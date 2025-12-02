@@ -52,14 +52,14 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | CRDs & Operators | |
 | Pod Security Admission | |
 
-### Part 0: Environment & Exam Technique
+### Part 0: Environment & Exam Technique ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 0.1 | [Cluster Setup](docs/cka/part0-environment/module-0.1-cluster-setup.md) | 📋 |
-| 0.2 | Shell Mastery (aliases, autocomplete) | 📋 |
-| 0.3 | Vim for YAML | 📋 |
-| 0.4 | kubernetes.io Navigation | 📋 |
-| 0.5 | Exam Strategy & Time Management | 📋 |
+| 0.1 | [Cluster Setup](docs/cka/part0-environment/module-0.1-cluster-setup.md) | ✅ |
+| 0.2 | [Shell Mastery](docs/cka/part0-environment/module-0.2-shell-mastery.md) | ✅ |
+| 0.3 | [Vim for YAML](docs/cka/part0-environment/module-0.3-vim-yaml.md) | ✅ |
+| 0.4 | [kubernetes.io Navigation](docs/cka/part0-environment/module-0.4-k8s-docs.md) | ✅ |
+| 0.5 | [Exam Strategy - Three-Pass Method](docs/cka/part0-environment/module-0.5-exam-strategy.md) | ✅ |
 
 ### Part 1: Cluster Architecture, Installation & Configuration (25%)
 | Module | Topic | Status |
