@@ -1,0 +1,957 @@
+# Module 2.6: Scheduling
+
+> **Complexity**: `[MEDIUM]` - Critical exam topic
+>
+> **Time to Complete**: 45-55 minutes
+>
+> **Prerequisites**: Module 2.1 (Pods), Module 2.5 (Resource Management)
+
+---
+
+## Why This Module Matters
+
+By default, the scheduler places pods on any node with available resources. But in production, you need control:
+- Run database pods on nodes with SSDs
+- Keep certain pods apart for high availability
+- Spread workloads across availability zones
+- Reserve nodes for specific workloads
+
+The CKA exam frequently tests scheduling constraints. You'll need to use nodeSelector, affinity rules, and taints/tolerations.
+
+> **The Event Planner Analogy**
+>
+> Think of scheduling like seating at a wedding. **nodeSelector** is "VIPs at Table 1." **Node affinity** is "Prefer tables near the stage, but anywhere is fine." **Taints** are reserved tables with "Staff Only" signs. **Tolerations** are staff badges that let you sit at reserved tables. **Anti-affinity** is "Don't seat the exes at the same table."
+
+---
+
+## What You'll Learn
+
+By the end of this module, you'll be able to:
+- Use nodeSelector for simple node selection
+- Configure node affinity and anti-affinity
+- Apply taints to nodes and tolerations to pods
+- Spread pods across topology domains
+- Troubleshoot scheduling issues
+
+---
+
+## Part 1: nodeSelector
+
+### 1.1 The Simplest Approach
+
+nodeSelector is the simplest way to constrain pods to specific nodes:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ssd-pod
+spec:
+  nodeSelector:
+    disk: ssd              # Only schedule on nodes with this label
+  containers:
+  - name: nginx
+    image: nginx
+```
+
+### 1.2 Working with Node Labels
+
+```bash
+# List node labels
+kubectl get nodes --show-labels
+
+# Label a node
+kubectl label node worker-1 disk=ssd
+
+# Remove a label
+kubectl label node worker-1 disk-
+
+# Overwrite a label
+kubectl label node worker-1 disk=hdd --overwrite
+```
+
+### 1.3 Common Built-in Labels
+
+| Label | Description |
+|-------|-------------|
+| `kubernetes.io/hostname` | Node hostname |
+| `kubernetes.io/os` | Operating system (linux, windows) |
+| `kubernetes.io/arch` | Architecture (amd64, arm64) |
+| `topology.kubernetes.io/zone` | Cloud availability zone |
+| `topology.kubernetes.io/region` | Cloud region |
+| `node.kubernetes.io/instance-type` | Instance type (cloud) |
+
+```yaml
+# Example: Schedule only on Linux nodes
+spec:
+  nodeSelector:
+    kubernetes.io/os: linux
+```
+
+> **Did You Know?**
+>
+> You can combine multiple nodeSelector labels. The pod only schedules on nodes that match ALL labels (AND logic).
+
+---
+
+## Part 2: Node Affinity
+
+### 2.1 Why Node Affinity?
+
+Node affinity is more expressive than nodeSelector:
+- **Soft preferences** ("prefer but don't require")
+- **Multiple match options** (OR logic)
+- **Operators** (In, NotIn, Exists, DoesNotExist, Gt, Lt)
+
+### 2.2 Affinity Types
+
+| Type | Behavior |
+|------|----------|
+| `requiredDuringSchedulingIgnoredDuringExecution` | Hard requirement (like nodeSelector) |
+| `preferredDuringSchedulingIgnoredDuringExecution` | Soft preference |
+
+> **Key Point**: "IgnoredDuringExecution" means if labels change after scheduling, the pod stays. There's no rescheduling.
+
+### 2.3 Required Affinity (Hard)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: affinity-required
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: disk
+            operator: In
+            values:
+            - ssd
+            - nvme
+  containers:
+  - name: nginx
+    image: nginx
+```
+
+### 2.4 Preferred Affinity (Soft)
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: affinity-preferred
+spec:
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 80               # Higher weight = stronger preference
+        preference:
+          matchExpressions:
+          - key: disk
+            operator: In
+            values:
+            - ssd
+      - weight: 20
+        preference:
+          matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-west-1a
+  containers:
+  - name: nginx
+    image: nginx
+```
+
+### 2.5 Operators
+
+| Operator | Meaning |
+|----------|---------|
+| `In` | Label value is in set |
+| `NotIn` | Label value not in set |
+| `Exists` | Label exists (any value) |
+| `DoesNotExist` | Label doesn't exist |
+| `Gt` | Greater than (integer comparison) |
+| `Lt` | Less than (integer comparison) |
+
+```yaml
+# Example: Node must have "gpu" label with any value
+matchExpressions:
+  - key: gpu
+    operator: Exists
+
+# Example: Node must NOT be in zone us-east-1c
+matchExpressions:
+  - key: topology.kubernetes.io/zone
+    operator: NotIn
+    values:
+    - us-east-1c
+```
+
+---
+
+## Part 3: Pod Affinity and Anti-Affinity
+
+### 3.1 Why Pod Affinity?
+
+Control pod placement relative to other pods:
+- **Pod Affinity**: "Schedule near pods with label X" (co-location)
+- **Pod Anti-Affinity**: "Don't schedule near pods with label X" (spreading)
+
+### 3.2 Pod Affinity Example
+
+"Schedule this pod on the same node as pods with app=cache":
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pod
+spec:
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app: cache
+        topologyKey: kubernetes.io/hostname    # Same node
+  containers:
+  - name: web
+    image: nginx
+```
+
+### 3.3 Pod Anti-Affinity Example
+
+"Don't schedule on nodes that already have app=web pods":
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pod
+  labels:
+    app: web
+spec:
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app: web
+        topologyKey: kubernetes.io/hostname
+  containers:
+  - name: web
+    image: nginx
+```
+
+### 3.4 Topology Key
+
+The `topologyKey` determines the "zone" for affinity:
+
+| topologyKey | Meaning |
+|-------------|---------|
+| `kubernetes.io/hostname` | Same node |
+| `topology.kubernetes.io/zone` | Same availability zone |
+| `topology.kubernetes.io/region` | Same region |
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│            Anti-Affinity with Different topologyKeys           │
+│                                                                 │
+│   topologyKey: kubernetes.io/hostname                          │
+│   → Pods spread across nodes (one per node)                    │
+│                                                                 │
+│   Node1: [web-1]    Node2: [web-2]    Node3: [web-3]          │
+│                                                                 │
+│   topologyKey: topology.kubernetes.io/zone                     │
+│   → Pods spread across zones (one per zone)                    │
+│                                                                 │
+│   Zone-A            Zone-B            Zone-C                   │
+│   [web-1]           [web-2]           [web-3]                  │
+│   Node1,Node2       Node3,Node4       Node5,Node6              │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+```
+
+> **Exam Tip**
+>
+> For spreading replicas across nodes, use pod anti-affinity with `topologyKey: kubernetes.io/hostname`. For spreading across zones for HA, use `topology.kubernetes.io/zone`.
+
+---
+
+## Part 4: Taints and Tolerations
+
+### 4.1 How Taints Work
+
+Taints are applied to **nodes** and repel pods unless the pod has a matching toleration.
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                   Taints and Tolerations                        │
+│                                                                 │
+│   Node with taint: gpu=true:NoSchedule                         │
+│   ┌─────────────────────────────────────────────┐              │
+│   │                                             │              │
+│   │  Regular Pod:      ❌ Cannot schedule       │              │
+│   │                                             │              │
+│   │  Pod with matching  ✅ Can schedule         │              │
+│   │  toleration:                                │              │
+│   │                                             │              │
+│   └─────────────────────────────────────────────┘              │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Taint Effects
+
+| Effect | Behavior |
+|--------|----------|
+| `NoSchedule` | Pods won't be scheduled (existing pods stay) |
+| `PreferNoSchedule` | Soft version - avoid but allow if necessary |
+| `NoExecute` | Evict existing pods, prevent new scheduling |
+
+### 4.3 Managing Taints
+
+```bash
+# Add taint to node
+kubectl taint nodes worker-1 gpu=true:NoSchedule
+
+# View taints
+kubectl describe node worker-1 | grep Taints
+
+# Remove taint (note the minus sign)
+kubectl taint nodes worker-1 gpu=true:NoSchedule-
+
+# Multiple taints
+kubectl taint nodes worker-1 dedicated=ml:NoSchedule
+kubectl taint nodes worker-1 gpu=nvidia:NoSchedule
+```
+
+### 4.4 Adding Tolerations to Pods
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gpu-pod
+spec:
+  tolerations:
+  - key: "gpu"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+  containers:
+  - name: cuda-app
+    image: nvidia/cuda
+```
+
+### 4.5 Toleration Operators
+
+| Operator | Meaning |
+|----------|---------|
+| `Equal` | Key and value must match |
+| `Exists` | Key exists (any value matches) |
+
+```yaml
+# Match specific value
+tolerations:
+- key: "gpu"
+  operator: "Equal"
+  value: "nvidia"
+  effect: "NoSchedule"
+
+# Match any value for key
+tolerations:
+- key: "gpu"
+  operator: "Exists"
+  effect: "NoSchedule"
+
+# Tolerate all taints (wildcard)
+tolerations:
+- operator: "Exists"
+```
+
+### 4.6 Common Taint Use Cases
+
+| Use Case | Taint Example |
+|----------|---------------|
+| GPU nodes | `gpu=true:NoSchedule` |
+| Dedicated nodes | `dedicated=team-a:NoSchedule` |
+| Control plane nodes | `node-role.kubernetes.io/control-plane:NoSchedule` |
+| Draining nodes | `node.kubernetes.io/unschedulable:NoSchedule` |
+
+> **War Story: The Disappeared Pods**
+>
+> An SRE added `NoExecute` taint for maintenance instead of `NoSchedule`. Existing pods were immediately evicted, causing a production outage. Know your taint effects! Use `NoSchedule` to prevent new pods. Use `NoExecute` only when you want to evict running pods.
+
+---
+
+## Part 5: Pod Topology Spread Constraints
+
+### 5.1 Why Topology Spread?
+
+Distribute pods evenly across failure domains:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: spread-pod
+  labels:
+    app: web
+spec:
+  topologySpreadConstraints:
+  - maxSkew: 1                              # Max difference between zones
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: DoNotSchedule        # Hard requirement
+    labelSelector:
+      matchLabels:
+        app: web
+  containers:
+  - name: nginx
+    image: nginx
+```
+
+### 5.2 Parameters Explained
+
+| Parameter | Description |
+|-----------|-------------|
+| `maxSkew` | Maximum allowed difference in pod count across domains |
+| `topologyKey` | Label key defining domains (zone, node, etc.) |
+| `whenUnsatisfiable` | `DoNotSchedule` (hard) or `ScheduleAnyway` (soft) |
+| `labelSelector` | Which pods to count for distribution |
+
+### 5.3 Visualization
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│              Topology Spread (maxSkew: 1)                       │
+│                                                                 │
+│   Zone A          Zone B          Zone C                       │
+│   [pod][pod]      [pod]           [pod]                        │
+│   Count: 2        Count: 1        Count: 1                     │
+│                                                                 │
+│   Max difference = 2-1 = 1 ≤ maxSkew ✓                         │
+│                                                                 │
+│   New pod arrives - where can it go?                           │
+│   Zone A: 3 pods → difference 3-1=2 > maxSkew ❌               │
+│   Zone B: 2 pods → difference 2-1=1 ≤ maxSkew ✓               │
+│   Zone C: 2 pods → difference 2-1=1 ≤ maxSkew ✓               │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 6: Scheduling Decision Flow
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                   Scheduling Decision Flow                      │
+│                                                                 │
+│   Pod Created                                                   │
+│       │                                                         │
+│       ▼                                                         │
+│   Filter Nodes                                                  │
+│   ├── nodeSelector matches?                                    │
+│   ├── Node affinity required matches?                          │
+│   ├── Taints tolerated?                                        │
+│   ├── Resources available?                                     │
+│   ├── Pod anti-affinity satisfied?                             │
+│   └── Topology spread constraints ok?                          │
+│       │                                                         │
+│       ▼                                                         │
+│   Score Remaining Nodes                                         │
+│   ├── Node affinity preferred                                  │
+│   ├── Pod affinity preferred                                   │
+│   └── Resource optimization                                    │
+│       │                                                         │
+│       ▼                                                         │
+│   Select Highest Scoring Node                                   │
+│       │                                                         │
+│       ▼                                                         │
+│   Bind Pod to Node                                              │
+│                                                                 │
+└────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Part 7: Troubleshooting Scheduling
+
+### 7.1 Common Issues
+
+| Symptom | Likely Cause | Debug Command |
+|---------|--------------|---------------|
+| Pending (no events) | No nodes match constraints | `kubectl describe pod` |
+| Pending (Insufficient) | Resource shortage | Check node resources |
+| Pending (Taints) | No toleration for taint | Check node taints, pod tolerations |
+| Pending (Affinity) | No nodes match affinity rules | Simplify/remove affinity |
+
+### 7.2 Debug Commands
+
+```bash
+# Check pod events
+kubectl describe pod <pod-name> | grep -A10 Events
+
+# Check node labels
+kubectl get nodes --show-labels
+
+# Check node taints
+kubectl describe node <node> | grep Taints
+
+# Check node resources
+kubectl describe node <node> | grep -A10 "Allocated resources"
+
+# Simulate scheduling
+kubectl get pods -o wide  # See where pods landed
+```
+
+---
+
+## Did You Know?
+
+- **Control plane nodes** are tainted by default with `node-role.kubernetes.io/control-plane:NoSchedule`. That's why regular pods don't run there.
+
+- **Affinity can be combined**. You can have nodeAffinity, podAffinity, and podAntiAffinity all on the same pod.
+
+- **Multiple topologySpreadConstraints** are ANDed. All constraints must be satisfied.
+
+- **DaemonSets ignore taints** by default for certain system taints. That's how they run on every node.
+
+---
+
+## Common Mistakes
+
+| Mistake | Problem | Solution |
+|---------|---------|----------|
+| nodeSelector typo | Pod stays Pending | Verify label exists on target node |
+| Missing toleration | Pod can't schedule on tainted node | Add matching toleration |
+| Wrong topologyKey | Affinity doesn't work as expected | Use correct label key |
+| NoExecute instead of NoSchedule | Pods evicted unexpectedly | Use NoSchedule for new pods only |
+| Anti-affinity too strict | Not enough nodes for all replicas | Use preferred or reduce replicas |
+
+---
+
+## Quiz
+
+1. **What's the difference between nodeSelector and node affinity?**
+   <details>
+   <summary>Answer</summary>
+   **nodeSelector** is simple key-value matching (AND logic, must match all). **Node affinity** is more expressive with operators (In, NotIn, Exists), soft preferences, and multiple options (OR logic within nodeSelectorTerms).
+   </details>
+
+2. **A node has taint `gpu=nvidia:NoSchedule`. What must a pod have to schedule there?**
+   <details>
+   <summary>Answer</summary>
+   A toleration matching the taint:
+   ```yaml
+   tolerations:
+   - key: "gpu"
+     operator: "Equal"
+     value: "nvidia"
+     effect: "NoSchedule"
+   ```
+   Or use `operator: Exists` to match any value.
+   </details>
+
+3. **What does topologyKey: kubernetes.io/hostname mean in pod anti-affinity?**
+   <details>
+   <summary>Answer</summary>
+   It means "spread pods across different nodes." Each node hostname is a separate topology domain. The anti-affinity rule prevents pods with matching labels from running on the same node.
+   </details>
+
+4. **A pod is Pending with event "0/3 nodes are available: 1 node(s) had taint". What's wrong?**
+   <details>
+   <summary>Answer</summary>
+   The pod doesn't have tolerations for at least one node's taint. Either add the appropriate toleration to the pod, or remove the taint from the node.
+   </details>
+
+---
+
+## Hands-On Exercise
+
+**Task**: Practice all scheduling techniques.
+
+**Steps**:
+
+### Part A: nodeSelector
+
+1. **Label a node and use nodeSelector**:
+```bash
+# Get a node name
+NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+
+# Label the node
+kubectl label node $NODE disk=ssd
+
+# Create pod with nodeSelector
+cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ssd-pod
+spec:
+  nodeSelector:
+    disk: ssd
+  containers:
+  - name: nginx
+    image: nginx
+EOF
+
+# Verify placement
+kubectl get pod ssd-pod -o wide
+
+# Cleanup
+kubectl delete pod ssd-pod
+kubectl label node $NODE disk-
+```
+
+### Part B: Taints and Tolerations
+
+2. **Add taint and create pod with toleration**:
+```bash
+# Taint the node
+kubectl taint nodes $NODE dedicated=special:NoSchedule
+
+# Try to create pod without toleration
+kubectl run no-toleration --image=nginx
+
+# Check - should be Pending or on different node
+kubectl get pod no-toleration -o wide
+
+# Create pod with toleration
+cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-toleration
+spec:
+  tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "special"
+    effect: "NoSchedule"
+  containers:
+  - name: nginx
+    image: nginx
+EOF
+
+# Verify placement
+kubectl get pod with-toleration -o wide
+
+# Cleanup
+kubectl delete pod no-toleration with-toleration
+kubectl taint nodes $NODE dedicated-
+```
+
+### Part C: Pod Anti-Affinity
+
+3. **Spread pods across nodes**:
+```bash
+cat << EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spread-deploy
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: spread
+  template:
+    metadata:
+      labels:
+        app: spread
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: spread
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: nginx
+        image: nginx
+EOF
+
+# Check pod distribution
+kubectl get pods -l app=spread -o wide
+
+# Cleanup
+kubectl delete deployment spread-deploy
+```
+
+**Success Criteria**:
+- [ ] Can use nodeSelector
+- [ ] Can add/remove node taints
+- [ ] Can add tolerations to pods
+- [ ] Understand affinity vs anti-affinity
+- [ ] Can troubleshoot scheduling issues
+
+---
+
+## Practice Drills
+
+### Drill 1: nodeSelector (Target: 3 minutes)
+
+```bash
+NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+
+# Label node
+kubectl label node $NODE env=production
+
+# Create pod with nodeSelector
+kubectl run selector-test --image=nginx --dry-run=client -o yaml | \
+  kubectl patch --dry-run=client -o yaml -f - \
+  -p '{"spec":{"nodeSelector":{"env":"production"}}}' | kubectl apply -f -
+
+# Or simpler - just use YAML
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: selector-test
+spec:
+  nodeSelector:
+    env: production
+  containers:
+  - name: nginx
+    image: nginx
+EOF
+
+# Verify
+kubectl get pod selector-test -o wide
+
+# Cleanup
+kubectl delete pod selector-test
+kubectl label node $NODE env-
+```
+
+### Drill 2: Taints (Target: 5 minutes)
+
+```bash
+NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+
+# Add taint
+kubectl taint nodes $NODE app=critical:NoSchedule
+
+# View taint
+kubectl describe node $NODE | grep Taints
+
+# Pod without toleration - will be Pending or elsewhere
+kubectl run no-tol --image=nginx
+kubectl get pod no-tol -o wide
+
+# Pod with toleration
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: with-tol
+spec:
+  tolerations:
+  - key: "app"
+    operator: "Equal"
+    value: "critical"
+    effect: "NoSchedule"
+  containers:
+  - name: nginx
+    image: nginx
+EOF
+
+kubectl get pod with-tol -o wide
+
+# Cleanup
+kubectl delete pod no-tol with-tol
+kubectl taint nodes $NODE app-
+```
+
+### Drill 3: Node Affinity (Target: 5 minutes)
+
+```bash
+NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+kubectl label node $NODE size=large
+
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: affinity-test
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: size
+            operator: In
+            values:
+            - large
+            - xlarge
+  containers:
+  - name: nginx
+    image: nginx
+EOF
+
+kubectl get pod affinity-test -o wide
+
+# Cleanup
+kubectl delete pod affinity-test
+kubectl label node $NODE size-
+```
+
+### Drill 4: Pod Anti-Affinity (Target: 5 minutes)
+
+```bash
+cat << 'EOF' | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anti-affinity
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: anti-test
+  template:
+    metadata:
+      labels:
+        app: anti-test
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                app: anti-test
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: nginx
+        image: nginx
+EOF
+
+# Check distribution (each pod on different node)
+kubectl get pods -l app=anti-test -o wide
+
+# Cleanup
+kubectl delete deployment anti-affinity
+```
+
+### Drill 5: Troubleshooting - Pending Pod (Target: 5 minutes)
+
+```bash
+NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+
+# Create impossible scenario
+kubectl taint nodes $NODE impossible=true:NoSchedule
+
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-pod
+spec:
+  nodeSelector:
+    nonexistent: label
+  containers:
+  - name: nginx
+    image: nginx
+EOF
+
+# Diagnose
+kubectl get pod pending-pod
+kubectl describe pod pending-pod | grep -A10 Events
+
+# YOUR TASK: Why is it Pending? Fix it.
+
+# Cleanup
+kubectl delete pod pending-pod
+kubectl taint nodes $NODE impossible-
+```
+
+<details>
+<summary>Solution</summary>
+
+The pod is pending for two reasons:
+1. nodeSelector requires label `nonexistent=label` which no node has
+2. All nodes have taint that the pod doesn't tolerate
+
+Fix by either:
+- Adding the label to a node: `kubectl label node $NODE nonexistent=label`
+- Adding toleration and removing nodeSelector
+
+</details>
+
+### Drill 6: Challenge - Complex Scheduling
+
+Create a pod that:
+1. Must run on nodes with label `tier=frontend`
+2. Prefers nodes with label `zone=us-east-1a`
+3. Tolerates taint `frontend=true:NoSchedule`
+
+```bash
+# YOUR TASK: Create this pod
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
+kubectl label node $NODE tier=frontend zone=us-east-1a
+kubectl taint nodes $NODE frontend=true:NoSchedule
+
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: complex-schedule
+spec:
+  tolerations:
+  - key: "frontend"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: tier
+            operator: In
+            values:
+            - frontend
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+          - key: zone
+            operator: In
+            values:
+            - us-east-1a
+  containers:
+  - name: nginx
+    image: nginx
+EOF
+
+kubectl get pod complex-schedule -o wide
+
+# Cleanup
+kubectl delete pod complex-schedule
+kubectl label node $NODE tier- zone-
+kubectl taint nodes $NODE frontend-
+```
+
+</details>
+
+---
+
+## Next Module
+
+[Module 2.7: ConfigMaps & Secrets](module-2.7-configmaps-secrets.md) - Application configuration management.
