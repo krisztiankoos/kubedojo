@@ -444,6 +444,52 @@ If you're behind at a checkpoint, speed up. Skip more aggressively.
 
 ---
 
+## Hands-On Exercise
+
+**Task**: Practice categorizing questions and timing yourself.
+
+### Exercise 1: Question Categorization
+
+Categorize these sample CKA questions as `[QUICK]`, `[MEDIUM]`, or `[COMPLEX]`:
+
+1. Create a pod named `nginx` running the `nginx:1.25` image
+2. The deployment `web-app` is not starting. Pods show `CrashLoopBackOff`. Find and fix the issue.
+3. Scale the deployment `api` to 5 replicas
+4. Create a NetworkPolicy that allows pods with label `role=frontend` to access pods with label `role=db` on port 3306
+5. Create a ClusterRole that allows listing and getting pods, and bind it to user `developer`
+6. Node `worker-02` is in `NotReady` state. Troubleshoot and fix.
+7. Add the label `env=production` to all pods in namespace `app`
+8. Create a PersistentVolumeClaim requesting 5Gi storage with `ReadWriteOnce` access mode
+
+<details>
+<summary>Answers</summary>
+
+1. `[QUICK]` - Single kubectl command
+2. `[COMPLEX]` - Requires investigation
+3. `[QUICK]` - Single kubectl command
+4. `[MEDIUM]` - Requires YAML, but straightforward
+5. `[MEDIUM]` - Multi-step but documented
+6. `[COMPLEX]` - Troubleshooting required
+7. `[QUICK]` - Single kubectl command with selector
+8. `[MEDIUM]` - Requires YAML template
+
+</details>
+
+### Exercise 2: Timed Practice
+
+Set a timer and practice:
+
+1. **2 minutes**: Create a deployment with 3 replicas and expose it
+2. **5 minutes**: Create a complete RBAC setup (Role, RoleBinding, ServiceAccount)
+3. **3 minutes**: Create a NetworkPolicy from documentation
+
+**Success Criteria**:
+- [ ] Can categorize question complexity in <10 seconds
+- [ ] Understand which pass each question belongs to
+- [ ] Can execute quick wins without hesitation
+
+---
+
 ## Summary: Three-Pass Reference Card
 
 ```

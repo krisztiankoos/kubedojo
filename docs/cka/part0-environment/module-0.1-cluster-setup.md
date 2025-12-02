@@ -435,7 +435,7 @@ sudo kubeadm reset
 
 ---
 
-## Common Issues & Solutions
+## Common Mistakes
 
 | Problem | Cause | Solution |
 |---------|-------|----------|
