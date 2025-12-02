@@ -3,8 +3,8 @@
 > **Read this first every session. Update before ending.**
 
 ## Current Work
-**Part 3: Services & Networking (20%)** - Next up
-- 0/7 modules complete
+**Part 4: Storage (10%)** - Next up
+- 0/5 modules complete
 
 ## Progress Summary
 | Part | Status | Modules |
@@ -12,8 +12,8 @@
 | Part 0: Environment | ✅ Complete | 5/5 |
 | Part 1: Cluster Architecture | ✅ Complete | 7/7 |
 | Part 2: Workloads & Scheduling | ✅ Complete (Reviewed 10/10) | 7/7 |
-| Part 3: Services & Networking | 🔄 Next | 0/7 |
-| Part 4: Storage | ⏳ Pending | 0/5 |
+| Part 3: Services & Networking | ✅ Complete (Reviewed 10/10) | 7/7 |
+| Part 4: Storage | 🔄 Next | 0/5 |
 | Part 5: Troubleshooting | ⏳ Pending | 0/7 |
 | Part 6: Mock Exams | ⏳ Pending | 0/7 |
 
@@ -35,6 +35,15 @@
 - [x] 2.6 Scheduling (nodeSelector, affinity, taints)
 - [x] 2.7 ConfigMaps & Secrets
 
+## Part 3 Modules (Completed)
+- [x] 3.1 Services (ClusterIP, NodePort, LoadBalancer, ExternalName)
+- [x] 3.2 Endpoints & EndpointSlices
+- [x] 3.3 DNS & CoreDNS
+- [x] 3.4 Ingress
+- [x] 3.5 Gateway API (CKA 2025)
+- [x] 3.6 Network Policies
+- [x] 3.7 CNI & Cluster Networking
+
 ## Blockers
 None
 
@@ -44,6 +53,8 @@ _2025-12-02: Part 1 reviewed and polished to 10/10. Fixed deprecated commands, a
 _2025-12-02: Major pedagogical enhancement - added Practice Drills (5-7 per module) to all Part 0 and Part 1 modules. Added cumulative quizzes. Updated review commands to check for pedagogical quality._
 _2025-12-02: Completed Part 2 (7 modules + cumulative quiz). Covers: Pods, Deployments, DaemonSets/StatefulSets, Jobs/CronJobs, Resource Management, Scheduling, ConfigMaps/Secrets._
 _2025-12-02: Part 2 reviewed - scored 10/10. All structure elements present, excellent pedagogical quality._
+_2025-12-02: Completed Part 3 (7 modules + cumulative quiz). Covers: Services, Endpoints/EndpointSlices, DNS/CoreDNS, Ingress, Gateway API (CKA 2025), Network Policies, CNI._
+_2025-12-02: Part 3 reviewed - scored 10/10. 74 YAML examples, 166 bash examples. All pedagogical elements present._
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.
