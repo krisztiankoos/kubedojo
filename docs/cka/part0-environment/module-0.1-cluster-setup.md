@@ -16,6 +16,10 @@ The CKA exam runs on **kubeadm-provisioned clusters**. Not managed Kubernetes. N
 
 This module teaches you to build exactly what you'll encounter in the exam.
 
+> **The Orchestra Analogy**
+>
+> Think of a Kubernetes cluster like an orchestra. The **control plane** is the conductor—it doesn't play any instruments (run your apps), but it coordinates everything: who plays when, how loud, when to start and stop. The **worker nodes** are the musicians—they do the actual work of producing music (running containers). Without a conductor, you have chaos. Without musicians, you have silence. You need both, working together, communicating constantly.
+
 ---
 
 ## What You'll Build
@@ -276,6 +280,10 @@ The node shows `NotReady` because we haven't installed a network plugin yet.
 
 Kubernetes doesn't come with networking. You must install a CNI plugin. We'll use Calico (widely used, exam-friendly).
 
+> **Why Doesn't Kubernetes Include Networking?**
+>
+> This surprises everyone at first. Kubernetes made a deliberate choice to define a networking *model* (every pod gets an IP, pods can reach each other) but not *implement* it. Why? Because networking needs vary wildly—some need advanced policies, some need high performance, some need cloud integration. By using the CNI (Container Network Interface) standard, Kubernetes lets you choose. Calico, Flannel, Cilium, Weave—they all implement the same interface but with different superpowers. It's like USB: the standard defines how to connect, but you choose your device.
+
 **On the control plane node:**
 
 ```bash
@@ -342,6 +350,10 @@ worker-02   Ready    <none>          1m    v1.31.0
 ```
 
 All nodes `Ready`! Your cluster is operational.
+
+> **War Story: The Phantom Node**
+>
+> An engineer once spent an hour trying to figure out why their "3-node cluster" only had 2 nodes showing. They ran `kubeadm join` on all three machines. Turns out, they ran it on the control plane node by mistake (instead of a worker), which silently failed because that node was already in the cluster. The lesson: always verify which node you're SSH'd into before running commands. The hostname in your terminal prompt is your friend.
 
 ### 4.3 Label Worker Nodes (Optional but Recommended)
 

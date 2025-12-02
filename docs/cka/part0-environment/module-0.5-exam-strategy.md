@@ -365,6 +365,10 @@ Set mental checkpoints during the exam:
 
 If you're behind at a checkpoint, speed up. Skip more aggressively.
 
+> **Success Story: From Failed to 89%**
+>
+> A candidate failed their first CKA attempt with 58%. They'd spent 18 minutes on a troubleshooting question in the first pass, then rushed through everything else. On their second attempt, they used the three-pass method religiously. Pass 1: 6 questions in 22 minutes. Pass 2: 7 questions in 50 minutes. Pass 3: 3 complex questions with 48 minutes remaining. Final score: 89%. Same knowledge, different strategy, completely different outcome.
+
 ---
 
 ## Part 8: Pre-Exam Routine

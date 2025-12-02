@@ -26,6 +26,10 @@ You don't need to be a vim expert. You need 10 commands.
 
 Vim has modes. This confuses everyone at first.
 
+> **The Gearshift Analogy**
+>
+> Vim modes are like a car's gearshift. In **Normal mode** (drive), you're navigating—moving around, not typing. In **Insert mode** (park), you're stationary and typing. In **Command mode** (reverse), you're doing special operations like saving. You wouldn't try to park while driving. Vim forces you to "shift gears" deliberately. It feels weird at first, but it's what makes vim so fast once you internalize it.
+
 | Mode | How to Enter | What It Does |
 |------|-------------|--------------|
 | Normal | `Esc` | Navigate, delete, copy, paste |
@@ -132,6 +136,10 @@ EOF
 > **Gotcha: Tabs vs Spaces**
 >
 > YAML requires consistent indentation. A single tab character mixed with spaces will break your manifest. Always use spaces. The `expandtab` setting converts tabs to spaces automatically.
+
+> **War Story: The Invisible Character**
+>
+> A senior engineer spent 45 minutes debugging why `kubectl apply` kept failing with a cryptic YAML parsing error. The manifest looked perfect. They eventually ran `cat -A` on the file and discovered invisible tab characters mixed with spaces—introduced when they copied code from a Confluence page. The lesson: never trust copy-paste. Always verify indentation, and configure your editor to show invisible characters or convert tabs automatically.
 
 ---
 

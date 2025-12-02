@@ -16,6 +16,10 @@ In the CKA exam, you have roughly **7 minutes per question on average**. Every k
 
 This module sets up your shell for maximum speed.
 
+> **The Race Car Pit Crew Analogy**
+>
+> In Formula 1, pit stops are won or lost by fractions of a second. The crew doesn't wing it—every movement is rehearsed, every tool is positioned perfectly, every action is muscle memory. Your shell setup is your pit crew. Aliases are your pre-positioned tools. Autocomplete is your practiced muscle memory. Without preparation, you fumble. With it, you're changing tires in 2 seconds flat while others are still looking for the wrench.
+
 ---
 
 ## What You'll Configure
@@ -161,6 +165,10 @@ source ~/.bashrc
 ## Part 3: Context and Namespace Switching
 
 The CKA exam uses **multiple clusters**. You'll need to switch contexts constantly.
+
+> **War Story: The $15,000 Mistake**
+>
+> A DevOps engineer meant to delete a test namespace in the staging cluster. They typed `kubectl delete ns payment-service` and hit enter. Then their stomach dropped—they were in the production context. 47 pods serving real customers vanished. Recovery took 3 hours. The fix? They now have `PS1` configured to show the current context in their prompt, highlighted in red when it's production. Context awareness isn't optional—it's survival.
 
 ### 3.1 Understand Contexts
 

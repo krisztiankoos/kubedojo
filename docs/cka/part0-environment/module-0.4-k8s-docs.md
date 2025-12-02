@@ -20,6 +20,14 @@ This is open-book. You don't need to memorize YAML schemas. But if you spend 3 m
 
 This module teaches you where everything is—so you can find it in seconds.
 
+> **The Library Analogy**
+>
+> Imagine you need a specific recipe from a library. You could wander the aisles hoping to stumble upon it. Or you could know that cookbooks are in section 641.5, third shelf from the top. The kubernetes.io docs are your library. Wandering wastes time. Knowing the sections—Tasks for how-to, Reference for specs, Concepts for theory—is your Dewey Decimal System. This module gives you the map.
+
+> **War Story: The Search That Cost 8 Points**
+>
+> A candidate needed a NetworkPolicy example during their CKA. They typed "network policy" in the search bar and got dozens of results. They clicked through Concepts first (wrong—theory, no examples), then a blog post (interesting but not what they needed), then finally found the Tasks page. Total time: 4 minutes. They ran out of time on the last question. Later they learned: Tasks → Administer Cluster → Declare Network Policy. That's a 15-second lookup if you know the path.
+
 ---
 
 ## Part 1: Documentation Structure
