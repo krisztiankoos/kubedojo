@@ -660,7 +660,70 @@ kubectl describe csinode <node-name>
 kubectl get sc -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.provisioner}{"\n"}{end}'
 ```
 
-### Drill 6: Network Connectivity Test (Target: 5 minutes)
+### Drill 6: CSI Provisioning - Create PVC with StorageClass (Target: 5 minutes)
+
+Practice the full CSI workflow from PVC to mounted volume:
+
+```bash
+# Check available StorageClasses
+kubectl get sc
+
+# Create a PVC using the default StorageClass
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-test-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  # storageClassName: standard  # Uncomment to use specific class
+EOF
+
+# Watch the PVC get bound (CSI provisioner creates PV)
+kubectl get pvc csi-test-pvc -w
+
+# Check the dynamically provisioned PV
+kubectl get pv
+
+# Create a pod that uses the PVC
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: csi-test-pod
+spec:
+  containers:
+  - name: app
+    image: nginx
+    volumeMounts:
+    - name: data
+      mountPath: /data
+  volumes:
+  - name: data
+    persistentVolumeClaim:
+      claimName: csi-test-pvc
+EOF
+
+# Wait for pod to be ready
+kubectl wait --for=condition=ready pod/csi-test-pod --timeout=60s
+
+# Verify the volume is mounted
+kubectl exec csi-test-pod -- df -h /data
+
+# Write test data
+kubectl exec csi-test-pod -- sh -c "echo 'CSI works!' > /data/test.txt"
+kubectl exec csi-test-pod -- cat /data/test.txt
+
+# Cleanup
+kubectl delete pod csi-test-pod
+kubectl delete pvc csi-test-pvc
+```
+
+### Drill 7: Network Connectivity Test (Target: 5 minutes)
 
 Verify CNI is working correctly:
 
@@ -684,7 +747,7 @@ kubectl exec net-test-2 -- curl -s --connect-timeout 5 $POD1_IP:80
 kubectl delete pod net-test-1 net-test-2
 ```
 
-### Drill 7: Challenge - Identify All Plugins
+### Drill 8: Challenge - Identify All Plugins
 
 Without documentation, identify all plugins in your cluster:
 

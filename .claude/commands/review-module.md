@@ -40,19 +40,11 @@ Score each category 1-10, then provide overall assessment.
 - [ ] Common mistakes table
 - [ ] Aligns with CKA 2025 curriculum
 
-### 5. Structure (Weight: 10%)
+### 5. Structure (Weight: 15%)
 - [ ] Clear learning objectives at start
-- [ ] Quiz with hidden answers (4+ questions)
+- [ ] Quiz with hidden answers
 - [ ] Hands-on exercise with success criteria
 - [ ] Link to next module
-
-### 6. Pedagogical Quality (Weight: 10%)
-- [ ] **Practice Drills section** with 5-7 drills
-- [ ] **Target times** on all drills (e.g., "Target: 3 minutes")
-- [ ] **Troubleshooting drill** (at least 1 "fix this broken..." exercise)
-- [ ] **Challenge drill** (at least 1 "no guidance provided" exercise)
-- [ ] **Drill variety** (mix of speed, understanding, debugging)
-- [ ] **Progressive difficulty** (easier drills first, challenge last)
 
 ## Review Process
 
@@ -74,9 +66,8 @@ Score each category 1-10, then provide overall assessment.
 | Theory Depth | X/10 | 25% | X.X |
 | Practical Value | X/10 | 25% | X.X |
 | Engagement | X/10 | 20% | X.X |
-| Exam Relevance | X/10 | 10% | X.X |
-| Structure | X/10 | 10% | X.X |
-| Pedagogical Quality | X/10 | 10% | X.X |
+| Exam Relevance | X/10 | 15% | X.X |
+| Structure | X/10 | 15% | X.X |
 | **Overall** | | | **X.X/10** |
 
 ### Strengths

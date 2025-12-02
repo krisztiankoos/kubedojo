@@ -887,6 +887,22 @@ You now understand:
 - ✅ RBAC for access control
 - ✅ kubeadm for cluster management
 
+### Part 1 Module Index
+
+Quick links for review:
+
+| Module | Topic | Key Skills |
+|--------|-------|------------|
+| [1.1](module-1.1-control-plane.md) | Control Plane Deep-Dive | Component roles, troubleshooting, static pods |
+| [1.2](module-1.2-extension-interfaces.md) | Extension Interfaces | CNI/CSI/CRI, crictl, plugin troubleshooting |
+| [1.3](module-1.3-helm.md) | Helm | Install, upgrade, rollback, values |
+| [1.4](module-1.4-kustomize.md) | Kustomize | Base/overlay, patches, `kubectl -k` |
+| [1.5](module-1.5-crds-operators.md) | CRDs & Operators | Create CRDs, manage custom resources |
+| [1.6](module-1.6-rbac.md) | RBAC | Roles, bindings, ServiceAccounts, `can-i` |
+| [1.7](module-1.7-kubeadm.md) | kubeadm Basics | Init, join, cordon, drain, tokens |
+
+📝 **Before moving on**: Complete the [Part 1 Cumulative Quiz](part1-cumulative-quiz.md) to test your retention.
+
 ---
 
 ## Next Steps
