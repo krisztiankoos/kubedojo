@@ -2,7 +2,7 @@
 
 > **Purpose**: Test your retention across all Part 2 modules before moving to Part 3.
 >
-> **Target Score**: 80% (20/25) to proceed confidently
+> **Target Score**: 80% (22/28) to proceed confidently
 >
 > **Time Limit**: 20 minutes
 
@@ -10,7 +10,7 @@
 
 ## Instructions
 
-Answer all 25 questions without referring to the modules. This quiz covers 15% of the CKA exam content.
+Answer all 28 questions without referring to the modules. This quiz covers 15% of the CKA exam content.
 
 ---
 
