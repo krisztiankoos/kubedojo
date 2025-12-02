@@ -34,9 +34,23 @@ KubeDojo prepares you for all 5 core Kubernetes certifications required for [Kub
 
 ---
 
-## CKA Curriculum
+## CKA Curriculum (2025)
+
+> **Curriculum Version**: CKA 2025 (effective Feb 18, 2025)
+>
+> Based on [CNCF Official Curriculum](https://github.com/cncf/curriculum)
 
 The CKA is notoriously difficult after recent changes. 16 hands-on questions in 2 hours. Speed matters as much as knowledge.
+
+### 2025 Changes Summary
+
+| Added | Removed/Deprioritized |
+|-------|----------------------|
+| Helm | etcd backup/restore |
+| Kustomize | Cluster upgrades |
+| Gateway API | Infrastructure provisioning |
+| CRDs & Operators | |
+| Pod Security Admission | |
 
 ### Part 0: Environment & Exam Technique
 | Module | Topic | Status |
@@ -51,11 +65,12 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | Module | Topic | Status |
 |--------|-------|--------|
 | 1.1 | Control Plane Deep-Dive | 📋 |
-| 1.2 | etcd (Backup, Restore, Why It Matters) | 📋 |
-| 1.3 | kubeadm (Bootstrap, Join, Upgrade) | 📋 |
-| 1.4 | RBAC from Scratch | 📋 |
-| 1.5 | Certificates & PKI | 📋 |
-| 1.6 | Cluster Upgrades | 📋 |
+| 1.2 | Extension Interfaces (CNI, CSI, CRI) | 📋 |
+| 1.3 | Helm | 📋 |
+| 1.4 | Kustomize | 📋 |
+| 1.5 | CRDs & Operators | 📋 |
+| 1.6 | RBAC | 📋 |
+| 1.7 | kubeadm Basics | 📋 |
 
 ### Part 2: Workloads & Scheduling (15%)
 | Module | Topic | Status |
@@ -65,16 +80,19 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | 2.3 | Jobs & CronJobs | 📋 |
 | 2.4 | Scheduling (Affinity, Taints, Tolerations) | 📋 |
 | 2.5 | Resource Requests & Limits | 📋 |
+| 2.6 | Pod Admission & Security Contexts | 📋 |
+| 2.7 | Workload Autoscaling (HPA) | 📋 |
 
 ### Part 3: Services & Networking (20%)
 | Module | Topic | Status |
 |--------|-------|--------|
 | 3.1 | Container Networking Fundamentals | 📋 |
-| 3.2 | CNI (What It Is, How Plugins Work) | 📋 |
+| 3.2 | CNI | 📋 |
 | 3.3 | Services (ClusterIP, NodePort, LoadBalancer) | 📋 |
 | 3.4 | DNS in Kubernetes (CoreDNS) | 📋 |
-| 3.5 | Ingress & Ingress Controllers | 📋 |
-| 3.6 | NetworkPolicies | 📋 |
+| 3.5 | Gateway API | 📋 |
+| 3.6 | Ingress (Legacy) | 📋 |
+| 3.7 | NetworkPolicies | 📋 |
 
 ### Part 4: Storage (10%)
 | Module | Topic | Status |
@@ -82,7 +100,8 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | 4.1 | Volumes (emptyDir, hostPath) | 📋 |
 | 4.2 | PersistentVolumes & PersistentVolumeClaims | 📋 |
 | 4.3 | StorageClasses & Dynamic Provisioning | 📋 |
-| 4.4 | CSI Basics | 📋 |
+| 4.4 | Volume Types, Access Modes & Reclaim Policies | 📋 |
+| 4.5 | CSI Basics | 📋 |
 
 ### Part 5: Troubleshooting (30%)
 | Module | Topic | Status |
@@ -91,18 +110,20 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | 5.2 | Application Failures | 📋 |
 | 5.3 | Control Plane Failures | 📋 |
 | 5.4 | Worker Node Failures | 📋 |
-| 5.5 | Networking Troubleshooting | 📋 |
-| 5.6 | Logging & Monitoring | 📋 |
+| 5.5 | Network Troubleshooting (Internal & External) | 📋 |
+| 5.6 | Service Troubleshooting | 📋 |
+| 5.7 | Logging & Monitoring | 📋 |
 
 ### Part 6: Speed Drills & Mock Exams
 | Module | Topic | Status |
 |--------|-------|--------|
 | 6.1 | Kubectl Imperative Speedruns | 📋 |
 | 6.2 | YAML Generation Patterns | 📋 |
-| 6.3 | Timed Scenarios (7-min tasks) | 📋 |
-| 6.4 | Mock Exam #1 | 📋 |
-| 6.5 | Mock Exam #2 | 📋 |
-| 6.6 | Mock Exam #3 | 📋 |
+| 6.3 | Helm Speed Drills | 📋 |
+| 6.4 | Timed Scenarios (7-min tasks) | 📋 |
+| 6.5 | Mock Exam #1 | 📋 |
+| 6.6 | Mock Exam #2 | 📋 |
+| 6.7 | Mock Exam #3 | 📋 |
 
 ---
 
@@ -144,9 +165,21 @@ Every module includes:
 4. Track your progress
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/kubedojo.git
+git clone https://github.com/krisztiankoos/kubedojo.git
 cd kubedojo
 ```
+
+---
+
+## Curriculum Sources
+
+We track official CNCF curriculum and update when changes occur:
+
+- [CNCF Curriculum Repository](https://github.com/cncf/curriculum)
+- [CKA Program Changes](https://training.linuxfoundation.org/certified-kubernetes-administrator-cka-program-changes/)
+- [CKS Program Changes](https://training.linuxfoundation.org/cks-program-changes/)
+
+See [Issue #14](https://github.com/krisztiankoos/kubedojo/issues/14) for monitoring and change tracking.
 
 ---
 
@@ -166,12 +199,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ## License
 
 MIT License. Free to use, share, and modify.
-
----
-
-## Acknowledgments
-
-Built with the belief that quality education should be accessible to everyone, not just those who can afford premium courses.
 
 ---
 
