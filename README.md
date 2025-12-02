@@ -120,10 +120,11 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | 6.1 | Kubectl Imperative Speedruns | 📋 |
 | 6.2 | YAML Generation Patterns | 📋 |
 | 6.3 | Helm Speed Drills | 📋 |
-| 6.4 | Timed Scenarios (7-min tasks) | 📋 |
-| 6.5 | Mock Exam #1 | 📋 |
-| 6.6 | Mock Exam #2 | 📋 |
-| 6.7 | Mock Exam #3 | 📋 |
+| 6.4 | Task Complexity Recognition | 📋 |
+| 6.5 | Three-Pass Strategy Practice | 📋 |
+| 6.6 | Mock Exam #1 | 📋 |
+| 6.7 | Mock Exam #2 | 📋 |
+| 6.8 | Mock Exam #3 | 📋 |
 
 ---
 
