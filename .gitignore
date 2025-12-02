@@ -1,0 +1,20 @@
+# Claude Code local config (deployed from claude_extensions/)
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
