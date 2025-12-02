@@ -75,11 +75,14 @@ Core strategy taught throughout curriculum:
 
 When starting work on KubeDojo:
 
-1. Check GitHub issues for current priorities
-2. Review Issue #14 for curriculum monitoring status
-3. For new modules, follow existing module structure exactly
-4. Run `/review-module` before considering a module complete
-5. Update README progress when completing modules/parts
+1. **READ `STATUS.md` FIRST** - Instant context on current work
+2. For new modules, follow existing module structure exactly
+3. Run `/review-module` before considering a module complete
+4. Update README progress when completing modules/parts
+
+**Before ending a session or after completing modules:**
+- **UPDATE `STATUS.md`** - Current work, progress, blockers, notes
+- This is mandatory - future sessions depend on it
 
 ## CKA 2025 Curriculum Alignment
 
