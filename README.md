@@ -1,0 +1,178 @@
+# KubeDojo
+
+**Free, comprehensive training for all 5 Kubernetes certifications.**
+
+No paywalls. No upsells. Just quality education.
+
+---
+
+## Why This Exists
+
+The Kubernetes certification industry charges $300-500+ for courses that often deliver shallow content, outdated material, and "exam dumps" that don't build real understanding.
+
+KubeDojo is different:
+- **Free forever** - No paid tiers, no premium content behind paywalls
+- **Theory-first** - Understand *why*, not just *what to type*
+- **Battle-tested** - Built by practitioners who use K8s daily and have taken these exams
+- **Community-driven** - Contributions welcome, knowledge shared
+
+If you can learn for free, you should be able to.
+
+---
+
+## The Kubestronaut Path
+
+KubeDojo prepares you for all 5 core Kubernetes certifications required for [Kubestronaut](https://www.cncf.io/training/kubestronaut/) status:
+
+| Cert | Name | Type | Status |
+|------|------|------|--------|
+| **CKA** | Certified Kubernetes Administrator | Hands-on lab | 🚧 In Progress |
+| **CKAD** | Certified Kubernetes Application Developer | Hands-on lab | 📋 Planned |
+| **CKS** | Certified Kubernetes Security Specialist | Hands-on lab | 📋 Planned |
+| **KCNA** | Kubernetes & Cloud Native Associate | Multiple choice | 📋 Planned |
+| **KCSA** | Kubernetes & Cloud Native Security Associate | Multiple choice | 📋 Planned |
+
+---
+
+## CKA Curriculum
+
+The CKA is notoriously difficult after recent changes. 16 hands-on questions in 2 hours. Speed matters as much as knowledge.
+
+### Part 0: Environment & Exam Technique
+| Module | Topic | Status |
+|--------|-------|--------|
+| 0.1 | [Cluster Setup](docs/cka/part0-environment/module-0.1-cluster-setup.md) | 📋 |
+| 0.2 | Shell Mastery (aliases, autocomplete) | 📋 |
+| 0.3 | Vim for YAML | 📋 |
+| 0.4 | kubernetes.io Navigation | 📋 |
+| 0.5 | Exam Strategy & Time Management | 📋 |
+
+### Part 1: Cluster Architecture, Installation & Configuration (25%)
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1.1 | Control Plane Deep-Dive | 📋 |
+| 1.2 | etcd (Backup, Restore, Why It Matters) | 📋 |
+| 1.3 | kubeadm (Bootstrap, Join, Upgrade) | 📋 |
+| 1.4 | RBAC from Scratch | 📋 |
+| 1.5 | Certificates & PKI | 📋 |
+| 1.6 | Cluster Upgrades | 📋 |
+
+### Part 2: Workloads & Scheduling (15%)
+| Module | Topic | Status |
+|--------|-------|--------|
+| 2.1 | Pods (What Actually Happens) | 📋 |
+| 2.2 | Deployments, ReplicaSets, DaemonSets | 📋 |
+| 2.3 | Jobs & CronJobs | 📋 |
+| 2.4 | Scheduling (Affinity, Taints, Tolerations) | 📋 |
+| 2.5 | Resource Requests & Limits | 📋 |
+
+### Part 3: Services & Networking (20%)
+| Module | Topic | Status |
+|--------|-------|--------|
+| 3.1 | Container Networking Fundamentals | 📋 |
+| 3.2 | CNI (What It Is, How Plugins Work) | 📋 |
+| 3.3 | Services (ClusterIP, NodePort, LoadBalancer) | 📋 |
+| 3.4 | DNS in Kubernetes (CoreDNS) | 📋 |
+| 3.5 | Ingress & Ingress Controllers | 📋 |
+| 3.6 | NetworkPolicies | 📋 |
+
+### Part 4: Storage (10%)
+| Module | Topic | Status |
+|--------|-------|--------|
+| 4.1 | Volumes (emptyDir, hostPath) | 📋 |
+| 4.2 | PersistentVolumes & PersistentVolumeClaims | 📋 |
+| 4.3 | StorageClasses & Dynamic Provisioning | 📋 |
+| 4.4 | CSI Basics | 📋 |
+
+### Part 5: Troubleshooting (30%)
+| Module | Topic | Status |
+|--------|-------|--------|
+| 5.1 | Troubleshooting Methodology | 📋 |
+| 5.2 | Application Failures | 📋 |
+| 5.3 | Control Plane Failures | 📋 |
+| 5.4 | Worker Node Failures | 📋 |
+| 5.5 | Networking Troubleshooting | 📋 |
+| 5.6 | Logging & Monitoring | 📋 |
+
+### Part 6: Speed Drills & Mock Exams
+| Module | Topic | Status |
+|--------|-------|--------|
+| 6.1 | Kubectl Imperative Speedruns | 📋 |
+| 6.2 | YAML Generation Patterns | 📋 |
+| 6.3 | Timed Scenarios (7-min tasks) | 📋 |
+| 6.4 | Mock Exam #1 | 📋 |
+| 6.5 | Mock Exam #2 | 📋 |
+| 6.6 | Mock Exam #3 | 📋 |
+
+---
+
+## Philosophy
+
+### Theory Before Hands-On
+You can't troubleshoot what you don't understand. Every module starts with *why* before *how*.
+
+### Speed Is a Skill
+Knowing Kubernetes isn't enough. The CKA gives you ~7 minutes per question. We train speed explicitly.
+
+### "Good Enough" Mindset
+Perfectionists fail timed exams. We teach when to move on, when 80% is better than 0%.
+
+### No Memorization
+Kubernetes docs are available during the exam. We teach you to navigate them fast, not memorize YAML.
+
+---
+
+## Quality Standards
+
+Every module includes:
+- **Clear explanations** - No handwaving, explain the "why"
+- **Analogies** - Complex concepts made memorable
+- **War stories** - Real incidents that illustrate consequences
+- **Gotchas** - Common mistakes and how to avoid them
+- **"Did You Know?"** - Interesting facts that reinforce learning
+- **Hands-on exercises** - Practice with clear deliverables
+- **Speed tips** - Exam-specific shortcuts
+- **Quiz questions** - Test your understanding
+
+---
+
+## Getting Started
+
+1. Clone this repo
+2. Start with [Module 0.1: Cluster Setup](docs/cka/part0-environment/module-0.1-cluster-setup.md)
+3. Work through modules in order
+4. Track your progress
+
+```bash
+git clone https://github.com/YOUR_USERNAME/kubedojo.git
+cd kubedojo
+```
+
+---
+
+## Contributing
+
+This is a community project. Contributions welcome:
+- Fix errors or typos
+- Add war stories from your experience
+- Improve explanations
+- Suggest better analogies
+- Report issues
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+---
+
+## License
+
+MIT License. Free to use, share, and modify.
+
+---
+
+## Acknowledgments
+
+Built with the belief that quality education should be accessible to everyone, not just those who can afford premium courses.
+
+---
+
+*"In the dojo, everyone starts as a white belt. What matters is showing up to train."*
