@@ -49,18 +49,23 @@ if [ -d "$SOURCE_DIR/commands" ]; then
     done
 fi
 
-# Deploy skills
+# Deploy skills (directory structure: skills/skill-name/SKILL.md)
 if [ -d "$SOURCE_DIR/skills" ]; then
-    for file in "$SOURCE_DIR/skills"/*.md; do
-        if [ -f "$file" ]; then
-            filename=$(basename "$file")
-            target_file="$TARGET_DIR/skills/$filename"
+    for skill_dir in "$SOURCE_DIR/skills"/*/; do
+        if [ -d "$skill_dir" ]; then
+            skill_name=$(basename "$skill_dir")
+            source_file="$skill_dir/SKILL.md"
+            target_skill_dir="$TARGET_DIR/skills/$skill_name"
+            target_file="$target_skill_dir/SKILL.md"
 
-            # Check if file changed
-            if [ ! -f "$target_file" ] || ! cmp -s "$file" "$target_file"; then
-                cp "$file" "$target_file"
-                log "   📄 skills/$filename"
-                SKILLS_CHANGED=$((SKILLS_CHANGED + 1))
+            if [ -f "$source_file" ]; then
+                mkdir -p "$target_skill_dir"
+                # Check if file changed
+                if [ ! -f "$target_file" ] || ! cmp -s "$source_file" "$target_file"; then
+                    cp "$source_file" "$target_file"
+                    log "   📄 skills/$skill_name/SKILL.md"
+                    SKILLS_CHANGED=$((SKILLS_CHANGED + 1))
+                fi
             fi
         fi
     done

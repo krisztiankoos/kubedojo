@@ -1,6 +1,10 @@
+---
+name: curriculum-writer
+description: Write KubeDojo curriculum modules. Use when creating modules, writing theory, exercises, quizzes. Triggers on "write module", "create module", "new module".
+---
+
 # Curriculum Writer Skill
 
-## Description
 Expert skill for writing new KubeDojo curriculum modules. Ensures consistent structure, tone, and quality across all educational content.
 
 ## When to Use

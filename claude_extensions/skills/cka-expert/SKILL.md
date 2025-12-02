@@ -1,6 +1,10 @@
+---
+name: cka-expert
+description: CKA 2025 exam knowledge. Use for Kubernetes certification questions, exam strategy, curriculum accuracy. Triggers on "CKA", "exam", "certification", "kubernetes admin".
+---
+
 # CKA Expert Skill
 
-## Description
 Authoritative knowledge source for CKA (Certified Kubernetes Administrator) exam preparation. Provides accurate, up-to-date information aligned with the CKA 2025 curriculum.
 
 ## When to Use

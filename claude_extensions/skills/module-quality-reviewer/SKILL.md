@@ -1,6 +1,10 @@
+---
+name: module-quality-reviewer
+description: Review KubeDojo modules for quality. Use when reviewing, scoring, or checking modules. Triggers on "review module", "check quality", "score module".
+---
+
 # Module Quality Reviewer Skill
 
-## Description
 Expert skill for validating KubeDojo curriculum modules against established quality standards. Automatically invoked when reviewing educational content for quality assurance.
 
 ## When to Use
