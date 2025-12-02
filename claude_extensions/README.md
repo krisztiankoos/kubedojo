@@ -60,18 +60,24 @@ Module template and writing guidelines. Use when creating new modules to ensure 
 
 ## Deployment
 
-To deploy extensions to your local Claude Code:
+Extensions are automatically deployed when using `start-claude.sh`:
 
 ```bash
-# From kubedojo root
-cp -r claude_extensions/commands/* .claude/commands/
-cp -r claude_extensions/skills/* .claude/skills/
-
-# Or use the deploy script
-./scripts/deploy-claude-extensions.sh
+# From kubedojo root - recommended way to start
+./start-claude.sh
 ```
 
-After deployment, restart Claude Code to load new commands.
+Or deploy manually:
+
+```bash
+# Deploy extensions only
+./claude_extensions/deploy.sh
+
+# Deploy quietly (for scripts)
+./claude_extensions/deploy.sh --quiet
+```
+
+The deploy script only copies changed files, making it fast and safe to run repeatedly.
 
 ## Development Workflow
 
