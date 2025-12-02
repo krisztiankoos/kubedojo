@@ -415,6 +415,176 @@ Or search "PVC accessModes"
 
 ---
 
+## Practice Drills
+
+### Drill 1: Documentation Race (Target times provided)
+
+Open kubernetes.io and race to find these. Use a stopwatch.
+
+| Task | Target Time |
+|------|-------------|
+| Find NetworkPolicy YAML example | < 30 sec |
+| Find PVC with ReadWriteMany example | < 45 sec |
+| Find RBAC RoleBinding example | < 30 sec |
+| Find Ingress with TLS example | < 45 sec |
+| Find HorizontalPodAutoscaler example | < 45 sec |
+| Find Job with backoffLimit example | < 30 sec |
+
+Record your times. Repeat until you beat all targets.
+
+### Drill 2: kubectl explain Mastery (Target: 2 minutes total)
+
+Without using the web, find these using only `kubectl explain`:
+
+```bash
+# 1. What fields does a Pod spec have?
+kubectl explain pod.spec | head -30
+
+# 2. What are valid values for PVC accessModes?
+kubectl explain pvc.spec.accessModes
+
+# 3. What fields does a container have for health checks?
+kubectl explain pod.spec.containers.livenessProbe
+
+# 4. What's the structure of a NetworkPolicy spec?
+kubectl explain networkpolicy.spec
+
+# 5. How do you specify resource limits?
+kubectl explain pod.spec.containers.resources
+```
+
+### Drill 3: Find and Apply (Target: 5 minutes)
+
+Using ONLY kubernetes.io docs, find examples and create:
+
+```bash
+# 1. Find a ConfigMap example and create one
+# kubernetes.io → Tasks → Configure Pods → ConfigMaps
+
+# 2. Find a Secret example and create one
+# kubernetes.io → Tasks → Configure Pods → Secrets
+
+# 3. Find a NetworkPolicy example and create one
+# kubernetes.io → Tasks → Administer Cluster → Network Policies
+
+# Verify all three exist
+kubectl get cm,secret,netpol
+
+# Cleanup
+kubectl delete cm --all
+kubectl delete secret --all  # careful: leaves default secrets
+kubectl delete netpol --all
+```
+
+### Drill 4: Helm Documentation Hunt (Target: 3 minutes)
+
+Find these on helm.sh/docs:
+
+```bash
+# 1. How do you install a chart from a repo?
+# Answer: helm install [RELEASE] [CHART]
+
+# 2. How do you see values available for a chart?
+# Answer: helm show values [CHART]
+
+# 3. How do you rollback to a previous release?
+# Answer: helm rollback [RELEASE] [REVISION]
+
+# 4. How do you list all releases?
+# Answer: helm list
+
+# 5. How do you upgrade with new values?
+# Answer: helm upgrade [RELEASE] [CHART] -f values.yaml
+```
+
+### Drill 5: Gateway API Deep Dive (Target: 5 minutes)
+
+Gateway API is new to CKA 2025. Find these in the docs:
+
+```bash
+# 1. Find the HTTPRoute example
+# kubernetes.io → Concepts → Services → Gateway API
+
+# 2. Find what parentRefs means in HTTPRoute
+kubectl explain httproute.spec.parentRefs  # If Gateway API CRDs installed
+
+# 3. Find the difference between Gateway and HTTPRoute
+# Gateway = infrastructure (like LoadBalancer)
+# HTTPRoute = routing rules (like Ingress rules)
+```
+
+### Drill 6: Troubleshooting - Wrong Documentation
+
+**Scenario**: You found what looks like the right YAML but it doesn't work.
+
+```bash
+# You found this "Ingress" example but it fails
+cat << 'EOF' > wrong-ingress.yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+spec:
+  backend:
+    serviceName: testsvc
+    servicePort: 80
+EOF
+
+kubectl apply -f wrong-ingress.yaml
+# ERROR: no matches for kind "Ingress" in version "extensions/v1beta1"
+
+# YOUR TASK: Find the CORRECT API version in current docs
+# Hint: The docs example is outdated. Find current version.
+```
+
+<details>
+<summary>Solution</summary>
+
+The old `extensions/v1beta1` API was deprecated. Current version:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test-ingress
+spec:
+  defaultBackend:
+    service:
+      name: testsvc
+      port:
+        number: 80
+```
+
+**Lesson**: Always check the apiVersion in docs matches your cluster version. Use `kubectl api-resources | grep ingress` to see available versions.
+
+</details>
+
+### Drill 7: Speed Documentation Challenge
+
+Set a 10-minute timer. Complete as many as possible:
+
+1. [ ] Create a Pod with resource limits (find in docs)
+2. [ ] Create a Deployment with 3 replicas (find in docs)
+3. [ ] Create a Service type LoadBalancer (find in docs)
+4. [ ] Create a ConfigMap from a file (find in docs)
+5. [ ] Create a PVC with 1Gi storage (find in docs)
+6. [ ] Create a Job that runs once (find in docs)
+7. [ ] Create a CronJob running every minute (find in docs)
+8. [ ] Create a NetworkPolicy allowing only port 80 (find in docs)
+
+```bash
+# Validate each one works
+kubectl apply -f <file> --dry-run=client
+```
+
+Score: How many did you complete in 10 minutes?
+- 8: Excellent - exam ready
+- 6-7: Good - keep practicing
+- 4-5: Needs work - repeat drill daily
+- <4: Review documentation structure again
+
+---
+
 ## Next Module
 
 [Module 0.5: Exam Strategy - Three-Pass Method](module-0.5-exam-strategy.md) - The strategy that maximizes your score.

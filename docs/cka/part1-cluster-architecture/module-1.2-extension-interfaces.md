@@ -523,6 +523,188 @@ kubectl delete pod test1 test2
 
 ---
 
+## Practice Drills
+
+### Drill 1: Interface Identification (Target: 2 minutes)
+
+Match each tool/plugin to its interface:
+
+| Tool/Plugin | Interface (CRI/CNI/CSI) |
+|-------------|-------------------------|
+| containerd | ___ |
+| Calico | ___ |
+| AWS EBS driver | ___ |
+| CRI-O | ___ |
+| Cilium | ___ |
+| Rook-Ceph | ___ |
+
+<details>
+<summary>Answers</summary>
+
+1. CRI - Container Runtime Interface
+2. CNI - Container Network Interface
+3. CSI - Container Storage Interface
+4. CRI - Container Runtime Interface
+5. CNI - Container Network Interface
+6. CSI - Container Storage Interface
+
+</details>
+
+### Drill 2: CRI Troubleshooting - Container Runtime Down (Target: 5 minutes)
+
+```bash
+# Setup: Stop containerd (WARNING: breaks cluster temporarily!)
+# Only do on practice nodes you can restart!
+sudo systemctl stop containerd
+
+# Observe the damage
+kubectl get nodes  # Node becomes NotReady
+kubectl describe node <your-node> | grep -A5 Conditions
+
+# YOUR TASK: Restore containerd and verify recovery
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+sudo systemctl start containerd
+sudo systemctl status containerd
+
+# Wait for node to recover
+kubectl get nodes -w  # Watch until Ready
+
+# Verify containers running
+sudo crictl ps
+```
+
+</details>
+
+### Drill 3: CNI Troubleshooting - Pods Stuck in ContainerCreating (Target: 5 minutes)
+
+```bash
+# Setup: Temporarily break CNI config
+sudo mv /etc/cni/net.d/10-calico.conflist /tmp/
+
+# Create a test pod
+kubectl run cni-broken --image=nginx
+
+# Observe
+kubectl get pods  # ContainerCreating forever
+kubectl describe pod cni-broken | grep -A10 Events
+
+# YOUR TASK: Diagnose and fix
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Check CNI config directory
+ls /etc/cni/net.d/  # Empty!
+
+# Restore CNI config
+sudo mv /tmp/10-calico.conflist /etc/cni/net.d/
+
+# Delete stuck pod and recreate
+kubectl delete pod cni-broken --force --grace-period=0
+kubectl run cni-fixed --image=nginx
+kubectl get pods  # Running!
+
+# Cleanup
+kubectl delete pod cni-fixed
+```
+
+</details>
+
+### Drill 4: crictl Mastery (Target: 3 minutes)
+
+Practice using crictl commands:
+
+```bash
+# 1. List all running containers
+sudo crictl ps
+
+# 2. List all pods (sandbox containers)
+sudo crictl pods
+
+# 3. Get container logs
+sudo crictl logs <container-id>
+
+# 4. Inspect a container
+sudo crictl inspect <container-id> | head -50
+
+# 5. List images
+sudo crictl images
+
+# 6. Get runtime info
+sudo crictl info
+```
+
+### Drill 5: CSI Driver Investigation (Target: 3 minutes)
+
+Explore CSI drivers in your cluster:
+
+```bash
+# List all CSI drivers
+kubectl get csidrivers
+
+# Get details on a driver
+kubectl describe csidriver <driver-name>
+
+# Check CSI nodes
+kubectl get csinodes
+kubectl describe csinode <node-name>
+
+# View StorageClasses using CSI
+kubectl get sc -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.provisioner}{"\n"}{end}'
+```
+
+### Drill 6: Network Connectivity Test (Target: 5 minutes)
+
+Verify CNI is working correctly:
+
+```bash
+# Create pods on different nodes
+kubectl run net-test-1 --image=nginx --overrides='{"spec":{"nodeName":"worker-01"}}'
+kubectl run net-test-2 --image=nginx --overrides='{"spec":{"nodeName":"worker-02"}}'
+
+# Wait for running
+kubectl wait --for=condition=ready pod/net-test-1 pod/net-test-2 --timeout=60s
+
+# Get IPs
+POD1_IP=$(kubectl get pod net-test-1 -o jsonpath='{.status.podIP}')
+POD2_IP=$(kubectl get pod net-test-2 -o jsonpath='{.status.podIP}')
+
+# Test cross-node connectivity
+kubectl exec net-test-1 -- curl -s --connect-timeout 5 $POD2_IP:80
+kubectl exec net-test-2 -- curl -s --connect-timeout 5 $POD1_IP:80
+
+# Cleanup
+kubectl delete pod net-test-1 net-test-2
+```
+
+### Drill 7: Challenge - Identify All Plugins
+
+Without documentation, identify all plugins in your cluster:
+
+```bash
+# 1. Find container runtime
+kubectl get nodes -o wide | awk '{print $NF}'
+
+# 2. Find CNI plugin
+ls /etc/cni/net.d/
+kubectl get pods -n kube-system | grep -E "calico|cilium|flannel|weave"
+
+# 3. Find CSI drivers
+kubectl get csidrivers
+kubectl get sc
+
+# Write down what you found - this is exam knowledge!
+```
+
+---
+
 ## Next Module
 
 [Module 1.3: Helm](module-1.3-helm.md) - Package management for Kubernetes, deploying applications with charts.

@@ -744,6 +744,235 @@ rm dev-pod.yaml
 
 ---
 
+## Practice Drills
+
+### Drill 1: RBAC Speed Test (Target: 3 minutes)
+
+Create RBAC resources as fast as possible:
+
+```bash
+# Create namespace
+kubectl create ns rbac-drill
+
+# Create ServiceAccount
+kubectl create sa drill-sa -n rbac-drill
+
+# Create Role (read pods)
+kubectl create role pod-reader --verb=get,list,watch --resource=pods -n rbac-drill
+
+# Create RoleBinding
+kubectl create rolebinding drill-binding --role=pod-reader --serviceaccount=rbac-drill:drill-sa -n rbac-drill
+
+# Test
+kubectl auth can-i get pods -n rbac-drill --as=system:serviceaccount:rbac-drill:drill-sa
+
+# Cleanup
+kubectl delete ns rbac-drill
+```
+
+### Drill 2: Permission Testing (Target: 5 minutes)
+
+```bash
+kubectl create ns perm-test
+kubectl create sa test-sa -n perm-test
+
+# Create limited role
+kubectl create role limited --verb=get,list --resource=pods,services -n perm-test
+kubectl create rolebinding limited-binding --role=limited --serviceaccount=perm-test:test-sa -n perm-test
+
+# Test various permissions
+echo "=== Testing as test-sa ==="
+kubectl auth can-i get pods -n perm-test --as=system:serviceaccount:perm-test:test-sa      # yes
+kubectl auth can-i create pods -n perm-test --as=system:serviceaccount:perm-test:test-sa   # no
+kubectl auth can-i get secrets -n perm-test --as=system:serviceaccount:perm-test:test-sa   # no
+kubectl auth can-i get pods -n default --as=system:serviceaccount:perm-test:test-sa        # no
+kubectl auth can-i get services -n perm-test --as=system:serviceaccount:perm-test:test-sa  # yes
+
+# Cleanup
+kubectl delete ns perm-test
+```
+
+### Drill 3: ClusterRole vs Role (Target: 5 minutes)
+
+```bash
+# Create namespaces
+kubectl create ns ns-a
+kubectl create ns ns-b
+kubectl create sa cross-ns-sa -n ns-a
+
+# Option 1: Role (namespace-scoped) - only works in ns-a
+kubectl create role ns-a-reader --verb=get,list --resource=pods -n ns-a
+kubectl create rolebinding ns-a-binding --role=ns-a-reader --serviceaccount=ns-a:cross-ns-sa -n ns-a
+
+# Test
+kubectl auth can-i get pods -n ns-a --as=system:serviceaccount:ns-a:cross-ns-sa  # yes
+kubectl auth can-i get pods -n ns-b --as=system:serviceaccount:ns-a:cross-ns-sa  # no
+
+# Option 2: ClusterRole + RoleBinding (still namespace-scoped binding)
+kubectl create clusterrole pod-reader-cluster --verb=get,list --resource=pods
+kubectl create rolebinding ns-b-binding -n ns-b --clusterrole=pod-reader-cluster --serviceaccount=ns-a:cross-ns-sa
+
+# Now can read ns-b too
+kubectl auth can-i get pods -n ns-b --as=system:serviceaccount:ns-a:cross-ns-sa  # yes
+
+# Cleanup
+kubectl delete ns ns-a ns-b
+kubectl delete clusterrole pod-reader-cluster
+```
+
+### Drill 4: Troubleshooting - Permission Denied (Target: 5 minutes)
+
+```bash
+# Setup: Create SA with intentionally wrong binding
+kubectl create ns debug-rbac
+kubectl create sa debug-sa -n debug-rbac
+kubectl create role secret-reader --verb=get,list --resource=secrets -n debug-rbac
+# WRONG: binding role to different SA name
+kubectl create rolebinding wrong-binding --role=secret-reader --serviceaccount=debug-rbac:other-sa -n debug-rbac
+
+# User reports: "I can't read secrets!"
+kubectl auth can-i get secrets -n debug-rbac --as=system:serviceaccount:debug-rbac:debug-sa
+# no
+
+# YOUR TASK: Diagnose and fix
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Check what the rolebinding references
+kubectl get rolebinding wrong-binding -n debug-rbac -o yaml | grep -A5 subjects
+# Shows: other-sa, not debug-sa
+
+# Fix: Create correct binding
+kubectl delete rolebinding wrong-binding -n debug-rbac
+kubectl create rolebinding correct-binding --role=secret-reader --serviceaccount=debug-rbac:debug-sa -n debug-rbac
+
+# Verify
+kubectl auth can-i get secrets -n debug-rbac --as=system:serviceaccount:debug-rbac:debug-sa
+# yes
+
+# Cleanup
+kubectl delete ns debug-rbac
+```
+
+</details>
+
+### Drill 5: Aggregate ClusterRoles (Target: 5 minutes)
+
+```bash
+# Create aggregated role
+cat << 'EOF' | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aggregate-reader
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+EOF
+
+# The built-in 'view' ClusterRole automatically includes rules from
+# any ClusterRole with label aggregate-to-view: "true"
+
+# Check what 'view' includes
+kubectl get clusterrole view -o yaml | grep -A20 "rules:"
+
+# Cleanup
+kubectl delete clusterrole aggregate-reader
+```
+
+### Drill 6: RBAC for User (Target: 5 minutes)
+
+```bash
+# Create role for hypothetical user "alice"
+kubectl create ns alice-ns
+kubectl create role alice-admin --verb='*' --resource='*' -n alice-ns
+kubectl create rolebinding alice-is-admin --role=alice-admin --user=alice -n alice-ns
+
+# Test as alice
+kubectl auth can-i create deployments -n alice-ns --as=alice      # yes
+kubectl auth can-i delete pods -n alice-ns --as=alice             # yes
+kubectl auth can-i get secrets -n default --as=alice              # no (different ns)
+kubectl auth can-i create namespaces --as=alice                   # no (cluster scope)
+
+# List what alice can do
+kubectl auth can-i --list -n alice-ns --as=alice
+
+# Cleanup
+kubectl delete ns alice-ns
+```
+
+### Drill 7: Challenge - Least Privilege Setup
+
+Create RBAC for a "deployment-manager" that can:
+- Create, update, delete Deployments in namespace `app`
+- View (but not modify) Services in namespace `app`
+- View Pods in any namespace (read-only cluster-wide)
+
+```bash
+kubectl create ns app
+# YOUR TASK: Create the necessary Role, ClusterRole, and bindings
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Role for deployment management in 'app' namespace
+kubectl create role deployment-manager \
+  --verb=create,update,delete,get,list,watch \
+  --resource=deployments \
+  -n app
+
+# Role for service viewing in 'app' namespace
+kubectl create role service-viewer \
+  --verb=get,list,watch \
+  --resource=services \
+  -n app
+
+# ClusterRole for cluster-wide pod viewing
+kubectl create clusterrole pod-viewer \
+  --verb=get,list,watch \
+  --resource=pods
+
+# Create ServiceAccount
+kubectl create sa deployment-manager -n app
+
+# Bind all roles
+kubectl create rolebinding dm-deployments \
+  --role=deployment-manager \
+  --serviceaccount=app:deployment-manager \
+  -n app
+
+kubectl create rolebinding dm-services \
+  --role=service-viewer \
+  --serviceaccount=app:deployment-manager \
+  -n app
+
+kubectl create clusterrolebinding dm-pods \
+  --clusterrole=pod-viewer \
+  --serviceaccount=app:deployment-manager
+
+# Test
+kubectl auth can-i create deployments -n app --as=system:serviceaccount:app:deployment-manager  # yes
+kubectl auth can-i delete services -n app --as=system:serviceaccount:app:deployment-manager     # no
+kubectl auth can-i get pods -n default --as=system:serviceaccount:app:deployment-manager        # yes
+
+# Cleanup
+kubectl delete ns app
+kubectl delete clusterrole pod-viewer
+kubectl delete clusterrolebinding dm-pods
+```
+
+</details>
+
+---
+
 ## Next Module
 
 [Module 1.7: kubeadm Basics](module-1.7-kubeadm.md) - Cluster bootstrap and node management.

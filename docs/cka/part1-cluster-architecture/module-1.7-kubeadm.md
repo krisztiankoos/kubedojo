@@ -665,6 +665,215 @@ kubectl delete pod test-pod
 
 ---
 
+## Practice Drills
+
+### Drill 1: Node Management Commands (Target: 3 minutes)
+
+```bash
+# List nodes with details
+kubectl get nodes -o wide
+
+# Get node labels
+kubectl get nodes --show-labels
+
+# Describe a node
+kubectl describe node <node-name> | head -50
+
+# Check node conditions
+kubectl get nodes -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.conditions[?(@.type=="Ready")].status}{"\n"}{end}'
+
+# Check node resources
+kubectl describe node <node-name> | grep -A10 "Allocated resources"
+```
+
+### Drill 2: Cordon and Uncordon (Target: 5 minutes)
+
+```bash
+# Cordon a node (prevent new pods)
+kubectl cordon <worker-node>
+
+# Verify
+kubectl get nodes  # Shows SchedulingDisabled
+
+# Try to schedule a pod
+kubectl run cordon-test --image=nginx
+kubectl get pods -o wide  # Won't be on cordoned node
+
+# Uncordon
+kubectl uncordon <worker-node>
+kubectl get nodes  # Back to Ready
+
+# Cleanup
+kubectl delete pod cordon-test
+```
+
+### Drill 3: Drain and Recover (Target: 5 minutes)
+
+```bash
+# Create test deployment
+kubectl create deployment drain-test --image=nginx --replicas=3
+
+# Wait for pods
+kubectl wait --for=condition=available deployment/drain-test --timeout=60s
+kubectl get pods -o wide
+
+# Drain a worker node
+kubectl drain <worker-node> --ignore-daemonsets --delete-emptydir-data
+
+# Watch pods move to other nodes
+kubectl get pods -o wide
+
+# Uncordon the node
+kubectl uncordon <worker-node>
+
+# Cleanup
+kubectl delete deployment drain-test
+```
+
+### Drill 4: kubeadm Token Management (Target: 3 minutes)
+
+```bash
+# List existing tokens
+kubeadm token list
+
+# Create a new token
+kubeadm token create
+
+# Create token with specific TTL
+kubeadm token create --ttl 2h
+
+# Generate full join command
+kubeadm token create --print-join-command
+
+# Delete a token
+kubeadm token delete <token-id>
+```
+
+### Drill 5: Static Pod Exploration (Target: 5 minutes)
+
+```bash
+# Find static pod manifest directory
+cat /var/lib/kubelet/config.yaml | grep staticPodPath
+# Usually: /etc/kubernetes/manifests
+
+# List static pod manifests
+ls -la /etc/kubernetes/manifests/
+
+# View one manifest
+cat /etc/kubernetes/manifests/kube-apiserver.yaml | head -30
+
+# Create your own static pod
+cat << 'EOF' | sudo tee /etc/kubernetes/manifests/my-static-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-static-pod
+  namespace: default
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+EOF
+
+# Wait and verify (will have node name suffix)
+sleep 10
+kubectl get pods | grep my-static-pod
+
+# Remove static pod
+sudo rm /etc/kubernetes/manifests/my-static-pod.yaml
+```
+
+### Drill 6: Certificate Inspection (Target: 5 minutes)
+
+```bash
+# Check certificate expiration (on control plane)
+kubeadm certs check-expiration
+
+# View certificate details
+openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout | head -30
+
+# Check all certificates
+ls -la /etc/kubernetes/pki/
+
+# Check CA certificate
+openssl x509 -in /etc/kubernetes/pki/ca.crt -text -noout | grep -E "Subject:|Issuer:|Not"
+```
+
+### Drill 7: Troubleshooting - Node NotReady (Target: 5 minutes)
+
+```bash
+# Simulate: Stop kubelet on a worker
+# (Run on worker node)
+sudo systemctl stop kubelet
+
+# On control plane, diagnose
+kubectl get nodes  # Shows NotReady
+kubectl describe node <worker> | grep -A10 Conditions
+
+# Check what's happening
+kubectl get events --field-selector involvedObject.kind=Node
+
+# Fix: Restart kubelet (on worker)
+sudo systemctl start kubelet
+
+# Verify recovery
+kubectl get nodes -w
+```
+
+### Drill 8: Challenge - Node Maintenance Workflow
+
+Perform a complete maintenance workflow:
+
+1. Cordon the node
+2. Drain all workloads
+3. Simulate maintenance (wait 30s)
+4. Uncordon the node
+5. Verify pods can be scheduled again
+
+```bash
+# YOUR TASK: Complete this without looking at solution
+NODE_NAME=<your-worker-node>
+kubectl create deployment maint-test --image=nginx --replicas=2
+
+# Start timer - Target: 3 minutes total
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+NODE_NAME=worker-01  # Replace with your node
+
+# 1. Cordon
+kubectl cordon $NODE_NAME
+
+# 2. Drain
+kubectl drain $NODE_NAME --ignore-daemonsets --delete-emptydir-data
+
+# 3. Verify pods moved
+kubectl get pods -o wide
+
+# 4. Simulate maintenance
+echo "Performing maintenance..."
+sleep 30
+
+# 5. Uncordon
+kubectl uncordon $NODE_NAME
+
+# 6. Verify scheduling works
+kubectl scale deployment maint-test --replicas=4
+kubectl get pods -o wide  # Some should land on $NODE_NAME
+
+# Cleanup
+kubectl delete deployment maint-test
+```
+
+</details>
+
+---
+
 ## Summary: Part 1 Complete!
 
 Congratulations! You've completed **Part 1: Cluster Architecture, Installation & Configuration**.

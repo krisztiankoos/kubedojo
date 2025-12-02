@@ -686,6 +686,334 @@ rm website-crd.yaml my-website.yaml blog.yaml
 
 ---
 
+## Practice Drills
+
+### Drill 1: CRD Exploration (Target: 3 minutes)
+
+Explore existing CRDs in your cluster:
+
+```bash
+# List all CRDs
+kubectl get crd
+
+# Get details on a specific CRD
+kubectl get crd <crd-name> -o yaml | head -50
+
+# List instances of a CRD
+kubectl get <resource-name> -A
+
+# Describe a CRD
+kubectl describe crd <crd-name>
+```
+
+### Drill 2: Create a Simple CRD (Target: 5 minutes)
+
+```bash
+# Create CRD
+cat << 'EOF' | kubectl apply -f -
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: apps.example.com
+spec:
+  group: example.com
+  names:
+    kind: App
+    listKind: AppList
+    plural: apps
+    singular: app
+    shortNames:
+      - ap
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                image:
+                  type: string
+                replicas:
+                  type: integer
+EOF
+
+# Verify CRD exists
+kubectl get crd apps.example.com
+
+# Create an instance
+cat << 'EOF' | kubectl apply -f -
+apiVersion: example.com/v1
+kind: App
+metadata:
+  name: my-app
+spec:
+  image: nginx:1.25
+  replicas: 3
+EOF
+
+# Query using short name
+kubectl get ap
+
+# Cleanup
+kubectl delete app my-app
+kubectl delete crd apps.example.com
+```
+
+### Drill 3: CRD with Validation (Target: 5 minutes)
+
+```bash
+cat << 'EOF' | kubectl apply -f -
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: databases.stable.example.com
+spec:
+  group: stable.example.com
+  names:
+    kind: Database
+    plural: databases
+    singular: database
+    shortNames:
+      - db
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - engine
+                - version
+              properties:
+                engine:
+                  type: string
+                  enum:
+                    - postgres
+                    - mysql
+                    - mongodb
+                version:
+                  type: string
+                storage:
+                  type: string
+                  default: "10Gi"
+EOF
+
+# Try to create invalid resource (should fail)
+cat << 'EOF' | kubectl apply -f -
+apiVersion: stable.example.com/v1
+kind: Database
+metadata:
+  name: invalid-db
+spec:
+  engine: oracle  # Not in enum!
+  version: "14"
+EOF
+
+# Create valid resource
+cat << 'EOF' | kubectl apply -f -
+apiVersion: stable.example.com/v1
+kind: Database
+metadata:
+  name: prod-db
+spec:
+  engine: postgres
+  version: "14"
+EOF
+
+# Cleanup
+kubectl delete database prod-db
+kubectl delete crd databases.stable.example.com
+```
+
+### Drill 4: Find Operator-Managed Resources (Target: 3 minutes)
+
+```bash
+# Find CRDs from popular operators
+kubectl get crd | grep -E "cert-manager|prometheus|istio|argocd"
+
+# If cert-manager is installed
+kubectl get certificates -A
+kubectl get clusterissuers
+
+# If prometheus operator is installed
+kubectl get servicemonitors -A
+kubectl get prometheusrules -A
+
+# General: Find all custom resources
+kubectl api-resources --api-group="" | head -20
+kubectl api-resources | grep -v "^NAME"
+```
+
+### Drill 5: CRD Status Subresource (Target: 5 minutes)
+
+```bash
+cat << 'EOF' | kubectl apply -f -
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: tasks.work.example.com
+spec:
+  group: work.example.com
+  names:
+    kind: Task
+    plural: tasks
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                command:
+                  type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                completedAt:
+                  type: string
+EOF
+
+# Create task
+cat << 'EOF' | kubectl apply -f -
+apiVersion: work.example.com/v1
+kind: Task
+metadata:
+  name: build-job
+spec:
+  command: "make build"
+EOF
+
+# View the task
+kubectl get task build-job -o yaml
+
+# Cleanup
+kubectl delete task build-job
+kubectl delete crd tasks.work.example.com
+```
+
+### Drill 6: Troubleshooting - CRD Not Found (Target: 3 minutes)
+
+```bash
+# Try to create a resource for non-existent CRD
+cat << 'EOF' | kubectl apply -f -
+apiVersion: nonexistent.example.com/v1
+kind: Widget
+metadata:
+  name: test
+spec:
+  size: large
+EOF
+
+# Error: no matches for kind "Widget"
+
+# Diagnose
+kubectl get crd | grep widget  # Nothing
+kubectl api-resources | grep -i widget  # Nothing
+
+# Solution: CRD must be created before resources
+# Create the CRD first, then the resource
+```
+
+### Drill 7: Challenge - Create Your Own CRD
+
+Design and implement a CRD for a "Backup" resource with:
+
+- Group: `backup.example.com`
+- Required fields: `source`, `destination`, `schedule` (cron format)
+- Optional field: `retention` (integer, default 7)
+- Validation: `schedule` must be a string
+
+```bash
+# YOUR TASK: Create the CRD and a sample Backup resource
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+cat << 'EOF' | kubectl apply -f -
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: backups.backup.example.com
+spec:
+  group: backup.example.com
+  names:
+    kind: Backup
+    plural: backups
+    shortNames:
+      - bk
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - spec
+          properties:
+            spec:
+              type: object
+              required:
+                - source
+                - destination
+                - schedule
+              properties:
+                source:
+                  type: string
+                destination:
+                  type: string
+                schedule:
+                  type: string
+                retention:
+                  type: integer
+                  default: 7
+EOF
+
+cat << 'EOF' | kubectl apply -f -
+apiVersion: backup.example.com/v1
+kind: Backup
+metadata:
+  name: daily-db-backup
+spec:
+  source: /data/postgres
+  destination: s3://backups/postgres
+  schedule: "0 2 * * *"
+  retention: 14
+EOF
+
+kubectl get bk
+kubectl delete backup daily-db-backup
+kubectl delete crd backups.backup.example.com
+```
+
+</details>
+
+---
+
 ## Next Module
 
 [Module 1.6: RBAC](module-1.6-rbac.md) - Role-Based Access Control for securing your cluster.

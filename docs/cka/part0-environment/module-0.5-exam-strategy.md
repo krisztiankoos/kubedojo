@@ -494,6 +494,274 @@ Set a timer and practice:
 
 ---
 
+## Practice Drills
+
+### Drill 1: Question Categorization Speed Test (Target: 2 minutes)
+
+Categorize all 10 questions as QUICK / MEDIUM / COMPLEX. Time yourself.
+
+1. Create namespace `production`
+2. Troubleshoot why deployment `api` pods are CrashLoopBackOff
+3. Create a ConfigMap named `app-config` with key `LOG_LEVEL=debug`
+4. Scale StatefulSet `database` to 5 replicas
+5. Create NetworkPolicy allowing frontend pods to reach backend on port 443
+6. Node `worker-03` shows NotReady. Find and fix the issue.
+7. Create ClusterRole allowing get/list on secrets, bind to user `auditor`
+8. Add annotation `owner=team-a` to deployment `web`
+9. Create PVC with 10Gi storage, ReadWriteOnce, StorageClass `fast`
+10. Debug: Service `api-svc` not routing traffic to pods. Fix it.
+
+<details>
+<summary>Answers</summary>
+
+1. QUICK - single command
+2. COMPLEX - requires investigation
+3. QUICK - single command
+4. QUICK - single command
+5. MEDIUM - requires YAML
+6. COMPLEX - troubleshooting
+7. MEDIUM - multi-step but documented
+8. QUICK - single command
+9. MEDIUM - requires YAML
+10. COMPLEX - troubleshooting
+
+</details>
+
+### Drill 2: Mock Exam - Pass 1 Only (Target: 15 minutes)
+
+Do ONLY the quick wins from Drill 1. Skip all MEDIUM and COMPLEX.
+
+```bash
+# Start timer
+
+# 1. Create namespace
+kubectl create ns production
+
+# 3. Create ConfigMap
+kubectl create cm app-config --from-literal=LOG_LEVEL=debug
+
+# 4. Scale StatefulSet
+kubectl scale sts database --replicas=5
+
+# 8. Add annotation
+kubectl annotate deploy web owner=team-a
+
+# Stop timer. Target: <5 minutes for 4 questions
+# You just secured ~25% of points in <5 minutes
+```
+
+### Drill 3: Context Switching Under Pressure (Target: 3 minutes)
+
+Simulate exam context switching. Create test contexts and practice:
+
+```bash
+# Setup
+kubectl config set-context exam-cluster-1 --cluster=kubernetes --user=kubernetes-admin
+kubectl config set-context exam-cluster-2 --cluster=kubernetes --user=kubernetes-admin
+kubectl config set-context exam-cluster-3 --cluster=kubernetes --user=kubernetes-admin
+
+# DRILL: Read the question, switch context, verify, then solve
+# Timer starts NOW
+
+# Question 1: On cluster exam-cluster-1, create pod nginx
+kubectl config use-context exam-cluster-1
+kubectl config current-context  # Verify!
+kubectl run nginx --image=nginx
+
+# Question 2: On cluster exam-cluster-2, create namespace dev
+kubectl config use-context exam-cluster-2
+kubectl config current-context  # Verify!
+kubectl create ns dev
+
+# Question 3: On cluster exam-cluster-3, scale deploy web to 3
+kubectl config use-context exam-cluster-3
+kubectl config current-context  # Verify!
+kubectl scale deploy web --replicas=3 2>/dev/null || echo "deploy not found - expected in drill"
+
+# Timer stop. Did you verify context EVERY time?
+```
+
+### Drill 4: Time Pressure Simulation (Target: 7 minutes)
+
+Simulate a medium-complexity question under time pressure:
+
+```bash
+# START TIMER: You have exactly 7 minutes
+
+# QUESTION:
+# Create a ServiceAccount named 'app-sa' in namespace 'secure'
+# Create a Role named 'secret-reader' that can get and list secrets
+# Bind the role to the service account
+# Create a pod 'test-pod' using this service account
+
+# GO!
+
+kubectl create ns secure
+kubectl create sa app-sa -n secure
+kubectl create role secret-reader --verb=get,list --resource=secrets -n secure
+kubectl create rolebinding app-sa-binding --role=secret-reader --serviceaccount=secure:app-sa -n secure
+kubectl run test-pod --image=nginx --serviceaccount=app-sa -n secure
+
+# VERIFY
+kubectl get sa,role,rolebinding,pod -n secure
+
+# STOP TIMER
+# <5 min: Excellent
+# 5-7 min: Good
+# >7 min: Practice more
+
+# Cleanup
+kubectl delete ns secure
+```
+
+### Drill 5: Partial Credit Practice
+
+**Scenario**: You're stuck on a complex question with 3 minutes left. Practice getting partial credit.
+
+```bash
+# QUESTION: The deployment 'web-app' is not working. Pods are in
+# ImagePullBackOff. Troubleshoot and fix. Also ensure the deployment
+# has resource limits set.
+
+# You have 3 minutes. You won't finish everything. Get partial credit.
+
+# Step 1: Diagnose (30 seconds)
+kubectl describe pod -l app=web-app | grep -A5 "Events"
+# See: Failed to pull image "nginx:nonexistent"
+
+# Step 2: Fix the obvious issue (30 seconds)
+kubectl set image deploy web-app web-app=nginx:1.25
+
+# Step 3: Check if working now (30 seconds)
+kubectl get pods -l app=web-app
+# Running? Good!
+
+# Time's up! You didn't add resource limits, but you got partial credit
+# for fixing the image issue.
+```
+
+### Drill 6: Full Mini-Exam (Target: 20 minutes)
+
+Complete this 4-question mini-exam using the three-pass method:
+
+**Question 1** (3%): Create a pod `q1-pod` running `nginx`
+
+**Question 2** (7%): Create a NetworkPolicy `q2-netpol` in namespace `web` that:
+- Applies to pods with label `app=backend`
+- Allows ingress only from pods with label `app=frontend`
+- Allows ingress only on port 8080
+
+**Question 3** (5%): Create a PVC `q3-pvc` requesting 5Gi with ReadWriteOnce
+
+**Question 4** (10%): Debug: The deployment `q4-broken` exists but pods won't start. Fix it.
+
+```bash
+# Setup for Q4
+kubectl create deploy q4-broken --image=nginx:doesnotexist
+```
+
+**Instructions**:
+1. Read all 4 questions (1 minute)
+2. Pass 1: Quick wins only
+3. Pass 2: Medium tasks
+4. Pass 3: Complex (Q4)
+
+<details>
+<summary>Solutions</summary>
+
+```bash
+# Pass 1: Quick wins
+# Q1 (QUICK)
+kubectl run q1-pod --image=nginx
+
+# Pass 2: Medium
+# Q3 (MEDIUM)
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: q3-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+EOF
+
+# Q2 (MEDIUM)
+kubectl create ns web
+cat << 'EOF' | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: q2-netpol
+  namespace: web
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - port: 8080
+EOF
+
+# Pass 3: Complex
+# Q4 (COMPLEX)
+kubectl describe deploy q4-broken
+kubectl get pods | grep q4-broken
+kubectl describe pod q4-broken-xxx | grep -A5 Events
+# Image doesn't exist - fix:
+kubectl set image deploy q4-broken nginx=nginx:1.25
+
+# Verify all
+kubectl get pod q1-pod
+kubectl get netpol -n web
+kubectl get pvc q3-pvc
+kubectl get pods | grep q4-broken
+```
+
+</details>
+
+### Drill 7: Challenge - 30-Minute Intensive
+
+Set aside 30 uninterrupted minutes. Complete as many tasks as possible:
+
+1. Create namespace `exam-practice`
+2. Create ConfigMap `cm-1` with 3 key-value pairs
+3. Create Secret `secret-1` with username and password
+4. Create Deployment `web` with 3 replicas using nginx
+5. Expose deployment `web` on NodePort 30080
+6. Create PVC `data-pvc` with 1Gi storage
+7. Create Pod `data-pod` using the PVC at `/data`
+8. Create ServiceAccount `app-sa`
+9. Create Role `pod-reader` (get, list, watch pods)
+10. Bind Role to ServiceAccount
+11. Create NetworkPolicy allowing only port 80 ingress
+12. Scale deployment `web` to 5 replicas
+13. Create HPA for `web` (min 2, max 10, CPU 80%)
+14. Create Job `batch-job` that runs `echo "done"` and exits
+15. Create CronJob `cron-job` running every 5 minutes
+
+All in namespace `exam-practice`. Track your score:
+- 15/15: Exam ready
+- 12-14: Almost there
+- 9-11: Keep practicing
+- <9: Review modules 0.1-0.4
+
+```bash
+# Cleanup
+kubectl delete ns exam-practice
+```
+
+---
+
 ## Summary: Three-Pass Reference Card
 
 ```

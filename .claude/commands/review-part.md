@@ -27,11 +27,22 @@ Check that ALL modules have:
 - [ ] Time to Complete estimate
 - [ ] Prerequisites listed
 - [ ] "Why This Module Matters" section
-- [ ] "Did You Know?" section(s)
+- [ ] Opening analogy (after "Why This Module Matters")
+- [ ] "Did You Know?" section(s) (2-3 facts)
 - [ ] Common Mistakes table
-- [ ] Quiz with hidden answers (`<details>` tags)
+- [ ] Quiz with hidden answers (`<details>` tags) (4+ questions)
 - [ ] Hands-On Exercise with Success Criteria
+- [ ] **Practice Drills section** (5-7 drills with target times)
 - [ ] "Next Module" link
+
+### Phase 2.5: Pedagogical Quality (NEW)
+Check practice and retention elements:
+- [ ] **Practice Drill Count**: Each module should have 5-7 drills
+- [ ] **Drill Variety**: Mix of speed tests, troubleshooting, challenges
+- [ ] **Target Times**: All drills should have target completion times
+- [ ] **Broken/Error Exercises**: At least 1 troubleshooting drill per module
+- [ ] **Challenge Variants**: At least 1 "no guidance" challenge drill per module
+- [ ] **Cumulative Quiz**: Part has a cumulative quiz file (`partX-cumulative-quiz.md`)
 
 ### Phase 3: Content Flow
 - [ ] Modules build on each other logically
@@ -76,12 +87,29 @@ For each module, provide quick scores:
 - Issues: [list any gaps or jumps]
 
 ### Module Scores Summary
-| Module | Theory | Practical | Engagement | Avg |
-|--------|--------|-----------|------------|-----|
-| 0.1 | X | X | X | X.X |
-| 0.2 | X | X | X | X.X |
-| ... | ... | ... | ... | ... |
-| **Part Avg** | X.X | X.X | X.X | **X.X** |
+| Module | Theory | Practical | Engagement | Pedagogy | Avg |
+|--------|--------|-----------|------------|----------|-----|
+| 0.1 | X | X | X | X | X.X |
+| 0.2 | X | X | X | X | X.X |
+| ... | ... | ... | ... | ... | ... |
+| **Part Avg** | X.X | X.X | X.X | X.X | **X.X** |
+
+### Pedagogical Assessment
+| Element | Status | Details |
+|---------|--------|---------|
+| Practice Drills | X/Y modules | [which modules missing] |
+| Drill Variety | ✅/❌ | Speed tests, troubleshooting, challenges |
+| Target Times | X/Y drills | [count with times vs total] |
+| Error/Fix Exercises | X/Y modules | [which have troubleshooting drills] |
+| Challenge Drills | X/Y modules | [which have no-guidance challenges] |
+| Cumulative Quiz | ✅/❌ | partX-cumulative-quiz.md exists |
+| Spaced Repetition | ✅/❌ | Cross-module review references |
+
+**Pedagogy Score**: X/10
+- 10: All elements present, excellent variety
+- 8-9: Most elements present, good variety
+- 6-7: Some elements missing
+- <6: Significant pedagogical gaps
 
 ### Top Issues to Address
 1. [Most critical issue]

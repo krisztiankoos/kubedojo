@@ -615,6 +615,202 @@ kubectl delete deployment test --ignore-not-found
 
 ---
 
+## Practice Drills
+
+### Drill 1: Component Identification Race (Target: 2 minutes)
+
+Without looking at notes, identify which component handles each scenario:
+
+| Scenario | Component |
+|----------|-----------|
+| Stores all cluster state | ___ |
+| Decides which node runs a new pod | ___ |
+| Authenticates kubectl requests | ___ |
+| Creates pods when ReplicaSet changes | ___ |
+| Reports node status to control plane | ___ |
+| Maintains iptables rules for Services | ___ |
+
+<details>
+<summary>Answers</summary>
+
+1. etcd
+2. kube-scheduler
+3. kube-apiserver
+4. kube-controller-manager (ReplicaSet controller)
+5. kubelet
+6. kube-proxy
+
+</details>
+
+### Drill 2: Troubleshooting - Missing Scheduler (Target: 5 minutes)
+
+**Scenario**: Pods are stuck in Pending forever.
+
+```bash
+# Setup: Break the scheduler
+sudo mv /etc/kubernetes/manifests/kube-scheduler.yaml /tmp/
+
+# Create a test pod
+kubectl run drill-pod --image=nginx
+
+# Observe the problem
+kubectl get pods  # Pending forever
+kubectl describe pod drill-pod | grep -A5 Events
+
+# YOUR TASK: Diagnose and fix
+# 1. What's missing?
+# 2. How do you restore it?
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Check control plane pods
+kubectl get pods -n kube-system | grep scheduler  # Nothing!
+
+# Restore scheduler
+sudo mv /tmp/kube-scheduler.yaml /etc/kubernetes/manifests/
+
+# Wait for scheduler and verify
+kubectl get pods -n kube-system | grep scheduler  # Running!
+kubectl get pod drill-pod  # Now Running
+
+# Cleanup
+kubectl delete pod drill-pod
+```
+
+</details>
+
+### Drill 3: Troubleshooting - Controller Manager Down (Target: 5 minutes)
+
+**Scenario**: Deployments create ReplicaSets but pods never appear.
+
+```bash
+# Setup
+sudo mv /etc/kubernetes/manifests/kube-controller-manager.yaml /tmp/
+
+# Create deployment
+kubectl create deployment drill-deploy --image=nginx --replicas=3
+
+# Observe
+kubectl get deploy  # Shows 0/3 ready
+kubectl get rs      # ReplicaSet exists but...
+kubectl get pods    # No pods!
+
+# YOUR TASK: Diagnose and fix
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Check controller manager
+kubectl get pods -n kube-system | grep controller  # Nothing!
+
+# Restore controller manager
+sudo mv /tmp/kube-controller-manager.yaml /etc/kubernetes/manifests/
+
+# Watch pods appear
+kubectl get pods -w  # 3 pods created
+
+# Cleanup
+kubectl delete deployment drill-deploy
+```
+
+</details>
+
+### Drill 4: API Server Health Deep Dive (Target: 3 minutes)
+
+Check API server health using multiple methods:
+
+```bash
+# Method 1: Basic connectivity
+kubectl cluster-info
+
+# Method 2: Health endpoints
+kubectl get --raw='/healthz'
+kubectl get --raw='/readyz'
+kubectl get --raw='/livez'
+
+# Method 3: Detailed health
+kubectl get --raw='/readyz?verbose' | grep -E "^\[|ok|failed"
+
+# Method 4: Direct curl (from control plane)
+curl -k https://localhost:6443/healthz
+
+# Method 5: Check API server logs for errors
+kubectl logs -n kube-system -l component=kube-apiserver --tail=20 | grep -i error
+```
+
+### Drill 5: Watch the Reconciliation Loop (Target: 5 minutes)
+
+See controllers in action:
+
+```bash
+# Terminal 1: Watch controller manager logs
+kubectl logs -n kube-system -l component=kube-controller-manager -f | grep -i "replicaset\|deployment"
+
+# Terminal 2: Create, scale, delete deployment
+kubectl create deployment watch-me --image=nginx --replicas=2
+sleep 5
+kubectl scale deployment watch-me --replicas=5
+sleep 5
+kubectl delete deployment watch-me
+
+# Observe logs in Terminal 1 - see the controller react to each change
+```
+
+### Drill 6: etcd Exploration (Target: 5 minutes)
+
+Explore what etcd stores (requires etcdctl on control plane):
+
+```bash
+# Set up etcdctl alias
+export ETCDCTL_API=3
+alias etcdctl='etcdctl --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key'
+
+# List all keys (be careful in production!)
+etcdctl get / --prefix --keys-only | head -50
+
+# Find all pods
+etcdctl get /registry/pods --prefix --keys-only
+
+# Get a specific pod's data
+etcdctl get /registry/pods/default/<pod-name>
+```
+
+### Drill 7: Challenge - Full Control Plane Restart
+
+**Advanced**: Restart all control plane components and verify cluster recovery.
+
+```bash
+# WARNING: Only do this on practice clusters!
+
+# 1. Note current state
+kubectl get nodes
+kubectl get pods -A | wc -l
+
+# 2. Restart all control plane components
+sudo systemctl restart kubelet
+# Static pods will restart automatically
+
+# 3. Wait and verify recovery
+sleep 30
+kubectl get nodes  # All Ready?
+kubectl get pods -n kube-system  # All Running?
+
+# 4. Test workload scheduling
+kubectl run recovery-test --image=nginx
+kubectl get pods  # Running?
+kubectl delete pod recovery-test
+```
+
+---
+
 ## Next Module
 
 [Module 1.2: Extension Interfaces (CNI, CSI, CRI)](module-1.2-extension-interfaces.md) - How Kubernetes plugs in networking, storage, and container runtimes.

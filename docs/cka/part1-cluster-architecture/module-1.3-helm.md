@@ -585,6 +585,197 @@ kubectl delete namespace helm-demo
 
 ---
 
+## Practice Drills
+
+### Drill 1: Helm Speed Test (Target: 3 minutes)
+
+Complete these tasks as fast as possible:
+
+```bash
+# 1. Add bitnami repo (if not added)
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+# 2. Search for redis
+helm search repo redis
+
+# 3. Show available values for redis
+helm show values bitnami/redis | head -50
+
+# 4. Install redis with custom replica count
+helm install my-redis bitnami/redis --set replica.replicaCount=2 --set auth.enabled=false
+
+# 5. List releases
+helm list
+
+# 6. Uninstall
+helm uninstall my-redis
+```
+
+### Drill 2: Values File Practice (Target: 5 minutes)
+
+```bash
+# Create a values file
+cat << 'EOF' > nginx-values.yaml
+replicaCount: 3
+service:
+  type: NodePort
+  nodePorts:
+    http: 30080
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "50m"
+  limits:
+    memory: "128Mi"
+    cpu: "100m"
+EOF
+
+# Install with values file
+helm install web bitnami/nginx -f nginx-values.yaml
+
+# Verify values applied
+kubectl get pods  # Should show 3 replicas
+kubectl get svc   # Should show NodePort 30080
+
+# Get values used
+helm get values web
+
+# Cleanup
+helm uninstall web
+rm nginx-values.yaml
+```
+
+### Drill 3: Upgrade and Rollback Race (Target: 5 minutes)
+
+```bash
+# Install initial version
+helm install rollback-test bitnami/nginx --set replicaCount=2
+
+# Upgrade to 3 replicas
+helm upgrade rollback-test bitnami/nginx --reuse-values --set replicaCount=3
+
+# Verify
+kubectl get pods | grep rollback-test | wc -l  # Should be 3
+
+# Check history
+helm history rollback-test
+
+# Rollback to revision 1
+helm rollback rollback-test 1
+
+# Verify rollback
+kubectl get pods | grep rollback-test | wc -l  # Should be 2
+
+# Cleanup
+helm uninstall rollback-test
+```
+
+### Drill 4: Troubleshooting - Wrong Values (Target: 5 minutes)
+
+```bash
+# Setup: Install with "broken" values
+helm install broken-nginx bitnami/nginx --set image.tag=nonexistent-tag
+
+# Observe the problem
+kubectl get pods  # ImagePullBackOff
+
+# YOUR TASK: Fix by upgrading with correct image tag
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Check current values
+helm get values broken-nginx
+
+# Fix with upgrade
+helm upgrade broken-nginx bitnami/nginx --reuse-values --set image.tag=1.25
+
+# Verify
+kubectl get pods  # Running!
+
+# Cleanup
+helm uninstall broken-nginx
+```
+
+</details>
+
+### Drill 5: Dry Run and Template (Target: 3 minutes)
+
+```bash
+# See what would be created without creating
+helm install dry-test bitnami/nginx --dry-run
+
+# Generate YAML only (for inspection or GitOps)
+helm template my-nginx bitnami/nginx > nginx-manifests.yaml
+cat nginx-manifests.yaml | head -100
+
+# Validate YAML
+kubectl apply -f nginx-manifests.yaml --dry-run=client
+
+# Cleanup
+rm nginx-manifests.yaml
+```
+
+### Drill 6: Multi-Release Management (Target: 5 minutes)
+
+```bash
+# Install multiple releases
+helm install prod-web bitnami/nginx --set replicaCount=3 -n production --create-namespace
+helm install dev-web bitnami/nginx --set replicaCount=1 -n development --create-namespace
+helm install staging-web bitnami/nginx --set replicaCount=2 -n staging --create-namespace
+
+# List all releases across namespaces
+helm list -A
+
+# Get status of specific release
+helm status prod-web -n production
+
+# Cleanup all
+helm uninstall prod-web -n production
+helm uninstall dev-web -n development
+helm uninstall staging-web -n staging
+kubectl delete ns production development staging
+```
+
+### Drill 7: Challenge - Install Without Documentation
+
+Without looking at docs, complete this task:
+
+**Task**: Install PostgreSQL with:
+- Database name: myapp
+- Username: appuser
+- Password: secret123
+- Storage: 5Gi
+
+```bash
+# Hint: Use helm show values to find the right parameters
+helm show values bitnami/postgresql | grep -A5 -i "auth\|primary\|persistence"
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+helm install mydb bitnami/postgresql \
+  --set auth.database=myapp \
+  --set auth.username=appuser \
+  --set auth.password=secret123 \
+  --set primary.persistence.size=5Gi
+
+# Verify
+kubectl get pods
+kubectl get pvc
+
+# Cleanup
+helm uninstall mydb
+```
+
+</details>
+
+---
+
 ## Next Module
 
 [Module 1.4: Kustomize](module-1.4-kustomize.md) - Configuration management without templates, Kubernetes-native customization.

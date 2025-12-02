@@ -773,6 +773,351 @@ rm -rf webapp/
 
 ---
 
+## Practice Drills
+
+### Drill 1: Kustomize vs kubectl apply (Target: 2 minutes)
+
+Understand the difference:
+
+```bash
+# Create base
+mkdir -p drill1/base
+cat << 'EOF' > drill1/base/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx
+EOF
+
+cat << 'EOF' > drill1/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+EOF
+
+# Preview vs apply
+kubectl kustomize drill1/base/          # Just preview
+kubectl apply -k drill1/base/           # Actually apply
+kubectl get deploy nginx
+kubectl delete -k drill1/base/
+rm -rf drill1
+```
+
+### Drill 2: Namespace Transformation (Target: 3 minutes)
+
+```bash
+mkdir -p drill2/base drill2/overlays/dev
+cat << 'EOF' > drill2/base/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: app
+        image: nginx
+EOF
+
+cat << 'EOF' > drill2/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+EOF
+
+cat << 'EOF' > drill2/overlays/dev/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+namespace: dev-namespace
+namePrefix: dev-
+EOF
+
+# Preview - see the transformations
+kubectl kustomize drill2/overlays/dev/
+
+# Apply
+kubectl create namespace dev-namespace
+kubectl apply -k drill2/overlays/dev/
+kubectl get deploy -n dev-namespace  # Shows dev-app
+
+# Cleanup
+kubectl delete -k drill2/overlays/dev/
+kubectl delete namespace dev-namespace
+rm -rf drill2
+```
+
+### Drill 3: Image Transformation (Target: 3 minutes)
+
+```bash
+mkdir -p drill3
+cat << 'EOF' > drill3/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.19
+EOF
+
+cat << 'EOF' > drill3/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+images:
+  - name: nginx
+    newTag: "1.25"
+EOF
+
+# Preview - notice image changed to nginx:1.25
+kubectl kustomize drill3/
+
+# Apply and verify
+kubectl apply -k drill3/
+kubectl get deploy web -o jsonpath='{.spec.template.spec.containers[0].image}'
+# Output: nginx:1.25
+
+# Cleanup
+kubectl delete -k drill3/
+rm -rf drill3
+```
+
+### Drill 4: Troubleshooting - Broken Kustomization (Target: 5 minutes)
+
+```bash
+# Create broken kustomization
+mkdir -p drill4
+cat << 'EOF' > drill4/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml    # File doesn't exist!
+  - service.yaml       # File doesn't exist!
+commonLabels:
+  app: myapp
+EOF
+
+# Try to build - will fail
+kubectl kustomize drill4/
+
+# YOUR TASK: Fix by creating the missing files
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+cat << 'EOF' > drill4/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: myapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: app
+        image: nginx
+EOF
+
+cat << 'EOF' > drill4/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myapp
+spec:
+  selector:
+    app: myapp
+  ports:
+  - port: 80
+EOF
+
+# Now it works
+kubectl kustomize drill4/
+rm -rf drill4
+```
+
+</details>
+
+### Drill 5: Strategic Merge Patch (Target: 5 minutes)
+
+```bash
+mkdir -p drill5/base drill5/overlay
+cat << 'EOF' > drill5/base/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: app
+        image: nginx
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+EOF
+
+cat << 'EOF' > drill5/base/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - deployment.yaml
+EOF
+
+# Create patch to increase resources for production
+cat << 'EOF' > drill5/overlay/patch-resources.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  replicas: 3
+  template:
+    spec:
+      containers:
+      - name: app
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "500m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+EOF
+
+cat << 'EOF' > drill5/overlay/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+patches:
+  - path: patch-resources.yaml
+EOF
+
+# Preview the result
+kubectl kustomize drill5/overlay/
+rm -rf drill5
+```
+
+### Drill 6: ConfigMap Generator (Target: 3 minutes)
+
+```bash
+mkdir -p drill6
+cat << 'EOF' > drill6/app.properties
+DATABASE_URL=postgres://localhost:5432/mydb
+LOG_LEVEL=info
+FEATURE_FLAG=enabled
+EOF
+
+cat << 'EOF' > drill6/kustomization.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: app-config
+    files:
+      - app.properties
+    literals:
+      - EXTRA_KEY=extra-value
+EOF
+
+# Preview - notice ConfigMap with hash suffix
+kubectl kustomize drill6/
+rm -rf drill6
+```
+
+### Drill 7: Challenge - Multi-Environment Setup
+
+Create a complete Kustomize structure for 3 environments without looking at solutions:
+
+**Requirements**:
+- Base: nginx deployment, service
+- Dev: 1 replica, namespace `dev`, image `nginx:1.24`
+- Staging: 2 replicas, namespace `staging`, image `nginx:1.25`
+- Prod: 5 replicas, namespace `production`, image `nginx:1.25`, add resource limits
+
+```bash
+mkdir -p challenge/{base,overlays/{dev,staging,prod}}
+# YOUR TASK: Create all kustomization.yaml and resource files
+```
+
+<details>
+<summary>Solution Structure</summary>
+
+```
+challenge/
+├── base/
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   └── kustomization.yaml
+├── overlays/
+│   ├── dev/
+│   │   └── kustomization.yaml
+│   ├── staging/
+│   │   └── kustomization.yaml
+│   └── prod/
+│       ├── kustomization.yaml
+│       └── patch-resources.yaml
+```
+
+Test each: `kubectl kustomize challenge/overlays/dev/`
+
+</details>
+
+---
+
 ## Next Module
 
 [Module 1.5: CRDs & Operators](module-1.5-crds-operators.md) - Extending Kubernetes with Custom Resource Definitions.

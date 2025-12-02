@@ -439,6 +439,274 @@ kubectl apply -f practice-pod.yaml --dry-run=client
 
 ---
 
+## Practice Drills
+
+### Drill 1: Vim Speed Test (Target: 2 minutes)
+
+Create this pod manifest from scratch in vim:
+
+```bash
+vim speed-test.yaml
+```
+
+Type this (don't copy-paste):
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  labels:
+    app: web
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.25
+    ports:
+    - containerPort: 80
+```
+
+Save and validate:
+```bash
+kubectl apply -f speed-test.yaml --dry-run=client
+rm speed-test.yaml
+```
+
+### Drill 2: Fix Broken YAML - Indentation (Target: 3 minutes)
+
+```bash
+# Create broken YAML
+cat << 'EOF' > broken-indent.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+name: broken-pod
+  labels:
+      app: test
+spec:
+    containers:
+  - name: nginx
+      image: nginx
+    ports:
+        - containerPort: 80
+EOF
+
+# Open in vim and fix ALL indentation errors
+vim broken-indent.yaml
+
+# Validate your fix
+kubectl apply -f broken-indent.yaml --dry-run=client
+rm broken-indent.yaml
+```
+
+<details>
+<summary>Fixed Version</summary>
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: broken-pod
+  labels:
+    app: test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    ports:
+    - containerPort: 80
+```
+
+</details>
+
+### Drill 3: Fix Broken YAML - Mixed Tabs/Spaces (Target: 3 minutes)
+
+```bash
+# Create YAML with hidden tab characters
+printf 'apiVersion: v1\nkind: Pod\nmetadata:\n\tname: tab-pod\nspec:\n\tcontainers:\n\t- name: nginx\n\t  image: nginx\n' > broken-tabs.yaml
+
+# Look at it - seems fine visually
+cat broken-tabs.yaml
+
+# But kubectl fails!
+kubectl apply -f broken-tabs.yaml --dry-run=client
+
+# YOUR TASK: Open in vim and fix
+vim broken-tabs.yaml
+# Hint: In vim, use :%s/\t/  /g to replace tabs with spaces
+
+kubectl apply -f broken-tabs.yaml --dry-run=client
+rm broken-tabs.yaml
+```
+
+### Drill 4: Copy and Modify Blocks (Target: 2 minutes)
+
+```bash
+# Create a deployment with one container
+cat << 'EOF' > multi-container.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi
+spec:
+  containers:
+  - name: app
+    image: nginx
+    ports:
+    - containerPort: 80
+EOF
+
+# YOUR TASK in vim:
+# 1. Duplicate the container block
+# 2. Change second container to: name: sidecar, image: busybox, remove ports
+# Target: 2 minutes
+
+vim multi-container.yaml
+
+# Validate
+kubectl apply -f multi-container.yaml --dry-run=client
+rm multi-container.yaml
+```
+
+<details>
+<summary>Expected Result</summary>
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi
+spec:
+  containers:
+  - name: app
+    image: nginx
+    ports:
+    - containerPort: 80
+  - name: sidecar
+    image: busybox
+```
+
+</details>
+
+### Drill 5: Search and Replace (Target: 1 minute)
+
+```bash
+# Create file with wrong image version
+cat << 'EOF' > version-fix.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.19
+      - name: log
+        image: fluentd:1.19
+      - name: cache
+        image: redis:1.19
+EOF
+
+# YOUR TASK: Change ALL "1.19" to "1.25" using vim search/replace
+# Command: :%s/1.19/1.25/g
+
+vim version-fix.yaml
+
+# Verify all changed
+grep "1.25" version-fix.yaml  # Should show 3 lines
+rm version-fix.yaml
+```
+
+### Drill 6: Fix Broken YAML - Syntax Errors (Target: 5 minutes)
+
+This YAML has multiple errors. Find and fix all of them:
+
+```bash
+cat << 'EOF' > broken-syntax.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: syntax-errors
+  labels:
+    app: test
+    environment: production  # missing quotes on value with special chars
+spec:
+  containers:
+  - name: app
+    image: nginx
+    env:
+    - name: DATABASE_URL
+      value: postgres://user:p@ssword@db:5432  # @ needs quoting
+    - name: DEBUG
+      value: true  # boolean should be string
+    ports:
+    - containerPort: "80"  # should be integer, not string
+    resources:
+      requests:
+        memory: 128Mi  # missing quotes won't break, but...
+        cpu: 100  # should be 100m
+EOF
+
+vim broken-syntax.yaml
+
+# Test
+kubectl apply -f broken-syntax.yaml --dry-run=client
+rm broken-syntax.yaml
+```
+
+<details>
+<summary>Fixed Version</summary>
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: syntax-errors
+  labels:
+    app: test
+    environment: production
+spec:
+  containers:
+  - name: app
+    image: nginx
+    env:
+    - name: DATABASE_URL
+      value: "postgres://user:p@ssword@db:5432"
+    - name: DEBUG
+      value: "true"
+    ports:
+    - containerPort: 80
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+```
+
+</details>
+
+### Drill 7: Challenge - Nano Speed Test
+
+If you prefer nano, do Drill 1 using nano instead:
+
+```bash
+nano speed-test.yaml
+# Ctrl+O to save, Ctrl+X to exit
+kubectl apply -f speed-test.yaml --dry-run=client
+rm speed-test.yaml
+```
+
+Compare your time with vim. Use whichever is faster for you.
+
+---
+
 ## Next Module
 
 [Module 0.4: kubernetes.io Navigation](module-0.4-k8s-docs.md) - Finding documentation fast during the exam.

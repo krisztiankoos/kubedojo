@@ -435,6 +435,208 @@ k run test --image=nginx $do
 
 ---
 
+## Practice Drills
+
+### Drill 1: Speed Test - Basic Commands (Target: 30 seconds each)
+
+Time yourself on these. If any takes >30 seconds, practice until automatic.
+
+```bash
+# 1. List all pods in all namespaces with wide output
+# Target command: k get po -A -o wide
+
+# 2. Get all nodes
+# Target command: k get no
+
+# 3. Describe a pod (use autocomplete for name)
+# Target command: kdp <TAB>
+
+# 4. Switch to kube-system namespace
+# Target command: kn kube-system
+
+# 5. Generate deployment YAML without creating
+# Target command: k create deploy nginx --image=nginx $do
+```
+
+### Drill 2: Context Switching Race (Target: 1 minute total)
+
+```bash
+# Setup: Create multiple contexts to practice
+kubectl config set-context practice-1 --cluster=kubernetes --user=kubernetes-admin
+kubectl config set-context practice-2 --cluster=kubernetes --user=kubernetes-admin
+kubectl config set-context practice-3 --cluster=kubernetes --user=kubernetes-admin
+
+# TIMED DRILL: Switch between contexts as fast as possible
+# Start timer now!
+
+kx practice-1
+kubectl config current-context  # Verify
+
+kx practice-2
+kubectl config current-context  # Verify
+
+kx practice-3
+kubectl config current-context  # Verify
+
+kx kubernetes-admin@kubernetes  # Back to default
+kubectl config current-context  # Verify
+
+# Stop timer. Target: <1 minute for all 4 switches + verifications
+```
+
+### Drill 3: YAML Generation Sprint (Target: 3 minutes)
+
+Generate all these YAML files using `$do` variable. Don't create the resources, just generate files.
+
+```bash
+# 1. Pod
+k run nginx --image=nginx $do > pod.yaml
+
+# 2. Deployment
+k create deploy web --image=nginx --replicas=3 $do > deploy.yaml
+
+# 3. Service (ClusterIP)
+k create svc clusterip my-svc --tcp=80:80 $do > svc-clusterip.yaml
+
+# 4. Service (NodePort)
+k create svc nodeport my-np --tcp=80:80 $do > svc-nodeport.yaml
+
+# 5. ConfigMap
+k create cm my-config --from-literal=key=value $do > cm.yaml
+
+# 6. Secret
+k create secret generic my-secret --from-literal=password=secret123 $do > secret.yaml
+
+# Verify all files exist and are valid
+ls -la *.yaml
+kubectl apply -f . --dry-run=client
+
+# Cleanup
+rm -f *.yaml
+```
+
+### Drill 4: Troubleshooting - Aliases Not Working
+
+**Scenario**: Your aliases stopped working. Diagnose and fix.
+
+```bash
+# Setup: Break the aliases
+unalias k 2>/dev/null
+unset do
+
+# Test: These should fail
+k get nodes  # Command not found
+echo $do     # Empty
+
+# YOUR TASK: Fix without looking at the solution
+
+# Verify fix worked:
+k get nodes
+echo $do
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Option 1: Re-source bashrc
+source ~/.bashrc
+
+# Option 2: Manually set (if bashrc is broken)
+alias k=kubectl
+complete -o default -F __start_kubectl k
+export do='--dry-run=client -o yaml'
+
+# Verify
+k get nodes
+echo $do
+```
+
+</details>
+
+### Drill 5: Resource Short Names Memory Test
+
+Without looking at the table, write commands using short names:
+
+```bash
+# 1. Get all deployments → k get ____
+# 2. Get all daemonsets → k get ____
+# 3. Get all statefulsets → k get ____
+# 4. Get all persistentvolumes → k get ____
+# 5. Get all persistentvolumeclaims → k get ____
+# 6. Get all configmaps → k get ____
+# 7. Get all serviceaccounts → k get ____
+# 8. Get all ingresses → k get ____
+# 9. Get all networkpolicies → k get ____
+# 10. Get all storageclasses → k get ____
+```
+
+<details>
+<summary>Answers</summary>
+
+```bash
+k get deploy
+k get ds
+k get sts
+k get pv
+k get pvc
+k get cm
+k get sa
+k get ing
+k get netpol
+k get sc
+```
+
+</details>
+
+### Drill 6: Challenge - Custom Alias Set
+
+Create your own productivity aliases for these scenarios:
+
+1. Show pod logs with timestamps
+2. Watch pods in current namespace
+3. Get events sorted by time
+4. Exec into a pod with bash
+5. Port-forward to port 8080
+
+```bash
+# Add to ~/.bashrc:
+alias klt='kubectl logs --timestamps'
+alias kw='kubectl get pods -w'
+alias kev='kubectl get events --sort-by=.lastTimestamp'
+alias kex='kubectl exec -it'
+alias kpf='kubectl port-forward'
+
+source ~/.bashrc
+
+# Test each one
+```
+
+### Drill 7: Exam Simulation - First 2 Minutes
+
+Practice what you'd do at the very start of the CKA exam:
+
+```bash
+# Timer starts NOW
+
+# Step 1: Set up aliases (type from memory)
+alias k=kubectl
+complete -o default -F __start_kubectl k
+export do='--dry-run=client -o yaml'
+export now='--force --grace-period=0'
+
+# Step 2: Verify setup
+k get nodes
+echo $do
+
+# Step 3: Check available contexts
+kubectl config get-contexts
+
+# Timer stop. Target: <2 minutes
+```
+
+---
+
 ## Next Module
 
 [Module 0.3: Vim for YAML](module-0.3-vim-yaml.md) - Essential Vim configuration for editing YAML files efficiently.

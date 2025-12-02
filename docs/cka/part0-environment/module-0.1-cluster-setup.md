@@ -513,6 +513,155 @@ kubectl delete pod test
 
 ---
 
+## Practice Drills
+
+### Drill 1: Node Health Check (Target: 2 minutes)
+
+Verify your cluster is healthy. Run these commands and confirm expected output:
+
+```bash
+# All nodes Ready?
+kubectl get nodes
+# Expected: 3 nodes, all STATUS=Ready
+
+# All system pods running?
+kubectl get pods -n kube-system | grep -v Running
+# Expected: No output (all pods Running)
+
+# Can schedule workloads?
+kubectl run test --image=nginx --rm -it --restart=Never -- echo "Cluster healthy"
+# Expected: "Cluster healthy" then pod deleted
+```
+
+### Drill 2: Troubleshooting - Node NotReady (Target: 5 minutes)
+
+**Scenario**: Simulate a node going NotReady and fix it.
+
+```bash
+# On worker-01, stop kubelet
+sudo systemctl stop kubelet
+
+# On control plane, watch node status
+kubectl get nodes -w
+# Wait until worker-01 shows NotReady
+
+# Diagnose the issue
+kubectl describe node worker-01 | grep -A5 Conditions
+
+# Fix: Restart kubelet on worker-01
+sudo systemctl start kubelet
+
+# Verify recovery
+kubectl get nodes
+```
+
+**What you learned**: kubelet health directly affects node status.
+
+### Drill 3: Troubleshooting - CNI Failure (Target: 5 minutes)
+
+**Scenario**: Pods stuck in ContainerCreating after CNI issues.
+
+```bash
+# Create a test pod
+kubectl run cni-test --image=nginx
+
+# Check status (should be Running if CNI works)
+kubectl get pod cni-test
+
+# If ContainerCreating, diagnose:
+kubectl describe pod cni-test | grep -A10 Events
+kubectl get pods -n kube-system | grep calico
+
+# Common fix: Restart CNI pods
+kubectl delete pods -n kube-system -l k8s-app=calico-node
+
+# Cleanup
+kubectl delete pod cni-test
+```
+
+### Drill 4: Reset and Rebuild (Target: 15 minutes)
+
+**Challenge**: Practice cluster recovery by resetting a worker and rejoining.
+
+```bash
+# On worker-01: Reset the node
+sudo kubeadm reset -f
+sudo rm -rf /etc/cni/net.d
+
+# On control plane: Remove the node
+kubectl delete node worker-01
+
+# On control plane: Generate new join command
+kubeadm token create --print-join-command
+
+# On worker-01: Rejoin
+sudo kubeadm join <command-from-above>
+
+# Verify
+kubectl get nodes
+```
+
+### Drill 5: Challenge - Add a Third Worker (Target: 20 minutes)
+
+**No guidance provided.** Using only what you learned in this module:
+
+1. Prepare a new VM with the same base setup
+2. Join it to the cluster as `worker-03`
+3. Verify it's Ready and can schedule pods
+4. Label it with `node-role.kubernetes.io/worker=`
+
+<details>
+<summary>Hints (only if stuck)</summary>
+
+1. Run all Part 1 steps (1.1-1.8) on the new node
+2. Get join command: `kubeadm token create --print-join-command`
+3. Label: `kubectl label node worker-03 node-role.kubernetes.io/worker=`
+
+</details>
+
+### Drill 6: Fix the Broken Cluster
+
+**Scenario**: Your colleague broke something. Fix it.
+
+```bash
+# Setup: Run this to break the cluster (on control plane)
+sudo mv /etc/kubernetes/manifests/kube-scheduler.yaml /tmp/
+
+# Problem: New pods won't schedule
+kubectl run broken-test --image=nginx
+kubectl get pods  # STATUS: Pending forever
+
+# YOUR TASK: Figure out why and fix it
+# Hint: Check control plane components
+```
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Check what's running in kube-system
+kubectl get pods -n kube-system
+# Notice: No scheduler pod!
+
+# Check manifest directory
+ls /etc/kubernetes/manifests/
+# Notice: kube-scheduler.yaml is missing
+
+# Fix: Restore the scheduler
+sudo mv /tmp/kube-scheduler.yaml /etc/kubernetes/manifests/
+
+# Wait for scheduler to restart
+kubectl get pods -n kube-system | grep scheduler
+
+# Verify pod now schedules
+kubectl get pods  # Should transition to Running
+kubectl delete pod broken-test
+```
+
+</details>
+
+---
+
 ## Next Module
 
 [Module 0.2: Shell Mastery](module-0.2-shell-mastery.md) - Aliases, autocomplete, and shell optimization for speed.
