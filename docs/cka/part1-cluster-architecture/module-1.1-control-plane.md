@@ -135,8 +135,12 @@ The pod doesn't exist yet as a running container—it's just stored in etcd. The
 # Is the API server responding?
 kubectl cluster-info
 
-# Check API server component status
-kubectl get componentstatuses  # Deprecated but still works
+# Check API server component status (legacy)
+kubectl get componentstatuses  # Deprecated, may not work on all clusters
+
+# Modern health endpoints (preferred)
+kubectl get --raw='/readyz?verbose'
+kubectl get --raw='/livez?verbose'
 
 # Direct health endpoint
 kubectl get --raw='/healthz'
@@ -602,6 +606,12 @@ sudo ETCDCTL_API=3 etcdctl get /registry/namespaces/default \
 - [ ] Can check health of API server
 - [ ] Can find and read control plane component logs
 - [ ] Understand what each component does in pod creation
+
+**Cleanup**:
+```bash
+# Remove test deployment if created
+kubectl delete deployment test --ignore-not-found
+```
 
 ---
 

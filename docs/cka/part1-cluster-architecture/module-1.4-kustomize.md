@@ -756,20 +756,20 @@ kubectl apply -k webapp/overlays/prod/
 kubectl get all -n production
 ```
 
-10. **Cleanup**:
-```bash
-kubectl delete -k webapp/overlays/dev/
-kubectl delete -k webapp/overlays/prod/
-kubectl delete namespace development production
-rm -rf webapp/
-```
-
 **Success Criteria**:
 - [ ] Understand base vs overlay structure
 - [ ] Can create kustomization.yaml files
 - [ ] Can use namePrefix, namespace, commonLabels
 - [ ] Can create and apply patches
 - [ ] Can preview output with `kubectl kustomize`
+
+**Cleanup**:
+```bash
+kubectl delete -k webapp/overlays/dev/
+kubectl delete -k webapp/overlays/prod/
+kubectl delete namespace development production
+rm -rf webapp/
+```
 
 ---
 

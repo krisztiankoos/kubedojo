@@ -118,8 +118,8 @@ helm version
 helm repo add bitnami https://charts.bitnami.com/bitnami
 
 # Add other common repositories
-helm repo add stable https://charts.helm.sh/stable  # Deprecated but still used
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 
 # Update repository index
 helm repo update
