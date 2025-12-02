@@ -142,6 +142,9 @@ Perfectionists fail timed exams. We teach when to move on, when 80% is better th
 ### No Memorization
 Kubernetes docs are available during the exam. We teach you to navigate them fast, not memorize YAML.
 
+### Skills Over Simulation
+We teach skills and strategy. For realistic exam simulation, use [killer.sh](https://killer.sh) (included with exam purchase).
+
 ---
 
 ## Quality Standards
