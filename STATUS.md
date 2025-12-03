@@ -3,8 +3,10 @@
 > **Read this first every session. Update before ending.**
 
 ## Current Work
-**Part 6: Mock Exams** - Next up
-- 0/8 modules complete
+**CKAD Curriculum** - Next up
+- CKA theory complete (33 modules), mock exams deferred
+- Strategy: Build all certification theory first, mock exams last
+- CKAD shares ~60% with CKA, focus on developer-specific topics
 
 ## Progress Summary
 | Part | Status | Modules |
@@ -74,6 +76,7 @@ _2025-12-02: Part 3 reviewed - scored 10/10. 74 YAML examples, 166 bash examples
 _2025-12-02: Completed Part 4 (5 modules + cumulative quiz). Covers: Volumes, PV/PVC, StorageClasses, Snapshots/Cloning, Storage Troubleshooting._
 _2025-12-02: Part 4 reviewed - scored 10/10. 58 YAML examples, 118 bash examples. All pedagogical elements present._
 _2025-12-03: Completed Part 5 (7 modules + cumulative quiz). Covers: Troubleshooting Methodology, Application Failures, Control Plane, Worker Nodes, Networking, Services, Logging & Monitoring. 30% of CKA exam weight._
+_2025-12-03: CKA theory complete (33 modules). Decision: Build all cert theory first, mock exams last. CKAD is next._
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.
