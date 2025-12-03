@@ -61,47 +61,47 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | 0.4 | [kubernetes.io Navigation](docs/cka/part0-environment/module-0.4-k8s-docs.md) | ✅ |
 | 0.5 | [Exam Strategy - Three-Pass Method](docs/cka/part0-environment/module-0.5-exam-strategy.md) | ✅ |
 
-### Part 1: Cluster Architecture, Installation & Configuration (25%)
+### Part 1: Cluster Architecture, Installation & Configuration (25%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 1.1 | Control Plane Deep-Dive | 📋 |
-| 1.2 | Extension Interfaces (CNI, CSI, CRI) | 📋 |
-| 1.3 | Helm | 📋 |
-| 1.4 | Kustomize | 📋 |
-| 1.5 | CRDs & Operators | 📋 |
-| 1.6 | RBAC | 📋 |
-| 1.7 | kubeadm Basics | 📋 |
+| 1.1 | [Control Plane Deep-Dive](docs/cka/part1-cluster-architecture/module-1.1-control-plane.md) | ✅ |
+| 1.2 | [Extension Interfaces (CNI, CSI, CRI)](docs/cka/part1-cluster-architecture/module-1.2-extension-interfaces.md) | ✅ |
+| 1.3 | [Helm](docs/cka/part1-cluster-architecture/module-1.3-helm.md) | ✅ |
+| 1.4 | [Kustomize](docs/cka/part1-cluster-architecture/module-1.4-kustomize.md) | ✅ |
+| 1.5 | [CRDs & Operators](docs/cka/part1-cluster-architecture/module-1.5-crds-operators.md) | ✅ |
+| 1.6 | [RBAC](docs/cka/part1-cluster-architecture/module-1.6-rbac.md) | ✅ |
+| 1.7 | [kubeadm Basics](docs/cka/part1-cluster-architecture/module-1.7-kubeadm.md) | ✅ |
 
-### Part 2: Workloads & Scheduling (15%)
+### Part 2: Workloads & Scheduling (15%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 2.1 | Pods (What Actually Happens) | 📋 |
-| 2.2 | Deployments, ReplicaSets, DaemonSets | 📋 |
-| 2.3 | Jobs & CronJobs | 📋 |
-| 2.4 | Scheduling (Affinity, Taints, Tolerations) | 📋 |
-| 2.5 | Resource Requests & Limits | 📋 |
-| 2.6 | Pod Admission & Security Contexts | 📋 |
-| 2.7 | Workload Autoscaling (HPA) | 📋 |
+| 2.1 | [Pods Deep-Dive](docs/cka/part2-workloads-scheduling/module-2.1-pods.md) | ✅ |
+| 2.2 | [Deployments & ReplicaSets](docs/cka/part2-workloads-scheduling/module-2.2-deployments.md) | ✅ |
+| 2.3 | [DaemonSets & StatefulSets](docs/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets.md) | ✅ |
+| 2.4 | [Jobs & CronJobs](docs/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs.md) | ✅ |
+| 2.5 | [Resource Management](docs/cka/part2-workloads-scheduling/module-2.5-resource-management.md) | ✅ |
+| 2.6 | [Scheduling](docs/cka/part2-workloads-scheduling/module-2.6-scheduling.md) | ✅ |
+| 2.7 | [ConfigMaps & Secrets](docs/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets.md) | ✅ |
 
-### Part 3: Services & Networking (20%)
+### Part 3: Services & Networking (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 3.1 | Container Networking Fundamentals | 📋 |
-| 3.2 | CNI | 📋 |
-| 3.3 | Services (ClusterIP, NodePort, LoadBalancer) | 📋 |
-| 3.4 | DNS in Kubernetes (CoreDNS) | 📋 |
-| 3.5 | Gateway API | 📋 |
-| 3.6 | Ingress (Legacy) | 📋 |
-| 3.7 | NetworkPolicies | 📋 |
+| 3.1 | [Services](docs/cka/part3-services-networking/module-3.1-services.md) | ✅ |
+| 3.2 | [Endpoints & EndpointSlices](docs/cka/part3-services-networking/module-3.2-endpoints.md) | ✅ |
+| 3.3 | [DNS & CoreDNS](docs/cka/part3-services-networking/module-3.3-dns.md) | ✅ |
+| 3.4 | [Ingress](docs/cka/part3-services-networking/module-3.4-ingress.md) | ✅ |
+| 3.5 | [Gateway API](docs/cka/part3-services-networking/module-3.5-gateway-api.md) | ✅ |
+| 3.6 | [Network Policies](docs/cka/part3-services-networking/module-3.6-network-policies.md) | ✅ |
+| 3.7 | [CNI & Cluster Networking](docs/cka/part3-services-networking/module-3.7-cni.md) | ✅ |
 
-### Part 4: Storage (10%)
+### Part 4: Storage (10%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 4.1 | Volumes (emptyDir, hostPath) | 📋 |
-| 4.2 | PersistentVolumes & PersistentVolumeClaims | 📋 |
-| 4.3 | StorageClasses & Dynamic Provisioning | 📋 |
-| 4.4 | Volume Types, Access Modes & Reclaim Policies | 📋 |
-| 4.5 | CSI Basics | 📋 |
+| 4.1 | [Volumes](docs/cka/part4-storage/module-4.1-volumes.md) | ✅ |
+| 4.2 | [PersistentVolumes & PersistentVolumeClaims](docs/cka/part4-storage/module-4.2-pv-pvc.md) | ✅ |
+| 4.3 | [StorageClasses & Dynamic Provisioning](docs/cka/part4-storage/module-4.3-storageclasses.md) | ✅ |
+| 4.4 | [Volume Snapshots & Cloning](docs/cka/part4-storage/module-4.4-snapshots.md) | ✅ |
+| 4.5 | [Storage Troubleshooting](docs/cka/part4-storage/module-4.5-troubleshooting.md) | ✅ |
 
 ### Part 5: Troubleshooting (30%)
 | Module | Topic | Status |
