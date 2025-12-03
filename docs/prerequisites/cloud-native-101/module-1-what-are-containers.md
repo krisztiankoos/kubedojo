@@ -350,6 +350,52 @@ Software Containers:
 
 ---
 
+## Hands-On Exercise
+
+**Task**: Explore container isolation (if you have Docker installed).
+
+```bash
+# 1. Run a container and explore its isolated view
+docker run -it --rm alpine sh
+
+# Inside the container, you'll see:
+# - PID 1 is your shell (isolated PID namespace)
+# - Only the container's filesystem (isolated mount namespace)
+# - Its own hostname (isolated UTS namespace)
+
+# Check processes - you only see container processes
+ps aux
+
+# Check hostname
+hostname
+
+# Check filesystem
+ls /
+
+# Exit the container
+exit
+
+# 2. Compare with your host
+# On your host, run:
+ps aux | wc -l    # Hundreds/thousands of processes
+hostname          # Your machine's name
+ls /              # Full host filesystem
+
+# 3. See the container from outside
+# In one terminal, run a container:
+docker run -it --rm --name mycontainer alpine sleep 1000
+
+# In another terminal, see it from host perspective:
+docker exec mycontainer ps aux  # Limited view inside
+ps aux | grep sleep             # Visible from host!
+
+# The container thinks it's alone, but it's just isolated.
+```
+
+**Success criteria**: Understand that containers provide isolation, not virtualization—processes still run on the host kernel.
+
+---
+
 ## Summary
 
 Containers solve the environment consistency problem by packaging:

@@ -290,6 +290,30 @@ Understanding why Kubernetes won helps you:
 
 ---
 
+## Reflection Exercise
+
+This module is conceptual—no CLI needed. Reflect on these questions:
+
+**1. Technology adoption patterns:**
+- Why do you think cloud providers adopted Kubernetes even though Google started it?
+- What role did CNCF neutrality play?
+
+**2. The declarative insight:**
+- Why is "I want 3 replicas" more powerful than "start 3 containers"?
+- What happens in each model when something fails?
+
+**3. Ecosystem dynamics:**
+- Why did having extensibility (CRDs) matter more than having all features built-in?
+- Can you think of other technologies that won because of ecosystem rather than features?
+
+**4. Lessons for the future:**
+- What would it take for something to replace Kubernetes?
+- What signals would indicate K8s is becoming a "dead end"?
+
+These questions help you think critically about technology choices—a skill that outlasts any specific tool.
+
+---
+
 ## Summary
 
 Kubernetes won the orchestration wars because:

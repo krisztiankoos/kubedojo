@@ -50,6 +50,7 @@ None
 _2025-12-02: CKA Parts 0-5 complete (33 modules). Theory done, mock exams deferred._
 _2025-12-03: CKAD complete (23 modules)._
 _2025-12-03: Prerequisites complete - Philosophy & Design (4), Cloud Native 101 (5), Kubernetes Basics (8), Modern DevOps (6)._
+_2025-12-03: Prerequisites reviewed & improved to 10/10 - Added hands-on exercises to Cloud Native 101 modules (1, 3, 4), reflection exercises to all Philosophy & Design modules and Cloud Native 101 module 5._
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.

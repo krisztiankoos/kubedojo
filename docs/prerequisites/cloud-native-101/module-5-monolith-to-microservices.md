@@ -367,6 +367,34 @@ K8s: Multi-container pods
 
 ---
 
+## Reflection Exercise
+
+This module covers architectural concepts that don't have a CLI exercise. Instead, reflect on these questions:
+
+**1. Think about applications you've used or built:**
+- Were they monoliths or microservices?
+- What signs indicated this? (Deployment frequency, team structure, scaling patterns)
+
+**2. Consider a hypothetical e-commerce site:**
+- What services might you extract? (Users, Products, Orders, Payments, Inventory)
+- Which would need to scale independently? (Product search? Payment processing?)
+- What data would each service own?
+
+**3. Evaluate this scenario:**
+> A 3-person startup is building a new product. They're considering microservices "to be modern."
+- Is this a good idea? (Probably not)
+- What would you recommend? (Monolith first, decompose when pain points emerge)
+- Why?
+
+**4. Research one company:**
+- Look up how Netflix, Amazon, or Spotify approaches microservices
+- What challenges did they face?
+- Would their approach work for a smaller company?
+
+These questions prepare you to make architectural decisions in your career, not just pass exams.
+
+---
+
 ## Summary
 
 **Monoliths**:

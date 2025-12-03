@@ -360,6 +360,39 @@ When new technologies emerge, ask:
 
 ---
 
+## Reflection Exercise
+
+This module teaches what NOT to learn—equally valuable as knowing what to learn:
+
+**1. Sunk cost evaluation:**
+- Have you invested time in a technology that later became obsolete?
+- How did you recognize it was time to move on?
+- What would you do differently?
+
+**2. Pattern recognition:**
+- The module describes patterns in failed technologies (single vendor, wrong abstraction, etc.)
+- Can you identify any current technologies showing similar warning signs?
+- How would you evaluate a "hot new tool"?
+
+**3. The Docker question:**
+- Why do people still say "Docker" when they mean "containers"?
+- Is Docker still worth knowing? (Yes, for building images)
+- What's the lesson about distinguishing tools from concepts?
+
+**4. Career implications:**
+- If you had Mesos expertise in 2018, what would you do?
+- How do you build skills that remain valuable even as specific tools change?
+- Is "Kubernetes expert" a safer bet than "Docker Swarm expert"? Why?
+
+**5. Future-proofing:**
+- What would have to change for Kubernetes to become a "dead end"?
+- Are there emerging technologies that might challenge K8s?
+- How would you spot them early?
+
+The ability to evaluate technology bets is a career skill that transcends any specific tool.
+
+---
+
 ## Summary
 
 Knowing what to avoid saves time:

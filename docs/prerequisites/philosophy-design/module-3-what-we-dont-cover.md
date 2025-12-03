@@ -281,6 +281,35 @@ Our curriculum matches official exam objectives. If something appears on the exa
 
 ---
 
+## Reflection Exercise
+
+This module sets expectations—reflect on your learning journey:
+
+**1. Your learning goals:**
+- Why are you learning Kubernetes?
+- Is certification the end goal, or a stepping stone?
+- What specific job role or project motivates you?
+
+**2. The 80/20 principle:**
+- In your field, what 20% of knowledge handles 80% of situations?
+- Does going deeper always help, or can it distract?
+
+**3. Scope discipline:**
+- Have you ever wasted time learning something that turned out irrelevant?
+- How do you decide what's worth learning deeply vs. just knowing exists?
+
+**4. After certification:**
+- Which specialization interests you? (Platform engineering, security, SRE, development?)
+- What would your ideal Kubernetes job look like?
+
+**5. Time budgeting:**
+- How much time can you dedicate to this?
+- Given KubeDojo's focus, do you need additional resources for your specific goals?
+
+Understanding scope helps you learn efficiently and plan beyond certification.
+
+---
+
 ## Summary
 
 KubeDojo makes deliberate choices about scope:

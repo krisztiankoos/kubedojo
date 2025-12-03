@@ -358,6 +358,35 @@ kubectl apply -f deployment.yaml
 
 ---
 
+## Reflection Exercise
+
+This module is conceptual—reflect on these questions:
+
+**1. The thermostat analogy:**
+- What other systems in your life work declaratively? (Cruise control? Auto-brightness?)
+- What makes them easier to use than manual alternatives?
+
+**2. Your current workflow:**
+- How do you deploy software today?
+- Is it more imperative or declarative?
+- What would change if you switched to the other model?
+
+**3. Self-healing implications:**
+- If Kubernetes "undoes" manual changes, is that a feature or a bug?
+- How does this change your troubleshooting approach?
+
+**4. Git and infrastructure:**
+- Why is storing infrastructure as YAML in Git powerful?
+- What questions can you answer with `git log` that you couldn't answer before?
+
+**5. Mental model shift:**
+- An operator asks "what commands do I run?" A declarative thinker asks "what state do I want?"
+- Which question leads to more maintainable systems? Why?
+
+This shift in thinking—from "how" to "what"—is the most important concept in this entire curriculum.
+
+---
+
 ## Summary
 
 The declarative model is Kubernetes' foundation:

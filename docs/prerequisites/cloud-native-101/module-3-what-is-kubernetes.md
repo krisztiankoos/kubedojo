@@ -351,6 +351,46 @@ For learning and development.
 
 ---
 
+## Hands-On Exercise
+
+**Task**: Explore a Kubernetes cluster (preview of what's coming).
+
+```bash
+# If you have a cluster running (kind, minikube, or other):
+
+# 1. See your cluster nodes
+kubectl get nodes
+# Output shows the machines in your cluster
+
+# 2. See running system components
+kubectl get pods -n kube-system
+# These are the components that make K8s work
+
+# 3. See all namespaces (like folders for resources)
+kubectl get namespaces
+
+# 4. Create something simple
+kubectl run hello --image=nginx --restart=Never
+kubectl get pods
+# You just created a Pod!
+
+# 5. See what Kubernetes knows about it
+kubectl describe pod hello
+# Lots of information about scheduling, containers, events
+
+# 6. Clean up
+kubectl delete pod hello
+
+# Don't worry if this is confusing now - you'll learn all of it
+# The goal is just to see K8s in action
+```
+
+**No cluster yet?** That's OK! The Kubernetes Basics track will walk you through setting one up. This is just a preview.
+
+**Success criteria**: See that Kubernetes provides an API to manage containers across machines.
+
+---
+
 ## Summary
 
 Kubernetes is a container orchestration platform that:

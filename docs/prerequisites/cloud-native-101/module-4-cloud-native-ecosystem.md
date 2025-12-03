@@ -314,6 +314,48 @@ For production, prefer **Graduated** projects. For learning and experimentation,
 
 ---
 
+## Hands-On Exercise
+
+**Task**: Explore the CNCF landscape.
+
+```bash
+# This is a research exercise, not a CLI task
+
+# 1. Open the CNCF Landscape
+#    Go to: https://landscape.cncf.io
+
+# 2. Explore by category
+#    - Click "App Definition & Development" → see Helm, Kustomize
+#    - Click "Observability" → see Prometheus, Grafana, Jaeger
+#    - Click "Provisioning" → see Terraform, Ansible
+#    Notice how many projects exist in each category!
+
+# 3. Filter by project maturity
+#    - Click "Project Maturity" filter
+#    - Select "Graduated" only
+#    - These are the most stable, production-proven projects
+#    - Count how many there are (hint: ~20)
+
+# 4. Find Kubernetes
+#    - Search for "Kubernetes"
+#    - Note it's under "Orchestration & Management" → "Scheduling & Orchestration"
+#    - Click it to see adoption stats
+
+# 5. Explore one new project
+#    - Pick any project you haven't heard of
+#    - Click to read the description
+#    - Ask: What problem does it solve?
+
+# Reflection:
+# - How many projects are in the landscape? (1000+)
+# - Could anyone learn them all? (No)
+# - What does this tell you about specialization?
+```
+
+**Success criteria**: Understand the scope of the cloud native ecosystem and why focus is necessary.
+
+---
+
 ## Summary
 
 The cloud native ecosystem includes:
