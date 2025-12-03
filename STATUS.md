@@ -31,14 +31,14 @@
 | Part 6: Mock Exams | 📋 Deferred | 0/8 |
 
 ## Prerequisite Tracks (Issue #17)
-User requested Track 4 first:
-1. **Track 4: Philosophy & Design** - DO FIRST
+Development order:
+1. **Philosophy & Design** - DO FIRST
    - What we don't cover and why
    - Architectural decisions
    - Design philosophy
-2. Track 1: Cloud Native 101
-3. Track 2: Kubernetes Basics
-4. Track 3: Modern DevOps
+2. Cloud Native 101
+3. Kubernetes Basics
+4. Modern DevOps Practices
 
 ## Blockers
 None
@@ -49,7 +49,7 @@ _2025-12-03: CKAD Part 0-2 complete. Reused Part 0 from CKA._
 _2025-12-03: CKAD Part 3 complete - Observability (probes, logging, debugging, monitoring, troubleshooting)._
 _2025-12-03: CKAD Part 4 complete - Environment (ConfigMaps, Secrets, Resources, SecurityContext, ServiceAccounts, CRDs)._
 _2025-12-03: CKAD Part 5 complete - Networking (Services, Ingress, NetworkPolicies). CKAD curriculum done!_
-_2025-12-03: User wants prerequisite Track 4 (Philosophy & Design) before other tracks._
+_2025-12-03: User wants Philosophy & Design developed first before other prerequisite tracks._
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.
