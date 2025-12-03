@@ -3,8 +3,8 @@
 > **Read this first every session. Update before ending.**
 
 ## Current Work
-**Part 5: Troubleshooting (30%)** - Next up
-- 0/7 modules complete
+**Part 6: Mock Exams** - Next up
+- 0/8 modules complete
 
 ## Progress Summary
 | Part | Status | Modules |
@@ -14,8 +14,8 @@
 | Part 2: Workloads & Scheduling | ✅ Complete (Reviewed 10/10) | 7/7 |
 | Part 3: Services & Networking | ✅ Complete (Reviewed 10/10) | 7/7 |
 | Part 4: Storage | ✅ Complete (Reviewed 10/10) | 5/5 |
-| Part 5: Troubleshooting | 🔄 Next | 0/7 |
-| Part 6: Mock Exams | ⏳ Pending | 0/7 |
+| Part 5: Troubleshooting | ✅ Complete | 7/7 |
+| Part 6: Mock Exams | 🔄 Next | 0/8 |
 
 ## Part 1 Modules (Completed)
 - [x] 1.1 Control Plane Deep-Dive
@@ -51,6 +51,15 @@
 - [x] 4.4 Volume Snapshots & Cloning
 - [x] 4.5 Storage Troubleshooting
 
+## Part 5 Modules (Completed)
+- [x] 5.1 Troubleshooting Methodology
+- [x] 5.2 Application Failures
+- [x] 5.3 Control Plane Failures
+- [x] 5.4 Worker Node Failures
+- [x] 5.5 Network Troubleshooting
+- [x] 5.6 Service Troubleshooting
+- [x] 5.7 Logging & Monitoring
+
 ## Blockers
 None
 
@@ -64,6 +73,7 @@ _2025-12-02: Completed Part 3 (7 modules + cumulative quiz). Covers: Services, E
 _2025-12-02: Part 3 reviewed - scored 10/10. 74 YAML examples, 166 bash examples. All pedagogical elements present._
 _2025-12-02: Completed Part 4 (5 modules + cumulative quiz). Covers: Volumes, PV/PVC, StorageClasses, Snapshots/Cloning, Storage Troubleshooting._
 _2025-12-02: Part 4 reviewed - scored 10/10. 58 YAML examples, 118 bash examples. All pedagogical elements present._
+_2025-12-03: Completed Part 5 (7 modules + cumulative quiz). Covers: Troubleshooting Methodology, Application Failures, Control Plane, Worker Nodes, Networking, Services, Logging & Monitoring. 30% of CKA exam weight._
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.

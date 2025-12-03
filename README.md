@@ -103,16 +103,16 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | 4.4 | [Volume Snapshots & Cloning](docs/cka/part4-storage/module-4.4-snapshots.md) | ✅ |
 | 4.5 | [Storage Troubleshooting](docs/cka/part4-storage/module-4.5-troubleshooting.md) | ✅ |
 
-### Part 5: Troubleshooting (30%)
+### Part 5: Troubleshooting (30%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 5.1 | Troubleshooting Methodology | 📋 |
-| 5.2 | Application Failures | 📋 |
-| 5.3 | Control Plane Failures | 📋 |
-| 5.4 | Worker Node Failures | 📋 |
-| 5.5 | Network Troubleshooting (Internal & External) | 📋 |
-| 5.6 | Service Troubleshooting | 📋 |
-| 5.7 | Logging & Monitoring | 📋 |
+| 5.1 | [Troubleshooting Methodology](docs/cka/part5-troubleshooting/module-5.1-methodology.md) | ✅ |
+| 5.2 | [Application Failures](docs/cka/part5-troubleshooting/module-5.2-application-failures.md) | ✅ |
+| 5.3 | [Control Plane Failures](docs/cka/part5-troubleshooting/module-5.3-control-plane.md) | ✅ |
+| 5.4 | [Worker Node Failures](docs/cka/part5-troubleshooting/module-5.4-worker-nodes.md) | ✅ |
+| 5.5 | [Network Troubleshooting](docs/cka/part5-troubleshooting/module-5.5-networking.md) | ✅ |
+| 5.6 | [Service Troubleshooting](docs/cka/part5-troubleshooting/module-5.6-services.md) | ✅ |
+| 5.7 | [Logging & Monitoring](docs/cka/part5-troubleshooting/module-5.7-logging-monitoring.md) | ✅ |
 
 ### Part 6: Speed Drills & Mock Exams
 | Module | Topic | Status |
