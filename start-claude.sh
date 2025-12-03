@@ -55,8 +55,9 @@ fi
 
 # Show KubeDojo-specific reminders
 echo ""
-echo "📚 KUBEDOJO - CKA Certification Training"
-echo "   • Progress: Part 0 complete (5/46 modules)"
+echo "📚 KUBEDOJO - Kubernetes Certification Training"
+echo "   • CKA: Theory complete (38 modules), mock exams pending"
+echo "   • CKAD: In progress"
 echo "   • Issues: https://github.com/krisztiankoos/kubedojo/issues"
 echo "   • Commands: /review-module, /review-part, /verify-technical"
 
