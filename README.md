@@ -190,6 +190,51 @@ The CKAD tests your ability to design, build, and deploy cloud-native applicatio
 
 ---
 
+## Prerequisite Tracks ✅
+
+Before diving into certification-specific content, these foundational tracks build the knowledge and context you need.
+
+### Philosophy & Design ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1 | [Why Kubernetes Won](docs/prerequisites/philosophy-design/module-1-why-kubernetes-won.md) | ✅ |
+| 2 | [Declarative vs Imperative](docs/prerequisites/philosophy-design/module-2-declarative-vs-imperative.md) | ✅ |
+| 3 | [What We Don't Cover](docs/prerequisites/philosophy-design/module-3-what-we-dont-cover.md) | ✅ |
+| 4 | [Dead Ends - Technologies to Avoid](docs/prerequisites/philosophy-design/module-4-dead-ends.md) | ✅ |
+
+### Cloud Native 101 ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1 | [What Are Containers?](docs/prerequisites/cloud-native-101/module-1-what-are-containers.md) | ✅ |
+| 2 | [Docker Fundamentals](docs/prerequisites/cloud-native-101/module-2-docker-fundamentals.md) | ✅ |
+| 3 | [What is Kubernetes?](docs/prerequisites/cloud-native-101/module-3-what-is-kubernetes.md) | ✅ |
+| 4 | [Cloud Native Ecosystem](docs/prerequisites/cloud-native-101/module-4-cloud-native-ecosystem.md) | ✅ |
+| 5 | [Monolith to Microservices](docs/prerequisites/cloud-native-101/module-5-monolith-to-microservices.md) | ✅ |
+
+### Kubernetes Basics ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1 | [Your First Cluster](docs/prerequisites/kubernetes-basics/module-1-first-cluster.md) | ✅ |
+| 2 | [kubectl Basics](docs/prerequisites/kubernetes-basics/module-2-kubectl-basics.md) | ✅ |
+| 3 | [Pods - The Atomic Unit](docs/prerequisites/kubernetes-basics/module-3-pods.md) | ✅ |
+| 4 | [Deployments - Managing Apps](docs/prerequisites/kubernetes-basics/module-4-deployments.md) | ✅ |
+| 5 | [Services - Stable Networking](docs/prerequisites/kubernetes-basics/module-5-services.md) | ✅ |
+| 6 | [ConfigMaps & Secrets](docs/prerequisites/kubernetes-basics/module-6-configmaps-secrets.md) | ✅ |
+| 7 | [Namespaces & Labels](docs/prerequisites/kubernetes-basics/module-7-namespaces-labels.md) | ✅ |
+| 8 | [YAML for Kubernetes](docs/prerequisites/kubernetes-basics/module-8-yaml-kubernetes.md) | ✅ |
+
+### Modern DevOps Practices ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1 | [Infrastructure as Code](docs/prerequisites/modern-devops/module-1-infrastructure-as-code.md) | ✅ |
+| 2 | [GitOps](docs/prerequisites/modern-devops/module-2-gitops.md) | ✅ |
+| 3 | [CI/CD Pipelines](docs/prerequisites/modern-devops/module-3-cicd-pipelines.md) | ✅ |
+| 4 | [Observability Fundamentals](docs/prerequisites/modern-devops/module-4-observability.md) | ✅ |
+| 5 | [Platform Engineering](docs/prerequisites/modern-devops/module-5-platform-engineering.md) | ✅ |
+| 6 | [Security Practices (DevSecOps)](docs/prerequisites/modern-devops/module-6-devsecops.md) | ✅ |
+
+---
+
 ## Philosophy
 
 ### Theory Before Hands-On
