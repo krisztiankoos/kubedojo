@@ -27,7 +27,7 @@ KubeDojo prepares you for all 5 core Kubernetes certifications required for [Kub
 | Cert | Name | Type | Status |
 |------|------|------|--------|
 | **CKA** | Certified Kubernetes Administrator | Hands-on lab | 🚧 In Progress |
-| **CKAD** | Certified Kubernetes Application Developer | Hands-on lab | 📋 Planned |
+| **CKAD** | Certified Kubernetes Application Developer | Hands-on lab | ✅ Complete |
 | **CKS** | Certified Kubernetes Security Specialist | Hands-on lab | 📋 Planned |
 | **KCNA** | Kubernetes & Cloud Native Associate | Multiple choice | 📋 Planned |
 | **KCSA** | Kubernetes & Cloud Native Security Associate | Multiple choice | 📋 Planned |
@@ -125,6 +125,68 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 | 6.6 | Mock Exam #1 | 📋 |
 | 6.7 | Mock Exam #2 | 📋 |
 | 6.8 | Mock Exam #3 | 📋 |
+
+---
+
+## CKAD Curriculum (2025) ✅
+
+> **Curriculum Version**: CKAD 2025
+>
+> Based on [CNCF Official Curriculum](https://github.com/cncf/curriculum)
+
+The CKAD tests your ability to design, build, and deploy cloud-native applications on Kubernetes.
+
+### Part 0: Environment & Exam Technique ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 0.1 | [Cluster Setup](docs/ckad/part0-environment/module-0.1-cluster-setup.md) | ✅ |
+| 0.2 | [Shell Mastery](docs/ckad/part0-environment/module-0.2-shell-mastery.md) | ✅ |
+| 0.3 | [Vim for YAML](docs/ckad/part0-environment/module-0.3-vim-yaml.md) | ✅ |
+| 0.4 | [kubernetes.io Navigation](docs/ckad/part0-environment/module-0.4-k8s-docs.md) | ✅ |
+| 0.5 | [Exam Strategy](docs/ckad/part0-environment/module-0.5-exam-strategy.md) | ✅ |
+
+### Part 1: Application Design and Build (20%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1.1 | [Pods Deep-Dive](docs/ckad/part1-app-design/module-1.1-pods.md) | ✅ |
+| 1.2 | [Jobs & CronJobs](docs/ckad/part1-app-design/module-1.2-jobs.md) | ✅ |
+| 1.3 | [Multi-Container Patterns](docs/ckad/part1-app-design/module-1.3-multi-container.md) | ✅ |
+| 1.4 | [Init Containers](docs/ckad/part1-app-design/module-1.4-init-containers.md) | ✅ |
+| 1.5 | [Volumes & Storage](docs/ckad/part1-app-design/module-1.5-volumes.md) | ✅ |
+
+### Part 2: Application Deployment (20%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 2.1 | [Deployments](docs/ckad/part2-deployment/module-2.1-deployments.md) | ✅ |
+| 2.2 | [Rolling Updates & Rollbacks](docs/ckad/part2-deployment/module-2.2-rolling-updates.md) | ✅ |
+| 2.3 | [Helm Package Manager](docs/ckad/part2-deployment/module-2.3-helm.md) | ✅ |
+| 2.4 | [Kustomize](docs/ckad/part2-deployment/module-2.4-kustomize.md) | ✅ |
+
+### Part 3: Application Observability (15%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 3.1 | [Probes (Liveness, Readiness, Startup)](docs/ckad/part3-observability/module-3.1-probes.md) | ✅ |
+| 3.2 | [Container Logging](docs/ckad/part3-observability/module-3.2-logging.md) | ✅ |
+| 3.3 | [Debugging Pods](docs/ckad/part3-observability/module-3.3-debugging.md) | ✅ |
+| 3.4 | [Resource Monitoring](docs/ckad/part3-observability/module-3.4-monitoring.md) | ✅ |
+| 3.5 | [Application Troubleshooting](docs/ckad/part3-observability/module-3.5-troubleshooting.md) | ✅ |
+
+### Part 4: Application Environment, Configuration and Security (25%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 4.1 | [ConfigMaps](docs/ckad/part4-environment/module-4.1-configmaps.md) | ✅ |
+| 4.2 | [Secrets](docs/ckad/part4-environment/module-4.2-secrets.md) | ✅ |
+| 4.3 | [Resource Requirements](docs/ckad/part4-environment/module-4.3-resources.md) | ✅ |
+| 4.4 | [SecurityContexts](docs/ckad/part4-environment/module-4.4-securitycontext.md) | ✅ |
+| 4.5 | [ServiceAccounts](docs/ckad/part4-environment/module-4.5-serviceaccounts.md) | ✅ |
+| 4.6 | [Custom Resource Definitions](docs/ckad/part4-environment/module-4.6-crds.md) | ✅ |
+
+### Part 5: Services and Networking (20%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 5.1 | [Services](docs/ckad/part5-networking/module-5.1-services.md) | ✅ |
+| 5.2 | [Ingress](docs/ckad/part5-networking/module-5.2-ingress.md) | ✅ |
+| 5.3 | [NetworkPolicies](docs/ckad/part5-networking/module-5.3-networkpolicies.md) | ✅ |
 
 ---
 
