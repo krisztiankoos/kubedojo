@@ -508,6 +508,16 @@ Investment allocation (example):
     └─────────────────────────────────────────────────────┘
 ```
 
+> **War Story: The Team That Stopped Blaming**
+>
+> A platform team had a toxic incident culture. After every outage: "Who deployed last? Whose code was it? Who's responsible?" Engineers hid information. Post-incident meetings were interrogations. The same problems kept happening.
+>
+> A new engineering director introduced blameless postmortems. The first one felt awkward—people kept trying to assign blame. She redirected: "We're not asking who. We're asking why the system allowed this to happen."
+>
+> Six months later: postmortem participation doubled. Engineers volunteered information. Action items actually got completed because people owned them willingly, not defensively. Incident recurrence dropped 60%.
+>
+> The insight: When people fear blame, they hide information. When they feel safe, they share what went wrong. Reliability improves when learning replaces blame.
+
 ---
 
 ## Did You Know?

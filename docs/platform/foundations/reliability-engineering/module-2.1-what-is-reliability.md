@@ -314,6 +314,18 @@ The goal isn't 100%. The goal is "reliable enough" for your users.
 >
 > Google's Chubby lock service intentionally introduces planned outages. Why? To ensure that dependent services don't accidentally build assumptions about 100% availability. If Chubby were "too reliable," services would fail catastrophically when it eventually had an unplanned outage. Controlled unreliability builds resilience.
 
+> **War Story: The 99.99% Promise**
+>
+> A SaaS company promised enterprise customers "99.99% availability" in contracts. Marketing loved the number. Sales closed deals with it. Nobody did the math.
+>
+> 99.99% means 4.4 minutes of downtime per month. Their average incident took 45 minutes to resolve. One incident per month would blow the SLA.
+>
+> First quarter: 3 incidents, customers invoking SLA credits. The credits cost more than the engineering team's annual budget for reliability improvements.
+>
+> The fix wasn't better reliability—it was honest expectations. They renegotiated to 99.9% (43 minutes/month), invested in faster incident response, and actually hit their targets. Customers were happier with a realistic promise kept than an ambitious promise broken.
+>
+> Lesson: Your SLA should match your operational capability, not your marketing aspirations.
+
 ---
 
 ## Part 4: Reliability as a Practice

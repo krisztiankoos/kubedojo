@@ -530,6 +530,16 @@ Simple system:
 
 **Lesson**: Redundancy only helps if the failover mechanism is reliable. Test it regularly.
 
+> **War Story: The Backup That Wasn't**
+>
+> A financial services company had "highly available" PostgreSQL: a primary with streaming replication to a standby. They were proud of their architecture diagrams. They never tested failover.
+>
+> When the primary failed, they triggered manual failover. The standby came up—with a 6-hour replication lag. Transactions from the last 6 hours were gone. It turned out monitoring had been alerting on lag for months, but the alerts went to a distribution list nobody read.
+>
+> Recovery took 3 days: restore from backup, replay transaction logs, reconcile with payment processors, apologize to customers. The CEO learned what "replication lag" means the hard way.
+>
+> Now they run failover drills monthly. They verify replication lag every deploy. And someone actually reads the alerts.
+
 ---
 
 ## Did You Know?
