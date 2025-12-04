@@ -24,13 +24,15 @@ If you can learn for free, you should be able to.
 
 KubeDojo prepares you for all 5 core Kubernetes certifications required for [Kubestronaut](https://www.cncf.io/training/kubestronaut/) status:
 
-| Cert | Name | Type | Status |
-|------|------|------|--------|
-| **CKA** | Certified Kubernetes Administrator | Hands-on lab | 🚧 In Progress |
-| **CKAD** | Certified Kubernetes Application Developer | Hands-on lab | ✅ Complete |
-| **CKS** | Certified Kubernetes Security Specialist | Hands-on lab | 📋 Planned |
-| **KCNA** | Kubernetes & Cloud Native Associate | Multiple choice | 📋 Planned |
-| **KCSA** | Kubernetes & Cloud Native Security Associate | Multiple choice | 📋 Planned |
+| Cert | Name | Type | Modules | Status |
+|------|------|------|---------|--------|
+| **CKA** | Certified Kubernetes Administrator | Hands-on lab | 38 | ✅ Complete |
+| **CKAD** | Certified Kubernetes Application Developer | Hands-on lab | 28 | ✅ Complete |
+| **CKS** | Certified Kubernetes Security Specialist | Hands-on lab | 30 | ✅ Complete |
+| **KCNA** | Kubernetes & Cloud Native Associate | Multiple choice | 21 | ✅ Complete |
+| **KCSA** | Kubernetes & Cloud Native Security Associate | Multiple choice | - | 📋 Planned |
+| | **Prerequisites** | Foundation | 23 | ✅ Complete |
+| | **Total** | | **140** | |
 
 ---
 
@@ -187,6 +189,131 @@ The CKAD tests your ability to design, build, and deploy cloud-native applicatio
 | 5.1 | [Services](docs/ckad/part5-networking/module-5.1-services.md) | ✅ |
 | 5.2 | [Ingress](docs/ckad/part5-networking/module-5.2-ingress.md) | ✅ |
 | 5.3 | [NetworkPolicies](docs/ckad/part5-networking/module-5.3-networkpolicies.md) | ✅ |
+
+---
+
+## CKS Curriculum (2025) ✅
+
+> **Curriculum Version**: CKS 2025
+>
+> Based on [CNCF Official Curriculum](https://github.com/cncf/curriculum)
+>
+> **Prerequisite**: Active CKA certification required
+
+The CKS tests your ability to secure Kubernetes clusters, from infrastructure to runtime.
+
+### Part 0: Environment & Exam Strategy ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 0.1 | [CKS Overview](docs/cks/part0-environment/module-0.1-cks-overview.md) | ✅ |
+| 0.2 | [Security Lab Setup](docs/cks/part0-environment/module-0.2-security-lab.md) | ✅ |
+| 0.3 | [Security Tools](docs/cks/part0-environment/module-0.3-security-tools.md) | ✅ |
+| 0.4 | [Exam Strategy](docs/cks/part0-environment/module-0.4-exam-strategy.md) | ✅ |
+
+### Part 1: Cluster Setup (10%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1.1 | [Network Policies](docs/cks/part1-cluster-setup/module-1.1-network-policies.md) | ✅ |
+| 1.2 | [CIS Benchmarks](docs/cks/part1-cluster-setup/module-1.2-cis-benchmarks.md) | ✅ |
+| 1.3 | [Ingress Security](docs/cks/part1-cluster-setup/module-1.3-ingress-security.md) | ✅ |
+| 1.4 | [Node Metadata Protection](docs/cks/part1-cluster-setup/module-1.4-node-metadata.md) | ✅ |
+| 1.5 | [GUI Security](docs/cks/part1-cluster-setup/module-1.5-gui-security.md) | ✅ |
+
+### Part 2: Cluster Hardening (15%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 2.1 | [RBAC Deep-Dive](docs/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive.md) | ✅ |
+| 2.2 | [ServiceAccount Security](docs/cks/part2-cluster-hardening/module-2.2-serviceaccount-security.md) | ✅ |
+| 2.3 | [API Server Security](docs/cks/part2-cluster-hardening/module-2.3-api-server-security.md) | ✅ |
+| 2.4 | [Kubernetes Upgrades](docs/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades.md) | ✅ |
+| 2.5 | [Restricting API Access](docs/cks/part2-cluster-hardening/module-2.5-restricting-api-access.md) | ✅ |
+
+### Part 3: System Hardening (15%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 3.1 | [AppArmor](docs/cks/part3-system-hardening/module-3.1-apparmor.md) | ✅ |
+| 3.2 | [Seccomp](docs/cks/part3-system-hardening/module-3.2-seccomp.md) | ✅ |
+| 3.3 | [Kernel Hardening](docs/cks/part3-system-hardening/module-3.3-kernel-hardening.md) | ✅ |
+| 3.4 | [Network Security](docs/cks/part3-system-hardening/module-3.4-network-security.md) | ✅ |
+
+### Part 4: Minimize Microservice Vulnerabilities (20%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 4.1 | [Security Contexts](docs/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts.md) | ✅ |
+| 4.2 | [Pod Security Admission](docs/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission.md) | ✅ |
+| 4.3 | [Secrets Management](docs/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management.md) | ✅ |
+| 4.4 | [Runtime Sandboxing](docs/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing.md) | ✅ |
+
+### Part 5: Supply Chain Security (20%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 5.1 | [Image Security](docs/cks/part5-supply-chain-security/module-5.1-image-security.md) | ✅ |
+| 5.2 | [Image Scanning](docs/cks/part5-supply-chain-security/module-5.2-image-scanning.md) | ✅ |
+| 5.3 | [Static Analysis](docs/cks/part5-supply-chain-security/module-5.3-static-analysis.md) | ✅ |
+| 5.4 | [Admission Controllers](docs/cks/part5-supply-chain-security/module-5.4-admission-controllers.md) | ✅ |
+
+### Part 6: Monitoring, Logging and Runtime Security (20%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 6.1 | [Audit Logging](docs/cks/part6-runtime-security/module-6.1-audit-logging.md) | ✅ |
+| 6.2 | [Falco](docs/cks/part6-runtime-security/module-6.2-falco.md) | ✅ |
+| 6.3 | [Container Investigation](docs/cks/part6-runtime-security/module-6.3-container-investigation.md) | ✅ |
+| 6.4 | [Immutable Infrastructure](docs/cks/part6-runtime-security/module-6.4-immutable-infrastructure.md) | ✅ |
+
+---
+
+## KCNA Curriculum ✅
+
+> **Kubernetes and Cloud Native Associate** - Entry-level certification
+>
+> **Format**: Multiple choice (not hands-on), 90 minutes, ~60 questions, 75% to pass
+
+The KCNA tests conceptual understanding of Kubernetes and cloud native technologies.
+
+### Part 0: Introduction ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 0.1 | [KCNA Overview](docs/kcna/part0-introduction/module-0.1-kcna-overview.md) | ✅ |
+| 0.2 | [Study Strategy](docs/kcna/part0-introduction/module-0.2-study-strategy.md) | ✅ |
+
+### Part 1: Kubernetes Fundamentals (46%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 1.1 | [What is Kubernetes](docs/kcna/part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes.md) | ✅ |
+| 1.2 | [Container Fundamentals](docs/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals.md) | ✅ |
+| 1.3 | [Control Plane](docs/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane.md) | ✅ |
+| 1.4 | [Node Components](docs/kcna/part1-kubernetes-fundamentals/module-1.4-node-components.md) | ✅ |
+| 1.5 | [Pods](docs/kcna/part1-kubernetes-fundamentals/module-1.5-pods.md) | ✅ |
+| 1.6 | [Workload Resources](docs/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources.md) | ✅ |
+| 1.7 | [Services](docs/kcna/part1-kubernetes-fundamentals/module-1.7-services.md) | ✅ |
+| 1.8 | [Namespaces & Labels](docs/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md) | ✅ |
+
+### Part 2: Container Orchestration (22%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 2.1 | [Scheduling](docs/kcna/part2-container-orchestration/module-2.1-scheduling.md) | ✅ |
+| 2.2 | [Scaling](docs/kcna/part2-container-orchestration/module-2.2-scaling.md) | ✅ |
+| 2.3 | [Storage](docs/kcna/part2-container-orchestration/module-2.3-storage.md) | ✅ |
+| 2.4 | [Configuration](docs/kcna/part2-container-orchestration/module-2.4-configuration.md) | ✅ |
+
+### Part 3: Cloud Native Architecture (16%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 3.1 | [Cloud Native Principles](docs/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles.md) | ✅ |
+| 3.2 | [CNCF Ecosystem](docs/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md) | ✅ |
+| 3.3 | [Cloud Native Patterns](docs/kcna/part3-cloud-native-architecture/module-3.3-patterns.md) | ✅ |
+
+### Part 4: Cloud Native Observability (8%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 4.1 | [Observability Fundamentals](docs/kcna/part4-cloud-native-observability/module-4.1-observability-fundamentals.md) | ✅ |
+| 4.2 | [Observability Tools](docs/kcna/part4-cloud-native-observability/module-4.2-observability-tools.md) | ✅ |
+
+### Part 5: Application Delivery (8%) ✅
+| Module | Topic | Status |
+|--------|-------|--------|
+| 5.1 | [CI/CD Fundamentals](docs/kcna/part5-application-delivery/module-5.1-ci-cd.md) | ✅ |
+| 5.2 | [Application Packaging](docs/kcna/part5-application-delivery/module-5.2-application-packaging.md) | ✅ |
 
 ---
 
