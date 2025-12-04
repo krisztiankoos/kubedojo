@@ -53,11 +53,42 @@ if [ -f "claude_extensions/deploy.sh" ]; then
     echo "✅ Extensions deployed"
 fi
 
-# Show KubeDojo-specific reminders
+# Show KubeDojo status (dynamically from STATUS.md)
 echo ""
 echo "📚 KUBEDOJO - Kubernetes Certification Training"
-echo "   • CKA: Theory complete (38 modules), mock exams pending"
-echo "   • CKAD: In progress"
+
+if [ -f "STATUS.md" ]; then
+    # Extract current work line
+    CURRENT_WORK=$(grep -A1 "## Current Work" STATUS.md | tail -1 | sed 's/^\*\*//' | sed 's/\*\*.*//')
+    if [ -n "$CURRENT_WORK" ]; then
+        echo "   • Status: $CURRENT_WORK"
+    fi
+
+    # Extract curriculum status table
+    echo "   • Curricula:"
+    grep -E "^\| (CKA|CKAD|CKS|KCNA|KCSA|Prerequisites) \|" STATUS.md 2>/dev/null | while read line; do
+        NAME=$(echo "$line" | cut -d'|' -f2 | xargs)
+        STATUS=$(echo "$line" | cut -d'|' -f3 | xargs)
+        MODULES=$(echo "$line" | cut -d'|' -f4 | xargs)
+        # Shorten status symbols
+        if [[ "$STATUS" == *"Complete"* ]]; then
+            echo "       $NAME: ✅ $MODULES modules"
+        elif [[ "$STATUS" == *"Progress"* ]]; then
+            echo "       $NAME: 🚧 In progress ($MODULES)"
+        elif [[ "$STATUS" == *"Next"* ]] || [[ "$STATUS" == *"Pending"* ]]; then
+            echo "       $NAME: ⏳ Pending"
+        fi
+    done
+
+    # Extract next steps
+    NEXT=$(grep -A1 "## Next Steps" STATUS.md | tail -1 | sed 's/^- //')
+    if [ -n "$NEXT" ]; then
+        echo "   • Next: $NEXT"
+    fi
+else
+    echo "   • (STATUS.md not found - run from project root)"
+fi
+
 echo "   • Issues: https://github.com/krisztiankoos/kubedojo/issues"
 echo "   • Commands: /review-module, /review-part, /verify-technical"
 

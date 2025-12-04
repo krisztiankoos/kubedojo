@@ -30,9 +30,9 @@ KubeDojo prepares you for all 5 core Kubernetes certifications required for [Kub
 | **CKAD** | Certified Kubernetes Application Developer | Hands-on lab | 28 | ✅ Complete |
 | **CKS** | Certified Kubernetes Security Specialist | Hands-on lab | 30 | ✅ Complete |
 | **KCNA** | Kubernetes & Cloud Native Associate | Multiple choice | 21 | ✅ Complete |
-| **KCSA** | Kubernetes & Cloud Native Security Associate | Multiple choice | - | 📋 Planned |
+| **KCSA** | Kubernetes & Cloud Native Security Associate | Multiple choice | 25 | ✅ Complete |
 | | **Prerequisites** | Foundation | 23 | ✅ Complete |
-| | **Total** | | **140** | |
+| | **Total** | | **165** | |
 
 ---
 
