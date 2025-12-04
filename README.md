@@ -153,11 +153,21 @@ KubeDojo is different:
 
 ## Contributing
 
-Contributions welcome:
-- Fix errors or typos
-- Add war stories from your experience
-- Improve explanations
-- Report issues
+**What we need:**
+- **Hands-on exercises** — Real scenarios, not toy examples
+- **War stories** — Production incidents that teach lessons
+- **Tool expertise** — Deep-dives on ArgoCD, Prometheus, Vault, etc.
+- **Error fixes** — Typos, outdated commands, broken YAML
+
+**What we don't build:**
+- Exam simulators — Use [killer.sh](https://killer.sh) (included with exam purchase)
+- Lab environments — Use [killercoda.com](https://killercoda.com) or local kind/minikube
+- Video content — Text-first, searchable, version-controlled
+
+**How to contribute:**
+- Open an issue to discuss before large PRs
+- Follow existing module structure
+- Test all commands and YAML before submitting
 
 ---
 
