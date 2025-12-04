@@ -1,0 +1,905 @@
+# Module 4.4: Secure by Default
+
+> **Complexity**: `[MEDIUM]`
+>
+> **Time to Complete**: 30-35 minutes
+>
+> **Prerequisites**: [Module 4.3: Identity and Access Management](module-4.3-identity-and-access.md)
+>
+> **Track**: Foundations
+
+---
+
+## Why This Module Matters
+
+Most security breaches don't exploit sophisticated zero-days. They exploit misconfigurations, default passwords, and forgotten settings. The attacker didn't have to be clever—they just found what was left open.
+
+**Secure by default** means systems ship in a secure state. Instead of requiring users to enable security, they have to explicitly disable it. Instead of hoping developers remember to validate input, the framework does it automatically.
+
+This module teaches you how to build systems where the path of least resistance is also the secure path—where doing things the easy way is also doing them safely.
+
+> **The Seatbelt Analogy**
+>
+> Old cars required you to find the seatbelt and buckle it. Many people didn't. Modern cars beep until you buckle up—the annoying path is the unsafe path. Some won't even start until passengers are buckled. The default became safe, and the unsafe choice became harder.
+
+---
+
+## What You'll Learn
+
+- What "secure by default" means in practice
+- How to design secure defaults for configurations
+- Common insecure defaults and how to fix them
+- Security guardrails that prevent mistakes
+- How Kubernetes implements secure defaults
+
+---
+
+## Part 1: The Secure Default Philosophy
+
+### 1.1 Default State Matters
+
+```
+THE IMPORTANCE OF DEFAULTS
+═══════════════════════════════════════════════════════════════
+
+INSECURE BY DEFAULT
+─────────────────────────────────────────────────────────────
+    Installation → Everything open
+    User must manually secure each setting
+
+    ┌────────────────────────────────────────────────────────┐
+    │ Default Settings:                                      │
+    │   Admin password: admin                                │
+    │   API authentication: disabled                         │
+    │   Encryption: disabled                                 │
+    │   Firewall: allow all                                  │
+    │   Debug mode: enabled                                  │
+    │                                                        │
+    │ "Please secure before production use"                  │
+    │                                                        │
+    │ Reality: Most users don't.                            │
+    └────────────────────────────────────────────────────────┘
+
+SECURE BY DEFAULT
+─────────────────────────────────────────────────────────────
+    Installation → Everything locked down
+    User must explicitly open what's needed
+
+    ┌────────────────────────────────────────────────────────┐
+    │ Default Settings:                                      │
+    │   Admin password: must be set on first run            │
+    │   API authentication: required                         │
+    │   Encryption: TLS enabled                             │
+    │   Firewall: deny all (allowlist needed)               │
+    │   Debug mode: disabled                                 │
+    │                                                        │
+    │ "Enable features as needed"                           │
+    │                                                        │
+    │ Reality: Security happens automatically.              │
+    └────────────────────────────────────────────────────────┘
+```
+
+### 1.2 Why Secure Defaults Win
+
+| Factor | Insecure Default | Secure Default |
+|--------|------------------|----------------|
+| **Setup friction** | Easy setup, insecure | Slightly harder, but safe |
+| **User expertise** | Requires security knowledge | Works for everyone |
+| **Forgotten configs** | Become attack vectors | Remain safe |
+| **Time pressure** | "We'll secure later" (won't) | Already secure |
+| **Audit findings** | Many defaults insecure | Clean by default |
+
+> **Try This (2 minutes)**
+>
+> Think of software you've installed. What were the defaults?
+>
+> | Software | Default Setting | Secure? |
+> |----------|----------------|---------|
+> | | | |
+> | | | |
+> | | | |
+>
+> How many required you to manually enable security?
+
+---
+
+## Part 2: Designing Secure Defaults
+
+### 2.1 Authentication Defaults
+
+```
+AUTHENTICATION DEFAULTS
+═══════════════════════════════════════════════════════════════
+
+PASSWORDS
+─────────────────────────────────────────────────────────────
+    ✗ Default password: "admin" or "password"
+    ✗ No password required initially
+    ✓ Force password set on first use
+    ✓ Require minimum complexity
+
+    # Good: Force password creation
+    if not user.has_password_set():
+        redirect('/setup/create-password')
+
+API ACCESS
+─────────────────────────────────────────────────────────────
+    ✗ API accessible without authentication
+    ✗ Optional authentication ("can be enabled")
+    ✓ Authentication required by default
+    ✓ All endpoints protected unless explicitly public
+
+    # Framework level default
+    @require_auth  # Applied to all routes by default
+    class APIView:
+        pass
+
+    @public  # Must explicitly mark as public
+    class HealthCheck:
+        pass
+
+SESSION MANAGEMENT
+─────────────────────────────────────────────────────────────
+    ✗ Sessions never expire
+    ✗ Long session timeouts (30 days)
+    ✓ Reasonable session timeout (hours, not days)
+    ✓ Secure cookie flags by default (HttpOnly, Secure, SameSite)
+```
+
+### 2.2 Network Defaults
+
+```
+NETWORK DEFAULTS
+═══════════════════════════════════════════════════════════════
+
+BINDING
+─────────────────────────────────────────────────────────────
+    ✗ Listen on 0.0.0.0 (all interfaces)
+    ✓ Listen on localhost by default
+    ✓ Require explicit config to expose externally
+
+    # Dangerous default
+    server.listen('0.0.0.0', 8080)  # World-accessible
+
+    # Secure default
+    server.listen('127.0.0.1', 8080)  # Local only
+    # User must configure to expose
+
+ENCRYPTION
+─────────────────────────────────────────────────────────────
+    ✗ Plain HTTP by default
+    ✗ TLS "optional"
+    ✓ TLS required by default
+    ✓ Modern TLS versions only (1.2+)
+    ✓ Strong cipher suites only
+
+FIREWALL / NETWORK POLICY
+─────────────────────────────────────────────────────────────
+    ✗ Allow all traffic
+    ✗ No firewall rules
+    ✓ Deny all by default
+    ✓ Explicit allowlist required
+```
+
+### 2.3 Data Defaults
+
+```
+DATA DEFAULTS
+═══════════════════════════════════════════════════════════════
+
+ENCRYPTION
+─────────────────────────────────────────────────────────────
+    ✗ Store data in plain text
+    ✗ Encryption available but not enabled
+    ✓ Encryption at rest by default
+    ✓ Encryption in transit required
+
+LOGGING
+─────────────────────────────────────────────────────────────
+    ✗ Log everything including secrets
+    ✗ No log sanitization
+    ✓ Automatic secret redaction
+    ✓ PII filtering by default
+
+    # Automatic redaction
+    logger.info("User login", extra={
+        "username": user.email,      # Logged
+        "password": user.password,   # [REDACTED]
+        "api_key": request.api_key   # [REDACTED]
+    })
+
+INPUT HANDLING
+─────────────────────────────────────────────────────────────
+    ✗ Trust all input
+    ✗ Validation optional
+    ✓ Validate and sanitize all input by default
+    ✓ Parameterized queries enforced (no string concatenation)
+
+    # Framework prevents SQL injection by default
+    users = db.query(User).filter_by(email=email).all()
+    # Not: f"SELECT * FROM users WHERE email = '{email}'"
+```
+
+---
+
+## Part 3: Guardrails and Constraints
+
+### 3.1 What are Guardrails?
+
+```
+GUARDRAILS
+═══════════════════════════════════════════════════════════════
+
+Guardrails are constraints that prevent mistakes without
+blocking legitimate work.
+
+HIGHWAY GUARDRAILS
+─────────────────────────────────────────────────────────────
+    - Don't slow you down during normal driving
+    - Prevent you from going off a cliff
+    - You hit them only when something goes wrong
+
+SECURITY GUARDRAILS
+─────────────────────────────────────────────────────────────
+    - Don't block normal development
+    - Prevent dangerous configurations
+    - You notice them only when doing something risky
+
+EXAMPLES
+─────────────────────────────────────────────────────────────
+┌────────────────────────────────────────────────────────────┐
+│ CI/CD Pipeline:                                            │
+│   ✓ Allows all normal deployments                         │
+│   ✗ Blocks deployment without security scan               │
+│   ✗ Blocks deployment of containers as root               │
+│   ✗ Blocks deployment with critical vulnerabilities       │
+│                                                            │
+│ Policy as Code:                                            │
+│   ✓ Allows pods with security context                     │
+│   ✗ Blocks pods without resource limits                   │
+│   ✗ Blocks pods with hostNetwork: true                    │
+│   ✗ Blocks images from untrusted registries               │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 Implementing Guardrails
+
+```
+GUARDRAIL IMPLEMENTATION
+═══════════════════════════════════════════════════════════════
+
+PRE-COMMIT HOOKS
+─────────────────────────────────────────────────────────────
+Stop problems before they're committed.
+
+    # .pre-commit-config.yaml
+    repos:
+    - repo: https://github.com/gitleaks/gitleaks
+      hooks:
+      - id: gitleaks  # Prevent committing secrets
+
+    - repo: https://github.com/hadolint/hadolint
+      hooks:
+      - id: hadolint  # Lint Dockerfiles for security
+
+CI PIPELINE GATES
+─────────────────────────────────────────────────────────────
+Stop problems before they're merged.
+
+    pipeline:
+      - security-scan:
+          fail_on: CRITICAL, HIGH
+      - container-scan:
+          fail_on: CVE score > 7.0
+      - policy-check:
+          policies: [no-root, resource-limits, no-privileged]
+
+ADMISSION CONTROLLERS
+─────────────────────────────────────────────────────────────
+Stop problems before they're deployed.
+
+    # OPA Gatekeeper, Kyverno
+    Block at the Kubernetes API:
+    - Pods without security context
+    - Containers running as root
+    - Images from unauthorized registries
+    - Resources without limits
+```
+
+### 3.3 Kubernetes Pod Security Standards
+
+```
+POD SECURITY STANDARDS
+═══════════════════════════════════════════════════════════════
+
+Kubernetes defines three security levels:
+
+PRIVILEGED (No restrictions)
+─────────────────────────────────────────────────────────────
+    For system-level workloads that need full access.
+    Use only when necessary.
+
+BASELINE (Minimal restrictions)
+─────────────────────────────────────────────────────────────
+    Prevents known privilege escalations.
+    Blocks: hostNetwork, hostPID, privileged containers
+
+RESTRICTED (Maximum security)
+─────────────────────────────────────────────────────────────
+    Enforces security best practices.
+    Requires: non-root, drop all capabilities,
+              read-only root filesystem
+
+APPLYING STANDARDS
+─────────────────────────────────────────────────────────────
+# Namespace-level enforcement
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+# Now all pods in production must meet restricted standard
+```
+
+> **War Story: The Privileged Container**
+>
+> A developer needed to debug a production issue. "I'll just run a privileged container real quick." They deployed with `privileged: true` and forgot about it.
+>
+> Six months later, attackers compromised a vulnerable dependency in that service. The privileged container gave them root on the node. From there, they accessed secrets for other pods and moved laterally through the cluster.
+>
+> After the breach, the team implemented Pod Security Standards. Now `privileged: true` is blocked in production namespaces. The developer would have gotten an immediate error instead of a deployed vulnerability.
+
+---
+
+## Part 4: Secure Configuration Management
+
+### 4.1 Configuration as Code
+
+```
+CONFIGURATION MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+ANTI-PATTERN: Manual configuration
+─────────────────────────────────────────────────────────────
+    - SSH into server
+    - Edit config file
+    - Restart service
+    - Hope you didn't break anything
+    - No record of what changed
+
+    Problems:
+    - Configuration drift between environments
+    - No audit trail
+    - Easy to make mistakes
+    - Hard to reproduce
+
+PATTERN: Configuration as code
+─────────────────────────────────────────────────────────────
+    - All configuration in version control
+    - Changes go through pull request
+    - Automated deployment
+    - Full history of changes
+
+    Benefits:
+    - Identical configuration across environments
+    - Review before apply
+    - Easy rollback
+    - Audit trail
+```
+
+### 4.2 Secrets Management
+
+```
+SECRETS MANAGEMENT
+═══════════════════════════════════════════════════════════════
+
+WRONG: Secrets in config files
+─────────────────────────────────────────────────────────────
+    # config.yaml (checked into git!)
+    database:
+      password: "super_secret_password"
+
+    Problems:
+    - Visible to anyone with repo access
+    - In git history forever
+    - Same secret across environments
+
+RIGHT: External secrets management
+─────────────────────────────────────────────────────────────
+    # config.yaml
+    database:
+      password: ${DATABASE_PASSWORD}  # From environment
+
+    # Even better: from secrets manager
+    database:
+      password_path: vault://secret/db/password
+
+KUBERNETES SECRETS
+─────────────────────────────────────────────────────────────
+    # Still not great: base64 encoded, not encrypted
+    apiVersion: v1
+    kind: Secret
+    data:
+      password: c3VwZXJfc2VjcmV0  # Just base64!
+
+    # Better: External Secrets Operator
+    apiVersion: external-secrets.io/v1beta1
+    kind: ExternalSecret
+    spec:
+      secretStoreRef:
+        name: vault
+      target:
+        name: db-credentials
+      data:
+      - secretKey: password
+        remoteRef:
+          key: secret/db/password
+```
+
+### 4.3 Immutable Infrastructure
+
+```
+IMMUTABLE INFRASTRUCTURE
+═══════════════════════════════════════════════════════════════
+
+MUTABLE (Traditional)
+─────────────────────────────────────────────────────────────
+    Deploy server → Update in place → Update again → ...
+
+    ┌──────────┐   ┌──────────┐   ┌──────────┐
+    │ Server   │──▶│ Updated  │──▶│ Updated  │
+    │ v1       │   │ v1.1     │   │ v1.2     │
+    └──────────┘   └──────────┘   └──────────┘
+
+    Problems:
+    - Configuration drift
+    - "Works on my machine"
+    - Security patches inconsistent
+    - Hard to know current state
+
+IMMUTABLE
+─────────────────────────────────────────────────────────────
+    Build image → Deploy → Replace (never update)
+
+    ┌──────────┐        ┌──────────┐        ┌──────────┐
+    │ Image v1 │        │ Image v2 │        │ Image v3 │
+    └────┬─────┘        └────┬─────┘        └────┬─────┘
+         │   Delete          │   Delete          │
+    ┌────▼─────┐        ┌────▼─────┐        ┌────▼─────┐
+    │ Server A │        │ Server B │        │ Server C │
+    └──────────┘        └──────────┘        └──────────┘
+
+    Benefits:
+    - Reproducible deployments
+    - Known state at all times
+    - Easy rollback (deploy previous image)
+    - Security: can't modify running container
+```
+
+> **Try This (3 minutes)**
+>
+> Audit your configuration:
+>
+> | Configuration | In Version Control? | Has Secrets? | Secure? |
+> |---------------|--------------------|--------------|---------|
+> | App config | | | |
+> | Infrastructure | | | |
+> | CI/CD pipelines | | | |
+> | Kubernetes manifests | | | |
+
+---
+
+## Part 5: Security by Design Patterns
+
+### 5.1 Secure Framework Patterns
+
+```
+SECURE FRAMEWORK PATTERNS
+═══════════════════════════════════════════════════════════════
+
+AUTO-ESCAPING (XSS Prevention)
+─────────────────────────────────────────────────────────────
+    # Django template - auto-escapes by default
+    {{ user_input }}  →  &lt;script&gt;...
+
+    # To allow HTML, must explicitly disable
+    {{ user_input|safe }}  # Developer knows they're taking risk
+
+PARAMETERIZED QUERIES (SQL Injection Prevention)
+─────────────────────────────────────────────────────────────
+    # ORM forces parameterization
+    User.objects.filter(email=user_email)  # Safe
+
+    # Raw SQL requires explicit params
+    cursor.execute("SELECT * FROM users WHERE email = %s", [email])
+
+    # String formatting errors immediately
+    cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")
+    # ^ Framework should warn or error
+
+CSRF PROTECTION
+─────────────────────────────────────────────────────────────
+    # Framework adds CSRF token to forms automatically
+    <form method="post">
+        {% csrf_token %}  <!-- Auto-injected -->
+        ...
+    </form>
+
+    # POST without valid token is rejected by default
+```
+
+### 5.2 Secure API Patterns
+
+```
+SECURE API PATTERNS
+═══════════════════════════════════════════════════════════════
+
+AUTHENTICATION REQUIRED BY DEFAULT
+─────────────────────────────────────────────────────────────
+    # All routes require auth unless marked public
+    @app.route('/api/users')
+    @require_auth  # Applied globally
+    def get_users():
+        pass
+
+    @app.route('/health')
+    @public  # Explicit opt-out
+    def health_check():
+        return 'OK'
+
+RATE LIMITING BY DEFAULT
+─────────────────────────────────────────────────────────────
+    # Default rate limit for all endpoints
+    app.config['RATELIMIT_DEFAULT'] = "100/minute"
+
+    # Specific endpoints can override
+    @app.route('/api/expensive')
+    @rate_limit("10/minute")  # Stricter
+    def expensive_operation():
+        pass
+
+INPUT VALIDATION BY DEFAULT
+─────────────────────────────────────────────────────────────
+    # Pydantic, Marshmallow, etc.
+    class UserInput(BaseModel):
+        email: EmailStr        # Must be valid email
+        age: int = Field(ge=0, le=150)  # Bounded integer
+
+    @app.route('/api/users', methods=['POST'])
+    def create_user(user: UserInput):  # Auto-validated
+        pass  # Only reaches here if input is valid
+```
+
+### 5.3 Secure Deployment Patterns
+
+```
+SECURE DEPLOYMENT PATTERNS
+═══════════════════════════════════════════════════════════════
+
+MINIMAL BASE IMAGES
+─────────────────────────────────────────────────────────────
+    # Bad: Full OS with unnecessary packages
+    FROM ubuntu:22.04
+    # Contains: bash, curl, wget, apt, hundreds of packages
+
+    # Better: Minimal base
+    FROM alpine:3.18
+    # Contains: minimal shell, busybox utilities
+
+    # Best: Distroless (no shell at all)
+    FROM gcr.io/distroless/static
+    # Contains: only what your app needs
+    # Attacker can't run shell commands if there's no shell
+
+NON-ROOT BY DEFAULT
+─────────────────────────────────────────────────────────────
+    # Dockerfile
+    FROM node:20-alpine
+
+    # Create non-root user
+    RUN addgroup -S app && adduser -S app -G app
+
+    # Set ownership
+    COPY --chown=app:app . /app
+    WORKDIR /app
+
+    # Run as non-root
+    USER app
+    CMD ["node", "server.js"]
+
+READ-ONLY FILESYSTEM
+─────────────────────────────────────────────────────────────
+    # Kubernetes deployment
+    spec:
+      containers:
+      - name: app
+        securityContext:
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp  # Writable temp if needed
+      volumes:
+      - name: tmp
+        emptyDir: {}
+```
+
+---
+
+## Did You Know?
+
+- **MongoDB's default config** used to bind to 0.0.0.0 with no authentication. In 2017, 27,000+ MongoDB instances were found exposed and ransomed. Now it binds to localhost by default.
+
+- **AWS S3 bucket ACLs** defaulted to private for years, but complex permission systems led to many accidental public exposures. In 2023, AWS added "Block Public Access" settings that default to blocking all public access.
+
+- **Kubernetes 1.25** removed Pod Security Policies (PSP) in favor of Pod Security Standards (PSS), which are simpler and enabled by default in new namespaces.
+
+---
+
+## Common Mistakes
+
+| Mistake | Problem | Solution |
+|---------|---------|----------|
+| "We'll secure it later" | Later never comes | Secure by default from start |
+| Default admin credentials | Easy target | Force credential setup |
+| Debug mode in production | Exposes internals | Disable unless explicitly enabled |
+| Overly permissive CORS | XSS exposure | Explicit allowed origins |
+| No resource limits | DoS vulnerability | Limits required by policy |
+| Trust all registries | Malicious images | Allowlist registries |
+
+---
+
+## Quiz
+
+1. **Why is "secure by default" more effective than "security checklist"?**
+   <details>
+   <summary>Answer</summary>
+
+   A security checklist requires active effort—someone must remember to check each item. Items get skipped under time pressure, forgotten during updates, or missed by new team members.
+
+   Secure by default means security happens automatically:
+   - No action required to be secure
+   - Must take explicit action to be insecure
+   - Works for experts and beginners alike
+   - Survives staff turnover
+   - Can't be skipped under pressure
+
+   Example: A checklist says "configure firewall rules." Secure by default means the firewall denies all traffic until rules are added. The checklist can be ignored; the default cannot.
+   </details>
+
+2. **What's the difference between a guardrail and a gate?**
+   <details>
+   <summary>Answer</summary>
+
+   **Guardrails** prevent you from going off course while allowing normal movement. They're passive—you don't notice them until you hit them.
+   - Example: Pod Security Standards that block privileged containers
+   - Normal deployments pass through; only dangerous ones are stopped
+
+   **Gates** are checkpoints everyone must pass through. They're active—everyone interacts with them.
+   - Example: Manual security review required for every PR
+   - All deployments wait; throughput slows
+
+   Best practice: Use guardrails for common risks (automated, scalable) and gates for high-stakes decisions (manual review when warranted). Too many gates slow everything down; too few guardrails let problems through.
+   </details>
+
+3. **How does immutable infrastructure improve security?**
+   <details>
+   <summary>Answer</summary>
+
+   Immutable infrastructure improves security several ways:
+
+   1. **Known state**: Servers match the deployed image exactly. No configuration drift or unknown modifications.
+
+   2. **No persistent attackers**: Attackers can't install backdoors that survive deployment. Next deploy starts fresh.
+
+   3. **Easy patching**: Deploy new image with patches. No complex in-place upgrade process.
+
+   4. **Forensics**: Can compare running container to original image to detect modifications.
+
+   5. **Reduced attack surface**: Read-only filesystems prevent attackers from writing malicious files.
+
+   With mutable infrastructure, an attacker who gains access can modify the system and persist. With immutable, they're removed on next deploy.
+   </details>
+
+4. **Why should secrets never be in version control?**
+   <details>
+   <summary>Answer</summary>
+
+   Version control creates permanent, searchable history:
+
+   1. **History is forever**: Even if you delete a secret, it's in git history. Anyone with repo access can find it.
+
+   2. **Broad access**: Many people have repo access who shouldn't have production secrets.
+
+   3. **Forks and clones**: Secrets spread to every fork, every developer's machine.
+
+   4. **No rotation**: Secrets in code are hard to rotate. Change requires redeploy.
+
+   5. **Audit**: No log of who accessed the secret—anyone who cloned the repo has it.
+
+   Instead:
+   - Use environment variables (for simple cases)
+   - Use secrets managers (Vault, AWS Secrets Manager)
+   - Use Kubernetes ExternalSecrets to sync from secrets manager
+   - Reference secrets by path/name, not value
+   </details>
+
+---
+
+## Hands-On Exercise
+
+**Task**: Implement secure defaults for a Kubernetes deployment.
+
+**Scenario**: You have this insecure deployment:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: myapp:latest
+        ports:
+        - containerPort: 8080
+```
+
+**Part 1: Identify Security Issues (5 minutes)**
+
+List everything wrong with this deployment:
+
+| Issue | Risk | Severity |
+|-------|------|----------|
+| | | |
+| | | |
+| | | |
+| | | |
+| | | |
+
+**Part 2: Fix the Deployment (15 minutes)**
+
+Rewrite with secure defaults:
+
+```yaml
+# Your secure deployment here
+```
+
+**Part 3: Add Network Policy (10 minutes)**
+
+Create a NetworkPolicy that:
+- Denies all ingress by default
+- Allows only from specific sources
+
+```yaml
+# Your NetworkPolicy here
+```
+
+**Part 4: Add Pod Security (10 minutes)**
+
+Create namespace labels to enforce restricted pod security:
+
+```yaml
+# Your Namespace with pod security labels
+```
+
+**Success Criteria**:
+- [ ] Identified at least 5 security issues in original deployment
+- [ ] Fixed deployment includes: non-root user, read-only fs, resource limits, image tag (not latest), security context
+- [ ] Network policy implements default deny
+- [ ] Namespace enforces restricted pod security standard
+
+**Sample Solution**:
+
+<details>
+<summary>Show secure deployment</summary>
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      serviceAccountName: web-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: web
+        image: myapp:v1.2.3@sha256:abc123...  # Pinned
+        ports:
+        - containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+      volumes:
+      - name: tmp
+        emptyDir: {}
+```
+
+</details>
+
+---
+
+## Further Reading
+
+- **"Building Secure and Reliable Systems"** - Google. Comprehensive guide to building secure systems from the ground up.
+
+- **"Container Security"** - Liz Rice. Essential reading for securing containerized applications.
+
+- **CIS Benchmarks** - cisecurity.org. Industry-standard secure configuration baselines for various platforms.
+
+---
+
+## Track Complete: Security Principles
+
+Congratulations! You've completed the Security Principles foundation. You now understand:
+
+- The security mindset: think like an attacker, design like a defender
+- Defense in depth: layer independent security controls
+- Identity and access: authentication, authorization, least privilege
+- Secure by default: build security in, don't bolt it on
+
+**Where to go from here:**
+
+| Your Interest | Next Track |
+|---------------|------------|
+| Security in practice | [DevSecOps Discipline](../../disciplines/devsecops/) |
+| Security tools | [Security Tools Toolkit](../../toolkits/security-tools/) |
+| Kubernetes security | [CKS Certification](../../../k8s/cks/) |
+| Foundations | [Distributed Systems](../distributed-systems/) |
+
+---
+
+## Track Summary
+
+| Module | Key Takeaway |
+|--------|--------------|
+| 4.1 | Security is a mindset—think like attackers to defend against them |
+| 4.2 | Layer defenses—no single control is enough |
+| 4.3 | Authenticate who, authorize what—principle of least privilege |
+| 4.4 | Make security the default—secure path should be the easy path |
+
+*"Security is not a product, but a process."* — Bruce Schneier
