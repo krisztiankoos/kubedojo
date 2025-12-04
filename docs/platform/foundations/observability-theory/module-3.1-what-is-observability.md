@@ -490,6 +490,8 @@ You don't need to build everything at once. Start with:
 
 - **The term "pillars"** (logs, metrics, traces) has been criticized by observability practitioners. Charity Majors argues they're not pillars but rather different views of the same events. The "pillar" framing can lead teams to treat them as separate silos instead of integrated data.
 
+- **Twitter famously had a "Fail Whale"** page during outages in its early days. The engineering team couldn't debug distributed issues because they lacked observability—they had monitoring but couldn't answer "why." This drove major investments in distributed tracing that later influenced the industry.
+
 ---
 
 ## Common Mistakes

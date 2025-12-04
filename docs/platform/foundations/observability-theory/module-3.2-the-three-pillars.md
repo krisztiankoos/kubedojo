@@ -550,6 +550,8 @@ Benefits:
 
 - **Logs are the oldest pillar**—Unix systems have had syslog since the 1980s. Metrics became common in the 2000s (RRDtool, Graphite). Traces emerged in the 2010s with Dapper and microservices. The history reflects increasing system complexity.
 
+- **Uber built their own tracing system** called Jaeger (German for "hunter") in 2015, then open-sourced it. It was designed to handle their scale: billions of spans per day across thousands of microservices. Jaeger became a CNCF project and is now one of the most popular tracing backends.
+
 ---
 
 ## Common Mistakes

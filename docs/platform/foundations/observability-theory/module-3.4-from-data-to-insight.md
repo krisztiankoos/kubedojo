@@ -535,6 +535,8 @@ Mental models in one person's head don't scale. Share them:
 
 - **Expert intuition is real**. Studies show experienced operators can often sense something is wrong before any alert fires—they've internalized subtle patterns. This is the goal of building mental models.
 
+- **PagerDuty analyzed millions of incidents** and found that the median time to acknowledgement is 3 minutes, but the median time to resolution is 30 minutes. The investigation phase—understanding what's wrong—takes 10x longer than noticing something is wrong. Good observability reduces investigation time, not detection time.
+
 ---
 
 ## Common Mistakes

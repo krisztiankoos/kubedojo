@@ -612,6 +612,8 @@ except TimeoutError:
 
 - **The OpenTelemetry project** merged OpenTracing and OpenCensus in 2019. It's now the second-largest CNCF project (after Kubernetes) by contributors.
 
+- **LinkedIn discovered that 1% of their traces** consumed 50% of their tracing storage. These "mega-traces" from long-running batch jobs needed special handling. The lesson: not all requests are equal—design your sampling strategy accordingly.
+
 ---
 
 ## Common Mistakes
