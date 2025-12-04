@@ -350,6 +350,8 @@ Combine metrics into a single view:
 
 3. **Stack Overflow's 2023 survey found** that 90% of developers use Stack Overflow weekly. Your internal documentation competes with the entire internet—it better be good.
 
+4. **Microsoft research shows developers spend 64% of their time on non-coding tasks**—meetings, documentation, waiting for builds. DevEx improvements often target this "invisible" time rather than writing code.
+
 ---
 
 ## War Story: The Metric That Backfired

@@ -511,6 +511,8 @@ Timeline: 6-12 months initial, continuous evolution
 
 3. **The most successful IDPs often start with the portal**, not the infrastructure. Discoverability and documentation solve immediate pain; infrastructure abstraction can come later.
 
+4. **Humanitec's 2024 IDP benchmarking report** found that enterprises with mature IDPs deploy 4x more frequently than peers—while reducing change failure rates by 50%.
+
 ---
 
 ## War Story: The Million-Dollar Mistake

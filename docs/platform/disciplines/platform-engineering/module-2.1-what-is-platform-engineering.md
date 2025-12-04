@@ -249,6 +249,8 @@ When developers *choose* your platform over rolling their own, you've built some
 
 3. **Netflix's "Full Cycle Developers"** are often cited as DevOps success. What's less discussed: they have massive platform teams (like the Spinnaker team) enabling those developers. The platform is invisible but essential.
 
+4. **According to Gartner, by 2026, 80% of software engineering organizations will establish platform teams** as internal providers of reusable services, components, and tools. This is up from less than 45% in 2022.
+
 ---
 
 ## War Story: The Platform Nobody Used
