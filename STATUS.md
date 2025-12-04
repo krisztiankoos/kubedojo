@@ -5,6 +5,8 @@
 ## Current Work
 **All 5 certifications complete** - Full Kubestronaut curriculum ready!
 
+**NEW: Platform Engineering Track** - Beyond certifications (SRE, GitOps, DevSecOps, MLOps)
+
 ## KCSA Progress Summary
 | Part | Status | Modules |
 |------|--------|---------|
@@ -75,12 +77,20 @@
 | KCNA | ✅ Complete | 21 |
 | KCSA | ✅ Complete | 25 |
 | Prerequisites | ✅ Complete | 23 |
-| **Total** | | **165** |
+| **Certifications Total** | | **165** |
+
+## Platform Engineering Track (NEW)
+| Section | Status | Modules |
+|---------|--------|---------|
+| Foundations | 📋 Planned | 0/19 |
+| Disciplines | 📋 Planned | 0/31 |
+| Toolkits | 📋 Planned | 0/25 |
+| **Platform Total** | | **0/75** |
 
 ## Next Steps
-- CKA Mock Exams (Part 6) - optional
-- Quality review of KCSA modules
-- README updates across all curricula
+- Platform Track: Start with Foundations (Systems Thinking, Reliability Engineering)
+- Platform Track: Then SRE discipline
+- CKA Mock Exams (Part 6) - optional/deferred
 
 ## Blockers
 None
@@ -95,6 +105,8 @@ _2025-12-03: CKS reviewed & improved to 10/10 - Fixed 4 modules: Module 0.1 (add
 _2025-12-03: KCNA curriculum complete (21 modules across 6 parts). Multiple-choice exam format. Covers: Kubernetes Fundamentals (46%), Container Orchestration (22%), Cloud Native Architecture (16%), Observability (8%), Application Delivery (8%)._
 _2025-12-04: KCNA reviewed (10/10 quality), committed & pushed. Closed 10 GitHub issues (#2-6, #8, #9, #11, #12, #16). 5 issues remaining: KCSA (#10), CKA Mock Exams (#7), plus 3 meta/docs issues._
 _2025-12-04: KCSA curriculum complete (25 modules across 7 parts). Multiple-choice exam format. Covers: Cloud Native Security (14%), Cluster Component Security (22%), Security Fundamentals (22%), Threat Model (16%), Platform Security (16%), Compliance Frameworks (10%). Committed and pushed._
+_2025-12-04: KCSA reviewed - all 25 modules already at 10/10 quality. No changes needed. Comprehensive coverage with ASCII diagrams, quizzes, hands-on exercises, and security tool deep-dives (Trivy, Falco, kube-bench, OPA/Gatekeeper, etc.)._
+_2025-12-04: Platform Engineering Track planned - 75 modules across foundations (19), disciplines (31), and toolkits (25). Covers SRE, Platform Engineering, GitOps, DevSecOps, MLOps. Directory structure created, README updated with learning paths._
 
 ## Open GitHub Issues
 | # | Issue | Status |

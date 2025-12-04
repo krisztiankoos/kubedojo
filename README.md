@@ -1,8 +1,109 @@
 # KubeDojo
 
-**Free, comprehensive training for all 5 Kubernetes certifications.**
+**Free, comprehensive training for Kubernetes certifications and platform engineering.**
 
 No paywalls. No upsells. Just quality education.
+
+---
+
+## 🇺🇦 Присвята
+
+*Цей проєкт присвячується українським ІТ-інженерам, які віддали своє життя, захищаючи Батьківщину.*
+
+*Вони були розробниками, DevOps-інженерами, системними адміністраторами. Вони будували системи, писали код, підтримували інфраструктуру. Коли прийшла війна, вони залишили клавіатури й взяли зброю. Вони стали воїнами.*
+
+*Їхній код живе. Їхня жертва — вічна. Слава Україні.*
+
+---
+
+### Заповіт
+
+*Тарас Шевченко, 1845*
+
+> Як умру, то поховайте
+> Мене на могилі,
+> Серед степу широкого,
+> На Вкраїні милій,
+> Щоб лани широкополі,
+> І Дніпро, і кручі
+> Було видно, було чути,
+> Як реве ревучий.
+>
+> Як понесе з України
+> У синєє море
+> Кров ворожу... отойді я
+> І лани і гори —
+> Все покину і полину
+> До самого Бога
+> Молитися... а до того
+> Я не знаю Бога.
+>
+> Поховайте та вставайте,
+> Кайдани порвіте
+> І вражою злою кров'ю
+> Волю окропіте.
+> І мене в сем'ї великій,
+> В сем'ї вольній, новій,
+> Не забудьте пом'янути
+> Незлим тихим словом.
+
+---
+
+## Learning Paths
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         KUBEDOJO                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  BEGINNER                                                       │
+│  └── prerequisites/                                             │
+│      ├── Philosophy & Design      "Why Kubernetes?"             │
+│      ├── Cloud Native 101         "Containers & ecosystem"      │
+│      ├── Kubernetes Basics        "Hands-on fundamentals"       │
+│      └── Modern DevOps            "IaC, GitOps, CI/CD intro"    │
+│                         │                                       │
+│                         ▼                                       │
+│  CERTIFICATION PATH (Kubestronaut)                              │
+│  └── k8s/                                                       │
+│      ├── KCNA  ─────► Entry-level (multiple choice)            │
+│      ├── CKAD  ─────► Developer (hands-on lab)                 │
+│      ├── CKA   ─────► Administrator (hands-on lab)             │
+│      ├── KCSA  ─────► Security Associate (multiple choice)     │
+│      └── CKS   ─────► Security Specialist (hands-on lab)       │
+│                         │                                       │
+│                         ▼                                       │
+│  PRACTITIONER PATH (Beyond Certifications)                      │
+│  └── platform/                                                  │
+│      ├── foundations/    "Theory that doesn't change"           │
+│      │   ├── Systems Thinking                                   │
+│      │   ├── Reliability Engineering                            │
+│      │   ├── Observability Theory                               │
+│      │   ├── Security Principles                                │
+│      │   └── Distributed Systems                                │
+│      │                                                          │
+│      ├── disciplines/    "Applied practices"                    │
+│      │   ├── SRE                                                │
+│      │   ├── Platform Engineering                               │
+│      │   ├── GitOps                                             │
+│      │   ├── DevSecOps                                          │
+│      │   └── MLOps                                              │
+│      │                                                          │
+│      └── toolkits/       "Current tools (evolving)"             │
+│          ├── Observability    (Prometheus, OTel, Grafana)       │
+│          ├── GitOps Tools     (ArgoCD, Flux)                    │
+│          ├── Security Tools   (Vault, OPA, Falco)               │
+│          ├── Platforms        (Backstage, Crossplane)           │
+│          └── ML Platforms     (Kubeflow, MLflow)                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| Path | Audience | Modules | Status |
+|------|----------|---------|--------|
+| **Prerequisites** | Beginners | 23 | ✅ Complete |
+| **Kubernetes Certifications** | Cert seekers | 142 | ✅ Complete |
+| **Platform Engineering** | Practitioners | ~75 | 🚧 Planned |
 
 ---
 
@@ -362,6 +463,44 @@ Before diving into certification-specific content, these foundational tracks bui
 
 ---
 
+## Platform Engineering Track 🚧
+
+> **Beyond Certifications** - Deep practitioner knowledge for SRE, Platform Engineering, DevSecOps, and MLOps.
+>
+> This track is for practitioners who want to master the disciplines and tools that run on Kubernetes in production.
+
+### Foundations (Theory That Doesn't Change)
+
+| Track | Modules | Focus | Status |
+|-------|---------|-------|--------|
+| Systems Thinking | 4 | Complexity, feedback loops, emergence, Cynefin | 📋 |
+| Reliability Engineering | 4 | Failure modes, redundancy, MTBF/MTTR, risk | 📋 |
+| Observability Theory | 3 | Signals, cardinality, unknown unknowns | 📋 |
+| Security Principles | 4 | Zero trust, threat modeling, defense in depth | 📋 |
+| Distributed Systems | 4 | CAP theorem, consensus, consistency | 📋 |
+
+### Disciplines (Applied Practices)
+
+| Track | Modules | Focus | Status |
+|-------|---------|-------|--------|
+| SRE | 8 | SLOs, error budgets, incidents, chaos engineering | 📋 |
+| Platform Engineering | 6 | IDPs, golden paths, self-service, developer experience | 📋 |
+| GitOps | 5 | Reconciliation, progressive delivery, multi-cluster | 📋 |
+| DevSecOps | 6 | Shift-left, supply chain, policy-as-code, compliance | 📋 |
+| MLOps | 6 | ML lifecycle, experiment tracking, model serving | 📋 |
+
+### Toolkits (Current Tools - Will Evolve)
+
+| Track | Modules | Tools Covered | Status |
+|-------|---------|---------------|--------|
+| Observability | 6 | Prometheus, OpenTelemetry, Grafana, Loki, Tempo | 📋 |
+| GitOps Tools | 5 | ArgoCD, Flux, Argo Rollouts, Flagger | 📋 |
+| Security Tools | 5 | Vault, OPA/Gatekeeper, Kyverno, Falco, Sigstore | 📋 |
+| Platforms | 4 | Backstage, Crossplane, Port, Kratix | 📋 |
+| ML Platforms | 5 | Kubeflow, MLflow, Seldon/KServe, Feast, vLLM | 📋 |
+
+---
+
 ## Philosophy
 
 ### Theory Before Hands-On
@@ -397,15 +536,19 @@ Every module includes:
 
 ## Getting Started
 
-1. Clone this repo
-2. Start with [Module 0.1: Cluster Setup](docs/cka/part0-environment/module-0.1-cluster-setup.md)
-3. Work through modules in order
-4. Track your progress
-
 ```bash
 git clone https://github.com/krisztiankoos/kubedojo.git
 cd kubedojo
 ```
+
+**Choose your path:**
+
+| If you are... | Start here |
+|---------------|------------|
+| New to Kubernetes | [Prerequisites: Philosophy & Design](docs/prerequisites/philosophy-design/module-1-why-kubernetes-won.md) |
+| Know basics, want certs | [KCNA Overview](docs/kcna/part0-introduction/module-0.1-kcna-overview.md) (entry-level) |
+| Already certified | [Platform Track: Foundations](docs/platform/) (coming soon) |
+| Experienced, want depth | [Platform Track: SRE](docs/platform/disciplines/sre/) (coming soon) |
 
 ---
 

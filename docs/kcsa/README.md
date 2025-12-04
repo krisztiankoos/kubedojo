@@ -25,7 +25,7 @@ The KCSA is a **multiple-choice exam** (not hands-on) that validates foundationa
 | [Part 3](part3-security-fundamentals/) | Kubernetes Security Fundamentals | 22% | 5 |
 | [Part 4](part4-threat-model/) | Kubernetes Threat Model | 16% | 4 |
 | [Part 5](part5-platform-security/) | Platform Security | 16% | 4 |
-| [Part 6](part6-compliance-frameworks/) | Compliance and Security Frameworks | 10% | 3 |
+| [Part 6](part6-compliance/) | Compliance and Security Frameworks | 10% | 3 |
 | **Total** | | **100%** | **25** |
 
 ## Module Overview
@@ -60,14 +60,14 @@ The KCSA is a **multiple-choice exam** (not hands-on) that validates foundationa
 
 ### Part 5: Platform Security - 16% (4 modules)
 - [5.1 Image Security](part5-platform-security/module-5.1-image-security.md) - Scanning and signing
-- [5.2 Admission Controllers](part5-platform-security/module-5.2-admission-controllers.md) - Policy enforcement
+- [5.2 Observability](part5-platform-security/module-5.2-observability.md) - Security monitoring
 - [5.3 Runtime Security](part5-platform-security/module-5.3-runtime-security.md) - Detection and response
-- [5.4 Audit Logging](part5-platform-security/module-5.4-audit-logging.md) - Tracking and forensics
+- [5.4 Security Tooling](part5-platform-security/module-5.4-security-tooling.md) - Tools ecosystem
 
 ### Part 6: Compliance and Security Frameworks - 10% (3 modules)
-- [6.1 CIS Benchmarks](part6-compliance-frameworks/module-6.1-cis-benchmarks.md) - Kubernetes CIS benchmark
-- [6.2 Security Frameworks](part6-compliance-frameworks/module-6.2-security-frameworks.md) - NIST, OWASP
-- [6.3 Compliance Assessment](part6-compliance-frameworks/module-6.3-compliance-assessment.md) - Tools and processes
+- [6.1 Compliance Frameworks](part6-compliance/module-6.1-compliance-frameworks.md) - PCI-DSS, HIPAA, SOC 2
+- [6.2 CIS Benchmarks](part6-compliance/module-6.2-cis-benchmarks.md) - Kubernetes CIS benchmark
+- [6.3 Security Assessments](part6-compliance/module-6.3-security-assessments.md) - Audits and testing
 
 ## How to Use This Curriculum
 

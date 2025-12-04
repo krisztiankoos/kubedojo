@@ -4,11 +4,13 @@ This file provides guidance to Claude Code when working with the KubeDojo projec
 
 ## Project Overview
 
-KubeDojo is a **free, open-source Kubernetes certification curriculum** covering all 5 certifications required for Kubestronaut status (CKA, CKAD, CKS, KCNA, KCSA).
+KubeDojo is a **free, open-source Kubernetes curriculum** with two tracks:
+1. **Certifications** - All 5 Kubestronaut certs (CKA, CKAD, CKS, KCNA, KCSA) - ✅ Complete
+2. **Platform Engineering** - SRE, GitOps, DevSecOps, MLOps - 🚧 In Progress
 
 **Philosophy**: Quality education should be free. We challenge paid certification courses by providing better content at no cost.
 
-**Current Focus**: CKA (Certified Kubernetes Administrator) curriculum aligned with the 2025 exam changes.
+**Current Focus**: Platform Engineering Track (foundations, disciplines, toolkits).
 
 ## Quality Standards
 
@@ -30,7 +32,7 @@ Every module MUST include:
 - **Junior-friendly**: Treat reader as beginner, no assumed knowledge
 - **Entertaining**: Analogies, war stories, conversational tone
 - **Practical**: All code must be runnable, not pseudocode
-- **Exam-aligned**: Match CKA 2025 curriculum exactly
+- **Exam-aligned**: Match official curriculum (for cert tracks)
 
 ### Technical Standards
 - kubectl alias: Use `k` consistently (after Module 0.2)
@@ -41,14 +43,38 @@ Every module MUST include:
 ## Curriculum Structure
 
 ```
-docs/cka/
-├── part0-environment/         # Setup & exam technique
-├── part1-cluster-architecture/ # 25% of exam
-├── part2-workloads-scheduling/ # 15% of exam
-├── part3-services-networking/  # 20% of exam
-├── part4-storage/              # 10% of exam
-├── part5-troubleshooting/      # 30% of exam
-└── part6-mock-exams/           # Speed drills & practice
+docs/
+├── prerequisites/              # Beginners start here
+│   ├── philosophy-design/
+│   ├── cloud-native-101/
+│   ├── kubernetes-basics/
+│   └── modern-devops/
+│
+├── cka/                        # Kubernetes certifications
+├── ckad/
+├── cks/
+├── kcna/
+├── kcsa/
+│
+└── platform/                   # Platform Engineering Track
+    ├── foundations/            # Theory (stable)
+    │   ├── systems-thinking/
+    │   ├── reliability-engineering/
+    │   ├── observability-theory/
+    │   ├── security-principles/
+    │   └── distributed-systems/
+    ├── disciplines/            # Applied practices
+    │   ├── sre/
+    │   ├── platform-engineering/
+    │   ├── gitops/
+    │   ├── devsecops/
+    │   └── mlops/
+    └── toolkits/               # Current tools (evolving)
+        ├── observability/
+        ├── gitops-tools/
+        ├── security-tools/
+        ├── platforms/
+        └── ml-platforms/
 ```
 
 ## Three-Pass Exam Strategy
@@ -84,19 +110,17 @@ When starting work on KubeDojo:
 - **UPDATE `STATUS.md`** - Current work, progress, blockers, notes
 - This is mandatory - future sessions depend on it
 
-## CKA 2025 Curriculum Alignment
+## Platform Track Guidelines
 
-**Added (must cover)**:
-- Helm
-- Kustomize
-- Gateway API
-- CRDs & Operators
-- Pod Security Admission
+For Platform Engineering modules:
+- **Foundations**: Focus on theory/principles that don't change
+- **Disciplines**: Applied practices, mental models, best practices
+- **Toolkits**: Current tools with honest comparisons (these will evolve)
 
-**Deprioritized (mention but don't emphasize)**:
-- etcd backup/restore
-- Cluster upgrades
-- Infrastructure provisioning
+Platform modules include additional sections:
+- **Current Landscape** - Tools that implement the concept
+- **Best Practices** - What good looks like
+- **Further Reading** - Books, talks, papers
 
 ## Git Workflow
 
