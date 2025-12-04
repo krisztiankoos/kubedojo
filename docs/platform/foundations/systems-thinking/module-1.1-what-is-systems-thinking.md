@@ -380,18 +380,126 @@ Systems approach:
 
 ## Hands-On Exercise
 
+This exercise has two parts: a practical Kubernetes exploration and a conceptual mapping exercise.
+
+### Part A: Observe Emergence in Kubernetes (15 minutes)
+
+**Objective**: See how system behavior emerges from component interactions.
+
+**Prerequisites**: A running Kubernetes cluster (kind, minikube, or any cluster)
+
+**Step 1: Create interconnected services**
+
+```bash
+# Create namespace
+kubectl create namespace systems-lab
+
+# Deploy a frontend that calls a backend
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: systems-lab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: systems-lab
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: systems-lab
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: curlimages/curl:latest
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            while true; do
+              curl -s -o /dev/null -w "%{http_code}" http://backend/
+              sleep 1
+            done
+EOF
+```
+
+**Step 2: Observe the system as a whole**
+
+```bash
+# Watch all pods
+kubectl get pods -n systems-lab -w
+```
+
+**Step 3: See emergence - kill a backend pod**
+
+```bash
+# In another terminal, delete a backend pod
+kubectl delete pod -n systems-lab -l app=backend --wait=false \
+  $(kubectl get pod -n systems-lab -l app=backend -o jsonpath='{.items[0].metadata.name}')
+```
+
+**What to observe:**
+- Frontend continues working (load balances to surviving backend)
+- New backend pod created automatically
+- System self-heals without human intervention
+
+This is **emergence**: the self-healing behavior exists at the system level, not in any individual pod.
+
+**Step 4: Clean up**
+
+```bash
+kubectl delete namespace systems-lab
+```
+
+---
+
+### Part B: Map a System Using Systems Thinking (25 minutes)
+
 **Task**: Map a production system using systems thinking concepts.
 
 **Choose a system you operate** (or use a hypothetical e-commerce checkout flow).
 
 **Steps**:
 
-1. **Draw the system diagram** (15 minutes)
+1. **Draw the system diagram** (10 minutes)
    - Identify 4-6 key components
    - Draw connections between them
    - Mark external dependencies (outside your control)
 
-2. **Identify feedback loops** (10 minutes)
+2. **Identify feedback loops** (5 minutes)
    - Find at least 2 reinforcing loops (amplify change)
    - Find at least 1 balancing loop (stabilizes)
    - Example: Retry logic (reinforcing—retries create more load)
@@ -402,7 +510,7 @@ Systems approach:
    - Cache TTLs
    - Human response time
 
-4. **Apply the iceberg model** (10 minutes)
+4. **Apply the iceberg model** (5 minutes)
    Think about a recent incident:
    - Event: What happened?
    - Pattern: Has this happened before?
@@ -410,12 +518,14 @@ Systems approach:
    - Mental model: What assumption allowed this structure?
 
 **Success Criteria**:
-- [ ] System diagram with 4+ components and connections
-- [ ] At least 3 feedback loops identified
-- [ ] Delays marked on diagram
-- [ ] Iceberg analysis for one incident/scenario
+- [ ] Part A: Observed pod deletion and automatic recovery
+- [ ] Part A: Can explain what "emergence" you witnessed
+- [ ] Part B: System diagram with 4+ components and connections
+- [ ] Part B: At least 3 feedback loops identified
+- [ ] Part B: Delays marked on diagram
+- [ ] Part B: Iceberg analysis for one incident/scenario
 
-**Example Output**:
+**Example Output for Part B**:
 
 ```
 CHECKOUT SYSTEM

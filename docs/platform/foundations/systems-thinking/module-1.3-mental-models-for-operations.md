@@ -551,11 +551,105 @@ Queries slow → More concurrent queries → More lock contention
 
 ## Hands-On Exercise
 
-**Task**: Analyze a system using all three mental models.
+This exercise has two parts: a practical Kubernetes observation and a conceptual analysis.
+
+### Part A: Observe Stocks and Flows in Kubernetes (15 minutes)
+
+**Objective**: See stocks and flows in action using a Kubernetes Job queue.
+
+**Prerequisites**: A running Kubernetes cluster (kind, minikube, or any cluster)
+
+**Step 1: Create a job processing system**
+
+```bash
+# Create namespace
+kubectl create namespace stocks-lab
+
+# Create a series of jobs (the "queue")
+for i in {1..10}; do
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: task-$i
+  namespace: stocks-lab
+spec:
+  template:
+    spec:
+      containers:
+      - name: worker
+        image: busybox
+        command: ["sh", "-c", "echo Processing task $i; sleep $((RANDOM % 10 + 5))"]
+      restartPolicy: Never
+  backoffLimit: 2
+EOF
+done
+```
+
+**Step 2: Watch the stock (pending jobs) drain**
+
+```bash
+# Watch jobs - this shows the "stock" of work
+kubectl get jobs -n stocks-lab -w
+
+# In another terminal, watch pods (the workers processing the queue)
+kubectl get pods -n stocks-lab -w
+```
+
+**Step 3: Observe stocks and flows**
+
+```bash
+# Count pending vs completed (stock levels)
+echo "Pending: $(kubectl get jobs -n stocks-lab --field-selector status.successful=0 --no-headers | wc -l)"
+echo "Completed: $(kubectl get jobs -n stocks-lab --field-selector status.successful=1 --no-headers | wc -l)"
+```
+
+**What to observe:**
+- **Stock**: Number of pending jobs (accumulation)
+- **Inflow**: Jobs being created (we created 10)
+- **Outflow**: Jobs completing (depends on processing time)
+- **Delay**: Time between job creation and completion
+
+**Step 4: Add more inflow (simulate load spike)**
+
+```bash
+# Add 5 more jobs while others are still processing
+for i in {11..15}; do
+cat <<EOF | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: task-$i
+  namespace: stocks-lab
+spec:
+  template:
+    spec:
+      containers:
+      - name: worker
+        image: busybox
+        command: ["sh", "-c", "echo Processing task $i; sleep 3"]
+      restartPolicy: Never
+EOF
+done
+```
+
+Notice how the "pending" stock grows when inflow exceeds outflow capacity.
+
+**Step 5: Clean up**
+
+```bash
+kubectl delete namespace stocks-lab
+```
+
+---
+
+### Part B: Analyze a System Using Mental Models (25 minutes)
+
+**Task**: Apply all three mental models to a system.
 
 **Choose a system** you operate (or use this scenario: a job processing system with a queue, workers, and a results store).
 
-**Part 1: Stock-and-Flow Diagram (15 minutes)**
+**Section 1: Stock-and-Flow Diagram (10 minutes)**
 
 Draw a stock-and-flow diagram including:
 - At least 2 stocks (e.g., queue depth, active workers)
@@ -567,7 +661,7 @@ Answer:
 - What happens if processing slows 50%?
 - Where are the limits (max queue, max connections)?
 
-**Part 2: Causal Loop Diagram (15 minutes)**
+**Section 2: Causal Loop Diagram (10 minutes)**
 
 Draw a causal loop diagram including:
 - At least one balancing loop (stabilizing mechanism)
@@ -578,7 +672,7 @@ Answer:
 - What could trigger the reinforcing loop?
 - What could break the balancing loop?
 
-**Part 3: Leverage Point Analysis (10 minutes)**
+**Section 3: Leverage Point Analysis (5 minutes)**
 
 For a hypothetical incident ("processing is falling behind"), list interventions at different leverage levels:
 
@@ -591,10 +685,12 @@ For a hypothetical incident ("processing is falling behind"), list interventions
 | 5 (rules) | | |
 
 **Success Criteria**:
-- [ ] Stock-and-flow diagram with 2+ stocks, clear inflows/outflows
-- [ ] Causal loop diagram with 1+ balancing and 1+ reinforcing loop
-- [ ] 5 interventions mapped to leverage levels
-- [ ] Clear reasoning for each intervention's level
+- [ ] Part A: Observed jobs being created and completed
+- [ ] Part A: Can explain the stock (pending jobs) and flows (creation/completion)
+- [ ] Part B: Stock-and-flow diagram with 2+ stocks, clear inflows/outflows
+- [ ] Part B: Causal loop diagram with 1+ balancing and 1+ reinforcing loop
+- [ ] Part B: 5 interventions mapped to leverage levels
+- [ ] Part B: Clear reasoning for each intervention's level
 
 ---
 
