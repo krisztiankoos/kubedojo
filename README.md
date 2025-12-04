@@ -1,8 +1,10 @@
 # KubeDojo
 
-**Free, comprehensive Kubernetes education.**
+**Free, comprehensive cloud native education.**
 
-From beginner to Kubestronaut to platform practitioner. No paywalls. No upsells.
+Kubernetes certifications. Platform engineering. SRE. DevSecOps. MLOps.
+
+No paywalls. No upsells. Theory-first.
 
 ---
 
@@ -13,6 +15,36 @@ From beginner to Kubestronaut to platform practitioner. No paywalls. No upsells.
 *Вони були розробниками, DevOps-інженерами, системними адміністраторами. Вони будували системи, писали код, підтримували інфраструктуру. Коли прийшла війна, вони залишили клавіатури й взяли зброю.*
 
 *Їхній код живе. Їхня жертва — вічна. Слава Україні.*
+
+### Заповіт
+*Тарас Шевченко, 1845*
+
+> Як умру, то поховайте
+> Мене на могилі,
+> Серед степу широкого,
+> На Вкраїні милій,
+> Щоб лани широкополі,
+> І Дніпро, і кручі
+> Було видно, було чути,
+> Як реве ревучий.
+>
+> Як понесе з України
+> У синєє море
+> Кров ворожу... отойді я
+> І лани і гори —
+> Все покину і полину
+> До самого Бога
+> Молитися... а до того
+> Я не знаю Бога.
+>
+> Поховайте та вставайте,
+> Кайдани порвіте
+> І вражою злою кров'ю
+> Волю окропіте.
+> І мене в сем'ї великій,
+> В сем'ї вольній, новій,
+> Не забудьте пом'янути
+> Незлим тихим словом.
 
 ---
 
@@ -97,13 +129,13 @@ From beginner to Kubestronaut to platform practitioner. No paywalls. No upsells.
 
 ## Why This Exists
 
-Kubernetes certification courses charge $300-500+ for content that's often shallow, outdated, or focused on "exam dumps" rather than understanding.
+Cloud native education is fragmented. Certification courses charge $300-500+ for shallow content. Platform engineering knowledge lives in scattered blog posts. Tool documentation tells you *what*, not *why*.
 
 KubeDojo is different:
 - **Free forever** — No paid tiers, no premium content
-- **Theory-first** — Understand *why*, not just *what to type*
-- **Practitioner-built** — By people who use K8s daily and have taken these exams
-- **Beyond certs** — Platform Engineering track teaches what certifications don't
+- **Theory-first** — Understand principles before tools
+- **Practitioner-built** — By people who run production systems
+- **Complete path** — From beginner to platform engineer, not just cert prep
 
 ---
 
