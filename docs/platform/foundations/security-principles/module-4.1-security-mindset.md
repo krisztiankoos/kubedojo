@@ -562,6 +562,8 @@ BAD CULTURE                          GOOD CULTURE
 
 - **Social engineering** accounts for over 90% of successful attacks. Technical defenses matter less than training humans to recognize manipulation.
 
+- **The "Morris Worm" of 1988** was the first major internet worm and was written by a Cornell graduate student. It accidentally replicated far more aggressively than intended, crashing about 10% of the internet (roughly 6,000 machines). Robert Morris became the first person convicted under the Computer Fraud and Abuse Act—and later became a tenured MIT professor.
+
 ---
 
 ## Common Mistakes

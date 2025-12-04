@@ -589,6 +589,8 @@ Azure: Azure AD Workload Identity
 
 - **Kubernetes defaulted to auto-mounting service account tokens** until v1.24. Now you have to explicitly request it, implementing least privilege by default.
 
+- **Password complexity rules often backfire.** NIST's 2017 guidelines reversed decades of advice—they now recommend long passphrases over complex passwords, and explicitly discourage mandatory rotation. "Tr0ub4dor&3" is weaker than "correct horse battery staple" because the complex password is hard for humans but easy for computers to crack.
+
 ---
 
 ## Common Mistakes

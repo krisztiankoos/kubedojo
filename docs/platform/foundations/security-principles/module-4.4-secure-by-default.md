@@ -637,6 +637,8 @@ READ-ONLY FILESYSTEM
 
 - **Kubernetes 1.25** removed Pod Security Policies (PSP) in favor of Pod Security Standards (PSS), which are simpler and enabled by default in new namespaces.
 
+- **The Docker Hub default** of pulling `latest` tag has caused countless production incidents. The tag is mutable—meaning `nginx:latest` today might be a completely different image than `nginx:latest` tomorrow. Secure by default means pinning to immutable digests like `nginx@sha256:abc123...`, which is why many organizations now enforce digest-based image references in admission policies.
+
 ---
 
 ## Common Mistakes

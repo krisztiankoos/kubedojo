@@ -831,6 +831,8 @@ LIMITATIONS
 
 - **DNS is eventually consistent** by design. When you update a DNS record, it can take up to 48 hours (or the TTL) to propagate worldwide. Yet the internet works fine because most applications tolerate stale DNS.
 
+- **Figma uses CRDTs** for real-time collaborative design. Multiple designers can edit the same file simultaneously, and their changes merge automatically without conflicts. When you drag a shape while your colleague resizes it, both operations succeed—no "your changes were overwritten" errors.
+
 ---
 
 ## Common Mistakes

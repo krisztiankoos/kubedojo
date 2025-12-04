@@ -825,6 +825,8 @@ Simple but single point of failure.
 
 - **Google's Chubby** (Paxos-based lock service) was so critical that when it went down for 15 minutes, more Google services failed than when a major datacenter lost power. Dependencies on coordination services can be dangerous.
 
+- **etcd started at CoreOS** in 2013 as a simple key-value store for CoreOS's distributed init system. When Kubernetes adopted it as its brain, etcd became one of the most critical pieces of infrastructure in cloud-native computing—now running in production at virtually every major tech company.
+
 ---
 
 ## Common Mistakes

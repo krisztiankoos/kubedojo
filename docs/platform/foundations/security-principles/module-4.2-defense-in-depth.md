@@ -536,6 +536,8 @@ spec:
 
 - **The Pentagon uses "air gaps"** (physically disconnected networks) for the most sensitive systems. Even sophisticated software-based defense in depth can't match physical isolation for high-value targets.
 
+- **The 2013 Target breach** is a textbook defense-in-depth failure. Attackers compromised an HVAC vendor, used those credentials to access Target's network, then moved laterally to payment systems. Multiple security layers existed but were either misconfigured or ignored alerts—the intrusion detection system flagged the attack, but the alert wasn't investigated.
+
 ---
 
 ## Common Mistakes

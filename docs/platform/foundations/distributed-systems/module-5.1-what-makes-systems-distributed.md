@@ -686,6 +686,8 @@ Pods keep running (kubelet operates independently).
 
 - **The term "Byzantine fault"** comes from the Byzantine Generals Problem, named for the Byzantine Empire's reputation for complex political intrigue. In distributed systems, a Byzantine node is one that might behave arbitrarily—including lying.
 
+- **Leslie Lamport's "Time, Clocks, and the Ordering of Events"** paper (1978) introduced logical clocks and is one of the most cited papers in computer science. Lamport later won the Turing Award partly for this work. The key insight: you don't need real time to order events—you just need to track causality ("happened before" relationships).
+
 ---
 
 ## Common Mistakes
