@@ -550,6 +550,8 @@ Simple system:
 
 - **Google's Borg** (precursor to Kubernetes) was designed around the assumption that machines will fail. Jobs are automatically rescheduled when machines die. Google expects ~1% of machines to fail per year, so redundancy isn't optional—it's the default.
 
+- **The "Pets vs. Cattle" metaphor** for servers was coined by Bill Baker at Microsoft. Pets have names, are irreplaceable, and get nursed back to health when sick. Cattle have numbers, are identical, and get replaced when sick. Modern cloud-native redundancy assumes cattle: any instance is expendable.
+
 ---
 
 ## Common Mistakes

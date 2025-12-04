@@ -491,6 +491,14 @@ Mitigation:
 
 - **Circuit breakers** are named after electrical circuit breakers—devices that "break" (open) when current exceeds safe levels, preventing damage. The software pattern does the same: stops calling a failing service to prevent cascading damage.
 
+- **The "Swiss Cheese" model** from James Reason explains why complex systems fail: each defense layer has holes (like Swiss cheese slices), and failures occur when holes align. This is why defense in depth—multiple imperfect layers—is more effective than one "perfect" layer.
+
+> **War Story: The Timeout That Wasn't**
+>
+> A fintech startup set all their service timeouts to 30 seconds—a "safe" default. One day, a database query started taking 25 seconds instead of the usual 200ms. It wasn't timing out, but it was holding connections. The connection pool filled. New requests queued. The queue filled. Memory spiked. Pods got OOM-killed. Kubernetes restarted them. They came back, hit the slow database, filled their pools, died again. The whole platform oscillated between "up" and "crashing" for two hours.
+>
+> The fix was embarrassingly simple: reduce timeouts to 2 seconds. A 25-second query now fails fast, the circuit breaker opens, and the system degrades gracefully instead of collapsing. Sometimes the most dangerous failures aren't outages—they're systems that are "almost working."
+
 ---
 
 ## Common Mistakes

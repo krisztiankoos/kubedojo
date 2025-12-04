@@ -399,6 +399,8 @@ Questions reliable systems designers ask:
 
 - **The first software reliability model** was created by John Musa at Bell Labs in 1975. He applied hardware reliability mathematics to software, founding the field of software reliability engineering.
 
+- **Netflix pioneered the "chaos monkey"** approach in 2010, randomly killing production instances to ensure their systems could handle failures. This evolved into chaos engineering—deliberately injecting failures to build confidence in reliability. If you haven't tested a failure, you don't know if you can survive it.
+
 ---
 
 ## Common Mistakes

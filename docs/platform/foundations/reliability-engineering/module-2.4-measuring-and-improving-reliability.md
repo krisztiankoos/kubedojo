@@ -528,6 +528,8 @@ Investment allocation (example):
 
 - **SLOs predate software**. The concept comes from manufacturing quality control. Walter Shewhart developed statistical quality control at Bell Labs in the 1920s—the same principles apply today.
 
+- **Amazon's "two pizza" rule** for team size also applies to SLOs: if a service needs more SLOs than can fit on two pizza boxes, it's probably too complex. Most teams settle on 3-5 SLIs per service—enough to capture user experience, few enough to focus on.
+
 ---
 
 ## Common Mistakes
