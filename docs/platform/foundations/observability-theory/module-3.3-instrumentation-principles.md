@@ -592,6 +592,16 @@ except TimeoutError:
     raise
 ```
 
+> **War Story: The $50,000 Metric**
+>
+> A startup instrumented everything. Every function call, every loop iteration, every variable change. "More data is better," they reasoned.
+>
+> Their monthly observability bill hit $50,000. Worse, dashboards were slow, queries timed out, and the noise made finding real issues nearly impossible.
+>
+> The fix took two weeks: they removed 90% of their instrumentation, keeping only boundary calls, business operations, and errors. Their bill dropped to $5,000. Query times went from minutes to seconds. And they could actually find problems now because they weren't buried in noise.
+>
+> The lesson: Instrumentation isn't free. Every metric, log, and span has cost—storage, performance, and attention. Instrument strategically, not exhaustively.
+
 ---
 
 ## Did You Know?

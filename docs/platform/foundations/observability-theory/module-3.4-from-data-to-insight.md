@@ -348,6 +348,20 @@ Similar pattern for:
     - Failing user vs. working user
 ```
 
+> **War Story: The 3 AM Hypothesis**
+>
+> An e-commerce platform had an alert: "checkout errors increased." The on-call engineer opened the dashboard. Error rate was up, but everything else looked normal. CPU fine. Memory fine. Database fine.
+>
+> Old approach: Restart services, hope it helps. Often it did (temporarily). Time to fix: 5 minutes. Time to understand: never.
+>
+> New approach: Follow the exploratory pattern. Quantify: 3% error rate (normally 0.1%). Segment: 100% of errors are "payment timeout." Correlate: Started at 2:47 AM, no deploys. Exemplify: Pull a failing trace—shows 30-second timeout to payment gateway.
+>
+> Hypothesis: "The payment gateway is having issues." Verify: Check payment gateway status page—major outage announced at 2:45 AM.
+>
+> Resolution: Enable fallback payment provider, already configured but dormant. Errors drop to 0.2%. Total investigation time: 12 minutes. And now they knew *why*, not just that something was wrong.
+>
+> The pattern works. Use it.
+
 ---
 
 ## Part 4: Dashboards That Tell Stories

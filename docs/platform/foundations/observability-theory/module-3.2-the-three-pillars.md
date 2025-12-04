@@ -435,6 +435,16 @@ INVESTIGATION WORKFLOW
 >
 > Where do you get stuck? That's your correlation gap.
 
+> **War Story: The Missing Trace**
+>
+> A fintech company had all three pillars—logs in Elasticsearch, metrics in Prometheus, traces in Jaeger. But they weren't connected.
+>
+> During an incident, the on-call engineer saw error spikes in metrics. She switched to Jaeger to find traces, but couldn't search by error type. She went to Elasticsearch, found error logs, but they had no trace IDs. She spent 45 minutes manually correlating timestamps across three tools.
+>
+> The root cause? A 5-minute fix: a misconfigured connection pool. But finding it took 45 minutes because the pillars were silos.
+>
+> After the incident, they added trace_id to every log, added exemplars to metrics, and linked their UIs. The next similar incident took 8 minutes to resolve. The pillars only work when they're connected.
+
 ---
 
 ## Part 5: Beyond the Three Pillars

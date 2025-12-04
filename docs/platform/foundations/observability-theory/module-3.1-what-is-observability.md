@@ -326,6 +326,19 @@ Cannot answer: "Why are some requests slow?" (???)
 | **Context preservation** | Details not aggregated away | Full request details, not just averages |
 | **Queryability** | Can ask arbitrary questions | "Show me requests where X AND Y AND Z" |
 
+> **Try This (2 minutes)**
+>
+> Pick a recent production issue. Could you have answered these questions with your current tools?
+>
+> | Question | Could You Answer It? |
+> |----------|---------------------|
+> | "Show me all requests from user X in the last hour" | Yes / No / Partially |
+> | "What do the slowest 1% of requests have in common?" | Yes / No / Partially |
+> | "Which version of the code handled this request?" | Yes / No / Partially |
+> | "What other requests were happening at the same time?" | Yes / No / Partially |
+>
+> Each "No" reveals an observability gap.
+
 ---
 
 ## Part 4: The Observability Mindset
