@@ -12,7 +12,59 @@ Expert skill for writing new KubeDojo curriculum modules. Ensures consistent str
 - Expanding existing module content
 - Writing theory sections, exercises, or quizzes
 
-## Module Template
+## Track-Specific Guidelines
+
+KubeDojo has three tracks with different focuses:
+
+### Kubernetes Certifications (docs/k8s/)
+- Exam-focused content
+- Aligned with official CNCF curriculum
+- Time-boxed complexity (exam speed matters)
+- kubectl commands emphasized
+
+### Prerequisites (docs/prerequisites/)
+- Beginner-friendly fundamentals
+- No assumed knowledge
+- Build foundation for certifications
+
+### Platform Engineering (docs/platform/)
+- Post-certification, practitioner content
+- Theory-first approach (principles over tools)
+- Three layers: Foundations → Disciplines → Toolkits
+
+---
+
+## Platform Track Structure
+
+Platform modules have **three tiers**:
+
+### Foundations (docs/platform/foundations/)
+Timeless theory that doesn't change:
+- Systems Thinking
+- Reliability Engineering
+- Observability Theory
+- Security Principles
+- Distributed Systems
+
+### Disciplines (docs/platform/disciplines/)
+Applied practices and mental models:
+- SRE
+- Platform Engineering
+- GitOps
+- DevSecOps
+- MLOps
+
+### Toolkits (docs/platform/toolkits/)
+Current tools (will evolve over time):
+- Observability (Prometheus, OTel, Grafana)
+- GitOps Tools (ArgoCD, Flux)
+- Security Tools (Vault, OPA, Falco)
+- Platforms (Backstage, Crossplane)
+- ML Platforms (Kubeflow, MLflow)
+
+---
+
+## Module Template (Certification Track)
 
 ```markdown
 # Module X.Y: [Topic Name]
@@ -27,7 +79,7 @@ Expert skill for writing new KubeDojo curriculum modules. Ensures consistent str
 
 ## Why This Module Matters
 
-[2-3 paragraphs explaining WHY this topic matters for CKA and real-world K8s admin]
+[2-3 paragraphs explaining WHY this topic matters]
 
 > **The [Topic] Analogy**
 >
@@ -35,47 +87,39 @@ Expert skill for writing new KubeDojo curriculum modules. Ensures consistent str
 
 ---
 
-## What You'll Learn/Build
+## What You'll Learn
 
-[Clear statement of learning objectives or what they'll create]
+[Clear learning objectives]
 
 ---
 
-## Part 1: [First Major Section]
+## Part 1: [Theory/Concepts]
 
 ### 1.1 [Subsection]
 
-[Content with code examples]
+[Content with diagrams/examples]
 
 > **Did You Know?**
 >
-> [Interesting fact related to this subsection]
-
-### 1.2 [Subsection]
-
-[More content]
-
-> **Gotcha: [Common Mistake]**
->
-> [Warning about a common pitfall]
+> [Interesting fact]
 
 ---
 
-## Part 2: [Second Major Section]
+## Part 2: [Practical Application]
 
-[Continue pattern...]
+[Hands-on content]
 
 > **War Story: [Catchy Title]**
 >
-> [Real-world incident that illustrates why this matters]
+> [Real incident that illustrates the concept]
 
 ---
 
 ## Did You Know?
 
-- **[Fact 1]**: [Interesting detail]
-- **[Fact 2]**: [Interesting detail]
-- **[Fact 3]**: [Interesting detail]
+- **[Fact 1]**: [Detail]
+- **[Fact 2]**: [Detail]
+- **[Fact 3]**: [Detail]
 
 ---
 
@@ -83,70 +127,168 @@ Expert skill for writing new KubeDojo curriculum modules. Ensures consistent str
 
 | Mistake | Problem | Solution |
 |---------|---------|----------|
-| [Mistake 1] | [What goes wrong] | [How to fix/avoid] |
-| [Mistake 2] | [What goes wrong] | [How to fix/avoid] |
-| [Mistake 3] | [What goes wrong] | [How to fix/avoid] |
+| [Mistake 1] | [What goes wrong] | [How to fix] |
+| [Mistake 2] | [What goes wrong] | [How to fix] |
 
 ---
 
 ## Quiz
 
-1. **[Question 1]**
+1. **[Question]**
    <details>
    <summary>Answer</summary>
    [Detailed answer explaining why]
    </details>
 
-2. **[Question 2]**
-   <details>
-   <summary>Answer</summary>
-   [Detailed answer explaining why]
-   </details>
-
-3. **[Question 3]**
-   <details>
-   <summary>Answer</summary>
-   [Detailed answer explaining why]
-   </details>
-
-4. **[Question 4]**
-   <details>
-   <summary>Answer</summary>
-   [Detailed answer explaining why]
-   </details>
+[4 questions total]
 
 ---
 
 ## Hands-On Exercise
 
-**Task**: [Clear description of what to do]
-
-**Setup** (if needed):
-```bash
-[Any setup commands]
-```
+**Task**: [What to do]
 
 **Steps**:
 1. [Step 1]
 2. [Step 2]
-3. [Step 3]
 
 **Success Criteria**:
-- [ ] [Verifiable outcome 1]
-- [ ] [Verifiable outcome 2]
-- [ ] [Verifiable outcome 3]
+- [ ] [Verifiable outcome]
 
 **Verification**:
 ```bash
-[Commands to verify success]
+[Commands to verify]
 ```
 
 ---
 
 ## Next Module
 
-[Module X.Z: Next Topic](module-X.Z-next-topic.md) - [Brief description]
+[Link to next module]
 ```
+
+---
+
+## Module Template (Platform Track)
+
+Platform modules include additional sections:
+
+```markdown
+# Module X.Y: [Topic Name]
+
+> **Complexity**: `[QUICK]` | `[MEDIUM]` | `[COMPLEX]`
+>
+> **Time to Complete**: X-Y minutes
+>
+> **Prerequisites**: [List required modules]
+>
+> **Track**: Foundations | Disciplines | Toolkits
+
+---
+
+## Why This Module Matters
+
+[Real-world motivation - not exam-focused]
+
+> **The [Topic] Analogy**
+>
+> [Analogy connecting to familiar concepts]
+
+---
+
+## What You'll Learn
+
+[Learning objectives]
+
+---
+
+## Key Concepts
+
+### [Concept 1]
+
+[Theory explanation with diagrams]
+
+### [Concept 2]
+
+[More theory]
+
+---
+
+## Current Landscape
+
+How this concept is implemented in practice:
+
+| Tool/Approach | Description | When to Use |
+|---------------|-------------|-------------|
+| [Tool 1] | [What it does] | [Use case] |
+| [Tool 2] | [What it does] | [Use case] |
+
+---
+
+## Best Practices
+
+What good looks like:
+
+1. **[Practice 1]** - [Explanation]
+2. **[Practice 2]** - [Explanation]
+3. **[Practice 3]** - [Explanation]
+
+---
+
+## Anti-Patterns
+
+What to avoid:
+
+| Anti-Pattern | Why It's Bad | Better Approach |
+|--------------|--------------|-----------------|
+| [Pattern 1] | [Problem] | [Solution] |
+| [Pattern 2] | [Problem] | [Solution] |
+
+---
+
+## Did You Know?
+
+- **[Fact 1]**: [Detail]
+- **[Fact 2]**: [Detail]
+
+---
+
+## Common Mistakes
+
+| Mistake | Problem | Solution |
+|---------|---------|----------|
+| [Mistake 1] | [Impact] | [Fix] |
+
+---
+
+## Quiz
+
+[4 questions with hidden answers]
+
+---
+
+## Hands-On Exercise
+
+[Practical exercise with verification]
+
+---
+
+## Further Reading
+
+Books, talks, and papers for deeper understanding:
+
+- **[Book/Resource]** - [Why it's valuable]
+- **[Talk/Video]** - [Key takeaway]
+- **[Paper/Article]** - [What you'll learn]
+
+---
+
+## Next Module
+
+[Link to next module]
+```
+
+---
 
 ## Writing Guidelines
 
@@ -158,7 +300,7 @@ Expert skill for writing new KubeDojo curriculum modules. Ensures consistent str
 
 ### Analogies
 - One memorable analogy per module minimum
-- Connect K8s concepts to familiar real-world things
+- Connect concepts to familiar real-world things
 - Analogies should illuminate, not oversimplify
 
 ### War Stories
@@ -173,11 +315,16 @@ Expert skill for writing new KubeDojo curriculum modules. Ensures consistent str
 - Show expected output where helpful
 - Include verification steps
 
+### Diagrams
+- Use ASCII art for architecture diagrams
+- Keep diagrams simple and focused
+- Every complex concept should have a visual
+
 ### Technical Accuracy
-- Align with CKA 2025 curriculum
-- Use current Kubernetes version (1.31+)
+- Use current versions of tools
 - Note when something is deprecated
 - Link to official docs for deep dives
+- For Platform track: cover principles before tools
 
 ### Quiz Questions
 - Test understanding, not memorization
@@ -186,14 +333,17 @@ Expert skill for writing new KubeDojo curriculum modules. Ensures consistent str
 - 4 questions per module
 
 ### Complexity Tags
-- `[QUICK]`: Can be done in exam in 1-3 minutes
-- `[MEDIUM]`: Takes 4-6 minutes in exam
-- `[COMPLEX]`: Requires 8+ minutes or troubleshooting
+- `[QUICK]`: Simple concept, fast read
+- `[MEDIUM]`: Moderate complexity
+- `[COMPLEX]`: Deep topic, requires focus
+
+---
 
 ## Quality Checklist
 
 Before considering a module complete:
 
+### All Tracks
 - [ ] All structural elements present
 - [ ] At least one memorable analogy
 - [ ] At least one war story
@@ -204,3 +354,42 @@ Before considering a module complete:
 - [ ] All code tested and working
 - [ ] Links to next module
 - [ ] Proofread for clarity
+
+### Platform Track Additional
+- [ ] Current Landscape section (tools/approaches)
+- [ ] Best Practices section
+- [ ] Anti-Patterns section
+- [ ] Further Reading section
+- [ ] Theory explained before tools
+- [ ] Principles emphasized over implementation
+
+---
+
+## Naming Conventions
+
+### File Names
+```
+module-X.Y-topic-name.md
+```
+
+Examples:
+- `module-1.1-what-is-sre.md`
+- `module-2.3-error-budgets.md`
+
+### Directory Structure
+```
+docs/platform/disciplines/sre/
+├── README.md           # Part overview
+├── module-1.1-xxx.md
+├── module-1.2-xxx.md
+└── ...
+```
+
+---
+
+## Cross-References
+
+When referencing other modules:
+- Use relative links: `../foundations/systems-thinking/module-1.1-xxx.md`
+- For prerequisites: Link to specific module, not just track
+- For further learning: "See also [Module X.Y: Topic]"
