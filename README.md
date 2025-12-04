@@ -158,64 +158,64 @@ The CKA is notoriously difficult after recent changes. 16 hands-on questions in 
 ### Part 0: Environment & Exam Technique ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 0.1 | [Cluster Setup](docs/cka/part0-environment/module-0.1-cluster-setup.md) | ✅ |
-| 0.2 | [Shell Mastery](docs/cka/part0-environment/module-0.2-shell-mastery.md) | ✅ |
-| 0.3 | [Vim for YAML](docs/cka/part0-environment/module-0.3-vim-yaml.md) | ✅ |
-| 0.4 | [kubernetes.io Navigation](docs/cka/part0-environment/module-0.4-k8s-docs.md) | ✅ |
-| 0.5 | [Exam Strategy - Three-Pass Method](docs/cka/part0-environment/module-0.5-exam-strategy.md) | ✅ |
+| 0.1 | [Cluster Setup](docs/k8s/cka/part0-environment/module-0.1-cluster-setup.md) | ✅ |
+| 0.2 | [Shell Mastery](docs/k8s/cka/part0-environment/module-0.2-shell-mastery.md) | ✅ |
+| 0.3 | [Vim for YAML](docs/k8s/cka/part0-environment/module-0.3-vim-yaml.md) | ✅ |
+| 0.4 | [kubernetes.io Navigation](docs/k8s/cka/part0-environment/module-0.4-k8s-docs.md) | ✅ |
+| 0.5 | [Exam Strategy - Three-Pass Method](docs/k8s/cka/part0-environment/module-0.5-exam-strategy.md) | ✅ |
 
 ### Part 1: Cluster Architecture, Installation & Configuration (25%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 1.1 | [Control Plane Deep-Dive](docs/cka/part1-cluster-architecture/module-1.1-control-plane.md) | ✅ |
-| 1.2 | [Extension Interfaces (CNI, CSI, CRI)](docs/cka/part1-cluster-architecture/module-1.2-extension-interfaces.md) | ✅ |
-| 1.3 | [Helm](docs/cka/part1-cluster-architecture/module-1.3-helm.md) | ✅ |
-| 1.4 | [Kustomize](docs/cka/part1-cluster-architecture/module-1.4-kustomize.md) | ✅ |
-| 1.5 | [CRDs & Operators](docs/cka/part1-cluster-architecture/module-1.5-crds-operators.md) | ✅ |
-| 1.6 | [RBAC](docs/cka/part1-cluster-architecture/module-1.6-rbac.md) | ✅ |
-| 1.7 | [kubeadm Basics](docs/cka/part1-cluster-architecture/module-1.7-kubeadm.md) | ✅ |
+| 1.1 | [Control Plane Deep-Dive](docs/k8s/cka/part1-cluster-architecture/module-1.1-control-plane.md) | ✅ |
+| 1.2 | [Extension Interfaces (CNI, CSI, CRI)](docs/k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces.md) | ✅ |
+| 1.3 | [Helm](docs/k8s/cka/part1-cluster-architecture/module-1.3-helm.md) | ✅ |
+| 1.4 | [Kustomize](docs/k8s/cka/part1-cluster-architecture/module-1.4-kustomize.md) | ✅ |
+| 1.5 | [CRDs & Operators](docs/k8s/cka/part1-cluster-architecture/module-1.5-crds-operators.md) | ✅ |
+| 1.6 | [RBAC](docs/k8s/cka/part1-cluster-architecture/module-1.6-rbac.md) | ✅ |
+| 1.7 | [kubeadm Basics](docs/k8s/cka/part1-cluster-architecture/module-1.7-kubeadm.md) | ✅ |
 
 ### Part 2: Workloads & Scheduling (15%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 2.1 | [Pods Deep-Dive](docs/cka/part2-workloads-scheduling/module-2.1-pods.md) | ✅ |
-| 2.2 | [Deployments & ReplicaSets](docs/cka/part2-workloads-scheduling/module-2.2-deployments.md) | ✅ |
-| 2.3 | [DaemonSets & StatefulSets](docs/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets.md) | ✅ |
-| 2.4 | [Jobs & CronJobs](docs/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs.md) | ✅ |
-| 2.5 | [Resource Management](docs/cka/part2-workloads-scheduling/module-2.5-resource-management.md) | ✅ |
-| 2.6 | [Scheduling](docs/cka/part2-workloads-scheduling/module-2.6-scheduling.md) | ✅ |
-| 2.7 | [ConfigMaps & Secrets](docs/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets.md) | ✅ |
+| 2.1 | [Pods Deep-Dive](docs/k8s/cka/part2-workloads-scheduling/module-2.1-pods.md) | ✅ |
+| 2.2 | [Deployments & ReplicaSets](docs/k8s/cka/part2-workloads-scheduling/module-2.2-deployments.md) | ✅ |
+| 2.3 | [DaemonSets & StatefulSets](docs/k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets.md) | ✅ |
+| 2.4 | [Jobs & CronJobs](docs/k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs.md) | ✅ |
+| 2.5 | [Resource Management](docs/k8s/cka/part2-workloads-scheduling/module-2.5-resource-management.md) | ✅ |
+| 2.6 | [Scheduling](docs/k8s/cka/part2-workloads-scheduling/module-2.6-scheduling.md) | ✅ |
+| 2.7 | [ConfigMaps & Secrets](docs/k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets.md) | ✅ |
 
 ### Part 3: Services & Networking (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 3.1 | [Services](docs/cka/part3-services-networking/module-3.1-services.md) | ✅ |
-| 3.2 | [Endpoints & EndpointSlices](docs/cka/part3-services-networking/module-3.2-endpoints.md) | ✅ |
-| 3.3 | [DNS & CoreDNS](docs/cka/part3-services-networking/module-3.3-dns.md) | ✅ |
-| 3.4 | [Ingress](docs/cka/part3-services-networking/module-3.4-ingress.md) | ✅ |
-| 3.5 | [Gateway API](docs/cka/part3-services-networking/module-3.5-gateway-api.md) | ✅ |
-| 3.6 | [Network Policies](docs/cka/part3-services-networking/module-3.6-network-policies.md) | ✅ |
-| 3.7 | [CNI & Cluster Networking](docs/cka/part3-services-networking/module-3.7-cni.md) | ✅ |
+| 3.1 | [Services](docs/k8s/cka/part3-services-networking/module-3.1-services.md) | ✅ |
+| 3.2 | [Endpoints & EndpointSlices](docs/k8s/cka/part3-services-networking/module-3.2-endpoints.md) | ✅ |
+| 3.3 | [DNS & CoreDNS](docs/k8s/cka/part3-services-networking/module-3.3-dns.md) | ✅ |
+| 3.4 | [Ingress](docs/k8s/cka/part3-services-networking/module-3.4-ingress.md) | ✅ |
+| 3.5 | [Gateway API](docs/k8s/cka/part3-services-networking/module-3.5-gateway-api.md) | ✅ |
+| 3.6 | [Network Policies](docs/k8s/cka/part3-services-networking/module-3.6-network-policies.md) | ✅ |
+| 3.7 | [CNI & Cluster Networking](docs/k8s/cka/part3-services-networking/module-3.7-cni.md) | ✅ |
 
 ### Part 4: Storage (10%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 4.1 | [Volumes](docs/cka/part4-storage/module-4.1-volumes.md) | ✅ |
-| 4.2 | [PersistentVolumes & PersistentVolumeClaims](docs/cka/part4-storage/module-4.2-pv-pvc.md) | ✅ |
-| 4.3 | [StorageClasses & Dynamic Provisioning](docs/cka/part4-storage/module-4.3-storageclasses.md) | ✅ |
-| 4.4 | [Volume Snapshots & Cloning](docs/cka/part4-storage/module-4.4-snapshots.md) | ✅ |
-| 4.5 | [Storage Troubleshooting](docs/cka/part4-storage/module-4.5-troubleshooting.md) | ✅ |
+| 4.1 | [Volumes](docs/k8s/cka/part4-storage/module-4.1-volumes.md) | ✅ |
+| 4.2 | [PersistentVolumes & PersistentVolumeClaims](docs/k8s/cka/part4-storage/module-4.2-pv-pvc.md) | ✅ |
+| 4.3 | [StorageClasses & Dynamic Provisioning](docs/k8s/cka/part4-storage/module-4.3-storageclasses.md) | ✅ |
+| 4.4 | [Volume Snapshots & Cloning](docs/k8s/cka/part4-storage/module-4.4-snapshots.md) | ✅ |
+| 4.5 | [Storage Troubleshooting](docs/k8s/cka/part4-storage/module-4.5-troubleshooting.md) | ✅ |
 
 ### Part 5: Troubleshooting (30%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 5.1 | [Troubleshooting Methodology](docs/cka/part5-troubleshooting/module-5.1-methodology.md) | ✅ |
-| 5.2 | [Application Failures](docs/cka/part5-troubleshooting/module-5.2-application-failures.md) | ✅ |
-| 5.3 | [Control Plane Failures](docs/cka/part5-troubleshooting/module-5.3-control-plane.md) | ✅ |
-| 5.4 | [Worker Node Failures](docs/cka/part5-troubleshooting/module-5.4-worker-nodes.md) | ✅ |
-| 5.5 | [Network Troubleshooting](docs/cka/part5-troubleshooting/module-5.5-networking.md) | ✅ |
-| 5.6 | [Service Troubleshooting](docs/cka/part5-troubleshooting/module-5.6-services.md) | ✅ |
-| 5.7 | [Logging & Monitoring](docs/cka/part5-troubleshooting/module-5.7-logging-monitoring.md) | ✅ |
+| 5.1 | [Troubleshooting Methodology](docs/k8s/cka/part5-troubleshooting/module-5.1-methodology.md) | ✅ |
+| 5.2 | [Application Failures](docs/k8s/cka/part5-troubleshooting/module-5.2-application-failures.md) | ✅ |
+| 5.3 | [Control Plane Failures](docs/k8s/cka/part5-troubleshooting/module-5.3-control-plane.md) | ✅ |
+| 5.4 | [Worker Node Failures](docs/k8s/cka/part5-troubleshooting/module-5.4-worker-nodes.md) | ✅ |
+| 5.5 | [Network Troubleshooting](docs/k8s/cka/part5-troubleshooting/module-5.5-networking.md) | ✅ |
+| 5.6 | [Service Troubleshooting](docs/k8s/cka/part5-troubleshooting/module-5.6-services.md) | ✅ |
+| 5.7 | [Logging & Monitoring](docs/k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring.md) | ✅ |
 
 ### Part 6: Speed Drills & Mock Exams
 | Module | Topic | Status |
@@ -242,54 +242,54 @@ The CKAD tests your ability to design, build, and deploy cloud-native applicatio
 ### Part 0: Environment & Exam Technique ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 0.1 | [Cluster Setup](docs/ckad/part0-environment/module-0.1-cluster-setup.md) | ✅ |
-| 0.2 | [Shell Mastery](docs/ckad/part0-environment/module-0.2-shell-mastery.md) | ✅ |
-| 0.3 | [Vim for YAML](docs/ckad/part0-environment/module-0.3-vim-yaml.md) | ✅ |
-| 0.4 | [kubernetes.io Navigation](docs/ckad/part0-environment/module-0.4-k8s-docs.md) | ✅ |
-| 0.5 | [Exam Strategy](docs/ckad/part0-environment/module-0.5-exam-strategy.md) | ✅ |
+| 0.1 | [Cluster Setup](docs/k8s/ckad/part0-environment/module-0.1-cluster-setup.md) | ✅ |
+| 0.2 | [Shell Mastery](docs/k8s/ckad/part0-environment/module-0.2-shell-mastery.md) | ✅ |
+| 0.3 | [Vim for YAML](docs/k8s/ckad/part0-environment/module-0.3-vim-yaml.md) | ✅ |
+| 0.4 | [kubernetes.io Navigation](docs/k8s/ckad/part0-environment/module-0.4-k8s-docs.md) | ✅ |
+| 0.5 | [Exam Strategy](docs/k8s/ckad/part0-environment/module-0.5-exam-strategy.md) | ✅ |
 
 ### Part 1: Application Design and Build (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 1.1 | [Pods Deep-Dive](docs/ckad/part1-app-design/module-1.1-pods.md) | ✅ |
-| 1.2 | [Jobs & CronJobs](docs/ckad/part1-app-design/module-1.2-jobs.md) | ✅ |
-| 1.3 | [Multi-Container Patterns](docs/ckad/part1-app-design/module-1.3-multi-container.md) | ✅ |
-| 1.4 | [Init Containers](docs/ckad/part1-app-design/module-1.4-init-containers.md) | ✅ |
-| 1.5 | [Volumes & Storage](docs/ckad/part1-app-design/module-1.5-volumes.md) | ✅ |
+| 1.1 | [Pods Deep-Dive](docs/k8s/ckad/part1-app-design/module-1.1-pods.md) | ✅ |
+| 1.2 | [Jobs & CronJobs](docs/k8s/ckad/part1-app-design/module-1.2-jobs.md) | ✅ |
+| 1.3 | [Multi-Container Patterns](docs/k8s/ckad/part1-app-design/module-1.3-multi-container.md) | ✅ |
+| 1.4 | [Init Containers](docs/k8s/ckad/part1-app-design/module-1.4-init-containers.md) | ✅ |
+| 1.5 | [Volumes & Storage](docs/k8s/ckad/part1-app-design/module-1.5-volumes.md) | ✅ |
 
 ### Part 2: Application Deployment (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 2.1 | [Deployments](docs/ckad/part2-deployment/module-2.1-deployments.md) | ✅ |
-| 2.2 | [Rolling Updates & Rollbacks](docs/ckad/part2-deployment/module-2.2-rolling-updates.md) | ✅ |
-| 2.3 | [Helm Package Manager](docs/ckad/part2-deployment/module-2.3-helm.md) | ✅ |
-| 2.4 | [Kustomize](docs/ckad/part2-deployment/module-2.4-kustomize.md) | ✅ |
+| 2.1 | [Deployments](docs/k8s/ckad/part2-deployment/module-2.1-deployments.md) | ✅ |
+| 2.2 | [Rolling Updates & Rollbacks](docs/k8s/ckad/part2-deployment/module-2.2-rolling-updates.md) | ✅ |
+| 2.3 | [Helm Package Manager](docs/k8s/ckad/part2-deployment/module-2.3-helm.md) | ✅ |
+| 2.4 | [Kustomize](docs/k8s/ckad/part2-deployment/module-2.4-kustomize.md) | ✅ |
 
 ### Part 3: Application Observability (15%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 3.1 | [Probes (Liveness, Readiness, Startup)](docs/ckad/part3-observability/module-3.1-probes.md) | ✅ |
-| 3.2 | [Container Logging](docs/ckad/part3-observability/module-3.2-logging.md) | ✅ |
-| 3.3 | [Debugging Pods](docs/ckad/part3-observability/module-3.3-debugging.md) | ✅ |
-| 3.4 | [Resource Monitoring](docs/ckad/part3-observability/module-3.4-monitoring.md) | ✅ |
-| 3.5 | [Application Troubleshooting](docs/ckad/part3-observability/module-3.5-troubleshooting.md) | ✅ |
+| 3.1 | [Probes (Liveness, Readiness, Startup)](docs/k8s/ckad/part3-observability/module-3.1-probes.md) | ✅ |
+| 3.2 | [Container Logging](docs/k8s/ckad/part3-observability/module-3.2-logging.md) | ✅ |
+| 3.3 | [Debugging Pods](docs/k8s/ckad/part3-observability/module-3.3-debugging.md) | ✅ |
+| 3.4 | [Resource Monitoring](docs/k8s/ckad/part3-observability/module-3.4-monitoring.md) | ✅ |
+| 3.5 | [Application Troubleshooting](docs/k8s/ckad/part3-observability/module-3.5-troubleshooting.md) | ✅ |
 
 ### Part 4: Application Environment, Configuration and Security (25%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 4.1 | [ConfigMaps](docs/ckad/part4-environment/module-4.1-configmaps.md) | ✅ |
-| 4.2 | [Secrets](docs/ckad/part4-environment/module-4.2-secrets.md) | ✅ |
-| 4.3 | [Resource Requirements](docs/ckad/part4-environment/module-4.3-resources.md) | ✅ |
-| 4.4 | [SecurityContexts](docs/ckad/part4-environment/module-4.4-securitycontext.md) | ✅ |
-| 4.5 | [ServiceAccounts](docs/ckad/part4-environment/module-4.5-serviceaccounts.md) | ✅ |
-| 4.6 | [Custom Resource Definitions](docs/ckad/part4-environment/module-4.6-crds.md) | ✅ |
+| 4.1 | [ConfigMaps](docs/k8s/ckad/part4-environment/module-4.1-configmaps.md) | ✅ |
+| 4.2 | [Secrets](docs/k8s/ckad/part4-environment/module-4.2-secrets.md) | ✅ |
+| 4.3 | [Resource Requirements](docs/k8s/ckad/part4-environment/module-4.3-resources.md) | ✅ |
+| 4.4 | [SecurityContexts](docs/k8s/ckad/part4-environment/module-4.4-securitycontext.md) | ✅ |
+| 4.5 | [ServiceAccounts](docs/k8s/ckad/part4-environment/module-4.5-serviceaccounts.md) | ✅ |
+| 4.6 | [Custom Resource Definitions](docs/k8s/ckad/part4-environment/module-4.6-crds.md) | ✅ |
 
 ### Part 5: Services and Networking (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 5.1 | [Services](docs/ckad/part5-networking/module-5.1-services.md) | ✅ |
-| 5.2 | [Ingress](docs/ckad/part5-networking/module-5.2-ingress.md) | ✅ |
-| 5.3 | [NetworkPolicies](docs/ckad/part5-networking/module-5.3-networkpolicies.md) | ✅ |
+| 5.1 | [Services](docs/k8s/ckad/part5-networking/module-5.1-services.md) | ✅ |
+| 5.2 | [Ingress](docs/k8s/ckad/part5-networking/module-5.2-ingress.md) | ✅ |
+| 5.3 | [NetworkPolicies](docs/k8s/ckad/part5-networking/module-5.3-networkpolicies.md) | ✅ |
 
 ---
 
@@ -306,60 +306,60 @@ The CKS tests your ability to secure Kubernetes clusters, from infrastructure to
 ### Part 0: Environment & Exam Strategy ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 0.1 | [CKS Overview](docs/cks/part0-environment/module-0.1-cks-overview.md) | ✅ |
-| 0.2 | [Security Lab Setup](docs/cks/part0-environment/module-0.2-security-lab.md) | ✅ |
-| 0.3 | [Security Tools](docs/cks/part0-environment/module-0.3-security-tools.md) | ✅ |
-| 0.4 | [Exam Strategy](docs/cks/part0-environment/module-0.4-exam-strategy.md) | ✅ |
+| 0.1 | [CKS Overview](docs/k8s/cks/part0-environment/module-0.1-cks-overview.md) | ✅ |
+| 0.2 | [Security Lab Setup](docs/k8s/cks/part0-environment/module-0.2-security-lab.md) | ✅ |
+| 0.3 | [Security Tools](docs/k8s/cks/part0-environment/module-0.3-security-tools.md) | ✅ |
+| 0.4 | [Exam Strategy](docs/k8s/cks/part0-environment/module-0.4-exam-strategy.md) | ✅ |
 
 ### Part 1: Cluster Setup (10%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 1.1 | [Network Policies](docs/cks/part1-cluster-setup/module-1.1-network-policies.md) | ✅ |
-| 1.2 | [CIS Benchmarks](docs/cks/part1-cluster-setup/module-1.2-cis-benchmarks.md) | ✅ |
-| 1.3 | [Ingress Security](docs/cks/part1-cluster-setup/module-1.3-ingress-security.md) | ✅ |
-| 1.4 | [Node Metadata Protection](docs/cks/part1-cluster-setup/module-1.4-node-metadata.md) | ✅ |
-| 1.5 | [GUI Security](docs/cks/part1-cluster-setup/module-1.5-gui-security.md) | ✅ |
+| 1.1 | [Network Policies](docs/k8s/cks/part1-cluster-setup/module-1.1-network-policies.md) | ✅ |
+| 1.2 | [CIS Benchmarks](docs/k8s/cks/part1-cluster-setup/module-1.2-cis-benchmarks.md) | ✅ |
+| 1.3 | [Ingress Security](docs/k8s/cks/part1-cluster-setup/module-1.3-ingress-security.md) | ✅ |
+| 1.4 | [Node Metadata Protection](docs/k8s/cks/part1-cluster-setup/module-1.4-node-metadata.md) | ✅ |
+| 1.5 | [GUI Security](docs/k8s/cks/part1-cluster-setup/module-1.5-gui-security.md) | ✅ |
 
 ### Part 2: Cluster Hardening (15%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 2.1 | [RBAC Deep-Dive](docs/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive.md) | ✅ |
-| 2.2 | [ServiceAccount Security](docs/cks/part2-cluster-hardening/module-2.2-serviceaccount-security.md) | ✅ |
-| 2.3 | [API Server Security](docs/cks/part2-cluster-hardening/module-2.3-api-server-security.md) | ✅ |
-| 2.4 | [Kubernetes Upgrades](docs/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades.md) | ✅ |
-| 2.5 | [Restricting API Access](docs/cks/part2-cluster-hardening/module-2.5-restricting-api-access.md) | ✅ |
+| 2.1 | [RBAC Deep-Dive](docs/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive.md) | ✅ |
+| 2.2 | [ServiceAccount Security](docs/k8s/cks/part2-cluster-hardening/module-2.2-serviceaccount-security.md) | ✅ |
+| 2.3 | [API Server Security](docs/k8s/cks/part2-cluster-hardening/module-2.3-api-server-security.md) | ✅ |
+| 2.4 | [Kubernetes Upgrades](docs/k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades.md) | ✅ |
+| 2.5 | [Restricting API Access](docs/k8s/cks/part2-cluster-hardening/module-2.5-restricting-api-access.md) | ✅ |
 
 ### Part 3: System Hardening (15%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 3.1 | [AppArmor](docs/cks/part3-system-hardening/module-3.1-apparmor.md) | ✅ |
-| 3.2 | [Seccomp](docs/cks/part3-system-hardening/module-3.2-seccomp.md) | ✅ |
-| 3.3 | [Kernel Hardening](docs/cks/part3-system-hardening/module-3.3-kernel-hardening.md) | ✅ |
-| 3.4 | [Network Security](docs/cks/part3-system-hardening/module-3.4-network-security.md) | ✅ |
+| 3.1 | [AppArmor](docs/k8s/cks/part3-system-hardening/module-3.1-apparmor.md) | ✅ |
+| 3.2 | [Seccomp](docs/k8s/cks/part3-system-hardening/module-3.2-seccomp.md) | ✅ |
+| 3.3 | [Kernel Hardening](docs/k8s/cks/part3-system-hardening/module-3.3-kernel-hardening.md) | ✅ |
+| 3.4 | [Network Security](docs/k8s/cks/part3-system-hardening/module-3.4-network-security.md) | ✅ |
 
 ### Part 4: Minimize Microservice Vulnerabilities (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 4.1 | [Security Contexts](docs/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts.md) | ✅ |
-| 4.2 | [Pod Security Admission](docs/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission.md) | ✅ |
-| 4.3 | [Secrets Management](docs/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management.md) | ✅ |
-| 4.4 | [Runtime Sandboxing](docs/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing.md) | ✅ |
+| 4.1 | [Security Contexts](docs/k8s/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts.md) | ✅ |
+| 4.2 | [Pod Security Admission](docs/k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission.md) | ✅ |
+| 4.3 | [Secrets Management](docs/k8s/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management.md) | ✅ |
+| 4.4 | [Runtime Sandboxing](docs/k8s/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing.md) | ✅ |
 
 ### Part 5: Supply Chain Security (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 5.1 | [Image Security](docs/cks/part5-supply-chain-security/module-5.1-image-security.md) | ✅ |
-| 5.2 | [Image Scanning](docs/cks/part5-supply-chain-security/module-5.2-image-scanning.md) | ✅ |
-| 5.3 | [Static Analysis](docs/cks/part5-supply-chain-security/module-5.3-static-analysis.md) | ✅ |
-| 5.4 | [Admission Controllers](docs/cks/part5-supply-chain-security/module-5.4-admission-controllers.md) | ✅ |
+| 5.1 | [Image Security](docs/k8s/cks/part5-supply-chain-security/module-5.1-image-security.md) | ✅ |
+| 5.2 | [Image Scanning](docs/k8s/cks/part5-supply-chain-security/module-5.2-image-scanning.md) | ✅ |
+| 5.3 | [Static Analysis](docs/k8s/cks/part5-supply-chain-security/module-5.3-static-analysis.md) | ✅ |
+| 5.4 | [Admission Controllers](docs/k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers.md) | ✅ |
 
 ### Part 6: Monitoring, Logging and Runtime Security (20%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 6.1 | [Audit Logging](docs/cks/part6-runtime-security/module-6.1-audit-logging.md) | ✅ |
-| 6.2 | [Falco](docs/cks/part6-runtime-security/module-6.2-falco.md) | ✅ |
-| 6.3 | [Container Investigation](docs/cks/part6-runtime-security/module-6.3-container-investigation.md) | ✅ |
-| 6.4 | [Immutable Infrastructure](docs/cks/part6-runtime-security/module-6.4-immutable-infrastructure.md) | ✅ |
+| 6.1 | [Audit Logging](docs/k8s/cks/part6-runtime-security/module-6.1-audit-logging.md) | ✅ |
+| 6.2 | [Falco](docs/k8s/cks/part6-runtime-security/module-6.2-falco.md) | ✅ |
+| 6.3 | [Container Investigation](docs/k8s/cks/part6-runtime-security/module-6.3-container-investigation.md) | ✅ |
+| 6.4 | [Immutable Infrastructure](docs/k8s/cks/part6-runtime-security/module-6.4-immutable-infrastructure.md) | ✅ |
 
 ---
 
@@ -374,47 +374,47 @@ The KCNA tests conceptual understanding of Kubernetes and cloud native technolog
 ### Part 0: Introduction ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 0.1 | [KCNA Overview](docs/kcna/part0-introduction/module-0.1-kcna-overview.md) | ✅ |
-| 0.2 | [Study Strategy](docs/kcna/part0-introduction/module-0.2-study-strategy.md) | ✅ |
+| 0.1 | [KCNA Overview](docs/k8s/kcna/part0-introduction/module-0.1-kcna-overview.md) | ✅ |
+| 0.2 | [Study Strategy](docs/k8s/kcna/part0-introduction/module-0.2-study-strategy.md) | ✅ |
 
 ### Part 1: Kubernetes Fundamentals (46%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 1.1 | [What is Kubernetes](docs/kcna/part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes.md) | ✅ |
-| 1.2 | [Container Fundamentals](docs/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals.md) | ✅ |
-| 1.3 | [Control Plane](docs/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane.md) | ✅ |
-| 1.4 | [Node Components](docs/kcna/part1-kubernetes-fundamentals/module-1.4-node-components.md) | ✅ |
-| 1.5 | [Pods](docs/kcna/part1-kubernetes-fundamentals/module-1.5-pods.md) | ✅ |
-| 1.6 | [Workload Resources](docs/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources.md) | ✅ |
-| 1.7 | [Services](docs/kcna/part1-kubernetes-fundamentals/module-1.7-services.md) | ✅ |
-| 1.8 | [Namespaces & Labels](docs/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md) | ✅ |
+| 1.1 | [What is Kubernetes](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes.md) | ✅ |
+| 1.2 | [Container Fundamentals](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals.md) | ✅ |
+| 1.3 | [Control Plane](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane.md) | ✅ |
+| 1.4 | [Node Components](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.4-node-components.md) | ✅ |
+| 1.5 | [Pods](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods.md) | ✅ |
+| 1.6 | [Workload Resources](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources.md) | ✅ |
+| 1.7 | [Services](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.7-services.md) | ✅ |
+| 1.8 | [Namespaces & Labels](docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md) | ✅ |
 
 ### Part 2: Container Orchestration (22%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 2.1 | [Scheduling](docs/kcna/part2-container-orchestration/module-2.1-scheduling.md) | ✅ |
-| 2.2 | [Scaling](docs/kcna/part2-container-orchestration/module-2.2-scaling.md) | ✅ |
-| 2.3 | [Storage](docs/kcna/part2-container-orchestration/module-2.3-storage.md) | ✅ |
-| 2.4 | [Configuration](docs/kcna/part2-container-orchestration/module-2.4-configuration.md) | ✅ |
+| 2.1 | [Scheduling](docs/k8s/kcna/part2-container-orchestration/module-2.1-scheduling.md) | ✅ |
+| 2.2 | [Scaling](docs/k8s/kcna/part2-container-orchestration/module-2.2-scaling.md) | ✅ |
+| 2.3 | [Storage](docs/k8s/kcna/part2-container-orchestration/module-2.3-storage.md) | ✅ |
+| 2.4 | [Configuration](docs/k8s/kcna/part2-container-orchestration/module-2.4-configuration.md) | ✅ |
 
 ### Part 3: Cloud Native Architecture (16%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 3.1 | [Cloud Native Principles](docs/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles.md) | ✅ |
-| 3.2 | [CNCF Ecosystem](docs/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md) | ✅ |
-| 3.3 | [Cloud Native Patterns](docs/kcna/part3-cloud-native-architecture/module-3.3-patterns.md) | ✅ |
+| 3.1 | [Cloud Native Principles](docs/k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles.md) | ✅ |
+| 3.2 | [CNCF Ecosystem](docs/k8s/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md) | ✅ |
+| 3.3 | [Cloud Native Patterns](docs/k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns.md) | ✅ |
 
 ### Part 4: Cloud Native Observability (8%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 4.1 | [Observability Fundamentals](docs/kcna/part4-cloud-native-observability/module-4.1-observability-fundamentals.md) | ✅ |
-| 4.2 | [Observability Tools](docs/kcna/part4-cloud-native-observability/module-4.2-observability-tools.md) | ✅ |
+| 4.1 | [Observability Fundamentals](docs/k8s/kcna/part4-cloud-native-observability/module-4.1-observability-fundamentals.md) | ✅ |
+| 4.2 | [Observability Tools](docs/k8s/kcna/part4-cloud-native-observability/module-4.2-observability-tools.md) | ✅ |
 
 ### Part 5: Application Delivery (8%) ✅
 | Module | Topic | Status |
 |--------|-------|--------|
-| 5.1 | [CI/CD Fundamentals](docs/kcna/part5-application-delivery/module-5.1-ci-cd.md) | ✅ |
-| 5.2 | [Application Packaging](docs/kcna/part5-application-delivery/module-5.2-application-packaging.md) | ✅ |
+| 5.1 | [CI/CD Fundamentals](docs/k8s/kcna/part5-application-delivery/module-5.1-ci-cd.md) | ✅ |
+| 5.2 | [Application Packaging](docs/k8s/kcna/part5-application-delivery/module-5.2-application-packaging.md) | ✅ |
 
 ---
 
@@ -546,7 +546,7 @@ cd kubedojo
 | If you are... | Start here |
 |---------------|------------|
 | New to Kubernetes | [Prerequisites: Philosophy & Design](docs/prerequisites/philosophy-design/module-1-why-kubernetes-won.md) |
-| Know basics, want certs | [KCNA Overview](docs/kcna/part0-introduction/module-0.1-kcna-overview.md) (entry-level) |
+| Know basics, want certs | [KCNA Overview](docs/k8s/kcna/part0-introduction/module-0.1-kcna-overview.md) (entry-level) |
 | Already certified | [Platform Track: Foundations](docs/platform/) (coming soon) |
 | Experienced, want depth | [Platform Track: SRE](docs/platform/disciplines/sre/) (coming soon) |
 

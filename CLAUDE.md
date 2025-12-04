@@ -50,11 +50,12 @@ docs/
 │   ├── kubernetes-basics/
 │   └── modern-devops/
 │
-├── cka/                        # Kubernetes certifications
-├── ckad/
-├── cks/
-├── kcna/
-├── kcsa/
+├── k8s/                        # Kubernetes certifications
+│   ├── cka/
+│   ├── ckad/
+│   ├── cks/
+│   ├── kcna/
+│   └── kcsa/
 │
 └── platform/                   # Platform Engineering Track
     ├── foundations/            # Theory (stable)
