@@ -94,12 +94,11 @@ _2025-12-03: CKS curriculum complete (26 modules across 7 parts). Covers all 6 e
 _2025-12-03: CKS reviewed & improved to 10/10 - Fixed 4 modules: Module 0.1 (added hands-on exercise), Module 0.4 (completed exercise solutions), Module 2.4 (made exercise interactive), Module 3.3 (made exercise hands-on with practical demos)._
 _2025-12-03: KCNA curriculum complete (21 modules across 6 parts). Multiple-choice exam format. Covers: Kubernetes Fundamentals (46%), Container Orchestration (22%), Cloud Native Architecture (16%), Observability (8%), Application Delivery (8%)._
 _2025-12-04: KCNA reviewed (10/10 quality), committed & pushed. Closed 10 GitHub issues (#2-6, #8, #9, #11, #12, #16). 5 issues remaining: KCSA (#10), CKA Mock Exams (#7), plus 3 meta/docs issues._
-_2025-12-04: KCSA curriculum complete (25 modules across 7 parts). Multiple-choice exam format. Covers: Cloud Native Security (14%), Cluster Component Security (22%), Security Fundamentals (22%), Threat Model (16%), Platform Security (16%), Compliance Frameworks (10%)._
+_2025-12-04: KCSA curriculum complete (25 modules across 7 parts). Multiple-choice exam format. Covers: Cloud Native Security (14%), Cluster Component Security (22%), Security Fundamentals (22%), Threat Model (16%), Platform Security (16%), Compliance Frameworks (10%). Committed and pushed._
 
 ## Open GitHub Issues
 | # | Issue | Status |
 |---|-------|--------|
-| #10 | KCSA Curriculum | ✅ Complete |
 | #7 | CKA Part 6: Mock Exams | 📋 Deferred |
 | #13 | Kubestronaut Path - Master Roadmap | Open |
 | #14 | Curriculum Monitoring & Official Sources | Open |
