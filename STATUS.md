@@ -5,7 +5,24 @@
 ## Current Work
 **All 5 certifications complete** - Full Kubestronaut curriculum ready!
 
-**NEW: Platform Engineering Track** - Beyond certifications (SRE, GitOps, DevSecOps, MLOps)
+**Platform Engineering Track** - Foundations complete, Disciplines #28-#30 complete!
+
+## Platform Engineering Track Progress
+| Section | Status | Modules |
+|---------|--------|---------|
+| Foundations | ✅ Complete | 19/19 |
+| Disciplines (SRE #28) | ✅ Complete | 7/7 |
+| Disciplines (Platform Eng #29) | ✅ Complete | 6/6 |
+| Disciplines (GitOps #30) | ✅ Complete | 6/6 |
+| Disciplines (DevSecOps #31) | 📋 Planned | 0/6 |
+| Disciplines (MLOps #32) | 📋 Planned | 0/6 |
+| Toolkits | 📋 Planned | 0/25 |
+| **Platform Total** | | **38/75** |
+
+## Quality Standard
+10/10 quality = 4 "Did You Know?" facts per module.
+
+All completed modules meet this standard.
 
 ## KCSA Progress Summary
 | Part | Status | Modules |
@@ -77,23 +94,21 @@
 | KCNA | ✅ Complete | 21 |
 | KCSA | ✅ Complete | 25 |
 | Prerequisites | ✅ Complete | 23 |
-| **Certifications Total** | | **165** |
-
-## Platform Engineering Track (NEW)
-| Section | Status | Modules |
-|---------|--------|---------|
-| Foundations | 📋 Planned | 0/19 |
-| Disciplines | 📋 Planned | 0/31 |
-| Toolkits | 📋 Planned | 0/25 |
-| **Platform Total** | | **0/75** |
+| Platform (partial) | 🚧 In Progress | 38/75 |
+| **Total** | | **203/240** |
 
 ## Next Steps
-- Platform Track: Start with Foundations (Systems Thinking, Reliability Engineering)
-- Platform Track: Then SRE discipline
+- Platform Track: DevSecOps discipline (#31 - 6 modules)
+- Platform Track: MLOps discipline (#32 - 6 modules)
+- Platform Track: Toolkits (#33-#37 - 25 modules)
 - CKA Mock Exams (Part 6) - optional/deferred
 
 ## Blockers
 None
+
+## File Naming Notes
+- GitOps modules: `module-3.4-drift-detection.md` (not `drift-detection-and-remediation`)
+- SRE modules: `module-1.2-slos.md` (not `service-level-objectives`)
 
 ## Session Notes
 _2025-12-02: CKA Parts 0-5 complete (33 modules). Theory done, mock exams deferred._
@@ -107,6 +122,8 @@ _2025-12-04: KCNA reviewed (10/10 quality), committed & pushed. Closed 10 GitHub
 _2025-12-04: KCSA curriculum complete (25 modules across 7 parts). Multiple-choice exam format. Covers: Cloud Native Security (14%), Cluster Component Security (22%), Security Fundamentals (22%), Threat Model (16%), Platform Security (16%), Compliance Frameworks (10%). Committed and pushed._
 _2025-12-04: KCSA reviewed - all 25 modules already at 10/10 quality. No changes needed. Comprehensive coverage with ASCII diagrams, quizzes, hands-on exercises, and security tool deep-dives (Trivy, Falco, kube-bench, OPA/Gatekeeper, etc.)._
 _2025-12-04: Platform Engineering Track planned - 75 modules across foundations (19), disciplines (31), and toolkits (25). Covers SRE, Platform Engineering, GitOps, DevSecOps, MLOps. Directory structure created, README updated with learning paths._
+_2025-12-05: Foundations complete (#23-#27) - 19 modules with 4 Did You Know facts each._
+_2025-12-05: Polished #28 SRE, #29 Platform Engineering, #30 GitOps to 10/10. Added 4th Did You Know to all SRE (7) and GitOps (6) modules, fixed Platform Engineering 2.6 (reduced 5→4 facts), fixed GitOps 3.6 format (inline blockquotes → proper section)._
 
 ## Open GitHub Issues
 | # | Issue | Status |
