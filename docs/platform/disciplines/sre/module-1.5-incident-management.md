@@ -335,6 +335,8 @@ Bad alerts are:
 
 3. **"All hands" incidents often have worse outcomes** than properly staffed responses. Too many people creates confusion and duplicated effort.
 
+4. **PagerDuty's annual "State of On-Call" report** consistently shows that engineers at high-performing organizations get paged less frequently but handle more complex issues—because they've automated away the simple stuff and have better tooling for the hard stuff.
+
 ---
 
 ## War Story: The Incident That Went Right

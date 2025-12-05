@@ -275,6 +275,8 @@ The question isn't "avoid spending budget" — it's "spend budget wisely."
 
 3. **Some teams have "error budget loans"** — you can "borrow" from next period's budget for critical launches, but you have to "pay it back" with extra reliability work.
 
+4. **Error budgets fundamentally changed the Dev vs Ops dynamic** at Google. Before error budgets, operations could always say "no" to releases. After, developers could say "we have budget" and release without permission—as long as they owned the consequences when budget ran out.
+
 ---
 
 ## War Story: The Budget That Saved the Launch

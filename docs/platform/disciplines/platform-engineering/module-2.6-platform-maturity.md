@@ -25,11 +25,13 @@ Maturity models provide a map. They show where you are, where you could be, and 
 
 ## Did You Know?
 
-- **Most organizations overestimate their platform maturity** by 1-2 levels when self-assessing—external benchmarking reveals gaps
-- **Spotify's platform took 7 years** to reach what they consider "mature"—rushing maturity leads to fragile foundations
-- **The CNCF Platform Maturity Model** identifies that 60% of organizations are at "Provisional" or lower levels
-- **Platform ROI becomes clearly measurable** at Level 3 (Scalable) and above—earlier stages are investments
-- **The "J-curve" of platform investment** is real: productivity often dips during initial platform rollout before rising—set expectations accordingly with stakeholders
+1. **Most organizations overestimate their platform maturity** by 1-2 levels when self-assessing—external benchmarking reveals gaps.
+
+2. **Spotify's platform took 7 years** to reach what they consider "mature"—rushing maturity leads to fragile foundations.
+
+3. **The CNCF Platform Maturity Model** identifies that 60% of organizations are at "Provisional" or lower levels.
+
+4. **The "J-curve" of platform investment** is real: productivity often dips during initial platform rollout before rising—set expectations accordingly with stakeholders.
 
 ---
 

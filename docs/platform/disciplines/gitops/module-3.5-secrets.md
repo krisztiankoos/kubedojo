@@ -474,6 +474,8 @@ Answer these questions to help choose:
 
 3. **SOPS was created by Mozilla** for their internal infrastructure. It's designed for GitOps-style workflows from the start.
 
+4. **GitGuardian's 2023 report** found over 10 million secrets exposed in public GitHub commits that year alone. The most common: API keys, database credentials, and cloud provider secrets. Prevention beats detection every time.
+
 ---
 
 ## War Story: The Secret That Lived in Git Forever

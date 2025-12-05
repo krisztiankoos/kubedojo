@@ -398,6 +398,8 @@ Pre-scales 10-15 minutes before predicted spike
 
 3. **AWS reports that customers typically over-provision by 30-40%** on average. Right-sizing can significantly reduce cloud costs.
 
+4. **Twitter's "Fail Whale"** (the famous over-capacity error page) became so iconic that it was merchandised on t-shirts. The whale appeared during early Twitter's frequent capacity issues and drove the company to completely re-architect their system—eventually building their own capacity planning expertise that now handles billions of tweets.
+
 ---
 
 ## War Story: The Black Friday That Worked

@@ -313,6 +313,8 @@ Priority order: 2 → 1 → 3 → (maybe 4)
 
 3. **Some teams measure "toil velocity"** — how fast toil is increasing. A positive toil velocity is a warning sign that the system is outgrowing its automation.
 
+4. **XKCD's "Is It Worth the Time?" chart** (xkcd.com/1205) became a cult classic among SREs for calculating automation ROI. The comic shows exactly how much time you can spend automating a task based on how often you do it and how much time it saves—printed on countless office walls.
+
 ---
 
 ## War Story: The Automation That Saved the Team

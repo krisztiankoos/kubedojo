@@ -323,6 +323,8 @@ There's no single way to structure SRE. Here are common models:
 
 3. **Netflix famously has no SRE team**. Instead, they practice "full-cycle developers" where each team owns their entire service lifecycle. They invest heavily in tooling to make this possible.
 
+4. **The first Google SRE book (2016) was downloaded over 1 million times** in its first month and sparked an industry-wide transformation. Before this, operations was rarely discussed with engineering rigor—now SRE is one of the most sought-after specializations in tech.
+
 ---
 
 ## War Story: The Team That Couldn't Scale

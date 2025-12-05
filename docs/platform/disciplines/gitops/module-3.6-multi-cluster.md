@@ -109,8 +109,6 @@ cluster-config:
     storage-class: gp3-eu
 ```
 
-> **Did You Know?** Netflix operates over 500 microservices across thousands of cloud instances. Their deployment platform Spinnaker was born from the need to manage deployments at this scale—GitOps tools like ArgoCD and Flux learned from these lessons.
-
 ---
 
 ## 2. Fleet Management Patterns
@@ -246,8 +244,6 @@ clusters/
     ├── inventory-prod/
     └── inventory-staging/
 ```
-
-> **Try This:** Think about how you'd organize 20 clusters across 3 regions, 2 environments (prod/staging), and 4 teams. Which grouping strategy makes the most sense? What about when you need to apply a security patch to all production clusters regardless of region or team?
 
 ---
 
@@ -645,8 +641,6 @@ spec:
               value: ${CLUSTER_NAME}
 ```
 
-> **Did You Know?** Google's Borg system (Kubernetes' predecessor) managed millions of containers across thousands of machines using a configuration language called BCL. Kubernetes' declarative YAML approach was inspired by lessons learned from Borg's configuration management at scale.
-
 ---
 
 ## 5. Hub-Spoke vs Mesh Topologies
@@ -912,6 +906,18 @@ webhooks:
 2. Pre-sync validation hooks
 3. Regional isolation in ApplicationSet generators
 4. Compliance drift detection alerts
+
+---
+
+## Did You Know?
+
+1. **Netflix operates over 500 microservices** across thousands of cloud instances. Their deployment platform Spinnaker was born from the need to manage deployments at this scale—GitOps tools like ArgoCD and Flux learned from these lessons.
+
+2. **Google's Borg system** (Kubernetes' predecessor) managed millions of containers across thousands of machines using a configuration language called BCL. Kubernetes' declarative YAML approach was inspired by lessons learned from Borg's configuration management at scale.
+
+3. **Rancher Fleet can manage up to 1 million clusters** according to their design goals. While few organizations need that scale, it demonstrates how fleet management tooling has evolved beyond simple multi-cluster to true hyperscale.
+
+4. **The Kubernetes Multi-Cluster SIG** is actively developing standards for fleet management, including the Cluster Inventory API and Work API, aiming to make multi-cluster a first-class citizen in the Kubernetes ecosystem.
 
 ---
 

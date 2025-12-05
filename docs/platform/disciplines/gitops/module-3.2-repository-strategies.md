@@ -368,6 +368,8 @@ apps/
 
 3. **Spotify pioneered many polyrepo patterns** for autonomy, but found they needed strong conventions and tooling to avoid chaos. Their "Golden Path" concept addresses this.
 
+4. **Microsoft's Windows codebase moved to Git** in 2017 with over 3.5 million files—they had to create Git Virtual File System (GVFS, now VFS for Git) to make it practical. Repository strategy isn't just about organization, it's about tooling limitations.
+
 ---
 
 ## War Story: The Branch Strategy That Backfired

@@ -396,6 +396,8 @@ spec:
 
 3. **Some teams use "promotion bots"** that automatically promote after tests pass and a timer expires. No human approval needed for staging, human approval only for prod.
 
+4. **LinkedIn's deployment system** promotes changes through 5 stages before reaching all users: canary → early adopters → first tier → second tier → full rollout. Each stage has automated health checks that can halt the promotion.
+
 ---
 
 ## War Story: The Promotion That Skipped Staging

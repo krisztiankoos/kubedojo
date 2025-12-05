@@ -259,6 +259,8 @@ groups:
 
 3. **Some drift is intentional and acceptable**. The key is knowing which drift matters and which doesn't. HPA scaling isn't a problem; manual hotfixes are.
 
+4. **AWS Config** was created specifically to address drift detection at cloud infrastructure level. The concept of "desired state vs actual state" reconciliation exists at every layer of the stack, from cloud resources to Kubernetes to application config.
+
 ---
 
 ## War Story: The Drift That Hid a Bug

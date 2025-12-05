@@ -315,6 +315,8 @@ Example:
 
 3. **Many teams track "SLO burn rate"** — how fast you're consuming your error budget. Burn rate of 1 means you'll exactly exhaust budget. Above 1 means you're in trouble.
 
+4. **The concept of "nines" (99.9%, 99.99%) comes from telephony**. The Bell System historically promised "five nines" (99.999%) availability for phone service, allowing only 5.26 minutes of downtime per year—a standard that influenced modern SLO culture in tech.
+
 ---
 
 ## War Story: The SLO That Changed Everything

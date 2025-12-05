@@ -353,6 +353,8 @@ Could detection be faster? [Yes/No, how]
 
 3. **John Allspaw (former Etsy CTO) popularized "blameless postmortems" in tech**. His 2012 talk "Blameless PostMortems" is considered a foundational SRE resource.
 
+4. **Some companies publish their postmortems publicly** (GitLab, Cloudflare, Google). GitLab's handbook even includes their postmortem templates. This radical transparency builds customer trust and contributes to industry-wide learning.
+
 ---
 
 ## War Story: The Postmortem That Changed Culture

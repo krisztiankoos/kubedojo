@@ -266,6 +266,8 @@ GitOps answers should be: Git repo, Agent recreates it, Check Git repo.
 
 3. **Google's Borg (Kubernetes' predecessor) used a similar pattern** — a central config system with continuous reconciliation — long before GitOps was named.
 
+4. **The OpenGitOps project** became a CNCF Sandbox project in 2021, establishing GitOps as an industry-standard practice with formal principles rather than just a marketing term.
+
 ---
 
 ## War Story: The Deployment That Fixed Itself
