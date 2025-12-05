@@ -14,10 +14,10 @@
 | Disciplines (SRE #28) | ✅ Complete | 7/7 |
 | Disciplines (Platform Eng #29) | ✅ Complete | 6/6 |
 | Disciplines (GitOps #30) | ✅ Complete | 6/6 |
-| Disciplines (DevSecOps #31) | 📋 Planned | 0/6 |
+| Disciplines (DevSecOps #31) | ✅ Complete | 6/6 |
 | Disciplines (MLOps #32) | 📋 Planned | 0/6 |
 | Toolkits | 📋 Planned | 0/25 |
-| **Platform Total** | | **38/75** |
+| **Platform Total** | | **44/75** |
 
 ## Quality Standard
 10/10 quality = 4 "Did You Know?" facts per module.
@@ -94,11 +94,10 @@ All completed modules meet this standard.
 | KCNA | ✅ Complete | 21 |
 | KCSA | ✅ Complete | 25 |
 | Prerequisites | ✅ Complete | 23 |
-| Platform (partial) | 🚧 In Progress | 38/75 |
-| **Total** | | **203/240** |
+| Platform (partial) | 🚧 In Progress | 44/75 |
+| **Total** | | **209/240** |
 
 ## Next Steps
-- Platform Track: DevSecOps discipline (#31 - 6 modules)
 - Platform Track: MLOps discipline (#32 - 6 modules)
 - Platform Track: Toolkits (#33-#37 - 25 modules)
 - CKA Mock Exams (Part 6) - optional/deferred
@@ -124,6 +123,7 @@ _2025-12-04: KCSA reviewed - all 25 modules already at 10/10 quality. No changes
 _2025-12-04: Platform Engineering Track planned - 75 modules across foundations (19), disciplines (31), and toolkits (25). Covers SRE, Platform Engineering, GitOps, DevSecOps, MLOps. Directory structure created, README updated with learning paths._
 _2025-12-05: Foundations complete (#23-#27) - 19 modules with 4 Did You Know facts each._
 _2025-12-05: Polished #28 SRE, #29 Platform Engineering, #30 GitOps to 10/10. Added 4th Did You Know to all SRE (7) and GitOps (6) modules, fixed Platform Engineering 2.6 (reduced 5→4 facts), fixed GitOps 3.6 format (inline blockquotes → proper section)._
+_2025-12-05: DevSecOps discipline (#31) complete - 6 modules covering shift-left security, CI/CD security, supply chain security (SBOM, Sigstore), runtime security (Falco, NetworkPolicies), and security culture. All modules at 10/10 quality with hands-on exercises using real tools (Bandit, Trivy, Semgrep, Cosign, etc.)._
 
 ## Open GitHub Issues
 | # | Issue | Status |
