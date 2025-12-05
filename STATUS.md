@@ -7,6 +7,11 @@
 
 **Platform Engineering Track** - ✅ COMPLETE! All 77 modules across foundations, disciplines, and toolkits.
 
+**New Tracks Planned:**
+- Linux Deep Dive Track (#44) - 28 modules
+- AIOps Discipline (#42) - 6 modules
+- AIOps Tools Toolkit (#43) - 4 modules
+
 ## Platform Engineering Track Progress
 | Section | Status | Modules |
 |---------|--------|---------|
@@ -27,6 +32,25 @@
 | Toolkits (ML Platforms #37) | ✅ Complete | 3/3 |
 | **Platform Total** | | **77/77** |
 
+## Linux Deep Dive Track (Planned)
+| Section | Issue | Modules |
+|---------|-------|---------|
+| System Essentials | #45 | 4 |
+| Container Primitives | #46 | 4 |
+| Networking | #47 | 4 |
+| Security Hardening | #48 | 4 |
+| Performance | #49 | 4 |
+| Troubleshooting | #50 | 4 |
+| Shell Scripting | #51 | 4 |
+| **Total** | | **28** |
+
+## AIOps (Planned)
+| Section | Issue | Modules |
+|---------|-------|---------|
+| AIOps Discipline | #42 | 6 |
+| AIOps Tools Toolkit | #43 | 4 |
+| **Total** | | **10** |
+
 ## Toolkit Structure (Revised)
 Original 5×5 structure replaced with natural module counts:
 - Observability: 5 modules (Prometheus, OTel, Grafana, Loki, Tracing)
@@ -46,67 +70,6 @@ Original 5×5 structure replaced with natural module counts:
 
 All completed modules meet this standard.
 
-## KCSA Progress Summary
-| Part | Status | Modules |
-|------|--------|---------|
-| Part 0: Introduction | ✅ Complete | 2/2 |
-| Part 1: Cloud Native Security (14%) | ✅ Complete | 3/3 |
-| Part 2: Cluster Component Security (22%) | ✅ Complete | 4/4 |
-| Part 3: Security Fundamentals (22%) | ✅ Complete | 5/5 |
-| Part 4: Threat Model (16%) | ✅ Complete | 4/4 |
-| Part 5: Platform Security (16%) | ✅ Complete | 4/4 |
-| Part 6: Compliance Frameworks (10%) | ✅ Complete | 3/3 |
-
-## KCNA Progress Summary
-| Part | Status | Modules |
-|------|--------|---------|
-| Part 0: Introduction | ✅ Complete | 2/2 |
-| Part 1: Kubernetes Fundamentals (46%) | ✅ Complete | 8/8 |
-| Part 2: Container Orchestration (22%) | ✅ Complete | 4/4 |
-| Part 3: Cloud Native Architecture (16%) | ✅ Complete | 3/3 |
-| Part 4: Cloud Native Observability (8%) | ✅ Complete | 2/2 |
-| Part 5: Application Delivery (8%) | ✅ Complete | 2/2 |
-
-## CKS Progress Summary
-| Part | Status | Modules |
-|------|--------|---------|
-| Part 0: Environment Setup | ✅ Complete | 4/4 |
-| Part 1: Cluster Setup (10%) | ✅ Complete | 5/5 |
-| Part 2: Cluster Hardening (15%) | ✅ Complete | 5/5 |
-| Part 3: System Hardening (15%) | ✅ Complete | 4/4 |
-| Part 4: Microservice Vulnerabilities (20%) | ✅ Complete | 4/4 |
-| Part 5: Supply Chain Security (20%) | ✅ Complete | 4/4 |
-| Part 6: Runtime Security (20%) | ✅ Complete | 4/4 |
-
-## Prerequisite Tracks Progress
-| Track | Status | Modules |
-|-------|--------|---------|
-| Philosophy & Design | ✅ Complete | 4/4 |
-| Cloud Native 101 | ✅ Complete | 5/5 |
-| Kubernetes Basics | ✅ Complete | 8/8 |
-| Modern DevOps Practices | ✅ Complete | 6/6 |
-
-## CKAD Progress Summary
-| Part | Status | Modules |
-|------|--------|---------|
-| Part 0: Environment | ✅ Complete | 5/5 |
-| Part 1: Application Design & Build | ✅ Complete | 5/5 |
-| Part 2: Application Deployment | ✅ Complete | 4/4 |
-| Part 3: Application Observability | ✅ Complete | 5/5 |
-| Part 4: Environment & Security | ✅ Complete | 6/6 |
-| Part 5: Services & Networking | ✅ Complete | 3/3 |
-
-## CKA Progress Summary
-| Part | Status | Modules |
-|------|--------|---------|
-| Part 0: Environment | ✅ Complete | 5/5 |
-| Part 1: Cluster Architecture | ✅ Complete | 7/7 |
-| Part 2: Workloads & Scheduling | ✅ Complete | 7/7 |
-| Part 3: Services & Networking | ✅ Complete | 7/7 |
-| Part 4: Storage | ✅ Complete | 5/5 |
-| Part 5: Troubleshooting | ✅ Complete | 7/7 |
-| Part 6: Mock Exams | 📋 Deferred | 0/8 |
-
 ## Overall Curriculum Status
 | Curriculum | Status | Modules |
 |------------|--------|---------|
@@ -116,19 +79,35 @@ All completed modules meet this standard.
 | KCNA | ✅ Complete | 21 |
 | KCSA | ✅ Complete | 25 |
 | Prerequisites | ✅ Complete | 23 |
-| Platform | ✅ Complete | 77/77 |
-| **Total** | | **242/250** |
+| Platform | ✅ Complete | 77 |
+| **Completed** | | **242** |
+| Linux (planned) | 📋 Planned | 28 |
+| AIOps (planned) | 📋 Planned | 10 |
+| **Total Planned** | | **280** |
 
 ## Next Steps
+- Start Linux Deep Dive Track (#44-#51)
+- Start AIOps content (#42-#43)
 - CKA Mock Exams (Part 6) - optional/deferred (8 modules)
-- All core curriculum complete!
 
 ## Blockers
 None
 
-## File Naming Notes
-- GitOps modules: `module-3.4-drift-detection.md` (not `drift-detection-and-remediation`)
-- SRE modules: `module-1.2-slos.md` (not `service-level-objectives`)
+## Open GitHub Issues
+| # | Issue | Status |
+|---|-------|--------|
+| #14 | Curriculum Monitoring & Official Sources | 📋 Open |
+| #15 | Practice Environment & Exercise Approach | 📋 Open |
+| #42 | Discipline: AIOps | 📋 Planned (6 modules) |
+| #43 | Toolkit: AIOps Tools | 📋 Planned (4 modules) |
+| #44 | Linux Deep Dive Track | 📋 Planned (main) |
+| #45 | Linux: System Essentials | 📋 Planned (4 modules) |
+| #46 | Linux: Container Primitives | 📋 Planned (4 modules) |
+| #47 | Linux: Networking | 📋 Planned (4 modules) |
+| #48 | Linux: Security Hardening | 📋 Planned (4 modules) |
+| #49 | Linux: Performance | 📋 Planned (4 modules) |
+| #50 | Linux: Troubleshooting | 📋 Planned (4 modules) |
+| #51 | Linux: Shell Scripting & Automation | 📋 Planned (4 modules) |
 
 ## Session Notes
 _2025-12-02: CKA Parts 0-5 complete (33 modules). Theory done, mock exams deferred._
@@ -155,15 +134,11 @@ _2025-12-05: Networking Toolkit complete (#39) - 2 modules: Cilium, Service Mesh
 _2025-12-05: Scaling & Reliability Toolkit complete (#40) - 3 modules: Karpenter, KEDA, Velero._
 _2025-12-05: Platforms Toolkit complete (#36) - 3 modules: Backstage, Crossplane, cert-manager._
 _2025-12-05: Developer Experience Toolkit complete (#41) - 3 modules: k9s+CLI, Telepresence+Tilt, Local K8s._
-_2025-12-05: ML Platforms Toolkit complete (#37) - 3 modules: Kubeflow, MLflow, Feature Stores (Feast). Platform Engineering Track 100% complete!
-
-## Open GitHub Issues
-| # | Issue | Status |
-|---|-------|--------|
-| #7 | CKA Part 6: Mock Exams | 📋 Deferred |
-| #13 | Kubestronaut Path - Master Roadmap | Open |
-| #14 | Curriculum Monitoring & Official Sources | Open |
-| #15 | Practice Environment & Exercise Approach | Open |
+_2025-12-05: ML Platforms Toolkit complete (#37) - 3 modules: Kubeflow, MLflow, Feature Stores (Feast). Platform Engineering Track 100% complete!_
+_2025-12-05: All toolkit modules polished - added 4th "Did You Know?" to 12 modules that were missing them._
+_2025-12-05: Closed all Platform Engineering issues (#22, #33-41). All 77 modules committed and pushed._
+_2025-12-05: Created AIOps issues - Discipline (#42, 6 modules) and Toolkit (#43, 4 modules)._
+_2025-12-05: Created Linux Deep Dive Track (#44) with 7 sub-issues (#45-51) for 28 modules covering system essentials, container primitives, networking, security hardening, performance, troubleshooting, and shell scripting._
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.
