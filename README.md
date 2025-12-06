@@ -113,7 +113,7 @@ No paywalls. No upsells. Theory-first.
 |-------|---------|--------|
 | [Prerequisites](docs/prerequisites/) | 23 | ✅ Complete |
 | [Kubernetes Certifications](docs/k8s/) | 142 | ✅ Complete |
-| [Platform Engineering](docs/platform/) | ~75 | 🚧 Planned |
+| [Platform Engineering](docs/platform/) | 80 | ✅ Complete |
 
 ---
 
@@ -129,21 +129,19 @@ No paywalls. No upsells. Theory-first.
 
 ## Why This Exists
 
-Cloud native education is fragmented. Certification courses charge $300-500+ for shallow content. Platform engineering knowledge lives in scattered blog posts. Tool documentation tells you *what*, not *why*.
+A free, text-based curriculum for learning Kubernetes and platform engineering.
 
-KubeDojo is different:
-- **Free forever** — No paid tiers, no premium content
+- **Free** — No paywalls, open source
 - **Theory-first** — Understand principles before tools
-- **Practitioner-built** — By people who run production systems
-- **Complete path** — From beginner to platform engineer, not just cert prep
+- **Text-based** — Searchable, version-controlled, no videos
+
+**What we are not:** A replacement for paid courses like KodeKloud or Udemy. We don't offer mock exams, video lessons, or hands-on labs for every module. For exam simulation, use [killer.sh](https://killer.sh). For interactive labs, use [killercoda.com](https://killercoda.com).
 
 ---
 
 ## Philosophy
 
 **Theory before hands-on.** You can't troubleshoot what you don't understand.
-
-**Speed is a skill.** CKA gives you ~7 minutes per question. We train speed explicitly.
 
 **No memorization.** K8s docs are available during exams. We teach navigation, not YAML memorization.
 
