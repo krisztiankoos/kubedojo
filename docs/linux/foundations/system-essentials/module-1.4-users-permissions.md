@@ -1,0 +1,664 @@
+# Module 1.4: Users & Permissions
+
+> **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
+
+## Prerequisites
+
+Before starting this module:
+- **Required**: [Module 1.3: Filesystem Hierarchy](module-1.3-filesystem-hierarchy.md)
+- **Helpful**: Understanding of basic file operations
+
+---
+
+## Why This Module Matters
+
+Linux is a multi-user system. Every process runs as a user, every file has an owner, and permissions control who can do what.
+
+Understanding users and permissions is essential because:
+
+- **Container security** — Containers run as users; root in container = dangerous
+- **Kubernetes security contexts** — runAsUser, runAsGroup, fsGroup
+- **File access** — Why can't my container write to this volume?
+- **Least privilege** — Running as root is rarely necessary
+
+When a pod fails with "permission denied" or your container can't read a mounted secret, you need to understand UIDs, GIDs, and permissions.
+
+---
+
+## Did You Know?
+
+- **UID 0 is always root** — regardless of the username. You could rename "root" to "admin" and UID 0 would still have full system access. The kernel doesn't care about names, only numbers.
+
+- **UIDs 1-999 are reserved for system accounts** on most distributions. Human users typically start at UID 1000. This convention helps identify system services vs real users.
+
+- **Kubernetes runs containers as root by default** unless you explicitly set `runAsNonRoot: true` or specify a `runAsUser`. This is a common security mistake.
+
+- **setuid programs are a major attack vector** — Any bug in a setuid root binary is a privilege escalation vulnerability. This is why `ping` no longer requires setuid on modern systems (it uses capabilities instead).
+
+---
+
+## Users and Groups
+
+### User Identification
+
+Every user has:
+- **Username** — Human-readable name (nginx, ubuntu, root)
+- **UID** — Numeric identifier (what the kernel uses)
+- **Home directory** — Default location for user files
+- **Default shell** — What runs when they log in
+
+### /etc/passwd — User Database
+
+```bash
+cat /etc/passwd | head -5
+
+# Format: username:x:UID:GID:comment:home:shell
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+ubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash
+```
+
+| Field | Meaning |
+|-------|---------|
+| username | Login name |
+| x | Password stored in /etc/shadow |
+| UID | User ID |
+| GID | Primary group ID |
+| comment | Full name or description |
+| home | Home directory |
+| shell | Default shell (nologin = can't login) |
+
+### /etc/shadow — Password Storage
+
+```bash
+# Only readable by root
+sudo cat /etc/shadow | head -3
+
+# Format: username:password_hash:last_change:min:max:warn:inactive:expire
+root:$6$abc...:19000:0:99999:7:::
+ubuntu:$6$xyz...:19000:0:99999:7:::
+```
+
+The password hash uses format `$algorithm$salt$hash`:
+- `$1$` = MD5 (legacy, insecure)
+- `$5$` = SHA-256
+- `$6$` = SHA-512 (recommended)
+
+### Groups
+
+```bash
+cat /etc/group | head -5
+
+# Format: groupname:x:GID:members
+root:x:0:
+sudo:x:27:ubuntu
+docker:x:998:ubuntu
+```
+
+```bash
+# See your groups
+groups
+
+# See groups for any user
+groups ubuntu
+
+# All group memberships
+id ubuntu
+# Output: uid=1000(ubuntu) gid=1000(ubuntu) groups=1000(ubuntu),27(sudo),998(docker)
+```
+
+### Special UIDs
+
+| UID | User | Purpose |
+|-----|------|---------|
+| 0 | root | Superuser, full access |
+| 1-999 | System | Service accounts |
+| 65534 | nobody | Minimal privilege user |
+| 1000+ | Regular | Human users |
+
+---
+
+## File Permissions
+
+### The Permission Model
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                       -rwxr-xr-x                               │
+│                        │││││││││                               │
+│  Type ─────────────────┘││││││││                               │
+│                          │││││││                               │
+│  Owner permissions ──────┴┴┴│││││                              │
+│       r = read                │││││                             │
+│       w = write               │││││                             │
+│       x = execute             │││││                             │
+│                               │││││                             │
+│  Group permissions ───────────┴┴┴││                            │
+│       r = read                    ││                            │
+│       - = no write                ││                            │
+│       x = execute                 ││                            │
+│                                   ││                            │
+│  Other permissions ───────────────┴┴                           │
+│       r = read                                                  │
+│       - = no write                                              │
+│       x = execute                                               │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Permission Meanings
+
+| Permission | For Files | For Directories |
+|------------|-----------|-----------------|
+| r (read) | View contents | List contents |
+| w (write) | Modify contents | Create/delete files |
+| x (execute) | Run as program | Enter directory |
+
+### Octal Notation
+
+Each permission has a numeric value:
+- r = 4
+- w = 2
+- x = 1
+
+```
+rwx = 4+2+1 = 7
+r-x = 4+0+1 = 5
+r-- = 4+0+0 = 4
+
+Common patterns:
+755 = rwxr-xr-x  (executables, directories)
+644 = rw-r--r-- (regular files)
+700 = rwx------  (private directories)
+600 = rw-------  (private files, like SSH keys)
+```
+
+### Viewing Permissions
+
+```bash
+ls -la
+# Output:
+# drwxr-xr-x  2 ubuntu ubuntu 4096 Dec  1 10:00 mydir
+# -rw-r--r--  1 ubuntu ubuntu  100 Dec  1 10:00 myfile.txt
+# lrwxrwxrwx  1 ubuntu ubuntu   10 Dec  1 10:00 mylink -> myfile.txt
+
+# Type indicators:
+# - = regular file
+# d = directory
+# l = symbolic link
+# c = character device
+# b = block device
+# s = socket
+# p = named pipe
+```
+
+### Changing Permissions
+
+```bash
+# Using octal
+chmod 755 script.sh
+chmod 600 secrets.txt
+
+# Using symbolic
+chmod u+x script.sh       # Add execute for user
+chmod g-w file.txt        # Remove write for group
+chmod o-rwx private.txt   # Remove all for others
+chmod a+r public.txt      # Add read for all
+
+# Recursive
+chmod -R 755 directory/
+```
+
+### Changing Ownership
+
+```bash
+# Change owner
+chown ubuntu file.txt
+
+# Change owner and group
+chown ubuntu:docker file.txt
+
+# Change just group
+chgrp docker file.txt
+
+# Recursive
+chown -R ubuntu:ubuntu /home/ubuntu/
+```
+
+---
+
+## Special Permissions
+
+### setuid (Set User ID)
+
+When executed, runs as the file's owner (not the caller).
+
+```
+-rwsr-xr-x 1 root root /usr/bin/passwd
+    ^
+    └── setuid bit (s instead of x)
+```
+
+```bash
+# Find setuid files
+find /usr -perm -4000 -type f 2>/dev/null
+
+# Set setuid (rarely needed)
+chmod u+s program
+chmod 4755 program
+```
+
+### setgid (Set Group ID)
+
+For files: Runs as the file's group.
+For directories: New files inherit the directory's group.
+
+```bash
+# Set setgid on directory
+chmod g+s /shared/
+chmod 2775 /shared/
+
+# Verify
+ls -ld /shared/
+# drwxrwsr-x 2 root developers 4096 Dec 1 /shared/
+#       ^
+#       └── setgid bit
+```
+
+### Sticky Bit
+
+Only file owner (or root) can delete files in the directory.
+
+```bash
+# Classic example
+ls -ld /tmp
+# drwxrwxrwt 10 root root 4096 Dec 1 /tmp
+#          ^
+#          └── sticky bit (t)
+
+# Set sticky bit
+chmod +t /shared/
+chmod 1777 /shared/
+```
+
+---
+
+## sudo and Privilege Escalation
+
+### How sudo Works
+
+```
+┌──────────────┐     sudo     ┌──────────────┐
+│  User Shell  │────command───│   command    │
+│   UID 1000   │              │   UID 0      │
+└──────────────┘              └──────────────┘
+       │                             │
+       │  1. Check /etc/sudoers      │
+       │  2. Verify user's password  │
+       │  3. Execute as root         │
+       └─────────────────────────────┘
+```
+
+### /etc/sudoers Configuration
+
+```bash
+# View sudoers (NEVER edit directly, use visudo)
+sudo cat /etc/sudoers
+
+# Format: who where=(as_who) what
+root    ALL=(ALL:ALL) ALL
+%sudo   ALL=(ALL:ALL) ALL
+ubuntu  ALL=(ALL) NOPASSWD: ALL
+nginx   ALL=(root) /usr/sbin/nginx, /bin/systemctl restart nginx
+```
+
+| Part | Meaning |
+|------|---------|
+| who | User or %group |
+| where | Hostname (usually ALL) |
+| as_who | Can sudo as which users |
+| what | Allowed commands |
+
+### sudo Best Practices
+
+```bash
+# Run single command as root
+sudo apt update
+
+# Run as different user
+sudo -u nginx whoami
+
+# Edit with sudo
+sudo nano /etc/hosts
+
+# Open root shell (use sparingly!)
+sudo -i
+
+# Check what you can sudo
+sudo -l
+```
+
+---
+
+## Container Security Context
+
+### Why This Matters for Kubernetes
+
+```yaml
+# Pod that runs as root (DANGEROUS!)
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: app
+    image: nginx
+    # No securityContext = runs as root (UID 0)
+```
+
+```yaml
+# Pod with proper security context
+apiVersion: v1
+kind: Pod
+spec:
+  securityContext:
+    runAsUser: 1000        # Run as UID 1000
+    runAsGroup: 3000       # Primary group GID 3000
+    fsGroup: 2000          # Group for mounted volumes
+    runAsNonRoot: true     # Refuse to start if image runs as root
+  containers:
+  - name: app
+    image: nginx
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL
+```
+
+### UID Mapping
+
+```
+Host System                     Container (with user namespace)
+┌──────────────────────┐       ┌──────────────────────┐
+│ UID 0 (root)         │       │ UID 0 (root) ────────┼──► Maps to UID 100000
+│ UID 1000 (ubuntu)    │       │ UID 1000 (app) ──────┼──► Maps to UID 101000
+└──────────────────────┘       └──────────────────────┘
+
+Without user namespace:
+Container UID 0 = Host UID 0 (DANGEROUS!)
+```
+
+### Common Permission Issues in Kubernetes
+
+```bash
+# Volume mounted as root
+$ ls -la /data
+drwxr-xr-x 2 root root 4096 /data
+
+# Container running as UID 1000
+# Can read but not write!
+
+# Solution: fsGroup in securityContext
+securityContext:
+  fsGroup: 1000  # Volumes will be writable by GID 1000
+```
+
+---
+
+## Common Mistakes
+
+| Mistake | Problem | Solution |
+|---------|---------|----------|
+| Running containers as root | Security vulnerability | Use runAsNonRoot: true |
+| 777 permissions | Anyone can modify | Use minimal permissions (755 or 644) |
+| Storing passwords in /etc/passwd | Exposed to all users | They go in /etc/shadow (automatic) |
+| sudo for everything | Accidents happen, audit trails lost | Use sudo only when necessary |
+| Ignoring setuid files | Security risk | Audit setuid files regularly |
+| Wrong fsGroup | Volumes not writable | Set fsGroup to container's GID |
+
+---
+
+## Quiz
+
+### Question 1
+What does permission mode 750 mean?
+
+<details>
+<summary>Show Answer</summary>
+
+- **7** (owner) = rwx (read, write, execute)
+- **5** (group) = r-x (read, execute)
+- **0** (other) = --- (no access)
+
+Owner can do everything, group can read and execute, others have no access.
+
+</details>
+
+### Question 2
+Why is running containers as root dangerous?
+
+<details>
+<summary>Show Answer</summary>
+
+Container root (UID 0) often maps to host root (UID 0). If an attacker escapes the container:
+
+1. They have root on the host
+2. Can access all containers on that node
+3. Can access Kubernetes secrets
+4. Can potentially compromise the cluster
+
+Always use `runAsNonRoot: true` in production.
+
+</details>
+
+### Question 3
+What's the difference between chmod and chown?
+
+<details>
+<summary>Show Answer</summary>
+
+- **chmod** changes **permissions** (what actions are allowed: rwx)
+- **chown** changes **ownership** (who owns the file: user and group)
+
+```bash
+chmod 644 file.txt  # Set permissions
+chown bob:staff file.txt  # Set owner to bob, group to staff
+```
+
+</details>
+
+### Question 4
+What is the sticky bit and why is /tmp sticky?
+
+<details>
+<summary>Show Answer</summary>
+
+The sticky bit (shown as `t`) on a directory means only the file owner can delete their files, even if others have write permission on the directory.
+
+/tmp is sticky because:
+- Everyone needs to create temp files (777)
+- But users shouldn't delete each other's files
+- The sticky bit provides this protection
+
+```bash
+ls -ld /tmp
+# drwxrwxrwt 10 root root 4096 /tmp
+```
+
+</details>
+
+### Question 5
+What does fsGroup do in a Kubernetes security context?
+
+<details>
+<summary>Show Answer</summary>
+
+**fsGroup** sets the group ownership of mounted volumes:
+
+1. All files in the volume are owned by the specified GID
+2. New files created are also owned by that GID
+3. The container's process has that GID as a supplementary group
+
+This solves permission issues with volume mounts:
+```yaml
+securityContext:
+  fsGroup: 1000  # Volumes writable by GID 1000
+```
+
+</details>
+
+---
+
+## Hands-On Exercise
+
+### Users and Permissions Deep Dive
+
+**Objective**: Master Linux users, groups, and permissions.
+
+**Environment**: Any Linux system where you have sudo access
+
+#### Part 1: User Information
+
+```bash
+# 1. Who are you?
+whoami
+id
+
+# 2. What groups are you in?
+groups
+
+# 3. Examine user database
+cat /etc/passwd | grep -E "^(root|nobody|$(whoami))"
+
+# 4. Check your entry
+grep "^$(whoami)" /etc/passwd
+```
+
+**Questions to answer:**
+- What's your UID?
+- What's your primary GID?
+- How many groups are you in?
+
+#### Part 2: Permission Practice
+
+```bash
+cd /tmp
+
+# 1. Create test files
+echo "public data" > public.txt
+echo "private data" > private.txt
+echo "#!/bin/bash\necho Hello" > script.sh
+
+# 2. Set permissions
+chmod 644 public.txt    # rw-r--r--
+chmod 600 private.txt   # rw-------
+chmod 755 script.sh     # rwxr-xr-x
+
+# 3. Verify
+ls -la public.txt private.txt script.sh
+
+# 4. Test execute permission
+./script.sh  # Should work
+
+chmod -x script.sh
+./script.sh  # Should fail: Permission denied
+
+# 5. Restore and run
+chmod +x script.sh
+./script.sh
+```
+
+#### Part 3: Ownership
+
+```bash
+# 1. Check ownership
+ls -la /tmp/*.txt
+
+# 2. Create a file for another user (if possible)
+echo "test" > /tmp/testfile.txt
+ls -la /tmp/testfile.txt
+
+# 3. Try to change owner (requires sudo)
+sudo chown root:root /tmp/testfile.txt
+ls -la /tmp/testfile.txt
+
+# 4. Can you still write to it?
+echo "more data" >> /tmp/testfile.txt  # Will fail
+
+# 5. Cleanup
+sudo rm /tmp/testfile.txt
+```
+
+#### Part 4: Special Permissions
+
+```bash
+# 1. Find setuid binaries
+find /usr/bin -perm -4000 2>/dev/null | head -10
+
+# 2. Examine /tmp (sticky bit)
+ls -ld /tmp
+
+# 3. Create a sticky directory
+mkdir /tmp/sticky-test
+chmod 1777 /tmp/sticky-test
+ls -ld /tmp/sticky-test
+
+# 4. Understand setgid for directories
+mkdir /tmp/shared-group
+chmod 2775 /tmp/shared-group
+ls -ld /tmp/shared-group
+
+# Cleanup
+rmdir /tmp/sticky-test /tmp/shared-group
+```
+
+#### Part 5: sudo Exploration
+
+```bash
+# 1. What can you sudo?
+sudo -l
+
+# 2. Run command as another user
+sudo -u nobody whoami
+
+# 3. Check sudoers (read-only)
+sudo cat /etc/sudoers | grep -v "^#" | grep -v "^$" | head -20
+```
+
+### Success Criteria
+
+- [ ] Identified your UID, GID, and groups
+- [ ] Created files with specific permissions (644, 600, 755)
+- [ ] Tested execute permission on a script
+- [ ] Found setuid binaries on the system
+- [ ] Understood sticky bit on /tmp
+
+---
+
+## Key Takeaways
+
+1. **UIDs are what matter** — The kernel uses numbers, not names
+
+2. **Permission triplet: owner-group-other** — Each has read, write, execute
+
+3. **Directories need x to enter** — Even if you have read permission
+
+4. **Containers should NOT run as root** — Use runAsNonRoot and runAsUser
+
+5. **fsGroup solves volume permissions** — Essential for writable mounts in Kubernetes
+
+---
+
+## What's Next?
+
+You've completed **System Essentials**! In the next section, **Container Primitives**, you'll learn how Linux namespaces and cgroups create the illusion of isolated systems—the foundation of all container technology.
+
+---
+
+## Further Reading
+
+- [Linux Users and Groups](https://wiki.archlinux.org/title/users_and_groups)
+- [File Permissions](https://www.linux.com/training-tutorials/understanding-linux-file-permissions/)
+- [Kubernetes Security Context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
+- [Container Security by Liz Rice](https://www.oreilly.com/library/view/container-security/9781492056690/)

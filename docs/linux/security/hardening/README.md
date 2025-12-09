@@ -1,0 +1,47 @@
+# Security Hardening
+
+> **Protecting Linux systems and containers through kernel-level security.**
+
+## Overview
+
+Security isn't just firewalls—it's defense in depth. This section covers the Linux security mechanisms that protect containers and hosts: kernel tuning, mandatory access controls (AppArmor, SELinux), and system call filtering (seccomp).
+
+## Modules
+
+| # | Module | Description | Time |
+|---|--------|-------------|------|
+| 4.1 | [Kernel Hardening & sysctl](module-4.1-kernel-hardening.md) | Network stack, memory protection, kernel parameters | 25-30 min |
+| 4.2 | [AppArmor Profiles](module-4.2-apparmor.md) | Mandatory access control, profile modes, K8s integration | 30-35 min |
+| 4.3 | [SELinux Contexts](module-4.3-selinux.md) | Policies, contexts, enforcing mode, troubleshooting | 35-40 min |
+| 4.4 | [seccomp Profiles](module-4.4-seccomp.md) | System call filtering, custom profiles | 25-30 min |
+
+## Why This Section Matters
+
+Linux security features are directly used by Kubernetes:
+
+- **sysctl** — Node hardening, network security
+- **AppArmor** — Pod security profiles (Ubuntu/Debian)
+- **SELinux** — Pod security profiles (RHEL/CentOS)
+- **seccomp** — System call filtering for containers
+
+CKS (Certified Kubernetes Security Specialist) specifically tests these topics.
+
+## Prerequisites
+
+- [Container Primitives](../../foundations/container-primitives/) — Especially capabilities & LSMs
+- [Networking](../../foundations/networking/) — For network hardening
+
+## Key Takeaways
+
+After completing this section, you'll understand:
+
+1. How to harden Linux kernels via sysctl
+2. How AppArmor profiles restrict application behavior
+3. How SELinux provides mandatory access control
+4. How seccomp filters dangerous system calls
+
+## Related Sections
+
+- **Previous**: [Networking](../../foundations/networking/)
+- **Next**: [Operations/Performance](../../operations/performance/)
+- **CKS**: Directly tested in System Hardening domain

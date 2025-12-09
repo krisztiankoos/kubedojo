@@ -1,0 +1,47 @@
+# Shell Scripting
+
+> **Automating Linux tasks with Bash.**
+
+## Overview
+
+Shell scripting transforms repetitive manual tasks into reliable automation. This section teaches Bash fundamentals, text processing, and practical scripting patterns used in DevOps and Kubernetes operations.
+
+## Modules
+
+| # | Module | Description | Time |
+|---|--------|-------------|------|
+| 7.1 | [Bash Fundamentals](module-7.1-bash-fundamentals.md) | Variables, conditionals, loops, functions | 30-35 min |
+| 7.2 | [Text Processing](module-7.2-text-processing.md) | grep, sed, awk, jq for data manipulation | 30-35 min |
+| 7.3 | [Practical Scripts](module-7.3-practical-scripts.md) | Common patterns, error handling, logging | 25-30 min |
+| 7.4 | [DevOps Automation](module-7.4-devops-automation.md) | kubectl scripts, CI/CD helpers, operational tools | 30-35 min |
+
+## Why This Section Matters
+
+DevOps and SRE work involves constant automation:
+
+- **Operational tasks** — Health checks, backups, deployments
+- **Data processing** — Log analysis, report generation
+- **Kubernetes management** — kubectl wrappers, cluster operations
+- **CI/CD pipelines** — Build scripts, deployment automation
+
+The shell is the universal interface to Linux systems.
+
+## Prerequisites
+
+- [System Essentials](../../foundations/system-essentials/) — Basic Linux commands
+- [Troubleshooting](../troubleshooting/) — Commands you'll want to automate
+
+## Key Takeaways
+
+After completing this section, you'll be able to:
+
+1. Write maintainable Bash scripts
+2. Process text with grep, sed, awk, and jq
+3. Handle errors and edge cases properly
+4. Automate Kubernetes and DevOps tasks
+
+## Related Sections
+
+- **Previous**: [Troubleshooting](../troubleshooting/)
+- **CKA/CKAD**: Scripting for exam efficiency
+- **Platform**: Automation foundation for all disciplines

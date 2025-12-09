@@ -1,0 +1,50 @@
+# Container Primitives
+
+> **The Linux features that make containers possible.**
+
+## Overview
+
+Containers aren't magic—they're built on Linux kernel features that have existed for years. This section demystifies container technology by teaching you the primitives: namespaces, cgroups, capabilities, and union filesystems.
+
+After this section, you'll understand that a "container" is just a process with:
+- **Namespaces** — Isolated view of system resources
+- **Cgroups** — Resource limits (CPU, memory)
+- **Capabilities** — Fine-grained privileges
+- **Union filesystem** — Layered filesystem (image + container layer)
+
+## Modules
+
+| # | Module | Description | Time |
+|---|--------|-------------|------|
+| 2.1 | [Linux Namespaces](module-2.1-namespaces.md) | PID, network, mount, UTS, user isolation | 30-35 min |
+| 2.2 | [Control Groups](module-2.2-cgroups.md) | CPU/memory limits, v1 vs v2, systemd integration | 30-35 min |
+| 2.3 | [Capabilities & LSMs](module-2.3-capabilities-lsms.md) | CAP_*, AppArmor, SELinux, seccomp overview | 25-30 min |
+| 2.4 | [Union Filesystems](module-2.4-union-filesystems.md) | OverlayFS, layers, storage drivers | 25-30 min |
+
+## Why This Section Matters
+
+Understanding container primitives lets you:
+
+- **Debug container issues** — Is it a namespace issue? A cgroup limit? Missing capabilities?
+- **Write secure containers** — Know which capabilities to drop, which syscalls to block
+- **Optimize images** — Understand layers and copy-on-write
+- **Understand Kubernetes** — Pod security, resource requests/limits, storage
+
+## Prerequisites
+
+- [System Essentials](../system-essentials/) — Kernel, processes, filesystem, permissions
+
+## Key Takeaways
+
+After completing this section, you'll understand:
+
+1. How namespaces create isolated environments (the "container" illusion)
+2. How cgroups enforce resource limits (what happens when memory is exceeded)
+3. Why containers don't need root (capabilities breakdown)
+4. How container images share layers efficiently (OverlayFS)
+
+## Related Sections
+
+- **Previous**: [System Essentials](../system-essentials/)
+- **Next**: [Networking](../networking/)
+- **Applies to**: Every container and Kubernetes concept

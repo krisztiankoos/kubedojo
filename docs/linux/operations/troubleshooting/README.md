@@ -1,0 +1,46 @@
+# Troubleshooting
+
+> **Systematic approaches to diagnosing Linux problems.**
+
+## Overview
+
+Troubleshooting isn't guesswork—it's methodology. This section teaches systematic approaches to finding root causes, using logs effectively, and debugging at different levels of the stack.
+
+## Modules
+
+| # | Module | Description | Time |
+|---|--------|-------------|------|
+| 6.1 | [Systematic Troubleshooting](module-6.1-systematic-troubleshooting.md) | Methodologies: hypothesis-driven, divide & conquer, timeline | 25-30 min |
+| 6.2 | [Log Analysis](module-6.2-log-analysis.md) | journald, syslog, log patterns, correlation | 25-30 min |
+| 6.3 | [Process Debugging](module-6.3-process-debugging.md) | strace, ltrace, /proc, debugging hung processes | 30-35 min |
+| 6.4 | [Network Debugging](module-6.4-network-debugging.md) | tcpdump, ss, connectivity issues, DNS problems | 30-35 min |
+
+## Why This Section Matters
+
+Production issues don't come with error messages. Systematic debugging skills help you:
+
+- **Find root causes faster** — Not just symptoms
+- **Debug Kubernetes issues** — Many have Linux causes
+- **Handle incidents** — Methodical approach reduces MTTR
+- **Learn from failures** — Understand what actually happened
+
+## Prerequisites
+
+- [Performance](../performance/) — USE method and metrics
+- [Networking](../../foundations/networking/) — TCP/IP and iptables
+- [Security Hardening](../../security/hardening/) — SELinux/AppArmor denials
+
+## Key Takeaways
+
+After completing this section, you'll understand:
+
+1. How to approach problems systematically
+2. How to use logs effectively
+3. How to trace process behavior
+4. How to debug network connectivity
+
+## Related Sections
+
+- **Previous**: [Performance](../performance/)
+- **Next**: [Shell Scripting](../shell-scripting/)
+- **CKA**: Cluster troubleshooting domain
