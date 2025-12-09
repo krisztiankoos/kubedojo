@@ -2,7 +2,7 @@
 
 > **Complexity**: `[MEDIUM]`
 >
-> **Time to Complete**: 30-35 minutes
+> **Time to Complete**: 40-45 minutes
 >
 > **Prerequisites**: [Module 2.1: What is Reliability?](module-2.1-what-is-reliability.md)
 >
@@ -10,27 +10,104 @@
 
 ---
 
+## The Cascade That Nobody Saw Coming
+
+**August 1st, 2019. Amazon Web Services.**
+
+The incident begins with a single overheating server in a Virginia data center. Temperature sensors trigger automatic failover—exactly as designed. The affected workloads shift to other servers. So far, everything is working perfectly.
+
+But here's where it gets interesting.
+
+The failover causes a spike in network traffic. The spike triggers rate limiters on internal services—a safety mechanism. But those rate limiters are a bit too aggressive. They start throttling legitimate traffic. Services that depend on those throttled services start timing out. Those timeouts trigger retries. The retries create more traffic. More rate limiting. More timeouts. More retries.
+
+Within minutes, a single overheating server has cascaded into a multi-hour outage affecting AWS S3, EC2, and Lambda in the US-East-1 region. Thousands of companies are down. Reddit. Slack. Twitch. iRobot's Roomba vacuums won't start. Dog doors won't open. Smart toilets won't flush.
+
+```
+THE ANATOMY OF A CASCADE
+═══════════════════════════════════════════════════════════════════════════════
+
+INITIAL TRIGGER (11:42 AM)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   Single server overheats                                                   │
+│           │                                                                 │
+│           ▼                                                                 │
+│   Automatic failover (WORKS CORRECTLY)                                      │
+│           │                                                                 │
+│           ▼                                                                 │
+│   Traffic spike to other servers                                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+AMPLIFICATION PHASE (11:42 - 11:50 AM)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   Traffic spike → Rate limiters activate                                    │
+│           │                                                                 │
+│           ▼                                                                 │
+│   Legitimate traffic throttled → Service timeouts                           │
+│           │                                                                 │
+│           ▼                                                                 │
+│   Timeouts trigger retries → MORE traffic                                   │
+│           │                                                                 │
+│           ▼                                                                 │
+│   More rate limiting → More timeouts → MORE retries                         │
+│           │                                                                 │
+│           └──────────────── FEEDBACK LOOP ────────────────┘                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+TOTAL COLLAPSE (11:50 AM onwards)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│   S3: DEGRADED  →  EC2: DEGRADED  →  Lambda: DOWN                          │
+│       │                 │                 │                                 │
+│       ▼                 ▼                 ▼                                 │
+│   Websites    │    Applications    │    Serverless                         │
+│   won't load  │    can't start     │    functions fail                     │
+│               │                    │                                        │
+│   Impact: Thousands of companies, millions of users, $100M+ in losses      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Root cause: One hot server
+Actual cause: Failure modes that amplified instead of contained
+```
+
+Every individual component worked exactly as designed. The failover worked. The rate limiters worked. The retry logic worked. But together, they created a catastrophe.
+
+This is why understanding failure modes matters. **The question isn't "will it fail?" but "HOW will it fail—and what happens next?"**
+
+---
+
 ## Why This Module Matters
 
-Every system fails. The question isn't "will it fail?" but "how will it fail?"
+Understanding failure modes lets you design systems that fail gracefully instead of catastrophically. The difference between a minor incident and a company-ending outage is often not whether failures happen, but how they propagate.
 
-Understanding failure modes lets you design systems that fail gracefully instead of catastrophically. A service that returns cached data when the database is down is more useful than one that throws errors. A shopping cart that works without recommendations is better than one that crashes entirely.
+Consider two architectures:
 
-This module teaches you to think systematically about failures—predicting them before they happen and designing responses that minimize impact.
+| Architecture | When Database Slows Down | Result |
+|--------------|--------------------------|--------|
+| **Tightly coupled** | All services wait → timeouts cascade → retries multiply → total outage | $2M loss |
+| **Well-isolated** | Checkout uses cached pricing → recommendations disabled → orders still flow | $5K loss |
+
+Same trigger. 400x difference in business impact. The only difference is how failure modes were designed.
 
 > **The Car Analogy**
 >
-> Modern cars have multiple failure modes designed in. Run out of fuel? The engine stops but the steering and brakes still work. Battery dies? The car stops but the doors still open. Brake line leaks? There's a second brake circuit. Engineers didn't just hope these systems wouldn't fail—they designed specific responses for when they do.
+> Modern cars have multiple failure modes designed in. Run out of fuel? The engine stops but the steering and brakes still work. Battery dies? The car stops but the doors still open. Brake line leaks? There's a second brake circuit.
+>
+> Engineers didn't just hope these systems wouldn't fail—they specifically designed what happens when they do. Your software needs the same intentional design.
 
 ---
 
 ## What You'll Learn
 
 - Categories of failure modes in distributed systems
-- FMEA (Failure Mode and Effects Analysis) technique
-- Designing for graceful degradation
-- Blast radius and failure isolation
-- Common failure patterns and responses
+- FMEA (Failure Mode and Effects Analysis) technique—how to systematically predict failures
+- Designing for graceful degradation—keeping some functionality when parts fail
+- Blast radius and failure isolation—containing damage
+- Common failure patterns and how to defend against them
 
 ---
 
@@ -38,82 +115,253 @@ This module teaches you to think systematically about failures—predicting them
 
 ### 1.1 The Failure Taxonomy
 
-Not all failures are equal. Understanding the type of failure guides your response.
+Not all failures are equal. A crash is different from corruption. A timeout is different from an error. Understanding the type of failure guides your response.
 
 ```
-FAILURE TAXONOMY
-═══════════════════════════════════════════════════════════════
+FAILURE TAXONOMY: THE COMPLETE PICTURE
+═══════════════════════════════════════════════════════════════════════════════
 
-BY VISIBILITY
-─────────────────────────────────────────────────────────────
-Obvious:    Service crashes, errors in logs
-            └── Easy to detect, hard to prevent
+BY VISIBILITY: Can You Tell It Failed?
+─────────────────────────────────────────────────────────────────────────────
+OBVIOUS                                    SILENT
+┌─────────────────────────┐              ┌─────────────────────────┐
+│ • Process crash         │              │ • Wrong calculations    │
+│ • 500 error response    │              │ • Missing data          │
+│ • Connection refused    │              │ • Incorrect results     │
+│ • Timeout               │              │ • Data corruption       │
+│ • Error in logs         │              │ • Security breach       │
+└─────────────────────────┘              └─────────────────────────┘
+        │                                          │
+        ▼                                          ▼
+   Easy to DETECT                           Hard to DETECT
+   (monitoring catches it)                  (users discover it later)
 
-Silent:     Wrong results, data corruption
-            └── Hard to detect, often worse
+   Example: API returns 503               Example: Tax calculation
+   → Alert fires immediately              is off by 0.1%
+                                          → Discovered during audit
 
-BY SCOPE
-─────────────────────────────────────────────────────────────
-Partial:    Some requests fail, some succeed
-            └── Often caused by load or specific inputs
 
-Complete:   All requests fail
-            └── Often caused by dependencies or resources
+BY SCOPE: How Much Is Affected?
+─────────────────────────────────────────────────────────────────────────────
+PARTIAL                                    COMPLETE
+┌─────────────────────────┐              ┌─────────────────────────┐
+│ Some requests work      │              │ Nothing works           │
+│                         │              │                         │
+│ ████████████░░░░░░░░░░ │              │ ░░░░░░░░░░░░░░░░░░░░░░ │
+│  Working    │ Failing  │              │    All failing          │
+│            │          │              │                         │
+│ Usually caused by:      │              │ Usually caused by:      │
+│ • One bad server        │              │ • Database down         │
+│ • Specific input        │              │ • DNS failure           │
+│ • Resource exhaustion   │              │ • Config error          │
+│ • Race condition        │              │ • Certificate expired   │
+└─────────────────────────┘              └─────────────────────────┘
 
-BY DURATION
-─────────────────────────────────────────────────────────────
-Transient:  Fails once, then works (network hiccup)
-            └── Retry usually helps
 
-Intermittent: Fails sometimes, unpredictably
-              └── Hardest to debug
-
-Permanent:  Fails until fixed (misconfiguration)
-            └── Requires intervention
+BY DURATION: How Long Does It Last?
+─────────────────────────────────────────────────────────────────────────────
+TRANSIENT                  INTERMITTENT                PERMANENT
+┌────────────────┐       ┌────────────────┐       ┌────────────────┐
+│ ✓✓✓✓✗✓✓✓✓✓✓✓✓ │       │ ✓✓✗✓✓✓✗✓✗✓✓✗✓ │       │ ✗✗✗✗✗✗✗✗✗✗✗✗✗ │
+│ One-time fail  │       │ Random pattern  │       │ Stays broken   │
+└────────────────┘       └────────────────┘       └────────────────┘
+        │                         │                       │
+        ▼                         ▼                       ▼
+ • Network hiccup         • Resource leak         • Misconfiguration
+ • Packet loss            • Race condition        • Hardware failure
+ • GC pause               • Load-dependent bug    • Certificate expired
+                          • Memory fragmentation   • Disk full
+        │                         │                       │
+        ▼                         ▼                       ▼
+   Retry WORKS             Retry SOMETIMES          Retry NEVER
+                           works (misleading)       works
 ```
+
+Why this taxonomy matters: **Your response should match the failure type.**
+
+| Failure Type | Wrong Response | Right Response |
+|--------------|----------------|----------------|
+| **Transient** | Long investigation | Just retry with backoff |
+| **Intermittent** | "We can't reproduce it" | Add extensive logging, trace the pattern |
+| **Permanent** | Keep retrying | Alert immediately, investigate root cause |
+| **Silent** | "All metrics are green!" | Add validation, checksums, reconciliation |
 
 ### 1.2 Common Failure Modes in Distributed Systems
 
-| Failure Mode | What Happens | Example |
-|--------------|--------------|---------|
-| **Crash** | Process terminates unexpectedly | OOM kill, unhandled exception |
-| **Hang** | Process alive but unresponsive | Deadlock, infinite loop, blocked I/O |
-| **Performance degradation** | Works but slowly | Memory leak, CPU saturation |
-| **Byzantine** | Wrong results, inconsistent behavior | Bit flip, corrupted data, buggy logic |
-| **Network partition** | Can't reach other services | Firewall rule, network failure |
-| **Resource exhaustion** | Runs out of something | Disk full, connection pool, file descriptors |
-| **Dependency failure** | External service fails | Database down, API timeout |
-| **Configuration error** | Wrong settings | Bad deploy, feature flag mistake |
+Here's a field guide to the failures you'll encounter:
+
+```
+THE EIGHT DEADLY FAILURE MODES
+═══════════════════════════════════════════════════════════════════════════════
+
+1. CRASH FAILURE
+─────────────────────────────────────────────────────────────────────────────
+   Process terminates unexpectedly
+
+   Symptoms: Process disappears, logs end abruptly, no response
+   Causes:   OOM kill, unhandled exception, segfault, kill -9
+   Detection: Easy (process monitor, health check)
+   Recovery: Restart (often automatic with orchestrators)
+
+   Example: Java service runs out of heap → OOM killer terminates it
+
+
+2. HANG FAILURE (The Silent Killer)
+─────────────────────────────────────────────────────────────────────────────
+   Process alive but unresponsive
+
+   Symptoms: Process shows "running," but doesn't respond to requests
+   Causes:   Deadlock, infinite loop, blocked I/O, waiting for lock
+   Detection: Tricky (process looks healthy, but isn't)
+   Recovery: Kill and restart (automatic detection harder)
+
+   Example: Thread waiting for database lock → all threads exhausted
+
+   ⚠️  Hangs are often WORSE than crashes because:
+       - Health checks might pass (process is "up")
+       - Resources stay consumed
+       - Load balancer keeps sending traffic
+
+
+3. PERFORMANCE DEGRADATION (The Slow Bleed)
+─────────────────────────────────────────────────────────────────────────────
+   Works, but slowly
+
+   Symptoms: Increasing latency, timeouts, user complaints
+   Causes:   Memory leak, CPU saturation, disk I/O, network congestion
+   Detection: Needs baselines (what's "slow"?)
+   Recovery: Fix root cause (scaling doesn't help memory leaks)
+
+   Example: Memory leak causes GC pauses → latency spikes
+
+
+4. BYZANTINE FAILURE (The Liar)
+─────────────────────────────────────────────────────────────────────────────
+   Returns wrong results without indicating error
+
+   Symptoms: Inconsistent data, wrong answers, users report "weird behavior"
+   Causes:   Bit flip, corrupted data, race condition, buggy logic
+   Detection: VERY hard (system says "success" but result is wrong)
+   Recovery: Depends on scope of corruption
+
+   Example: Calculation bug returns $0.00 tax on $1000 purchase
+
+   ⚠️  Byzantine failures are the HARDEST to detect and recover from
+
+
+5. NETWORK PARTITION
+─────────────────────────────────────────────────────────────────────────────
+   Can't reach other services
+
+   Symptoms: Timeouts to specific services, "connection refused"
+   Causes:   Firewall rule, network failure, DNS issue, routing problem
+   Detection: Easy (connection errors)
+   Recovery: Wait for network, or fail over
+
+   Example: Kubernetes NetworkPolicy blocks traffic between namespaces
+
+
+6. RESOURCE EXHAUSTION
+─────────────────────────────────────────────────────────────────────────────
+   Runs out of something critical
+
+   Symptoms: Errors like "too many open files," "disk full," "connection refused"
+   Causes:   Disk full, connection pool exhausted, file descriptors, memory
+   Detection: Easy (specific error messages)
+   Recovery: Free resources, increase limits, find leak
+
+   Common resources that exhaust:
+   • Disk space              • Database connections
+   • File descriptors        • Thread pool
+   • Memory                  • Network sockets
+
+
+7. DEPENDENCY FAILURE
+─────────────────────────────────────────────────────────────────────────────
+   External service your system needs is down
+
+   Symptoms: Errors on specific operations, feature doesn't work
+   Causes:   Database down, API timeout, third-party outage
+   Detection: Easy (clear error messages usually)
+   Recovery: Wait, fail over, or degrade gracefully
+
+   Example: Stripe API is down → payment fails
+
+
+8. CONFIGURATION ERROR (The Human Factor)
+─────────────────────────────────────────────────────────────────────────────
+   Wrong settings cause misbehavior
+
+   Symptoms: System behaves unexpectedly, "it worked yesterday"
+   Causes:   Bad deploy, wrong feature flag, typo, missing env var
+   Detection: Sometimes obvious, sometimes subtle
+   Recovery: Fix config, rollback
+
+   Example: Typo in database URL → connects to wrong database
+```
 
 ### 1.3 Failure Characteristics
 
-Every failure has characteristics that affect how you handle it:
+Every failure has four characteristics that affect how you handle it:
 
 ```
-FAILURE CHARACTERISTICS
-═══════════════════════════════════════════════════════════════
+FAILURE CHARACTERISTICS FRAMEWORK
+═══════════════════════════════════════════════════════════════════════════════
 
-Detectability:    How quickly can you know it failed?
-                  ├── Immediate (crash)
-                  ├── Delayed (health check catches it)
-                  └── Unknown (silent corruption)
+                    ┌─────────────────────────────────────────────────────────┐
+                    │                    YOUR FAILURE                          │
+                    └─────────────────────────────────────────────────────────┘
+                                            │
+         ┌──────────────────────────────────┼──────────────────────────────────┐
+         │                                  │                                   │
+         ▼                                  ▼                                   ▼
+┌─────────────────┐               ┌─────────────────┐               ┌─────────────────┐
+│  DETECTABILITY  │               │  RECOVERABILITY │               │     IMPACT      │
+│                 │               │                 │               │                 │
+│ How quickly do  │               │ Can system      │               │ What's broken?  │
+│ you know?       │               │ self-heal?      │               │                 │
+│                 │               │                 │               │ • Single request│
+│ ├── Immediate   │               │ ├── Automatic   │               │ • Single user   │
+│ │   (crash)     │               │ │   (restart)   │               │ • Feature       │
+│ │               │               │ │               │               │ • Entire system │
+│ ├── Delayed     │               │ ├── Manual      │               │                 │
+│ │   (health     │               │ │   (needs      │               │ Who is affected?│
+│ │   check)      │               │ │   human)      │               │ • 1 user        │
+│ │               │               │ │               │               │ • 100 users     │
+│ └── Unknown     │               │ └── Permanent   │               │ • 1M users      │
+│     (silent     │               │     (data lost) │               │ • All users     │
+│     corruption) │               │                 │               │                 │
+└─────────────────┘               └─────────────────┘               └─────────────────┘
 
-Recoverability:   Can the system self-heal?
-                  ├── Automatic (restart, retry)
-                  ├── Manual (needs operator)
-                  └── Permanent (data loss)
-
-Impact:           What's affected?
-                  ├── Single request
-                  ├── Single user
-                  ├── Feature
-                  └── Entire system
-
-Frequency:        How often does it happen?
-                  ├── Rare (once a year)
-                  ├── Occasional (monthly)
-                  └── Common (daily)
+                                           │
+                                           ▼
+                              ┌─────────────────────┐
+                              │     FREQUENCY       │
+                              │                     │
+                              │ How often?          │
+                              │                     │
+                              │ ├── Rare            │
+                              │ │   (once a year)   │
+                              │ │                   │
+                              │ ├── Occasional      │
+                              │ │   (monthly)       │
+                              │ │                   │
+                              │ └── Common          │
+                              │     (daily/weekly)  │
+                              │                     │
+                              └─────────────────────┘
 ```
+
+**Priority Matrix:**
+
+The combination of these characteristics determines priority:
+
+| Detectability | Impact | Frequency | Priority | Action |
+|---------------|--------|-----------|----------|--------|
+| Unknown | High | Any | **CRITICAL** | Must add detection ASAP |
+| Low | High | Common | **CRITICAL** | Fix root cause immediately |
+| High | Low | Rare | Low | Monitor, don't over-invest |
+| High | High | Common | High | Automate recovery |
 
 > **Try This (2 minutes)**
 >
@@ -122,6 +370,8 @@ Frequency:        How often does it happen?
 > - Scope: Partial or complete?
 > - Duration: Transient, intermittent, or permanent?
 > - Detectability, recoverability, impact, frequency?
+>
+> Based on the priority matrix, was it prioritized correctly?
 
 ---
 
@@ -191,6 +441,8 @@ Step 6: Prioritize mitigations by RPN
 > **Did You Know?**
 >
 > FMEA was developed by the U.S. military in the 1940s and was first used on the Apollo program. NASA required contractors to perform FMEA on all mission-critical systems. The technique helped identify and mitigate thousands of potential failures before they could endanger astronauts.
+>
+> **The Apollo 13 Survival Story**: When an oxygen tank exploded on Apollo 13, the crew survived because FMEA had identified and mitigated thousands of failure scenarios. The procedures they used—venting to reduce pressure, routing power through specific pathways, using the lunar module as a "lifeboat"—were all documented because engineers had asked "what if?" for every component.
 
 ---
 
@@ -358,11 +610,46 @@ Strategies to minimize impact:
 4. **Service isolation** - Each service fails independently
 5. **Data isolation** - Separate databases for critical vs. non-critical data
 
-> **War Story: The Shared Database**
+> **War Story: The Shared Database That Took Down Everything**
 >
-> A team ran all their microservices against a shared PostgreSQL database. "It's simpler," they said. Until a single poorly-optimized query locked a table, causing every service to queue up waiting for connections. The checkout service, user service, inventory service—all down simultaneously because of one bad query in the reporting service.
+> A fintech startup ran all their microservices against a shared PostgreSQL database. "It's simpler," they said. "We can do transactions across services."
 >
-> The fix: separate databases for separate services, with clear ownership. Reporting now has its own read replica. A reporting bug can't take down checkout.
+> Then, on a random Tuesday, a developer added a new analytics query to the reporting service. The query was correct, but it ran a full table scan on a 50-million-row table. Without an index. Under normal load.
+>
+> ```
+> THE BLAST RADIUS OF ONE BAD QUERY
+> ═════════════════════════════════════════════════════════════════════════════
+>
+> 2:34 PM - Reporting query starts, begins acquiring row locks
+>
+> 2:35 PM - User service tries to read users, waits for lock
+>         - Connection pool starts filling
+>
+> 2:36 PM - Checkout service needs user data
+>         - Calls user service → timeout
+>         - Checkout starts queueing
+>
+> 2:37 PM - Every service waiting for database connections
+>         - Connection pool exhausted across ALL services
+>
+> 2:38 PM - Alerts fire: "User service unhealthy"
+>                       "Checkout service unhealthy"
+>                       "Inventory service unhealthy"
+>         - Response: "Check database" → "Looks fine, CPU low"
+>
+> 2:45 PM - Finally found: one query holding locks
+>         - Killed the query
+>
+> 2:50 PM - Services slowly recover as connection pools drain
+>
+> Total downtime: 16 minutes
+> Root cause: One missing database index
+> Blast radius: ENTIRE platform
+> ```
+>
+> The fix: separate databases for separate services, with clear ownership. Reporting now has its own read replica. A reporting bug can't take down checkout. Each service's database failure is isolated to that service.
+>
+> **Lesson**: Shared resources create shared fate. Isolation isn't just nice—it's survival.
 
 ---
 
@@ -493,11 +780,52 @@ Mitigation:
 
 - **The "Swiss Cheese" model** from James Reason explains why complex systems fail: each defense layer has holes (like Swiss cheese slices), and failures occur when holes align. This is why defense in depth—multiple imperfect layers—is more effective than one "perfect" layer.
 
-> **War Story: The Timeout That Wasn't**
+> **War Story: The Timeout That Was Too Long**
 >
-> A fintech startup set all their service timeouts to 30 seconds—a "safe" default. One day, a database query started taking 25 seconds instead of the usual 200ms. It wasn't timing out, but it was holding connections. The connection pool filled. New requests queued. The queue filled. Memory spiked. Pods got OOM-killed. Kubernetes restarted them. They came back, hit the slow database, filled their pools, died again. The whole platform oscillated between "up" and "crashing" for two hours.
+> A fintech startup set all their service timeouts to 30 seconds—a "safe" default. "Better to wait than fail," they reasoned.
 >
-> The fix was embarrassingly simple: reduce timeouts to 2 seconds. A 25-second query now fails fast, the circuit breaker opens, and the system degrades gracefully instead of collapsing. Sometimes the most dangerous failures aren't outages—they're systems that are "almost working."
+> One day, a database query started taking 25 seconds instead of the usual 200ms. A missing WHERE clause caused a sequential scan. Not a bug—it still returned correct data. Just slowly.
+>
+> ```
+> THE 30-SECOND TIMEOUT DEATH SPIRAL
+> ═════════════════════════════════════════════════════════════════════════════
+>
+> Normal state:
+>   Request → Database (200ms) → Response
+>   Connection pool: 10 used / 100 available
+>
+> Query becomes slow (25 seconds):
+>   ─────────────────────────────────────────────────────────────────────────
+>
+>   Second 1:   New requests arrive, start waiting
+>               Connections: 50/100
+>
+>   Second 10:  All connections waiting on slow queries
+>               Connections: 100/100 (exhausted)
+>
+>   Second 15:  New requests can't get connections
+>               Queue starts filling
+>               Memory climbing
+>
+>   Second 20:  Queue full
+>               OOM pressure building
+>               GC thrashing
+>
+>   Second 25:  OOM killer strikes
+>               Pod dies
+>               Kubernetes restarts it
+>
+>   Second 30:  Pod comes back
+>               Hits slow database
+>               Connection pool fills immediately
+>               Death spiral resumes
+>
+>   For 2 HOURS the platform oscillated between "starting up" and "crashing"
+> ```
+>
+> The fix was embarrassingly simple: **reduce timeouts to 2 seconds**. A 25-second query now fails fast at 2 seconds, the circuit breaker opens, and the system degrades gracefully (returning cached data or an error) instead of collapsing.
+>
+> **Lesson**: The most dangerous failures aren't outages—they're systems that are "almost working." A long timeout that never triggers is worse than no timeout at all.
 
 ---
 
@@ -627,16 +955,67 @@ Answer:
 
 ---
 
+## Key Takeaways
+
+Before moving on, make sure you understand these core concepts:
+
+```
+FAILURE MODES CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+□ Failures come in types: crash, hang, degradation, byzantine, partition,
+  exhaustion, dependency, configuration
+
+□ Silent failures are worse than obvious ones
+  (wrong results without errors)
+
+□ FMEA is a systematic way to predict failures
+  (Failure Mode and Effects Analysis)
+
+□ RPN = Severity × Likelihood × (10 - Detection)
+  (prioritize high RPN items)
+
+□ Graceful degradation keeps some functionality
+  (better than complete failure)
+
+□ Blast radius = scope of impact
+  (smaller is better)
+
+□ Bulkheads isolate failures
+  (like watertight compartments in a ship)
+
+□ Retries without backoff cause storms
+  (always use exponential backoff + jitter)
+
+□ Timeouts that are too long are worse than no timeouts
+  (fail fast is better than slow death)
+
+□ Cascading failures are the real danger
+  (one failure triggers another)
+```
+
+---
+
 ## Further Reading
 
-- **"Release It! Second Edition"** - Michael Nygard. Essential reading on stability patterns including circuit breakers, bulkheads, and timeouts.
+**Books:**
 
-- **"Failure Mode and Effects Analysis"** - D.H. Stamatis. Comprehensive guide to FMEA technique.
+- **"Release It! Second Edition"** - Michael Nygard. Essential reading on stability patterns including circuit breakers, bulkheads, and timeouts. Every chapter is a war story.
 
-- **"How Complex Systems Fail"** - Richard Cook. Short paper on why FMEA alone isn't enough—complex systems fail in unexpected ways.
+- **"Failure Mode and Effects Analysis"** - D.H. Stamatis. Comprehensive guide to FMEA technique from the manufacturing world.
+
+**Papers:**
+
+- **"How Complex Systems Fail"** - Richard Cook. A 5-page paper on why FMEA alone isn't enough—complex systems fail in unexpected ways. Required reading.
+
+- **"Metastable Failures in Distributed Systems"** - Nathan Bronson et al. (Facebook/Meta). Deep dive into failure patterns that can sustain themselves even after the trigger is removed.
+
+**Talks:**
+
+- **"Breaking Things on Purpose"** - Kolton Andrus (Gremlin). How to build confidence through deliberate failure injection.
 
 ---
 
 ## Next Module
 
-[Module 2.3: Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance.md) - Building systems that continue working when components fail.
+[Module 2.3: Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance.md) - Now that you understand how systems fail, learn how to build systems that continue working when components fail.
