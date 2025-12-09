@@ -26,10 +26,12 @@ theme:
     - navigation.sections
     - navigation.indexes
     - navigation.top
+    - navigation.path
     - search.suggest
     - search.highlight
     - content.code.copy
     - content.code.annotate
+    - content.tabs.link
   icon:
     repo: fontawesome/brands/github
 
@@ -63,7 +65,417 @@ copyright: MIT License - Free to use, share, and modify
 
 nav:
   - Home: index.md
-  - Prerequisites: prerequisites/
-  - Linux: linux/
-  - Certifications: k8s/
-  - Platform Engineering: platform/
+
+  - Prerequisites:
+    - prerequisites/README.md
+    - Philosophy & Design:
+      - prerequisites/philosophy-design/module-1-why-kubernetes-won.md
+      - prerequisites/philosophy-design/module-2-declarative-vs-imperative.md
+      - prerequisites/philosophy-design/module-3-what-we-dont-cover.md
+      - prerequisites/philosophy-design/module-4-dead-ends.md
+    - Cloud Native 101:
+      - prerequisites/cloud-native-101/module-1-what-are-containers.md
+      - prerequisites/cloud-native-101/module-2-docker-fundamentals.md
+      - prerequisites/cloud-native-101/module-3-what-is-kubernetes.md
+      - prerequisites/cloud-native-101/module-4-cloud-native-ecosystem.md
+      - prerequisites/cloud-native-101/module-5-monolith-to-microservices.md
+    - Kubernetes Basics:
+      - prerequisites/kubernetes-basics/module-1-first-cluster.md
+      - prerequisites/kubernetes-basics/module-2-kubectl-basics.md
+      - prerequisites/kubernetes-basics/module-3-pods.md
+      - prerequisites/kubernetes-basics/module-4-deployments.md
+      - prerequisites/kubernetes-basics/module-5-services.md
+      - prerequisites/kubernetes-basics/module-6-configmaps-secrets.md
+      - prerequisites/kubernetes-basics/module-7-namespaces-labels.md
+      - prerequisites/kubernetes-basics/module-8-yaml-kubernetes.md
+    - Modern DevOps:
+      - prerequisites/modern-devops/module-1-infrastructure-as-code.md
+      - prerequisites/modern-devops/module-2-gitops.md
+      - prerequisites/modern-devops/module-3-cicd-pipelines.md
+      - prerequisites/modern-devops/module-4-observability.md
+      - prerequisites/modern-devops/module-5-platform-engineering.md
+      - prerequisites/modern-devops/module-6-devsecops.md
+
+  - Linux:
+    - linux/README.md
+    - Foundations:
+      - System Essentials:
+        - linux/foundations/system-essentials/README.md
+        - linux/foundations/system-essentials/module-1.1-kernel-architecture.md
+        - linux/foundations/system-essentials/module-1.2-processes-systemd.md
+        - linux/foundations/system-essentials/module-1.3-filesystem-hierarchy.md
+        - linux/foundations/system-essentials/module-1.4-users-permissions.md
+      - Container Primitives:
+        - linux/foundations/container-primitives/README.md
+        - linux/foundations/container-primitives/module-2.1-namespaces.md
+        - linux/foundations/container-primitives/module-2.2-cgroups.md
+        - linux/foundations/container-primitives/module-2.3-capabilities-lsms.md
+        - linux/foundations/container-primitives/module-2.4-union-filesystems.md
+      - Networking:
+        - linux/foundations/networking/README.md
+        - linux/foundations/networking/module-3.1-tcp-ip-essentials.md
+        - linux/foundations/networking/module-3.2-dns-linux.md
+        - linux/foundations/networking/module-3.3-network-namespaces.md
+        - linux/foundations/networking/module-3.4-iptables-netfilter.md
+    - Security:
+      - Hardening:
+        - linux/security/hardening/README.md
+        - linux/security/hardening/module-4.1-kernel-hardening.md
+        - linux/security/hardening/module-4.2-apparmor.md
+        - linux/security/hardening/module-4.3-selinux.md
+        - linux/security/hardening/module-4.4-seccomp.md
+    - Operations:
+      - Performance:
+        - linux/operations/performance/README.md
+        - linux/operations/performance/module-5.1-use-method.md
+        - linux/operations/performance/module-5.2-cpu-scheduling.md
+        - linux/operations/performance/module-5.3-memory-management.md
+        - linux/operations/performance/module-5.4-io-performance.md
+      - Troubleshooting:
+        - linux/operations/troubleshooting/README.md
+        - linux/operations/troubleshooting/module-6.1-systematic-troubleshooting.md
+        - linux/operations/troubleshooting/module-6.2-log-analysis.md
+        - linux/operations/troubleshooting/module-6.3-process-debugging.md
+        - linux/operations/troubleshooting/module-6.4-network-debugging.md
+      - Shell Scripting:
+        - linux/operations/shell-scripting/README.md
+        - linux/operations/shell-scripting/module-7.1-bash-fundamentals.md
+        - linux/operations/shell-scripting/module-7.2-text-processing.md
+        - linux/operations/shell-scripting/module-7.3-practical-scripts.md
+        - linux/operations/shell-scripting/module-7.4-devops-automation.md
+
+  - Certifications:
+    - k8s/README.md
+    - KCNA:
+      - k8s/kcna/README.md
+      - "Part 0: Introduction":
+        - k8s/kcna/part0-introduction/module-0.1-kcna-overview.md
+        - k8s/kcna/part0-introduction/module-0.2-study-strategy.md
+      - "Part 1: K8s Fundamentals":
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes.md
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals.md
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane.md
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.4-node-components.md
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods.md
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources.md
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.7-services.md
+        - k8s/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md
+      - "Part 2: Container Orchestration":
+        - k8s/kcna/part2-container-orchestration/module-2.1-scheduling.md
+        - k8s/kcna/part2-container-orchestration/module-2.2-scaling.md
+        - k8s/kcna/part2-container-orchestration/module-2.3-storage.md
+        - k8s/kcna/part2-container-orchestration/module-2.4-configuration.md
+      - "Part 3: Cloud Native Architecture":
+        - k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles.md
+        - k8s/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md
+        - k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns.md
+      - "Part 4: Observability":
+        - k8s/kcna/part4-cloud-native-observability/module-4.1-observability-fundamentals.md
+        - k8s/kcna/part4-cloud-native-observability/module-4.2-observability-tools.md
+      - "Part 5: Application Delivery":
+        - k8s/kcna/part5-application-delivery/module-5.1-ci-cd.md
+        - k8s/kcna/part5-application-delivery/module-5.2-application-packaging.md
+    - KCSA:
+      - k8s/kcsa/README.md
+      - "Part 0: Introduction":
+        - k8s/kcsa/part0-introduction/module-0.1-kcsa-overview.md
+        - k8s/kcsa/part0-introduction/module-0.2-security-mindset.md
+      - "Part 1: Cloud Native Security":
+        - k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs.md
+        - k8s/kcsa/part1-cloud-native-security/module-1.2-cloud-provider-security.md
+        - k8s/kcsa/part1-cloud-native-security/module-1.3-security-principles.md
+      - "Part 2: Cluster Component Security":
+        - k8s/kcsa/part2-cluster-component-security/module-2.1-control-plane-security.md
+        - k8s/kcsa/part2-cluster-component-security/module-2.2-node-security.md
+        - k8s/kcsa/part2-cluster-component-security/module-2.3-network-security.md
+        - k8s/kcsa/part2-cluster-component-security/module-2.4-pki-certificates.md
+      - "Part 3: Security Fundamentals":
+        - k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security.md
+        - k8s/kcsa/part3-security-fundamentals/module-3.2-rbac.md
+        - k8s/kcsa/part3-security-fundamentals/module-3.3-secrets.md
+        - k8s/kcsa/part3-security-fundamentals/module-3.4-serviceaccounts.md
+        - k8s/kcsa/part3-security-fundamentals/module-3.5-network-policies.md
+      - "Part 4: Threat Model":
+        - k8s/kcsa/part4-threat-model/module-4.1-attack-surfaces.md
+        - k8s/kcsa/part4-threat-model/module-4.2-vulnerabilities.md
+        - k8s/kcsa/part4-threat-model/module-4.3-container-escape.md
+        - k8s/kcsa/part4-threat-model/module-4.4-supply-chain.md
+      - "Part 5: Platform Security":
+        - k8s/kcsa/part5-platform-security/README.md
+        - k8s/kcsa/part5-platform-security/module-5.1-image-security.md
+        - k8s/kcsa/part5-platform-security/module-5.2-observability.md
+        - k8s/kcsa/part5-platform-security/module-5.3-runtime-security.md
+        - k8s/kcsa/part5-platform-security/module-5.4-security-tooling.md
+      - "Part 6: Compliance":
+        - k8s/kcsa/part6-compliance/README.md
+        - k8s/kcsa/part6-compliance/module-6.1-compliance-frameworks.md
+        - k8s/kcsa/part6-compliance/module-6.2-cis-benchmarks.md
+        - k8s/kcsa/part6-compliance/module-6.3-security-assessments.md
+    - CKAD:
+      - k8s/ckad/README.md
+      - "Part 0: Environment":
+        - k8s/ckad/part0-environment/module-0.1-ckad-overview.md
+        - k8s/ckad/part0-environment/module-0.2-developer-workflow.md
+        - k8s/ckad/part0-environment/part0-cumulative-quiz.md
+      - "Part 1: Design & Build":
+        - k8s/ckad/part1-design-build/module-1.1-container-images.md
+        - k8s/ckad/part1-design-build/module-1.2-jobs-cronjobs.md
+        - k8s/ckad/part1-design-build/module-1.3-multi-container-pods.md
+        - k8s/ckad/part1-design-build/module-1.4-volumes.md
+        - k8s/ckad/part1-design-build/part1-cumulative-quiz.md
+      - "Part 2: Deployment":
+        - k8s/ckad/part2-deployment/module-2.1-deployments.md
+        - k8s/ckad/part2-deployment/module-2.2-helm.md
+        - k8s/ckad/part2-deployment/module-2.3-kustomize.md
+        - k8s/ckad/part2-deployment/module-2.4-deployment-strategies.md
+        - k8s/ckad/part2-deployment/part2-cumulative-quiz.md
+      - "Part 3: Observability":
+        - k8s/ckad/part3-observability/module-3.1-probes.md
+        - k8s/ckad/part3-observability/module-3.2-logging.md
+        - k8s/ckad/part3-observability/module-3.3-debugging.md
+        - k8s/ckad/part3-observability/module-3.4-monitoring.md
+        - k8s/ckad/part3-observability/module-3.5-api-deprecations.md
+        - k8s/ckad/part3-observability/part3-cumulative-quiz.md
+      - "Part 4: Environment":
+        - k8s/ckad/part4-environment/module-4.1-configmaps.md
+        - k8s/ckad/part4-environment/module-4.2-secrets.md
+        - k8s/ckad/part4-environment/module-4.3-resources.md
+        - k8s/ckad/part4-environment/module-4.4-securitycontext.md
+        - k8s/ckad/part4-environment/module-4.5-serviceaccounts.md
+        - k8s/ckad/part4-environment/module-4.6-crds.md
+        - k8s/ckad/part4-environment/part4-cumulative-quiz.md
+      - "Part 5: Networking":
+        - k8s/ckad/part5-networking/module-5.1-services.md
+        - k8s/ckad/part5-networking/module-5.2-ingress.md
+        - k8s/ckad/part5-networking/module-5.3-networkpolicies.md
+        - k8s/ckad/part5-networking/part5-cumulative-quiz.md
+    - CKA:
+      - k8s/cka/README.md
+      - "Part 0: Environment":
+        - k8s/cka/part0-environment/module-0.1-cluster-setup.md
+        - k8s/cka/part0-environment/module-0.2-shell-mastery.md
+        - k8s/cka/part0-environment/module-0.3-vim-yaml.md
+        - k8s/cka/part0-environment/module-0.4-k8s-docs.md
+        - k8s/cka/part0-environment/module-0.5-exam-strategy.md
+        - k8s/cka/part0-environment/part0-cumulative-quiz.md
+      - "Part 1: Cluster Architecture":
+        - k8s/cka/part1-cluster-architecture/module-1.1-control-plane.md
+        - k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces.md
+        - k8s/cka/part1-cluster-architecture/module-1.3-helm.md
+        - k8s/cka/part1-cluster-architecture/module-1.4-kustomize.md
+        - k8s/cka/part1-cluster-architecture/module-1.5-crds-operators.md
+        - k8s/cka/part1-cluster-architecture/module-1.6-rbac.md
+        - k8s/cka/part1-cluster-architecture/module-1.7-kubeadm.md
+        - k8s/cka/part1-cluster-architecture/part1-cumulative-quiz.md
+      - "Part 2: Workloads & Scheduling":
+        - k8s/cka/part2-workloads-scheduling/module-2.1-pods.md
+        - k8s/cka/part2-workloads-scheduling/module-2.2-deployments.md
+        - k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets.md
+        - k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs.md
+        - k8s/cka/part2-workloads-scheduling/module-2.5-resource-management.md
+        - k8s/cka/part2-workloads-scheduling/module-2.6-scheduling.md
+        - k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets.md
+        - k8s/cka/part2-workloads-scheduling/part2-cumulative-quiz.md
+      - "Part 3: Services & Networking":
+        - k8s/cka/part3-services-networking/module-3.1-services.md
+        - k8s/cka/part3-services-networking/module-3.2-endpoints.md
+        - k8s/cka/part3-services-networking/module-3.3-dns.md
+        - k8s/cka/part3-services-networking/module-3.4-ingress.md
+        - k8s/cka/part3-services-networking/module-3.5-gateway-api.md
+        - k8s/cka/part3-services-networking/module-3.6-network-policies.md
+        - k8s/cka/part3-services-networking/module-3.7-cni.md
+        - k8s/cka/part3-services-networking/part3-cumulative-quiz.md
+      - "Part 4: Storage":
+        - k8s/cka/part4-storage/module-4.1-volumes.md
+        - k8s/cka/part4-storage/module-4.2-pv-pvc.md
+        - k8s/cka/part4-storage/module-4.3-storageclasses.md
+        - k8s/cka/part4-storage/module-4.4-snapshots.md
+        - k8s/cka/part4-storage/module-4.5-troubleshooting.md
+        - k8s/cka/part4-storage/part4-cumulative-quiz.md
+      - "Part 5: Troubleshooting":
+        - k8s/cka/part5-troubleshooting/module-5.1-methodology.md
+        - k8s/cka/part5-troubleshooting/module-5.2-application-failures.md
+        - k8s/cka/part5-troubleshooting/module-5.3-control-plane.md
+        - k8s/cka/part5-troubleshooting/module-5.4-worker-nodes.md
+        - k8s/cka/part5-troubleshooting/module-5.5-networking.md
+        - k8s/cka/part5-troubleshooting/module-5.6-services.md
+        - k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring.md
+        - k8s/cka/part5-troubleshooting/cumulative-quiz.md
+    - CKS:
+      - k8s/cks/README.md
+      - "Part 0: Environment":
+        - k8s/cks/part0-environment/module-0.1-cks-overview.md
+        - k8s/cks/part0-environment/module-0.2-security-lab.md
+        - k8s/cks/part0-environment/module-0.3-security-tools.md
+        - k8s/cks/part0-environment/module-0.4-exam-strategy.md
+      - "Part 1: Cluster Setup":
+        - k8s/cks/part1-cluster-setup/module-1.1-network-policies.md
+        - k8s/cks/part1-cluster-setup/module-1.2-cis-benchmarks.md
+        - k8s/cks/part1-cluster-setup/module-1.3-ingress-security.md
+        - k8s/cks/part1-cluster-setup/module-1.4-node-metadata.md
+        - k8s/cks/part1-cluster-setup/module-1.5-gui-security.md
+      - "Part 2: Cluster Hardening":
+        - k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive.md
+        - k8s/cks/part2-cluster-hardening/module-2.2-serviceaccount-security.md
+        - k8s/cks/part2-cluster-hardening/module-2.3-api-server-security.md
+        - k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades.md
+        - k8s/cks/part2-cluster-hardening/module-2.5-restricting-api-access.md
+      - "Part 3: System Hardening":
+        - k8s/cks/part3-system-hardening/module-3.1-apparmor.md
+        - k8s/cks/part3-system-hardening/module-3.2-seccomp.md
+        - k8s/cks/part3-system-hardening/module-3.3-kernel-hardening.md
+        - k8s/cks/part3-system-hardening/module-3.4-network-security.md
+      - "Part 4: Microservice Vulnerabilities":
+        - k8s/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts.md
+        - k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission.md
+        - k8s/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management.md
+        - k8s/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing.md
+      - "Part 5: Supply Chain Security":
+        - k8s/cks/part5-supply-chain-security/module-5.1-image-security.md
+        - k8s/cks/part5-supply-chain-security/module-5.2-image-scanning.md
+        - k8s/cks/part5-supply-chain-security/module-5.3-static-analysis.md
+        - k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers.md
+      - "Part 6: Runtime Security":
+        - k8s/cks/part6-runtime-security/module-6.1-audit-logging.md
+        - k8s/cks/part6-runtime-security/module-6.2-falco.md
+        - k8s/cks/part6-runtime-security/module-6.3-container-investigation.md
+        - k8s/cks/part6-runtime-security/module-6.4-immutable-infrastructure.md
+
+  - Platform Engineering:
+    - platform/README.md
+    - Foundations:
+      - Systems Thinking:
+        - platform/foundations/systems-thinking/README.md
+        - platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking.md
+        - platform/foundations/systems-thinking/module-1.2-feedback-loops.md
+        - platform/foundations/systems-thinking/module-1.3-mental-models-for-operations.md
+        - platform/foundations/systems-thinking/module-1.4-complexity-and-emergent-behavior.md
+      - Reliability Engineering:
+        - platform/foundations/reliability-engineering/README.md
+        - platform/foundations/reliability-engineering/module-2.1-what-is-reliability.md
+        - platform/foundations/reliability-engineering/module-2.2-failure-modes-and-effects.md
+        - platform/foundations/reliability-engineering/module-2.3-redundancy-and-fault-tolerance.md
+        - platform/foundations/reliability-engineering/module-2.4-measuring-and-improving-reliability.md
+      - Observability Theory:
+        - platform/foundations/observability-theory/README.md
+        - platform/foundations/observability-theory/module-3.1-what-is-observability.md
+        - platform/foundations/observability-theory/module-3.2-the-three-pillars.md
+        - platform/foundations/observability-theory/module-3.3-instrumentation-principles.md
+        - platform/foundations/observability-theory/module-3.4-from-data-to-insight.md
+      - Security Principles:
+        - platform/foundations/security-principles/README.md
+        - platform/foundations/security-principles/module-4.1-security-mindset.md
+        - platform/foundations/security-principles/module-4.2-defense-in-depth.md
+        - platform/foundations/security-principles/module-4.3-identity-and-access.md
+        - platform/foundations/security-principles/module-4.4-secure-by-default.md
+      - Distributed Systems:
+        - platform/foundations/distributed-systems/README.md
+        - platform/foundations/distributed-systems/module-5.1-what-makes-systems-distributed.md
+        - platform/foundations/distributed-systems/module-5.2-consensus-and-coordination.md
+        - platform/foundations/distributed-systems/module-5.3-eventual-consistency.md
+    - Disciplines:
+      - SRE:
+        - platform/disciplines/sre/README.md
+        - platform/disciplines/sre/module-1.1-what-is-sre.md
+        - platform/disciplines/sre/module-1.2-slos.md
+        - platform/disciplines/sre/module-1.3-error-budgets.md
+        - platform/disciplines/sre/module-1.4-toil-automation.md
+        - platform/disciplines/sre/module-1.5-incident-management.md
+        - platform/disciplines/sre/module-1.6-postmortems.md
+        - platform/disciplines/sre/module-1.7-capacity-planning.md
+      - Platform Engineering:
+        - platform/disciplines/platform-engineering/README.md
+        - platform/disciplines/platform-engineering/module-2.1-what-is-platform-engineering.md
+        - platform/disciplines/platform-engineering/module-2.2-developer-experience.md
+        - platform/disciplines/platform-engineering/module-2.3-internal-developer-platforms.md
+        - platform/disciplines/platform-engineering/module-2.4-golden-paths.md
+        - platform/disciplines/platform-engineering/module-2.5-self-service-infrastructure.md
+        - platform/disciplines/platform-engineering/module-2.6-platform-maturity.md
+      - GitOps:
+        - platform/disciplines/gitops/README.md
+        - platform/disciplines/gitops/module-3.1-what-is-gitops.md
+        - platform/disciplines/gitops/module-3.2-repository-strategies.md
+        - platform/disciplines/gitops/module-3.3-environment-promotion.md
+        - platform/disciplines/gitops/module-3.4-drift-detection.md
+        - platform/disciplines/gitops/module-3.5-secrets.md
+        - platform/disciplines/gitops/module-3.6-multi-cluster.md
+      - DevSecOps:
+        - platform/disciplines/devsecops/README.md
+        - platform/disciplines/devsecops/module-4.1-devsecops-fundamentals.md
+        - platform/disciplines/devsecops/module-4.2-shift-left-security.md
+        - platform/disciplines/devsecops/module-4.3-security-cicd.md
+        - platform/disciplines/devsecops/module-4.4-supply-chain-security.md
+        - platform/disciplines/devsecops/module-4.5-runtime-security.md
+        - platform/disciplines/devsecops/module-4.6-security-culture.md
+      - MLOps:
+        - platform/disciplines/mlops/README.md
+        - platform/disciplines/mlops/module-5.1-mlops-fundamentals.md
+        - platform/disciplines/mlops/module-5.2-feature-stores.md
+        - platform/disciplines/mlops/module-5.3-model-training.md
+        - platform/disciplines/mlops/module-5.4-model-serving.md
+        - platform/disciplines/mlops/module-5.5-model-monitoring.md
+        - platform/disciplines/mlops/module-5.6-ml-pipelines.md
+      - AIOps:
+        - platform/disciplines/aiops/README.md
+        - platform/disciplines/aiops/module-6.1-aiops-foundations.md
+        - platform/disciplines/aiops/module-6.2-anomaly-detection.md
+        - platform/disciplines/aiops/module-6.3-event-correlation.md
+        - platform/disciplines/aiops/module-6.4-root-cause-analysis.md
+        - platform/disciplines/aiops/module-6.5-predictive-operations.md
+        - platform/disciplines/aiops/module-6.6-auto-remediation.md
+    - Toolkits:
+      - platform/toolkits/README.md
+      - Observability:
+        - platform/toolkits/observability/README.md
+        - platform/toolkits/observability/module-1.1-prometheus.md
+        - platform/toolkits/observability/module-1.2-opentelemetry.md
+        - platform/toolkits/observability/module-1.3-grafana.md
+        - platform/toolkits/observability/module-1.4-loki.md
+        - platform/toolkits/observability/module-1.5-tracing.md
+      - GitOps & Deployments:
+        - platform/toolkits/gitops-deployments/README.md
+        - platform/toolkits/gitops-deployments/module-2.1-argocd.md
+        - platform/toolkits/gitops-deployments/module-2.2-argo-rollouts.md
+        - platform/toolkits/gitops-deployments/module-2.3-flux.md
+        - platform/toolkits/gitops-deployments/module-2.4-helm-kustomize.md
+      - CI/CD Pipelines:
+        - platform/toolkits/ci-cd-pipelines/README.md
+        - platform/toolkits/ci-cd-pipelines/module-3.1-dagger.md
+        - platform/toolkits/ci-cd-pipelines/module-3.2-tekton.md
+        - platform/toolkits/ci-cd-pipelines/module-3.3-argo-workflows.md
+      - Security Tools:
+        - platform/toolkits/security-tools/README.md
+        - platform/toolkits/security-tools/module-4.1-vault-eso.md
+        - platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md
+        - platform/toolkits/security-tools/module-4.3-falco.md
+        - platform/toolkits/security-tools/module-4.4-supply-chain.md
+      - Networking:
+        - platform/toolkits/networking/README.md
+        - platform/toolkits/networking/module-5.1-cilium.md
+        - platform/toolkits/networking/module-5.2-service-mesh.md
+      - Scaling & Reliability:
+        - platform/toolkits/scaling-reliability/README.md
+        - platform/toolkits/scaling-reliability/module-6.1-karpenter.md
+        - platform/toolkits/scaling-reliability/module-6.2-keda.md
+        - platform/toolkits/scaling-reliability/module-6.3-velero.md
+      - Platforms:
+        - platform/toolkits/platforms/README.md
+        - platform/toolkits/platforms/module-7.1-backstage.md
+        - platform/toolkits/platforms/module-7.2-crossplane.md
+        - platform/toolkits/platforms/module-7.3-cert-manager.md
+      - Developer Experience:
+        - platform/toolkits/developer-experience/README.md
+        - platform/toolkits/developer-experience/module-8.1-k9s-cli.md
+        - platform/toolkits/developer-experience/module-8.2-telepresence-tilt.md
+        - platform/toolkits/developer-experience/module-8.3-local-kubernetes.md
+      - ML Platforms:
+        - platform/toolkits/ml-platforms/README.md
+        - platform/toolkits/ml-platforms/module-9.1-kubeflow.md
+        - platform/toolkits/ml-platforms/module-9.2-mlflow.md
+        - platform/toolkits/ml-platforms/module-9.3-feature-stores.md
+      - AIOps Tools:
+        - platform/toolkits/aiops-tools/README.md
+        - platform/toolkits/aiops-tools/module-10.1-anomaly-detection-tools.md
+        - platform/toolkits/aiops-tools/module-10.2-event-correlation-platforms.md
+        - platform/toolkits/aiops-tools/module-10.3-observability-ai-features.md
+        - platform/toolkits/aiops-tools/module-10.4-building-custom-aiops.md
