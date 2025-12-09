@@ -65,24 +65,30 @@ No paywalls. No upsells. Theory-first.
     │                                                         │
     └────────────────────────┬────────────────────────────────┘
                              │
-                             ▼
-    ┌─────────────────────────────────────────────────────────┐
-    │                                                         │
-    │   CERTIFICATIONS                       Kubestronaut Path│
-    │   └── docs/k8s/                                         │
-    │       │                                                 │
-    │       │  ENTRY LEVEL (multiple choice)                  │
-    │       ├── KCNA    Kubernetes & Cloud Native Associate   │
-    │       ├── KCSA    Security Associate                    │
-    │       │                                                 │
-    │       │  PRACTITIONER (hands-on lab)                    │
-    │       ├── CKAD    Application Developer                 │
-    │       ├── CKA     Administrator                         │
-    │       └── CKS     Security Specialist                   │
-    │                                                         │
-    └────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
+              ┌──────────────┴──────────────┐
+              │                             │
+              ▼                             ▼
+    ┌─────────────────────────┐   ┌─────────────────────────┐
+    │                         │   │                         │
+    │   LINUX DEEP DIVE       │   │   CERTIFICATIONS        │
+    │   └── docs/linux/       │   │   └── docs/k8s/         │
+    │       │                 │   │       │                 │
+    │       ├── foundations/  │   │       │  ENTRY LEVEL    │
+    │       │  System · Cgroup│   │       ├── KCNA          │
+    │       │  Network        │   │       ├── KCSA          │
+    │       │                 │   │       │                 │
+    │       ├── security/     │   │       │  PRACTITIONER   │
+    │       │  Hardening      │   │       ├── CKAD          │
+    │       │                 │   │       ├── CKA           │
+    │       └── operations/   │   │       └── CKS           │
+    │          Perf · Debug   │   │                         │
+    │          Shell Scripts  │   │                         │
+    │                         │   │                         │
+    └────────────┬────────────┘   └────────────┬────────────┘
+                 │                             │
+                 └──────────────┬──────────────┘
+                                │
+                                ▼
     ┌─────────────────────────────────────────────────────────┐
     │                                                         │
     │   PLATFORM ENGINEERING              Beyond Certifications│
@@ -94,7 +100,7 @@ No paywalls. No upsells. Theory-first.
     │       │                                                 │
     │       ├── disciplines/         Applied practices        │
     │       │   SRE · Platform Engineering · GitOps ·         │
-    │       │   DevSecOps · MLOps                             │
+    │       │   DevSecOps · MLOps · AIOps                     │
     │       │                                                 │
     │       └── toolkits/            Current tools (evolving) │
     │           Prometheus · ArgoCD · Vault · Backstage ·     │
@@ -113,7 +119,8 @@ No paywalls. No upsells. Theory-first.
 |-------|---------|--------|
 | [Prerequisites](docs/prerequisites/) | 23 | ✅ Complete |
 | [Kubernetes Certifications](docs/k8s/) | 142 | ✅ Complete |
-| [Platform Engineering](docs/platform/) | 80 | ✅ Complete |
+| [Linux Deep Dive](docs/linux/) | 28 | ✅ Complete |
+| [Platform Engineering](docs/platform/) | 83 | ✅ Complete |
 
 ---
 
@@ -122,6 +129,7 @@ No paywalls. No upsells. Theory-first.
 | You are... | Start here |
 |------------|------------|
 | New to containers/K8s | [Prerequisites](docs/prerequisites/) |
+| Want deep Linux knowledge | [Linux Deep Dive](docs/linux/) |
 | Want certifications | [KCNA](docs/k8s/kcna/) (entry) or [CKA](docs/k8s/cka/) (admin) |
 | Already certified | [Platform Engineering](docs/platform/) |
 
