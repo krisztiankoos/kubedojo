@@ -2,6 +2,8 @@
 
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 
+The platform architect presented the migration proposal to the CTO with unexpected confidence. Their hosted CI service had been steadily increasing costs—$340,000 per year for a 90-person engineering team—and vendor lock-in was strangling their ability to customize pipelines. "We can run the same workloads on our own Kubernetes clusters for a third of the cost," she explained, "and we'll own our CI infrastructure like we own our application infrastructure." Eighteen months later, with Tekton powering 2,400 pipeline runs per day across five clusters, they'd reduced CI costs to **$95,000 per year** while gaining the ability to run pipelines on-premise for their government clients—a capability that won them a **$12 million contract**.
+
 ## Prerequisites
 
 Before starting this module:
@@ -658,36 +660,154 @@ spec:
 | No timeouts | Stuck pipelines waste resources | Set `timeout` on Tasks and Pipelines |
 | Ignoring results | Can't pass data between tasks | Use `results` for task outputs |
 
-## War Story: The Workspace Woes
+## War Story: The $890,000 Workspace Disaster
 
-A team migrated from Jenkins to Tekton. Their first pipeline worked in isolation but failed at scale—PVCs couldn't be provisioned fast enough, and storage costs exploded with each run creating a 10GB volume.
+An e-commerce company migrated from CircleCI to Tekton to reduce costs and gain multi-cloud capability. The migration seemed successful—pipelines ran faster, costs dropped initially, and teams loved the Kubernetes-native approach. Then Black Friday hit.
 
-**The fixes**:
-1. Used `volumeClaimTemplate` for automatic cleanup
-2. Reduced storage to actual needs (500Mi instead of 10Gi)
-3. Added `fsGroup` for proper permissions
-4. Implemented workspace caching for dependencies
+```
+THE WORKSPACE DISASTER TIMELINE
+─────────────────────────────────────────────────────────────────
+NOVEMBER 25 (BLACK FRIDAY EVE)
+9:00 AM     Feature freeze lifted, 47 PRs merge in first hour
+9:30 AM     PipelineRuns start queuing (normal)
+10:15 AM    Storage alerts: EBS provisioning hitting rate limits
+10:45 AM    47 pipelines stuck in "Pending" - no PVCs available
+11:00 AM    Storage costs spiking: 10GB PVC per run, not cleaning up
+11:30 AM    Kubernetes cluster storage at 94% capacity
+12:00 PM    Critical hotfix needed for checkout bug
+12:15 PM    Hotfix pipeline can't start - no storage available
+12:45 PM    Manual PVC cleanup begins (47 orphaned PVCs)
+1:30 PM     Hotfix finally deploys - 90 minutes late
+2:00 PM     Checkout page slow - cache invalidated during chaos
+5:00 PM     Black Friday traffic starts ramping
+
+POST-INCIDENT DISCOVERY
+─────────────────────────────────────────────────────────────────
+Orphaned PVCs found:              847 (from 3 months of runs)
+Storage wasted:                   8,470 GB
+Storage cost (accumulated):       $42,350 over 3 months
+Lost revenue (hotfix delay):      ~$340,000 (90 min during peak prep)
+Engineering time for cleanup:     120 hours @ $100/hr = $12,000
+Incident response costs:          $15,000
+Customer trust impact:            $500,000+ (estimated)
+
+TOTAL COST OF WORKSPACE MISMANAGEMENT: ~$890,000
+```
+
+The root cause analysis revealed multiple failures:
 
 ```yaml
-# Before: Each run leaves PVC behind
+# MISTAKE 1: Static PVC (never cleaned up)
 workspaces:
   - name: shared
     persistentVolumeClaim:
-      claimName: pipeline-pvc  # Never cleaned up
+      claimName: pipeline-pvc  # Reused but eventually abandoned
 
-# After: Auto-cleanup with template
-workspaces:
-  - name: shared
-    volumeClaimTemplate:
-      spec:
-        accessModes: [ReadWriteOnce]
-        resources:
-          requests:
-            storage: 500Mi
-        # PVC deleted when PipelineRun completes
+# MISTAKE 2: Oversized storage requests
+resources:
+  requests:
+    storage: 10Gi  # Actual usage: 200-500 MB
+
+# MISTAKE 3: No resource quotas on tekton-pipelines namespace
+# Any pipeline could request unlimited storage
+
+# MISTAKE 4: No monitoring on PVC lifecycle
+# 847 PVCs accumulated without anyone noticing
 ```
 
-**The lesson**: Tekton is Kubernetes-native, which means you need to think about storage like any K8s workload.
+**The Fix—Comprehensive Workspace Strategy:**
+
+```yaml
+# FIX 1: volumeClaimTemplate for automatic cleanup
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: build-
+spec:
+  pipelineRef:
+    name: build-pipeline
+  workspaces:
+    - name: shared
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          storageClassName: fast-ssd  # Explicit storage class
+          resources:
+            requests:
+              storage: 500Mi  # Right-sized for actual needs
+          # PVC automatically deleted when PipelineRun completes
+
+# FIX 2: Resource quotas for tekton namespace
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: tekton-storage-quota
+  namespace: tekton-pipelines
+spec:
+  hard:
+    persistentvolumeclaims: "100"
+    requests.storage: "100Gi"
+
+# FIX 3: LimitRange for default sizes
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tekton-storage-limits
+  namespace: tekton-pipelines
+spec:
+  limits:
+    - type: PersistentVolumeClaim
+      max:
+        storage: 2Gi
+      default:
+        storage: 500Mi
+
+# FIX 4: PVC cleanup CronJob for any stragglers
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cleanup-orphaned-pvcs
+spec:
+  schedule: "0 */6 * * *"  # Every 6 hours
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: pvc-cleaner
+          containers:
+            - name: cleaner
+              image: bitnami/kubectl
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  # Delete PVCs older than 2 hours with no owner
+                  kubectl get pvc -n tekton-pipelines \
+                    --field-selector status.phase=Bound \
+                    -o json | jq -r '.items[] |
+                    select(.metadata.ownerReferences == null) |
+                    select(now - (.metadata.creationTimestamp | fromdateiso8601) > 7200) |
+                    .metadata.name' | xargs -r kubectl delete pvc -n tekton-pipelines
+          restartPolicy: OnFailure
+```
+
+**Results After Fix:**
+
+```
+BEFORE VS AFTER
+─────────────────────────────────────────────────────────────────
+                            Before          After
+Orphaned PVCs/month:        280             0
+Storage costs/month:        $14,000         $2,100
+Pipeline queue time:        5-15 min        < 30 sec
+Storage provisioning:       Rate limited    Never limited
+Black Friday readiness:     FAILED          PASSED
+```
+
+**Key Takeaway**: Tekton is Kubernetes-native—which means Kubernetes storage problems become Tekton problems. Plan your workspace strategy before your first pipeline, not after your first incident.
 
 ## Quiz
 
@@ -826,6 +946,226 @@ spec:
 ```
 
 Then expose the EventListener service via Ingress and configure GitHub webhook to POST to it.
+</details>
+
+### Question 5
+A company runs 500 Tekton pipeline runs per day. Each run uses a 2GB workspace PVC. Without volumeClaimTemplate (manual cleanup), they clean up PVCs weekly. With volumeClaimTemplate, PVCs are deleted immediately. Storage costs $0.10/GB/month. Calculate monthly storage cost savings.
+
+<details>
+<summary>Show Answer</summary>
+
+**Without volumeClaimTemplate (weekly cleanup):**
+```
+Daily PVCs created:     500
+PVCs accumulated before cleanup: 500 × 7 days = 3,500 PVCs
+Average PVCs existing:  ~1,750 (middle of week)
+Storage:                1,750 × 2GB = 3,500 GB
+Monthly cost:           3,500 × $0.10 = $350/month
+```
+
+**With volumeClaimTemplate (immediate cleanup):**
+```
+Concurrent pipelines:   ~20 at any time (estimate)
+Storage:                20 × 2GB = 40 GB
+Monthly cost:           40 × $0.10 = $4/month
+```
+
+**Monthly Savings:** $350 - $4 = **$346/month** ($4,152/year)
+
+But this calculation is conservative! The real cost includes:
+- EBS provisioning API rate limits
+- Time waiting for storage provisioning
+- Risk of running out of storage quota
+- Engineering time for cleanup scripts
+
+The actual value of proper workspace management is often 10-100x the raw storage savings.
+</details>
+
+### Question 6
+Your Tekton pipeline has these tasks: git-clone (30s), lint (2m), unit-test (3m), integration-test (5m), build (2m), push (1m). Currently all tasks run sequentially. Lint, unit-test, and integration-test can run in parallel after git-clone. Build requires all three to pass. What's the time savings from parallelization?
+
+<details>
+<summary>Show Answer</summary>
+
+**Sequential execution (current):**
+```
+git-clone → lint → unit-test → integration-test → build → push
+   30s      2m       3m            5m              2m      1m
+
+Total: 30s + 2m + 3m + 5m + 2m + 1m = 13 minutes 30 seconds
+```
+
+**Parallel execution (optimized):**
+```
+git-clone → [lint (2m), unit-test (3m), integration-test (5m)] → build → push
+   30s              parallel: max(2m, 3m, 5m) = 5m               2m      1m
+
+Total: 30s + 5m + 2m + 1m = 8 minutes 30 seconds
+```
+
+**Time savings:** 13m30s - 8m30s = **5 minutes per run** (37% faster)
+
+At 500 runs/day:
+- Time saved: 500 × 5 min = 2,500 min = **41.7 hours/day**
+- If developers wait for pipelines: 41.7 hrs × $75/hr = **$3,125/day**
+
+Pipeline YAML for parallel:
+```yaml
+tasks:
+  - name: lint
+    runAfter: [git-clone]  # Same runAfter = parallel
+  - name: unit-test
+    runAfter: [git-clone]
+  - name: integration-test
+    runAfter: [git-clone]
+  - name: build
+    runAfter: [lint, unit-test, integration-test]  # Waits for all
+```
+</details>
+
+### Question 7
+You're designing a Tekton setup for a company with 15 teams, each with their own pipelines but sharing common tasks (git-clone, build-push, deploy). How would you structure the Tekton resources? Consider maintenance, security, and team autonomy.
+
+<details>
+<summary>Show Answer</summary>
+
+**Recommended Structure:**
+
+```
+NAMESPACE STRATEGY
+─────────────────────────────────────────────────────────────────
+tekton-system/          # Tekton controllers (installed once)
+tekton-catalog/         # Shared Tasks (ClusterTasks deprecated)
+team-alpha-pipelines/   # Team Alpha's pipelines and runs
+team-beta-pipelines/    # Team Beta's pipelines and runs
+...
+```
+
+**Implementation:**
+
+```yaml
+# 1. Shared Tasks in central namespace (or use Tekton Hub)
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone
+  namespace: tekton-catalog
+  labels:
+    app.kubernetes.io/version: "1.0"
+# ...
+
+# 2. Team namespaces with RBAC
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: team-alpha-pipelines
+  labels:
+    team: alpha
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: team-alpha-tekton
+  namespace: team-alpha-pipelines
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-pipelines-admin
+subjects:
+  - kind: Group
+    name: team-alpha
+    apiGroup: rbac.authorization.k8s.io
+
+# 3. Teams reference shared tasks
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: team-alpha-build
+  namespace: team-alpha-pipelines
+spec:
+  tasks:
+    - name: clone
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: tekton-catalog
+```
+
+**Key Decisions:**
+| Aspect | Recommendation |
+|--------|----------------|
+| Controllers | Single installation, cluster-wide |
+| Common Tasks | Central namespace with versioning |
+| Team Pipelines | Per-team namespace with RBAC |
+| Secrets | Per-team, never shared |
+| Storage | Per-namespace ResourceQuotas |
+| Triggers | Per-team EventListeners |
+
+This gives teams autonomy while maintaining governance over shared components.
+</details>
+
+### Question 8
+Your Tekton TaskRun shows status "Pending" with message "pod has unbound immediate PersistentVolumeClaims". List all possible causes and how you'd diagnose each.
+
+<details>
+<summary>Show Answer</summary>
+
+**Diagnostic Checklist:**
+
+```bash
+# 1. Check PVC status
+kubectl get pvc -n <namespace>
+kubectl describe pvc <pvc-name>
+
+# 2. Check StorageClass
+kubectl get storageclass
+kubectl describe storageclass <class-name>
+
+# 3. Check available storage capacity
+kubectl get pv
+kubectl describe nodes | grep -A 5 "Allocatable"
+
+# 4. Check resource quotas
+kubectl get resourcequota -n <namespace>
+kubectl describe resourcequota -n <namespace>
+
+# 5. Check events
+kubectl get events -n <namespace> --sort-by=.lastTimestamp
+```
+
+**Possible Causes and Solutions:**
+
+| Cause | Diagnosis | Solution |
+|-------|-----------|----------|
+| **No StorageClass default** | `kubectl get sc` shows no `(default)` | Add annotation `storageclass.kubernetes.io/is-default-class: "true"` |
+| **StorageClass doesn't exist** | PVC shows "storageclass not found" | Create StorageClass or use existing one |
+| **Insufficient storage quota** | ResourceQuota shows exceeded | Increase quota or clean up old PVCs |
+| **CSI driver not ready** | CSI pods not running | Check `kubectl get pods -n kube-system \| grep csi` |
+| **Cloud provider limits** | Events show "rate limit" or "quota" | Check cloud provider quotas, request increase |
+| **Wrong access mode** | PV exists but mode mismatch | Match PVC accessModes to available PVs |
+| **Node affinity mismatch** | PV bound to unavailable node | Check PV nodeAffinity, ensure nodes available |
+| **Storage class provisioner failing** | Provisioner pod logs show errors | `kubectl logs -n kube-system <provisioner-pod>` |
+
+**Quick Fix Workflow:**
+```bash
+# Fast diagnosis
+kubectl get events -n tekton-pipelines | grep -i pvc
+kubectl describe pvc -n tekton-pipelines | grep -A 10 "Events"
+
+# If quota issue
+kubectl delete pvc -n tekton-pipelines -l tekton.dev/pipelineRun  # Clean completed runs
+
+# If StorageClass issue
+kubectl get pvc <name> -o yaml | grep storageClassName
+kubectl get sc  # Verify class exists
+```
 </details>
 
 ## Hands-On Exercise
@@ -1001,6 +1341,21 @@ tkn pipelinerun list
 ```bash
 kind delete cluster --name tekton-lab
 ```
+
+## Key Takeaways
+
+Before moving on, ensure you can:
+
+- [ ] Explain the difference between Task, TaskRun, Pipeline, and PipelineRun
+- [ ] Write a multi-step Task with parameters, workspaces, and results
+- [ ] Design pipelines with parallel tasks using `runAfter` patterns
+- [ ] Configure workspace strategies (volumeClaimTemplate vs static PVC)
+- [ ] Set up Tekton Triggers for webhook-driven pipeline execution
+- [ ] Calculate storage costs and implement cleanup strategies
+- [ ] Use the Tekton Catalog for common tasks (git-clone, kaniko)
+- [ ] Debug "Pending" TaskRuns using kubectl and tkn CLI
+- [ ] Design multi-team Tekton setups with proper namespace isolation
+- [ ] Compare Tekton's Kubernetes-native approach with hosted CI services
 
 ## Next Module
 
