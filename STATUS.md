@@ -9,6 +9,8 @@
 
 **Linux Deep Dive Track** - ✅ COMPLETE! 28 modules covering system essentials, container primitives, networking, security hardening, performance, troubleshooting, and shell scripting.
 
+**IaC Deep Dive Track** - ✅ COMPLETE! 12 modules covering IaC discipline (fundamentals, testing, security, scale, drift, cost) and toolkit (Terraform, OpenTofu, Pulumi, Ansible, CloudFormation, Bicep).
+
 **Next Up:**
 - AIOps Tools Toolkit (#43) - 4 modules planned
 - Website build (#52) - MkDocs setup
@@ -45,6 +47,13 @@
 | Troubleshooting | #50 | 4 | ✅ Complete |
 | Shell Scripting | #51 | 4 | ✅ Complete |
 | **Total** | | **28** | ✅ |
+
+## IaC Deep Dive Track ✅ COMPLETE
+| Section | Issue | Modules | Status |
+|---------|-------|---------|--------|
+| IaC Discipline | #54 | 6 | ✅ Complete |
+| IaC Toolkit | #54 | 6 | ✅ Complete |
+| **Total** | | **12** | ✅ |
 
 ## AIOps
 | Section | Issue | Modules | Status |
@@ -83,9 +92,10 @@ All completed modules meet this standard.
 | Prerequisites | ✅ Complete | 23 |
 | Platform | ✅ Complete | 83 |
 | Linux | ✅ Complete | 28 |
-| **Completed** | | **276** |
+| IaC | ✅ Complete | 12 |
+| **Completed** | | **288** |
 | AIOps Toolkit | 📋 Planned | 4 |
-| **Total** | | **280** |
+| **Total** | | **292** |
 
 ## Next Steps
 - Build website with MkDocs (#52)
@@ -106,6 +116,7 @@ None
 ### Recently Closed
 | # | Issue | Status |
 |---|-------|--------|
+| #54 | IaC Deep Dive Track | ✅ Closed (12 modules) |
 | #42 | Discipline: AIOps | ✅ Closed (6 modules) |
 | #44 | Linux Deep Dive Track | ✅ Closed (main) |
 | #45 | Linux: System Essentials | ✅ Closed (4 modules) |
@@ -151,6 +162,7 @@ _2025-12-10: Module improvement initiative (#53) - Improved 8 modules in Foundat
 _2025-12-10: Observability Theory (4 modules) improved - Added dramatic openings (AWS S3 2017, rideshare NYE, fintech regulatory crisis, e-commerce Black Friday), expanded war stories with detailed timelines and financial impact ($2.8M-$18.7M examples), 8 quiz questions per module with calculations, Key Takeaways checklists, enhanced ASCII diagrams. Total: 12 Foundations modules improved (Systems Thinking + Reliability + Observability). Progress: 12/246 modules.
 _2025-12-10: Security Principles (4 modules) improved - Added dramatic openings (SolarWinds $100M+, Target $292M, Twitter 130 accounts, MongoDB 27K databases), enhanced war stories with timelines (Equifax $1.4B, $4.2M CI/CD catastrophe, $2.3M privileged container), 8 quiz questions per module with calculations, Key Takeaways checklists. All facts verified against authoritative sources. Total: 16 Foundations modules improved. Progress: 16/246 modules. Remaining: Distributed Systems (3 modules)._
 _2025-12-10: Distributed Systems (3 modules) improved - Added dramatic openings (AWS S3 2017 $150M, consensus failure $234M, Amazon 2012 $66K/min), enhanced war stories ($12M clock skew, $4.7M etcd split-brain, $8.2M shopping cart bug), 8 quiz questions per module with calculations, Key Takeaways checklists. All facts verified. FOUNDATIONS COMPLETE! Total: 19/246 modules improved. All 19 Foundations modules now at enhanced quality._
+_2025-12-10: IaC Deep Dive Track COMPLETE (#54) - 12 modules: IaC Discipline (6 modules: Fundamentals, Testing, Security, Scale, Drift Detection, Cost Management) + IaC Toolkit (6 modules: Terraform, OpenTofu, Pulumi, Ansible, CloudFormation, Bicep). All modules at 10/10 quality with dramatic openings, war stories, 8 quiz questions, Key Takeaways, 4 Did You Know facts. Added to #53 for fact-check review. Total curriculum: 288 modules complete._
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.
