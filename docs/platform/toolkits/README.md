@@ -19,13 +19,13 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Scaling & Reliability](scaling-reliability/) | Karpenter, KEDA, Velero | 3 |
 | [Platforms](platforms/) | Backstage, Crossplane, cert-manager | 3 |
 | [Developer Experience](developer-experience/) | K9s, Telepresence, Local K8s | 3 |
-| [ML Platforms](ml-platforms/) | Kubeflow, MLflow, Feature Stores | 3 |
+| [ML Platforms](ml-platforms/) | Kubeflow, MLflow, Feature Stores, vLLM, Ray Serve, LangChain | 6 |
 | [AIOps Tools](aiops-tools/) | Anomaly detection, Event correlation | 4 |
 | [Source Control](source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 1 |
 | [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 2 |
 | [Container Registries](container-registries/) | Harbor, Zot, Dragonfly | 3 |
 | [K8s Distributions](k8s-distributions/) | k3s, k0s, MicroK8s | 3 |
-| **Total** | | **53** |
+| **Total** | | **56** |
 
 ## How to Use Toolkits
 

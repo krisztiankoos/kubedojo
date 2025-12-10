@@ -1,10 +1,10 @@
 # ML Platforms Toolkit
 
-> **Toolkit Track** | 3 Modules | ~2.5 hours total
+> **Toolkit Track** | 6 Modules | ~5 hours total
 
 ## Overview
 
-The ML Platforms Toolkit covers the infrastructure for production machine learning on Kubernetes. Kubeflow provides the full platform for ML workflows, MLflow handles experiment tracking and model registry, and Feast manages features at scale. Together, they form the foundation of a modern MLOps stack.
+The ML Platforms Toolkit covers the infrastructure for production machine learning on Kubernetes. From traditional ML pipelines with Kubeflow and MLflow to the LLM revolution with vLLM and LangChain—this toolkit provides the complete foundation for modern AI/ML infrastructure. Whether you're running batch training, serving real-time predictions, or building RAG applications, these tools form the backbone of production AI systems.
 
 This toolkit applies concepts from [MLOps Discipline](../../disciplines/mlops/).
 
@@ -23,6 +23,9 @@ Before starting this toolkit:
 | 9.1 | [Kubeflow](module-9.1-kubeflow.md) | `[COMPLEX]` | 50-60 min |
 | 9.2 | [MLflow](module-9.2-mlflow.md) | `[MEDIUM]` | 40-45 min |
 | 9.3 | [Feature Stores](module-9.3-feature-stores.md) | `[MEDIUM]` | 40-45 min |
+| 9.4 | [vLLM](module-9.4-vllm.md) | `[COMPLEX]` | 50-60 min |
+| 9.5 | [Ray Serve](module-9.5-ray-serve.md) | `[COMPLEX]` | 50-60 min |
+| 9.6 | [LangChain & LlamaIndex](module-9.6-langchain-llamaindex.md) | `[COMPLEX]` | 50-60 min |
 
 ## Learning Outcomes
 
@@ -31,7 +34,9 @@ After completing this toolkit, you will be able to:
 1. **Deploy Kubeflow** — Pipelines, notebooks, model serving
 2. **Track experiments** — MLflow tracking and model registry
 3. **Manage features** — Feast offline and online stores
-4. **Build MLOps workflows** — End-to-end ML infrastructure
+4. **Serve LLMs efficiently** — vLLM with PagedAttention for high throughput
+5. **Build distributed inference** — Ray Serve for multi-model pipelines
+6. **Create RAG applications** — LangChain and LlamaIndex for LLM apps
 
 ## Tool Selection Guide
 
@@ -73,6 +78,27 @@ WHICH ML PLATFORM TOOL?
      • Canary deployments
      • Multi-framework support
      • GPU inference
+
+"I need to serve LLMs with high throughput"
+└──▶ vLLM
+     • PagedAttention memory optimization
+     • Continuous batching
+     • OpenAI-compatible API
+     • Multi-GPU tensor parallelism
+
+"I need distributed model serving"
+└──▶ Ray Serve
+     • Model composition
+     • Fractional GPU allocation
+     • Auto-scaling
+     • A/B testing built-in
+
+"I need to build LLM applications"
+└──▶ LangChain / LlamaIndex
+     • RAG (Retrieval-Augmented Generation)
+     • Chains and agents
+     • Memory management
+     • Document processing
 
 ML PLATFORM STACK:
 ─────────────────────────────────────────────────────────────────
@@ -157,7 +183,22 @@ Module 9.3: Feature Stores
      │  Feature management
      │  Training-serving consistency
      ▼
-[Toolkit Complete] → Production MLOps!
+Module 9.4: vLLM
+     │
+     │  High-throughput LLM serving
+     │  PagedAttention optimization
+     ▼
+Module 9.5: Ray Serve
+     │
+     │  Distributed inference
+     │  Model composition
+     ▼
+Module 9.6: LangChain & LlamaIndex
+     │
+     │  LLM application frameworks
+     │  RAG and agents
+     ▼
+[Toolkit Complete] → Production AI/ML!
 ```
 
 ## Key Concepts
@@ -335,6 +376,9 @@ Latency: < 100ms total
 | Kubeflow | Deploy Pipelines, run training pipeline |
 | MLflow | Track experiment, register model |
 | Feature Stores | Define features, serve online/offline |
+| vLLM | Deploy LLM with PagedAttention, benchmark throughput |
+| Ray Serve | Build multi-model pipeline with composition |
+| LangChain/LlamaIndex | Create RAG application with vector store |
 
 ## Tool Comparison
 

@@ -493,6 +493,9 @@ nav:
         - platform/toolkits/ml-platforms/module-9.1-kubeflow.md
         - platform/toolkits/ml-platforms/module-9.2-mlflow.md
         - platform/toolkits/ml-platforms/module-9.3-feature-stores.md
+        - platform/toolkits/ml-platforms/module-9.4-vllm.md
+        - platform/toolkits/ml-platforms/module-9.5-ray-serve.md
+        - platform/toolkits/ml-platforms/module-9.6-langchain-llamaindex.md
       - AIOps Tools:
         - platform/toolkits/aiops-tools/README.md
         - platform/toolkits/aiops-tools/module-10.1-anomaly-detection-tools.md
