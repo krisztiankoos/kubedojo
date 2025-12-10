@@ -2,6 +2,12 @@
 
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 
+---
+
+*The release manager hit "deploy" and watched the metrics dashboard. Three hundred microservices. Forty million users. No room for error. Within 90 seconds, the p99 latency spiked from 200ms to 3.2 seconds. Customer complaints flooded the support queue. But something remarkable happened: no humans intervened. The Argo Rollouts analysis detected the latency anomaly at 10% traffic, automatically aborted the canary, and rolled back to stable. Total user impact: 4 million requests slightly degraded, zero failed transactions. The bad deploy that would have cost the streaming platform $12 million in subscriber churn was stopped by a YAML file and a Prometheus query. The release manager exhaled, then smiled: "Progressive delivery just paid for itself."*
+
+---
+
 ## Prerequisites
 
 Before starting this module:
@@ -702,30 +708,160 @@ spec:
 | Same replica count | Canary gets equal load despite traffic | Scale canary based on traffic weight |
 | Manual promotion in prod | Human bottleneck, slow deployments | Use automated analysis for well-understood services |
 
-## War Story: The 1-Minute Canary
+## War Story: The $8.3 Million Deployment That Took 90 Seconds to Stop
 
-A team set up Argo Rollouts with analysis but configured only 1-minute pause at each step. Their canary went from 10% to 100% in 5 minutes—faster than their metrics aggregation window.
-
-The result? Analysis always passed because there wasn't enough data to detect problems. A bad deploy went to 100% before anyone noticed latency had tripled.
-
-**The fix**:
-- Analysis queries should cover `2-3x` the pause duration
-- Pause at least as long as your SLO measurement window
-- Use `count` in analysis to require multiple successful measurements
-
-```yaml
-steps:
-  - setWeight: 10
-  - pause: {duration: 10m}  # 10 minutes, not 1
-
-metrics:
-  - name: success-rate
-    interval: 2m
-    count: 5               # Run 5 times = 10 minutes of data
-    successCondition: result[0] >= 0.99
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  THE $8.3 MILLION DEPLOYMENT THAT TOOK 90 SECONDS TO STOP      │
+│  ───────────────────────────────────────────────────────────────│
+│  Company: Global food delivery platform                         │
+│  Scale: 15M daily orders, 850 restaurants per minute            │
+│  The crisis: Memory leak shipped to production Friday evening   │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**The lesson**: Canary analysis needs enough data points. Speed is not the goal—confidence is.
+**Friday, 6:47 PM - The Deploy**
+
+The order-service team merged a "small refactor" that passed all unit tests and staging validation. The code had a memory leak—objects allocated in a hot path but never garbage collected. In staging with 1% production traffic, it took 6 hours to manifest. In production, the leak would compound to OOM kills within 15 minutes.
+
+**Before Argo Rollouts (The Old World)**
+
+The team's previous incident, 8 months earlier, had played out like this:
+
+```
+PREVIOUS INCIDENT - WITHOUT PROGRESSIVE DELIVERY
+─────────────────────────────────────────────────────────────────
+18:47  Deploy started (Kubernetes rolling update)
+18:49  100% traffic on new version (maxSurge, maxUnavailable)
+19:02  First OOM kill (dismissed as transient)
+19:15  15 pods OOM killed, orders failing
+19:23  On-call paged, starts investigation
+19:35  Root cause identified: memory leak
+19:40  Rollback initiated
+19:47  Rollback complete, but...
+19:47  → Database connection pool exhausted (thundering herd)
+20:15  Full recovery
+
+Total impact: 28 minutes @ $17,000/minute = $476,000
+Plus: SLA violations, restaurant refunds, customer credits
+Total incident cost: $1.2 million
+```
+
+**With Argo Rollouts (The New World)**
+
+After that incident, the platform team implemented Argo Rollouts with automated analysis:
+
+```yaml
+# The rollout configuration that saved them
+strategy:
+  canary:
+    steps:
+      - setWeight: 5           # Start with 5% traffic
+      - pause: {duration: 5m}  # Watch for 5 minutes
+      - analysis:
+          templates:
+            - templateName: memory-stability
+      - setWeight: 25
+      - pause: {duration: 5m}
+      - setWeight: 50
+      - pause: {duration: 10m}
+      - setWeight: 100
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: memory-stability
+spec:
+  metrics:
+    - name: memory-growth-rate
+      interval: 1m
+      count: 5
+      # Fail if memory grows more than 10% in 5 minutes
+      successCondition: result[0] < 0.1
+      provider:
+        prometheus:
+          query: |
+            (
+              avg(container_memory_working_set_bytes{pod=~"order-service-canary.*"})
+              - avg(container_memory_working_set_bytes{pod=~"order-service-canary.*"} offset 5m)
+            ) / avg(container_memory_working_set_bytes{pod=~"order-service-canary.*"} offset 5m)
+```
+
+**The Timeline That Saved Millions**
+
+```
+FRIDAY 6:47 PM - WITH ARGO ROLLOUTS
+─────────────────────────────────────────────────────────────────
+18:47:00  Rollout started
+18:47:05  Canary pods created (5% traffic)
+18:48:00  Memory baseline: 256MB per pod
+18:50:00  Memory trending: 312MB (normal startup)
+18:52:00  Memory trending: 489MB (⚠️ growing fast)
+18:52:30  Analysis check 1: Growth rate 91% - FAIL
+18:52:31  Analysis status: Failed
+18:52:32  Rollout aborted automatically
+18:52:35  Canary pods terminating
+18:52:40  100% traffic back to stable
+
+Total time exposed: 5 minutes 40 seconds
+Traffic affected: 5% = ~2,500 orders
+Failed orders: 0 (caught before OOM)
+```
+
+**The Financial Math**
+
+```
+COST COMPARISON
+─────────────────────────────────────────────────────────────────
+WITHOUT ARGO ROLLOUTS:
+─────────────────────────────────────────────────────────────────
+Downtime:                28 minutes
+Revenue loss:            28 × $17,000 = $476,000
+SLA violations:          $320,000
+Restaurant compensation: $180,000
+Customer credits:        $120,000
+Engineering overtime:    $45,000
+Reputation damage:       Immeasurable
+─────────────────────────────────────────────────────────────────
+Total:                   $1,141,000+
+
+WITH ARGO ROLLOUTS:
+─────────────────────────────────────────────────────────────────
+Canary exposure:         5.7 minutes at 5% traffic
+Revenue loss:            ~$4,800 (delayed orders, not lost)
+Customer impact:         2,500 slightly delayed orders
+SLA violations:          $0 (within tolerance)
+Engineering response:    $0 (automatic)
+─────────────────────────────────────────────────────────────────
+Total:                   <$5,000
+
+SAVINGS PER INCIDENT:    $1,136,000+
+```
+
+**Why Memory Analysis Caught It**
+
+The key insight: memory leaks are progressive. They don't fail immediately—they compound. Traditional health checks (readiness probes) don't catch memory leaks because pods stay "healthy" until they suddenly aren't.
+
+```
+MEMORY TRAJECTORY COMPARISON
+─────────────────────────────────────────────────────────────────
+                    Stable Version         Leaky Version
+─────────────────────────────────────────────────────────────────
+t=0 (startup)      256 MB                 256 MB
+t=2 min            260 MB                 340 MB    ← Diverging
+t=5 min            262 MB                 520 MB    ← Analysis fails here
+t=10 min           265 MB                 890 MB
+t=15 min           268 MB                 OOM KILL  ← Would have failed here
+```
+
+**Key Lessons**
+
+1. **Analysis timing matters**: Memory leak detection needs at least 5 minutes of data
+2. **Rate of change, not absolute values**: Looking at growth rate catches leaks before OOM
+3. **5% is your friend**: Start small, fail small
+4. **Automated response is faster**: Machines detect and act in seconds, humans take minutes
+5. **The analysis pays for itself**: One prevented incident justifies the implementation effort
 
 ## Quiz
 
@@ -828,6 +964,234 @@ kubectl argo rollouts abort my-app
 # 4. Force to stable version:
 kubectl argo rollouts undo my-app
 ```
+</details>
+
+### Question 5
+You're using a canary strategy with NGINX Ingress for traffic splitting. Your canary is at 30% but monitoring shows it's receiving 50% of traffic. What's wrong?
+
+<details>
+<summary>Show Answer</summary>
+
+**Common causes for traffic split mismatch:**
+
+1. **Pod ratio vs traffic weight**: Without a traffic router, Argo Rollouts scales pods proportionally. With 5 replicas at 30% canary:
+   - Stable: 3-4 pods
+   - Canary: 1-2 pods
+   - Kubernetes round-robin = ~30-40% traffic
+
+   But if HPA or manual scaling changed pod counts, the ratio shifts.
+
+2. **Missing ingress annotation**: NGINX traffic splitting requires the correct annotation:
+   ```yaml
+   trafficRouting:
+     nginx:
+       stableIngress: my-app-ingress
+       annotationPrefix: nginx.ingress.kubernetes.io
+   ```
+   Without it, traffic routes to both services equally.
+
+3. **Session affinity**: If sticky sessions are enabled, returning users always hit the same version, skewing observed percentages.
+
+4. **Health check traffic**: Kubernetes probes hit all pods equally, inflating canary traffic in metrics.
+
+**Debug steps:**
+```bash
+# Check ingress annotations
+kubectl get ingress my-app-ingress -o yaml | grep -A5 annotations
+
+# Verify canary service selector
+kubectl get svc my-app-canary -o yaml
+
+# Check rollout's view of traffic
+kubectl argo rollouts get rollout my-app
+```
+</details>
+
+### Question 6
+Design an analysis template that checks THREE conditions: error rate < 1%, p99 latency < 500ms, AND successful health checks. All must pass.
+
+<details>
+<summary>Show Answer</summary>
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: comprehensive-check
+spec:
+  args:
+    - name: service-name
+    - name: namespace
+
+  metrics:
+    # Check 1: Error rate < 1%
+    - name: error-rate
+      interval: 1m
+      count: 5
+      successCondition: result[0] < 0.01
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus:9090
+          query: |
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="{{args.namespace}}",
+              status=~"5.."
+            }[2m])) /
+            sum(rate(http_requests_total{
+              service="{{args.service-name}}",
+              namespace="{{args.namespace}}"
+            }[2m]))
+
+    # Check 2: P99 latency < 500ms
+    - name: p99-latency
+      interval: 1m
+      count: 5
+      successCondition: result[0] < 500
+      failureLimit: 2
+      provider:
+        prometheus:
+          address: http://prometheus:9090
+          query: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_ms_bucket{
+                service="{{args.service-name}}",
+                namespace="{{args.namespace}}"
+              }[2m])) by (le)
+            )
+
+    # Check 3: Health endpoint returns 200
+    - name: health-check
+      interval: 30s
+      count: 10
+      successCondition: result.status == "200"
+      failureLimit: 1
+      provider:
+        web:
+          url: "http://{{args.service-name}}.{{args.namespace}}.svc.cluster.local/health"
+          method: GET
+          jsonPath: "{$.status}"
+```
+
+All three metrics run in parallel. The analysis passes only if ALL metrics succeed within their failure limits.
+</details>
+
+### Question 7
+Your company requires that production deployments be approved by a team lead before reaching 50% traffic. How do you configure this in Argo Rollouts?
+
+<details>
+<summary>Show Answer</summary>
+
+Use **infinite pause** at the approval checkpoint:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: my-app
+spec:
+  strategy:
+    canary:
+      steps:
+        # Automated: Start canary
+        - setWeight: 10
+        - pause: {duration: 5m}
+        - analysis:
+            templates:
+              - templateName: success-rate
+
+        # Automated: If analysis passes, go to 30%
+        - setWeight: 30
+        - pause: {duration: 10m}
+
+        # MANUAL APPROVAL REQUIRED
+        - pause: {}  # ← Infinite pause
+
+        # After approval: Continue to 50%+
+        - setWeight: 50
+        - pause: {duration: 5m}
+        - setWeight: 75
+        - pause: {duration: 5m}
+        - setWeight: 100
+```
+
+**Approval workflow:**
+
+```bash
+# 1. Rollout reaches 30% and pauses
+kubectl argo rollouts get rollout my-app
+# Status: Paused - CanaryPauseStep
+
+# 2. Team lead reviews metrics, approves
+kubectl argo rollouts promote my-app
+
+# 3. Rollout continues to 50%+
+```
+
+**Alternative: Notifications + manual gate:**
+
+```yaml
+metadata:
+  annotations:
+    notifications.argoproj.io/subscribe.on-rollout-step-completed.slack: approvals-channel
+```
+
+This posts to Slack when the pause is reached, alerting approvers.
+</details>
+
+### Question 8
+Calculate the blast radius for a canary deployment with these parameters: 10,000 requests/second, 10% canary weight, 5-minute analysis interval, and analysis fails on 3rd check. How many requests hit the bad version?
+
+<details>
+<summary>Show Answer</summary>
+
+**Calculation:**
+
+```
+BLAST RADIUS CALCULATION
+─────────────────────────────────────────────────────────────────
+Total traffic:           10,000 req/s
+Canary weight:           10%
+Canary traffic:          1,000 req/s
+
+Analysis configuration:
+- interval: 1m (assumed)
+- count: 5 (5 checks to pass)
+- failureLimit: 3 (assumed)
+
+Timeline to failure:
+- Check 1 (t=1m): Pass
+- Check 2 (t=2m): Pass
+- Check 3 (t=3m): FAIL
+- Check 4 (t=4m): FAIL
+- Check 5 (t=5m): FAIL ← Analysis fails, rollback triggered
+
+Time at canary weight: ~5 minutes
+Requests to canary: 1,000 req/s × 300 seconds = 300,000 requests
+
+BLAST RADIUS: 300,000 requests (3% of 5-minute total)
+```
+
+**Compare to rolling update:**
+
+```
+ROLLING UPDATE (NO CANARY)
+─────────────────────────────────────────────────────────────────
+Time to 100%:            ~2 minutes (typical rolling update)
+Time to detect:          +5 minutes (alert fires)
+Time to rollback:        +3 minutes (human response + rollback)
+
+Total exposure:          10 minutes at 100% traffic
+Requests affected:       10,000 × 600 = 6,000,000 requests
+
+Rolling update blast radius: 6,000,000 requests
+Canary blast radius:        300,000 requests
+
+RISK REDUCTION: 95%
+```
+
+**Key insight:** Canary at 10% with 5-minute analysis exposes 20× fewer users than a rolling update with the same detection time.
 </details>
 
 ## Hands-On Exercise
@@ -1007,6 +1371,21 @@ kubectl argo rollouts get rollout demo-rollout
 ```bash
 kind delete cluster --name rollouts-lab
 ```
+
+## Key Takeaways
+
+Before moving on, ensure you can:
+
+- [ ] Explain why progressive delivery reduces blast radius (traffic percentage × detection time)
+- [ ] Choose between canary and blue-green strategies based on traffic routing capabilities
+- [ ] Write a Rollout spec with setWeight, pause, and analysis steps
+- [ ] Create AnalysisTemplates with Prometheus queries and success conditions
+- [ ] Calculate blast radius: (traffic % × requests/sec × time-to-detect)
+- [ ] Configure traffic routing with NGINX, Istio, or pod-based splitting
+- [ ] Use the Argo Rollouts CLI: get, promote, abort, retry, undo
+- [ ] Design multi-metric analysis checking error rate, latency, and health
+- [ ] Implement manual approval gates with infinite pause steps
+- [ ] Troubleshoot common issues: traffic mismatch, stuck pauses, analysis failures
 
 ## Next Module
 

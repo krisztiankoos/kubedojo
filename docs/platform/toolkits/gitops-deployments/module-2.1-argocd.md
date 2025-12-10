@@ -2,6 +2,12 @@
 
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 
+---
+
+*The on-call engineer's phone buzzed at 2 AM: "Production is down." She SSH'd into the bastion, ran `kubectl get pods`—everything looked fine. But customers were seeing errors. After two hours of frantic debugging, she discovered it: someone had manually scaled the payment service to zero replicas "for testing" three days ago, then forgot to scale it back. No ticket. No pull request. No audit trail. The change existed only in cluster state, invisible to monitoring, unknown to the team. That night cost the e-commerce platform $890,000 in lost Black Friday pre-orders. The next Monday, the CTO demanded answers. "How do we prevent this from ever happening again?" The answer was GitOps—and ArgoCD became the tool that would transform their deployment culture from chaos to confidence.*
+
+---
+
 ## Prerequisites
 
 Before starting this module:
@@ -633,25 +639,118 @@ spec:
 | No projects | No isolation between teams | Create projects per team with RBAC |
 | Hardcoded image tags | Can't track what's deployed | Use image updater or Git automation |
 
-## War Story: The Accidental Wipe
+## War Story: The $1.7 Million Git Merge
 
-A platform team enabled `prune: true` on their root app-of-apps without testing. When they accidentally deleted an application manifest from Git, ArgoCD helpfully pruned all 200 resources in that namespace—including a production database PVC.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  THE $1.7 MILLION GIT MERGE                                     │
+│  ───────────────────────────────────────────────────────────────│
+│  Company: B2B SaaS platform (500+ enterprise customers)         │
+│  Stack: 127 microservices, 3 clusters, ArgoCD managed           │
+│  The disaster: One merge, 47 services deleted, 6 hours down     │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-**The fix**:
-1. Always use `finalizers` to prevent accidental deletion
-2. Enable `orphanedResources.warn` before enabling `prune`
-3. Use `argocd.argoproj.io/sync-options: Prune=false` for stateful resources
+**Day 0 - The Merge**
+
+A developer was cleaning up the repository. "Let's remove these old deployment files that are no longer needed." He identified 47 services in the `deprecated/` folder and deleted them. The PR passed code review—reviewers saw only file deletions, nothing alarming.
+
+But there was a problem: the root ArgoCD Application had `prune: true` enabled. And the "deprecated" folder? It wasn't deprecated at all. A naming refactor months earlier had moved services there, but they were still in production.
+
+```
+THE MERGE TIMELINE
+─────────────────────────────────────────────────────────────────
+09:14 AM  PR merged to main
+09:14 AM  ArgoCD detected change (30-second sync)
+09:15 AM  ArgoCD synced: 47 services deleted from cluster
+09:17 AM  First customer reports: "API returning 503"
+09:22 AM  PagerDuty: 2,847 alerts in 5 minutes
+09:25 AM  Engineering all-hands: "What happened?!"
+09:45 AM  Root cause identified: services deleted by GitOps
+10:00 AM  Git revert pushed to main
+10:02 AM  ArgoCD synced: services recreating
+10:15 AM  Database connection pools exhausted (cold start storm)
+11:00 AM  Services recovering, still degraded
+15:00 PM  Full recovery confirmed
+```
+
+**The Fallout**
+
+```
+INCIDENT IMPACT ASSESSMENT
+─────────────────────────────────────────────────────────────────
+Downtime duration:        5 hours 45 minutes
+Services affected:        47 of 127 (37%)
+Customers impacted:       312 enterprise accounts
+SLA violations:           89 customers (99.9% SLA)
+
+Financial Impact:
+- SLA credit payouts:     $847,000
+- Lost transactions:      $523,000
+- Emergency response:     $67,000 (overtime, contractors)
+- Customer churn (30d):   $312,000 (7 accounts)
+
+Total quantifiable cost:  $1,749,000
+```
+
+**Why ArgoCD "Worked Correctly"**
+
+ArgoCD did exactly what it was configured to do:
+1. Git is the source of truth
+2. Files were deleted from Git
+3. `prune: true` was enabled
+4. ArgoCD deleted resources not in Git
+
+The tool wasn't broken—the process was.
+
+**The Fix: Defense in Depth**
 
 ```yaml
-# Protect against accidental deletion
+# 1. Protect critical namespaces with finalizers
+apiVersion: argoproj.io/v1alpha1
+kind: Application
 metadata:
+  name: payment-service
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
+    # Require manual deletion, never auto-prune
     argocd.argoproj.io/sync-options: Prune=false
+
+# 2. Warn before pruning
+spec:
+  syncPolicy:
+    automated:
+      prune: false  # Changed from true!
+      selfHeal: true
+  # Enable orphan warnings instead of auto-delete
+  orphanedResources:
+    warn: true
 ```
 
-**The lesson**: GitOps is powerful—it applies what's in Git. Make sure what's in Git is what you want.
+```yaml
+# 3. CODEOWNERS protection for critical paths
+# .github/CODEOWNERS
+/apps/production/**  @platform-team @security-team
+/infrastructure/**   @platform-team
+```
+
+**The Cultural Change**
+
+After the incident, the team implemented:
+
+1. **Prune disabled by default**: Services opt-in to pruning with explicit annotation
+2. **Two-person review for deletions**: Any PR that removes files requires platform team approval
+3. **Staging sync first**: Production ArgoCD syncs only after 1-hour staging bake time
+4. **Sync windows**: Critical services can only sync during business hours
+
+**Key Lessons**
+
+1. **`prune: true` is a loaded gun**: Only enable for namespaces you're willing to lose
+2. **Git history is your backup**: But recovery requires understanding what ArgoCD will do
+3. **Review deletions carefully**: "Removing old files" PRs need scrutiny
+4. **Staging isn't optional**: If ArgoCD would destroy staging, it'll destroy production
+5. **GitOps amplifies mistakes**: The same property that makes recovery fast makes destruction fast
 
 ## Quiz
 
@@ -786,6 +885,212 @@ Several options:
    ```
 
 Git revert is preferred because it maintains the audit trail and works with any sync policy.
+</details>
+
+### Question 5
+You're managing 150 applications across 5 clusters. Using individual Application CRs is becoming unwieldy. What ArgoCD pattern would you use?
+
+<details>
+<summary>Show Answer</summary>
+
+Use **ApplicationSets** with multiple generators:
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-apps
+spec:
+  generators:
+    # Matrix: Combine clusters × apps
+    - matrix:
+        generators:
+          - clusters: {}  # All registered clusters
+          - git:
+              repoURL: https://github.com/org/apps.git
+              revision: HEAD
+              directories:
+                - path: apps/*
+
+  template:
+    metadata:
+      name: '{{name}}-{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/org/apps.git
+        path: '{{path}}'
+      destination:
+        server: '{{server}}'
+        namespace: '{{path.basename}}'
+```
+
+This generates:
+- 5 clusters × 30 apps = 150 Applications from ONE ApplicationSet
+- Adding a cluster automatically deploys all apps
+- Adding an app automatically deploys to all clusters
+</details>
+
+### Question 6
+An application is showing "OutOfSync" status even though the Git source hasn't changed. What are the common causes and how do you debug?
+
+<details>
+<summary>Show Answer</summary>
+
+**Common causes:**
+
+1. **Defaulted fields**: Kubernetes API adds defaults that weren't in your manifest
+2. **Mutations by controllers**: Admission webhooks or operators modify resources
+3. **Immutable fields**: Some fields can't be changed after creation
+4. **Annotation drift**: Timestamps or hash annotations added by other tools
+
+**Debug steps:**
+
+```bash
+# 1. View the diff
+argocd app diff my-app
+
+# 2. Check what ArgoCD sees
+argocd app get my-app --show-params
+
+# 3. View raw manifests
+argocd app manifests my-app --source live
+argocd app manifests my-app --source git
+
+# 4. Compare in UI
+# ArgoCD UI shows side-by-side diff
+
+# 5. If acceptable drift, ignore specific fields
+```
+
+**Fix with ignore differences:**
+
+```yaml
+spec:
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # Ignore HPA-managed replicas
+    - group: ""
+      kind: Service
+      jqPathExpressions:
+        - .metadata.annotations["kubectl.kubernetes.io/last-applied-configuration"]
+```
+</details>
+
+### Question 7
+You need to prevent Team A from deploying to Team B's namespaces while sharing a single ArgoCD instance. How do you configure this?
+
+<details>
+<summary>Show Answer</summary>
+
+Use **AppProjects** for namespace isolation:
+
+```yaml
+# Team A project
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: team-a
+  namespace: argocd
+spec:
+  description: Team A applications
+
+  # Can only deploy to team-a namespaces
+  destinations:
+    - namespace: team-a-*
+      server: https://kubernetes.default.svc
+
+  # Can only use team-a repos
+  sourceRepos:
+    - https://github.com/org/team-a-*
+
+  # No cluster-wide resources
+  clusterResourceWhitelist: []
+
+  # Map OIDC group to project
+  roles:
+    - name: developer
+      policies:
+        - p, proj:team-a:developer, applications, *, team-a/*, allow
+      groups:
+        - team-a-developers  # OIDC group
+```
+
+**RBAC enforcement:**
+
+```yaml
+# argocd-rbac-cm ConfigMap
+data:
+  policy.csv: |
+    # Team A can only access team-a project
+    p, role:team-a-dev, applications, *, team-a/*, allow
+    p, role:team-a-dev, logs, get, team-a/*, allow
+    g, team-a-developers, role:team-a-dev
+
+    # Default: deny
+    p, role:default, *, *, *, deny
+  policy.default: role:readonly
+```
+</details>
+
+### Question 8
+Calculate the resource requirements for ArgoCD managing 500 applications with 20 Git repositories, syncing every 3 minutes.
+
+<details>
+<summary>Show Answer</summary>
+
+**Calculation approach:**
+
+```
+ARGOCD RESOURCE SIZING
+─────────────────────────────────────────────────────────────────
+Applications: 500
+Git repos: 20
+Sync interval: 3 minutes
+Average manifests per app: 10
+
+API Server:
+- Handles UI, CLI, API calls
+- Memory: ~200MB base + 1MB per 100 apps = 200 + 5 = 205MB
+- Replicas: 2 (HA) = 410MB total
+- CPU: 500m per replica
+
+Repo Server:
+- Clones repos, renders manifests
+- Memory: ~100MB base + 50MB per repo = 100 + 1000 = 1.1GB
+- Clones cached, but 20 repos with activity = significant
+- Replicas: 2 (HA) = 2.2GB total
+- CPU: 1 core per replica (manifest rendering is CPU-intensive)
+
+Application Controller:
+- Watches 500 apps, calculates diffs
+- Memory: ~500MB base + 2MB per app = 500 + 1000 = 1.5GB
+- Single instance (uses leader election)
+- CPU: 2 cores (continuous reconciliation)
+
+Redis:
+- Caches repo contents, application state
+- Memory: 512MB-1GB depending on manifest sizes
+- Single instance (or Redis HA)
+
+TOTAL ESTIMATE:
+─────────────────────────────────────────────────────────────────
+api-server:     2 × (500m CPU, 256MB)  = 1 core, 512MB
+repo-server:    2 × (1 core, 1.5GB)    = 2 cores, 3GB
+controller:     1 × (2 cores, 2GB)     = 2 cores, 2GB
+redis:          1 × (200m CPU, 1GB)    = 200m, 1GB
+─────────────────────────────────────────────────────────────────
+Total:          ~5 cores, ~6.5GB memory
+
+Plus buffer for spikes: 8 cores, 10GB memory recommended
+```
+
+**Scaling tips:**
+- Increase repo-server replicas if manifest rendering is slow
+- Use `--parallelism-limit` on controller to prevent thundering herd
+- Consider sharding controller across clusters for >1000 apps
 </details>
 
 ## Hands-On Exercise
@@ -973,6 +1278,21 @@ open https://localhost:8080
 kind delete cluster --name argocd-lab
 rm -rf argocd-lab
 ```
+
+## Key Takeaways
+
+Before moving on, ensure you can:
+
+- [ ] Explain ArgoCD's architecture: API Server, Repo Server, Application Controller
+- [ ] Install ArgoCD and access the UI via port-forward or ingress
+- [ ] Create Application CRs pointing to Git repos with Helm, Kustomize, or plain YAML
+- [ ] Configure sync policies: `automated`, `prune`, and `selfHeal` with appropriate safeguards
+- [ ] Use sync waves and hooks to control deployment order and run pre/post-sync jobs
+- [ ] Implement App of Apps pattern for managing multiple applications
+- [ ] Use ApplicationSets to generate applications from templates and generators
+- [ ] Configure AppProjects and RBAC for multi-tenant isolation
+- [ ] Troubleshoot sync failures: read diffs, check logs, use `ignoreDifferences`
+- [ ] Roll back deployments using Git revert or ArgoCD CLI
 
 ## Next Module
 
