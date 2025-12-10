@@ -10,6 +10,65 @@
 
 ---
 
+## The Startup That Went Blind at the Worst Possible Moment
+
+**November 2019. A Fast-Growing Fintech Startup. Series B Funding Just Closed.**
+
+The engineering team had built fast. Really fast. In 18 months, they went from zero to 2 million users, handling $40 million in transactions monthly. The codebase was a masterpiece of velocity—features shipped weekly, bugs fixed within hours.
+
+But they had cut one corner: observability. Every service logged to stdout with basic print statements. No structured data. No trace IDs. No metrics beyond "is the server up?" When things worked, nobody noticed. When things broke, they guessed.
+
+November 15th, 3:47 PM. Their payment processor reports a critical vulnerability. They need to identify every transaction processed through a specific code path in the last 72 hours. Regulatory deadline: 4 hours.
+
+The senior engineer opens their logging system. Searches for "payment." Gets 847 million results. Unstructured text. No way to filter by transaction ID. No way to identify the affected code path. No correlation between services.
+
+**Hour 1**: They try regex patterns on raw logs. The patterns match too much. False positives everywhere.
+
+**Hour 2**: They dump logs to CSV and manually filter in Excel. The file is 47GB. Excel crashes.
+
+**Hour 3**: They start reading logs line by line, trying to reconstruct transaction flows manually. Ten engineers working in parallel.
+
+**Hour 4**: They miss the deadline.
+
+**The Fallout**:
+- Regulatory fine: $2.3 million
+- Emergency audit: 6 weeks of engineering time diverted
+- Customer notification required: 847,000 users informed of potential data exposure
+- Reputation damage: Two enterprise deals cancelled
+- Investor confidence: Series C delayed by 9 months
+
+**Total cost**: $18.7 million in direct losses, plus immeasurable opportunity cost.
+
+**The root cause**: Not the vulnerability itself—that was a common library issue affecting thousands of companies. The root cause was **invisible instrumentation**. They couldn't see what their systems had done.
+
+```
+THE INSTRUMENTATION BLINDNESS TRAP
+═══════════════════════════════════════════════════════════════════════════════
+
+WHAT THEY HAD                          WHAT THEY NEEDED
+─────────────────────────────────────  ─────────────────────────────────────
+print("processing payment")            Structured: {"event": "payment_start",
+                                                    "transaction_id": "T-12345",
+                                                    "user_id": "U-6789",
+                                                    "trace_id": "abc-123"}
+
+No metrics                             Counters: payments_processed_total
+                                       Histograms: payment_duration_seconds
+                                       Gauges: active_transactions
+
+No tracing                             Spans: payment-service → fraud-check
+                                              → processor-api → ledger-write
+
+TIME TO ANSWER "What transactions used code path X?"
+
+With their setup:   4+ hours (and failed)
+With proper setup:  47 seconds (WHERE code_path = 'X' AND timestamp > '3 days ago')
+```
+
+After the incident, they spent 3 months instrumenting properly. The same regulatory request—which came again during the next quarterly audit—took 2 minutes to answer.
+
+---
+
 ## Why This Module Matters
 
 You understand logs, metrics, and traces. But where do they come from? **Instrumentation**—the code that generates telemetry.
@@ -592,15 +651,48 @@ except TimeoutError:
     raise
 ```
 
-> **War Story: The $50,000 Metric**
+> **War Story: The $50,000/Month Instrumentation Disaster**
 >
-> A startup instrumented everything. Every function call, every loop iteration, every variable change. "More data is better," they reasoned.
+> **2021. A Series A SaaS Startup. 50 Engineers.**
 >
-> Their monthly observability bill hit $50,000. Worse, dashboards were slow, queries timed out, and the noise made finding real issues nearly impossible.
+> The VP of Engineering declared: "We will never be caught blind by an incident. Instrument everything."
 >
-> The fix took two weeks: they removed 90% of their instrumentation, keeping only boundary calls, business operations, and errors. Their bill dropped to $5,000. Query times went from minutes to seconds. And they could actually find problems now because they weren't buried in noise.
+> The team took it literally. Every function got timing metrics. Every variable assignment got logged. Every code branch got a span. They were proud of their 847,000 active time series and 2.3TB of daily logs.
 >
-> The lesson: Instrumentation isn't free. Every metric, log, and span has cost—storage, performance, and attention. Instrument strategically, not exhaustively.
+> **Month 1**: Observability bill: $12,000. "Worth it for visibility."
+>
+> **Month 3**: Bill: $28,000. Dashboards taking 45 seconds to load. "We'll optimize later."
+>
+> **Month 6**: Bill: $52,000. Queries timing out. Engineers avoiding the observability stack because it's too slow. Alert fatigue from 400+ daily alerts.
+>
+> **The Breaking Point**: A P0 incident occurs. The on-call engineer opens their dashboard. 47-second load time. They search for the error in logs. Query times out after 5 minutes. They try to find relevant metrics among 847,000 series. Needle in a haystack.
+>
+> The incident that should have taken 15 minutes to debug took 3 hours. Their "comprehensive observability" was actually *anti-observability*—so much noise that signal was invisible.
+>
+> **The Recovery**:
+>
+> | Before | After |
+> |--------|-------|
+> | 847,000 metric series | 12,400 series |
+> | 2.3 TB daily logs | 180 GB daily logs |
+> | Every function instrumented | Boundaries + business ops + errors |
+> | $52,000/month | $4,200/month |
+> | 45-second dashboard load | 1.2-second dashboard load |
+> | 400 daily alerts (90% noise) | 23 daily alerts (95% actionable) |
+>
+> **What they removed**:
+> - Loop iteration metrics (who cares how many times a for-loop ran?)
+> - Internal function timing (nobody debugs at this granularity)
+> - Debug-level logs in production (useful in dev, noise in prod)
+> - Metrics with unbounded cardinality (user_id as a label = disaster)
+>
+> **What they kept**:
+> - Every HTTP request in/out (boundaries)
+> - Every database query (boundaries)
+> - Business operations (signup, payment, order)
+> - All errors with full context
+>
+> **The Lesson**: "Instrument everything" is not a strategy. It's an anti-pattern. The goal isn't maximum data—it's maximum *signal*. Every datapoint you add should answer a question you'll actually ask.
 
 ---
 
@@ -701,6 +793,160 @@ except TimeoutError:
 
    Rule of thumb: If you'll ask "how many" or "what's the average," use metrics. If you'll ask "what happened to this specific thing," use logs. Use both when appropriate—they complement each other.
    </details>
+
+5. **A service has 100 endpoints, 50 status codes, and 1 million users. An engineer wants to add a metric with labels for endpoint, status, and user_id. Calculate the potential cardinality explosion and explain why this is problematic.**
+   <details>
+   <summary>Answer</summary>
+
+   **Calculation**:
+   100 endpoints × 50 status codes × 1,000,000 users = **5 billion potential time series**
+
+   **Why this is problematic**:
+   1. **Storage**: Each time series needs ~3KB of memory for efficient querying. 5B × 3KB = 15TB of memory
+   2. **Query performance**: Scanning 5B series for a dashboard = timeout
+   3. **Cost**: At $0.10 per 1000 active series, that's $500,000/month
+   4. **Prometheus limits**: Default recommendation is <10M series
+
+   **The fix**:
+   - Remove user_id from metric labels (move to logs instead)
+   - Keep endpoint × status = 5,000 series (manageable)
+   - Log user_id with structured fields for per-user debugging
+
+   **Rule**: Metrics = low cardinality (bounded dimensions). Logs = high cardinality welcome.
+   </details>
+
+6. **Your team uses head-based sampling at 1%. A critical bug affects 0.1% of requests. Calculate the probability of catching this bug in your traces. What sampling strategy would help?**
+   <details>
+   <summary>Answer</summary>
+
+   **With head-based 1% sampling**:
+   - Bug affects 0.1% of requests
+   - You sample 1% of all requests randomly
+   - Probability of sampling a buggy request: 1% × 0.1% = 0.001% of total traffic
+   - If you have 1M requests/day: 1M × 0.00001 = **10 buggy traces/day**
+
+   **The problem**: You might catch 10 examples, but:
+   - If the bug is intermittent, you might not even notice the pattern
+   - If you need to analyze 100+ cases to understand the bug, you're waiting 10+ days
+
+   **Better strategy: Tail-based sampling**:
+   - Keep 100% of error traces (not sampled)
+   - Bug causes errors → all buggy requests are traced
+   - Analysis: immediate, comprehensive
+
+   **Even better: Adaptive sampling**:
+   - Normal requests: 1% sampling
+   - Errors: 100% retention
+   - Slow requests (>p99): 100% retention
+   - New code paths: elevated sampling for first 24 hours
+   </details>
+
+7. **An engineer adds this log line: `logger.info(f"Processing request for user {user.email} with password {user.password}")`. List all the problems with this instrumentation.**
+   <details>
+   <summary>Answer</summary>
+
+   **Critical problems**:
+
+   1. **PII exposure**: Email is personally identifiable information (PII)
+   2. **Credential leak**: Password in logs is a severe security vulnerability
+   3. **Compliance violation**: GDPR, CCPA, SOC2 all prohibit logging credentials
+   4. **Unstructured format**: f-string isn't queryable
+   5. **Missing context**: No trace_id, request_id, timestamp
+   6. **Audit liability**: Logs may be retained for years—credentials persist
+
+   **The fix**:
+   ```python
+   logger.info("request_processing_started", extra={
+       "user_id": user.id,  # ID, not email
+       "trace_id": get_trace_id(),
+       "request_id": request.id,
+       # NEVER log: password, tokens, SSN, credit card, email (use user_id)
+   })
+   ```
+
+   **Best practice**: Use allow-lists (explicitly list what CAN be logged) rather than deny-lists (trying to catch everything that shouldn't be logged). Assume everything is sensitive unless proven otherwise.
+   </details>
+
+8. **Your service calls a third-party API. Traces show the span but context propagation breaks—downstream spans aren't connected. List three possible causes and how to debug each.**
+   <details>
+   <summary>Answer</summary>
+
+   **Possible causes and debugging**:
+
+   1. **HTTP client not instrumented**
+      - Debug: Check if traceparent header is being sent
+      - Fix: Use OTel-instrumented HTTP client or add manual header injection
+      ```bash
+      # Verify header propagation
+      curl -v yourservice.com 2>&1 | grep -i traceparent
+      ```
+
+   2. **Third-party API doesn't propagate context**
+      - Debug: Check if third-party returns/forwards trace context
+      - Fix: You can't fix their code, but you can:
+        - End your span when you make the call
+        - Start a new trace when response returns (link to original via span attributes)
+
+   3. **Async boundary drops context**
+      - Debug: Check if context is preserved across await/callback
+      - Fix: Use context propagation utilities:
+      ```python
+      # Python example with OTel
+      from opentelemetry import context
+      ctx = context.get_current()
+      # ... in callback ...
+      context.attach(ctx)
+      ```
+
+   **Debugging workflow**:
+   1. Add debug logging at call site: log trace_id before and after
+   2. Inspect outgoing HTTP headers
+   3. Check if response includes trace context
+   4. Verify context storage across async boundaries
+   </details>
+
+---
+
+## Key Takeaways
+
+```
+INSTRUMENTATION ESSENTIALS CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+WHAT TO INSTRUMENT (PRIORITY ORDER)
+☑ 1. Errors - EVERYTHING that fails, with full context
+☑ 2. Boundaries - every request in, every request out
+☑ 3. Business operations - signup, payment, order, key events
+☑ 4. Dependencies - database, cache, external APIs
+☑ 5. Internal operations - SELECTIVE, not exhaustive
+
+INSTRUMENTATION RULES
+☑ Structured logs with consistent field names
+☑ trace_id in EVERY log line (non-negotiable)
+☑ Low-cardinality metric labels only
+☑ Span names should be low-cardinality (variables in tags)
+☑ NEVER log passwords, tokens, PII, credentials
+
+COST AWARENESS
+☑ Every metric costs storage and query time
+☑ Every log line costs storage and search time
+☑ Every span costs memory and export bandwidth
+☑ Sample traces strategically (100% for errors, % for normal)
+☑ Calculate cardinality BEFORE adding labels
+
+CONTEXT PROPAGATION
+☑ Use W3C Trace Context standard (traceparent header)
+☑ Test propagation across ALL service boundaries
+☑ Include context in async operations (queues, callbacks)
+☑ Use baggage for application-level context (user_id, tenant)
+
+COMMON ANTI-PATTERNS TO AVOID
+☑ "Instrument everything" → instrument strategically
+☑ High-cardinality metrics → move to logs
+☑ Unstructured logs → structured JSON with fields
+☑ Missing trace_id → always include correlation
+☑ Sensitive data in logs → use allow-lists
+```
 
 ---
 

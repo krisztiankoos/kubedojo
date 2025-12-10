@@ -10,6 +10,52 @@
 
 ---
 
+## The Engineer Who Had Everything and Nothing
+
+**October 2015. A Major Rideshare Company. 7:43 PM on New Year's Eve.**
+
+The platform is about to handle 440% of normal traffic. The engineering team has prepared for months. They have comprehensive Prometheus metrics on every service. They have Elasticsearch with 2TB of logs. They have distributed tracing through Jaeger. All three pillars, best-in-class tooling.
+
+At 11:52 PM, surge pricing stops working.
+
+The on-call engineer opens Grafana. Latency spike on the pricing service—p99 jumped from 150ms to 8 seconds. Great, the metrics show *that* something is wrong.
+
+She switches to Jaeger to find slow traces. But the trace UI only lets her search by trace ID or service name. She doesn't have a trace ID. She searches for "pricing-service" and gets 2 million results in the last hour. No way to filter by duration. No way to find the slow ones.
+
+She pivots to Elasticsearch. Searches for "pricing" and "error." 847,000 results. None have trace IDs—the team never added them to logs. She can see errors happened but can't connect them to specific requests or traces.
+
+**90 minutes**. That's how long it took to find the root cause: a database connection pool exhaustion that only manifested under New Year's Eve load. The fix was a single config change. But finding it required manually correlating timestamps across three disconnected tools.
+
+**Cost**: $12.4 million in lost surge pricing revenue. 340,000 customer complaints. A PR crisis that took weeks to contain.
+
+**The lesson**: They had all three pillars. What they didn't have was *correlation*. Without trace IDs in logs, without the ability to drill from metrics to traces, without exemplars connecting aggregates to specifics—the pillars were just three separate silos. Three blind investigators who couldn't share notes.
+
+```
+THE THREE PILLARS PARADOX
+═══════════════════════════════════════════════════════════════════════════════
+
+WHAT THE TEAM HAD                          WHAT THEY COULD DO
+─────────────────────────────────────      ─────────────────────────────────────
+☑ Prometheus metrics (2M series)           ✗ Find which specific requests failed
+☑ Elasticsearch logs (2TB/day)             ✗ Connect a log to its trace
+☑ Jaeger traces (100M spans/day)           ✗ Find traces matching a metric spike
+                                           ✗ Query logs by trace_id
+                                           ✗ Drill down from aggregate to specific
+
+Having the pillars ≠ Having observability
+
+WHAT THEY ADDED AFTER THE INCIDENT
+─────────────────────────────────────────────────────────────────────────────
+✓ trace_id in every log line
+✓ Exemplars linking p99 metrics to sample traces
+✓ Duration-based trace search
+✓ Unified query UI that links all three
+
+Same tools. 10-minute resolution time for similar incidents.
+```
+
+---
+
 ## Why This Module Matters
 
 You've learned what observability is. Now, how do you actually achieve it?
@@ -435,15 +481,47 @@ INVESTIGATION WORKFLOW
 >
 > Where do you get stuck? That's your correlation gap.
 
-> **War Story: The Missing Trace**
+> **War Story: The $6.7 Million Investigation Gap**
 >
-> A fintech company had all three pillars—logs in Elasticsearch, metrics in Prometheus, traces in Jaeger. But they weren't connected.
+> **2018. A Major Trading Platform. Monday Morning, Market Open.**
 >
-> During an incident, the on-call engineer saw error spikes in metrics. She switched to Jaeger to find traces, but couldn't search by error type. She went to Elasticsearch, found error logs, but they had no trace IDs. She spent 45 minutes manually correlating timestamps across three tools.
+> At 9:31 AM Eastern, order execution latency jumped from 3ms to 400ms. For a high-frequency trading platform, this was catastrophic. Every millisecond of delay meant lost arbitrage opportunities. Customers were losing money—and switching to competitors in real-time.
 >
-> The root cause? A 5-minute fix: a misconfigured connection pool. But finding it took 45 minutes because the pillars were silos.
+> The platform had excellent tooling: Prometheus metrics with 50,000 time series, Elasticsearch ingesting 500GB of logs daily, and Zipkin handling 10 million spans per hour. On paper, world-class observability.
 >
-> After the incident, they added trace_id to every log, added exemplars to metrics, and linked their UIs. The next similar incident took 8 minutes to resolve. The pillars only work when they're connected.
+> **9:31 AM**: Alert fires. P99 latency above threshold.
+> **9:34 AM**: Engineer opens Grafana. Confirms latency spike. Can see *which* services are slow but not *why*.
+> **9:41 AM**: Switches to Zipkin. Searches for "order-execution" service. Gets 847,000 traces. No way to filter to just the slow ones. No latency-based search.
+> **9:52 AM**: Opens Elasticsearch. Searches for "order" and "slow." 2.3 million results. Logs have timestamps but no trace IDs. Can't correlate to traces.
+> **10:14 AM**: Resorts to manually comparing timestamps across tools. Tedious, error-prone.
+> **10:47 AM**: Finally identifies pattern—slow requests all touched a specific Redis cluster.
+> **10:52 AM**: Root cause found—Redis master failover during maintenance window wasn't announced. Connections were timing out during reconnection.
+> **10:54 AM**: Fix applied—bump connection pool retry settings.
+>
+> **Time to resolution: 83 minutes.** Fix took 2 minutes. Finding the problem took 81.
+>
+> **Financial Impact**:
+> - Lost trading volume during outage: $847,000
+> - Customer churn (3 major clients left): $5.8 million annual revenue
+> - Regulatory fine for execution delay: $120,000
+> - **Total: $6.77 million**
+>
+> **The Postmortem**:
+>
+> | What They Had | What They Couldn't Do |
+> |---------------|----------------------|
+> | 50,000 Prometheus metrics | Find slow traces from metric spikes |
+> | 500GB/day logs in Elasticsearch | Search logs by trace_id |
+> | 10M spans/hour in Zipkin | Filter traces by duration |
+> | Three world-class tools | Navigate between them |
+>
+> **What They Built After**:
+> - Added trace_id to every log line (2 hours of work)
+> - Added exemplars to latency histograms (4 hours)
+> - Built unified search UI linking all three (2 weeks)
+> - Next similar incident: 9 minutes to resolution
+>
+> **The math**: $6.77M cost ÷ 2 weeks engineering time = worth it.
 
 ---
 
@@ -631,6 +709,133 @@ Benefits:
 
    The better framing: "We collect rich events about system behavior. We can view them as logs (individual events), metrics (aggregates over time), or traces (connected journeys). They're the same data, different lenses."
    </details>
+
+5. **A company generates 10,000 requests/second. They want to trace all requests but storage costs are prohibitive. If they sample at 1%, how many traces per day will they store? What requests should NOT be sampled?**
+   <details>
+   <summary>Answer</summary>
+
+   **Calculation**:
+   - 10,000 requests/second × 60 seconds × 60 minutes × 24 hours = 864,000,000 requests/day
+   - At 1% sampling: 864,000,000 × 0.01 = **8,640,000 traces/day**
+
+   **Requests that should NOT be sampled (keep 100%)**:
+   1. **Errors**: Always trace failed requests—you need full details to debug
+   2. **Slow requests**: Any request above p99 latency threshold
+   3. **Key business transactions**: Payments, order completions, sign-ups
+   4. **Known problematic endpoints**: Routes that historically have issues
+   5. **Debug-flagged requests**: When a user reports an issue, they can add a header to force tracing
+
+   **Head-based vs tail-based sampling**:
+   - Head-based: Decide at request start (easy, but might miss interesting requests)
+   - Tail-based: Decide at request end (can keep all errors/slow requests, harder to implement)
+   </details>
+
+6. **Your team has Prometheus metrics showing p99 latency increased. You want to find an example slow request to investigate. Without exemplars, list the steps you'd need to take. How do exemplars simplify this?**
+   <details>
+   <summary>Answer</summary>
+
+   **Without exemplars (manual correlation)**:
+   1. Note the timestamp of the p99 spike from Prometheus
+   2. Switch to your tracing tool (Jaeger, Zipkin)
+   3. Search for traces from that service around that timestamp
+   4. Manually filter for traces with duration > p99 value
+   5. If tracing tool doesn't support duration filtering, export traces and filter externally
+   6. Hope you find a representative example
+
+   **Time**: 10-30 minutes. Error-prone. Might not find the right trace.
+
+   **With exemplars**:
+   1. View p99 latency metric in Grafana
+   2. Click the exemplar marker on the graph
+   3. Jump directly to a trace that contributed to that p99 value
+   4. Investigate
+
+   **Time**: 30 seconds. Guaranteed to find a relevant trace.
+
+   Exemplars are the bridge between "something is slow" and "here's a specific slow thing to investigate."
+   </details>
+
+7. **An engineer says "We use structured JSON logging, so we have observability." What's missing from this statement? What else would they need?**
+   <details>
+   <summary>Answer</summary>
+
+   Structured logging is necessary but not sufficient for observability.
+
+   **What structured logging provides**:
+   - Queryable fields (can filter by user_id, error_code)
+   - Consistent format (easy to parse)
+   - Context preservation
+
+   **What's still missing**:
+   1. **Trace IDs**: Can they connect logs to traces? Without trace_id in logs, they're still isolated.
+   2. **Request correlation**: Can they find all logs for a single request across services?
+   3. **Metrics**: Logs alone don't show trends, aggregates, or enable alerting
+   4. **Traces**: Logs don't show request flow, timing, or service dependencies
+   5. **High-cardinality queries**: Can they ask "show me all logs where user_id=X AND error_code=Y"?
+   6. **Cross-signal navigation**: Can they click from a log to its trace? From a metric spike to sample logs?
+
+   Structured logs are the foundation. Full observability requires all three pillars connected via shared IDs.
+   </details>
+
+8. **Your checkout service makes 5 downstream calls (inventory, pricing, payment, shipping, notification). A trace shows total latency of 850ms. The spans show: inventory (45ms), pricing (180ms), payment (320ms), shipping (90ms), notification (40ms). The sum is 675ms, but total is 850ms. What explains the 175ms gap?**
+   <details>
+   <summary>Answer</summary>
+
+   The 175ms gap (850ms - 675ms = 175ms) represents time spent in the **parent checkout service itself**, not in downstream calls.
+
+   **This time could be**:
+   1. **Service overhead**: Request parsing, response assembly
+   2. **Sequential processing**: Time between finishing one call and starting another
+   3. **Business logic**: Validation, transformation, calculations
+   4. **Network latency**: Not captured in span duration (time waiting for response to arrive)
+   5. **Queue time**: Time waiting in thread pool before processing
+
+   **To investigate**:
+   - Add more granular spans within the checkout service
+   - Look for "gaps" in the waterfall view between child spans
+   - Add spans for "validation," "marshal_request," "await_response"
+   - Check if calls are sequential when they could be parallel (inventory + pricing could run in parallel)
+
+   **Key insight**: Trace spans only show what you instrument. Missing time = missing instrumentation.
+   </details>
+
+---
+
+## Key Takeaways
+
+```
+THREE PILLARS ESSENTIALS CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+
+UNDERSTANDING EACH PILLAR
+☑ Logs = detailed events (what happened, high cardinality OK)
+☑ Metrics = numeric aggregates (how many, low cardinality required)
+☑ Traces = request journey (where time went, shows dependencies)
+
+WHEN TO USE WHAT
+☑ Debugging specific requests → Logs + Traces
+☑ Alerting on thresholds → Metrics
+☑ Finding patterns across users → Logs with structured fields
+☑ Identifying slow components → Traces
+☑ Capacity planning → Metrics (trends over time)
+
+THE CORRELATION IMPERATIVE
+☑ trace_id in EVERY log line (non-negotiable)
+☑ Exemplars connecting metrics to sample traces
+☑ Same timestamp format across all pillars
+☑ Unified UI or linked navigation between tools
+
+CARDINALITY RULES
+☑ Metrics: bounded dimensions only (endpoint, region, status_code)
+☑ Logs: high cardinality welcome (user_id, request_id, session_id)
+☑ Traces: sampling for volume control, 100% for errors
+
+THE EVENTS PERSPECTIVE
+☑ Pillars are views, not silos
+☑ Same underlying data, different lenses
+☑ OpenTelemetry unifies instrumentation
+☑ Goal: answer questions you didn't anticipate
+```
 
 ---
 
