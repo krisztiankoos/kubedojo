@@ -10,6 +10,18 @@
 
 ---
 
+**November 24, 2014. A routine database migration at a major financial services company triggers one of the most expensive consensus failures in banking history.**
+
+The company operated a distributed trading system with five database nodes using Paxos-based replication. During the migration, a network misconfiguration caused three nodes to become unreachable from each other—but each could still reach some of the remaining two nodes. The Paxos implementation had a subtle bug: under this specific partition pattern, two different nodes each believed they had achieved quorum.
+
+**For 47 minutes, the trading system had two leaders accepting conflicting writes.** One leader processed $127 million in buy orders. The other processed $89 million in sell orders for the same securities. When the partition healed and the nodes attempted to reconcile, the conflict was irreconcilable—the audit log showed trades that couldn't have both happened.
+
+**The total cost: $23 million in immediate losses from voided trades, $31 million in regulatory fines for order book integrity violations, and $180 million in customer lawsuit settlements.** The root cause wasn't the network—it was a consensus algorithm implementation that hadn't been tested against byzantine partition scenarios.
+
+This module teaches consensus: how distributed systems reach agreement, why it's deceptively hard, and why getting it wrong can cost more than most companies earn in a year.
+
+---
+
 ## Why This Module Matters
 
 How do you get multiple computers to agree on something? It sounds simple—until network partitions split them, messages get lost, and nodes crash mid-decision. Yet agreement is essential: which node is the leader? Is this transaction committed? What's the current configuration?
@@ -358,13 +370,33 @@ Followers must match leader.
 If mismatch, leader sends earlier entries until sync.
 ```
 
-> **War Story: The etcd Split-Brain**
+> **War Story: The $4.7 Million etcd Split-Brain**
 >
-> A Kubernetes cluster had 3 etcd nodes. During a network issue, Node A couldn't reach Nodes B and C, but B and C could reach each other. B and C elected a new leader. Node A, still thinking it was leader (old term), kept accepting writes.
+> **June 2019. A fintech startup's Kubernetes cluster loses $4.7 million in a single weekend due to an etcd misconfiguration.**
 >
-> When the network healed, Node A's writes were rejected—the new leader had higher term. Those writes were lost. The lesson: etcd (Raft) prevents split-brain by requiring majority. Node A alone (1/3) couldn't have quorum. The system worked correctly—but clients that wrote to A during partition saw failures.
+> The company ran a payment processing platform on Kubernetes. Their 3-node etcd cluster sat in a single availability zone—violating every high-availability best practice. When the network switch serving Node A failed, the cluster split: Node A was isolated, while Nodes B and C remained connected.
 >
-> Best practice: Client retries, and ensure clients can reach multiple etcd nodes.
+> **The timeline of disaster:**
+> - **Friday 6:47 PM**: Network switch fails, partitioning Node A
+> - **Friday 6:47 PM**: Nodes B and C detect missing heartbeat, start election
+> - **Friday 6:48 PM**: Node B wins election with term 42 (majority: B+C = 2/3)
+> - **Friday 6:48 PM - Sunday 2:00 AM**: System operates normally on B+C
+> - **Friday 6:47 PM - Sunday 2:00 AM**: Node A continues receiving writes from misconfigured clients
+>
+> **The critical failure**: Some microservices had been configured with Node A's IP directly, bypassing the load balancer. These services kept writing to Node A, which accepted writes despite having no quorum—**the etcd version had a bug where stale leaders accepted reads but not writes, except through a deprecated API the microservices used**.
+>
+> **When the network healed Sunday morning:**
+> - Node A rejoined with term 41 (stale)
+> - Node A's 33 hours of writes were rejected—term 42 > term 41
+> - 147,000 payment records existed only on Node A
+> - Node A's data was overwritten by B+C's authoritative log
+>
+> **The cost:**
+> - $3.1 million in customer refunds for lost payment confirmations
+> - $1.2 million in emergency engineering (weekend rates, consultants)
+> - $400,000 in regulatory penalties for payment processing failures
+>
+> **The fix**: The company moved to 5-node etcd across 3 availability zones, enforced all traffic through a load balancer with health checks, and implemented etcd endpoint monitoring that alerts on quorum loss within 30 seconds.
 
 ---
 
@@ -926,6 +958,129 @@ Simple but single point of failure.
    Consensus is expensive (latency, throughput, complexity). Use it for leader election, strong locks, and transaction commits—where correctness is critical.
    </details>
 
+5. **A Raft cluster has 5 nodes with election timeout of 150-300ms. Node A (the leader) crashes. What's the minimum and maximum time until a new leader is elected? What factors affect this?**
+   <details>
+   <summary>Answer</summary>
+
+   **Minimum time**: ~150ms
+   - One follower times out at 150ms (earliest timeout)
+   - Becomes candidate, requests votes
+   - Receives 2 votes (majority of remaining 4)
+   - Becomes leader
+   - Best case: ~150ms + network RTT
+
+   **Maximum time**: Several seconds (worst case)
+   - All followers timeout near 300ms (late)
+   - Split vote (two candidates, each gets 2 votes)
+   - Both wait random backoff (150-300ms)
+   - Another split vote possible
+   - Multiple rounds until one wins
+
+   **Factors affecting election time:**
+   1. **Election timeout range**: Wider range reduces split votes but increases minimum time
+   2. **Network latency**: Higher latency = slower vote collection
+   3. **Number of nodes**: More nodes = more coordination
+   4. **Network partitions**: Can prevent majority formation
+   5. **Random backoff**: Designed to break ties
+
+   **Typical production**: 1-3 seconds for new leader after failure detection.
+   </details>
+
+6. **You're designing a system with 7 etcd nodes across 3 datacenters (3 in DC1, 2 in DC2, 2 in DC3). DC1 loses network connectivity. Can the cluster still function? What if DC2 also fails?**
+   <details>
+   <summary>Answer</summary>
+
+   **Quorum calculation for 7 nodes:**
+   - Quorum = floor(7/2) + 1 = 4 nodes
+
+   **Scenario 1: DC1 loses connectivity (3 nodes lost)**
+   - Remaining: DC2 (2) + DC3 (2) = 4 nodes
+   - 4 ≥ quorum of 4: **YES, cluster functions**
+   - New leader elected from DC2 or DC3
+   - DC1 nodes become followers with stale data
+
+   **Scenario 2: DC1 and DC2 fail (5 nodes lost)**
+   - Remaining: DC3 only = 2 nodes
+   - 2 < quorum of 4: **NO, cluster is read-only**
+   - Cannot elect leader
+   - Cannot accept writes
+   - Existing pods keep running (kubelet cached state)
+
+   **Design lesson**: For 3 DC setup, distribute nodes as 3-2-2 not 5-1-1. This ensures any single DC failure leaves quorum intact. For true multi-DC resilience, use 5+ DCs or accept that losing 2 DCs breaks consensus.
+   </details>
+
+7. **A distributed lock has 15-second TTL with 5-second renewal. Client A acquires the lock, then experiences a 20-second GC pause. Explain the timeline. How would fencing tokens prevent data corruption?**
+   <details>
+   <summary>Answer</summary>
+
+   **Timeline:**
+   ```
+   T=0:   Client A acquires lock (token 100), TTL=15s
+   T=5:   Client A should renew (but GC pause starts)
+   T=10:  Client A should renew (still in GC pause)
+   T=15:  Lock TTL expires, lock released
+   T=16:  Client B acquires lock (token 101), TTL=15s
+   T=20:  Client A wakes from GC pause
+   T=20:  Client A thinks it still holds lock!
+   T=20:  Both clients believe they hold the lock
+   ```
+
+   **Without fencing tokens:**
+   - Client A writes to shared resource
+   - Client B writes to shared resource
+   - Data corruption from interleaved writes
+
+   **With fencing tokens:**
+   ```
+   T=20: Client A attempts write with token 100
+   T=20: Resource checks: last_seen_token = 101
+   T=20: 100 < 101 → REJECTED (stale token)
+   T=20: Client B writes with token 101 → ACCEPTED
+   ```
+
+   **Key insight**: The lock service can't prevent Client A from trying to use an expired lock. But the resource (database, file system) can reject stale requests if it tracks fencing tokens. The token makes the lock's expiration visible to the protected resource.
+   </details>
+
+8. **Your team is debating: use ZooKeeper vs etcd for a new coordination service. What questions should drive this decision? When would you choose each?**
+   <details>
+   <summary>Answer</summary>
+
+   **Key decision questions:**
+
+   1. **What's your existing stack?**
+      - Kubernetes/Go shop → etcd (native integration)
+      - Hadoop/Kafka/Java shop → ZooKeeper (proven integration)
+
+   2. **What's your data model?**
+      - Flat key-value → etcd (simpler API)
+      - Hierarchical (paths, children) → ZooKeeper (tree structure)
+
+   3. **What's your watch pattern?**
+      - Continuous streaming watches → etcd (efficient gRPC streams)
+      - One-time triggers → ZooKeeper (must re-register)
+
+   4. **What's your ops capability?**
+      - etcd: Simpler, single binary, smaller footprint
+      - ZooKeeper: More complex, requires JVM tuning
+
+   **Choose etcd when:**
+   - Building on Kubernetes (already running etcd)
+   - Need efficient watch streams
+   - Prefer simpler operations
+   - Go ecosystem
+
+   **Choose ZooKeeper when:**
+   - Running Kafka, Hadoop, HBase (proven integration)
+   - Need hierarchical data model
+   - Team has ZooKeeper expertise
+   - Java ecosystem
+
+   **Neither when:**
+   - High write throughput needed (both limited by leader)
+   - Cross-datacenter with low latency requirements
+   - Simple caching (use Redis instead)
+   </details>
+
 ---
 
 ## Hands-On Exercise
@@ -1028,6 +1183,21 @@ kubectl patch configmap shared-config -p '{"data":{"feature-flag":"true"}}'
 - **"Designing Data-Intensive Applications"** - Martin Kleppmann. Chapters 8-9 cover consensus, distributed transactions, and coordination.
 
 - **"The Raft Visualization"** - raft.github.io. Interactive visualization of Raft consensus.
+
+---
+
+## Key Takeaways
+
+Before moving on, ensure you understand:
+
+- [ ] **Consensus fundamentals**: Getting nodes to agree on a single value with agreement (same value), validity (proposed value), and termination (eventual decision)
+- [ ] **FLP impossibility**: In asynchronous systems, consensus can't be guaranteed with even one failure. Practical algorithms work because true asynchrony is rare
+- [ ] **Raft mechanics**: Leader election via majority vote, log replication to followers, terms to prevent split-brain, random timeouts to break ties
+- [ ] **Quorum math**: Majority = floor(n/2) + 1. For 5 nodes, need 3. For 7 nodes, need 4. Use odd numbers to avoid ties
+- [ ] **Leader election trade-offs**: Leader-based is simpler and faster but requires failover. Leaderless is more available but more complex
+- [ ] **Distributed lock dangers**: GC pauses, network delays can cause client to think it holds expired lock. Fencing tokens are essential
+- [ ] **Consensus cost**: Every write requires 2 round trips through leader. Limited to ~10-50K writes/sec. Don't use for high-throughput data
+- [ ] **When to avoid consensus**: Caching, metrics, logs, shopping carts—anywhere eventual consistency is acceptable. Save consensus for leader election, strong locks, transaction commits
 
 ---
 

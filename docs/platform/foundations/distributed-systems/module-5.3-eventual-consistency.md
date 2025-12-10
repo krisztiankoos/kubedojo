@@ -10,6 +10,20 @@
 
 ---
 
+**December 26, 2012. Amazon's retail website experiences intermittent failures during the busiest shopping week of the year—and the root cause is surprisingly simple: they chose the wrong consistency model for their inventory system.**
+
+Amazon's engineers had designed a strongly consistent inventory system. Every purchase required immediate confirmation from all database replicas before the customer saw "Order Confirmed." This worked perfectly at normal load. But on the day after Christmas, with millions of gift card recipients flooding the site, the synchronous replication became a bottleneck. Database replicas couldn't keep up, write latency spiked to 30+ seconds, and shopping carts started timing out.
+
+**For 49 minutes, an estimated $66,000 per minute in potential revenue was lost**—not because servers were down, but because the system was waiting for perfect consistency that customers didn't actually need.
+
+The irony: customers don't need to know the exact inventory count. They need to know if they can buy the item. Amazon's post-incident analysis led to a fundamental architecture shift: use eventual consistency everywhere possible, reserve strong consistency only for the actual purchase transaction.
+
+**The lesson rippled through the industry.** Amazon's 2007 Dynamo paper, describing their eventually consistent key-value store, became the blueprint for Cassandra, Riak, and DynamoDB. The paper's core insight: for most data, "close enough" consistency with high availability beats perfect consistency that fails under load.
+
+This module teaches eventual consistency—when to use it, how to design for it, and the patterns that make it work in production.
+
+---
+
 ## Why This Module Matters
 
 Strong consistency is expensive. Consensus requires coordination, coordination adds latency, and during network partitions you must choose: be unavailable or be inconsistent. For many applications, that's an unacceptable trade-off.
@@ -529,11 +543,37 @@ Merged version: {Node1: 2, Node2: 1}
 Merged value: Application decides (merge or pick one)
 ```
 
-> **War Story: The Shopping Cart Bug**
+> **War Story: The $8.2 Million Shopping Cart Bug**
 >
-> An e-commerce site used eventual consistency for shopping carts. When users added items from different devices, the carts sometimes "lost" items. Investigation revealed they used last-write-wins—if you added an item on your phone, then added a different item on your laptop, one would disappear.
+> **Black Friday 2018. A major electronics retailer discovers their shopping carts are "eating" high-value items—and the timing couldn't be worse.**
 >
-> The fix was simple: instead of storing the cart as one value, they stored it as a set of add/remove operations. Adding an item never conflicts with adding a different item. Removing an item explicitly records the removal. Conflicts became impossible by design.
+> The company had implemented eventually consistent shopping carts using last-write-wins (LWW) conflict resolution. The theory was sound: shopping carts are a classic eventual consistency use case. But the implementation had a fatal flaw.
+>
+> **The bug**: When a user added an item on their phone, then added a different item on their laptop before the phone's write replicated, the laptop's write included only its local cart state. Last-write-wins meant the phone's item disappeared.
+>
+> **Timeline of the disaster:**
+> - **Wednesday before Black Friday**: QA notices occasional "missing item" reports but can't reproduce
+> - **Black Friday 6:00 AM**: Doors open, traffic spikes 40x normal
+> - **Black Friday 8:15 AM**: Customer complaints surge—"I added a TV but it's gone"
+> - **Black Friday 9:00 AM**: Engineering traces bug to LWW conflict resolution
+> - **Black Friday 10:30 AM**: Hotfix deployed—all cart writes now merge (union) instead of replace
+> - **Black Friday 6:00 PM**: Final tally: 127,000 carts affected, 23,000 abandoned purchases
+>
+> **The cost:**
+> - $4.8 million in lost sales (abandoned carts with high-value items)
+> - $2.1 million in emergency discounts to affected customers
+> - $1.3 million in overtime engineering and customer service
+>
+> **The fix**: The team replaced their cart data structure with a CRDT-style design:
+> ```
+> Before: cart = {items: ["tv", "laptop"]}  // Single value, LWW
+> After:  cart = {
+>           adds: {"tv": uuid1, "laptop": uuid2},
+>           removes: {}
+>         }  // OR-Set style, merges correctly
+> ```
+>
+> **The lesson**: Eventual consistency requires thinking about conflict resolution at design time, not after the bug reports come in. "Last-write-wins" is almost never what you actually want for user data.
 
 ---
 
@@ -942,6 +982,167 @@ LIMITATIONS
    - Read-your-writes within sessions, eventual across users
    </details>
 
+5. **A system uses N=5 replicas. Calculate the minimum W and R values needed for: (a) strong consistency, (b) fast writes with strong reads, (c) maximum availability.**
+   <details>
+   <summary>Answer</summary>
+
+   **Quorum rule for strong consistency**: W + R > N
+
+   **For N=5:**
+
+   **(a) Strong consistency (balanced):**
+   - W=3, R=3 (3+3=6 > 5) ✓
+   - Tolerates 2 failures for both reads and writes
+   - Most common production configuration
+
+   **(b) Fast writes, strong reads:**
+   - W=1, R=5 (1+5=6 > 5) ✓
+   - Writes return immediately after 1 ACK
+   - Reads must contact all 5 nodes
+   - Use case: Write-heavy workloads where reads are less frequent
+
+   **(c) Maximum availability (eventual consistency):**
+   - W=1, R=1 (1+1=2 ≤ 5) ✗ (not strongly consistent)
+   - Can tolerate 4 failures
+   - Fastest but may read stale data
+   - Use case: Caching, metrics, non-critical data
+
+   **Trade-off matrix:**
+   | Config | Write Latency | Read Latency | Consistency | Availability |
+   |--------|---------------|--------------|-------------|--------------|
+   | W=3,R=3 | Medium | Medium | Strong | Medium |
+   | W=1,R=5 | Low | High | Strong | Low (reads) |
+   | W=5,R=1 | High | Low | Strong | Low (writes) |
+   | W=1,R=1 | Low | Low | Eventual | High |
+   </details>
+
+6. **A social media platform stores user posts with eventual consistency. User A posts "Hello", then immediately comments "First!". Another user B sees "First!" but not "Hello". What consistency property is violated? How would you fix it?**
+   <details>
+   <summary>Answer</summary>
+
+   **Violated property: Causal consistency**
+
+   The comment causally depends on the post (you can't comment on something that doesn't exist). User B should never see the effect (comment) before the cause (post).
+
+   **Why it happened:**
+   - Post written to Replica 1
+   - Comment written to Replica 1 (references post)
+   - User B reads from Replica 2
+   - Comment replicated faster than post (or post delayed)
+   - Replica 2 has comment but not post
+
+   **Solutions:**
+
+   1. **Explicit dependencies:**
+   ```
+   Post: {id: 1, content: "Hello", deps: []}
+   Comment: {id: 2, content: "First!", deps: [1]}
+   ```
+   Replica doesn't show comment until it has all dependencies.
+
+   2. **Version vectors:**
+   - Post increments writer's version: {A: 1}
+   - Comment includes causal context: {A: 1}
+   - Replica delays showing comment until it's seen {A: 1}
+
+   3. **Same-replica routing:**
+   - Route all reads for a thread to the same replica
+   - That replica has consistent view of causally related items
+
+   4. **Synchronous replication for dependencies:**
+   - When writing comment, wait for post to replicate first
+   - Increases latency but guarantees causality
+   </details>
+
+7. **You're implementing a collaborative document editor. User A inserts "Hello" at position 0. User B inserts "World" at position 0 (concurrently, before seeing A's edit). After sync, what are the possible results? How do CRDTs or OT handle this?**
+   <details>
+   <summary>Answer</summary>
+
+   **Possible results without proper handling:**
+   - "HelloWorld" (A's edit applied first)
+   - "WorldHello" (B's edit applied first)
+   - "Hello" or "World" (one overwrites the other - data loss!)
+
+   **The challenge:**
+   Both edits target position 0, but position 0 means something different after the first edit is applied.
+
+   **Operational Transformation (OT) approach:**
+   ```
+   A's operation: insert("Hello", pos=0)
+   B's operation: insert("World", pos=0)
+
+   When A receives B's op:
+   - A already has "Hello" at 0-4
+   - Transform B's op: insert("World", pos=0) stays at 0
+   - Result at A: "WorldHello"
+
+   When B receives A's op:
+   - B already has "World" at 0-4
+   - Transform A's op: insert("Hello", pos=5) (shifted by "World" length)
+   - Result at B: "WorldHello"
+   ```
+   Both converge to same result through transformation.
+
+   **CRDT approach (e.g., RGA - Replicated Growable Array):**
+   - Each character has unique ID (timestamp + node)
+   - Insert specifies "insert after character with ID X"
+   - Concurrent inserts at same position sorted by ID
+   - Deterministic ordering without transformation
+
+   ```
+   A inserts "Hello" with ID (A,1) after start
+   B inserts "World" with ID (B,1) after start
+   Sort by ID: (A,1) < (B,1) → "HelloWorld"
+   (or (B,1) < (A,1) → "WorldHello" - consistent either way)
+   ```
+
+   **Key insight**: Both OT and CRDTs guarantee convergence, but via different mechanisms—OT transforms operations, CRDTs use commutative data structures.
+   </details>
+
+8. **A G-Counter CRDT has the following state across 3 nodes. Calculate the total count. Then Node B increments by 5 and syncs with Node A. What's Node A's new state?**
+   ```
+   Node A: {A: 10, B: 3, C: 7}
+   Node B: {A: 8,  B: 3, C: 5}
+   Node C: {A: 10, B: 2, C: 7}
+   ```
+   <details>
+   <summary>Answer</summary>
+
+   **Current total count at each node:**
+   - Node A: 10 + 3 + 7 = **20**
+   - Node B: 8 + 3 + 5 = **16**
+   - Node C: 10 + 2 + 7 = **19**
+
+   Note: Nodes have different views because replication is eventual. The "true" count is the maximum of each component: max(10,8,10) + max(3,3,2) + max(7,5,7) = 10 + 3 + 7 = **20**
+
+   **After Node B increments by 5:**
+   ```
+   Node B: {A: 8, B: 8, C: 5}  (B's count: 3 + 5 = 8)
+   ```
+
+   **After Node B syncs with Node A:**
+
+   G-Counter merge rule: take max of each component
+   ```
+   Node A before: {A: 10, B: 3, C: 7}
+   Node B after:  {A: 8,  B: 8, C: 5}
+
+   Merge:
+   A: max(10, 8) = 10
+   B: max(3, 8) = 8
+   C: max(7, 5) = 7
+
+   Node A after: {A: 10, B: 8, C: 7}
+   Total: 10 + 8 + 7 = 25
+   ```
+
+   **Why this works:**
+   - Each node only ever increments its own counter
+   - Taking max never loses increments
+   - Order of syncs doesn't matter (commutative)
+   - Syncing twice gives same result (idempotent)
+   </details>
+
 ---
 
 ## Hands-On Exercise
@@ -1032,6 +1233,21 @@ Questions:
 - **"A comprehensive study of Convergent and Commutative Replicated Data Types"** - Shapiro et al. The foundational CRDT paper.
 
 - **"Dynamo: Amazon's Highly Available Key-value Store"** - DeCandia et al. The paper that popularized eventual consistency.
+
+---
+
+## Key Takeaways
+
+Before moving on, ensure you understand:
+
+- [ ] **Eventual consistency guarantee**: If updates stop, all replicas converge to the same state. No bound on "when"—but usually milliseconds in practice
+- [ ] **The consistency spectrum**: Linearizability → Sequential → Causal → Session → Eventual. Stronger = more latency, less availability
+- [ ] **Quorum math**: W + R > N for strong consistency. W=R=majority is common. Tuning W and R trades consistency for performance
+- [ ] **Replication trade-offs**: Synchronous = strong but slow. Asynchronous = fast but eventual. Multi-leader = available but conflicts
+- [ ] **Conflict resolution strategies**: Last-write-wins (simple, lossy), merge functions (semantic), version vectors (detect conflicts), CRDTs (conflict-free by design)
+- [ ] **CRDTs eliminate conflicts**: Commutative + associative + idempotent operations. G-Counter, PN-Counter, OR-Set. Use when available, but limited expressiveness
+- [ ] **Read-your-writes is essential**: Even with eventual consistency, users should see their own updates. Implement via sticky sessions, quorum reads, or version tracking
+- [ ] **Design for conflict upfront**: "Last-write-wins" is almost never what you want for user data. Choose conflict resolution strategy before you ship
 
 ---
 

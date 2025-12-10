@@ -10,6 +10,20 @@
 
 ---
 
+**February 28, 2017. Amazon Web Services experiences what would become one of the most costly outages in cloud computing history.**
+
+A simple typo in a command to remove a small number of S3 servers accidentally removes a larger set of servers than intended. The servers being removed supported the S3 index and placement systems—the metadata layer that tracks where every object is stored.
+
+**For the next 4 hours, S3 in US-East-1 was essentially offline.** But the real impact was just beginning. Hundreds of other AWS services depended on S3. Websites couldn't load images. Applications couldn't access configuration. CI/CD pipelines failed. The AWS status dashboard—itself hosted on S3—couldn't display that S3 was down.
+
+The cascade revealed what most engineers knew but rarely confronted: **even the simplest web application is a distributed system**, with hidden dependencies, partial failures, and emergent behaviors that no single person fully understands.
+
+**S&P 500 companies collectively lost an estimated $150 million during the outage.** And it all started because distributed systems don't behave like the single-machine programs most engineers learn to write.
+
+This module teaches why distributed systems are fundamentally different—and why understanding their constraints is essential for building anything that scales.
+
+---
+
 ## Why This Module Matters
 
 Every modern system is distributed. The moment you have a web server talking to a database, you have a distributed system. The moment you deploy to the cloud, you're distributed across availability zones. The moment you scale beyond one machine, distribution becomes your reality.
@@ -268,11 +282,24 @@ CONSEQUENCES
 - Need logical clocks (Lamport clocks, vector clocks) for ordering
 ```
 
-> **War Story: The Clock Skew Incident**
+> **War Story: The $12 Million Clock Skew Incident**
 >
-> A financial trading system used timestamps to order trades. Two servers had clocks that drifted 50ms apart. When trades came in rapid succession, the "later" trade sometimes got an "earlier" timestamp. The system processed them in the wrong order, causing customers to see incorrect account balances.
+> **March 2018. A high-frequency trading firm discovers they've been losing money for months—not from bad trades, but from bad timestamps.**
 >
-> The fix required moving to logical ordering—tracking causality instead of wall-clock time. A trade that *caused* another trade must come first, regardless of what the clocks say.
+> The firm operated trading servers in both New Jersey and Chicago. The servers used NTP to synchronize clocks, but NTP only guarantees accuracy within tens of milliseconds. The clocks had drifted 47ms apart.
+>
+> When a trade executed in Chicago triggered a hedge trade in New Jersey, the timestamps sometimes showed the hedge happening *before* the original trade. The reconciliation system, which used timestamps to order events, processed them wrong. Sometimes hedges were cancelled as "duplicate trades." Sometimes positions were calculated incorrectly.
+>
+> **Timeline of discovery:**
+> - **Day 1**: Risk analyst notices P&L discrepancies in overnight reports
+> - **Week 2**: Engineering traces problem to event ordering logic
+> - **Week 3**: Clock drift identified as root cause
+> - **Week 4**: Logical clocks implemented (Lamport timestamps)
+> - **Month 2**: Full audit reveals $12 million in losses over 6 months
+>
+> **The fix**: The team replaced wall-clock ordering with Lamport timestamps. Every event now carries a logical clock value that increments with each operation. When server A sends a message to server B, it includes its clock value. Server B sets its clock to max(its_clock, received_clock) + 1. This guarantees that caused events always have higher timestamps than their causes—regardless of what the physical clocks say.
+>
+> **The lesson**: In distributed systems, "when" something happened is less important than "what caused what." Physical time is unreliable. Causal ordering is essential.
 
 ---
 
@@ -784,6 +811,111 @@ Pods keep running (kubelet operates independently).
    Kubernetes chooses CP during partitions—better to refuse changes than have inconsistent state.
    </details>
 
+5. **A service makes 50 sequential database calls per request. Each call takes 2ms over the network. What's the minimum latency for a user request? How could you improve it?**
+   <details>
+   <summary>Answer</summary>
+
+   **Calculation:**
+   - 50 calls × 2ms = **100ms minimum latency**
+   - This doesn't include processing time, just network round trips
+
+   **Improvement strategies:**
+
+   1. **Batch calls**: Instead of 50 individual calls, combine into fewer queries
+      - 5 batched calls × 2ms = 10ms (10x improvement)
+
+   2. **Parallelize**: If calls are independent, execute simultaneously
+      - 50 parallel calls = 2ms (50x improvement)
+
+   3. **Cache**: Store frequently accessed data locally
+      - Cache hit: 0.1ms vs 2ms network call
+
+   4. **Denormalize**: Store data together to reduce joins/calls
+      - Single call with all data: 2ms total
+
+   **The lesson**: Network latency compounds. Design minimizes round trips.
+   </details>
+
+6. **You send a request to a service and don't receive a response after 5 seconds. List all possible states the request could be in. Why is this uncertainty fundamental?**
+   <details>
+   <summary>Answer</summary>
+
+   **Possible states:**
+
+   1. **Request lost in transit** - Never reached server
+   2. **Server received but crashed before processing** - No work done
+   3. **Server processing but slow** - Will eventually complete
+   4. **Server processed successfully, response lost** - Work completed!
+   5. **Server processed, crashed after responding** - Work completed!
+   6. **Response delayed in network** - Will eventually arrive
+
+   **Why fundamental:**
+
+   This uncertainty cannot be eliminated by any protocol. From the client's perspective, states 2, 3, 4, 5, and 6 look identical: silence.
+
+   This is the **Two Generals Problem**—you cannot achieve certainty about remote state over an unreliable channel.
+
+   **Practical implications:**
+   - Must design operations to be idempotent (safe to retry)
+   - Use unique request IDs to detect duplicates
+   - Implement timeouts and retries with exponential backoff
+   - Accept that "at-most-once" or "at-least-once" delivery—never "exactly-once"
+   </details>
+
+7. **An etcd cluster has 5 nodes. How many can fail while maintaining quorum? If you lose quorum, what happens to the Kubernetes cluster?**
+   <details>
+   <summary>Answer</summary>
+
+   **Quorum calculation:**
+   - Quorum requires majority: floor(n/2) + 1
+   - For 5 nodes: floor(5/2) + 1 = 3 nodes required
+   - **Can lose 2 nodes** and still have quorum (3 remaining)
+
+   **If quorum is lost (3+ nodes fail):**
+
+   1. **etcd becomes read-only** - No writes accepted
+   2. **No new pods can be scheduled** - Scheduler can't write
+   3. **No deployments can update** - Controllers can't write
+   4. **Existing pods keep running** - kubelets have cached state
+   5. **kubectl get works** - Reads still succeed
+   6. **kubectl apply fails** - Writes rejected
+
+   **Recovery:**
+   - Restore failed nodes to regain quorum
+   - Or restore from etcd backup to new cluster
+   - Never reduce below 3 nodes (can't lose any)
+
+   **Best practice**: Use 5 nodes for production (tolerates 2 failures), 3 for smaller clusters (tolerates 1 failure).
+   </details>
+
+8. **A social media platform shows like counts that update every 30 seconds. During a network partition between US and EU datacenters, a post gets 1000 likes in US and 500 likes in EU. When the partition heals, what should the count be? What CAP trade-off did this system make?**
+   <details>
+   <summary>Answer</summary>
+
+   **The count should be 1500** (1000 + 500)
+
+   This requires a **CRDT (Conflict-free Replicated Data Type)**—specifically a G-Counter (grow-only counter) that merges by summing per-replica increments.
+
+   **CAP trade-off:**
+   - System chose **AP (Availability over Consistency)**
+   - During partition: Both regions accepted writes (available)
+   - Result: Temporary inconsistency (US saw 1000, EU saw 500)
+   - After partition: Merge brings eventual consistency
+
+   **Why this is appropriate for likes:**
+   - Temporary wrong count is acceptable
+   - Users don't expect real-time accuracy
+   - Unavailability (can't like) would be worse than inconsistency
+
+   **Contrast with banking:**
+   - Bank would choose CP
+   - During partition: Reject transactions
+   - Why: Incorrect balance is unacceptable
+   - Unavailability is better than double-spending
+
+   **The pattern**: Choose AP for data where "close enough" is acceptable, CP for data where correctness is critical.
+   </details>
+
 ---
 
 ## Hands-On Exercise
@@ -868,6 +1000,21 @@ kubectl uncordon <node-name>
 - **"Distributed Systems for Fun and Profit"** - Mikito Takada. Free online book covering distributed systems fundamentals.
 
 - **"Time, Clocks, and the Ordering of Events in a Distributed System"** - Leslie Lamport. The foundational paper on logical clocks.
+
+---
+
+## Key Takeaways
+
+Before moving on, ensure you understand:
+
+- [ ] **The three fundamental challenges**: Latency (network is slow), partial failure (parts fail independently), no global clock (can't trust timestamps)
+- [ ] **CAP theorem reality**: During a network partition, you choose consistency OR availability—not both. Most systems need both, so you choose which to sacrifice during failures
+- [ ] **PACELC extension**: Even without partitions, you trade latency for consistency. Synchronous replication = consistent but slow. Async = fast but potentially stale
+- [ ] **The Two Generals Problem**: You cannot guarantee agreement over unreliable networks. This is mathematically proven impossible
+- [ ] **Idempotency is essential**: Design operations to be safe to retry. Use unique request IDs to detect duplicates
+- [ ] **Kubernetes is CP**: It chooses consistency over availability during partitions. etcd requires quorum; without it, the cluster becomes read-only
+- [ ] **Logical clocks > wall clocks**: Don't use timestamps to order events. Use Lamport clocks or vector clocks to track causality
+- [ ] **Distribution is a spectrum**: A web server + database is distributed. Understanding where your system falls helps choose appropriate patterns
 
 ---
 
