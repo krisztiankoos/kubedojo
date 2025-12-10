@@ -1,6 +1,6 @@
 # Observability Toolkit
 
-> **Toolkit Track** | 7 Modules | ~5 hours total
+> **Toolkit Track** | 8 Modules | ~6.5 hours total
 
 ## Overview
 
@@ -27,6 +27,7 @@ Before starting this toolkit:
 | 1.5 | [Distributed Tracing](module-1.5-tracing.md) | `[COMPLEX]` | 45-50 min |
 | 1.6 | [Pixie](module-1.6-pixie.md) | `[MEDIUM]` | 90 min |
 | 1.7 | [Hubble](module-1.7-hubble.md) | `[MEDIUM]` | 90 min |
+| 1.8 | [Coroot](module-1.8-coroot.md) | `[MEDIUM]` | 90 min |
 
 ## Learning Outcomes
 
@@ -39,6 +40,7 @@ After completing this toolkit, you will be able to:
 5. **Trace distributed requests** — Jaeger, Tempo, TraceQL, sampling
 6. **Use Pixie for zero-instrumentation observability** — eBPF, PxL queries, instant debugging
 7. **Deploy Hubble for network observability** — Cilium integration, network policy debugging
+8. **Deploy Coroot for auto-instrumented observability** — Zero-code tracing, SLOs, profiling
 
 ## The Observability Stack
 

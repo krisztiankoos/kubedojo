@@ -1,6 +1,6 @@
 # Developer Experience Toolkit
 
-> **Toolkit Track** | 3 Modules | ~1.5 hours total
+> **Toolkit Track** | 5 Modules | ~3.5 hours total
 
 ## Overview
 
@@ -23,6 +23,8 @@ Before starting this toolkit:
 | 8.1 | [k9s & CLI Tools](module-8.1-k9s-cli.md) | `[QUICK]` | 30-35 min |
 | 8.2 | [Telepresence & Tilt](module-8.2-telepresence-tilt.md) | `[MEDIUM]` | 40-45 min |
 | 8.3 | [Local Kubernetes](module-8.3-local-kubernetes.md) | `[QUICK]` | 30-35 min |
+| 8.4 | [DevPod](module-8.4-devpod.md) | `[MEDIUM]` | 45-50 min |
+| 8.5 | [Gitpod & Codespaces](module-8.5-gitpod-codespaces.md) | `[MEDIUM]` | 45-50 min |
 
 ## Learning Outcomes
 
@@ -32,6 +34,7 @@ After completing this toolkit, you will be able to:
 2. **Develop locally with remote clusters** — Telepresence intercepts
 3. **Automate development workflows** — Tilt for live updates
 4. **Run local Kubernetes** — kind, minikube, Docker Desktop
+5. **Use cloud development environments** — DevPod, Gitpod, Codespaces
 
 ## Tool Selection Guide
 

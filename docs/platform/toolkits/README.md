@@ -10,7 +10,7 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 
 | Toolkit | Focus | Modules |
 |---------|-------|---------|
-| [Observability](observability/) | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble | 7 |
+| [Observability](observability/) | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble, Coroot | 8 |
 | [GitOps & Deployments](gitops-deployments/) | ArgoCD, Argo Rollouts, Flux, Helm | 4 |
 | [CI/CD Pipelines](ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows | 3 |
 | [IaC Tools](iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible | 6 |
@@ -18,14 +18,14 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Networking](networking/) | Cilium, Service Mesh | 2 |
 | [Scaling & Reliability](scaling-reliability/) | Karpenter, KEDA, Velero | 3 |
 | [Platforms](platforms/) | Backstage, Crossplane, cert-manager | 3 |
-| [Developer Experience](developer-experience/) | K9s, Telepresence, Local K8s | 3 |
+| [Developer Experience](developer-experience/) | K9s, Telepresence, Local K8s, DevPod, Gitpod/Codespaces | 5 |
 | [ML Platforms](ml-platforms/) | Kubeflow, MLflow, Feature Stores, vLLM, Ray Serve, LangChain | 6 |
 | [AIOps Tools](aiops-tools/) | Anomaly detection, Event correlation | 4 |
-| [Source Control](source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 1 |
-| [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 2 |
+| [Source Control](source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 3 |
+| [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 5 |
 | [Container Registries](container-registries/) | Harbor, Zot, Dragonfly | 3 |
 | [K8s Distributions](k8s-distributions/) | k3s, k0s, MicroK8s | 3 |
-| **Total** | | **56** |
+| **Total** | | **64** |
 
 ## How to Use Toolkits
 
