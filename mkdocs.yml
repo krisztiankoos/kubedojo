@@ -527,3 +527,9 @@ nav:
         - platform/toolkits/k8s-distributions/module-14.1-k3s.md
         - platform/toolkits/k8s-distributions/module-14.2-k0s.md
         - platform/toolkits/k8s-distributions/module-14.3-microk8s.md
+      - Cloud-Native Databases:
+        - platform/toolkits/cloud-native-databases/README.md
+        - platform/toolkits/cloud-native-databases/module-15.1-cockroachdb.md
+        - platform/toolkits/cloud-native-databases/module-15.2-cloudnativepg.md
+        - platform/toolkits/cloud-native-databases/module-15.3-serverless-databases.md
+        - platform/toolkits/cloud-native-databases/module-15.4-vitess.md
