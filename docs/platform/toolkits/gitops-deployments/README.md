@@ -195,6 +195,7 @@ Breaking change in API                → Argo Rollouts canary
 
 - **Before**: [GitOps Discipline](../../disciplines/gitops/) — Why GitOps works
 - **Related**: [Observability Toolkit](../observability/) — Monitor deployments
+- **Related**: [IaC Tools](../iac-tools/) — Infrastructure delivery with GitOps
 - **After**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Build before deploy
 
 ---

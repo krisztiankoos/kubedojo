@@ -1,0 +1,191 @@
+# IaC Tools Toolkit
+
+> **Toolkit Track** | 6 Modules | ~5.5 hours total
+
+## Overview
+
+The IaC Tools Toolkit covers the major infrastructure as code tools in depth. From HashiCorp's Terraform to OpenTofu, from Pulumi's programming language approach to Ansible's configuration management, from CloudFormation to Bicep—this toolkit gives you hands-on experience with the tools that define modern infrastructure.
+
+This toolkit applies concepts from [IaC Discipline](../../disciplines/iac/).
+
+## Prerequisites
+
+Before starting this toolkit:
+- [IaC Discipline](../../disciplines/iac/) — IaC fundamentals, testing, security
+- [IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals.md) — Core concepts (minimum)
+- Cloud provider account (AWS, Azure, or GCP for exercises)
+- Basic command-line experience
+
+## Modules
+
+| # | Module | Complexity | Time |
+|---|--------|------------|------|
+| 7.1 | [Terraform Deep Dive](module-7.1-terraform.md) | `[COMPLEX]` | 60 min |
+| 7.2 | [OpenTofu](module-7.2-opentofu.md) | `[MEDIUM]` | 45-50 min |
+| 7.3 | [Pulumi](module-7.3-pulumi.md) | `[COMPLEX]` | 55-60 min |
+| 7.4 | [Ansible](module-7.4-ansible.md) | `[COMPLEX]` | 55-60 min |
+| 7.5 | [CloudFormation](module-7.5-cloudformation.md) | `[MEDIUM]` | 45-50 min |
+| 7.6 | [Bicep](module-7.6-bicep.md) | `[MEDIUM]` | 45-50 min |
+
+## Learning Outcomes
+
+After completing this toolkit, you will be able to:
+
+1. **Write production Terraform** — Modules, workspaces, state backends, providers
+2. **Migrate to OpenTofu** — Understand the fork, migration path, differences
+3. **Use Pulumi** — Infrastructure in TypeScript, Python, Go
+4. **Manage configuration with Ansible** — Playbooks, roles, inventory
+5. **Deploy with CloudFormation** — AWS-native IaC, nested stacks, macros
+6. **Use Bicep** — Azure-native IaC, simplified ARM templates
+
+## Tool Selection Guide
+
+```
+WHICH IAC TOOL?
+─────────────────────────────────────────────────────────────────
+
+"I need multi-cloud infrastructure provisioning"
+└──▶ Terraform / OpenTofu
+     • Declarative HCL syntax
+     • Provider ecosystem (AWS, Azure, GCP, K8s, etc.)
+     • State management built-in
+     • Largest community
+
+"I want to use my programming language (TypeScript, Python, Go)"
+└──▶ Pulumi
+     • Real programming languages
+     • Better testing capabilities
+     • Complex logic support
+     • Reuse existing libraries
+
+"I need AWS-only with native integration"
+└──▶ CloudFormation
+     • Deep AWS integration
+     • Stack drift detection
+     • StackSets for multi-account
+     • No state file management
+
+"I need Azure-only with simplified syntax"
+└──▶ Bicep
+     • Azure-first design
+     • Cleaner than ARM templates
+     • Built into Azure CLI
+     • No state file management
+
+"I need configuration management (post-provisioning)"
+└──▶ Ansible
+     • Agentless (SSH/WinRM)
+     • Idempotent operations
+     • Procedural + declarative
+     • Great for OS configuration
+
+"I want Terraform without HashiCorp licensing concerns"
+└──▶ OpenTofu
+     • 1:1 Terraform compatible
+     • Linux Foundation governance
+     • Community-driven
+     • Drop-in replacement
+```
+
+## Tool Comparison Matrix
+
+| Feature | Terraform | OpenTofu | Pulumi | Ansible | CloudFormation | Bicep |
+|---------|-----------|----------|--------|---------|----------------|-------|
+| **Language** | HCL | HCL | TypeScript/Python/Go | YAML | YAML/JSON | Bicep DSL |
+| **State** | Required | Required | Required | None | Managed | Managed |
+| **Multi-cloud** | Yes | Yes | Yes | Yes | AWS only | Azure only |
+| **Learning curve** | Medium | Medium | Higher | Low | Medium | Low |
+| **Testing** | Terratest | Terratest | Native | Molecule | TaskCat | ARM TTK |
+| **Drift detection** | Plan | Plan | Preview | Check mode | Drift detection | What-if |
+| **License** | BSL 1.1 | MPL 2.0 | Apache 2.0 | GPL 3.0 | Proprietary | MIT |
+
+## The IaC Landscape
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    IAC TOOL LANDSCAPE                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  PROVISIONING (Infrastructure Creation)                          │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                                                              ││
+│  │  Multi-Cloud              Cloud-Native                       ││
+│  │  ┌────────────┐          ┌────────────┐                     ││
+│  │  │ Terraform  │          │CloudForm.  │ (AWS)               ││
+│  │  │ OpenTofu   │          │ Bicep      │ (Azure)             ││
+│  │  │ Pulumi     │          │ GCP DM     │ (GCP)               ││
+│  │  └────────────┘          └────────────┘                     ││
+│  │                                                              ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                  │
+│  CONFIGURATION (Post-Provisioning)                               │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  Ansible  │  Chef  │  Puppet  │  Salt                       ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                  │
+│  KUBERNETES-NATIVE                                               │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  Crossplane  │  Cluster API  │  Pulumi K8s                  ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Study Path
+
+```
+Module 7.1: Terraform Deep Dive
+     │
+     │  The industry standard
+     │  Providers, modules, state
+     ▼
+Module 7.2: OpenTofu
+     │
+     │  Open-source alternative
+     │  Migration from Terraform
+     ▼
+Module 7.3: Pulumi
+     │
+     │  Programming languages for IaC
+     │  Testing with real code
+     ▼
+Module 7.4: Ansible
+     │
+     │  Configuration management
+     │  Playbooks and roles
+     ▼
+Module 7.5: CloudFormation
+     │
+     │  AWS-native IaC
+     │  Stacks and StackSets
+     ▼
+Module 7.6: Bicep
+     │
+     │  Azure-native IaC
+     │  ARM template evolution
+     ▼
+[Toolkit Complete] → Apply to production
+```
+
+## Hands-On Focus
+
+| Module | Key Exercise |
+|--------|--------------|
+| Terraform | Build multi-environment setup with modules |
+| OpenTofu | Migrate existing Terraform project |
+| Pulumi | Deploy infrastructure with TypeScript |
+| Ansible | Configure servers with roles and inventory |
+| CloudFormation | Create nested stack with drift detection |
+| Bicep | Deploy Azure resources with parameters |
+
+## Related Tracks
+
+- **Before**: [IaC Discipline](../../disciplines/iac/) — IaC fundamentals (essential)
+- **Related**: [GitOps & Deployments](../gitops-deployments/) — GitOps for infrastructure delivery
+- **Related**: [Security Tools](../security-tools/) — Security scanning for IaC
+- **Related**: [CI/CD Pipelines](../ci-cd-pipelines/) — IaC in pipelines
+- **Related**: [Platforms Toolkit](../platforms/) — Crossplane as Kubernetes-native IaC
+
+---
+
+*"The best tool is the one your team will actually use consistently. Master one deeply, understand all broadly."*

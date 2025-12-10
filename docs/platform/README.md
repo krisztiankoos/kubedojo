@@ -32,14 +32,16 @@ platform/
 │   ├── platform-engineering/
 │   ├── gitops/
 │   ├── devsecops/
-│   └── mlops/
+│   ├── mlops/
+│   └── iac/                # Infrastructure as Code
 │
 └── toolkits/           # Current tools (will evolve)
     ├── observability/      # Prometheus, OTel, Grafana
     ├── gitops-tools/       # ArgoCD, Flux
     ├── security-tools/     # Vault, OPA, Falco
     ├── platforms/          # Backstage, Crossplane
-    └── ml-platforms/       # Kubeflow, MLflow
+    ├── ml-platforms/       # Kubeflow, MLflow
+    └── iac-tools/          # Terraform, OpenTofu, Pulumi
 ```
 
 ---
@@ -69,6 +71,7 @@ Applied practices - how to do the work.
 | [GitOps](disciplines/gitops/) | Deployment, reconciliation |
 | [DevSecOps](disciplines/devsecops/) | Security integration, compliance |
 | [MLOps](disciplines/mlops/) | ML lifecycle, model serving |
+| [Infrastructure as Code](disciplines/iac/) | IaC patterns, testing, drift management |
 
 ### Reference Toolkits as Needed
 
@@ -81,6 +84,7 @@ Tools change. Use these as reference when implementing.
 | [Security Tools](toolkits/security-tools/) | Policy, secrets, runtime security |
 | [Platforms](toolkits/platforms/) | Building internal platforms |
 | [ML Platforms](toolkits/ml-platforms/) | ML infrastructure |
+| [IaC Tools](toolkits/iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible |
 
 ---
 

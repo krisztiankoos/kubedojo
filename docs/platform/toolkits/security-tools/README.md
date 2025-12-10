@@ -224,6 +224,7 @@ Each module includes practical exercises:
 - **Before**: [DevSecOps Discipline](../../disciplines/devsecops/) — Security concepts
 - **Before**: [Security Principles](../../foundations/security-principles/) — Theory
 - **Related**: [GitOps & Deployments](../gitops-deployments/) — Secure deployments
+- **Related**: [IaC Tools](../iac-tools/) — IaC security scanning with Checkov, tfsec
 - **After**: [Networking Toolkit](../networking/) — Network security
 
 ---

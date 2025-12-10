@@ -24,7 +24,7 @@ Before starting this track, you should:
 
 - Understand Kubernetes fundamentals (deployments, services, namespaces)
 - Be familiar with CI/CD concepts and tools
-- Have experience with infrastructure-as-code (Terraform, Pulumi, or similar)
+- Have experience with infrastructure-as-code (or complete [IaC Discipline](../iac/))
 - Complete the **Systems Thinking** foundation track (recommended)
 
 ## Modules
@@ -142,10 +142,12 @@ Platform teams treat developers as customers:
 - [SRE Discipline](../sre/) - Reliability practices for platforms
 - [GitOps Discipline](../gitops/) - GitOps for platform delivery
 - [DevSecOps Discipline](../devsecops/) - Security in platform workflows
+- [IaC Discipline](../iac/) - Infrastructure as Code patterns and practices
 
 **Toolkits** (Deep dive into specific tools):
 - [GitOps Tools](../../toolkits/gitops-tools/) - ArgoCD, Flux implementation
 - [Platforms Toolkit](../../toolkits/platforms/) - Backstage, Crossplane hands-on
+- [IaC Tools](../../toolkits/iac-tools/) - Terraform, OpenTofu, Pulumi, Ansible
 
 ## Tools You'll Encounter
 

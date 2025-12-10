@@ -48,7 +48,7 @@ WHICH PLATFORM TOOL?
 
 "I need self-service infrastructure for developers"
 └──▶ Crossplane
-     • Kubernetes-native IaC
+     • Kubernetes-native IaC (see [IaC Discipline](../../disciplines/iac/))
      • Custom APIs with Compositions
      • GitOps-friendly
      • Multi-cloud
@@ -261,8 +261,10 @@ COMPLETE PLATFORM ARCHITECTURE
 ## Related Tracks
 
 - **Before**: [Platform Engineering Discipline](../../disciplines/platform-engineering/)
+- **Before**: [IaC Discipline](../../disciplines/iac/) — Infrastructure as Code fundamentals
 - **Related**: [GitOps & Deployments](../gitops-deployments/) — Deploy platform resources
 - **Related**: [Security Tools](../security-tools/) — Secure the platform
+- **Related**: [IaC Tools](../iac-tools/) — Terraform, OpenTofu, Pulumi hands-on
 - **After**: [Developer Experience](../developer-experience/) — Day-to-day tools
 
 ---

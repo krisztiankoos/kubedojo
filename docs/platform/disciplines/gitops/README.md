@@ -138,6 +138,7 @@ Module 3.6: Multi-Cluster GitOps
 - [SRE Discipline](../sre/) - Operationalizing GitOps for reliability
 - [DevSecOps Discipline](../devsecops/) - Security in GitOps pipelines
 - [Platform Engineering](../platform-engineering/) - Self-service GitOps platforms
+- [IaC Discipline](../iac/) - Infrastructure as Code with GitOps delivery
 
 **Toolkits** (Deep dive into specific tools):
 - [GitOps Tools](../../toolkits/gitops-tools/) - ArgoCD, Flux, and related tools

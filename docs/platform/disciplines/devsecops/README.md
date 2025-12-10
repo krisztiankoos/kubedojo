@@ -86,7 +86,7 @@ After completing this track, you will be able to:
 | **SAST** | Semgrep, CodeQL, Bandit, SonarQube |
 | **SCA** | Trivy, Snyk, Dependabot, Grype |
 | **Container Scanning** | Trivy, Grype, Docker Scout |
-| **IaC Scanning** | Checkov, tfsec, Kubesec |
+| **IaC Scanning** | Checkov, tfsec, Kubesec (see [IaC Security](../iac/module-6.3-iac-security.md)) |
 | **Supply Chain** | Cosign, Sigstore, Syft |
 | **Runtime** | Falco, Kyverno, OPA/Gatekeeper |
 
@@ -118,7 +118,9 @@ Module 4.6: Security Culture & Automation
 
 - **Before**: [Security Principles](../../foundations/security-principles/) — Foundational theory
 - **Related**: [GitOps](../gitops/) — Deployment practices that support DevSecOps
+- **Related**: [IaC Discipline](../iac/) — Infrastructure as Code security and testing
 - **After**: [Security Tools Toolkit](../../toolkits/security-tools/) — Hands-on implementations
+- **After**: [IaC Tools](../../toolkits/iac-tools/) — Terraform, OpenTofu, Pulumi hands-on
 
 ---
 
