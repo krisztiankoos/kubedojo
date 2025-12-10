@@ -2,6 +2,12 @@
 
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 
+---
+
+*The VP of Engineering stared at the Slack channel in disbelief. "Customer checkout is failing. Intermittently. For the past 3 hours." The e-commerce platform processed $47 million daily during the holiday season, with each minute of checkout failures costing roughly $32,000 in abandoned carts. Metrics showed elevated error rates, but which of the 67 microservices was failing? Logs flooded in from everywhere—millions of lines—but without correlation, they were useless. The war room had 15 engineers from 8 teams, each defending their service. "It's not us," became the mantra. Three hours became six. Lost revenue: $5.8 million. The root cause, discovered only after implementing distributed tracing: a single misconfigured timeout in a third-party payment validation service, buried five hops deep in the request flow. One service. Five layers down. Invisible without tracing.*
+
+---
+
 ## Prerequisites
 
 Before starting this module:
@@ -735,15 +741,130 @@ datasources:
 | Ignoring sampling bias | Missing rare errors | Use tail-based sampling for errors |
 | No service name in spans | Can't filter by service | Always set `service.name` resource attribute |
 
-## War Story: The Missing Trace
+## War Story: The $4.2 Million Black Friday Ghost
 
-A team deployed distributed tracing across 50 microservices. Everything worked in staging. In production, traces stopped at service boundaries—only showing the first hop.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  THE $4.2 MILLION BLACK FRIDAY GHOST                            │
+│  ───────────────────────────────────────────────────────────────│
+│  Company: Major online retailer                                 │
+│  Architecture: 127 microservices across 3 cloud regions         │
+│  Black Friday target: $89 million in 24 hours                   │
+│  The nightmare: Checkout failures, no visibility, finger-pointing│
+└─────────────────────────────────────────────────────────────────┘
+```
 
-After days of debugging, they found the issue: their API gateway was stripping "unknown" headers, including `traceparent`. The gateway team had enabled a security feature that removed headers not in an allowlist.
+**10:00 AM - Black Friday**
 
-**The fix**: Add `traceparent` and `tracestate` to the gateway's header allowlist.
+The traffic surge began as expected. Everything looked green on dashboards. Then customers started complaining: "Payment accepted, but no order confirmation." Not errors—just silence. The orders vanished into the void.
 
-**The lesson**: Trace context propagation requires every hop to pass headers. One misconfigured proxy breaks the entire trace. Test production-like configurations, not just application code.
+**11:30 AM - The War Room Assembles**
+
+Fifteen engineers from payment, inventory, fulfillment, and notification teams. Each team's metrics looked healthy. Each team's logs showed successful operations. "It's not us," echoed around the room.
+
+```
+METRICS ANALYSIS (All services "green"):
+─────────────────────────────────────────────────────────────────
+payment-service:      error_rate: 0.02%  ✓  (within SLA)
+inventory-service:    error_rate: 0.01%  ✓  (within SLA)
+fulfillment-service:  error_rate: 0.03%  ✓  (within SLA)
+notification-service: error_rate: 0.00%  ✓  (within SLA)
+
+But checkout completion rate: DOWN 23%
+```
+
+**2:00 PM - Desperation Sets In**
+
+Revenue loss was mounting. Engineers manually correlated logs by timestamp—needle in a haystack across 127 services. Someone suggested "Let's just restart everything." They did. Problem persisted.
+
+**4:30 PM - The Breakthrough**
+
+A junior engineer had been implementing distributed tracing as a "20% project." It wasn't fully deployed, but it covered the payment flow. She enabled sampling to 100% and captured a failing request.
+
+```
+TRACE: f8d2e4a1-7b3c-4e5f-9a1b-2c3d4e5f6a7b
+─────────────────────────────────────────────────────────────────
+api-gateway (12ms)
+ └─ checkout-orchestrator (2,847ms) ← SUSPICIOUSLY LONG
+     ├─ payment-service (156ms) ✓
+     ├─ inventory-reserve (89ms) ✓
+     └─ fulfillment-queue (2,589ms) ← THE BOTTLENECK
+         └─ kafka-producer (TIMEOUT) ✗
+
+Root cause: Kafka broker rebalancing during traffic spike
+- Producer timeout: 3000ms
+- Actual wait: 2589ms (retrying internally, not reporting errors)
+- Result: fire-and-forget message lost, no error logged
+```
+
+**The Root Cause**
+
+The fulfillment service used Kafka with `acks=1` and fire-and-forget publishing. During the traffic spike, Kafka brokers started rebalancing. Messages were accepted by the producer but never delivered. No errors because the producer configured timeouts to fail silently.
+
+```yaml
+# The problematic Kafka config (production)
+producer:
+  acks: 1                    # ← Only leader ack, not replicas
+  retries: 0                 # ← No retry on failure
+  linger.ms: 0              # ← Send immediately, no batching
+  request.timeout.ms: 3000  # ← 3s timeout, then silent drop
+  # No error callback configured
+```
+
+**The Fix (Applied at 5:15 PM)**
+
+```yaml
+# Fixed Kafka config
+producer:
+  acks: all                  # ← Wait for all replicas
+  retries: 3                 # ← Retry on transient failures
+  enable.idempotence: true   # ← Prevent duplicates
+  delivery.timeout.ms: 120000
+  # Error callback: log and alert on failed delivery
+```
+
+**The Financial Impact**
+
+```
+BLACK FRIDAY DAMAGE ASSESSMENT
+─────────────────────────────────────────────────────────────────
+Duration of incident:      7.25 hours (10:00 AM → 5:15 PM)
+Peak revenue rate:         $62,000/minute
+Lost orders:               ~6,800 checkouts
+Average order value:       $617
+Direct lost revenue:       $4,195,600
+
+Additional costs:
+- Emergency escalation:    $47,000 (contractor callouts)
+- Customer service surge:  $23,000 (extended hours)
+- Reputation damage:       Immeasurable (social media storm)
+
+Total quantifiable impact: ~$4.3 million in one day
+```
+
+**Why Tracing Saved Them**
+
+```
+WITHOUT TRACING:                    WITH TRACING:
+─────────────────────────────────────────────────────────────────
+• 15 engineers, 7 hours            • 1 engineer, 45 minutes
+• Each service looked healthy      • Saw exact failure point
+• Finger-pointing war              • Objective evidence
+• "Restart everything"             • Targeted fix
+• Would have continued failing     • Identified silent failure mode
+```
+
+**The Monday After**
+
+The team mandated distributed tracing across all 127 services. Within 6 weeks, full coverage. The junior engineer's "20% project" became the company's standard. Her promotion followed.
+
+**Key Lessons**
+
+1. **Silent failures are the deadliest**: Services that fail without logging are invisible to everything except traces
+2. **Green dashboards can lie**: Individual service metrics don't show cross-service failures
+3. **Timeouts must be instrumented**: Any timeout should create a span with explicit failure status
+4. **Fire-and-forget is gambling**: Async operations need delivery confirmation and tracing
+5. **Traces show what logs and metrics cannot**: The request's journey through time and services
 
 ## Quiz
 
@@ -836,6 +957,190 @@ To find it:
 - Profile the application (CPU, memory)
 - Check for GC pauses in JVM/runtime logs
 - Verify all I/O operations are instrumented
+</details>
+
+### Question 5
+Your system processes 5,000 requests/second with an average of 40 spans per trace at 800 bytes per span. You're using 5% head sampling. Calculate daily storage requirements and explain why tail sampling might still be needed.
+
+<details>
+<summary>Show Answer</summary>
+
+**Storage calculation:**
+```
+5,000 req/s × 40 spans × 800 bytes = 160 MB/second raw
+With 5% sampling: 8 MB/second = 691 GB/day
+
+Monthly storage: ~21 TB
+At $0.023/GB (S3): ~$480/month
+```
+
+**Why tail sampling is still needed:**
+
+Head sampling randomly keeps 5% of traces. But consider:
+- Error rate: 0.1% of requests fail
+- At 5% sampling, you capture: 5,000 × 0.001 × 0.05 = 0.25 errors/second
+- Some error traces will be discarded!
+
+Tail sampling ensures:
+1. **All errors captured**: Sample 100% of traces with `status=error`
+2. **All slow requests captured**: Keep traces where `duration > SLA`
+3. **Important users**: Keep traces for premium customers
+4. **Then sample the rest**: 5% of normal successful traces
+
+Configuration pattern:
+```yaml
+policies:
+  - name: keep-errors
+    type: status_code
+    status_codes: [ERROR]
+  - name: keep-slow
+    type: latency
+    threshold_ms: 2000
+  - name: sample-rest
+    type: probabilistic
+    sampling_percentage: 5
+```
+</details>
+
+### Question 6
+Your traces are breaking at a Kafka message boundary. Service A publishes, Service B consumes, but they appear as separate traces. How do you fix this?
+
+<details>
+<summary>Show Answer</summary>
+
+Kafka (and other message queues) don't automatically propagate trace context like HTTP does. You must:
+
+**1. Inject context when producing:**
+```python
+from opentelemetry import trace
+from opentelemetry.propagate import inject
+
+def produce_message(topic, message):
+    headers = {}
+    # Inject current trace context into headers
+    inject(headers)
+
+    producer.send(topic,
+                  value=message,
+                  headers=[(k, v.encode()) for k, v in headers.items()])
+```
+
+**2. Extract context when consuming:**
+```python
+from opentelemetry.propagate import extract
+
+def consume_message(message):
+    # Convert Kafka headers to dict
+    headers = {k: v.decode() for k, v in message.headers}
+
+    # Extract and use as parent context
+    ctx = extract(headers)
+
+    with tracer.start_as_current_span("process_message", context=ctx):
+        # Now this span is linked to producer's trace
+        process(message)
+```
+
+**3. Use OTel instrumentation libraries:**
+```python
+from opentelemetry.instrumentation.kafka import KafkaInstrumentor
+
+KafkaInstrumentor().instrument()  # Auto-instruments produce/consume
+```
+
+The key insight: HTTP auto-propagates via headers. Message queues need explicit instrumentation for each message system (Kafka, RabbitMQ, SQS, etc.).
+</details>
+
+### Question 7
+You're comparing Jaeger and Tempo for your organization. Given this scenario, which would you choose and why?
+
+**Scenario**: 80 microservices, Grafana already deployed, storing 500GB traces/day, need to search by custom business attributes (customer_id, order_id), budget-conscious.
+
+<details>
+<summary>Show Answer</summary>
+
+**Recommendation: Jaeger** for this scenario, despite the budget focus.
+
+**Analysis:**
+
+| Factor | Jaeger | Tempo |
+|--------|--------|-------|
+| Grafana integration | Good (via datasource) | Native (built-in) |
+| Custom tag search | ✓ Full support | ✗ Requires exemplars/logs |
+| Storage cost | Higher (requires indexing) | Lower (object storage) |
+| 500GB/day | ~$3,000-5,000/month (ES) | ~$350/month (S3) |
+
+**Why Jaeger wins here:**
+
+The requirement "search by customer_id, order_id" is critical. Tempo's architecture is trace-ID-only lookup. To find traces by customer_id:
+
+With Tempo:
+1. Customer calls support: "Order 12345 failed"
+2. You search Loki for `order_id=12345`
+3. Find log line with trace_id
+4. Look up trace_id in Tempo
+
+With Jaeger:
+1. Customer calls support: "Order 12345 failed"
+2. Search Jaeger: `order_id=12345`
+3. Get traces directly
+
+**If budget is paramount:**
+
+Consider Tempo + richer logging:
+- Log every transaction with trace_id
+- Accept the two-hop lookup workflow
+- Save $2,500-4,000/month
+
+**Hybrid approach:**
+- Tempo for storage (cheap)
+- Sample 100% of errors/slow requests into Jaeger (searchable)
+- This gives searchability for interesting traces, cheap storage for the rest
+</details>
+
+### Question 8
+Given this TraceQL query, explain what it finds and write an equivalent Jaeger search:
+
+```traceql
+{ resource.service.name = "checkout" && span.http.status_code >= 500 } | avg(duration) by (span.http.route) | > 1s
+```
+
+<details>
+<summary>Show Answer</summary>
+
+**What this query finds:**
+
+1. `resource.service.name = "checkout"` - Traces from the checkout service
+2. `span.http.status_code >= 500` - Only spans with server errors (5xx)
+3. `avg(duration) by (span.http.route)` - Calculate average duration grouped by HTTP endpoint
+4. `> 1s` - Filter to routes where average error duration exceeds 1 second
+
+**In plain English**: "Find which API endpoints in checkout service have slow 5xx errors (averaging over 1 second), so we can prioritize fixing the slowest failure modes."
+
+**Equivalent Jaeger search:**
+
+Jaeger doesn't support aggregations in queries. You would:
+
+1. **Search in Jaeger UI:**
+   - Service: checkout
+   - Tags: `http.status_code >= 500`
+   - Min Duration: 1s
+
+2. **Export and analyze externally:**
+   ```bash
+   # Fetch traces via API
+   curl "http://jaeger:16686/api/traces?service=checkout&tags=http.status_code:500" \
+     | jq '.data[].spans[] | select(.duration > 1000000) | {route: .tags["http.route"], duration: .duration}'
+   ```
+
+3. **Use Jaeger metrics (if enabled):**
+   ```promql
+   histogram_quantile(0.5,
+     rate(jaeger_trace_duration_bucket{service="checkout", status_code=~"5.."}[5m])
+   ) > 1
+   ```
+
+**Key insight**: TraceQL is more powerful for ad-hoc analysis. Jaeger excels at finding individual traces but requires external tools for aggregation.
 </details>
 
 ## Hands-On Exercise
@@ -1021,6 +1326,21 @@ kubectl -n tracing port-forward svc/tempo 3200:3200 &
 ```bash
 kind delete cluster --name tracing-lab
 ```
+
+## Key Takeaways
+
+Before moving on, ensure you can:
+
+- [ ] Explain trace anatomy: trace ID, span ID, parent span ID, and how they connect
+- [ ] Describe W3C Trace Context headers (`traceparent`, `tracestate`) and their format
+- [ ] Compare Jaeger vs Tempo trade-offs: searchability vs cost, indexed vs ID-only
+- [ ] Calculate trace storage costs: requests/sec × spans × size × sampling rate
+- [ ] Configure head vs tail sampling and explain when each is appropriate
+- [ ] Propagate trace context through HTTP (automatic) and message queues (manual)
+- [ ] Use TraceQL to find slow spans, errors, and aggregate by attributes
+- [ ] Correlate the three signals: metrics → exemplars → traces → logs
+- [ ] Identify "dark time" in traces where uninstrumented code hides latency
+- [ ] Deploy Jaeger or Tempo in Kubernetes and instrument applications with OTel
 
 ## Next Steps
 

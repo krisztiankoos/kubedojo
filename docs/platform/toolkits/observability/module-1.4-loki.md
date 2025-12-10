@@ -10,6 +10,20 @@ Before starting this module:
 - Basic understanding of log aggregation
 - kubectl log experience
 
+---
+
+The infrastructure team at a fast-growing SaaS company stared at their AWS bill in disbelief. Elasticsearch: $127,000 last month. For logs. Not revenue-generating features, not customer-facing services—just storing text that nobody read 99% of the time.
+
+"We need these logs for compliance," the security team argued. "Seven years retention, fully searchable."
+
+The math was brutal: 2TB of logs per day, indexed across 12 fields, replicated 3x, stored for 2,555 days. The five-year projection showed $8.4 million in Elasticsearch infrastructure costs alone.
+
+Then the platform architect discovered Loki. Same 2TB/day, but stored in S3 at $0.023/GB instead of hot Elasticsearch nodes at $0.30/GB. Labels indexed, content compressed. The seven-year compliance requirement? Achievable for $340,000—a 96% cost reduction.
+
+Six months after migration, the CFO asked the infrastructure team to present at the board meeting. "This is the first time anyone's ever invited infrastructure to talk about cost savings," the architect joked. The board approved their next three proposals on the spot.
+
+---
+
 ## Why This Module Matters
 
 Logs tell you what happened. Metrics tell you something is wrong; logs tell you why. But traditional logging solutions (ELK, Splunk) are expensive—indexing every field in every log line costs storage and compute.
@@ -693,15 +707,71 @@ Or use "Derived Fields":
 | Not using time ranges | Scans entire history | Always include time range `[1h]` or use Grafana time picker |
 | Ignoring line limits | Returning millions of lines | Use `| limit 100` or topk/bottomk aggregations |
 
-## War Story: The $50,000 Log Bill
+## War Story: The Stream Explosion That Killed Production
 
-A startup migrated from Elasticsearch to Loki for cost savings. In the first month, they saved 80% on infrastructure. But they made one mistake: they added `request_id` as a label.
+A startup migrated from Elasticsearch to Loki for cost savings. Initial results were spectacular: 80% cost reduction, faster queries, simpler operations. The VP of Engineering sent a company-wide email celebrating the win.
 
-With 1 million requests per day, each with a unique ID, they created 1 million log streams. Loki's ingester memory exploded. Queries timed out. They had to recreate the entire cluster.
+**Week 3, Tuesday 2:14 PM**: Developers noticed log queries timing out.
 
-**The fix**: Move request_id to the log content, parse it at query time with `| json | request_id="abc123"`. Same searchability, 1000x fewer streams.
+**Week 3, Tuesday 2:45 PM**: Loki ingesters started OOMing. Kubernetes restarted them in a loop.
 
-**The lesson**: Labels are for grouping, not for unique identifiers. Parse unique values at query time.
+**Week 3, Tuesday 3:30 PM**: Complete logging blackout. No logs ingested or queryable.
+
+**Week 3, Tuesday 4:00 PM**: Root cause identified. A well-intentioned developer had added a "helpful" label to make debugging easier:
+
+```yaml
+# The problematic Promtail config
+pipeline_stages:
+  - json:
+      expressions:
+        request_id: request_id  # ← This created a new stream per request
+  - labels:
+      request_id:  # ← Labels must be low-cardinality!
+```
+
+**The Math That Broke Everything**:
+```
+Request volume:       1,000,000 requests/day
+Labels before:        ~500 unique combinations (namespace × service × pod)
+Labels after:         500 × 1,000,000 = 500,000,000 stream combinations
+
+Ingester memory:
+  Before: 500 streams × 64KB each = 32MB
+  After:  500M streams × 64KB each = 32TB (impossible)
+```
+
+**Financial Impact**:
+```
+─────────────────────────────────────────────────────────────────
+Incident duration:           4 hours
+Logs lost:                   ~2.8 million events
+Compliance gap:              SOC 2 finding (minor)
+Engineering hours:           8 engineers × 6 hours = $9,600
+Cluster rebuild:             $2,400 (new nodes, data migration)
+Audit remediation:           $15,000 (documentation, controls)
+─────────────────────────────────────────────────────────────────
+Total Impact:                ~$27,000
+```
+
+**The Fix**: Move high-cardinality values to log content, query with parsers:
+
+```yaml
+# Correct approach
+pipeline_stages:
+  - json:
+      expressions:
+        request_id: request_id
+  # Don't add request_id as label!
+  - output:
+      source: message  # Keep request_id in log content
+```
+
+Query at runtime:
+```logql
+{app="api"} | json | request_id="abc123-def456"
+```
+
+**The Lesson**: Labels are for grouping, not for unique identifiers. If a value has more than ~100 unique values, it should be parsed at query time, not indexed as a label.
 
 ## Quiz
 
@@ -780,6 +850,168 @@ This tells Promtail:
 - Combine up to 128 lines into one entry
 
 Without this, each line of a stack trace becomes a separate log entry, making them impossible to search together.
+</details>
+
+### Question 5
+Calculate: You have 500GB of logs per day. Elasticsearch costs $0.30/GB/month for hot storage. Loki with S3 costs $0.023/GB/month. What's the monthly and annual savings?
+
+<details>
+<summary>Show Answer</summary>
+
+**Monthly calculation**:
+```
+Daily volume:    500 GB
+Monthly volume:  500 × 30 = 15,000 GB
+
+Elasticsearch:   15,000 × $0.30 = $4,500/month
+Loki + S3:       15,000 × $0.023 = $345/month
+
+Monthly savings: $4,155 (92% reduction)
+```
+
+**Annual calculation**:
+```
+Elasticsearch:   $4,500 × 12 = $54,000/year
+Loki + S3:       $345 × 12 = $4,140/year
+
+Annual savings:  $49,860
+```
+
+**Caveats**:
+- Elasticsearch may need 3x replication (multiply by 3)
+- Loki needs querier/ingester compute (add ~$500-1000/month)
+- S3 has request costs (add ~$50-100/month for GET/PUT)
+- True savings: ~85-90% after all factors
+
+**Real-world**: Companies typically see 80-95% cost reduction migrating from ELK to Loki.
+</details>
+
+### Question 6
+Your LogQL query `{app="api"} |= "error"` returns 10 million results and times out. How would you make it efficient?
+
+<details>
+<summary>Show Answer</summary>
+
+**Step 1: Add time constraints** (most important):
+```logql
+{app="api"} |= "error" [1h]  # Query only last hour
+```
+
+**Step 2: Add more label filters**:
+```logql
+{app="api", namespace="production", level="error"} [1h]
+```
+
+**Step 3: Use aggregation instead of raw logs**:
+```logql
+# Count errors per 5 minutes
+sum by (service) (
+  count_over_time({app="api"} |= "error" [5m])
+)
+```
+
+**Step 4: Limit output**:
+```logql
+{app="api"} |= "error" | limit 1000
+```
+
+**Step 5: Parse and filter**:
+```logql
+{app="api"}
+  | json
+  | level="error"
+  | status_code >= 500
+  | limit 100
+```
+
+**Root cause**: Loki scans all chunks matching labels. More specific labels + shorter time range = fewer chunks scanned.
+</details>
+
+### Question 7
+What's the difference between `count_over_time()`, `rate()`, and `bytes_rate()` in LogQL?
+
+<details>
+<summary>Show Answer</summary>
+
+| Function | Returns | Use Case |
+|----------|---------|----------|
+| `count_over_time({...}[5m])` | Number of log lines | "How many errors in 5 minutes?" |
+| `rate({...}[5m])` | Log lines per second | "What's the error rate per second?" |
+| `bytes_rate({...}[5m])` | Bytes per second | "How much log data am I ingesting?" |
+
+**Relationship**:
+```logql
+rate() = count_over_time() / range_in_seconds
+
+# These are equivalent:
+rate({app="api"}[5m])
+# ≈ count_over_time({app="api"}[5m]) / 300
+```
+
+**Practical examples**:
+```logql
+# Alert: More than 100 errors per minute
+rate({app="api"} |= "error" [1m]) > 100
+
+# Dashboard: Errors per 5-minute window
+count_over_time({app="api"} |= "error" [5m])
+
+# Capacity planning: Log ingestion rate
+sum(bytes_rate({namespace="production"}[5m]))
+```
+</details>
+
+### Question 8
+How would you set up Loki alerting to page when a specific error message appears more than 10 times in 5 minutes?
+
+<details>
+<summary>Show Answer</summary>
+
+**Loki ruler configuration**:
+```yaml
+# /etc/loki/rules/alerts.yaml
+groups:
+  - name: critical-errors
+    interval: 1m
+    rules:
+      - alert: CriticalDatabaseError
+        expr: |
+          sum(
+            count_over_time(
+              {app="api"} |= "FATAL: database connection failed" [5m]
+            )
+          ) > 10
+        for: 0m  # Alert immediately when condition is true
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "Database connection failures spiking"
+          description: "{{ $value }} database connection failures in last 5 minutes"
+          runbook: "https://wiki.company.com/runbooks/db-connection"
+
+      - alert: PaymentProcessingError
+        expr: |
+          sum by (payment_provider) (
+            count_over_time(
+              {app="payment-service"}
+                | json
+                | level="error"
+                | error_type="payment_declined" [5m]
+            )
+          ) > 10
+        for: 2m  # Sustained for 2 minutes
+        labels:
+          severity: warning
+        annotations:
+          summary: "Payment failures for {{ $labels.payment_provider }}"
+```
+
+**Key elements**:
+- `for: 0m` vs `for: 2m`: How long condition must be true
+- `sum()`: Aggregate across all matching streams
+- `by (label)`: Group results for per-dimension alerting
+- Route to Alertmanager just like Prometheus alerts
 </details>
 
 ## Hands-On Exercise
@@ -908,6 +1140,21 @@ kubectl apply -f error-app.yaml
 ```bash
 kind delete cluster --name loki-lab
 ```
+
+## Key Takeaways
+
+Before moving on, ensure you can:
+
+- [ ] Explain why Loki is cheaper than Elasticsearch (index-free design, label-based)
+- [ ] Calculate approximate storage costs: logs/day × compression ratio × retention
+- [ ] Configure Promtail with pipeline stages for JSON extraction and multiline parsing
+- [ ] Write LogQL queries using stream selectors, line filters, and parsers
+- [ ] Calculate log rates using `rate()` and `count_over_time()` functions
+- [ ] Identify and avoid high-cardinality labels (request IDs, user IDs as labels)
+- [ ] Set up Grafana dashboards with log panels and LogQL variables
+- [ ] Configure recording rules for expensive queries run frequently
+- [ ] Design retention policies balancing compliance and cost
+- [ ] Troubleshoot common issues: dropped logs, stream explosion, ingestion limits
 
 ## Next Module
 

@@ -10,6 +10,22 @@ Before starting this module:
 - Basic PromQL knowledge
 - Understanding of metrics and time series
 
+---
+
+At 11:47 PM on Black Friday, the director of engineering at a major retail company pulled up the main Grafana dashboard on the war room TV. Three hundred engineers stared at the screen. Revenue was down 40% from projections and nobody knew why.
+
+The dashboard showed 200 panels. Graphs for every conceivable metric—CPU, memory, disk, network, HTTP status codes, queue depths, cache hit rates. Everything looked... fine. Green across the board. Yet customers were abandoning carts at record rates.
+
+"Which of these panels matters?" asked the CEO, who had flown in from vacation.
+
+Silence. The dashboards had been built over three years by different teams. Some showed production data, others showed staging. Some used 5-minute rates, others used instantaneous values. Nobody knew what "green" actually meant because thresholds had never been set.
+
+The team spent 47 minutes just figuring out which dashboard showed the real checkout service. By the time they found the problem—a third-party payment provider timing out—they had lost $3.2 million in sales.
+
+The next quarter, they rebuilt their dashboards from scratch: one overview, four golden signals per service, consistent thresholds, linked drill-downs. The following Black Friday, they identified and routed around a similar payment issue in 4 minutes.
+
+---
+
 ## Why This Module Matters
 
 Data without visualization is just numbers. Grafana transforms raw metrics into actionable insights. It's the window into your systems—the first place you look during an incident, the source of truth for SLOs, the tool that makes observability accessible to everyone.
@@ -63,11 +79,50 @@ Grafana has evolved from a dashboarding tool into a complete observability platf
 | **Tempo** | Distributed tracing |
 | **Mimir** | Scalable Prometheus metrics storage |
 
-### War Story: Dashboard Hell
+### War Story: The Dashboard That Cried Wolf
 
-A team had 200 dashboards. Nobody could find anything. Each engineer created their own versions. During incidents, people argued about which dashboard was "correct."
+A fintech startup prided itself on comprehensive monitoring. They had 847 alert rules across 312 dashboards. "We monitor everything," the VP of Engineering boasted to investors.
 
-The fix? Dashboard standards. One dashboard per service, using variables for flexibility. Team ownership with review processes. The dashboard count dropped to 30—and everyone could find what they needed.
+**Monday 3:00 AM**: PagerDuty fires. "High CPU on auth-service." The on-call engineer checks—87% CPU but everything working. Acknowledges. Goes back to sleep.
+
+**Monday 3:47 AM**: Another alert. "Memory pressure on auth-service." Same story. Acknowledges.
+
+**Monday 4:12 AM**: "Disk I/O high on auth-service." The engineer starts wondering why auth-service is so needy tonight. Acknowledges.
+
+**Monday 4:38 AM**: "Latency spike on auth-service." By now, the engineer is exhausted and frustrated. Just acknowledges without checking.
+
+**Monday 5:15 AM**: Customer complaints start rolling in. Logins are failing. The actual problem? A credential rotation job had stalled, causing auth retries to spike. The first three alerts were symptoms. The fourth one—latency—was the real signal.
+
+But by then, alert fatigue had set in. The engineer ignored the one alert that mattered.
+
+```
+Dashboard/Alert Audit Results
+─────────────────────────────────────────────────────────────────
+Total dashboards:           312
+Dashboards viewed monthly:  47
+Total alert rules:          847
+Alerts/week average:        156
+True positives:             12 (7.7%)
+MTTA (Mean Time to Ack):    23 minutes (should be <5)
+Incidents missed due to fatigue: 3 in 6 months
+─────────────────────────────────────────────────────────────────
+Cost of alert fatigue: $1.2M in incident impact
+```
+
+**The Fix**:
+1. **Deleted 734 alert rules** (kept only SLO-based alerts)
+2. **Consolidated to 28 dashboards** (overview → service → component)
+3. **Added thresholds with meaningful colors** (green/yellow/red = actual SLO risk)
+4. **Created runbooks** linked from each alert
+5. **Implemented alert routing**: Page for customer-facing, ticket for internal
+
+**After 3 months**:
+- Alerts per week: 156 → 12
+- True positive rate: 7.7% → 89%
+- MTTA: 23 min → 3 min
+- Incidents missed: 0
+
+**The Lesson**: More dashboards ≠ better visibility. The goal isn't monitoring everything—it's surfacing what matters.
 
 ## Dashboard Design Principles
 
@@ -572,6 +627,133 @@ Explore is for investigation, dashboards are for monitoring. Build dashboards fr
 This enables rapid root cause analysis: metric spike → related logs → distributed trace.
 </details>
 
+<details>
+<summary>5. A dashboard has 50 panels and takes 30 seconds to load. What's likely wrong and how would you fix it?</summary>
+
+**Answer**: Common causes and fixes:
+
+**1. Too many queries executing**:
+- Each panel fires separate query
+- Fix: Use recording rules to pre-compute, reduce panels
+
+**2. Long time ranges with high resolution**:
+- Querying months of data at 1-second granularity
+- Fix: Use `$__interval` variable, implement step adjustment
+
+**3. High cardinality queries**:
+- `topk(100, ...)` or unbounded label matches
+- Fix: Add filters, reduce cardinality, use recording rules
+
+**4. No caching**:
+- Same queries repeatedly hit Prometheus
+- Fix: Enable query caching, set appropriate cache TTL
+
+**5. Slow data source**:
+- Prometheus itself is overwhelmed
+- Fix: Add capacity, shard Prometheus, use Thanos/Mimir
+
+**Diagnostic approach**:
+1. Open browser DevTools → Network tab
+2. Identify slowest queries
+3. Run those queries directly in Prometheus to isolate
+</details>
+
+<details>
+<summary>6. You need one dashboard to work for 100 microservices. How would you design the variable structure?</summary>
+
+**Answer**: Multi-level variable cascade:
+
+```
+Variable: namespace
+  Query: label_values(up, namespace)
+
+Variable: service
+  Query: label_values(up{namespace="$namespace"}, service)
+  Depends on: namespace
+
+Variable: instance
+  Query: label_values(up{namespace="$namespace", service="$service"}, instance)
+  Depends on: namespace, service
+
+Variable: interval
+  Type: interval
+  Auto: true
+  Auto_min: 10s
+```
+
+**Key techniques**:
+- **Cascading dependencies**: Each variable filters the next
+- **Include All option**: `.*` regex for multi-select
+- **Refresh on load**: Keep data current
+- **Default values**: Pre-select production namespace
+
+**In panels**: Use `{namespace="$namespace", service=~"$service"}` with regex match for multi-select support.
+</details>
+
+<details>
+<summary>7. What's the difference between Stat, Gauge, and Bar Gauge panels? When would you use each?</summary>
+
+**Answer**:
+
+| Panel | Best For | Example |
+|-------|----------|---------|
+| **Stat** | Current value, large display | Error rate: 0.5%, uptime: 99.95% |
+| **Gauge** | Value vs. thresholds, radial | CPU: 75% of 100%, memory: 8/16 GB |
+| **Bar Gauge** | Comparing multiple values | Top 5 endpoints by latency |
+
+**Decision tree**:
+- Single value, big number display? → **Stat**
+- Single value, progress toward limit? → **Gauge**
+- Multiple values, comparing? → **Bar Gauge**
+- Time series needed? → **Time series** (not these)
+
+**Threshold configuration**: All three support color thresholds (green/yellow/red) which should map to SLO states, not arbitrary percentages.
+</details>
+
+<details>
+<summary>8. How would you set up Grafana to correlate a metric spike to logs and then traces?</summary>
+
+**Answer**: Configure data source links:
+
+**1. Prometheus → Loki (metrics to logs)**:
+```yaml
+datasources:
+  - name: Prometheus
+    jsonData:
+      derivedFields:
+        - datasourceUid: loki
+          matcherRegex: service="([^"]+)"
+          name: ServiceLogs
+          url: '/explore?left={"queries":[{"expr":"{service=\"${__value.raw}\"}"}]}'
+```
+
+**2. Prometheus → Tempo (via exemplars)**:
+```yaml
+    jsonData:
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: tempo
+```
+
+**3. Loki → Tempo (logs to traces)**:
+```yaml
+datasources:
+  - name: Loki
+    jsonData:
+      derivedFields:
+        - name: TraceID
+          matcherRegex: 'trace_id=(\w+)'
+          datasourceUid: tempo
+          url: '${__value.raw}'
+```
+
+**Workflow**:
+1. See latency spike in dashboard (Prometheus)
+2. Click exemplar → opens trace in Tempo
+3. See slow span, click service → opens Loki with filtered logs
+4. Find error message with stack trace
+</details>
+
 ## Hands-On Exercise: Build a Service Dashboard
 
 Create a complete service dashboard:
@@ -690,11 +872,18 @@ You've completed this exercise when you can:
 
 ## Key Takeaways
 
-1. **Four Golden Signals**: Latency, Traffic, Errors, Saturation
-2. **Variables reduce duplication**: One dashboard serves many use cases
-3. **Choose panels wisely**: Right visualization for the data
-4. **Explore for investigation**: Dashboards for monitoring
-5. **Dashboard as code**: Version control your dashboards
+Before moving on, ensure you understand:
+
+- [ ] **Four Golden Signals**: Every service dashboard should show Latency, Traffic, Errors, and Saturation
+- [ ] **Dashboard hierarchy**: Overview (all services) → Service (one service) → Component (instances/pods)
+- [ ] **Variables are essential**: Query, interval, and custom variables enable reusable dashboards
+- [ ] **Panel selection**: Stat (single value), Gauge (vs. threshold), Bar Gauge (comparison), Time Series (trends)
+- [ ] **Thresholds must be meaningful**: Map to SLO states (green = healthy, yellow = warning, red = breaching)
+- [ ] **Explore for investigation**: Ad-hoc queries, split view, incident response; dashboards for monitoring
+- [ ] **Signal correlation**: Configure exemplars (Prometheus → Tempo), derived fields (Loki → Tempo)
+- [ ] **Dashboard as code**: Use Grafonnet/JSON provisioning for version control and consistency
+- [ ] **Alert fatigue is deadly**: Fewer, high-signal alerts beat many noisy ones
+- [ ] **Units and legends**: Always label axes, set units, format legends for clarity
 
 ## Further Reading
 

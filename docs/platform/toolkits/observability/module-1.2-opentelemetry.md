@@ -10,6 +10,18 @@ Before starting this module:
 - Basic understanding of distributed tracing
 - Familiarity with at least one programming language
 
+---
+
+The platform team at a major European bank faced an impossible decision. Their 400-microservice system used three different tracing solutions—legacy services on Zipkin, newer Java services on Jaeger, and a recent Python rewrite with DataDog instrumentation. When a critical payment flow crossed all three systems, traces simply... stopped. Each tool saw only its fragment of the transaction.
+
+A regulatory audit demanded end-to-end transaction tracing within 90 days. The vendor quotes came back: €2.4 million to migrate everything to a single commercial solution, with 18 months of engineering effort. The platform architect stared at the numbers, knowing they had neither the budget nor the timeline.
+
+Then she discovered OpenTelemetry. Within three weeks, her team deployed the OTel Collector as a proxy between all existing instrumentation and a unified backend. Legacy Zipkin spans flowed through. Jaeger spans converted automatically. DataDog traces joined the stream. The entire payment flow appeared as a single trace for the first time in the company's history.
+
+The cost? Zero licensing fees. The migration effort? Six engineers for three weeks. The audit? Passed with commendation.
+
+---
+
 ## Why This Module Matters
 
 The observability landscape was fragmented. Prometheus for metrics, Jaeger for traces, different agents for different backends. Each vendor had its own SDK. Switching vendors meant rewriting instrumentation code.
@@ -96,13 +108,49 @@ Spans with context        Aggregated numbers        Discrete events
 All three can be correlated via TraceID and common attributes
 ```
 
-### War Story: The Instrumentation Rewrite
+### War Story: The $1.8 Million Vendor Lock-In Escape
 
-A company used Jaeger for tracing, Prometheus for metrics, DataDog for logs. Three SDKs, three sets of instrumentation code, inconsistent context propagation.
+An e-commerce company had built their entire observability stack on a commercial APM vendor. Every service, 127 of them, contained vendor-specific SDK calls hardcoded into the application logic. Annual licensing: $890,000.
 
-When they wanted to switch tracing backends, they faced a six-month rewrite. Every service, every library, all the instrumentation code had to change.
+**Year 3**: The vendor raised prices 40%. The CFO demanded alternatives.
 
-With OpenTelemetry: they would have changed one line in the Collector config. Same instrumentation, different backend. That's the power of vendor-neutral telemetry.
+**The Audit Results**:
+```
+Vendor SDK Calls Across Codebase
+─────────────────────────────────────────────────────────────────
+Python services:     847 direct SDK imports
+Java services:       2,341 agent configurations
+Node.js services:    523 custom instrumentations
+Mobile apps:         189 embedded SDK calls
+─────────────────────────────────────────────────────────────────
+Total touchpoints:   3,900+
+Estimated rewrite:   18 months, 12 engineers
+Cost at new rates:   $2.4M over 2 years
+```
+
+**The OpenTelemetry Migration**:
+
+**Week 1-2**: Deployed OTel Collector as a sidecar, configured to receive the vendor's proprietary protocol and export to both the old vendor AND a new backend.
+
+**Week 3-4**: Auto-instrumentation agents replaced 80% of manual SDK calls. Java services: one JVM flag. Python: one wrapper command.
+
+**Month 2-3**: Migrated remaining 20% of custom instrumentation to OTel SDK. Most changes were search-and-replace.
+
+**Month 4**: Cut over to the new backend. Cancelled the old vendor contract.
+
+```
+Migration Financial Summary
+─────────────────────────────────────────────────────────────────
+Engineering effort:       4 months, 6 engineers = $480,000
+New backend licensing:    $180,000/year
+Year 1 savings:          $230,000
+Year 2+ savings:         $710,000/year
+5-year savings:          $3,070,000
+─────────────────────────────────────────────────────────────────
+ROI: 640%
+```
+
+**The Lesson**: Vendor-neutral instrumentation isn't about today's costs—it's about tomorrow's negotiating leverage. With OpenTelemetry, you can change backends by editing a config file, not rewriting your codebase.
 
 ## SDK Instrumentation
 
@@ -599,6 +647,104 @@ This creates a linked trace across all services.
 Best practice: Start with auto-instrumentation, add manual spans for business-critical paths.
 </details>
 
+<details>
+<summary>5. Your OTel Collector is consuming 8GB RAM and pages are getting killed. What's likely wrong and how do you fix it?</summary>
+
+**Answer**: The Collector is likely missing memory limits or buffering too much data.
+
+**Diagnosis**:
+1. Check if `memory_limiter` processor is configured
+2. Look at queue sizes in `exporters` section
+3. Check if backend is slow/unavailable (causing backup)
+
+**Fix**:
+```yaml
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 4000        # Hard limit
+    spike_limit_mib: 800   # Spike allowance
+```
+
+**Root causes**:
+- Missing memory_limiter processor (most common)
+- Backend unavailable, queue growing indefinitely
+- Tail sampling buffering too many traces (reduce `num_traces`)
+- Too many concurrent exporters
+
+Always deploy the Collector with resource limits AND the memory_limiter processor.
+</details>
+
+<details>
+<summary>6. Calculate: You have 1000 req/s, each request generates 50 spans averaging 2KB. With 10% head sampling, how much data per day reaches your backend?</summary>
+
+**Answer**: **~864 GB per day**
+
+Calculation:
+```
+Without sampling:
+1000 req/s × 50 spans × 2KB = 100,000 KB/s = 100 MB/s
+100 MB/s × 86,400 sec/day = 8,640,000 MB = 8.64 TB/day
+
+With 10% head sampling:
+8.64 TB × 10% = 864 GB/day
+```
+
+**Practical implications**:
+- At $0.50/GB ingestion (typical vendor pricing): $432/day = $157,680/year
+- Tail sampling at 10% with error capture might sample 15-20% (errors are rare)
+- Consider: Do you need 1000 req/s sampled, or would 1% (8.64 GB/day) suffice?
+</details>
+
+<details>
+<summary>7. Service A → Service B → Service C. Traces show A and C, but B appears as a separate trace. What's wrong?</summary>
+
+**Answer**: Context propagation is broken at Service B.
+
+**Diagnostic steps**:
+1. **Check incoming headers at B**: Does B receive `traceparent` from A?
+2. **Check B's instrumentation**: Is it extracting context before creating spans?
+3. **Check B's outgoing calls**: Is it injecting context into requests to C?
+
+**Common causes**:
+- B uses a custom HTTP client not instrumented by OTel
+- Proxy/gateway between A and B strips unknown headers
+- B manually creates spans without setting parent from context
+- B uses async message queue without message propagation
+
+**Quick test**:
+```bash
+# Add debug logging to see if headers arrive
+curl -H "traceparent: 00-12345678901234567890123456789012-1234567890123456-01" \
+     http://service-b/endpoint
+```
+</details>
+
+<details>
+<summary>8. What's the difference between OTLP/gRPC and OTLP/HTTP? When would you choose each?</summary>
+
+**Answer**:
+
+| Aspect | OTLP/gRPC (4317) | OTLP/HTTP (4318) |
+|--------|------------------|------------------|
+| **Protocol** | HTTP/2 + Protobuf | HTTP/1.1 + Protobuf or JSON |
+| **Performance** | Higher throughput | Lower throughput |
+| **Connection** | Persistent, multiplexed | Per-request or keep-alive |
+| **Compatibility** | Requires gRPC support | Works through any HTTP proxy |
+| **Browser** | Not supported | Supported (for frontend) |
+
+**Choose gRPC when**:
+- High throughput requirements
+- Internal service-to-collector communication
+- Network supports HTTP/2
+
+**Choose HTTP when**:
+- Behind load balancer/proxy that doesn't support gRPC
+- Browser-based instrumentation (RUM)
+- Debugging (can inspect with standard tools)
+- Serverless environments (cold start overhead)
+</details>
+
 ## Hands-On Exercise: End-to-End Observability
 
 Deploy OTel Collector and instrument an application:
@@ -822,11 +968,18 @@ You've completed this exercise when you can:
 
 ## Key Takeaways
 
-1. **OTel unifies observability**: One SDK, any backend
-2. **Collector is essential**: Buffer, process, export
-3. **Auto-instrumentation gets you started**: Add manual spans for business logic
-4. **Context propagation links services**: TraceID flows via headers
-5. **Sampling controls costs**: Tail sampling for best results
+Before moving on, ensure you understand:
+
+- [ ] **Vendor neutrality**: OTel instrumentation works with any backend—change exporters, not code
+- [ ] **Three signals unified**: Traces, metrics, and logs share common attributes and context
+- [ ] **Collector architecture**: Receivers → Processors → Exporters in configurable pipelines
+- [ ] **Auto-instrumentation**: Java agents, Python wrappers, K8s operator inject spans with zero code changes
+- [ ] **Manual instrumentation**: Use for business-critical paths and custom attributes
+- [ ] **Context propagation**: W3C `traceparent` header carries TraceID/SpanID across service boundaries
+- [ ] **OTLP protocol**: Native OTel format; use gRPC for throughput, HTTP for compatibility
+- [ ] **Memory limiter**: Essential processor to prevent Collector OOM
+- [ ] **Sampling strategies**: Head-based (simple, probabilistic) vs. tail-based (smart, memory-intensive)
+- [ ] **Resource attributes**: `service.name`, `service.version`, `deployment.environment` identify telemetry sources
 
 ## Further Reading
 

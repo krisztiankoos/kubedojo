@@ -10,6 +10,16 @@ Before starting this module:
 - Basic Kubernetes knowledge
 - Understanding of metrics concepts
 
+---
+
+The on-call engineer's phone buzzed at 3:47 AM. A senior infrastructure lead at one of the world's largest streaming platforms stared at thousands of red squares on a global map—every region showing elevated latency. Customer complaints were flooding in. Revenue was bleeding at $180,000 per hour.
+
+She opened Prometheus. Within 90 seconds, she identified the pattern: `rate(http_request_duration_seconds_bucket{le="0.5"}[5m])` showed the p50 latency had jumped from 50ms to 3 seconds—but only for requests hitting a specific database cluster. Cross-referencing with `node_disk_io_time_seconds_total`, she spotted a storage controller failing silently.
+
+The fix was simple: failover to the replica. But finding the root cause in a system serving 200 million users required Prometheus. Without it, she would have been flying blind through terabytes of logs for hours while customers churned.
+
+---
+
 ## Why This Module Matters
 
 Prometheus is the de facto standard for metrics in cloud-native environments. Born at SoundCloud in 2012, it became the second project to graduate from CNCF (after Kubernetes). If you run Kubernetes, you're almost certainly running Prometheus.
@@ -98,13 +108,46 @@ CONS:                                  CONS:
 • NAT/firewall challenges             • No target health detection
 ```
 
-### War Story: The Missing Metrics
+### War Story: The $2.3 Million Blind Spot
 
-A team migrated to Kubernetes. Their Prometheus dashboards went dark—no app metrics. Panic ensued.
+A fintech company migrated their payment processing system to Kubernetes. Everything worked in staging. The migration weekend arrived.
 
-The problem? Prometheus couldn't discover pods. Service discovery was misconfigured. The apps were healthy, exposing metrics correctly, but Prometheus didn't know they existed.
+**Friday 6:00 PM**: Migration complete. All pods healthy. Engineers high-five and go home.
 
-Lesson: In Kubernetes, service discovery is as important as metric exposition. If Prometheus can't find your targets, your metrics don't exist.
+**Saturday 2:15 AM**: Customer complaints start trickling in. Payments failing sporadically.
+
+**Saturday 8:00 AM**: The on-call engineer opens Grafana dashboards—completely blank. Zero metrics from the new Kubernetes cluster. Prometheus targets page shows 0/847 endpoints being scraped.
+
+**Saturday 8:30 AM**: Panic escalates. Without metrics, they can't identify which services are failing. They resort to `kubectl logs` across 200+ pods, manually searching for errors.
+
+**Saturday 11:00 AM**: After 3 hours of log diving, they find the pattern: payment-validator pods are OOMing. But they don't know how often or which instances.
+
+**Saturday 2:00 PM**: Root cause found. The Prometheus ServiceMonitor was looking for `app: payment-processor` labels, but the new Helm chart used `app.kubernetes.io/name: payment-processor`. Kubernetes naming conventions changed; nobody updated the monitoring config.
+
+**Saturday 3:00 PM**: Metrics restored. They discover the OOMs had been happening since Friday night—120 pod restarts, 15,000 failed transactions.
+
+```
+Financial Impact Timeline
+─────────────────────────────────────────────────────────────────
+Incident Duration: 21 hours (6 PM Friday → 3 PM Saturday)
+Failed Transactions: 15,247
+Average Transaction Value: $156
+Direct Lost Revenue: $2,378,532
+Customer Compensation: $47,000 (chargebacks, credits)
+Engineering Hours: 14 engineers × 8 hours = $28,000
+Regulatory Fine (SLA breach): $250,000
+─────────────────────────────────────────────────────────────────
+Total Impact: ~$2.7 million
+```
+
+**The Fix**: Three lines in a ServiceMonitor:
+```yaml
+selector:
+  matchLabels:
+    app.kubernetes.io/name: payment-processor  # Was: app: payment-processor
+```
+
+**The Lesson**: Service discovery is as critical as the metrics themselves. Test your monitoring configuration as rigorously as your application code. If Prometheus can't find your targets, you're flying blind.
 
 ## PromQL Fundamentals
 
@@ -490,6 +533,86 @@ Each unique label combination creates a new time series. Prometheus stores all s
 Solution: Remove high-cardinality labels or aggregate them.
 </details>
 
+<details>
+<summary>5. Your Prometheus is using 95% memory. The query `prometheus_tsdb_head_series` returns 8.2 million. What's likely wrong and how do you diagnose?</summary>
+
+**Answer**: 8.2 million series is extremely high cardinality. Diagnosis steps:
+
+1. **Find the culprits**:
+   ```promql
+   topk(10, count by (__name__) ({__name__=~".+"}))
+   ```
+   This shows which metrics have the most series.
+
+2. **Find high-cardinality labels**:
+   ```promql
+   count by (job) (up)
+   ```
+   Check if any job has unexpectedly many targets.
+
+3. **Common culprits**:
+   - Metrics with `user_id`, `session_id`, `request_id` labels
+   - URL paths with dynamic segments: `/users/12345/orders`
+   - Prometheus scraping too many targets (misconfigured service discovery)
+
+4. **Resolution**:
+   - Use relabel_configs to drop high-cardinality labels
+   - Aggregate metrics at application level before exposing
+   - Set `sample_limit` on scrape configs to fail fast
+</details>
+
+<details>
+<summary>6. Calculate: If rate(http_requests_total[5m]) returns 100, what's the approximate value of increase(http_requests_total[5m])?</summary>
+
+**Answer**: **30,000 requests**
+
+Calculation:
+- `rate()` returns per-second average = 100 requests/second
+- 5 minutes = 300 seconds
+- `increase()` = rate × duration = 100 × 300 = 30,000
+
+Note: This is approximate because:
+- Counter resets affect both functions differently
+- Actual formula accounts for sample timing
+- `increase()` extrapolates to the exact range boundaries
+</details>
+
+<details>
+<summary>7. Why should you never use `irate()` in alerting rules? When is `irate()` appropriate?</summary>
+
+**Answer**:
+
+**Never use `irate()` for alerting because**:
+- `irate()` uses only the last two data points
+- Result is extremely volatile—can spike and drop between scrapes
+- Causes alert flapping (firing → resolved → firing)
+- A brief spike triggers alert even if overall trend is fine
+
+**Use `irate()` when**:
+- Debugging in Grafana Explore to see real-time behavior
+- You want to catch instantaneous spikes on dashboards
+- Investigating "what's happening right now" during incidents
+
+**Best practice**: Use `rate()` for alerting (smoothed over time), `irate()` for investigation.
+</details>
+
+<details>
+<summary>8. A histogram metric has buckets le="0.1", le="0.5", le="1", le="+Inf". If histogram_quantile(0.90, ...) returns 0.75, what does this tell you?</summary>
+
+**Answer**: **90% of requests completed in 0.75 seconds or less.**
+
+Breaking it down:
+- The result (0.75) falls between bucket boundaries 0.5 and 1.0
+- Prometheus interpolates within that bucket to estimate the 90th percentile
+- 10% of requests took longer than 0.75 seconds
+
+**Important caveats**:
+- This is an *estimate* based on linear interpolation between buckets
+- More buckets = more accurate estimation
+- If 90th percentile truly fell at 0.8s, you'd only know it's "between 0.5 and 1.0"
+- For SLOs, define buckets around your targets (e.g., le="0.3" for 300ms SLO)
+</details>
+
 ## Hands-On Exercise: Prometheus from Scratch
 
 Deploy Prometheus and write queries:
@@ -643,11 +766,18 @@ You've completed this exercise when you can:
 
 ## Key Takeaways
 
-1. **Pull model is intentional**: Prometheus knows when targets are down
-2. **PromQL is powerful**: rate(), histogram_quantile(), aggregations
-3. **Service discovery is critical**: Especially in Kubernetes
-4. **Recording rules for performance**: Pre-compute expensive queries
-5. **Labels are powerful but dangerous**: Avoid high cardinality
+Before moving on, ensure you understand:
+
+- [ ] **Pull model advantages**: Prometheus scrapes targets, enabling automatic down detection and centralized rate control
+- [ ] **PromQL data types**: Instant vectors (single point), range vectors (multiple points), scalars, and when to use each
+- [ ] **rate() vs. irate()**: Use `rate()` for dashboards and alerts (smoothed), `irate()` for debugging (instant)
+- [ ] **rate() vs. increase()**: `rate()` = per-second average, `increase()` = total count over range
+- [ ] **Histogram quantiles**: `histogram_quantile()` interpolates between buckets; choose buckets around SLO targets
+- [ ] **Service discovery**: In Kubernetes, ServiceMonitors or pod annotations enable automatic target discovery
+- [ ] **High cardinality dangers**: Each unique label combination = new time series = memory; avoid user_id, request_id labels
+- [ ] **Recording rules**: Pre-compute expensive queries to speed dashboards and ensure consistency
+- [ ] **Alert rule anatomy**: `expr` (query), `for` (duration), `labels` (routing), `annotations` (human context)
+- [ ] **Alertmanager routing**: Deduplicate, group, route to receivers (PagerDuty, Slack) based on labels
 
 ## Further Reading
 
