@@ -501,3 +501,9 @@ nav:
       - Code Quality:
         - platform/toolkits/code-quality/README.md
         - platform/toolkits/code-quality/module-12.1-sonarqube.md
+        - platform/toolkits/code-quality/module-12.2-semgrep.md
+      - Container Registries:
+        - platform/toolkits/container-registries/README.md
+        - platform/toolkits/container-registries/module-13.1-harbor.md
+        - platform/toolkits/container-registries/module-13.2-zot.md
+        - platform/toolkits/container-registries/module-13.3-dragonfly.md

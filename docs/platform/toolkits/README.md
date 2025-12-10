@@ -22,8 +22,9 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [ML Platforms](ml-platforms/) | Kubeflow, MLflow, Feature Stores | 3 |
 | [AIOps Tools](aiops-tools/) | Anomaly detection, Event correlation | 4 |
 | [Source Control](source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 1 |
-| [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 1 |
-| **Total** | | **42** |
+| [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 2 |
+| [Container Registries](container-registries/) | Harbor, Zot, Dragonfly | 3 |
+| **Total** | | **46** |
 
 ## How to Use Toolkits
 
