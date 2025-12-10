@@ -1,6 +1,6 @@
 # Observability Toolkit
 
-> **Toolkit Track** | 5 Modules | ~4 hours total
+> **Toolkit Track** | 7 Modules | ~5 hours total
 
 ## Overview
 
@@ -25,6 +25,8 @@ Before starting this toolkit:
 | 1.3 | [Grafana](module-1.3-grafana.md) | `[COMPLEX]` | 40-45 min |
 | 1.4 | [Loki](module-1.4-loki.md) | `[COMPLEX]` | 40-45 min |
 | 1.5 | [Distributed Tracing](module-1.5-tracing.md) | `[COMPLEX]` | 45-50 min |
+| 1.6 | [Pixie](module-1.6-pixie.md) | `[MEDIUM]` | 90 min |
+| 1.7 | [Hubble](module-1.7-hubble.md) | `[MEDIUM]` | 90 min |
 
 ## Learning Outcomes
 
@@ -35,6 +37,8 @@ After completing this toolkit, you will be able to:
 3. **Build Grafana dashboards** — Variables, Four Golden Signals, Explore
 4. **Aggregate logs with Loki** — LogQL, Promtail, multi-tenancy
 5. **Trace distributed requests** — Jaeger, Tempo, TraceQL, sampling
+6. **Use Pixie for zero-instrumentation observability** — eBPF, PxL queries, instant debugging
+7. **Deploy Hubble for network observability** — Cilium integration, network policy debugging
 
 ## The Observability Stack
 

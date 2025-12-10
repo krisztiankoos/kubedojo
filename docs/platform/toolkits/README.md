@@ -10,11 +10,11 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 
 | Toolkit | Focus | Modules |
 |---------|-------|---------|
-| [Observability](observability/) | Prometheus, OpenTelemetry, Grafana, Loki | 5 |
+| [Observability](observability/) | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble | 7 |
 | [GitOps & Deployments](gitops-deployments/) | ArgoCD, Argo Rollouts, Flux, Helm | 4 |
 | [CI/CD Pipelines](ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows | 3 |
 | [IaC Tools](iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible | 6 |
-| [Security Tools](security-tools/) | Vault, OPA/Gatekeeper, Falco | 4 |
+| [Security Tools](security-tools/) | Vault, OPA/Gatekeeper, Falco, Tetragon, KubeArmor | 6 |
 | [Networking](networking/) | Cilium, Service Mesh | 2 |
 | [Scaling & Reliability](scaling-reliability/) | Karpenter, KEDA, Velero | 3 |
 | [Platforms](platforms/) | Backstage, Crossplane, cert-manager | 3 |
@@ -25,7 +25,7 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 2 |
 | [Container Registries](container-registries/) | Harbor, Zot, Dragonfly | 3 |
 | [K8s Distributions](k8s-distributions/) | k3s, k0s, MicroK8s | 3 |
-| **Total** | | **49** |
+| **Total** | | **53** |
 
 ## How to Use Toolkits
 

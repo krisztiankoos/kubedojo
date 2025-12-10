@@ -1,6 +1,6 @@
 # Security Tools Toolkit
 
-> **Toolkit Track** | 4 Modules | ~3 hours total
+> **Toolkit Track** | 6 Modules | ~5 hours total
 
 ## Overview
 
@@ -24,6 +24,8 @@ Before starting this toolkit:
 | 4.2 | [OPA & Gatekeeper](module-4.2-opa-gatekeeper.md) | `[COMPLEX]` | 45-50 min |
 | 4.3 | [Falco](module-4.3-falco.md) | `[COMPLEX]` | 45-50 min |
 | 4.4 | [Supply Chain Security](module-4.4-supply-chain.md) | `[COMPLEX]` | 45-50 min |
+| 4.5 | [Tetragon](module-4.5-tetragon.md) | `[MEDIUM]` | 90 min |
+| 4.6 | [KubeArmor](module-4.6-kubearmor.md) | `[MEDIUM]` | 90 min |
 
 ## Learning Outcomes
 
@@ -33,6 +35,8 @@ After completing this toolkit, you will be able to:
 2. **Enforce policies at admission** — Gatekeeper/OPA for policy-as-code
 3. **Detect runtime threats** — Falco for syscall-based intrusion detection
 4. **Secure the supply chain** — Signing, SBOMs, vulnerability scanning
+5. **Prevent attacks with Tetragon** — eBPF-based kernel-level enforcement
+6. **Implement least privilege with KubeArmor** — Allow-listing for containers
 
 ## Tool Selection Guide
 

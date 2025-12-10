@@ -440,6 +440,8 @@ nav:
         - platform/toolkits/observability/module-1.3-grafana.md
         - platform/toolkits/observability/module-1.4-loki.md
         - platform/toolkits/observability/module-1.5-tracing.md
+        - platform/toolkits/observability/module-1.6-pixie.md
+        - platform/toolkits/observability/module-1.7-hubble.md
       - GitOps & Deployments:
         - platform/toolkits/gitops-deployments/README.md
         - platform/toolkits/gitops-deployments/module-2.1-argocd.md
@@ -457,6 +459,8 @@ nav:
         - platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md
         - platform/toolkits/security-tools/module-4.3-falco.md
         - platform/toolkits/security-tools/module-4.4-supply-chain.md
+        - platform/toolkits/security-tools/module-4.5-tetragon.md
+        - platform/toolkits/security-tools/module-4.6-kubearmor.md
       - IaC Tools:
         - platform/toolkits/iac-tools/README.md
         - platform/toolkits/iac-tools/module-7.1-terraform.md
