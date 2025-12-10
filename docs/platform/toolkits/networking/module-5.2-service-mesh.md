@@ -1,157 +1,289 @@
 # Module 5.2: Service Mesh
 
-> **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 50-60 minutes
+## Complexity: [COMPLEX]
+## Time to Complete: 60 minutes
 
-## Overview
+---
 
-When your microservices multiply, so do your problems: How do services find each other? How do you secure inter-service traffic? How do you know what's calling what? Service mesh answers these questions by moving networking concerns out of application code and into infrastructure. This module covers service mesh patterns, Istio, and when you actually need one.
+## Prerequisites
 
-**What You'll Learn**:
-- Service mesh architecture and patterns
-- Istio core concepts and configuration
-- Traffic management and observability
-- When to use (and when to avoid) service mesh
-
-**Prerequisites**:
-- [Cilium Module](module-5.1-cilium.md)
+Before starting this module, you should have completed:
+- [Module 5.1: Cilium](module-5.1-cilium.md)
 - Kubernetes Services and Ingress
-- Basic understanding of proxies
+- Basic understanding of proxies and TLS
 
 ---
 
 ## Why This Module Matters
 
-At scale, every service needs: mTLS, retries, circuit breaking, load balancing, tracing, metrics. You can implement these in every service (inconsistently), or you can push them to infrastructure. Service mesh is that infrastructure layer—but it comes with complexity. Knowing when it's worth that complexity is the real skill.
+*The security auditor's report landed on the CTO's desk like a bomb: "Service-to-service communication is completely unencrypted."*
 
-> 💡 **Did You Know?** The term "service mesh" was coined by William Morgan, CEO of Buoyant (creators of Linkerd), in 2017. The first service mesh was actually Linkerd 1.0, followed by Istio in 2017 and Linkerd 2.0 in 2018. The pattern emerged from Airbnb's Synapse and Netflix's Eureka in the early 2010s.
+When the mid-size fintech company underwent their SOC 2 audit, they assumed their Kubernetes cluster was secure. They had firewalls. They had ingress TLS. But inside the cluster? Every service talked to every other service over plaintext HTTP. Credit card data, authentication tokens, personal information—all flowing unencrypted between pods.
+
+The auditor's words still echoed: "An attacker who gains access to any pod can intercept traffic from every other service. You've built a castle with no walls inside."
+
+The team had 90 days to implement mutual TLS across 47 microservices. Modifying each service to handle certificates would take months. Service mesh became their only option.
+
+**This module teaches you** when service mesh is the right answer, how to implement Istio effectively, and—critically—when the complexity isn't worth it. Because the biggest mistake isn't avoiding service mesh when you need it. It's adopting it when you don't.
+
+---
+
+## War Story: The 200ms That Killed Black Friday
+
+**Characters:**
+- Jennifer: Platform Architect (6 years experience)
+- Team: 8 engineers running 120 microservices
+- Stack: E-commerce platform, $50M daily revenue
+
+**The Incident:**
+
+The company had adopted Istio six months before Black Friday. Everything worked in staging. Then traffic spiked.
+
+**Timeline:**
+
+```
+November 23rd - Black Friday Prep
+09:00 AM: Traffic starts climbing (3x normal)
+          Latency: Normal (~50ms p99)
+
+10:30 AM: Traffic at 5x normal
+          Latency: 85ms p99
+          "A bit slow, but acceptable"
+
+11:00 AM: Traffic at 8x normal
+          Latency: 180ms p99
+          First customer complaints
+
+11:30 AM: Envoy sidecars start OOMing
+          Pods restarting across the cluster
+          Latency: 500ms+ p99
+
+11:45 AM: Checkout service cascading failures
+          "All checkout pods show OOMKilled"
+          Revenue loss: $2,000/minute
+
+12:00 PM: Circuit breakers trip everywhere
+          Services can't communicate
+          Revenue loss: $8,000/minute
+
+12:15 PM: Jennifer: "Kill the sidecars"
+          Team hesitates—"We'll lose mTLS"
+          Jennifer: "We're losing $480K/hour"
+
+12:20 PM: Emergency: Disable sidecar injection
+          Pods restart without Envoy
+
+12:45 PM: Services recovering
+          Latency dropping
+          Revenue resuming
+
+1:30 PM:  Full recovery
+          Lost revenue: $340,000
+          Post-mortem begins immediately
+
+Root Cause Analysis:
+───────────────────────────────────────────────────
+1. Envoy sidecars had default memory limits (128MB)
+2. Under high traffic, Envoy needed 400MB+
+3. No load testing with sidecars at Black Friday scale
+4. Checkout service made 47 downstream calls per request
+5. Each sidecar added ~2ms latency
+6. 47 calls × 2ms = 94ms overhead PER REQUEST
+7. At 8x traffic, memory exhaustion + latency spiral
+```
+
+**What They Fixed:**
+
+```yaml
+# Before: Default sidecar resources
+# Envoy would OOM at ~1000 req/s
+
+# After: Right-sized sidecar resources
+metadata:
+  annotations:
+    sidecar.istio.io/proxyMemory: "512Mi"
+    sidecar.istio.io/proxyMemoryLimit: "1Gi"
+    sidecar.istio.io/proxyCPU: "100m"
+    sidecar.istio.io/proxyCPULimit: "2000m"
+```
+
+```yaml
+# Excluded high-fanout services from mesh
+metadata:
+  annotations:
+    sidecar.istio.io/inject: "false"  # Checkout calls 47 services
+```
+
+**Lessons Learned:**
+1. Load test with sidecars at 10x expected traffic
+2. High-fanout services multiply mesh latency
+3. Default sidecar resources are too small for production
+4. Have a kill switch to disable mesh in emergencies
+5. Some services should never be meshed
+
+**Financial Impact:**
+- Direct revenue loss: $340,000
+- Emergency consulting: $45,000
+- Re-architecture costs: $120,000
+- Total: $505,000
 
 ---
 
 ## Service Mesh Architecture
 
-```
-SERVICE MESH PATTERN
-════════════════════════════════════════════════════════════════════
+### The Problem Service Mesh Solves
 
-WITHOUT SERVICE MESH
-─────────────────────────────────────────────────────────────────
+```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Service A                                                       │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Application Code                                        │   │
-│  │  + Service discovery                                     │   │
-│  │  + Load balancing                                        │   │
-│  │  + Retries                                               │   │
-│  │  + Circuit breaker                                       │   │
-│  │  + TLS                                                   │   │
-│  │  + Tracing                                               │   │
-│  │  + Metrics                                               │   │
-│  └─────────────────────────────────────────────────────────┘   │
+│              WITHOUT SERVICE MESH: CHAOS                         │
+├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  Every service implements this. Inconsistently. In every lang.  │
+│  Every service implements (inconsistently):                      │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  Service A (Java)          Service B (Go)                   ││
+│  │  ├── Spring Cloud Netflix  ├── Go kit                       ││
+│  │  ├── Hystrix (circuit)     ├── Custom retries               ││
+│  │  ├── Ribbon (LB)           ├── gRPC balancing               ││
+│  │  ├── mTLS (maybe)          ├── Plain HTTP (oops)            ││
+│  │  └── OpenTracing           └── Custom logging               ││
+│  │                                                              ││
+│  │  Service C (Python)        Service D (Node.js)              ││
+│  │  ├── No circuit breaker    ├── Different retry lib          ││
+│  │  ├── No load balancing     ├── No mTLS                      ││
+│  │  ├── requests (no retry)   ├── axios with timeout           ││
+│  │  └── No tracing            └── Different tracing format     ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                  │
+│  Result: 4 languages, 4 patterns, 0 consistency                 │
+│  Security audit: "This is a compliance nightmare"               │
+│                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 
-WITH SERVICE MESH
-─────────────────────────────────────────────────────────────────
 ┌─────────────────────────────────────────────────────────────────┐
-│  Service A                                                       │
-│  ┌─────────────────────┐  ┌─────────────────────────────────┐  │
-│  │  Application Code   │  │  Sidecar Proxy                  │  │
-│  │  (business logic    │◀▶│  + Service discovery            │  │
-│  │   only)             │  │  + Load balancing               │  │
-│  │                     │  │  + Retries                      │  │
-│  │                     │  │  + Circuit breaker              │  │
-│  │                     │  │  + mTLS                         │  │
-│  │                     │  │  + Tracing                      │  │
-│  │                     │  │  + Metrics                      │  │
-│  └─────────────────────┘  └─────────────────────────────────┘  │
+│              WITH SERVICE MESH: CONSISTENCY                      │
+├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  Networking concerns handled uniformly, language-agnostic       │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │  Service A (Java)          Service B (Go)                   ││
+│  │  └── Business logic        └── Business logic               ││
+│  │      ↓                         ↓                            ││
+│  │  ┌─────────────────┐      ┌─────────────────┐              ││
+│  │  │  Envoy Sidecar  │      │  Envoy Sidecar  │              ││
+│  │  │  ├── mTLS       │      │  ├── mTLS       │              ││
+│  │  │  ├── Retries    │      │  ├── Retries    │              ││
+│  │  │  ├── Circuit    │      │  ├── Circuit    │              ││
+│  │  │  ├── LB         │      │  ├── LB         │              ││
+│  │  │  └── Tracing    │      │  └── Tracing    │              ││
+│  │  └─────────────────┘      └─────────────────┘              ││
+│  └─────────────────────────────────────────────────────────────┘│
+│                                                                  │
+│  Result: Apps only do business logic. Mesh handles networking.  │
+│  Security audit: "Uniform mTLS everywhere. Approved."           │
+│                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Plane vs Control Plane
 
 ```
-SERVICE MESH COMPONENTS
-════════════════════════════════════════════════════════════════════
-
-                    CONTROL PLANE
 ┌─────────────────────────────────────────────────────────────────┐
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   Config    │  │  Service    │  │  Certificate│             │
-│  │   Store     │  │  Discovery  │  │  Authority  │             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
+│                  SERVICE MESH ARCHITECTURE                       │
+├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  • Pushes config to proxies                                     │
-│  • Issues certificates                                          │
-│  • Aggregates telemetry                                         │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              │ Config distribution
-                              ▼
-                    DATA PLANE
-┌─────────────────────────────────────────────────────────────────┐
+│                      CONTROL PLANE                               │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                                                              ││
+│  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐   ││
+│  │  │    Config     │  │   Service     │  │  Certificate  │   ││
+│  │  │    Store      │  │   Discovery   │  │   Authority   │   ││
+│  │  │               │  │               │  │               │   ││
+│  │  │  "What rules  │  │  "Where are   │  │  "Here's your │   ││
+│  │  │   to apply"   │  │   services?"  │  │   certificate"│   ││
+│  │  └───────────────┘  └───────────────┘  └───────────────┘   ││
+│  │                                                              ││
+│  │  THE BRAIN: Makes decisions, doesn't touch traffic          ││
+│  └──────────────────────────┬──────────────────────────────────┘│
+│                             │                                    │
+│                             │ xDS Protocol                       │
+│                             │ (Config distribution)              │
+│                             ▼                                    │
+│                      DATA PLANE                                  │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                                                              ││
+│  │  ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐  ││
+│  │  │ Envoy   │◀──▶│ Envoy   │◀──▶│ Envoy   │◀──▶│ Envoy   │  ││
+│  │  │ Sidecar │    │ Sidecar │    │ Sidecar │    │ Sidecar │  ││
+│  │  └────┬────┘    └────┬────┘    └────┬────┘    └────┬────┘  ││
+│  │       │              │              │              │        ││
+│  │  ┌────▼────┐    ┌────▼────┐    ┌────▼────┐    ┌────▼────┐  ││
+│  │  │  App A  │    │  App B  │    │  App C  │    │  App D  │  ││
+│  │  └─────────┘    └─────────┘    └─────────┘    └─────────┘  ││
+│  │                                                              ││
+│  │  THE MUSCLE: Actually routes traffic, enforces policies     ││
+│  └─────────────────────────────────────────────────────────────┘│
 │                                                                  │
-│  ┌──────┐    ┌──────┐    ┌──────┐    ┌──────┐                  │
-│  │Proxy │    │Proxy │    │Proxy │    │Proxy │                  │
-│  │  A   │◀──▶│  B   │◀──▶│  C   │◀──▶│  D   │                  │
-│  └──┬───┘    └──┬───┘    └──┬───┘    └──┬───┘                  │
-│     │           │           │           │                       │
-│  ┌──▼───┐    ┌──▼───┐    ┌──▼───┐    ┌──▼───┐                  │
-│  │App A │    │App B │    │App C │    │App D │                  │
-│  └──────┘    └──────┘    └──────┘    └──────┘                  │
+│  Analogy: Control plane = Air traffic control tower             │
+│           Data plane = The actual airplanes                     │
 │                                                                  │
-│  • Intercepts all traffic                                       │
-│  • Enforces policies                                            │
-│  • Collects metrics                                             │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Service Mesh Options
+## Service Mesh Options Compared
 
-### Comparison
+### The Landscape
 
 | Feature | Istio | Linkerd | Cilium Mesh | Consul Connect |
 |---------|-------|---------|-------------|----------------|
-| **Proxy** | Envoy | Linkerd2-proxy (Rust) | eBPF (no proxy) | Envoy |
+| **Proxy** | Envoy | linkerd2-proxy (Rust) | eBPF (no sidecar) | Envoy |
+| **Memory/pod** | 50-100MB | ~10MB | ~0 (kernel) | 50-100MB |
+| **Latency overhead** | 2-3ms | <1ms | <0.5ms | 2-3ms |
 | **Complexity** | High | Medium | Low | Medium |
-| **Resource Usage** | High | Low | Very Low | Medium |
 | **Features** | Most complete | Core features | Growing | HashiCorp ecosystem |
-| **mTLS** | ✓ | ✓ | ✓ | ✓ |
-| **Traffic Management** | Advanced | Basic | Basic | Medium |
-| **Multi-cluster** | ✓ | ✓ | ✓ | ✓ |
+| **Learning curve** | Steep | Moderate | Gentle | Moderate |
+| **Multi-cluster** | Excellent | Good | Excellent | Excellent |
+| **CNCF Status** | Graduated | Graduated | Graduated | - |
 
-### When to Use What
+### Decision Tree
 
 ```
-DECISION TREE
-════════════════════════════════════════════════════════════════════
-
-Do you need mTLS between services?
-│
-├── No ──▶ Do you need traffic management (canary, retries)?
-│          │
-│          ├── No ──▶ You probably don't need a service mesh
-│          │
-│          └── Yes ──▶ Consider Argo Rollouts + basic ingress
-│
-└── Yes ──▶ How complex are your traffic management needs?
-            │
-            ├── Basic (mTLS, retries, timeouts)
-            │   │
-            │   ├── Want simplicity? ──▶ Linkerd
-            │   │
-            │   └── Already using Cilium? ──▶ Cilium Service Mesh
-            │
-            └── Advanced (complex routing, rate limiting, ext auth)
-                │
-                └── Istio (or pay for managed: AWS App Mesh, GKE ASM)
+┌─────────────────────────────────────────────────────────────────┐
+│                   DO YOU NEED A SERVICE MESH?                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Start Here: Do you need mTLS between ALL services?             │
+│  │                                                               │
+│  ├── NO ──▶ Do you need traffic management (canary, retries)?   │
+│  │          │                                                    │
+│  │          ├── NO ──▶ ❌ You don't need a service mesh         │
+│  │          │          Use: NetworkPolicies + Ingress           │
+│  │          │                                                    │
+│  │          └── YES ──▶ Consider alternatives first:            │
+│  │                      • Argo Rollouts (canary/blue-green)     │
+│  │                      • Ingress retries                       │
+│  │                      • Client-side libraries                 │
+│  │                                                               │
+│  └── YES ──▶ How complex are your traffic needs?                │
+│              │                                                   │
+│              ├── BASIC (mTLS, retries, timeouts)                │
+│              │   │                                               │
+│              │   ├── Want minimal overhead? ──▶ Linkerd         │
+│              │   │   (10MB/pod, <1ms latency)                   │
+│              │   │                                               │
+│              │   ├── Already using Cilium? ──▶ Cilium Mesh      │
+│              │   │   (No sidecars, kernel-level)                │
+│              │   │                                               │
+│              │   └── HashiCorp shop? ──▶ Consul Connect         │
+│              │                                                   │
+│              └── ADVANCED (complex routing, rate limiting,      │
+│                  external auth, multi-cluster policies)         │
+│                  │                                               │
+│                  └── Istio (or managed: GKE ASM, AWS App Mesh)  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
-
-> 💡 **Did You Know?** Linkerd's proxy is written in Rust and uses about 10MB of memory per sidecar—compared to Envoy's 50-100MB. For cost-sensitive deployments with thousands of pods, this difference adds up fast. On a 1000-pod cluster, that's 40-90GB of memory just for proxies.
 
 ---
 
@@ -160,34 +292,41 @@ Do you need mTLS between services?
 ### Architecture
 
 ```
-ISTIO ARCHITECTURE
-════════════════════════════════════════════════════════════════════
-
 ┌─────────────────────────────────────────────────────────────────┐
-│                     CONTROL PLANE (istiod)                       │
+│                      ISTIO ARCHITECTURE                          │
+├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
-│  │   Pilot     │  │   Citadel   │  │   Galley    │             │
-│  │  (config)   │  │   (certs)   │  │ (validation)│             │
-│  └─────────────┘  └─────────────┘  └─────────────┘             │
+│                    ┌─────────────────────┐                      │
+│                    │       istiod        │                      │
+│                    │                     │                      │
+│                    │  ┌──────┐ ┌──────┐  │                      │
+│                    │  │Pilot │ │Citadel│  │                      │
+│                    │  │      │ │      │  │                      │
+│                    │  │Config│ │Certs │  │                      │
+│                    │  └──────┘ └──────┘  │                      │
+│                    │                     │                      │
+│                    │  One binary does    │                      │
+│                    │  everything now     │                      │
+│                    └──────────┬──────────┘                      │
+│                               │                                  │
+│                               │ xDS (config)                     │
+│              ┌────────────────┼────────────────┐                │
+│              │                │                │                │
+│              ▼                ▼                ▼                │
+│  ┌───────────────────────────────────────────────────────────┐ │
+│  │                          Pod                               │ │
+│  │  ┌─────────────────┐    ┌─────────────────────────────┐   │ │
+│  │  │                 │    │    istio-proxy (Envoy)      │   │ │
+│  │  │   Application   │◀──▶│                             │   │ │
+│  │  │                 │    │  • Injected by MutatingWebhook │ │
+│  │  │  (your code)    │    │  • Intercepts all traffic   │   │ │
+│  │  │                 │    │  • Handles mTLS termination │   │ │
+│  │  │                 │    │  • Enforces policies        │   │ │
+│  │  │                 │    │  • Reports telemetry        │   │ │
+│  │  └─────────────────┘    └─────────────────────────────┘   │ │
+│  └───────────────────────────────────────────────────────────┘ │
 │                                                                  │
-│  All in one binary: istiod                                      │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              │ xDS protocol
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      DATA PLANE                                  │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Pod                                                     │   │
-│  │  ┌─────────────┐    ┌─────────────────────────────────┐ │   │
-│  │  │    App      │◀──▶│  istio-proxy (Envoy sidecar)   │ │   │
-│  │  │             │    │  - Injected automatically       │ │   │
-│  │  │             │    │  - Intercepts all traffic       │ │   │
-│  │  │             │    │  - Handles mTLS                 │ │   │
-│  │  └─────────────┘    └─────────────────────────────────┘ │   │
-│  └─────────────────────────────────────────────────────────┘   │
+│  Traffic flow: App → iptables redirect → Envoy → Network       │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -200,43 +339,57 @@ curl -L https://istio.io/downloadIstio | sh -
 cd istio-*
 export PATH=$PWD/bin:$PATH
 
-# Install with default profile
+# Choose a profile:
+# - demo: Good for learning, includes everything
+# - default: Production baseline
+# - minimal: Just the essentials
+
+# Install for learning
+istioctl install --set profile=demo -y
+
+# Install for production
 istioctl install --set profile=default -y
 
-# Enable sidecar injection for namespace
+# Enable automatic sidecar injection for a namespace
 kubectl label namespace default istio-injection=enabled
 
 # Verify installation
 istioctl verify-install
+
+# Check pods
 kubectl get pods -n istio-system
 ```
 
-### Core Resources
+### Core Istio Resources
 
 ```yaml
-# VirtualService - Traffic routing rules
+# VirtualService: "How should traffic be routed?"
+# Think of it as an enhanced Ingress for internal traffic
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: reviews-route
+  name: reviews-routing
 spec:
   hosts:
-  - reviews
+    - reviews  # Intercept traffic to "reviews" service
   http:
-  - match:
-    - headers:
-        user-agent:
-          regex: ".*Chrome.*"
-    route:
-    - destination:
-        host: reviews
-        subset: v2
-  - route:
-    - destination:
-        host: reviews
-        subset: v1
+    # Route Chrome users to v2
+    - match:
+        - headers:
+            user-agent:
+              regex: ".*Chrome.*"
+      route:
+        - destination:
+            host: reviews
+            subset: v2
+    # Everyone else gets v1
+    - route:
+        - destination:
+            host: reviews
+            subset: v1
 ---
-# DestinationRule - Traffic policies for destination
+# DestinationRule: "What policies apply to a destination?"
+# Defines subsets (versions) and traffic policies
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
@@ -249,42 +402,54 @@ spec:
         maxConnections: 100
       http:
         h2UpgradePolicy: UPGRADE
+        http1MaxPendingRequests: 100
     loadBalancer:
       simple: ROUND_ROBIN
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
   subsets:
-  - name: v1
-    labels:
-      version: v1
-  - name: v2
-    labels:
-      version: v2
+    - name: v1
+      labels:
+        version: v1
+    - name: v2
+      labels:
+        version: v2
+    - name: v3
+      labels:
+        version: v3
 ```
 
 ---
 
-## Traffic Management
+## Traffic Management Patterns
 
 ### Canary Deployments
 
 ```yaml
-# 90% to v1, 10% to v2
+# Start: 95% to v1, 5% to v2
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: my-app
+  name: my-app-canary
 spec:
   hosts:
-  - my-app
+    - my-app
   http:
-  - route:
-    - destination:
-        host: my-app
-        subset: v1
-      weight: 90
-    - destination:
-        host: my-app
-        subset: v2
-      weight: 10
+    - route:
+        - destination:
+            host: my-app
+            subset: v1
+          weight: 95
+        - destination:
+            host: my-app
+            subset: v2
+          weight: 5
+---
+# After validation: Shift to 50/50
+# Then: 0% v1, 100% v2
+# Each change is just a kubectl apply
 ```
 
 ### Timeouts and Retries
@@ -293,28 +458,29 @@ spec:
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: ratings
+  name: ratings-resilience
 spec:
   hosts:
-  - ratings
+    - ratings
   http:
-  - route:
-    - destination:
-        host: ratings
-    timeout: 10s
-    retries:
-      attempts: 3
-      perTryTimeout: 2s
-      retryOn: gateway-error,connect-failure,refused-stream
+    - route:
+        - destination:
+            host: ratings
+      timeout: 10s  # Total timeout
+      retries:
+        attempts: 3
+        perTryTimeout: 3s
+        retryOn: gateway-error,connect-failure,refused-stream,5xx
 ```
 
 ### Circuit Breaking
 
 ```yaml
+# "Stop calling a service that's failing"
 apiVersion: networking.istio.io/v1beta1
 kind: DestinationRule
 metadata:
-  name: reviews
+  name: reviews-circuit-breaker
 spec:
   host: reviews
   trafficPolicy:
@@ -326,73 +492,100 @@ spec:
         http2MaxRequests: 1000
         maxRequestsPerConnection: 10
     outlierDetection:
+      # If a pod returns 5 consecutive 5xx errors...
       consecutive5xxErrors: 5
+      # ...checked every 30 seconds...
       interval: 30s
+      # ...eject it for 30 seconds
       baseEjectionTime: 30s
+      # Can eject up to 100% of pods
       maxEjectionPercent: 100
 ```
 
-### Fault Injection (Testing)
+### Fault Injection (Chaos Testing)
 
 ```yaml
-# Inject delay and errors for testing resilience
+# Inject failures to test resilience
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
-  name: ratings
+  name: ratings-chaos
 spec:
   hosts:
-  - ratings
+    - ratings
   http:
-  - fault:
-      delay:
-        percentage:
-          value: 10
-        fixedDelay: 5s
-      abort:
-        percentage:
-          value: 5
-        httpStatus: 500
-    route:
-    - destination:
-        host: ratings
+    - fault:
+        # 10% of requests get 5 second delay
+        delay:
+          percentage:
+            value: 10
+          fixedDelay: 5s
+        # 5% of requests get HTTP 500
+        abort:
+          percentage:
+            value: 5
+          httpStatus: 500
+      route:
+        - destination:
+            host: ratings
 ```
-
-> 💡 **Did You Know?** Netflix pioneered chaos engineering by running "Chaos Monkey" in production to randomly kill instances. Istio's fault injection lets you do the same thing in a controlled way—test how your app handles failures before they happen for real. You can inject delays to simulate network issues or errors to test retry logic.
 
 ---
 
-## Security: mTLS
+## Security: Mutual TLS (mTLS)
 
-### How mTLS Works in Istio
+### How mTLS Works
 
 ```
-MUTUAL TLS (mTLS)
-════════════════════════════════════════════════════════════════════
-
-Regular TLS (HTTPS):
-─────────────────────────────────────────────────────────────────
-Client ──▶ "Show me your certificate" ──▶ Server
-Client ◀── Certificate proves server identity ◀── Server
-Client ──▶ Encrypted traffic ──▶ Server
-
-Only SERVER proves identity. Client is anonymous.
-
-Mutual TLS:
-─────────────────────────────────────────────────────────────────
-Client ──▶ "Show me your certificate" ──▶ Server
-Client ◀── Server certificate ◀── Server
-Client ──▶ Client certificate ──▶ Server
-Client ◀── "Verified, you're app-a" ◀── Server
-Client ◀──▶ Encrypted traffic ◀──▶ Server
-
-BOTH sides prove identity. Zero-trust networking.
+┌─────────────────────────────────────────────────────────────────┐
+│                    TLS vs MUTUAL TLS                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  REGULAR TLS (HTTPS)                                            │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  Client                                     Server               │
+│    │                                           │                 │
+│    │──── "Show me your certificate" ──────────▶│                │
+│    │                                           │                 │
+│    │◀─── Server certificate ──────────────────│                 │
+│    │     (proves server identity)              │                 │
+│    │                                           │                 │
+│    │◀═══ Encrypted traffic ══════════════════▶│                │
+│                                                                  │
+│  Problem: Server doesn't know WHO the client is                 │
+│  Client could be anyone with network access                     │
+│                                                                  │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  MUTUAL TLS (mTLS)                                              │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  Client                                     Server               │
+│    │                                           │                 │
+│    │──── "Show me your certificate" ──────────▶│                │
+│    │                                           │                 │
+│    │◀─── Server certificate ──────────────────│                 │
+│    │     (proves server identity)              │                 │
+│    │                                           │                 │
+│    │──── Client certificate ─────────────────▶│                 │
+│    │     (proves client identity)              │                 │
+│    │                                           │                 │
+│    │◀─── "Verified: You're frontend-sa" ──────│                │
+│    │                                           │                 │
+│    │◀═══ Encrypted traffic ══════════════════▶│                │
+│                                                                  │
+│  Result: BOTH sides prove identity                              │
+│  Server knows EXACTLY which service is calling                  │
+│  This enables identity-based authorization                      │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Configuring mTLS
 
 ```yaml
-# Enable strict mTLS for namespace
+# PeerAuthentication: "Who can connect to services in this namespace?"
 apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
@@ -401,12 +594,15 @@ metadata:
 spec:
   mtls:
     mode: STRICT  # Options: STRICT, PERMISSIVE, DISABLE
+    # STRICT: Only mTLS allowed
+    # PERMISSIVE: Accept both plaintext and mTLS (migration mode)
+    # DISABLE: No mTLS
 ---
-# Authorization policy - who can call what
+# AuthorizationPolicy: "Who can call what?"
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: frontend-to-backend
+  name: backend-authz
   namespace: production
 spec:
   selector:
@@ -414,78 +610,97 @@ spec:
       app: backend
   action: ALLOW
   rules:
-  - from:
-    - source:
-        principals:
-        - "cluster.local/ns/production/sa/frontend"
-    to:
-    - operation:
-        methods: ["GET", "POST"]
-        paths: ["/api/*"]
+    # Only frontend service account can call backend
+    - from:
+        - source:
+            principals:
+              - "cluster.local/ns/production/sa/frontend"
+      to:
+        - operation:
+            methods: ["GET", "POST"]
+            paths: ["/api/*"]
+    # Deny everything else (implicit)
 ```
 
-### Verify mTLS is Working
+### Verify mTLS Status
 
 ```bash
-# Check if mTLS is enabled
-istioctl authn tls-check <pod-name> <service>
+# Check mTLS status for a service
+istioctl authn tls-check <pod-name>.<namespace> <service>.<namespace>.svc.cluster.local
 
 # Example output:
-# HOST:PORT                     STATUS
-# backend.production.svc:80     OK         mTLS (mode: STRICT)
+# HOST:PORT                                        STATUS
+# backend.production.svc.cluster.local:80          OK      mTLS (mode: STRICT)
 
-# Check proxy config
+# Check proxy certificates
 istioctl proxy-config secret <pod-name> -n production
+
+# Analyze potential issues
+istioctl analyze -n production
 ```
 
 ---
 
 ## Observability
 
-### Built-in Addons
+### The Three Pillars in Istio
 
 ```bash
-# Install observability addons
+# Install observability stack
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/prometheus.yaml
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/grafana.yaml
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/jaeger.yaml
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/kiali.yaml
 
-# Access Kiali dashboard
-istioctl dashboard kiali
-
-# Access Grafana
-istioctl dashboard grafana
-
-# Access Jaeger
-istioctl dashboard jaeger
+# Access dashboards
+istioctl dashboard kiali     # Service graph + health
+istioctl dashboard grafana   # Metrics dashboards
+istioctl dashboard jaeger    # Distributed tracing
 ```
 
-### Kiali: Service Mesh Visualization
+### Kiali: The Service Mesh Console
 
 ```
-KIALI DASHBOARD
-════════════════════════════════════════════════════════════════════
-
 ┌─────────────────────────────────────────────────────────────────┐
-│  KIALI - Service Graph                                          │
+│                    KIALI DASHBOARD                               │
+├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│     ┌──────────┐                                                │
-│     │ frontend │                                                │
-│     └────┬─────┘                                                │
-│          │ 100 req/s                                            │
-│          ▼                                                      │
-│     ┌──────────┐         ┌──────────┐                          │
-│     │ backend  │────────▶│ database │                          │
-│     └────┬─────┘  50 req/s└──────────┘                         │
-│          │                                                      │
-│          │ 50 req/s (10% errors)                                │
-│          ▼                                                      │
-│     ┌──────────┐                                                │
-│     │ payments │  ⚠️ Degraded                                   │
-│     └──────────┘                                                │
+│  Graph View - Live Traffic Visualization                        │
+│  ─────────────────────────────────────────────────────────────  │
 │                                                                  │
-│  Live traffic visualization, health status, mTLS indicator      │
+│        ┌──────────┐                                             │
+│        │ frontend │──────────────────────┐                      │
+│        │  🔒 ✓    │ 100 req/s            │                      │
+│        └────┬─────┘                      │                      │
+│             │                            │                      │
+│     50 req/s│                     50 req/s                      │
+│             │                            │                      │
+│             ▼                            ▼                      │
+│        ┌──────────┐              ┌──────────┐                   │
+│        │ backend  │──────────────▶│ database │                  │
+│        │  🔒 ✓    │   30 req/s   │  🔒 ✓    │                   │
+│        └────┬─────┘              └──────────┘                   │
+│             │                                                    │
+│     20 req/s│ (12% errors ⚠️)                                   │
+│             │                                                    │
+│             ▼                                                    │
+│        ┌──────────┐                                             │
+│        │ payments │                                             │
+│        │  🔒 ⚠️   │ Degraded                                    │
+│        └──────────┘                                             │
+│                                                                  │
+│  🔒 = mTLS enabled                                              │
+│  ✓ = Healthy                                                    │
+│  ⚠️ = Issues detected                                           │
+│                                                                  │
+│  Features:                                                       │
+│  • Real-time traffic flow                                       │
+│  • Health status per service                                    │
+│  • mTLS verification (lock icon)                                │
+│  • Error rate visualization                                     │
+│  • Latency percentiles                                          │
+│  • Configuration validation                                      │
+│                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -493,259 +708,405 @@ KIALI DASHBOARD
 
 ## When NOT to Use Service Mesh
 
+### The Honest Cost-Benefit Analysis
+
 ```
-SERVICE MESH OVERHEAD
-════════════════════════════════════════════════════════════════════
-
-COSTS:
-─────────────────────────────────────────────────────────────────
-• +2 containers per pod (init + sidecar)
-• +50-100MB memory per pod (Envoy)
-• +1-2ms latency per hop
-• Complex debugging ("is it the app or the mesh?")
-• Steep learning curve
-• Control plane overhead
-
-DON'T USE IF:
-─────────────────────────────────────────────────────────────────
-• < 10 services (use NetworkPolicies + basic ingress)
-• Simple request/response patterns
-• Your team doesn't have mesh expertise
-• You're just starting with Kubernetes
-• Cost is a primary concern
-
-DO USE IF:
-─────────────────────────────────────────────────────────────────
-• Compliance requires mTLS everywhere
-• Complex traffic management (canary, blue-green)
-• Multi-language services need uniform observability
-• Zero-trust security requirements
-• Already mature with Kubernetes
+┌─────────────────────────────────────────────────────────────────┐
+│                 SERVICE MESH: REAL COSTS                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  RESOURCE OVERHEAD                                               │
+│  ─────────────────────────────────────────────────────────────  │
+│  • +2 containers per pod (init + sidecar)                       │
+│  • +50-100MB memory per pod (Envoy)                             │
+│  • +1-2ms latency per network hop                               │
+│  • CPU overhead: ~10-15% of app CPU                             │
+│                                                                  │
+│  Example: 500 pods × 100MB = 50GB just for sidecars            │
+│                                                                  │
+│  OPERATIONAL OVERHEAD                                            │
+│  ─────────────────────────────────────────────────────────────  │
+│  • Steep learning curve (100+ CRDs in Istio)                    │
+│  • Complex debugging ("is it the app or the mesh?")             │
+│  • Upgrade complexity (control plane + data plane)              │
+│  • Certificate management                                        │
+│  • Team needs mesh expertise                                     │
+│                                                                  │
+│  LATENCY MULTIPLICATION                                          │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                  │
+│  Simple request:    App A ──▶ App B                             │
+│  Actual path:       App A ──▶ Envoy ──▶ Network ──▶ Envoy ──▶ App B │
+│                                                                  │
+│  High-fanout request (checkout calling 50 services):            │
+│  Without mesh: 50 calls × ~0ms overhead = 0ms                   │
+│  With mesh:    50 calls × ~2ms overhead = 100ms added latency   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-> 💡 **Did You Know?** Many companies have "de-meshed" after initial enthusiasm. Monzo (UK bank) famously shared that they removed Istio because the operational overhead outweighed benefits for their scale. The right question isn't "should we use service mesh?" but "do we have the problems that service mesh solves, and is the complexity worth it?"
+### Decision Matrix
+
+| Scenario | Service Mesh? | Better Alternative |
+|----------|---------------|-------------------|
+| <10 services | ❌ | NetworkPolicies + Ingress |
+| Starting with K8s | ❌ | Learn basics first |
+| Just need canary deployments | ❌ | Argo Rollouts |
+| Cost-sensitive | ⚠️ | Linkerd or Cilium Mesh |
+| Latency-critical (<5ms) | ⚠️ | Cilium Mesh (eBPF) |
+| Compliance requires mTLS | ✅ | - |
+| Multi-language, need uniform observability | ✅ | - |
+| Zero-trust security requirement | ✅ | - |
+| Complex traffic policies | ✅ | - |
 
 ---
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Enabling mesh cluster-wide | Breaks things you don't control | Start with one namespace |
-| Not excluding namespaces | kube-system sidecars cause issues | Always exclude system namespaces |
-| Strict mTLS immediately | Legacy services can't connect | Use PERMISSIVE mode first |
-| Ignoring proxy resources | Envoy OOMs or starves | Set resource limits on sidecars |
-| Too many VirtualServices | Config explosion, hard to debug | Use conventions, fewer rules |
-| Not monitoring proxy | Proxy issues look like app issues | Monitor `istio_requests_total` |
-
----
-
-## War Story: The 2ms That Became 200ms
-
-*A team enabled Istio on their high-throughput trading service. Latency jumped from 2ms to 200ms.*
-
-**What went wrong**:
-1. Service made 100 downstream calls per request
-2. Each call added 2ms mesh overhead
-3. 100 calls × 2ms = 200ms additional latency
-
-**The fix**:
-1. Exclude high-frequency internal calls from mesh
-2. Batch downstream calls where possible
-3. Use headless services for latency-sensitive paths
-
-```yaml
-# Exclude specific pods from injection
-metadata:
-  annotations:
-    sidecar.istio.io/inject: "false"
-```
-
-**Lesson**: Service mesh overhead is per-hop. High-fanout services multiply that overhead.
+| Mistake | Impact | Solution |
+|---------|--------|----------|
+| Enabling mesh cluster-wide immediately | Breaks system components | Start with one app namespace |
+| Not excluding kube-system | System pods fail with sidecars | Always exclude system namespaces |
+| STRICT mTLS on day one | Legacy services can't connect | Use PERMISSIVE mode during migration |
+| Default sidecar resources | OOM at scale (see War Story) | Set explicit memory/CPU limits |
+| Too many VirtualServices | Config explosion, impossible to debug | Use conventions, fewer rules |
+| Not monitoring proxy metrics | Proxy issues look like app bugs | Alert on `istio_requests_total` errors |
+| Meshing high-fanout services | Latency multiplication | Exclude or use headless services |
+| No emergency kill switch | Stuck when mesh breaks | Document sidecar disable procedure |
 
 ---
 
 ## Quiz
 
-### Question 1
-What's the difference between the data plane and control plane in a service mesh?
-
 <details>
-<summary>Show Answer</summary>
+<summary>1. What's the difference between the data plane and control plane in a service mesh?</summary>
 
-**Data Plane**:
-- Sidecar proxies (Envoy) in each pod
-- Intercepts and routes all traffic
-- Enforces policies, collects metrics
-- Does the actual work
+**Answer:**
 
-**Control Plane**:
-- Centralized management (istiod in Istio)
-- Distributes configuration to proxies
-- Issues certificates for mTLS
-- Doesn't handle traffic directly
+**Data Plane:**
+- Sidecar proxies (Envoy) injected into each pod
+- Intercepts ALL traffic to/from the application
+- Enforces policies (mTLS, retries, circuit breaking)
+- Collects metrics and traces
+- Does the actual work of routing traffic
 
-Analogy: Control plane is the airport control tower (gives instructions). Data plane is the airplanes (moves traffic).
+**Control Plane:**
+- Centralized management component (istiod in Istio)
+- Distributes configuration to all proxies
+- Issues and rotates certificates
+- Doesn't handle actual traffic
+- Makes decisions that proxies execute
 
+**Analogy:** Control plane is the air traffic control tower (gives instructions). Data plane is the airplanes (actually moves traffic).
 </details>
 
-### Question 2
-Why would you use mTLS instead of regular TLS?
-
 <details>
-<summary>Show Answer</summary>
+<summary>2. Why would you use mTLS instead of regular TLS?</summary>
 
-**Regular TLS**:
-- Only server proves identity
-- Client is anonymous to server
-- Prevents eavesdropping, ensures server is who it claims
+**Answer:**
 
-**Mutual TLS (mTLS)**:
+**Regular TLS (one-way):**
+- Only server proves its identity
+- Client remains anonymous
+- Prevents eavesdropping on traffic
+- Used for HTTPS websites
+
+**Mutual TLS (mTLS):**
 - BOTH client and server prove identity
 - Server knows exactly which service is calling
-- Required for zero-trust networking
 - Enables identity-based authorization
+- Required for zero-trust networking
 
-In Kubernetes: mTLS ensures `frontend` service can prove it's `frontend` when calling `backend`—not a compromised pod impersonating it.
-
+In Kubernetes context: mTLS ensures that when "frontend" calls "backend", the backend KNOWS it's actually frontend—not a compromised pod pretending to be frontend.
 </details>
-
-### Question 3
-When should you avoid using a service mesh?
 
 <details>
-<summary>Show Answer</summary>
+<summary>3. A company has 8 microservices. They want canary deployments. Should they use a service mesh?</summary>
 
-Avoid service mesh when:
-1. **Small scale** (<10 services) - overhead not worth it
-2. **Starting with K8s** - learn basics first
-3. **Cost-sensitive** - sidecars add memory/CPU
-4. **Low-latency critical** - mesh adds ~1-2ms per hop
-5. **No mesh expertise** - operational burden is high
+**Answer:** **Probably not.**
 
-Better alternatives:
-- NetworkPolicies for segmentation
-- Ingress controller for external traffic
-- Cloud provider's service mesh (less operational burden)
-- Cilium mesh (lower overhead than sidecar approach)
+For just canary deployments without mTLS requirements, **Argo Rollouts** is a better choice:
+- No sidecar overhead
+- No latency addition
+- Simpler to operate
+- Purpose-built for progressive delivery
 
+Service mesh is overkill if you only need one feature. Only adopt it when you need multiple capabilities (mTLS + traffic management + observability uniformly across all services).
 </details>
+
+<details>
+<summary>4. What does "outlier detection" do in an Istio DestinationRule?</summary>
+
+**Answer:** Outlier detection implements **circuit breaking** by ejecting unhealthy endpoints:
+
+```yaml
+outlierDetection:
+  consecutive5xxErrors: 5    # After 5 consecutive 5xx responses...
+  interval: 30s              # ...checked every 30 seconds...
+  baseEjectionTime: 30s      # ...eject for 30 seconds
+  maxEjectionPercent: 100    # Can eject all pods if all are failing
+```
+
+When a pod returns too many errors, Istio stops sending traffic to it temporarily. This prevents a failing instance from affecting all requests and gives it time to recover.
+</details>
+
+<details>
+<summary>5. Why might enabling Istio on a high-fanout service cause significant latency increase?</summary>
+
+**Answer:** **Latency multiplication effect.**
+
+Each service mesh hop adds ~2ms latency (Envoy processing + mTLS handshake).
+
+For a service that calls 50 downstream services per request:
+- Without mesh: ~0ms overhead
+- With mesh: 50 × 2ms = **100ms additional latency**
+
+This is why the War Story checkout service (47 downstream calls) saw latency jump from 50ms to 200ms+. High-fanout services should either be excluded from the mesh or redesigned to batch calls.
+</details>
+
+<details>
+<summary>6. What's the difference between a VirtualService and a DestinationRule?</summary>
+
+**Answer:**
+
+**VirtualService:** "HOW to route traffic"
+- Traffic routing rules
+- Which subset/version gets traffic
+- Weights for canary
+- Match conditions (headers, paths)
+- Timeouts and retries
+
+**DestinationRule:** "WHAT policies apply at destination"
+- Defines subsets (v1, v2, v3)
+- Connection pool settings
+- Load balancing algorithm
+- Circuit breaker configuration
+- TLS settings
+
+They work together: VirtualService says "send 10% to v2", DestinationRule defines what "v2" means and how to connect to it.
+</details>
+
+<details>
+<summary>7. How does Istio inject sidecars into pods?</summary>
+
+**Answer:** Istio uses a **MutatingAdmissionWebhook**:
+
+1. Pod creation request goes to API server
+2. API server calls Istio's webhook
+3. Webhook modifies the pod spec to add:
+   - `istio-init` container (sets up iptables)
+   - `istio-proxy` container (Envoy sidecar)
+4. Modified pod spec is created
+
+This is controlled by the namespace label:
+```bash
+kubectl label namespace default istio-injection=enabled
+```
+
+Or per-pod annotation:
+```yaml
+annotations:
+  sidecar.istio.io/inject: "true"  # or "false" to exclude
+```
+</details>
+
+<details>
+<summary>8. What's the memory overhead of Linkerd vs Istio, and when does this matter?</summary>
+
+**Answer:**
+
+| Mesh | Memory per sidecar |
+|------|-------------------|
+| Istio (Envoy) | 50-100MB |
+| Linkerd | ~10MB |
+
+**When it matters:**
+
+On a 1000-pod cluster:
+- Istio: 50-100GB just for sidecars
+- Linkerd: ~10GB for sidecars
+
+For cost-sensitive deployments or clusters with many small pods, Linkerd's 5-10x lower memory usage can save significant cloud costs. At $0.05/GB/hour, a 1000-pod cluster saves $175-400/month choosing Linkerd over Istio.
+</details>
+
+---
+
+## Key Takeaways
+
+1. **Service mesh moves networking out of apps** - Retries, mTLS, circuit breaking become infrastructure
+2. **Data plane does the work, control plane gives orders** - Proxies route traffic, istiod configures them
+3. **mTLS proves both sides' identity** - Essential for zero-trust, enables identity-based authz
+4. **Latency multiplies with fanout** - 50 downstream calls × 2ms = 100ms overhead
+5. **Size your sidecars for production** - Default resources are too small for real traffic
+6. **Start with one namespace** - Don't mesh everything at once
+7. **PERMISSIVE mode first** - Migrate to STRICT mTLS gradually
+8. **Not every team needs service mesh** - <10 services? Use NetworkPolicies
+9. **Linkerd for simplicity, Istio for features** - Choose based on actual needs
+10. **Have an emergency kill switch** - Know how to disable sidecars fast
+
+---
+
+## Did You Know?
+
+1. **The term "service mesh" was coined in 2017** by William Morgan, CEO of Buoyant and creator of Linkerd. The pattern emerged from Netflix's Eureka and Airbnb's Synapse in the early 2010s, but didn't have a name until Morgan's blog post defined the category.
+
+2. **Linkerd's proxy uses only 10MB of memory** because it's written in Rust, not C++ like Envoy. For a 1000-pod cluster, that's 40-90GB less memory than Istio—potentially thousands of dollars per month in cloud costs.
+
+3. **Netflix doesn't use a service mesh** despite pioneering many of the patterns. They use client-side libraries (Hystrix, Ribbon) because they prioritize latency over operational simplicity. Their scale (~1000 microservices) means even 1ms overhead per hop adds up.
+
+4. **Istio's control plane used to be 4 separate components** (Pilot, Citadel, Galley, Mixer). The 2020 Istio 1.5 release merged them all into a single binary called "istiod," dramatically simplifying operations and reducing resource usage.
 
 ---
 
 ## Hands-On Exercise
 
 ### Objective
-Deploy Istio, enable mTLS, and observe traffic with Kiali.
+Deploy Istio, enable mTLS, implement a canary deployment, and visualize traffic in Kiali.
 
-### Environment Setup
+### Part 1: Installation
 
 ```bash
-# Install Istio
+# Install Istio with demo profile
 istioctl install --set profile=demo -y
 
 # Enable injection for default namespace
 kubectl label namespace default istio-injection=enabled
 
-# Install sample app (Bookinfo)
+# Deploy sample Bookinfo application
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/bookinfo/platform/kube/bookinfo.yaml
 
-# Wait for pods
+# Wait for pods (should show 2/2 containers)
 kubectl wait --for=condition=ready pod -l app=productpage --timeout=120s
+kubectl get pods  # All should show 2/2
 
-# Install addons
+# Install observability stack
 kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/addons/
 ```
 
-### Tasks
+### Part 2: Verify Sidecar Injection
 
-1. **Verify sidecars injected**:
-   ```bash
-   kubectl get pods
-   # Each pod should show 2/2 containers
-   ```
+```bash
+# Check pods have 2 containers
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .spec.containers[*]}{.name}{" "}{end}{"\n"}{end}'
 
-2. **Access the app**:
-   ```bash
-   kubectl exec "$(kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}')" -c ratings -- curl -s productpage:9080/productpage | head -20
-   ```
+# Should see: productpage-xxx    productpage istio-proxy
+```
 
-3. **Open Kiali dashboard**:
-   ```bash
-   istioctl dashboard kiali
-   # Navigate to Graph view
-   ```
+### Part 3: Enable Strict mTLS
 
-4. **Generate traffic**:
-   ```bash
-   for i in $(seq 1 100); do
-     kubectl exec "$(kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}')" -c ratings -- curl -s productpage:9080/productpage > /dev/null
-   done
-   ```
+```bash
+kubectl apply -f - <<EOF
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: default
+spec:
+  mtls:
+    mode: STRICT
+EOF
 
-5. **Enable strict mTLS**:
-   ```yaml
-   kubectl apply -f - <<EOF
-   apiVersion: security.istio.io/v1beta1
-   kind: PeerAuthentication
-   metadata:
-     name: default
-     namespace: default
-   spec:
-     mtls:
-       mode: STRICT
-   EOF
-   ```
+# Verify mTLS is working
+istioctl authn tls-check $(kubectl get pod -l app=productpage -o jsonpath='{.items[0].metadata.name}').default productpage.default.svc.cluster.local
+```
 
-6. **Verify mTLS**:
-   ```bash
-   istioctl authn tls-check productpage-xxx.default productpage.default.svc.cluster.local
-   ```
+### Part 4: Traffic Routing (Canary)
 
-7. **Add traffic routing** (v1 of reviews only):
-   ```yaml
-   kubectl apply -f - <<EOF
-   apiVersion: networking.istio.io/v1beta1
-   kind: VirtualService
-   metadata:
-     name: reviews
-   spec:
-     hosts:
-     - reviews
-     http:
-     - route:
-       - destination:
-           host: reviews
-           subset: v1
-   ---
-   apiVersion: networking.istio.io/v1beta1
-   kind: DestinationRule
-   metadata:
-     name: reviews
-   spec:
-     host: reviews
-     subsets:
-     - name: v1
-       labels:
-         version: v1
-     - name: v2
-       labels:
-         version: v2
-     - name: v3
-       labels:
-         version: v3
-   EOF
-   ```
+```bash
+# Define subsets
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: reviews
+spec:
+  host: reviews
+  subsets:
+  - name: v1
+    labels:
+      version: v1
+  - name: v2
+    labels:
+      version: v2
+  - name: v3
+    labels:
+      version: v3
+EOF
+
+# Route 100% to v1
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+      weight: 100
+EOF
+
+# Shift to 50/50 canary
+kubectl apply -f - <<EOF
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: reviews
+spec:
+  hosts:
+  - reviews
+  http:
+  - route:
+    - destination:
+        host: reviews
+        subset: v1
+      weight: 50
+    - destination:
+        host: reviews
+        subset: v3
+      weight: 50
+EOF
+```
+
+### Part 5: Observe in Kiali
+
+```bash
+# Generate traffic
+for i in $(seq 1 100); do
+  kubectl exec "$(kubectl get pod -l app=ratings -o jsonpath='{.items[0].metadata.name}')" -c ratings -- curl -sS productpage:9080/productpage > /dev/null
+done
+
+# Open Kiali
+istioctl dashboard kiali
+# Navigate to Graph → Select "default" namespace
+# Observe: Traffic split, mTLS locks, request rates
+```
 
 ### Success Criteria
-- [ ] All pods show 2/2 containers (sidecar injected)
-- [ ] Kiali shows service graph with traffic flow
-- [ ] mTLS enabled (STRICT mode)
-- [ ] Traffic routes only to reviews v1
-- [ ] Can see lock icon in Kiali indicating mTLS
 
-### Bonus Challenge
-Configure 50/50 canary between reviews v2 and v3, then gradually shift traffic.
+- [ ] All pods show 2/2 containers (sidecar injected)
+- [ ] mTLS check returns "OK" with "mode: STRICT"
+- [ ] Traffic routes only to v1 initially
+- [ ] Canary shows ~50/50 split in Kiali
+- [ ] Lock icons visible (mTLS verified)
+
+### Cleanup
+
+```bash
+kubectl delete -f https://raw.githubusercontent.com/istio/istio/release-1.20/samples/bookinfo/platform/kube/bookinfo.yaml
+istioctl uninstall --purge -y
+kubectl delete namespace istio-system
+```
+
+---
+
+## Next Module
+
+Continue to [Scaling & Reliability Toolkit](../scaling-reliability/) to learn about Karpenter for node autoscaling, KEDA for event-driven scaling, and Velero for backup and disaster recovery.
 
 ---
 
@@ -753,15 +1114,8 @@ Configure 50/50 canary between reviews v2 and v3, then gradually shift traffic.
 
 - [Istio Documentation](https://istio.io/latest/docs/)
 - [Linkerd Documentation](https://linkerd.io/2.14/overview/)
+- [Cilium Service Mesh](https://docs.cilium.io/en/stable/network/servicemesh/)
 - [Service Mesh Comparison](https://servicemesh.es/)
 - [CNCF Service Mesh Interface (SMI)](https://smi-spec.io/)
-
----
-
-## Next Module
-
-Continue to [Scaling & Reliability Toolkit](../scaling-reliability/) to learn about Karpenter, KEDA, and Velero for autoscaling and disaster recovery.
-
----
-
-*"A service mesh is like democracy—the worst form of networking, except for all the others that have been tried at scale."*
+- Talk: ["Service Mesh: The Hype, The Tech, The Future" - William Morgan](https://www.youtube.com/watch?v=TrCHDuixbKQ)
+- Book: "Istio in Action" by Christian Posta
