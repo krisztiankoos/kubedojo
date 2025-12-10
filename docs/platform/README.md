@@ -31,17 +31,23 @@ platform/
 │   ├── sre/
 │   ├── platform-engineering/
 │   ├── gitops/
+│   ├── iac/
 │   ├── devsecops/
 │   ├── mlops/
-│   └── iac/                # Infrastructure as Code
+│   └── aiops/
 │
 └── toolkits/           # Current tools (will evolve)
     ├── observability/      # Prometheus, OTel, Grafana
-    ├── gitops-tools/       # ArgoCD, Flux
+    ├── gitops-deployments/ # ArgoCD, Flux, Helm
+    ├── ci-cd-pipelines/    # Dagger, Tekton, Argo Workflows
+    ├── iac-tools/          # Terraform, OpenTofu, Pulumi
     ├── security-tools/     # Vault, OPA, Falco
+    ├── networking/         # Cilium, Service Mesh
+    ├── scaling-reliability/ # Karpenter, KEDA, Velero
     ├── platforms/          # Backstage, Crossplane
+    ├── developer-experience/ # K9s, Telepresence
     ├── ml-platforms/       # Kubeflow, MLflow
-    └── iac-tools/          # Terraform, OpenTofu, Pulumi
+    └── aiops-tools/        # Anomaly detection, AIOps
 ```
 
 ---
@@ -69,9 +75,10 @@ Applied practices - how to do the work.
 | [SRE](disciplines/sre/) | Operations, reliability, on-call |
 | [Platform Engineering](disciplines/platform-engineering/) | Developer experience, self-service |
 | [GitOps](disciplines/gitops/) | Deployment, reconciliation |
+| [Infrastructure as Code](disciplines/iac/) | IaC patterns, testing, drift management |
 | [DevSecOps](disciplines/devsecops/) | Security integration, compliance |
 | [MLOps](disciplines/mlops/) | ML lifecycle, model serving |
-| [Infrastructure as Code](disciplines/iac/) | IaC patterns, testing, drift management |
+| [AIOps](disciplines/aiops/) | AI-driven operations, automation |
 
 ### Reference Toolkits as Needed
 
@@ -80,11 +87,16 @@ Tools change. Use these as reference when implementing.
 | Toolkit | When to Use |
 |---------|-------------|
 | [Observability](toolkits/observability/) | Setting up monitoring/tracing |
-| [GitOps Tools](toolkits/gitops-tools/) | Implementing ArgoCD/Flux |
-| [Security Tools](toolkits/security-tools/) | Policy, secrets, runtime security |
-| [Platforms](toolkits/platforms/) | Building internal platforms |
-| [ML Platforms](toolkits/ml-platforms/) | ML infrastructure |
+| [GitOps & Deployments](toolkits/gitops-deployments/) | Implementing ArgoCD/Flux |
+| [CI/CD Pipelines](toolkits/ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows |
 | [IaC Tools](toolkits/iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible |
+| [Security Tools](toolkits/security-tools/) | Policy, secrets, runtime security |
+| [Networking](toolkits/networking/) | Cilium, Service Mesh |
+| [Scaling & Reliability](toolkits/scaling-reliability/) | Karpenter, KEDA, Velero |
+| [Platforms](toolkits/platforms/) | Building internal platforms |
+| [Developer Experience](toolkits/developer-experience/) | K9s, Telepresence |
+| [ML Platforms](toolkits/ml-platforms/) | ML infrastructure |
+| [AIOps Tools](toolkits/aiops-tools/) | Anomaly detection, AIOps |
 
 ---
 
@@ -104,13 +116,13 @@ Every module includes:
 
 ## Status
 
-🚧 **This track is under development.**
+✅ **This track is complete** - 102 modules across foundations, disciplines, and toolkits.
 
-| Section | Status |
-|---------|--------|
-| Foundations | 📋 Planned |
-| Disciplines | 📋 Planned |
-| Toolkits | 📋 Planned |
+| Section | Modules | Status |
+|---------|---------|--------|
+| Foundations | 19 | ✅ Complete |
+| Disciplines | 43 | ✅ Complete |
+| Toolkits | 40 | ✅ Complete |
 
 ---
 

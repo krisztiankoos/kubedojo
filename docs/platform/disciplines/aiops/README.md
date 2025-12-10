@@ -134,8 +134,10 @@ Module 6.6: Auto-Remediation
 
 - **Before**: [Observability Theory](../../foundations/observability-theory/) — Data collection
 - **Before**: [SRE Discipline](../sre/) — Operational practices
+- **Related**: [IaC Discipline](../iac/) — Infrastructure automation for AIOps platforms
 - **Related**: [MLOps Discipline](../mlops/) — ML fundamentals
 - **After**: [AIOps Tools Toolkit](../../toolkits/aiops-tools/) — Hands-on implementations
+- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/) — Automated infrastructure provisioning
 
 ---
 

@@ -99,12 +99,12 @@ No paywalls. No upsells. Theory-first.
     │       │   Systems · Observability Theory · Security     │
     │       │                                                 │
     │       ├── disciplines/         Applied practices        │
-    │       │   SRE · Platform Engineering · GitOps ·         │
+    │       │   SRE · Platform Engineering · GitOps · IaC ·   │
     │       │   DevSecOps · MLOps · AIOps                     │
     │       │                                                 │
     │       └── toolkits/            Current tools (evolving) │
-    │           Prometheus · ArgoCD · Vault · Backstage ·     │
-    │           Kubeflow · and more...                        │
+    │           Prometheus · ArgoCD · Terraform · Vault ·     │
+    │           Backstage · Kubeflow · and more...            │
     │                                                         │
     └─────────────────────────────────────────────────────────┘
 
@@ -120,7 +120,7 @@ No paywalls. No upsells. Theory-first.
 | [Prerequisites](docs/prerequisites/) | 23 | ✅ Complete |
 | [Kubernetes Certifications](docs/k8s/) | 142 | ✅ Complete |
 | [Linux Deep Dive](docs/linux/) | 28 | ✅ Complete |
-| [Platform Engineering](docs/platform/) | 83 | ✅ Complete |
+| [Platform Engineering](docs/platform/) | 102 | ✅ Complete |
 
 ---
 

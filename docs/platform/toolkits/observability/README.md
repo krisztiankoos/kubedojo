@@ -149,6 +149,7 @@ INVESTIGATING AN INCIDENT:
 
 - **Before**: [Observability Theory](../../foundations/observability-theory/) — Why these tools exist
 - **Related**: [SRE Discipline](../../disciplines/sre/) — How to apply observability
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Deploy observability stack with Terraform
 - **After**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deploy observable apps
 
 ---

@@ -129,8 +129,10 @@ Module 5.6: ML Pipelines & Automation
 ## Related Tracks
 
 - **Before**: [Observability Theory](../../foundations/observability-theory/) — Monitoring foundations
+- **Related**: [IaC Discipline](../iac/) — Infrastructure provisioning for ML platforms
 - **Related**: [DevSecOps](../devsecops/) — Security for ML pipelines
 - **After**: [ML Platforms Toolkit](../../toolkits/ml-platforms/) — Hands-on implementations
+- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/) — Terraform modules for ML infrastructure
 
 ---
 

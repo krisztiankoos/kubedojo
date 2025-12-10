@@ -284,7 +284,8 @@ Best for           Debugging      Development      CI/CD
 
 - **Before**: [Platforms Toolkit](../platforms/) — Portal and infrastructure
 - **Applies**: [Platform Engineering Discipline](../../disciplines/platform-engineering/) — Developer experience concepts
-- **Related**: [CI/CD Pipelines Toolkit](../cicd-pipelines/) — Build and deploy automation
+- **Related**: [IaC Discipline](../../disciplines/iac/) — Infrastructure provisioning patterns
+- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Build and deploy automation
 - **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deployment workflows
 
 ---

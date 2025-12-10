@@ -314,6 +314,7 @@ Auto-Remediation (Kubernetes operators)
 ## Related Tracks
 
 - **Before**: [AIOps Discipline](../../disciplines/aiops/) — Conceptual foundation
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for AIOps infrastructure
 - **Related**: [Observability Toolkit](../observability/) — Data collection layer
 - **Related**: [SRE Discipline](../../disciplines/sre/) — Operational practices
 - **After**: Build production AIOps!

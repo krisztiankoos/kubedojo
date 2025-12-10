@@ -183,6 +183,7 @@ Tool: Dagger and Argo Workflows
 ## Related Tracks
 
 - **Before**: [DevSecOps Discipline](../../disciplines/devsecops/) — CI/CD concepts
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform for pipeline infrastructure
 - **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deploy what CI builds
 - **After**: [Security Tools Toolkit](../security-tools/) — Secure the pipeline
 

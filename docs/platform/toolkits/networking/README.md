@@ -178,6 +178,7 @@ No traffic mgmt  Basic             Basic             Advanced
 
 - **Before**: [Security Tools Toolkit](../security-tools/) — Security context
 - **Before**: [Security Principles](../../foundations/security-principles/) — Theory
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for Cilium, Istio
 - **Related**: [DevSecOps Discipline](../../disciplines/devsecops/) — Security practices
 - **After**: [Scaling & Reliability](../scaling-reliability/) — Autoscaling
 

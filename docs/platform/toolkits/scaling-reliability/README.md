@@ -226,6 +226,7 @@ FAILOVER: Restore from replicated backup to DR cluster
 
 - **Before**: [SRE Discipline](../../disciplines/sre/) — SRE concepts
 - **Before**: [Reliability Engineering](../../foundations/reliability-engineering/) — Theory
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for Karpenter, KEDA
 - **Related**: [Observability Toolkit](../observability/) — Metrics for scaling
 - **After**: [Platforms Toolkit](../platforms/) — Platform features
 

@@ -364,6 +364,8 @@ RECOMMENDATION: Use all three together
 ## Related Tracks
 
 - **Before**: [MLOps Discipline](../../disciplines/mlops/) — MLOps concepts and practices
+- **Related**: [IaC Discipline](../../disciplines/iac/) — Infrastructure provisioning for ML platforms
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for ML infrastructure
 - **Related**: [Observability Toolkit](../observability/) — Monitor ML systems
 - **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deploy ML infrastructure
 - **Related**: [Scaling & Reliability Toolkit](../scaling-reliability/) — Scale ML workloads

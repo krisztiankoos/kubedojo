@@ -13,6 +13,7 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Observability](observability/) | Prometheus, OpenTelemetry, Grafana, Loki | 5 |
 | [GitOps & Deployments](gitops-deployments/) | ArgoCD, Argo Rollouts, Flux, Helm | 4 |
 | [CI/CD Pipelines](ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows | 3 |
+| [IaC Tools](iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible | 6 |
 | [Security Tools](security-tools/) | Vault, OPA/Gatekeeper, Falco | 4 |
 | [Networking](networking/) | Cilium, Service Mesh | 2 |
 | [Scaling & Reliability](scaling-reliability/) | Karpenter, KEDA, Velero | 3 |
@@ -20,7 +21,7 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Developer Experience](developer-experience/) | K9s, Telepresence, Local K8s | 3 |
 | [ML Platforms](ml-platforms/) | Kubeflow, MLflow, Feature Stores | 3 |
 | [AIOps Tools](aiops-tools/) | Anomaly detection, Event correlation | 4 |
-| **Total** | | **34** |
+| **Total** | | **40** |
 
 ## How to Use Toolkits
 
@@ -53,4 +54,5 @@ Pick a toolkit based on your current focus:
 
 - **Starting observability?** Begin with [Prometheus](observability/module-1.1-prometheus.md)
 - **Implementing GitOps?** Start with [ArgoCD](gitops-deployments/module-2.1-argocd.md)
+- **Managing infrastructure?** Check out [Terraform](iac-tools/module-5.1-terraform.md)
 - **Building a platform?** Check out [Backstage](platforms/module-7.1-backstage.md)
