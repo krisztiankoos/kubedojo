@@ -1,6 +1,6 @@
 # Kubernetes Distributions Toolkit
 
-> **Toolkit Track** | 3 Modules | ~2.5 hours total
+> **Toolkit Track** | 6 Modules | ~5 hours total
 
 ## Overview
 
@@ -23,6 +23,9 @@ Before starting this toolkit:
 | 14.1 | [k3s](module-14.1-k3s.md) | `[MEDIUM]` | 45-50 min |
 | 14.2 | [k0s](module-14.2-k0s.md) | `[MEDIUM]` | 40-45 min |
 | 14.3 | [MicroK8s](module-14.3-microk8s.md) | `[MEDIUM]` | 40-45 min |
+| 14.4 | [Talos](module-14.4-talos.md) | `[COMPLEX]` | 50-55 min |
+| 14.5 | [OpenShift](module-14.5-openshift.md) | `[COMPLEX]` | 50-55 min |
+| 14.6 | [Managed Kubernetes](module-14.6-managed-kubernetes.md) | `[COMPLEX]` | 55-60 min |
 
 ## Learning Outcomes
 
@@ -31,7 +34,10 @@ After completing this toolkit, you will be able to:
 1. **Deploy k3s** — The most popular lightweight Kubernetes for edge
 2. **Run k0s** — Zero-friction Kubernetes for any environment
 3. **Use MicroK8s** — Canonical's snap-based Kubernetes
-4. **Choose the right distribution** — Match requirements to distribution strengths
+4. **Understand Talos** — Immutable OS built specifically for Kubernetes
+5. **Navigate OpenShift** — Enterprise Kubernetes with batteries included
+6. **Compare managed services** — EKS vs GKE vs AKS decision making
+7. **Choose the right distribution** — Match requirements to distribution strengths
 
 ## Distribution Selection Guide
 
@@ -369,6 +375,24 @@ Module 14.3: MicroK8s
      │  Add-on ecosystem
      │  Ubuntu integration
      ▼
+Module 14.4: Talos
+     │
+     │  Immutable OS
+     │  API-only management
+     │  Maximum security
+     ▼
+Module 14.5: OpenShift
+     │
+     │  Enterprise platform
+     │  Batteries included
+     │  Red Hat support
+     ▼
+Module 14.6: Managed Kubernetes
+     │
+     │  EKS vs GKE vs AKS
+     │  Provider comparison
+     │  Cost optimization
+     ▼
 [Toolkit Complete] → Next: CI/CD Pipelines Toolkit
 ```
 
@@ -402,6 +426,9 @@ CPU                2 cores     2 cores     2 cores     2 cores
 | k3s | Deploy HA cluster, run workloads, configure storage |
 | k0s | Zero-dependency install, cluster-api bootstrap |
 | MicroK8s | Snap install, enable add-ons, cluster join |
+| Talos | Deploy cluster, verify security, API management |
+| OpenShift | S2I builds, Routes, BuildConfigs |
+| Managed K8s | Multi-provider comparison, cost analysis |
 
 ## Related Tracks
 

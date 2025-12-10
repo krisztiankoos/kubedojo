@@ -470,6 +470,10 @@ nav:
         - platform/toolkits/iac-tools/module-7.4-ansible.md
         - platform/toolkits/iac-tools/module-7.5-cloudformation.md
         - platform/toolkits/iac-tools/module-7.6-bicep.md
+        - platform/toolkits/iac-tools/module-7.7-winglang.md
+        - platform/toolkits/iac-tools/module-7.8-sst.md
+        - platform/toolkits/iac-tools/module-7.9-system-initiative.md
+        - platform/toolkits/iac-tools/module-7.10-nitric.md
       - Networking:
         - platform/toolkits/networking/README.md
         - platform/toolkits/networking/module-5.1-cilium.md
@@ -527,6 +531,9 @@ nav:
         - platform/toolkits/k8s-distributions/module-14.1-k3s.md
         - platform/toolkits/k8s-distributions/module-14.2-k0s.md
         - platform/toolkits/k8s-distributions/module-14.3-microk8s.md
+        - platform/toolkits/k8s-distributions/module-14.4-talos.md
+        - platform/toolkits/k8s-distributions/module-14.5-openshift.md
+        - platform/toolkits/k8s-distributions/module-14.6-managed-kubernetes.md
       - Cloud-Native Databases:
         - platform/toolkits/cloud-native-databases/README.md
         - platform/toolkits/cloud-native-databases/module-15.1-cockroachdb.md

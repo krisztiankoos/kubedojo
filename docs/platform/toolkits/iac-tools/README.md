@@ -1,6 +1,6 @@
 # IaC Tools Toolkit
 
-> **Toolkit Track** | 6 Modules | ~5.5 hours total
+> **Toolkit Track** | 10 Modules | ~8.5 hours total
 
 ## Overview
 
@@ -26,6 +26,10 @@ Before starting this toolkit:
 | 7.4 | [Ansible](module-7.4-ansible.md) | `[COMPLEX]` | 55-60 min |
 | 7.5 | [CloudFormation](module-7.5-cloudformation.md) | `[MEDIUM]` | 45-50 min |
 | 7.6 | [Bicep](module-7.6-bicep.md) | `[MEDIUM]` | 45-50 min |
+| 7.7 | [Wing](module-7.7-winglang.md) | `[COMPLEX]` | 50-55 min |
+| 7.8 | [SST](module-7.8-sst.md) | `[MEDIUM]` | 45-50 min |
+| 7.9 | [System Initiative](module-7.9-system-initiative.md) | `[COMPLEX]` | 50-55 min |
+| 7.10 | [Nitric](module-7.10-nitric.md) | `[MEDIUM]` | 45-50 min |
 
 ## Learning Outcomes
 
@@ -37,6 +41,10 @@ After completing this toolkit, you will be able to:
 4. **Manage configuration with Ansible** — Playbooks, roles, inventory
 5. **Deploy with CloudFormation** — AWS-native IaC, nested stacks, macros
 6. **Use Bicep** — Azure-native IaC, simplified ARM templates
+7. **Understand Wing** — Cloud-oriented programming language
+8. **Develop with SST** — Modern serverless framework with live Lambda
+9. **Explore System Initiative** — Reactive, visual DevOps automation
+10. **Build with Nitric** — Cloud-agnostic application framework
 
 ## Tool Selection Guide
 
@@ -85,6 +93,34 @@ WHICH IAC TOOL?
      • Linux Foundation governance
      • Community-driven
      • Drop-in replacement
+
+"I want unified infrastructure and application code"
+└──▶ Wing
+     • Cloud-oriented programming language
+     • Compiles to Terraform + Lambda
+     • Built-in local simulator
+     • Preflight/inflight model
+
+"I want fast serverless development with live reload"
+└──▶ SST
+     • Live Lambda development
+     • Real AWS, instant reload
+     • Full-stack support (Lambda, Next.js, etc.)
+     • TypeScript-first
+
+"I want visual, reactive infrastructure automation"
+└──▶ System Initiative
+     • Canvas-based visual editing
+     • Reactive dependency propagation
+     • Real-time collaboration
+     • Function-based extensibility
+
+"I want to deploy the same code to any cloud"
+└──▶ Nitric
+     • Cloud-agnostic APIs
+     • Infrastructure derived from code
+     • AWS, Azure, GCP support
+     • TypeScript, Python, Go, Dart
 ```
 
 ## Tool Comparison Matrix
@@ -164,6 +200,26 @@ Module 7.6: Bicep
      │  Azure-native IaC
      │  ARM template evolution
      ▼
+Module 7.7: Wing
+     │
+     │  Cloud-oriented language
+     │  Unified infra and code
+     ▼
+Module 7.8: SST
+     │
+     │  Live Lambda development
+     │  Modern serverless
+     ▼
+Module 7.9: System Initiative
+     │
+     │  Visual, reactive IaC
+     │  Collaboration built-in
+     ▼
+Module 7.10: Nitric
+     │
+     │  Cloud-agnostic framework
+     │  Deploy anywhere
+     ▼
 [Toolkit Complete] → Apply to production
 ```
 
@@ -177,6 +233,10 @@ Module 7.6: Bicep
 | Ansible | Configure servers with roles and inventory |
 | CloudFormation | Create nested stack with drift detection |
 | Bicep | Deploy Azure resources with parameters |
+| Wing | Build image processing pipeline with simulator |
+| SST | URL shortener with live Lambda development |
+| System Initiative | Reactive VPC with automatic subnet calculation |
+| Nitric | Multi-cloud notes API deployed everywhere |
 
 ## Related Tracks
 

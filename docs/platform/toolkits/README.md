@@ -13,7 +13,7 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Observability](observability/) | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble, Coroot | 8 |
 | [GitOps & Deployments](gitops-deployments/) | ArgoCD, Argo Rollouts, Flux, Helm | 4 |
 | [CI/CD Pipelines](ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows | 3 |
-| [IaC Tools](iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible | 6 |
+| [IaC Tools](iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible, Wing, SST, System Initiative, Nitric | 10 |
 | [Security Tools](security-tools/) | Vault, OPA/Gatekeeper, Falco, Tetragon, KubeArmor | 6 |
 | [Networking](networking/) | Cilium, Service Mesh | 2 |
 | [Scaling & Reliability](scaling-reliability/) | Karpenter, KEDA, Velero | 3 |
@@ -24,9 +24,9 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Source Control](source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 3 |
 | [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 5 |
 | [Container Registries](container-registries/) | Harbor, Zot, Dragonfly | 3 |
-| [K8s Distributions](k8s-distributions/) | k3s, k0s, MicroK8s | 3 |
+| [K8s Distributions](k8s-distributions/) | k3s, k0s, MicroK8s, Talos, OpenShift, Managed K8s | 6 |
 | [Cloud-Native Databases](cloud-native-databases/) | CockroachDB, CloudNativePG, Neon/PlanetScale, Vitess | 4 |
-| **Total** | | **68** |
+| **Total** | | **75** |
 
 ## How to Use Toolkits
 
