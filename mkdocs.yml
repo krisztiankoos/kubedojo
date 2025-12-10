@@ -423,6 +423,14 @@ nav:
         - platform/disciplines/aiops/module-6.4-root-cause-analysis.md
         - platform/disciplines/aiops/module-6.5-predictive-operations.md
         - platform/disciplines/aiops/module-6.6-auto-remediation.md
+      - Infrastructure as Code:
+        - platform/disciplines/iac/README.md
+        - platform/disciplines/iac/module-6.1-iac-fundamentals.md
+        - platform/disciplines/iac/module-6.2-iac-testing.md
+        - platform/disciplines/iac/module-6.3-iac-security.md
+        - platform/disciplines/iac/module-6.4-iac-at-scale.md
+        - platform/disciplines/iac/module-6.5-drift-remediation.md
+        - platform/disciplines/iac/module-6.6-iac-cost-management.md
     - Toolkits:
       - platform/toolkits/README.md
       - Observability:
@@ -449,6 +457,14 @@ nav:
         - platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md
         - platform/toolkits/security-tools/module-4.3-falco.md
         - platform/toolkits/security-tools/module-4.4-supply-chain.md
+      - IaC Tools:
+        - platform/toolkits/iac-tools/README.md
+        - platform/toolkits/iac-tools/module-7.1-terraform.md
+        - platform/toolkits/iac-tools/module-7.2-opentofu.md
+        - platform/toolkits/iac-tools/module-7.3-pulumi.md
+        - platform/toolkits/iac-tools/module-7.4-ansible.md
+        - platform/toolkits/iac-tools/module-7.5-cloudformation.md
+        - platform/toolkits/iac-tools/module-7.6-bicep.md
       - Networking:
         - platform/toolkits/networking/README.md
         - platform/toolkits/networking/module-5.1-cilium.md
