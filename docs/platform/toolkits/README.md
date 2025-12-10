@@ -24,7 +24,8 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 | [Source Control](source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 1 |
 | [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 2 |
 | [Container Registries](container-registries/) | Harbor, Zot, Dragonfly | 3 |
-| **Total** | | **46** |
+| [K8s Distributions](k8s-distributions/) | k3s, k0s, MicroK8s | 3 |
+| **Total** | | **49** |
 
 ## How to Use Toolkits
 

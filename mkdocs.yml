@@ -507,3 +507,8 @@ nav:
         - platform/toolkits/container-registries/module-13.1-harbor.md
         - platform/toolkits/container-registries/module-13.2-zot.md
         - platform/toolkits/container-registries/module-13.3-dragonfly.md
+      - K8s Distributions:
+        - platform/toolkits/k8s-distributions/README.md
+        - platform/toolkits/k8s-distributions/module-14.1-k3s.md
+        - platform/toolkits/k8s-distributions/module-14.2-k0s.md
+        - platform/toolkits/k8s-distributions/module-14.3-microk8s.md
