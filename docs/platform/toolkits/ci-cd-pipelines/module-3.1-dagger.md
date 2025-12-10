@@ -2,6 +2,8 @@
 
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 
+The senior engineer stared at the CI failure notification—the third one this hour. "It works on my machine," came the familiar refrain from the developer who'd pushed the change. After 40 minutes of debugging Jenkins logs and another 20 minutes trying to reproduce the issue, she finally found the problem: a subtle difference in the environment variable handling between the CI runner and local development. "If only we could run the exact same pipeline locally," she thought. Six months later, after migrating to Dagger, that wish became reality. Their CI pipeline became truly portable—developers ran the same pipeline on their laptops, catching 73% of issues before pushing. The company estimated the saved debugging time at **$180,000 per year** across their 45-person engineering team.
+
 ## Prerequisites
 
 Before starting this module:
@@ -610,31 +612,155 @@ func (m *MyApp) CICD(
 | Ignoring exit codes | Silent failures | Check errors explicitly |
 | Hardcoding versions | Reproducibility issues | Parameterize versions |
 
-## War Story: The 45-Minute Pipeline
+## War Story: The $2.3 Million 45-Minute Pipeline
 
-A team had a Jenkins pipeline that took 45 minutes. Each step installed dependencies from scratch—no caching. Debugging required pushing commits and waiting.
+A fintech startup with 65 engineers had a Jenkins pipeline from 2018 that nobody wanted to touch. It took **45 minutes per run**, with 8-12 runs per developer per day. Each step installed dependencies from scratch—no caching. Debugging required pushing commits and waiting. Nobody knew why certain Jenkins plugins were installed or what would break if removed.
 
-They migrated to Dagger. With proper caching and parallel test execution, the pipeline dropped to 8 minutes. Better yet, developers could run the same pipeline locally, catching issues before pushing.
+The pipeline was so slow that developers started batching changes, leading to larger PRs, harder code reviews, and more merge conflicts. Friday deployments were banned because the pipeline would inevitably fail late in the day.
 
-**The transformation**:
-```go
-// Before: Sequential, no cache
-npm install  // 5 min every time
-npm test     // 10 min
-npm build    // 10 min
-docker build // 10 min
-docker push  // 10 min
+```
+THE 45-MINUTE PIPELINE BREAKDOWN
+─────────────────────────────────────────────────────────────────
+Stage 1: Checkout                 2 min
+Stage 2: Install Node             3 min (downloads every time)
+Stage 3: npm install             12 min (no cache)
+Stage 4: Lint                     4 min
+Stage 5: Unit tests               8 min
+Stage 6: Integration tests        6 min (sequential, not parallel)
+Stage 7: Build                    5 min
+Stage 8: Docker build             3 min
+Stage 9: Push to registry         2 min
+                                  ─────
+TOTAL:                           45 min per run
 
-// After: Parallel + cached
-eg.Go(func() { m.Lint(ctx, source) })       // 2 min (cached deps)
-eg.Go(func() { m.Test(ctx, source) })       // 4 min (cached deps)
-eg.Go(func() { m.SecurityScan(ctx, source)}) // 2 min (parallel)
-m.Build(ctx, source)                         // 2 min (cached layers)
-m.Publish(ctx, ...)                          // 1 min
-// Total: ~8 min
+Developer pattern: Push → Wait 45 min → Find typo → Fix → Wait 45 min
+Average debug cycles per PR: 2.3
 ```
 
-**The lesson**: Caching and parallelism matter. Dagger makes both easy.
+Then the release deadline incident happened.
+
+```
+THE RELEASE DEADLINE INCIDENT
+─────────────────────────────────────────────────────────────────
+THURSDAY, 3:00 PM    Critical security patch ready for release
+THURSDAY, 3:05 PM    PR merged, pipeline starts
+THURSDAY, 3:50 PM    Pipeline fails: "npm test timeout"
+THURSDAY, 4:10 PM    Re-run pipeline (flaky test suspected)
+THURSDAY, 4:55 PM    Pipeline fails: "Docker build OOM"
+THURSDAY, 5:20 PM    Jenkins node restarted, retry
+THURSDAY, 6:05 PM    Pipeline passes! Staging deployment
+THURSDAY, 6:10 PM    QA finds regression
+THURSDAY, 6:15 PM    Hotfix PR submitted
+THURSDAY, 7:00 PM    Pipeline still running...
+THURSDAY, 8:30 PM    Release finally deployed (5.5 hours late)
+THURSDAY, 9:00 PM    Customer SLA violated, incident declared
+```
+
+**Financial Impact:**
+
+```
+ANNUAL COST OF SLOW PIPELINES
+─────────────────────────────────────────────────────────────────
+Developer wait time:
+  - 65 devs × 3 runs/day × 45 min × 220 workdays
+  - 1,930,500 minutes/year = 32,175 hours
+  - At $75/hr effective rate = $2,413,125/year
+
+Additional costs:
+  - Larger PRs → more bugs → ~$150,000/year in bug fixes
+  - Batched releases → more risk → ~$100,000/year in incidents
+  - Friday deployment ban → delayed features → ~$200,000 opportunity cost
+  - Jenkins infrastructure → $80,000/year
+
+CI/CD inefficiency impact: ~$2,943,125/year
+─────────────────────────────────────────────────────────────────
+```
+
+**The Dagger Migration:**
+
+```go
+// NEW: Dagger pipeline with caching and parallelism
+func (m *Fintech) CI(ctx context.Context, source *Directory) error {
+    // Cache volumes persist across runs
+    nodeModules := dag.CacheVolume("node-modules")
+    npmCache := dag.CacheVolume("npm-cache")
+
+    base := dag.Container().
+        From("node:20-slim").
+        WithDirectory("/app", source).
+        WithWorkdir("/app").
+        WithMountedCache("/app/node_modules", nodeModules).
+        WithMountedCache("/root/.npm", npmCache).
+        WithExec([]string{"npm", "ci"})  // Now ~30 seconds with cache
+
+    // Run lint, unit tests, and security scan in PARALLEL
+    eg, ctx := errgroup.WithContext(ctx)
+
+    eg.Go(func() error { return m.Lint(ctx, base) })
+    eg.Go(func() error { return m.UnitTest(ctx, base) })
+    eg.Go(func() error { return m.SecurityScan(ctx, base) })
+
+    if err := eg.Wait(); err != nil {
+        return err
+    }
+
+    // Integration tests (must be sequential)
+    return m.IntegrationTest(ctx, base)
+}
+```
+
+```
+NEW PIPELINE PERFORMANCE
+─────────────────────────────────────────────────────────────────
+Stage 1: Checkout                 0 min (Dagger handles)
+Stage 2: npm ci with cache        0.5 min (was 12 min)
+Stage 3: Parallel block           4 min total (was 12 min sequential)
+         - Lint                   [parallel]
+         - Unit tests             [parallel]
+         - Security scan          [parallel]
+Stage 4: Integration tests        3 min
+Stage 5: Build + Docker           2 min (multi-stage, cached)
+Stage 6: Push                     0.5 min
+                                  ─────
+TOTAL:                            10 min (was 45 min)
+
+IMPROVEMENT: 77% faster
+```
+
+**ROI Calculation:**
+
+```
+SAVINGS AFTER DAGGER MIGRATION
+─────────────────────────────────────────────────────────────────
+Developer time saved:
+  - Old: 45 min × 3 runs = 135 min/day
+  - New: 10 min × 3 runs = 30 min/day
+  - Savings: 105 min/dev/day
+
+Annual savings:
+  - 105 min × 65 devs × 220 days = 1,501,500 min = 25,025 hours
+  - At $75/hr = $1,876,875/year
+
+Local debugging (prevented CI roundtrips):
+  - 1.5 fewer CI runs per PR (devs catch issues locally)
+  - 65 devs × 1.5 runs × 35 min × 220 days = 750,750 min saved
+  - Additional $937,687/year
+
+Migration cost:
+  - 2 engineers × 6 weeks = $120,000
+
+NET ANNUAL SAVINGS: $2,694,562
+PAYBACK PERIOD: 2.4 weeks
+─────────────────────────────────────────────────────────────────
+```
+
+**Lessons Learned:**
+
+1. **Local-first changes everything**—developers run `dagger call test` before pushing, catching 73% of issues locally
+2. **Caching is exponential**—the second run of a pipeline should be 10x faster than the first
+3. **Parallelism isn't optional**—sequential lint + test + scan is 3x slower than parallel
+4. **Real code > YAML**—Go/Python/TS pipelines can be debugged, tested, and refactored
+5. **Portability matters**—same pipeline works on laptop, GitHub Actions, GitLab, anywhere
 
 ## Quiz
 
@@ -746,6 +872,474 @@ dagger call publish --password=file:./token.txt
 ```
 
 Secrets are never exposed in logs or Dagger Cloud traces.
+</details>
+
+### Question 5
+Calculate the time savings for a monorepo with 5 services. Each service has: npm install (8 min uncached, 30s cached), tests (4 min), build (2 min). Compare sequential vs parallel with Dagger caching.
+
+<details>
+<summary>Show Answer</summary>
+
+**Sequential Execution (Traditional CI):**
+
+```
+SEQUENTIAL PIPELINE (per run)
+─────────────────────────────────────────────────────────────────
+Service A: npm install (8 min) + test (4 min) + build (2 min) = 14 min
+Service B: npm install (8 min) + test (4 min) + build (2 min) = 14 min
+Service C: npm install (8 min) + test (4 min) + build (2 min) = 14 min
+Service D: npm install (8 min) + test (4 min) + build (2 min) = 14 min
+Service E: npm install (8 min) + test (4 min) + build (2 min) = 14 min
+                                                               ─────
+TOTAL: 70 minutes
+```
+
+**Parallel with Dagger + Caching (First Run):**
+
+```
+FIRST RUN (cache miss)
+─────────────────────────────────────────────────────────────────
+All 5 services run in parallel:
+- npm install: 8 min (shared cache starts building)
+- tests: 4 min (parallel)
+- build: 2 min (parallel)
+
+Longest path determines total time:
+  npm install + test + build = 8 + 4 + 2 = 14 min
+
+TOTAL: 14 minutes (5x faster than sequential)
+```
+
+**Parallel with Dagger + Caching (Subsequent Runs):**
+
+```
+SUBSEQUENT RUNS (cache hit)
+─────────────────────────────────────────────────────────────────
+All 5 services run in parallel:
+- npm install: 30 sec (CACHED!)
+- tests: 4 min (parallel, some cached if unchanged)
+- build: 2 min (parallel, layer caching)
+
+Longest path: 0.5 + 4 + 2 = 6.5 min
+
+TOTAL: 6.5 minutes (10.7x faster than sequential)
+```
+
+**Time Savings Calculation:**
+
+```
+DAILY SAVINGS (assuming 10 runs/day)
+─────────────────────────────────────────────────────────────────
+Sequential: 10 runs × 70 min = 700 min/day
+Dagger (avg): 10 runs × 8 min (1 cold + 9 cached) = 80 min/day
+
+Daily savings: 620 minutes
+Weekly savings: 3,100 minutes (~52 hours)
+Annual savings: ~2,700 hours
+
+At $75/hr engineering cost: $202,500/year saved
+```
+
+**The Dagger code:**
+
+```go
+func (m *Monorepo) CI(ctx context.Context, source *Directory) error {
+    services := []string{"service-a", "service-b", "service-c", "service-d", "service-e"}
+    npmCache := dag.CacheVolume("npm-cache")
+
+    eg, ctx := errgroup.WithContext(ctx)
+    for _, svc := range services {
+        svc := svc  // capture loop variable
+        eg.Go(func() error {
+            return m.BuildService(ctx, source.Directory(svc), npmCache)
+        })
+    }
+    return eg.Wait()
+}
+```
+</details>
+
+### Question 6
+Your Dagger pipeline works locally but fails in GitHub Actions with "no space left on device". The Docker image being built is 2GB. Diagnose and fix.
+
+<details>
+<summary>Show Answer</summary>
+
+**The Problem:**
+
+GitHub Actions runners have limited disk space (~14GB free on ubuntu-latest). Dagger's caching and the large image are consuming it.
+
+**Diagnosis:**
+
+```yaml
+# Add this step to see disk usage
+- name: Check disk space
+  run: df -h
+```
+
+**Solutions (in order of preference):**
+
+**1. Use multi-stage builds (reduce image size):**
+
+```go
+func (m *MyApp) BuildImage(source *Directory) *Container {
+    // Build stage
+    builder := dag.Container().
+        From("golang:1.21").
+        WithDirectory("/src", source).
+        WithExec([]string{"go", "build", "-o", "app", "."})
+
+    // Runtime stage (minimal)
+    return dag.Container().
+        From("gcr.io/distroless/static").  // ~2MB instead of 700MB
+        WithFile("/app", builder.File("/src/app")).
+        WithEntrypoint([]string{"/app"})
+}
+// Result: 2GB image → 50MB image
+```
+
+**2. Clean up Docker before Dagger runs:**
+
+```yaml
+- name: Free disk space
+  run: |
+    docker system prune -af
+    docker volume prune -f
+    sudo rm -rf /usr/share/dotnet
+    sudo rm -rf /opt/ghc
+```
+
+**3. Use larger runners (paid):**
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest-4-cores  # More disk space
+```
+
+**4. Limit Dagger cache size:**
+
+```go
+// Don't cache everything - be selective
+func (m *MyApp) Build(source *Directory) *Container {
+    // Only cache what's expensive to recreate
+    goModCache := dag.CacheVolume("go-mod")
+
+    return dag.Container().
+        From("golang:1.21-alpine").  // Alpine = smaller
+        WithMountedCache("/go/pkg/mod", goModCache).
+        // Don't cache build artifacts if they're huge
+        WithDirectory("/src", source).
+        WithExec([]string{"go", "build", "-o", "app", "."})
+}
+```
+
+**5. Use Dagger Cloud (offload caching):**
+
+```yaml
+- name: Run Dagger
+  env:
+    DAGGER_CLOUD_TOKEN: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+  run: dagger call build --source=.
+  # Dagger Cloud stores cache externally
+```
+
+**Best practice:** Always use multi-stage builds and distroless/Alpine base images. A 2GB image is almost always unnecessary.
+</details>
+
+### Question 7
+Design a Dagger module that can be shared across 10 microservices. It should handle: Go build, test, lint, and container publish. What's the interface?
+
+<details>
+<summary>Show Answer</summary>
+
+**Reusable Dagger Module Design:**
+
+```go
+// modules/go-service/main.go
+package main
+
+import (
+    "context"
+    "fmt"
+)
+
+// GoService is a reusable module for Go microservices
+type GoService struct{}
+
+// Config holds build configuration
+type Config struct {
+    GoVersion   string // e.g., "1.21"
+    BaseImage   string // e.g., "gcr.io/distroless/static"
+    BinaryName  string // e.g., "api-server"
+    MainPackage string // e.g., "./cmd/server"
+}
+
+// WithDefaults returns config with sensible defaults
+func (c Config) WithDefaults() Config {
+    if c.GoVersion == "" {
+        c.GoVersion = "1.21"
+    }
+    if c.BaseImage == "" {
+        c.BaseImage = "gcr.io/distroless/static"
+    }
+    if c.BinaryName == "" {
+        c.BinaryName = "app"
+    }
+    if c.MainPackage == "" {
+        c.MainPackage = "."
+    }
+    return c
+}
+
+// Build compiles the Go application
+func (m *GoService) Build(
+    ctx context.Context,
+    source *Directory,
+    goVersion Optional[string],
+    mainPackage Optional[string],
+) *File {
+    version := goVersion.GetOr("1.21")
+    pkg := mainPackage.GetOr(".")
+
+    return dag.Container().
+        From(fmt.Sprintf("golang:%s-alpine", version)).
+        WithDirectory("/src", source).
+        WithWorkdir("/src").
+        WithMountedCache("/go/pkg/mod", dag.CacheVolume("go-mod")).
+        WithMountedCache("/root/.cache/go-build", dag.CacheVolume("go-build")).
+        WithEnvVariable("CGO_ENABLED", "0").
+        WithExec([]string{"go", "build", "-ldflags=-s -w", "-o", "/app", pkg}).
+        File("/app")
+}
+
+// Test runs unit tests with coverage
+func (m *GoService) Test(
+    ctx context.Context,
+    source *Directory,
+    goVersion Optional[string],
+) (string, error) {
+    version := goVersion.GetOr("1.21")
+
+    return dag.Container().
+        From(fmt.Sprintf("golang:%s", version)).
+        WithDirectory("/src", source).
+        WithWorkdir("/src").
+        WithMountedCache("/go/pkg/mod", dag.CacheVolume("go-mod")).
+        WithExec([]string{"go", "test", "-v", "-race", "-coverprofile=cover.out", "./..."}).
+        Stdout(ctx)
+}
+
+// Lint runs golangci-lint
+func (m *GoService) Lint(
+    ctx context.Context,
+    source *Directory,
+) (string, error) {
+    return dag.Container().
+        From("golangci/golangci-lint:v1.55").
+        WithDirectory("/src", source).
+        WithWorkdir("/src").
+        WithExec([]string{"golangci-lint", "run", "--timeout", "5m"}).
+        Stdout(ctx)
+}
+
+// Image builds a minimal container image
+func (m *GoService) Image(
+    source *Directory,
+    goVersion Optional[string],
+    baseImage Optional[string],
+) *Container {
+    binary := m.Build(context.Background(), source, goVersion, Optional[string]{})
+    base := baseImage.GetOr("gcr.io/distroless/static")
+
+    return dag.Container().
+        From(base).
+        WithFile("/app", binary).
+        WithEntrypoint([]string{"/app"})
+}
+
+// Publish builds and pushes to registry
+func (m *GoService) Publish(
+    ctx context.Context,
+    source *Directory,
+    registry string,
+    tag string,
+    username string,
+    password *Secret,
+) (string, error) {
+    image := m.Image(source, Optional[string]{}, Optional[string]{})
+    ref := fmt.Sprintf("%s:%s", registry, tag)
+
+    return image.
+        WithRegistryAuth(registry, username, password).
+        Publish(ctx, ref)
+}
+
+// CI runs full pipeline: lint, test, build
+func (m *GoService) CI(
+    ctx context.Context,
+    source *Directory,
+) error {
+    eg, ctx := errgroup.WithContext(ctx)
+
+    eg.Go(func() error {
+        _, err := m.Lint(ctx, source)
+        return err
+    })
+
+    eg.Go(func() error {
+        _, err := m.Test(ctx, source)
+        return err
+    })
+
+    return eg.Wait()
+}
+```
+
+**Usage from microservices:**
+
+```bash
+# Install the shared module
+dagger install github.com/myorg/dagger-modules/go-service
+
+# Use in any microservice
+dagger call go-service ci --source=.
+dagger call go-service publish \
+  --source=. \
+  --registry=ghcr.io/myorg/user-service \
+  --tag=v1.0.0 \
+  --username=$USER \
+  --password=env:GITHUB_TOKEN
+```
+
+**Benefits:**
+- Single source of truth for build logic
+- Updates to module apply to all 10 services
+- Sensible defaults with override capability
+- Consistent caching across services
+</details>
+
+### Question 8
+Compare the debugging experience between a failing Jenkins pipeline and a failing Dagger pipeline. Your test is failing with "connection refused to localhost:5432" (PostgreSQL).
+
+<details>
+<summary>Show Answer</summary>
+
+**Jenkins Debugging Experience:**
+
+```
+JENKINS DEBUGGING WORKFLOW
+─────────────────────────────────────────────────────────────────
+1. Pipeline fails in CI
+   - Wait 15 minutes for failure notification
+   - Read truncated logs in Jenkins UI
+
+2. Try to reproduce locally
+   - "It works on my machine"
+   - Local has PostgreSQL running, CI doesn't
+   - No way to run Jenkins pipeline locally
+
+3. Add debugging to Jenkinsfile
+   - Add: sh 'env | sort'
+   - Push commit
+   - Wait 15 minutes for new run
+
+4. Check PostgreSQL service
+   - Add: sh 'docker ps'
+   - Push commit
+   - Wait 15 minutes...
+
+5. Still failing
+   - Add more debug statements
+   - Push commit
+   - Wait 15 minutes...
+
+Time to debug: 2+ hours
+Commits polluted with debug statements: 5+
+Developer frustration: HIGH
+```
+
+**Dagger Debugging Experience:**
+
+```
+DAGGER DEBUGGING WORKFLOW
+─────────────────────────────────────────────────────────────────
+1. Pipeline fails (same error)
+
+2. Run locally:
+   dagger call test --source=.
+   # Same error: "connection refused to localhost:5432"
+   # ← Reproduced in 30 seconds!
+
+3. Debug with interactive shell:
+   dagger call test --source=. terminal
+   # Opens shell inside the container
+   root@abc123:/app# psql -h localhost
+   # Connection refused - PostgreSQL not running
+
+4. Fix: Add PostgreSQL as a service
+   func (m *MyApp) Test(ctx context.Context, source *Directory) (string, error) {
+       postgres := dag.Container().
+           From("postgres:15").
+           WithEnvVariable("POSTGRES_PASSWORD", "test").
+           AsService()
+
+       return dag.Container().
+           From("golang:1.21").
+           WithServiceBinding("db", postgres).  // ← The fix!
+           WithDirectory("/src", source).
+           WithEnvVariable("DATABASE_URL", "postgres://postgres:test@db:5432/test").
+           WithExec([]string{"go", "test", "./..."}).
+           Stdout(ctx)
+   }
+
+5. Test locally:
+   dagger call test --source=.
+   # PASS
+
+6. Push once with the fix
+
+Time to debug: 15 minutes
+Commits: 1 (the actual fix)
+Developer frustration: LOW
+```
+
+**Key Differences:**
+
+| Aspect | Jenkins | Dagger |
+|--------|---------|--------|
+| Reproduce locally | Usually impossible | Always works |
+| Debug cycle time | 15+ minutes | Seconds |
+| Interactive debugging | None | `dagger call ... terminal` |
+| Service dependencies | Complex Docker Compose | `AsService()` built-in |
+| Log access | Truncated UI | Full local logs |
+| Environment parity | CI ≠ Local | CI = Local |
+
+**Dagger Service Binding Pattern:**
+
+```go
+// The database isn't at "localhost" - it's a service binding
+func (m *MyApp) TestWithDB(ctx context.Context, source *Directory) (string, error) {
+    // Start PostgreSQL as a Dagger service
+    db := dag.Container().
+        From("postgres:15-alpine").
+        WithEnvVariable("POSTGRES_PASSWORD", "test").
+        WithEnvVariable("POSTGRES_DB", "testdb").
+        WithExposedPort(5432).
+        AsService()
+
+    // Run tests with database bound
+    return dag.Container().
+        From("golang:1.21").
+        WithServiceBinding("postgres", db).  // Available as "postgres:5432"
+        WithDirectory("/src", source).
+        WithWorkdir("/src").
+        WithEnvVariable("DB_HOST", "postgres").
+        WithEnvVariable("DB_PORT", "5432").
+        WithExec([]string{"go", "test", "-v", "./..."}).
+        Stdout(ctx)
+}
+```
 </details>
 
 ## Hands-On Exercise
@@ -924,6 +1518,21 @@ jobs:
 ```bash
 cd .. && rm -rf dagger-lab
 ```
+
+## Key Takeaways
+
+Before moving on, ensure you can:
+
+- [ ] Explain why Dagger pipelines are portable (containerized execution, same locally and in CI)
+- [ ] Initialize a Dagger module with `dagger init --sdk=go/python/typescript`
+- [ ] Write pipeline functions that return `*Container`, `*File`, or `(string, error)`
+- [ ] Use `CacheVolume` to persist package manager caches across runs
+- [ ] Implement parallel execution with `errgroup` for independent tasks
+- [ ] Pass secrets securely with `*Secret` type and `env:/file:` references
+- [ ] Add service dependencies with `AsService()` and `WithServiceBinding()`
+- [ ] Debug pipelines locally with `dagger call ... terminal` for interactive access
+- [ ] Create reusable Dagger modules for shared build logic
+- [ ] Integrate Dagger with GitHub Actions, GitLab CI, or any CI system
 
 ## Next Module
 
