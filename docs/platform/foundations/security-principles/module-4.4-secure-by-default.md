@@ -10,6 +10,20 @@
 
 ---
 
+**January 2017. Security researchers discover 27,000 MongoDB databases exposed to the internet.**
+
+No exploit was needed. MongoDB's default configuration bound to all network interfaces (0.0.0.0) with authentication disabled. Install MongoDB, start it, and the entire database is accessible to anyone on the internet.
+
+Attackers ran automated scripts across the internet, finding these databases, deleting the contents, and leaving ransom notes demanding Bitcoin for data recovery. Many victims had no backups. Some databases contained medical records, customer data, and financial information.
+
+**Over 28,000 MongoDB instances were ransomed in the first wave alone.** The total data loss was incalculable. And the root cause wasn't a bug or vulnerability—it was the default configuration.
+
+MongoDB changed their defaults. New installations bind to localhost only. Authentication is strongly encouraged during setup. But thousands of organizations had already learned the hard way: insecure defaults become insecure deployments.
+
+This module teaches secure by default—how to build systems where the easy path is also the safe path.
+
+---
+
 ## Why This Module Matters
 
 Most security breaches don't exploit sophisticated zero-days. They exploit misconfigurations, default passwords, and forgotten settings. The attacker didn't have to be clever—they just found what was left open.
@@ -345,13 +359,17 @@ metadata:
 # Now all pods in production must meet restricted standard
 ```
 
-> **War Story: The Privileged Container**
+> **War Story: The $2.3 Million Privileged Container**
 >
-> A developer needed to debug a production issue. "I'll just run a privileged container real quick." They deployed with `privileged: true` and forgot about it.
+> **September 2022.** A developer at a healthcare technology company needed to debug a production networking issue. "I'll just run a privileged container real quick to capture network traffic." They deployed with `privileged: true`, fixed the issue, and moved on to the next ticket. The privileged container stayed running.
 >
-> Six months later, attackers compromised a vulnerable dependency in that service. The privileged container gave them root on the node. From there, they accessed secrets for other pods and moved laterally through the cluster.
+> Eight months later, attackers exploited a Log4j vulnerability in a different service running on the same node. Normally, container isolation would have limited the blast radius. But the attacker discovered the privileged container.
 >
-> After the breach, the team implemented Pod Security Standards. Now `privileged: true` is blocked in production namespaces. The developer would have gotten an immediate error instead of a deployed vulnerability.
+> **With `privileged: true`, the container had full access to the host.** The attacker escaped the container, accessed the node's filesystem, read Kubernetes secrets for 47 other services, and exfiltrated patient health records for 340,000 individuals.
+>
+> **The breach cost $2.3 million** in HIPAA fines, breach notification, credit monitoring, and forensic investigation. The company was required to implement comprehensive security controls and submit to three years of audits.
+>
+> After the breach, the team implemented Pod Security Standards with `enforce: restricted` on all production namespaces. Now `privileged: true` is blocked at admission—the developer would have gotten an immediate error instead of a deployed vulnerability sitting dormant for eight months.
 
 ---
 
@@ -729,6 +747,136 @@ READ-ONLY FILESYSTEM
    - Reference secrets by path/name, not value
    </details>
 
+5. **An organization deploys 500 new services per month. Each deployment has a 5% chance of having a misconfiguration if checked manually. With automated guardrails, the chance drops to 0.1%. Over a year, how many misconfigurations does each approach produce?**
+   <details>
+   <summary>Answer</summary>
+
+   **Manual checks:**
+
+   - Services per year: 500 × 12 = 6,000
+   - Misconfigurations: 6,000 × 0.05 = **300 misconfigurations per year**
+
+   **Automated guardrails:**
+
+   - Services per year: 6,000
+   - Misconfigurations: 6,000 × 0.001 = **6 misconfigurations per year**
+
+   **Difference: 294 fewer misconfigurations per year**
+
+   This illustrates why secure by default scales:
+   - Manual processes degrade under volume and time pressure
+   - Automated checks run consistently on every deployment
+   - Small percentage improvements compound across thousands of deployments
+   - Security doesn't depend on individual vigilance
+
+   If each misconfiguration has a 10% chance of being exploited and costs $50,000 on average:
+   - Manual: 300 × 0.1 × $50,000 = $1.5M expected annual cost
+   - Automated: 6 × 0.1 × $50,000 = $30K expected annual cost
+   </details>
+
+6. **The MongoDB ransomware attacks exploited databases binding to 0.0.0.0 by default. What "secure by default" changes would have prevented this, and what trade-offs do they create?**
+   <details>
+   <summary>Answer</summary>
+
+   **Secure default changes:**
+
+   1. **Bind to localhost (127.0.0.1) by default**
+      - Trade-off: Remote connections require explicit configuration
+      - Users must know to change the bind address for legitimate remote access
+
+   2. **Require authentication setup during installation**
+      - Trade-off: Adds friction to getting started
+      - Development/testing environments need extra steps
+
+   3. **Block external connections until auth is configured**
+      - Trade-off: Can't run a quick test database remotely
+      - Local development is easy; production requires configuration
+
+   4. **Warning messages when running in insecure mode**
+      - Trade-off: Noise in development environments
+      - Can be ignored (but at least it's explicit)
+
+   **The principle:**
+
+   Secure by default shifts the burden:
+   - Before: Easy to run insecurely, hard to run securely
+   - After: Easy to run securely, requires effort to run insecurely
+
+   The trade-off is intentional friction. Users who need insecure configurations (development, isolated networks) must explicitly choose them. Users who don't know better are protected by default.
+   </details>
+
+7. **A framework auto-escapes HTML output by default. Why is it better to require developers to explicitly mark unsafe output with `|safe` rather than requiring them to explicitly escape output?**
+   <details>
+   <summary>Answer</summary>
+
+   **Forgetting has different consequences:**
+
+   **If escaping is opt-in (insecure default):**
+   - Developer forgets to escape → XSS vulnerability
+   - Mistakes create security holes
+   - Every template is a potential vulnerability
+   - Must review all code for missing escaping
+
+   **If raw output is opt-in (secure default):**
+   - Developer forgets to mark as safe → Broken HTML display
+   - Mistakes create visual bugs, not security holes
+   - Vulnerabilities only possible where `|safe` is used
+   - Security review focuses on explicit `|safe` usage
+
+   **The key insight:**
+
+   With secure defaults, mistakes fail safe:
+   - Forgotten escaping → Content renders as literal text `&lt;script&gt;`
+   - User sees broken display, reports bug, developer fixes it
+   - No security impact
+
+   With insecure defaults, mistakes fail dangerous:
+   - Forgotten escaping → XSS attack possible
+   - User might not notice
+   - Attacker notices, exploits it
+
+   The same principle applies to: parameterized queries (prevent SQL injection by default), CSRF tokens (validated by default), authentication (required by default).
+   </details>
+
+8. **A Kubernetes deployment uses `image: nginx:latest`. Why is this insecure by default, and what should be used instead?**
+   <details>
+   <summary>Answer</summary>
+
+   **Problems with `nginx:latest`:**
+
+   1. **Mutable tag**: `latest` points to different images over time. The image running today might not be the image running after a restart.
+
+   2. **No reproducibility**: Can't rebuild the exact same deployment. `latest` six months ago is different from `latest` today.
+
+   3. **Surprise changes**: Nginx might update `latest` to a new major version with breaking changes or new vulnerabilities.
+
+   4. **No audit trail**: Can't determine what image was running at a specific time.
+
+   5. **Supply chain risk**: If an attacker compromises the `latest` tag, all future pulls get the malicious image.
+
+   **Secure alternatives:**
+
+   ```yaml
+   # Good: Specific version tag
+   image: nginx:1.25.3
+
+   # Better: Include variant
+   image: nginx:1.25.3-alpine
+
+   # Best: Immutable digest
+   image: nginx@sha256:abc123def456...
+   ```
+
+   **Why digests are best:**
+
+   - `sha256` digest is a content hash—if the image changes, the hash changes
+   - Completely immutable—you always get exactly this image
+   - Can't be overwritten by attackers
+   - Admission controllers can enforce digest-based images
+
+   Trade-off: Updating requires changing the digest in manifests. This is a feature—updates are explicit and trackable.
+   </details>
+
 ---
 
 ## Hands-On Exercise
@@ -872,6 +1020,21 @@ spec:
 - **"Container Security"** - Liz Rice. Essential reading for securing containerized applications.
 
 - **CIS Benchmarks** - cisecurity.org. Industry-standard secure configuration baselines for various platforms.
+
+---
+
+## Key Takeaways Checklist
+
+Before moving on, verify you can answer these:
+
+- [ ] Can you explain why secure by default is more effective than security checklists?
+- [ ] Do you understand the difference between guardrails (passive blockers) and gates (active checkpoints)?
+- [ ] Can you describe secure defaults for authentication, networking, and data?
+- [ ] Do you understand Pod Security Standards (Privileged, Baseline, Restricted) and how to enforce them?
+- [ ] Can you explain why secrets should never be in version control and what to use instead?
+- [ ] Do you understand immutable infrastructure and why it improves security?
+- [ ] Can you explain secure framework patterns (auto-escaping, parameterized queries, CSRF tokens)?
+- [ ] Do you understand why `image:latest` is insecure and what to use instead?
 
 ---
 

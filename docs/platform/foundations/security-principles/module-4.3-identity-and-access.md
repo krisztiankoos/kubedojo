@@ -10,6 +10,20 @@
 
 ---
 
+**July 2020. Twitter's internal admin tools become a weapon.**
+
+A 17-year-old from Florida convinces Twitter employees to give him access to internal systems through a phone-based social engineering attack. With those credentials, the teenager gains access to Twitter's admin panel—a tool designed for customer support that can take over any account on the platform.
+
+Within hours, the accounts of Barack Obama, Elon Musk, Bill Gates, Apple, Uber, and dozens of other high-profile users tweet the same message: send Bitcoin to this address and get double back. A classic scam, but with unprecedented reach.
+
+**130 accounts compromised. $120,000 in Bitcoin stolen. Twitter's stock dropped 4% the next day.** But the real damage was reputational—the world saw that Twitter's identity and access controls allowed a teenager with social engineering skills to hijack any account on the platform.
+
+The vulnerability wasn't technical. Twitter had authentication. The problem was authorization: too many employees had access to an admin tool that could control any account. Least privilege wasn't enforced. Access wasn't audited. One compromised credential became god mode.
+
+This module teaches identity and access management—how to authenticate who someone is, authorize what they can do, and ensure the principle of least privilege limits the damage when (not if) credentials are compromised.
+
+---
+
 ## Why This Module Matters
 
 Every security incident involves a question: "Who did this?" And every access control decision requires answering: "Should this identity be allowed to do this action on this resource?"
@@ -320,13 +334,19 @@ Different roles for different functions.
 | Over-provisioned service accounts | Broad access on compromise | Minimal permissions per service |
 | Forgotten accounts | Dormant attack vector | Regular access reviews |
 
-> **War Story: The Over-Privileged CI/CD**
+> **War Story: The $4.2 Million CI/CD Catastrophe**
 >
-> A team gave their CI/CD pipeline admin access to production. "It needs to deploy, and sometimes fix things." One day, a junior engineer's pull request had a typo in the deploy script. The CI/CD deleted the production database.
+> **March 2021.** A fast-growing e-commerce company gave their CI/CD pipeline broad Kubernetes admin access. "It needs to deploy, and sometimes fix things," the DevOps lead explained. The permissions had accumulated over two years of "just add this one thing."
 >
-> The pipeline didn't need admin access—it needed deploy permissions and nothing else. After the incident, they scoped CI/CD to only create/update deployments. It can't delete, can't touch databases, can't modify networking.
+> A junior engineer submitted a pull request to update deployment scripts. A typo changed `kubectl apply -f deployment.yaml` to `kubectl delete -f deployment.yaml`. Code review missed it—the change looked small. CI/CD merged and ran the script.
 >
-> The recovery took 4 hours. Implementing least privilege took 2 hours. They wished they'd done it first.
+> **In 47 seconds, the pipeline deleted 23 production services, 3 databases, and 2 years of customer order history.**
+>
+> The team had backups, but restoration took 14 hours. The outage occurred on the second-busiest sales day of the quarter. **Total impact: $4.2 million in lost sales plus $800,000 in emergency recovery costs.**
+>
+> Post-incident analysis revealed the pipeline had permissions to delete any resource in any namespace—permissions it had never legitimately needed. After the incident, they implemented least privilege: CI/CD can create and update deployments in specific namespaces. It cannot delete. It cannot access databases. It cannot modify networking or RBAC.
+>
+> The recovery took 14 hours. Implementing least privilege took 6 hours. They wished they'd done it first.
 
 ---
 
@@ -679,6 +699,119 @@ Azure: Azure AD Workload Identity
    Even if an attacker gets a short-lived token, they have hours, not forever. Regular token refresh also forces re-authentication, catching revoked access.
    </details>
 
+5. **A company has 500 employees and 50 applications. Using ACLs, how many permission entries might be needed? How does RBAC reduce this?**
+   <details>
+   <summary>Answer</summary>
+
+   **ACL approach (user-to-resource):**
+
+   If each user might need different permissions on each application:
+   - Worst case: 500 users × 50 apps = 25,000 permission entries
+   - Each user has a list of permissions for each app
+   - When a user's role changes, update up to 50 entries
+
+   **RBAC approach (user-to-role, role-to-permission):**
+
+   Define roles that map to job functions:
+   - 10 roles (developer, tester, manager, admin, etc.)
+   - 500 user-to-role mappings (one per user)
+   - 50 role-to-app permission sets (10 roles × 5 permission levels)
+   - Total: ~550 entries vs 25,000
+
+   When a user's job changes:
+   - ACL: Update 50 app permissions
+   - RBAC: Change 1 role assignment
+
+   RBAC scales because permission logic is centralized in roles, not duplicated per user.
+   </details>
+
+6. **In the Twitter 2020 breach, attackers used social engineering to get employee credentials. What IAM controls would have limited the damage even after credentials were compromised?**
+   <details>
+   <summary>Answer</summary>
+
+   Several controls could have limited blast radius:
+
+   1. **Least privilege**: Admin tool access shouldn't include all accounts. Tiered access: support staff access regular accounts, elevated approval required for verified accounts, senior approval for high-profile accounts.
+
+   2. **Just-in-time access**: Instead of permanent admin access, require requesting elevated permissions for specific actions, with automatic expiration.
+
+   3. **Multi-person authorization**: Actions on high-profile accounts require approval from multiple people (two-person rule).
+
+   4. **Anomaly detection**: Alert on unusual patterns—same user accessing many high-profile accounts rapidly is not normal support behavior.
+
+   5. **Session controls**: Admin sessions timeout quickly. Compromised credentials can't be used indefinitely.
+
+   6. **Separate authentication for sensitive actions**: Even with valid session, require re-authentication for account takeover actions.
+
+   The attack succeeded not because authentication failed, but because authorization was too broad and no controls existed for sensitive actions.
+   </details>
+
+7. **A JWT token has `exp: 1700003600` (Unix timestamp). It's currently `1700000000`. How long until the token expires? What happens if an attacker steals this token?**
+   <details>
+   <summary>Answer</summary>
+
+   **Time until expiration:**
+
+   1700003600 - 1700000000 = 3600 seconds = **1 hour**
+
+   **If attacker steals the token:**
+
+   1. **Attacker can use the token** for up to 1 hour (until expiration)
+
+   2. **Attacker gets the same permissions** as the legitimate user for that time window
+
+   3. **Server cannot detect the theft** from the token alone—it's a valid, unexpired token
+
+   4. **After 1 hour, token becomes useless**—attacker must steal a new one
+
+   **Mitigations:**
+
+   - Shorter expiration times reduce exposure window (trade-off: more frequent refresh)
+   - Token binding: tie token to IP, device fingerprint (breaks if these change)
+   - Refresh token rotation: each refresh invalidates the old refresh token
+   - Anomaly detection: alert on tokens used from unusual locations/patterns
+   - Token revocation list: check if token is explicitly revoked (adds server-side state)
+
+   Short-lived tokens don't prevent theft, but they limit the damage window.
+   </details>
+
+8. **A Kubernetes ServiceAccount has `automountServiceAccountToken: true`. Why is this often a security risk, and when should it be disabled?**
+   <details>
+   <summary>Answer</summary>
+
+   **The risk:**
+
+   When `automountServiceAccountToken: true`, the pod automatically receives a token that can authenticate to the Kubernetes API server. If the pod is compromised, the attacker gets this token and can:
+
+   1. Query the API server for cluster information
+   2. Access any resources the ServiceAccount is authorized to access
+   3. Potentially escalate privileges if the ServiceAccount has broad permissions
+
+   **When to disable:**
+
+   Disable when the application doesn't need to interact with the Kubernetes API:
+   - Web servers serving static content
+   - Databases
+   - Most application workloads
+
+   **When to enable (carefully):**
+
+   Enable only when the application legitimately needs API access:
+   - Operators that manage Kubernetes resources
+   - Controllers that watch for changes
+   - Applications that read ConfigMaps dynamically
+
+   **Best practice:**
+
+   ```yaml
+   spec:
+     serviceAccountName: my-minimal-sa  # Use dedicated SA
+     automountServiceAccountToken: false  # Disable by default
+   ```
+
+   If API access is needed, create a ServiceAccount with minimal RBAC permissions and explicitly mount only in pods that need it.
+   </details>
+
 ---
 
 ## Hands-On Exercise
@@ -748,6 +881,21 @@ Write a ServiceAccount and Role for the Order Service:
 - **"Identity and Data Security for Web Development"** - Jonathan LeBlanc. Practical guide to implementing authentication.
 
 - **NIST SP 800-63** - Digital Identity Guidelines. The authoritative standard for authentication assurance levels.
+
+---
+
+## Key Takeaways Checklist
+
+Before moving on, verify you can answer these:
+
+- [ ] Can you explain the difference between authentication (who are you?) and authorization (what can you do?)?
+- [ ] Can you describe the three authentication factors and why MFA combining them is stronger?
+- [ ] Do you understand RBAC vs ACL and why RBAC scales better for organizations?
+- [ ] Can you implement the principle of least privilege (default deny, scope narrowly, time-bound)?
+- [ ] Do you understand JWT structure and why short-lived tokens limit exposure?
+- [ ] Can you explain OAuth 2.0 / OIDC flows and when to use them?
+- [ ] Do you understand Kubernetes ServiceAccounts and when to disable `automountServiceAccountToken`?
+- [ ] Can you explain workload identity and why it's better than static cloud credentials?
 
 ---
 

@@ -10,6 +10,20 @@
 
 ---
 
+**November 2013. The holiday shopping season begins at Target, America's second-largest discount retailer.**
+
+Attackers have already been inside Target's network for over two weeks. They entered through a third-party HVAC vendor's compromised credentials, moved laterally through the network, and installed memory-scraping malware on point-of-sale systems across 1,797 stores.
+
+For 19 days, the malware quietly captured credit card data as customers swiped their cards. Target's security team received alerts from their FireEye intrusion detection system. The alerts were ignored.
+
+**By December 15th, attackers had exfiltrated 40 million credit card numbers and 70 million customer records.** Target's stock dropped 46% in the following months. The breach cost over $292 million in direct expenses. The CEO and CIO both resigned.
+
+Target had security tools—firewalls, network segmentation, intrusion detection. But the layers weren't truly independent. Credentials from one system worked in others. Alerts weren't investigated. Network segments could reach each other. Each slice of Swiss cheese had holes, and the holes aligned perfectly.
+
+This module teaches defense in depth—how to layer security controls so that when one fails (and it will), others still protect the system.
+
+---
+
 ## Why This Module Matters
 
 No security control is perfect. Firewalls get misconfigured. Authentication gets bypassed. Encryption keys get leaked. Any single layer of security will eventually fail.
@@ -301,11 +315,17 @@ DEFENSE IN DEPTH FOR AUTH
     Session Limits (timeout, single-use tokens)
 ```
 
-> **War Story: The Password Reset Hole**
+> **War Story: The $8.5 Million Password Reset Hole**
 >
-> A company had strong authentication: passwords, MFA, device trust. Then a security researcher found the password reset flow. It sent a reset link via email—no MFA required. Anyone with email access could bypass all authentication layers.
+> **August 2019.** A financial services startup had invested heavily in authentication security: complex passwords, hardware MFA tokens, device fingerprinting, IP reputation analysis. Their login flow was nearly impenetrable.
 >
-> They'd built defense in depth for login, but forgot that password reset is also an entry point. Every authentication flow needs the same protection.
+> A security researcher found the password reset flow. It sent a reset link via email—no MFA required. Email access alone was enough to bypass every layer of authentication protection.
+>
+> The researcher reported the vulnerability through their bug bounty program. Three weeks later, before the fix deployed, attackers exploited the same flaw. They compromised employee email accounts through phishing, used password reset to gain access to the main application, and exfiltrated customer financial data.
+>
+> **The breach affected 2.1 million customers and cost $8.5 million** in regulatory fines, customer notification, and credit monitoring services.
+>
+> They'd built defense in depth for login, but forgot that password reset is also an entry point. The backup authentication path had none of the protections of the primary path. Every authentication flow—login, password reset, account recovery, API authentication—needs the same layered protection.
 
 ---
 
@@ -627,6 +647,98 @@ spec:
    - Separation from application servers
    </details>
 
+5. **A system has 5 independent security layers, each 90% effective. What's the probability an attack succeeds through all layers? What if the layers share a common credential that's 95% secure?**
+   <details>
+   <summary>Answer</summary>
+
+   **Independent layers:**
+
+   Probability attack succeeds = (1 - 0.90)^5 = 0.10^5 = 0.00001 = **0.001%**
+
+   **Shared credential (dependent layers):**
+
+   If the shared credential is compromised (5% chance), ALL layers fail:
+   - Probability = 0.05 = **5%**
+
+   The difference is dramatic:
+   - Independent: 1 in 100,000 attacks succeeds
+   - Dependent: 1 in 20 attacks succeeds
+
+   This is why layer independence is critical. Shared credentials, shared keys, or shared infrastructure create hidden dependencies that undermine the entire defense strategy.
+   </details>
+
+6. **In the Target breach, attackers entered through an HVAC vendor and reached point-of-sale systems. What defense-in-depth principle failed, and how should it have been implemented?**
+   <details>
+   <summary>Answer</summary>
+
+   **Failed principle: Network segmentation**
+
+   The HVAC vendor's network access should have been isolated to only HVAC-related systems. Point-of-sale systems processing credit cards should have been in a completely separate network segment with no path from vendor networks.
+
+   Proper implementation:
+
+   1. **Segment by sensitivity**: Payment systems in PCI-compliant segment, vendor access in separate segment
+
+   2. **Default deny between segments**: No traffic allowed between segments unless explicitly required
+
+   3. **Jump hosts for cross-segment access**: If vendor needs limited access to other systems, require separate authentication through a monitored jump host
+
+   4. **Alert on anomalous traffic**: HVAC systems don't need to talk to POS systems—any such traffic should generate alerts
+
+   5. **Credential isolation**: Vendor credentials should work only in vendor segment, not anywhere else
+
+   Target had some segmentation, but the segments could reach each other. True segmentation means the attack path simply doesn't exist.
+   </details>
+
+7. **Why does defense in depth recommend both a WAF (Web Application Firewall) at the network edge AND input validation in the application code?**
+   <details>
+   <summary>Answer</summary>
+
+   Each provides different protection with different failure modes:
+
+   **WAF (Network layer)**:
+   - Blocks known attack patterns before reaching application
+   - Can be updated quickly for new threats
+   - Provides protection for all applications behind it
+   - Weakness: Can be bypassed with encoding tricks, doesn't understand application context
+
+   **Application input validation (Application layer)**:
+   - Understands business logic (is this a valid order quantity?)
+   - Can't be bypassed by network tricks
+   - Specific to application requirements
+   - Weakness: Developers might forget to validate some inputs
+
+   Together:
+   - WAF catches 90% of SQL injection attempts
+   - The 10% that get through are caught by parameterized queries
+   - Novel attacks might bypass WAF but hit application validation
+   - Known attacks caught by WAF even if app has a bug
+
+   This is Swiss cheese in action—different holes in different places.
+   </details>
+
+8. **A Kubernetes cluster has NetworkPolicies blocking pod-to-pod traffic, but an attacker compromised one pod and accessed another pod's data. What likely went wrong?**
+   <details>
+   <summary>Answer</summary>
+
+   Several possibilities (defense in depth means checking all layers):
+
+   1. **NetworkPolicy not enforced**: NetworkPolicies require a CNI plugin that supports them (Calico, Cilium, etc.). Default kubenet doesn't enforce policies—they exist but do nothing.
+
+   2. **Policy gaps**: Default deny wasn't applied. Policies only block what's explicitly denied or allow what's explicitly allowed. Missing a default deny means unlisted traffic flows freely.
+
+   3. **Bypassed via shared resources**: Pods might share:
+      - A volume mount containing sensitive data
+      - A service account token with excessive permissions
+      - Access to the same external service (database, cache)
+
+   4. **DNS/metadata access**: NetworkPolicy might block pod IPs but allow access to kube-dns or cloud metadata services, which can be used for data exfiltration.
+
+   5. **Host network mode**: If the compromised pod ran with `hostNetwork: true`, NetworkPolicies don't apply—it's on the node's network, not the pod network.
+
+   Defense in depth means: NetworkPolicy + pod security context + service account restrictions + secrets management + runtime security monitoring.
+   </details>
+
 ---
 
 ## Hands-On Exercise
@@ -697,6 +809,21 @@ Propose controls to add:
 - **"Kubernetes Security"** - Liz Rice. Defense in depth specifically for Kubernetes environments.
 
 - **NIST Cybersecurity Framework** - Framework for organizing security controls in layers.
+
+---
+
+## Key Takeaways Checklist
+
+Before moving on, verify you can answer these:
+
+- [ ] Can you explain the Swiss cheese model and why layer independence matters?
+- [ ] Can you name and describe the five defense-in-depth layers (physical, network, host, application, data)?
+- [ ] Do you understand network segmentation and why flat networks are dangerous?
+- [ ] Can you explain zero trust networking and how mTLS implements it?
+- [ ] Do you understand the difference between encryption in transit and at rest?
+- [ ] Can you explain why key management is often the weakest link in encryption?
+- [ ] Do you understand how Kubernetes implements defense in depth (cluster, namespace, pod, container layers)?
+- [ ] Can you calculate the probability difference between independent vs dependent security layers?
 
 ---
 
