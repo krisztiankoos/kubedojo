@@ -495,3 +495,9 @@ nav:
         - platform/toolkits/aiops-tools/module-10.2-event-correlation-platforms.md
         - platform/toolkits/aiops-tools/module-10.3-observability-ai-features.md
         - platform/toolkits/aiops-tools/module-10.4-building-custom-aiops.md
+      - Source Control:
+        - platform/toolkits/source-control/README.md
+        - platform/toolkits/source-control/module-11.1-gitlab.md
+      - Code Quality:
+        - platform/toolkits/code-quality/README.md
+        - platform/toolkits/code-quality/module-12.1-sonarqube.md
