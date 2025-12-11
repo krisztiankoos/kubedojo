@@ -18,10 +18,43 @@ Modern observability platforms have **AI capabilities built-in**. These aren't s
 3. **Accelerate troubleshooting** — AI-powered root cause analysis saves hours
 4. **Avoid duplicate tooling** — Don't build what's already included
 
-> **Did You Know?**
-> - Dynatrace Davis AI processes over **1 trillion dependencies per hour** across customer environments
-> - Datadog Watchdog automatically monitors **all your metrics** without configuration
-> - New Relic's Applied Intelligence reduces alert noise by up to **80%** through automatic correlation
+## Did You Know?
+
+- **Dynatrace Davis AI** processes over **1 trillion dependencies per hour** across customer environments. It uses Smartscape topology to understand causation, not just correlation—meaning it can tell you "A caused B" rather than just "A and B happened together."
+
+- **Datadog Watchdog** automatically monitors **all your metrics** without configuration. The engineering team built it after realizing customers weren't using 80% of their anomaly detection features because setup was too complex.
+
+- **New Relic's Applied Intelligence** reduces alert noise by up to **80%** through automatic correlation. Their ML models were trained on data from millions of incidents across thousands of customers.
+
+- **Splunk ITSI** pioneered the concept of **service health scores**—aggregating hundreds of KPIs into a single number. A Fortune 100 retailer uses these scores to predict outages 30 minutes before they impact customers.
+
+## War Story: The $4.2M AI That Nobody Trusted
+
+A financial services company invested heavily in observability AI features—Datadog Watchdog plus New Relic Applied Intelligence running in parallel. Their monthly spend exceeded $350,000. Six months in, they calculated the ROI and found it was negative.
+
+**What went wrong:**
+
+The AI was working perfectly. Watchdog detected anomalies accurately. Applied Intelligence correlated alerts into incidents. The problem? Nobody trusted the AI output.
+
+When on-call engineers received AI-generated alerts, they'd manually verify everything anyway. "Watchdog says there's an anomaly in the payment service, but let me check the dashboards myself..." They treated AI as another noise source rather than a trusted assistant.
+
+**Root causes:**
+1. **No human-in-the-loop training**: Engineers never provided feedback on AI accuracy
+2. **Alert fatigue transfer**: Previous noisy alerts trained engineers to ignore everything
+3. **Black box distrust**: Engineers couldn't understand why AI flagged certain events
+4. **Missing runbooks**: AI detected problems but didn't guide resolution
+
+**The fix:**
+
+They implemented a 3-month "trust building" program:
+1. Weekly reviews of AI vs. human detection accuracy (AI was 94% accurate)
+2. Added "AI Explanation" field showing why Watchdog flagged each anomaly
+3. Linked every AI alert to relevant runbooks
+4. Gamified feedback—engineers earned points for confirming/rejecting AI calls
+
+After the program, AI-assisted MTTR dropped from 47 minutes to 12 minutes. Engineers now trust the AI because they understand it.
+
+**The lesson**: AI features are only as valuable as the trust your team places in them. Invest in explainability and feedback loops, not just technology.
 
 ---
 

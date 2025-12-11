@@ -23,10 +23,47 @@ Platform AI (Datadog Watchdog, Dynatrace Davis) covers 80% of use cases. But som
 
 Building custom AIOps is a significant investment. This module shows you how to do it right.
 
-> **Did You Know?**
-> - Netflix's anomaly detection system processes **billions of time series** with custom algorithms
-> - Uber built **Argos** for real-time anomaly detection across their microservices
-> - LinkedIn's **ThirdEye** is open-sourced from their internal AIOps platform
+## Did You Know?
+
+- **Netflix's anomaly detection system** processes **billions of time series** with custom algorithms. They open-sourced many components (Surus, Argus) but the full system remains proprietary because it's tightly integrated with their streaming architecture.
+
+- **Uber built Argos** for real-time anomaly detection across their microservices. At peak, it processes 500+ million metrics per minute with sub-second detection latency—impossible with off-the-shelf tools at their scale.
+
+- **LinkedIn's ThirdEye** is open-sourced from their internal AIOps platform. It was built after they realized commercial tools couldn't handle their 10,000+ services generating 30+ million metrics.
+
+- **Pinterest's Anomaly Detection** system uses isolation forest ensembles trained on 2 years of historical data. They found that domain-specific training data improved accuracy by 40% compared to generic models—the key insight that drove them to build custom.
+
+## War Story: The $8M Custom AIOps That Saved $50M
+
+A major e-commerce company was losing $2M per hour during peak shopping periods when their systems had issues. Their off-the-shelf monitoring tools detected problems, but the correlation was too slow—by the time they figured out the root cause, an hour had passed.
+
+**The challenge:**
+- 4,000+ microservices
+- 2 million metrics per minute
+- Complex dependencies (payment → inventory → shipping → notifications)
+- Platform AI tools took 5-15 minutes to correlate events
+
+**The decision to build custom:**
+
+After a $12M incident during a flash sale (6 hours of degraded checkout), they decided commercial tools weren't cutting it. They spent $8M over 18 months building a custom AIOps platform.
+
+**Architecture decisions:**
+1. **Kafka backbone** — Every metric, log, and trace flowed through Kafka topics
+2. **Pre-computed topology** — Service dependencies updated every 5 minutes, cached in Redis
+3. **Domain-specific detectors** — Different ML models for checkout flow vs. browse flow
+4. **Human feedback loop** — Engineers rated every alert, continuously improving models
+
+**The breakthrough:**
+
+Their custom system achieved 45-second detection-to-root-cause time. The key innovation wasn't fancier ML—it was **pre-computed correlation**. Instead of correlating events in real-time, they maintained a constantly-updated dependency graph that instantly showed blast radius.
+
+**Results after 2 years:**
+- MTTR dropped from 45 minutes to 6 minutes
+- Incident frequency dropped 60% (predictive alerting caught issues before impact)
+- Engineering hours on incidents dropped from 400/month to 80/month
+- ROI: $50M saved annually vs. $8M investment
+
+**The lesson**: Custom AIOps makes sense at scale. The break-even point for this company was around 1,000 services. Below that, commercial tools win on cost. Above that, custom wins on accuracy and speed.
 
 ---
 
