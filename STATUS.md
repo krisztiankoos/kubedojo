@@ -11,8 +11,10 @@
 
 **IaC Deep Dive Track** - ✅ COMPLETE! 12 modules covering IaC discipline (fundamentals, testing, security, scale, drift, cost) and toolkit (Terraform, OpenTofu, Pulumi, Ansible, CloudFormation, Bicep).
 
+**Website:** ✅ Live at https://krisztiankoos.github.io/kubedojo/
+
 **Next Up:**
-- Website build (#52) - MkDocs setup
+- CKA Mock Exams (Part 6) - optional/deferred (8 modules)
 
 ## Platform Engineering Track Progress
 | Section | Status | Modules |
@@ -108,7 +110,6 @@ All completed modules meet this standard.
 | **Total** | | **311** |
 
 ## Next Steps
-- Build website with MkDocs (#52)
 - CKA Mock Exams (Part 6) - optional/deferred (8 modules)
 
 ## Blockers
@@ -119,11 +120,11 @@ None
 |---|-------|--------|
 | #14 | Curriculum Monitoring & Official Sources | 📋 Open |
 | #15 | Practice Environment & Exercise Approach | 📋 Open |
-| #52 | Build KubeDojo Website | 📋 Planned |
 
 ### Recently Closed
 | # | Issue | Status |
 |---|-------|--------|
+| #52 | Build KubeDojo Website | ✅ Closed (MkDocs + GitHub Pages) |
 | #43 | Toolkit: AIOps Tools | ✅ Closed (4 modules) |
 | #54 | IaC Deep Dive Track | ✅ Closed (12 modules) |
 | #42 | Discipline: AIOps | ✅ Closed (6 modules) |
