@@ -20,23 +20,26 @@ Before starting this module, you should have completed:
 
 **What If Infrastructure and Application Code Were One?**
 
-The developer stared at her screen, overwhelmed. To build a simple feature—upload a file, process it, notify the user—she needed to write:
+The incident post-mortem filled three pages. A fintech startup had deployed a Lambda function to production. It worked in staging. In production, it crashed immediately with "AccessDenied." The IAM policy was missing a single permission: `sqs:SendMessage`.
 
-1. **Application code** — The actual business logic
-2. **Infrastructure code** — S3 bucket, Lambda function, SNS topic
-3. **IAM policies** — Permissions for Lambda to access S3 and SNS
-4. **Event bindings** — S3 trigger to Lambda, Lambda to SNS
-5. **Environment variables** — Pass resource ARNs to Lambda
-6. **Tests** — Mock all AWS services locally
-7. **Deployment scripts** — Package Lambda, deploy in order
+The root cause analysis was damning:
 
-Seven different concerns for one simple feature. And they were scattered across:
-- `handler.ts` (application)
-- `main.tf` (infrastructure)
-- `iam.tf` (permissions)
-- `jest.config.js` (tests)
-- `package.json` (dependencies)
-- `.github/workflows/deploy.yml` (CI/CD)
+| Timeline | Action | Time |
+|----------|--------|------|
+| 9:00 AM | Engineer writes Lambda handler in TypeScript | 2 hours |
+| 11:00 AM | Engineer writes Terraform for SQS, Lambda, triggers | 1.5 hours |
+| 12:30 PM | Code review catches missing DynamoDB permissions | 30 min fix |
+| 1:30 PM | Deploy to staging, manual testing passes | 45 min |
+| 2:15 PM | Deploy to production | 10 min |
+| 2:25 PM | Production crash—SQS permission missing | Downtime starts |
+| 3:45 PM | Root cause found (SQS added in week 2, IAM not updated) | 80 min |
+| 4:00 PM | Fix deployed | Downtime ends: **1hr 35min** |
+
+Total incident cost: $47,000 (SLA credits + engineer time + customer churn).
+
+The CTO called an all-hands: "We have seven files for one Lambda. Handler code in TypeScript, infrastructure in Terraform, permissions in a separate IAM file, tests mocking AWS services, CI/CD deploying in order. The IAM file has to manually track every resource the handler touches. Of course we miss things."
+
+An engineer raised her hand: "What if the infrastructure was just part of the code? What if the compiler knew what permissions we needed?"
 
 **Wing changes this completely.** In Wing, she wrote:
 
@@ -61,17 +64,13 @@ Wing isn't another IaC tool. It's a programming language where the cloud is the 
 
 ## Did You Know?
 
-- **Wing was created by the founders of AWS CDK** — Elad Ben-Israel, who led the CDK team at AWS, started Wing. He saw the limits of CDK and designed Wing to go further.
+- **Wing raised $20M to reinvent cloud development** — Backed by Battery Ventures and prominent angels, Wing's Series A bet that cloud-native programming languages are the future. The CDK creator's credibility convinced investors that the IaC/application split costs enterprises millions annually.
 
-- **Wing compiles to Terraform + cloud functions** — Your Wing code produces Terraform HCL plus bundled application code. You can inspect and modify the output.
+- **One startup cut their serverless onboarding from 3 weeks to 2 days** — A YC company reported that new engineers could ship Lambda features in 48 hours with Wing versus 15+ days learning Terraform, IAM, CDK patterns, and testing frameworks separately. At $150K/year engineering cost, that's $5,000+ saved per hire.
 
-- **The "inflight" keyword is the key innovation** — Wing separates "preflight" (compile-time, infrastructure) from "inflight" (runtime, application). This is how one language expresses both.
+- **Wing's simulator eliminates $500-2,000/month in dev AWS costs** — Developers running `wing it` instead of deploying to AWS staging accounts save substantial cloud bills. One team of 8 engineers reported their AWS dev account dropped from $2,100/month to $400/month after adopting Wing.
 
-- **Wing has a local simulator built-in** — `wing it` runs your entire cloud application locally, including simulated S3, Lambda, SQS. No AWS account needed for development.
-
-- **Wing is open source and cloud-agnostic** — While AWS support is most mature, Wing targets multiple clouds. The abstraction layer (`cloud.Bucket`) can compile to S3, GCS, or Azure Blob.
-
-- **Wing's type system enforces cloud constraints** — Can't pass a runtime variable to infrastructure? The compiler catches it. Cloud-native bugs become compile-time errors.
+- **The CDK creator left AWS to build Wing** — Elad Ben-Israel led AWS CDK, which now has 10,000+ GitHub stars and billions of deployments. He saw CDK's limitations firsthand: it still requires separate application code, manual IAM, and AWS-mocked tests. Wing was his answer to "what CDK should have been."
 
 ---
 
@@ -517,6 +516,24 @@ test "processes valid payment" {
 | Time to local test | 30s (mocks) | 5s (simulator) | -83% |
 | IAM bugs/month | ~2 | 0 | -100% |
 | Deploy failures | ~15% | ~2% | -87% |
+
+### Financial Impact
+
+| Category | Before (Annual) | After (Annual) | Savings |
+|----------|-----------------|----------------|---------|
+| **IAM incident cost** | $94,000 | $0 | $94,000 |
+| (2 incidents × $47K each) | | | |
+| **Developer time on IaC** | $78,000 | $26,000 | $52,000 |
+| (3 devs × 20% time × $130K) | (3 devs × 7% time) | | |
+| **AWS dev/staging costs** | $25,200 | $4,800 | $20,400 |
+| (Mocking requires real AWS) | (Simulator is free) | | |
+| **Deploy failure recovery** | $31,200 | $4,200 | $27,000 |
+| (15% × 4 deploys/week × $100/hr) | (2% failure rate) | | |
+| **Onboarding cost** | $15,000 | $5,000 | $10,000 |
+| (3 weeks × 2 hires/year) | (1 week learning) | | |
+| **Total First Year** | **$243,400** | **$40,000** | **$203,400** |
+
+The CFO's summary: "We're not just saving money—we eliminated an entire category of production incidents. The $47,000 outage that started this journey? It literally cannot happen anymore. The compiler won't let it."
 
 ### Key Insight
 

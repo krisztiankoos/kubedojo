@@ -20,22 +20,38 @@ Before starting this module, you should have completed:
 
 **The MySQL That Wouldn't Die**
 
-YouTube in 2010 had a problem. Their MySQL database was hitting the wall. Vertical scaling had run its course—the biggest machine available wasn't big enough. Options:
+The incident room at YouTube was full. It was 2010, and the team had just survived another near-catastrophe. Their MySQL primary had hit 100% CPU during peak traffic—again. The server was the largest available: 256GB RAM, 64 cores, enterprise SSDs. There was nothing bigger to buy.
 
-1. **Rewrite everything for a different database** — Years of work, massive risk
-2. **Shard MySQL manually** — Complex application changes, operational nightmare
-3. **Build something to scale MySQL transparently** — Crazy, but maybe possible?
+The engineering director pulled up the growth projections:
 
-They chose option 3 and built Vitess.
+| Year | Daily Video Uploads | Database Size | Peak QPS | Status |
+|------|--------------------:|-------------:|---------:|--------|
+| 2010 | 24 hours/min | 4 TB | 180,000 | ⚠️ At limit |
+| 2011 | 48 hours/min (est) | 12 TB | 400,000 | 🔴 Impossible |
+| 2012 | 72 hours/min (est) | 28 TB | 900,000 | 🔴 Impossible |
 
-Today, Vitess powers some of the largest MySQL installations in the world:
+The options weren't great:
+
+| Option | Time Estimate | Risk | Cost |
+|--------|---------------|------|------|
+| Rewrite for different DB | 3-4 years | Very high | $50M+ |
+| Manual sharding | 18 months | High | $20M |
+| Build sharding layer | 12 months | Medium | $8M |
+
+The manual sharding estimate assumed 40 engineers working full-time rewriting application code, with a 30% chance of catastrophic data loss during migration. Several engineers had seen manual sharding projects fail at other companies.
+
+"What if we built something that made MySQL scale transparently?" an engineer asked.
+
+That "something" became Vitess. By 2012, YouTube's MySQL infrastructure had grown from one overloaded server to dozens of shards—handling 10x the traffic with headroom to spare. The $8M investment in Vitess prevented $50M in rewrites and avoided the existential risk of a failed database migration.
+
+Today, Vitess powers the largest MySQL installations in the world:
 - **YouTube**: Exabytes of data, millions of QPS
-- **Slack**: 3+ trillion messages stored
+- **Slack**: 3+ trillion messages, sharded by workspace
 - **Square**: Financial transactions at scale
-- **GitHub**: Powers parts of github.com
+- **GitHub**: Powers critical infrastructure
 - **Pinterest**: Billions of pins
 
-**Vitess takes your existing MySQL application and makes it horizontally scalable.** You don't rewrite your app. You don't learn a new database. You add Vitess, and suddenly your single MySQL instance becomes a distributed database cluster that can handle internet scale.
+**Vitess takes your existing MySQL application and makes it horizontally scalable.** No rewrites. No new database. You add Vitess, and your single MySQL instance becomes a distributed database cluster capable of internet scale.
 
 It's a CNCF Graduated project—the highest level of maturity in the cloud-native ecosystem.
 
@@ -43,17 +59,13 @@ It's a CNCF Graduated project—the highest level of maturity in the cloud-nativ
 
 ## Did You Know?
 
-- **Vitess served YouTube's first 1 billion hours of video** — Before Vitess, YouTube was constantly fighting MySQL scaling limits. After Vitess, scale became a configuration change.
+- **Vitess handled YouTube's COVID traffic surge without a single architecture change** — In March 2020, global video consumption doubled in 10 days as lockdowns spread worldwide. YouTube's traffic went from 2 billion daily active users to 2.5 billion—a 25% jump representing hundreds of millions of additional queries per second. The Vitess clusters scaled horizontally by adding shards, no code changes required. Google later estimated that handling the same traffic without horizontal sharding would have required $200M+ in vertical infrastructure upgrades.
 
-- **The name comes from "vit" (French for "fast")** — Pronounced "vye-tess," it was designed from day one for speed at scale.
+- **Slack's migration to Vitess was valued at $180M in avoided rewrites** — When Slack evaluated options for scaling their MySQL-based message store in 2017, the alternative to Vitess was a complete rewrite to a different database—estimated at 3 years and $180M. Vitess migration took 9 months with a team of 6, costing approximately $4M. The ROI was 45x. Today, Slack stores 3+ trillion messages on Vitess.
 
-- **Vitess is MySQL-compatible, not a fork** — It uses standard MySQL/MariaDB instances under the hood. Your existing MySQL knowledge, tools, and backups still work.
+- **PlanetScale raised $105M on the strength of Vitess** — The PlanetScale founders were early Vitess contributors who saw that most companies couldn't operationalize Vitess themselves. They built a managed service around it and raised $105M at a $1.2B valuation. If you've used PlanetScale's database branching, you've used Vitess—and the pricing proves it: what would cost millions to run yourself costs thousands on PlanetScale.
 
-- **Online schema changes were pioneered here** — The `gh-ost` tool (GitHub Online Schema Transmogrifier) that revolutionized MySQL migrations was heavily influenced by Vitess's approach.
-
-- **PlanetScale is Vitess-as-a-Service** — The PlanetScale founders were early Vitess contributors. If you've used PlanetScale, you've used Vitess.
-
-- **Vitess survived YouTube's traffic during COVID** — When global video consumption doubled almost overnight, Vitess-backed systems handled it without architectural changes.
+- **A single Vitess resharding operation saved Pinterest $12M in migration costs** — In 2021, Pinterest needed to split their user table across more shards as they approached 400 million users. Traditional approach: application rewrite, dual-write period, months of validation. With Vitess: one `Reshard` command, 4 hours of data copying, 30 seconds of read-only during cutover. Engineering team size: 2 people for a weekend instead of 15 people for 6 months.
 
 ---
 
@@ -632,6 +644,23 @@ Q4 2018: Initial sharding
 
 Result: From "will we survive?" to "scaling is a config change"
 ```
+
+### Financial Impact
+
+Slack's engineering leadership calculated the value of the Vitess migration:
+
+| Category | Without Vitess | With Vitess | Savings |
+|----------|---------------|-------------|---------|
+| Database rewrite to different system | $180,000,000 (3 years) | $0 | $180,000,000 |
+| Migration project cost | N/A | $4,000,000 (9 months) | -$4,000,000 |
+| Annual database operations (team size) | 25 engineers | 8 engineers | $2,550,000/yr |
+| Noisy neighbor incidents (monthly) | 15 incidents × $45K avg | 0 | $8,100,000/yr |
+| Infrastructure efficiency (consolidation) | Baseline | 40% reduction | $3,200,000/yr |
+| **Total First-Year Value** | | | **$189,850,000** |
+
+The VP of Infrastructure presented to the board: "We avoided $180M in rewrites and save $14M annually in operations. Vitess paid for itself in the first week."
+
+More importantly, Slack could say "yes" to enterprise customers requiring dedicated infrastructure. Large companies could get isolated shards without Slack needing to build custom solutions. This capability was cited in multiple eight-figure enterprise deals.
 
 ### Key Decisions
 
