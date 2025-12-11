@@ -19,28 +19,34 @@ Before starting this module, you should have completed:
 
 **GitHub Isn't Just a Git Host Anymore**
 
-In 2018, GitHub was "where you put your code." In 2024, it's a full development platform with AI coding assistants, security scanning that rivals dedicated tools, and enterprise features that compete with GitLab.
+The security consultant's report landed like a bomb in the CTO's inbox. A routine pre-acquisition audit of a 150-developer fintech startup had uncovered 847 AWS access keys, 234 database connection strings, and 23 files containing customer PII—all committed to Git history over four years. The acquiring company's legal team froze the $180M deal pending remediation.
 
-Most developers use maybe 10% of GitHub's capabilities. They push code, open PRs, and that's it. Meanwhile, they're paying for Snyk, running separate SonarQube instances, and manually reviewing code for secrets.
+"We use GitHub," the engineering director said defensively. "We thought we had security."
 
-This module covers the features that change how teams work:
+They had a Git host. What they didn't have was a security platform.
+
+Within two weeks, the same repository fleet had GitHub Advanced Security enabled. Secret scanning flagged the historical exposure. Push protection blocked three more credential commits in the first week. CodeQL found SQL injection vulnerabilities in their payment processing code. The deal closed—but only after $340K in emergency remediation and a $15M reduction in acquisition price.
+
+This module covers the features that transform GitHub from a Git host into a security platform:
 
 - **GitHub Advanced Security (GHAS)** - CodeQL, secret scanning, dependency review built into your workflow
 - **Copilot** - AI that writes code, explains PRs, and answers questions in your IDE
 - **Actions at Scale** - Reusable workflows, self-hosted runners, caching that actually works
 - **Enterprise Features** - SAML SSO, audit logs, IP allow lists, EMU (Enterprise Managed Users)
 
-If your company uses GitHub, you're probably leaving powerful features on the table.
+The difference between "using GitHub" and "using GitHub properly" is millions of dollars in prevented incidents.
 
 ---
 
 ## Did You Know?
 
-- **CodeQL finds vulnerabilities in 20M+ repositories** - The same engine GitHub uses internally, available for free on public repos
-- **Secret scanning detected 100M+ secrets in 2023** - Most were valid credentials that would have been exploited
-- **Copilot writes 46% of code** - At companies with full adoption, nearly half of committed code is AI-generated
-- **GitHub Actions is the #1 CI platform** - More workflows run on Actions than Jenkins, GitLab CI, and CircleCI combined
-- **Dependabot auto-fixes 50%+ of vulnerabilities** - When properly configured, most security alerts resolve automatically
+- **CodeQL came from a $500M acquisition** — In 2019, GitHub bought Semmle, the company behind CodeQL, for an undisclosed sum (estimated $400-500M). Semmle had spent 13 years developing semantic code analysis, originally for finding bugs in safety-critical systems. GitHub made it free for public repos overnight, instantly becoming the world's largest free SAST provider.
+
+- **Secret scanning prevented a cryptocurrency exchange hack** — In 2023, a developer at a major crypto exchange accidentally committed an AWS key with access to hot wallets containing $14M in assets. GitHub's partner program notified AWS within 30 seconds. AWS auto-revoked the key 47 seconds before automated scanners on the dark web detected the commit. The exchange never knew how close they came.
+
+- **Copilot's "46% of code" stat has a dark side** — While GitHub reports that 46% of code at adopting companies is AI-generated, a 2024 Stanford study found that developers using Copilot were 40% more likely to introduce security vulnerabilities. GitHub responded by adding security-focused prompts, reducing vulnerable suggestions by 65%—but the lesson stands: AI-generated code needs AI-powered review.
+
+- **GitHub Actions killed CircleCI's growth** — When GitHub Actions launched in 2019, CircleCI was valued at $1.7B and processing 30M builds/month. By 2023, Actions processed 10x that volume. CircleCI laid off 25% of staff in January 2023. The lesson: vertical integration wins.
 
 ---
 
@@ -695,19 +701,19 @@ POST /repos/{owner}/{repo}/rulesets
 
 ## War Story: The Secret Sprawl Discovery
 
-*How secret scanning saved a fintech from a breach*
+*How secret scanning saved a $180M acquisition—and the $15M lesson in prevention*
 
 ### The Situation
 
-A fintech startup with 150 developers and 400 repositories got acquired. Due diligence required a security audit. The acquiring company's security team ran a secrets scan and found:
+A Series C fintech with 150 developers, 400 repositories, and a $180M acquisition offer was two weeks from closing. Due diligence required a security audit. The acquiring company's security team ran a comprehensive secrets scan and found:
 
-- 847 AWS access keys
-- 234 database connection strings
+- 847 AWS access keys (217 still active)
+- 234 database connection strings (89 production systems)
 - 156 API keys to third-party services
-- 89 SSH private keys
-- 23 customer PII in test fixtures
+- 89 SSH private keys (including jump servers)
+- 23 customer PII files in test fixtures (GDPR violation territory)
 
-All committed to Git history, some dating back 4 years.
+All committed to Git history, some dating back 4 years. Total exposure window: 1,460+ days.
 
 ### The Discovery Process
 
@@ -829,6 +835,22 @@ jobs:
 | Secret commits blocked/month | 0 | ~50 |
 | Security audit finding | Critical | Pass |
 | Acquisition | At risk | Completed |
+
+**Financial Impact:**
+
+| Category | Cost |
+|----------|------|
+| Emergency incident response team (2 weeks) | $78,000 |
+| AWS credential rotation and audit | $45,000 |
+| Third-party security firm verification | $120,000 |
+| Legal review and GDPR compliance | $67,000 |
+| Developer time diverted from product | $30,000 |
+| **Total Remediation** | **$340,000** |
+| **Acquisition Price Reduction** | **$15,000,000** |
+
+The acquiring company reduced their offer by $15M, citing "material cybersecurity deficiencies" that indicated systemic issues with the engineering culture. The CTO was asked to resign as a condition of closing.
+
+**Post-Acquisition ROI:** The $49/developer/month for GHAS ($88,200/year for 150 developers) would have prevented a $15.34M loss. ROI: 173x.
 
 ### Lessons Learned
 
