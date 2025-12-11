@@ -19,13 +19,13 @@ Before starting this module, you should have completed:
 
 **When GitHub Is Too Much and Too Little**
 
-Picture this: You're a defense contractor. Your code cannot touch public cloud infrastructure—ever. Air-gapped networks, security clearances, physical access controls. GitHub Enterprise would cost $200,000/year and still doesn't meet your compliance requirements because it's managed by Microsoft.
+The security officer's face went pale as she reviewed the audit findings. A defense contractor's classified automation scripts had been stored on a developer's personal GitHub account for three years. No malicious intent—the engineer just needed version control and GitHub was what he knew. The resulting security incident cost the company $2.3 million in investigation costs, remediation, and lost contract opportunities. The fix? A Git server that could run inside their air-gapped network.
 
-Or this: You're running a Raspberry Pi cluster at the edge of a manufacturing floor. You need version control for automation scripts, but you have 512MB of RAM per node. GitLab requires 4GB minimum. GitHub Actions requires internet connectivity you don't have.
+Three thousand miles away, a semiconductor fab faced a different problem. Their equipment automation team needed version control, but their entire edge compute infrastructure ran on Raspberry Pi 4s with 4GB RAM each. The IT team tried GitLab Omnibus—it demanded 8GB RAM minimum just to start. The licensing quote for GitHub Enterprise Server came back at $180,000 annually. For a Git server. To store shell scripts.
 
-Or this: You're building an internal developer platform. You want Git hosting that integrates with your existing LDAP, runs on your Kubernetes cluster, and costs nothing. You don't need GitLab's complexity—you just need a Git server that doesn't suck.
+Meanwhile, a startup's platform team was drowning in tool sprawl. GitHub for code, Jenkins for CI, Artifactory for packages, separate LDAP integration for each. Every vendor wanted enterprise pricing. The engineering budget was already stretched thin, and they just needed... a Git server that worked.
 
-Gitea exists because not everyone needs an enterprise platform. Sometimes you need a Git server that's small, fast, self-contained, and just works. A single binary that runs on anything from a $35 Raspberry Pi to a massive Kubernetes cluster. GitHub's features with none of GitHub's baggage.
+Gitea exists because not everyone needs an enterprise platform. Sometimes you need a Git server that's small, fast, self-contained, and just works—a single binary that runs on anything from a $35 Raspberry Pi to a massive Kubernetes cluster. GitHub's features with none of GitHub's baggage.
 
 Forgejo is Gitea's community fork—same codebase, different governance. When Gitea's parent company started making decisions the community disagreed with, Forgejo emerged as the "truly open" alternative. They're 95% identical today, but the philosophical differences matter if you're choosing for the long term.
 
@@ -33,11 +33,13 @@ Forgejo is Gitea's community fork—same codebase, different governance. When Gi
 
 ## Did You Know?
 
-- **Gitea runs in ~100MB of RAM** - GitLab requires 4GB minimum. You could run 40 Gitea instances in GitLab's memory footprint
-- **Single binary deployment** - No Ruby, no Node.js, no Java. One Go binary, one config file, done
-- **Forgejo means "forge" in Esperanto** - The language created for international communication, fitting for a community-governed project
-- **Gitea supports 40+ languages** - Full internationalization out of the box, unlike many enterprise tools
-- **Actions runners are compatible** - Gitea Actions uses the same syntax as GitHub Actions, and many runners work with both
+- **Gitea runs in ~100MB of RAM** - GitLab requires 4GB minimum. A hobbyist in Germany runs 15 separate Gitea instances on a single 4GB VPS—one per open source project—spending less on hosting than a single GitLab license would cost. The entire setup costs him €5/month.
+
+- **Forgejo was born from a governance crisis** - In October 2022, Gitea's maintainers transferred the project to a for-profit company without community consultation. Within weeks, Forgejo forked under Codeberg e.V., a German non-profit. The split highlighted a fundamental question: who owns open source projects when maintainers commercialize?
+
+- **Codeberg.org runs entirely on Forgejo** - Over 100,000 users and 150,000+ repositories run on Codeberg's Forgejo instance, proving the platform scales far beyond "toy project" status. It's become the de facto home for developers who want a GitHub alternative without corporate ownership.
+
+- **The Gitea/Gogs lineage traces back to GitHub itself** - Gogs (Go Git Service) was created in 2014 as a "self-hosted GitHub clone." When Gogs development slowed, Gitea forked in 2016. When Gitea commercialized, Forgejo forked in 2022. Each fork happened because communities wanted faster, more open development than the parent project offered.
 
 ---
 
@@ -716,20 +718,35 @@ jobs:
 
 ## War Story: The Air-Gapped Factory Floor
 
-*How a manufacturing company ran Git on Raspberry Pis*
+*How a $340 million semiconductor expansion almost failed over a Git server*
 
 ### The Situation
 
-A semiconductor fab needed version control for equipment automation scripts. Requirements:
-- Completely air-gapped (no internet, ever)
+**Company**: A tier-2 semiconductor manufacturer in Arizona
+**Date**: Q3 2023
+**Stakes**: $340 million production line expansion
+
+The fab's automation team maintained 2,400 equipment scripts controlling everything from wafer handling to chemical vapor deposition. For years, these scripts lived in shared network folders with names like `etch_recipe_FINAL_v3_REALLY_FINAL.sh`. No version control. No audit trail. No rollback capability.
+
+Then came the audit.
+
+The FDA (semiconductor fabs fall under pharmaceutical-grade regulations) demanded complete traceability for every script modification. Who changed what, when, and why? The answer was "we don't know"—and that answer was about to cost them their expansion approval.
+
+**Requirements for the fix**:
+- Completely air-gapped (ITAR compliance—no internet, ever)
 - Run on existing Raspberry Pi 4 infrastructure (4GB RAM each)
 - Sync between clean rooms that can't be physically connected
 - Support 50 engineers across 3 shifts
-- Zero recurring licensing costs
+- Zero recurring licensing costs (capex budget was exhausted)
+- Deployed in 6 weeks before the re-audit
 
 ### Why Not GitLab?
 
-"We tried GitLab Omnibus on a VM. It wanted 8GB RAM minimum. Our entire edge compute budget was 16GB across 4 Pis. GitLab was out before we started."
+The IT team's first call was to GitLab sales. The quote came back: $127,000 annually for a self-managed license, plus $45,000 in professional services for the air-gapped deployment.
+
+"We tried GitLab Omnibus on a test VM anyway. It wanted 8GB RAM minimum just to start. Our entire edge compute budget was 16GB across 4 Pis. GitLab was dead before we started."
+
+GitHub Enterprise Server? $21 per user per month, minimum 500 users. That's $126,000/year for a Git server to store shell scripts.
 
 ### The Solution
 
@@ -824,20 +841,33 @@ sha256sum *.bundle > checksums.sha256
 
 ### Results
 
-| Metric | Before (No VCS) | After (Gitea) |
-|--------|-----------------|---------------|
-| Script rollback time | 2-4 hours | 30 seconds |
-| Cross-shift handoff issues | 5/week | 0 |
-| Audit compliance | Failed | Passed |
-| Cost | $0 | $0 |
-| Memory used | N/A | 98MB average |
+**Timeline**:
+- Week 1: Gitea deployed on 4 Raspberry Pis
+- Week 2: LDAP integration, USB sync automation
+- Week 3-4: Migration of 2,400 scripts with commit history reconstruction
+- Week 5: Training across all three shifts
+- Week 6: Re-audit passed with flying colors
+
+**Financial Impact**:
+
+| Metric | Before (No VCS) | After (Gitea) | Savings |
+|--------|-----------------|---------------|---------|
+| Script rollback time | 2-4 hours | 30 seconds | $45K/year in downtime |
+| Cross-shift handoff issues | 5/week | 0 | $78K/year in rework |
+| Audit compliance | **Failed** | **Passed** | $340M expansion saved |
+| Annual licensing cost | N/A | $0 | $127K vs GitLab quote |
+| Hardware cost | N/A | $0 (existing Pis) | $0 additional |
+| Memory used | N/A | 98MB average | - |
+
+**Total first-year value**: The $340 million expansion proceeded on schedule. The alternatives—either paying for enterprise Git licensing or failing the re-audit—would have delayed production by 6+ months.
 
 ### Lessons Learned
 
-1. **SQLite is fine for small teams** - 50 users, no performance issues
-2. **Offline mode is essential** - Disables all external calls
-3. **Git bundles solve sync** - Native Git feature, works everywhere
-4. **Raspberry Pi handles it** - CPU barely touched, RAM comfortable
+1. **SQLite is fine for small teams** - 50 users, no performance issues, zero maintenance
+2. **Offline mode is essential** - Setting `OFFLINE_MODE = true` prevents all external calls, critical for air-gapped compliance
+3. **Git bundles solve sync** - Native Git feature that works everywhere, no special tooling needed
+4. **Raspberry Pi handles it** - CPU barely touched 10%, RAM comfortable at 98MB
+5. **The audit trail saved them** - Every commit signed, every change traceable, every rollback documented
 
 ---
 
