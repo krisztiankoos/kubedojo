@@ -16,14 +16,15 @@ The KCNA is a **multiple-choice exam** (not hands-on) that validates foundationa
 
 ## Curriculum Structure
 
+*Updated November 2025 - Observability merged into Cloud Native Architecture*
+
 | Part | Topic | Weight | Modules |
 |------|-------|--------|---------|
 | [Part 0](part0-introduction/) | Introduction | - | 2 |
-| [Part 1](part1-kubernetes-fundamentals/) | Kubernetes Fundamentals | 46% | 8 |
-| [Part 2](part2-container-orchestration/) | Container Orchestration | 22% | 4 |
-| [Part 3](part3-cloud-native-architecture/) | Cloud Native Architecture | 16% | 3 |
-| [Part 4](part4-cloud-native-observability/) | Cloud Native Observability | 8% | 2 |
-| [Part 5](part5-application-delivery/) | Application Delivery | 8% | 2 |
+| [Part 1](part1-kubernetes-fundamentals/) | Kubernetes Fundamentals | 44% | 8 |
+| [Part 2](part2-container-orchestration/) | Container Orchestration | 28% | 4 |
+| [Part 3](part3-cloud-native-architecture/) | Cloud Native Architecture | 12% | 5 |
+| [Part 4](part4-application-delivery/) | Application Delivery | 16% | 2 |
 | **Total** | | **100%** | **21** |
 
 ## Module Overview
@@ -32,7 +33,7 @@ The KCNA is a **multiple-choice exam** (not hands-on) that validates foundationa
 - [0.1 KCNA Overview](part0-introduction/module-0.1-kcna-overview.md) - Exam format and domains
 - [0.2 Study Strategy](part0-introduction/module-0.2-study-strategy.md) - Multiple-choice exam techniques
 
-### Part 1: Kubernetes Fundamentals (8 modules)
+### Part 1: Kubernetes Fundamentals (8 modules) — 44%
 - [1.1 What is Kubernetes](part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes.md) - Purpose and architecture
 - [1.2 Container Fundamentals](part1-kubernetes-fundamentals/module-1.2-container-fundamentals.md) - Container concepts
 - [1.3 Control Plane](part1-kubernetes-fundamentals/module-1.3-control-plane.md) - API server, etcd, scheduler
@@ -42,24 +43,24 @@ The KCNA is a **multiple-choice exam** (not hands-on) that validates foundationa
 - [1.7 Services](part1-kubernetes-fundamentals/module-1.7-services.md) - Service types and discovery
 - [1.8 Namespaces and Labels](part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md) - Organization
 
-### Part 2: Container Orchestration (4 modules)
+### Part 2: Container Orchestration (4 modules) — 28%
 - [2.1 Scheduling](part2-container-orchestration/module-2.1-scheduling.md) - How pods get assigned
 - [2.2 Scaling](part2-container-orchestration/module-2.2-scaling.md) - HPA, VPA, Cluster Autoscaler
 - [2.3 Storage](part2-container-orchestration/module-2.3-storage.md) - PV, PVC, StorageClass
 - [2.4 Configuration](part2-container-orchestration/module-2.4-configuration.md) - ConfigMaps and Secrets
 
-### Part 3: Cloud Native Architecture (3 modules)
+### Part 3: Cloud Native Architecture (5 modules) — 12%
+*Includes Observability (merged November 2025)*
+
 - [3.1 Cloud Native Principles](part3-cloud-native-architecture/module-3.1-cloud-native-principles.md) - 12-factor apps
 - [3.2 CNCF Ecosystem](part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md) - Projects and landscape
 - [3.3 Cloud Native Patterns](part3-cloud-native-architecture/module-3.3-patterns.md) - Service mesh, GitOps
+- [3.4 Observability Fundamentals](part3-cloud-native-architecture/module-3.4-observability-fundamentals.md) - Metrics, logs, traces
+- [3.5 Observability Tools](part3-cloud-native-architecture/module-3.5-observability-tools.md) - Prometheus, Grafana, Jaeger
 
-### Part 4: Cloud Native Observability (2 modules)
-- [4.1 Observability Fundamentals](part4-cloud-native-observability/module-4.1-observability-fundamentals.md) - Metrics, logs, traces
-- [4.2 Observability Tools](part4-cloud-native-observability/module-4.2-observability-tools.md) - Prometheus, Grafana, Jaeger
-
-### Part 5: Application Delivery (2 modules)
-- [5.1 CI/CD Fundamentals](part5-application-delivery/module-5.1-ci-cd.md) - Pipelines and deployment
-- [5.2 Application Packaging](part5-application-delivery/module-5.2-application-packaging.md) - Helm and Kustomize
+### Part 4: Application Delivery (2 modules) — 16%
+- [4.1 CI/CD Fundamentals](part4-application-delivery/module-4.1-ci-cd.md) - Pipelines and deployment
+- [4.2 Application Packaging](part4-application-delivery/module-4.2-application-packaging.md) - Helm and Kustomize
 
 ## How to Use This Curriculum
 
@@ -82,7 +83,7 @@ The KCNA is a **multiple-choice exam** (not hands-on) that validates foundationa
 
 - **Understand, don't memorize** - The exam tests concepts
 - **Know CNCF projects** - Especially graduated ones
-- **Focus on Part 1** - It's 46% of the exam
+- **Focus on Parts 1 & 2** - They're 72% of the exam combined
 - **Review diagrams** - Visuals help with multiple-choice
 - **Take practice tests** - Get comfortable with the format
 

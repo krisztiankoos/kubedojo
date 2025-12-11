@@ -1,10 +1,10 @@
-# Module 5.1: CI/CD Fundamentals
+# Module 4.1: CI/CD Fundamentals
 
 > **Complexity**: `[MEDIUM]` - Delivery concepts
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: Part 4 (Cloud Native Observability)
+> **Prerequisites**: Part 3 (Cloud Native Architecture)
 
 ---
 
@@ -396,4 +396,4 @@ Source → Build → Test → Package → Deploy
 
 ## Next Module
 
-[Module 5.2: Application Packaging](module-5.2-application-packaging.md) - Helm, Kustomize, and other tools for packaging Kubernetes applications.
+[Module 4.2: Application Packaging](module-4.2-application-packaging.md) - Helm, Kustomize, and other tools for packaging Kubernetes applications.

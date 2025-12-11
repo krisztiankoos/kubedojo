@@ -169,12 +169,11 @@ nav:
         - k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles.md
         - k8s/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md
         - k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns.md
-      - "Part 4: Observability":
-        - k8s/kcna/part4-cloud-native-observability/module-4.1-observability-fundamentals.md
-        - k8s/kcna/part4-cloud-native-observability/module-4.2-observability-tools.md
-      - "Part 5: Application Delivery":
-        - k8s/kcna/part5-application-delivery/module-5.1-ci-cd.md
-        - k8s/kcna/part5-application-delivery/module-5.2-application-packaging.md
+        - k8s/kcna/part3-cloud-native-architecture/module-3.4-observability-fundamentals.md
+        - k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools.md
+      - "Part 4: Application Delivery":
+        - k8s/kcna/part4-application-delivery/module-4.1-ci-cd.md
+        - k8s/kcna/part4-application-delivery/module-4.2-application-packaging.md
     - KCSA:
       - k8s/kcsa/README.md
       - "Part 0: Introduction":

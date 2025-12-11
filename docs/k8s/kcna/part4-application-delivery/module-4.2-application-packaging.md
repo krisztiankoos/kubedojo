@@ -1,10 +1,10 @@
-# Module 5.2: Application Packaging
+# Module 4.2: Application Packaging
 
 > **Complexity**: `[MEDIUM]` - Tool concepts
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: Module 5.1 (CI/CD Fundamentals)
+> **Prerequisites**: Module 4.1 (CI/CD Fundamentals)
 
 ---
 
@@ -465,11 +465,12 @@ Congratulations! You've completed the entire KCNA curriculum covering:
 
 | Part | Topic | Weight |
 |------|-------|--------|
-| Part 1 | Kubernetes Fundamentals | 46% |
-| Part 2 | Container Orchestration | 22% |
-| Part 3 | Cloud Native Architecture | 16% |
-| Part 4 | Cloud Native Observability | 8% |
-| Part 5 | Application Delivery | 8% |
+| Part 1 | Kubernetes Fundamentals | 44% |
+| Part 2 | Container Orchestration | 28% |
+| Part 3 | Cloud Native Architecture (incl. Observability) | 12% |
+| Part 4 | Application Delivery | 16% |
+
+*Updated November 2025: Observability merged into Cloud Native Architecture*
 
 **Next steps**:
 1. Review weak areas

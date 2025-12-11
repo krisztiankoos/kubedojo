@@ -404,11 +404,6 @@ Beyond basic concepts, cloud native includes patterns for solving complex proble
 
 ---
 
-## Part 3 Complete!
+## Next Module
 
-You've finished **Cloud Native Architecture** (16% of the exam). You now understand:
-- Cloud native principles and 12-factor apps
-- CNCF ecosystem and key projects
-- Service mesh, serverless, GitOps, and Operators
-
-**Next Part**: [Part 4: Cloud Native Observability](../part4-cloud-native-observability/module-4.1-observability-fundamentals.md) - Monitoring, logging, and tracing in cloud native environments.
+[Module 3.4: Observability Fundamentals](module-3.4-observability-fundamentals.md) - Understanding the three pillars of observability: metrics, logs, and traces.

@@ -1,10 +1,10 @@
-# Module 4.2: Observability Tools
+# Module 3.5: Observability Tools
 
 > **Complexity**: `[QUICK]` - Tool overview
 >
 > **Time to Complete**: 20-25 minutes
 >
-> **Prerequisites**: Module 4.1 (Observability Fundamentals)
+> **Prerequisites**: Module 3.4 (Observability Fundamentals)
 
 ---
 
@@ -411,11 +411,12 @@ Knowing the concepts is one thing; knowing the tools is another. KCNA tests your
 
 ---
 
-## Part 4 Complete!
+## Part 3 Complete!
 
-You've finished **Cloud Native Observability** (8% of the exam). You now understand:
-- The three pillars: metrics, logs, traces
-- Key tools: Prometheus, Grafana, Fluentd, Jaeger
-- OpenTelemetry as the unifying standard
+You've finished **Cloud Native Architecture** (12% of the exam, including Observability). You now understand:
+- Cloud native principles and the CNCF ecosystem
+- Architectural patterns: service mesh, serverless, GitOps
+- The three pillars of observability: metrics, logs, traces
+- Key tools: Prometheus, Grafana, Fluentd, Jaeger, OpenTelemetry
 
-**Next Part**: [Part 5: Application Delivery](../part5-application-delivery/module-5.1-ci-cd.md) - Continuous Integration, Continuous Delivery, and deployment strategies.
+**Next Part**: [Part 4: Application Delivery](../part5-application-delivery/module-5.1-ci-cd.md) - Continuous Integration, Continuous Delivery, and deployment strategies (16% of the exam).

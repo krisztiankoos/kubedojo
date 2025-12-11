@@ -1,10 +1,10 @@
-# Module 4.1: Observability Fundamentals
+# Module 3.4: Observability Fundamentals
 
 > **Complexity**: `[MEDIUM]` - Observability concepts
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: Part 3 (Cloud Native Architecture)
+> **Prerequisites**: Module 3.3 (Cloud Native Patterns)
 
 ---
 
@@ -404,4 +404,4 @@ For resources, track:
 
 ## Next Module
 
-[Module 4.2: Observability Tools](module-4.2-observability-tools.md) - Prometheus, Grafana, Jaeger, and other observability tools in Kubernetes.
+[Module 3.5: Observability Tools](module-3.5-observability-tools.md) - Prometheus, Grafana, Jaeger, and other observability tools in Kubernetes.
