@@ -184,21 +184,25 @@ nav:
         - k8s/kcsa/part0-introduction/module-0.1-kcsa-overview.md
         - k8s/kcsa/part0-introduction/module-0.2-security-mindset.md
       - "Part 1: Cloud Native Security":
+        - k8s/kcsa/part1-cloud-native-security/README.md
         - k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs.md
         - k8s/kcsa/part1-cloud-native-security/module-1.2-cloud-provider-security.md
         - k8s/kcsa/part1-cloud-native-security/module-1.3-security-principles.md
       - "Part 2: Cluster Component Security":
+        - k8s/kcsa/part2-cluster-component-security/README.md
         - k8s/kcsa/part2-cluster-component-security/module-2.1-control-plane-security.md
         - k8s/kcsa/part2-cluster-component-security/module-2.2-node-security.md
         - k8s/kcsa/part2-cluster-component-security/module-2.3-network-security.md
         - k8s/kcsa/part2-cluster-component-security/module-2.4-pki-certificates.md
       - "Part 3: Security Fundamentals":
+        - k8s/kcsa/part3-security-fundamentals/README.md
         - k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security.md
         - k8s/kcsa/part3-security-fundamentals/module-3.2-rbac.md
         - k8s/kcsa/part3-security-fundamentals/module-3.3-secrets.md
         - k8s/kcsa/part3-security-fundamentals/module-3.4-serviceaccounts.md
         - k8s/kcsa/part3-security-fundamentals/module-3.5-network-policies.md
       - "Part 4: Threat Model":
+        - k8s/kcsa/part4-threat-model/README.md
         - k8s/kcsa/part4-threat-model/module-4.1-attack-surfaces.md
         - k8s/kcsa/part4-threat-model/module-4.2-vulnerabilities.md
         - k8s/kcsa/part4-threat-model/module-4.3-container-escape.md
