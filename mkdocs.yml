@@ -157,23 +157,27 @@ nav:
         - k8s/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane.md
         - k8s/kcna/part1-kubernetes-fundamentals/module-1.4-node-components.md
         - k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods.md
-        - k8s/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources.md
-        - k8s/kcna/part1-kubernetes-fundamentals/module-1.7-services.md
-        - k8s/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md
-      - "Part 2: Container Orchestration":
-        - k8s/kcna/part2-container-orchestration/module-2.1-scheduling.md
-        - k8s/kcna/part2-container-orchestration/module-2.2-scaling.md
-        - k8s/kcna/part2-container-orchestration/module-2.3-storage.md
-        - k8s/kcna/part2-container-orchestration/module-2.4-configuration.md
+      - k8s/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources.md
+      - k8s/kcna/part1-kubernetes-fundamentals/module-1.7-services.md
+      - k8s/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md
+      - k8s/kcna/part1-kubernetes-fundamentals/module-1.9-debugging-basics.md
+    - "Part 2: Container Orchestration":
+      - k8s/kcna/part2-container-orchestration/module-2.1-scheduling.md
+      - k8s/kcna/part2-container-orchestration/module-2.2-scaling.md
+      - k8s/kcna/part2-container-orchestration/module-2.3-storage.md
+      - k8s/kcna/part2-container-orchestration/module-2.4-configuration.md
       - "Part 3: Cloud Native Architecture":
         - k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles.md
-        - k8s/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md
-        - k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns.md
-        - k8s/kcna/part3-cloud-native-architecture/module-3.4-observability-fundamentals.md
-        - k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools.md
-      - "Part 4: Application Delivery":
-        - k8s/kcna/part4-application-delivery/module-4.1-ci-cd.md
-        - k8s/kcna/part4-application-delivery/module-4.2-application-packaging.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.4-observability-fundamentals.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.6-security-basics.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.7-community-collaboration.md
+    - "Part 4: Application Delivery":
+      - k8s/kcna/part4-application-delivery/module-4.1-ci-cd.md
+      - k8s/kcna/part4-application-delivery/module-4.2-application-packaging.md
+      - k8s/kcna/part4-application-delivery/module-4.3-release-strategies.md
     - KCSA:
       - k8s/kcsa/README.md
       - "Part 0: Introduction":
@@ -199,6 +203,7 @@ nav:
         - k8s/kcsa/part4-threat-model/module-4.2-vulnerabilities.md
         - k8s/kcsa/part4-threat-model/module-4.3-container-escape.md
         - k8s/kcsa/part4-threat-model/module-4.4-supply-chain.md
+        - k8s/kcsa/part4-threat-model/module-4.5-threat-modeling-supply-chain-theory.md
       - "Part 5: Platform Security":
         - k8s/kcsa/part5-platform-security/README.md
         - k8s/kcsa/part5-platform-security/module-5.1-image-security.md
@@ -274,6 +279,7 @@ nav:
         - k8s/cka/part2-workloads-scheduling/module-2.5-resource-management.md
         - k8s/cka/part2-workloads-scheduling/module-2.6-scheduling.md
         - k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets.md
+        - k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory.md
         - k8s/cka/part2-workloads-scheduling/part2-cumulative-quiz.md
       - "Part 3: Services & Networking":
         - k8s/cka/part3-services-networking/module-3.1-services.md
@@ -283,6 +289,7 @@ nav:
         - k8s/cka/part3-services-networking/module-3.5-gateway-api.md
         - k8s/cka/part3-services-networking/module-3.6-network-policies.md
         - k8s/cka/part3-services-networking/module-3.7-cni.md
+        - k8s/cka/part3-services-networking/module-3.8-cluster-networking-data-path.md
         - k8s/cka/part3-services-networking/part3-cumulative-quiz.md
       - "Part 4: Storage":
         - k8s/cka/part4-storage/module-4.1-volumes.md
@@ -355,6 +362,7 @@ nav:
         - platform/foundations/reliability-engineering/module-2.2-failure-modes-and-effects.md
         - platform/foundations/reliability-engineering/module-2.3-redundancy-and-fault-tolerance.md
         - platform/foundations/reliability-engineering/module-2.4-measuring-and-improving-reliability.md
+        - platform/foundations/reliability-engineering/module-2.5-slos-slis-error-budgets.md
       - Observability Theory:
         - platform/foundations/observability-theory/README.md
         - platform/foundations/observability-theory/module-3.1-what-is-observability.md

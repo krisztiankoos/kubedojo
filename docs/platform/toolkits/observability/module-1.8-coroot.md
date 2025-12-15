@@ -1004,4 +1004,4 @@ If you need highly specific business metrics, custom trace attributes, or run on
 
 ## Next Module
 
-Continue to [Module 2.1: ArgoCD](../gitops-tools/module-2.1-argocd.md) for GitOps continuous delivery, or explore [Module 1.6: Pixie](module-1.6-pixie.md) to compare another eBPF-based observability tool.
+Continue to [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd.md) for GitOps continuous delivery, or explore [Module 1.6: Pixie](module-1.6-pixie.md) to compare another eBPF-based observability tool.

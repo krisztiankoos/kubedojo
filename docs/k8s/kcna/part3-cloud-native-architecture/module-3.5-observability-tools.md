@@ -419,4 +419,4 @@ You've finished **Cloud Native Architecture** (12% of the exam, including Observ
 - The three pillars of observability: metrics, logs, traces
 - Key tools: Prometheus, Grafana, Fluentd, Jaeger, OpenTelemetry
 
-**Next Part**: [Part 4: Application Delivery](../part5-application-delivery/module-5.1-ci-cd.md) - Continuous Integration, Continuous Delivery, and deployment strategies (16% of the exam).
+**Next Part**: [Part 4: Application Delivery](../part4-application-delivery/module-4.1-ci-cd.md) - Continuous Integration, Continuous Delivery, and deployment strategies (16% of the exam).

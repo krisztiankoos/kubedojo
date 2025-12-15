@@ -488,6 +488,6 @@ Congratulations! You've finished the **Kubernetes Basics** prerequisite track. Y
 8. YAML for Kubernetes - writing manifests
 
 **Next Steps**:
-- [CKA Curriculum](../../cka/part0-environment/module-0.1-cluster-setup.md) - Administrator certification
-- [CKAD Curriculum](../../ckad/part0-environment/module-0.1-cluster-setup.md) - Developer certification
+- [CKA Curriculum](../../k8s/cka/part0-environment/module-0.1-cluster-setup.md) - Administrator certification
+- [CKAD Curriculum](../../k8s/ckad/part0-environment/module-0.1-ckad-overview.md) - Developer certification
 - [Modern DevOps Practices](../modern-devops/module-1-infrastructure-as-code.md) - Complementary skills

@@ -640,6 +640,6 @@ Congratulations! You've finished the **Modern DevOps Practices** prerequisite tr
 6. Security practices (DevSecOps)
 
 **Next Steps**:
-- [CKA Curriculum](../../cka/part0-environment/module-0.1-cluster-setup.md) - Administrator certification
-- [CKAD Curriculum](../../ckad/part0-environment/module-0.1-cluster-setup.md) - Developer certification
+- [CKA Curriculum](../../k8s/cka/part0-environment/module-0.1-cluster-setup.md) - Administrator certification
+- [CKAD Curriculum](../../k8s/ckad/part0-environment/module-0.1-ckad-overview.md) - Developer certification
 - [Philosophy & Design](../philosophy-design/module-1-why-kubernetes-won.md) - Why Kubernetes?
