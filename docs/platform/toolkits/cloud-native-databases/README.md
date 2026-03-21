@@ -1,6 +1,6 @@
 # Cloud-Native Databases Toolkit
 
-> **Toolkit Track** | 4 Modules | ~3.5 hours total
+> **Toolkit Track** | 5 Modules | ~4 hours total
 
 ## Overview
 
@@ -25,6 +25,7 @@ Before starting this toolkit:
 | 15.2 | [CloudNativePG](module-15.2-cloudnativepg.md) | `[MEDIUM]` | 45-50 min |
 | 15.3 | [Neon & PlanetScale](module-15.3-serverless-databases.md) | `[MEDIUM]` | 40-45 min |
 | 15.4 | [Vitess](module-15.4-vitess.md) | `[COMPLEX]` | 50-55 min |
+| 15.5 | [etcd-operator](module-15.5-etcd-operator.md) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -34,7 +35,8 @@ After completing this toolkit, you will be able to:
 2. **Run PostgreSQL on K8s** — CloudNativePG operator for day-2 operations
 3. **Use serverless databases** — Neon and PlanetScale for developer productivity
 4. **Scale MySQL horizontally** — Vitess for YouTube/Slack-scale sharding
-5. **Choose the right database** — Understand trade-offs for your use case
+5. **Manage etcd with operators** — etcd-operator for automated TLS, upgrades, and cluster lifecycle
+6. **Choose the right database** — Understand trade-offs for your use case
 
 ## Tool Selection Guide
 
