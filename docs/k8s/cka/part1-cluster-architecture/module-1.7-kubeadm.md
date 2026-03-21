@@ -114,7 +114,7 @@ sudo kubeadm init --pod-network-cidr=10.244.0.0/16
 sudo kubeadm init --apiserver-advertise-address=192.168.1.10
 
 # With specific Kubernetes version
-sudo kubeadm init --kubernetes-version=v1.31.0
+sudo kubeadm init --kubernetes-version=v1.35.0
 ```
 
 ### 2.2 After init - Setup kubectl Access
@@ -150,7 +150,7 @@ cilium install
 # Check nodes
 kubectl get nodes
 # NAME           STATUS   ROLES           AGE   VERSION
-# control-plane  Ready    control-plane   5m    v1.31.0
+# control-plane  Ready    control-plane   5m    v1.35.0
 
 # Check system pods
 kubectl get pods -n kube-system
@@ -385,8 +385,8 @@ kubectl uncordon <node-name>
 # Check node status
 kubectl get nodes
 # NAME    STATUS                     ROLES    AGE   VERSION
-# node1   Ready                      worker   10d   v1.31.0
-# node2   Ready,SchedulingDisabled   worker   10d   v1.31.0  # cordoned
+# node1   Ready                      worker   10d   v1.35.0
+# node2   Ready,SchedulingDisabled   worker   10d   v1.35.0  # cordoned
 ```
 
 ### 6.4 Removing a Node

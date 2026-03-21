@@ -189,10 +189,10 @@ sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 
 # Add Kubernetes repository key
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
 
 # Add Kubernetes repository
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
 
 # Install components
 sudo apt-get update
@@ -269,7 +269,7 @@ kubectl get nodes
 Output:
 ```
 NAME      STATUS     ROLES           AGE   VERSION
-cp-node   NotReady   control-plane   1m    v1.31.0
+cp-node   NotReady   control-plane   1m    v1.35.0
 ```
 
 The node shows `NotReady` because we haven't installed a network plugin yet.
@@ -305,7 +305,7 @@ kubectl get nodes
 Output:
 ```
 NAME      STATUS   ROLES           AGE   VERSION
-cp-node   Ready    control-plane   5m    v1.31.0
+cp-node   Ready    control-plane   5m    v1.35.0
 ```
 
 `Ready`! The control plane is operational.
@@ -344,9 +344,9 @@ kubectl get nodes
 Output:
 ```
 NAME        STATUS   ROLES           AGE   VERSION
-cp-node     Ready    control-plane   10m   v1.31.0
-worker-01   Ready    <none>          2m    v1.31.0
-worker-02   Ready    <none>          1m    v1.31.0
+cp-node     Ready    control-plane   10m   v1.35.0
+worker-01   Ready    <none>          2m    v1.35.0
+worker-02   Ready    <none>          1m    v1.35.0
 ```
 
 All nodes `Ready`! Your cluster is operational.
@@ -365,9 +365,9 @@ kubectl label node worker-02 node-role.kubernetes.io/worker=
 Now `kubectl get nodes` shows:
 ```
 NAME        STATUS   ROLES           AGE   VERSION
-cp-node     Ready    control-plane   10m   v1.31.0
-worker-01   Ready    worker          3m    v1.31.0
-worker-02   Ready    worker          2m    v1.31.0
+cp-node     Ready    control-plane   10m   v1.35.0
+worker-01   Ready    worker          3m    v1.35.0
+worker-02   Ready    worker          2m    v1.35.0
 ```
 
 ---

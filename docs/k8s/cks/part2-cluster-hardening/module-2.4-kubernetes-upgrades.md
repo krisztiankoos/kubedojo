@@ -29,12 +29,12 @@ This module focuses on the security aspects of upgrades, not the mechanical proc
 │  • Security fixes backported to all 3                      │
 │  • Older versions: NO SECURITY PATCHES                     │
 │                                                             │
-│  Example (if current is 1.31):                             │
-│  ├── 1.31 ✓ Supported (security patches)                  │
-│  ├── 1.30 ✓ Supported (security patches)                  │
-│  ├── 1.29 ✓ Supported (security patches)                  │
-│  ├── 1.28 ✗ End of life (no patches!)                     │
-│  └── 1.27 ✗ Unsupported (vulnerable!)                     │
+│  Example (if current is 1.35):                             │
+│  ├── 1.35 ✓ Supported (security patches)                  │
+│  ├── 1.34 ✓ Supported (security patches)                  │
+│  ├── 1.33 ✓ Supported (security patches)                  │
+│  ├── 1.32 ✗ End of life (no patches!)                     │
+│  └── 1.31 ✗ Unsupported (vulnerable!)                     │
 │                                                             │
 │  Risk of running unsupported versions:                     │
 │  ⚠️  Known CVEs remain unpatched                           │
@@ -119,16 +119,16 @@ kubectl api-resources --verbs=list -o name | xargs -n 1 kubectl get --show-label
 ```bash
 # On control plane
 sudo apt update
-sudo apt install -y kubeadm=1.31.0-*
+sudo apt install -y kubeadm=1.35.0-*
 
 # Plan the upgrade
 sudo kubeadm upgrade plan
 
 # Apply upgrade
-sudo kubeadm upgrade apply v1.31.0
+sudo kubeadm upgrade apply v1.35.0
 
 # Upgrade kubelet and kubectl
-sudo apt install -y kubelet=1.31.0-* kubectl=1.31.0-*
+sudo apt install -y kubelet=1.35.0-* kubectl=1.35.0-*
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 ```
@@ -369,7 +369,7 @@ kubeadm upgrade plan | grep -E "v1\.[0-9]+\.[0-9]+"
 1. **How many minor versions does Kubernetes support with security patches?**
    <details>
    <summary>Answer</summary>
-   Three minor versions. For example, if 1.31 is current, versions 1.31, 1.30, and 1.29 receive security patches.
+   Three minor versions. For example, if 1.35 is current, versions 1.35, 1.34, and 1.33 receive security patches.
    </details>
 
 2. **What component should be upgraded first in a cluster?**

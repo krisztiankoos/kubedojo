@@ -37,7 +37,7 @@ Every module MUST include:
 ### Technical Standards
 - kubectl alias: Use `k` consistently (after Module 0.2)
 - YAML: 2-space indentation, valid syntax
-- Kubernetes version: 1.31+ (current exam version)
+- Kubernetes version: 1.35+ (current exam version)
 - Commands: Complete, not abbreviated
 
 ## Curriculum Structure
