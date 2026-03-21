@@ -458,6 +458,16 @@ kubectl get pod -n production --show-labels
 
 - **Not all CNIs support NetworkPolicies.** Flannel doesn't. Calico, Cilium, and Weave do. Check your cluster!
 
+- **Cilium goes beyond NetworkPolicies.** Cilium supports standard Kubernetes NetworkPolicies plus its own `CiliumNetworkPolicy` CRD for L7 (HTTP/gRPC) filtering, DNS-aware policies, and **transparent Pod-to-Pod encryption** (WireGuard or IPsec) without any application changes. If your CKS exam environment uses Cilium, you get network encryption essentially for free:
+
+```yaml
+# Enable Cilium transparent encryption (cluster-level)
+# In Cilium Helm values or ConfigMap:
+encryption:
+  enabled: true
+  type: wireguard  # or ipsec
+```
+
 ---
 
 ## Common Mistakes

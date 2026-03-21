@@ -4,13 +4,13 @@
 >
 > **Time to Complete**: 20-25 minutes
 >
-> **Prerequisites**: Active CKA certification (required for CKS)
+> **Prerequisites**: CKA certification (must have passed CKA at any point — active certification no longer required)
 
 ---
 
 ## Why This Module Matters
 
-The CKS (Certified Kubernetes Security Specialist) is the most advanced Kubernetes certification. It requires an **active CKA** to even attempt. This isn't arbitrary gatekeeping—security requires deep operational knowledge first.
+The CKS (Certified Kubernetes Security Specialist) is the most advanced Kubernetes certification. It requires you to have **passed the CKA** (it no longer needs to be active). This isn't arbitrary gatekeeping—security requires deep operational knowledge first.
 
 You can't secure what you don't understand.
 
@@ -56,7 +56,7 @@ This module sets your expectations, explains what makes CKS different, and maps 
 | **Format** | Performance-based (CLI tasks) |
 | **Questions** | ~15-20 tasks |
 | **Passing Score** | 67% |
-| **Prerequisite** | Active CKA certification |
+| **Prerequisite** | CKA certification (passed at any point) |
 | **Environment** | Ubuntu-based, kubeadm clusters |
 | **Validity** | 2 years |
 
@@ -230,7 +230,7 @@ Same strategy as CKA, security-focused:
 1. **What is the prerequisite for taking the CKS exam?**
    <details>
    <summary>Answer</summary>
-   An active CKA certification. You cannot register for CKS without a valid CKA.
+   A CKA certification — you must have passed CKA at any point (it no longer needs to be active/unexpired).
    </details>
 
 2. **What percentage of the CKS exam covers runtime security and monitoring?**

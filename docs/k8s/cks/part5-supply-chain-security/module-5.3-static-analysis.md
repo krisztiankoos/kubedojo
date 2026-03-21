@@ -203,6 +203,46 @@ kubesec scan secure-pod.yaml
 
 ---
 
+## KubeLinter
+
+KubeLinter is a static analysis tool that checks Kubernetes manifests against best practices and common misconfigurations. It's faster and more opinionated than kubesec, focusing on deployment safety.
+
+```bash
+# Install
+curl -sL https://github.com/stackrox/kube-linter/releases/latest/download/kube-linter-linux -o kube-linter
+chmod +x kube-linter
+
+# Lint a manifest
+./kube-linter lint deployment.yaml
+
+# Lint an entire directory
+./kube-linter lint manifests/
+
+# List all available checks
+./kube-linter checks list
+```
+
+KubeLinter catches issues like:
+- Containers running as root
+- No resource limits set
+- No readiness/liveness probes
+- Writable root filesystems
+- Privileged containers
+- Missing network policies
+
+```bash
+# Example output
+deployment.yaml: (object: default/nginx apps/v1, Kind=Deployment)
+  - container "nginx" does not have a read-only root file system
+    (check: no-read-only-root-fs, remediation: Set readOnlyRootFilesystem to true)
+  - container "nginx" has cpu limit 0 (check: unset-cpu-requirements)
+  - container "nginx" is not set to runAsNonRoot (check: run-as-non-root)
+```
+
+> **kubesec vs KubeLinter**: kubesec scores overall security posture (good for audits). KubeLinter catches specific issues with actionable remediations (good for CI pipelines). Use both.
+
+---
+
 ## OPA Gatekeeper
 
 Open Policy Agent (OPA) Gatekeeper provides policy enforcement at admission time.
