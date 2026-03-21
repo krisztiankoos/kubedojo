@@ -92,6 +92,19 @@ Volumes provide storage that exists outside the container's filesystem:
 | secret | Secret lifetime | Credentials | Managed by Secret |
 | projected | Source lifetime | Multiple sources in one mount | Depends on sources |
 | persistentVolumeClaim | PV lifetime | Persistent data | Survives pod deletion |
+| image | Image lifetime | OCI image content as read-only volume (K8s 1.35+) | Read-only, pulled from registry |
+
+> **New in K8s 1.35: Image Volumes (GA)**
+>
+> Image volumes let you pull an OCI image from a registry and mount its contents directly as a read-only volume. No init containers or bootstrap scripts needed. Perfect for ML models, config bundles, or static assets:
+>
+> ```yaml
+> volumes:
+> - name: model-data
+>   image:
+>     reference: registry.example.com/ml-models/bert:v2
+>     pullPolicy: IfNotPresent
+> ```
 
 ---
 
