@@ -96,23 +96,23 @@ All completed modules meet this standard.
 ## Overall Curriculum Status
 | Curriculum | Status | Modules |
 |------------|--------|---------|
-| CKA | ✅ Complete | 38 |
+| CKA | ✅ Complete | 39 |
 | CKAD | ✅ Complete | 28 |
 | CKS | ✅ Complete | 30 |
 | KCNA | ✅ Complete | 21 |
 | KCSA | ✅ Complete | 25 |
 | Prerequisites | ✅ Complete | 23 |
-| Platform | ✅ Complete | 106 |
+| Platform | ✅ Complete | 122 |
 | Linux | ✅ Complete | 28 |
 | IaC | ✅ Complete | 12 |
-| **Completed** | | **311** |
-| **Total** | | **311** |
+| **Completed** | | **328** |
+| **Total** | | **328** |
 
-## Current Work: Ecosystem Update (March 2026) — Nearly Complete
-6 of 7 update issues closed. Only CNPE/CKNE certification mapping (#68) remains.
+## Current Work: Ecosystem Update + Gap Fill (March 2026) — Complete
+All ecosystem update issues closed. 15 new modules added filling K8s ecosystem gaps.
 
 ## Next Steps
-- P7: CNPE certification mapping (map existing Platform modules to CNPE domains)
+- P7: CNPE certification mapping (#68 — map existing Platform modules to CNPE domains)
 - Ongoing: Keep curriculum aligned with K8s releases and CNCF cert changes
 
 ## Blockers
@@ -135,6 +135,19 @@ None
 | #66 | P5: etcd-operator v0.2.0 | ✅ Closed (new module 15.5) |
 | #67 | P6: CKA Competency Updates | ✅ Closed (new module 2.9 Autoscaling) |
 | #69 | Bridge Adaptation | ✅ Closed |
+| #70 | FinOps / OpenCost | ✅ Closed (new module) |
+| #71 | Kyverno | ✅ Closed (new module) |
+| #72 | Chaos Engineering | ✅ Closed (new module) |
+| #73 | Kubebuilder / Operators | ✅ Closed (new module) |
+| #74 | Continuous Profiling | ✅ Closed (new module) |
+| #75 | SLO Tooling | ✅ Closed (new module) |
+| #76 | Cluster API | ✅ Closed (new module) |
+| #77 | vCluster | ✅ Closed (new module) |
+| #78 | Storage (Rook/Ceph, MinIO, Longhorn) | ✅ Closed (3 new modules) |
+| #79 | GPU Scheduling | ✅ Closed (new module) |
+| #80 | DNS Deep Dive | ✅ Closed (new module) |
+| #81 | MetalLB | ✅ Closed (new module) |
+| #82 | SPIFFE/SPIRE | ✅ Closed (new module) |
 | #55 | Phase 4-5 Toolkit Expansion | ✅ Closed (19 modules + quality polish) |
 | #53 | Content Quality Improvement | ✅ Closed (all modules 10/10) |
 | #56 | KCNA Curriculum Update (Nov 2025) | ✅ Closed (restructured) |
