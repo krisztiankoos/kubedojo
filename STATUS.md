@@ -108,15 +108,12 @@ All completed modules meet this standard.
 | **Completed** | | **311** |
 | **Total** | | **311** |
 
-## Current Work: Ecosystem Update (March 2026)
-Updating curriculum for K8s 1.35 "Timbernetes", Gateway API dominance, and new CNCF certifications.
+## Current Work: Ecosystem Update (March 2026) — Nearly Complete
+6 of 7 update issues closed. Only CNPE/CKNE certification mapping (#68) remains.
 
 ## Next Steps
-- Complete remaining P3 items (K8s 1.35 features: gang scheduling, PodCertificateRequests, Linux track)
-- P4: CKS audit gaps (Cilium encryption, SBOM, Kubesec, KubeLinter)
-- P5: etcd-operator v0.2.0 module
-- P6: CKA competency verification
-- P7: CNPE certification mapping
+- P7: CNPE certification mapping (map existing Platform modules to CNPE domains)
+- Ongoing: Keep curriculum aligned with K8s releases and CNCF cert changes
 
 ## Blockers
 None
@@ -126,10 +123,6 @@ None
 |---|-------|--------|
 | #14 | Curriculum Monitoring & Official Sources | 📋 Open |
 | #15 | Practice Environment & Exercise Approach | 📋 Open |
-| #64 | P3: K8s 1.35 Features | 🔧 In Progress (cgroup v2, RBAC, resize, IPVS, volumes done) |
-| #65 | P4: CKS Overhaul Alignment | 📋 Open (audit complete, gaps identified) |
-| #66 | P5: etcd-operator v0.2.0 | 📋 Open |
-| #67 | P6: CKA Competency Updates | 📋 Open |
 | #68 | P7: CNPE/CKNE Certifications | 📋 Open |
 
 ### Recently Closed
@@ -137,6 +130,11 @@ None
 |---|-------|--------|
 | #62 | P1: K8s Version 1.31→1.35 | ✅ Closed |
 | #63 | P2: Gateway API / Ingress-NGINX Retirement | ✅ Closed |
+| #64 | P3: K8s 1.35 Features | ✅ Closed (12 ACs across 6 tracks) |
+| #65 | P4: CKS Overhaul Alignment | ✅ Closed (Cilium, KubeLinter, prereq) |
+| #66 | P5: etcd-operator v0.2.0 | ✅ Closed (new module 15.5) |
+| #67 | P6: CKA Competency Updates | ✅ Closed (new module 2.9 Autoscaling) |
+| #69 | Bridge Adaptation | ✅ Closed |
 | #55 | Phase 4-5 Toolkit Expansion | ✅ Closed (19 modules + quality polish) |
 | #53 | Content Quality Improvement | ✅ Closed (all modules 10/10) |
 | #56 | KCNA Curriculum Update (Nov 2025) | ✅ Closed (restructured) |
@@ -154,7 +152,7 @@ None
 | #51 | Linux: Shell Scripting & Automation | ✅ Closed (4 modules) |
 
 ## Session Notes
-_2026-03-21: Ecosystem Update session. Researched K8s 1.35, Gateway API, ingress-nginx retirement, etcd-operator v0.2.0, CNCF cert changes. Created issues #62-#68 (7 phases). Gemini reviewed all via ai_agent_bridge. Completed: P1 (version bump 1.31→1.35, 4 files), P2 (Gateway API/Ingress updates across CKA/CKAD/CKS, 4 files), P3 partial (cgroup v2, containerd 2.0, RBAC exec breaking change, in-place pod resize GA, IPVS deprecation, nftables, image volumes, PreferSameNode traffic). CKS audit: PSP→PSS already handled, gaps in Cilium encryption/SBOM/Kubesec. Adapted ai_agent_bridge from learn-ukrainian for kubedojo. Bridge script committed._
+_2026-03-21: Major ecosystem update session. Researched K8s 1.35, Gateway API, ingress-nginx retirement, etcd-operator v0.2.0, CNCF cert changes. Created issues #62-#68 (7 phases), all Gemini-reviewed. Closed 6/7: P1 version bump (1.31→1.35), P2 Gateway API/Ingress retirement (4 cert modules), P3 K8s 1.35 features (cgroup v2, RBAC exec, in-place resize, IPVS/nftables, image volumes, PreferSameNode, gang scheduling, StatefulSet MaxUnavailable, PodCertificateRequests, KubeletEnsureSecretPulledImages — 12 ACs across 6 tracks), P4 CKS alignment (Cilium encryption, KubeLinter, prereq update), P5 etcd-operator v0.2.0 (new module 15.5), P6 CKA competency updates (new module 2.9 Autoscaling). Adapted ai_agent_bridge from learn-ukrainian with KubeDojo-specific review prompts. Total: 2 new modules, ~20 module updates, 15 commits. Only #68 (CNPE/CKNE) remains._
 _2025-12-12: Issue #55 COMPLETE - All 7 low-priority modules polished to 10/10. Enhanced with third-person dramatic openings, financial impact tables, 4 compelling "Did You Know" facts with dollar amounts, war story financial impact tables. Modules: CodeQL ($315K/$2M), Vitess ($189M Slack), Managed K8s ($2.4M/$669K), Wing ($47K/$203K), Coroot ($43K/$164K), CockroachDB ($4.2M/$2M), Talos ($2.3M/$1.1M). All curriculum content complete (311 modules). Only meta issues #14, #15 remain open._
 _2025-12-02: CKA Parts 0-5 complete (33 modules). Theory done, mock exams deferred._
 _2025-12-03: CKAD complete (23 modules)._
