@@ -21,3 +21,12 @@ temp/
 .venv/
 site/
 .mcp/servers/message-broker/
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+service-account.json
+kubeconfig
