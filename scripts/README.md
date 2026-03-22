@@ -10,22 +10,22 @@ Multi-agent collaboration bridge enabling Claude and Gemini to work together on 
 # Review a GitHub issue
 python scripts/ai_agent_bridge/__main__.py ask-gemini \
   "Review issue #66 for completeness and technical accuracy: $(gh issue view 66 --json body --jq .body)" \
-  --task-id "issue-66-review" --model gemini-3-flash-preview --stdout-only
+  --task-id "issue-66-review" --model gemini-3.1-pro-preview --stdout-only
 
 # Review a module
 python scripts/ai_agent_bridge/__main__.py ask-gemini \
   "Review docs/k8s/cka/part3-services-networking/module-3.5-gateway-api.md for technical accuracy and exam alignment" \
-  --task-id "module-review" --model gemini-3-flash-preview --stdout-only
+  --task-id "module-review" --model gemini-3.1-pro-preview --stdout-only
 
 # Review a diff before closing an issue
 python scripts/ai_agent_bridge/__main__.py ask-gemini \
   "Review this diff for accuracy: $(git diff HEAD~3..HEAD -- docs/)" \
-  --task-id "diff-review" --model gemini-3-flash-preview --stdout-only
+  --task-id "diff-review" --model gemini-3.1-pro-preview --stdout-only
 
 # Post review directly to a GitHub issue (omit --no-github)
 python scripts/ai_agent_bridge/__main__.py ask-gemini \
   "Review issue #66" \
-  --task-id "issue-66" --model gemini-3-flash-preview --stdout-only
+  --task-id "issue-66" --model gemini-3.1-pro-preview --stdout-only
 
 # Check bridge status
 python scripts/ai_agent_bridge/__main__.py status
