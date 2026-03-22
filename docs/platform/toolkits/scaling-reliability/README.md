@@ -23,6 +23,8 @@ Before starting this toolkit:
 | 6.1 | [Karpenter](module-6.1-karpenter.md) | `[COMPLEX]` | 45-50 min |
 | 6.2 | [KEDA](module-6.2-keda.md) | `[MEDIUM]` | 40-45 min |
 | 6.3 | [Velero](module-6.3-velero.md) | `[MEDIUM]` | 40-45 min |
+| 6.4 | [FinOps with OpenCost](module-6.4-finops-opencost.md) | `[MEDIUM]` | 40-45 min |
+| 6.5 | [Chaos Engineering](module-6.5-chaos-engineering.md) | `[COMPLEX]` | 50 min |
 
 ## Learning Outcomes
 

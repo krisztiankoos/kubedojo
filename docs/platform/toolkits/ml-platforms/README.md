@@ -26,6 +26,7 @@ Before starting this toolkit:
 | 9.4 | [vLLM](module-9.4-vllm.md) | `[COMPLEX]` | 50-60 min |
 | 9.5 | [Ray Serve](module-9.5-ray-serve.md) | `[COMPLEX]` | 50-60 min |
 | 9.6 | [LangChain & LlamaIndex](module-9.6-langchain-llamaindex.md) | `[COMPLEX]` | 50-60 min |
+| 9.7 | [GPU Scheduling](module-9.7-gpu-scheduling.md) | `[COMPLEX]` | 50 min |
 
 ## Learning Outcomes
 

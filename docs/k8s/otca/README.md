@@ -12,6 +12,17 @@ The OTCA (OpenTelemetry Certified Associate) validates your understanding of Ope
 
 ---
 
+## OTCA-Specific Modules
+
+These modules fill the gaps between KubeDojo's existing observability modules and the OTCA exam requirements:
+
+| # | Module | Topic | Domains Covered |
+|---|--------|-------|-----------------|
+| 1 | [OTel SDK Deep Dive](module-1-otel-sdk-deep-dive.md) | TracerProvider, MeterProvider, span processors, sampling, context propagation | Domain 2 (46%) |
+| 2 | [OTel Collector Advanced](module-2-otel-collector-advanced.md) | Collector pipelines, deployment patterns, connectors, distributions | Domain 3 (26%) |
+
+---
+
 ## Exam Domains
 
 | Domain | Weight | KubeDojo Coverage |
@@ -80,6 +91,7 @@ The OTCA (OpenTelemetry Certified Associate) validates your understanding of Ope
 | [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry.md) | OTel SDK overview, auto-instrumentation basics | Partial |
 | [Tracing](../../platform/toolkits/observability/module-1.5-tracing.md) | Spans, trace context, propagation basics | Partial |
 | [Observability 3.3](../../platform/foundations/observability-theory/module-3.3-instrumentation-principles.md) | Instrumentation theory and principles | Partial |
+| [OTel SDK Deep Dive](module-1-otel-sdk-deep-dive.md) | TracerProvider, MeterProvider, span processors, sampling, context propagation, metric instruments | Direct |
 
 ### Key Exam Topics Not Yet Covered
 
@@ -123,6 +135,7 @@ This is where KubeDojo's biggest gap lies. The following require dedicated modul
 | [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry.md) | Collector overview, receiver/processor/exporter basics | Partial |
 | [Prometheus](../../platform/toolkits/observability/module-1.1-prometheus.md) | Prometheus receiver/exporter context | Partial |
 | [Tracing](../../platform/toolkits/observability/module-1.5-tracing.md) | Trace pipeline concepts | Partial |
+| [OTel Collector Advanced](module-2-otel-collector-advanced.md) | Pipeline configuration, deployment patterns, connectors, distributions, processors | Direct |
 
 ### Key Exam Topics Not Yet Covered
 

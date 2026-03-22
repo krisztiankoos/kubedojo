@@ -23,6 +23,9 @@ Before starting this toolkit:
 | 7.1 | [Backstage](module-7.1-backstage.md) | `[COMPLEX]` | 50-60 min |
 | 7.2 | [Crossplane](module-7.2-crossplane.md) | `[COMPLEX]` | 50-60 min |
 | 7.3 | [cert-manager](module-7.3-cert-manager.md) | `[MEDIUM]` | 40-45 min |
+| 3.4 | [Kubebuilder](module-3.4-kubebuilder.md) | `[COMPLEX]` | 55 min |
+| 3.5 | [Cluster API](module-3.5-cluster-api.md) | `[COMPLEX]` | 50 min |
+| 3.6 | [vCluster](module-3.6-vcluster.md) | `[MEDIUM]` | 40 min |
 
 ## Learning Outcomes
 

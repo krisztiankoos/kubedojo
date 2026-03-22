@@ -12,6 +12,17 @@ The KCA (Kyverno Certified Associate) validates your ability to use Kyverno for 
 
 ---
 
+## KCA-Specific Modules
+
+These modules fill the gaps between KubeDojo's existing Kyverno toolkit module and the KCA exam requirements:
+
+| # | Module | Topic | Domains Covered |
+|---|--------|-------|-----------------|
+| 1 | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) | verifyImages, CEL expressions, cleanup policies, advanced validate/mutate/generate | Domain 5 (32%) |
+| 2 | [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) | kyverno apply/test/jp, policy exceptions, metrics, HA deployment | Domains 2, 3, 6 (40%) |
+
+---
+
 ## Exam Domains
 
 | Domain | Weight | KubeDojo Coverage |
@@ -105,6 +116,7 @@ The KCA (Kyverno Certified Associate) validates your ability to use Kyverno for 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | CLI basics, CI/CD integration | Partial |
+| [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) | kyverno apply/test/jp, policy exceptions, metrics, HA deployment | Direct |
 | [DevSecOps 4.3](../../platform/disciplines/devsecops/module-4.3-security-cicd.md) | Security in CI/CD pipelines (policy-as-code pattern) | Context |
 | [CKS Static Analysis](../../k8s/cks/part5-supply-chain-security/module-5.3-static-analysis.md) | Pre-deploy scanning concepts | Context |
 
@@ -199,10 +211,11 @@ spec:
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Validate, mutate, generate policies with examples | Direct |
+| [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) | verifyImages, CEL expressions, cleanup policies, advanced patterns | Direct |
 | [Security Mindset 4.1](../../platform/foundations/security-principles/module-4.1-security-mindset.md) | Why policy enforcement matters | Context |
 | [Defense in Depth 4.2](../../platform/foundations/security-principles/module-4.2-defense-in-depth.md) | Layered security model | Context |
 
-**Gaps requiring external study (verifyImages, CEL, cleanup):**
+**Additional depth (verifyImages, CEL, cleanup):**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|

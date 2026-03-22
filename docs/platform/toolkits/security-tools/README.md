@@ -26,6 +26,8 @@ Before starting this toolkit:
 | 4.4 | [Supply Chain Security](module-4.4-supply-chain.md) | `[COMPLEX]` | 45-50 min |
 | 4.5 | [Tetragon](module-4.5-tetragon.md) | `[MEDIUM]` | 90 min |
 | 4.6 | [KubeArmor](module-4.6-kubearmor.md) | `[MEDIUM]` | 90 min |
+| 4.7 | [Kyverno](module-4.7-kyverno.md) | `[MEDIUM]` | 35-40 min |
+| 4.8 | [SPIFFE/SPIRE](module-4.8-spiffe-spire.md) | `[COMPLEX]` | 50 min |
 
 ## Learning Outcomes
 

@@ -28,6 +28,8 @@ Before starting this toolkit:
 | 1.6 | [Pixie](module-1.6-pixie.md) | `[MEDIUM]` | 90 min |
 | 1.7 | [Hubble](module-1.7-hubble.md) | `[MEDIUM]` | 90 min |
 | 1.8 | [Coroot](module-1.8-coroot.md) | `[MEDIUM]` | 90 min |
+| 1.9 | [Continuous Profiling](module-1.9-continuous-profiling.md) | `[MEDIUM]` | 40 min |
+| 1.10 | [SLO Tooling](module-1.10-slo-tooling.md) | `[MEDIUM]` | 40 min |
 
 ## Learning Outcomes
 

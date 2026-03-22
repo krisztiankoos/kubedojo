@@ -23,6 +23,17 @@ The CAPA (Certified Argo Project Associate) validates knowledge of the four Argo
 
 ---
 
+## CAPA-Specific Modules
+
+These modules fill the gaps between KubeDojo's existing Platform Engineering content and the CAPA exam requirements:
+
+| # | Module | Topic | Relevance |
+|---|--------|-------|-----------|
+| 1 | [Advanced Argo Workflows](module-1-advanced-argo-workflows.md) | All 7 template types, artifacts, CronWorkflows, memoization, lifecycle hooks | Domain 1 (36%) |
+| 2 | [Argo Events](module-2-argo-events.md) | EventSource, Sensor, Trigger, EventBus architecture, event-driven automation | Domain 4 (12%) |
+
+---
+
 ## Domain 1: Argo Workflows (36%)
 
 ### Competencies
@@ -40,6 +51,7 @@ The CAPA (Certified Argo Project Associate) validates knowledge of the four Argo
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Argo Workflows](../../platform/toolkits/ci-cd-pipelines/module-3.3-argo-workflows.md) | Workflow CRD, DAG/steps, templates, parameters | Direct |
+| [Advanced Argo Workflows](module-1-advanced-argo-workflows.md) | All 7 template types, artifacts, CronWorkflows, retries, memoization | Direct |
 
 ### Supplementary Study Topics
 
@@ -211,7 +223,9 @@ With Istio/Nginx/ALB:   Fine-grained traffic percentage control
 
 ### KubeDojo Learning Path
 
-> **Gap**: KubeDojo does not currently have a dedicated Argo Events module. Use the resources below to study this domain.
+| Module | Topic | Relevance |
+|--------|-------|-----------|
+| [Argo Events](module-2-argo-events.md) | EventSource, Sensor, EventBus, Trigger architecture, event-driven patterns | Direct |
 
 ### Study Resources
 

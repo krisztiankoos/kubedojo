@@ -22,6 +22,8 @@ Before starting this toolkit:
 |---|--------|------------|------|
 | 5.1 | [Cilium](module-5.1-cilium.md) | `[COMPLEX]` | 50-60 min |
 | 5.2 | [Service Mesh](module-5.2-service-mesh.md) | `[COMPLEX]` | 50-60 min |
+| 5.3 | [DNS Deep Dive](module-5.3-dns-deep-dive.md) | `[MEDIUM]` | 40 min |
+| 5.4 | [MetalLB](module-5.4-metallb.md) | `[MEDIUM]` | 35 min |
 
 ## Learning Outcomes
 

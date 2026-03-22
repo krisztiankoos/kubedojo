@@ -12,6 +12,18 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 
 ---
 
+## CBA-Specific Modules
+
+These modules fill the gaps between KubeDojo's existing Backstage toolkit module and the CBA exam requirements:
+
+| # | Module | Topic | Domains Covered |
+|---|--------|-------|-----------------|
+| 1 | [Backstage Developer Workflow](module-1-backstage-dev-workflow.md) | Monorepo structure, TypeScript essentials, Docker builds, app-config, CLI | Domain 1 (24%) |
+| 2 | [Backstage Plugin Development](module-2-backstage-plugin-development.md) | Frontend/backend plugins, React/MUI, scaffolder actions, themes, APIs | Domain 4 (32%) |
+| 3 | [Backstage Catalog & Infrastructure](module-3-backstage-catalog-infrastructure.md) | Entity processors, providers, annotations, auth, deployment, troubleshooting | Domains 2-3 (44%) |
+
+---
+
 ## Exam Details
 
 | Detail | Value |
@@ -58,15 +70,11 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 |--------|-------|-----------|
 | [Backstage 7.1](../../platform/toolkits/platforms/module-7.1-backstage.md) | Installation, `npx @backstage/create-app`, `yarn dev` | Partial -- covers basic setup only |
 
-**Gap -- needs new module(s):**
+**Dedicated CBA module:**
 
-| Topic | Status | What's Missing |
-|-------|--------|----------------|
-| Backstage monorepo structure | Not covered | packages/app, packages/backend, lerna/yarn workspaces |
-| TypeScript for Backstage | Not covered | Types, interfaces, async patterns used in plugins |
-| Docker multi-stage builds | Not covered | `packages/backend/Dockerfile`, host builds vs multi-stage |
-| app-config overlays | Not covered | `app-config.local.yaml`, `app-config.production.yaml`, env substitution |
-| Backstage CLI commands | Not covered | `backstage-cli package start`, `build`, `lint`, version bumps |
+| Module | Topic | Relevance |
+|--------|-------|-----------|
+| [Backstage Developer Workflow](module-1-backstage-dev-workflow.md) | Monorepo structure, TypeScript essentials, Docker builds, app-config overlays, CLI commands | Direct |
 
 ---
 
@@ -91,15 +99,11 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 | [Platform Eng 2.3](../../platform/disciplines/platform-engineering/module-2.3-internal-developer-platforms.md) | IDP concepts, why portals matter | Background |
 | [Platform Eng 2.2](../../platform/disciplines/platform-engineering/module-2.2-developer-experience.md) | Developer Experience principles | Background |
 
-**Gap -- needs coverage:**
+**Dedicated CBA module:**
 
-| Topic | Status | What's Missing |
-|-------|--------|----------------|
-| Auth providers in depth | Not covered | GitHub App auth, Okta/OIDC config, sign-in resolvers |
-| Backstage proxy | Not covered | `/api/proxy` endpoint, forwarding to external APIs |
-| Database migrations | Not covered | Running migrations, switching SQLite to PostgreSQL |
-| Production hardening | Not covered | HTTPS, CORS, CSP headers, scaling |
-| Backend-for-frontend pattern | Not covered | How frontend plugins call backend APIs |
+| Module | Topic | Relevance |
+|--------|-------|-----------|
+| [Backstage Catalog & Infrastructure](module-3-backstage-catalog-infrastructure.md) | Auth providers, proxy, database migrations, production hardening, backend-for-frontend | Direct |
 
 ---
 
@@ -159,17 +163,11 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 |--------|-------|-----------|
 | [Backstage 7.1](../../platform/toolkits/platforms/module-7.1-backstage.md) | Plugin ecosystem overview, basic plugin code snippet | Minimal |
 
-**Gap -- needs new module(s):**
+**Dedicated CBA module:**
 
-| Topic | Status | What's Missing |
-|-------|--------|----------------|
-| React for Backstage | Not covered | Components, hooks, props, state management |
-| Material UI (MUI) | Not covered | MUI components, sx prop, theme customization |
-| Frontend plugin development | Not covered | Full plugin creation, routing, API calls |
-| Backend plugin development | Not covered | Express routers, database access, service-to-service auth |
-| Scaffolder custom actions | Not covered | `createTemplateAction`, input/output schemas |
-| Custom themes | Not covered | `createUnifiedTheme`, palette, typography |
-| Extension points | Not covered | Overriding default components, adding cards |
+| Module | Topic | Relevance |
+|--------|-------|-----------|
+| [Backstage Plugin Development](module-2-backstage-plugin-development.md) | React/MUI, frontend/backend plugins, scaffolder actions, themes, extension points | Direct |
 
 ---
 

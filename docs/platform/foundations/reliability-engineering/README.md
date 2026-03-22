@@ -28,6 +28,7 @@ This isn't about hoping things don't break. It's about engineering systems that 
 | 2.2 | [Failure Modes and Effects](module-2.2-failure-modes-and-effects.md) | 30-35 min | FMEA, graceful degradation, blast radius |
 | 2.3 | [Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance.md) | 30-35 min | HA vs FT, active-active, redundancy patterns |
 | 2.4 | [Measuring and Improving Reliability](module-2.4-measuring-and-improving-reliability.md) | 35-40 min | SLIs, SLOs, error budgets, continuous improvement |
+| 2.5 | [SLOs, SLIs, and Error Budgets](module-2.5-slos-slis-error-budgets.md) | 20-30 min | Deep dive into the SRE mental model for reliability targets |
 
 ---
 
