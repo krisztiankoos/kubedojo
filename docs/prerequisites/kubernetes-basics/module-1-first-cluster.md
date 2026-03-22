@@ -252,8 +252,8 @@ kubectl get pods -A
 # Get more detail on nodes
 kubectl describe node kind-control-plane
 
-# Check component status
-kubectl get componentstatuses  # May show deprecated warning
+# Check component health (componentstatuses is deprecated; use this instead)
+kubectl get --raw='/readyz?verbose'
 
 # View cluster events
 kubectl get events -A

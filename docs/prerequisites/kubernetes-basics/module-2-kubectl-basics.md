@@ -131,13 +131,18 @@ kubectl get pod nginx -o yaml
 # JSON
 kubectl get pod nginx -o json
 
-# Custom columns
-kubectl get pods -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
-
-# JSONPath (extract specific fields)
-kubectl get pod nginx -o jsonpath='{.status.podIP}'
-kubectl get pods -o jsonpath='{.items[*].metadata.name}'
 ```
+
+> **Bonus: Power User Syntax** (come back to these after you're comfortable with the basics)
+>
+> ```bash
+> # Custom columns (great for dashboards)
+> kubectl get pods -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
+>
+> # JSONPath (extract specific fields — exam gold!)
+> kubectl get pod nginx -o jsonpath='{.status.podIP}'
+> kubectl get pods -o jsonpath='{.items[*].metadata.name}'
+> ```
 
 ---
 
