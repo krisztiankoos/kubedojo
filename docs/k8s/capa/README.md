@@ -36,6 +36,7 @@ The CAPA (Certified Argo Project Associate) validates knowledge of the four Argo
 ### KubeDojo Learning Path
 
 **Core module:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Argo Workflows](../../platform/toolkits/ci-cd-pipelines/module-3.3-argo-workflows.md) | Workflow CRD, DAG/steps, templates, parameters | Direct |
@@ -91,6 +92,7 @@ Step A (outputs.artifacts.data) → Artifact Repo (S3/MinIO) → Step B (inputs.
 ### KubeDojo Learning Path
 
 **Theory (start here):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [GitOps 3.1](../../platform/disciplines/gitops/module-3.1-what-is-gitops.md) | What is GitOps? OpenGitOps 4 principles | Direct |
@@ -101,6 +103,7 @@ Step A (outputs.artifacts.data) → Artifact Repo (S3/MinIO) → Step B (inputs.
 | [GitOps 3.6](../../platform/disciplines/gitops/module-3.6-multi-cluster.md) | Multi-cluster GitOps | Direct |
 
 **Tools (hands-on):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [ArgoCD](../../platform/toolkits/gitops-deployments/module-2.1-argocd.md) | Application CRD, sync policies, RBAC, ApplicationSet, App-of-Apps | Direct |

@@ -34,6 +34,7 @@ The OTCA (OpenTelemetry Certified Associate) validates your understanding of Ope
 ### KubeDojo Learning Path
 
 **Theory (start here):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Observability 3.1](../../platform/foundations/observability-theory/module-3.1-what-is-observability.md) | What is Observability? Observability vs. monitoring | Direct |
@@ -42,6 +43,7 @@ The OTCA (OpenTelemetry Certified Associate) validates your understanding of Ope
 | [Observability 3.4](../../platform/foundations/observability-theory/module-3.4-from-data-to-insight.md) | From data to insight | Partial |
 
 **Tools (context):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry.md) | OTel architecture overview, signals, auto-instrumentation | Direct |
@@ -72,6 +74,7 @@ The OTCA (OpenTelemetry Certified Associate) validates your understanding of Ope
 ### KubeDojo Learning Path
 
 **Existing coverage:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry.md) | OTel SDK overview, auto-instrumentation basics | Partial |
@@ -114,6 +117,7 @@ This is where KubeDojo's biggest gap lies. The following require dedicated modul
 ### KubeDojo Learning Path
 
 **Existing coverage:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry.md) | Collector overview, receiver/processor/exporter basics | Partial |

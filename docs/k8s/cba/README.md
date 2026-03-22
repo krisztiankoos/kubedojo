@@ -53,11 +53,13 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 ### KubeDojo Learning Path
 
 **Existing coverage:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Backstage 7.1](../../platform/toolkits/platforms/module-7.1-backstage.md) | Installation, `npx @backstage/create-app`, `yarn dev` | Partial -- covers basic setup only |
 
 **Gap -- needs new module(s):**
+
 | Topic | Status | What's Missing |
 |-------|--------|----------------|
 | Backstage monorepo structure | Not covered | packages/app, packages/backend, lerna/yarn workspaces |
@@ -82,6 +84,7 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 ### KubeDojo Learning Path
 
 **Existing coverage:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Backstage 7.1](../../platform/toolkits/platforms/module-7.1-backstage.md) | Architecture diagram, app-config.yaml, K8s deployment YAML | Direct |
@@ -89,6 +92,7 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 | [Platform Eng 2.2](../../platform/disciplines/platform-engineering/module-2.2-developer-experience.md) | Developer Experience principles | Background |
 
 **Gap -- needs coverage:**
+
 | Topic | Status | What's Missing |
 |-------|--------|----------------|
 | Auth providers in depth | Not covered | GitHub App auth, Okta/OIDC config, sign-in resolvers |
@@ -114,6 +118,7 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 ### KubeDojo Learning Path
 
 **Existing coverage:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Backstage 7.1](../../platform/toolkits/platforms/module-7.1-backstage.md) | Entity types, catalog-info.yaml, relationships, annotations, auto-discovery | Direct |
@@ -121,6 +126,7 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 | [Platform Eng 2.5](../../platform/disciplines/platform-engineering/module-2.5-self-service-infrastructure.md) | Self-service concepts | Background |
 
 **Gap -- needs coverage:**
+
 | Topic | Status | What's Missing |
 |-------|--------|----------------|
 | Entity processors | Not covered | Writing custom processors for ingestion |
@@ -148,11 +154,13 @@ The CBA (Certified Backstage Associate) validates your understanding of Backstag
 ### KubeDojo Learning Path
 
 **Existing coverage:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Backstage 7.1](../../platform/toolkits/platforms/module-7.1-backstage.md) | Plugin ecosystem overview, basic plugin code snippet | Minimal |
 
 **Gap -- needs new module(s):**
+
 | Topic | Status | What's Missing |
 |-------|--------|----------------|
 | React for Backstage | Not covered | Components, hooks, props, state management |

@@ -34,6 +34,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 ### KubeDojo Learning Path
 
 **Theory (start here):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [GitOps 3.1](../../platform/disciplines/gitops/module-3.1-what-is-gitops.md) | What is GitOps? OpenGitOps 4 principles | Direct |
@@ -44,6 +45,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 | [GitOps 3.6](../../platform/disciplines/gitops/module-3.6-multi-cluster.md) | Multi-cluster GitOps | Direct |
 
 **Tools (hands-on):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [ArgoCD](../../platform/toolkits/gitops-deployments/module-2.1-argocd.md) | ArgoCD: Application CRD, sync, RBAC, ApplicationSet | Direct |
@@ -67,6 +69,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 ### KubeDojo Learning Path
 
 **Theory:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Platform Eng 2.1](../../platform/disciplines/platform-engineering/module-2.1-what-is-platform-engineering.md) | What is Platform Engineering? | Direct |
@@ -77,6 +80,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 | [Platform Eng 2.6](../../platform/disciplines/platform-engineering/module-2.6-platform-maturity.md) | Platform Maturity Models | Direct |
 
 **Tools:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Backstage](../../platform/toolkits/platforms/module-7.1-backstage.md) | Software Catalog, Templates, TechDocs | Direct |
@@ -98,6 +102,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 ### KubeDojo Learning Path
 
 **Theory:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Observability 3.1](../../platform/foundations/observability-theory/module-3.1-what-is-observability.md) | What is Observability? | Direct |
@@ -109,6 +114,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 | [SRE 1.5](../../platform/disciplines/sre/module-1.5-incident-management.md) | Incident Management | Direct |
 
 **Tools:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Prometheus](../../platform/toolkits/observability/module-1.1-prometheus.md) | Pull-based monitoring, PromQL, ServiceMonitor | Direct |
@@ -132,6 +138,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 ### KubeDojo Learning Path
 
 **Theory:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Systems Thinking 1.1](../../platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking.md) | Systems thinking for architects | Partial |
@@ -142,6 +149,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 | [IaC 6.4](../../platform/disciplines/iac/module-6.4-iac-at-scale.md) | IaC at Scale | Direct |
 
 **Tools:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Karpenter](../../platform/toolkits/scaling-reliability/module-6.1-karpenter.md) | Autoscaling, right-sizing | Direct |
@@ -164,6 +172,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 ### KubeDojo Learning Path
 
 **Theory:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Security 4.1](../../platform/foundations/security-principles/module-4.1-security-mindset.md) | Security mindset | Direct |
@@ -175,6 +184,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 | [DevSecOps 4.5](../../platform/disciplines/devsecops/module-4.5-runtime-security.md) | Runtime security | Direct |
 
 **Tools:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [OPA/Gatekeeper](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md) | Policy engine (Rego), admission control | Direct |

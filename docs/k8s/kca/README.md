@@ -36,12 +36,14 @@ The KCA (Kyverno Certified Associate) validates your ability to use Kyverno for 
 ### KubeDojo Learning Path
 
 **Core module:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Architecture, policy model, validate/mutate/generate | Direct |
 | [OPA & Gatekeeper 4.2](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md) | Policy engine concepts, admission control patterns | Context |
 
 **Kubernetes foundations (admission controllers):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [CKS Admission Controllers](../../k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers.md) | ValidatingWebhookConfiguration, MutatingWebhookConfiguration | Direct |
@@ -68,11 +70,13 @@ The KCA (Kyverno Certified Associate) validates your ability to use Kyverno for 
 ### KubeDojo Learning Path
 
 **Kyverno-specific:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Installation, Helm values, basic configuration | Direct |
 
 **Supporting Kubernetes concepts:**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [CKS Kubernetes Upgrades](../../k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades.md) | Upgrade strategies, version skew | Context |
@@ -191,6 +195,7 @@ spec:
 ### KubeDojo Learning Path
 
 **Well-covered (validate, mutate, generate):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Validate, mutate, generate policies with examples | Direct |
@@ -198,6 +203,7 @@ spec:
 | [Defense in Depth 4.2](../../platform/foundations/security-principles/module-4.2-defense-in-depth.md) | Layered security model | Context |
 
 **Gaps requiring external study (verifyImages, CEL, cleanup):**
+
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Supply Chain Security 4.4](../../platform/toolkits/security-tools/module-4.4-supply-chain.md) | Cosign, image signing, attestations (verifyImages context) | Direct |
