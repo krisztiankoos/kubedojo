@@ -1,5 +1,32 @@
 # KubeDojo Scripts
 
+## check_site_health.py
+
+Validates site integrity — run before every push.
+
+```bash
+# Run the health check
+python scripts/check_site_health.py
+```
+
+**What it checks:**
+1. All `mkdocs.yml` nav entries point to existing files
+2. No orphaned `.md` files missing from navigation
+3. All internal markdown links resolve (`[text](path.md)`)
+4. Changelog has links for every mentioned module
+5. No duplicate nav entries
+6. Module count in STATUS.md matches actual files
+7. README files reference their child modules
+
+**Exit codes:** 0 = pass, 1 = errors found
+
+**When to run:**
+- Before every `git push`
+- After adding new modules
+- After updating navigation or changelog
+
+---
+
 ## ai_agent_bridge
 
 Multi-agent collaboration bridge enabling Claude and Gemini to work together on KubeDojo.

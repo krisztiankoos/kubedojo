@@ -1,0 +1,15 @@
+#!/bin/bash
+# KubeDojo pre-push hook: runs site health check before pushing
+# Install: git config core.hooksPath .githooks
+
+echo "Running KubeDojo site health check..."
+python3 scripts/check_site_health.py
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "Site health check FAILED. Fix errors before pushing."
+    echo "Run: python scripts/check_site_health.py"
+    exit 1
+fi
+
+echo "Site health check passed."
