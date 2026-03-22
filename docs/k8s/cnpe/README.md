@@ -79,8 +79,8 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 **Tools:**
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Backstage](../../platform/toolkits/platforms/module-3.1-backstage.md) | Software Catalog, Templates, TechDocs | Direct |
-| [Crossplane](../../platform/toolkits/platforms/module-3.2-crossplane.md) | XRDs, Compositions, Providers | Direct |
+| [Backstage](../../platform/toolkits/platforms/module-7.1-backstage.md) | Software Catalog, Templates, TechDocs | Direct |
+| [Crossplane](../../platform/toolkits/platforms/module-7.2-crossplane.md) | XRDs, Compositions, Providers | Direct |
 | [Kubebuilder](../../platform/toolkits/platforms/module-3.4-kubebuilder.md) | Building custom operators | Direct |
 | [Cluster API](../../platform/toolkits/platforms/module-3.5-cluster-api.md) | Declarative cluster lifecycle | Direct |
 | [vCluster](../../platform/toolkits/platforms/module-3.6-vcluster.md) | Virtual clusters for self-service | Direct |
@@ -115,7 +115,7 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 | [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry.md) | OTel Collector, auto-instrumentation | Direct |
 | [Grafana](../../platform/toolkits/observability/module-1.3-grafana.md) | Dashboards, data sources, provisioning | Direct |
 | [Loki](../../platform/toolkits/observability/module-1.4-loki.md) | Log aggregation, LogQL | Direct |
-| [Tracing](../../platform/toolkits/observability/module-1.5-distributed-tracing.md) | Jaeger/Tempo, context propagation | Direct |
+| [Tracing](../../platform/toolkits/observability/module-1.5-tracing.md) | Jaeger/Tempo, context propagation | Direct |
 | [SLO Tooling](../../platform/toolkits/observability/module-1.10-slo-tooling.md) | Sloth, Pyrra, error budget dashboards | Direct |
 | [Continuous Profiling](../../platform/toolkits/observability/module-1.9-continuous-profiling.md) | Parca, Pyroscope (4th pillar) | Partial |
 | [FinOps](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost.md) | OpenCost, cost allocation, right-sizing | Direct |

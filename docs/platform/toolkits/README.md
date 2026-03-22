@@ -59,5 +59,5 @@ Pick a toolkit based on your current focus:
 
 - **Starting observability?** Begin with [Prometheus](observability/module-1.1-prometheus.md)
 - **Implementing GitOps?** Start with [ArgoCD](gitops-deployments/module-2.1-argocd.md)
-- **Managing infrastructure?** Check out [Terraform](iac-tools/module-5.1-terraform.md)
+- **Managing infrastructure?** Check out [Terraform](iac-tools/module-7.1-terraform.md)
 - **Building a platform?** Check out [Backstage](platforms/module-7.1-backstage.md)

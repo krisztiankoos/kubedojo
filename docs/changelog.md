@@ -22,28 +22,28 @@ KubeDojo is now fully aligned with **Kubernetes 1.35** (released December 2025):
 #### Certification Tracks
 | Module | Track | Description |
 |--------|-------|-------------|
-| Autoscaling (HPA/VPA) | CKA | Horizontal and Vertical Pod Autoscaling with hands-on load testing |
-| etcd-operator v0.2.0 | Platform | Official etcd operator — TLS management, managed upgrades |
-| CNPE Learning Path | CNPE | Maps 60+ existing modules to the new CNPE certification domains |
+| [Autoscaling (HPA/VPA)](k8s/cka/part2-workloads-scheduling/module-2.9-autoscaling.md) | CKA | Horizontal and Vertical Pod Autoscaling with hands-on load testing |
+| [etcd-operator v0.2.0](platform/toolkits/cloud-native-databases/module-15.5-etcd-operator.md) | Platform | Official etcd operator — TLS management, managed upgrades |
+| [CNPE Learning Path](k8s/cnpe/README.md) | CNPE | Maps 60+ existing modules to the new CNPE certification domains |
 
 #### Platform Engineering Toolkit — 15 New Modules
 | Module | Category | Description |
 |--------|----------|-------------|
-| **FinOps & OpenCost** | Scaling | K8s cost optimization, resource right-sizing, idle cleanup |
-| **Kyverno** | Security | YAML-native policy engine — validate, mutate, generate |
-| **Chaos Engineering** | Scaling | LitmusChaos + Chaos Mesh hands-on with GameDay planning |
-| **Building Operators** | Platforms | Kubebuilder from scratch — build a WebApp operator |
-| **Continuous Profiling** | Observability | Parca + Pyroscope — the 4th pillar of observability |
-| **SLO Tooling** | Observability | Sloth + Pyrra — bridging SRE theory to practice |
-| **Cluster API** | Platforms | Declarative K8s cluster lifecycle management (CAPI) |
-| **vCluster** | Platforms | Virtual K8s clusters for multi-tenancy at 1/10th the cost |
-| **Rook/Ceph** | Storage | Distributed storage — block, filesystem, and object from one cluster |
-| **MinIO** | Storage | S3-compatible object storage on K8s |
-| **Longhorn** | Storage | Lightweight distributed block storage with backup/DR |
-| **GPU Scheduling** | ML Platforms | NVIDIA GPU Operator, time-slicing, MIG, monitoring |
-| **DNS Deep Dive** | Networking | CoreDNS customization, external-dns, ndots optimization |
-| **MetalLB** | Networking | Bare-metal load balancing — L2 and BGP modes |
-| **SPIFFE/SPIRE** | Security | Cryptographic workload identity for zero-trust networking |
+| [**FinOps & OpenCost**](platform/toolkits/scaling-reliability/module-6.4-finops-opencost.md) | Scaling | K8s cost optimization, resource right-sizing, idle cleanup |
+| [**Kyverno**](platform/toolkits/security-tools/module-4.7-kyverno.md) | Security | YAML-native policy engine — validate, mutate, generate |
+| [**Chaos Engineering**](platform/toolkits/scaling-reliability/module-6.5-chaos-engineering.md) | Scaling | LitmusChaos + Chaos Mesh hands-on with GameDay planning |
+| [**Building Operators**](platform/toolkits/platforms/module-3.4-kubebuilder.md) | Platforms | Kubebuilder from scratch — build a WebApp operator |
+| [**Continuous Profiling**](platform/toolkits/observability/module-1.9-continuous-profiling.md) | Observability | Parca + Pyroscope — the 4th pillar of observability |
+| [**SLO Tooling**](platform/toolkits/observability/module-1.10-slo-tooling.md) | Observability | Sloth + Pyrra — bridging SRE theory to practice |
+| [**Cluster API**](platform/toolkits/platforms/module-3.5-cluster-api.md) | Platforms | Declarative K8s cluster lifecycle management (CAPI) |
+| [**vCluster**](platform/toolkits/platforms/module-3.6-vcluster.md) | Platforms | Virtual K8s clusters for multi-tenancy at 1/10th the cost |
+| [**Rook/Ceph**](platform/toolkits/storage/module-16.1-rook-ceph.md) | Storage | Distributed storage — block, filesystem, and object from one cluster |
+| [**MinIO**](platform/toolkits/storage/module-16.2-minio.md) | Storage | S3-compatible object storage on K8s |
+| [**Longhorn**](platform/toolkits/storage/module-16.3-longhorn.md) | Storage | Lightweight distributed block storage with backup/DR |
+| [**GPU Scheduling**](platform/toolkits/ml-platforms/module-9.7-gpu-scheduling.md) | ML Platforms | NVIDIA GPU Operator, time-slicing, MIG, monitoring |
+| [**DNS Deep Dive**](platform/toolkits/networking/module-5.3-dns-deep-dive.md) | Networking | CoreDNS customization, external-dns, ndots optimization |
+| [**MetalLB**](platform/toolkits/networking/module-5.4-metallb.md) | Networking | Bare-metal load balancing — L2 and BGP modes |
+| [**SPIFFE/SPIRE**](platform/toolkits/security-tools/module-4.8-spiffe-spire.md) | Security | Cryptographic workload identity for zero-trust networking |
 
 ### CKS Exam Alignment
 

@@ -298,4 +298,4 @@ k delete hpa challenge-web
 
 ## Next Module
 
-[Module 2.10: Advanced Scheduling](module-2.10-advanced-scheduling.md) — or return to [Part 2 Overview](../part2-workloads-scheduling/).
+Return to [Part 2 Overview](../part2-workloads-scheduling/).

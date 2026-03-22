@@ -9,7 +9,7 @@
 
 Before starting this module, you should have completed:
 - [Module 6.1: IaC Fundamentals](module-6.1-iac-fundamentals.md) - Core IaC concepts
-- [Module 4.1: Security Foundations](../security-principles/module-4.1-defense-in-depth.md) - Security principles
+- [Module 4.1: Security Mindset](../../foundations/security-principles/module-4.1-security-mindset.md) - Security principles
 - Basic understanding of unit testing concepts
 
 ---

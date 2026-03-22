@@ -1277,4 +1277,4 @@ infracost breakdown --path . --terraform-var "environment=dev"
 
 ## Next Module
 
-Continue to [Module 7.1: Terraform Deep Dive](../toolkits/iac-tools/module-7.1-terraform.md) to learn advanced Terraform patterns, state management, and real-world best practices.
+Continue to [Module 7.1: Terraform Deep Dive](../../toolkits/iac-tools/module-7.1-terraform.md) to learn advanced Terraform patterns, state management, and real-world best practices.

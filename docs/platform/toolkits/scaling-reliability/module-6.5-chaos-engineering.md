@@ -722,7 +722,7 @@ Create a NetworkChaos experiment that adds 500ms latency between the web pods an
 
 ## Next Module
 
-Continue to [Module 6.6: Service Mesh](module-6.6-service-mesh.md) to learn how Istio and Linkerd add observability, security, and traffic management to your microservices.
+Continue to [Module 5.2: Service Mesh](../networking/module-5.2-service-mesh.md) to learn how Istio and Linkerd add observability, security, and traffic management to your microservices.
 
 ---
 

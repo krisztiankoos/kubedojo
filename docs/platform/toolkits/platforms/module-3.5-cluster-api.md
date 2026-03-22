@@ -316,7 +316,7 @@ spec:
 
 With this setup, adding a new cluster means committing a YAML file. Upgrading a fleet means bumping the version in Git. Every change is auditable, reviewable, and reversible.
 
-> Cross-reference: See [ArgoCD](../../gitops-deployments/module-2.1-argocd.md) and [Flux](../../gitops-deployments/module-2.3-flux.md) for GitOps fundamentals.
+> Cross-reference: See [ArgoCD](../gitops-deployments/module-2.1-argocd.md) and [Flux](../gitops-deployments/module-2.3-flux.md) for GitOps fundamentals.
 
 ---
 

@@ -24,7 +24,7 @@ Before starting this toolkit:
 | 12.2 | [Semgrep](module-12.2-semgrep.md) | `[MEDIUM]` | 45-50 min |
 | 12.3 | [CodeQL](module-12.3-codeql.md) | `[COMPLEX]` | 50-60 min |
 | 12.4 | [Snyk](module-12.4-snyk.md) | `[MEDIUM]` | 40-45 min |
-| 12.5 | [Checkov & Trivy](module-12.5-checkov-trivy.md) | `[MEDIUM]` | 40-45 min |
+| 12.5 | [Checkov & Trivy](module-12.5-trivy.md) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
