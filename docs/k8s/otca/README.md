@@ -39,7 +39,7 @@ The OTCA (OpenTelemetry Certified Associate) validates your understanding of Ope
 | [Observability 3.1](../../platform/foundations/observability-theory/module-3.1-what-is-observability.md) | What is Observability? Observability vs. monitoring | Direct |
 | [Observability 3.2](../../platform/foundations/observability-theory/module-3.2-the-three-pillars.md) | Metrics, Logs, Traces — the three pillars | Direct |
 | [Observability 3.3](../../platform/foundations/observability-theory/module-3.3-instrumentation-principles.md) | Instrumentation principles: auto vs. manual, what to measure | Direct |
-| [Observability 3.4](../../platform/foundations/observability-theory/module-3.4-observability-culture.md) | Observability culture and organizational practices | Partial |
+| [Observability 3.4](../../platform/foundations/observability-theory/module-3.4-from-data-to-insight.md) | From data to insight | Partial |
 
 **Tools (context):**
 | Module | Topic | Relevance |
