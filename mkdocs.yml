@@ -65,6 +65,7 @@ copyright: MIT License - Free to use, share, and modify
 
 nav:
   - Home: index.md
+  - "What's New": changelog.md
 
   - Prerequisites:
     - prerequisites/README.md
@@ -219,6 +220,8 @@ nav:
         - k8s/kcsa/part6-compliance/module-6.1-compliance-frameworks.md
         - k8s/kcsa/part6-compliance/module-6.2-cis-benchmarks.md
         - k8s/kcsa/part6-compliance/module-6.3-security-assessments.md
+    - CNPE:
+      - k8s/cnpe/README.md
     - CKAD:
       - k8s/ckad/README.md
       - "Part 0: Environment":
@@ -284,6 +287,7 @@ nav:
         - k8s/cka/part2-workloads-scheduling/module-2.6-scheduling.md
         - k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets.md
         - k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory.md
+        - k8s/cka/part2-workloads-scheduling/module-2.9-autoscaling.md
         - k8s/cka/part2-workloads-scheduling/part2-cumulative-quiz.md
       - "Part 3: Services & Networking":
         - k8s/cka/part3-services-networking/module-3.1-services.md
@@ -454,6 +458,8 @@ nav:
         - platform/toolkits/observability/module-1.6-pixie.md
         - platform/toolkits/observability/module-1.7-hubble.md
         - platform/toolkits/observability/module-1.8-coroot.md
+        - platform/toolkits/observability/module-1.9-continuous-profiling.md
+        - platform/toolkits/observability/module-1.10-slo-tooling.md
       - GitOps & Deployments:
         - platform/toolkits/gitops-deployments/README.md
         - platform/toolkits/gitops-deployments/module-2.1-argocd.md
@@ -473,6 +479,8 @@ nav:
         - platform/toolkits/security-tools/module-4.4-supply-chain.md
         - platform/toolkits/security-tools/module-4.5-tetragon.md
         - platform/toolkits/security-tools/module-4.6-kubearmor.md
+        - platform/toolkits/security-tools/module-4.7-kyverno.md
+        - platform/toolkits/security-tools/module-4.8-spiffe-spire.md
       - IaC Tools:
         - platform/toolkits/iac-tools/README.md
         - platform/toolkits/iac-tools/module-7.1-terraform.md
@@ -489,16 +497,23 @@ nav:
         - platform/toolkits/networking/README.md
         - platform/toolkits/networking/module-5.1-cilium.md
         - platform/toolkits/networking/module-5.2-service-mesh.md
+        - platform/toolkits/networking/module-5.3-dns-deep-dive.md
+        - platform/toolkits/networking/module-5.4-metallb.md
       - Scaling & Reliability:
         - platform/toolkits/scaling-reliability/README.md
         - platform/toolkits/scaling-reliability/module-6.1-karpenter.md
         - platform/toolkits/scaling-reliability/module-6.2-keda.md
         - platform/toolkits/scaling-reliability/module-6.3-velero.md
+        - platform/toolkits/scaling-reliability/module-6.4-finops-opencost.md
+        - platform/toolkits/scaling-reliability/module-6.5-chaos-engineering.md
       - Platforms:
         - platform/toolkits/platforms/README.md
         - platform/toolkits/platforms/module-7.1-backstage.md
         - platform/toolkits/platforms/module-7.2-crossplane.md
         - platform/toolkits/platforms/module-7.3-cert-manager.md
+        - platform/toolkits/platforms/module-3.4-kubebuilder.md
+        - platform/toolkits/platforms/module-3.5-cluster-api.md
+        - platform/toolkits/platforms/module-3.6-vcluster.md
       - Developer Experience:
         - platform/toolkits/developer-experience/README.md
         - platform/toolkits/developer-experience/module-8.1-k9s-cli.md
@@ -514,6 +529,7 @@ nav:
         - platform/toolkits/ml-platforms/module-9.4-vllm.md
         - platform/toolkits/ml-platforms/module-9.5-ray-serve.md
         - platform/toolkits/ml-platforms/module-9.6-langchain-llamaindex.md
+        - platform/toolkits/ml-platforms/module-9.7-gpu-scheduling.md
       - AIOps Tools:
         - platform/toolkits/aiops-tools/README.md
         - platform/toolkits/aiops-tools/module-10.1-anomaly-detection-tools.md
@@ -551,3 +567,9 @@ nav:
         - platform/toolkits/cloud-native-databases/module-15.2-cloudnativepg.md
         - platform/toolkits/cloud-native-databases/module-15.3-serverless-databases.md
         - platform/toolkits/cloud-native-databases/module-15.4-vitess.md
+        - platform/toolkits/cloud-native-databases/module-15.5-etcd-operator.md
+      - Storage:
+        - platform/toolkits/storage/README.md
+        - platform/toolkits/storage/module-16.1-rook-ceph.md
+        - platform/toolkits/storage/module-16.2-minio.md
+        - platform/toolkits/storage/module-16.3-longhorn.md

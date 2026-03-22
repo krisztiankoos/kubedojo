@@ -6,6 +6,8 @@ Kubernetes certifications. Platform engineering. SRE. DevSecOps. MLOps.
 
 No paywalls. No upsells. Theory-first.
 
+> **March 2026 Update**: 18 new modules added — FinOps, Kyverno, Chaos Engineering, GPU Scheduling, Cluster API, vCluster, and more. Full K8s 1.35 support. Every module quality-reviewed. [See what's new &rarr;](changelog.md)
+
 ---
 
 ## 🇺🇦 Присвята
