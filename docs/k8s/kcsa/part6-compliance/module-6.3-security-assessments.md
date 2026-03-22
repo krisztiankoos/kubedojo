@@ -565,6 +565,7 @@ kube-hunter --report yaml
 <summary>Threat Model</summary>
 
 **INGRESS:**
+
 | Threat | Example | Mitigation |
 |--------|---------|------------|
 | S | Fake SSL cert | Valid certs, certificate pinning |
@@ -575,6 +576,7 @@ kube-hunter --report yaml
 | E | Path traversal | Restrict paths, validate |
 
 **FRONTEND:**
+
 | Threat | Example | Mitigation |
 |--------|---------|------------|
 | S | Session hijacking | Secure cookies, short sessions |
@@ -585,6 +587,7 @@ kube-hunter --report yaml
 | E | SA token abuse | No API access needed |
 
 **BACKEND:**
+
 | Threat | Example | Mitigation |
 |--------|---------|------------|
 | S | Stolen SA token | Disable auto-mount |
@@ -595,6 +598,7 @@ kube-hunter --report yaml
 | E | RBAC escalation | Minimal permissions |
 
 **DATABASE:**
+
 | Threat | Example | Mitigation |
 |--------|---------|------------|
 | S | Credential theft | Rotate credentials, Vault |
@@ -605,6 +609,7 @@ kube-hunter --report yaml
 | E | Privilege escalation | Least privilege DB user |
 
 **SECRETS:**
+
 | Threat | Example | Mitigation |
 |--------|---------|------------|
 | S | Stolen credentials | Rotate regularly |

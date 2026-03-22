@@ -839,6 +839,7 @@ def format_cost_report(response):
 **Total Cost**: ${total:,.2f}
 
 ## By Service (Top 10)
+
 | Service | Cost |
 |---------|------|
 """
