@@ -32,8 +32,21 @@ theme:
   - content.tabs.link
   icon:
     repo: fontawesome/brands/github
+  language: en
 plugins:
 - search
+- i18n:
+    default_language: en
+    docs_structure: suffix
+    languages:
+    - locale: en
+      default: true
+      name: English
+      build: true
+    - locale: uk
+      default: false
+      name: Українська
+      build: true
 markdown_extensions:
 - pymdownx.highlight:
     anchor_linenums: true
