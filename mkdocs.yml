@@ -47,6 +47,23 @@ plugins:
       default: false
       name: Українська
       build: true
+      nav_translations:
+        Home: Головна
+        What's New: Що нового
+        Prerequisites: Передумови
+        Zero to Terminal: Від нуля до терміналу
+        Philosophy & Design: Філософія та дизайн
+        Cloud Native 101: Cloud Native 101
+        Kubernetes Basics: Основи Kubernetes
+        Modern DevOps: Сучасний DevOps
+        Linux: Linux
+        Foundations: Основи
+        Security: Безпека
+        Operations: Операції
+        Certifications: Сертифікації
+        Platform Engineering: Платформна інженерія
+        Toolkits: Інструменти
+        Disciplines: Дисципліни
 markdown_extensions:
 - pymdownx.highlight:
     anchor_linenums: true
