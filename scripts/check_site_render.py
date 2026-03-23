@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """KubeDojo Site Render Check — validates the built HTML for rendering issues.
 
-Requires the MkDocs dev server to be running at http://127.0.0.1:8001/kubedojo/
+Requires the MkDocs dev server to be running at http://127.0.0.1:8001/
 
 Run: python scripts/check_site_render.py
 """
@@ -12,7 +12,7 @@ import urllib.request
 import urllib.error
 from pathlib import Path
 
-BASE_URL = "http://127.0.0.1:8001/kubedojo"
+BASE_URL = "http://127.0.0.1:8001"
 DOCS_DIR = Path(__file__).parent.parent / "docs"
 MKDOCS_YML = Path(__file__).parent.parent / "mkdocs.yml"
 
