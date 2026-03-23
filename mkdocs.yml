@@ -68,6 +68,13 @@ extra:
   social:
   - icon: fontawesome/brands/github
     link: https://github.com/krisztiankoos/kubedojo
+  alternate:
+  - name: English
+    link: /
+    lang: en
+  - name: Українська
+    link: /uk/
+    lang: uk
 copyright: MIT License - Free to use, share, and modify
 nav:
 - Home: index.md
