@@ -94,6 +94,22 @@ Think of SSH as a **secure phone line to a remote kitchen**. You pick up the pho
 
 The "secure" part is important: everything you send over SSH is encrypted. Nobody can listen in on your conversation. It's like having a private, scrambled phone line.
 
+### A Quick Word About Environment Variables
+
+You'll sometimes see things like `$USER` or `$HOME` in commands or documentation. These are **environment variables** -- named boxes that your system fills with useful values automatically.
+
+- `$USER` holds your username
+- `$HOME` holds the path to your home directory
+
+Try them out:
+
+```bash
+echo $USER
+echo $HOME
+```
+
+You don't need to set these -- your computer does it for you when you log in. We mention this now because SSH commands often use `$USER`, and you'll see environment variables throughout your career.
+
 ### The SSH Command
 
 The basic SSH command looks like this:

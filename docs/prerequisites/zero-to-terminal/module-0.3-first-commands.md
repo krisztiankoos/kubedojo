@@ -373,6 +373,44 @@ Keep this handy until these become muscle memory:
 
 ---
 
+## Bonus: Connecting Commands with Pipes
+
+This is a **bonus section** -- feel free to skim it now and come back later. You don't need to master this today.
+
+Sometimes you want to take the output of one command and feed it into another command. That's what the **pipe** (`|`) does.
+
+> Kitchen analogy: Think of it like an assembly line. One station chops the vegetables, then passes them down the line to the next station that cooks them. Each station does one job and hands off the result.
+
+The `|` character (usually found above the Enter/Return key, typed with Shift + Backslash) sends the output of the command on its left into the command on its right.
+
+**Show only the first 5 files:**
+
+```bash
+ls | head -5
+```
+
+`ls` lists everything, but `head -5` takes only the first 5 lines. Useful when a folder has hundreds of files.
+
+**Search for a word inside a file:**
+
+```bash
+cat menu.txt | grep "pasta"
+```
+
+`cat` displays the file contents, and `grep "pasta"` filters to show only lines containing "pasta." (You'll use `grep` a LOT in your career.)
+
+**Find a past command you typed:**
+
+```bash
+history | grep "mkdir"
+```
+
+`history` shows every command you've typed, and `grep "mkdir"` filters it down to only the ones that included "mkdir." Very handy when you can't remember the exact command you ran earlier.
+
+You'll get more practice with pipes as the curriculum continues. For now, just remember: `|` connects commands like stations on an assembly line.
+
+---
+
 ## Common Mistakes
 
 | Mistake | Why It's a Problem | What to Do Instead |

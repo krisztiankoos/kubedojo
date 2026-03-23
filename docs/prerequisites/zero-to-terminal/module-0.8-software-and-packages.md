@@ -204,6 +204,17 @@ This doesn't install or change anything — it just downloads the latest list of
 
 **macOS:**
 
+First, if you don't have Homebrew installed yet, install it now:
+
+```bash
+# First, install Homebrew (macOS only — skip if you already have it)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+> This may take a few minutes. It will ask for your password (the one you use to log into your Mac).
+
+Once Homebrew is installed, update it:
+
 ```bash
 $ brew update
 ```

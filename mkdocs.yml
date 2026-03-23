@@ -74,6 +74,18 @@ nav:
 - What's New: changelog.md
 - Prerequisites:
   - prerequisites/README.md
+  - Zero to Terminal:
+    - prerequisites/zero-to-terminal/README.md
+    - prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.md
+    - prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal.md
+    - prerequisites/zero-to-terminal/module-0.3-first-commands.md
+    - prerequisites/zero-to-terminal/module-0.4-files-and-directories.md
+    - prerequisites/zero-to-terminal/module-0.5-editing-files.md
+    - prerequisites/zero-to-terminal/module-0.6-what-is-networking.md
+    - prerequisites/zero-to-terminal/module-0.7-servers-and-ssh.md
+    - prerequisites/zero-to-terminal/module-0.8-software-and-packages.md
+    - prerequisites/zero-to-terminal/module-0.9-what-is-the-cloud.md
+    - prerequisites/zero-to-terminal/module-0.10-your-first-server.md
   - Philosophy & Design:
     - prerequisites/philosophy-design/module-1-why-kubernetes-won.md
     - prerequisites/philosophy-design/module-2-declarative-vs-imperative.md
