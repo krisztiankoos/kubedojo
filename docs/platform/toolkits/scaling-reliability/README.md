@@ -25,6 +25,7 @@ Before starting this toolkit:
 | 6.3 | [Velero](module-6.3-velero.md) | `[MEDIUM]` | 40-45 min |
 | 6.4 | [FinOps with OpenCost](module-6.4-finops-opencost.md) | `[MEDIUM]` | 40-45 min |
 | 6.5 | [Chaos Engineering](module-6.5-chaos-engineering.md) | `[COMPLEX]` | 50 min |
+| 6.6 | [Knative](module-6.6-knative.md) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
