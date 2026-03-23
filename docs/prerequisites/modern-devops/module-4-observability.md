@@ -272,7 +272,12 @@ Traces **follow a request across multiple services**.
 ## Kubernetes-Native Metrics
 
 ```bash
-# kubectl top (requires metrics-server)
+# First, install metrics-server (kind clusters don't include it by default)
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# For kind/local clusters, patch it to work without TLS verification:
+kubectl patch deployment metrics-server -n kube-system --type=json \
+  -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+# Wait ~60 seconds for metrics to start collecting, then:
 kubectl top nodes
 kubectl top pods
 
@@ -433,8 +438,12 @@ kubectl expose deployment web --port=80
 kubectl logs -l app=web --all-containers
 kubectl logs -l app=web -f  # Follow logs
 
-# 3. Check resource usage (requires metrics-server)
-# If metrics-server is installed:
+# 3. Check resource usage
+# Install metrics-server first (if not already done):
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type=json \
+  -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+# Wait ~60 seconds, then:
 kubectl top pods
 kubectl top nodes
 
