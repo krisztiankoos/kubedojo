@@ -155,7 +155,7 @@ No paywalls. No upsells. Theory-first.
 | [FinOps](k8s/finops/README.md) | Learning Path | ✅ FinOps Practitioner prep |
 | [Linux Deep Dive](linux/README.md) | 30 | ✅ Complete |
 | [Platform Engineering](platform/README.md) | 154 | ✅ Complete |
-| **Total** | **370+** | |
+| **Total** | **375+** | |
 
 ---
 
