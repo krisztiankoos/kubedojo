@@ -14,13 +14,28 @@
 
 24 pages translated to Ukrainian including the full beginner track, Philosophy & Design, and Cloud Native 101. Language switcher in the header. Translation follows learn-ukrainian project quality rules (4-check: Russicism, Surzhyk, Calque, Paronym).
 
+### KCNA: AI/ML, WebAssembly, Green Computing
+
+3 new modules for the November 2025 KCNA curriculum update:
+- [AI/ML on Kubernetes](k8s/kcna/part3-cloud-native-architecture/module-3.8-ai-ml-cloud-native.md) — GPU scheduling, LLM inference, Kubeflow/KServe
+- [WebAssembly](k8s/kcna/part3-cloud-native-architecture/module-3.9-webassembly.md) — Wasm vs containers, WasmEdge, SpinKube
+- [Green Computing](k8s/kcna/part3-cloud-native-architecture/module-3.10-green-computing.md) — Kepler, carbon-aware scheduling
+
+### Knative Serverless
+
+New module: [Knative](platform/toolkits/scaling-reliability/module-6.6-knative.md) — scale-to-zero workloads, Serving, Eventing, traffic splitting.
+
 ### CNI Deep Dives
 
 4 new networking modules: [Flannel](platform/toolkits/networking/module-5.5-flannel.md), [Calico](platform/toolkits/networking/module-5.6-calico.md), [kube-router](platform/toolkits/networking/module-5.7-kube-router.md), [Multus](platform/toolkits/networking/module-5.8-multus.md).
 
 ### Linux Track Gaps Filled
 
-2 new modules: Package & User Management (apt/dnf, useradd/visudo), Scheduling & Backups (cron, systemd timers, tar, rsync).
+4 new modules:
+- [Package & User Management](linux/operations/module-8.1-storage-management.md) — apt/dnf, useradd/visudo
+- [Scheduling & Backups](linux/operations/module-8.4-scheduling-backups.md) — cron, systemd timers, tar, rsync
+- [Storage Management](linux/operations/module-8.1-storage-management.md) — LVM, RAID, NFS, swap
+- [Network Administration](linux/operations/module-8.2-network-administration.md) — firewalld, bonding, chrony, SSH hardening
 
 ### 21 Certification Tracks
 

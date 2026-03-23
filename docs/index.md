@@ -6,7 +6,7 @@ Kubernetes certifications. Platform engineering. SRE. DevSecOps. MLOps.
 
 No paywalls. No upsells. Theory-first.
 
-> **March 2026 Update**: Now covering **21 certifications** including PCA, ICA, CCA, CGOA, LFCS, and FinOps. 40+ new modules, K8s 1.35 support, every module quality-reviewed. [See what's new &rarr;](changelog.md)
+> **March 2026 Update**: **410+ modules** covering **21 certifications**. New: AI/ML, WebAssembly, Knative, 4 CNI deep dives, beginner track, Ukrainian translation. [See what's new &rarr;](changelog.md)
 
 ---
 
@@ -156,7 +156,7 @@ No paywalls. No upsells. Theory-first.
 | [FinOps](k8s/finops/README.md) | Learning Path | ✅ FinOps Practitioner prep |
 | [Linux Deep Dive](linux/README.md) | 30 | ✅ Complete |
 | [Platform Engineering](platform/README.md) | 154 | ✅ Complete |
-| **Total** | **375+** | |
+| **Total** | **410+** | |
 
 ---
 
