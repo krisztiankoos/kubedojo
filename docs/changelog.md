@@ -2,7 +2,25 @@
 
 ## March 2026 — Ecosystem Update + Quality Review + 21 Certifications
 
-**The biggest update since KubeDojo launched.** 40+ new modules, 30+ updated, every module quality-reviewed, and coverage expanded to 21 certifications.
+**The biggest update since KubeDojo launched.** 60+ new modules, 30+ updated, every module quality-reviewed, and coverage expanded to 21 certifications.
+
+### Zero to Terminal — Absolute Beginner Track
+
+10 new modules for people with **zero IT background**. From "What is a computer?" to deploying a website — with a restaurant kitchen analogy running throughout. Available in English and Ukrainian.
+
+[Start here &rarr;](prerequisites/zero-to-terminal/README.md)
+
+### Ukrainian Translation (Українська)
+
+24 pages translated to Ukrainian including the full beginner track, Philosophy & Design, and Cloud Native 101. Language switcher in the header. Translation follows learn-ukrainian project quality rules (4-check: Russicism, Surzhyk, Calque, Paronym).
+
+### CNI Deep Dives
+
+4 new networking modules: [Flannel](platform/toolkits/networking/module-5.5-flannel.md), [Calico](platform/toolkits/networking/module-5.6-calico.md), [kube-router](platform/toolkits/networking/module-5.7-kube-router.md), [Multus](platform/toolkits/networking/module-5.8-multus.md).
+
+### Linux Track Gaps Filled
+
+2 new modules: Package & User Management (apt/dnf, useradd/visudo), Scheduling & Backups (cron, systemd timers, tar, rsync).
 
 ### 21 Certification Tracks
 

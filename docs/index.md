@@ -135,6 +135,7 @@ No paywalls. No upsells. Theory-first.
 
 | Track | Modules | Status |
 |-------|---------|--------|
+| [Zero to Terminal](prerequisites/zero-to-terminal/README.md) | 10 | ✅ Complete (absolute beginners) |
 | [Prerequisites](prerequisites/README.md) | 23 | ✅ Complete |
 | [CKA](k8s/cka/README.md) | 41 | ✅ Complete (K8s 1.35) |
 | [CKAD](k8s/ckad/README.md) | 24 | ✅ Complete (K8s 1.35) |
@@ -163,6 +164,7 @@ No paywalls. No upsells. Theory-first.
 
 | You are... | Start here |
 |------------|------------|
+| Never used a terminal before | [Zero to Terminal](prerequisites/zero-to-terminal/README.md) (start here!) |
 | New to containers/K8s | [Prerequisites](prerequisites/README.md) |
 | Want deep Linux knowledge | [Linux Deep Dive](linux/README.md) |
 | Want K8s admin certification | [CKA](k8s/cka/README.md) |
