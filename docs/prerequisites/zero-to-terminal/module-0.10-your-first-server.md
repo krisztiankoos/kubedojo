@@ -70,6 +70,7 @@ You need a tool to run containers. Pick **any one** of these — they all work t
 | Tool | Best for | License |
 |------|----------|---------|
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Most popular, biggest community | Free for personal/small business |
+| [OrbStack](https://orbstack.dev/) | macOS — fastest, lightest, best UX | Free for personal use |
 | [Podman Desktop](https://podman-desktop.io/) | No daemon, rootless by default | Free and open source |
 | [Rancher Desktop](https://rancherdesktop.io/) | Includes K8s built-in | Free and open source |
 

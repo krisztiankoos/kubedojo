@@ -70,6 +70,7 @@
 | Інструмент | Найкраще для | Ліцензія |
 |------------|-------------|----------|
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Найпопулярніший, найбільша спільнота | Безкоштовний для особистого використання |
+| [OrbStack](https://orbstack.dev/) | macOS — найшвидший, найлегший, найкращий UX | Безкоштовний для особистого використання |
 | [Podman Desktop](https://podman-desktop.io/) | Без демона, безпечніший за замовчуванням | Вільне ПЗ |
 | [Rancher Desktop](https://rancherdesktop.io/) | Включає K8s з коробки | Вільне ПЗ |
 
