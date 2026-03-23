@@ -10,9 +10,9 @@
 
 ## Why This Module Matters
 
-Container escape—breaking out of a container to access the host—is the most severe container security failure. Understanding escape techniques helps you configure defenses and recognize dangerous configurations.
+Container escape—breaking out of a container to access the host—is the most severe container security failure. Understanding which configurations make escape possible helps you build secure defaults and recognize dangerous settings before they reach production.
 
-KCSA tests your ability to identify configurations that enable container escape and understand prevention strategies.
+KCSA tests your ability to identify configurations that enable container escape and understand prevention strategies. You don't need to know specific exploitation commands—that's [CKS territory](../../cks/README.md)—but you must recognize the risky settings and know how to prevent them.
 
 ---
 
@@ -51,13 +51,13 @@ KCSA tests your ability to identify configurations that enable container escape 
 
 ---
 
-## Escape Techniques
+## Risk Factors: What Makes Escape Possible?
 
-### 1. Privileged Container Escape
+### 1. Privileged Containers
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              PRIVILEGED CONTAINER ESCAPE                    │
+│              PRIVILEGED CONTAINER RISK                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  CONFIGURATION:                                            │
@@ -70,35 +70,29 @@ KCSA tests your ability to identify configurations that enable container escape 
 │  • No seccomp filtering                                    │
 │  • SELinux/AppArmor bypassed                              │
 │                                                             │
-│  ESCAPE METHOD:                                            │
-│  1. Mount host filesystem:                                 │
-│     mount /dev/sda1 /mnt                                  │
-│  2. Access host files:                                     │
-│     cat /mnt/etc/shadow                                   │
-│  3. Modify host:                                          │
-│     echo "attacker ALL=(ALL) NOPASSWD:ALL" >> /mnt/etc/...│
-│  4. Escape via cron, ssh, or exec on host                 │
+│  WHY IT'S DANGEROUS:                                       │
+│  An attacker inside a privileged container can mount the   │
+│  host filesystem, access sensitive host files, and modify  │
+│  host configurations—effectively gaining full host control │
+│  with minimal effort.                                      │
 │                                                             │
 │  TRIVIAL ESCAPE - Never use privileged: true              │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 2. Host Namespace Escape
+### 2. Host Namespace Sharing
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              HOST NAMESPACE ESCAPE                          │
+│              HOST NAMESPACE RISKS                           │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  hostPID: true                                             │
 │  ├── Container sees all host processes                     │
 │  ├── Can send signals to host processes                    │
-│  └── Can attach to host processes (with capabilities)      │
-│                                                             │
-│  ESCAPE METHOD:                                            │
-│  # Enter namespace of host process (e.g., PID 1)          │
-│  nsenter --target 1 --mount --uts --ipc --net --pid bash  │
+│  └── An attacker could inspect or interact with host       │
+│      processes, potentially gaining host-level access      │
 │                                                             │
 │  hostNetwork: true                                         │
 │  ├── Container uses host's network stack                   │
@@ -116,7 +110,7 @@ KCSA tests your ability to identify configurations that enable container escape 
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              HOST PATH ESCAPE                               │
+│              HOST PATH RISKS                                │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  DANGEROUS MOUNTS:                                         │
@@ -125,7 +119,7 @@ KCSA tests your ability to identify configurations that enable container escape 
 │  └── Full host filesystem access                           │
 │                                                             │
 │  hostPath: { path: /etc }                                  │
-│  └── Modify passwd, shadow, crontab                        │
+│  └── Can read/modify host credentials and configuration   │
 │                                                             │
 │  hostPath: { path: /var/run/docker.sock }                  │
 │  └── Control Docker daemon → create privileged containers  │
@@ -136,15 +130,16 @@ KCSA tests your ability to identify configurations that enable container escape 
 │  hostPath: { path: /root/.ssh }                            │
 │  └── Steal SSH keys                                        │
 │                                                             │
-│  ESCAPE METHOD (Docker socket):                            │
-│  1. Mount docker.sock into container                       │
-│  2. Run: docker run -v /:/host --privileged alpine        │
-│  3. Access host via new container                          │
+│  WHY DOCKER SOCKET IS ESPECIALLY DANGEROUS:                │
+│  Access to the Docker socket gives full control over the   │
+│  container runtime. An attacker could use it to launch     │
+│  new privileged containers with host filesystem access,    │
+│  effectively escaping to the host.                         │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 4. Capability-Based Escape
+### 4. Dangerous Capabilities
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -153,13 +148,13 @@ KCSA tests your ability to identify configurations that enable container escape 
 │                                                             │
 │  CAP_SYS_ADMIN                                             │
 │  ├── Nearly equivalent to root                             │
-│  ├── Can mount filesystems                                 │
-│  └── Can escape via mount namespaces                       │
+│  ├── Allows mounting filesystems                           │
+│  └── Can be used to break container isolation              │
 │                                                             │
 │  CAP_SYS_PTRACE                                            │
-│  ├── Can debug any process (with hostPID)                  │
-│  ├── Read process memory                                   │
-│  └── Inject code into processes                            │
+│  ├── Allows debugging processes                            │
+│  └── Combined with hostPID, can interact with host         │
+│      processes in dangerous ways                           │
 │                                                             │
 │  CAP_NET_ADMIN                                             │
 │  ├── Configure network interfaces                          │
@@ -167,16 +162,19 @@ KCSA tests your ability to identify configurations that enable container escape 
 │                                                             │
 │  CAP_DAC_READ_SEARCH                                       │
 │  ├── Bypass file read permission checks                    │
-│  └── Read any file                                         │
+│  └── Read any file regardless of ownership                 │
 │                                                             │
 │  CAP_DAC_OVERRIDE                                          │
 │  ├── Bypass all file permission checks                     │
-│  └── Write to any file                                     │
+│  └── Write to any file regardless of ownership             │
+│                                                             │
+│  BEST PRACTICE: Drop ALL capabilities, then add back only  │
+│  the specific ones your application needs.                 │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 5. Kernel Vulnerability Escape
+### 5. Kernel Vulnerabilities
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -309,7 +307,7 @@ KCSA tests your ability to identify configurations that enable container escape 
 
 - **Most container escapes are misconfigurations**, not zero-days. Proper configuration prevents most escape scenarios.
 
-- **Docker socket mount** is one of the most common escape vectors. Mounting /var/run/docker.sock gives control over all containers on the host.
+- **Docker socket mount** is one of the most common escape vectors. It gives an attacker full control over the container runtime, making it trivial to compromise the host.
 
 - **gVisor intercepts over 200 syscalls** and implements them in user-space, dramatically reducing kernel attack surface.
 
@@ -337,16 +335,16 @@ KCSA tests your ability to identify configurations that enable container escape 
    Privileged containers have all Linux capabilities, access to all host devices, no seccomp filtering, and bypass SELinux/AppArmor. This allows trivial escape by mounting the host filesystem or accessing host devices directly.
    </details>
 
-2. **How can hostPID: true enable container escape?**
+2. **Why is hostPID: true a container escape risk?**
    <details>
    <summary>Answer</summary>
-   With hostPID, the container can see all host processes and can use nsenter to enter the namespace of a host process (like PID 1/init), effectively gaining a shell on the host.
+   With hostPID, the container can see all host processes. Combined with capabilities like CAP_SYS_PTRACE or CAP_SYS_ADMIN, an attacker could inspect or interact with host processes, potentially gaining host-level access. Pod Security Standards (Baseline and above) block this setting.
    </details>
 
-3. **Why is mounting Docker socket dangerous?**
+3. **Why is mounting the Docker socket dangerous, and how would you prevent it?**
    <details>
    <summary>Answer</summary>
-   The Docker socket gives full control over the Docker daemon. An attacker can create a new privileged container that mounts the host filesystem, escaping to the host through that container.
+   The Docker socket gives full control over the container runtime. An attacker could use it to launch new privileged containers with host filesystem access, effectively escaping to the host. Prevent it by enforcing Pod Security Standards that block sensitive hostPath mounts and avoiding Docker socket mounts in pod specs entirely.
    </details>
 
 4. **How do sandboxed runtimes like gVisor prevent escape?**
@@ -396,36 +394,65 @@ spec:
       path: /
 ```
 
-**Identify the escape paths:**
+**Tasks:**
+1. Identify all the escape risk factors in this pod spec
+2. Explain why each one is dangerous
+3. Write a fixed version that follows the Restricted Pod Security Standard
 
 <details>
-<summary>Escape Paths</summary>
+<summary>Risk Factors</summary>
 
-This pod has **multiple** escape paths:
+This pod has **multiple** escape risk factors:
 
-**1. Docker Socket (Easiest)**
-- Mount: /var/run/docker.sock
-- Attack: `docker run -v /:/host --privileged alpine chroot /host`
-- Result: Full host access
+**1. Docker Socket Mount** (`/var/run/docker.sock`)
+- Gives full control over the container runtime
+- An attacker could launch new privileged containers with host access
 
-**2. Host Filesystem Mount**
-- Mount: / → /host
-- Attack: Direct file access, modify /host/etc/passwd
-- Result: Add user, access SSH keys, modify crontab
+**2. Host Root Filesystem Mount** (`/` mounted to `/host`)
+- Direct read/write access to the entire host filesystem
+- Credentials, configuration, and SSH keys are all exposed
 
-**3. hostPID + SYS_PTRACE**
-- Settings: hostPID: true, CAP_SYS_PTRACE
-- Attack: `nsenter -t 1 -m -u -i -n -p bash`
-- Result: Enter init's namespace, shell on host
+**3. hostPID + CAP_SYS_PTRACE**
+- Container can see all host processes and interact with them
+- Could be used to inspect host process memory or gain host access
 
-**4. hostPID + SYS_ADMIN**
-- Settings: hostPID: true, CAP_SYS_ADMIN
-- Attack: Mount namespace manipulation
-- Result: Create mounts that access host
+**4. hostPID + CAP_SYS_ADMIN**
+- Combined with host PID visibility, allows namespace manipulation
+- Nearly equivalent to running directly on the host
 
-**Prevention**: Remove ALL of these settings. Use restricted PSS.
+**Prevention**: Remove ALL of these settings. Enforce the Restricted Pod Security Standard.
 
 </details>
+
+<details>
+<summary>Fixed Pod Spec</summary>
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secure-pod
+spec:
+  # No hostPID, hostNetwork, or hostIPC
+  containers:
+  - name: app
+    image: ubuntu:20.04
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    # No hostPath volumes — use PVCs if storage is needed
+```
+
+</details>
+
+> **Want to learn hands-on exploitation and security testing techniques?** See the [CKS track](../../cks/README.md) for offensive security labs.
 
 ---
 

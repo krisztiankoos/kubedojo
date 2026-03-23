@@ -219,6 +219,9 @@ nav:
       - k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools.md
       - k8s/kcna/part3-cloud-native-architecture/module-3.6-security-basics.md
       - k8s/kcna/part3-cloud-native-architecture/module-3.7-community-collaboration.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.8-ai-ml-cloud-native.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.9-webassembly.md
+      - k8s/kcna/part3-cloud-native-architecture/module-3.10-green-computing.md
     - 'Part 4: Application Delivery':
       - k8s/kcna/part4-application-delivery/module-4.1-ci-cd.md
       - k8s/kcna/part4-application-delivery/module-4.2-application-packaging.md
