@@ -77,16 +77,23 @@ nodes:
         hostPath: /etc/kubernetes/audit-policy.yaml
         mountPath: /etc/kubernetes/audit-policy.yaml
         readOnly: true
+        pathType: File
       - name: audit-logs
         hostPath: /var/log/kubernetes
         mountPath: /var/log/kubernetes
+        pathType: DirectoryOrCreate
   extraMounts:
   - hostPath: ./audit-policy.yaml
     containerPath: /etc/kubernetes/audit-policy.yaml
     readOnly: true
+  - hostPath: ./audit-logs
+    containerPath: /var/log/kubernetes
 - role: worker
 - role: worker
 EOF
+
+# Create the audit log directory on the host
+mkdir -p audit-logs
 
 # Create basic audit policy
 cat <<EOF > audit-policy.yaml

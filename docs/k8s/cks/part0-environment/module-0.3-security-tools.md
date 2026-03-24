@@ -209,8 +209,32 @@ condition: >
 # - falco_rules.yaml: Default rules (don't edit)
 # - falco_rules.local.yaml: Your custom rules
 
-# Add custom rule
-cat <<EOF | kubectl exec -it -n falco $(kubectl get pod -n falco -l app.kubernetes.io/name=falco -o name | head -1) -- tee -a /etc/falco/falco_rules.local.yaml
+# Method 1: Helm values (RECOMMENDED — persists across restarts)
+# Create a values file with custom rules
+cat <<EOF > falco-custom-rules.yaml
+customRules:
+  custom-rules.yaml: |-
+    - rule: Detect cat of sensitive files
+      desc: Someone is reading sensitive files
+      condition: >
+        spawned_process and
+        container and
+        proc.name = cat and
+        (proc.args contains "/etc/shadow" or proc.args contains "/etc/passwd")
+      output: "Sensitive file read (user=%user.name file=%proc.args container=%container.name)"
+      priority: WARNING
+EOF
+
+# Upgrade Falco with custom rules
+helm upgrade falco falcosecurity/falco \
+  --namespace falco \
+  --reuse-values \
+  -f falco-custom-rules.yaml
+
+# Method 2: ConfigMap (alternative — also persists)
+kubectl create configmap falco-custom-rules \
+  --namespace falco \
+  --from-literal=custom-rules.yaml='
 - rule: Detect cat of sensitive files
   desc: Someone is reading sensitive files
   condition: >
@@ -220,11 +244,14 @@ cat <<EOF | kubectl exec -it -n falco $(kubectl get pod -n falco -l app.kubernet
     (proc.args contains "/etc/shadow" or proc.args contains "/etc/passwd")
   output: "Sensitive file read (user=%user.name file=%proc.args container=%container.name)"
   priority: WARNING
-EOF
+'
 
-# Reload Falco to apply new rules
-kubectl exec -it -n falco $(kubectl get pod -n falco -l app.kubernetes.io/name=falco -o name | head -1) -- kill -HUP 1
+# Then reference the ConfigMap in Helm values or mount it manually
+# Restart Falco pods to pick up changes
+kubectl rollout restart daemonset/falco -n falco
 ```
+
+> **Important**: Never modify rules by exec-ing into Falco pods — those changes are lost when pods restart. Always use Helm values or ConfigMaps so custom rules survive upgrades and restarts.
 
 ### Testing Falco Detection
 
