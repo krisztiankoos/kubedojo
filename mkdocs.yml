@@ -555,6 +555,13 @@ nav:
       - platform/disciplines/iac/module-6.4-iac-at-scale.md
       - platform/disciplines/iac/module-6.5-drift-remediation.md
       - platform/disciplines/iac/module-6.6-iac-cost-management.md
+    - Release Engineering:
+      - platform/disciplines/release-engineering/README.md
+      - platform/disciplines/release-engineering/module-1.1-release-strategies.md
+      - platform/disciplines/release-engineering/module-1.2-argo-rollouts.md
+      - platform/disciplines/release-engineering/module-1.3-feature-flags.md
+      - platform/disciplines/release-engineering/module-1.4-global-releases.md
+      - platform/disciplines/release-engineering/module-1.5-release-metrics.md
   - Toolkits:
     - platform/toolkits/README.md
     - Observability:
