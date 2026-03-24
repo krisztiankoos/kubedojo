@@ -203,6 +203,21 @@ nav:
       - linux/operations/module-8.4-scheduling-backups.md
 - Cloud:
   - cloud/README.md
+  - Rosetta Stone: cloud/hyperscaler-rosetta-stone.md
+  - AWS Essentials:
+    - cloud/aws-essentials/README.md
+    - cloud/aws-essentials/module-1-iam.md
+    - cloud/aws-essentials/module-2-vpc.md
+    - cloud/aws-essentials/module-3-ec2.md
+    - cloud/aws-essentials/module-4-s3.md
+    - cloud/aws-essentials/module-5-route53.md
+    - cloud/aws-essentials/module-6-ecr.md
+    - cloud/aws-essentials/module-7-ecs-fargate.md
+    - cloud/aws-essentials/module-8-lambda.md
+    - cloud/aws-essentials/module-9-secrets.md
+    - cloud/aws-essentials/module-10-cloudwatch.md
+    - cloud/aws-essentials/module-11-cicd.md
+    - cloud/aws-essentials/module-12-cloudformation.md
 - Certifications:
   - k8s/README.md
   - Extending Kubernetes:
