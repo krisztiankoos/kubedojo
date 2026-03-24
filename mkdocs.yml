@@ -272,6 +272,42 @@ nav:
     - cloud/aks-deep-dive/module-2-aks-networking.md
     - cloud/aks-deep-dive/module-3-aks-identity.md
     - cloud/aks-deep-dive/module-4-aks-production.md
+  - Advanced Operations:
+    - cloud/advanced-operations/README.md
+    - cloud/advanced-operations/module-1-multi-account.md
+    - cloud/advanced-operations/module-2-transit-hubs.md
+    - cloud/advanced-operations/module-3-cross-cluster-networking.md
+    - cloud/advanced-operations/module-4-enterprise-identity.md
+    - cloud/advanced-operations/module-5-disaster-recovery.md
+    - cloud/advanced-operations/module-6-active-active.md
+    - cloud/advanced-operations/module-7-stateful-migration.md
+    - cloud/advanced-operations/module-8-cloud-cost.md
+    - cloud/advanced-operations/module-9-observability-scale.md
+    - cloud/advanced-operations/module-10-iac-scale.md
+  - Managed Services:
+    - cloud/managed-services/README.md
+    - cloud/managed-services/module-1-databases.md
+    - cloud/managed-services/module-2-message-brokers.md
+    - cloud/managed-services/module-3-serverless.md
+    - cloud/managed-services/module-4-object-storage.md
+    - cloud/managed-services/module-5-caching.md
+    - cloud/managed-services/module-6-search.md
+    - cloud/managed-services/module-7-streaming.md
+    - cloud/managed-services/module-8-secrets-deep.md
+    - cloud/managed-services/module-9-api-gateways.md
+    - cloud/managed-services/module-10-analytics.md
+  - Enterprise & Hybrid:
+    - cloud/enterprise-hybrid/README.md
+    - cloud/enterprise-hybrid/module-1-landing-zones.md
+    - cloud/enterprise-hybrid/module-2-governance.md
+    - cloud/enterprise-hybrid/module-3-compliance.md
+    - cloud/enterprise-hybrid/module-4-hybrid.md
+    - cloud/enterprise-hybrid/module-5-fleet-management.md
+    - cloud/enterprise-hybrid/module-6-cluster-api.md
+    - cloud/enterprise-hybrid/module-7-multi-cloud-mesh.md
+    - cloud/enterprise-hybrid/module-8-enterprise-gitops.md
+    - cloud/enterprise-hybrid/module-9-zero-trust.md
+    - cloud/enterprise-hybrid/module-10-enterprise-finops.md
 - Certifications:
   - k8s/README.md
   - Extending Kubernetes:
