@@ -145,7 +145,7 @@ Platform teams treat developers as customers:
 - [IaC Discipline](../iac/README.md) - Infrastructure as Code patterns and practices
 
 **Toolkits** (Deep dive into specific tools):
-- [GitOps Tools](../../toolkits/gitops-tools/README.md) - ArgoCD, Flux implementation
+- [GitOps Tools](../../toolkits/gitops-deployments/README.md) - ArgoCD, Flux implementation
 - [Platforms Toolkit](../../toolkits/platforms/README.md) - Backstage, Crossplane hands-on
 - [IaC Tools](../../toolkits/iac-tools/README.md) - Terraform, OpenTofu, Pulumi, Ansible
 

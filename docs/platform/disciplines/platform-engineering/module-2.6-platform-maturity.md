@@ -1255,7 +1255,7 @@ You now understand:
 ### Where to Go Next
 
 **Apply what you've learned:**
-- [GitOps Tools Toolkit](../../toolkits/gitops-tools/README.md) - ArgoCD, Flux deep dive
+- [GitOps Tools Toolkit](../../toolkits/gitops-deployments/README.md) - ArgoCD, Flux deep dive
 - [Platforms Toolkit](../../toolkits/platforms/README.md) - Backstage, Crossplane hands-on
 
 **Related disciplines:**

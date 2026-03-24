@@ -421,7 +421,7 @@ Several tools implement GitOps principles:
 - **Werf**: Integrated CI/CD
 - **Codefresh**: Commercial GitOps platform
 
-We'll explore specific tools in the [GitOps Tools Toolkit](../../toolkits/gitops-tools/README.md).
+We'll explore specific tools in the [GitOps Tools Toolkit](../../toolkits/gitops-deployments/README.md).
 
 ---
 

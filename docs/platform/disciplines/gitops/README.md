@@ -141,7 +141,7 @@ Module 3.6: Multi-Cluster GitOps
 - [IaC Discipline](../iac/README.md) - Infrastructure as Code with GitOps delivery
 
 **Toolkits** (Deep dive into specific tools):
-- [GitOps Tools](../../toolkits/gitops-tools/README.md) - ArgoCD, Flux, and related tools
+- [GitOps Tools](../../toolkits/gitops-deployments/README.md) - ArgoCD, Flux, and related tools
 
 ## Tools You'll Encounter
 
