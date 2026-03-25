@@ -27,51 +27,56 @@ python scripts/check_site_health.py
 
 ---
 
-## ai_agent_bridge
+## dispatch.py
 
-Multi-agent collaboration bridge enabling Claude and Gemini to work together on KubeDojo.
+Direct CLI dispatch for Gemini and Claude — calls CLIs as subprocesses with no broker or database.
 
 ### Quick Usage
 
 ```bash
-# Review a GitHub issue
-python scripts/ai_agent_bridge/__main__.py ask-gemini \
-  "Review issue #66 for completeness and technical accuracy: $(gh issue view 66 --json body --jq .body)" \
-  --task-id "issue-66-review" --model gemini-3.1-pro-preview --stdout-only
+# Review a module (--review adds KubeDojo review context)
+python scripts/dispatch.py gemini \
+  "Review docs/k8s/cka/part3-services-networking/module-3.5-gateway-api.md for technical accuracy" \
+  --review
 
-# Review a module
-python scripts/ai_agent_bridge/__main__.py ask-gemini \
-  "Review docs/k8s/cka/part3-services-networking/module-3.5-gateway-api.md for technical accuracy and exam alignment" \
-  --task-id "module-review" --model gemini-3.1-pro-preview --stdout-only
+# Review a GitHub issue and post result as comment
+python scripts/dispatch.py gemini \
+  "Review issue #66: $(gh issue view 66 --json body --jq .body)" \
+  --review --github 66
 
-# Review a diff before closing an issue
-python scripts/ai_agent_bridge/__main__.py ask-gemini \
+# Review a diff
+python scripts/dispatch.py gemini \
   "Review this diff for accuracy: $(git diff HEAD~3..HEAD -- docs/)" \
-  --task-id "diff-review" --model gemini-3.1-pro-preview --stdout-only
+  --review
 
-# Post review directly to a GitHub issue (omit --no-github)
-python scripts/ai_agent_bridge/__main__.py ask-gemini \
-  "Review issue #66" \
-  --task-id "issue-66" --model gemini-3.1-pro-preview --stdout-only
+# Read prompt from stdin
+cat prompt.txt | python scripts/dispatch.py gemini - --review
 
-# Check bridge status
-python scripts/ai_agent_bridge/__main__.py status
+# Use Claude for expansion
+python scripts/dispatch.py claude "Expand this draft to full depth..."
+```
+
+### Programmatic Usage
+
+```python
+from scripts.dispatch import dispatch_gemini_with_retry, post_to_github
+
+ok, output = dispatch_gemini_with_retry("Review this module...", review=True)
+if ok:
+    post_to_github(66, output, "gemini-3.1-pro-preview")
 ```
 
 ### Review Criteria
 
-Gemini reviews KubeDojo content against these criteria:
+Gemini reviews KubeDojo content against these criteria (auto-injected with `--review`):
 - **Technical accuracy**: K8s commands correct and runnable, version numbers accurate
 - **Exam alignment**: Content matches current CNCF exam curriculum
 - **Completeness**: Acceptance criteria thorough, edge cases covered
-- **Scope**: Changes appropriately sized
 - **Junior-friendly**: Beginner-accessible, "why" explained not just "what"
 
 ### Architecture
 
-- **Message broker**: SQLite DB at `.mcp/servers/message-broker/messages.db`
-- **Gemini invocation**: Spawns `gemini` CLI as subprocess
-- **GitHub integration**: Posts reviews as issue comments via `gh` CLI
-- **Three modes**: Standard (collaborative), Orchestrated (text-only), Full-execution (read-write)
-
-Adapted from [learn-ukrainian](https://github.com/krisztiankoos/learn-ukrainian) project.
+- **No broker** — direct `subprocess.Popen` / `subprocess.run` calls to `gemini` and `claude` CLIs
+- **Streaming** — Gemini output streams to stdout in real-time
+- **Retry** — exponential backoff on rate limits (default 3 retries)
+- **GitHub integration** — posts reviews as issue comments via `gh` CLI (with chunking for long reviews)

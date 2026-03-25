@@ -1,14 +1,30 @@
 ---
-description: How to work with Gemini via the ai_agent_bridge
+description: How to work with Gemini via direct CLI dispatch
 ---
 
 # Gemini Multi-Agent Workflow
 
-## Bridge Command
+## Dispatch Command
 ```bash
-python scripts/ai_agent_bridge/__main__.py ask-gemini "prompt" --task-id "id" --stdout-only
+# Simple review (stdout)
+python scripts/dispatch.py gemini "prompt" --review
+
+# Review and post to GitHub issue
+python scripts/dispatch.py gemini "prompt" --review --github 66
+
+# Read prompt from stdin
+echo "prompt" | python scripts/dispatch.py gemini - --review
 ```
 Default model: `gemini-3.1-pro-preview`
+
+## Programmatic Usage (from Python)
+```python
+from scripts.dispatch import dispatch_gemini_with_retry, post_to_github
+
+ok, output = dispatch_gemini_with_retry("Review this module...", review=True)
+if ok:
+    post_to_github(66, output, "gemini-3.1-pro-preview")
+```
 
 ## Gemini Roles
 

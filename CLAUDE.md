@@ -41,7 +41,7 @@ NO_MKDOCS_2_WARNING=1 mkdocs serve --dev-addr 127.0.0.1:8001 --no-livereload --c
 | `.claude/settings.json` | Shared permissions (committed) |
 | `.claude/settings.local.json` | Personal overrides (gitignored) |
 | `scripts/prompts/module-writer.md` | Standard prompt for module creation |
-| `scripts/ai_agent_bridge/` | Gemini integration |
+| `scripts/dispatch.py` | Direct CLI dispatch for Gemini/Claude |
 | `docs/uk-glossary.md` | Ukrainian translation glossary |
 | `requirements.txt` | Pinned deps (mkdocs<2.0.0) |
 
@@ -103,4 +103,4 @@ docs/
 
 - **Repo**: https://github.com/kube-dojo/kube-dojo.github.io
 - **Writer Prompt**: `scripts/prompts/module-writer.md`
-- **Gemini Bridge**: `scripts/ai_agent_bridge/`
+- **Gemini Dispatch**: `scripts/dispatch.py`
