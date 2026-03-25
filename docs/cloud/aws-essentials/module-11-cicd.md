@@ -6,7 +6,7 @@
 
 Before starting this module, ensure you have:
 - Completed [Module 6: ECR (Container Registry)](module-6-ecr.md) (pushing/pulling container images)
-- Completed [Module 7: ECS (Container Orchestration)](module-7-ecs.md) (ECS services, task definitions, Fargate)
+- Completed [Module 7: ECS (Container Orchestration)](module-7-ecs-fargate.md) (ECS services, task definitions, Fargate)
 - Familiarity with CI/CD concepts (build, test, deploy pipeline stages)
 - A GitHub account and a repository to use for pipeline integration
 - AWS CLI v2 installed and configured
