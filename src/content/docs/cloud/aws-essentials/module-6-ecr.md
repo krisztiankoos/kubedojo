@@ -72,7 +72,7 @@ ECR offers two flavors:
 | Cost | $0.10/GB/month storage + data transfer | Free (up to limits) |
 | Use case | Internal services, proprietary code | Open source projects, shared base images |
 | Regions | All commercial regions | us-east-1 only (content delivered globally via CloudFront) |
-| Vulnerability scanning | Basic + Enhanced (Inspector) | Basic only |
+| Vulnerability scanning | Basic + Enhanced (Inspector) | Not supported |
 | Lifecycle policies | Yes | No |
 
 For most DevOps workflows, you will use private repositories. Public ECR is excellent for distributing open-source tools or shared base images that external teams or customers need to pull.

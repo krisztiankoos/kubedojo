@@ -141,7 +141,7 @@ AWS Systems Manager Parameter Store is the workhorse for configuration managemen
 | `StringList` | None | 4 KB | 8 KB | Free (Standard) |
 | `SecureString` | KMS | 4 KB | 8 KB | Free (Standard) |
 
-**Standard parameters** are free for up to 10,000 per account per region. **Advanced parameters** cost $0.05 per parameter per month, support up to 8 KB values, parameter policies (TTL, expiration notifications), and higher throughput (1,000 TPS vs 40 TPS for standard).
+**Standard parameters** are free for up to 10,000 per account per region. **Advanced parameters** cost $0.05 per parameter per month, support up to 8 KB values, parameter policies (TTL, expiration notifications), and parameter policies (TTL, expiration). Higher throughput (up to 10,000 TPS) is an account-level setting available for both Standard and Advanced parameters.
 
 ### Hierarchical Naming
 
@@ -394,7 +394,7 @@ ECS has native integration with both SSM Parameter Store and Secrets Manager. Yo
       "secrets": [
         {
           "name": "DB_PASSWORD",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:myapp/production/db-credentials:password::"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:123456789012:secret:myapp/production/db-credentials-a1b2c3:password::"
         },
         {
           "name": "DB_USERNAME",

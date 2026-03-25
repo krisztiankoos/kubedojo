@@ -30,11 +30,11 @@ In this module, you will learn the full CloudWatch observability stack -- from t
 
 - **CloudWatch ingests over 1 trillion metrics per day** across all AWS customers. It is one of the oldest AWS services, launching alongside EC2 in 2009, and has grown from a simple CPU-monitoring tool into a full observability platform.
 
-- **EC2 standard metrics have a 5-minute resolution** by default and are completely free. Enabling "detailed monitoring" bumps this to 1-minute resolution but costs $3.50 per instance per month. Most production workloads need 1-minute resolution -- 5-minute intervals can hide spikes that cause real user impact.
+- **EC2 standard metrics have a 5-minute resolution** by default and are completely free. Enabling "detailed monitoring" bumps this to 1-minute resolution but costs ~$2.10 per instance per month (7 metrics at $0.30 each). Most production workloads need 1-minute resolution -- 5-minute intervals can hide spikes that cause real user impact.
 
 - **CloudWatch Logs Insights can query terabytes of logs in seconds** using a purpose-built query language. It was released in November 2018 and has largely eliminated the need for teams to ship logs to Elasticsearch just for ad-hoc querying. You pay $0.005 per GB of data scanned.
 
-- **The CloudWatch Agent replaced three older tools**: the CloudWatch Monitoring Scripts (Perl-based), the SSM Agent metrics collection, and the CloudWatch Logs Agent. If you encounter tutorials referencing `awslogs` agent or `mon-put-instance-data.pl`, they are outdated -- the unified CloudWatch Agent handles everything.
+- **The CloudWatch Agent replaced three older tools**: the CloudWatch Monitoring Scripts (Perl-based `mon-put-instance-data.pl`), the SSM CloudWatch Plugin (on Windows), and the CloudWatch Logs Agent (`awslogs`). If you encounter tutorials referencing `awslogs` agent or `mon-put-instance-data.pl`, they are outdated -- the unified CloudWatch Agent handles everything.
 
 ---
 

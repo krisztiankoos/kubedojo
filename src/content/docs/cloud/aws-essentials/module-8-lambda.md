@@ -39,7 +39,7 @@ Lambda Execution Environment Lifecycle:
 
 Request 1 (Cold Start):
 +------------------------------------------------------------+
-| INIT Phase (billed separately)                              |
+| INIT Phase (billed as part of invocation duration)          |
 | [Download code] -> [Start runtime] -> [Run init code]      |
 | Extension init -> Runtime init -> Function init              |
 | ~100ms-10s depending on language, package size, VPC          |

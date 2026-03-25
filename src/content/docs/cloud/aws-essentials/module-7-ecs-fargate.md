@@ -95,9 +95,9 @@ This is the biggest architectural decision you will make with ECS.
 | Aspect | EC2 Launch Type | Fargate Launch Type |
 |--------|----------------|-------------------|
 | Infrastructure | You manage EC2 instances | AWS manages compute |
-| Pricing | Pay for EC2 instances (even idle capacity) | Pay per task (per-second, CPU + memory) |
+| Pricing | Pay for EC2 instances (even idle capacity) | Pay per task (per-second, 1-min minimum, CPU + memory) |
 | Scaling | Must scale instances AND tasks separately | Only scale tasks |
-| Startup time | Minutes (if no warm instances) | 10-30 seconds |
+| Startup time | Seconds (on warm instances) | 45-90 seconds (cold start: microVM + ENI + image pull) |
 | GPU support | Yes | No (as of 2026, use SageMaker for GPU) |
 | Max task size | Limited by instance type | 16 vCPU, 120 GB memory |
 | SSH access | Yes (to the EC2 host) | No (use ECS Exec) |
