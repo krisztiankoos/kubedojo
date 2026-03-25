@@ -76,8 +76,8 @@ gcloud resource-manager folders get-iam-policy FOLDER_ID
 # View the IAM policy at a project level
 gcloud projects get-iam-policy PROJECT_ID
 
-# Check what effective permissions a user has on a project
-# (includes inherited permissions from org and folders)
+# Check IAM bindings directly on this project
+# (does NOT include inherited permissions from org/folders)
 gcloud projects get-iam-policy PROJECT_ID \
   --flatten="bindings[].members" \
   --filter="bindings.members:user:alice@example.com" \
