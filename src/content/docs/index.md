@@ -1,0 +1,230 @@
+---
+title: "KubeDojo"
+sidebar:
+  order: 1
+  label: "Home"
+---
+**Free, comprehensive cloud native education.**
+
+Kubernetes certifications. Platform engineering. SRE. DevSecOps. MLOps.
+
+No paywalls. No upsells. Theory-first.
+
+> **March 2026 Update**: **410+ modules** covering **21 certifications**. New: AI/ML, WebAssembly, Knative, 4 CNI deep dives, beginner track, Ukrainian translation. [See what's new &rarr;](changelog.md)
+
+---
+
+## 🇺🇦 Присвята
+
+*Цей проєкт присвячується українським ІТ-інженерам, які віддали своє життя, захищаючи Батьківщину.*
+
+*Вони були розробниками, DevOps-інженерами, системними адміністраторами. Вони будували системи, писали код, підтримували інфраструктуру. Коли прийшла війна, вони залишили клавіатури й взяли зброю.*
+
+*Їхній код живе. Їхня жертва — вічна. Слава Україні.*
+
+### Заповіт
+*Тарас Шевченко, 1845*
+
+> Як умру, то поховайте  
+> Мене на могилі,  
+> Серед степу широкого,  
+> На Вкраїні милій,  
+> Щоб лани широкополі,  
+> І Дніпро, і кручі  
+> Було видно, було чути,  
+> Як реве ревучий.
+>
+> Як понесе з України  
+> У синєє море  
+> Кров ворожу... отойді я  
+> І лани і гори —  
+> Все покину і полину  
+> До самого Бога  
+> Молитися... а до того  
+> Я не знаю Бога.
+>
+> Поховайте та вставайте,  
+> Кайдани порвіте  
+> І вражою злою кров'ю  
+> Волю окропіте.  
+> І мене в сем'ї великій,  
+> В сем'ї вольній, новій,  
+> Не забудьте пом'янути  
+> Незлим тихим словом.
+
+---
+
+## Learning Paths
+
+**Choose your starting point based on your experience:**
+
+### Complete Beginner
+Fundamentals (Zero to Terminal → Cloud Native 101 → K8s Basics → Modern DevOps) → Linux Deep Dive → Cloud Essentials → Certifications (KCNA → CKA)
+
+### Know Linux, New to K8s
+Fundamentals (Cloud Native 101 → K8s Basics → Modern DevOps) → Certifications (KCNA → CKA → CKAD) → Cloud Deep Dive
+
+### K8s User Going Deep
+Certifications (CKA → CKS) → Cloud Deep Dive (your provider) → Platform Engineering → Extending K8s
+
+### Preparing for Certs
+Certifications (pick your exam) — each track is self-contained with exercises, quizzes, and practice drills
+
+---
+
+## Curriculum Map
+
+```
+                              KUBEDOJO
+    ═══════════════════════════════════════════════════════════
+
+    ┌─────────────────────────────────────────────────────────┐
+    │                                                         │
+    │   FUNDAMENTALS                                          │
+    │       ├── Zero to Terminal            10 modules        │
+    │       ├── Philosophy & Design          4 modules        │
+    │       ├── Cloud Native 101             5 modules        │
+    │       ├── Kubernetes Basics            8 modules        │
+    │       ├── Modern DevOps                6 modules        │
+    │       └── Linux Deep Dive             28 modules        │
+    │                                                         │
+    └────────────────────────┬────────────────────────────────┘
+                             │
+           ┌─────────────────┼─────────────────┐
+           │                 │                 │
+           ▼                 ▼                 ▼
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+    │              │  │              │  │                  │
+    │   CLOUD      │  │  CERTS       │  │  PLATFORM ENG    │
+    │              │  │              │  │                  │
+    │  Rosetta     │  │  KCNA  KCSA  │  │  Foundations     │
+    │  Stone       │  │  CKA   CKAD  │  │  · Systems       │
+    │              │  │  CKS   CNPE  │  │  · Reliability   │
+    │  AWS  GCP    │  │              │  │  · Security      │
+    │  Azure       │  │  Tool Certs  │  │  · Networking    │
+    │  Essentials  │  │  PCA ICA CCA │  │  · Leadership    │
+    │              │  │  + 8 more    │  │                  │
+    │  Deep Dive   │  │              │  │  Disciplines     │
+    │  EKS GKE AKS │  │  Extending   │  │  · SRE · GitOps  │
+    │              │  │  Kubernetes   │  │  · DevSecOps     │
+    │  Enterprise  │  │  (operators,  │  │  · MLOps · AIOps │
+    │  & Hybrid    │  │   webhooks)  │  │  · Release Eng   │
+    │              │  │              │  │  · Chaos Eng     │
+    │              │  │              │  │  · FinOps        │
+    │              │  │              │  │  · Data Eng      │
+    │              │  │              │  │  · AI Infra      │
+    │              │  │              │  │                  │
+    │              │  │              │  │  Toolkits (75+)  │
+    │              │  │              │  │  Prometheus ·    │
+    │              │  │              │  │  ArgoCD · Vault  │
+    │              │  │              │  │  Backstage ·     │
+    │              │  │              │  │  and more...     │
+    │              │  │              │  │                  │
+    └──────────────┘  └──────────────┘  └──────────────────┘
+
+    ═══════════════════════════════════════════════════════════
+```
+
+---
+
+## Status
+
+| Track | Modules | Status |
+|-------|---------|--------|
+| [Zero to Terminal](prerequisites/zero-to-terminal/index.md) | 10 | ✅ Complete (absolute beginners) |
+| [Prerequisites](prerequisites/index.md) | 33 | ✅ Complete |
+| [CKA](k8s/cka/index.md) | 41 | ✅ Complete (K8s 1.35) |
+| [CKAD](k8s/ckad/index.md) | 24 | ✅ Complete (K8s 1.35) |
+| [CKS](k8s/cks/index.md) | 30 | ✅ Complete (K8s 1.34) |
+| [KCNA](k8s/kcna/index.md) | 28 | ✅ Complete |
+| [KCSA](k8s/kcsa/index.md) | 26 | ✅ Complete |
+| [CNPE](k8s/cnpe/index.md) | Learning Path | ✅ Maps 60+ modules |
+| [CBA](k8s/cba/index.md) | Learning Path | ✅ Backstage cert prep |
+| [OTCA](k8s/otca/index.md) | Learning Path | ✅ OpenTelemetry cert prep |
+| [KCA](k8s/kca/index.md) | Learning Path | ✅ Kyverno cert prep |
+| [CAPA](k8s/capa/index.md) | Learning Path | ✅ Argo Project cert prep |
+| [PCA](k8s/pca/index.md) | Learning Path | ✅ Prometheus cert prep |
+| [ICA](k8s/ica/index.md) | Learning Path | ✅ Istio cert prep |
+| [CCA](k8s/cca/index.md) | Learning Path | ✅ Cilium cert prep |
+| [CGOA](k8s/cgoa/index.md) | Learning Path | ✅ GitOps cert prep |
+| [CNPA](k8s/cnpa/index.md) | Learning Path | ✅ Platform Associate prep |
+| [LFCS](k8s/lfcs/index.md) | Learning Path | ✅ Linux Sysadmin cert prep |
+| [FinOps](k8s/finops/index.md) | Learning Path | ✅ FinOps Practitioner prep |
+| [Linux Deep Dive](linux/index.md) | 32 | ✅ Complete |
+| [Platform Engineering](platform/index.md) | 159 | ✅ Complete |
+| **Total** | **410+** | |
+
+---
+
+## Where to Start
+
+| You are... | Start here |
+|------------|------------|
+| Never used a terminal before | [Zero to Terminal](prerequisites/zero-to-terminal/index.md) (start here!) |
+| New to containers/K8s | [Prerequisites](prerequisites/index.md) |
+| Want deep Linux knowledge | [Linux Deep Dive](linux/index.md) |
+| Want K8s admin certification | [CKA](k8s/cka/index.md) |
+| Want K8s developer certification | [CKAD](k8s/ckad/index.md) |
+| Want K8s security certification | [CKS](k8s/cks/index.md) |
+| Entry-level K8s cert | [KCNA](k8s/kcna/index.md) (general) or [KCSA](k8s/kcsa/index.md) (security) |
+| Platform engineer | [CNPE Learning Path](k8s/cnpe/index.md) |
+| Prometheus cert | [PCA](k8s/pca/index.md) |
+| Istio / Service Mesh cert | [ICA](k8s/ica/index.md) |
+| Cilium / Networking cert | [CCA](k8s/cca/index.md) |
+| GitOps cert | [CGOA](k8s/cgoa/index.md) |
+| Backstage / OTel / Kyverno / Argo cert | [CBA](k8s/cba/index.md) · [OTCA](k8s/otca/index.md) · [KCA](k8s/kca/index.md) · [CAPA](k8s/capa/index.md) |
+| Linux sysadmin cert | [LFCS](k8s/lfcs/index.md) |
+| Cloud cost management | [FinOps](k8s/finops/index.md) |
+| Already certified, want depth | [Platform Engineering](platform/index.md) |
+
+---
+
+## Why This Exists
+
+A free, text-based curriculum for learning Kubernetes and platform engineering.
+
+- **Free** — No paywalls, open source
+- **Theory-first** — Understand principles before tools
+- **Text-based** — Searchable, version-controlled, no videos
+
+**What we are not:** A replacement for paid courses like KodeKloud or Udemy. We don't offer mock exams, video lessons, or hands-on labs for every module. For exam simulation, use [killer.sh](https://killer.sh). For interactive labs, use [killercoda.com](https://killercoda.com).
+
+---
+
+## Philosophy
+
+**Theory before hands-on.** You can't troubleshoot what you don't understand.
+
+**No memorization.** K8s docs are available during exams. We teach navigation, not YAML memorization.
+
+**Principles over tools.** Tools change. Foundations don't. Learn both, in that order.
+
+---
+
+## Contributing
+
+**What we need:**
+- **Hands-on exercises** — Real scenarios, not toy examples
+- **War stories** — Production incidents that teach lessons
+- **Tool expertise** — Deep-dives on ArgoCD, Prometheus, Vault, etc.
+- **Error fixes** — Typos, outdated commands, broken YAML
+
+**What we don't build:**
+- Exam simulators — Use [killer.sh](https://killer.sh) (included with exam purchase)
+- Lab environments — Use [killercoda.com](https://killercoda.com) or local kind/minikube
+- Video content — Text-first, searchable, version-controlled
+
+**How to contribute:**
+- Open an issue to discuss before large PRs
+- Follow existing module structure
+- Test all commands and YAML before submitting
+
+---
+
+## License
+
+MIT License. Free to use, share, and modify.
+
+---
+
+*"In the dojo, everyone starts as a white belt. What matters is showing up to train."*

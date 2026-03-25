@@ -34,3 +34,6 @@ site/
 credentials.json
 service-account.json
 kubeconfig
+node_modules/
+dist/
+.astro/

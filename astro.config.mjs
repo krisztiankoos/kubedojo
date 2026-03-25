@@ -1,0 +1,88 @@
+// @ts-check
+import { defineConfig } from 'astro/config';
+import starlight from '@astrojs/starlight';
+import sitemap from '@astrojs/sitemap';
+
+export default defineConfig({
+  site: 'https://kube-dojo.github.io',
+  trailingSlash: 'always',
+  compressHTML: true,
+
+  integrations: [
+    starlight({
+      title: 'KubeDojo',
+      tagline: 'Free, comprehensive cloud native education',
+      social: [
+        {
+          label: 'GitHub',
+          icon: 'github',
+          href: 'https://github.com/kube-dojo/kube-dojo.github.io',
+        },
+      ],
+      credits: false,
+      defaultLocale: 'root',
+      locales: {
+        root: { label: 'English', lang: 'en' },
+        uk: { label: 'Українська', lang: 'uk' },
+      },
+      customCss: ['./src/css/custom.css'],
+      sidebar: [
+        { label: "What's New", link: '/changelog/' },
+        {
+          label: 'Fundamentals',
+          collapsed: true,
+          items: [
+            { label: 'Overview', link: '/prerequisites/' },
+            { label: 'Zero to Terminal', autogenerate: { directory: 'prerequisites/zero-to-terminal' }, collapsed: true },
+            { label: 'Linux Everyday Use', autogenerate: { directory: 'linux/foundations/everyday-use' }, collapsed: true },
+            { label: 'Philosophy & Design', autogenerate: { directory: 'prerequisites/philosophy-design' }, collapsed: true },
+            { label: 'Cloud Native 101', autogenerate: { directory: 'prerequisites/cloud-native-101' }, collapsed: true },
+            { label: 'Kubernetes Basics', autogenerate: { directory: 'prerequisites/kubernetes-basics' }, collapsed: true },
+            { label: 'Modern DevOps', autogenerate: { directory: 'prerequisites/modern-devops' }, collapsed: true },
+            { label: 'Linux Deep Dive', autogenerate: { directory: 'linux/foundations' }, collapsed: true },
+          ],
+        },
+        {
+          label: 'Cloud',
+          collapsed: true,
+          items: [
+            { label: 'Rosetta Stone', link: '/cloud/hyperscaler-rosetta-stone/' },
+            { label: 'AWS Essentials', autogenerate: { directory: 'cloud/aws-essentials' }, collapsed: true },
+            { label: 'GCP Essentials', autogenerate: { directory: 'cloud/gcp-essentials' }, collapsed: true },
+            { label: 'Azure Essentials', autogenerate: { directory: 'cloud/azure-essentials' }, collapsed: true },
+            { label: 'Architecture Patterns', autogenerate: { directory: 'cloud/architecture-patterns' }, collapsed: true },
+            { label: 'EKS Deep Dive', autogenerate: { directory: 'cloud/eks-deep-dive' }, collapsed: true },
+            { label: 'GKE Deep Dive', autogenerate: { directory: 'cloud/gke-deep-dive' }, collapsed: true },
+            { label: 'AKS Deep Dive', autogenerate: { directory: 'cloud/aks-deep-dive' }, collapsed: true },
+            { label: 'Advanced Operations', autogenerate: { directory: 'cloud/advanced-operations' }, collapsed: true },
+            { label: 'Managed Services', autogenerate: { directory: 'cloud/managed-services' }, collapsed: true },
+            { label: 'Enterprise & Hybrid', autogenerate: { directory: 'cloud/enterprise-hybrid' }, collapsed: true },
+          ],
+        },
+        {
+          label: 'Certifications',
+          collapsed: true,
+          items: [
+            { label: 'KCNA', autogenerate: { directory: 'k8s/kcna' }, collapsed: true },
+            { label: 'KCSA', autogenerate: { directory: 'k8s/kcsa' }, collapsed: true },
+            { label: 'CKA', autogenerate: { directory: 'k8s/cka' }, collapsed: true },
+            { label: 'CKAD', autogenerate: { directory: 'k8s/ckad' }, collapsed: true },
+            { label: 'CKS', autogenerate: { directory: 'k8s/cks' }, collapsed: true },
+            { label: 'Extending K8s', autogenerate: { directory: 'k8s/extending' }, collapsed: true },
+          ],
+        },
+        {
+          label: 'Platform Engineering',
+          collapsed: true,
+          items: [
+            { label: 'Foundations', autogenerate: { directory: 'platform/foundations' }, collapsed: true },
+            { label: 'Disciplines', autogenerate: { directory: 'platform/disciplines' }, collapsed: true },
+            { label: 'Toolkits', autogenerate: { directory: 'platform/toolkits' }, collapsed: true },
+          ],
+        },
+        { label: 'Glossary', link: '/glossary/' },
+      ],
+    }),
+    sitemap(),
+  ],
+});
