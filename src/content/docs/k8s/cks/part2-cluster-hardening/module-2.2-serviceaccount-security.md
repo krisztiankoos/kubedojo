@@ -3,7 +3,6 @@ title: "Module 2.2: ServiceAccount Security"
 slug: k8s/cks/part2-cluster-hardening/module-2.2-serviceaccount-security
 sidebar:
   order: 2
-  label: "Part 2: Cluster Hardening"
 ---
 > **Complexity**: `[MEDIUM]` - Critical for workload security
 >

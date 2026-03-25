@@ -3,7 +3,6 @@ title: "Module 4.2: Pod Security Admission (PSA)"
 slug: k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission
 sidebar:
   order: 2
-  label: "Part 4: Microservice Vulnerabilities"
 ---
 > **Complexity**: `[MEDIUM]` - Core CKS skill
 >

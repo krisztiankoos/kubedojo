@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.1: \u0422\u043e\u043c\u0438 (Volu
 slug: uk/k8s/cka/part4-storage/module-4.1-volumes
 sidebar:
   order: 2
-  label: "Part 4: Storage"
 ---
 > **Складність**: `[MEDIUM]` — Основа для всіх концепцій зберігання даних
 >

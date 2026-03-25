@@ -3,7 +3,6 @@ title: "Module 1.3: Grafana"
 slug: platform/toolkits/observability/module-1.3-grafana
 sidebar:
   order: 4
-  label: "Observability"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 min
 

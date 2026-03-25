@@ -3,7 +3,6 @@ title: "Module 1.2: Advanced GPU Scheduling & Sharing"
 slug: platform/disciplines/ai-infrastructure/module-1.2-gpu-scheduling
 sidebar:
   order: 3
-  label: "AI Infrastructure"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 4 hours
 

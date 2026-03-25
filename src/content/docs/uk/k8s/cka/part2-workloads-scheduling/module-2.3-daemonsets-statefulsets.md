@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.3: DaemonSets \u0442\u0430 Statef
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets
 sidebar:
   order: 4
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Складність**: `[MEDIUM]` — Спеціалізовані шаблони навантажень
 >

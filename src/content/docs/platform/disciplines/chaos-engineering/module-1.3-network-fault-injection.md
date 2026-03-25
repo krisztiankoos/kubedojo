@@ -3,7 +3,6 @@ title: "Module 1.3: Advanced Network & Application Fault Injection"
 slug: platform/disciplines/chaos-engineering/module-1.3-network-fault-injection
 sidebar:
   order: 4
-  label: "Chaos Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3 hours
 

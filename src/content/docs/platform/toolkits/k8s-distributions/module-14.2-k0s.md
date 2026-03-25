@@ -3,7 +3,6 @@ title: "Module 14.2: k0s - Zero Friction Kubernetes"
 slug: platform/toolkits/k8s-distributions/module-14.2-k0s
 sidebar:
   order: 3
-  label: "K8s Distributions"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

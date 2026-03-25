@@ -3,7 +3,6 @@ title: "Module 1.5: Stakeholder Communication & Managing Expectations"
 slug: platform/foundations/engineering-leadership/module-1.5-stakeholders
 sidebar:
   order: 6
-  label: "Engineering Leadership"
 ---
 > **Complexity**: `[COMPLEX]` | **Time**: 2.5 hours | **Prerequisites**: None
 >

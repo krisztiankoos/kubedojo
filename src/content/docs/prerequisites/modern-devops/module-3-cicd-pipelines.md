@@ -2,7 +2,6 @@
 title: "Module 3: CI/CD Pipelines"
 sidebar:
   order: 4
-  label: "Modern DevOps"
 ---
 > **Complexity**: `[MEDIUM]` - Essential automation
 >

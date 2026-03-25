@@ -3,7 +3,6 @@ title: "Module 3.6: Security Basics (Theory)"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.6-security-basics
 sidebar:
   order: 7
-  label: "Part 3: Cloud Native Architecture"
 ---
 > **Complexity**: `[QUICK]` - Foundations only
 >

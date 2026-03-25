@@ -3,7 +3,6 @@ title: "Module 3.2: Repository Strategies"
 slug: platform/disciplines/gitops/module-3.2-repository-strategies
 sidebar:
   order: 3
-  label: "GitOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

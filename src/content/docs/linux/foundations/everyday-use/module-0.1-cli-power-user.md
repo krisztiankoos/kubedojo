@@ -3,7 +3,6 @@ title: "Module 0.1: The CLI Power User (Search & Streams)"
 slug: linux/foundations/everyday-use/module-0.1-cli-power-user
 sidebar:
   order: 2
-  label: "Linux Everyday Use"
 ---
 **Complexity:** [QUICK]
 **Time to Complete:** 45 minutes

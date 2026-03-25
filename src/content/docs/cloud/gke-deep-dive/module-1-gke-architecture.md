@@ -2,7 +2,6 @@
 title: "GKE Architecture: Standard vs Autopilot"
 sidebar:
   order: 2
-  label: "GCP GKE Deep Dive"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: GCP Essentials, Cloud Architecture Patterns
 

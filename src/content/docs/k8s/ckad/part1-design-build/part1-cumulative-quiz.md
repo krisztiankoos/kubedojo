@@ -2,7 +2,6 @@
 title: "Part 1 Cumulative Quiz: Application Design and Build"
 sidebar:
   order: 5
-  label: "Part 1: Design & Build"
 ---
 > **Time Limit**: 25 minutes (simulating exam pressure)
 >

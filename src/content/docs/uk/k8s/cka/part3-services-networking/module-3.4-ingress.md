@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.4: \u0406\u043d\u0433\u0440\u0435
 slug: uk/k8s/cka/part3-services-networking/module-3.4-ingress
 sidebar:
   order: 5
-  label: "Part 3: Services & Networking"
 ---
 > **Складність**: `[СЕРЕДНЯ]` — HTTP/HTTPS маршрутизація
 >

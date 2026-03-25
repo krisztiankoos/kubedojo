@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.3: \u0417\u0431\u043e\u0457 \u043
 slug: uk/k8s/cka/part5-troubleshooting/module-5.3-control-plane
 sidebar:
   order: 4
-  label: "Part 5: Troubleshooting"
 ---
 > **Складність**: `[COMPLEX]` — Усунення несправностей критичної інфраструктури
 >

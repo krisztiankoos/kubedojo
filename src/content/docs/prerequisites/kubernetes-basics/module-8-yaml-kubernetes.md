@@ -2,7 +2,6 @@
 title: "Module 8: YAML for Kubernetes"
 sidebar:
   order: 9
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[MEDIUM]` - Essential skill
 >

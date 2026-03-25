@@ -3,7 +3,6 @@ title: "Module 5.1: Cilium - The Kernel-Powered Network Revolution"
 slug: platform/toolkits/networking/module-5.1-cilium
 sidebar:
   order: 2
-  label: "Networking"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 60-75 minutes
 

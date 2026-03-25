@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.5: \u0421\u0442\u0440\u0430\u0442
 slug: uk/k8s/cka/part0-environment/module-0.5-exam-strategy
 sidebar:
   order: 5
-  label: "Part 0: Environment"
 ---
 > **Складність**: `[QUICK]` — Стратегія, а не технічні навички
 >

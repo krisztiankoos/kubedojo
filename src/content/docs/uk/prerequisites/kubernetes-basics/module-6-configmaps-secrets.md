@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 6: ConfigMaps \u0442\u0430 Secrets"
 sidebar:
   order: 7
-  label: "Kubernetes Basics"
 ---
 > **Складність**: `[MEDIUM]` — Основи керування конфігурацією
 >

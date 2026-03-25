@@ -2,7 +2,6 @@
 title: "AKS Workload Identity & Security"
 sidebar:
   order: 4
-  label: "Azure AKS Deep Dive"
 ---
 **Complexity**: [QUICK] | **Time to Complete**: 1.5h | **Prerequisites**: [Module 1: AKS Architecture & Node Management](module-1-aks-architecture/)
 

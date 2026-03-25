@@ -2,7 +2,6 @@
 title: "Multi-Cloud Fleet Management (Azure Arc / GKE Fleet)"
 sidebar:
   order: 6
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Hybrid Cloud Architecture (Module 4), Kubernetes Multi-Cluster Basics
 

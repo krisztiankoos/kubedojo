@@ -3,7 +3,6 @@ title: "Module 1.8: Namespaces and Labels"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels
 sidebar:
   order: 9
-  label: "Part 1: K8s Fundamentals"
 ---
 > **Complexity**: `[QUICK]` - Organization concepts
 >

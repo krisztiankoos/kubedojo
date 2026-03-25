@@ -3,7 +3,6 @@ title: "Module 1.4: Loki"
 slug: platform/toolkits/observability/module-1.4-loki
 sidebar:
   order: 5
-  label: "Observability"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

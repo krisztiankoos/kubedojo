@@ -2,7 +2,6 @@
 title: "AKS Advanced Networking"
 sidebar:
   order: 3
-  label: "Azure AKS Deep Dive"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3.5h | **Prerequisites**: [Module 1: AKS Architecture & Node Management](module-1-aks-architecture/)
 

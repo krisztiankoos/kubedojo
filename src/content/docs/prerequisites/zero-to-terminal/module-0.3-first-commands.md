@@ -3,7 +3,6 @@ title: "Module 0.3: First Terminal Commands"
 slug: prerequisites/zero-to-terminal/module-0.3-first-commands
 sidebar:
   order: 4
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Follow along and type what you see
 >

@@ -3,7 +3,6 @@ title: "Module 5.2: Feature Engineering & Stores"
 slug: platform/disciplines/mlops/module-5.2-feature-stores
 sidebar:
   order: 3
-  label: "MLOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

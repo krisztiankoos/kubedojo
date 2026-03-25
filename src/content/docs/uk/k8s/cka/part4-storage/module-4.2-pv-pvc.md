@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.2: PersistentVolumes \u0442\u0430
 slug: uk/k8s/cka/part4-storage/module-4.2-pv-pvc
 sidebar:
   order: 3
-  label: "Part 4: Storage"
 ---
 > **Складність**: `[MEDIUM]` — Основна абстракція зберігання
 >

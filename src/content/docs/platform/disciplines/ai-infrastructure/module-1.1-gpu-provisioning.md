@@ -3,7 +3,6 @@ title: "Module 1.1: GPU Provisioning & Device Plugins"
 slug: platform/disciplines/ai-infrastructure/module-1.1-gpu-provisioning
 sidebar:
   order: 2
-  label: "AI Infrastructure"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 3 hours
 

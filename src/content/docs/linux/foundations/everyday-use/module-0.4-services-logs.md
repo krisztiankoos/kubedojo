@@ -3,7 +3,6 @@ title: "Module 0.4: Services & Logs Demystified"
 slug: linux/foundations/everyday-use/module-0.4-services-logs
 sidebar:
   order: 5
-  label: "Linux Everyday Use"
 ---
 > **Everyday Linux Use** | Complexity: `[QUICK]` | Time: 40 min
 

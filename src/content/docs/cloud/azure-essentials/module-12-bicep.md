@@ -2,7 +2,6 @@
 title: "ARM & Bicep Basics"
 sidebar:
   order: 13
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 1.5h | **Prerequisites**: Module 1 (Entra ID), basic Azure CLI
 

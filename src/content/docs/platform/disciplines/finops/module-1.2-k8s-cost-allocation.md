@@ -3,7 +3,6 @@ title: "Module 1.2: Kubernetes Cost Allocation & Visibility"
 slug: platform/disciplines/finops/module-1.2-k8s-cost-allocation
 sidebar:
   order: 3
-  label: "FinOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2.5h
 

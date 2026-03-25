@@ -2,7 +2,6 @@
 title: "Virtual Private Cloud (VPC) & Core Networking"
 sidebar:
   order: 3
-  label: "AWS Essentials"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 1, Linux Networking
 

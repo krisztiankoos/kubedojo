@@ -3,7 +3,6 @@ title: "Module 12.1: SonarQube - The Code Quality Platform"
 slug: platform/toolkits/code-quality/module-12.1-sonarqube
 sidebar:
   order: 2
-  label: "Code Quality"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-60 minutes

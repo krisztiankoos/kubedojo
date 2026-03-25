@@ -2,7 +2,6 @@
 title: "Module 2: Istio Traffic Management"
 sidebar:
   order: 3
-  label: "ICA"
 ---
 ## Complexity: `[COMPLEX]`
 ## Time to Complete: 60-75 minutes

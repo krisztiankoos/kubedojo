@@ -3,7 +3,6 @@ title: "Module 5.4: Model Serving & Inference"
 slug: platform/disciplines/mlops/module-5.4-model-serving
 sidebar:
   order: 5
-  label: "MLOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

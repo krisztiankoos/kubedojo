@@ -2,7 +2,6 @@
 title: "Module 2: Declarative vs Imperative - The Philosophy"
 sidebar:
   order: 3
-  label: "Philosophy & Design"
 ---
 > **Complexity**: `[QUICK]` - Conceptual understanding
 >

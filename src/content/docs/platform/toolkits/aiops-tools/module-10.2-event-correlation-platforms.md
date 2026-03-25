@@ -3,7 +3,6 @@ title: "Module 10.2: Event Correlation Platforms"
 slug: platform/toolkits/aiops-tools/module-10.2-event-correlation-platforms
 sidebar:
   order: 3
-  label: "AIOps Tools"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 min
 

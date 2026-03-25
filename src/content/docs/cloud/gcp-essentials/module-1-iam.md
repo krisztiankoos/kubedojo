@@ -2,7 +2,6 @@
 title: "GCP Identity, IAM & Resource Hierarchy"
 sidebar:
   order: 2
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Cloud Native 101
 

@@ -2,7 +2,6 @@
 title: "Module 6: ConfigMaps and Secrets"
 sidebar:
   order: 7
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[MEDIUM]` - Essential configuration management
 >

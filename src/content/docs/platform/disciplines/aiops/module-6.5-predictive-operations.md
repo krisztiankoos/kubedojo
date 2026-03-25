@@ -3,7 +3,6 @@ title: "Module 6.5: Predictive Operations"
 slug: platform/disciplines/aiops/module-6.5-predictive-operations
 sidebar:
   order: 6
-  label: "AIOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

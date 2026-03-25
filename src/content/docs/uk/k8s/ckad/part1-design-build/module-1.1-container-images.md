@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.1: \u041e\u0431\u0440\u0430\u0437
 slug: uk/k8s/ckad/part1-design-build/module-1.1-container-images
 sidebar:
   order: 1
-  label: "Part 1: Design & Build"
 ---
 > **Складність**: `[MEDIUM]` — Потребує розуміння Dockerfile та реєстрів образів
 >

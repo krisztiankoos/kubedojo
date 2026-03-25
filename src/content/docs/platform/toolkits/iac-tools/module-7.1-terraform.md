@@ -3,7 +3,6 @@ title: "Module 7.1: Terraform Deep Dive"
 slug: platform/toolkits/iac-tools/module-7.1-terraform
 sidebar:
   order: 2
-  label: "IaC Tools"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 60 minutes

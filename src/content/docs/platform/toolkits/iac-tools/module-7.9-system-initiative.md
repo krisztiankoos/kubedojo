@@ -3,7 +3,6 @@ title: "Module 7.9: System Initiative - DevOps Automation Reimagined"
 slug: platform/toolkits/iac-tools/module-7.9-system-initiative
 sidebar:
   order: 10
-  label: "IaC Tools"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-55 minutes

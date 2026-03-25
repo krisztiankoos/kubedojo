@@ -2,7 +2,6 @@
 title: "Module 3: Cloud IAM Integration for Kubernetes"
 sidebar:
   order: 4
-  label: "Architecture Patterns"
 ---
 > **Complexity**: `[MEDIUM]`
 >

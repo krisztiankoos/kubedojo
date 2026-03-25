@@ -2,7 +2,6 @@
 title: "Part 0 Cumulative Quiz: Environment & Exam Technique"
 sidebar:
   order: 6
-  label: "Part 0: Environment"
 ---
 > **Purpose**: Test your retention across all Part 0 modules before moving to Part 1.
 >

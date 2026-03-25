@@ -3,7 +3,6 @@ title: "Module 7.1: Bash Fundamentals"
 slug: linux/operations/shell-scripting/module-7.1-bash-fundamentals
 sidebar:
   order: 2
-  label: "Shell Scripting"
 ---
 > **Shell Scripting** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -3,7 +3,6 @@ title: "Module 5.6: Project Calico - The Full-Stack Networking and Security Plat
 slug: platform/toolkits/networking/module-5.6-calico
 sidebar:
   order: 7
-  label: "Networking"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 90-120 minutes
 

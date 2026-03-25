@@ -2,7 +2,6 @@
 title: "Multi-Cloud Service Mesh (Istio Multi-Cluster)"
 sidebar:
   order: 8
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Kubernetes Networking, Service Mesh Basics, Hybrid Cloud Architecture (Module 4)
 

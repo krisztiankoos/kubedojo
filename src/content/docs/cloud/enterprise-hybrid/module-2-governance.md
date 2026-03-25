@@ -2,7 +2,6 @@
 title: "Cloud Governance & Policy as Code"
 sidebar:
   order: 3
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Enterprise Landing Zones (Module 1), Kubernetes RBAC basics, YAML/JSON fundamentals
 

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.4: Kustomize \u2014 \u043a\u043e\
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.4-kustomize
 sidebar:
   order: 5
-  label: "Part 1: Cluster Architecture"
 ---
 > **Складність**: `[MEDIUM]` — необхідний навик для іспиту 2025 року
 >

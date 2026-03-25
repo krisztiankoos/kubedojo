@@ -3,7 +3,6 @@ title: "Module 3.2: DNS in Linux"
 slug: linux/foundations/networking/module-3.2-dns-linux
 sidebar:
   order: 3
-  label: "Networking"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

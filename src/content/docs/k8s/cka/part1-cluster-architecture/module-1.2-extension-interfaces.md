@@ -3,7 +3,6 @@ title: "Module 1.2: Extension Interfaces - CNI, CSI, CRI"
 slug: k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces
 sidebar:
   order: 3
-  label: "Part 1: Cluster Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual with some hands-on
 >

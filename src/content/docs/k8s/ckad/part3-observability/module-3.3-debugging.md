@@ -3,7 +3,6 @@ title: "Module 3.3: Debugging in Kubernetes"
 slug: k8s/ckad/part3-observability/module-3.3-debugging
 sidebar:
   order: 3
-  label: "Part 3: Observability"
 ---
 > **Complexity**: `[MEDIUM]` - Critical exam skill requiring systematic approach
 >

@@ -3,7 +3,6 @@ title: "Module 3.4: Monitoring Applications"
 slug: k8s/ckad/part3-observability/module-3.4-monitoring
 sidebar:
   order: 4
-  label: "Part 3: Observability"
 ---
 > **Complexity**: `[QUICK]` - Basic commands, conceptual understanding
 >

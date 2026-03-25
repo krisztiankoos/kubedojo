@@ -2,7 +2,6 @@
 title: "Data Warehousing & Analytics from Kubernetes"
 sidebar:
   order: 11
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Module 4 (Object Storage), Module 7 (Streaming Pipelines), SQL basics
 

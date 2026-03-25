@@ -3,7 +3,6 @@ title: "Module 1.5: Pods"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods
 sidebar:
   order: 6
-  label: "Part 1: K8s Fundamentals"
 ---
 > **Complexity**: `[MEDIUM]` - Core resource concept
 >

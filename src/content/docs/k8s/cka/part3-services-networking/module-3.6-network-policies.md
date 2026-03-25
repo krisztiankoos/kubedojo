@@ -3,7 +3,6 @@ title: "Module 3.6: Network Policies"
 slug: k8s/cka/part3-services-networking/module-3.6-network-policies
 sidebar:
   order: 7
-  label: "Part 3: Services & Networking"
 ---
 > **Complexity**: `[MEDIUM]` - Pod-level firewalling
 >

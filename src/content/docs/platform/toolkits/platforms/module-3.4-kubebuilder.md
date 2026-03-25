@@ -3,7 +3,6 @@ title: "Module 3.4: Kubebuilder - Building Kubernetes Operators"
 slug: platform/toolkits/platforms/module-3.4-kubebuilder
 sidebar:
   order: 5
-  label: "Platforms"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: ~55 minutes
 

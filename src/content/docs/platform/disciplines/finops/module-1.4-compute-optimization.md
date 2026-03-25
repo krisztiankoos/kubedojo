@@ -3,7 +3,6 @@ title: "Module 1.4: Cluster Scaling & Compute Optimization"
 slug: platform/disciplines/finops/module-1.4-compute-optimization
 sidebar:
   order: 5
-  label: "FinOps"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3h
 

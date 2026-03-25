@@ -3,7 +3,6 @@ title: "Module 3.5: API Deprecations"
 slug: k8s/ckad/part3-observability/module-3.5-api-deprecations
 sidebar:
   order: 5
-  label: "Part 3: Observability"
 ---
 > **Complexity**: `[QUICK]` - Conceptual understanding with practical commands
 >

@@ -2,7 +2,6 @@
 title: "Relational Database Integration (RDS / Cloud SQL / Flexible Server)"
 sidebar:
   order: 2
-  label: "Managed Services"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Cloud Essentials (any provider), Kubernetes networking basics
 

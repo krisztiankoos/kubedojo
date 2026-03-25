@@ -2,7 +2,6 @@
 title: "Part 1 Cumulative Quiz: Cluster Architecture"
 sidebar:
   order: 9
-  label: "Part 1: Cluster Architecture"
 ---
 > **Purpose**: Test your retention across all Part 1 modules before moving to Part 2.
 >

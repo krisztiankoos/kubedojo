@@ -3,7 +3,6 @@ title: "Module 1.6: Cost & Capacity Planning for AI"
 slug: platform/disciplines/ai-infrastructure/module-1.6-ai-cost
 sidebar:
   order: 7
-  label: "AI Infrastructure"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 3 hours
 

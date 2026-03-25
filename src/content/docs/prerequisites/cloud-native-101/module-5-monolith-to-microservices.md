@@ -2,7 +2,6 @@
 title: "Module 5: From Monolith to Microservices"
 sidebar:
   order: 6
-  label: "Cloud Native 101"
 ---
 > **Complexity**: `[QUICK]` - Architectural concepts
 >

@@ -3,7 +3,6 @@ title: "Module 1.3: Kubernetes Architecture - Control Plane"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane
 sidebar:
   order: 4
-  label: "Part 1: K8s Fundamentals"
 ---
 > **Complexity**: `[MEDIUM]` - Core architecture concepts
 >

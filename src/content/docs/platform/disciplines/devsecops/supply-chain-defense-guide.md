@@ -2,7 +2,6 @@
 title: "Supply Chain Defense Guide"
 sidebar:
   order: 6
-  label: "DevSecOps"
 ---
 > **Practical Reference** | Applies to any project, any language, any CI/CD platform
 

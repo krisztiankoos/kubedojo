@@ -3,7 +3,6 @@ title: "Module 1.5: Release Engineering Metrics & Observability"
 slug: platform/disciplines/release-engineering/module-1.5-release-metrics
 sidebar:
   order: 6
-  label: "Release Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2 hours
 

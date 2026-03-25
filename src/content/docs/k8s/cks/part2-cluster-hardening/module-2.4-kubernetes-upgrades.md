@@ -3,7 +3,6 @@ title: "Module 2.4: Kubernetes Security Upgrades"
 slug: k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades
 sidebar:
   order: 4
-  label: "Part 2: Cluster Hardening"
 ---
 > **Complexity**: `[MEDIUM]` - CKA refresher with security focus
 >

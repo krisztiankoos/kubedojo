@@ -3,7 +3,6 @@ title: "Module 1.6: Pixie - Zero-Instrumentation Observability"
 slug: platform/toolkits/observability/module-1.6-pixie
 sidebar:
   order: 7
-  label: "Observability"
 ---
 ## Complexity: [MEDIUM]
 

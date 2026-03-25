@@ -2,7 +2,6 @@
 title: "Module 1: Backstage Developer Workflow"
 sidebar:
   order: 2
-  label: "CBA"
 ---
 > **Complexity**: `[COMPLEX]` - Full-stack TypeScript project with monorepo tooling
 >

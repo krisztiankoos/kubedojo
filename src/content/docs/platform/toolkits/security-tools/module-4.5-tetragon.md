@@ -3,7 +3,6 @@ title: "Module 4.5: Tetragon - eBPF Runtime Security"
 slug: platform/toolkits/security-tools/module-4.5-tetragon
 sidebar:
   order: 6
-  label: "Security Tools"
 ---
 ## Complexity: [MEDIUM]
 

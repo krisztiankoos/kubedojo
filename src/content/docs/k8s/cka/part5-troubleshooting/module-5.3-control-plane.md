@@ -3,7 +3,6 @@ title: "Module 5.3: Control Plane Failures"
 slug: k8s/cka/part5-troubleshooting/module-5.3-control-plane
 sidebar:
   order: 4
-  label: "Part 5: Troubleshooting"
 ---
 > **Complexity**: `[COMPLEX]` - Critical infrastructure troubleshooting
 >

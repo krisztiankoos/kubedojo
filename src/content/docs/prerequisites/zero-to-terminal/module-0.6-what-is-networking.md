@@ -3,7 +3,6 @@ title: "Module 0.6: What is Networking?"
 slug: prerequisites/zero-to-terminal/module-0.6-what-is-networking
 sidebar:
   order: 7
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Absolute beginner
 >

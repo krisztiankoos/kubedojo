@@ -3,7 +3,6 @@ title: "Module 13.3: Dragonfly - P2P Image Distribution at Scale"
 slug: platform/toolkits/container-registries/module-13.3-dragonfly
 sidebar:
   order: 4
-  label: "Container Registries"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 minutes
 

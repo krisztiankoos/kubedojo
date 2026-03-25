@@ -3,7 +3,6 @@ title: "Module 2.2: Developer Experience (DevEx)"
 slug: platform/disciplines/platform-engineering/module-2.2-developer-experience
 sidebar:
   order: 3
-  label: "Platform Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 40-50 min
 

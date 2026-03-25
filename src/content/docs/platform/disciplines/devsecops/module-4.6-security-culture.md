@@ -3,7 +3,6 @@ title: "Module 4.6: Security Culture and Automation"
 slug: platform/disciplines/devsecops/module-4.6-security-culture
 sidebar:
   order: 8
-  label: "DevSecOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

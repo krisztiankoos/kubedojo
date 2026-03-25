@@ -3,7 +3,6 @@ title: "Module 15.1: CockroachDB - Distributed SQL That Survives Anything"
 slug: platform/toolkits/cloud-native-databases/module-15.1-cockroachdb
 sidebar:
   order: 2
-  label: "Cloud-Native Databases"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 55-65 minutes

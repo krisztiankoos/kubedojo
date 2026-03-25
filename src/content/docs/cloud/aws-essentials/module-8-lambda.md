@@ -2,7 +2,6 @@
 title: "Module 8: AWS Lambda & Serverless Patterns"
 sidebar:
   order: 9
-  label: "AWS Essentials"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 2 hours

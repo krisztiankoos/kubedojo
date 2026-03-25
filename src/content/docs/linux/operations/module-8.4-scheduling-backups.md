@@ -3,7 +3,6 @@ title: "Module 8.4: Task Scheduling and Backup Strategies"
 slug: linux/operations/module-8.4-scheduling-backups
 sidebar:
   order: 4
-  label: "System Administration"
 ---
 > **Operations — LFCS** | Complexity: `[COMPLEX]` | Time: 45-55 min
 

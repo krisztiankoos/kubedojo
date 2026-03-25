@@ -3,7 +3,6 @@ title: "Module 5.3: Model Training & Experimentation"
 slug: platform/disciplines/mlops/module-5.3-model-training
 sidebar:
   order: 4
-  label: "MLOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

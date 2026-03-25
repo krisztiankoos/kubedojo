@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.7: \u041e\u0441\u043d\u043e\u0432
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.7-kubeadm
 sidebar:
   order: 8
-  label: "Part 1: Cluster Architecture"
 ---
 > **Складність**: `[MEDIUM]` — Основи управління кластером
 >

@@ -3,7 +3,6 @@ title: "Module 4.4: Supply Chain Security"
 slug: platform/toolkits/security-tools/module-4.4-supply-chain
 sidebar:
   order: 5
-  label: "Security Tools"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 minutes
 

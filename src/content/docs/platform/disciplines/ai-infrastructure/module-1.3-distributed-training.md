@@ -3,7 +3,6 @@ title: "Module 1.3: Distributed Training Infrastructure"
 slug: platform/disciplines/ai-infrastructure/module-1.3-distributed-training
 sidebar:
   order: 4
-  label: "AI Infrastructure"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 5 hours
 

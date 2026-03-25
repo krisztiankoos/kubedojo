@@ -3,7 +3,6 @@ title: "Module 4.2: PersistentVolumes & PersistentVolumeClaims"
 slug: k8s/cka/part4-storage/module-4.2-pv-pvc
 sidebar:
   order: 3
-  label: "Part 4: Storage"
 ---
 > **Complexity**: `[MEDIUM]` - Core storage abstraction
 >

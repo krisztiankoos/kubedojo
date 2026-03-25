@@ -2,7 +2,6 @@
 title: "Module 1: Managed vs Self-Managed Kubernetes"
 sidebar:
   order: 2
-  label: "Architecture Patterns"
 ---
 > **Complexity**: `[MEDIUM]`
 >

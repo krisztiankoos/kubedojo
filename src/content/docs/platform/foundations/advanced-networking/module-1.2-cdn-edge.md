@@ -3,7 +3,6 @@ title: "Module 1.2: CDN & Edge Computing"
 slug: platform/foundations/advanced-networking/module-1.2-cdn-edge
 sidebar:
   order: 3
-  label: "Advanced Networking"
 ---
 > **Complexity**: `[MEDIUM]`
 >

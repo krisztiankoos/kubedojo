@@ -3,7 +3,6 @@ title: "Module 13.1: Harbor - Enterprise Container Registry"
 slug: platform/toolkits/container-registries/module-13.1-harbor
 sidebar:
   order: 2
-  label: "Container Registries"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 50-60 minutes
 

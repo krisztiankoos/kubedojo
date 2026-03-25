@@ -3,7 +3,6 @@ title: "Module 2.4: Golden Paths"
 slug: platform/disciplines/platform-engineering/module-2.4-golden-paths
 sidebar:
   order: 5
-  label: "Platform Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 40-50 min
 

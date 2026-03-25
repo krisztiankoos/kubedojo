@@ -3,7 +3,6 @@ title: "Module 0.3: Vim for YAML"
 slug: k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:
   order: 3
-  label: "Part 0: Environment"
 ---
 > **Complexity**: `[QUICK]` - Learn 10 commands, use them forever
 >

@@ -2,7 +2,6 @@
 title: "Module 4: Dead Ends - Technologies We Skip"
 sidebar:
   order: 5
-  label: "Philosophy & Design"
 ---
 > **Complexity**: `[QUICK]` - Understanding what NOT to learn
 >

@@ -3,7 +3,6 @@ title: "Module 9.1: Kubeflow"
 slug: platform/toolkits/ml-platforms/module-9.1-kubeflow
 sidebar:
   order: 2
-  label: "ML Platforms"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 50-60 minutes
 

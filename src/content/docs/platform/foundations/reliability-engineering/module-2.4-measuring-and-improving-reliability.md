@@ -3,7 +3,6 @@ title: "Module 2.4: Measuring and Improving Reliability"
 slug: platform/foundations/reliability-engineering/module-2.4-measuring-and-improving-reliability
 sidebar:
   order: 5
-  label: "Reliability Engineering"
 ---
 > **Complexity**: `[MEDIUM]`
 >

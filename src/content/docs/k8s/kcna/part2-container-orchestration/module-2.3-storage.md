@@ -3,7 +3,6 @@ title: "Module 2.3: Storage Orchestration"
 slug: k8s/kcna/part2-container-orchestration/module-2.3-storage
 sidebar:
   order: 4
-  label: "Part 2: Container Orchestration"
 ---
 > **Complexity**: `[MEDIUM]` - Storage concepts
 >

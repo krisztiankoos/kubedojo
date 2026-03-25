@@ -3,7 +3,6 @@ title: "Module 6.6: Knative -- Serverless Workloads on Kubernetes"
 slug: platform/toolkits/scaling-reliability/module-6.6-knative
 sidebar:
   order: 7
-  label: "Scaling & Reliability"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: ~55 minutes
 

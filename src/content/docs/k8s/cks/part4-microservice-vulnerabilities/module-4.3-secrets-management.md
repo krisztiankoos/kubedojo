@@ -3,7 +3,6 @@ title: "Module 4.3: Secrets Management"
 slug: k8s/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management
 sidebar:
   order: 3
-  label: "Part 4: Microservice Vulnerabilities"
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS skill
 >

@@ -3,7 +3,6 @@ title: "Module 6.3: Security Assessments"
 slug: k8s/kcsa/part6-compliance/module-6.3-security-assessments
 sidebar:
   order: 4
-  label: "Part 6: Compliance"
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual knowledge
 >

@@ -3,7 +3,6 @@ title: "Module 6.4: Immutable Infrastructure"
 slug: k8s/cks/part6-runtime-security/module-6.4-immutable-infrastructure
 sidebar:
   order: 4
-  label: "Part 6: Runtime Security"
 ---
 > **Complexity**: `[MEDIUM]` - Security architecture
 >

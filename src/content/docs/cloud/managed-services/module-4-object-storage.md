@@ -2,7 +2,6 @@
 title: "Object Storage Patterns (S3 / GCS / Blob)"
 sidebar:
   order: 5
-  label: "Managed Services"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 1 (Databases), Kubernetes PersistentVolumes and CSI concepts
 

@@ -2,7 +2,6 @@
 title: "\u0421\u0435\u0440\u0442\u0438\u0444\u0456\u043a\u0430\u0446\u0456\u0457 Kubernetes"
 sidebar:
   order: 1
-  label: "Certifications"
 ---
 **Шлях до Kubestronaut** — усі 5 сертифікацій, необхідних для отримання статусу [Kubestronaut](https://www.cncf.io/training/kubestronaut/).
 

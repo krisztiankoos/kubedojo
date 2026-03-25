@@ -3,7 +3,6 @@ title: "Module 2.1: What is Reliability?"
 slug: platform/foundations/reliability-engineering/module-2.1-what-is-reliability
 sidebar:
   order: 2
-  label: "Reliability Engineering"
 ---
 > **Complexity**: `[MEDIUM]`
 >

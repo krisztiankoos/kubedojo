@@ -2,7 +2,6 @@
 title: "Module 2: FinOps in Practice"
 sidebar:
   order: 3
-  label: "FinOps"
 ---
 > **Certification Track** | Complexity: `[MEDIUM]` | Time: 50 minutes
 

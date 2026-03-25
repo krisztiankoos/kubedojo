@@ -3,7 +3,6 @@ title: "Module 0.7: Servers and SSH"
 slug: prerequisites/zero-to-terminal/module-0.7-servers-and-ssh
 sidebar:
   order: 8
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Concepts and a hands-on connection
 >

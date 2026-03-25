@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.1: \u041c\u0435\u0442\u043e\u0434
 slug: uk/k8s/cka/part5-troubleshooting/module-5.1-methodology
 sidebar:
   order: 2
-  label: "Part 5: Troubleshooting"
 ---
 > **Складність**: `[MEDIUM]` — Основа для всього усунення несправностей
 >

@@ -3,7 +3,6 @@ title: "Module 14.5: OpenShift - Enterprise Kubernetes with Batteries Included"
 slug: platform/toolkits/k8s-distributions/module-14.5-openshift
 sidebar:
   order: 6
-  label: "K8s Distributions"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-55 minutes

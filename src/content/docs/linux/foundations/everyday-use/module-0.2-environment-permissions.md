@@ -3,7 +3,6 @@ title: "Module 0.2: Environment & Permissions (Who You Are & Where You Are)"
 slug: linux/foundations/everyday-use/module-0.2-environment-permissions
 sidebar:
   order: 3
-  label: "Linux Everyday Use"
 ---
 > **Everyday Use** | Complexity: `[QUICK]` | Time: 45 min
 

@@ -3,7 +3,6 @@ title: "Module 8.3: Local Kubernetes"
 slug: platform/toolkits/developer-experience/module-8.3-local-kubernetes
 sidebar:
   order: 4
-  label: "Developer Experience"
 ---
 > **Toolkit Track** | Complexity: `[QUICK]` | Time: 30-35 minutes
 

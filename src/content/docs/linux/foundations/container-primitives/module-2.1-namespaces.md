@@ -3,7 +3,6 @@ title: "Module 2.1: Linux Namespaces"
 slug: linux/foundations/container-primitives/module-2.1-namespaces
 sidebar:
   order: 2
-  label: "Container Primitives"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

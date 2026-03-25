@@ -2,7 +2,6 @@
 title: "GCP Cloud Run (Serverless Containers)"
 sidebar:
   order: 8
-  label: "GCP Essentials"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Module 1 (IAM), Module 6 (Artifact Registry)
 

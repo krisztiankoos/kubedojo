@@ -2,7 +2,6 @@
 title: "Serverless Interoperability (Lambda / Cloud Functions / Knative)"
 sidebar:
   order: 4
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2h | **Prerequisites**: Module 2 (Message Brokers), Kubernetes Services and Ingress basics
 

@@ -3,7 +3,6 @@ title: "Module 6.2: CIS Benchmarks"
 slug: k8s/kcsa/part6-compliance/module-6.2-cis-benchmarks
 sidebar:
   order: 3
-  label: "Part 6: Compliance"
 ---
 > **Complexity**: `[MEDIUM]` - Technical knowledge
 >

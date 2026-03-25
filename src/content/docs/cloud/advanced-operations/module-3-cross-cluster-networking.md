@@ -2,7 +2,6 @@
 title: "Module 3: Cross-Cluster & Cross-Region Networking"
 sidebar:
   order: 4
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

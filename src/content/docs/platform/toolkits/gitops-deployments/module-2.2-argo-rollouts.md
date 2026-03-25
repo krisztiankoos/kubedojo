@@ -3,7 +3,6 @@ title: "Module 2.2: Argo Rollouts"
 slug: platform/toolkits/gitops-deployments/module-2.2-argo-rollouts
 sidebar:
   order: 3
-  label: "GitOps & Deployments"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 

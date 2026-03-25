@@ -3,7 +3,6 @@ title: "Module 1.1: Prometheus"
 slug: platform/toolkits/observability/module-1.1-prometheus
 sidebar:
   order: 2
-  label: "Observability"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 

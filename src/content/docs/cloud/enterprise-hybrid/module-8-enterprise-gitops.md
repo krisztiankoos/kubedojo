@@ -2,7 +2,6 @@
 title: "Enterprise GitOps & Platform Engineering"
 sidebar:
   order: 9
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: GitOps Basics (ArgoCD/Flux), Kubernetes RBAC, Multi-Cloud Fleet Management (Module 5)
 

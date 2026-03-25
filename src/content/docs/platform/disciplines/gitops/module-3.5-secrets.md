@@ -3,7 +3,6 @@ title: "Module 3.5: Secrets in GitOps"
 slug: platform/disciplines/gitops/module-3.5-secrets
 sidebar:
   order: 6
-  label: "GitOps"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 35-40 min
 

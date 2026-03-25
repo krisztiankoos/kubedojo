@@ -3,7 +3,6 @@ title: "Module 2.4: Jobs & CronJobs"
 slug: k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs
 sidebar:
   order: 5
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Complexity**: `[QUICK]` - Straightforward batch workloads
 >

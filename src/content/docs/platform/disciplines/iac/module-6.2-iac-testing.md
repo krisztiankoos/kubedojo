@@ -3,7 +3,6 @@ title: "Module 6.2: Infrastructure as Code Testing"
 slug: platform/disciplines/iac/module-6.2-iac-testing
 sidebar:
   order: 3
-  label: "Infrastructure as Code"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 55 minutes

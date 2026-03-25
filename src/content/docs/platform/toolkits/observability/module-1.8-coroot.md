@@ -3,7 +3,6 @@ title: "Module 1.8: Coroot - Zero-Instrumentation Observability"
 slug: platform/toolkits/observability/module-1.8-coroot
 sidebar:
   order: 9
-  label: "Observability"
 ---
 ## Complexity: [MEDIUM]
 

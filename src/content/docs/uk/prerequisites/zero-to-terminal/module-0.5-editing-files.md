@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.5: \u0420\u0435\u0434\u0430\u0433
 slug: uk/prerequisites/zero-to-terminal/module-0.5-editing-files
 sidebar:
   order: 6
-  label: "Zero to Terminal"
 ---
 > **Складність**: `[QUICK]` — Вводьте те, що бачите, збережіть, готово
 >

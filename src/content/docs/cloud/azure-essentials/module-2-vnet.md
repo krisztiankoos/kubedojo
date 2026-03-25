@@ -2,7 +2,6 @@
 title: "Virtual Networks (VNet)"
 sidebar:
   order: 3
-  label: "Azure Essentials"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 1 (Entra ID & RBAC)
 

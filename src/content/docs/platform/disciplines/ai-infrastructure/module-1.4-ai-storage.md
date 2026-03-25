@@ -3,7 +3,6 @@ title: "Module 1.4: High-Performance Storage for AI"
 slug: platform/disciplines/ai-infrastructure/module-1.4-ai-storage
 sidebar:
   order: 5
-  label: "AI Infrastructure"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 3 hours
 

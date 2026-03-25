@@ -2,7 +2,6 @@
 title: "GCP VPC Networking"
 sidebar:
   order: 3
-  label: "GCP Essentials"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 1 (IAM & Resource Hierarchy)
 

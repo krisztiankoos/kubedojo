@@ -3,7 +3,6 @@ title: "Module 1.7: kubeadm Basics - Cluster Bootstrap"
 slug: k8s/cka/part1-cluster-architecture/module-1.7-kubeadm
 sidebar:
   order: 8
-  label: "Part 1: Cluster Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Essential cluster management
 >

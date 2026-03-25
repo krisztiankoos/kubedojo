@@ -3,7 +3,6 @@ title: "Module 6.1: IaC Fundamentals & Maturity Model"
 slug: platform/disciplines/iac/module-6.1-iac-fundamentals
 sidebar:
   order: 2
-  label: "Infrastructure as Code"
 ---
 > **Complexity**: `[MEDIUM]`
 >

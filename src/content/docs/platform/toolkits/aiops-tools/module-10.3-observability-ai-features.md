@@ -3,7 +3,6 @@ title: "Module 10.3: Observability AI Features"
 slug: platform/toolkits/aiops-tools/module-10.3-observability-ai-features
 sidebar:
   order: 4
-  label: "AIOps Tools"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

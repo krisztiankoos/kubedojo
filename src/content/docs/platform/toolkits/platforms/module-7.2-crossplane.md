@@ -3,7 +3,6 @@ title: "Module 7.2: Crossplane"
 slug: platform/toolkits/platforms/module-7.2-crossplane
 sidebar:
   order: 3
-  label: "Platforms"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 50-60 minutes
 

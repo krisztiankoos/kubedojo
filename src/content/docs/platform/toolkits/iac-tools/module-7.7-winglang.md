@@ -3,7 +3,6 @@ title: "Module 7.7: Wing - The Cloud-Oriented Programming Language"
 slug: platform/toolkits/iac-tools/module-7.7-winglang
 sidebar:
   order: 8
-  label: "IaC Tools"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-55 minutes

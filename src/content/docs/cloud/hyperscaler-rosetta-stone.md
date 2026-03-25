@@ -2,7 +2,6 @@
 title: "The Hyperscaler Rosetta Stone"
 sidebar:
   order: 2
-  label: "Rosetta Stone"
 ---
 **Complexity**: [MEDIUM]
 **Time to Complete**: 2 hours

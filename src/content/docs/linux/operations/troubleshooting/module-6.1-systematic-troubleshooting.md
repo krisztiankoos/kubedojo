@@ -3,7 +3,6 @@ title: "Module 6.1: Systematic Troubleshooting"
 slug: linux/operations/troubleshooting/module-6.1-systematic-troubleshooting
 sidebar:
   order: 2
-  label: "Troubleshooting"
 ---
 > **Linux Troubleshooting** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

@@ -3,7 +3,6 @@ title: "Module 1.2: Processes & systemd"
 slug: linux/foundations/system-essentials/module-1.2-processes-systemd
 sidebar:
   order: 3
-  label: "System Essentials"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

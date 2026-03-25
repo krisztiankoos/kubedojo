@@ -2,7 +2,6 @@
 title: "Microsoft Entra ID & Azure RBAC"
 sidebar:
   order: 2
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: Cloud Native 101
 

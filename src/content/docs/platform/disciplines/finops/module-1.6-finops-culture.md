@@ -3,7 +3,6 @@ title: "Module 1.6: FinOps Culture & Automation"
 slug: platform/disciplines/finops/module-1.6-finops-culture
 sidebar:
   order: 7
-  label: "FinOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2h
 

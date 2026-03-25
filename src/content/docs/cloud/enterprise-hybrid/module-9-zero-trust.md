@@ -2,7 +2,6 @@
 title: "Zero Trust Architecture in Hybrid Cloud"
 sidebar:
   order: 10
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Kubernetes Networking, Identity & Access Management, Service Mesh Basics
 

@@ -3,7 +3,6 @@ title: "Module 11.3: GitHub Advanced - Beyond Basic Git Hosting"
 slug: platform/toolkits/source-control/module-11.3-github-advanced
 sidebar:
   order: 4
-  label: "Source Control"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-60 minutes

@@ -2,7 +2,6 @@
 title: "GCP Artifact Registry"
 sidebar:
   order: 7
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 1h | **Prerequisites**: Module 1 (IAM & Resource Hierarchy)
 

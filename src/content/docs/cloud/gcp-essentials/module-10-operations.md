@@ -2,7 +2,6 @@
 title: "GCP Cloud Operations (Monitoring & Logging)"
 sidebar:
   order: 11
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: Module 3 (Compute Engine), Module 7 (Cloud Run)
 

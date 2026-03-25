@@ -2,7 +2,6 @@
 title: "Module 3: What We Don't Cover (and Why)"
 sidebar:
   order: 4
-  label: "Philosophy & Design"
 ---
 > **Complexity**: `[QUICK]` - Setting expectations
 >

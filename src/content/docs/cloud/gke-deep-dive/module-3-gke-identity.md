@@ -2,7 +2,6 @@
 title: "GKE Workload Identity and Security"
 sidebar:
   order: 4
-  label: "GCP GKE Deep Dive"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: Module 1 (GKE Architecture)
 

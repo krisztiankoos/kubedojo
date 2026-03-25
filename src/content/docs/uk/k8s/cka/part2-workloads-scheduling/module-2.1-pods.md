@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.1: \u041f\u043e\u0433\u043b\u0438
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.1-pods
 sidebar:
   order: 2
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Основа для всіх робочих навантажень
 >

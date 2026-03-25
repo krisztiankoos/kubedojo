@@ -3,7 +3,6 @@ title: "Module 5.3: Runtime Security"
 slug: k8s/kcsa/part5-platform-security/module-5.3-runtime-security
 sidebar:
   order: 4
-  label: "Part 5: Platform Security"
 ---
 > **Complexity**: `[MEDIUM]` - Core knowledge
 >

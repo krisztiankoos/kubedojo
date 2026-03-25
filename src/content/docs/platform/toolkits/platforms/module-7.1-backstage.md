@@ -3,7 +3,6 @@ title: "Module 7.1: Backstage"
 slug: platform/toolkits/platforms/module-7.1-backstage
 sidebar:
   order: 2
-  label: "Platforms"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 50-60 minutes
 

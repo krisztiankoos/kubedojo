@@ -2,7 +2,6 @@
 title: "Module 8: Cloud Cost Optimization (Advanced)"
 sidebar:
   order: 9
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[MEDIUM]`
 >

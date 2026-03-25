@@ -3,7 +3,6 @@ title: "Module 3.6: vCluster"
 slug: platform/toolkits/platforms/module-3.6-vcluster
 sidebar:
   order: 7
-  label: "Platforms"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: ~40 minutes
 

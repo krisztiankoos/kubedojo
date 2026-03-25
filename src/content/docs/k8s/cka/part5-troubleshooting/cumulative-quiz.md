@@ -2,7 +2,6 @@
 title: "Part 5: Troubleshooting - Cumulative Quiz"
 sidebar:
   order: 9
-  label: "Part 5: Troubleshooting"
 ---
 > **30% of CKA Exam** | 35 Questions | Target: 85%+
 

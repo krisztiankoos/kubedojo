@@ -3,7 +3,6 @@ title: "Module 5.1: What Makes Systems Distributed"
 slug: platform/foundations/distributed-systems/module-5.1-what-makes-systems-distributed
 sidebar:
   order: 2
-  label: "Distributed Systems"
 ---
 > **Complexity**: `[MEDIUM]`
 >

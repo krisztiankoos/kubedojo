@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.5: \u0423\u0441\u0443\u043d\u0435
 slug: uk/k8s/cka/part4-storage/module-4.5-troubleshooting
 sidebar:
   order: 6
-  label: "Part 4: Storage"
 ---
 > **Складність**: `[MEDIUM]` — Діагностика та виправлення проблем зберігання
 >

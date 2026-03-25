@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.2: \u041f\u0430\u043a\u0435\u0442
 slug: uk/k8s/ckad/part2-deployment/module-2.2-helm
 sidebar:
   order: 2
-  label: "Part 2: Deployment"
 ---
 > **Складність**: `[MEDIUM]` — необхідний інструмент, доданий до CKAD 2025
 >

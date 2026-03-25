@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1: \u0427\u043e\u043c\u0443 Kubernetes \u043f\u0435\u0440\u0435\u043c\u0456\u0433"
 sidebar:
   order: 2
-  label: "Philosophy & Design"
 ---
 > **Складність**: `[QUICK]` - Концептуальне розуміння, без практики
 >

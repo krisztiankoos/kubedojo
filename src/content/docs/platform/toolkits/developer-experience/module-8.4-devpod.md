@@ -3,7 +3,6 @@ title: "Module 8.4: DevPod - Open Source Dev Environments"
 slug: platform/toolkits/developer-experience/module-8.4-devpod
 sidebar:
   order: 5
-  label: "Developer Experience"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 40-45 minutes

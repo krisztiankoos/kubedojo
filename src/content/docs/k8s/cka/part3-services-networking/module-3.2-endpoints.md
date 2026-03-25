@@ -3,7 +3,6 @@ title: "Module 3.2: Endpoints & EndpointSlices"
 slug: k8s/cka/part3-services-networking/module-3.2-endpoints
 sidebar:
   order: 3
-  label: "Part 3: Services & Networking"
 ---
 > **Complexity**: `[MEDIUM]` - Understanding service mechanics
 >

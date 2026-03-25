@@ -2,7 +2,6 @@
 title: "\u041f\u0435\u0440\u0435\u0434\u0443\u043c\u043e\u0432\u0438"
 sidebar:
   order: 1
-  label: "Fundamentals"
 ---
 **Почніть тут, якщо ви новачок у Kubernetes.**
 

@@ -3,7 +3,6 @@ title: "Module 5.1: USE Method"
 slug: linux/operations/performance/module-5.1-use-method
 sidebar:
   order: 2
-  label: "Performance"
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

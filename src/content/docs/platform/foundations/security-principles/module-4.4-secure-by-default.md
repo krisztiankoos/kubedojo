@@ -3,7 +3,6 @@ title: "Module 4.4: Secure by Default"
 slug: platform/foundations/security-principles/module-4.4-secure-by-default
 sidebar:
   order: 5
-  label: "Security Principles"
 ---
 > **Complexity**: `[MEDIUM]`
 >

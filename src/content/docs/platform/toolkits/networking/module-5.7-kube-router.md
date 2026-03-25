@@ -3,7 +3,6 @@ title: "Module 5.7: Kube-Router - The Swiss Army Knife in a Single Binary"
 slug: platform/toolkits/networking/module-5.7-kube-router
 sidebar:
   order: 8
-  label: "Networking"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 45-55 minutes
 

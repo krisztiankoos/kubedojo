@@ -3,7 +3,6 @@ title: "Module 1.4: BGP & Core Routing"
 slug: platform/foundations/advanced-networking/module-1.4-bgp-routing
 sidebar:
   order: 5
-  label: "Advanced Networking"
 ---
 > **Complexity**: `[COMPLEX]`
 >

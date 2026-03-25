@@ -3,7 +3,6 @@ title: "Module 6.6: Auto-Remediation"
 slug: platform/disciplines/aiops/module-6.6-auto-remediation
 sidebar:
   order: 7
-  label: "AIOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

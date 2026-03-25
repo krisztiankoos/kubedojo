@@ -3,7 +3,6 @@ title: "Module 1.5: Storage & Network Cost Management"
 slug: platform/disciplines/finops/module-1.5-storage-network-costs
 sidebar:
   order: 6
-  label: "FinOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2h
 

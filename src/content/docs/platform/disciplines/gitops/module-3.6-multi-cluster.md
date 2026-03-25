@@ -3,7 +3,6 @@ title: "Module 3.6: Multi-Cluster GitOps"
 slug: platform/disciplines/gitops/module-3.6-multi-cluster
 sidebar:
   order: 7
-  label: "GitOps"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 55-65 min
 

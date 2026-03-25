@@ -2,7 +2,6 @@
 title: "Managed Message Brokers & Event-Driven Kubernetes"
 sidebar:
   order: 3
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Module 1 (Relational Database Integration), Kubernetes Deployments and Services
 

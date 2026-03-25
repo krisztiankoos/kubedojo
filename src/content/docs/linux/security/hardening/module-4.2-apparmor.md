@@ -3,7 +3,6 @@ title: "Module 4.2: AppArmor Profiles"
 slug: linux/security/hardening/module-4.2-apparmor
 sidebar:
   order: 3
-  label: "Security Hardening"
 ---
 > **Linux Security** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -3,7 +3,6 @@ title: "Module 5.4: Security Tooling"
 slug: k8s/kcsa/part5-platform-security/module-5.4-security-tooling
 sidebar:
   order: 5
-  label: "Part 5: Platform Security"
 ---
 > **Complexity**: `[MEDIUM]` - Tool awareness
 >

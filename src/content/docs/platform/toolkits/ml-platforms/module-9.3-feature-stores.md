@@ -3,7 +3,6 @@ title: "Module 9.3: Feature Stores"
 slug: platform/toolkits/ml-platforms/module-9.3-feature-stores
 sidebar:
   order: 4
-  label: "ML Platforms"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

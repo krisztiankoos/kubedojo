@@ -2,7 +2,6 @@
 title: "Module 2: Instrumentation & Alerting"
 sidebar:
   order: 3
-  label: "PCA"
 ---
 > **PCA Track** | Complexity: `[COMPLEX]` | Time: 45-55 min
 

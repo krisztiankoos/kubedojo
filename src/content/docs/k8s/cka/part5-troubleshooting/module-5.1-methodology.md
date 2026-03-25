@@ -3,7 +3,6 @@ title: "Module 5.1: Troubleshooting Methodology"
 slug: k8s/cka/part5-troubleshooting/module-5.1-methodology
 sidebar:
   order: 2
-  label: "Part 5: Troubleshooting"
 ---
 > **Complexity**: `[MEDIUM]` - Foundation for all troubleshooting
 >

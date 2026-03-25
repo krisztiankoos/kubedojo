@@ -2,7 +2,6 @@
 title: "AKS Architecture & Node Management"
 sidebar:
   order: 2
-  label: "Azure AKS Deep Dive"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Azure Essentials, Cloud Architecture Patterns
 

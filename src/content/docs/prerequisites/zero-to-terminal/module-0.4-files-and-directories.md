@@ -3,7 +3,6 @@ title: "Module 0.4: Files and Directories"
 slug: prerequisites/zero-to-terminal/module-0.4-files-and-directories
 sidebar:
   order: 5
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Absolute beginner
 >

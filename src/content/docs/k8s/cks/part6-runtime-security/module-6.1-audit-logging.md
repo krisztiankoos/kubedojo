@@ -3,7 +3,6 @@ title: "Module 6.1: Kubernetes Audit Logging"
 slug: k8s/cks/part6-runtime-security/module-6.1-audit-logging
 sidebar:
   order: 1
-  label: "Part 6: Runtime Security"
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS skill
 >

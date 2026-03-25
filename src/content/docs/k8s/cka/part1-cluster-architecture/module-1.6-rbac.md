@@ -3,7 +3,6 @@ title: "Module 1.6: RBAC - Role-Based Access Control"
 slug: k8s/cka/part1-cluster-architecture/module-1.6-rbac
 sidebar:
   order: 7
-  label: "Part 1: Cluster Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Common exam topic
 >

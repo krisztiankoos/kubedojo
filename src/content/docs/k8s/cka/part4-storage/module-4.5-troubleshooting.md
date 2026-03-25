@@ -3,7 +3,6 @@ title: "Module 4.5: Storage Troubleshooting"
 slug: k8s/cka/part4-storage/module-4.5-troubleshooting
 sidebar:
   order: 6
-  label: "Part 4: Storage"
 ---
 > **Complexity**: `[MEDIUM]` - Diagnosing and fixing storage issues
 >

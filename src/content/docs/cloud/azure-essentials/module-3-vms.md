@@ -2,7 +2,6 @@
 title: "VMs & VM Scale Sets"
 sidebar:
   order: 4
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 2 (Virtual Networks)
 

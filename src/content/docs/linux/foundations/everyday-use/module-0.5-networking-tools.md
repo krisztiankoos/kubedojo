@@ -3,7 +3,6 @@ title: "Module 0.5: Everyday Networking Tools"
 slug: linux/foundations/everyday-use/module-0.5-networking-tools
 sidebar:
   order: 6
-  label: "Linux Everyday Use"
 ---
 > **Everyday Use** | Complexity: `[QUICK]` | Time: 45 min
 

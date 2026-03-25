@@ -3,7 +3,6 @@ title: "Module 5.5: Network Troubleshooting"
 slug: k8s/cka/part5-troubleshooting/module-5.5-networking
 sidebar:
   order: 6
-  label: "Part 5: Troubleshooting"
 ---
 > **Complexity**: `[COMPLEX]` - Multiple layers to debug
 >

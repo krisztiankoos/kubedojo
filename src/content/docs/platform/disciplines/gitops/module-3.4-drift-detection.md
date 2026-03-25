@@ -3,7 +3,6 @@ title: "Module 3.4: Drift Detection and Remediation"
 slug: platform/disciplines/gitops/module-3.4-drift-detection
 sidebar:
   order: 5
-  label: "GitOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

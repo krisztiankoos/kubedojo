@@ -3,7 +3,6 @@ title: "Module 6.6: Infrastructure as Code Cost Management"
 slug: platform/disciplines/iac/module-6.6-iac-cost-management
 sidebar:
   order: 7
-  label: "Infrastructure as Code"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45 minutes

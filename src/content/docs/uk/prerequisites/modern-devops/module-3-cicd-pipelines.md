@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3: CI/CD \u043a\u043e\u043d\u0432\u0435\u0454\u0440\u0438"
 sidebar:
   order: 4
-  label: "Modern DevOps"
 ---
 > **Складність**: `[MEDIUM]` — Необхідна автоматизація
 >

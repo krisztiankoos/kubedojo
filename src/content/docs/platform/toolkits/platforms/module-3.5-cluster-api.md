@@ -3,7 +3,6 @@ title: "Module 3.5: Cluster API (CAPI)"
 slug: platform/toolkits/platforms/module-3.5-cluster-api
 sidebar:
   order: 6
-  label: "Platforms"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: ~50 minutes
 

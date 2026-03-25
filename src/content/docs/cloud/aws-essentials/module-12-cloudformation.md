@@ -2,7 +2,6 @@
 title: "Module 12: Infrastructure as Code on AWS"
 sidebar:
   order: 13
-  label: "AWS Essentials"
 ---
 **Complexity:** `[MEDIUM]` | **Time to Complete:** 1.5 hours | **Track:** AWS DevOps Essentials
 

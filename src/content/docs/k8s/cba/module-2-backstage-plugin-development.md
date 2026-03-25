@@ -2,7 +2,6 @@
 title: "Module 2: Backstage Plugin Development \u2014 Customizing Backstage"
 sidebar:
   order: 3
-  label: "CBA"
 ---
 > **Complexity**: `[COMPLEX]` — Heaviest exam domain (32%)
 >

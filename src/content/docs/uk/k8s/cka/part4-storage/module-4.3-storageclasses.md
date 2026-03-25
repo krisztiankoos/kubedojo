@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.3: StorageClasses \u0442\u0430 \u
 slug: uk/k8s/cka/part4-storage/module-4.3-storageclasses
 sidebar:
   order: 4
-  label: "Part 4: Storage"
 ---
 > **Складність**: `[MEDIUM]` — Автоматизація надання сховища
 >

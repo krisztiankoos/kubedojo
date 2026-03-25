@@ -2,7 +2,6 @@
 title: "Module 3: Istio Security & Troubleshooting"
 sidebar:
   order: 4
-  label: "ICA"
 ---
 ## Complexity: `[COMPLEX]`
 ## Time to Complete: 50-60 minutes

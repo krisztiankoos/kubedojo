@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.1: \u041d\u0430\u043b\u0430\u0448
 slug: uk/k8s/cka/part0-environment/module-0.1-cluster-setup
 sidebar:
   order: 1
-  label: "Part 0: Environment"
 ---
 > **Складність**: `[MEDIUM]` — Займає час, але все просто, якщо дотримуватися кроків
 >

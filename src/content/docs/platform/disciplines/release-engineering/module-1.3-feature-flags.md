@@ -3,7 +3,6 @@ title: "Module 1.3: Feature Management at Scale"
 slug: platform/disciplines/release-engineering/module-1.3-feature-flags
 sidebar:
   order: 4
-  label: "Release Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2.5 hours
 

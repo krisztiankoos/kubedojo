@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.5: \u0421\u0435\u0440\u0432\u0456
 slug: uk/k8s/ckad/part4-environment/module-4.5-serviceaccounts
 sidebar:
   order: 5
-  label: "Part 4: Environment"
 ---
 > **Складність**: `[MEDIUM]` — Важливо для доступу до API та ідентифікації
 >

@@ -3,7 +3,6 @@ title: "Module 1.1: Incident Command & Crisis Management"
 slug: platform/foundations/engineering-leadership/module-1.1-incident-command
 sidebar:
   order: 2
-  label: "Engineering Leadership"
 ---
 | | |
 |---|---|

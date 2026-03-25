@@ -3,7 +3,6 @@ title: "Module 6.1: AIOps Foundations"
 slug: platform/disciplines/aiops/module-6.1-aiops-foundations
 sidebar:
   order: 2
-  label: "AIOps"
 ---
 > **Discipline Track** | Complexity: `[MEDIUM]` | Time: 35-40 min
 

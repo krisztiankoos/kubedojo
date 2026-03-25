@@ -3,7 +3,6 @@ title: "Module 2.3: Redundancy and Fault Tolerance"
 slug: platform/foundations/reliability-engineering/module-2.3-redundancy-and-fault-tolerance
 sidebar:
   order: 4
-  label: "Reliability Engineering"
 ---
 > **Complexity**: `[MEDIUM]`
 >

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.5: \u0417\u0430\u0441\u0442\u0430
 slug: uk/k8s/ckad/part3-observability/module-3.5-api-deprecations
 sidebar:
   order: 5
-  label: "Part 3: Observability"
 ---
 > **Складність**: `[QUICK]` — Концептуальне розуміння з практичними командами
 >

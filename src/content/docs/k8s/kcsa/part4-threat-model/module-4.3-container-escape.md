@@ -3,7 +3,6 @@ title: "Module 4.3: Container Escape"
 slug: k8s/kcsa/part4-threat-model/module-4.3-container-escape
 sidebar:
   order: 4
-  label: "Part 4: Threat Model"
 ---
 > **Complexity**: `[MEDIUM]` - Threat awareness
 >

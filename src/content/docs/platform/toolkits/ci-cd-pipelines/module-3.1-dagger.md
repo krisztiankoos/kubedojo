@@ -3,7 +3,6 @@ title: "Module 3.1: Dagger"
 slug: platform/toolkits/ci-cd-pipelines/module-3.1-dagger
 sidebar:
   order: 2
-  label: "CI/CD Pipelines"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 

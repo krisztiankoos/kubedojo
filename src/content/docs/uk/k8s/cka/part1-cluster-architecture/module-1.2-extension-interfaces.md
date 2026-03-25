@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.2: \u0406\u043d\u0442\u0435\u0440
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces
 sidebar:
   order: 3
-  label: "Part 1: Cluster Architecture"
 ---
 > **Складність**: `[MEDIUM]` - Концептуальний із практичними елементами
 >

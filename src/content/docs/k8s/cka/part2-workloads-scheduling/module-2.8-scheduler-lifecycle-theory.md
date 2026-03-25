@@ -3,7 +3,6 @@ title: "Module 2.8: Scheduler & Pod Lifecycle Theory"
 slug: k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory
 sidebar:
   order: 9
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Complexity**: `[MEDIUM]` - High exam yield
 >

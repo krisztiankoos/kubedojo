@@ -3,7 +3,6 @@ title: "Module 1.7: Customizing the Scheduler"
 slug: k8s/extending/module-1.7-scheduler-plugins
 sidebar:
   order: 8
-  label: "Extending Kubernetes"
 ---
 > **Complexity**: `[COMPLEX]` - Extending Kubernetes scheduling decisions
 >

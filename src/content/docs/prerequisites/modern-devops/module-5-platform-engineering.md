@@ -2,7 +2,6 @@
 title: "Module 5: Platform Engineering Concepts"
 sidebar:
   order: 6
-  label: "Modern DevOps"
 ---
 > **Complexity**: `[MEDIUM]` - Strategic perspective
 >

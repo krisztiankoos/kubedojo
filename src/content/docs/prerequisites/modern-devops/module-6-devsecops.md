@@ -2,7 +2,6 @@
 title: "Module 6: Security Practices (DevSecOps)"
 sidebar:
   order: 7
-  label: "Modern DevOps"
 ---
 > **Complexity**: `[MEDIUM]` - Essential security mindset
 >

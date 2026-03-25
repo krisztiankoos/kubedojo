@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.3: Helm \u2014 \u043c\u0435\u043d
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.3-helm
 sidebar:
   order: 4
-  label: "Part 1: Cluster Architecture"
 ---
 > **Складність**: `[MEDIUM]` — необхідна навичка для іспиту 2025
 >

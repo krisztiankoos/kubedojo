@@ -2,7 +2,6 @@
 title: "Module 1: Infrastructure as Code"
 sidebar:
   order: 2
-  label: "Modern DevOps"
 ---
 > **Complexity**: `[MEDIUM]` - Foundational concept
 >

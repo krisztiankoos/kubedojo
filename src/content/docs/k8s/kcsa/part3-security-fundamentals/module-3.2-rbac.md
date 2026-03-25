@@ -3,7 +3,6 @@ title: "Module 3.2: RBAC Fundamentals"
 slug: k8s/kcsa/part3-security-fundamentals/module-3.2-rbac
 sidebar:
   order: 3
-  label: "Part 3: Security Fundamentals"
 ---
 > **Complexity**: `[MEDIUM]` - Core knowledge
 >

@@ -3,7 +3,6 @@ title: "Module 3.4: Host Network Security"
 slug: k8s/cks/part3-system-hardening/module-3.4-network-security
 sidebar:
   order: 4
-  label: "Part 3: System Hardening"
 ---
 > **Complexity**: `[MEDIUM]` - Network administration with security focus
 >

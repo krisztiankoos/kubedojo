@@ -3,7 +3,6 @@ title: "Module 4.3: Resource Requirements and Limits"
 slug: k8s/ckad/part4-environment/module-4.3-resources
 sidebar:
   order: 3
-  label: "Part 4: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - Critical for production, affects scheduling
 >

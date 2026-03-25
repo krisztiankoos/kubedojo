@@ -3,7 +3,6 @@ title: "Jobs and CronJobs"
 slug: uk/k8s/ckad/part0-environment/module-0.1-ckad-overview
 sidebar:
   order: 1
-  label: "Part 0: Environment"
 ---
 > **Складність**: `[QUICK]` - Орієнтація та стратегія
 >

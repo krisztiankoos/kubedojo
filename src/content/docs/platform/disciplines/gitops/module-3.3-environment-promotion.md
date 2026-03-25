@@ -3,7 +3,6 @@ title: "Module 3.3: Environment Promotion"
 slug: platform/disciplines/gitops/module-3.3-environment-promotion
 sidebar:
   order: 4
-  label: "GitOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3: \u0429\u043e \u0442\u0430\u043a\u0435 Kubernetes?"
 sidebar:
   order: 4
-  label: "Cloud Native 101"
 ---
 > **Складність**: `[QUICK]` — загальний огляд
 >

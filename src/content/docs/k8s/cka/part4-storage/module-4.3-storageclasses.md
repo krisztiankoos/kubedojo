@@ -3,7 +3,6 @@ title: "Module 4.3: StorageClasses & Dynamic Provisioning"
 slug: k8s/cka/part4-storage/module-4.3-storageclasses
 sidebar:
   order: 4
-  label: "Part 4: Storage"
 ---
 > **Complexity**: `[MEDIUM]` - Automation of storage provisioning
 >

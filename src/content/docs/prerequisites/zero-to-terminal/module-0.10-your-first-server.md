@@ -3,7 +3,6 @@ title: "Module 0.10: Your First Server -- Putting It All Together"
 slug: prerequisites/zero-to-terminal/module-0.10-your-first-server
 sidebar:
   order: 11
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[MEDIUM]` - Capstone project
 >

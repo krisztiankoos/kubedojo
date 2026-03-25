@@ -3,7 +3,6 @@ title: "Module 5.4: Worker Node Failures"
 slug: k8s/cka/part5-troubleshooting/module-5.4-worker-nodes
 sidebar:
   order: 5
-  label: "Part 5: Troubleshooting"
 ---
 > **Complexity**: `[MEDIUM]` - Critical for cluster operations
 >

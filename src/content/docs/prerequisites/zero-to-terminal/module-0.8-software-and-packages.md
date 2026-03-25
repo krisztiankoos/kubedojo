@@ -3,7 +3,6 @@ title: "Module 0.8: Software and Packages"
 slug: prerequisites/zero-to-terminal/module-0.8-software-and-packages
 sidebar:
   order: 9
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Absolute beginner
 >

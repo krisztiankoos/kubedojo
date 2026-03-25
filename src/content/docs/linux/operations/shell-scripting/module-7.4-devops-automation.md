@@ -3,7 +3,6 @@ title: "Module 7.4: DevOps Automation"
 slug: linux/operations/shell-scripting/module-7.4-devops-automation
 sidebar:
   order: 5
-  label: "Shell Scripting"
 ---
 > **Shell Scripting** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -3,7 +3,6 @@ title: "Module 3.1: What is GitOps?"
 slug: platform/disciplines/gitops/module-3.1-what-is-gitops
 sidebar:
   order: 2
-  label: "GitOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

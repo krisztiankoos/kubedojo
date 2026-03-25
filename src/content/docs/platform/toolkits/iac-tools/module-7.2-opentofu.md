@@ -3,7 +3,6 @@ title: "Module 7.2: OpenTofu - The Open Source Fork"
 slug: platform/toolkits/iac-tools/module-7.2-opentofu
 sidebar:
   order: 3
-  label: "IaC Tools"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 40 minutes

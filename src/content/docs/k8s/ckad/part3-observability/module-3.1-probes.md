@@ -3,7 +3,6 @@ title: "Module 3.1: Application Probes"
 slug: k8s/ckad/part3-observability/module-3.1-probes
 sidebar:
   order: 1
-  label: "Part 3: Observability"
 ---
 > **Complexity**: `[MEDIUM]` - Critical exam topic with multiple probe types
 >

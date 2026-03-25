@@ -2,7 +2,6 @@
 title: "Module 2: Docker Fundamentals"
 sidebar:
   order: 3
-  label: "Cloud Native 101"
 ---
 > **Complexity**: `[MEDIUM]` - Hands-on practice required
 >

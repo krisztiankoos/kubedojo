@@ -3,7 +3,6 @@ title: "Module 5.8: Multus CNI - Multi-Network Pods for Specialized Workloads"
 slug: platform/toolkits/networking/module-5.8-multus
 sidebar:
   order: 9
-  label: "Networking"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 55-70 minutes
 

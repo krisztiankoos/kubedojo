@@ -2,7 +2,6 @@
 title: "Module 4: Observability Fundamentals"
 sidebar:
   order: 5
-  label: "Modern DevOps"
 ---
 > **Complexity**: `[MEDIUM]` - Critical operational skill
 >

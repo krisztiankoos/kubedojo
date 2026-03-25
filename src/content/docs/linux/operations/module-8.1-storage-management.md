@@ -3,7 +3,6 @@ title: "Module 8.1: Storage Management"
 slug: linux/operations/module-8.1-storage-management
 sidebar:
   order: 1
-  label: "System Administration"
 ---
 > **Operations — LFCS** | Complexity: `[COMPLEX]` | Time: 45-55 min
 

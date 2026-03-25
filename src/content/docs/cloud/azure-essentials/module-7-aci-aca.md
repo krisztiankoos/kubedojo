@@ -2,7 +2,6 @@
 title: "ACI & Azure Container Apps"
 sidebar:
   order: 8
-  label: "Azure Essentials"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 6 (ACR), Module 1 (Entra ID)
 

@@ -2,7 +2,6 @@
 title: "Part 4 Cumulative Quiz: Storage"
 sidebar:
   order: 7
-  label: "Part 4: Storage"
 ---
 > **Time Limit**: 30 minutes
 >

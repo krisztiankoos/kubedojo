@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.3: Vim \u0434\u043b\u044f YAML"
 slug: uk/k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:
   order: 3
-  label: "Part 0: Environment"
 ---
 > **Складність**: `[QUICK]` — Вивчіть 10 команд, використовуйте їх завжди
 >

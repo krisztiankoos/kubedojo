@@ -3,7 +3,6 @@ title: "Module 5.1: Container Image Security"
 slug: k8s/cks/part5-supply-chain-security/module-5.1-image-security
 sidebar:
   order: 1
-  label: "Part 5: Supply Chain Security"
 ---
 > **Complexity**: `[MEDIUM]` - Core CKS skill
 >

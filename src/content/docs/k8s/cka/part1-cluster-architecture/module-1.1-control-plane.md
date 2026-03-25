@@ -3,7 +3,6 @@ title: "Module 1.1: Control Plane Deep-Dive"
 slug: k8s/cka/part1-cluster-architecture/module-1.1-control-plane
 sidebar:
   order: 2
-  label: "Part 1: Cluster Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual understanding required
 >

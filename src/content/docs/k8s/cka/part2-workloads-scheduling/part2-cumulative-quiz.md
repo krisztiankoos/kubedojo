@@ -2,7 +2,6 @@
 title: "Part 2 Cumulative Quiz: Workloads & Scheduling"
 sidebar:
   order: 11
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Purpose**: Test your retention across all Part 2 modules before moving to Part 3.
 >

@@ -3,7 +3,6 @@ title: "Module 4.3: SELinux Contexts"
 slug: linux/security/hardening/module-4.3-selinux
 sidebar:
   order: 4
-  label: "Security Hardening"
 ---
 > **Linux Security** | Complexity: `[COMPLEX]` | Time: 35-40 min
 

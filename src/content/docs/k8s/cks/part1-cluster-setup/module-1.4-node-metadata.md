@@ -3,7 +3,6 @@ title: "Module 1.4: Node Metadata Protection"
 slug: k8s/cks/part1-cluster-setup/module-1.4-node-metadata
 sidebar:
   order: 4
-  label: "Part 1: Cluster Setup"
 ---
 > **Complexity**: `[MEDIUM]` - Cloud-specific security critical skill
 >

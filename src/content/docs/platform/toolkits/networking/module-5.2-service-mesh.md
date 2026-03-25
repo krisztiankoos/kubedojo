@@ -3,7 +3,6 @@ title: "Module 5.2: Service Mesh"
 slug: platform/toolkits/networking/module-5.2-service-mesh
 sidebar:
   order: 3
-  label: "Networking"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 60 minutes

@@ -3,7 +3,6 @@ title: "Module 9.5: Ray Serve - Distributed Model Serving"
 slug: platform/toolkits/ml-platforms/module-9.5-ray-serve
 sidebar:
   order: 6
-  label: "ML Platforms"
 ---
 ## Complexity: [COMPLEX]
 

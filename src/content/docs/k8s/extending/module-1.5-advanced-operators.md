@@ -3,7 +3,6 @@ title: "Module 1.5: Advanced Operator Development"
 slug: k8s/extending/module-1.5-advanced-operators
 sidebar:
   order: 6
-  label: "Extending Kubernetes"
 ---
 > **Complexity**: `[COMPLEX]` - Production-grade operator patterns
 >

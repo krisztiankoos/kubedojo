@@ -2,7 +2,6 @@
 title: "Module 1: PromQL Deep Dive"
 sidebar:
   order: 2
-  label: "PCA"
 ---
 > **PCA Track** | Complexity: `[COMPLEX]` | Time: 50-60 min
 

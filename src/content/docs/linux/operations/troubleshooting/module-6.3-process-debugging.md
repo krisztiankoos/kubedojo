@@ -3,7 +3,6 @@ title: "Module 6.3: Process Debugging"
 slug: linux/operations/troubleshooting/module-6.3-process-debugging
 sidebar:
   order: 4
-  label: "Troubleshooting"
 ---
 > **Linux Troubleshooting** | Complexity: `[COMPLEX]` | Time: 30-35 min
 

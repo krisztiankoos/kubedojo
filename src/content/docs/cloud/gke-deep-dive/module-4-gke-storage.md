@@ -2,7 +2,6 @@
 title: "GKE Storage"
 sidebar:
   order: 5
-  label: "GCP GKE Deep Dive"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 1 (GKE Architecture)
 

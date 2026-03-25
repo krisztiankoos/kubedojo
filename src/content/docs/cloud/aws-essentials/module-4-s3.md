@@ -2,7 +2,6 @@
 title: "Amazon S3 & Object Storage"
 sidebar:
   order: 5
-  label: "AWS Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: Module 1
 

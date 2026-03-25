@@ -3,7 +3,6 @@ title: "Module 5.2: CPU & Scheduling"
 slug: linux/operations/performance/module-5.2-cpu-scheduling
 sidebar:
   order: 3
-  label: "Performance"
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

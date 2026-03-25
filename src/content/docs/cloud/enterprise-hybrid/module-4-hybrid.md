@@ -2,7 +2,6 @@
 title: "Hybrid Cloud Architecture (On-Prem to Cloud)"
 sidebar:
   order: 5
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Cloud Architecture Patterns, Networking Fundamentals, Enterprise Landing Zones (Module 1)
 

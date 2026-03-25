@@ -2,7 +2,6 @@
 title: "Module 7: Stateful Workload Migration & Data Gravity"
 sidebar:
   order: 8
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

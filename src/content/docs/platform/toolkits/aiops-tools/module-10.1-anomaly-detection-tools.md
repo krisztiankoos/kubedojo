@@ -3,7 +3,6 @@ title: "Module 10.1: Anomaly Detection Tools"
 slug: platform/toolkits/aiops-tools/module-10.1-anomaly-detection-tools
 sidebar:
   order: 2
-  label: "AIOps Tools"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 min
 

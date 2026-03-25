@@ -2,7 +2,6 @@
 title: "Module 2: kubectl Basics"
 sidebar:
   order: 3
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[MEDIUM]` - Essential commands to master
 >

@@ -3,7 +3,6 @@ title: "Module 8.5: Gitpod & GitHub Codespaces - Cloud Development Environments"
 slug: platform/toolkits/developer-experience/module-8.5-gitpod-codespaces
 sidebar:
   order: 6
-  label: "Developer Experience"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

@@ -3,7 +3,6 @@ title: "Module 7.5: AWS CloudFormation"
 slug: platform/toolkits/iac-tools/module-7.5-cloudformation
 sidebar:
   order: 6
-  label: "IaC Tools"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 90 minutes

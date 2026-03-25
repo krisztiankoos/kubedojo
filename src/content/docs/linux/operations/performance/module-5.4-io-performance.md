@@ -3,7 +3,6 @@ title: "Module 5.4: I/O Performance"
 slug: linux/operations/performance/module-5.4-io-performance
 sidebar:
   order: 5
-  label: "Performance"
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

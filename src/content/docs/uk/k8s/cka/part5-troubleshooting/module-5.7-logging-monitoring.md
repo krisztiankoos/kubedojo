@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.7: \u041b\u043e\u0433\u0443\u0432
 slug: uk/k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring
 sidebar:
   order: 8
-  label: "Part 5: Troubleshooting"
 ---
 > **Складність**: `[MEDIUM]` — Основні навички спостережуваності
 >

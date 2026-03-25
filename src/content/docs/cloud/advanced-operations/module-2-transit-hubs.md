@@ -2,7 +2,6 @@
 title: "Module 2: Advanced Cloud Networking & Transit Hubs"
 sidebar:
   order: 3
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

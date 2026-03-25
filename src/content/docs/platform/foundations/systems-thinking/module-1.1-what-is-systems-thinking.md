@@ -3,7 +3,6 @@ title: "Module 1.1: What is Systems Thinking?"
 slug: platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking
 sidebar:
   order: 2
-  label: "Systems Thinking"
 ---
 > **Complexity**: `[MEDIUM]` | **Time**: 35-45 minutes | **Prerequisites**: None (entry point to Platform track)
 

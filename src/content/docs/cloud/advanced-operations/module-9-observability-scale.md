@@ -2,7 +2,6 @@
 title: "Module 9: Large-Scale Observability & Telemetry"
 sidebar:
   order: 10
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

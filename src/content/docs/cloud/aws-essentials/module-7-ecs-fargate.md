@@ -2,7 +2,6 @@
 title: "Module 7: Elastic Container Service (ECS) & Fargate"
 sidebar:
   order: 8
-  label: "AWS Essentials"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 3 hours

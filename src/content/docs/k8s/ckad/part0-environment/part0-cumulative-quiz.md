@@ -2,7 +2,6 @@
 title: "Part 0 Cumulative Quiz: Environment & Strategy"
 sidebar:
   order: 3
-  label: "Part 0: Environment"
 ---
 > **Time Limit**: 10 minutes (simulating exam pressure)
 >

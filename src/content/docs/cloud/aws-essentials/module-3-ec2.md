@@ -2,7 +2,6 @@
 title: "Elastic Compute Cloud (EC2) & Compute Foundations"
 sidebar:
   order: 4
-  label: "AWS Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: Module 2
 

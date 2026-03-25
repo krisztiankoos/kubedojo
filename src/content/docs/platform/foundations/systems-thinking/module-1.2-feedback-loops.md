@@ -3,7 +3,6 @@ title: "Module 1.2: Feedback Loops"
 slug: platform/foundations/systems-thinking/module-1.2-feedback-loops
 sidebar:
   order: 3
-  label: "Systems Thinking"
 ---
 > **Complexity**: `[MEDIUM]`
 >

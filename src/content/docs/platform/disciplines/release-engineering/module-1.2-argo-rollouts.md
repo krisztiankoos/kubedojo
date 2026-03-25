@@ -3,7 +3,6 @@ title: "Module 1.2: Advanced Canary Deployments with Argo Rollouts"
 slug: platform/disciplines/release-engineering/module-1.2-argo-rollouts
 sidebar:
   order: 3
-  label: "Release Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3 hours
 

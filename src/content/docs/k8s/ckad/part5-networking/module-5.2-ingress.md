@@ -3,7 +3,6 @@ title: "Module 5.2: Ingress"
 slug: k8s/ckad/part5-networking/module-5.2-ingress
 sidebar:
   order: 2
-  label: "Part 5: Networking"
 ---
 > **Complexity**: `[MEDIUM]` - Important for external access, multiple concepts
 >

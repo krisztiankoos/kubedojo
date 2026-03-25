@@ -3,7 +3,6 @@ title: "Module 3.9: WebAssembly and Cloud Native"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.9-webassembly
 sidebar:
   order: 10
-  label: "Part 3: Cloud Native Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual awareness
 >

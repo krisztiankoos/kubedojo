@@ -3,7 +3,6 @@ title: "Module 8.3: Package Management & User Administration"
 slug: linux/operations/module-8.3-package-user-management
 sidebar:
   order: 3
-  label: "System Administration"
 ---
 > **Operations — LFCS** | Complexity: `[MEDIUM]` | Time: 40-50 min
 

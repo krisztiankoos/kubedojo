@@ -3,7 +3,6 @@ title: "Module 0.2: Security Mindset"
 slug: k8s/kcsa/part0-introduction/module-0.2-security-mindset
 sidebar:
   order: 3
-  label: "Part 0: Introduction"
 ---
 > **Complexity**: `[QUICK]` - Foundational thinking
 >

@@ -3,7 +3,6 @@ title: "Module 2.3: Kustomize"
 slug: k8s/ckad/part2-deployment/module-2.3-kustomize
 sidebar:
   order: 3
-  label: "Part 2: Deployment"
 ---
 > **Complexity**: `[MEDIUM]` - Template-free customization for Kubernetes
 >

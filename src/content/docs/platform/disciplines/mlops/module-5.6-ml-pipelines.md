@@ -3,7 +3,6 @@ title: "Module 5.6: ML Pipelines & Automation"
 slug: platform/disciplines/mlops/module-5.6-ml-pipelines
 sidebar:
   order: 7
-  label: "MLOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

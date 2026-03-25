@@ -3,7 +3,6 @@ title: "Module 1.1: What is SRE?"
 slug: platform/disciplines/sre/module-1.1-what-is-sre
 sidebar:
   order: 2
-  label: "SRE"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -3,7 +3,6 @@ title: "Module 11.1: GitLab - The Complete DevOps Platform"
 slug: platform/toolkits/source-control/module-11.1-gitlab
 sidebar:
   order: 2
-  label: "Source Control"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-60 minutes

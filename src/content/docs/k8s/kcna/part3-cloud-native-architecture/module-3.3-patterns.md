@@ -3,7 +3,6 @@ title: "Module 3.3: Cloud Native Patterns"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns
 sidebar:
   order: 4
-  label: "Part 3: Cloud Native Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Architecture concepts
 >

@@ -3,7 +3,6 @@ title: "Module 2.1: What is Platform Engineering?"
 slug: platform/disciplines/platform-engineering/module-2.1-what-is-platform-engineering
 sidebar:
   order: 2
-  label: "Platform Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 35-45 min
 

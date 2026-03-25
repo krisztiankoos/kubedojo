@@ -2,7 +2,6 @@
 title: "Azure Functions & Serverless"
 sidebar:
   order: 9
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 4 (Blob Storage), Module 1 (Entra ID)
 

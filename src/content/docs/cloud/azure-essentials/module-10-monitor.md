@@ -2,7 +2,6 @@
 title: "Azure Monitor & Log Analytics"
 sidebar:
   order: 11
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: Module 3 (VMs), Module 1 (Entra ID)
 

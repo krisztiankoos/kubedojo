@@ -3,7 +3,6 @@ title: "Module 3.1: TCP/IP Essentials"
 slug: linux/foundations/networking/module-3.1-tcp-ip-essentials
 sidebar:
   order: 2
-  label: "Networking"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

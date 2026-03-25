@@ -3,7 +3,6 @@ title: "Module 2.3: API Server Security"
 slug: k8s/cks/part2-cluster-hardening/module-2.3-api-server-security
 sidebar:
   order: 3
-  label: "Part 2: Cluster Hardening"
 ---
 > **Complexity**: `[COMPLEX]` - Critical infrastructure component
 >

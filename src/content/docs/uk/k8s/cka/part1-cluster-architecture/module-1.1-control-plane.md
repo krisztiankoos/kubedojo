@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.1: \u041f\u043e\u0433\u043b\u0438
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.1-control-plane
 sidebar:
   order: 2
-  label: "Part 1: Cluster Architecture"
 ---
 > **Складність**: `[MEDIUM]` - Вимагає концептуального розуміння
 >

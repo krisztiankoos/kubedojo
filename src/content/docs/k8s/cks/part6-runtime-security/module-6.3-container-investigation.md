@@ -3,7 +3,6 @@ title: "Module 6.3: Container Investigation"
 slug: k8s/cks/part6-runtime-security/module-6.3-container-investigation
 sidebar:
   order: 3
-  label: "Part 6: Runtime Security"
 ---
 > **Complexity**: `[MEDIUM]` - Incident response skills
 >

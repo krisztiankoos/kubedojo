@@ -3,7 +3,6 @@ title: "Module 2.4: Deployment Strategies"
 slug: k8s/ckad/part2-deployment/module-2.4-deployment-strategies
 sidebar:
   order: 4
-  label: "Part 2: Deployment"
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual understanding with practical implementation
 >

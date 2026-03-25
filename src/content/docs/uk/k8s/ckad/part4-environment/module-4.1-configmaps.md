@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.1: ConfigMaps"
 slug: uk/k8s/ckad/part4-environment/module-4.1-configmaps
 sidebar:
   order: 1
-  label: "Part 4: Environment"
 ---
 > **Складність**: `[MEDIUM]` — Кілька способів створення та використання
 >

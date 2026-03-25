@@ -3,7 +3,6 @@ title: "Module 1.5: Automating Chaos & Game Days"
 slug: platform/disciplines/chaos-engineering/module-1.5-automating-chaos
 sidebar:
   order: 6
-  label: "Chaos Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2 hours
 

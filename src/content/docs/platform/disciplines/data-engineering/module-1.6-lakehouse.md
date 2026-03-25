@@ -3,7 +3,6 @@ title: "Module 1.6: Building a Data Lakehouse on Kubernetes"
 slug: platform/disciplines/data-engineering/module-1.6-lakehouse
 sidebar:
   order: 7
-  label: "Data Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3.5 hours
 

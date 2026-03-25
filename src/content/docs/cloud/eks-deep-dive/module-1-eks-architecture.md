@@ -2,7 +2,6 @@
 title: "EKS Architecture & Control Plane"
 sidebar:
   order: 2
-  label: "AWS EKS Deep Dive"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: AWS Essentials, Cloud Architecture Patterns
 

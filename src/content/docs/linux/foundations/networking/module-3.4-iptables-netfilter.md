@@ -3,7 +3,6 @@ title: "Module 3.4: iptables & netfilter"
 slug: linux/foundations/networking/module-3.4-iptables-netfilter
 sidebar:
   order: 5
-  label: "Networking"
 ---
 > **Linux Foundations** | Complexity: `[COMPLEX]` | Time: 35-40 min
 

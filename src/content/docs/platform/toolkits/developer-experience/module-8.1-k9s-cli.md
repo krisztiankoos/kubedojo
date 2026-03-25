@@ -3,7 +3,6 @@ title: "Module 8.1: k9s & CLI Tools"
 slug: platform/toolkits/developer-experience/module-8.1-k9s-cli
 sidebar:
   order: 2
-  label: "Developer Experience"
 ---
 > **Toolkit Track** | Complexity: `[QUICK]` | Time: 30-35 minutes
 

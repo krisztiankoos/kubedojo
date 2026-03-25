@@ -3,7 +3,6 @@ title: "Module 4.3: Falco & Runtime Security"
 slug: platform/toolkits/security-tools/module-4.3-falco
 sidebar:
   order: 4
-  label: "Security Tools"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 minutes
 

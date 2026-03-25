@@ -2,7 +2,6 @@
 title: "Azure Blob Storage & Data Lake"
 sidebar:
   order: 5
-  label: "Azure Essentials"
 ---
 **Complexity**: [QUICK] | **Time to Complete**: 1.5h | **Prerequisites**: Module 1 (Entra ID & RBAC)
 

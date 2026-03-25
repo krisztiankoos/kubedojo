@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.2: \u041c\u0430\u0439\u0441\u0442
 slug: uk/k8s/cka/part0-environment/module-0.2-shell-mastery
 sidebar:
   order: 2
-  label: "Part 0: Environment"
 ---
 > **Складність**: `[QUICK]` — Налаштуйте один раз, користуйтесь завжди
 >

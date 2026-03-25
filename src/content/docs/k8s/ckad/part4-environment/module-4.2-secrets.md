@@ -3,7 +3,6 @@ title: "Module 4.2: Secrets"
 slug: k8s/ckad/part4-environment/module-4.2-secrets
 sidebar:
   order: 2
-  label: "Part 4: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - Similar to ConfigMaps but with security considerations
 >

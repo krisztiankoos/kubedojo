@@ -3,7 +3,6 @@ title: "Module 1.4: The Operator Pattern & Kubebuilder"
 slug: k8s/extending/module-1.4-kubebuilder
 sidebar:
   order: 5
-  label: "Extending Kubernetes"
 ---
 > **Complexity**: `[COMPLEX]` - Framework-based operator development
 >

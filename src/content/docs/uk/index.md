@@ -2,7 +2,6 @@
 title: "KubeDojo"
 sidebar:
   order: 1
-  label: "Home"
 ---
 **Безкоштовна, всебічна хмарна освіта.**
 

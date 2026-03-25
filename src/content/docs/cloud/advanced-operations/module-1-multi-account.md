@@ -2,7 +2,6 @@
 title: "Module 1: Multi-Account Architecture & Org Design"
 sidebar:
   order: 2
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

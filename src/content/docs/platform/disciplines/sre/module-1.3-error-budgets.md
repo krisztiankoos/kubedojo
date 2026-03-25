@@ -3,7 +3,6 @@ title: "Module 1.3: Error Budgets"
 slug: platform/disciplines/sre/module-1.3-error-budgets
 sidebar:
   order: 4
-  label: "SRE"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -3,7 +3,6 @@ title: "Module 1.4: Stateful Chaos \u2014 Databases & Storage"
 slug: platform/disciplines/chaos-engineering/module-1.4-stateful-chaos
 sidebar:
   order: 5
-  label: "Chaos Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3 hours
 

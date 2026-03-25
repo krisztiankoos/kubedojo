@@ -3,7 +3,6 @@ title: "Module 12.5: Trivy - The Swiss Army Knife of Security Scanning"
 slug: platform/toolkits/code-quality/module-12.5-trivy
 sidebar:
   order: 6
-  label: "Code Quality"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

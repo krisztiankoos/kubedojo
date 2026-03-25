@@ -3,7 +3,6 @@ title: "Module 3.2: Tekton"
 slug: platform/toolkits/ci-cd-pipelines/module-3.2-tekton
 sidebar:
   order: 3
-  label: "CI/CD Pipelines"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 

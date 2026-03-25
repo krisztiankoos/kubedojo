@@ -2,7 +2,6 @@
 title: "Module 3: Pods - The Atomic Unit"
 sidebar:
   order: 4
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[MEDIUM]` - Core concept, hands-on required
 >

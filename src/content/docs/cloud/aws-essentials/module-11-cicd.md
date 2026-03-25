@@ -2,7 +2,6 @@
 title: "Module 11: CI/CD on AWS (Code Suite)"
 sidebar:
   order: 12
-  label: "AWS Essentials"
 ---
 **Complexity:** `[MEDIUM]` | **Time to Complete:** 2 hours | **Track:** AWS DevOps Essentials
 

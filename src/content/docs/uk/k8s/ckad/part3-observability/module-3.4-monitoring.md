@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.4: \u041c\u043e\u043d\u0456\u0442
 slug: uk/k8s/ckad/part3-observability/module-3.4-monitoring
 sidebar:
   order: 4
-  label: "Part 3: Observability"
 ---
 > **Складність**: `[QUICK]` — Базові команди, концептуальне розуміння
 >

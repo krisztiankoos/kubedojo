@@ -2,7 +2,6 @@
 title: "Module 3: What Is Kubernetes?"
 sidebar:
   order: 4
-  label: "Cloud Native 101"
 ---
 > **Complexity**: `[QUICK]` - High-level overview
 >

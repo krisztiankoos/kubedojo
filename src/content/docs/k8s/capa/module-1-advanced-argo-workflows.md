@@ -2,7 +2,6 @@
 title: "Module 1: Advanced Argo Workflows"
 sidebar:
   order: 2
-  label: "CAPA"
 ---
 > **CAPA Track -- Domain 1 (36%)** | Complexity: `[COMPLEX]` | Time: 50-60 min
 

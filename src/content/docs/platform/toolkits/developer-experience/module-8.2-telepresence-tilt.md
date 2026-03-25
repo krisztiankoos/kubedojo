@@ -3,7 +3,6 @@ title: "Module 8.2: Telepresence & Tilt"
 slug: platform/toolkits/developer-experience/module-8.2-telepresence-tilt
 sidebar:
   order: 3
-  label: "Developer Experience"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

@@ -110,8 +110,13 @@ def extract_title(content: str) -> tuple[str, str]:
 
 def generate_frontmatter(title: str, sidebar_order: int | None = None,
                          sidebar_label: str | None = None,
-                         slug: str | None = None) -> str:
-    """Generate Starlight-compatible YAML frontmatter."""
+                         slug: str | None = None,
+                         is_index: bool = False) -> str:
+    """Generate Starlight-compatible YAML frontmatter.
+
+    sidebar.label is only set on index pages (section headers).
+    Regular modules use their title as the sidebar label automatically.
+    """
     # Build YAML manually — use json.dumps for safe string escaping
     lines = ["---"]
     lines.append(f"title: {json.dumps(title)}")
@@ -123,7 +128,8 @@ def generate_frontmatter(title: str, sidebar_order: int | None = None,
     sidebar = {}
     if sidebar_order is not None:
         sidebar["order"] = sidebar_order
-    if sidebar_label and sidebar_label != title:
+    # Only set label on index pages — child modules use their title
+    if is_index and sidebar_label and sidebar_label != title:
         sidebar["label"] = sidebar_label
 
     if sidebar:
@@ -131,7 +137,7 @@ def generate_frontmatter(title: str, sidebar_order: int | None = None,
         if "order" in sidebar:
             lines.append(f"  order: {sidebar['order']}")
         if "label" in sidebar:
-            lines.append(f'  label: "{sidebar["label"]}"')
+            lines.append(f'  label: {json.dumps(sidebar["label"])}'  )
 
     lines.append("---")
     return "\n".join(lines)
@@ -275,8 +281,9 @@ def migrate_file(src: Path, nav_index: dict, is_ukrainian: bool,
         if "." in stem:
             slug = slug_path
 
-    # Generate frontmatter
-    frontmatter = generate_frontmatter(title, sidebar_order, sidebar_label, slug)
+    # Generate frontmatter — only index pages get sidebar labels
+    is_index = (src.name == "README.md")
+    frontmatter = generate_frontmatter(title, sidebar_order, sidebar_label, slug, is_index)
 
     # Fix links
     body = fix_internal_links(body, is_ukrainian, rel)

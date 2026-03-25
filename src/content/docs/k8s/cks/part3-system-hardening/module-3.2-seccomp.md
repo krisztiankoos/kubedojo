@@ -3,7 +3,6 @@ title: "Module 3.2: Seccomp Profiles"
 slug: k8s/cks/part3-system-hardening/module-3.2-seccomp
 sidebar:
   order: 2
-  label: "Part 3: System Hardening"
 ---
 > **Complexity**: `[MEDIUM]` - System-level security
 >

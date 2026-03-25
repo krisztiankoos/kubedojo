@@ -3,7 +3,6 @@ title: "Module 4.6: KubeArmor - Runtime Security with Least Privilege"
 slug: platform/toolkits/security-tools/module-4.6-kubearmor
 sidebar:
   order: 7
-  label: "Security Tools"
 ---
 ## Complexity: [MEDIUM]
 

@@ -3,7 +3,6 @@ title: "Module 2.5: SLIs, SLOs, and Error Budgets \u2014 The Theory"
 slug: platform/foundations/reliability-engineering/module-2.5-slos-slis-error-budgets
 sidebar:
   order: 6
-  label: "Reliability Engineering"
 ---
 > **Complexity**: `[MEDIUM]` — Core SRE mental model
 >

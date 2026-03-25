@@ -2,7 +2,6 @@
 title: "Part 5 Cumulative Quiz: Services and Networking"
 sidebar:
   order: 4
-  label: "Part 5: Networking"
 ---
 > **Time Limit**: 20 minutes (simulating exam pressure)
 >

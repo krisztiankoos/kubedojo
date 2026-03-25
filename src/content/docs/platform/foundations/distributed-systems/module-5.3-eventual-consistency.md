@@ -3,7 +3,6 @@ title: "Module 5.3: Eventual Consistency"
 slug: platform/foundations/distributed-systems/module-5.3-eventual-consistency
 sidebar:
   order: 4
-  label: "Distributed Systems"
 ---
 > **Complexity**: `[MEDIUM]`
 >

@@ -3,7 +3,6 @@ title: "Module 4.6: Custom Resource Definitions (CRDs)"
 slug: k8s/ckad/part4-environment/module-4.6-crds
 sidebar:
   order: 6
-  label: "Part 4: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - New to CKAD 2025, conceptual understanding important
 >

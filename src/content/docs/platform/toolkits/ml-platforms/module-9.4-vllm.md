@@ -3,7 +3,6 @@ title: "Module 9.4: vLLM - High-Throughput LLM Serving"
 slug: platform/toolkits/ml-platforms/module-9.4-vllm
 sidebar:
   order: 5
-  label: "ML Platforms"
 ---
 ## Complexity: [COMPLEX]
 

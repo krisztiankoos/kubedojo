@@ -2,7 +2,6 @@
 title: "Module 6: Elastic Container Registry (ECR)"
 sidebar:
   order: 7
-  label: "AWS Essentials"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 1 hour

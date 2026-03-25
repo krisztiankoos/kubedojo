@@ -3,7 +3,6 @@ title: "Module 6.3: Velero"
 slug: platform/toolkits/scaling-reliability/module-6.3-velero
 sidebar:
   order: 4
-  label: "Scaling & Reliability"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

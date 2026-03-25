@@ -3,7 +3,6 @@ title: "Module 6.2: Runtime Security with Falco"
 slug: k8s/cks/part6-runtime-security/module-6.2-falco
 sidebar:
   order: 2
-  label: "Part 6: Runtime Security"
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS skill
 >

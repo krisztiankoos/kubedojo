@@ -3,7 +3,6 @@ title: "Module 1.7: Services"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.7-services
 sidebar:
   order: 8
-  label: "Part 1: K8s Fundamentals"
 ---
 > **Complexity**: `[MEDIUM]` - Core networking concept
 >

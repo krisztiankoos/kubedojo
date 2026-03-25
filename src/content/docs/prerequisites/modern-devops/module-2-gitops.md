@@ -2,7 +2,6 @@
 title: "Module 2: GitOps"
 sidebar:
   order: 3
-  label: "Modern DevOps"
 ---
 > **Complexity**: `[MEDIUM]` - Key operational pattern
 >

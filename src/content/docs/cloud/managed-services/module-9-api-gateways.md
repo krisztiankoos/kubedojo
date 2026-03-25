@@ -2,7 +2,6 @@
 title: "Cloud-Native API Gateways & WAF"
 sidebar:
   order: 10
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Module 3 (Serverless Interoperability), Kubernetes Ingress and Services, HTTP/TLS basics
 

@@ -3,7 +3,6 @@ title: "Module 0.3: Security Tool Mastery"
 slug: k8s/cks/part0-environment/module-0.3-security-tools
 sidebar:
   order: 3
-  label: "Part 0: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - Essential exam tools
 >

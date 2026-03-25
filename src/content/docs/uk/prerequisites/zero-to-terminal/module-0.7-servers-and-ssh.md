@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.7: \u0421\u0435\u0440\u0432\u0435
 slug: uk/prerequisites/zero-to-terminal/module-0.7-servers-and-ssh
 sidebar:
   order: 8
-  label: "Zero to Terminal"
 ---
 > **Складність**: `[QUICK]` — Концепції та практичне підключення
 >

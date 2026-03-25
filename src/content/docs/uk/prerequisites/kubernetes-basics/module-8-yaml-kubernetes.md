@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 8: YAML \u0434\u043b\u044f Kubernetes"
 sidebar:
   order: 9
-  label: "Kubernetes Basics"
 ---
 > **Складність**: `[MEDIUM]` — Необхідна навичка
 >

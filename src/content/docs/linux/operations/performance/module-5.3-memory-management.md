@@ -3,7 +3,6 @@ title: "Module 5.3: Memory Management"
 slug: linux/operations/performance/module-5.3-memory-management
 sidebar:
   order: 4
-  label: "Performance"
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

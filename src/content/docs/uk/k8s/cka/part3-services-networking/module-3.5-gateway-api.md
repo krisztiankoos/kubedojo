@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.5: Gateway API"
 slug: uk/k8s/cka/part3-services-networking/module-3.5-gateway-api
 sidebar:
   order: 6
-  label: "Part 3: Services & Networking"
 ---
 > **Складність**: `[MEDIUM]` — тема іспиту CKA
 >

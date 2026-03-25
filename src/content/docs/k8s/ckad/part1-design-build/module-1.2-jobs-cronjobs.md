@@ -3,7 +3,6 @@ title: "Module 1.2: Jobs and CronJobs"
 slug: k8s/ckad/part1-design-build/module-1.2-jobs-cronjobs
 sidebar:
   order: 2
-  label: "Part 1: Design & Build"
 ---
 > **Complexity**: `[MEDIUM]` - Essential CKAD skill with specific patterns
 >

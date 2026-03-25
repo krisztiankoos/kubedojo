@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.2: Secrets"
 slug: uk/k8s/ckad/part4-environment/module-4.2-secrets
 sidebar:
   order: 2
-  label: "Part 4: Environment"
 ---
 > **Складність**: `[MEDIUM]` — Схоже на ConfigMaps, але з міркуваннями безпеки
 >

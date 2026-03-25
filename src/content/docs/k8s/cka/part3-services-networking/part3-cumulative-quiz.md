@@ -2,7 +2,6 @@
 title: "Part 3 Cumulative Quiz: Services & Networking"
 sidebar:
   order: 10
-  label: "Part 3: Services & Networking"
 ---
 > **Time Limit**: 45 minutes
 >

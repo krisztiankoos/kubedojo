@@ -3,7 +3,6 @@ title: "Module 1.2: OpenTelemetry"
 slug: platform/toolkits/observability/module-1.2-opentelemetry
 sidebar:
   order: 3
-  label: "Observability"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 

@@ -3,7 +3,6 @@ title: "Module 12.3: CodeQL - Query Your Code Like a Database"
 slug: platform/toolkits/code-quality/module-12.3-codeql
 sidebar:
   order: 4
-  label: "Code Quality"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-60 minutes

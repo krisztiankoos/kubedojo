@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.3: \u041d\u0430\u043b\u0430\u0433
 slug: uk/k8s/ckad/part3-observability/module-3.3-debugging
 sidebar:
   order: 3
-  label: "Part 3: Observability"
 ---
 > **Складність**: `[MEDIUM]` — Критична навичка для іспиту, що вимагає системного підходу
 >

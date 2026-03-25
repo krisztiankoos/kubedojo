@@ -2,7 +2,6 @@
 title: "Module 3: Backstage Catalog & Infrastructure"
 sidebar:
   order: 4
-  label: "CBA"
 ---
 > **Complexity**: `[COMPLEX]` - Covers two exam domains (44% of CBA combined)
 >

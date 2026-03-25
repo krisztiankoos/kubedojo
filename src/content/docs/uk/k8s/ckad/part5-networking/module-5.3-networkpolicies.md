@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.3: \u041c\u0435\u0440\u0435\u0436
 slug: uk/k8s/ckad/part5-networking/module-5.3-networkpolicies
 sidebar:
   order: 3
-  label: "Part 5: Networking"
 ---
 > **Складність**: `[MEDIUM]` — Важливий для безпеки, потребує розуміння селекторів
 >

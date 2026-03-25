@@ -2,7 +2,6 @@
 title: "Module 5: Route 53 & DNS Management"
 sidebar:
   order: 6
-  label: "AWS Essentials"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 1.5 hours

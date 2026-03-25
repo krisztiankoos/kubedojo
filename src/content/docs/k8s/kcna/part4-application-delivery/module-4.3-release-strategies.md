@@ -3,7 +3,6 @@ title: "Module 4.3: Release Strategies (Theory)"
 slug: k8s/kcna/part4-application-delivery/module-4.3-release-strategies
 sidebar:
   order: 4
-  label: "Part 4: Application Delivery"
 ---
 > **Complexity**: `[QUICK]` - Patterns and trade-offs
 >

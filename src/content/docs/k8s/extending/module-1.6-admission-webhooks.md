@@ -3,7 +3,6 @@ title: "Module 1.6: Admission Webhooks"
 slug: k8s/extending/module-1.6-admission-webhooks
 sidebar:
   order: 7
-  label: "Extending Kubernetes"
 ---
 > **Complexity**: `[COMPLEX]` - Intercepting and modifying API requests
 >

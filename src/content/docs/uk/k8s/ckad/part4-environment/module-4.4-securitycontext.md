@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.4: SecurityContexts"
 slug: uk/k8s/ckad/part4-environment/module-4.4-securitycontext
 sidebar:
   order: 4
-  label: "Part 4: Environment"
 ---
 > **Складність**: `[MEDIUM]` — Важливо для безпеки, численні налаштування
 >

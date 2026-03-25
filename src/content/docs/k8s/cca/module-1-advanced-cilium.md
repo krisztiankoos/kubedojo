@@ -2,7 +2,6 @@
 title: "Module 1: Advanced Cilium for CCA"
 sidebar:
   order: 2
-  label: "CCA"
 ---
 > **CCA Track** | Complexity: `[COMPLEX]` | Time: 75-90 minutes
 

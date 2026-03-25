@@ -2,7 +2,6 @@
 title: "Module 5: Services - Stable Networking"
 sidebar:
   order: 6
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[MEDIUM]` - Essential networking concept
 >

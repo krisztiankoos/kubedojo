@@ -3,7 +3,6 @@ title: "Module 6.5: Chaos Engineering"
 slug: platform/toolkits/scaling-reliability/module-6.5-chaos-engineering
 sidebar:
   order: 6
-  label: "Scaling & Reliability"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: ~50 minutes
 

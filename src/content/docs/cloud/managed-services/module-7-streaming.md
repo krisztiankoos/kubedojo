@@ -2,7 +2,6 @@
 title: "Streaming Data Pipelines (MSK / Confluent / Dataflow)"
 sidebar:
   order: 8
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 2 (Message Brokers), Module 6 (Search & Analytics), distributed systems basics
 

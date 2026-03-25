@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3: \u0429\u043e \u043c\u0438 \u043d\u0435 \u043e\u0445\u043e\u043f\u043b\u044e\u0454\u043c\u043e (\u0456 \u0447\u043e\u043c\u0443)"
 sidebar:
   order: 4
-  label: "Philosophy & Design"
 ---
 > **Складність**: `[QUICK]` — Встановлення очікувань
 >

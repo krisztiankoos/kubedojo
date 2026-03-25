@@ -3,7 +3,6 @@ title: "Module 3.4: ServiceAccount Security"
 slug: k8s/kcsa/part3-security-fundamentals/module-3.4-serviceaccounts
 sidebar:
   order: 5
-  label: "Part 3: Security Fundamentals"
 ---
 > **Complexity**: `[MEDIUM]` - Core knowledge
 >

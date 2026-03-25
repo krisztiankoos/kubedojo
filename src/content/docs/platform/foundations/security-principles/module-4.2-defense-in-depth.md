@@ -3,7 +3,6 @@ title: "Module 4.2: Defense in Depth"
 slug: platform/foundations/security-principles/module-4.2-defense-in-depth
 sidebar:
   order: 3
-  label: "Security Principles"
 ---
 > **Complexity**: `[MEDIUM]`
 >

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.4: \u0417\u043d\u0456\u043c\u043a
 slug: uk/k8s/cka/part4-storage/module-4.4-snapshots
 sidebar:
   order: 5
-  label: "Part 4: Storage"
 ---
 > **Складність**: `[MEDIUM]` — Захист даних та клонування
 >

@@ -3,7 +3,6 @@ title: "Module 1.4: Complexity and Emergent Behavior"
 slug: platform/foundations/systems-thinking/module-1.4-complexity-and-emergent-behavior
 sidebar:
   order: 5
-  label: "Systems Thinking"
 ---
 > **Complexity**: `[COMPLEX]`
 >

@@ -3,7 +3,6 @@ title: "Module 4.3: Identity and Access Management"
 slug: platform/foundations/security-principles/module-4.3-identity-and-access
 sidebar:
   order: 4
-  label: "Security Principles"
 ---
 > **Complexity**: `[MEDIUM]`
 >

@@ -3,7 +3,6 @@ title: "Module 5.2: Consensus and Coordination"
 slug: platform/foundations/distributed-systems/module-5.2-consensus-and-coordination
 sidebar:
   order: 3
-  label: "Distributed Systems"
 ---
 > **Complexity**: `[COMPLEX]`
 >

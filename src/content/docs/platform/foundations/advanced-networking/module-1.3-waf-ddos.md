@@ -3,7 +3,6 @@ title: "Module 1.3: WAF & DDoS Mitigation"
 slug: platform/foundations/advanced-networking/module-1.3-waf-ddos
 sidebar:
   order: 4
-  label: "Advanced Networking"
 ---
 > **Complexity**: `[MEDIUM]`
 >

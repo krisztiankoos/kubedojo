@@ -2,7 +2,6 @@
 title: "Module 4: Cloud-Native Networking and VPC Topologies"
 sidebar:
   order: 5
-  label: "Architecture Patterns"
 ---
 > **Complexity**: `[COMPLEX]`
 >

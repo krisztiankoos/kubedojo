@@ -3,7 +3,6 @@ title: "Module 6.1: Karpenter"
 slug: platform/toolkits/scaling-reliability/module-6.1-karpenter
 sidebar:
   order: 2
-  label: "Scaling & Reliability"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 minutes
 

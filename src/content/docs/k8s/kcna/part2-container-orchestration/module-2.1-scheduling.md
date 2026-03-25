@@ -3,7 +3,6 @@ title: "Module 2.1: Scheduling"
 slug: k8s/kcna/part2-container-orchestration/module-2.1-scheduling
 sidebar:
   order: 2
-  label: "Part 2: Container Orchestration"
 ---
 > **Complexity**: `[MEDIUM]` - Orchestration concepts
 >

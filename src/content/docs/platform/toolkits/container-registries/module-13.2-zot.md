@@ -3,7 +3,6 @@ title: "Module 13.2: Zot - The Minimal OCI-Native Registry"
 slug: platform/toolkits/container-registries/module-13.2-zot
 sidebar:
   order: 3
-  label: "Container Registries"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

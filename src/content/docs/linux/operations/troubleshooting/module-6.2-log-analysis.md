@@ -3,7 +3,6 @@ title: "Module 6.2: Log Analysis"
 slug: linux/operations/troubleshooting/module-6.2-log-analysis
 sidebar:
   order: 3
-  label: "Troubleshooting"
 ---
 > **Linux Troubleshooting** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

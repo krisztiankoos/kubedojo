@@ -2,7 +2,6 @@
 title: "CI/CD: Azure DevOps & GitHub Actions"
 sidebar:
   order: 12
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 6 (ACR), Module 7 (Container Apps), Module 1 (Entra ID)
 

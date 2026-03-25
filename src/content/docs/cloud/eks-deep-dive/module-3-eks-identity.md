@@ -2,7 +2,6 @@
 title: "EKS Identity: IRSA vs Pod Identity"
 sidebar:
   order: 4
-  label: "AWS EKS Deep Dive"
 ---
 **Complexity**: [QUICK] | **Time to Complete**: 1.5h | **Prerequisites**: Module 1 (EKS Architecture & Control Plane)
 

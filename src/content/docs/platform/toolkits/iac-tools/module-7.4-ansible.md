@@ -3,7 +3,6 @@ title: "Module 7.4: Ansible for Infrastructure"
 slug: platform/toolkits/iac-tools/module-7.4-ansible
 sidebar:
   order: 5
-  label: "IaC Tools"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 90 minutes

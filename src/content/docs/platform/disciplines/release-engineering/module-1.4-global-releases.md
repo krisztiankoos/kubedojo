@@ -3,7 +3,6 @@ title: "Module 1.4: Multi-Region & Global Release Orchestration"
 slug: platform/disciplines/release-engineering/module-1.4-global-releases
 sidebar:
   order: 5
-  label: "Release Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3 hours
 

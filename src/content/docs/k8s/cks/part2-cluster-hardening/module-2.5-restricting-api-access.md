@@ -3,7 +3,6 @@ title: "Module 2.5: Restricting API Access"
 slug: k8s/cks/part2-cluster-hardening/module-2.5-restricting-api-access
 sidebar:
   order: 5
-  label: "Part 2: Cluster Hardening"
 ---
 > **Complexity**: `[MEDIUM]` - Essential for cluster security
 >

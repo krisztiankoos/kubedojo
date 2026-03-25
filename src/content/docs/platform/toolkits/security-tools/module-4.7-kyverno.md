@@ -3,7 +3,6 @@ title: "Module 4.7: Kyverno"
 slug: platform/toolkits/security-tools/module-4.7-kyverno
 sidebar:
   order: 8
-  label: "Security Tools"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 35-40 minutes
 

@@ -3,7 +3,6 @@ title: "Module 16.2: MinIO - High-Performance Object Storage for Kubernetes"
 slug: platform/toolkits/storage/module-16.2-minio
 sidebar:
   order: 3
-  label: "Storage"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

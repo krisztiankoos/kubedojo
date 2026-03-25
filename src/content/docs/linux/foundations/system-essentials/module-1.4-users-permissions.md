@@ -3,7 +3,6 @@ title: "Module 1.4: Users & Permissions"
 slug: linux/foundations/system-essentials/module-1.4-users-permissions
 sidebar:
   order: 5
-  label: "System Essentials"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.3: \u041f\u0435\u0440\u0448\u0456
 slug: uk/prerequisites/zero-to-terminal/module-0.3-first-commands
 sidebar:
   order: 4
-  label: "Zero to Terminal"
 ---
 > **Складність**: `[QUICK]` — Слідкуйте й вводьте те, що бачите
 >

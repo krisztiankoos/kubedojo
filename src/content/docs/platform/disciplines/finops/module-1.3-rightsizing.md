@@ -3,7 +3,6 @@ title: "Module 1.3: Workload Rightsizing & Optimization"
 slug: platform/disciplines/finops/module-1.3-rightsizing
 sidebar:
   order: 4
-  label: "FinOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2.5h
 

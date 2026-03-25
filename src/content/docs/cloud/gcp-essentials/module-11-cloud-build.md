@@ -2,7 +2,6 @@
 title: "GCP Cloud Build & CI/CD"
 sidebar:
   order: 12
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 6 (Artifact Registry), Module 7 (Cloud Run)
 

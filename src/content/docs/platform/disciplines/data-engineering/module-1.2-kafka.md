@@ -3,7 +3,6 @@ title: "Module 1.2: Apache Kafka on Kubernetes (Strimzi)"
 slug: platform/disciplines/data-engineering/module-1.2-kafka
 sidebar:
   order: 3
-  label: "Data Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3.5 hours
 

@@ -3,7 +3,6 @@ title: "Module 3.10: Green Computing and Sustainability"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.10-green-computing
 sidebar:
   order: 11
-  label: "Part 3: Cloud Native Architecture"
 ---
 > **Complexity**: `[QUICK]` - Awareness level
 >

@@ -3,7 +3,6 @@ title: "Module 7.6: Azure Bicep"
 slug: platform/toolkits/iac-tools/module-7.6-bicep
 sidebar:
   order: 7
-  label: "IaC Tools"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 75 minutes

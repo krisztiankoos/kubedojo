@@ -3,7 +3,6 @@ title: "Module 1.3: Building Controllers with client-go"
 slug: k8s/extending/module-1.3-controllers-client-go
 sidebar:
   order: 4
-  label: "Extending Kubernetes"
 ---
 > **Complexity**: `[COMPLEX]` - Full controller implementation from scratch
 >

@@ -3,7 +3,6 @@ title: "Module 1.3: Helm - Kubernetes Package Manager"
 slug: k8s/cka/part1-cluster-architecture/module-1.3-helm
 sidebar:
   order: 4
-  label: "Part 1: Cluster Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Essential exam skill for 2025
 >

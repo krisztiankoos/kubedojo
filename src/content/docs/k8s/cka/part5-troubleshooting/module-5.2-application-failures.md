@@ -3,7 +3,6 @@ title: "Module 5.2: Application Failures"
 slug: k8s/cka/part5-troubleshooting/module-5.2-application-failures
 sidebar:
   order: 3
-  label: "Part 5: Troubleshooting"
 ---
 > **Complexity**: `[MEDIUM]` - Most common troubleshooting scenarios
 >

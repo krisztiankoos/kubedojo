@@ -2,7 +2,6 @@
 title: "Part 4 Cumulative Quiz: Application Environment, Configuration and Security"
 sidebar:
   order: 7
-  label: "Part 4: Environment"
 ---
 > **Time Limit**: 25 minutes (simulating exam pressure)
 >

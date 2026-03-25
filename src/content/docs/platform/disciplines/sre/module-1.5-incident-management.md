@@ -3,7 +3,6 @@ title: "Module 1.5: Incident Management"
 slug: platform/disciplines/sre/module-1.5-incident-management
 sidebar:
   order: 6
-  label: "SRE"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 35-40 min
 

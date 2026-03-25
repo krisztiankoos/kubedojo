@@ -3,7 +3,6 @@ title: "Module 16.1: Rook/Ceph - Enterprise Storage for Kubernetes"
 slug: platform/toolkits/storage/module-16.1-rook-ceph
 sidebar:
   order: 2
-  label: "Storage"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 55-65 minutes

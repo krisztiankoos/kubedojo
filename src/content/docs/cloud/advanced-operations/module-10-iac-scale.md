@@ -2,7 +2,6 @@
 title: "Module 10: Scaling IaC & State Management"
 sidebar:
   order: 11
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[MEDIUM]`
 >

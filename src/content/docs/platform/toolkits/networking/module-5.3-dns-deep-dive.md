@@ -3,7 +3,6 @@ title: "Module 5.3: DNS Deep Dive"
 slug: platform/toolkits/networking/module-5.3-dns-deep-dive
 sidebar:
   order: 4
-  label: "Networking"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 40 minutes

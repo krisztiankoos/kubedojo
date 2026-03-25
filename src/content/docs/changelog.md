@@ -2,7 +2,6 @@
 title: "Changelog"
 sidebar:
   order: 2
-  label: "What's New"
 ---
 ## March 2026 — Ecosystem Update + Quality Review + 21 Certifications
 

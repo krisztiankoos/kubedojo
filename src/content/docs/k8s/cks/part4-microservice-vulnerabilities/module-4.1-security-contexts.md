@@ -3,7 +3,6 @@ title: "Module 4.1: Security Contexts"
 slug: k8s/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts
 sidebar:
   order: 1
-  label: "Part 4: Microservice Vulnerabilities"
 ---
 > **Complexity**: `[MEDIUM]` - Core CKS skill
 >

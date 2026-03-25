@@ -3,7 +3,6 @@ title: "Module 5.7: Logging & Monitoring"
 slug: k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring
 sidebar:
   order: 8
-  label: "Part 5: Troubleshooting"
 ---
 > **Complexity**: `[MEDIUM]` - Essential observability skills
 >

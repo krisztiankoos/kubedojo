@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.6: RBAC \u2014 \u0440\u043e\u043b
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.6-rbac
 sidebar:
   order: 7
-  label: "Part 1: Cluster Architecture"
 ---
 > **Складність**: `[MEDIUM]` — часта тема на іспиті
 >

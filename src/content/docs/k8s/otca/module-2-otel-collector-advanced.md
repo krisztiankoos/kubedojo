@@ -2,7 +2,6 @@
 title: "Module 2: OTel Collector Advanced"
 sidebar:
   order: 3
-  label: "OTCA"
 ---
 > **Complexity**: `[COMPLEX]` - Multiple interacting components, pipeline logic
 >

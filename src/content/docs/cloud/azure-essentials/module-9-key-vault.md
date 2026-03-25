@@ -2,7 +2,6 @@
 title: "Azure Key Vault"
 sidebar:
   order: 10
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 1.5h | **Prerequisites**: Module 1 (Entra ID & RBAC)
 

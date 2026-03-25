@@ -3,7 +3,6 @@ title: "Module 6.4: Root Cause Analysis"
 slug: platform/disciplines/aiops/module-6.4-root-cause-analysis
 sidebar:
   order: 5
-  label: "AIOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

@@ -3,7 +3,6 @@ title: "Module 3.4: Ingress"
 slug: k8s/cka/part3-services-networking/module-3.4-ingress
 sidebar:
   order: 5
-  label: "Part 3: Services & Networking"
 ---
 > **Complexity**: `[MEDIUM]` - HTTP/HTTPS routing
 >

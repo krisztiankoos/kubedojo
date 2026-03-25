@@ -3,7 +3,6 @@ title: "Module 2.2: Helm Package Manager"
 slug: k8s/ckad/part2-deployment/module-2.2-helm
 sidebar:
   order: 2
-  label: "Part 2: Deployment"
 ---
 > **Complexity**: `[MEDIUM]` - Essential tool added to CKAD 2025
 >

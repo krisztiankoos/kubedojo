@@ -3,7 +3,6 @@ title: "Module 0.9: What is the Cloud?"
 slug: prerequisites/zero-to-terminal/module-0.9-what-is-the-cloud
 sidebar:
   order: 10
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Concepts that click into place
 >

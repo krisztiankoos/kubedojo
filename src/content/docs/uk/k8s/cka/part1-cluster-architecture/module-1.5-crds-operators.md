@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.5: CRD \u0442\u0430 \u041e\u043f\
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.5-crds-operators
 sidebar:
   order: 6
-  label: "Part 1: Cluster Architecture"
 ---
 > **Складність**: `[MEDIUM]` — нове в CKA 2025
 >

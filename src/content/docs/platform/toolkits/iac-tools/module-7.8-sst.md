@@ -3,7 +3,6 @@ title: "Module 7.8: SST - The Modern Serverless Framework"
 slug: platform/toolkits/iac-tools/module-7.8-sst
 sidebar:
   order: 9
-  label: "IaC Tools"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

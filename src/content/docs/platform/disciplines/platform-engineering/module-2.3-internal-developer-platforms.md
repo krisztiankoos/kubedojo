@@ -3,7 +3,6 @@ title: "Module 2.3: Internal Developer Platforms (IDPs)"
 slug: platform/disciplines/platform-engineering/module-2.3-internal-developer-platforms
 sidebar:
   order: 4
-  label: "Platform Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 50-60 min
 

@@ -3,7 +3,6 @@ title: "Module 5.1: Services"
 slug: k8s/ckad/part5-networking/module-5.1-services
 sidebar:
   order: 1
-  label: "Part 5: Networking"
 ---
 > **Complexity**: `[MEDIUM]` - Core networking concept, multiple types to understand
 >

@@ -3,7 +3,6 @@ title: "Module 0.2: Shell Mastery"
 slug: k8s/cka/part0-environment/module-0.2-shell-mastery
 sidebar:
   order: 2
-  label: "Part 0: Environment"
 ---
 > **Complexity**: `[QUICK]` - Setup once, benefit forever
 >

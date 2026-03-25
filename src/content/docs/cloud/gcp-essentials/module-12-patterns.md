@@ -2,7 +2,6 @@
 title: "GCP Architectural Patterns"
 sidebar:
   order: 13
-  label: "GCP Essentials"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 1.5h | **Prerequisites**: Modules 1-11 (all previous GCP Essentials modules)
 

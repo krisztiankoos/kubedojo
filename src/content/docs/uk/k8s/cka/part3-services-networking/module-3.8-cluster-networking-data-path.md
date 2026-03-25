@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.8: \u0428\u043b\u044f\u0445 \u043
 slug: uk/k8s/cka/part3-services-networking/module-3.8-cluster-networking-data-path
 sidebar:
   order: 9
-  label: "Part 3: Services & Networking"
 ---
 > **Складність**: `[MEDIUM]` — Ключова тема діагностики
 >

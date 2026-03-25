@@ -3,7 +3,6 @@ title: "Module 1.3: Ingress Security"
 slug: k8s/cks/part1-cluster-setup/module-1.3-ingress-security
 sidebar:
   order: 3
-  label: "Part 1: Cluster Setup"
 ---
 > **Complexity**: `[MEDIUM]` - Critical for external access security
 >

@@ -3,7 +3,6 @@ title: "Module 16.3: Longhorn - Lightweight Distributed Block Storage for Kubern
 slug: platform/toolkits/storage/module-16.3-longhorn
 sidebar:
   order: 4
-  label: "Storage"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-55 minutes

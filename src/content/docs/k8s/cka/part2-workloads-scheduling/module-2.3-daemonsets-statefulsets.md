@@ -3,7 +3,6 @@ title: "Module 2.3: DaemonSets & StatefulSets"
 slug: k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets
 sidebar:
   order: 4
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Complexity**: `[MEDIUM]` - Specialized workload patterns
 >

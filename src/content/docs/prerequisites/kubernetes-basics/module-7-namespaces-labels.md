@@ -2,7 +2,6 @@
 title: "Module 7: Namespaces and Labels"
 sidebar:
   order: 8
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[QUICK]` - Organizational concepts
 >

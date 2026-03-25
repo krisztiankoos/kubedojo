@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.6: \u0423\u0441\u0443\u043d\u0435
 slug: uk/k8s/cka/part5-troubleshooting/module-5.6-services
 sidebar:
   order: 7
-  label: "Part 5: Troubleshooting"
 ---
 > **Складність**: `[MEDIUM]` — Критично для доступності додатків
 >

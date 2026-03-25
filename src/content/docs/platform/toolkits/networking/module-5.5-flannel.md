@@ -3,7 +3,6 @@ title: "Module 5.5: Flannel - Overlay Networking from the Ground Up"
 slug: platform/toolkits/networking/module-5.5-flannel
 sidebar:
   order: 6
-  label: "Networking"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 60-75 minutes
 

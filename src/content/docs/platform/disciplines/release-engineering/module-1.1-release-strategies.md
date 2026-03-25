@@ -3,7 +3,6 @@ title: "Module 1.1: Release Strategies & Progressive Delivery Fundamentals"
 slug: platform/disciplines/release-engineering/module-1.1-release-strategies
 sidebar:
   order: 2
-  label: "Release Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2 hours
 

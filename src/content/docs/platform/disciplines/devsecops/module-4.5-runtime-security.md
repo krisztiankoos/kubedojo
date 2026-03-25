@@ -3,7 +3,6 @@ title: "Module 4.5: Runtime Security"
 slug: platform/disciplines/devsecops/module-4.5-runtime-security
 sidebar:
   order: 7
-  label: "DevSecOps"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

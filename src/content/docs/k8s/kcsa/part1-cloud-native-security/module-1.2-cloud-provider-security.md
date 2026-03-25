@@ -3,7 +3,6 @@ title: "Module 1.2: Cloud Provider Security"
 slug: k8s/kcsa/part1-cloud-native-security/module-1.2-cloud-provider-security
 sidebar:
   order: 3
-  label: "Part 1: Cloud Native Security"
 ---
 > **Complexity**: `[MEDIUM]` - Foundational knowledge
 >

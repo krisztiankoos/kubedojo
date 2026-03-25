@@ -3,7 +3,6 @@ title: "Module 9.2: MLflow"
 slug: platform/toolkits/ml-platforms/module-9.2-mlflow
 sidebar:
   order: 3
-  label: "ML Platforms"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

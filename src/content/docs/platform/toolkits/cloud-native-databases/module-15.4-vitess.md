@@ -3,7 +3,6 @@ title: "Module 15.4: Vitess - Scaling MySQL to YouTube Numbers"
 slug: platform/toolkits/cloud-native-databases/module-15.4-vitess
 sidebar:
   order: 5
-  label: "Cloud-Native Databases"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-55 minutes

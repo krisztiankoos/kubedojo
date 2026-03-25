@@ -3,7 +3,6 @@ title: "Module 4.1: Vault & External Secrets"
 slug: platform/toolkits/security-tools/module-4.1-vault-eso
 sidebar:
   order: 2
-  label: "Security Tools"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 minutes
 

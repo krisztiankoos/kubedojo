@@ -2,7 +2,6 @@
 title: "Module 2: Kyverno Operations & CLI"
 sidebar:
   order: 3
-  label: "KCA"
 ---
 > **Complexity**: `[MEDIUM]` - Multiple tools and operational concepts
 >

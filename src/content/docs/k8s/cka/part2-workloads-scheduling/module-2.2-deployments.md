@@ -3,7 +3,6 @@ title: "Module 2.2: Deployments & ReplicaSets"
 slug: k8s/cka/part2-workloads-scheduling/module-2.2-deployments
 sidebar:
   order: 3
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Complexity**: `[MEDIUM]` - Core exam topic
 >

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.1: \u0414\u0435\u043f\u043b\u043e
 slug: uk/k8s/ckad/part2-deployment/module-2.1-deployments
 sidebar:
   order: 1
-  label: "Part 2: Deployment"
 ---
 > **Складність**: `[MEDIUM]` — ключова навичка CKAD з кількома операціями
 >

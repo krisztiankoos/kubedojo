@@ -3,7 +3,6 @@ title: "Module 3.1: What is Observability?"
 slug: platform/foundations/observability-theory/module-3.1-what-is-observability
 sidebar:
   order: 2
-  label: "Observability Theory"
 ---
 > **Complexity**: `[MEDIUM]`
 >

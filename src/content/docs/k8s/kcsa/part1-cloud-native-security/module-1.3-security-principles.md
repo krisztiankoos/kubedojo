@@ -3,7 +3,6 @@ title: "Module 1.3: Security Principles"
 slug: k8s/kcsa/part1-cloud-native-security/module-1.3-security-principles
 sidebar:
   order: 4
-  label: "Part 1: Cloud Native Security"
 ---
 > **Complexity**: `[MEDIUM]` - Foundational concepts
 >

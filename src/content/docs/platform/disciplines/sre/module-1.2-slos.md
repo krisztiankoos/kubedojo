@@ -3,7 +3,6 @@ title: "Module 1.2: Service Level Objectives (SLOs)"
 slug: platform/disciplines/sre/module-1.2-slos
 sidebar:
   order: 3
-  label: "SRE"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 35-40 min
 

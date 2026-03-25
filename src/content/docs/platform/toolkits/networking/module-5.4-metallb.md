@@ -3,7 +3,6 @@ title: "Module 5.4: MetalLB - Load Balancing for Bare-Metal Kubernetes"
 slug: platform/toolkits/networking/module-5.4-metallb
 sidebar:
   order: 5
-  label: "Networking"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: ~35 minutes
 

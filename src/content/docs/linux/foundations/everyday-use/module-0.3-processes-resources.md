@@ -3,7 +3,6 @@ title: "Module 0.3: Process & Resource Survival Guide"
 slug: linux/foundations/everyday-use/module-0.3-processes-resources
 sidebar:
   order: 4
-  label: "Linux Everyday Use"
 ---
 > **Everyday Use** | Complexity: `[QUICK]` | Time: 40 min
 

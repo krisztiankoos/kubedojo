@@ -3,7 +3,6 @@ title: "Module 2.1: Control Plane Security"
 slug: k8s/kcsa/part2-cluster-component-security/module-2.1-control-plane-security
 sidebar:
   order: 2
-  label: "Part 2: Cluster Component Security"
 ---
 > **Complexity**: `[MEDIUM]` - Core knowledge
 >

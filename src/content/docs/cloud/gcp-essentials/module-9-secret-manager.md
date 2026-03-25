@@ -2,7 +2,6 @@
 title: "GCP Secret Manager"
 sidebar:
   order: 10
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 1.5h | **Prerequisites**: Module 1 (IAM & Resource Hierarchy)
 

@@ -3,7 +3,6 @@ title: "Module 6.4: FinOps with OpenCost"
 slug: platform/toolkits/scaling-reliability/module-6.4-finops-opencost
 sidebar:
   order: 5
-  label: "Scaling & Reliability"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

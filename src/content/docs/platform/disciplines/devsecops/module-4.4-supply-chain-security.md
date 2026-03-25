@@ -3,7 +3,6 @@ title: "Module 4.4: Supply Chain Security"
 slug: platform/disciplines/devsecops/module-4.4-supply-chain-security
 sidebar:
   order: 5
-  label: "DevSecOps"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

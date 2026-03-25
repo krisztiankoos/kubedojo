@@ -3,7 +3,6 @@ title: "Module 3.1: AppArmor for Containers"
 slug: k8s/cks/part3-system-hardening/module-3.1-apparmor
 sidebar:
   order: 1
-  label: "Part 3: System Hardening"
 ---
 > **Complexity**: `[MEDIUM]` - Linux security essential
 >

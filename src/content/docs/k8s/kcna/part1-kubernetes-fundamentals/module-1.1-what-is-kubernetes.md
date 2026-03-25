@@ -3,7 +3,6 @@ title: "Module 1.1: What is Kubernetes?"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes
 sidebar:
   order: 2
-  label: "Part 1: K8s Fundamentals"
 ---
 > **Complexity**: `[QUICK]` - Foundational concepts
 >

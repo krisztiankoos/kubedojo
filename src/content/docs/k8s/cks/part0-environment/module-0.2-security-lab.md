@@ -3,7 +3,6 @@ title: "Module 0.2: Security Lab Setup"
 slug: k8s/cks/part0-environment/module-0.2-security-lab
 sidebar:
   order: 2
-  label: "Part 0: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - Multiple tools to install
 >

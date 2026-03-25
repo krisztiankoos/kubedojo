@@ -3,7 +3,6 @@ title: "Module 1.5: Data Orchestration with Apache Airflow"
 slug: platform/disciplines/data-engineering/module-1.5-airflow
 sidebar:
   order: 6
-  label: "Data Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2.5 hours
 

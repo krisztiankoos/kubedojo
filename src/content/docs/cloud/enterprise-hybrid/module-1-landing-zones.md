@@ -2,7 +2,6 @@
 title: "Enterprise Landing Zones & Account Vending"
 sidebar:
   order: 2
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Cloud Essentials (AWS/Azure/GCP), Kubernetes Basics, Cloud Architecture Patterns
 

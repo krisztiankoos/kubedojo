@@ -3,7 +3,6 @@ title: "Module 3.8: Cluster Networking Data Path"
 slug: k8s/cka/part3-services-networking/module-3.8-cluster-networking-data-path
 sidebar:
   order: 9
-  label: "Part 3: Services & Networking"
 ---
 > **Complexity**: `[MEDIUM]` - Core troubleshooting topic
 >

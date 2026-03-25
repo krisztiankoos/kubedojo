@@ -3,7 +3,6 @@ title: "Module 14.4: Talos Linux - The OS That IS Kubernetes"
 slug: platform/toolkits/k8s-distributions/module-14.4-talos
 sidebar:
   order: 5
-  label: "K8s Distributions"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 50-55 minutes

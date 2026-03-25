@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.4: \u0424\u0430\u0439\u043b\u0438
 slug: uk/prerequisites/zero-to-terminal/module-0.4-files-and-directories
 sidebar:
   order: 5
-  label: "Zero to Terminal"
 ---
 > **Складність**: `[QUICK]` — Абсолютний початківець
 >

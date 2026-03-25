@@ -2,7 +2,6 @@
 title: "EKS Storage & Data Management"
 sidebar:
   order: 5
-  label: "AWS EKS Deep Dive"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 1 (EKS Architecture & Control Plane)
 

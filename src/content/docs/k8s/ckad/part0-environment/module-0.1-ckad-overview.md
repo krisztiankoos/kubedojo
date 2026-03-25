@@ -3,7 +3,6 @@ title: "Module 0.1: CKAD Overview & Strategy"
 slug: k8s/ckad/part0-environment/module-0.1-ckad-overview
 sidebar:
   order: 1
-  label: "Part 0: Environment"
 ---
 > **Complexity**: `[QUICK]` - Orientation and strategy
 >

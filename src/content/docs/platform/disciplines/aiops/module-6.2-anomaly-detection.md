@@ -3,7 +3,6 @@ title: "Module 6.2: Anomaly Detection"
 slug: platform/disciplines/aiops/module-6.2-anomaly-detection
 sidebar:
   order: 3
-  label: "AIOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

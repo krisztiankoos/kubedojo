@@ -3,7 +3,6 @@ title: "Module 1.4: Architecture Decision Records & Technical Writing"
 slug: platform/foundations/engineering-leadership/module-1.4-adrs
 sidebar:
   order: 5
-  label: "Engineering Leadership"
 ---
 > **Complexity**: `[MEDIUM]` | **Time**: 2 hours | **Prerequisites**: System Design basics
 >

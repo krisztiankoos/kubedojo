@@ -3,7 +3,6 @@ title: "Module 4.1: Kernel Hardening & sysctl"
 slug: linux/security/hardening/module-4.1-kernel-hardening
 sidebar:
   order: 2
-  label: "Security Hardening"
 ---
 > **Linux Security** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

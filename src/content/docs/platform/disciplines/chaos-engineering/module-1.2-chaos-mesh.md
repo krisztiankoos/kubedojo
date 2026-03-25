@@ -3,7 +3,6 @@ title: "Module 1.2: Chaos Mesh Fundamentals"
 slug: platform/disciplines/chaos-engineering/module-1.2-chaos-mesh
 sidebar:
   order: 3
-  label: "Chaos Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 2.5 hours
 

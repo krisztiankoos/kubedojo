@@ -3,7 +3,6 @@ title: "Module 4.5: ServiceAccounts"
 slug: k8s/ckad/part4-environment/module-4.5-serviceaccounts
 sidebar:
   order: 5
-  label: "Part 4: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - Important for API access and identity
 >

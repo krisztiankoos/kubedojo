@@ -3,7 +3,6 @@ title: "Module 4.4: seccomp Profiles"
 slug: linux/security/hardening/module-4.4-seccomp
 sidebar:
   order: 5
-  label: "Security Hardening"
 ---
 > **Linux Security** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

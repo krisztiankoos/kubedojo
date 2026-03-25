@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.9: \u0410\u0432\u0442\u043e\u043c
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.9-autoscaling
 sidebar:
   order: 10
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Складність**: `[MEDIUM]` — тема іспиту CKA
 >

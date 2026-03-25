@@ -3,7 +3,6 @@ title: "Module 2.2: Scaling"
 slug: k8s/kcna/part2-container-orchestration/module-2.2-scaling
 sidebar:
   order: 3
-  label: "Part 2: Container Orchestration"
 ---
 > **Complexity**: `[MEDIUM]` - Orchestration concepts
 >

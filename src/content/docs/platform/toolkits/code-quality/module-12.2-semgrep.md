@@ -3,7 +3,6 @@ title: "Module 12.2: Semgrep - Security Rules in Minutes"
 slug: platform/toolkits/code-quality/module-12.2-semgrep
 sidebar:
   order: 3
-  label: "Code Quality"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

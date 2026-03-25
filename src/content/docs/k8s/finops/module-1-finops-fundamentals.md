@@ -2,7 +2,6 @@
 title: "Module 1: FinOps Fundamentals"
 sidebar:
   order: 2
-  label: "FinOps"
 ---
 > **Certification Track** | Complexity: `[MEDIUM]` | Time: 45 minutes
 

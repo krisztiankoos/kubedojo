@@ -2,7 +2,6 @@
 title: "Search & Analytics Engines (OpenSearch / Elasticsearch)"
 sidebar:
   order: 7
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2.5h | **Prerequisites**: Module 2 (Message Brokers), Kubernetes logging concepts, JSON/HTTP API basics
 

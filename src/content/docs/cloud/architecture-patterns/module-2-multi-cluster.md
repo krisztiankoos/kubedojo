@@ -2,7 +2,6 @@
 title: "Module 2: Multi-Cluster and Multi-Region Architectures"
 sidebar:
   order: 3
-  label: "Architecture Patterns"
 ---
 > **Complexity**: `[COMPLEX]`
 >

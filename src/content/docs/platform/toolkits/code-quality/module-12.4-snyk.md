@@ -3,7 +3,6 @@ title: "Module 12.4: Snyk - Developer-First Security"
 slug: platform/toolkits/code-quality/module-12.4-snyk
 sidebar:
   order: 5
-  label: "Code Quality"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

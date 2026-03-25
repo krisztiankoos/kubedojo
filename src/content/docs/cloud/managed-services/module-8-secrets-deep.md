@@ -2,7 +2,6 @@
 title: "Secrets Management Deep Dive"
 sidebar:
   order: 9
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2h | **Prerequisites**: Module 1 (Databases), Kubernetes RBAC, cloud IAM basics
 

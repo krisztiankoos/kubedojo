@@ -3,7 +3,6 @@ title: "Module 3.3: Network Namespaces & veth"
 slug: linux/foundations/networking/module-3.3-network-namespaces
 sidebar:
   order: 4
-  label: "Networking"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -2,7 +2,6 @@
 title: "Part 2 Cumulative Quiz: Application Deployment"
 sidebar:
   order: 5
-  label: "Part 2: Deployment"
 ---
 > **Time Limit**: 25 minutes (simulating exam pressure)
 >

@@ -3,7 +3,6 @@ title: "Module 2.3: Capabilities & Linux Security Modules"
 slug: linux/foundations/container-primitives/module-2.3-capabilities-lsms
 sidebar:
   order: 4
-  label: "Container Primitives"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

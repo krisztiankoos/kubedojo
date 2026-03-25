@@ -3,7 +3,6 @@ title: "Module 4.1: The Security Mindset"
 slug: platform/foundations/security-principles/module-4.1-security-mindset
 sidebar:
   order: 2
-  label: "Security Principles"
 ---
 > **Complexity**: `[MEDIUM]`
 >

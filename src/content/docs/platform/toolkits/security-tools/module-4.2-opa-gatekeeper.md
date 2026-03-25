@@ -3,7 +3,6 @@ title: "Module 4.2: OPA & Gatekeeper"
 slug: platform/toolkits/security-tools/module-4.2-opa-gatekeeper
 sidebar:
   order: 3
-  label: "Security Tools"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 minutes
 

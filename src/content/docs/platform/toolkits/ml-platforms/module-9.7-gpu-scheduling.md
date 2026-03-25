@@ -3,7 +3,6 @@ title: "Module 9.7: GPU Scheduling & NVIDIA GPU Operator on Kubernetes"
 slug: platform/toolkits/ml-platforms/module-9.7-gpu-scheduling
 sidebar:
   order: 8
-  label: "ML Platforms"
 ---
 ## Complexity: [COMPLEX]
 

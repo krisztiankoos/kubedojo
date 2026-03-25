@@ -2,7 +2,6 @@
 title: "AKS Storage, Observability & Scaling"
 sidebar:
   order: 5
-  label: "Azure AKS Deep Dive"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: [Module 1: AKS Architecture & Node Management](module-1-aks-architecture/)
 

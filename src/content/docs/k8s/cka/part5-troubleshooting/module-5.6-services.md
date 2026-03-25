@@ -3,7 +3,6 @@ title: "Module 5.6: Service Troubleshooting"
 slug: k8s/cka/part5-troubleshooting/module-5.6-services
 sidebar:
   order: 7
-  label: "Part 5: Troubleshooting"
 ---
 > **Complexity**: `[MEDIUM]` - Critical for application access
 >

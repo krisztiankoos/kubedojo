@@ -3,7 +3,6 @@ title: "Module 15.3: Neon & PlanetScale - Serverless Databases That Branch Like 
 slug: platform/toolkits/cloud-native-databases/module-15.3-serverless-databases
 sidebar:
   order: 4
-  label: "Cloud-Native Databases"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 40-45 minutes

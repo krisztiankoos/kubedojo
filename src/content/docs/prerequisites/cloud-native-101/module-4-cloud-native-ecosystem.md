@@ -2,7 +2,6 @@
 title: "Module 4: The Cloud Native Ecosystem"
 sidebar:
   order: 5
-  label: "Cloud Native 101"
 ---
 > **Complexity**: `[QUICK]` - Orientation, not deep dives
 >

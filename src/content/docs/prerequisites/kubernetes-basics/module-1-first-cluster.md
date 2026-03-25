@@ -2,7 +2,6 @@
 title: "Module 1: Your First Cluster"
 sidebar:
   order: 2
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[MEDIUM]` - Hands-on setup required
 >

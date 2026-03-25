@@ -2,7 +2,6 @@
 title: "Module 9: Secrets Management & Configuration"
 sidebar:
   order: 10
-  label: "AWS Essentials"
 ---
 **Complexity:** `[MEDIUM]` | **Time to Complete:** 1.5 hours | **Track:** AWS DevOps Essentials
 

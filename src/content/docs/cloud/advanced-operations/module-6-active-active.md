@@ -2,7 +2,6 @@
 title: "Module 6: Multi-Region Active-Active Deployments"
 sidebar:
   order: 7
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

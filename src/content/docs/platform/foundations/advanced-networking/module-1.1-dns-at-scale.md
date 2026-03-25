@@ -3,7 +3,6 @@ title: "Module 1.1: DNS at Scale & Global Traffic Management"
 slug: platform/foundations/advanced-networking/module-1.1-dns-at-scale
 sidebar:
   order: 2
-  label: "Advanced Networking"
 ---
 > **Complexity**: `[COMPLEX]`
 >

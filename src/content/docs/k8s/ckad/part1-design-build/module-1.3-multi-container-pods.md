@@ -3,7 +3,6 @@ title: "Module 1.3: Multi-Container Pods"
 slug: k8s/ckad/part1-design-build/module-1.3-multi-container-pods
 sidebar:
   order: 3
-  label: "Part 1: Design & Build"
 ---
 > **Complexity**: `[MEDIUM]` - Essential CKAD skill requiring pattern recognition
 >

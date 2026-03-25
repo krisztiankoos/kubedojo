@@ -3,7 +3,6 @@ title: "Module 1.5: Serving LLMs at Scale"
 slug: platform/disciplines/ai-infrastructure/module-1.5-llm-serving
 sidebar:
   order: 6
-  label: "AI Infrastructure"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 4 hours
 

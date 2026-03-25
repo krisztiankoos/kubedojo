@@ -3,7 +3,6 @@ title: "Module 14.1: k3s - Lightweight Kubernetes for Edge"
 slug: platform/toolkits/k8s-distributions/module-14.1-k3s
 sidebar:
   order: 2
-  label: "K8s Distributions"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 45-50 minutes
 

@@ -3,7 +3,6 @@ title: "Module 4.4: SecurityContexts"
 slug: k8s/ckad/part4-environment/module-4.4-securitycontext
 sidebar:
   order: 4
-  label: "Part 4: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - Important for security, multiple settings
 >

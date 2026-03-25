@@ -3,7 +3,6 @@ title: "Module 2.4: Helm & Kustomize"
 slug: platform/toolkits/gitops-deployments/module-2.4-helm-kustomize
 sidebar:
   order: 5
-  label: "GitOps & Deployments"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 35-40 min
 

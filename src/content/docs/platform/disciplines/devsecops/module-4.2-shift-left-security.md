@@ -3,7 +3,6 @@ title: "Module 4.2: Shift-Left Security"
 slug: platform/disciplines/devsecops/module-4.2-shift-left-security
 sidebar:
   order: 3
-  label: "DevSecOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 35-40 min
 

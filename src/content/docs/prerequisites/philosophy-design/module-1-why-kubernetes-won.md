@@ -2,7 +2,6 @@
 title: "Module 1: Why Kubernetes Won"
 sidebar:
   order: 2
-  label: "Philosophy & Design"
 ---
 > **Complexity**: `[QUICK]` - Conceptual understanding, no hands-on
 >

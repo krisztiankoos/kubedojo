@@ -3,7 +3,6 @@ title: "Module 1.1: Principles of Chaos Engineering & Resilience"
 slug: platform/disciplines/chaos-engineering/module-1.1-chaos-principles
 sidebar:
   order: 2
-  label: "Chaos Engineering"
 ---
 > **Discipline Module** | Complexity: `[QUICK]` | Time: 1.5 hours
 

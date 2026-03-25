@@ -3,7 +3,6 @@ title: "Module 6.1: Compliance Frameworks"
 slug: k8s/kcsa/part6-compliance/module-6.1-compliance-frameworks
 sidebar:
   order: 2
-  label: "Part 6: Compliance"
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual knowledge
 >

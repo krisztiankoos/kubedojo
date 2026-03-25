@@ -3,7 +3,6 @@ title: "Module 4.1: DevSecOps Fundamentals"
 slug: platform/disciplines/devsecops/module-4.1-devsecops-fundamentals
 sidebar:
   order: 2
-  label: "DevSecOps"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

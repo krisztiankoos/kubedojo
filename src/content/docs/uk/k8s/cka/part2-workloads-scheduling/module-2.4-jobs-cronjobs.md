@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.4: Jobs \u0442\u0430 CronJobs"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs
 sidebar:
   order: 5
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Складність**: `[QUICK]` — Прості пакетні робочі навантаження
 >

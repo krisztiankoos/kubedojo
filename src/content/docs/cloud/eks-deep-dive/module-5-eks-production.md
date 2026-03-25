@@ -2,7 +2,6 @@
 title: "EKS Production: Scaling, Observability & Cost"
 sidebar:
   order: 6
-  label: "AWS EKS Deep Dive"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 1 (EKS Architecture), Module 2 (EKS Networking)
 

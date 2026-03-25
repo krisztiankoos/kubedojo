@@ -3,7 +3,6 @@ title: "Module 7.3: cert-manager"
 slug: platform/toolkits/platforms/module-7.3-cert-manager
 sidebar:
   order: 4
-  label: "Platforms"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

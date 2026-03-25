@@ -2,7 +2,6 @@
 title: "Azure Container Registry (ACR)"
 sidebar:
   order: 7
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 1h | **Prerequisites**: Module 1 (Entra ID & RBAC), Docker basics
 

@@ -3,7 +3,6 @@ title: "Module 11.2: Gitea & Forgejo - Lightweight Self-Hosted Git"
 slug: platform/toolkits/source-control/module-11.2-gitea-forgejo
 sidebar:
   order: 3
-  label: "Source Control"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

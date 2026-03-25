@@ -3,7 +3,6 @@ title: "Module 1.4: Batch Processing & Apache Spark on Kubernetes"
 slug: platform/disciplines/data-engineering/module-1.4-spark
 sidebar:
   order: 5
-  label: "Data Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 3 hours
 

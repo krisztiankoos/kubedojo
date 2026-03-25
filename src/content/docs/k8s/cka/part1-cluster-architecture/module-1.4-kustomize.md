@@ -3,7 +3,6 @@ title: "Module 1.4: Kustomize - Template-Free Configuration"
 slug: k8s/cka/part1-cluster-architecture/module-1.4-kustomize
 sidebar:
   order: 5
-  label: "Part 1: Cluster Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Essential exam skill for 2025
 >

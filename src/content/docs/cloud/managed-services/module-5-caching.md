@@ -2,7 +2,6 @@
 title: "Advanced Caching Services (ElastiCache / Memorystore)"
 sidebar:
   order: 6
-  label: "Managed Services"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2h | **Prerequisites**: Module 1 (Databases), Module 4 (Object Storage), Redis fundamentals
 

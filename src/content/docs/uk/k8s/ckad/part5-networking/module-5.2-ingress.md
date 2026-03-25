@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.2: \u0406\u043d\u0433\u0440\u0435
 slug: uk/k8s/ckad/part5-networking/module-5.2-ingress
 sidebar:
   order: 2
-  label: "Part 5: Networking"
 ---
 > **Складність**: `[MEDIUM]` — Важливий для зовнішнього доступу, кілька концепцій
 >

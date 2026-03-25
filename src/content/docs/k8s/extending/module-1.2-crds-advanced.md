@@ -3,7 +3,6 @@ title: "Module 1.2: Custom Resource Definitions Deep Dive"
 slug: k8s/extending/module-1.2-crds-advanced
 sidebar:
   order: 3
-  label: "Extending Kubernetes"
 ---
 > **Complexity**: `[MEDIUM]` - Defining your own Kubernetes APIs
 >

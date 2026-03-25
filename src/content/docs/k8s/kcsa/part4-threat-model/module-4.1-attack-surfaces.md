@@ -3,7 +3,6 @@ title: "Module 4.1: Attack Surfaces"
 slug: k8s/kcsa/part4-threat-model/module-4.1-attack-surfaces
 sidebar:
   order: 2
-  label: "Part 4: Threat Model"
 ---
 > **Complexity**: `[MEDIUM]` - Threat awareness
 >

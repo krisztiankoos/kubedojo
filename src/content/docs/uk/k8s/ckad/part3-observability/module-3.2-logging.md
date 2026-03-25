@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.2: \u041b\u043e\u0433\u0443\u0432
 slug: uk/k8s/ckad/part3-observability/module-3.2-logging
 sidebar:
   order: 2
-  label: "Part 3: Observability"
 ---
 > **Складність**: `[QUICK]` — Необхідна щоденна навичка, прості команди
 >

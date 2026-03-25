@@ -2,7 +2,6 @@
 title: "Module 1: Advanced Kyverno Policies"
 sidebar:
   order: 2
-  label: "KCA"
 ---
 > **Complexity**: `[COMPLEX]` - Domain 5: Kyverno Advanced Policy Writing (32% of exam)
 >

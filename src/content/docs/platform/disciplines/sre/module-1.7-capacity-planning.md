@@ -3,7 +3,6 @@ title: "Module 1.7: Capacity Planning"
 slug: platform/disciplines/sre/module-1.7-capacity-planning
 sidebar:
   order: 8
-  label: "SRE"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 35-40 min
 

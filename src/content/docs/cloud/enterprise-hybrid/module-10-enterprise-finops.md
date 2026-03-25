@@ -2,7 +2,6 @@
 title: "FinOps at Enterprise Scale"
 sidebar:
   order: 11
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2h | **Prerequisites**: Cloud Essentials (AWS/Azure/GCP), Kubernetes Resource Management, Enterprise Landing Zones (Module 1)
 

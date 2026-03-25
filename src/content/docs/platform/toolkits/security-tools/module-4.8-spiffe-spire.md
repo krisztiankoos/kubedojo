@@ -3,7 +3,6 @@ title: "Module 4.8: SPIFFE/SPIRE - Cryptographic Workload Identity"
 slug: platform/toolkits/security-tools/module-4.8-spiffe-spire
 sidebar:
   order: 9
-  label: "Security Tools"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: ~50 minutes
 

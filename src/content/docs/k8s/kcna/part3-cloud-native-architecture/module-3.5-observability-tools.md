@@ -3,7 +3,6 @@ title: "Module 3.5: Observability Tools"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools
 sidebar:
   order: 6
-  label: "Part 3: Cloud Native Architecture"
 ---
 > **Complexity**: `[QUICK]` - Tool overview
 >

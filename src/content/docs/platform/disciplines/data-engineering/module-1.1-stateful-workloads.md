@@ -3,7 +3,6 @@ title: "Module 1.1: Stateful Workloads & Storage Deep Dive"
 slug: platform/disciplines/data-engineering/module-1.1-stateful-workloads
 sidebar:
   order: 2
-  label: "Data Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3 hours
 

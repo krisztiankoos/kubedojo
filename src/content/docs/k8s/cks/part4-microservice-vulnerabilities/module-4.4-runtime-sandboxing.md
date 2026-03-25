@@ -3,7 +3,6 @@ title: "Module 4.4: Runtime Sandboxing"
 slug: k8s/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing
 sidebar:
   order: 4
-  label: "Part 4: Microservice Vulnerabilities"
 ---
 > **Complexity**: `[MEDIUM]` - Advanced container isolation
 >

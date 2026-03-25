@@ -2,7 +2,6 @@
 title: "GKE Networking: Dataplane V2 and Gateway API"
 sidebar:
   order: 3
-  label: "GCP GKE Deep Dive"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 1 (GKE Architecture)
 

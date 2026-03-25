@@ -2,7 +2,6 @@
 title: "GCP Cloud Functions & Event-Driven Architecture"
 sidebar:
   order: 9
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Module 4 (GCS), Module 7 (Cloud Run)
 

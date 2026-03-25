@@ -3,7 +3,6 @@ title: "Module 1.6: Postmortems and Learning"
 slug: platform/disciplines/sre/module-1.6-postmortems
 sidebar:
   order: 7
-  label: "SRE"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

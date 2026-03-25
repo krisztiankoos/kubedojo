@@ -3,7 +3,6 @@ title: "Module 1.2: CIS Benchmarks and kube-bench"
 slug: k8s/cks/part1-cluster-setup/module-1.2-cis-benchmarks
 sidebar:
   order: 2
-  label: "Part 1: Cluster Setup"
 ---
 > **Complexity**: `[MEDIUM]` - Core security auditing skill
 >

@@ -3,7 +3,6 @@ title: "Module 3.3: Linux Kernel and OS Hardening"
 slug: k8s/cks/part3-system-hardening/module-3.3-kernel-hardening
 sidebar:
   order: 3
-  label: "Part 3: System Hardening"
 ---
 > **Complexity**: `[MEDIUM]` - System administration with security focus
 >

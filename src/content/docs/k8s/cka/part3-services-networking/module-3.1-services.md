@@ -3,7 +3,6 @@ title: "Module 3.1: Services Deep-Dive"
 slug: k8s/cka/part3-services-networking/module-3.1-services
 sidebar:
   order: 2
-  label: "Part 3: Services & Networking"
 ---
 > **Complexity**: `[MEDIUM]` - Core networking concept
 >

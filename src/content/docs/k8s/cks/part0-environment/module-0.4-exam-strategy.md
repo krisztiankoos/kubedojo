@@ -3,7 +3,6 @@ title: "Module 0.4: CKS Exam Strategy"
 slug: k8s/cks/part0-environment/module-0.4-exam-strategy
 sidebar:
   order: 4
-  label: "Part 0: Environment"
 ---
 > **Complexity**: `[QUICK]` - Critical for exam success
 >

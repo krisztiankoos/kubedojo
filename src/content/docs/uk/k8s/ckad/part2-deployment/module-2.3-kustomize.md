@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.3: Kustomize"
 slug: uk/k8s/ckad/part2-deployment/module-2.3-kustomize
 sidebar:
   order: 3
-  label: "Part 2: Deployment"
 ---
 > **Складність**: `[MEDIUM]` — кастомізація Kubernetes без шаблонів
 >

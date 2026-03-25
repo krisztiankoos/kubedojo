@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.4: \u0422\u043e\u043c\u0438 \u043
 slug: uk/k8s/ckad/part1-design-build/module-1.4-volumes
 sidebar:
   order: 4
-  label: "Part 1: Design & Build"
 ---
 > **Складність**: `[MEDIUM]` — Необхідний для застосунків зі збереженням стану
 >

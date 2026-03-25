@@ -3,7 +3,6 @@ title: "Module 3.2: The Three Pillars of Observability"
 slug: platform/foundations/observability-theory/module-3.2-the-three-pillars
 sidebar:
   order: 3
-  label: "Observability Theory"
 ---
 > **Complexity**: `[MEDIUM]`
 >

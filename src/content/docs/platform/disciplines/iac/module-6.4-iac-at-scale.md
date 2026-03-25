@@ -3,7 +3,6 @@ title: "Module 6.4: Infrastructure as Code at Scale"
 slug: platform/disciplines/iac/module-6.4-iac-at-scale
 sidebar:
   order: 5
-  label: "Infrastructure as Code"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 55 minutes

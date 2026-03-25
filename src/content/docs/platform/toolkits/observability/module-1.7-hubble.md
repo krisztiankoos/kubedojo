@@ -3,7 +3,6 @@ title: "Module 1.7: Hubble - Network Observability with Cilium"
 slug: platform/toolkits/observability/module-1.7-hubble
 sidebar:
   order: 8
-  label: "Observability"
 ---
 ## Complexity: [MEDIUM]
 

@@ -3,7 +3,6 @@ title: "Module 4.1: Volumes"
 slug: k8s/cka/part4-storage/module-4.1-volumes
 sidebar:
   order: 2
-  label: "Part 4: Storage"
 ---
 > **Complexity**: `[MEDIUM]` - Foundation for all storage concepts
 >

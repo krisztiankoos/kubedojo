@@ -2,7 +2,6 @@
 title: "Module 4: Istio Observability"
 sidebar:
   order: 5
-  label: "ICA"
 ---
 ## Complexity: `[MEDIUM]`
 ## Time to Complete: 40-50 minutes

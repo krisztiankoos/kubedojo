@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2: \u041e\u0441\u043d\u043e\u0432\u0438 Docker"
 sidebar:
   order: 3
-  label: "Cloud Native 101"
 ---
 > **Складність**: `[MEDIUM]` — потрібна практична робота
 >

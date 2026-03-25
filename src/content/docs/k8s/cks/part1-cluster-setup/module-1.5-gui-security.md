@@ -3,7 +3,6 @@ title: "Module 1.5: GUI Security (Kubernetes Dashboard)"
 slug: k8s/cks/part1-cluster-setup/module-1.5-gui-security
 sidebar:
   order: 5
-  label: "Part 1: Cluster Setup"
 ---
 > **Complexity**: `[MEDIUM]` - Common attack surface
 >

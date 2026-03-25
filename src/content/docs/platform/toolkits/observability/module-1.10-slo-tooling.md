@@ -3,7 +3,6 @@ title: "Module 1.10: SLO Tooling - Sloth, Pyrra, and the OpenSLO Ecosystem"
 slug: platform/toolkits/observability/module-1.10-slo-tooling
 sidebar:
   order: 11
-  label: "Observability"
 ---
 ## Complexity: [MEDIUM]
 

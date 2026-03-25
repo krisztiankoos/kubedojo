@@ -3,7 +3,6 @@ title: "Module 0.5: Editing Files"
 slug: prerequisites/zero-to-terminal/module-0.5-editing-files
 sidebar:
   order: 6
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Type what you see, save, done
 >

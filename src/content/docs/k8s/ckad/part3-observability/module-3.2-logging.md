@@ -3,7 +3,6 @@ title: "Module 3.2: Container Logging"
 slug: k8s/ckad/part3-observability/module-3.2-logging
 sidebar:
   order: 2
-  label: "Part 3: Observability"
 ---
 > **Complexity**: `[QUICK]` - Essential daily skill, simple commands
 >

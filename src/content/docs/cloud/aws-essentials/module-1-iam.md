@@ -2,7 +2,6 @@
 title: "AWS Identity & Access Management (IAM) Deep Dive"
 sidebar:
   order: 2
-  label: "AWS Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2h | **Prerequisites**: Cloud Native 101
 

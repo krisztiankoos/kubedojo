@@ -3,7 +3,6 @@ title: "Module 3.4: From Data to Insight"
 slug: platform/foundations/observability-theory/module-3.4-from-data-to-insight
 sidebar:
   order: 5
-  label: "Observability Theory"
 ---
 > **Complexity**: `[MEDIUM]`
 >

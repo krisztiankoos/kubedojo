@@ -3,7 +3,6 @@ title: "Module 6.5: Drift Detection and Remediation"
 slug: platform/disciplines/iac/module-6.5-drift-remediation
 sidebar:
   order: 6
-  label: "Infrastructure as Code"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45 minutes

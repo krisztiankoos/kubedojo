@@ -3,7 +3,6 @@ title: "Module 7.10: Nitric - Cloud-Native Application Framework"
 slug: platform/toolkits/iac-tools/module-7.10-nitric
 sidebar:
   order: 11
-  label: "IaC Tools"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

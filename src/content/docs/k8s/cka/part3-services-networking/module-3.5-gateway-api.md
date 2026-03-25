@@ -3,7 +3,6 @@ title: "Module 3.5: Gateway API"
 slug: k8s/cka/part3-services-networking/module-3.5-gateway-api
 sidebar:
   order: 6
-  label: "Part 3: Services & Networking"
 ---
 > **Complexity**: `[MEDIUM]` - CKA exam topic
 >

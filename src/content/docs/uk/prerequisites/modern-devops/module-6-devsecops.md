@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 6: \u041f\u0440\u0430\u043a\u0442\u0438\u043a\u0438 \u0431\u0435\u0437\u043f\u0435\u043a\u0438 (DevSecOps)"
 sidebar:
   order: 7
-  label: "Modern DevOps"
 ---
 > **Складність**: `[MEDIUM]` — Необхідне мислення безпеки
 >

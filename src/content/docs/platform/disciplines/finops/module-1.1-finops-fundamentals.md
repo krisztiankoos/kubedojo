@@ -3,7 +3,6 @@ title: "Module 1.1: FinOps Fundamentals & The Cloud Bill"
 slug: platform/disciplines/finops/module-1.1-finops-fundamentals
 sidebar:
   order: 2
-  label: "FinOps"
 ---
 > **Discipline Module** | Complexity: `[QUICK]` | Time: 1.5h
 

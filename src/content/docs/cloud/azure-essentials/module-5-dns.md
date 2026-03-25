@@ -2,7 +2,6 @@
 title: "Azure DNS & Traffic Manager"
 sidebar:
   order: 6
-  label: "Azure Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 1.5h | **Prerequisites**: Module 2 (Virtual Networks)
 

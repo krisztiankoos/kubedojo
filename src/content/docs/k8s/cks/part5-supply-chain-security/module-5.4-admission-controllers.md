@@ -3,7 +3,6 @@ title: "Module 5.4: Admission Controllers"
 slug: k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers
 sidebar:
   order: 4
-  label: "Part 5: Supply Chain Security"
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS topic
 >

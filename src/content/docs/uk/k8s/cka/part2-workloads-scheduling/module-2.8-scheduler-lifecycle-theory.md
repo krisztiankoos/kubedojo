@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.8: \u0422\u0435\u043e\u0440\u0456
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory
 sidebar:
   order: 9
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Складність**: `[MEDIUM]` — Висока цінність на іспиті
 >

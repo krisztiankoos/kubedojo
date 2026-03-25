@@ -3,7 +3,6 @@ title: "Module 2.5: Resource Management"
 slug: k8s/cka/part2-workloads-scheduling/module-2.5-resource-management
 sidebar:
   order: 6
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Complexity**: `[MEDIUM]` - Critical for production workloads
 >

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.6: \u041f\u043b\u0430\u043d\u0443
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.6-scheduling
 sidebar:
   order: 7
-  label: "Part 2: Workloads & Scheduling"
 ---
 > **Складність**: `[MEDIUM]` — Критична тема на іспиті
 >

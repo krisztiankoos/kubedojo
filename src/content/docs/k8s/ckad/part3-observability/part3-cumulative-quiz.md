@@ -2,7 +2,6 @@
 title: "Part 3 Cumulative Quiz: Application Observability and Maintenance"
 sidebar:
   order: 6
-  label: "Part 3: Observability"
 ---
 > **Time Limit**: 20 minutes (simulating exam pressure)
 >

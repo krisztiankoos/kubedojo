@@ -3,7 +3,6 @@ title: "Module 2.1: ArgoCD"
 slug: platform/toolkits/gitops-deployments/module-2.1-argocd
 sidebar:
   order: 2
-  label: "GitOps & Deployments"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 

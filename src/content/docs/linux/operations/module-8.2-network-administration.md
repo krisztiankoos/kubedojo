@@ -3,7 +3,6 @@ title: "Module 8.2: Network Administration"
 slug: linux/operations/module-8.2-network-administration
 sidebar:
   order: 2
-  label: "System Administration"
 ---
 > **Operations — LFCS** | Complexity: `[COMPLEX]` | Time: 45-55 min
 

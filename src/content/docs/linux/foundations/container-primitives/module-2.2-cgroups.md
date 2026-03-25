@@ -3,7 +3,6 @@ title: "Module 2.2: Control Groups (cgroups)"
 slug: linux/foundations/container-primitives/module-2.2-cgroups
 sidebar:
   order: 3
-  label: "Container Primitives"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

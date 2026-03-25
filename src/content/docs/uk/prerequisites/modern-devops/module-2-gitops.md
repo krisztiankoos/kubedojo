@@ -2,7 +2,6 @@
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2: GitOps"
 sidebar:
   order: 3
-  label: "Modern DevOps"
 ---
 > **Складність**: `[MEDIUM]` — Ключовий операційний патерн
 >

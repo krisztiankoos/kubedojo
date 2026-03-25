@@ -3,7 +3,6 @@ title: "Module 1.2: Container Fundamentals"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals
 sidebar:
   order: 3
-  label: "Part 1: K8s Fundamentals"
 ---
 > **Complexity**: `[QUICK]` - Foundational concepts
 >

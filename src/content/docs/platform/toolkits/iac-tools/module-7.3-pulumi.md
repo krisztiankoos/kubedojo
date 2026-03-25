@@ -3,7 +3,6 @@ title: "Module 7.3: Pulumi - Infrastructure as Real Code"
 slug: platform/toolkits/iac-tools/module-7.3-pulumi
 sidebar:
   order: 4
-  label: "IaC Tools"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45 minutes

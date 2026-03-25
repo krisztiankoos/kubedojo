@@ -2,7 +2,6 @@
 title: "EKS Networking Deep Dive (VPC CNI)"
 sidebar:
   order: 3
-  label: "AWS EKS Deep Dive"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3.5h | **Prerequisites**: Module 1 (EKS Architecture & Control Plane)
 

@@ -3,7 +3,6 @@ title: "Module 9.6: LangChain & LlamaIndex - LLM Application Frameworks"
 slug: platform/toolkits/ml-platforms/module-9.6-langchain-llamaindex
 sidebar:
   order: 7
-  label: "ML Platforms"
 ---
 ## Complexity: [COMPLEX]
 

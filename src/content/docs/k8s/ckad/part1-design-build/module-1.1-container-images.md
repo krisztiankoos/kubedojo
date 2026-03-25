@@ -3,7 +3,6 @@ title: "Module 1.1: Container Images"
 slug: k8s/ckad/part1-design-build/module-1.1-container-images
 sidebar:
   order: 1
-  label: "Part 1: Design & Build"
 ---
 > **Complexity**: `[MEDIUM]` - Requires understanding of Dockerfile and image registries
 >

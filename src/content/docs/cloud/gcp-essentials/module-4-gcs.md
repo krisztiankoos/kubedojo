@@ -2,7 +2,6 @@
 title: "GCP Cloud Storage (GCS)"
 sidebar:
   order: 5
-  label: "GCP Essentials"
 ---
 **Complexity**: [QUICK] | **Time to Complete**: 1.5h | **Prerequisites**: Module 1 (IAM & Resource Hierarchy)
 

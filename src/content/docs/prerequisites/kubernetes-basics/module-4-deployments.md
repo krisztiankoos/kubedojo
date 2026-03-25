@@ -2,7 +2,6 @@
 title: "Module 4: Deployments - Managing Applications"
 sidebar:
   order: 5
-  label: "Kubernetes Basics"
 ---
 > **Complexity**: `[MEDIUM]` - Core workload management
 >

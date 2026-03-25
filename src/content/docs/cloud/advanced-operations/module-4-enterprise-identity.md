@@ -2,7 +2,6 @@
 title: "Module 4: Cross-Account IAM & Enterprise Identity"
 sidebar:
   order: 5
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

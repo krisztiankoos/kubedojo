@@ -2,7 +2,6 @@
 title: "Continuous Compliance & CSPM"
 sidebar:
   order: 4
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 2h | **Prerequisites**: Cloud Governance & Policy as Code (Module 2), Kubernetes Security Basics
 

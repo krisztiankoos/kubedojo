@@ -2,7 +2,6 @@
 title: "Module 1: What Are Containers?"
 sidebar:
   order: 2
-  label: "Cloud Native 101"
 ---
 > **Complexity**: `[QUICK]` - Foundational concepts
 >

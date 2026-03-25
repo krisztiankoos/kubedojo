@@ -3,7 +3,6 @@ title: "Module 15.5: etcd-operator - Managing Kubernetes' Backbone"
 slug: platform/toolkits/cloud-native-databases/module-15.5-etcd-operator
 sidebar:
   order: 6
-  label: "Cloud-Native Databases"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 40-45 minutes

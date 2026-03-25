@@ -2,7 +2,6 @@
 title: "Module 2: Argo Events \u2014 Event-Driven Automation for Kubernetes"
 sidebar:
   order: 3
-  label: "CAPA"
 ---
 > **Complexity**: `[COMPLEX]` — Multiple interacting CRDs and integration patterns
 >

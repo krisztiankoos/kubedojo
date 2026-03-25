@@ -3,7 +3,6 @@ title: "Module 3.1: Cloud Native Principles"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles
 sidebar:
   order: 2
-  label: "Part 3: Cloud Native Architecture"
 ---
 > **Complexity**: `[MEDIUM]` - Architecture concepts
 >

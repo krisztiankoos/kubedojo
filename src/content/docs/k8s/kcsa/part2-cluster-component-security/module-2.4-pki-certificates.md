@@ -3,7 +3,6 @@ title: "Module 2.4: PKI and Certificates"
 slug: k8s/kcsa/part2-cluster-component-security/module-2.4-pki-certificates
 sidebar:
   order: 5
-  label: "Part 2: Cluster Component Security"
 ---
 > **Complexity**: `[MEDIUM]` - Core knowledge
 >

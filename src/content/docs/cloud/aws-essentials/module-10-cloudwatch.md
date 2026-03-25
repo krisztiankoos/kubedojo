@@ -2,7 +2,6 @@
 title: "Module 10: CloudWatch & Observability"
 sidebar:
   order: 11
-  label: "AWS Essentials"
 ---
 **Complexity:** `[MEDIUM]` | **Time to Complete:** 2 hours | **Track:** AWS DevOps Essentials
 

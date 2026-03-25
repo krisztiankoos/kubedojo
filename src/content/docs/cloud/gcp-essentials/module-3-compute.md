@@ -2,7 +2,6 @@
 title: "GCP Compute Engine"
 sidebar:
   order: 4
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: Module 2 (VPC Networking)
 

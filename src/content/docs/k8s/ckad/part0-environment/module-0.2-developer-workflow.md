@@ -3,7 +3,6 @@ title: "Module 0.2: Developer Workflow"
 slug: k8s/ckad/part0-environment/module-0.2-developer-workflow
 sidebar:
   order: 2
-  label: "Part 0: Environment"
 ---
 > **Complexity**: `[QUICK]` - Essential kubectl patterns
 >

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.10: \u0412\u0430\u0448 \u043f\u04
 slug: uk/prerequisites/zero-to-terminal/module-0.10-your-first-server
 sidebar:
   order: 11
-  label: "Zero to Terminal"
 ---
 > **Складність**: `[MEDIUM]` — Підсумковий проєкт
 >

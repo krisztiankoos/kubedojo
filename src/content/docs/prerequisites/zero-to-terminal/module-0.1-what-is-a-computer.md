@@ -3,7 +3,6 @@ title: "Module 0.1: What is a Computer?"
 slug: prerequisites/zero-to-terminal/module-0.1-what-is-a-computer
 sidebar:
   order: 2
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - No technical experience needed
 >

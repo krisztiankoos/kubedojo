@@ -2,7 +2,6 @@
 title: "Module 1: OTel API & SDK Deep Dive"
 sidebar:
   order: 2
-  label: "OTCA"
 ---
 > **Complexity**: `[COMPLEX]` - Core domain, 46% of OTCA exam weight
 >

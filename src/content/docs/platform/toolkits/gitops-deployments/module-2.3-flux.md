@@ -3,7 +3,6 @@ title: "Module 2.3: Flux"
 slug: platform/toolkits/gitops-deployments/module-2.3-flux
 sidebar:
   order: 4
-  label: "GitOps & Deployments"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

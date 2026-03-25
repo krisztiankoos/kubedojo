@@ -2,7 +2,6 @@
 title: "Module 1: Istio Installation & Architecture"
 sidebar:
   order: 2
-  label: "ICA"
 ---
 ## Complexity: `[MEDIUM]`
 ## Time to Complete: 50-60 minutes

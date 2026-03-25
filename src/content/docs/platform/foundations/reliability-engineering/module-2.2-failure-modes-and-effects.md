@@ -3,7 +3,6 @@ title: "Module 2.2: Failure Modes and Effects"
 slug: platform/foundations/reliability-engineering/module-2.2-failure-modes-and-effects
 sidebar:
   order: 3
-  label: "Reliability Engineering"
 ---
 > **Complexity**: `[MEDIUM]`
 >

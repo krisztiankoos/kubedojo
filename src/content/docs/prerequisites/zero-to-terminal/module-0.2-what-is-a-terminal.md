@@ -3,7 +3,6 @@ title: "Module 0.2: What is a Terminal?"
 slug: prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal
 sidebar:
   order: 3
-  label: "Zero to Terminal"
 ---
 > **Complexity**: `[QUICK]` - Absolute beginner
 >

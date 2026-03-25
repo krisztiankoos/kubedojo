@@ -3,7 +3,6 @@ title: "Module 5.3: Static Analysis with kubesec and OPA"
 slug: k8s/cks/part5-supply-chain-security/module-5.3-static-analysis
 sidebar:
   order: 3
-  label: "Part 5: Supply Chain Security"
 ---
 > **Complexity**: `[MEDIUM]` - Security tooling
 >

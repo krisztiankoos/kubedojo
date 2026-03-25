@@ -3,7 +3,6 @@ title: "Module 2.4: Configuration"
 slug: k8s/kcna/part2-container-orchestration/module-2.4-configuration
 sidebar:
   order: 5
-  label: "Part 2: Container Orchestration"
 ---
 > **Complexity**: `[MEDIUM]` - Configuration concepts
 >

@@ -3,7 +3,6 @@ title: "Module 1.5: Cloud Load Balancing Deep Dive"
 slug: platform/foundations/advanced-networking/module-1.5-load-balancing
 sidebar:
   order: 6
-  label: "Advanced Networking"
 ---
 > **Complexity**: `[COMPLEX]`
 >

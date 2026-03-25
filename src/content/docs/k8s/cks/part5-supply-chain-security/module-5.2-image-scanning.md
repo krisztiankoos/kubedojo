@@ -3,7 +3,6 @@ title: "Module 5.2: Image Scanning with Trivy"
 slug: k8s/cks/part5-supply-chain-security/module-5.2-image-scanning
 sidebar:
   order: 2
-  label: "Part 5: Supply Chain Security"
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS skill
 >

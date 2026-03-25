@@ -3,7 +3,6 @@ title: "Module 4.1: ConfigMaps"
 slug: k8s/ckad/part4-environment/module-4.1-configmaps
 sidebar:
   order: 1
-  label: "Part 4: Environment"
 ---
 > **Complexity**: `[MEDIUM]` - Multiple ways to create and consume
 >

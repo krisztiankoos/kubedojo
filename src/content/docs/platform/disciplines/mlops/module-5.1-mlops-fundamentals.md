@@ -3,7 +3,6 @@ title: "Module 5.1: MLOps Fundamentals"
 slug: platform/disciplines/mlops/module-5.1-mlops-fundamentals
 sidebar:
   order: 2
-  label: "MLOps"
 ---
 > **Discipline Track** | Complexity: `[MEDIUM]` | Time: 35-40 min
 

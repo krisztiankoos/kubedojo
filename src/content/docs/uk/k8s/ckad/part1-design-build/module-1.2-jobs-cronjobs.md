@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.2: Jobs \u0442\u0430 CronJobs"
 slug: uk/k8s/ckad/part1-design-build/module-1.2-jobs-cronjobs
 sidebar:
   order: 2
-  label: "Part 1: Design & Build"
 ---
 > **Складність**: `[MEDIUM]` — Ключова навичка CKAD зі специфічними паттернами
 >

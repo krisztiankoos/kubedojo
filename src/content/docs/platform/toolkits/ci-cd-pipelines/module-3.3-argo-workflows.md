@@ -3,7 +3,6 @@ title: "Module 3.3: Argo Workflows"
 slug: platform/toolkits/ci-cd-pipelines/module-3.3-argo-workflows
 sidebar:
   order: 4
-  label: "CI/CD Pipelines"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

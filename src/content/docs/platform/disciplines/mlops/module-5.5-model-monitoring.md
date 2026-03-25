@@ -3,7 +3,6 @@ title: "Module 5.5: Model Monitoring & Observability"
 slug: platform/disciplines/mlops/module-5.5-model-monitoring
 sidebar:
   order: 6
-  label: "MLOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

@@ -3,7 +3,6 @@ title: "Module 4.2: Common Vulnerabilities"
 slug: k8s/kcsa/part4-threat-model/module-4.2-vulnerabilities
 sidebar:
   order: 3
-  label: "Part 4: Threat Model"
 ---
 > **Complexity**: `[MEDIUM]` - Threat awareness
 >

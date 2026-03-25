@@ -3,7 +3,6 @@ title: "Module 1.2: Blameless Postmortems & Root Cause Analysis"
 slug: platform/foundations/engineering-leadership/module-1.2-postmortems
 sidebar:
   order: 3
-  label: "Engineering Leadership"
 ---
 > **Complexity**: `[MEDIUM]` | **Time**: 2 hours | **Prerequisites**: [Module 1.1: Incident Command](module-1.1-incident-command/)
 

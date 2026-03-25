@@ -2,7 +2,6 @@
 title: "GCP Cloud DNS"
 sidebar:
   order: 6
-  label: "GCP Essentials"
 ---
 **Complexity**: [MEDIUM] | **Time to Complete**: 1.5h | **Prerequisites**: Module 2 (VPC Networking)
 

@@ -3,7 +3,6 @@ title: "Module 1.5: Distributed Tracing"
 slug: platform/toolkits/observability/module-1.5-tracing
 sidebar:
   order: 6
-  label: "Observability"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.3: \u0412\u0438\u043c\u043e\u0433
 slug: uk/k8s/ckad/part4-environment/module-4.3-resources
 sidebar:
   order: 3
-  label: "Part 4: Environment"
 ---
 > **Складність**: `[MEDIUM]` — Критично для продакшену, впливає на планування
 >

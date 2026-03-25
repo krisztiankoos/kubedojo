@@ -3,7 +3,6 @@ title: "Module 4.3: Security in CI/CD Pipelines"
 slug: platform/disciplines/devsecops/module-4.3-security-cicd
 sidebar:
   order: 4
-  label: "DevSecOps"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.7: CNI \u0442\u0430 \u043c\u0435\
 slug: uk/k8s/cka/part3-services-networking/module-3.7-cni
 sidebar:
   order: 8
-  label: "Part 3: Services & Networking"
 ---
 > **Складність**: `[MEDIUM]` — Розуміння мережевої інфраструктури
 >

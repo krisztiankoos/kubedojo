@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.4: \u041d\u0430\u0432\u0456\u0433
 slug: uk/k8s/cka/part0-environment/module-0.4-k8s-docs
 sidebar:
   order: 4
-  label: "Part 0: Environment"
 ---
 > **Складність**: `[QUICK]` — Знайте, де що знаходиться, знаходьте швидко
 >

@@ -2,7 +2,6 @@
 title: "GKE Observability and Fleet Management"
 sidebar:
   order: 6
-  label: "GCP GKE Deep Dive"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Module 1 (GKE Architecture)
 

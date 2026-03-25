@@ -3,7 +3,6 @@ title: "Module 1.6: Mentorship & Multiplying Impact"
 slug: platform/foundations/engineering-leadership/module-1.6-mentorship
 sidebar:
   order: 7
-  label: "Engineering Leadership"
 ---
 > **Complexity**: `[MEDIUM]` | **Time**: 2 hours | **Prerequisites**: None
 >

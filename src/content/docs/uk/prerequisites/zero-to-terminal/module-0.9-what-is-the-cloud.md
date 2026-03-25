@@ -3,7 +3,6 @@ title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.9: \u0429\u043e \u0442\u0430\u043
 slug: uk/prerequisites/zero-to-terminal/module-0.9-what-is-the-cloud
 sidebar:
   order: 10
-  label: "Zero to Terminal"
 ---
 > **Складність**: `[QUICK]` — Концепції, що стають на свої місця
 >

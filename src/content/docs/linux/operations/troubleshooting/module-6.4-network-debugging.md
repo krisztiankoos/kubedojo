@@ -3,7 +3,6 @@ title: "Module 6.4: Network Debugging"
 slug: linux/operations/troubleshooting/module-6.4-network-debugging
 sidebar:
   order: 5
-  label: "Troubleshooting"
 ---
 > **Linux Troubleshooting** | Complexity: `[COMPLEX]` | Time: 30-35 min
 

@@ -3,7 +3,6 @@ title: "Module 1.4: Toil and Automation"
 slug: platform/disciplines/sre/module-1.4-toil-automation
 sidebar:
   order: 5
-  label: "SRE"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

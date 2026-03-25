@@ -3,7 +3,6 @@ title: "Module 6.3: Event Correlation"
 slug: platform/disciplines/aiops/module-6.3-event-correlation
 sidebar:
   order: 4
-  label: "AIOps"
 ---
 > **Discipline Track** | Complexity: `[COMPLEX]` | Time: 40-45 min
 

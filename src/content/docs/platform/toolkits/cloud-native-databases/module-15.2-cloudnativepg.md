@@ -3,7 +3,6 @@ title: "Module 15.2: CloudNativePG - PostgreSQL Done Right on Kubernetes"
 slug: platform/toolkits/cloud-native-databases/module-15.2-cloudnativepg
 sidebar:
   order: 3
-  label: "Cloud-Native Databases"
 ---
 ## Complexity: [MEDIUM]
 ## Time to Complete: 45-50 minutes

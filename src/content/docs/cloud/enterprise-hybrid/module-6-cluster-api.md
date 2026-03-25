@@ -2,7 +2,6 @@
 title: "Multi-Cloud Provisioning with Cluster API"
 sidebar:
   order: 7
-  label: "Enterprise & Hybrid"
 ---
 **Complexity**: [COMPLEX] | **Time to Complete**: 3h | **Prerequisites**: Multi-Cloud Fleet Management (Module 5), Kubernetes Custom Resources, Infrastructure as Code Basics
 

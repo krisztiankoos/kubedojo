@@ -3,7 +3,6 @@ title: "Module 7.2: Text Processing"
 slug: linux/operations/shell-scripting/module-7.2-text-processing
 sidebar:
   order: 3
-  label: "Shell Scripting"
 ---
 > **Shell Scripting** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

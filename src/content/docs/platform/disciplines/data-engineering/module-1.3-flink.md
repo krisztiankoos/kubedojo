@@ -3,7 +3,6 @@ title: "Module 1.3: Stream Processing with Apache Flink"
 slug: platform/disciplines/data-engineering/module-1.3-flink
 sidebar:
   order: 4
-  label: "Data Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 3.5 hours
 

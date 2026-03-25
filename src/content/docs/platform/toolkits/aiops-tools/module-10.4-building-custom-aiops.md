@@ -3,7 +3,6 @@ title: "Module 10.4: Building Custom AIOps"
 slug: platform/toolkits/aiops-tools/module-10.4-building-custom-aiops
 sidebar:
   order: 5
-  label: "AIOps Tools"
 ---
 > **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 50-60 minutes
 

@@ -3,7 +3,6 @@ title: "Module 14.6: Managed Kubernetes - EKS vs GKE vs AKS"
 slug: platform/toolkits/k8s-distributions/module-14.6-managed-kubernetes
 sidebar:
   order: 7
-  label: "K8s Distributions"
 ---
 ## Complexity: [COMPLEX]
 ## Time to Complete: 55-60 minutes

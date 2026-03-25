@@ -2,7 +2,6 @@
 title: "Module 5: Disaster Recovery: RTO/RPO for Kubernetes"
 sidebar:
   order: 6
-  label: "Advanced Operations"
 ---
 > **Complexity**: `[COMPLEX]`
 >

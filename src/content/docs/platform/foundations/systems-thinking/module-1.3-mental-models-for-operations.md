@@ -3,7 +3,6 @@ title: "Module 1.3: Mental Models for Operations"
 slug: platform/foundations/systems-thinking/module-1.3-mental-models-for-operations
 sidebar:
   order: 4
-  label: "Systems Thinking"
 ---
 > **Complexity**: `[MEDIUM]`
 >

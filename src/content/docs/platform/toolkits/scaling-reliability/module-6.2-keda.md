@@ -3,7 +3,6 @@ title: "Module 6.2: KEDA"
 slug: platform/toolkits/scaling-reliability/module-6.2-keda
 sidebar:
   order: 3
-  label: "Scaling & Reliability"
 ---
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes
 

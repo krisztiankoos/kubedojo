@@ -3,7 +3,6 @@ title: "Module 1.1: Kubernetes API & Extensibility Architecture"
 slug: k8s/extending/module-1.1-api-deep-dive
 sidebar:
   order: 2
-  label: "Extending Kubernetes"
 ---
 > **Complexity**: `[MEDIUM]` - Understanding the API machinery
 >

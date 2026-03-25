@@ -3,7 +3,6 @@ title: "Module 1.9: Debugging Basics (Theory)"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.9-debugging-basics
 sidebar:
   order: 10
-  label: "Part 1: K8s Fundamentals"
 ---
 > **Complexity**: `[QUICK]` - Fast triage mindset
 >

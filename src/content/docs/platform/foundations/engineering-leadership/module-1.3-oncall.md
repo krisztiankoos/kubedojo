@@ -3,7 +3,6 @@ title: "Module 1.3: Effective On-Call & Burnout Prevention"
 slug: platform/foundations/engineering-leadership/module-1.3-oncall
 sidebar:
   order: 4
-  label: "Engineering Leadership"
 ---
 > **Complexity**: `[MEDIUM]`
 >

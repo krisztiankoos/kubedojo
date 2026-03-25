@@ -3,7 +3,6 @@ title: "Module 2.5: Self-Service Infrastructure"
 slug: platform/disciplines/platform-engineering/module-2.5-self-service-infrastructure
 sidebar:
   order: 6
-  label: "Platform Engineering"
 ---
 > **Discipline Module** | Complexity: `[COMPLEX]` | Time: 50-60 min
 

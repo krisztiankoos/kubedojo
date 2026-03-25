@@ -3,7 +3,6 @@ title: "Module 2.6: Platform Maturity"
 slug: platform/disciplines/platform-engineering/module-2.6-platform-maturity
 sidebar:
   order: 7
-  label: "Platform Engineering"
 ---
 > **Discipline Module** | Complexity: `[MEDIUM]` | Time: 45-55 min
 
