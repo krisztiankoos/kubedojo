@@ -15,7 +15,7 @@ This track covers the complete ML lifecycle—from experiment tracking and featu
 ## Prerequisites
 
 Before starting this track:
-- [Observability Theory Track](../../foundations/observability-theory/index.md) — Monitoring fundamentals
+- [Observability Theory Track](../../foundations/observability-theory/) — Monitoring fundamentals
 - Basic machine learning concepts (training, inference, models)
 - Python programming experience
 - Understanding of CI/CD concepts
@@ -25,12 +25,12 @@ Before starting this track:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 5.1 | [MLOps Fundamentals](module-5.1-mlops-fundamentals.md) | `[MEDIUM]` | 35-40 min |
-| 5.2 | [Feature Engineering & Stores](module-5.2-feature-stores.md) | `[COMPLEX]` | 40-45 min |
-| 5.3 | [Model Training & Experimentation](module-5.3-model-training.md) | `[COMPLEX]` | 40-45 min |
-| 5.4 | [Model Serving & Inference](module-5.4-model-serving.md) | `[COMPLEX]` | 40-45 min |
-| 5.5 | [Model Monitoring & Observability](module-5.5-model-monitoring.md) | `[COMPLEX]` | 40-45 min |
-| 5.6 | [ML Pipelines & Automation](module-5.6-ml-pipelines.md) | `[COMPLEX]` | 40-45 min |
+| 5.1 | [MLOps Fundamentals](module-5.1-mlops-fundamentals/) | `[MEDIUM]` | 35-40 min |
+| 5.2 | [Feature Engineering & Stores](module-5.2-feature-stores/) | `[COMPLEX]` | 40-45 min |
+| 5.3 | [Model Training & Experimentation](module-5.3-model-training/) | `[COMPLEX]` | 40-45 min |
+| 5.4 | [Model Serving & Inference](module-5.4-model-serving/) | `[COMPLEX]` | 40-45 min |
+| 5.5 | [Model Monitoring & Observability](module-5.5-model-monitoring/) | `[COMPLEX]` | 40-45 min |
+| 5.6 | [ML Pipelines & Automation](module-5.6-ml-pipelines/) | `[COMPLEX]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -132,11 +132,11 @@ Module 5.6: ML Pipelines & Automation
 
 ## Related Tracks
 
-- **Before**: [Observability Theory](../../foundations/observability-theory/index.md) — Monitoring foundations
-- **Related**: [IaC Discipline](../iac/index.md) — Infrastructure provisioning for ML platforms
-- **Related**: [DevSecOps](../devsecops/index.md) — Security for ML pipelines
-- **After**: [ML Platforms Toolkit](../../toolkits/ml-platforms/index.md) — Hands-on implementations
-- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/index.md) — Terraform modules for ML infrastructure
+- **Before**: [Observability Theory](../../foundations/observability-theory/) — Monitoring foundations
+- **Related**: [IaC Discipline](../iac/) — Infrastructure provisioning for ML platforms
+- **Related**: [DevSecOps](../devsecops/) — Security for ML pipelines
+- **After**: [ML Platforms Toolkit](../../toolkits/ml-platforms/) — Hands-on implementations
+- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/) — Terraform modules for ML infrastructure
 
 ---
 

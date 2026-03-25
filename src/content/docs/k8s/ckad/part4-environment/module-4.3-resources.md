@@ -1,5 +1,6 @@
 ---
 title: "Module 4.3: Resource Requirements and Limits"
+slug: k8s/ckad/part4-environment/module-4.3-resources
 sidebar:
   order: 3
   label: "Part 4: Environment"
@@ -577,4 +578,4 @@ k delete ns drill6
 
 ## Next Module
 
-[Module 4.4: SecurityContexts](module-4.4-securitycontext.md) - Configure pod and container security settings.
+[Module 4.4: SecurityContexts](module-4.4-securitycontext/) - Configure pod and container security settings.

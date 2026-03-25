@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.2: \u041f\u0430\u043a\u0435\u0442\u043d\u0438\u0439 \u043c\u0435\u043d\u0435\u0434\u0436\u0435\u0440 Helm"
+slug: uk/k8s/ckad/part2-deployment/module-2.2-helm
 sidebar:
   order: 2
   label: "Part 2: Deployment"
@@ -638,4 +639,4 @@ helm uninstall prod-web
 
 ## Наступний модуль
 
-[Модуль 2.3: Kustomize](module-2.3-kustomize.md) — кастомізація ресурсів Kubernetes без шаблонів.
+[Модуль 2.3: Kustomize](module-2.3-kustomize/) — кастомізація ресурсів Kubernetes без шаблонів.

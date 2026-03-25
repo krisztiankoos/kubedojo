@@ -763,4 +763,4 @@ az ad app delete --id "$APP_OBJECT_ID"
 
 ## Next Module
 
-[Module 12: ARM & Bicep Basics](module-12-bicep.md) --- Learn infrastructure as code on Azure with ARM templates and Bicep, including modules, deployment scopes, and what-if previews for safe infrastructure changes.
+[Module 12: ARM & Bicep Basics](module-12-bicep/) --- Learn infrastructure as code on Azure with ARM templates and Bicep, including modules, deployment scopes, and what-if previews for safe infrastructure changes.

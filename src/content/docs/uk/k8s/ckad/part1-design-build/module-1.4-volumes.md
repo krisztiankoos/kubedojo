@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.4: \u0422\u043e\u043c\u0438 \u0434\u043b\u044f \u0440\u043e\u0437\u0440\u043e\u0431\u043d\u0438\u043a\u0456\u0432"
+slug: uk/k8s/ckad/part1-design-build/module-1.4-volumes
 sidebar:
   order: 4
   label: "Part 1: Design & Build"
@@ -831,4 +832,4 @@ k delete cm processing-config
 
 ## Наступний модуль
 
-[Підсумковий тест Частини 1](part1-cumulative-quiz.md) — Перевірте свої знання з проєктування та збірки застосунків.
+[Підсумковий тест Частини 1](part1-cumulative-quiz/) — Перевірте свої знання з проєктування та збірки застосунків.

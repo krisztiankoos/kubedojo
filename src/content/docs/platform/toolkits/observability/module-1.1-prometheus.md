@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Prometheus"
+slug: platform/toolkits/observability/module-1.1-prometheus
 sidebar:
   order: 2
   label: "Observability"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Observability Theory Track](../../foundations/observability-theory/index.md)
-- [SRE Discipline](../../disciplines/sre/index.md) (recommended)
+- [Observability Theory Track](../../foundations/observability-theory/)
+- [SRE Discipline](../../disciplines/sre/) (recommended)
 - Basic Kubernetes knowledge
 - Understanding of metrics concepts
 
@@ -798,4 +799,4 @@ Prometheus is the foundation of cloud-native observability. Its pull-based model
 
 ## Next Module
 
-Continue to [Module 1.2: OpenTelemetry](module-1.2-opentelemetry.md) to learn about vendor-agnostic observability instrumentation.
+Continue to [Module 1.2: OpenTelemetry](module-1.2-opentelemetry/) to learn about vendor-agnostic observability instrumentation.

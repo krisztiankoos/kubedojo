@@ -738,4 +738,4 @@ az group delete --name "$RG" --yes --no-wait
 
 ## Next Module
 
-[Module 10: Azure Monitor & Log Analytics](module-10-monitor.md) --- Learn how to observe your Azure infrastructure and applications with metrics, logs, KQL queries, and alerts that notify you before your customers notice problems.
+[Module 10: Azure Monitor & Log Analytics](module-10-monitor/) --- Learn how to observe your Azure infrastructure and applications with metrics, logs, KQL queries, and alerts that notify you before your customers notice problems.

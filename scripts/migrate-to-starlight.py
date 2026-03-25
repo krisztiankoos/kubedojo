@@ -109,22 +109,22 @@ def extract_title(content: str) -> tuple[str, str]:
 
 
 def generate_frontmatter(title: str, sidebar_order: int | None = None,
-                         sidebar_label: str | None = None) -> str:
+                         sidebar_label: str | None = None,
+                         slug: str | None = None) -> str:
     """Generate Starlight-compatible YAML frontmatter."""
-    fm = {"title": title}
+    # Build YAML manually — use json.dumps for safe string escaping
+    lines = ["---"]
+    lines.append(f"title: {json.dumps(title)}")
+
+    # Explicit slug to preserve dots (Starlight strips dots from filenames)
+    if slug:
+        lines.append(f"slug: {slug}")
 
     sidebar = {}
     if sidebar_order is not None:
         sidebar["order"] = sidebar_order
     if sidebar_label and sidebar_label != title:
         sidebar["label"] = sidebar_label
-
-    if sidebar:
-        fm["sidebar"] = sidebar
-
-    # Build YAML manually — use json.dumps for safe string escaping
-    lines = ["---"]
-    lines.append(f"title: {json.dumps(title)}")
 
     if sidebar:
         lines.append("sidebar:")
@@ -153,20 +153,34 @@ def fix_internal_links(content: str, is_ukrainian: bool = False,
             content
         )
 
-    # README.md → index.md in link targets
+    # README.md → index (not index.md — Starlight uses slug-based routing)
     content = re.sub(
-        r'\[([^\]]*)\]\(([^)]*?)README\.md([^)]*)\)',
-        r'[\1](\2index.md\3)',
+        r'\[([^\]]*)\]\(([^)]*?)README\.md(#[^)]*)?\)',
+        lambda m: f'[{m.group(1)}]({m.group(2)}{m.group(3) or ""})',
+        content
+    )
+
+    # Strip .md extension from all internal links (Starlight resolves by slug)
+    # Preserve anchors: file.md#section → file/#section
+    def _strip_md(m):
+        text, pre, anchor = m.group(1), m.group(2), m.group(3) or ""
+        if pre.startswith("http"):
+            return m.group(0)
+        # file.md → file/  or  file.md#anchor → file/#anchor
+        return f"[{text}]({pre}/{anchor})"
+
+    content = re.sub(
+        r'\[([^\]]*)\]\(([^)]+?)\.md(#[^)]*)?\)',
+        _strip_md,
         content
     )
 
     if is_ukrainian:
         # Ukrainian files at the uk/ root (e.g. uk/changelog.md, uk/index.md)
         # link to English content that is now one level up. Prepend ../
-        # to non-relative links (those not starting with . or / or http)
-        src_depth = src_rel.count("/")  # e.g. "changelog.uk.md" → 0 depth in docs/
+        # to non-relative links (those not starting with . or / or http or #)
+        src_depth = src_rel.count("/")
         if src_depth == 0:
-            # Top-level uk/ file linking to k8s/..., platform/..., etc.
             def _prefix_link(m):
                 text, path = m.group(1), m.group(2)
                 if path.startswith((".", "/", "http", "#")):
@@ -174,7 +188,7 @@ def fix_internal_links(content: str, is_ukrainian: bool = False,
                 return f"[{text}](../{path})"
 
             content = re.sub(
-                r'\[([^\]]*)\]\(([^)]+\.md(?:#[^)]*)?)\)',
+                r'\[([^\]]*)\]\(([^)]+/[^)]*)\)',
                 lambda m: _prefix_link(m),
                 content
             )
@@ -245,17 +259,30 @@ def migrate_file(src: Path, nav_index: dict, is_ukrainian: bool,
     if lookup_rel in nav_index:
         sidebar_label, sidebar_order = nav_index[lookup_rel]
 
+    # Compute explicit slug to preserve dots in filenames
+    # Starlight strips dots: module-1.1-foo.md → module-11-foo (wrong)
+    # We want: module-1.1-foo.md → module-1.1-foo (correct)
+    out_path = compute_output_path(src, is_ukrainian)
+    slug = None
+    stem = out_path.stem  # e.g. "module-1.1-control-plane" or "index"
+    if stem != "index":
+        # Build slug from output path relative to docs root
+        rel_out = out_path.relative_to(OUT_DIR)
+        # e.g. k8s/cka/part1-cluster-architecture/module-1.1-control-plane.md
+        # → k8s/cka/part1-cluster-architecture/module-1.1-control-plane
+        slug_path = str(rel_out.parent / stem)
+        # Only set explicit slug if filename contains a dot (would be stripped)
+        if "." in stem:
+            slug = slug_path
+
     # Generate frontmatter
-    frontmatter = generate_frontmatter(title, sidebar_order, sidebar_label)
+    frontmatter = generate_frontmatter(title, sidebar_order, sidebar_label, slug)
 
     # Fix links
     body = fix_internal_links(body, is_ukrainian, rel)
 
     # Combine
     output = f"{frontmatter}\n{body}"
-
-    # Compute output path
-    out_path = compute_output_path(src, is_ukrainian)
 
     if dry_run:
         return out_path, True

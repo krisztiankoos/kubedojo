@@ -27,11 +27,11 @@ This isn't about hoping things don't break. It's about engineering systems that 
 
 | # | Module | Time | Description |
 |---|--------|------|-------------|
-| 2.1 | [What is Reliability?](module-2.1-what-is-reliability.md) | 25-30 min | Definitions, nines, MTBF/MTTR, error budgets |
-| 2.2 | [Failure Modes and Effects](module-2.2-failure-modes-and-effects.md) | 30-35 min | FMEA, graceful degradation, blast radius |
-| 2.3 | [Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance.md) | 30-35 min | HA vs FT, active-active, redundancy patterns |
-| 2.4 | [Measuring and Improving Reliability](module-2.4-measuring-and-improving-reliability.md) | 35-40 min | SLIs, SLOs, error budgets, continuous improvement |
-| 2.5 | [SLOs, SLIs, and Error Budgets](module-2.5-slos-slis-error-budgets.md) | 20-30 min | Deep dive into the SRE mental model for reliability targets |
+| 2.1 | [What is Reliability?](module-2.1-what-is-reliability/) | 25-30 min | Definitions, nines, MTBF/MTTR, error budgets |
+| 2.2 | [Failure Modes and Effects](module-2.2-failure-modes-and-effects/) | 30-35 min | FMEA, graceful degradation, blast radius |
+| 2.3 | [Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance/) | 30-35 min | HA vs FT, active-active, redundancy patterns |
+| 2.4 | [Measuring and Improving Reliability](module-2.4-measuring-and-improving-reliability/) | 35-40 min | SLIs, SLOs, error budgets, continuous improvement |
+| 2.5 | [SLOs, SLIs, and Error Budgets](module-2.5-slos-slis-error-budgets/) | 20-30 min | Deep dive into the SRE mental model for reliability targets |
 
 ---
 
@@ -110,7 +110,7 @@ Observability   Security        SRE
 
 ## Prerequisites
 
-- **Recommended**: [Systems Thinking Track](../systems-thinking/index.md)
+- **Recommended**: [Systems Thinking Track](../systems-thinking/)
 - Helpful: Some experience operating production systems
 - Helpful: Understanding of distributed systems basics
 
@@ -122,10 +122,10 @@ After completing Reliability Engineering, you're ready for:
 
 | Track | Why |
 |-------|-----|
-| [Observability Theory](../observability-theory/index.md) | Can't improve reliability without seeing what's happening |
-| [SRE Discipline](../../disciplines/sre/index.md) | Putting reliability engineering into operational practice |
-| [Security Principles](../security-principles/index.md) | Security and reliability share patterns |
-| [Distributed Systems](../distributed-systems/index.md) | Deep dive into CAP, consensus, and distributed patterns |
+| [Observability Theory](../observability-theory/) | Can't improve reliability without seeing what's happening |
+| [SRE Discipline](../../disciplines/sre/) | Putting reliability engineering into operational practice |
+| [Security Principles](../security-principles/) | Security and reliability share patterns |
+| [Distributed Systems](../distributed-systems/) | Deep dive into CAP, consensus, and distributed patterns |
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 0.5: Exam Strategy - Three-Pass Method"
+slug: k8s/cka/part0-environment/module-0.5-exam-strategy
 sidebar:
   order: 5
   label: "Part 0: Environment"
@@ -808,6 +809,6 @@ You now have:
 - ✅ Knowledge of where to find documentation fast
 - ✅ A strategy to maximize your exam score
 
-**Next**: [Part 1: Cluster Architecture, Installation & Configuration](../part1-cluster-architecture/index.md)
+**Next**: [Part 1: Cluster Architecture, Installation & Configuration](../part1-cluster-architecture/)
 
 This is where the real Kubernetes learning begins.

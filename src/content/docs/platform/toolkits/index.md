@@ -13,22 +13,22 @@ Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless the
 
 | Toolkit | Focus | Modules |
 |---------|-------|---------|
-| [Observability](observability/index.md) | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble, Coroot | 8 |
-| [GitOps & Deployments](gitops-deployments/index.md) | ArgoCD, Argo Rollouts, Flux, Helm | 4 |
-| [CI/CD Pipelines](ci-cd-pipelines/index.md) | Dagger, Tekton, Argo Workflows | 3 |
-| [IaC Tools](iac-tools/index.md) | Terraform, OpenTofu, Pulumi, Ansible, Wing, SST, System Initiative, Nitric | 10 |
-| [Security Tools](security-tools/index.md) | Vault, OPA/Gatekeeper, Falco, Tetragon, KubeArmor | 6 |
-| [Networking](networking/index.md) | Cilium, Service Mesh | 2 |
-| [Scaling & Reliability](scaling-reliability/index.md) | Karpenter, KEDA, Velero | 3 |
-| [Platforms](platforms/index.md) | Backstage, Crossplane, cert-manager | 3 |
-| [Developer Experience](developer-experience/index.md) | K9s, Telepresence, Local K8s, DevPod, Gitpod/Codespaces | 5 |
-| [ML Platforms](ml-platforms/index.md) | Kubeflow, MLflow, Feature Stores, vLLM, Ray Serve, LangChain | 6 |
-| [AIOps Tools](aiops-tools/index.md) | Anomaly detection, Event correlation | 4 |
-| [Source Control](source-control/index.md) | GitLab, Gitea/Forgejo, GitHub Advanced | 3 |
-| [Code Quality](code-quality/index.md) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 5 |
-| [Container Registries](container-registries/index.md) | Harbor, Zot, Dragonfly | 3 |
-| [K8s Distributions](k8s-distributions/index.md) | k3s, k0s, MicroK8s, Talos, OpenShift, Managed K8s | 6 |
-| [Cloud-Native Databases](cloud-native-databases/index.md) | CockroachDB, CloudNativePG, Neon/PlanetScale, Vitess | 4 |
+| [Observability](observability/) | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble, Coroot | 8 |
+| [GitOps & Deployments](gitops-deployments/) | ArgoCD, Argo Rollouts, Flux, Helm | 4 |
+| [CI/CD Pipelines](ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows | 3 |
+| [IaC Tools](iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible, Wing, SST, System Initiative, Nitric | 10 |
+| [Security Tools](security-tools/) | Vault, OPA/Gatekeeper, Falco, Tetragon, KubeArmor | 6 |
+| [Networking](networking/) | Cilium, Service Mesh | 2 |
+| [Scaling & Reliability](scaling-reliability/) | Karpenter, KEDA, Velero | 3 |
+| [Platforms](platforms/) | Backstage, Crossplane, cert-manager | 3 |
+| [Developer Experience](developer-experience/) | K9s, Telepresence, Local K8s, DevPod, Gitpod/Codespaces | 5 |
+| [ML Platforms](ml-platforms/) | Kubeflow, MLflow, Feature Stores, vLLM, Ray Serve, LangChain | 6 |
+| [AIOps Tools](aiops-tools/) | Anomaly detection, Event correlation | 4 |
+| [Source Control](source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 3 |
+| [Code Quality](code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 5 |
+| [Container Registries](container-registries/) | Harbor, Zot, Dragonfly | 3 |
+| [K8s Distributions](k8s-distributions/) | k3s, k0s, MicroK8s, Talos, OpenShift, Managed K8s | 6 |
+| [Cloud-Native Databases](cloud-native-databases/) | CockroachDB, CloudNativePG, Neon/PlanetScale, Vitess | 4 |
 | **Total** | | **75** |
 
 ## How to Use Toolkits
@@ -52,15 +52,15 @@ We include tools that are:
 
 Before diving into toolkits:
 
-- Complete relevant [Foundations](../foundations/index.md) modules
-- Understand the [Discipline](../disciplines/index.md) the tool supports
+- Complete relevant [Foundations](../foundations/) modules
+- Understand the [Discipline](../disciplines/) the tool supports
 - Have a Kubernetes cluster (kind/minikube for learning)
 
 ## Start Learning
 
 Pick a toolkit based on your current focus:
 
-- **Starting observability?** Begin with [Prometheus](observability/module-1.1-prometheus.md)
-- **Implementing GitOps?** Start with [ArgoCD](gitops-deployments/module-2.1-argocd.md)
-- **Managing infrastructure?** Check out [Terraform](iac-tools/module-7.1-terraform.md)
-- **Building a platform?** Check out [Backstage](platforms/module-7.1-backstage.md)
+- **Starting observability?** Begin with [Prometheus](observability/module-1.1-prometheus/)
+- **Implementing GitOps?** Start with [ArgoCD](gitops-deployments/module-2.1-argocd/)
+- **Managing infrastructure?** Check out [Terraform](iac-tools/module-7.1-terraform/)
+- **Building a platform?** Check out [Backstage](platforms/module-7.1-backstage/)

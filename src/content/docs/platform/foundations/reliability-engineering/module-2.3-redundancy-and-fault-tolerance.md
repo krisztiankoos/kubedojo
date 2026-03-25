@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: Redundancy and Fault Tolerance"
+slug: platform/foundations/reliability-engineering/module-2.3-redundancy-and-fault-tolerance
 sidebar:
   order: 4
   label: "Reliability Engineering"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 35-40 minutes
 >
-> **Prerequisites**: [Module 2.2: Failure Modes and Effects](module-2.2-failure-modes-and-effects.md)
+> **Prerequisites**: [Module 2.2: Failure Modes and Effects](module-2.2-failure-modes-and-effects/)
 >
 > **Track**: Foundations
 
@@ -1489,4 +1490,4 @@ Simpler redundancy, tested regularly > Complex redundancy, never tested
 
 ## Next Module
 
-[Module 2.4: Measuring and Improving Reliability](module-2.4-measuring-and-improving-reliability.md) - SLIs, SLOs, and the practice of continuous reliability improvement.
+[Module 2.4: Measuring and Improving Reliability](module-2.4-measuring-and-improving-reliability/) - SLIs, SLOs, and the practice of continuous reliability improvement.

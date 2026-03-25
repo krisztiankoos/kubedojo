@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 3 hours
 >
-> **Prerequisites**: [Module 5: Disaster Recovery](module-5-disaster-recovery.md), understanding of distributed systems basics (CAP theorem)
+> **Prerequisites**: [Module 5: Disaster Recovery](module-5-disaster-recovery/), understanding of distributed systems basics (CAP theorem)
 >
 > **Track**: Advanced Cloud Operations
 
@@ -1024,4 +1024,4 @@ Break-even analysis:
 
 ## Next Module
 
-[Module 7: Stateful Workload Migration & Data Gravity](module-7-stateful-migration.md) -- You know how to run workloads across regions. Now learn how to move them. Database migrations, the Strangler Fig pattern, CSI snapshots, and the art of zero-downtime migration for stateful workloads.
+[Module 7: Stateful Workload Migration & Data Gravity](module-7-stateful-migration/) -- You know how to run workloads across regions. Now learn how to move them. Database migrations, the Strangler Fig pattern, CSI snapshots, and the art of zero-downtime migration for stateful workloads.

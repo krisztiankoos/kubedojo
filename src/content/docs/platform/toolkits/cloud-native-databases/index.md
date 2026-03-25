@@ -10,7 +10,7 @@ sidebar:
 
 The Cloud-Native Databases Toolkit covers running databases on Kubernetes—something that went from "don't do it" to "actually, it's great now" in just a few years. Modern operators, distributed architectures, and serverless models have made stateful workloads on Kubernetes not just viable, but often preferable to traditional deployments.
 
-This toolkit applies concepts from [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) and [Reliability Engineering Foundation](../../foundations/reliability-engineering/index.md).
+This toolkit applies concepts from [Distributed Systems Foundation](../../foundations/distributed-systems/) and [Reliability Engineering Foundation](../../foundations/reliability-engineering/).
 
 ## Prerequisites
 
@@ -18,18 +18,18 @@ Before starting this toolkit:
 - Solid Kubernetes fundamentals (StatefulSets, PVCs, Services)
 - Basic SQL and database concepts
 - Understanding of replication and high availability
-- [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) - Consensus, consistency
-- [Reliability Engineering Foundation](../../foundations/reliability-engineering/index.md) - SLOs, failure modes
+- [Distributed Systems Foundation](../../foundations/distributed-systems/) - Consensus, consistency
+- [Reliability Engineering Foundation](../../foundations/reliability-engineering/) - SLOs, failure modes
 
 ## Modules
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 15.1 | [CockroachDB](module-15.1-cockroachdb.md) | `[COMPLEX]` | 55-65 min |
-| 15.2 | [CloudNativePG](module-15.2-cloudnativepg.md) | `[MEDIUM]` | 45-50 min |
-| 15.3 | [Neon & PlanetScale](module-15.3-serverless-databases.md) | `[MEDIUM]` | 40-45 min |
-| 15.4 | [Vitess](module-15.4-vitess.md) | `[COMPLEX]` | 50-55 min |
-| 15.5 | [etcd-operator](module-15.5-etcd-operator.md) | `[MEDIUM]` | 40-45 min |
+| 15.1 | [CockroachDB](module-15.1-cockroachdb/) | `[COMPLEX]` | 55-65 min |
+| 15.2 | [CloudNativePG](module-15.2-cloudnativepg/) | `[MEDIUM]` | 45-50 min |
+| 15.3 | [Neon & PlanetScale](module-15.3-serverless-databases/) | `[MEDIUM]` | 40-45 min |
+| 15.4 | [Vitess](module-15.4-vitess/) | `[COMPLEX]` | 50-55 min |
+| 15.5 | [etcd-operator](module-15.5-etcd-operator/) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -472,11 +472,11 @@ WHEN MANAGED/SERVERLESS WINS:
 
 ## Related Tracks
 
-- **Before**: [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) — Consensus, consistency
-- **Before**: [Reliability Engineering Foundation](../../foundations/reliability-engineering/index.md) — SLOs, failure modes
-- **Related**: [Observability Toolkit](../observability/index.md) — Database monitoring
-- **Related**: [GitOps & Deployments](../gitops-deployments/index.md) — Database GitOps
-- **Related**: [Security Tools](../security-tools/index.md) — Database encryption, access control
+- **Before**: [Distributed Systems Foundation](../../foundations/distributed-systems/) — Consensus, consistency
+- **Before**: [Reliability Engineering Foundation](../../foundations/reliability-engineering/) — SLOs, failure modes
+- **Related**: [Observability Toolkit](../observability/) — Database monitoring
+- **Related**: [GitOps & Deployments](../gitops-deployments/) — Database GitOps
+- **Related**: [Security Tools](../security-tools/) — Database encryption, access control
 
 ---
 

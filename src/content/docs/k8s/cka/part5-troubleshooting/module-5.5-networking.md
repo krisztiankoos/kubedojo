@@ -1,5 +1,6 @@
 ---
 title: "Module 5.5: Network Troubleshooting"
+slug: k8s/cka/part5-troubleshooting/module-5.5-networking
 sidebar:
   order: 6
   label: "Part 5: Troubleshooting"
@@ -785,4 +786,4 @@ k get endpoints <service>              # Endpoints
 
 ## Next Module
 
-Continue to [Module 5.6: Service Troubleshooting](module-5.6-services.md) for a deeper dive into Service, Ingress, and LoadBalancer troubleshooting.
+Continue to [Module 5.6: Service Troubleshooting](module-5.6-services/) for a deeper dive into Service, Ingress, and LoadBalancer troubleshooting.

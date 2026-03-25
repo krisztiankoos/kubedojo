@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 2.5 hours
 >
-> **Prerequisites**: [Module 1: Multi-Account Architecture](module-1-multi-account.md), experience operating at least one Kubernetes cluster in production
+> **Prerequisites**: [Module 1: Multi-Account Architecture](module-1-multi-account/), experience operating at least one Kubernetes cluster in production
 >
 > **Track**: Advanced Cloud Operations
 
@@ -1000,4 +1000,4 @@ rm /tmp/velero-creds
 
 ## Next Module
 
-[Module 6: Multi-Region Active-Active Deployments](module-6-active-active.md) -- Disaster recovery is about surviving failure. Active-active is about eliminating downtime entirely. Learn how to run your Kubernetes workloads in multiple regions simultaneously, handle global state management, and deal with the cost and complexity trade-offs.
+[Module 6: Multi-Region Active-Active Deployments](module-6-active-active/) -- Disaster recovery is about surviving failure. Active-active is about eliminating downtime entirely. Learn how to run your Kubernetes workloads in multiple regions simultaneously, handle global state management, and deal with the cost and complexity trade-offs.

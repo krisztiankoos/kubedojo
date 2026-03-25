@@ -1,5 +1,6 @@
 ---
 title: "Module 0.10: Your First Server -- Putting It All Together"
+slug: prerequisites/zero-to-terminal/module-0.10-your-first-server
 sidebar:
   order: 11
   label: "Zero to Terminal"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 40-50 minutes
 >
-> **Prerequisites**: [Module 0.1](module-0.1-what-is-a-computer.md) through [Module 0.9](module-0.9-what-is-the-cloud.md) -- all of them
+> **Prerequisites**: [Module 0.1](module-0.1-what-is-a-computer/) through [Module 0.9](module-0.9-what-is-the-cloud/) -- all of them
 
 ---
 
@@ -453,7 +454,7 @@ The Linux track takes you inside the operating system itself -- the kernel, proc
 
 If you want to become a systems engineer, SRE, or anyone who manages infrastructure, this path makes you dangerous (in the best way).
 
-> Start here: [Linux Fundamentals](../../linux/index.md)
+> Start here: [Linux Fundamentals](../../linux/)
 
 ### Path B: Cloud Native
 
@@ -463,7 +464,7 @@ The Cloud Native track picks up right where you left off. You'll learn about con
 
 If you want to become a cloud engineer, DevOps engineer, or platform engineer, this is your path.
 
-> Start here: [Cloud Native 101](../cloud-native-101/module-1-what-are-containers.md)
+> Start here: [Cloud Native 101](../cloud-native-101/module-1-what-are-containers/)
 
 ### Path C: Both
 

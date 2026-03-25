@@ -492,4 +492,4 @@ rm deployment.yaml
 
 ## Next Module
 
-[Module 2: GitOps](module-2-gitops.md) - Using Git as the source of truth for infrastructure.
+[Module 2: GitOps](module-2-gitops/) - Using Git as the source of truth for infrastructure.

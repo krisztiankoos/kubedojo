@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: Pods"
+slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods
 sidebar:
   order: 6
   label: "Part 1: K8s Fundamentals"
@@ -379,4 +380,4 @@ spec:
 
 ## Next Module
 
-[Module 1.6: Workload Resources](module-1.6-workload-resources.md) - Deployments, ReplicaSets, and other controllers that manage Pods.
+[Module 1.6: Workload Resources](module-1.6-workload-resources/) - Deployments, ReplicaSets, and other controllers that manage Pods.

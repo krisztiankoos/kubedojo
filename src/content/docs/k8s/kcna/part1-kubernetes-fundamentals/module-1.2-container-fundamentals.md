@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Container Fundamentals"
+slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals
 sidebar:
   order: 3
   label: "Part 1: K8s Fundamentals"
@@ -380,4 +381,4 @@ Kubernetes doesn't run containers directly—it uses a **container runtime**:
 
 ## Next Module
 
-[Module 1.3: Kubernetes Architecture - Control Plane](module-1.3-control-plane.md) - Understanding the brain of Kubernetes.
+[Module 1.3: Kubernetes Architecture - Control Plane](module-1.3-control-plane/) - Understanding the brain of Kubernetes.

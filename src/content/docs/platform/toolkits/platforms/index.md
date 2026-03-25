@@ -10,12 +10,12 @@ sidebar:
 
 The Platforms Toolkit covers the building blocks of Internal Developer Platforms. Backstage provides the developer portal, Crossplane enables self-service infrastructure, and cert-manager automates TLS certificate management. Together, they form the foundation of a modern platform engineering stack.
 
-This toolkit applies concepts from [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md).
+This toolkit applies concepts from [Platform Engineering Discipline](../../disciplines/platform-engineering/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md)
+- [Platform Engineering Discipline](../../disciplines/platform-engineering/)
 - Kubernetes CRD concepts
 - Basic cloud provider knowledge
 - TLS/PKI fundamentals
@@ -24,12 +24,12 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 7.1 | [Backstage](module-7.1-backstage.md) | `[COMPLEX]` | 50-60 min |
-| 7.2 | [Crossplane](module-7.2-crossplane.md) | `[COMPLEX]` | 50-60 min |
-| 7.3 | [cert-manager](module-7.3-cert-manager.md) | `[MEDIUM]` | 40-45 min |
-| 3.4 | [Kubebuilder](module-3.4-kubebuilder.md) | `[COMPLEX]` | 55 min |
-| 3.5 | [Cluster API](module-3.5-cluster-api.md) | `[COMPLEX]` | 50 min |
-| 3.6 | [vCluster](module-3.6-vcluster.md) | `[MEDIUM]` | 40 min |
+| 7.1 | [Backstage](module-7.1-backstage/) | `[COMPLEX]` | 50-60 min |
+| 7.2 | [Crossplane](module-7.2-crossplane/) | `[COMPLEX]` | 50-60 min |
+| 7.3 | [cert-manager](module-7.3-cert-manager/) | `[MEDIUM]` | 40-45 min |
+| 3.4 | [Kubebuilder](module-3.4-kubebuilder/) | `[COMPLEX]` | 55 min |
+| 3.5 | [Cluster API](module-3.5-cluster-api/) | `[COMPLEX]` | 50 min |
+| 3.6 | [vCluster](module-3.6-vcluster/) | `[MEDIUM]` | 40 min |
 
 ## Learning Outcomes
 
@@ -55,7 +55,7 @@ WHICH PLATFORM TOOL?
 
 "I need self-service infrastructure for developers"
 └──▶ Crossplane
-     • Kubernetes-native IaC (see [IaC Discipline](../../disciplines/iac/index.md))
+     • Kubernetes-native IaC (see [IaC Discipline](../../disciplines/iac/))
      • Custom APIs with Compositions
      • GitOps-friendly
      • Multi-cloud
@@ -267,12 +267,12 @@ COMPLETE PLATFORM ARCHITECTURE
 
 ## Related Tracks
 
-- **Before**: [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md)
-- **Before**: [IaC Discipline](../../disciplines/iac/index.md) — Infrastructure as Code fundamentals
-- **Related**: [GitOps & Deployments](../gitops-deployments/index.md) — Deploy platform resources
-- **Related**: [Security Tools](../security-tools/index.md) — Secure the platform
-- **Related**: [IaC Tools](../iac-tools/index.md) — Terraform, OpenTofu, Pulumi hands-on
-- **After**: [Developer Experience](../developer-experience/index.md) — Day-to-day tools
+- **Before**: [Platform Engineering Discipline](../../disciplines/platform-engineering/)
+- **Before**: [IaC Discipline](../../disciplines/iac/) — Infrastructure as Code fundamentals
+- **Related**: [GitOps & Deployments](../gitops-deployments/) — Deploy platform resources
+- **Related**: [Security Tools](../security-tools/) — Secure the platform
+- **Related**: [IaC Tools](../iac-tools/) — Terraform, OpenTofu, Pulumi hands-on
+- **After**: [Developer Experience](../developer-experience/) — Day-to-day tools
 
 ---
 

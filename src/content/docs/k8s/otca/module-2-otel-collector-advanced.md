@@ -1222,4 +1222,4 @@ You should see:
 
 ---
 
-> **Next Module**: [OTCA Track Overview](index.md) — Instrument applications using OTel SDKs across multiple languages.
+> **Next Module**: [OTCA Track Overview]() — Instrument applications using OTel SDKs across multiple languages.

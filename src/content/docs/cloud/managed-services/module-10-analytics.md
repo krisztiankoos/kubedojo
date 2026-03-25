@@ -1030,4 +1030,4 @@ kind delete cluster --name analytics-lab
 
 ---
 
-**Next**: Return to the [Managed Services README](index.md) for the complete module index and learning path recommendations.
+**Next**: Return to the [Managed Services README]() for the complete module index and learning path recommendations.

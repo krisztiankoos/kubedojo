@@ -1,5 +1,6 @@
 ---
 title: "Module 0.1: CKS Exam Overview"
+slug: k8s/cks/part0-environment/module-0.1-cks-overview
 sidebar:
   order: 1
   label: "Part 0: Environment"
@@ -325,4 +326,4 @@ echo "- Missing audit logging"
 
 ## Next Module
 
-[Module 0.2: Security Lab Setup](module-0.2-security-lab.md) - Build your CKS practice environment with security tools.
+[Module 0.2: Security Lab Setup](module-0.2-security-lab/) - Build your CKS practice environment with security tools.

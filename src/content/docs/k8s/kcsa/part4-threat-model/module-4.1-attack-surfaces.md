@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: Attack Surfaces"
+slug: k8s/kcsa/part4-threat-model/module-4.1-attack-surfaces
 sidebar:
   order: 2
   label: "Part 4: Threat Model"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 3.5: Network Policies](../part3-security-fundamentals/module-3.5-network-policies.md)
+> **Prerequisites**: [Module 3.5: Network Policies](../part3-security-fundamentals/module-3.5-network-policies/)
 
 ---
 
@@ -424,4 +425,4 @@ Key principles:
 
 ## Next Module
 
-[Module 4.2: Common Vulnerabilities](module-4.2-vulnerabilities.md) - Understanding CVEs and misconfigurations in Kubernetes.
+[Module 4.2: Common Vulnerabilities](module-4.2-vulnerabilities/) - Understanding CVEs and misconfigurations in Kubernetes.

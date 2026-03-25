@@ -1,5 +1,6 @@
 ---
 title: "Module 3.5: Network Policies"
+slug: k8s/kcsa/part3-security-fundamentals/module-3.5-network-policies
 sidebar:
   order: 6
   label: "Part 3: Security Fundamentals"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 3.4: ServiceAccount Security](module-3.4-serviceaccounts.md)
+> **Prerequisites**: [Module 3.4: ServiceAccount Security](module-3.4-serviceaccounts/)
 
 ---
 
@@ -702,4 +703,4 @@ Best practices:
 
 ## Next Module
 
-[Module 4.1: Attack Surfaces](../part4-threat-model/module-4.1-attack-surfaces.md) - Understanding Kubernetes attack vectors.
+[Module 4.1: Attack Surfaces](../part4-threat-model/module-4.1-attack-surfaces/) - Understanding Kubernetes attack vectors.

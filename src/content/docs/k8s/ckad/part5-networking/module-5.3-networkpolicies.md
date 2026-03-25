@@ -1,5 +1,6 @@
 ---
 title: "Module 5.3: NetworkPolicies"
+slug: k8s/ckad/part5-networking/module-5.3-networkpolicies
 sidebar:
   order: 3
   label: "Part 5: Networking"
@@ -757,4 +758,4 @@ k delete ns drill6
 
 ## Next Module
 
-[Part 5 Cumulative Quiz](part5-cumulative-quiz.md) - Test your mastery of Services, Ingress, and NetworkPolicies.
+[Part 5 Cumulative Quiz](part5-cumulative-quiz/) - Test your mastery of Services, Ingress, and NetworkPolicies.

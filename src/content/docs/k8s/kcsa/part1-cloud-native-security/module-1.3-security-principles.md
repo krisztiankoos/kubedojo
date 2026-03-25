@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Security Principles"
+slug: k8s/kcsa/part1-cloud-native-security/module-1.3-security-principles
 sidebar:
   order: 4
   label: "Part 1: Cloud Native Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 1.2: Cloud Provider Security](module-1.2-cloud-provider-security.md)
+> **Prerequisites**: [Module 1.2: Cloud Provider Security](module-1.2-cloud-provider-security/)
 
 ---
 
@@ -481,4 +482,4 @@ Key concepts:
 
 ## Next Module
 
-[Module 2.1: Control Plane Security](../part2-cluster-component-security/module-2.1-control-plane-security.md) - Securing the Kubernetes control plane components.
+[Module 2.1: Control Plane Security](../part2-cluster-component-security/module-2.1-control-plane-security/) - Securing the Kubernetes control plane components.

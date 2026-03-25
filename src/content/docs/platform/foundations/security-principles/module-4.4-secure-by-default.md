@@ -1,5 +1,6 @@
 ---
 title: "Module 4.4: Secure by Default"
+slug: platform/foundations/security-principles/module-4.4-secure-by-default
 sidebar:
   order: 5
   label: "Security Principles"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 4.3: Identity and Access Management](module-4.3-identity-and-access.md)
+> **Prerequisites**: [Module 4.3: Identity and Access Management](module-4.3-identity-and-access/)
 >
 > **Track**: Foundations
 
@@ -1055,10 +1056,10 @@ Congratulations! You've completed the Security Principles foundation. You now un
 
 | Your Interest | Next Track |
 |---------------|------------|
-| Security in practice | [DevSecOps Discipline](../../disciplines/devsecops/index.md) |
-| Security tools | [Security Tools Toolkit](../../toolkits/security-tools/index.md) |
-| Kubernetes security | [CKS Certification](../../../k8s/cks/index.md) |
-| Foundations | [Distributed Systems](../distributed-systems/index.md) |
+| Security in practice | [DevSecOps Discipline](../../disciplines/devsecops/) |
+| Security tools | [Security Tools Toolkit](../../toolkits/security-tools/) |
+| Kubernetes security | [CKS Certification](../../../k8s/cks/) |
+| Foundations | [Distributed Systems](../distributed-systems/) |
 
 ---
 

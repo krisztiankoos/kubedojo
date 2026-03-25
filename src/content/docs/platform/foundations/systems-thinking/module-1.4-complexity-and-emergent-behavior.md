@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Complexity and Emergent Behavior"
+slug: platform/foundations/systems-thinking/module-1.4-complexity-and-emergent-behavior
 sidebar:
   order: 5
   label: "Systems Thinking"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 40-45 minutes
 >
-> **Prerequisites**: [Module 1.3: Mental Models for Operations](module-1.3-mental-models-for-operations.md)
+> **Prerequisites**: [Module 1.3: Mental Models for Operations](module-1.3-mental-models-for-operations/)
 >
 > **Track**: Foundations
 
@@ -1165,10 +1166,10 @@ Congratulations! You've completed the Systems Thinking foundation.
 
 | Your Interest | Next Track |
 |---------------|------------|
-| Building reliable systems | [Reliability Engineering](../reliability-engineering/index.md) |
-| Understanding system behavior | [Observability Theory](../observability-theory/index.md) |
-| Operating in production | [SRE Discipline](../../disciplines/sre/index.md) |
-| Designing for failure | [Distributed Systems](../distributed-systems/index.md) |
+| Building reliable systems | [Reliability Engineering](../reliability-engineering/) |
+| Understanding system behavior | [Observability Theory](../observability-theory/) |
+| Operating in production | [SRE Discipline](../../disciplines/sre/) |
+| Designing for failure | [Distributed Systems](../distributed-systems/) |
 
 ---
 

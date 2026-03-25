@@ -416,4 +416,4 @@ Key concepts:
 
 ## Next Module
 
-[Module 4: The Cloud Native Ecosystem](module-4-cloud-native-ecosystem.md) - Understanding the CNCF landscape and where Kubernetes fits.
+[Module 4: The Cloud Native Ecosystem](module-4-cloud-native-ecosystem/) - Understanding the CNCF landscape and where Kubernetes fits.

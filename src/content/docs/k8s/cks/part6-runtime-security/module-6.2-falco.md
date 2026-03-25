@@ -1,5 +1,6 @@
 ---
 title: "Module 6.2: Runtime Security with Falco"
+slug: k8s/cks/part6-runtime-security/module-6.2-falco
 sidebar:
   order: 2
   label: "Part 6: Runtime Security"
@@ -696,4 +697,4 @@ rm -f /tmp/custom-falco-rules.yaml /tmp/sample-falco-events.json
 
 ## Next Module
 
-[Module 6.3: Container Investigation](module-6.3-container-investigation.md) - Analyzing suspicious container behavior.
+[Module 6.3: Container Investigation](module-6.3-container-investigation/) - Analyzing suspicious container behavior.

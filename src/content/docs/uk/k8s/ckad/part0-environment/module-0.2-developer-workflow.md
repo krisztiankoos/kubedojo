@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.2: \u0420\u043e\u0431\u043e\u0447\u0438\u0439 \u043f\u0440\u043e\u0446\u0435\u0441 \u0440\u043e\u0437\u0440\u043e\u0431\u043d\u0438\u043a\u0430"
+slug: uk/k8s/ckad/part0-environment/module-0.2-developer-workflow
 sidebar:
   order: 2
   label: "Part 0: Environment"
@@ -562,4 +563,4 @@ k delete ns web-app
 
 ## Наступний модуль
 
-[Модуль 1.1: Образи контейнерів](../part1-design-build/module-1.1-container-images.md) — Збірка, тегування та пуш образів контейнерів для CKAD.
+[Модуль 1.1: Образи контейнерів](../part1-design-build/module-1.1-container-images/) — Збірка, тегування та пуш образів контейнерів для CKAD.

@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.7: \u041b\u043e\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u0442\u0430 \u043c\u043e\u043d\u0456\u0442\u043e\u0440\u0438\u043d\u0433"
+slug: uk/k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring
 sidebar:
   order: 8
   label: "Part 5: Troubleshooting"
@@ -872,4 +873,4 @@ k top pods -A --sort-by=memory | head
 
 ## Наступні кроки
 
-Переходьте до [Частина 6: Пробні іспити](../part6-mock-exams/index.md), щоб перевірити свої знання на реалістичних сценаріях іспиту.
+Переходьте до [Частина 6: Пробні іспити](../part6-mock-exams/), щоб перевірити свої знання на реалістичних сценаріях іспиту.

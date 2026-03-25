@@ -10,12 +10,12 @@ sidebar:
 
 The ML Platforms Toolkit covers the infrastructure for production machine learning on Kubernetes. From traditional ML pipelines with Kubeflow and MLflow to the LLM revolution with vLLM and LangChain—this toolkit provides the complete foundation for modern AI/ML infrastructure. Whether you're running batch training, serving real-time predictions, or building RAG applications, these tools form the backbone of production AI systems.
 
-This toolkit applies concepts from [MLOps Discipline](../../disciplines/mlops/index.md).
+This toolkit applies concepts from [MLOps Discipline](../../disciplines/mlops/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [MLOps Discipline](../../disciplines/mlops/index.md)
+- [MLOps Discipline](../../disciplines/mlops/)
 - Kubernetes fundamentals
 - Basic ML concepts (training, inference)
 - Python familiarity
@@ -24,13 +24,13 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 9.1 | [Kubeflow](module-9.1-kubeflow.md) | `[COMPLEX]` | 50-60 min |
-| 9.2 | [MLflow](module-9.2-mlflow.md) | `[MEDIUM]` | 40-45 min |
-| 9.3 | [Feature Stores](module-9.3-feature-stores.md) | `[MEDIUM]` | 40-45 min |
-| 9.4 | [vLLM](module-9.4-vllm.md) | `[COMPLEX]` | 50-60 min |
-| 9.5 | [Ray Serve](module-9.5-ray-serve.md) | `[COMPLEX]` | 50-60 min |
-| 9.6 | [LangChain & LlamaIndex](module-9.6-langchain-llamaindex.md) | `[COMPLEX]` | 50-60 min |
-| 9.7 | [GPU Scheduling](module-9.7-gpu-scheduling.md) | `[COMPLEX]` | 50 min |
+| 9.1 | [Kubeflow](module-9.1-kubeflow/) | `[COMPLEX]` | 50-60 min |
+| 9.2 | [MLflow](module-9.2-mlflow/) | `[MEDIUM]` | 40-45 min |
+| 9.3 | [Feature Stores](module-9.3-feature-stores/) | `[MEDIUM]` | 40-45 min |
+| 9.4 | [vLLM](module-9.4-vllm/) | `[COMPLEX]` | 50-60 min |
+| 9.5 | [Ray Serve](module-9.5-ray-serve/) | `[COMPLEX]` | 50-60 min |
+| 9.6 | [LangChain & LlamaIndex](module-9.6-langchain-llamaindex/) | `[COMPLEX]` | 50-60 min |
+| 9.7 | [GPU Scheduling](module-9.7-gpu-scheduling/) | `[COMPLEX]` | 50 min |
 
 ## Learning Outcomes
 
@@ -412,12 +412,12 @@ RECOMMENDATION: Use all three together
 
 ## Related Tracks
 
-- **Before**: [MLOps Discipline](../../disciplines/mlops/index.md) — MLOps concepts and practices
-- **Related**: [IaC Discipline](../../disciplines/iac/index.md) — Infrastructure provisioning for ML platforms
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Terraform modules for ML infrastructure
-- **Related**: [Observability Toolkit](../observability/index.md) — Monitor ML systems
-- **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/index.md) — Deploy ML infrastructure
-- **Related**: [Scaling & Reliability Toolkit](../scaling-reliability/index.md) — Scale ML workloads
+- **Before**: [MLOps Discipline](../../disciplines/mlops/) — MLOps concepts and practices
+- **Related**: [IaC Discipline](../../disciplines/iac/) — Infrastructure provisioning for ML platforms
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for ML infrastructure
+- **Related**: [Observability Toolkit](../observability/) — Monitor ML systems
+- **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deploy ML infrastructure
+- **Related**: [Scaling & Reliability Toolkit](../scaling-reliability/) — Scale ML workloads
 
 ---
 

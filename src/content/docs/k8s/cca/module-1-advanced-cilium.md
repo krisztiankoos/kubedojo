@@ -8,8 +8,8 @@ sidebar:
 
 ## Prerequisites
 
-- [Cilium Toolkit Module](../../platform/toolkits/networking/module-5.1-cilium.md) -- eBPF fundamentals, basic Cilium architecture, identity-based security
-- [Hubble Toolkit Module](../../platform/toolkits/observability/module-1.7-hubble.md) -- Hubble CLI, flow observation
+- [Cilium Toolkit Module](../../platform/toolkits/networking/module-5.1-cilium/) -- eBPF fundamentals, basic Cilium architecture, identity-based security
+- [Hubble Toolkit Module](../../platform/toolkits/observability/module-1.7-hubble/) -- Hubble CLI, flow observation
 - Kubernetes networking basics (Services, Pods, DNS)
 - Comfort with `kubectl` and YAML
 
@@ -1199,7 +1199,7 @@ rm cluster-a.yaml cluster-b.yaml
 
 ## Next Module
 
-Return to the [CCA Learning Path](index.md) to review other exam domains and identify any remaining study areas.
+Return to the [CCA Learning Path]() to review other exam domains and identify any remaining study areas.
 
 ---
 

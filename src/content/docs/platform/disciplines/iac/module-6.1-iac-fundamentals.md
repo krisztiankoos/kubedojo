@@ -1,5 +1,6 @@
 ---
 title: "Module 6.1: IaC Fundamentals & Maturity Model"
+slug: platform/disciplines/iac/module-6.1-iac-fundamentals
 sidebar:
   order: 2
   label: "Infrastructure as Code"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 35-40 minutes
 >
-> **Prerequisites**: [Module 1: Infrastructure as Code](../../../prerequisites/modern-devops/module-1-infrastructure-as-code.md)
+> **Prerequisites**: [Module 1: Infrastructure as Code](../../../prerequisites/modern-devops/module-1-infrastructure-as-code/)
 >
 > **Track**: Platform Engineering - IaC Discipline
 
@@ -1125,4 +1126,4 @@ Before moving on, ensure you understand:
 
 ## Next Module
 
-[Module 6.2: IaC Testing](module-6.2-iac-testing.md) - How to test infrastructure code before it reaches production.
+[Module 6.2: IaC Testing](module-6.2-iac-testing/) - How to test infrastructure code before it reaches production.

@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.2: \u041b\u043e\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440\u0456\u0432"
+slug: uk/k8s/ckad/part3-observability/module-3.2-logging
 sidebar:
   order: 2
   label: "Part 3: Observability"
@@ -544,4 +545,4 @@ k delete deploy drill6
 
 ## Наступний модуль
 
-[Модуль 3.3: Налагодження в Kubernetes](module-3.3-debugging.md) — Усунення несправностей подів, контейнерів та проблем кластера.
+[Модуль 3.3: Налагодження в Kubernetes](module-3.3-debugging/) — Усунення несправностей подів, контейнерів та проблем кластера.

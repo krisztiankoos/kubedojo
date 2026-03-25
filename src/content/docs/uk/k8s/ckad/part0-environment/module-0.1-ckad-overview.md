@@ -1,5 +1,6 @@
 ---
 title: "Jobs and CronJobs"
+slug: uk/k8s/ckad/part0-environment/module-0.1-ckad-overview
 sidebar:
   order: 1
   label: "Part 0: Environment"
@@ -494,5 +495,5 @@ k delete pod probed-app
 
 ## Наступний модуль
 
-[Модуль 0.2: Робочий процес розробника](module-0.2-developer-workflow.md) — Оптимізуйте свої шаблони kubectl для швидкості на CKAD.
+[Модуль 0.2: Робочий процес розробника](module-0.2-developer-workflow/) — Оптимізуйте свої шаблони kubectl для швидкості на CKAD.
 

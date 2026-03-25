@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Mental Models for Operations"
+slug: platform/foundations/systems-thinking/module-1.3-mental-models-for-operations
 sidebar:
   order: 4
   label: "Systems Thinking"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 35-40 minutes
 >
-> **Prerequisites**: [Module 1.2: Feedback Loops](module-1.2-feedback-loops.md)
+> **Prerequisites**: [Module 1.2: Feedback Loops](module-1.2-feedback-loops/)
 >
 > **Track**: Foundations
 
@@ -1144,4 +1145,4 @@ For "cascading failures during traffic spikes," list interventions:
 
 ## Next Module
 
-[Module 1.4: Complexity and Emergent Behavior](module-1.4-complexity-and-emergent-behavior.md) - The Cynefin framework for decision-making, why complex systems fail unpredictably, and how to design for resilience in environments you can't fully understand.
+[Module 1.4: Complexity and Emergent Behavior](module-1.4-complexity-and-emergent-behavior/) - The Cynefin framework for decision-making, why complex systems fail unpredictably, and how to design for resilience in environments you can't fully understand.

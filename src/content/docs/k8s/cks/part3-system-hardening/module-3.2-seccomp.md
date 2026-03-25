@@ -1,5 +1,6 @@
 ---
 title: "Module 3.2: Seccomp Profiles"
+slug: k8s/cks/part3-system-hardening/module-3.2-seccomp
 sidebar:
   order: 2
   label: "Part 3: System Hardening"
@@ -559,4 +560,4 @@ kubectl delete pod no-ptrace-pod
 
 ## Next Module
 
-[Module 3.3: Linux Kernel Hardening](module-3.3-kernel-hardening.md) - Reducing OS attack surface.
+[Module 3.3: Linux Kernel Hardening](module-3.3-kernel-hardening/) - Reducing OS attack surface.

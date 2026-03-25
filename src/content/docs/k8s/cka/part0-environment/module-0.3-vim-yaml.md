@@ -1,5 +1,6 @@
 ---
 title: "Module 0.3: Vim for YAML"
+slug: k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:
   order: 3
   label: "Part 0: Environment"
@@ -713,4 +714,4 @@ Compare your time with vim. Use whichever is faster for you.
 
 ## Next Module
 
-[Module 0.4: kubernetes.io Navigation](module-0.4-k8s-docs.md) - Finding documentation fast during the exam.
+[Module 0.4: kubernetes.io Navigation](module-0.4-k8s-docs/) - Finding documentation fast during the exam.

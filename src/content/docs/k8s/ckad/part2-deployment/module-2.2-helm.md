@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: Helm Package Manager"
+slug: k8s/ckad/part2-deployment/module-2.2-helm
 sidebar:
   order: 2
   label: "Part 2: Deployment"
@@ -638,4 +639,4 @@ helm uninstall prod-web
 
 ## Next Module
 
-[Module 2.3: Kustomize](module-2.3-kustomize.md) - Customize Kubernetes resources without templates.
+[Module 2.3: Kustomize](module-2.3-kustomize/) - Customize Kubernetes resources without templates.

@@ -1,5 +1,6 @@
 ---
 title: "Module 5.5: Model Monitoring & Observability"
+slug: platform/disciplines/mlops/module-5.5-model-monitoring
 sidebar:
   order: 6
   label: "MLOps"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 5.4: Model Serving & Inference](module-5.4-model-serving.md)
-- [Observability Theory Track](../../foundations/observability-theory/index.md) (recommended)
+- [Module 5.4: Model Serving & Inference](module-5.4-model-serving/)
+- [Observability Theory Track](../../foundations/observability-theory/) (recommended)
 - Understanding of statistical distributions
 - Basic Prometheus/Grafana knowledge
 
@@ -852,4 +853,4 @@ Model monitoring goes beyond infrastructure observability. You need to track dat
 
 ## Next Module
 
-Continue to [Module 5.6: ML Pipelines & Automation](module-5.6-ml-pipelines.md) to learn how to automate the entire ML lifecycle.
+Continue to [Module 5.6: ML Pipelines & Automation](module-5.6-ml-pipelines/) to learn how to automate the entire ML lifecycle.

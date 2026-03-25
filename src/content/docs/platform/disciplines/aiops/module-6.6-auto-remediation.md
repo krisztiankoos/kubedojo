@@ -1,5 +1,6 @@
 ---
 title: "Module 6.6: Auto-Remediation"
+slug: platform/disciplines/aiops/module-6.6-auto-remediation
 sidebar:
   order: 7
   label: "AIOps"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 6.4: Root Cause Analysis](module-6.4-root-cause-analysis.md) — Understanding probable causes
-- [Module 6.5: Predictive Operations](module-6.5-predictive-operations.md) — Proactive detection
+- [Module 6.4: Root Cause Analysis](module-6.4-root-cause-analysis/) — Understanding probable causes
+- [Module 6.5: Predictive Operations](module-6.5-predictive-operations/) — Proactive detection
 - Familiarity with runbook automation concepts
 - Understanding of Kubernetes basics (for exercises)
 
@@ -1097,7 +1098,7 @@ Congratulations on completing the AIOps Discipline track. You now have the knowl
 6. Build safe auto-remediation with proper guardrails
 
 **Next Steps**:
-- [AIOps Tools Toolkit](../../toolkits/aiops-tools/index.md) — Hands-on with Prophet, BigPanda, Datadog
+- [AIOps Tools Toolkit](../../toolkits/aiops-tools/) — Hands-on with Prophet, BigPanda, Datadog
 - Apply these concepts in your organization
 - Start with anomaly detection and correlation (biggest immediate value)
 - Build auto-remediation gradually, with safety first

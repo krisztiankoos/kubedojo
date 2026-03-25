@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: Services Deep-Dive"
+slug: k8s/cka/part3-services-networking/module-3.1-services
 sidebar:
   order: 2
   label: "Part 3: Services & Networking"
@@ -1030,4 +1031,4 @@ k delete svc challenge-app
 
 ## Next Module
 
-[Module 3.2: Endpoints & EndpointSlices](module-3.2-endpoints.md) - Deep-dive into how services track pods.
+[Module 3.2: Endpoints & EndpointSlices](module-3.2-endpoints/) - Deep-dive into how services track pods.

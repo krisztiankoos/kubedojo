@@ -1,5 +1,6 @@
 ---
 title: "Module 5.3: Control Plane Failures"
+slug: k8s/cka/part5-troubleshooting/module-5.3-control-plane
 sidebar:
   order: 4
   label: "Part 5: Troubleshooting"
@@ -776,4 +777,4 @@ curl -k https://localhost:6443/healthz
 
 ## Next Module
 
-Continue to [Module 5.4: Worker Node Failures](module-5.4-worker-nodes.md) to learn how to troubleshoot kubelet, container runtime, and node-level issues.
+Continue to [Module 5.4: Worker Node Failures](module-5.4-worker-nodes/) to learn how to troubleshoot kubelet, container runtime, and node-level issues.

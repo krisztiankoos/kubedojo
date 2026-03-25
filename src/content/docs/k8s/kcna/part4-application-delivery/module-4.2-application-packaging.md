@@ -1,5 +1,6 @@
 ---
 title: "Module 4.2: Application Packaging"
+slug: k8s/kcna/part4-application-delivery/module-4.2-application-packaging
 sidebar:
   order: 3
   label: "Part 4: Application Delivery"

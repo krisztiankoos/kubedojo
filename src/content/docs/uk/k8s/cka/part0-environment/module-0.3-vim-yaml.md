@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.3: Vim \u0434\u043b\u044f YAML"
+slug: uk/k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:
   order: 3
   label: "Part 0: Environment"
@@ -713,4 +714,4 @@ rm speed-test.yaml
 
 ## Наступний модуль
 
-[Модуль 0.4: Навігація по kubernetes.io](module-0.4-k8s-docs.md) — Як швидко знаходити документацію під час іспиту.
+[Модуль 0.4: Навігація по kubernetes.io](module-0.4-k8s-docs/) — Як швидко знаходити документацію під час іспиту.

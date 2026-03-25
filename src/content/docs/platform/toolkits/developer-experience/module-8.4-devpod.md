@@ -1,5 +1,6 @@
 ---
 title: "Module 8.4: DevPod - Open Source Dev Environments"
+slug: platform/toolkits/developer-experience/module-8.4-devpod
 sidebar:
   order: 5
   label: "Developer Experience"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 8.3: Local Kubernetes](module-8.3-local-kubernetes.md)
+- [Module 8.3: Local Kubernetes](module-8.3-local-kubernetes/)
 - Container fundamentals (Docker)
 - Basic understanding of Dev Containers specification
 - SSH basics
@@ -1003,9 +1004,9 @@ Use Kubernetes when:
 
 ## Next Steps
 
-- **Next Module**: [Module 8.5: Gitpod & Codespaces](module-8.5-gitpod-codespaces.md) - Cloud alternatives
-- **Related**: [Module 8.3: Local Kubernetes](module-8.3-local-kubernetes.md) - Local K8s for DevPod
-- **Related**: [Platform Engineering](../../disciplines/platform-engineering/index.md) - Building developer platforms
+- **Next Module**: [Module 8.5: Gitpod & Codespaces](module-8.5-gitpod-codespaces/) - Cloud alternatives
+- **Related**: [Module 8.3: Local Kubernetes](module-8.3-local-kubernetes/) - Local K8s for DevPod
+- **Related**: [Platform Engineering](../../disciplines/platform-engineering/) - Building developer platforms
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Deployment Strategies"
+slug: k8s/ckad/part2-deployment/module-2.4-deployment-strategies
 sidebar:
   order: 4
   label: "Part 2: Deployment"
@@ -928,4 +929,4 @@ k delete svc production
 
 ## Next Module
 
-[Part 2 Cumulative Quiz](part2-cumulative-quiz.md) - Test your Application Deployment knowledge.
+[Part 2 Cumulative Quiz](part2-cumulative-quiz/) - Test your Application Deployment knowledge.

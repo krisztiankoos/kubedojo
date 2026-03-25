@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: API Server Security"
+slug: k8s/cks/part2-cluster-hardening/module-2.3-api-server-security
 sidebar:
   order: 3
   label: "Part 2: Cluster Hardening"
@@ -547,4 +548,4 @@ rm /tmp/apiserver.yaml
 
 ## Next Module
 
-[Module 2.4: Kubernetes Upgrades](module-2.4-kubernetes-upgrades.md) - Security considerations for cluster upgrades.
+[Module 2.4: Kubernetes Upgrades](module-2.4-kubernetes-upgrades/) - Security considerations for cluster upgrades.

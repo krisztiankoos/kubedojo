@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: What is SRE?"
+slug: platform/disciplines/sre/module-1.1-what-is-sre
 sidebar:
   order: 2
   label: "SRE"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Reliability Engineering Track](../../foundations/reliability-engineering/index.md) — Understanding failure and resilience
-- **Required**: [Systems Thinking Track](../../foundations/systems-thinking/index.md) — See systems as wholes
+- **Required**: [Reliability Engineering Track](../../foundations/reliability-engineering/) — Understanding failure and resilience
+- **Required**: [Systems Thinking Track](../../foundations/systems-thinking/) — See systems as wholes
 - **Recommended**: Some experience operating production systems
 - **Recommended**: Understanding of software development lifecycle
 
@@ -560,7 +561,7 @@ SRE isn't about perfection — it's about being **reliably good enough** while s
 
 ## Next Module
 
-Continue to [Module 1.2: Service Level Objectives (SLOs)](module-1.2-slos.md) to learn how to define and measure reliability targets.
+Continue to [Module 1.2: Service Level Objectives (SLOs)](module-1.2-slos/) to learn how to define and measure reliability targets.
 
 ---
 

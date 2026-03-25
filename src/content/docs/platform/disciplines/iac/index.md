@@ -15,20 +15,20 @@ This isn't about learning a specific tool—it's about understanding the pattern
 ## Prerequisites
 
 Before starting this track:
-- [Prerequisites: Infrastructure as Code](../../../prerequisites/modern-devops/module-1-infrastructure-as-code.md) — Basic IaC concepts
-- [Systems Thinking](../../foundations/systems-thinking/index.md) — Understanding complex systems
+- [Prerequisites: Infrastructure as Code](../../../prerequisites/modern-devops/module-1-infrastructure-as-code/) — Basic IaC concepts
+- [Systems Thinking](../../foundations/systems-thinking/) — Understanding complex systems
 - Basic cloud provider knowledge (any cloud)
 
 ## Modules
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 6.1 | [IaC Fundamentals & Maturity Model](module-6.1-iac-fundamentals.md) | `[MEDIUM]` | 35-40 min |
-| 6.2 | [IaC Testing Strategies](module-6.2-iac-testing.md) | `[COMPLEX]` | 40-45 min |
-| 6.3 | [IaC Security](module-6.3-iac-security.md) | `[COMPLEX]` | 40-45 min |
-| 6.4 | [IaC at Scale](module-6.4-iac-at-scale.md) | `[COMPLEX]` | 45-50 min |
-| 6.5 | [Drift Detection & Remediation](module-6.5-drift-remediation.md) | `[MEDIUM]` | 35-40 min |
-| 6.6 | [IaC Cost Management](module-6.6-iac-cost-management.md) | `[MEDIUM]` | 35-40 min |
+| 6.1 | [IaC Fundamentals & Maturity Model](module-6.1-iac-fundamentals/) | `[MEDIUM]` | 35-40 min |
+| 6.2 | [IaC Testing Strategies](module-6.2-iac-testing/) | `[COMPLEX]` | 40-45 min |
+| 6.3 | [IaC Security](module-6.3-iac-security/) | `[COMPLEX]` | 40-45 min |
+| 6.4 | [IaC at Scale](module-6.4-iac-at-scale/) | `[COMPLEX]` | 45-50 min |
+| 6.5 | [Drift Detection & Remediation](module-6.5-drift-remediation/) | `[MEDIUM]` | 35-40 min |
+| 6.6 | [IaC Cost Management](module-6.6-iac-cost-management/) | `[MEDIUM]` | 35-40 min |
 
 ## Learning Outcomes
 
@@ -120,7 +120,7 @@ Module 6.6: IaC Cost Management
 
 ## Tools Covered (Conceptually)
 
-This track covers **concepts** that apply across tools. For hands-on tool implementations, see the [IaC Tools Toolkit](../../toolkits/iac-tools/index.md).
+This track covers **concepts** that apply across tools. For hands-on tool implementations, see the [IaC Tools Toolkit](../../toolkits/iac-tools/).
 
 | Category | Examples |
 |----------|----------|
@@ -132,12 +132,12 @@ This track covers **concepts** that apply across tools. For hands-on tool implem
 
 ## Related Tracks
 
-- **Before**: [Systems Thinking](../../foundations/systems-thinking/index.md) — Complex systems fundamentals
-- **Before**: [Security Principles](../../foundations/security-principles/index.md) — Security foundations for IaC Security module
-- **Related**: [Platform Engineering](../platform-engineering/index.md) — IaC is core to self-service platforms
-- **Related**: [DevSecOps](../devsecops/index.md) — Security in IaC pipelines
-- **Related**: [GitOps](../gitops/index.md) — GitOps for infrastructure delivery
-- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/index.md) — Terraform, OpenTofu, Pulumi hands-on
+- **Before**: [Systems Thinking](../../foundations/systems-thinking/) — Complex systems fundamentals
+- **Before**: [Security Principles](../../foundations/security-principles/) — Security foundations for IaC Security module
+- **Related**: [Platform Engineering](../platform-engineering/) — IaC is core to self-service platforms
+- **Related**: [DevSecOps](../devsecops/) — Security in IaC pipelines
+- **Related**: [GitOps](../gitops/) — GitOps for infrastructure delivery
+- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/) — Terraform, OpenTofu, Pulumi hands-on
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 6.1: AIOps Foundations"
+slug: platform/disciplines/aiops/module-6.1-aiops-foundations
 sidebar:
   order: 2
   label: "AIOps"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Observability Theory](../../foundations/observability-theory/index.md) — Understanding of metrics, logs, traces
-- [SRE Fundamentals](../sre/module-1.1-what-is-sre.md) — Incident management basics
+- [Observability Theory](../../foundations/observability-theory/) — Understanding of metrics, logs, traces
+- [SRE Fundamentals](../sre/module-1.1-what-is-sre/) — Incident management basics
 - Basic understanding of machine learning concepts
 
 ## Why This Module Matters
@@ -618,4 +619,4 @@ Success requires good data foundations, realistic expectations, and incremental 
 
 ## Next Module
 
-Continue to [Module 6.2: Anomaly Detection](module-6.2-anomaly-detection.md) to learn statistical and ML approaches for finding problems without predefined thresholds.
+Continue to [Module 6.2: Anomaly Detection](module-6.2-anomaly-detection/) to learn statistical and ML approaches for finding problems without predefined thresholds.

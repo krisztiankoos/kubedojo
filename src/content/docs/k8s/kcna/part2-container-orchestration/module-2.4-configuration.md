@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Configuration"
+slug: k8s/kcna/part2-container-orchestration/module-2.4-configuration
 sidebar:
   order: 5
   label: "Part 2: Container Orchestration"
@@ -390,4 +391,4 @@ You've finished **Container Orchestration** (22% of the exam). You now understan
 - Storage with PVs, PVCs, and StorageClasses
 - Configuration with ConfigMaps and Secrets
 
-**Next Part**: [Part 3: Cloud Native Architecture](../part3-cloud-native-architecture/module-3.1-cloud-native-principles.md) - Understanding cloud native design patterns and the CNCF ecosystem.
+**Next Part**: [Part 3: Cloud Native Architecture](../part3-cloud-native-architecture/module-3.1-cloud-native-principles/) - Understanding cloud native design patterns and the CNCF ecosystem.

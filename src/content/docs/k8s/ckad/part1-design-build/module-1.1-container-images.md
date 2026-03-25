@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Container Images"
+slug: k8s/ckad/part1-design-build/module-1.1-container-images
 sidebar:
   order: 1
   label: "Part 1: Design & Build"
@@ -657,4 +658,4 @@ k delete deploy webapp
 
 ## Next Module
 
-[Module 1.2: Jobs and CronJobs](module-1.2-jobs-cronjobs.md) - Run one-time and scheduled batch workloads.
+[Module 1.2: Jobs and CronJobs](module-1.2-jobs-cronjobs/) - Run one-time and scheduled batch workloads.

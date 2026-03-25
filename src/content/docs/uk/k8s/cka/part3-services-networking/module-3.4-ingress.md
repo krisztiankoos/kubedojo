@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.4: \u0406\u043d\u0433\u0440\u0435\u0441"
+slug: uk/k8s/cka/part3-services-networking/module-3.4-ingress
 sidebar:
   order: 5
   label: "Part 3: Services & Networking"
@@ -1152,4 +1153,4 @@ rm tls.key tls.crt
 
 ## Наступний модуль
 
-[Модуль 3.5: Gateway API](module-3.5-gateway-api.md) — Наступне покоління Kubernetes Інгресу.
+[Модуль 3.5: Gateway API](module-3.5-gateway-api/) — Наступне покоління Kubernetes Інгресу.

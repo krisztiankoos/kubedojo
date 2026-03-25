@@ -1,5 +1,6 @@
 ---
 title: "Module 11.1: GitLab - The Complete DevOps Platform"
+slug: platform/toolkits/source-control/module-11.1-gitlab
 sidebar:
   order: 2
   label: "Source Control"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - CI/CD and security concepts
-- [GitOps Discipline](../../disciplines/gitops/index.md) - Git-centric workflows
+- [DevSecOps Discipline](../../disciplines/devsecops/) - CI/CD and security concepts
+- [GitOps Discipline](../../disciplines/gitops/) - Git-centric workflows
 - Basic Docker/Kubernetes experience
 - Git fundamentals (branches, merges, remotes)
 
@@ -1294,4 +1295,4 @@ git push origin main
 
 ## Next Module
 
-Continue to [Module 11.2: Gitea & Forgejo](module-11.2-gitea-forgejo.md) to learn about lightweight, self-hosted Git alternatives that run in a fraction of GitLab's resources.
+Continue to [Module 11.2: Gitea & Forgejo](module-11.2-gitea-forgejo/) to learn about lightweight, self-hosted Git alternatives that run in a fraction of GitLab's resources.

@@ -183,4 +183,4 @@ If you missed questions, review these specific sections:
 
 When you score 16/20 or higher:
 
-→ Continue to [Part 1: Cluster Architecture](../part1-cluster-architecture/index.md)
+→ Continue to [Part 1: Cluster Architecture](../part1-cluster-architecture/)

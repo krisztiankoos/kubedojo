@@ -1,5 +1,6 @@
 ---
 title: "Module 4.4: Volume Snapshots & Cloning"
+slug: k8s/cka/part4-storage/module-4.4-snapshots
 sidebar:
   order: 5
   label: "Part 4: Storage"
@@ -714,4 +715,4 @@ k get volumesnapshot <name> -o jsonpath='{.status.boundVolumeSnapshotContentName
 
 ## Next Module
 
-Continue to [Module 4.5: Storage Troubleshooting](module-4.5-troubleshooting.md) to learn how to diagnose and fix common storage problems.
+Continue to [Module 4.5: Storage Troubleshooting](module-4.5-troubleshooting/) to learn how to diagnose and fix common storage problems.

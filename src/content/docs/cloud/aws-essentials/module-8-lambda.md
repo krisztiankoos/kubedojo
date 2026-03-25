@@ -12,8 +12,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 1: IAM & Security Foundations](module-1-iam.md)
-- [Module 4: S3 & Storage Fundamentals](module-4-s3.md)
+- [Module 1: IAM & Security Foundations](module-1-iam/)
+- [Module 4: S3 & Storage Fundamentals](module-4-s3/)
 - Basic Python or Node.js knowledge (Lambda examples use Python)
 - AWS CLI configured with appropriate permissions
 
@@ -1099,4 +1099,4 @@ echo "Cleanup complete"
 
 ## Next Module
 
-Next up: **[Module 9: Secrets Manager](module-9-secrets.md)** -- Learn to manage sensitive configuration data (database credentials, API keys, certificates) securely with automatic rotation, cross-account sharing, and integration with Lambda, ECS, and EKS.
+Next up: **[Module 9: Secrets Manager](module-9-secrets/)** -- Learn to manage sensitive configuration data (database credentials, API keys, certificates) securely with automatic rotation, cross-account sharing, and integration with Lambda, ECS, and EKS.

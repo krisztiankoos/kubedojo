@@ -875,4 +875,4 @@ echo "Cleanup complete."
 
 ## Next Module
 
-Next up: **[Module 9: Secret Manager](module-9-secret-manager.md)** --- Learn how to securely store and manage secrets, control access with IAM, version and rotate secrets, and integrate them with Cloud Run and Compute Engine.
+Next up: **[Module 9: Secret Manager](module-9-secret-manager/)** --- Learn how to securely store and manage secrets, control access with IAM, version and rotate secrets, and integrate them with Cloud Run and Compute Engine.

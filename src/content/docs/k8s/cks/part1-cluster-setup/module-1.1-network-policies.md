@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Network Policies Deep Dive"
+slug: k8s/cks/part1-cluster-setup/module-1.1-network-policies
 sidebar:
   order: 1
   label: "Part 1: Cluster Setup"
@@ -625,4 +626,4 @@ kubectl delete namespace exercise
 
 ## Next Module
 
-[Module 1.2: CIS Benchmarks](module-1.2-cis-benchmarks.md) - Auditing cluster security with kube-bench.
+[Module 1.2: CIS Benchmarks](module-1.2-cis-benchmarks/) - Auditing cluster security with kube-bench.

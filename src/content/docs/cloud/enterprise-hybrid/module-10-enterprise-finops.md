@@ -1054,4 +1054,4 @@ rm /tmp/efficiency-report.sh /tmp/chargeback-report.sh /tmp/optimization-plan.sh
 
 ## Next Module
 
-Congratulations on completing the Enterprise & Hybrid phase of the Cloud Deep Dive track. You now have the knowledge to design, secure, and optimize enterprise Kubernetes architectures across cloud and on-premises environments. Return to the [Enterprise & Hybrid README](index.md) to review the full phase and explore advanced topics.
+Congratulations on completing the Enterprise & Hybrid phase of the Cloud Deep Dive track. You now have the knowledge to design, secure, and optimize enterprise Kubernetes architectures across cloud and on-premises environments. Return to the [Enterprise & Hybrid README]() to review the full phase and explore advanced topics.

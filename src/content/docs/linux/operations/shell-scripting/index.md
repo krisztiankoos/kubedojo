@@ -13,10 +13,10 @@ Shell scripting transforms repetitive manual tasks into reliable automation. Thi
 
 | # | Module | Description | Time |
 |---|--------|-------------|------|
-| 7.1 | [Bash Fundamentals](module-7.1-bash-fundamentals.md) | Variables, conditionals, loops, functions | 30-35 min |
-| 7.2 | [Text Processing](module-7.2-text-processing.md) | grep, sed, awk, jq for data manipulation | 30-35 min |
-| 7.3 | [Practical Scripts](module-7.3-practical-scripts.md) | Common patterns, error handling, logging | 25-30 min |
-| 7.4 | [DevOps Automation](module-7.4-devops-automation.md) | kubectl scripts, CI/CD helpers, operational tools | 30-35 min |
+| 7.1 | [Bash Fundamentals](module-7.1-bash-fundamentals/) | Variables, conditionals, loops, functions | 30-35 min |
+| 7.2 | [Text Processing](module-7.2-text-processing/) | grep, sed, awk, jq for data manipulation | 30-35 min |
+| 7.3 | [Practical Scripts](module-7.3-practical-scripts/) | Common patterns, error handling, logging | 25-30 min |
+| 7.4 | [DevOps Automation](module-7.4-devops-automation/) | kubectl scripts, CI/CD helpers, operational tools | 30-35 min |
 
 ## Why This Section Matters
 
@@ -31,8 +31,8 @@ The shell is the universal interface to Linux systems.
 
 ## Prerequisites
 
-- [System Essentials](../../foundations/system-essentials/index.md) — Basic Linux commands
-- [Troubleshooting](../troubleshooting/index.md) — Commands you'll want to automate
+- [System Essentials](../../foundations/system-essentials/) — Basic Linux commands
+- [Troubleshooting](../troubleshooting/) — Commands you'll want to automate
 
 ## Key Takeaways
 
@@ -45,6 +45,6 @@ After completing this section, you'll be able to:
 
 ## Related Sections
 
-- **Previous**: [Troubleshooting](../troubleshooting/index.md)
+- **Previous**: [Troubleshooting](../troubleshooting/)
 - **CKA/CKAD**: Scripting for exam efficiency
 - **Platform**: Automation foundation for all disciplines

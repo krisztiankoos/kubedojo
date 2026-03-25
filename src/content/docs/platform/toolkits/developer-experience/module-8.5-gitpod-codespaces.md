@@ -1,5 +1,6 @@
 ---
 title: "Module 8.5: Gitpod & GitHub Codespaces - Cloud Development Environments"
+slug: platform/toolkits/developer-experience/module-8.5-gitpod-codespaces
 sidebar:
   order: 6
   label: "Developer Experience"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 8.4: DevPod](module-8.4-devpod.md) - Open source alternative
+- [Module 8.4: DevPod](module-8.4-devpod/) - Open source alternative
 - Basic Git/GitHub understanding
 - Container fundamentals
 - Understanding of development workflows
@@ -1050,9 +1051,9 @@ Choose Gitpod if:
 
 ## Next Steps
 
-- **Related**: [Module 8.4: DevPod](module-8.4-devpod.md) - Open source alternative
-- **Related**: [Platform Engineering](../../disciplines/platform-engineering/index.md) - Building developer platforms
-- **Related**: [Module 8.3: Local Kubernetes](module-8.3-local-kubernetes.md) - When you need local
+- **Related**: [Module 8.4: DevPod](module-8.4-devpod/) - Open source alternative
+- **Related**: [Platform Engineering](../../disciplines/platform-engineering/) - Building developer platforms
+- **Related**: [Module 8.3: Local Kubernetes](module-8.3-local-kubernetes/) - When you need local
 
 ---
 

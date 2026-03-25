@@ -1,5 +1,6 @@
 ---
 title: "Module 9.2: MLflow"
+slug: platform/toolkits/ml-platforms/module-9.2-mlflow
 sidebar:
   order: 3
   label: "ML Platforms"
@@ -21,7 +22,7 @@ MLflow is the experiment tracking and model registry tool that data scientists a
 - Python basics
 - Basic ML concepts
 - Kubernetes fundamentals
-- [MLOps Discipline](../../disciplines/mlops/index.md) recommended
+- [MLOps Discipline](../../disciplines/mlops/) recommended
 
 ---
 
@@ -876,7 +877,7 @@ Register a model to the Model Registry and load it by alias.
 
 ## Next Module
 
-Continue to [Module 9.3: Feature Stores](module-9.3-feature-stores.md) to learn about managing ML features at scale.
+Continue to [Module 9.3: Feature Stores](module-9.3-feature-stores/) to learn about managing ML features at scale.
 
 ---
 

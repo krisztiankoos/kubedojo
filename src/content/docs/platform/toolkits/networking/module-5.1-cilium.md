@@ -1,5 +1,6 @@
 ---
 title: "Module 5.1: Cilium - The Kernel-Powered Network Revolution"
+slug: platform/toolkits/networking/module-5.1-cilium
 sidebar:
   order: 2
   label: "Networking"
@@ -38,7 +39,7 @@ Cilium changes everything. By the end of this module, when something drops packe
 
 **Prerequisites**:
 - Kubernetes networking basics (Services, Pods)
-- [Security Principles Foundations](../../foundations/security-principles/index.md)
+- [Security Principles Foundations](../../foundations/security-principles/)
 - A healthy frustration with iptables (optional but helps)
 
 ---
@@ -1610,7 +1611,7 @@ kind delete cluster --name cilium-lab
 
 ## Next Module
 
-Continue to [Module 5.2: Service Mesh](module-5.2-service-mesh.md) to learn about service mesh patterns with Istio, and when sidecar-free approaches make sense.
+Continue to [Module 5.2: Service Mesh](module-5.2-service-mesh/) to learn about service mesh patterns with Istio, and when sidecar-free approaches make sense.
 
 ---
 

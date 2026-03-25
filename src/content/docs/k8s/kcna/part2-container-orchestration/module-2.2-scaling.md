@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: Scaling"
+slug: k8s/kcna/part2-container-orchestration/module-2.2-scaling
 sidebar:
   order: 3
   label: "Part 2: Container Orchestration"
@@ -373,4 +374,4 @@ You can also scale manually:
 
 ## Next Module
 
-[Module 2.3: Storage Orchestration](module-2.3-storage.md) - How Kubernetes manages persistent storage.
+[Module 2.3: Storage Orchestration](module-2.3-storage/) - How Kubernetes manages persistent storage.

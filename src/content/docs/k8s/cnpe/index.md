@@ -41,24 +41,24 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [GitOps 3.1](../../platform/disciplines/gitops/module-3.1-what-is-gitops.md) | What is GitOps? OpenGitOps 4 principles | Direct |
-| [GitOps 3.2](../../platform/disciplines/gitops/module-3.2-repository-strategies.md) | Repository strategies, mono vs multi-repo | Direct |
-| [GitOps 3.3](../../platform/disciplines/gitops/module-3.3-environment-promotion.md) | Environment promotion patterns | Direct |
-| [GitOps 3.4](../../platform/disciplines/gitops/module-3.4-drift-detection.md) | Drift detection and reconciliation | Direct |
-| [GitOps 3.5](../../platform/disciplines/gitops/module-3.5-secrets.md) | Secrets management in GitOps | Direct |
-| [GitOps 3.6](../../platform/disciplines/gitops/module-3.6-multi-cluster.md) | Multi-cluster GitOps | Direct |
+| [GitOps 3.1](../../platform/disciplines/gitops/module-3.1-what-is-gitops/) | What is GitOps? OpenGitOps 4 principles | Direct |
+| [GitOps 3.2](../../platform/disciplines/gitops/module-3.2-repository-strategies/) | Repository strategies, mono vs multi-repo | Direct |
+| [GitOps 3.3](../../platform/disciplines/gitops/module-3.3-environment-promotion/) | Environment promotion patterns | Direct |
+| [GitOps 3.4](../../platform/disciplines/gitops/module-3.4-drift-detection/) | Drift detection and reconciliation | Direct |
+| [GitOps 3.5](../../platform/disciplines/gitops/module-3.5-secrets/) | Secrets management in GitOps | Direct |
+| [GitOps 3.6](../../platform/disciplines/gitops/module-3.6-multi-cluster/) | Multi-cluster GitOps | Direct |
 
 **Tools (hands-on):**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [ArgoCD](../../platform/toolkits/gitops-deployments/module-2.1-argocd.md) | ArgoCD: Application CRD, sync, RBAC, ApplicationSet | Direct |
-| [Argo Rollouts](../../platform/toolkits/gitops-deployments/module-2.2-argo-rollouts.md) | Progressive delivery: canary, blue-green, analysis | Direct |
-| [Flux](../../platform/toolkits/gitops-deployments/module-2.3-flux.md) | Flux CD: 5 controllers, GitRepository, HelmRelease | Direct |
-| [Helm & Kustomize](../../platform/toolkits/gitops-deployments/module-2.4-helm-kustomize.md) | Packaging and customization | Direct |
-| [Dagger](../../platform/toolkits/ci-cd-pipelines/module-3.1-dagger.md) | CI/CD pipeline design | Direct |
-| [Tekton](../../platform/toolkits/ci-cd-pipelines/module-3.2-tekton.md) | K8s-native CI/CD pipelines | Direct |
-| [Argo Workflows](../../platform/toolkits/ci-cd-pipelines/module-3.3-argo-workflows.md) | Workflow automation | Direct |
+| [ArgoCD](../../platform/toolkits/gitops-deployments/module-2.1-argocd/) | ArgoCD: Application CRD, sync, RBAC, ApplicationSet | Direct |
+| [Argo Rollouts](../../platform/toolkits/gitops-deployments/module-2.2-argo-rollouts/) | Progressive delivery: canary, blue-green, analysis | Direct |
+| [Flux](../../platform/toolkits/gitops-deployments/module-2.3-flux/) | Flux CD: 5 controllers, GitRepository, HelmRelease | Direct |
+| [Helm & Kustomize](../../platform/toolkits/gitops-deployments/module-2.4-helm-kustomize/) | Packaging and customization | Direct |
+| [Dagger](../../platform/toolkits/ci-cd-pipelines/module-3.1-dagger/) | CI/CD pipeline design | Direct |
+| [Tekton](../../platform/toolkits/ci-cd-pipelines/module-3.2-tekton/) | K8s-native CI/CD pipelines | Direct |
+| [Argo Workflows](../../platform/toolkits/ci-cd-pipelines/module-3.3-argo-workflows/) | Workflow automation | Direct |
 
 ---
 
@@ -76,23 +76,23 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Platform Eng 2.1](../../platform/disciplines/platform-engineering/module-2.1-what-is-platform-engineering.md) | What is Platform Engineering? | Direct |
-| [Platform Eng 2.2](../../platform/disciplines/platform-engineering/module-2.2-developer-experience.md) | Developer Experience (DevEx) | Direct |
-| [Platform Eng 2.3](../../platform/disciplines/platform-engineering/module-2.3-internal-developer-platforms.md) | Internal Developer Platforms | Direct |
-| [Platform Eng 2.4](../../platform/disciplines/platform-engineering/module-2.4-golden-paths.md) | Golden Paths and paved roads | Direct |
-| [Platform Eng 2.5](../../platform/disciplines/platform-engineering/module-2.5-self-service-infrastructure.md) | Self-Service Infrastructure | Direct |
-| [Platform Eng 2.6](../../platform/disciplines/platform-engineering/module-2.6-platform-maturity.md) | Platform Maturity Models | Direct |
+| [Platform Eng 2.1](../../platform/disciplines/platform-engineering/module-2.1-what-is-platform-engineering/) | What is Platform Engineering? | Direct |
+| [Platform Eng 2.2](../../platform/disciplines/platform-engineering/module-2.2-developer-experience/) | Developer Experience (DevEx) | Direct |
+| [Platform Eng 2.3](../../platform/disciplines/platform-engineering/module-2.3-internal-developer-platforms/) | Internal Developer Platforms | Direct |
+| [Platform Eng 2.4](../../platform/disciplines/platform-engineering/module-2.4-golden-paths/) | Golden Paths and paved roads | Direct |
+| [Platform Eng 2.5](../../platform/disciplines/platform-engineering/module-2.5-self-service-infrastructure/) | Self-Service Infrastructure | Direct |
+| [Platform Eng 2.6](../../platform/disciplines/platform-engineering/module-2.6-platform-maturity/) | Platform Maturity Models | Direct |
 
 **Tools:**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Backstage](../../platform/toolkits/platforms/module-7.1-backstage.md) | Software Catalog, Templates, TechDocs | Direct |
-| [Crossplane](../../platform/toolkits/platforms/module-7.2-crossplane.md) | XRDs, Compositions, Providers | Direct |
-| [Kubebuilder](../../platform/toolkits/platforms/module-3.4-kubebuilder.md) | Building custom operators | Direct |
-| [Cluster API](../../platform/toolkits/platforms/module-3.5-cluster-api.md) | Declarative cluster lifecycle | Direct |
-| [vCluster](../../platform/toolkits/platforms/module-3.6-vcluster.md) | Virtual clusters for self-service | Direct |
-| [CKA CRDs](../../k8s/cka/part1-cluster-architecture/module-1.5-crds-operators.md) | CRD creation and operator pattern | Direct |
+| [Backstage](../../platform/toolkits/platforms/module-7.1-backstage/) | Software Catalog, Templates, TechDocs | Direct |
+| [Crossplane](../../platform/toolkits/platforms/module-7.2-crossplane/) | XRDs, Compositions, Providers | Direct |
+| [Kubebuilder](../../platform/toolkits/platforms/module-3.4-kubebuilder/) | Building custom operators | Direct |
+| [Cluster API](../../platform/toolkits/platforms/module-3.5-cluster-api/) | Declarative cluster lifecycle | Direct |
+| [vCluster](../../platform/toolkits/platforms/module-3.6-vcluster/) | Virtual clusters for self-service | Direct |
+| [CKA CRDs](../../k8s/cka/part1-cluster-architecture/module-1.5-crds-operators/) | CRD creation and operator pattern | Direct |
 
 ---
 
@@ -109,26 +109,26 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Observability 3.1](../../platform/foundations/observability-theory/module-3.1-what-is-observability.md) | What is Observability? | Direct |
-| [Observability 3.2](../../platform/foundations/observability-theory/module-3.2-the-three-pillars.md) | Metrics, Logs, Traces | Direct |
-| [Observability 3.3](../../platform/foundations/observability-theory/module-3.3-instrumentation-principles.md) | Instrumentation principles | Direct |
-| [SRE 1.1](../../platform/disciplines/sre/module-1.1-what-is-sre.md) | What is SRE? | Direct |
-| [SRE 1.2](../../platform/disciplines/sre/module-1.2-slos.md) | SLOs (SLIs, SLAs) | Direct |
-| [SRE 1.3](../../platform/disciplines/sre/module-1.3-error-budgets.md) | Error Budgets and burn rates | Direct |
-| [SRE 1.5](../../platform/disciplines/sre/module-1.5-incident-management.md) | Incident Management | Direct |
+| [Observability 3.1](../../platform/foundations/observability-theory/module-3.1-what-is-observability/) | What is Observability? | Direct |
+| [Observability 3.2](../../platform/foundations/observability-theory/module-3.2-the-three-pillars/) | Metrics, Logs, Traces | Direct |
+| [Observability 3.3](../../platform/foundations/observability-theory/module-3.3-instrumentation-principles/) | Instrumentation principles | Direct |
+| [SRE 1.1](../../platform/disciplines/sre/module-1.1-what-is-sre/) | What is SRE? | Direct |
+| [SRE 1.2](../../platform/disciplines/sre/module-1.2-slos/) | SLOs (SLIs, SLAs) | Direct |
+| [SRE 1.3](../../platform/disciplines/sre/module-1.3-error-budgets/) | Error Budgets and burn rates | Direct |
+| [SRE 1.5](../../platform/disciplines/sre/module-1.5-incident-management/) | Incident Management | Direct |
 
 **Tools:**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Prometheus](../../platform/toolkits/observability/module-1.1-prometheus.md) | Pull-based monitoring, PromQL, ServiceMonitor | Direct |
-| [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry.md) | OTel Collector, auto-instrumentation | Direct |
-| [Grafana](../../platform/toolkits/observability/module-1.3-grafana.md) | Dashboards, data sources, provisioning | Direct |
-| [Loki](../../platform/toolkits/observability/module-1.4-loki.md) | Log aggregation, LogQL | Direct |
-| [Tracing](../../platform/toolkits/observability/module-1.5-tracing.md) | Jaeger/Tempo, context propagation | Direct |
-| [SLO Tooling](../../platform/toolkits/observability/module-1.10-slo-tooling.md) | Sloth, Pyrra, error budget dashboards | Direct |
-| [Continuous Profiling](../../platform/toolkits/observability/module-1.9-continuous-profiling.md) | Parca, Pyroscope (4th pillar) | Partial |
-| [FinOps](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost.md) | OpenCost, cost allocation, right-sizing | Direct |
+| [Prometheus](../../platform/toolkits/observability/module-1.1-prometheus/) | Pull-based monitoring, PromQL, ServiceMonitor | Direct |
+| [OpenTelemetry](../../platform/toolkits/observability/module-1.2-opentelemetry/) | OTel Collector, auto-instrumentation | Direct |
+| [Grafana](../../platform/toolkits/observability/module-1.3-grafana/) | Dashboards, data sources, provisioning | Direct |
+| [Loki](../../platform/toolkits/observability/module-1.4-loki/) | Log aggregation, LogQL | Direct |
+| [Tracing](../../platform/toolkits/observability/module-1.5-tracing/) | Jaeger/Tempo, context propagation | Direct |
+| [SLO Tooling](../../platform/toolkits/observability/module-1.10-slo-tooling/) | Sloth, Pyrra, error budget dashboards | Direct |
+| [Continuous Profiling](../../platform/toolkits/observability/module-1.9-continuous-profiling/) | Parca, Pyroscope (4th pillar) | Partial |
+| [FinOps](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost/) | OpenCost, cost allocation, right-sizing | Direct |
 
 ---
 
@@ -145,22 +145,22 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Systems Thinking 1.1](../../platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking.md) | Systems thinking for architects | Partial |
-| [Distributed Systems 5.1](../../platform/foundations/distributed-systems/module-5.1-what-makes-systems-distributed.md) | Distributed systems fundamentals | Direct |
-| [Distributed Systems 5.2](../../platform/foundations/distributed-systems/module-5.2-consensus-and-coordination.md) | Consensus and coordination | Direct |
-| [Reliability 2.3](../../platform/foundations/reliability-engineering/module-2.3-redundancy-and-fault-tolerance.md) | Redundancy and fault tolerance | Direct |
-| [IaC 6.1](../../platform/disciplines/iac/module-6.1-iac-fundamentals.md) | Infrastructure as Code | Direct |
-| [IaC 6.4](../../platform/disciplines/iac/module-6.4-iac-at-scale.md) | IaC at Scale | Direct |
+| [Systems Thinking 1.1](../../platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking/) | Systems thinking for architects | Partial |
+| [Distributed Systems 5.1](../../platform/foundations/distributed-systems/module-5.1-what-makes-systems-distributed/) | Distributed systems fundamentals | Direct |
+| [Distributed Systems 5.2](../../platform/foundations/distributed-systems/module-5.2-consensus-and-coordination/) | Consensus and coordination | Direct |
+| [Reliability 2.3](../../platform/foundations/reliability-engineering/module-2.3-redundancy-and-fault-tolerance/) | Redundancy and fault tolerance | Direct |
+| [IaC 6.1](../../platform/disciplines/iac/module-6.1-iac-fundamentals/) | Infrastructure as Code | Direct |
+| [IaC 6.4](../../platform/disciplines/iac/module-6.4-iac-at-scale/) | IaC at Scale | Direct |
 
 **Tools:**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Karpenter](../../platform/toolkits/scaling-reliability/module-6.1-karpenter.md) | Autoscaling, right-sizing | Direct |
-| [KEDA](../../platform/toolkits/scaling-reliability/module-6.2-keda.md) | Event-driven autoscaling | Direct |
-| [FinOps](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost.md) | Cost management, OpenCost | Direct |
-| [vCluster](../../platform/toolkits/platforms/module-3.6-vcluster.md) | Multi-tenancy with virtual clusters | Direct |
-| [Cilium](../../platform/toolkits/networking/module-5.1-cilium.md) | eBPF networking, policies | Direct |
+| [Karpenter](../../platform/toolkits/scaling-reliability/module-6.1-karpenter/) | Autoscaling, right-sizing | Direct |
+| [KEDA](../../platform/toolkits/scaling-reliability/module-6.2-keda/) | Event-driven autoscaling | Direct |
+| [FinOps](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost/) | Cost management, OpenCost | Direct |
+| [vCluster](../../platform/toolkits/platforms/module-3.6-vcluster/) | Multi-tenancy with virtual clusters | Direct |
+| [Cilium](../../platform/toolkits/networking/module-5.1-cilium/) | eBPF networking, policies | Direct |
 
 ---
 
@@ -179,25 +179,25 @@ The CNPE (Certified Cloud Native Platform Engineer) validates skills in designin
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Security 4.1](../../platform/foundations/security-principles/module-4.1-security-mindset.md) | Security mindset | Direct |
-| [Security 4.2](../../platform/foundations/security-principles/module-4.2-defense-in-depth.md) | Defense in depth | Direct |
-| [DevSecOps 4.1](../../platform/disciplines/devsecops/module-4.1-devsecops-fundamentals.md) | DevSecOps fundamentals | Direct |
-| [DevSecOps 4.2](../../platform/disciplines/devsecops/module-4.2-shift-left-security.md) | Shift-left security | Direct |
-| [DevSecOps 4.3](../../platform/disciplines/devsecops/module-4.3-security-cicd.md) | Security in CI/CD | Direct |
-| [DevSecOps 4.4](../../platform/disciplines/devsecops/module-4.4-supply-chain-security.md) | Supply chain security, SBOM | Direct |
-| [DevSecOps 4.5](../../platform/disciplines/devsecops/module-4.5-runtime-security.md) | Runtime security | Direct |
+| [Security 4.1](../../platform/foundations/security-principles/module-4.1-security-mindset/) | Security mindset | Direct |
+| [Security 4.2](../../platform/foundations/security-principles/module-4.2-defense-in-depth/) | Defense in depth | Direct |
+| [DevSecOps 4.1](../../platform/disciplines/devsecops/module-4.1-devsecops-fundamentals/) | DevSecOps fundamentals | Direct |
+| [DevSecOps 4.2](../../platform/disciplines/devsecops/module-4.2-shift-left-security/) | Shift-left security | Direct |
+| [DevSecOps 4.3](../../platform/disciplines/devsecops/module-4.3-security-cicd/) | Security in CI/CD | Direct |
+| [DevSecOps 4.4](../../platform/disciplines/devsecops/module-4.4-supply-chain-security/) | Supply chain security, SBOM | Direct |
+| [DevSecOps 4.5](../../platform/disciplines/devsecops/module-4.5-runtime-security/) | Runtime security | Direct |
 
 **Tools:**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [OPA/Gatekeeper](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md) | Policy engine (Rego), admission control | Direct |
-| [Kyverno](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | YAML-native policy engine | Direct |
-| [Falco](../../platform/toolkits/security-tools/module-4.3-falco.md) | Runtime threat detection | Direct |
-| [Supply Chain](../../platform/toolkits/security-tools/module-4.4-supply-chain.md) | Sigstore/Cosign, image signing, SBOM | Direct |
-| [Vault & ESO](../../platform/toolkits/security-tools/module-4.1-vault-eso.md) | Secrets management | Direct |
-| [SPIFFE/SPIRE](../../platform/toolkits/security-tools/module-4.8-spiffe-spire.md) | Workload identity, mTLS | Direct |
-| [Service Mesh](../../platform/toolkits/networking/module-5.2-service-mesh.md) | Istio/Linkerd mTLS | Direct |
+| [OPA/Gatekeeper](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper/) | Policy engine (Rego), admission control | Direct |
+| [Kyverno](../../platform/toolkits/security-tools/module-4.7-kyverno/) | YAML-native policy engine | Direct |
+| [Falco](../../platform/toolkits/security-tools/module-4.3-falco/) | Runtime threat detection | Direct |
+| [Supply Chain](../../platform/toolkits/security-tools/module-4.4-supply-chain/) | Sigstore/Cosign, image signing, SBOM | Direct |
+| [Vault & ESO](../../platform/toolkits/security-tools/module-4.1-vault-eso/) | Secrets management | Direct |
+| [SPIFFE/SPIRE](../../platform/toolkits/security-tools/module-4.8-spiffe-spire/) | Workload identity, mTLS | Direct |
+| [Service Mesh](../../platform/toolkits/networking/module-5.2-service-mesh/) | Istio/Linkerd mTLS | Direct |
 
 ---
 
@@ -261,7 +261,7 @@ Our Platform Engineering track covers ~95%+ of the CNPE curriculum. Remaining mi
 
 | Topic | Status | Notes |
 |-------|--------|-------|
-| Argo Events (event-driven automation) | Covered | See [Argo Events](../capa/module-2-argo-events.md) in the CAPA track — EventSource, Sensor, EventBus, Triggers |
+| Argo Events (event-driven automation) | Covered | See [Argo Events](../capa/module-2-argo-events/) in the CAPA track — EventSource, Sensor, EventBus, Triggers |
 | DORA metrics implementation | Covered | DORA metrics now covered in the SRE discipline modules; SLOs and error budgets provide the measurement framework |
 | Hierarchical Namespaces | Minor gap (niche topic) | Niche multi-tenancy topic, unlikely to be exam-critical; vCluster module covers multi-tenancy alternatives |
 

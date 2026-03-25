@@ -1,5 +1,6 @@
 ---
 title: "Module 3.4: ServiceAccount Security"
+slug: k8s/kcsa/part3-security-fundamentals/module-3.4-serviceaccounts
 sidebar:
   order: 5
   label: "Part 3: Security Fundamentals"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 3.3: Secrets Management](module-3.3-secrets.md)
+> **Prerequisites**: [Module 3.3: Secrets Management](module-3.3-secrets/)
 
 ---
 
@@ -495,4 +496,4 @@ Key principles:
 
 ## Next Module
 
-[Module 3.5: Network Policies](module-3.5-network-policies.md) - Controlling pod-to-pod network traffic.
+[Module 3.5: Network Policies](module-3.5-network-policies/) - Controlling pod-to-pod network traffic.

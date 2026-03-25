@@ -1,5 +1,6 @@
 ---
 title: "Module 2.5: Restricting API Access"
+slug: k8s/cks/part2-cluster-hardening/module-2.5-restricting-api-access
 sidebar:
   order: 5
   label: "Part 2: Cluster Hardening"
@@ -550,4 +551,4 @@ You've finished **Cluster Hardening** (15% of CKS). You now understand:
 - Kubernetes upgrade security
 - Restricting API access
 
-**Next Part**: [Part 3: System Hardening](../part3-system-hardening/module-3.1-apparmor.md) - AppArmor, seccomp, and OS-level security.
+**Next Part**: [Part 3: System Hardening](../part3-system-hardening/module-3.1-apparmor/) - AppArmor, seccomp, and OS-level security.

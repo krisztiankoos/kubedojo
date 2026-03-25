@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.6: \u041f\u043b\u0430\u043d\u0443\u0432\u0430\u043d\u043d\u044f"
+slug: uk/k8s/cka/part2-workloads-scheduling/module-2.6-scheduling
 sidebar:
   order: 7
   label: "Part 2: Workloads & Scheduling"
@@ -959,4 +960,4 @@ kubectl taint nodes $NODE frontend-
 
 ## Наступний модуль
 
-[Модуль 2.7: ConfigMaps і Secrets](module-2.7-configmaps-secrets.md) — Управління конфігурацією застосунків.
+[Модуль 2.7: ConfigMaps і Secrets](module-2.7-configmaps-secrets/) — Управління конфігурацією застосунків.

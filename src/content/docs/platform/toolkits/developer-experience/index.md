@@ -10,7 +10,7 @@ sidebar:
 
 The Developer Experience Toolkit covers tools that make daily Kubernetes work faster and more productive. k9s provides a terminal UI for rapid cluster navigation, Telepresence and Tilt enable local development against remote clusters, and local Kubernetes options (kind, minikube) give you disposable environments for testing.
 
-These tools apply concepts from [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) to improve developer productivity.
+These tools apply concepts from [Platform Engineering Discipline](../../disciplines/platform-engineering/) to improve developer productivity.
 
 ## Prerequisites
 
@@ -24,11 +24,11 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 8.1 | [k9s & CLI Tools](module-8.1-k9s-cli.md) | `[QUICK]` | 30-35 min |
-| 8.2 | [Telepresence & Tilt](module-8.2-telepresence-tilt.md) | `[MEDIUM]` | 40-45 min |
-| 8.3 | [Local Kubernetes](module-8.3-local-kubernetes.md) | `[QUICK]` | 30-35 min |
-| 8.4 | [DevPod](module-8.4-devpod.md) | `[MEDIUM]` | 45-50 min |
-| 8.5 | [Gitpod & Codespaces](module-8.5-gitpod-codespaces.md) | `[MEDIUM]` | 45-50 min |
+| 8.1 | [k9s & CLI Tools](module-8.1-k9s-cli/) | `[QUICK]` | 30-35 min |
+| 8.2 | [Telepresence & Tilt](module-8.2-telepresence-tilt/) | `[MEDIUM]` | 40-45 min |
+| 8.3 | [Local Kubernetes](module-8.3-local-kubernetes/) | `[QUICK]` | 30-35 min |
+| 8.4 | [DevPod](module-8.4-devpod/) | `[MEDIUM]` | 45-50 min |
+| 8.5 | [Gitpod & Codespaces](module-8.5-gitpod-codespaces/) | `[MEDIUM]` | 45-50 min |
 
 ## Learning Outcomes
 
@@ -289,11 +289,11 @@ Best for           Debugging      Development      CI/CD
 
 ## Related Tracks
 
-- **Before**: [Platforms Toolkit](../platforms/index.md) — Portal and infrastructure
-- **Applies**: [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) — Developer experience concepts
-- **Related**: [IaC Discipline](../../disciplines/iac/index.md) — Infrastructure provisioning patterns
-- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) — Build and deploy automation
-- **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/index.md) — Deployment workflows
+- **Before**: [Platforms Toolkit](../platforms/) — Portal and infrastructure
+- **Applies**: [Platform Engineering Discipline](../../disciplines/platform-engineering/) — Developer experience concepts
+- **Related**: [IaC Discipline](../../disciplines/iac/) — Infrastructure provisioning patterns
+- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Build and deploy automation
+- **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deployment workflows
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 5.1: USE Method"
+slug: linux/operations/performance/module-5.1-use-method
 sidebar:
   order: 2
   label: "Performance"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd.md)
-- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups.md)
+- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups/)
 - **Helpful**: Basic understanding of system metrics
 
 ---

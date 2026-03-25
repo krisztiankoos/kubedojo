@@ -1,5 +1,6 @@
 ---
 title: "Module 3.5: Gateway API"
+slug: k8s/cka/part3-services-networking/module-3.5-gateway-api
 sidebar:
   order: 6
   label: "Part 3: Services & Networking"
@@ -1204,4 +1205,4 @@ k delete svc frontend backend admin
 
 ## Next Module
 
-[Module 3.6: Network Policies](module-3.6-network-policies.md) - Controlling pod-to-pod communication.
+[Module 3.6: Network Policies](module-3.6-network-policies/) - Controlling pod-to-pod communication.

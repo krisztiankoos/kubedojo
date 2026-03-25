@@ -10,13 +10,13 @@ sidebar:
 
 The Networking Toolkit covers advanced Kubernetes networking beyond basic Services and Ingress. Cilium brings eBPF-powered networking with identity-based security and deep observability. Service mesh adds traffic management and mTLS for complex microservice architectures.
 
-This toolkit builds on [Security Principles](../../foundations/security-principles/index.md) and complements the [Security Tools Toolkit](../security-tools/index.md).
+This toolkit builds on [Security Principles](../../foundations/security-principles/) and complements the [Security Tools Toolkit](../security-tools/).
 
 ## Prerequisites
 
 Before starting this toolkit:
 - Kubernetes Services, Pods, and basic networking
-- [Security Principles Foundations](../../foundations/security-principles/index.md)
+- [Security Principles Foundations](../../foundations/security-principles/)
 - Linux networking basics (TCP/IP, DNS)
 - Container fundamentals
 
@@ -24,14 +24,14 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 5.1 | [Cilium](module-5.1-cilium.md) | `[COMPLEX]` | 50-60 min |
-| 5.2 | [Service Mesh](module-5.2-service-mesh.md) | `[COMPLEX]` | 50-60 min |
-| 5.3 | [DNS Deep Dive](module-5.3-dns-deep-dive.md) | `[MEDIUM]` | 40 min |
-| 5.4 | [MetalLB](module-5.4-metallb.md) | `[MEDIUM]` | 35 min |
-| 5.5 | [Flannel](module-5.5-flannel.md) | `[MEDIUM]` | 45-50 min |
-| 5.6 | [Calico](module-5.6-calico.md) | `[COMPLEX]` | 55-65 min |
-| 5.7 | [kube-router](module-5.7-kube-router.md) | `[MEDIUM]` | 40-45 min |
-| 5.8 | [Multus](module-5.8-multus.md) | `[MEDIUM]` | 40-45 min |
+| 5.1 | [Cilium](module-5.1-cilium/) | `[COMPLEX]` | 50-60 min |
+| 5.2 | [Service Mesh](module-5.2-service-mesh/) | `[COMPLEX]` | 50-60 min |
+| 5.3 | [DNS Deep Dive](module-5.3-dns-deep-dive/) | `[MEDIUM]` | 40 min |
+| 5.4 | [MetalLB](module-5.4-metallb/) | `[MEDIUM]` | 35 min |
+| 5.5 | [Flannel](module-5.5-flannel/) | `[MEDIUM]` | 45-50 min |
+| 5.6 | [Calico](module-5.6-calico/) | `[COMPLEX]` | 55-65 min |
+| 5.7 | [kube-router](module-5.7-kube-router/) | `[MEDIUM]` | 40-45 min |
+| 5.8 | [Multus](module-5.8-multus/) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -188,11 +188,11 @@ No traffic mgmt  Basic             Basic             Advanced
 
 ## Related Tracks
 
-- **Before**: [Security Tools Toolkit](../security-tools/index.md) — Security context
-- **Before**: [Security Principles](../../foundations/security-principles/index.md) — Theory
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Terraform modules for Cilium, Istio
-- **Related**: [DevSecOps Discipline](../../disciplines/devsecops/index.md) — Security practices
-- **After**: [Scaling & Reliability](../scaling-reliability/index.md) — Autoscaling
+- **Before**: [Security Tools Toolkit](../security-tools/) — Security context
+- **Before**: [Security Principles](../../foundations/security-principles/) — Theory
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for Cilium, Istio
+- **Related**: [DevSecOps Discipline](../../disciplines/devsecops/) — Security practices
+- **After**: [Scaling & Reliability](../scaling-reliability/) — Autoscaling
 
 ---
 

@@ -64,11 +64,11 @@ Theory that applies everywhere. Read these first - they don't change.
 
 | Track | Why Start Here |
 |-------|---------------|
-| [Systems Thinking](foundations/systems-thinking/index.md) | Mental models for complex systems |
-| [Reliability Engineering](foundations/reliability-engineering/index.md) | Failure theory, redundancy, risk |
-| [Distributed Systems](foundations/distributed-systems/index.md) | CAP, consensus, consistency |
-| [Observability Theory](foundations/observability-theory/index.md) | What to measure and why |
-| [Security Principles](foundations/security-principles/index.md) | Zero trust, threat modeling |
+| [Systems Thinking](foundations/systems-thinking/) | Mental models for complex systems |
+| [Reliability Engineering](foundations/reliability-engineering/) | Failure theory, redundancy, risk |
+| [Distributed Systems](foundations/distributed-systems/) | CAP, consensus, consistency |
+| [Observability Theory](foundations/observability-theory/) | What to measure and why |
+| [Security Principles](foundations/security-principles/) | Zero trust, threat modeling |
 
 ### Then Pick a Discipline
 
@@ -76,13 +76,13 @@ Applied practices - how to do the work.
 
 | Discipline | Best For |
 |------------|----------|
-| [SRE](disciplines/sre/index.md) | Operations, reliability, on-call |
-| [Platform Engineering](disciplines/platform-engineering/index.md) | Developer experience, self-service |
-| [GitOps](disciplines/gitops/index.md) | Deployment, reconciliation |
-| [Infrastructure as Code](disciplines/iac/index.md) | IaC patterns, testing, drift management |
-| [DevSecOps](disciplines/devsecops/index.md) | Security integration, compliance |
-| [MLOps](disciplines/mlops/index.md) | ML lifecycle, model serving |
-| [AIOps](disciplines/aiops/index.md) | AI-driven operations, automation |
+| [SRE](disciplines/sre/) | Operations, reliability, on-call |
+| [Platform Engineering](disciplines/platform-engineering/) | Developer experience, self-service |
+| [GitOps](disciplines/gitops/) | Deployment, reconciliation |
+| [Infrastructure as Code](disciplines/iac/) | IaC patterns, testing, drift management |
+| [DevSecOps](disciplines/devsecops/) | Security integration, compliance |
+| [MLOps](disciplines/mlops/) | ML lifecycle, model serving |
+| [AIOps](disciplines/aiops/) | AI-driven operations, automation |
 
 ### Reference Toolkits as Needed
 
@@ -90,17 +90,17 @@ Tools change. Use these as reference when implementing.
 
 | Toolkit | When to Use |
 |---------|-------------|
-| [Observability](toolkits/observability/index.md) | Setting up monitoring/tracing |
-| [GitOps & Deployments](toolkits/gitops-deployments/index.md) | Implementing ArgoCD/Flux |
-| [CI/CD Pipelines](toolkits/ci-cd-pipelines/index.md) | Dagger, Tekton, Argo Workflows |
-| [IaC Tools](toolkits/iac-tools/index.md) | Terraform, OpenTofu, Pulumi, Ansible |
-| [Security Tools](toolkits/security-tools/index.md) | Policy, secrets, runtime security |
-| [Networking](toolkits/networking/index.md) | Cilium, Service Mesh |
-| [Scaling & Reliability](toolkits/scaling-reliability/index.md) | Karpenter, KEDA, Velero |
-| [Platforms](toolkits/platforms/index.md) | Building internal platforms |
-| [Developer Experience](toolkits/developer-experience/index.md) | K9s, Telepresence |
-| [ML Platforms](toolkits/ml-platforms/index.md) | ML infrastructure |
-| [AIOps Tools](toolkits/aiops-tools/index.md) | Anomaly detection, AIOps |
+| [Observability](toolkits/observability/) | Setting up monitoring/tracing |
+| [GitOps & Deployments](toolkits/gitops-deployments/) | Implementing ArgoCD/Flux |
+| [CI/CD Pipelines](toolkits/ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows |
+| [IaC Tools](toolkits/iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible |
+| [Security Tools](toolkits/security-tools/) | Policy, secrets, runtime security |
+| [Networking](toolkits/networking/) | Cilium, Service Mesh |
+| [Scaling & Reliability](toolkits/scaling-reliability/) | Karpenter, KEDA, Velero |
+| [Platforms](toolkits/platforms/) | Building internal platforms |
+| [Developer Experience](toolkits/developer-experience/) | K9s, Telepresence |
+| [ML Platforms](toolkits/ml-platforms/) | ML infrastructure |
+| [AIOps Tools](toolkits/aiops-tools/) | Anomaly detection, AIOps |
 
 ---
 
@@ -133,7 +133,7 @@ Every module includes:
 ## Prerequisites
 
 Before starting this track, you should have:
-- Kubernetes basics (or completed [Prerequisites](../prerequisites/index.md))
+- Kubernetes basics (or completed [Prerequisites](../prerequisites/))
 - Some production experience (helpful but not required)
 - Curiosity about "why" not just "how"
 

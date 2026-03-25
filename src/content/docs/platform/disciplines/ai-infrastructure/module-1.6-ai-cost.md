@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Cost & Capacity Planning for AI"
+slug: platform/disciplines/ai-infrastructure/module-1.6-ai-cost
 sidebar:
   order: 7
   label: "AI Infrastructure"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: GPU Provisioning & Device Plugins](module-1.1-gpu-provisioning.md) — GPU resources, DCGM metrics
-- **Required**: [Module 1.5: Serving LLMs at Scale](module-1.5-llm-serving.md) — Inference workload patterns
+- **Required**: [Module 1.1: GPU Provisioning & Device Plugins](module-1.1-gpu-provisioning/) — GPU resources, DCGM metrics
+- **Required**: [Module 1.5: Serving LLMs at Scale](module-1.5-llm-serving/) — Inference workload patterns
 - **Recommended**: Kubernetes autoscaling concepts (HPA, VPA, Cluster Autoscaler)
 - **Recommended**: Experience with cloud billing (AWS, GCP, or Azure cost explorer)
 
@@ -1288,9 +1289,9 @@ AI infrastructure cost optimization is a multi-layered discipline: spot instance
 
 You have completed the AI/GPU Infrastructure discipline. From here:
 
-- **Build on this foundation** with the [Platform Engineering](../platform-engineering/index.md) discipline for internal developer platforms
-- **Deepen your observability** with the [SRE](../sre/index.md) discipline for GPU cluster reliability
-- **Explore MLOps** with the [MLOps](../mlops/index.md) discipline for model lifecycle management
+- **Build on this foundation** with the [Platform Engineering](../platform-engineering/) discipline for internal developer platforms
+- **Deepen your observability** with the [SRE](../sre/) discipline for GPU cluster reliability
+- **Explore MLOps** with the [MLOps](../mlops/) discipline for model lifecycle management
 - **Review** all modules in this discipline and build a production GPU platform integrating all six modules
 
 ---

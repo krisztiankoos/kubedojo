@@ -1,5 +1,6 @@
 ---
 title: "Module 6.1: Compliance Frameworks"
+slug: k8s/kcsa/part6-compliance/module-6.1-compliance-frameworks
 sidebar:
   order: 2
   label: "Part 6: Compliance"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 5.4: Security Tooling](../part5-platform-security/module-5.4-security-tooling.md)
+> **Prerequisites**: [Module 5.4: Security Tooling](../part5-platform-security/module-5.4-security-tooling/)
 
 ---
 
@@ -548,4 +549,4 @@ Key principles:
 
 ## Next Module
 
-[Module 6.2: CIS Benchmarks](module-6.2-cis-benchmarks.md) - Understanding and implementing CIS Kubernetes Benchmark.
+[Module 6.2: CIS Benchmarks](module-6.2-cis-benchmarks/) - Understanding and implementing CIS Kubernetes Benchmark.

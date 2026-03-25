@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 3.5 hours
 >
-> **Prerequisites**: [Module 1: Managed vs Self-Managed Kubernetes](module-1-managed-vs-selfmanaged.md), [Module 2: Multi-Cluster and Multi-Region Architectures](module-2-multi-cluster.md)
+> **Prerequisites**: [Module 1: Managed vs Self-Managed Kubernetes](module-1-managed-vs-selfmanaged/), [Module 2: Multi-Cluster and Multi-Region Architectures](module-2-multi-cluster/)
 >
 > **Track**: Cloud Architecture Patterns
 
@@ -996,4 +996,4 @@ Estimate the monthly cost for the complete network architecture, including NAT G
 
 ## Next Module
 
-This is the final module in the Cloud Architecture Patterns series. You now have the knowledge to design Kubernetes deployments that are well-managed (Module 1), resilient across regions (Module 2), secured with identity federation (Module 3), and networked correctly from day one (Module 4). Consider exploring the [Platform Engineering Track](../../platform/index.md) for deeper dives into GitOps, observability, and security tooling.
+This is the final module in the Cloud Architecture Patterns series. You now have the knowledge to design Kubernetes deployments that are well-managed (Module 1), resilient across regions (Module 2), secured with identity federation (Module 3), and networked correctly from day one (Module 4). Consider exploring the [Platform Engineering Track](../../platform/) for deeper dives into GitOps, observability, and security tooling.

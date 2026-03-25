@@ -10,17 +10,17 @@ Cloud native principles, the CNCF ecosystem, architectural patterns, observabili
 
 | Module | Topic | Complexity | Time |
 |--------|-------|------------|------|
-| [3.1](module-3.1-cloud-native-principles.md) | Cloud Native Principles | Medium | 30-35 min |
-| [3.2](module-3.2-cncf-ecosystem.md) | CNCF Ecosystem | Quick | 20-25 min |
-| [3.3](module-3.3-patterns.md) | Cloud Native Patterns | Medium | 30-35 min |
-| [3.4](module-3.4-observability-fundamentals.md) | Observability Fundamentals | Medium | 25-30 min |
-| [3.5](module-3.5-observability-tools.md) | Observability Tools | Quick | 20-25 min |
-| [3.6](module-3.6-security-basics.md) | Security Basics (Theory) | Quick | 15-20 min |
-| [3.7](module-3.7-community-collaboration.md) | Community & Collaboration | Quick | 10-15 min |
-| [3.8](module-3.8-ai-ml-cloud-native.md) | AI/ML on Cloud Native | Medium | 25-30 min |
-| [3.9](module-3.9-webassembly.md) | WebAssembly and Cloud Native | Medium | 25-30 min |
-| [3.10](module-3.10-green-computing.md) | Green Computing and Sustainability | Quick | 20-25 min |
+| [3.1](module-3.1-cloud-native-principles/) | Cloud Native Principles | Medium | 30-35 min |
+| [3.2](module-3.2-cncf-ecosystem/) | CNCF Ecosystem | Quick | 20-25 min |
+| [3.3](module-3.3-patterns/) | Cloud Native Patterns | Medium | 30-35 min |
+| [3.4](module-3.4-observability-fundamentals/) | Observability Fundamentals | Medium | 25-30 min |
+| [3.5](module-3.5-observability-tools/) | Observability Tools | Quick | 20-25 min |
+| [3.6](module-3.6-security-basics/) | Security Basics (Theory) | Quick | 15-20 min |
+| [3.7](module-3.7-community-collaboration/) | Community & Collaboration | Quick | 10-15 min |
+| [3.8](module-3.8-ai-ml-cloud-native/) | AI/ML on Cloud Native | Medium | 25-30 min |
+| [3.9](module-3.9-webassembly/) | WebAssembly and Cloud Native | Medium | 25-30 min |
+| [3.10](module-3.10-green-computing/) | Green Computing and Sustainability | Quick | 20-25 min |
 
 ---
 
-[← Part 2: Container Orchestration](../part2-container-orchestration/index.md) | [Part 4: Application Delivery →](../part4-application-delivery/index.md)
+[← Part 2: Container Orchestration](../part2-container-orchestration/) | [Part 4: Application Delivery →](../part4-application-delivery/)

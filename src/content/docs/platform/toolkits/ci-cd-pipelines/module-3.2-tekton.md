@@ -1,5 +1,6 @@
 ---
 title: "Module 3.2: Tekton"
+slug: platform/toolkits/ci-cd-pipelines/module-3.2-tekton
 sidebar:
   order: 3
   label: "CI/CD Pipelines"
@@ -11,7 +12,7 @@ The platform architect presented the migration proposal to the CTO with unexpect
 ## Prerequisites
 
 Before starting this module:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) — CI/CD concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) — CI/CD concepts
 - Kubernetes basics (Pods, Services, CRDs)
 - Container fundamentals
 - YAML proficiency
@@ -1363,7 +1364,7 @@ Before moving on, ensure you can:
 
 ## Next Module
 
-Continue to [Module 3.3: Argo Workflows](module-3.3-argo-workflows.md) where we'll explore DAG-based workflow orchestration.
+Continue to [Module 3.3: Argo Workflows](module-3.3-argo-workflows/) where we'll explore DAG-based workflow orchestration.
 
 ---
 

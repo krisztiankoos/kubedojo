@@ -1,5 +1,6 @@
 ---
 title: "Module 3.2: Repository Strategies"
+slug: platform/disciplines/gitops/module-3.2-repository-strategies
 sidebar:
   order: 3
   label: "GitOps"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops.md) — GitOps fundamentals
+- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops/) — GitOps fundamentals
 - **Required**: Git branching and PR workflow experience
 - **Recommended**: Experience managing multiple services/environments
 
@@ -813,7 +814,7 @@ There's no universally "right" answer — but there are patterns that work bette
 
 ## Next Module
 
-Continue to [Module 3.3: Environment Promotion](module-3.3-environment-promotion.md) to learn strategies for moving changes safely through environments.
+Continue to [Module 3.3: Environment Promotion](module-3.3-environment-promotion/) to learn strategies for moving changes safely through environments.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 5.1: Image Security"
+slug: k8s/kcsa/part5-platform-security/module-5.1-image-security
 sidebar:
   order: 2
   label: "Part 5: Platform Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 4.4: Supply Chain Threats](../part4-threat-model/module-4.4-supply-chain.md)
+> **Prerequisites**: [Module 4.4: Supply Chain Threats](../part4-threat-model/module-4.4-supply-chain/)
 
 ---
 
@@ -629,4 +630,4 @@ Key principles:
 
 ## Next Module
 
-[Module 5.2: Security Observability](module-5.2-observability.md) - Monitoring and detecting security threats in Kubernetes.
+[Module 5.2: Security Observability](module-5.2-observability/) - Monitoring and detecting security threats in Kubernetes.

@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: Kustomize"
+slug: k8s/ckad/part2-deployment/module-2.3-kustomize
 sidebar:
   order: 3
   label: "Part 2: Deployment"
@@ -979,4 +980,4 @@ cd /tmp && rm -rf drill6
 
 ## Next Module
 
-[Module 2.4: Deployment Strategies](module-2.4-deployment-strategies.md) - Blue/green, canary, and rolling deployment patterns.
+[Module 2.4: Deployment Strategies](module-2.4-deployment-strategies/) - Blue/green, canary, and rolling deployment patterns.

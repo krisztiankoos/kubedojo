@@ -1,5 +1,6 @@
 ---
 title: "Module 0.3: First Terminal Commands"
+slug: prerequisites/zero-to-terminal/module-0.3-first-commands
 sidebar:
   order: 4
   label: "Zero to Terminal"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25 minutes
 >
-> **Prerequisites**: [Module 0.1 - What is a Computer?](module-0.1-what-is-a-computer.md)
+> **Prerequisites**: [Module 0.1 - What is a Computer?](module-0.1-what-is-a-computer/)
 
 ---
 
@@ -556,7 +557,7 @@ No output means it's gone.
 
 ## What's Next?
 
-In [Module 0.5: Editing Files](module-0.5-editing-files.md), you'll learn how to actually put content inside files using a text editor that runs right in your terminal. Creating empty files is useful, but filling them with content is where the real work happens.
+In [Module 0.5: Editing Files](module-0.5-editing-files/), you'll learn how to actually put content inside files using a text editor that runs right in your terminal. Creating empty files is useful, but filling them with content is where the real work happens.
 
 ---
 

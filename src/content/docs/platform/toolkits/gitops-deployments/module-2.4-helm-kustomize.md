@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Helm & Kustomize"
+slug: platform/toolkits/gitops-deployments/module-2.4-helm-kustomize
 sidebar:
   order: 5
   label: "GitOps & Deployments"
@@ -11,7 +12,7 @@ The DevOps lead scrolled through the pull request with growing horror. Someone h
 ## Prerequisites
 
 Before starting this module:
-- [Module 2.1: ArgoCD](module-2.1-argocd.md) or [Module 2.3: Flux](module-2.3-flux.md)
+- [Module 2.1: ArgoCD](module-2.1-argocd/) or [Module 2.3: Flux](module-2.3-flux/)
 - Basic Kubernetes YAML knowledge
 - Understanding of templating concepts
 
@@ -1470,7 +1471,7 @@ These tools form the foundation of modern Kubernetes deployment practices.
 
 ## Next Steps
 
-Continue to [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) where we'll explore Dagger, Tekton, and Argo Workflows for building before deploying.
+Continue to [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) where we'll explore Dagger, Tekton, and Argo Workflows for building before deploying.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: CDN & Edge Computing"
+slug: platform/foundations/advanced-networking/module-1.2-cdn-edge
 sidebar:
   order: 3
   label: "Advanced Networking"
@@ -1276,4 +1277,4 @@ Before moving on, ensure you understand:
 
 ## Next Module
 
-[Module 1.3: WAF & DDoS Mitigation](module-1.3-waf-ddos.md) — How Web Application Firewalls protect against OWASP Top 10 attacks, and how DDoS mitigation works at scale.
+[Module 1.3: WAF & DDoS Mitigation](module-1.3-waf-ddos/) — How Web Application Firewalls protect against OWASP Top 10 attacks, and how DDoS mitigation works at scale.

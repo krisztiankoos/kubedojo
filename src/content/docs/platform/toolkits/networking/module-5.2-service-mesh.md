@@ -1,5 +1,6 @@
 ---
 title: "Module 5.2: Service Mesh"
+slug: platform/toolkits/networking/module-5.2-service-mesh
 sidebar:
   order: 3
   label: "Networking"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 5.1: Cilium](module-5.1-cilium.md)
+- [Module 5.1: Cilium](module-5.1-cilium/)
 - Kubernetes Services and Ingress
 - Basic understanding of proxies and TLS
 
@@ -1110,7 +1111,7 @@ kubectl delete namespace istio-system
 
 ## Next Module
 
-Continue to [Scaling & Reliability Toolkit](../scaling-reliability/index.md) to learn about Karpenter for node autoscaling, KEDA for event-driven scaling, and Velero for backup and disaster recovery.
+Continue to [Scaling & Reliability Toolkit](../scaling-reliability/) to learn about Karpenter for node autoscaling, KEDA for event-driven scaling, and Velero for backup and disaster recovery.
 
 ---
 

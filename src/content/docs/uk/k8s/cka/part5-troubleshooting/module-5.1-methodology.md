@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.1: \u041c\u0435\u0442\u043e\u0434\u043e\u043b\u043e\u0433\u0456\u044f \u0443\u0441\u0443\u043d\u0435\u043d\u043d\u044f \u043d\u0435\u0441\u043f\u0440\u0430\u0432\u043d\u043e\u0441\u0442\u0435\u0439"
+slug: uk/k8s/cka/part5-troubleshooting/module-5.1-methodology
 sidebar:
   order: 2
   label: "Part 5: Troubleshooting"
@@ -747,4 +748,4 @@ k logs <pod> -c <container> -f
 
 ## Наступний модуль
 
-Переходьте до [Модуль 5.2: Збої додатків](module-5.2-application-failures.md), щоб навчитися усувати несправності Підів, Деплойментів та проблем на рівні додатків.
+Переходьте до [Модуль 5.2: Збої додатків](module-5.2-application-failures/), щоб навчитися усувати несправності Підів, Деплойментів та проблем на рівні додатків.

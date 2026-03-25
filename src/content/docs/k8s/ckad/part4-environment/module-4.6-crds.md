@@ -1,5 +1,6 @@
 ---
 title: "Module 4.6: Custom Resource Definitions (CRDs)"
+slug: k8s/ckad/part4-environment/module-4.6-crds
 sidebar:
   order: 6
   label: "Part 4: Environment"
@@ -639,4 +640,4 @@ k delete crd configs.drill.example.com
 
 ## Next Module
 
-[Part 4 Cumulative Quiz](part4-cumulative-quiz.md) - Test your mastery of environment, configuration, and security topics.
+[Part 4 Cumulative Quiz](part4-cumulative-quiz/) - Test your mastery of environment, configuration, and security topics.

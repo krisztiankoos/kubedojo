@@ -1,5 +1,6 @@
 ---
 title: "Module 2.7: ConfigMaps & Secrets"
+slug: k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets
 sidebar:
   order: 8
   label: "Part 2: Workloads & Scheduling"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, ensure you have:
-- Completed [Module 2.1: Pods Deep-Dive](module-2.1-pods.md) (Pod spec structure)
-- Completed [Module 2.2: Deployments](module-2.2-deployments.md) (Updating configurations)
+- Completed [Module 2.1: Pods Deep-Dive](module-2.1-pods/) (Pod spec structure)
+- Completed [Module 2.2: Deployments](module-2.2-deployments/) (Updating configurations)
 - A running Kubernetes cluster (kind or minikube)
 - Basic understanding of environment variables
 
@@ -1021,7 +1022,7 @@ Note: This requires the ConfigMap to have a key named `db.host`. If your ConfigM
 
 Congratulations! You've completed all modules in Part 2: Workloads & Scheduling.
 
-**Next step:** [Part 2 Cumulative Quiz](part2-cumulative-quiz.md) - Test your knowledge across all Part 2 topics before moving on.
+**Next step:** [Part 2 Cumulative Quiz](part2-cumulative-quiz/) - Test your knowledge across all Part 2 topics before moving on.
 
 **Coming up in Part 3:** Services & Networking - How Pods communicate with each other and the outside world.
 
@@ -1033,12 +1034,12 @@ Quick links for review:
 
 | Module | Topic | Key Skills |
 |--------|-------|------------|
-| [2.1](module-2.1-pods.md) | Pods Deep-Dive | Multi-container patterns, lifecycle, probes |
-| [2.2](module-2.2-deployments.md) | Deployments & ReplicaSets | Rolling updates, rollbacks, scaling |
-| [2.3](module-2.3-daemonsets-statefulsets.md) | DaemonSets & StatefulSets | Node-level workloads, stateful apps |
-| [2.4](module-2.4-jobs-cronjobs.md) | Jobs & CronJobs | Batch processing, scheduled tasks |
-| [2.5](module-2.5-resource-management.md) | Resource Management | Requests, limits, QoS, quotas |
-| [2.6](module-2.6-scheduling.md) | Scheduling | Affinity, taints, topology |
-| [2.7](module-2.7-configmaps-secrets.md) | ConfigMaps & Secrets | Configuration injection |
+| [2.1](module-2.1-pods/) | Pods Deep-Dive | Multi-container patterns, lifecycle, probes |
+| [2.2](module-2.2-deployments/) | Deployments & ReplicaSets | Rolling updates, rollbacks, scaling |
+| [2.3](module-2.3-daemonsets-statefulsets/) | DaemonSets & StatefulSets | Node-level workloads, stateful apps |
+| [2.4](module-2.4-jobs-cronjobs/) | Jobs & CronJobs | Batch processing, scheduled tasks |
+| [2.5](module-2.5-resource-management/) | Resource Management | Requests, limits, QoS, quotas |
+| [2.6](module-2.6-scheduling/) | Scheduling | Affinity, taints, topology |
+| [2.7](module-2.7-configmaps-secrets/) | ConfigMaps & Secrets | Configuration injection |
 
 **Exam Tip:** Part 2 (Workloads & Scheduling) is 15% of the CKA exam. Master `kubectl run`, `kubectl create deployment`, and `kubectl create configmap/secret` for quick task completion.

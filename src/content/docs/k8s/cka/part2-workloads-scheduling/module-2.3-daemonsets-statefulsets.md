@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: DaemonSets & StatefulSets"
+slug: k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets
 sidebar:
   order: 4
   label: "Part 2: Workloads & Scheduling"
@@ -1050,4 +1051,4 @@ For each scenario, identify whether to use Deployment, DaemonSet, or StatefulSet
 
 ## Next Module
 
-[Module 2.4: Jobs & CronJobs](module-2.4-jobs-cronjobs.md) - Batch workloads and scheduled tasks.
+[Module 2.4: Jobs & CronJobs](module-2.4-jobs-cronjobs/) - Batch workloads and scheduled tasks.

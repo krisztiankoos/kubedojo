@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.3: DNS \u0442\u0430 CoreDNS"
+slug: uk/k8s/cka/part3-services-networking/module-3.3-dns
 sidebar:
   order: 4
   label: "Part 3: Services & Networking"
@@ -856,4 +857,4 @@ k delete namespace test
 
 ## Наступний модуль
 
-[Модуль 3.4: Ingress](module-3.4-ingress.md) — HTTP-маршрутизація та зовнішній доступ до Сервісів.
+[Модуль 3.4: Ingress](module-3.4-ingress/) — HTTP-маршрутизація та зовнішній доступ до Сервісів.

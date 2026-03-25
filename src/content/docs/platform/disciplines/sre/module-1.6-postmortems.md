@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Postmortems and Learning"
+slug: platform/disciplines/sre/module-1.6-postmortems
 sidebar:
   order: 7
   label: "SRE"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.5: Incident Management](module-1.5-incident-management.md) — Incident response
-- **Required**: [Module 1.1: What is SRE?](module-1.1-what-is-sre.md) — SRE fundamentals
-- **Recommended**: [Systems Thinking Track](../../foundations/systems-thinking/index.md) — Understanding system dynamics
+- **Required**: [Module 1.5: Incident Management](module-1.5-incident-management/) — Incident response
+- **Required**: [Module 1.1: What is SRE?](module-1.1-what-is-sre/) — SRE fundamentals
+- **Recommended**: [Systems Thinking Track](../../foundations/systems-thinking/) — Understanding system dynamics
 
 ---
 
@@ -716,7 +717,7 @@ Every incident should make your system stronger. Postmortems are how that happen
 
 ## Next Module
 
-Continue to [Module 1.7: Capacity Planning](module-1.7-capacity-planning.md) to learn how to ensure your systems can handle future demand.
+Continue to [Module 1.7: Capacity Planning](module-1.7-capacity-planning/) to learn how to ensure your systems can handle future demand.
 
 ---
 

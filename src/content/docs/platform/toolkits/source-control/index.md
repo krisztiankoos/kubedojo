@@ -10,23 +10,23 @@ sidebar:
 
 The Source Control & Collaboration Toolkit goes beyond "just use GitHub." Modern platform engineering requires understanding the full landscape: GitLab's integrated DevOps platform, self-hosted alternatives for data sovereignty, and GitHub's advanced security features that most teams never enable.
 
-This toolkit applies concepts from [DevSecOps Discipline](../../disciplines/devsecops/index.md) and [GitOps Discipline](../../disciplines/gitops/index.md).
+This toolkit applies concepts from [DevSecOps Discipline](../../disciplines/devsecops/) and [GitOps Discipline](../../disciplines/gitops/).
 
 ## Prerequisites
 
 Before starting this toolkit:
 - Basic Git proficiency (commits, branches, merges)
 - Understanding of CI/CD concepts
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - Security integration
-- [GitOps Discipline](../../disciplines/gitops/index.md) - Git-centric workflows
+- [DevSecOps Discipline](../../disciplines/devsecops/) - Security integration
+- [GitOps Discipline](../../disciplines/gitops/) - Git-centric workflows
 
 ## Modules
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 11.1 | [GitLab](module-11.1-gitlab.md) | `[COMPLEX]` | 50-60 min |
-| 11.2 | [Gitea & Forgejo](module-11.2-gitea-forgejo.md) | `[MEDIUM]` | 40-45 min |
-| 11.3 | [GitHub Advanced](module-11.3-github-advanced.md) | `[MEDIUM]` | 40-45 min |
+| 11.1 | [GitLab](module-11.1-gitlab/) | `[COMPLEX]` | 50-60 min |
+| 11.2 | [Gitea & Forgejo](module-11.2-gitea-forgejo/) | `[MEDIUM]` | 40-45 min |
+| 11.3 | [GitHub Advanced](module-11.3-github-advanced/) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -285,11 +285,11 @@ Note: Costs vary significantly by usage patterns and scale
 
 ## Related Tracks
 
-- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/index.md) — Security integration concepts
-- **Before**: [GitOps Discipline](../../disciplines/gitops/index.md) — Git-centric workflows
-- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) — Pipeline implementation
-- **Related**: [Code Quality Toolkit](../code-quality/index.md) — Scanning and analysis tools
-- **After**: [Security Tools Toolkit](../security-tools/index.md) — Runtime security
+- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/) — Security integration concepts
+- **Before**: [GitOps Discipline](../../disciplines/gitops/) — Git-centric workflows
+- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Pipeline implementation
+- **Related**: [Code Quality Toolkit](../code-quality/) — Scanning and analysis tools
+- **After**: [Security Tools Toolkit](../security-tools/) — Runtime security
 
 ---
 

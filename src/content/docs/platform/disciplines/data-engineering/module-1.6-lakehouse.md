@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Building a Data Lakehouse on Kubernetes"
+slug: platform/disciplines/data-engineering/module-1.6-lakehouse
 sidebar:
   order: 7
   label: "Data Engineering"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2 — Apache Kafka on Kubernetes](module-1.2-kafka.md) — Understanding event streaming and data pipelines
-- **Required**: [Module 1.4 — Batch Processing & Apache Spark on K8s](module-1.4-spark.md) — Spark fundamentals and the Spark Operator
+- **Required**: [Module 1.2 — Apache Kafka on Kubernetes](module-1.2-kafka/) — Understanding event streaming and data pipelines
+- **Required**: [Module 1.4 — Batch Processing & Apache Spark on K8s](module-1.4-spark/) — Spark fundamentals and the Spark Operator
 - **Recommended**: SQL proficiency (joins, window functions, CTEs, partitioning)
 - **Recommended**: Familiarity with S3/object storage concepts (buckets, prefixes, object lifecycle)
 
@@ -1235,9 +1236,9 @@ This is the promise of the lakehouse: warehouse-grade reliability, lake-scale ec
 ## Next Steps
 
 You have completed the Data Engineering on Kubernetes discipline. From here, consider:
-- **[SRE Discipline](../sre/index.md)** — Learn to operate these data systems reliably in production
-- **[Observability Toolkit](../../toolkits/observability/index.md)** — Monitor your data platform with Prometheus, Grafana, and OpenTelemetry
-- **[MLOps Discipline](../mlops/index.md)** — Build ML pipelines on top of your lakehouse
+- **[SRE Discipline](../sre/)** — Learn to operate these data systems reliably in production
+- **[Observability Toolkit](../../toolkits/observability/)** — Monitor your data platform with Prometheus, Grafana, and OpenTelemetry
+- **[MLOps Discipline](../mlops/)** — Build ML pipelines on top of your lakehouse
 
 ---
 

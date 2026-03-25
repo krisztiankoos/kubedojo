@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: FinOps Fundamentals & The Cloud Bill"
+slug: platform/disciplines/finops/module-1.1-finops-fundamentals
 sidebar:
   order: 2
   label: "FinOps"
@@ -720,7 +721,7 @@ The key insight is that FinOps is not about spending *less*. It's about spending
 
 ## Next Module
 
-Continue to [Module 1.2: Kubernetes Cost Allocation & Visibility](module-1.2-k8s-cost-allocation.md) to learn how to attribute cloud costs in multi-tenant Kubernetes clusters.
+Continue to [Module 1.2: Kubernetes Cost Allocation & Visibility](module-1.2-k8s-cost-allocation/) to learn how to attribute cloud costs in multi-tenant Kubernetes clusters.
 
 ---
 

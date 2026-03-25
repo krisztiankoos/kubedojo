@@ -1,5 +1,6 @@
 ---
 title: "Module 5.1: Troubleshooting Methodology"
+slug: k8s/cka/part5-troubleshooting/module-5.1-methodology
 sidebar:
   order: 2
   label: "Part 5: Troubleshooting"
@@ -745,4 +746,4 @@ k logs <pod> -c <container> -f
 
 ## Next Module
 
-Continue to [Module 5.2: Application Failures](module-5.2-application-failures.md) to learn how to troubleshoot pods, deployments, and application-level issues.
+Continue to [Module 5.2: Application Failures](module-5.2-application-failures/) to learn how to troubleshoot pods, deployments, and application-level issues.

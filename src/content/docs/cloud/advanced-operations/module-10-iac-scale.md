@@ -1201,4 +1201,4 @@ terraform test
 
 ## Next Module
 
-Return to the [Advanced Operations README](index.md) for a summary of all modules in this phase and guidance on what to learn next. You have covered the full spectrum of advanced cloud operations: from multi-account architecture through transit networking, identity, disaster recovery, active-active deployments, migration, cost optimization, observability, and infrastructure as code at scale.
+Return to the [Advanced Operations README]() for a summary of all modules in this phase and guidance on what to learn next. You have covered the full spectrum of advanced cloud operations: from multi-account architecture through transit networking, identity, disaster recovery, active-active deployments, migration, cost optimization, observability, and infrastructure as code at scale.

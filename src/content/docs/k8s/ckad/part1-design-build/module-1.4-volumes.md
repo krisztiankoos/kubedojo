@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Volumes for Developers"
+slug: k8s/ckad/part1-design-build/module-1.4-volumes
 sidebar:
   order: 4
   label: "Part 1: Design & Build"
@@ -831,4 +832,4 @@ k delete cm processing-config
 
 ## Next Module
 
-[Part 1 Cumulative Quiz](part1-cumulative-quiz.md) - Test your Application Design and Build knowledge.
+[Part 1 Cumulative Quiz](part1-cumulative-quiz/) - Test your Application Design and Build knowledge.

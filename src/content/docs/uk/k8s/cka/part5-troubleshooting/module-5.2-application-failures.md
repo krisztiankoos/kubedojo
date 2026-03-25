@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.2: \u0417\u0431\u043e\u0457 \u0434\u043e\u0434\u0430\u0442\u043a\u0456\u0432"
+slug: uk/k8s/cka/part5-troubleshooting/module-5.2-application-failures
 sidebar:
   order: 3
   label: "Part 5: Troubleshooting"
@@ -886,4 +887,4 @@ k get pod <pod> -o yaml | grep -A 15 readinessProbe
 
 ## Наступний модуль
 
-Переходьте до [Модуль 5.3: Збої площини управління](module-5.3-control-plane.md), щоб навчитися усувати несправності API-сервера, планувальника, controller manager та etcd.
+Переходьте до [Модуль 5.3: Збої площини управління](module-5.3-control-plane/), щоб навчитися усувати несправності API-сервера, планувальника, controller manager та etcd.

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Error Budgets"
+slug: platform/disciplines/sre/module-1.3-error-budgets
 sidebar:
   order: 4
   label: "SRE"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: Service Level Objectives](module-1.2-slos.md) — Understanding SLOs
-- **Required**: [Reliability Engineering Track](../../foundations/reliability-engineering/index.md) — Reliability concepts
+- **Required**: [Module 1.2: Service Level Objectives](module-1.2-slos/) — Understanding SLOs
+- **Required**: [Reliability Engineering Track](../../foundations/reliability-engineering/) — Reliability concepts
 - **Recommended**: Experience with software releases and deployment
 
 ---
@@ -715,7 +716,7 @@ Without error budgets, SLOs are just numbers. With them, SLOs drive behavior.
 
 ## Next Module
 
-Continue to [Module 1.4: Toil and Automation](module-1.4-toil-automation.md) to learn how to identify and eliminate repetitive operational work.
+Continue to [Module 1.4: Toil and Automation](module-1.4-toil-automation/) to learn how to identify and eliminate repetitive operational work.
 
 ---
 

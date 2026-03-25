@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Node Metadata Protection"
+slug: k8s/cks/part1-cluster-setup/module-1.4-node-metadata
 sidebar:
   order: 4
   label: "Part 1: Cluster Setup"
@@ -526,4 +527,4 @@ kubectl delete namespace metadata-test
 
 ## Next Module
 
-[Module 1.5: GUI Security](module-1.5-gui-security.md) - Securing Kubernetes Dashboard and web UIs.
+[Module 1.5: GUI Security](module-1.5-gui-security/) - Securing Kubernetes Dashboard and web UIs.

@@ -1,5 +1,6 @@
 ---
 title: "Module 4.5: Tetragon - eBPF Runtime Security"
+slug: platform/toolkits/security-tools/module-4.5-tetragon
 sidebar:
   order: 6
   label: "Security Tools"
@@ -895,4 +896,4 @@ Kprobes are eBPF programs attached to kernel functions. When the function is cal
 
 ## Next Module
 
-Continue to [Module 4.6: KubeArmor](module-4.6-kubearmor.md) to learn about runtime security policies with least-privilege enforcement.
+Continue to [Module 4.6: KubeArmor](module-4.6-kubearmor/) to learn about runtime security policies with least-privilege enforcement.

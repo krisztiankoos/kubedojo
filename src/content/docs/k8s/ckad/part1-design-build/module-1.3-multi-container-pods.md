@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Multi-Container Pods"
+slug: k8s/ckad/part1-design-build/module-1.3-multi-container-pods
 sidebar:
   order: 3
   label: "Part 1: Design & Build"
@@ -659,4 +660,4 @@ k delete pod app-complete
 
 ## Next Module
 
-[Module 1.4: Volumes for Developers](module-1.4-volumes.md) - Persistent and ephemeral storage patterns.
+[Module 1.4: Volumes for Developers](module-1.4-volumes/) - Persistent and ephemeral storage patterns.

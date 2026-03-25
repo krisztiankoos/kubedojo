@@ -1,5 +1,6 @@
 ---
 title: "Module 0.2: Developer Workflow"
+slug: k8s/ckad/part0-environment/module-0.2-developer-workflow
 sidebar:
   order: 2
   label: "Part 0: Environment"
@@ -562,4 +563,4 @@ k delete ns web-app
 
 ## Next Module
 
-[Module 1.1: Container Images](../part1-design-build/module-1.1-container-images.md) - Build, tag, and push container images for CKAD.
+[Module 1.1: Container Images](../part1-design-build/module-1.1-container-images/) - Build, tag, and push container images for CKAD.

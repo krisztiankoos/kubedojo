@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: Scheduling"
+slug: k8s/kcna/part2-container-orchestration/module-2.1-scheduling
 sidebar:
   order: 2
   label: "Part 2: Container Orchestration"
@@ -357,4 +358,4 @@ Resources affect scheduling decisions:
 
 ## Next Module
 
-[Module 2.2: Scaling](module-2.2-scaling.md) - How Kubernetes automatically scales applications.
+[Module 2.2: Scaling](module-2.2-scaling/) - How Kubernetes automatically scales applications.

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.7: kubeadm Basics - Cluster Bootstrap"
+slug: k8s/cka/part1-cluster-architecture/module-1.7-kubeadm
 sidebar:
   order: 8
   label: "Part 1: Cluster Architecture"
@@ -897,20 +898,20 @@ Quick links for review:
 
 | Module | Topic | Key Skills |
 |--------|-------|------------|
-| [1.1](module-1.1-control-plane.md) | Control Plane Deep-Dive | Component roles, troubleshooting, static pods |
-| [1.2](module-1.2-extension-interfaces.md) | Extension Interfaces | CNI/CSI/CRI, crictl, plugin troubleshooting |
-| [1.3](module-1.3-helm.md) | Helm | Install, upgrade, rollback, values |
-| [1.4](module-1.4-kustomize.md) | Kustomize | Base/overlay, patches, `kubectl -k` |
-| [1.5](module-1.5-crds-operators.md) | CRDs & Operators | Create CRDs, manage custom resources |
-| [1.6](module-1.6-rbac.md) | RBAC | Roles, bindings, ServiceAccounts, `can-i` |
-| [1.7](module-1.7-kubeadm.md) | kubeadm Basics | Init, join, cordon, drain, tokens |
+| [1.1](module-1.1-control-plane/) | Control Plane Deep-Dive | Component roles, troubleshooting, static pods |
+| [1.2](module-1.2-extension-interfaces/) | Extension Interfaces | CNI/CSI/CRI, crictl, plugin troubleshooting |
+| [1.3](module-1.3-helm/) | Helm | Install, upgrade, rollback, values |
+| [1.4](module-1.4-kustomize/) | Kustomize | Base/overlay, patches, `kubectl -k` |
+| [1.5](module-1.5-crds-operators/) | CRDs & Operators | Create CRDs, manage custom resources |
+| [1.6](module-1.6-rbac/) | RBAC | Roles, bindings, ServiceAccounts, `can-i` |
+| [1.7](module-1.7-kubeadm/) | kubeadm Basics | Init, join, cordon, drain, tokens |
 
-📝 **Before moving on**: Complete the [Part 1 Cumulative Quiz](part1-cumulative-quiz.md) to test your retention.
+📝 **Before moving on**: Complete the [Part 1 Cumulative Quiz](part1-cumulative-quiz/) to test your retention.
 
 ---
 
 ## Next Steps
 
-Continue to [Part 2: Workloads & Scheduling](../part2-workloads-scheduling/index.md) - Learn how to deploy and manage applications.
+Continue to [Part 2: Workloads & Scheduling](../part2-workloads-scheduling/) - Learn how to deploy and manage applications.
 
 This covers 15% of the exam and builds directly on what you've learned about cluster architecture.

@@ -425,4 +425,4 @@ ConfigMaps and Secrets externalize configuration:
 
 ## Next Module
 
-[Module 7: Namespaces and Labels](module-7-namespaces-labels.md) - Organizing your cluster.
+[Module 7: Namespaces and Labels](module-7-namespaces-labels/) - Organizing your cluster.

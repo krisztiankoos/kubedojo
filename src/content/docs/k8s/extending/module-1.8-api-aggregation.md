@@ -1,5 +1,6 @@
 ---
 title: "Module 1.8: API Aggregation & Extension API Servers"
+slug: k8s/extending/module-1.8-api-aggregation
 sidebar:
   order: 9
   label: "Extending Kubernetes"

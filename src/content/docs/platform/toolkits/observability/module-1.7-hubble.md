@@ -1,5 +1,6 @@
 ---
 title: "Module 1.7: Hubble - Network Observability with Cilium"
+slug: platform/toolkits/observability/module-1.7-hubble
 sidebar:
   order: 8
   label: "Observability"
@@ -819,4 +820,4 @@ This requires L7 visibility to be enabled. You can also use ranges like `--http-
 
 ## Next Module
 
-Continue to [Module 1.8: Coroot](module-1.8-coroot.md) to learn about auto-instrumentation observability platforms, or move to [Module 4.5: Tetragon](../security-tools/module-4.5-tetragon.md) to explore eBPF-based security.
+Continue to [Module 1.8: Coroot](module-1.8-coroot/) to learn about auto-instrumentation observability platforms, or move to [Module 4.5: Tetragon](../security-tools/module-4.5-tetragon/) to explore eBPF-based security.

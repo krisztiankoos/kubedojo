@@ -1,5 +1,6 @@
 ---
 title: "Module 5.4: Model Serving & Inference"
+slug: platform/disciplines/mlops/module-5.4-model-serving
 sidebar:
   order: 5
   label: "MLOps"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 5.3: Model Training & Experimentation](module-5.3-model-training.md)
+- [Module 5.3: Model Training & Experimentation](module-5.3-model-training/)
 - Understanding of REST APIs
 - Basic Kubernetes concepts (Deployments, Services)
 - Familiarity with containerization (Docker)
@@ -685,4 +686,4 @@ Model serving bridges the gap between training and production. The right serving
 
 ## Next Module
 
-Continue to [Module 5.5: Model Monitoring & Observability](module-5.5-model-monitoring.md) to learn how to detect model degradation before it impacts users.
+Continue to [Module 5.5: Model Monitoring & Observability](module-5.5-model-monitoring/) to learn how to detect model degradation before it impacts users.

@@ -1,5 +1,6 @@
 ---
 title: "Module 3.5: Cluster API (CAPI)"
+slug: platform/toolkits/platforms/module-3.5-cluster-api
 sidebar:
   order: 6
   label: "Platforms"
@@ -20,8 +21,8 @@ Cluster API (CAPI) brings the declarative, reconciliation-driven model of Kubern
 - Infrastructure provider landscape and GitOps integration
 
 **Prerequisites**:
-- [Kubernetes Fundamentals](../../../prerequisites/kubernetes-basics/index.md)
-- [kubeadm cluster setup](../../../k8s/cka/index.md) (understanding of cluster bootstrapping)
+- [Kubernetes Fundamentals](../../../prerequisites/kubernetes-basics/)
+- [kubeadm cluster setup](../../../k8s/cka/) (understanding of cluster bootstrapping)
 - Familiarity with Custom Resource Definitions (CRDs)
 
 ---
@@ -164,7 +165,7 @@ That is it. Dozens of underlying resources are created from one concise definiti
 | OpenStack | CAPO | OpenStack VMs | Stable |
 | Hetzner | CAPH | Hetzner Cloud + bare-metal | Community |
 
-> Cross-reference: For lightweight distributions that CAPI can bootstrap, see [K3s](../k8s-distributions/module-14.1-k3s.md), [Talos](../k8s-distributions/module-14.4-talos.md), and [k0s](../k8s-distributions/module-14.2-k0s.md). For understanding kubeadm (the default bootstrap provider), see the [CKA track](../../../k8s/cka/index.md).
+> Cross-reference: For lightweight distributions that CAPI can bootstrap, see [K3s](../k8s-distributions/module-14.1-k3s/), [Talos](../k8s-distributions/module-14.4-talos/), and [k0s](../k8s-distributions/module-14.2-k0s/). For understanding kubeadm (the default bootstrap provider), see the [CKA track](../../../k8s/cka/).
 
 ---
 
@@ -320,7 +321,7 @@ spec:
 
 With this setup, adding a new cluster means committing a YAML file. Upgrading a fleet means bumping the version in Git. Every change is auditable, reviewable, and reversible.
 
-> Cross-reference: See [ArgoCD](../gitops-deployments/module-2.1-argocd.md) and [Flux](../gitops-deployments/module-2.3-flux.md) for GitOps fundamentals.
+> Cross-reference: See [ArgoCD](../gitops-deployments/module-2.1-argocd/) and [Flux](../gitops-deployments/module-2.3-flux/) for GitOps fundamentals.
 
 ---
 
@@ -445,4 +446,4 @@ ClusterClass solves the problem of verbose, repetitive cluster definitions. With
 
 ---
 
-**Next Module**: [Module 7.1: Backstage](module-7.1-backstage.md) - Build an Internal Developer Portal to give developers self-service access to these clusters.
+**Next Module**: [Module 7.1: Backstage](module-7.1-backstage/) - Build an Internal Developer Portal to give developers self-service access to these clusters.

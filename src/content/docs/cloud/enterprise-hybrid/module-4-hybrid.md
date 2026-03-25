@@ -1008,4 +1008,4 @@ rm /tmp/onprem-cluster.yaml /tmp/cloud-cluster.yaml /tmp/hybrid-inventory.sh
 
 ## Next Module
 
-With hybrid connectivity established, it is time to manage multiple clusters at scale. Head to [Module 5: Multi-Cloud Fleet Management (Azure Arc / GKE Fleet)](module-5-fleet-management.md) to learn how Azure Arc and Google Fleet Manager let you manage Kubernetes clusters across any environment from a single control plane.
+With hybrid connectivity established, it is time to manage multiple clusters at scale. Head to [Module 5: Multi-Cloud Fleet Management (Azure Arc / GKE Fleet)](module-5-fleet-management/) to learn how Azure Arc and Google Fleet Manager let you manage Kubernetes clusters across any environment from a single control plane.

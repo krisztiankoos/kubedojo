@@ -10,9 +10,9 @@ This part introduces cloud native security principles, the 4C model, and mindset
 
 | Module | Topic | Complexity | Time |
 |--------|-------|------------|------|
-| [1.1](module-1.1-four-cs.md) | The Four Cs | Medium | 20-30 min |
-| [1.2](module-1.2-cloud-provider-security.md) | Cloud Provider Security | Medium | 20-30 min |
-| [1.3](module-1.3-security-principles.md) | Security Principles | Medium | 20-30 min |
+| [1.1](module-1.1-four-cs/) | The Four Cs | Medium | 20-30 min |
+| [1.2](module-1.2-cloud-provider-security/) | Cloud Provider Security | Medium | 20-30 min |
+| [1.3](module-1.3-security-principles/) | Security Principles | Medium | 20-30 min |
 
 ## What You'll Learn
 
@@ -22,4 +22,4 @@ This part introduces cloud native security principles, the 4C model, and mindset
 
 ---
 
-[← Part 0: Introduction](../part0-introduction/module-0.1-kcsa-overview.md) | [Part 2: Cluster Component Security →](../part2-cluster-component-security/index.md)
+[← Part 0: Introduction](../part0-introduction/module-0.1-kcsa-overview/) | [Part 2: Cluster Component Security →](../part2-cluster-component-security/)

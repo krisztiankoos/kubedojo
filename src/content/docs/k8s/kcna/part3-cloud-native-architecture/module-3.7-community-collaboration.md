@@ -1,5 +1,6 @@
 ---
 title: "Module 3.7: Cloud Native Community & Collaboration"
+slug: k8s/kcna/part3-cloud-native-architecture/module-3.7-community-collaboration
 sidebar:
   order: 8
   label: "Part 3: Cloud Native Architecture"

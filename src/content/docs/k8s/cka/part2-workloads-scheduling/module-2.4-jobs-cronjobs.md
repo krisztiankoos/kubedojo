@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Jobs & CronJobs"
+slug: k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs
 sidebar:
   order: 5
   label: "Part 2: Workloads & Scheduling"
@@ -758,4 +759,4 @@ kubectl get job challenge-job -w
 
 ## Next Module
 
-[Module 2.5: Resource Management](module-2.5-resource-management.md) - Requests, limits, and QoS classes.
+[Module 2.5: Resource Management](module-2.5-resource-management/) - Requests, limits, and QoS classes.

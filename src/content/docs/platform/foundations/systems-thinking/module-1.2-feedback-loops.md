@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Feedback Loops"
+slug: platform/foundations/systems-thinking/module-1.2-feedback-loops
 sidebar:
   order: 3
   label: "Systems Thinking"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 35-40 minutes
 >
-> **Prerequisites**: [Module 1.1: What is Systems Thinking?](module-1.1-what-is-systems-thinking.md)
+> **Prerequisites**: [Module 1.1: What is Systems Thinking?](module-1.1-what-is-systems-thinking/)
 >
 > **Track**: Foundations
 
@@ -1111,4 +1112,4 @@ pool:
 
 ## Next Module
 
-[Module 1.3: Mental Models for Operations](module-1.3-mental-models-for-operations.md) - Build practical mental models for understanding production systems: leverage points, stock-and-flow diagrams, and the frameworks that experienced operators use instinctively.
+[Module 1.3: Mental Models for Operations](module-1.3-mental-models-for-operations/) - Build practical mental models for understanding production systems: leverage points, stock-and-flow diagrams, and the frameworks that experienced operators use instinctively.

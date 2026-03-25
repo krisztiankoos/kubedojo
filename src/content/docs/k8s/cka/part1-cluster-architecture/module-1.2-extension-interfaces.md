@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Extension Interfaces - CNI, CSI, CRI"
+slug: k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces
 sidebar:
   order: 3
   label: "Part 1: Cluster Architecture"
@@ -774,4 +775,4 @@ kubectl get sc
 
 ## Next Module
 
-[Module 1.3: Helm](module-1.3-helm.md) - Package management for Kubernetes, deploying applications with charts.
+[Module 1.3: Helm](module-1.3-helm/) - Package management for Kubernetes, deploying applications with charts.

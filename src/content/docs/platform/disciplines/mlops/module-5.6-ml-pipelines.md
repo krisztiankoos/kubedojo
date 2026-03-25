@@ -1,5 +1,6 @@
 ---
 title: "Module 5.6: ML Pipelines & Automation"
+slug: platform/disciplines/mlops/module-5.6-ml-pipelines
 sidebar:
   order: 7
   label: "MLOps"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 5.5: Model Monitoring & Observability](module-5.5-model-monitoring.md)
+- [Module 5.5: Model Monitoring & Observability](module-5.5-model-monitoring/)
 - Understanding of CI/CD concepts
 - Basic Kubernetes knowledge
 - Familiarity with DAGs (Directed Acyclic Graphs)
@@ -1018,4 +1019,4 @@ Congratulations on completing the MLOps Discipline! You now understand:
 - Drift detection and model monitoring
 - Pipeline orchestration and automation
 
-Next, explore the [ML Platforms Toolkit](../../toolkits/ml-platforms/index.md) for hands-on implementations with Kubeflow, MLflow, and other tools.
+Next, explore the [ML Platforms Toolkit](../../toolkits/ml-platforms/) for hands-on implementations with Kubeflow, MLflow, and other tools.

@@ -1,5 +1,6 @@
 ---
 title: "Module 0.7: Servers and SSH"
+slug: prerequisites/zero-to-terminal/module-0.7-servers-and-ssh
 sidebar:
   order: 8
   label: "Zero to Terminal"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25 minutes
 >
-> **Prerequisites**: [Module 0.5 - Editing Files](module-0.5-editing-files.md)
+> **Prerequisites**: [Module 0.5 - Editing Files](module-0.5-editing-files/)
 
 ---
 
@@ -430,7 +431,7 @@ It would look, feel, and work exactly like the localhost exercise. The only diff
 
 ## What's Next?
 
-In [Module 0.9: What is the Cloud?](module-0.9-what-is-the-cloud.md), you'll learn what happens when you take thousands of servers, put them in massive buildings, and let anyone rent them by the hour. That's cloud computing, and it's where Kubernetes lives.
+In [Module 0.9: What is the Cloud?](module-0.9-what-is-the-cloud/), you'll learn what happens when you take thousands of servers, put them in massive buildings, and let anyone rent them by the hour. That's cloud computing, and it's where Kubernetes lives.
 
 ---
 

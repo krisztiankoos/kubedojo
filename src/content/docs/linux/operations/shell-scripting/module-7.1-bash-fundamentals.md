@@ -1,5 +1,6 @@
 ---
 title: "Module 7.1: Bash Fundamentals"
+slug: linux/operations/shell-scripting/module-7.1-bash-fundamentals
 sidebar:
   order: 2
   label: "Shell Scripting"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: Kernel Architecture](../../foundations/system-essentials/module-1.1-kernel-architecture.md) for understanding commands
+- **Required**: [Module 1.1: Kernel Architecture](../../foundations/system-essentials/module-1.1-kernel-architecture/) for understanding commands
 - **Required**: Basic command line experience
 - **Helpful**: Any programming experience
 

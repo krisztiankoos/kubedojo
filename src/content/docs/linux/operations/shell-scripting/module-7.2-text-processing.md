@@ -1,5 +1,6 @@
 ---
 title: "Module 7.2: Text Processing"
+slug: linux/operations/shell-scripting/module-7.2-text-processing
 sidebar:
   order: 3
   label: "Shell Scripting"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 7.1: Bash Fundamentals](module-7.1-bash-fundamentals.md)
+- **Required**: [Module 7.1: Bash Fundamentals](module-7.1-bash-fundamentals/)
 - **Required**: Basic regex understanding
-- **Helpful**: [Module 6.2: Log Analysis](../troubleshooting/module-6.2-log-analysis.md)
+- **Helpful**: [Module 6.2: Log Analysis](../troubleshooting/module-6.2-log-analysis/)
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Filesystem Hierarchy"
+slug: linux/foundations/system-essentials/module-1.3-filesystem-hierarchy
 sidebar:
   order: 4
   label: "System Essentials"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: Kernel & Architecture](module-1.1-kernel-architecture.md)
-- **Helpful**: [Module 1.2: Processes & systemd](module-1.2-processes-systemd.md)
+- **Required**: [Module 1.1: Kernel & Architecture](module-1.1-kernel-architecture/)
+- **Helpful**: [Module 1.2: Processes & systemd](module-1.2-processes-systemd/)
 
 ---
 

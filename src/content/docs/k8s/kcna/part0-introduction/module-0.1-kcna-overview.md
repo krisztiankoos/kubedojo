@@ -1,5 +1,6 @@
 ---
 title: "Module 0.1: KCNA Exam Overview"
+slug: k8s/kcna/part0-introduction/module-0.1-kcna-overview
 sidebar:
   order: 2
   label: "Part 0: Introduction"
@@ -305,4 +306,4 @@ This curriculum follows the exam domains:
 
 ## Next Module
 
-[Module 0.2: Study Strategy](module-0.2-study-strategy.md) - How to effectively prepare for a multiple-choice Kubernetes exam.
+[Module 0.2: Study Strategy](module-0.2-study-strategy/) - How to effectively prepare for a multiple-choice Kubernetes exam.

@@ -10,12 +10,12 @@ sidebar:
 
 The Scaling & Reliability Toolkit covers advanced autoscaling and disaster recovery for Kubernetes. Karpenter provides intelligent node provisioning, KEDA enables event-driven workload scaling, and Velero ensures you can recover from disasters.
 
-This toolkit applies concepts from [SRE Discipline](../../disciplines/sre/index.md) and [Reliability Engineering](../../foundations/reliability-engineering/index.md).
+This toolkit applies concepts from [SRE Discipline](../../disciplines/sre/) and [Reliability Engineering](../../foundations/reliability-engineering/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [SRE Discipline](../../disciplines/sre/index.md) — Scaling and reliability concepts
+- [SRE Discipline](../../disciplines/sre/) — Scaling and reliability concepts
 - Kubernetes HPA basics
 - Persistent Volume concepts
 - Cloud provider fundamentals
@@ -24,12 +24,12 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 6.1 | [Karpenter](module-6.1-karpenter.md) | `[COMPLEX]` | 45-50 min |
-| 6.2 | [KEDA](module-6.2-keda.md) | `[MEDIUM]` | 40-45 min |
-| 6.3 | [Velero](module-6.3-velero.md) | `[MEDIUM]` | 40-45 min |
-| 6.4 | [FinOps with OpenCost](module-6.4-finops-opencost.md) | `[MEDIUM]` | 40-45 min |
-| 6.5 | [Chaos Engineering](module-6.5-chaos-engineering.md) | `[COMPLEX]` | 50 min |
-| 6.6 | [Knative](module-6.6-knative.md) | `[MEDIUM]` | 40-45 min |
+| 6.1 | [Karpenter](module-6.1-karpenter/) | `[COMPLEX]` | 45-50 min |
+| 6.2 | [KEDA](module-6.2-keda/) | `[MEDIUM]` | 40-45 min |
+| 6.3 | [Velero](module-6.3-velero/) | `[MEDIUM]` | 40-45 min |
+| 6.4 | [FinOps with OpenCost](module-6.4-finops-opencost/) | `[MEDIUM]` | 40-45 min |
+| 6.5 | [Chaos Engineering](module-6.5-chaos-engineering/) | `[COMPLEX]` | 50 min |
+| 6.6 | [Knative](module-6.6-knative/) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -231,11 +231,11 @@ FAILOVER: Restore from replicated backup to DR cluster
 
 ## Related Tracks
 
-- **Before**: [SRE Discipline](../../disciplines/sre/index.md) — SRE concepts
-- **Before**: [Reliability Engineering](../../foundations/reliability-engineering/index.md) — Theory
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Terraform modules for Karpenter, KEDA
-- **Related**: [Observability Toolkit](../observability/index.md) — Metrics for scaling
-- **After**: [Platforms Toolkit](../platforms/index.md) — Platform features
+- **Before**: [SRE Discipline](../../disciplines/sre/) — SRE concepts
+- **Before**: [Reliability Engineering](../../foundations/reliability-engineering/) — Theory
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for Karpenter, KEDA
+- **Related**: [Observability Toolkit](../observability/) — Metrics for scaling
+- **After**: [Platforms Toolkit](../platforms/) — Platform features
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 9.4: vLLM - High-Throughput LLM Serving"
+slug: platform/toolkits/ml-platforms/module-9.4-vllm
 sidebar:
   order: 5
   label: "ML Platforms"
@@ -939,4 +940,4 @@ When this metric is consistently high, requests are waiting in queue, indicating
 
 ## Next Module
 
-Continue to [Module 9.5: Ray Serve](module-9.5-ray-serve.md) to learn about distributed inference and scaling LLM serving across multiple nodes.
+Continue to [Module 9.5: Ray Serve](module-9.5-ray-serve/) to learn about distributed inference and scaling LLM serving across multiple nodes.

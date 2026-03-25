@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Golden Paths"
+slug: platform/disciplines/platform-engineering/module-2.4-golden-paths
 sidebar:
   order: 5
   label: "Platform Engineering"
@@ -10,9 +11,9 @@ sidebar:
 
 Before starting this module, you should:
 
-- Complete [Module 2.1: What is Platform Engineering?](module-2.1-what-is-platform-engineering.md) - Platform foundations
-- Complete [Module 2.2: Developer Experience](module-2.2-developer-experience.md) - Cognitive load concepts
-- Complete [Module 2.3: Internal Developer Platforms](module-2.3-internal-developer-platforms.md) - IDP components
+- Complete [Module 2.1: What is Platform Engineering?](module-2.1-what-is-platform-engineering/) - Platform foundations
+- Complete [Module 2.2: Developer Experience](module-2.2-developer-experience/) - Cognitive load concepts
+- Complete [Module 2.3: Internal Developer Platforms](module-2.3-internal-developer-platforms/) - IDP components
 - Understand template engines (Helm, Cookiecutter, or similar)
 
 ## Why This Module Matters
@@ -1065,6 +1066,6 @@ The test of a great golden path: **developers choose it because it's better, not
 
 ## Next Module
 
-Continue to [Module 2.5: Self-Service Infrastructure](module-2.5-self-service-infrastructure.md) to learn how to empower developers with on-demand infrastructure while maintaining control and governance.
+Continue to [Module 2.5: Self-Service Infrastructure](module-2.5-self-service-infrastructure/) to learn how to empower developers with on-demand infrastructure while maintaining control and governance.
 
 ---

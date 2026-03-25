@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.3: \u041c\u0435\u0440\u0435\u0436\u0435\u0432\u0456 \u043f\u043e\u043b\u0456\u0442\u0438\u043a\u0438"
+slug: uk/k8s/ckad/part5-networking/module-5.3-networkpolicies
 sidebar:
   order: 3
   label: "Part 5: Networking"
@@ -757,4 +758,4 @@ k delete ns drill6
 
 ## Наступний модуль
 
-[Сукупний тест частини 5](part5-cumulative-quiz.md) — Перевірте своє володіння Сервісами, Інгресом і мережевими політиками.
+[Сукупний тест частини 5](part5-cumulative-quiz/) — Перевірте своє володіння Сервісами, Інгресом і мережевими політиками.

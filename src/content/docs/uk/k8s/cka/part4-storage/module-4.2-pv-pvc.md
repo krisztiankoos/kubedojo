@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.2: PersistentVolumes \u0442\u0430 PersistentVolumeClaims"
+slug: uk/k8s/cka/part4-storage/module-4.2-pv-pvc
 sidebar:
   order: 3
   label: "Part 4: Storage"
@@ -800,4 +801,4 @@ k delete pv lab-pv
 
 ## Наступний модуль
 
-Переходьте до [Модуль 4.3: StorageClasses та динамічне надання](module-4.3-storageclasses.md), щоб дізнатися про автоматичне створення PV.
+Переходьте до [Модуль 4.3: StorageClasses та динамічне надання](module-4.3-storageclasses/), щоб дізнатися про автоматичне створення PV.

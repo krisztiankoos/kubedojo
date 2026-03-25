@@ -10,10 +10,10 @@ This part covers platform-level security controls including image security, obse
 
 | Module | Topic | Complexity | Time |
 |--------|-------|------------|------|
-| [5.1](module-5.1-image-security.md) | Image Security | Medium | 25-30 min |
-| [5.2](module-5.2-observability.md) | Security Observability | Medium | 25-30 min |
-| [5.3](module-5.3-runtime-security.md) | Runtime Security | Medium | 25-30 min |
-| [5.4](module-5.4-security-tooling.md) | Security Tooling | Medium | 25-30 min |
+| [5.1](module-5.1-image-security/) | Image Security | Medium | 25-30 min |
+| [5.2](module-5.2-observability/) | Security Observability | Medium | 25-30 min |
+| [5.3](module-5.3-runtime-security/) | Runtime Security | Medium | 25-30 min |
+| [5.4](module-5.4-security-tooling/) | Security Tooling | Medium | 25-30 min |
 
 ## What You'll Learn
 
@@ -32,8 +32,8 @@ This part covers the **Platform Security (16%)** domain:
 
 ## Prerequisites
 
-Complete [Part 4: Kubernetes Threat Model](../part4-threat-model/index.md) before starting this part.
+Complete [Part 4: Kubernetes Threat Model](../part4-threat-model/) before starting this part.
 
 ---
 
-[← Part 4: Kubernetes Threat Model](../part4-threat-model/index.md) | [Part 6: Compliance and Frameworks →](../part6-compliance/index.md)
+[← Part 4: Kubernetes Threat Model](../part4-threat-model/) | [Part 6: Compliance and Frameworks →](../part6-compliance/)

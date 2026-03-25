@@ -1,5 +1,6 @@
 ---
 title: "Module 3.2: DNS in Linux"
+slug: linux/foundations/networking/module-3.2-dns-linux
 sidebar:
   order: 3
   label: "Networking"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: TCP/IP Essentials](module-3.1-tcp-ip-essentials.md)
+- **Required**: [Module 3.1: TCP/IP Essentials](module-3.1-tcp-ip-essentials/)
 - **Helpful**: Understanding of hostname resolution concepts
 
 ---

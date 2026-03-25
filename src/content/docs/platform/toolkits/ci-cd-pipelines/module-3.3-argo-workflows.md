@@ -1,5 +1,6 @@
 ---
 title: "Module 3.3: Argo Workflows"
+slug: platform/toolkits/ci-cd-pipelines/module-3.3-argo-workflows
 sidebar:
   order: 4
   label: "CI/CD Pipelines"
@@ -11,7 +12,7 @@ The data science team lead stared at the Airflow logs in frustration. Their ML t
 ## Prerequisites
 
 Before starting this module:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) — CI/CD concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) — CI/CD concepts
 - Kubernetes basics (Pods, Services)
 - Container fundamentals
 - DAG (Directed Acyclic Graph) concepts helpful
@@ -1646,7 +1647,7 @@ These tools provide different approaches to the same problem—choose based on y
 
 ## Next Steps
 
-Continue to [Security Tools Toolkit](../security-tools/index.md) where we'll cover Vault, OPA, Falco, and supply chain security.
+Continue to [Security Tools Toolkit](../security-tools/) where we'll cover Vault, OPA, Falco, and supply chain security.
 
 ---
 

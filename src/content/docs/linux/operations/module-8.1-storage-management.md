@@ -1,5 +1,6 @@
 ---
 title: "Module 8.1: Storage Management"
+slug: linux/operations/module-8.1-storage-management
 sidebar:
   order: 1
   label: "System Administration"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.3: Filesystem Hierarchy](../foundations/system-essentials/module-1.3-filesystem-hierarchy.md) for understanding mount points and inodes
-- **Required**: [Module 1.1: Kernel Architecture](../foundations/system-essentials/module-1.1-kernel-architecture.md) for understanding kernel/userspace boundary
-- **Helpful**: [Module 5.4: I/O Performance](performance/module-5.4-io-performance.md) for storage monitoring context
+- **Required**: [Module 1.3: Filesystem Hierarchy](../foundations/system-essentials/module-1.3-filesystem-hierarchy/) for understanding mount points and inodes
+- **Required**: [Module 1.1: Kernel Architecture](../foundations/system-essentials/module-1.1-kernel-architecture/) for understanding kernel/userspace boundary
+- **Helpful**: [Module 5.4: I/O Performance](performance/module-5.4-io-performance/) for storage monitoring context
 
 ---
 
@@ -892,4 +893,4 @@ sudo sed -i '/vg_practice/d' /etc/fstab
 
 ## Next Module
 
-Continue with [Module 8.2: Network Administration](module-8.2-network-administration.md) to cover firewall configuration, NAT, network bonding, and other LFCS networking topics.
+Continue with [Module 8.2: Network Administration](module-8.2-network-administration/) to cover firewall configuration, NAT, network bonding, and other LFCS networking topics.

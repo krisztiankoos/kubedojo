@@ -1,5 +1,6 @@
 ---
 title: "Module 3.5: API Deprecations"
+slug: k8s/ckad/part3-observability/module-3.5-api-deprecations
 sidebar:
   order: 5
   label: "Part 3: Observability"
@@ -424,4 +425,4 @@ You've completed the Application Observability and Maintenance section:
 
 ## Next Steps
 
-Take the [Part 3 Cumulative Quiz](part3-cumulative-quiz.md) to test your understanding, then proceed to [Part 4: Application Environment, Configuration and Security](../part4-environment/module-4.1-configmaps.md).
+Take the [Part 3 Cumulative Quiz](part3-cumulative-quiz/) to test your understanding, then proceed to [Part 4: Application Environment, Configuration and Security](../part4-environment/module-4.1-configmaps/).

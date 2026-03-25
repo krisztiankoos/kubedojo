@@ -1,5 +1,6 @@
 ---
 title: "Module 13.3: Dragonfly - P2P Image Distribution at Scale"
+slug: platform/toolkits/container-registries/module-13.3-dragonfly
 sidebar:
   order: 4
   label: "Container Registries"
@@ -17,7 +18,7 @@ This module teaches you to deploy Dragonfly for massive-scale container image di
 - Understanding of container registries (Harbor or Zot)
 - Kubernetes fundamentals (DaemonSets, Services)
 - Basic networking concepts (P2P, BitTorrent-like protocols)
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - Supply chain concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) - Supply chain concepts
 
 ## Why This Module Matters
 
@@ -1196,7 +1197,7 @@ You've completed the Container Registries toolkit! You now understand:
 - **Zot**: Minimal OCI-native registry for edge and simplicity
 - **Dragonfly**: P2P distribution for massive scale
 
-Continue to the [K8s Distributions Toolkit](../k8s-distributions/index.md) to explore k3s, k0s, and other lightweight Kubernetes distributions.
+Continue to the [K8s Distributions Toolkit](../k8s-distributions/) to explore k3s, k0s, and other lightweight Kubernetes distributions.
 
 ---
 

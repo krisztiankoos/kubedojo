@@ -1,5 +1,6 @@
 ---
 title: "Module 5.3: Eventual Consistency"
+slug: platform/foundations/distributed-systems/module-5.3-eventual-consistency
 sidebar:
   order: 4
   label: "Distributed Systems"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 5.2: Consensus and Coordination](module-5.2-consensus-and-coordination.md)
+> **Prerequisites**: [Module 5.2: Consensus and Coordination](module-5.2-consensus-and-coordination/)
 >
 > **Track**: Foundations
 
@@ -1270,10 +1271,10 @@ Congratulations! You've completed the Distributed Systems foundation. You now un
 
 | Your Interest | Next Track |
 |---------------|------------|
-| Platform building | [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) |
-| Reliability | [SRE Discipline](../../disciplines/sre/index.md) |
-| Kubernetes deep dive | [CKA Certification](../../../k8s/cka/index.md) |
-| Observability tools | [Observability Toolkit](../../toolkits/observability/index.md) |
+| Platform building | [Platform Engineering Discipline](../../disciplines/platform-engineering/) |
+| Reliability | [SRE Discipline](../../disciplines/sre/) |
+| Kubernetes deep dive | [CKA Certification](../../../k8s/cka/) |
+| Observability tools | [Observability Toolkit](../../toolkits/observability/) |
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 3.6: vCluster"
+slug: platform/toolkits/platforms/module-3.6-vcluster
 sidebar:
   order: 7
   label: "Platforms"
@@ -19,7 +20,7 @@ Every developer wants their own Kubernetes cluster. Nobody wants to pay for it. 
 
 **Prerequisites**:
 - Kubernetes fundamentals (Pods, Deployments, Services, Namespaces)
-- Multi-tenancy concepts ([Security Principles](../../foundations/security-principles/index.md))
+- Multi-tenancy concepts ([Security Principles](../../foundations/security-principles/))
 - kubectl basics
 - Helm basics
 
@@ -370,7 +371,7 @@ vcluster delete upgrade-test
 
 ### Self-Service Cluster Provisioning
 
-Combine vCluster with [Backstage](module-7.1-backstage.md) for a self-service developer experience:
+Combine vCluster with [Backstage](module-7.1-backstage/) for a self-service developer experience:
 
 ```
 SELF-SERVICE PLATFORM
@@ -403,7 +404,7 @@ Developer                    Platform Team
            their virtual cluster
 ```
 
-This pattern ties directly into the principles covered in [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md)—golden paths, self-service, and reducing cognitive load.
+This pattern ties directly into the principles covered in [Platform Engineering Discipline](../../disciplines/platform-engineering/)—golden paths, self-service, and reducing cognitive load.
 
 ### Resource Quotas on Host
 
@@ -599,16 +600,16 @@ vcluster delete my-vcluster-2
 
 ## Cross-References
 
-- [Module 7.1: Backstage](module-7.1-backstage.md) — Build a self-service portal that provisions vClusters
-- [Module 7.2: Crossplane](module-7.2-crossplane.md) — Combine with Crossplane for full infrastructure self-service
-- [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) — The principles behind self-service platforms
-- [Security Principles](../../foundations/security-principles/index.md) — Multi-tenancy and isolation theory
+- [Module 7.1: Backstage](module-7.1-backstage/) — Build a self-service portal that provisions vClusters
+- [Module 7.2: Crossplane](module-7.2-crossplane/) — Combine with Crossplane for full infrastructure self-service
+- [Platform Engineering Discipline](../../disciplines/platform-engineering/) — The principles behind self-service platforms
+- [Security Principles](../../foundations/security-principles/) — Multi-tenancy and isolation theory
 
 ---
 
 ## Next Module
 
-Continue to [Module 7.1: Backstage](module-7.1-backstage.md) to learn how to build an Internal Developer Portal that ties vCluster provisioning into a self-service experience.
+Continue to [Module 7.1: Backstage](module-7.1-backstage/) to learn how to build an Internal Developer Portal that ties vCluster provisioning into a self-service experience.
 
 ---
 

@@ -348,4 +348,4 @@ kubectl delete namespace frontend backend
 
 ## Наступний модуль
 
-[Модуль 8: YAML для Kubernetes](module-8-yaml-kubernetes.md) — Написання та розуміння маніфестів K8s.
+[Модуль 8: YAML для Kubernetes](module-8-yaml-kubernetes/) — Написання та розуміння маніфестів K8s.

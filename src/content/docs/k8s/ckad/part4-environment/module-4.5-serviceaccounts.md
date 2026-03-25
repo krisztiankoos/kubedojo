@@ -1,5 +1,6 @@
 ---
 title: "Module 4.5: ServiceAccounts"
+slug: k8s/ckad/part4-environment/module-4.5-serviceaccounts
 sidebar:
   order: 5
   label: "Part 4: Environment"
@@ -587,4 +588,4 @@ k delete deploy drill6 sa drill6-sa
 
 ## Next Module
 
-[Module 4.6: Custom Resource Definitions](module-4.6-crds.md) - Extend Kubernetes with custom resources.
+[Module 4.6: Custom Resource Definitions](module-4.6-crds/) - Extend Kubernetes with custom resources.

@@ -1,5 +1,6 @@
 ---
 title: "Module 6.6: Infrastructure as Code Cost Management"
+slug: platform/disciplines/iac/module-6.6-iac-cost-management
 sidebar:
   order: 7
   label: "Infrastructure as Code"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 6.1: IaC Fundamentals](module-6.1-iac-fundamentals.md) - Core IaC concepts
-- [Module 6.4: IaC at Scale](module-6.4-iac-at-scale.md) - Scale challenges
+- [Module 6.1: IaC Fundamentals](module-6.1-iac-fundamentals/) - Core IaC concepts
+- [Module 6.4: IaC at Scale](module-6.4-iac-at-scale/) - Scale challenges
 - Basic understanding of cloud billing concepts
 
 ---
@@ -1282,4 +1283,4 @@ infracost breakdown --path . --terraform-var "environment=dev"
 
 ## Next Module
 
-Continue to [Module 7.1: Terraform Deep Dive](../../toolkits/iac-tools/module-7.1-terraform.md) to learn advanced Terraform patterns, state management, and real-world best practices.
+Continue to [Module 7.1: Terraform Deep Dive](../../toolkits/iac-tools/module-7.1-terraform/) to learn advanced Terraform patterns, state management, and real-world best practices.

@@ -1,5 +1,6 @@
 ---
 title: "Module 5.3: Static Analysis with kubesec and OPA"
+slug: k8s/cks/part5-supply-chain-security/module-5.3-static-analysis
 sidebar:
   order: 3
   label: "Part 5: Supply Chain Security"
@@ -784,4 +785,4 @@ rm -f insecure.yaml secure.yaml
 
 ## Next Module
 
-[Module 5.4: Admission Controllers](module-5.4-admission-controllers.md) - Custom admission control for security.
+[Module 5.4: Admission Controllers](module-5.4-admission-controllers/) - Custom admission control for security.

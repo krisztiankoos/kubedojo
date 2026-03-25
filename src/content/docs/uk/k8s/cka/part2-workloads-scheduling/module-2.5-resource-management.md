@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.5: \u0423\u043f\u0440\u0430\u0432\u043b\u0456\u043d\u043d\u044f \u0440\u0435\u0441\u0443\u0440\u0441\u0430\u043c\u0438"
+slug: uk/k8s/cka/part2-workloads-scheduling/module-2.5-resource-management
 sidebar:
   order: 6
   label: "Part 2: Workloads & Scheduling"
@@ -993,4 +994,4 @@ kubectl delete namespace challenge
 
 ## Наступний модуль
 
-[Модуль 2.6: Планування](module-2.6-scheduling.md) — Вибір вузла, спорідненість, taints та tolerations.
+[Модуль 2.6: Планування](module-2.6-scheduling/) — Вибір вузла, спорідненість, taints та tolerations.

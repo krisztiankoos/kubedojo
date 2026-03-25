@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.2: \u0406\u043d\u0433\u0440\u0435\u0441"
+slug: uk/k8s/ckad/part5-networking/module-5.2-ingress
 sidebar:
   order: 2
   label: "Part 5: Networking"
@@ -768,4 +769,4 @@ rm /tmp/tls.key /tmp/tls.crt
 
 ## Наступний модуль
 
-[Модуль 5.3: Мережеві політики](module-5.3-networkpolicies.md) — Контроль комунікації між подами.
+[Модуль 5.3: Мережеві політики](module-5.3-networkpolicies/) — Контроль комунікації між подами.

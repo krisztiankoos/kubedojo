@@ -1,5 +1,6 @@
 ---
 title: "Module 3.4: From Data to Insight"
+slug: platform/foundations/observability-theory/module-3.4-from-data-to-insight
 sidebar:
   order: 5
   label: "Observability Theory"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 3.3: Instrumentation Principles](module-3.3-instrumentation-principles.md)
+> **Prerequisites**: [Module 3.3: Instrumentation Principles](module-3.3-instrumentation-principles/)
 >
 > **Track**: Foundations
 
@@ -979,10 +980,10 @@ Congratulations! You've completed the Observability Theory foundation. You now u
 
 | Your Interest | Next Track |
 |---------------|------------|
-| Implementing observability | [Observability Toolkit](../../toolkits/observability/index.md) |
-| Operating with observability | [SRE Discipline](../../disciplines/sre/index.md) |
-| Security observability | [Security Principles](../security-principles/index.md) |
-| Foundational concepts | [Distributed Systems](../distributed-systems/index.md) |
+| Implementing observability | [Observability Toolkit](../../toolkits/observability/) |
+| Operating with observability | [SRE Discipline](../../disciplines/sre/) |
+| Security observability | [Security Principles](../security-principles/) |
+| Foundational concepts | [Distributed Systems](../distributed-systems/) |
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 2.6: Scheduling"
+slug: k8s/cka/part2-workloads-scheduling/module-2.6-scheduling
 sidebar:
   order: 7
   label: "Part 2: Workloads & Scheduling"
@@ -958,4 +959,4 @@ kubectl taint nodes $NODE frontend-
 
 ## Next Module
 
-[Module 2.7: ConfigMaps & Secrets](module-2.7-configmaps-secrets.md) - Application configuration management.
+[Module 2.7: ConfigMaps & Secrets](module-2.7-configmaps-secrets/) - Application configuration management.

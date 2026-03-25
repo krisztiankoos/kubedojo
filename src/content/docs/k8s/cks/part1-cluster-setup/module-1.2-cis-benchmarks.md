@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: CIS Benchmarks and kube-bench"
+slug: k8s/cks/part1-cluster-setup/module-1.2-cis-benchmarks
 sidebar:
   order: 2
   label: "Part 1: Cluster Setup"
@@ -528,4 +529,4 @@ kubectl delete job kube-bench
 
 ## Next Module
 
-[Module 1.3: Ingress Security](module-1.3-ingress-security.md) - Securing ingress controllers and TLS termination.
+[Module 1.3: Ingress Security](module-1.3-ingress-security/) - Securing ingress controllers and TLS termination.

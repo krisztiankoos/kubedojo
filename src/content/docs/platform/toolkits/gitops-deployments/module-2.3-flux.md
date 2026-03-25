@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: Flux"
+slug: platform/toolkits/gitops-deployments/module-2.3-flux
 sidebar:
   order: 4
   label: "GitOps & Deployments"
@@ -11,8 +12,8 @@ The platform engineer stared at the dashboard in disbelief. At 2:47 AM, their mu
 ## Prerequisites
 
 Before starting this module:
-- [Module 2.1: ArgoCD](module-2.1-argocd.md) — GitOps concepts (for comparison)
-- [GitOps Discipline](../../disciplines/gitops/index.md) — GitOps principles
+- [Module 2.1: ArgoCD](module-2.1-argocd/) — GitOps concepts (for comparison)
+- [GitOps Discipline](../../disciplines/gitops/) — GitOps principles
 - Kubernetes basics
 - Git fundamentals
 
@@ -1446,7 +1447,7 @@ Before moving on, ensure you can:
 
 ## Next Module
 
-Continue to [Module 2.4: Helm & Kustomize](module-2.4-helm-kustomize.md) where we'll dive deep into the package management tools that power GitOps.
+Continue to [Module 2.4: Helm & Kustomize](module-2.4-helm-kustomize/) where we'll dive deep into the package management tools that power GitOps.
 
 ---
 

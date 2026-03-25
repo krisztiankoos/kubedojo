@@ -24,50 +24,50 @@ The KCNA is a **multiple-choice exam** (not hands-on) that validates foundationa
 
 | Part | Topic | Weight | Modules |
 |------|-------|--------|---------|
-| [Part 0](part0-introduction/index.md) | Introduction | - | 2 |
-| [Part 1](part1-kubernetes-fundamentals/index.md) | Kubernetes Fundamentals | 44% | 8 |
-| [Part 2](part2-container-orchestration/index.md) | Container Orchestration | 28% | 4 |
-| [Part 3](part3-cloud-native-architecture/index.md) | Cloud Native Architecture | 12% | 8 |
-| [Part 4](part4-application-delivery/index.md) | Application Delivery | 16% | 2 |
+| [Part 0](part0-introduction/) | Introduction | - | 2 |
+| [Part 1](part1-kubernetes-fundamentals/) | Kubernetes Fundamentals | 44% | 8 |
+| [Part 2](part2-container-orchestration/) | Container Orchestration | 28% | 4 |
+| [Part 3](part3-cloud-native-architecture/) | Cloud Native Architecture | 12% | 8 |
+| [Part 4](part4-application-delivery/) | Application Delivery | 16% | 2 |
 | **Total** | | **100%** | **24** |
 
 ## Module Overview
 
 ### Part 0: Introduction (2 modules)
-- [0.1 KCNA Overview](part0-introduction/module-0.1-kcna-overview.md) - Exam format and domains
-- [0.2 Study Strategy](part0-introduction/module-0.2-study-strategy.md) - Multiple-choice exam techniques
+- [0.1 KCNA Overview](part0-introduction/module-0.1-kcna-overview/) - Exam format and domains
+- [0.2 Study Strategy](part0-introduction/module-0.2-study-strategy/) - Multiple-choice exam techniques
 
 ### Part 1: Kubernetes Fundamentals (8 modules) — 44%
-- [1.1 What is Kubernetes](part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes.md) - Purpose and architecture
-- [1.2 Container Fundamentals](part1-kubernetes-fundamentals/module-1.2-container-fundamentals.md) - Container concepts
-- [1.3 Control Plane](part1-kubernetes-fundamentals/module-1.3-control-plane.md) - API server, etcd, scheduler
-- [1.4 Node Components](part1-kubernetes-fundamentals/module-1.4-node-components.md) - kubelet, kube-proxy
-- [1.5 Pods](part1-kubernetes-fundamentals/module-1.5-pods.md) - Basic workload unit
-- [1.6 Workload Resources](part1-kubernetes-fundamentals/module-1.6-workload-resources.md) - Deployments, StatefulSets
-- [1.7 Services](part1-kubernetes-fundamentals/module-1.7-services.md) - Service types and discovery
-- [1.8 Namespaces and Labels](part1-kubernetes-fundamentals/module-1.8-namespaces-labels.md) - Organization
+- [1.1 What is Kubernetes](part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes/) - Purpose and architecture
+- [1.2 Container Fundamentals](part1-kubernetes-fundamentals/module-1.2-container-fundamentals/) - Container concepts
+- [1.3 Control Plane](part1-kubernetes-fundamentals/module-1.3-control-plane/) - API server, etcd, scheduler
+- [1.4 Node Components](part1-kubernetes-fundamentals/module-1.4-node-components/) - kubelet, kube-proxy
+- [1.5 Pods](part1-kubernetes-fundamentals/module-1.5-pods/) - Basic workload unit
+- [1.6 Workload Resources](part1-kubernetes-fundamentals/module-1.6-workload-resources/) - Deployments, StatefulSets
+- [1.7 Services](part1-kubernetes-fundamentals/module-1.7-services/) - Service types and discovery
+- [1.8 Namespaces and Labels](part1-kubernetes-fundamentals/module-1.8-namespaces-labels/) - Organization
 
 ### Part 2: Container Orchestration (4 modules) — 28%
-- [2.1 Scheduling](part2-container-orchestration/module-2.1-scheduling.md) - How pods get assigned
-- [2.2 Scaling](part2-container-orchestration/module-2.2-scaling.md) - HPA, VPA, Cluster Autoscaler
-- [2.3 Storage](part2-container-orchestration/module-2.3-storage.md) - PV, PVC, StorageClass
-- [2.4 Configuration](part2-container-orchestration/module-2.4-configuration.md) - ConfigMaps and Secrets
+- [2.1 Scheduling](part2-container-orchestration/module-2.1-scheduling/) - How pods get assigned
+- [2.2 Scaling](part2-container-orchestration/module-2.2-scaling/) - HPA, VPA, Cluster Autoscaler
+- [2.3 Storage](part2-container-orchestration/module-2.3-storage/) - PV, PVC, StorageClass
+- [2.4 Configuration](part2-container-orchestration/module-2.4-configuration/) - ConfigMaps and Secrets
 
 ### Part 3: Cloud Native Architecture (8 modules) — 12%
 *Includes Observability (merged November 2025)*
 
-- [3.1 Cloud Native Principles](part3-cloud-native-architecture/module-3.1-cloud-native-principles.md) - 12-factor apps
-- [3.2 CNCF Ecosystem](part3-cloud-native-architecture/module-3.2-cncf-ecosystem.md) - Projects and landscape
-- [3.3 Cloud Native Patterns](part3-cloud-native-architecture/module-3.3-patterns.md) - Service mesh, GitOps
-- [3.4 Observability Fundamentals](part3-cloud-native-architecture/module-3.4-observability-fundamentals.md) - Metrics, logs, traces
-- [3.5 Observability Tools](part3-cloud-native-architecture/module-3.5-observability-tools.md) - Prometheus, Grafana, Jaeger
-- [3.8 AI/ML in Cloud Native](part3-cloud-native-architecture/module-3.8-ai-ml-cloud-native.md) - AI/LLM workloads, GPU scheduling, model serving
-- [3.9 WebAssembly](part3-cloud-native-architecture/module-3.9-webassembly.md) - Wasm as container alternative, WASI, SpinKube
-- [3.10 Green Computing & Sustainability](part3-cloud-native-architecture/module-3.10-green-computing.md) - Carbon-aware scheduling, resource efficiency
+- [3.1 Cloud Native Principles](part3-cloud-native-architecture/module-3.1-cloud-native-principles/) - 12-factor apps
+- [3.2 CNCF Ecosystem](part3-cloud-native-architecture/module-3.2-cncf-ecosystem/) - Projects and landscape
+- [3.3 Cloud Native Patterns](part3-cloud-native-architecture/module-3.3-patterns/) - Service mesh, GitOps
+- [3.4 Observability Fundamentals](part3-cloud-native-architecture/module-3.4-observability-fundamentals/) - Metrics, logs, traces
+- [3.5 Observability Tools](part3-cloud-native-architecture/module-3.5-observability-tools/) - Prometheus, Grafana, Jaeger
+- [3.8 AI/ML in Cloud Native](part3-cloud-native-architecture/module-3.8-ai-ml-cloud-native/) - AI/LLM workloads, GPU scheduling, model serving
+- [3.9 WebAssembly](part3-cloud-native-architecture/module-3.9-webassembly/) - Wasm as container alternative, WASI, SpinKube
+- [3.10 Green Computing & Sustainability](part3-cloud-native-architecture/module-3.10-green-computing/) - Carbon-aware scheduling, resource efficiency
 
 ### Part 4: Application Delivery (2 modules) — 16%
-- [4.1 CI/CD Fundamentals](part4-application-delivery/module-4.1-ci-cd.md) - Pipelines and deployment
-- [4.2 Application Packaging](part4-application-delivery/module-4.2-application-packaging.md) - Helm and Kustomize
+- [4.1 CI/CD Fundamentals](part4-application-delivery/module-4.1-ci-cd/) - Pipelines and deployment
+- [4.2 Application Packaging](part4-application-delivery/module-4.2-application-packaging/) - Helm and Kustomize
 
 ## How to Use This Curriculum
 
@@ -106,6 +106,6 @@ These topics represent a small percentage of questions but signal where the clou
 
 ## Start Learning
 
-Begin with [Part 0: Introduction](part0-introduction/module-0.1-kcna-overview.md) to understand the exam format, then proceed through each part in order.
+Begin with [Part 0: Introduction](part0-introduction/module-0.1-kcna-overview/) to understand the exam format, then proceed through each part in order.
 
 Good luck on your KCNA journey!

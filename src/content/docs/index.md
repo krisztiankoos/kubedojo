@@ -10,7 +10,7 @@ Kubernetes certifications. Platform engineering. SRE. DevSecOps. MLOps.
 
 No paywalls. No upsells. Theory-first.
 
-> **March 2026 Update**: **410+ modules** covering **21 certifications**. New: AI/ML, WebAssembly, Knative, 4 CNI deep dives, beginner track, Ukrainian translation. [See what's new &rarr;](changelog.md)
+> **March 2026 Update**: **410+ modules** covering **21 certifications**. New: AI/ML, WebAssembly, Knative, 4 CNI deep dives, beginner track, Ukrainian translation. [See what's new &rarr;](changelog/)
 
 ---
 
@@ -131,27 +131,27 @@ Certifications (pick your exam) — each track is self-contained with exercises,
 
 | Track | Modules | Status |
 |-------|---------|--------|
-| [Zero to Terminal](prerequisites/zero-to-terminal/index.md) | 10 | ✅ Complete (absolute beginners) |
-| [Prerequisites](prerequisites/index.md) | 33 | ✅ Complete |
-| [CKA](k8s/cka/index.md) | 41 | ✅ Complete (K8s 1.35) |
-| [CKAD](k8s/ckad/index.md) | 24 | ✅ Complete (K8s 1.35) |
-| [CKS](k8s/cks/index.md) | 30 | ✅ Complete (K8s 1.34) |
-| [KCNA](k8s/kcna/index.md) | 28 | ✅ Complete |
-| [KCSA](k8s/kcsa/index.md) | 26 | ✅ Complete |
-| [CNPE](k8s/cnpe/index.md) | Learning Path | ✅ Maps 60+ modules |
-| [CBA](k8s/cba/index.md) | Learning Path | ✅ Backstage cert prep |
-| [OTCA](k8s/otca/index.md) | Learning Path | ✅ OpenTelemetry cert prep |
-| [KCA](k8s/kca/index.md) | Learning Path | ✅ Kyverno cert prep |
-| [CAPA](k8s/capa/index.md) | Learning Path | ✅ Argo Project cert prep |
-| [PCA](k8s/pca/index.md) | Learning Path | ✅ Prometheus cert prep |
-| [ICA](k8s/ica/index.md) | Learning Path | ✅ Istio cert prep |
-| [CCA](k8s/cca/index.md) | Learning Path | ✅ Cilium cert prep |
-| [CGOA](k8s/cgoa/index.md) | Learning Path | ✅ GitOps cert prep |
-| [CNPA](k8s/cnpa/index.md) | Learning Path | ✅ Platform Associate prep |
-| [LFCS](k8s/lfcs/index.md) | Learning Path | ✅ Linux Sysadmin cert prep |
-| [FinOps](k8s/finops/index.md) | Learning Path | ✅ FinOps Practitioner prep |
-| [Linux Deep Dive](linux/index.md) | 32 | ✅ Complete |
-| [Platform Engineering](platform/index.md) | 159 | ✅ Complete |
+| [Zero to Terminal](prerequisites/zero-to-terminal/) | 10 | ✅ Complete (absolute beginners) |
+| [Prerequisites](prerequisites/) | 33 | ✅ Complete |
+| [CKA](k8s/cka/) | 41 | ✅ Complete (K8s 1.35) |
+| [CKAD](k8s/ckad/) | 24 | ✅ Complete (K8s 1.35) |
+| [CKS](k8s/cks/) | 30 | ✅ Complete (K8s 1.34) |
+| [KCNA](k8s/kcna/) | 28 | ✅ Complete |
+| [KCSA](k8s/kcsa/) | 26 | ✅ Complete |
+| [CNPE](k8s/cnpe/) | Learning Path | ✅ Maps 60+ modules |
+| [CBA](k8s/cba/) | Learning Path | ✅ Backstage cert prep |
+| [OTCA](k8s/otca/) | Learning Path | ✅ OpenTelemetry cert prep |
+| [KCA](k8s/kca/) | Learning Path | ✅ Kyverno cert prep |
+| [CAPA](k8s/capa/) | Learning Path | ✅ Argo Project cert prep |
+| [PCA](k8s/pca/) | Learning Path | ✅ Prometheus cert prep |
+| [ICA](k8s/ica/) | Learning Path | ✅ Istio cert prep |
+| [CCA](k8s/cca/) | Learning Path | ✅ Cilium cert prep |
+| [CGOA](k8s/cgoa/) | Learning Path | ✅ GitOps cert prep |
+| [CNPA](k8s/cnpa/) | Learning Path | ✅ Platform Associate prep |
+| [LFCS](k8s/lfcs/) | Learning Path | ✅ Linux Sysadmin cert prep |
+| [FinOps](k8s/finops/) | Learning Path | ✅ FinOps Practitioner prep |
+| [Linux Deep Dive](linux/) | 32 | ✅ Complete |
+| [Platform Engineering](platform/) | 159 | ✅ Complete |
 | **Total** | **410+** | |
 
 ---
@@ -160,22 +160,22 @@ Certifications (pick your exam) — each track is self-contained with exercises,
 
 | You are... | Start here |
 |------------|------------|
-| Never used a terminal before | [Zero to Terminal](prerequisites/zero-to-terminal/index.md) (start here!) |
-| New to containers/K8s | [Prerequisites](prerequisites/index.md) |
-| Want deep Linux knowledge | [Linux Deep Dive](linux/index.md) |
-| Want K8s admin certification | [CKA](k8s/cka/index.md) |
-| Want K8s developer certification | [CKAD](k8s/ckad/index.md) |
-| Want K8s security certification | [CKS](k8s/cks/index.md) |
-| Entry-level K8s cert | [KCNA](k8s/kcna/index.md) (general) or [KCSA](k8s/kcsa/index.md) (security) |
-| Platform engineer | [CNPE Learning Path](k8s/cnpe/index.md) |
-| Prometheus cert | [PCA](k8s/pca/index.md) |
-| Istio / Service Mesh cert | [ICA](k8s/ica/index.md) |
-| Cilium / Networking cert | [CCA](k8s/cca/index.md) |
-| GitOps cert | [CGOA](k8s/cgoa/index.md) |
-| Backstage / OTel / Kyverno / Argo cert | [CBA](k8s/cba/index.md) · [OTCA](k8s/otca/index.md) · [KCA](k8s/kca/index.md) · [CAPA](k8s/capa/index.md) |
-| Linux sysadmin cert | [LFCS](k8s/lfcs/index.md) |
-| Cloud cost management | [FinOps](k8s/finops/index.md) |
-| Already certified, want depth | [Platform Engineering](platform/index.md) |
+| Never used a terminal before | [Zero to Terminal](prerequisites/zero-to-terminal/) (start here!) |
+| New to containers/K8s | [Prerequisites](prerequisites/) |
+| Want deep Linux knowledge | [Linux Deep Dive](linux/) |
+| Want K8s admin certification | [CKA](k8s/cka/) |
+| Want K8s developer certification | [CKAD](k8s/ckad/) |
+| Want K8s security certification | [CKS](k8s/cks/) |
+| Entry-level K8s cert | [KCNA](k8s/kcna/) (general) or [KCSA](k8s/kcsa/) (security) |
+| Platform engineer | [CNPE Learning Path](k8s/cnpe/) |
+| Prometheus cert | [PCA](k8s/pca/) |
+| Istio / Service Mesh cert | [ICA](k8s/ica/) |
+| Cilium / Networking cert | [CCA](k8s/cca/) |
+| GitOps cert | [CGOA](k8s/cgoa/) |
+| Backstage / OTel / Kyverno / Argo cert | [CBA](k8s/cba/) · [OTCA](k8s/otca/) · [KCA](k8s/kca/) · [CAPA](k8s/capa/) |
+| Linux sysadmin cert | [LFCS](k8s/lfcs/) |
+| Cloud cost management | [FinOps](k8s/finops/) |
+| Already certified, want depth | [Platform Engineering](platform/) |
 
 ---
 

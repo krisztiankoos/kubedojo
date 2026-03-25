@@ -1,5 +1,6 @@
 ---
 title: "Module 10.3: Observability AI Features"
+slug: platform/toolkits/aiops-tools/module-10.3-observability-ai-features
 sidebar:
   order: 4
   label: "AIOps Tools"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [AIOps Discipline](../../disciplines/aiops/index.md) — Conceptual foundation
-- [Observability Toolkit](../observability/index.md) — Platform fundamentals
+- [AIOps Discipline](../../disciplines/aiops/) — Conceptual foundation
+- [Observability Toolkit](../observability/) — Platform fundamentals
 - Basic understanding of observability platforms (Datadog, Dynatrace, New Relic)
 
 ## Why This Module Matters
@@ -841,4 +842,4 @@ Observability platforms have evolved beyond data collection into intelligent ana
 
 ## Next Module
 
-Continue to [Building Custom AIOps](module-10.4-building-custom-aiops.md) to learn how to build your own AIOps pipelines when platform AI isn't enough.
+Continue to [Building Custom AIOps](module-10.4-building-custom-aiops/) to learn how to build your own AIOps pipelines when platform AI isn't enough.

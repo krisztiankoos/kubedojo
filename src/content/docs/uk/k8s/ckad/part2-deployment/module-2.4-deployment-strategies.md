@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.4: \u0421\u0442\u0440\u0430\u0442\u0435\u0433\u0456\u0457 \u0434\u0435\u043f\u043b\u043e\u0439\u043c\u0435\u043d\u0442\u0443"
+slug: uk/k8s/ckad/part2-deployment/module-2.4-deployment-strategies
 sidebar:
   order: 4
   label: "Part 2: Deployment"
@@ -928,4 +929,4 @@ k delete svc production
 
 ## Наступний модуль
 
-[Кумулятивний тест Частини 2](part2-cumulative-quiz.md) — перевірте свої знання з розгортання застосунків.
+[Кумулятивний тест Частини 2](part2-cumulative-quiz/) — перевірте свої знання з розгортання застосунків.

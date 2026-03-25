@@ -1,5 +1,6 @@
 ---
 title: "Module 5.2: Ingress"
+slug: k8s/ckad/part5-networking/module-5.2-ingress
 sidebar:
   order: 2
   label: "Part 5: Networking"
@@ -768,4 +769,4 @@ rm /tmp/tls.key /tmp/tls.crt
 
 ## Next Module
 
-[Module 5.3: NetworkPolicies](module-5.3-networkpolicies.md) - Control pod-to-pod communication.
+[Module 5.3: NetworkPolicies](module-5.3-networkpolicies/) - Control pod-to-pod communication.

@@ -1,5 +1,6 @@
 ---
 title: "Module 3.4: Monitoring Applications"
+slug: k8s/ckad/part3-observability/module-3.4-monitoring
 sidebar:
   order: 4
   label: "Part 3: Observability"
@@ -477,4 +478,4 @@ k delete deploy drill6
 
 ## Next Module
 
-[Module 3.5: API Deprecations](module-3.5-api-deprecations.md) - Handle API version changes and deprecations.
+[Module 3.5: API Deprecations](module-3.5-api-deprecations/) - Handle API version changes and deprecations.

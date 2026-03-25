@@ -1,11 +1,10 @@
 ---
-title: "Create a simple pod"
+title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.1: \u041f\u043e\u0433\u043b\u0438\u0431\u043b\u0435\u043d\u0435 \u0432\u0438\u0432\u0447\u0435\u043d\u043d\u044f \u041f\u043e\u0434\u0456\u0432"
+slug: uk/k8s/cka/part2-workloads-scheduling/module-2.1-pods
 sidebar:
   order: 2
   label: "Part 2: Workloads & Scheduling"
 ---
-  [watchdog] Output resumed after 178s stall
-
 > **Складність**: `[СЕРЕДНЯ]` — Основа для всіх робочих навантажень
 >
 > **Час на проходження**: 40-50 хвилин
@@ -97,7 +96,7 @@ sidebar:
 ### 2.1 Імперативні команди (Швидко для іспиту)
 
 ```bash
-
+# Create a simple pod
 kubectl run nginx --image=nginx
 
 # Create pod and expose port
@@ -961,5 +960,5 @@ kubectl delete pod challenge
 
 ## Наступний модуль
 
-[Модуль 2.2: Деплойменти та ReplicaSets](module-2.2-deployments.md) — Поступові оновлення, відкати та масштабування.
+[Модуль 2.2: Деплойменти та ReplicaSets](module-2.2-deployments/) — Поступові оновлення, відкати та масштабування.
 

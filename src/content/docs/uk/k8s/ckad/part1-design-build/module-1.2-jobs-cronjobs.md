@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.2: Jobs \u0442\u0430 CronJobs"
+slug: uk/k8s/ckad/part1-design-build/module-1.2-jobs-cronjobs
 sidebar:
   order: 2
   label: "Part 1: Design & Build"
@@ -701,4 +702,4 @@ k delete configmap backup-script
 
 ## Наступний модуль
 
-[Модуль 1.3: Під з кількома контейнерами](module-1.3-multi-container-pods.md) — Паттерни sidecar, init та ambassador.
+[Модуль 1.3: Під з кількома контейнерами](module-1.3-multi-container-pods/) — Паттерни sidecar, init та ambassador.

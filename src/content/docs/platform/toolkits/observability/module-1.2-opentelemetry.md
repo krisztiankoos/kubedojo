@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: OpenTelemetry"
+slug: platform/toolkits/observability/module-1.2-opentelemetry
 sidebar:
   order: 3
   label: "Observability"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 1.1: Prometheus](module-1.1-prometheus.md)
-- [Observability Theory Track](../../foundations/observability-theory/index.md)
+- [Module 1.1: Prometheus](module-1.1-prometheus/)
+- [Observability Theory Track](../../foundations/observability-theory/)
 - Basic understanding of distributed tracing
 - Familiarity with at least one programming language
 
@@ -1000,4 +1001,4 @@ OpenTelemetry is the future of observability instrumentation. Its vendor-neutral
 
 ## Next Module
 
-Continue to [Module 1.3: Grafana](module-1.3-grafana.md) to learn about visualization and dashboards for your telemetry.
+Continue to [Module 1.3: Grafana](module-1.3-grafana/) to learn about visualization and dashboards for your telemetry.

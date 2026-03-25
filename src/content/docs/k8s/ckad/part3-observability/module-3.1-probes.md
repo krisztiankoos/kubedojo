@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: Application Probes"
+slug: k8s/ckad/part3-observability/module-3.1-probes
 sidebar:
   order: 1
   label: "Part 3: Observability"
@@ -664,4 +665,4 @@ k delete pod drill6
 
 ## Next Module
 
-[Module 3.2: Container Logging](module-3.2-logging.md) - Access, manage, and troubleshoot container logs.
+[Module 3.2: Container Logging](module-3.2-logging/) - Access, manage, and troubleshoot container logs.

@@ -1,5 +1,6 @@
 ---
 title: "Module 13.2: Zot - The Minimal OCI-Native Registry"
+slug: platform/toolkits/container-registries/module-13.2-zot
 sidebar:
   order: 3
   label: "Container Registries"
@@ -1316,7 +1317,7 @@ kind delete cluster --name zot-lab
 
 ## Next Module
 
-Continue to [Module 13.3: Dragonfly](module-13.3-dragonfly.md) — P2P image distribution for massive-scale deployments.
+Continue to [Module 13.3: Dragonfly](module-13.3-dragonfly/) — P2P image distribution for massive-scale deployments.
 
 ---
 

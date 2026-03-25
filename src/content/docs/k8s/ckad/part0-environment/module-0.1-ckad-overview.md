@@ -1,5 +1,6 @@
 ---
 title: "Module 0.1: CKAD Overview & Strategy"
+slug: k8s/ckad/part0-environment/module-0.1-ckad-overview
 sidebar:
   order: 1
   label: "Part 0: Environment"
@@ -494,4 +495,4 @@ Verify your answers match the domain breakdown above. This helps you prioritize 
 
 ## Next Module
 
-[Module 0.2: Developer Workflow](module-0.2-developer-workflow.md) - Optimize your kubectl patterns for CKAD speed.
+[Module 0.2: Developer Workflow](module-0.2-developer-workflow/) - Optimize your kubectl patterns for CKAD speed.

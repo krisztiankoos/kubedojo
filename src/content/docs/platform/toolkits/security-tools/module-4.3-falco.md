@@ -1,5 +1,6 @@
 ---
 title: "Module 4.3: Falco & Runtime Security"
+slug: platform/toolkits/security-tools/module-4.3-falco
 sidebar:
   order: 4
   label: "Security Tools"
@@ -17,7 +18,7 @@ Admission control stops bad configurations, but what about runtime attacks? A co
 - Integration with incident response
 
 **Prerequisites**:
-- [Security Principles Foundations](../../foundations/security-principles/index.md)
+- [Security Principles Foundations](../../foundations/security-principles/)
 - Linux basics (processes, files, networking)
 - Kubernetes networking concepts
 
@@ -679,7 +680,7 @@ kubectl run b64-test --image=busybox --rm -it --restart=Never -- sh -c "echo aGV
 
 ## Next Module
 
-Continue to [Module 4.4: Supply Chain Security](module-4.4-supply-chain.md) to learn about securing container images with signing, SBOMs, and vulnerability scanning.
+Continue to [Module 4.4: Supply Chain Security](module-4.4-supply-chain/) to learn about securing container images with signing, SBOMs, and vulnerability scanning.
 
 ---
 

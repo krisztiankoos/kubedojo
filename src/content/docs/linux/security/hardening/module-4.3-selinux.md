@@ -1,5 +1,6 @@
 ---
 title: "Module 4.3: SELinux Contexts"
+slug: linux/security/hardening/module-4.3-selinux
 sidebar:
   order: 4
   label: "Security Hardening"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms.md)
-- **Helpful**: [Module 4.2: AppArmor Profiles](module-4.2-apparmor.md) for comparison
+- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms/)
+- **Helpful**: [Module 4.2: AppArmor Profiles](module-4.2-apparmor/) for comparison
 - **Helpful**: Access to RHEL/CentOS/Fedora system
 
 ---

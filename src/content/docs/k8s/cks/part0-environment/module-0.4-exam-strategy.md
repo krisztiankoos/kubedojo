@@ -1,5 +1,6 @@
 ---
 title: "Module 0.4: CKS Exam Strategy"
+slug: k8s/cks/part0-environment/module-0.4-exam-strategy
 sidebar:
   order: 4
   label: "Part 0: Environment"
@@ -468,4 +469,4 @@ You've finished the **Environment Setup** section. You now have:
 - Proficiency with Trivy, Falco, kube-bench
 - Exam strategy for security tasks
 
-**Next Part**: [Part 1: Cluster Setup](../part1-cluster-setup/module-1.1-network-policies.md) - Deep dive into network security.
+**Next Part**: [Part 1: Cluster Setup](../part1-cluster-setup/module-1.1-network-policies/) - Deep dive into network security.

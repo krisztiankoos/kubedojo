@@ -1,5 +1,6 @@
 ---
 title: "Module 7.1: Terraform Deep Dive"
+slug: platform/toolkits/iac-tools/module-7.1-terraform
 sidebar:
   order: 2
   label: "IaC Tools"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals.md) - Core IaC concepts
-- [Module 6.2: IaC Testing](../../disciplines/iac/module-6.2-iac-testing.md) - Testing strategies
+- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals/) - Core IaC concepts
+- [Module 6.2: IaC Testing](../../disciplines/iac/module-6.2-iac-testing/) - Testing strategies
 - Basic command-line experience
 
 ---
@@ -1481,4 +1482,4 @@ terraform plan
 
 ## Next Module
 
-Continue to [Module 7.2: OpenTofu](module-7.2-opentofu.md) to learn about the open-source fork of Terraform and its unique features.
+Continue to [Module 7.2: OpenTofu](module-7.2-opentofu/) to learn about the open-source fork of Terraform and its unique features.

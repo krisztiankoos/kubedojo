@@ -407,4 +407,4 @@ Deployments manage your applications:
 
 ## Next Module
 
-[Module 5: Services](module-5-services.md) - Stable networking for your Pods.
+[Module 5: Services](module-5-services/) - Stable networking for your Pods.

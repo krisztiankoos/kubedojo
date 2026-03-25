@@ -1,5 +1,6 @@
 ---
 title: "Module 7.4: Ansible for Infrastructure"
+slug: platform/toolkits/iac-tools/module-7.4-ansible
 sidebar:
   order: 5
   label: "IaC Tools"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals.md)
+- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals/)
 - Basic SSH and Linux administration
 - Understanding of YAML syntax
 
@@ -1716,7 +1717,7 @@ ansible-playbook -i inventory/local.yml playbooks/site.yml
 
 ## Next Module
 
-Continue to [Module 7.5: AWS CloudFormation](module-7.5-cloudformation.md) to learn AWS-native infrastructure as code with CloudFormation templates and stacks.
+Continue to [Module 7.5: AWS CloudFormation](module-7.5-cloudformation/) to learn AWS-native infrastructure as code with CloudFormation templates and stacks.
 
 ---
 

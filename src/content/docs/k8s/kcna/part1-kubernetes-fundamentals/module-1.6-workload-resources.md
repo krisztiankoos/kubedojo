@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Workload Resources"
+slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources
 sidebar:
   order: 7
   label: "Part 1: K8s Fundamentals"
@@ -400,4 +401,4 @@ For **batch and scheduled workloads**:
 
 ## Next Module
 
-[Module 1.7: Services](module-1.7-services.md) - How Pods are exposed and discovered within and outside the cluster.
+[Module 1.7: Services](module-1.7-services/) - How Pods are exposed and discovered within and outside the cluster.

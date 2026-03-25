@@ -1,5 +1,6 @@
 ---
 title: "Module 15.5: etcd-operator - Managing Kubernetes' Backbone"
+slug: platform/toolkits/cloud-native-databases/module-15.5-etcd-operator
 sidebar:
   order: 6
   label: "Cloud-Native Databases"
@@ -12,10 +13,10 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 15.1: CockroachDB](module-15.1-cockroachdb.md) - Distributed consensus concepts
+- [Module 15.1: CockroachDB](module-15.1-cockroachdb/) - Distributed consensus concepts
 - Kubernetes fundamentals (CRDs, Operators, StatefulSets)
 - CKA etcd knowledge (backup, restore, cluster health)
-- [Reliability Engineering Foundation](../../foundations/reliability-engineering/index.md) - HA concepts
+- [Reliability Engineering Foundation](../../foundations/reliability-engineering/) - HA concepts
 
 ---
 
@@ -339,4 +340,4 @@ kubectl delete -f https://github.com/etcd-io/etcd-operator/releases/download/v0.
 
 ## Next Module
 
-[Back to Cloud-Native Databases Overview](index.md)
+[Back to Cloud-Native Databases Overview]()

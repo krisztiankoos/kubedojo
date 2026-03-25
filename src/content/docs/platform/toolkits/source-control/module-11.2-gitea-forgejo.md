@@ -1,5 +1,6 @@
 ---
 title: "Module 11.2: Gitea & Forgejo - Lightweight Self-Hosted Git"
+slug: platform/toolkits/source-control/module-11.2-gitea-forgejo
 sidebar:
   order: 3
   label: "Source Control"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [GitOps Discipline](../../disciplines/gitops/index.md) - Git-centric workflows
+- [GitOps Discipline](../../disciplines/gitops/) - Git-centric workflows
 - Basic Git fundamentals (branches, remotes, hooks)
 - Container/Kubernetes basics
 - Understanding of why self-hosting matters
@@ -1205,9 +1206,9 @@ Choose GitLab when:
 
 ## Next Steps
 
-- **Next Module**: [Module 11.3: GitHub Advanced](module-11.3-github-advanced.md) - GHAS, Copilot, and enterprise features
-- **Related**: [Module 12.1: SonarQube](../code-quality/module-12.1-sonarqube.md) - Integrate code quality scanning
-- **Related**: [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd.md) - GitOps with Gitea
+- **Next Module**: [Module 11.3: GitHub Advanced](module-11.3-github-advanced/) - GHAS, Copilot, and enterprise features
+- **Related**: [Module 12.1: SonarQube](../code-quality/module-12.1-sonarqube/) - Integrate code quality scanning
+- **Related**: [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd/) - GitOps with Gitea
 
 ---
 

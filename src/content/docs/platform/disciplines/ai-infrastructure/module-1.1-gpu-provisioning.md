@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: GPU Provisioning & Device Plugins"
+slug: platform/disciplines/ai-infrastructure/module-1.1-gpu-provisioning
 sidebar:
   order: 2
   label: "AI Infrastructure"
@@ -11,7 +12,7 @@ sidebar:
 Before starting this module:
 - **Required**: Kubernetes administration experience (Deployments, DaemonSets, RBAC, Helm)
 - **Required**: Basic Linux hardware awareness (PCI devices, drivers, kernel modules)
-- **Recommended**: [Observability Theory](../../foundations/observability-theory/index.md) — Understanding metrics pipelines
+- **Recommended**: [Observability Theory](../../foundations/observability-theory/) — Understanding metrics pipelines
 - **Recommended**: Access to a node with at least one NVIDIA GPU (even a modest T4 or RTX 3060 works)
 
 ---
@@ -840,7 +841,7 @@ GPU provisioning on Kubernetes is a multi-layered problem: drivers, container in
 
 ## Next Module
 
-Continue to [Module 1.2: Advanced GPU Scheduling & Sharing](module-1.2-gpu-scheduling.md) to learn how to share GPUs across workloads using MIG, time-slicing, MPS, and Dynamic Resource Allocation.
+Continue to [Module 1.2: Advanced GPU Scheduling & Sharing](module-1.2-gpu-scheduling/) to learn how to share GPUs across workloads using MIG, time-slicing, MPS, and Dynamic Resource Allocation.
 
 ---
 

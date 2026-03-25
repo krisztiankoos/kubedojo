@@ -1,5 +1,6 @@
 ---
 title: "Module 12.4: Snyk - Developer-First Security"
+slug: platform/toolkits/code-quality/module-12.4-snyk
 sidebar:
   order: 5
   label: "Code Quality"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - Security scanning concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) - Security scanning concepts
 - Basic understanding of dependency management (npm, pip, maven)
 - Container basics (Dockerfile, images)
 - CI/CD fundamentals
@@ -1035,9 +1036,9 @@ This prevents alert fatigue while still catching new issues.
 
 ## Next Steps
 
-- **Next Module**: [Module 12.5: Trivy](module-12.5-trivy.md) - Open source alternative
-- **Related**: [Module 4.4: Supply Chain Security](../security-tools/module-4.4-supply-chain.md) - SBOM and signing
-- **Related**: [Module 13.1: Harbor](../container-registries/module-13.1-harbor.md) - Registry with Snyk integration
+- **Next Module**: [Module 12.5: Trivy](module-12.5-trivy/) - Open source alternative
+- **Related**: [Module 4.4: Supply Chain Security](../security-tools/module-4.4-supply-chain/) - SBOM and signing
+- **Related**: [Module 13.1: Harbor](../container-registries/module-13.1-harbor/) - Registry with Snyk integration
 
 ---
 

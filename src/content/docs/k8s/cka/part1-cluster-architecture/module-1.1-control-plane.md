@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Control Plane Deep-Dive"
+slug: k8s/cka/part1-cluster-architecture/module-1.1-control-plane
 sidebar:
   order: 2
   label: "Part 1: Cluster Architecture"
@@ -817,4 +818,4 @@ kubectl delete pod recovery-test
 
 ## Next Module
 
-[Module 1.2: Extension Interfaces (CNI, CSI, CRI)](module-1.2-extension-interfaces.md) - How Kubernetes plugs in networking, storage, and container runtimes.
+[Module 1.2: Extension Interfaces (CNI, CSI, CRI)](module-1.2-extension-interfaces/) - How Kubernetes plugs in networking, storage, and container runtimes.

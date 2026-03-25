@@ -1,5 +1,6 @@
 ---
 title: "Module 6.4: Network Debugging"
+slug: linux/operations/troubleshooting/module-6.4-network-debugging
 sidebar:
   order: 5
   label: "Troubleshooting"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: TCP/IP Essentials](../../foundations/networking/module-3.1-tcp-ip-essentials.md)
-- **Required**: [Module 3.4: iptables & netfilter](../../foundations/networking/module-3.4-iptables-netfilter.md)
-- **Helpful**: [Module 6.1: Systematic Troubleshooting](module-6.1-systematic-troubleshooting.md)
+- **Required**: [Module 3.1: TCP/IP Essentials](../../foundations/networking/module-3.1-tcp-ip-essentials/)
+- **Required**: [Module 3.4: iptables & netfilter](../../foundations/networking/module-3.4-iptables-netfilter/)
+- **Helpful**: [Module 6.1: Systematic Troubleshooting](module-6.1-systematic-troubleshooting/)
 
 ---
 

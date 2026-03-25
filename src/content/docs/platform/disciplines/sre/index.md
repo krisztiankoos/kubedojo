@@ -28,13 +28,13 @@ SRE isn't just operations with a fancy name. It's a fundamentally different appr
 
 | # | Module | Time | Description |
 |---|--------|------|-------------|
-| 1.1 | [What is SRE?](module-1.1-what-is-sre.md) | 30-35 min | Origins, mindset, team structures, SRE vs DevOps |
-| 1.2 | [Service Level Objectives](module-1.2-slos.md) | 35-40 min | SLI, SLO, SLA hierarchy, choosing and measuring |
-| 1.3 | [Error Budgets](module-1.3-error-budgets.md) | 30-35 min | Budget calculation, policies, balancing velocity |
-| 1.4 | [Toil and Automation](module-1.4-toil-automation.md) | 30-35 min | Identifying toil, 50% rule, automation strategies |
-| 1.5 | [Incident Management](module-1.5-incident-management.md) | 35-40 min | Response roles, severity, on-call, runbooks |
-| 1.6 | [Postmortems and Learning](module-1.6-postmortems.md) | 30-35 min | Blameless culture, postmortem structure, action items |
-| 1.7 | [Capacity Planning](module-1.7-capacity-planning.md) | 35-40 min | Forecasting, provisioning, load testing, cost |
+| 1.1 | [What is SRE?](module-1.1-what-is-sre/) | 30-35 min | Origins, mindset, team structures, SRE vs DevOps |
+| 1.2 | [Service Level Objectives](module-1.2-slos/) | 35-40 min | SLI, SLO, SLA hierarchy, choosing and measuring |
+| 1.3 | [Error Budgets](module-1.3-error-budgets/) | 30-35 min | Budget calculation, policies, balancing velocity |
+| 1.4 | [Toil and Automation](module-1.4-toil-automation/) | 30-35 min | Identifying toil, 50% rule, automation strategies |
+| 1.5 | [Incident Management](module-1.5-incident-management/) | 35-40 min | Response roles, severity, on-call, runbooks |
+| 1.6 | [Postmortems and Learning](module-1.6-postmortems/) | 30-35 min | Blameless culture, postmortem structure, action items |
+| 1.7 | [Capacity Planning](module-1.7-capacity-planning/) | 35-40 min | Forecasting, provisioning, load testing, cost |
 
 ---
 
@@ -144,9 +144,9 @@ Engineering   Discipline      Toolkit
 
 ## Prerequisites
 
-- **Required**: [Reliability Engineering Track](../../foundations/reliability-engineering/index.md) — Failure modes and resilience
-- **Required**: [Systems Thinking Track](../../foundations/systems-thinking/index.md) — Understanding system dynamics
-- **Recommended**: [Observability Theory Track](../../foundations/observability-theory/index.md) — Metrics and monitoring
+- **Required**: [Reliability Engineering Track](../../foundations/reliability-engineering/) — Failure modes and resilience
+- **Required**: [Systems Thinking Track](../../foundations/systems-thinking/) — Understanding system dynamics
+- **Recommended**: [Observability Theory Track](../../foundations/observability-theory/) — Metrics and monitoring
 - **Helpful**: Experience operating production systems
 - **Helpful**: Some Kubernetes experience
 
@@ -158,12 +158,12 @@ After completing the SRE Discipline, you're ready for:
 
 | Track | Why |
 |-------|-----|
-| [Platform Engineering Discipline](../platform-engineering/index.md) | Build platforms using SRE principles |
-| [GitOps Discipline](../gitops/index.md) | Declarative infrastructure operations |
-| [IaC Discipline](../iac/index.md) | Infrastructure as Code for reliable provisioning |
-| [Observability Toolkit](../../toolkits/observability/index.md) | Implement Prometheus, Grafana, OpenTelemetry |
-| [IaC Tools Toolkit](../../toolkits/iac-tools/index.md) | Terraform, OpenTofu, Pulumi for automation |
-| [CKA Certification](../../../k8s/cka/index.md) | Apply SRE to Kubernetes administration |
+| [Platform Engineering Discipline](../platform-engineering/) | Build platforms using SRE principles |
+| [GitOps Discipline](../gitops/) | Declarative infrastructure operations |
+| [IaC Discipline](../iac/) | Infrastructure as Code for reliable provisioning |
+| [Observability Toolkit](../../toolkits/observability/) | Implement Prometheus, Grafana, OpenTelemetry |
+| [IaC Tools Toolkit](../../toolkits/iac-tools/) | Terraform, OpenTofu, Pulumi for automation |
+| [CKA Certification](../../../k8s/cka/) | Apply SRE to Kubernetes administration |
 
 ---
 

@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 3 hours
 >
-> **Prerequisites**: [Module 2: Advanced Cloud Networking & Transit Hubs](module-2-transit-hubs.md), working knowledge of Kubernetes Services and Ingress
+> **Prerequisites**: [Module 2: Advanced Cloud Networking & Transit Hubs](module-2-transit-hubs/), working knowledge of Kubernetes Services and Ingress
 >
 > **Track**: Advanced Cloud Operations
 
@@ -977,4 +977,4 @@ rm cluster-a.yaml cluster-b.yaml
 
 ## Next Module
 
-[Module 4: Cross-Account IAM & Enterprise Identity](module-4-enterprise-identity.md) -- Now that your clusters can talk to each other across accounts, learn how to manage WHO can access WHAT. Cross-account roles, workload identity federation, and the art of building trust boundaries that don't become bottlenecks.
+[Module 4: Cross-Account IAM & Enterprise Identity](module-4-enterprise-identity/) -- Now that your clusters can talk to each other across accounts, learn how to manage WHO can access WHAT. Cross-account roles, workload identity federation, and the art of building trust boundaries that don't become bottlenecks.

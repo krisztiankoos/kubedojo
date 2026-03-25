@@ -1,5 +1,6 @@
 ---
 title: "Module 7.6: Azure Bicep"
+slug: platform/toolkits/iac-tools/module-7.6-bicep
 sidebar:
   order: 7
   label: "IaC Tools"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals.md)
+- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals/)
 - Azure subscription with Contributor access
 - Azure CLI installed (`az --version`)
 - Basic understanding of Azure Resource Manager (ARM)
@@ -1452,9 +1453,9 @@ az deployment sub create \
 ## Next Steps
 
 You've completed the IaC Toolkit! Continue your learning:
-- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals.md) - Review core concepts
-- [Platform Engineering Track](../../disciplines/platform-engineering/index.md) - Apply IaC in platform contexts
-- [GitOps Discipline](../../disciplines/gitops/index.md) - Combine IaC with GitOps practices
+- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals/) - Review core concepts
+- [Platform Engineering Track](../../disciplines/platform-engineering/) - Apply IaC in platform contexts
+- [GitOps Discipline](../../disciplines/gitops/) - Combine IaC with GitOps practices
 
 ---
 

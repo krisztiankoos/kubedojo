@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: Control Plane Security"
+slug: k8s/kcsa/part2-cluster-component-security/module-2.1-control-plane-security
 sidebar:
   order: 2
   label: "Part 2: Cluster Component Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 1.3: Security Principles](../part1-cloud-native-security/module-1.3-security-principles.md)
+> **Prerequisites**: [Module 1.3: Security Principles](../part1-cloud-native-security/module-1.3-security-principles/)
 
 ---
 
@@ -489,4 +490,4 @@ Key points:
 
 ## Next Module
 
-[Module 2.2: Node Security](module-2.2-node-security.md) - Securing worker nodes, kubelets, and container runtimes.
+[Module 2.2: Node Security](module-2.2-node-security/) - Securing worker nodes, kubelets, and container runtimes.

@@ -1,5 +1,6 @@
 ---
 title: "Module 7.2: Crossplane"
+slug: platform/toolkits/platforms/module-7.2-crossplane
 sidebar:
   order: 3
   label: "Platforms"
@@ -17,7 +18,7 @@ Terraform in CI pipelines. CloudFormation templates. Manual console clicks. Infr
 - GitOps for infrastructure
 
 **Prerequisites**:
-- [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md)
+- [Platform Engineering Discipline](../../disciplines/platform-engineering/)
 - Kubernetes Custom Resource Definitions (CRDs)
 - Basic cloud provider knowledge (AWS/GCP/Azure)
 
@@ -772,7 +773,7 @@ Modify the Composition to create different resources based on the `size` paramet
 
 ## Next Module
 
-Continue to [Module 7.3: cert-manager](module-7.3-cert-manager.md) to learn automated certificate management for Kubernetes.
+Continue to [Module 7.3: cert-manager](module-7.3-cert-manager/) to learn automated certificate management for Kubernetes.
 
 ---
 

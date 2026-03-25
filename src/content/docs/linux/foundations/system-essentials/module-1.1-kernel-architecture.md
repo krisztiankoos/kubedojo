@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Kernel & Architecture"
+slug: linux/foundations/system-essentials/module-1.1-kernel-architecture
 sidebar:
   order: 2
   label: "System Essentials"

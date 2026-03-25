@@ -1,5 +1,6 @@
 ---
 title: "Module 3.2: Container Logging"
+slug: k8s/ckad/part3-observability/module-3.2-logging
 sidebar:
   order: 2
   label: "Part 3: Observability"
@@ -544,4 +545,4 @@ k delete deploy drill6
 
 ## Next Module
 
-[Module 3.3: Debugging in Kubernetes](module-3.3-debugging.md) - Troubleshoot pods, containers, and cluster issues.
+[Module 3.3: Debugging in Kubernetes](module-3.3-debugging/) - Troubleshoot pods, containers, and cluster issues.

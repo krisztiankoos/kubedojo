@@ -241,4 +241,4 @@ k get pod multi-app -o jsonpath='{range .spec.containers[*]}{.image}{"\n"}{end}'
 
 ## Наступна частина
 
-[Частина 1: Проєктування та збірка застосунків](../part1-design-build/module-1.1-container-images.md) — образи контейнерів, Jobs, багатоконтейнерні Поди та томи.
+[Частина 1: Проєктування та збірка застосунків](../part1-design-build/module-1.1-container-images/) — образи контейнерів, Jobs, багатоконтейнерні Поди та томи.

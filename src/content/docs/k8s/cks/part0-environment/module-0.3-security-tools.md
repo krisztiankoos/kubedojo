@@ -1,5 +1,6 @@
 ---
 title: "Module 0.3: Security Tool Mastery"
+slug: k8s/cks/part0-environment/module-0.3-security-tools
 sidebar:
   order: 3
   label: "Part 0: Environment"
@@ -514,4 +515,4 @@ EOF
 
 ## Next Module
 
-[Module 0.4: CKS Exam Strategy](module-0.4-exam-strategy.md) - Security-focused exam approach.
+[Module 0.4: CKS Exam Strategy](module-0.4-exam-strategy/) - Security-focused exam approach.

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: BGP & Core Routing"
+slug: platform/foundations/advanced-networking/module-1.4-bgp-routing
 sidebar:
   order: 5
   label: "Advanced Networking"
@@ -1391,4 +1392,4 @@ Before moving on, ensure you understand:
 
 ## Next Module
 
-[Module 1.5: Cloud Load Balancing Deep Dive](module-1.5-load-balancing.md) — The mechanics of L4 and L7 load balancers, connection draining, Proxy Protocol, and the architectures behind cloud load balancing services.
+[Module 1.5: Cloud Load Balancing Deep Dive](module-1.5-load-balancing/) — The mechanics of L4 and L7 load balancers, connection draining, Proxy Protocol, and the architectures behind cloud load balancing services.

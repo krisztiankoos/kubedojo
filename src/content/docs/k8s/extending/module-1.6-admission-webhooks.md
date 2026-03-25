@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Admission Webhooks"
+slug: k8s/extending/module-1.6-admission-webhooks
 sidebar:
   order: 7
   label: "Extending Kubernetes"
@@ -1031,4 +1032,4 @@ kind delete cluster --name webhook-lab
 
 ## Next Module
 
-[Module 1.7: Customizing the Scheduler](module-1.7-scheduler-plugins.md) - Extend the Kubernetes scheduler with custom scoring and filtering plugins.
+[Module 1.7: Customizing the Scheduler](module-1.7-scheduler-plugins/) - Extend the Kubernetes scheduler with custom scoring and filtering plugins.

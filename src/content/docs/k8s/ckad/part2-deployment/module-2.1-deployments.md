@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: Deployments Deep Dive"
+slug: k8s/ckad/part2-deployment/module-2.1-deployments
 sidebar:
   order: 1
   label: "Part 2: Deployment"
@@ -641,4 +642,4 @@ k delete svc production
 
 ## Next Module
 
-[Module 2.2: Helm Package Manager](module-2.2-helm.md) - Deploy and manage applications with Helm charts.
+[Module 2.2: Helm Package Manager](module-2.2-helm/) - Deploy and manage applications with Helm charts.

@@ -1,5 +1,6 @@
 ---
 title: "Module 3.4: Observability Fundamentals"
+slug: k8s/kcna/part3-cloud-native-architecture/module-3.4-observability-fundamentals
 sidebar:
   order: 5
   label: "Part 3: Cloud Native Architecture"
@@ -408,4 +409,4 @@ For resources, track:
 
 ## Next Module
 
-[Module 3.5: Observability Tools](module-3.5-observability-tools.md) - Prometheus, Grafana, Jaeger, and other observability tools in Kubernetes.
+[Module 3.5: Observability Tools](module-3.5-observability-tools/) - Prometheus, Grafana, Jaeger, and other observability tools in Kubernetes.

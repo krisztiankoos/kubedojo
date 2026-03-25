@@ -1,5 +1,6 @@
 ---
 title: "Module 5.6: Service Troubleshooting"
+slug: k8s/cka/part5-troubleshooting/module-5.6-services
 sidebar:
   order: 7
   label: "Part 5: Troubleshooting"
@@ -818,4 +819,4 @@ curl -H "Host: <hostname>" http://<ingress-ip>
 
 ## Next Module
 
-Continue to [Module 5.7: Logging & Monitoring](module-5.7-logging-monitoring.md) to learn how to use logs and metrics for troubleshooting.
+Continue to [Module 5.7: Logging & Monitoring](module-5.7-logging-monitoring/) to learn how to use logs and metrics for troubleshooting.

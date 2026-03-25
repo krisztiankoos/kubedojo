@@ -12,8 +12,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [CKA Part 3: Services & Networking](../cka/part3-services-networking/index.md) — Kubernetes networking fundamentals
-- [Service Mesh Concepts](../../platform/toolkits/networking/module-5.2-service-mesh.md) — Why service mesh exists
+- [CKA Part 3: Services & Networking](../cka/part3-services-networking/) — Kubernetes networking fundamentals
+- [Service Mesh Concepts](../../platform/toolkits/networking/module-5.2-service-mesh/) — Why service mesh exists
 - Basic understanding of proxies and TLS
 
 ---
@@ -781,4 +781,4 @@ kind delete cluster --name istio-lab
 
 ## Next Module
 
-Continue to [Module 2: Traffic Management](module-2-istio-traffic-management.md) — the heaviest ICA domain at 35%, covering VirtualService, DestinationRule, Gateway, traffic shifting, fault injection, and more.
+Continue to [Module 2: Traffic Management](module-2-istio-traffic-management/) — the heaviest ICA domain at 35%, covering VirtualService, DestinationRule, Gateway, traffic shifting, fault injection, and more.

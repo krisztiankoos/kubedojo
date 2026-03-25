@@ -1,5 +1,6 @@
 ---
 title: "Module 5.4: Security Tooling"
+slug: k8s/kcsa/part5-platform-security/module-5.4-security-tooling
 sidebar:
   order: 5
   label: "Part 5: Platform Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 5.3: Runtime Security](module-5.3-runtime-security.md)
+> **Prerequisites**: [Module 5.3: Runtime Security](module-5.3-runtime-security/)
 
 ---
 
@@ -710,4 +711,4 @@ Key principles:
 
 ## Next Module
 
-[Module 6.1: Compliance Frameworks](../part6-compliance/module-6.1-compliance-frameworks.md) - Understanding security compliance standards for Kubernetes.
+[Module 6.1: Compliance Frameworks](../part6-compliance/module-6.1-compliance-frameworks/) - Understanding security compliance standards for Kubernetes.

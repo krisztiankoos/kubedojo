@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Helm - Kubernetes Package Manager"
+slug: k8s/cka/part1-cluster-architecture/module-1.3-helm
 sidebar:
   order: 4
   label: "Part 1: Cluster Architecture"
@@ -782,4 +783,4 @@ helm uninstall mydb
 
 ## Next Module
 
-[Module 1.4: Kustomize](module-1.4-kustomize.md) - Configuration management without templates, Kubernetes-native customization.
+[Module 1.4: Kustomize](module-1.4-kustomize/) - Configuration management without templates, Kubernetes-native customization.

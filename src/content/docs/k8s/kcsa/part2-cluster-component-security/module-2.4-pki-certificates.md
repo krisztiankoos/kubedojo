@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: PKI and Certificates"
+slug: k8s/kcsa/part2-cluster-component-security/module-2.4-pki-certificates
 sidebar:
   order: 5
   label: "Part 2: Cluster Component Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 2.3: Network Security](module-2.3-network-security.md)
+> **Prerequisites**: [Module 2.3: Network Security](module-2.3-network-security/)
 
 ---
 
@@ -454,4 +455,4 @@ Key security practices:
 
 ## Next Module
 
-[Module 3.1: Pod Security](../part3-security-fundamentals/module-3.1-pod-security.md) - SecurityContext, Pod Security Standards, and container-level security.
+[Module 3.1: Pod Security](../part3-security-fundamentals/module-3.1-pod-security/) - SecurityContext, Pod Security Standards, and container-level security.

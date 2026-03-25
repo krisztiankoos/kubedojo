@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.2: \u0415\u043d\u0434\u043f\u043e\u0456\u043d\u0442\u0438 \u0442\u0430 EndpointSlices"
+slug: uk/k8s/cka/part3-services-networking/module-3.2-endpoints
 sidebar:
   order: 3
   label: "Part 3: Services & Networking"
@@ -993,4 +994,4 @@ k delete endpoints manual-svc
 
 ## Наступний модуль
 
-[Модуль 3.3: DNS та CoreDNS](module-3.3-dns.md) - Глибоке занурення у Kubernetes DNS та виявлення сервісів.
+[Модуль 3.3: DNS та CoreDNS](module-3.3-dns/) - Глибоке занурення у Kubernetes DNS та виявлення сервісів.

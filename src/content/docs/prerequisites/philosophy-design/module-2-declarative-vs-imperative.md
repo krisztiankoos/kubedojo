@@ -409,4 +409,4 @@ This isn't just a technical choice—it's a philosophy that enables reliable, sc
 
 ## Next Module
 
-[Module 3: What We Don't Cover (and Why)](module-3-what-we-dont-cover.md) - Understanding KubeDojo's scope and where to go for topics we skip.
+[Module 3: What We Don't Cover (and Why)](module-3-what-we-dont-cover/) - Understanding KubeDojo's scope and where to go for topics we skip.

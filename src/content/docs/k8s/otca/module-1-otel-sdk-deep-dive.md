@@ -680,4 +680,4 @@ pip install opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-prot
 
 ---
 
-**Next Module**: [Module 2: OTel Collector Architecture](module-2-otel-collector-advanced.md) — how to receive, process, and export telemetry at scale.
+**Next Module**: [Module 2: OTel Collector Architecture](module-2-otel-collector-advanced/) — how to receive, process, and export telemetry at scale.

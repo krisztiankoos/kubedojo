@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: Vault & External Secrets"
+slug: platform/toolkits/security-tools/module-4.1-vault-eso
 sidebar:
   order: 2
   label: "Security Tools"
@@ -17,7 +18,7 @@ Hardcoded secrets in Git are a security incident waiting to happen. This module 
 - Secret rotation strategies
 
 **Prerequisites**:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md)
+- [DevSecOps Discipline](../../disciplines/devsecops/)
 - Kubernetes Secrets basics
 - RBAC concepts
 
@@ -781,7 +782,7 @@ Update the secret in Vault and verify ESO syncs the change within the refresh in
 
 ## Next Module
 
-Continue to [Module 4.2: OPA & Gatekeeper](module-4.2-opa-gatekeeper.md) to learn policy-as-code for Kubernetes admission control.
+Continue to [Module 4.2: OPA & Gatekeeper](module-4.2-opa-gatekeeper/) to learn policy-as-code for Kubernetes admission control.
 
 ---
 

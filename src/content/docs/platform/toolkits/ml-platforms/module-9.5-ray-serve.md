@@ -1,5 +1,6 @@
 ---
 title: "Module 9.5: Ray Serve - Distributed Model Serving"
+slug: platform/toolkits/ml-platforms/module-9.5-ray-serve
 sidebar:
   order: 6
   label: "ML Platforms"
@@ -867,4 +868,4 @@ RayCluster just manages the Ray runtime. RayService also deploys and manages Ser
 
 ## Next Module
 
-Continue to [Module 9.6: LangChain & LlamaIndex](module-9.6-langchain-llamaindex.md) to learn about building LLM applications with frameworks for RAG, agents, and chains.
+Continue to [Module 9.6: LangChain & LlamaIndex](module-9.6-langchain-llamaindex/) to learn about building LLM applications with frameworks for RAG, agents, and chains.

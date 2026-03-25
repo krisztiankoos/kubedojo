@@ -10,12 +10,12 @@ sidebar:
 
 The GitOps & Deployments Toolkit covers the essential tools for declarative, Git-driven Kubernetes deployments. These tools implement the GitOps methodology—using Git as the single source of truth for infrastructure and application configuration.
 
-This toolkit builds on the concepts from [GitOps Discipline](../../disciplines/gitops/index.md) and shows you how to implement those principles with production-grade tools.
+This toolkit builds on the concepts from [GitOps Discipline](../../disciplines/gitops/) and shows you how to implement those principles with production-grade tools.
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [GitOps Discipline](../../disciplines/gitops/index.md) — GitOps principles and practices
+- [GitOps Discipline](../../disciplines/gitops/) — GitOps principles and practices
 - Basic Kubernetes knowledge (Deployments, Services)
 - Git fundamentals
 - kubectl experience
@@ -24,10 +24,10 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 2.1 | [ArgoCD](module-2.1-argocd.md) | `[COMPLEX]` | 45-50 min |
-| 2.2 | [Argo Rollouts](module-2.2-argo-rollouts.md) | `[COMPLEX]` | 45-50 min |
-| 2.3 | [Flux](module-2.3-flux.md) | `[COMPLEX]` | 40-45 min |
-| 2.4 | [Helm & Kustomize](module-2.4-helm-kustomize.md) | `[MEDIUM]` | 35-40 min |
+| 2.1 | [ArgoCD](module-2.1-argocd/) | `[COMPLEX]` | 45-50 min |
+| 2.2 | [Argo Rollouts](module-2.2-argo-rollouts/) | `[COMPLEX]` | 45-50 min |
+| 2.3 | [Flux](module-2.3-flux/) | `[COMPLEX]` | 40-45 min |
+| 2.4 | [Helm & Kustomize](module-2.4-helm-kustomize/) | `[MEDIUM]` | 35-40 min |
 
 ## Learning Outcomes
 
@@ -197,10 +197,10 @@ Breaking change in API                → Argo Rollouts canary
 
 ## Related Tracks
 
-- **Before**: [GitOps Discipline](../../disciplines/gitops/index.md) — Why GitOps works
-- **Related**: [Observability Toolkit](../observability/index.md) — Monitor deployments
-- **Related**: [IaC Tools](../iac-tools/index.md) — Infrastructure delivery with GitOps
-- **After**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) — Build before deploy
+- **Before**: [GitOps Discipline](../../disciplines/gitops/) — Why GitOps works
+- **Related**: [Observability Toolkit](../observability/) — Monitor deployments
+- **Related**: [IaC Tools](../iac-tools/) — Infrastructure delivery with GitOps
+- **After**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Build before deploy
 
 ---
 

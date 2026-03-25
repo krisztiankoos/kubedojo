@@ -1,5 +1,6 @@
 ---
 title: "Module 14.4: Talos Linux - The OS That IS Kubernetes"
+slug: platform/toolkits/k8s-distributions/module-14.4-talos
 sidebar:
   order: 5
   label: "K8s Distributions"
@@ -12,11 +13,11 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 14.1: k3s](module-14.1-k3s.md) - Lightweight Kubernetes concepts
-- [Module 14.2: k0s](module-14.2-k0s.md) - Alternative distributions
+- [Module 14.1: k3s](module-14.1-k3s/) - Lightweight Kubernetes concepts
+- [Module 14.2: k0s](module-14.2-k0s/) - Alternative distributions
 - Linux fundamentals (boot process, systemd concepts)
 - Understanding of immutable infrastructure
-- [Security Principles Foundation](../../foundations/security-principles/index.md) - Defense in depth
+- [Security Principles Foundation](../../foundations/security-principles/) - Defense in depth
 
 ---
 
@@ -958,9 +959,9 @@ Store configs in Git, apply via CI/CD, and you have GitOps for your entire infra
 
 ## Next Steps
 
-- **Next Module**: [Module 14.5: OpenShift](module-14.5-openshift.md) — Enterprise Kubernetes
-- **Related**: [Security Tools Toolkit](../security-tools/index.md) — Runtime security
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Automate Talos deployment
+- **Next Module**: [Module 14.5: OpenShift](module-14.5-openshift/) — Enterprise Kubernetes
+- **Related**: [Security Tools Toolkit](../security-tools/) — Runtime security
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Automate Talos deployment
 
 ---
 

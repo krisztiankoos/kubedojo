@@ -1,5 +1,6 @@
 ---
 title: "Module 0.4: kubernetes.io Navigation"
+slug: k8s/cka/part0-environment/module-0.4-k8s-docs
 sidebar:
   order: 4
   label: "Part 0: Environment"
@@ -591,4 +592,4 @@ Score: How many did you complete in 10 minutes?
 
 ## Next Module
 
-[Module 0.5: Exam Strategy - Three-Pass Method](module-0.5-exam-strategy.md) - The strategy that maximizes your score.
+[Module 0.5: Exam Strategy - Three-Pass Method](module-0.5-exam-strategy/) - The strategy that maximizes your score.

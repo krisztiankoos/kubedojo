@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Custom Resource Definitions Deep Dive"
+slug: k8s/extending/module-1.2-crds-advanced
 sidebar:
   order: 3
   label: "Extending Kubernetes"
@@ -1306,4 +1307,4 @@ k delete crd backuppolicies.data.kubedojo.io
 
 ## Next Module
 
-[Module 1.3: Building Controllers with client-go](module-1.3-controllers-client-go.md) - Write a complete Kubernetes controller from scratch using the patterns you learned in Modules 1.1 and 1.2.
+[Module 1.3: Building Controllers with client-go](module-1.3-controllers-client-go/) - Write a complete Kubernetes controller from scratch using the patterns you learned in Modules 1.1 and 1.2.

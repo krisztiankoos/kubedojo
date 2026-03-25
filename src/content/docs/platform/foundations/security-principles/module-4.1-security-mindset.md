@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: The Security Mindset"
+slug: platform/foundations/security-principles/module-4.1-security-mindset
 sidebar:
   order: 2
   label: "Security Principles"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Systems Thinking Track](../systems-thinking/index.md) (recommended)
+> **Prerequisites**: [Systems Thinking Track](../systems-thinking/) (recommended)
 >
 > **Track**: Foundations
 
@@ -841,4 +842,4 @@ Before moving on, verify you can answer these:
 
 ## Next Module
 
-[Module 4.2: Defense in Depth](module-4.2-defense-in-depth.md) - Layered security controls and how to implement them effectively.
+[Module 4.2: Defense in Depth](module-4.2-defense-in-depth/) - Layered security controls and how to implement them effectively.

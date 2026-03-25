@@ -1,5 +1,6 @@
 ---
 title: "Module 4.2: OPA & Gatekeeper"
+slug: platform/toolkits/security-tools/module-4.2-opa-gatekeeper
 sidebar:
   order: 3
   label: "Security Tools"
@@ -17,7 +18,7 @@ sidebar:
 - Policy testing and CI/CD integration
 
 **Prerequisites**:
-- [Security Principles Foundations](../../foundations/security-principles/index.md)
+- [Security Principles Foundations](../../foundations/security-principles/)
 - Kubernetes admission controllers concept
 - Basic programming logic
 
@@ -719,7 +720,7 @@ Add a second constraint that requires all pods to have a `team` label.
 
 ## Next Module
 
-Continue to [Module 4.3: Falco](module-4.3-falco.md) to learn runtime security monitoring for detecting threats in running containers.
+Continue to [Module 4.3: Falco](module-4.3-falco/) to learn runtime security monitoring for detecting threats in running containers.
 
 ---
 

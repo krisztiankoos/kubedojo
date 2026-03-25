@@ -1,5 +1,6 @@
 ---
 title: "Module 5.1: What Makes Systems Distributed"
+slug: platform/foundations/distributed-systems/module-5.1-what-makes-systems-distributed
 sidebar:
   order: 2
   label: "Distributed Systems"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Systems Thinking Track](../systems-thinking/index.md) (recommended)
+> **Prerequisites**: [Systems Thinking Track](../systems-thinking/) (recommended)
 >
 > **Track**: Foundations
 
@@ -1024,4 +1025,4 @@ Before moving on, ensure you understand:
 
 ## Next Module
 
-[Module 5.2: Consensus and Coordination](module-5.2-consensus-and-coordination.md) - How distributed systems agree on anything, and why it's so hard.
+[Module 5.2: Consensus and Coordination](module-5.2-consensus-and-coordination/) - How distributed systems agree on anything, and why it's so hard.

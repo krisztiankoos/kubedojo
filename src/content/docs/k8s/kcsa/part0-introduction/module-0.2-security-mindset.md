@@ -1,5 +1,6 @@
 ---
 title: "Module 0.2: Security Mindset"
+slug: k8s/kcsa/part0-introduction/module-0.2-security-mindset
 sidebar:
   order: 3
   label: "Part 0: Introduction"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 20-25 minutes
 >
-> **Prerequisites**: [Module 0.1: KCSA Overview](module-0.1-kcsa-overview.md)
+> **Prerequisites**: [Module 0.1: KCSA Overview](module-0.1-kcsa-overview/)
 
 ---
 
@@ -397,4 +398,4 @@ For KCSA questions:
 
 ## Next Module
 
-[Module 1.1: The 4 Cs of Cloud Native Security](../part1-cloud-native-security/module-1.1-four-cs.md) - Deep dive into the foundational security model for cloud native systems.
+[Module 1.1: The 4 Cs of Cloud Native Security](../part1-cloud-native-security/module-1.1-four-cs/) - Deep dive into the foundational security model for cloud native systems.

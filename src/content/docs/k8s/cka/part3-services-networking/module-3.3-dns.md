@@ -1,5 +1,6 @@
 ---
 title: "Module 3.3: DNS & CoreDNS"
+slug: k8s/cka/part3-services-networking/module-3.3-dns
 sidebar:
   order: 4
   label: "Part 3: Services & Networking"
@@ -855,4 +856,4 @@ k delete namespace test
 
 ## Next Module
 
-[Module 3.4: Ingress](module-3.4-ingress.md) - HTTP routing and external access to services.
+[Module 3.4: Ingress](module-3.4-ingress/) - HTTP routing and external access to services.

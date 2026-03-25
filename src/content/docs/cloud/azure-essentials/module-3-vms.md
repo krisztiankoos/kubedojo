@@ -784,4 +784,4 @@ az group delete --name "$RG" --yes --no-wait
 
 ## Next Module
 
-[Module 4: Azure Blob Storage & Data Lake](module-4-blob.md) --- Learn how Azure stores unstructured data at massive scale, from hot-tier serving to cold archival, with SAS tokens and identity-based access control.
+[Module 4: Azure Blob Storage & Data Lake](module-4-blob/) --- Learn how Azure stores unstructured data at massive scale, from hot-tier serving to cold archival, with SAS tokens and identity-based access control.

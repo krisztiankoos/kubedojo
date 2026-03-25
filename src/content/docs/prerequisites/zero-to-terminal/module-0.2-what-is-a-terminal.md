@@ -1,5 +1,6 @@
 ---
 title: "Module 0.2: What is a Terminal?"
+slug: prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal
 sidebar:
   order: 3
   label: "Zero to Terminal"
@@ -453,4 +454,4 @@ You've completed this exercise when you can:
 
 You've taken the first step — you opened a terminal and ran commands. In the next modules, you'll learn to navigate the filesystem, work with files, and start building real skills.
 
-**Next Module**: [Module 0.4: Files and Directories](module-0.4-files-and-directories.md) — Learn how your computer organizes everything into files and folders, and how to navigate them like a pro.
+**Next Module**: [Module 0.4: Files and Directories](module-0.4-files-and-directories/) — Learn how your computer organizes everything into files and folders, and how to navigate them like a pro.

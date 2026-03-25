@@ -1,5 +1,6 @@
 ---
 title: "Module 10.2: Event Correlation Platforms"
+slug: platform/toolkits/aiops-tools/module-10.2-event-correlation-platforms
 sidebar:
   order: 3
   label: "AIOps Tools"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 6.3: Event Correlation](../../disciplines/aiops/module-6.3-event-correlation.md) — Correlation concepts
+- [Module 6.3: Event Correlation](../../disciplines/aiops/module-6.3-event-correlation/) — Correlation concepts
 - Understanding of ITSM/incident management
 - Familiarity with enterprise monitoring tools
 
@@ -757,4 +758,4 @@ Event correlation platforms—BigPanda, Moogsoft, PagerDuty AIOps, ServiceNow IT
 
 ## Next Module
 
-Continue to [Module 10.3: Observability AI Features](module-10.3-observability-ai-features.md) to learn about AI built into observability platforms.
+Continue to [Module 10.3: Observability AI Features](module-10.3-observability-ai-features/) to learn about AI built into observability platforms.

@@ -594,4 +594,4 @@ rm -rf /tmp/acr-lab
 
 ## Next Module
 
-[Module 7: ACI & Container Apps](module-7-aci-aca.md) --- Learn the serverless container options in Azure, from quick-and-simple Azure Container Instances to the fully-featured Azure Container Apps with KEDA auto-scaling and Dapr integration.
+[Module 7: ACI & Container Apps](module-7-aci-aca/) --- Learn the serverless container options in Azure, from quick-and-simple Azure Container Instances to the fully-featured Azure Container Apps with KEDA auto-scaling and Dapr integration.

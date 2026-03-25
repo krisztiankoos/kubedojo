@@ -358,4 +358,4 @@ If you scored less than 80%, review these areas:
 
 ## Next Part
 
-[Part 4: Application Environment, Configuration and Security](../part4-environment/module-4.1-configmaps.md) - ConfigMaps, Secrets, SecurityContexts, and more.
+[Part 4: Application Environment, Configuration and Security](../part4-environment/module-4.1-configmaps/) - ConfigMaps, Secrets, SecurityContexts, and more.

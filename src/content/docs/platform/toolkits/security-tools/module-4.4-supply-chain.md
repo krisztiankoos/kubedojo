@@ -1,5 +1,6 @@
 ---
 title: "Module 4.4: Supply Chain Security"
+slug: platform/toolkits/security-tools/module-4.4-supply-chain
 sidebar:
   order: 5
   label: "Security Tools"
@@ -17,7 +18,7 @@ You trust your code. But do you trust your dependencies? Your base images? Your 
 - Secure artifact registries with Harbor
 
 **Prerequisites**:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md)
+- [DevSecOps Discipline](../../disciplines/devsecops/)
 - Container image basics
 - CI/CD pipeline concepts
 
@@ -726,7 +727,7 @@ cosign attest --predicate sbom.json --type cyclonedx ghcr.io/youruser/myapp:v1
 
 ## Next Module
 
-Continue to [Networking Toolkit](../networking/index.md) to learn about Cilium and Service Mesh for Kubernetes networking and security.
+Continue to [Networking Toolkit](../networking/) to learn about Cilium and Service Mesh for Kubernetes networking and security.
 
 ---
 

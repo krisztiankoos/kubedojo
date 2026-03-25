@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.5: \u0421\u0435\u0440\u0432\u0456\u0441\u043d\u0456 \u0430\u043a\u0430\u0443\u043d\u0442\u0438"
+slug: uk/k8s/ckad/part4-environment/module-4.5-serviceaccounts
 sidebar:
   order: 5
   label: "Part 4: Environment"
@@ -587,4 +588,4 @@ k delete deploy drill6 sa drill6-sa
 
 ## Наступний модуль
 
-[Модуль 4.6: Custom Resource Definitions](module-4.6-crds.md) — Розширення Kubernetes за допомогою власних ресурсів.
+[Модуль 4.6: Custom Resource Definitions](module-4.6-crds/) — Розширення Kubernetes за допомогою власних ресурсів.

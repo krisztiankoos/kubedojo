@@ -28,9 +28,9 @@ Understanding these challenges helps you design systems that work despite them.
 
 | # | Module | Time | Description |
 |---|--------|------|-------------|
-| 5.1 | [What Makes Systems Distributed](module-5.1-what-makes-systems-distributed.md) | 25-30 min | Fundamental challenges, CAP theorem, Kubernetes as distributed system |
-| 5.2 | [Consensus and Coordination](module-5.2-consensus-and-coordination.md) | 35-40 min | Paxos, Raft, leader election, distributed locks, etcd |
-| 5.3 | [Eventual Consistency](module-5.3-eventual-consistency.md) | 30-35 min | Consistency models, replication, conflict resolution, CRDTs |
+| 5.1 | [What Makes Systems Distributed](module-5.1-what-makes-systems-distributed/) | 25-30 min | Fundamental challenges, CAP theorem, Kubernetes as distributed system |
+| 5.2 | [Consensus and Coordination](module-5.2-consensus-and-coordination/) | 35-40 min | Paxos, Raft, leader election, distributed locks, etcd |
+| 5.3 | [Eventual Consistency](module-5.3-eventual-consistency/) | 30-35 min | Consistency models, replication, conflict resolution, CRDTs |
 
 ---
 
@@ -100,8 +100,8 @@ Discipline    Engineering   Discipline
 
 ## Prerequisites
 
-- **Recommended**: [Systems Thinking Track](../systems-thinking/index.md) — Understanding system interactions
-- **Recommended**: [Reliability Engineering Track](../reliability-engineering/index.md) — Failure modes and resilience
+- **Recommended**: [Systems Thinking Track](../systems-thinking/) — Understanding system interactions
+- **Recommended**: [Reliability Engineering Track](../reliability-engineering/) — Failure modes and resilience
 - Helpful: Basic Kubernetes knowledge
 - Helpful: Some programming experience
 
@@ -113,10 +113,10 @@ After completing Distributed Systems, you're ready for:
 
 | Track | Why |
 |-------|-----|
-| [SRE Discipline](../../disciplines/sre/index.md) | Apply distributed systems thinking to reliability |
-| [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) | Build platforms on distributed foundations |
-| [GitOps Discipline](../../disciplines/gitops/index.md) | Eventual consistency in practice |
-| [Observability Toolkit](../../toolkits/observability/index.md) | Monitor distributed systems |
+| [SRE Discipline](../../disciplines/sre/) | Apply distributed systems thinking to reliability |
+| [Platform Engineering Discipline](../../disciplines/platform-engineering/) | Build platforms on distributed foundations |
+| [GitOps Discipline](../../disciplines/gitops/) | Eventual consistency in practice |
+| [Observability Toolkit](../../toolkits/observability/) | Monitor distributed systems |
 
 ---
 

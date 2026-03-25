@@ -1,5 +1,6 @@
 ---
 title: "Module 4.4: seccomp Profiles"
+slug: linux/security/hardening/module-4.4-seccomp
 sidebar:
   order: 5
   label: "Security Hardening"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms.md)
-- **Required**: [Module 1.1: Kernel & Architecture](../../foundations/system-essentials/module-1.1-kernel-architecture.md) (system calls)
+- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms/)
+- **Required**: [Module 1.1: Kernel & Architecture](../../foundations/system-essentials/module-1.1-kernel-architecture/) (system calls)
 - **Helpful**: Understanding of BPF concepts
 
 ---

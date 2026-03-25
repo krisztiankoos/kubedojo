@@ -932,4 +932,4 @@ echo "Cleanup complete."
 
 ## Next Module
 
-Next up: **[Module 12: GCP Architectural Patterns](module-12-patterns.md)** --- Learn about project vending machines, landing zones, Identity-Aware Proxy, and get an overview of Anthos and GKE for container orchestration at scale.
+Next up: **[Module 12: GCP Architectural Patterns](module-12-patterns/)** --- Learn about project vending machines, landing zones, Identity-Aware Proxy, and get an overview of Anthos and GKE for container orchestration at scale.

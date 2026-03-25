@@ -1,5 +1,6 @@
 ---
 title: "Module 3.3: Network Namespaces & veth"
+slug: linux/foundations/networking/module-3.3-network-namespaces
 sidebar:
   order: 4
   label: "Networking"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.1: Linux Namespaces](../container-primitives/module-2.1-namespaces.md)
-- **Required**: [Module 3.1: TCP/IP Essentials](module-3.1-tcp-ip-essentials.md)
+- **Required**: [Module 2.1: Linux Namespaces](../container-primitives/module-2.1-namespaces/)
+- **Required**: [Module 3.1: TCP/IP Essentials](module-3.1-tcp-ip-essentials/)
 - **Helpful**: Basic understanding of bridges and switches
 
 ---

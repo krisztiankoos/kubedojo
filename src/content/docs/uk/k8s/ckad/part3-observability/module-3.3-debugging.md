@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.3: \u041d\u0430\u043b\u0430\u0433\u043e\u0434\u0436\u0435\u043d\u043d\u044f \u0432 Kubernetes"
+slug: uk/k8s/ckad/part3-observability/module-3.3-debugging
 sidebar:
   order: 3
   label: "Part 3: Observability"
@@ -692,4 +693,4 @@ k delete deploy drill6 svc drill6-svc
 
 ## Наступний модуль
 
-[Модуль 3.4: Моніторинг застосунків](module-3.4-monitoring.md) — Моніторинг стану застосунків та використання ресурсів.
+[Модуль 3.4: Моніторинг застосунків](module-3.4-monitoring/) — Моніторинг стану застосунків та використання ресурсів.

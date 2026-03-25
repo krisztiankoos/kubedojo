@@ -10,13 +10,13 @@ sidebar:
 
 The Observability Toolkit covers the essential tools for monitoring, logging, and tracing cloud-native applications. These are the instruments you'll use daily to understand what's happening in your systems.
 
-This toolkit builds on the theoretical foundations from [Observability Theory](../../foundations/observability-theory/index.md) and shows you how to implement those concepts with production-grade tools.
+This toolkit builds on the theoretical foundations from [Observability Theory](../../foundations/observability-theory/) and shows you how to implement those concepts with production-grade tools.
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [Observability Theory Track](../../foundations/observability-theory/index.md) — Conceptual foundation
-- [SRE Discipline](../../disciplines/sre/index.md) — Where observability fits (recommended)
+- [Observability Theory Track](../../foundations/observability-theory/) — Conceptual foundation
+- [SRE Discipline](../../disciplines/sre/) — Where observability fits (recommended)
 - Basic Kubernetes knowledge
 - Command-line familiarity
 
@@ -24,16 +24,16 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 1.1 | [Prometheus](module-1.1-prometheus.md) | `[COMPLEX]` | 45-50 min |
-| 1.2 | [OpenTelemetry](module-1.2-opentelemetry.md) | `[COMPLEX]` | 45-50 min |
-| 1.3 | [Grafana](module-1.3-grafana.md) | `[COMPLEX]` | 40-45 min |
-| 1.4 | [Loki](module-1.4-loki.md) | `[COMPLEX]` | 40-45 min |
-| 1.5 | [Distributed Tracing](module-1.5-tracing.md) | `[COMPLEX]` | 45-50 min |
-| 1.6 | [Pixie](module-1.6-pixie.md) | `[MEDIUM]` | 90 min |
-| 1.7 | [Hubble](module-1.7-hubble.md) | `[MEDIUM]` | 90 min |
-| 1.8 | [Coroot](module-1.8-coroot.md) | `[MEDIUM]` | 90 min |
-| 1.9 | [Continuous Profiling](module-1.9-continuous-profiling.md) | `[MEDIUM]` | 40 min |
-| 1.10 | [SLO Tooling](module-1.10-slo-tooling.md) | `[MEDIUM]` | 40 min |
+| 1.1 | [Prometheus](module-1.1-prometheus/) | `[COMPLEX]` | 45-50 min |
+| 1.2 | [OpenTelemetry](module-1.2-opentelemetry/) | `[COMPLEX]` | 45-50 min |
+| 1.3 | [Grafana](module-1.3-grafana/) | `[COMPLEX]` | 40-45 min |
+| 1.4 | [Loki](module-1.4-loki/) | `[COMPLEX]` | 40-45 min |
+| 1.5 | [Distributed Tracing](module-1.5-tracing/) | `[COMPLEX]` | 45-50 min |
+| 1.6 | [Pixie](module-1.6-pixie/) | `[MEDIUM]` | 90 min |
+| 1.7 | [Hubble](module-1.7-hubble/) | `[MEDIUM]` | 90 min |
+| 1.8 | [Coroot](module-1.8-coroot/) | `[MEDIUM]` | 90 min |
+| 1.9 | [Continuous Profiling](module-1.9-continuous-profiling/) | `[MEDIUM]` | 40 min |
+| 1.10 | [SLO Tooling](module-1.10-slo-tooling/) | `[MEDIUM]` | 40 min |
 
 ## Learning Outcomes
 
@@ -159,10 +159,10 @@ INVESTIGATING AN INCIDENT:
 
 ## Related Tracks
 
-- **Before**: [Observability Theory](../../foundations/observability-theory/index.md) — Why these tools exist
-- **Related**: [SRE Discipline](../../disciplines/sre/index.md) — How to apply observability
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Deploy observability stack with Terraform
-- **After**: [GitOps & Deployments Toolkit](../gitops-deployments/index.md) — Deploy observable apps
+- **Before**: [Observability Theory](../../foundations/observability-theory/) — Why these tools exist
+- **Related**: [SRE Discipline](../../disciplines/sre/) — How to apply observability
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Deploy observability stack with Terraform
+- **After**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deploy observable apps
 
 ---
 

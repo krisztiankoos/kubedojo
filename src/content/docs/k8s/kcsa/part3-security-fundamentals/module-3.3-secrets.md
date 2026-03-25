@@ -1,5 +1,6 @@
 ---
 title: "Module 3.3: Secrets Management"
+slug: k8s/kcsa/part3-security-fundamentals/module-3.3-secrets
 sidebar:
   order: 4
   label: "Part 3: Security Fundamentals"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 3.2: RBAC Fundamentals](module-3.2-rbac.md)
+> **Prerequisites**: [Module 3.2: RBAC Fundamentals](module-3.2-rbac/)
 
 ---
 
@@ -532,4 +533,4 @@ Key points:
 
 ## Next Module
 
-[Module 3.4: ServiceAccount Security](module-3.4-serviceaccounts.md) - Securing pod identities and API access.
+[Module 3.4: ServiceAccount Security](module-3.4-serviceaccounts/) - Securing pod identities and API access.

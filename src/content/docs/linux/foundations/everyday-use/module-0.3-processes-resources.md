@@ -1,5 +1,6 @@
 ---
 title: "Module 0.3: Process & Resource Survival Guide"
+slug: linux/foundations/everyday-use/module-0.3-processes-resources
 sidebar:
   order: 4
   label: "Linux Everyday Use"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 0.1: The CLI Power User](module-0.1-cli-power-user.md)
-- **Helpful**: [Module 0.2: Environment & Permissions](module-0.2-environment-permissions.md)
+- **Required**: [Module 0.1: The CLI Power User](module-0.1-cli-power-user/)
+- **Helpful**: [Module 0.2: Environment & Permissions](module-0.2-environment-permissions/)
 - **Environment**: Any Linux system (VM, WSL, or native)
 
 ---
@@ -673,4 +674,4 @@ jobs
 
 You can find and kill processes, and you know where your disk space went. But who is managing all the services that start at boot — your web servers, databases, and schedulers? Time to learn about the system that orchestrates everything.
 
-**Next**: [Module 0.4: Services & Logs Demystified](module-0.4-services-logs.md)
+**Next**: [Module 0.4: Services & Logs Demystified](module-0.4-services-logs/)

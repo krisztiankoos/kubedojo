@@ -19,7 +19,7 @@ Module 1 gave you the "why" and "what" of FinOps. This module gives you the "how
 - Kubernetes-specific FinOps: namespace cost allocation and OpenCost
 
 **Prerequisites**:
-- [Module 1: FinOps Fundamentals](module-1-finops-fundamentals.md) — Principles, lifecycle, team structure
+- [Module 1: FinOps Fundamentals](module-1-finops-fundamentals/) — Principles, lifecycle, team structure
 - Basic cloud familiarity (AWS/Azure/GCP concepts)
 - For K8s section: Basic understanding of namespaces, pods, resource requests/limits
 
@@ -452,7 +452,7 @@ Idle cost = Total node cost - Sum of all pod costs
 Cluster efficiency = Sum of pod costs / Total node cost × 100%
 ```
 
-> For hands-on OpenCost installation, dashboards, and right-sizing exercises, see our toolkit module: [Module 6.4: FinOps with OpenCost](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost.md)
+> For hands-on OpenCost installation, dashboards, and right-sizing exercises, see our toolkit module: [Module 6.4: FinOps with OpenCost](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost/)
 
 ### Kubernetes Optimization Strategies
 
@@ -776,7 +776,7 @@ FinOps capabilities turn principles into practice. The key skills tested on the 
 
 You have completed the FOCP curriculum modules. To continue your learning:
 
-- **Hands-on practice**: Work through [Module 6.4: FinOps with OpenCost](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost.md) for practical Kubernetes cost monitoring
-- **Review Module 1**: Re-take the [Module 1 quiz](module-1-finops-fundamentals.md#quiz) to confirm you know the 6 principles and lifecycle phases cold
+- **Hands-on practice**: Work through [Module 6.4: FinOps with OpenCost](../../platform/toolkits/scaling-reliability/module-6.4-finops-opencost/) for practical Kubernetes cost monitoring
+- **Review Module 1**: Re-take the [Module 1 quiz](module-1-finops-fundamentals/#quiz) to confirm you know the 6 principles and lifecycle phases cold
 - **Official resources**: Visit [finops.org](https://www.finops.org/) for the FinOps Foundation's free training materials
 - **Take the exam**: Register at [training.linuxfoundation.org](https://training.linuxfoundation.org/)

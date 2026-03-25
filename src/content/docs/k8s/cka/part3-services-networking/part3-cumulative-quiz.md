@@ -487,16 +487,16 @@ Count your correct answers:
 
 If you scored below 80%, review these modules:
 
-- **Services questions (Q1-Q7)**: [Module 3.1](module-3.1-services.md)
-- **Endpoints questions (Q8-Q11)**: [Module 3.2](module-3.2-endpoints.md)
-- **DNS questions (Q12-Q16)**: [Module 3.3](module-3.3-dns.md)
-- **Ingress questions (Q17-Q20)**: [Module 3.4](module-3.4-ingress.md)
-- **Gateway API questions (Q21-Q24)**: [Module 3.5](module-3.5-gateway-api.md)
-- **Network Policy questions (Q25-Q28)**: [Module 3.6](module-3.6-network-policies.md)
-- **CNI questions (Q29-Q30)**: [Module 3.7](module-3.7-cni.md)
+- **Services questions (Q1-Q7)**: [Module 3.1](module-3.1-services/)
+- **Endpoints questions (Q8-Q11)**: [Module 3.2](module-3.2-endpoints/)
+- **DNS questions (Q12-Q16)**: [Module 3.3](module-3.3-dns/)
+- **Ingress questions (Q17-Q20)**: [Module 3.4](module-3.4-ingress/)
+- **Gateway API questions (Q21-Q24)**: [Module 3.5](module-3.5-gateway-api/)
+- **Network Policy questions (Q25-Q28)**: [Module 3.6](module-3.6-network-policies/)
+- **CNI questions (Q29-Q30)**: [Module 3.7](module-3.7-cni/)
 
 ---
 
 ## Next Part
 
-Proceed to [Part 4: Storage](../part4-storage/index.md) to learn about PersistentVolumes, StorageClasses, and data management in Kubernetes.
+Proceed to [Part 4: Storage](../part4-storage/) to learn about PersistentVolumes, StorageClasses, and data management in Kubernetes.

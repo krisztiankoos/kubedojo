@@ -1,5 +1,6 @@
 ---
 title: "Module 3.4: Drift Detection and Remediation"
+slug: platform/disciplines/gitops/module-3.4-drift-detection
 sidebar:
   order: 5
   label: "GitOps"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops.md) — GitOps fundamentals
-- **Required**: [Module 3.3: Environment Promotion](module-3.3-environment-promotion.md) — Environment management
+- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops/) — GitOps fundamentals
+- **Required**: [Module 3.3: Environment Promotion](module-3.3-environment-promotion/) — Environment management
 - **Recommended**: Experience with Kubernetes kubectl debugging
 
 ---
@@ -828,7 +829,7 @@ Document the drift response process:
 
 ## Related Modules
 
-> **IaC Drift**: For IaC-specific drift remediation (Terraform state, CloudFormation drift), see [IaC Drift Remediation](../../disciplines/iac/module-6.5-drift-remediation.md).
+> **IaC Drift**: For IaC-specific drift remediation (Terraform state, CloudFormation drift), see [IaC Drift Remediation](../../disciplines/iac/module-6.5-drift-remediation/).
 
 ---
 
@@ -869,7 +870,7 @@ The goal isn't zero drift — it's knowing what drift exists and why.
 
 ## Next Module
 
-Continue to [Module 3.5: Secrets in GitOps](module-3.5-secrets.md) to learn how to handle sensitive data in a GitOps workflow.
+Continue to [Module 3.5: Secrets in GitOps](module-3.5-secrets/) to learn how to handle sensitive data in a GitOps workflow.
 
 ---
 

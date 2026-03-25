@@ -1,5 +1,6 @@
 ---
 title: "Module 0.1: What is a Computer?"
+slug: prerequisites/zero-to-terminal/module-0.1-what-is-a-computer
 sidebar:
   order: 2
   label: "Zero to Terminal"
@@ -305,7 +306,7 @@ Write down (yes, physically write it down or type it somewhere):
 
 ## What's Next?
 
-In [Module 0.3: First Terminal Commands](module-0.3-first-commands.md), you'll open the terminal and start typing commands. You'll navigate your computer's file system, create folders and files, and move things around -- all without clicking a single button.
+In [Module 0.3: First Terminal Commands](module-0.3-first-commands/), you'll open the terminal and start typing commands. You'll navigate your computer's file system, create folders and files, and move things around -- all without clicking a single button.
 
 The graphical interface is the dining room. The terminal is the kitchen. Time to step into the kitchen.
 

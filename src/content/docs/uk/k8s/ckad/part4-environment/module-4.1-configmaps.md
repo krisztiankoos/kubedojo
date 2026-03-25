@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.1: ConfigMaps"
+slug: uk/k8s/ckad/part4-environment/module-4.1-configmaps
 sidebar:
   order: 1
   label: "Part 4: Environment"
@@ -602,4 +603,4 @@ k delete pod drill6 cm drill6-nginx
 
 ## Наступний модуль
 
-[Модуль 4.2: Secrets](module-4.2-secrets.md) — Безпечне керування конфіденційними даними.
+[Модуль 4.2: Secrets](module-4.2-secrets/) — Безпечне керування конфіденційними даними.

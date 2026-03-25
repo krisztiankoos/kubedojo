@@ -10,11 +10,11 @@ How Kubernetes schedules, scales, stores data, and manages configuration.
 
 | Module | Topic | Complexity | Time |
 |--------|-------|------------|------|
-| [2.1](module-2.1-scheduling.md) | Scheduling | Medium | 25-30 min |
-| [2.2](module-2.2-scaling.md) | Scaling | Medium | 25-30 min |
-| [2.3](module-2.3-storage.md) | Storage Orchestration | Medium | 25-30 min |
-| [2.4](module-2.4-configuration.md) | Configuration | Medium | 25-30 min |
+| [2.1](module-2.1-scheduling/) | Scheduling | Medium | 25-30 min |
+| [2.2](module-2.2-scaling/) | Scaling | Medium | 25-30 min |
+| [2.3](module-2.3-storage/) | Storage Orchestration | Medium | 25-30 min |
+| [2.4](module-2.4-configuration/) | Configuration | Medium | 25-30 min |
 
 ---
 
-[← Part 1: Kubernetes Fundamentals](../part1-kubernetes-fundamentals/index.md) | [Part 3: Cloud Native Architecture →](../part3-cloud-native-architecture/index.md)
+[← Part 1: Kubernetes Fundamentals](../part1-kubernetes-fundamentals/) | [Part 3: Cloud Native Architecture →](../part3-cloud-native-architecture/)

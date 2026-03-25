@@ -1,5 +1,6 @@
 ---
 title: "Module 6.3: Process Debugging"
+slug: linux/operations/troubleshooting/module-6.3-process-debugging
 sidebar:
   order: 4
   label: "Troubleshooting"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd.md)
-- **Required**: [Module 6.2: Log Analysis](module-6.2-log-analysis.md)
+- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Required**: [Module 6.2: Log Analysis](module-6.2-log-analysis/)
 - **Helpful**: Understanding of system calls
 
 ---

@@ -1,5 +1,6 @@
 ---
 title: "Module 0.1: Cluster Setup"
+slug: k8s/cka/part0-environment/module-0.1-cluster-setup
 sidebar:
   order: 1
   label: "Part 0: Environment"
@@ -692,4 +693,4 @@ kubectl delete pod broken-test
 
 ## Next Module
 
-[Module 0.2: Shell Mastery](module-0.2-shell-mastery.md) - Aliases, autocomplete, and shell optimization for speed.
+[Module 0.2: Shell Mastery](module-0.2-shell-mastery/) - Aliases, autocomplete, and shell optimization for speed.

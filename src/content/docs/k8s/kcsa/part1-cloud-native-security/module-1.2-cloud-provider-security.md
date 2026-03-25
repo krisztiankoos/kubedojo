@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Cloud Provider Security"
+slug: k8s/kcsa/part1-cloud-native-security/module-1.2-cloud-provider-security
 sidebar:
   order: 3
   label: "Part 1: Cloud Native Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 1.1: The 4 Cs of Cloud Native Security](module-1.1-four-cs.md)
+> **Prerequisites**: [Module 1.1: The 4 Cs of Cloud Native Security](module-1.1-four-cs/)
 
 ---
 
@@ -435,4 +436,4 @@ Remember: The cloud provider gives you secure building blocks. Assembling them s
 
 ## Next Module
 
-[Module 1.3: Security Principles](module-1.3-security-principles.md) - Defense in depth, least privilege, and other foundational security principles.
+[Module 1.3: Security Principles](module-1.3-security-principles/) - Defense in depth, least privilege, and other foundational security principles.

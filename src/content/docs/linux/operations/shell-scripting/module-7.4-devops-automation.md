@@ -1,5 +1,6 @@
 ---
 title: "Module 7.4: DevOps Automation"
+slug: linux/operations/shell-scripting/module-7.4-devops-automation
 sidebar:
   order: 5
   label: "Shell Scripting"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 7.3: Practical Scripts](module-7.3-practical-scripts.md)
+- **Required**: [Module 7.3: Practical Scripts](module-7.3-practical-scripts/)
 - **Required**: Basic kubectl knowledge
 - **Helpful**: CI/CD experience
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Kustomize - Template-Free Configuration"
+slug: k8s/cka/part1-cluster-architecture/module-1.4-kustomize
 sidebar:
   order: 5
   label: "Part 1: Cluster Architecture"
@@ -1124,4 +1125,4 @@ Test each: `kubectl kustomize challenge/overlays/dev/`
 
 ## Next Module
 
-[Module 1.5: CRDs & Operators](module-1.5-crds-operators.md) - Extending Kubernetes with Custom Resource Definitions.
+[Module 1.5: CRDs & Operators](module-1.5-crds-operators/) - Extending Kubernetes with Custom Resource Definitions.

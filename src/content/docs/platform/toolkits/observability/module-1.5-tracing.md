@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: Distributed Tracing"
+slug: platform/toolkits/observability/module-1.5-tracing
 sidebar:
   order: 6
   label: "Observability"
@@ -15,9 +16,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 1.2: OpenTelemetry](module-1.2-opentelemetry.md) — Instrumentation fundamentals
-- [Module 1.1: Prometheus](module-1.1-prometheus.md) — Understanding metrics
-- [Module 1.4: Loki](module-1.4-loki.md) — Log correlation (recommended)
+- [Module 1.2: OpenTelemetry](module-1.2-opentelemetry/) — Instrumentation fundamentals
+- [Module 1.1: Prometheus](module-1.1-prometheus/) — Understanding metrics
+- [Module 1.4: Loki](module-1.4-loki/) — Log correlation (recommended)
 - Familiarity with microservices architecture
 
 ## Why This Module Matters
@@ -1356,8 +1357,8 @@ Congratulations! You've completed the Observability Toolkit. You now understand:
 - **Jaeger/Tempo** for traces
 
 Consider exploring:
-- [GitOps & Deployments Toolkit](../gitops-deployments/index.md) — Deploy your observable applications
-- [SRE Discipline](../../disciplines/sre/index.md) — Apply observability for reliability
+- [GitOps & Deployments Toolkit](../gitops-deployments/) — Deploy your observable applications
+- [SRE Discipline](../../disciplines/sre/) — Apply observability for reliability
 
 ---
 

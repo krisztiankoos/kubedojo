@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: Storage Orchestration"
+slug: k8s/kcna/part2-container-orchestration/module-2.3-storage
 sidebar:
   order: 4
   label: "Part 2: Container Orchestration"
@@ -417,4 +418,4 @@ spec:
 
 ## Next Module
 
-[Module 2.4: Configuration](module-2.4-configuration.md) - Managing application configuration with ConfigMaps and Secrets.
+[Module 2.4: Configuration](module-2.4-configuration/) - Managing application configuration with ConfigMaps and Secrets.

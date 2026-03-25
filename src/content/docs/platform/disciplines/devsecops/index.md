@@ -15,8 +15,8 @@ This track covers the complete DevSecOps journey—from shift-left practices and
 ## Prerequisites
 
 Before starting this track:
-- [Security Principles Track](../../foundations/security-principles/index.md) — Defense in depth, least privilege
-- [GitOps Track](../gitops/index.md) — Modern deployment practices
+- [Security Principles Track](../../foundations/security-principles/) — Defense in depth, least privilege
+- [GitOps Track](../gitops/) — Modern deployment practices
 - Basic CI/CD concepts (pipelines, builds, deployments)
 - Container basics (Docker, registries)
 
@@ -24,13 +24,13 @@ Before starting this track:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 4.1 | [DevSecOps Fundamentals](module-4.1-devsecops-fundamentals.md) | `[MEDIUM]` | 30-35 min |
-| 4.2 | [Shift-Left Security](module-4.2-shift-left-security.md) | `[MEDIUM]` | 35-40 min |
-| 4.3 | [Security in CI/CD Pipelines](module-4.3-security-cicd.md) | `[COMPLEX]` | 40-45 min |
-| 4.4 | [Supply Chain Security](module-4.4-supply-chain-security.md) | `[COMPLEX]` | 40-45 min |
-| -- | [Supply Chain Defense Guide](supply-chain-defense-guide.md) | Reference | 20-25 min |
-| 4.5 | [Runtime Security](module-4.5-runtime-security.md) | `[COMPLEX]` | 40-45 min |
-| 4.6 | [Security Culture & Automation](module-4.6-security-culture.md) | `[MEDIUM]` | 30-35 min |
+| 4.1 | [DevSecOps Fundamentals](module-4.1-devsecops-fundamentals/) | `[MEDIUM]` | 30-35 min |
+| 4.2 | [Shift-Left Security](module-4.2-shift-left-security/) | `[MEDIUM]` | 35-40 min |
+| 4.3 | [Security in CI/CD Pipelines](module-4.3-security-cicd/) | `[COMPLEX]` | 40-45 min |
+| 4.4 | [Supply Chain Security](module-4.4-supply-chain-security/) | `[COMPLEX]` | 40-45 min |
+| -- | [Supply Chain Defense Guide](supply-chain-defense-guide/) | Reference | 20-25 min |
+| 4.5 | [Runtime Security](module-4.5-runtime-security/) | `[COMPLEX]` | 40-45 min |
+| 4.6 | [Security Culture & Automation](module-4.6-security-culture/) | `[MEDIUM]` | 30-35 min |
 
 ## Learning Outcomes
 
@@ -91,7 +91,7 @@ After completing this track, you will be able to:
 | **SAST** | Semgrep, CodeQL, Bandit, SonarQube |
 | **SCA** | Trivy, Snyk, Dependabot, Grype |
 | **Container Scanning** | Trivy, Grype, Docker Scout |
-| **IaC Scanning** | Checkov, tfsec, Kubesec (see [IaC Security](../iac/module-6.3-iac-security.md)) |
+| **IaC Scanning** | Checkov, tfsec, Kubesec (see [IaC Security](../iac/module-6.3-iac-security/)) |
 | **Supply Chain** | Cosign, Sigstore, Syft |
 | **Runtime** | Falco, Kyverno, OPA/Gatekeeper |
 
@@ -121,11 +121,11 @@ Module 4.6: Security Culture & Automation
 
 ## Related Tracks
 
-- **Before**: [Security Principles](../../foundations/security-principles/index.md) — Foundational theory
-- **Related**: [GitOps](../gitops/index.md) — Deployment practices that support DevSecOps
-- **Related**: [IaC Discipline](../iac/index.md) — Infrastructure as Code security and testing
-- **After**: [Security Tools Toolkit](../../toolkits/security-tools/index.md) — Hands-on implementations
-- **After**: [IaC Tools](../../toolkits/iac-tools/index.md) — Terraform, OpenTofu, Pulumi hands-on
+- **Before**: [Security Principles](../../foundations/security-principles/) — Foundational theory
+- **Related**: [GitOps](../gitops/) — Deployment practices that support DevSecOps
+- **Related**: [IaC Discipline](../iac/) — Infrastructure as Code security and testing
+- **After**: [Security Tools Toolkit](../../toolkits/security-tools/) — Hands-on implementations
+- **After**: [IaC Tools](../../toolkits/iac-tools/) — Terraform, OpenTofu, Pulumi hands-on
 
 ---
 

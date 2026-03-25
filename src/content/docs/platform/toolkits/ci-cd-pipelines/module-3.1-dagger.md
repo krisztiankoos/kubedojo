@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: Dagger"
+slug: platform/toolkits/ci-cd-pipelines/module-3.1-dagger
 sidebar:
   order: 2
   label: "CI/CD Pipelines"
@@ -11,7 +12,7 @@ The senior engineer stared at the CI failure notification—the third one this h
 ## Prerequisites
 
 Before starting this module:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) — CI/CD concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) — CI/CD concepts
 - Programming experience in Go, Python, or TypeScript
 - Docker/container fundamentals
 - Basic CI/CD pipeline experience
@@ -1540,7 +1541,7 @@ Before moving on, ensure you can:
 
 ## Next Module
 
-Continue to [Module 3.2: Tekton](module-3.2-tekton.md) where we'll explore Kubernetes-native pipelines.
+Continue to [Module 3.2: Tekton](module-3.2-tekton/) where we'll explore Kubernetes-native pipelines.
 
 ---
 

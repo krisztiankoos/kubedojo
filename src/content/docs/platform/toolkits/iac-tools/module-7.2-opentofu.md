@@ -1,5 +1,6 @@
 ---
 title: "Module 7.2: OpenTofu - The Open Source Fork"
+slug: platform/toolkits/iac-tools/module-7.2-opentofu
 sidebar:
   order: 3
   label: "IaC Tools"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 7.1: Terraform Deep Dive](module-7.1-terraform.md) - Terraform fundamentals
+- [Module 7.1: Terraform Deep Dive](module-7.1-terraform/) - Terraform fundamentals
 - Basic understanding of open-source licensing
 
 ---
@@ -873,4 +874,4 @@ tofu apply -auto-approve
 
 ## Next Module
 
-Continue to [Module 7.3: Pulumi](module-7.3-pulumi.md) to learn about infrastructure as code using general-purpose programming languages.
+Continue to [Module 7.3: Pulumi](module-7.3-pulumi/) to learn about infrastructure as code using general-purpose programming languages.

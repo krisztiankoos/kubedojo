@@ -12,9 +12,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 1: Installation & Architecture](module-1-istio-installation-architecture.md) — istiod, Envoy, sidecar injection
-- [Module 2: Traffic Management](module-2-istio-traffic-management.md) — VirtualService, DestinationRule, Gateway
-- [Module 3: Security & Troubleshooting](module-3-istio-security-troubleshooting.md) — mTLS, AuthorizationPolicy, debugging
+- [Module 1: Installation & Architecture](module-1-istio-installation-architecture/) — istiod, Envoy, sidecar injection
+- [Module 2: Traffic Management](module-2-istio-traffic-management/) — VirtualService, DestinationRule, Gateway
+- [Module 3: Security & Troubleshooting](module-3-istio-security-troubleshooting/) — mTLS, AuthorizationPolicy, debugging
 - Basic understanding of Prometheus metrics and distributed tracing concepts
 
 ---
@@ -761,8 +761,8 @@ You've now completed all four ICA modules:
 - **Module 4**: Observability — metrics, tracing, logging, dashboards (10%)
 
 For deeper dives into the tools referenced here, see:
-- [Observability Theory](../../platform/foundations/observability-theory/index.md) — Metrics, logs, traces fundamentals
-- [Observability Tools](../../platform/toolkits/observability/index.md) — Prometheus, Grafana, Jaeger in depth
+- [Observability Theory](../../platform/foundations/observability-theory/) — Metrics, logs, traces fundamentals
+- [Observability Tools](../../platform/toolkits/observability/) — Prometheus, Grafana, Jaeger in depth
 
 ### Final Exam Prep Checklist
 

@@ -9,9 +9,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Prometheus Module](../../platform/toolkits/observability/module-1.1-prometheus.md) — architecture, metric types, basic alerting
-- [PromQL Deep Dive](module-1-promql-deep-dive.md) — query fundamentals
-- [Observability 3.3: Instrumentation Principles](../../platform/foundations/observability-theory/module-3.3-instrumentation-principles.md)
+- [Prometheus Module](../../platform/toolkits/observability/module-1.1-prometheus/) — architecture, metric types, basic alerting
+- [PromQL Deep Dive](module-1-promql-deep-dive/) — query fundamentals
+- [Observability 3.3: Instrumentation Principles](../../platform/foundations/observability-theory/module-3.3-instrumentation-principles/)
 - Basic Go, Python, or Java knowledge (for client library examples)
 
 ---
@@ -1366,7 +1366,7 @@ Instrumentation is where monitoring begins — without good metrics from your ap
 
 ## Related Modules
 
-- [PCA README](index.md) — Full exam domain mapping and study strategy
-- [PromQL Deep Dive](module-1-promql-deep-dive.md) — Complete PromQL for Domain 3
-- [Prometheus Fundamentals](../../platform/toolkits/observability/module-1.1-prometheus.md) — Architecture and basics
-- [Grafana](../../platform/toolkits/observability/module-1.3-grafana.md) — Dashboarding for Domain 5
+- [PCA README]() — Full exam domain mapping and study strategy
+- [PromQL Deep Dive](module-1-promql-deep-dive/) — Complete PromQL for Domain 3
+- [Prometheus Fundamentals](../../platform/toolkits/observability/module-1.1-prometheus/) — Architecture and basics
+- [Grafana](../../platform/toolkits/observability/module-1.3-grafana/) — Dashboarding for Domain 5

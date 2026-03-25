@@ -1,5 +1,6 @@
 ---
 title: "Module 10.1: Anomaly Detection Tools"
+slug: platform/toolkits/aiops-tools/module-10.1-anomaly-detection-tools
 sidebar:
   order: 2
   label: "AIOps Tools"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 6.2: Anomaly Detection](../../disciplines/aiops/module-6.2-anomaly-detection.md) — Conceptual foundation
+- [Module 6.2: Anomaly Detection](../../disciplines/aiops/module-6.2-anomaly-detection/) — Conceptual foundation
 - Python proficiency
 - Basic understanding of time series data
 - pip/conda for package installation
@@ -917,4 +918,4 @@ Anomaly detection tools each have strengths: Prophet for seasonal time series, L
 
 ## Next Module
 
-Continue to [Module 10.2: Event Correlation Platforms](module-10.2-event-correlation-platforms.md) to learn about enterprise platforms like BigPanda and Moogsoft.
+Continue to [Module 10.2: Event Correlation Platforms](module-10.2-event-correlation-platforms/) to learn about enterprise platforms like BigPanda and Moogsoft.

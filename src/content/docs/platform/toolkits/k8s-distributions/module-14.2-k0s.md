@@ -1,5 +1,6 @@
 ---
 title: "Module 14.2: k0s - Zero Friction Kubernetes"
+slug: platform/toolkits/k8s-distributions/module-14.2-k0s
 sidebar:
   order: 3
   label: "K8s Distributions"
@@ -1030,7 +1031,7 @@ multipass purge
 
 ## Next Module
 
-Continue to [Module 14.3: MicroK8s](module-14.3-microk8s.md) — Canonical's snap-based Kubernetes with rich add-ons.
+Continue to [Module 14.3: MicroK8s](module-14.3-microk8s/) — Canonical's snap-based Kubernetes with rich add-ons.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 4.5: Runtime Security"
+slug: platform/disciplines/devsecops/module-4.5-runtime-security
 sidebar:
   order: 7
   label: "DevSecOps"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 4.4: Supply Chain Security](module-4.4-supply-chain-security.md) — Securing the build
+- **Required**: [Module 4.4: Supply Chain Security](module-4.4-supply-chain-security/) — Securing the build
 - **Required**: Kubernetes basics (Pods, containers, namespaces)
-- **Recommended**: [Security Principles Track](../../foundations/security-principles/index.md) — Defense in depth
+- **Recommended**: [Security Principles Track](../../foundations/security-principles/) — Defense in depth
 - **Helpful**: Linux process and syscall concepts
 
 ---
@@ -1190,7 +1191,7 @@ The goal is to limit blast radius: if an attacker gets in, they should be detect
 
 ## Next Module
 
-Continue to [Module 4.6: Security Culture and Automation](module-4.6-security-culture.md) to learn about building security-first teams and automating security operations.
+Continue to [Module 4.6: Security Culture and Automation](module-4.6-security-culture/) to learn about building security-first teams and automating security operations.
 
 ---
 

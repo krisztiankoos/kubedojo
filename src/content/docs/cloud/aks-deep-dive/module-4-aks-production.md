@@ -4,7 +4,7 @@ sidebar:
   order: 5
   label: "Azure AKS Deep Dive"
 ---
-**Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: [Module 1: AKS Architecture & Node Management](module-1-aks-architecture.md)
+**Complexity**: [MEDIUM] | **Time to Complete**: 2.5h | **Prerequisites**: [Module 1: AKS Architecture & Node Management](module-1-aks-architecture/)
 
 ## Why This Module Matters
 
@@ -985,4 +985,4 @@ echo "az group delete --name rg-aks-prod --yes --no-wait"
 
 ## Next Module
 
-This is the final module in the AKS Deep Dive series. You now have the knowledge to architect, secure, network, observe, and scale production AKS clusters. For further learning, explore the [Platform Engineering Track](../../platform/index.md) to deepen your understanding of SRE practices, GitOps workflows, and DevSecOps pipelines that build on this AKS foundation.
+This is the final module in the AKS Deep Dive series. You now have the knowledge to architect, secure, network, observe, and scale production AKS clusters. For further learning, explore the [Platform Engineering Track](../../platform/) to deepen your understanding of SRE practices, GitOps workflows, and DevSecOps pipelines that build on this AKS foundation.

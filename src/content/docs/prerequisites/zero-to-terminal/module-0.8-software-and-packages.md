@@ -1,5 +1,6 @@
 ---
 title: "Module 0.8: Software and Packages"
+slug: prerequisites/zero-to-terminal/module-0.8-software-and-packages
 sidebar:
   order: 9
   label: "Zero to Terminal"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 0.6: What is Networking?](module-0.6-what-is-networking.md) — You should be comfortable with the terminal, files, and basic networking concepts.
+> **Prerequisites**: [Module 0.6: What is Networking?](module-0.6-what-is-networking/) — You should be comfortable with the terminal, files, and basic networking concepts.
 
 ---
 
@@ -550,4 +551,4 @@ You now know how software gets from code to a running program, how to install to
 
 From here, you have the foundation to start learning about containers, cloud computing, and eventually Kubernetes. Every tool in the Kubernetes ecosystem — `kubectl`, `helm`, `kind`, `docker` — gets installed exactly the way you just learned.
 
-**Continue to**: [Part 2: Cloud Native 101](../cloud-native-101/module-1-what-are-containers.md) — Now that you're comfortable with the terminal, it's time to learn what containers are and why they changed everything.
+**Continue to**: [Part 2: Cloud Native 101](../cloud-native-101/module-1-what-are-containers/) — Now that you're comfortable with the terminal, it's time to learn what containers are and why they changed everything.

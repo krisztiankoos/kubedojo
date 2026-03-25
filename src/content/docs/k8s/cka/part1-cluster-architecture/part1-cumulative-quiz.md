@@ -230,6 +230,6 @@ Before proceeding, ensure you can do these without help:
 
 When you score 20/25 or higher and complete the practical assessment:
 
-→ Continue to [Part 2: Workloads & Scheduling](../part2-workloads-scheduling/index.md)
+→ Continue to [Part 2: Workloads & Scheduling](../part2-workloads-scheduling/)
 
 This covers 15% of the exam and builds directly on cluster architecture concepts.

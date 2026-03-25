@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: Network Security"
+slug: k8s/kcsa/part2-cluster-component-security/module-2.3-network-security
 sidebar:
   order: 4
   label: "Part 2: Cluster Component Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 2.2: Node Security](module-2.2-node-security.md)
+> **Prerequisites**: [Module 2.2: Node Security](module-2.2-node-security/)
 
 ---
 
@@ -592,4 +593,4 @@ Key patterns:
 
 ## Next Module
 
-[Module 2.4: PKI and Certificates](module-2.4-pki-certificates.md) - Understanding Kubernetes certificate management and PKI.
+[Module 2.4: PKI and Certificates](module-2.4-pki-certificates/) - Understanding Kubernetes certificate management and PKI.

@@ -1,5 +1,6 @@
 ---
 title: "Module 5.8: Multus CNI - Multi-Network Pods for Specialized Workloads"
+slug: platform/toolkits/networking/module-5.8-multus
 sidebar:
   order: 9
   label: "Networking"
@@ -54,7 +55,7 @@ Multus breaks the "one network per pod" assumption. By the end of this module, y
 
 **Prerequisites**:
 - Kubernetes networking basics (Pods, Services, CNI)
-- [Module 5.1: Cilium](module-5.1-cilium.md) or equivalent CNI knowledge
+- [Module 5.1: Cilium](module-5.1-cilium/) or equivalent CNI knowledge
 - Linux networking fundamentals (interfaces, VLANs, bridges)
 - Basic understanding of container networking
 
@@ -1049,7 +1050,7 @@ kind delete cluster --name multus-lab
 
 ## Next Module
 
-Continue to [Module 5.2: Service Mesh](module-5.2-service-mesh.md) to learn about traffic management, mTLS, and when service mesh patterns complement multi-network architectures.
+Continue to [Module 5.2: Service Mesh](module-5.2-service-mesh/) to learn about traffic management, mTLS, and when service mesh patterns complement multi-network architectures.
 
 ---
 

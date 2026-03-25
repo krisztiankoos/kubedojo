@@ -1,5 +1,6 @@
 ---
 title: "Module 0.1: KCSA Exam Overview"
+slug: k8s/kcsa/part0-introduction/module-0.1-kcsa-overview
 sidebar:
   order: 2
   label: "Part 0: Introduction"
@@ -298,4 +299,4 @@ This curriculum follows the exam domains:
 
 ## Next Module
 
-[Module 0.2: Security Mindset](module-0.2-security-mindset.md) - How to think like a security professional and approach security questions strategically.
+[Module 0.2: Security Mindset](module-0.2-security-mindset/) - How to think like a security professional and approach security questions strategically.

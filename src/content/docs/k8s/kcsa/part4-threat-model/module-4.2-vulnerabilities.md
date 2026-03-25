@@ -1,5 +1,6 @@
 ---
 title: "Module 4.2: Common Vulnerabilities"
+slug: k8s/kcsa/part4-threat-model/module-4.2-vulnerabilities
 sidebar:
   order: 3
   label: "Part 4: Threat Model"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 4.1: Attack Surfaces](module-4.1-attack-surfaces.md)
+> **Prerequisites**: [Module 4.1: Attack Surfaces](module-4.1-attack-surfaces/)
 
 ---
 
@@ -452,4 +453,4 @@ Key practices:
 
 ## Next Module
 
-[Module 4.3: Container Escape](module-4.3-container-escape.md) - Understanding and preventing container breakout scenarios.
+[Module 4.3: Container Escape](module-4.3-container-escape/) - Understanding and preventing container breakout scenarios.

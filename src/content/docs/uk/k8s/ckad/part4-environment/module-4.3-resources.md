@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.3: \u0412\u0438\u043c\u043e\u0433\u0438 \u0442\u0430 \u043b\u0456\u043c\u0456\u0442\u0438 \u0440\u0435\u0441\u0443\u0440\u0441\u0456\u0432"
+slug: uk/k8s/ckad/part4-environment/module-4.3-resources
 sidebar:
   order: 3
   label: "Part 4: Environment"
@@ -579,4 +580,4 @@ k delete ns drill6
 
 ## Наступний модуль
 
-[Модуль 4.4: SecurityContexts](module-4.4-securitycontext.md) — Налаштування параметрів безпеки подів та контейнерів.
+[Модуль 4.4: SecurityContexts](module-4.4-securitycontext/) — Налаштування параметрів безпеки подів та контейнерів.

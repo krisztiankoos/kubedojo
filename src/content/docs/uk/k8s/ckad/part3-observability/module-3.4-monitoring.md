@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.4: \u041c\u043e\u043d\u0456\u0442\u043e\u0440\u0438\u043d\u0433 \u0437\u0430\u0441\u0442\u043e\u0441\u0443\u043d\u043a\u0456\u0432"
+slug: uk/k8s/ckad/part3-observability/module-3.4-monitoring
 sidebar:
   order: 4
   label: "Part 3: Observability"
@@ -478,4 +479,4 @@ k delete deploy drill6
 
 ## Наступний модуль
 
-[Модуль 3.5: Застарівання API](module-3.5-api-deprecations.md) — Обробка змін версій API та застарівань.
+[Модуль 3.5: Застарівання API](module-3.5-api-deprecations/) — Обробка змін версій API та застарівань.

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: GUI Security (Kubernetes Dashboard)"
+slug: k8s/cks/part1-cluster-setup/module-1.5-gui-security
 sidebar:
   order: 5
   label: "Part 1: Cluster Setup"
@@ -594,4 +595,4 @@ You've finished **Cluster Setup** (10% of CKS). You now understand:
 - Metadata service protection
 - Dashboard security hardening
 
-**Next Part**: [Part 2: Cluster Hardening](../part2-cluster-hardening/module-2.1-rbac-deep-dive.md) - RBAC, ServiceAccounts, and API security.
+**Next Part**: [Part 2: Cluster Hardening](../part2-cluster-hardening/module-2.1-rbac-deep-dive/) - RBAC, ServiceAccounts, and API security.

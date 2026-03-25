@@ -45,11 +45,11 @@ sidebar:
 
 | Cert | Name | Type | Modules | Curriculum |
 |------|------|------|---------|------------|
-| [KCNA](kcna/index.md) | Kubernetes & Cloud Native Associate | Multiple choice | 21 | [Details](kcna/index.md) |
-| [KCSA](kcsa/index.md) | Security Associate | Multiple choice | 25 | [Details](kcsa/index.md) |
-| [CKAD](ckad/index.md) | Application Developer | Hands-on lab | 28 | [Details](ckad/index.md) |
-| [CKA](cka/index.md) | Administrator | Hands-on lab | 38 | [Details](cka/index.md) |
-| [CKS](cks/index.md) | Security Specialist | Hands-on lab | 30 | [Details](cks/index.md) |
+| [KCNA](kcna/) | Kubernetes & Cloud Native Associate | Multiple choice | 21 | [Details](kcna/) |
+| [KCSA](kcsa/) | Security Associate | Multiple choice | 25 | [Details](kcsa/) |
+| [CKAD](ckad/) | Application Developer | Hands-on lab | 28 | [Details](ckad/) |
+| [CKA](cka/) | Administrator | Hands-on lab | 38 | [Details](cka/) |
+| [CKS](cks/) | Security Specialist | Hands-on lab | 30 | [Details](cks/) |
 | | **Total** | | **142** | |
 
 ---

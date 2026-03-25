@@ -27,10 +27,10 @@ This foundation applies to everything that follows in the Platform Engineering t
 
 | # | Module | Time | Description |
 |---|--------|------|-------------|
-| 1.1 | [What is Systems Thinking?](module-1.1-what-is-systems-thinking.md) | 25-30 min | Systems vs components, emergence, the iceberg model |
-| 1.2 | [Feedback Loops](module-1.2-feedback-loops.md) | 30-35 min | Reinforcing and balancing loops, delays, oscillation |
-| 1.3 | [Mental Models for Operations](module-1.3-mental-models-for-operations.md) | 30-35 min | Leverage points, stock-and-flow, causal loop diagrams |
-| 1.4 | [Complexity and Emergent Behavior](module-1.4-complexity-and-emergent-behavior.md) | 35-40 min | Cynefin framework, how complex systems fail, resilience |
+| 1.1 | [What is Systems Thinking?](module-1.1-what-is-systems-thinking/) | 25-30 min | Systems vs components, emergence, the iceberg model |
+| 1.2 | [Feedback Loops](module-1.2-feedback-loops/) | 30-35 min | Reinforcing and balancing loops, delays, oscillation |
+| 1.3 | [Mental Models for Operations](module-1.3-mental-models-for-operations/) | 30-35 min | Leverage points, stock-and-flow, causal loop diagrams |
+| 1.4 | [Complexity and Emergent Behavior](module-1.4-complexity-and-emergent-behavior/) | 35-40 min | Cynefin framework, how complex systems fail, resilience |
 
 ---
 
@@ -115,10 +115,10 @@ After completing Systems Thinking, you're ready for:
 
 | Track | Why |
 |-------|-----|
-| [Reliability Engineering](../reliability-engineering/index.md) | Applies systems thinking to failure modes and redundancy |
-| [Observability Theory](../observability-theory/index.md) | Understanding what to measure and why |
-| [SRE Discipline](../../disciplines/sre/index.md) | Putting systems thinking into operational practice |
-| [Distributed Systems](../distributed-systems/index.md) | Deep dive into CAP, consensus, and distributed patterns |
+| [Reliability Engineering](../reliability-engineering/) | Applies systems thinking to failure modes and redundancy |
+| [Observability Theory](../observability-theory/) | Understanding what to measure and why |
+| [SRE Discipline](../../disciplines/sre/) | Putting systems thinking into operational practice |
+| [Distributed Systems](../distributed-systems/) | Deep dive into CAP, consensus, and distributed patterns |
 
 ---
 

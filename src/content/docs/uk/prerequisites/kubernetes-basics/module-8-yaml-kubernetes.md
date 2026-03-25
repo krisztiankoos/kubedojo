@@ -492,6 +492,6 @@ rm web.yaml service.yaml
 8. YAML для Kubernetes — написання маніфестів
 
 **Наступні кроки**:
-- [Програма CKA](../../k8s/cka/part0-environment/module-0.1-cluster-setup.md) — Сертифікація адміністратора
-- [Програма CKAD](../../k8s/ckad/part0-environment/module-0.1-ckad-overview.md) — Сертифікація розробника
-- [Сучасні DevOps-практики](../modern-devops/module-1-infrastructure-as-code.md) — Додаткові навички
+- [Програма CKA](../../k8s/cka/part0-environment/module-0.1-cluster-setup/) — Сертифікація адміністратора
+- [Програма CKAD](../../k8s/ckad/part0-environment/module-0.1-ckad-overview/) — Сертифікація розробника
+- [Сучасні DevOps-практики](../modern-devops/module-1-infrastructure-as-code/) — Додаткові навички

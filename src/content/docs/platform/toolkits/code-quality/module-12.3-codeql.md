@@ -1,5 +1,6 @@
 ---
 title: "Module 12.3: CodeQL - Query Your Code Like a Database"
+slug: platform/toolkits/code-quality/module-12.3-codeql
 sidebar:
   order: 4
   label: "Code Quality"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - Security scanning concepts
-- [Module 11.3: GitHub Advanced](../source-control/module-11.3-github-advanced.md) - GHAS overview
+- [DevSecOps Discipline](../../disciplines/devsecops/) - Security scanning concepts
+- [Module 11.3: GitHub Advanced](../source-control/module-11.3-github-advanced/) - GHAS overview
 - Programming experience in at least one supported language
 - Understanding of common vulnerability classes (SQLi, XSS, etc.)
 
@@ -1098,9 +1099,9 @@ What's the relationship between CodeQL and GHAS?
 
 ## Next Steps
 
-- **Next Module**: [Module 12.4: Snyk](module-12.4-snyk.md) - Dependency and container scanning
-- **Related**: [Module 11.3: GitHub Advanced](../source-control/module-11.3-github-advanced.md) - GHAS integration
-- **Related**: [Module 4.4: Supply Chain Security](../security-tools/module-4.4-supply-chain.md) - SBOM and signing
+- **Next Module**: [Module 12.4: Snyk](module-12.4-snyk/) - Dependency and container scanning
+- **Related**: [Module 11.3: GitHub Advanced](../source-control/module-11.3-github-advanced/) - GHAS integration
+- **Related**: [Module 4.4: Supply Chain Security](../security-tools/module-4.4-supply-chain/) - SBOM and signing
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.8: Coroot - Zero-Instrumentation Observability"
+slug: platform/toolkits/observability/module-1.8-coroot
 sidebar:
   order: 9
   label: "Observability"
@@ -1008,4 +1009,4 @@ If you need highly specific business metrics, custom trace attributes, or run on
 
 ## Next Module
 
-Continue to [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd.md) for GitOps continuous delivery, or explore [Module 1.6: Pixie](module-1.6-pixie.md) to compare another eBPF-based observability tool.
+Continue to [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd/) for GitOps continuous delivery, or explore [Module 1.6: Pixie](module-1.6-pixie/) to compare another eBPF-based observability tool.

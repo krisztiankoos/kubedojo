@@ -4,7 +4,7 @@ sidebar:
   order: 3
   label: "Azure AKS Deep Dive"
 ---
-**Complexity**: [COMPLEX] | **Time to Complete**: 3.5h | **Prerequisites**: [Module 1: AKS Architecture & Node Management](module-1-aks-architecture.md)
+**Complexity**: [COMPLEX] | **Time to Complete**: 3.5h | **Prerequisites**: [Module 1: AKS Architecture & Node Management](module-1-aks-architecture/)
 
 ## Why This Module Matters
 
@@ -988,4 +988,4 @@ k exec -n kube-system -l k8s-app=cilium -- cilium monitor --type policy-verdict 
 
 ## Next Module
 
-[Module 3: AKS Workload Identity & Security](module-3-aks-identity.md) --- Learn how to eliminate hardcoded credentials entirely using Entra Workload Identity, federated identity credentials, and the Secrets Store CSI Driver with Azure Key Vault integration.
+[Module 3: AKS Workload Identity & Security](module-3-aks-identity/) --- Learn how to eliminate hardcoded credentials entirely using Entra Workload Identity, federated identity credentials, and the Secrets Store CSI Driver with Azure Key Vault integration.

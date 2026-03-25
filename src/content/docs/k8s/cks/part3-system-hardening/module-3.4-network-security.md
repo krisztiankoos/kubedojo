@@ -1,5 +1,6 @@
 ---
 title: "Module 3.4: Host Network Security"
+slug: k8s/cks/part3-system-hardening/module-3.4-network-security
 sidebar:
   order: 4
   label: "Part 3: System Hardening"
@@ -490,4 +491,4 @@ You've finished **System Hardening** (15% of CKS). You now understand:
 - Linux kernel and OS hardening
 - Host network security
 
-**Next Part**: [Part 4: Minimize Microservice Vulnerabilities](../part4-microservice-vulnerabilities/module-4.1-security-contexts.md) - Security contexts, Pod Security, and secrets management.
+**Next Part**: [Part 4: Minimize Microservice Vulnerabilities](../part4-microservice-vulnerabilities/module-4.1-security-contexts/) - Security contexts, Pod Security, and secrets management.

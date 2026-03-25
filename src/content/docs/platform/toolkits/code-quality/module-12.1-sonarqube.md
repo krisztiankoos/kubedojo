@@ -1,5 +1,6 @@
 ---
 title: "Module 12.1: SonarQube - The Code Quality Platform"
+slug: platform/toolkits/code-quality/module-12.1-sonarqube
 sidebar:
   order: 2
   label: "Code Quality"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - CI/CD and security concepts
-- [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) - Pipeline implementation
+- [DevSecOps Discipline](../../disciplines/devsecops/) - CI/CD and security concepts
+- [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) - Pipeline implementation
 - Experience with at least one programming language
 - Basic Docker knowledge
 
@@ -1205,4 +1206,4 @@ docker run --rm \
 
 ## Next Module
 
-Continue to [Module 12.2: Semgrep](module-12.2-semgrep.md) to learn about writing custom security rules in minutes—the developer-friendly alternative to complex SAST tools.
+Continue to [Module 12.2: Semgrep](module-12.2-semgrep/) to learn about writing custom security rules in minutes—the developer-friendly alternative to complex SAST tools.

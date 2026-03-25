@@ -1,5 +1,6 @@
 ---
 title: "Module 6.2: Log Analysis"
+slug: linux/operations/troubleshooting/module-6.2-log-analysis
 sidebar:
   order: 3
   label: "Troubleshooting"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 6.1: Systematic Troubleshooting](module-6.1-systematic-troubleshooting.md)
-- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd.md)
+- **Required**: [Module 6.1: Systematic Troubleshooting](module-6.1-systematic-troubleshooting/)
+- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
 - **Helpful**: Basic regex knowledge
 
 ---

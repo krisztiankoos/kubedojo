@@ -423,4 +423,4 @@ ps aux | grep sleep             # Visible from host!
 
 ## Наступний модуль
 
-[Модуль 2: Основи Docker](module-2-docker-fundamentals.md) — практична робота зі збіркою та запуском контейнерів.
+[Модуль 2: Основи Docker](module-2-docker-fundamentals/) — практична робота зі збіркою та запуском контейнерів.

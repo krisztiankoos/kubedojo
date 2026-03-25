@@ -1,5 +1,6 @@
 ---
 title: "Module 14.1: k3s - Lightweight Kubernetes for Edge"
+slug: platform/toolkits/k8s-distributions/module-14.1-k3s
 sidebar:
   order: 2
   label: "K8s Distributions"
@@ -915,7 +916,7 @@ multipass delete --purge k3s-server-1 k3s-server-2 k3s-server-3 k3s-agent-1 k3s-
 
 ## Next Module
 
-Continue to [Module 14.2: k0s](module-14.2-k0s.md) — Zero-dependency Kubernetes with even cleaner architecture.
+Continue to [Module 14.2: k0s](module-14.2-k0s/) — Zero-dependency Kubernetes with even cleaner architecture.
 
 ---
 

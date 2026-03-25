@@ -1,5 +1,6 @@
 ---
 title: "Module 5.2: CPU & Scheduling"
+slug: linux/operations/performance/module-5.2-cpu-scheduling
 sidebar:
   order: 3
   label: "Performance"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 5.1: USE Method](module-5.1-use-method.md)
-- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups.md)
+- **Required**: [Module 5.1: USE Method](module-5.1-use-method/)
+- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups/)
 - **Helpful**: Understanding of processes and threads
 
 ---

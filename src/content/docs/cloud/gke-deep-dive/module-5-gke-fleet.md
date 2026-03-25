@@ -1106,6 +1106,6 @@ echo "Verify with: gcloud container clusters list"
 
 You have completed the GKE Deep Dive series. From here, consider exploring:
 
-- **[Hyperscaler Rosetta Stone](../hyperscaler-rosetta-stone.md)** --- Compare GKE concepts with EKS and AKS for multi-cloud fluency
-- **[Platform Engineering Foundations](../../platform/foundations/index.md)** --- Apply what you learned about GKE to build internal developer platforms
-- **[SRE Disciplines](../../platform/disciplines/sre/index.md)** --- Use GKE observability and Fleet management in an SRE practice
+- **[Hyperscaler Rosetta Stone](../hyperscaler-rosetta-stone/)** --- Compare GKE concepts with EKS and AKS for multi-cloud fluency
+- **[Platform Engineering Foundations](../../platform/foundations/)** --- Apply what you learned about GKE to build internal developer platforms
+- **[SRE Disciplines](../../platform/disciplines/sre/)** --- Use GKE observability and Fleet management in an SRE practice

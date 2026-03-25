@@ -1,5 +1,6 @@
 ---
 title: "Module 7.1: Backstage"
+slug: platform/toolkits/platforms/module-7.1-backstage
 sidebar:
   order: 2
   label: "Platforms"
@@ -17,7 +18,7 @@ sidebar:
 - Plugin ecosystem and customization
 
 **Prerequisites**:
-- [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md)
+- [Platform Engineering Discipline](../../disciplines/platform-engineering/)
 - Node.js basics (for customization)
 - Kubernetes fundamentals
 
@@ -761,7 +762,7 @@ Create a Software Template that scaffolds a simple Node.js service with a README
 
 ## Next Module
 
-Continue to [Module 7.2: Crossplane](module-7.2-crossplane.md) to learn infrastructure provisioning using Kubernetes-native APIs.
+Continue to [Module 7.2: Crossplane](module-7.2-crossplane/) to learn infrastructure provisioning using Kubernetes-native APIs.
 
 ---
 

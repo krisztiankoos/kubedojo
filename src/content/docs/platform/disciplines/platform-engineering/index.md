@@ -28,19 +28,19 @@ Before starting this track, you should:
 
 - Understand Kubernetes fundamentals (deployments, services, namespaces)
 - Be familiar with CI/CD concepts and tools
-- Have experience with infrastructure-as-code (or complete [IaC Discipline](../iac/index.md))
+- Have experience with infrastructure-as-code (or complete [IaC Discipline](../iac/))
 - Complete the **Systems Thinking** foundation track (recommended)
 
 ## Modules
 
 | # | Module | Complexity | Time | Description |
 |---|--------|------------|------|-------------|
-| 2.1 | [What is Platform Engineering?](module-2.1-what-is-platform-engineering.md) | MEDIUM | 35-45 min | Origins, platform-as-a-product, Team Topologies |
-| 2.2 | [Developer Experience](module-2.2-developer-experience.md) | MEDIUM | 40-50 min | SPACE framework, cognitive load, flow state |
-| 2.3 | [Internal Developer Platforms](module-2.3-internal-developer-platforms.md) | COMPLEX | 50-60 min | Five pillars, reference architectures, build vs buy |
-| 2.4 | [Golden Paths](module-2.4-golden-paths.md) | MEDIUM | 40-50 min | Design, mandates vs paths, maintenance |
-| 2.5 | [Self-Service Infrastructure](module-2.5-self-service-infrastructure.md) | COMPLEX | 50-60 min | Abstractions, guardrails, lifecycle management |
-| 2.6 | [Platform Maturity](module-2.6-platform-maturity.md) | MEDIUM | 45-55 min | Assessment, dimensions, roadmaps |
+| 2.1 | [What is Platform Engineering?](module-2.1-what-is-platform-engineering/) | MEDIUM | 35-45 min | Origins, platform-as-a-product, Team Topologies |
+| 2.2 | [Developer Experience](module-2.2-developer-experience/) | MEDIUM | 40-50 min | SPACE framework, cognitive load, flow state |
+| 2.3 | [Internal Developer Platforms](module-2.3-internal-developer-platforms/) | COMPLEX | 50-60 min | Five pillars, reference architectures, build vs buy |
+| 2.4 | [Golden Paths](module-2.4-golden-paths/) | MEDIUM | 40-50 min | Design, mandates vs paths, maintenance |
+| 2.5 | [Self-Service Infrastructure](module-2.5-self-service-infrastructure/) | COMPLEX | 50-60 min | Abstractions, guardrails, lifecycle management |
+| 2.6 | [Platform Maturity](module-2.6-platform-maturity/) | MEDIUM | 45-55 min | Assessment, dimensions, roadmaps |
 
 **Total Time**: ~4.5-5.5 hours
 
@@ -139,19 +139,19 @@ Platform teams treat developers as customers:
 ## Related Tracks
 
 **Foundations** (Start here if new to these concepts):
-- [Systems Thinking](../../foundations/systems-thinking/index.md) - Feedback loops and emergent behavior
-- [Reliability Engineering](../../foundations/reliability-engineering/index.md) - Change management principles
+- [Systems Thinking](../../foundations/systems-thinking/) - Feedback loops and emergent behavior
+- [Reliability Engineering](../../foundations/reliability-engineering/) - Change management principles
 
 **Disciplines** (Apply platform engineering in context):
-- [SRE Discipline](../sre/index.md) - Reliability practices for platforms
-- [GitOps Discipline](../gitops/index.md) - GitOps for platform delivery
-- [DevSecOps Discipline](../devsecops/index.md) - Security in platform workflows
-- [IaC Discipline](../iac/index.md) - Infrastructure as Code patterns and practices
+- [SRE Discipline](../sre/) - Reliability practices for platforms
+- [GitOps Discipline](../gitops/) - GitOps for platform delivery
+- [DevSecOps Discipline](../devsecops/) - Security in platform workflows
+- [IaC Discipline](../iac/) - Infrastructure as Code patterns and practices
 
 **Toolkits** (Deep dive into specific tools):
-- [GitOps Tools](../../toolkits/gitops-deployments/index.md) - ArgoCD, Flux implementation
-- [Platforms Toolkit](../../toolkits/platforms/index.md) - Backstage, Crossplane hands-on
-- [IaC Tools](../../toolkits/iac-tools/index.md) - Terraform, OpenTofu, Pulumi, Ansible
+- [GitOps Tools](../../toolkits/gitops-deployments/) - ArgoCD, Flux implementation
+- [Platforms Toolkit](../../toolkits/platforms/) - Backstage, Crossplane hands-on
+- [IaC Tools](../../toolkits/iac-tools/) - Terraform, OpenTofu, Pulumi, Ansible
 
 ## Tools You'll Encounter
 

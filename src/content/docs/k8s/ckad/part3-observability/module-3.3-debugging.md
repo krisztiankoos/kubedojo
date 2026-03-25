@@ -1,5 +1,6 @@
 ---
 title: "Module 3.3: Debugging in Kubernetes"
+slug: k8s/ckad/part3-observability/module-3.3-debugging
 sidebar:
   order: 3
   label: "Part 3: Observability"
@@ -692,4 +693,4 @@ k delete deploy drill6 svc drill6-svc
 
 ## Next Module
 
-[Module 3.4: Monitoring Applications](module-3.4-monitoring.md) - Monitor application health and resource usage.
+[Module 3.4: Monitoring Applications](module-3.4-monitoring/) - Monitor application health and resource usage.

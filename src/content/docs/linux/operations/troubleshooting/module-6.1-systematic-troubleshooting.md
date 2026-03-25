@@ -1,5 +1,6 @@
 ---
 title: "Module 6.1: Systematic Troubleshooting"
+slug: linux/operations/troubleshooting/module-6.1-systematic-troubleshooting
 sidebar:
   order: 2
   label: "Troubleshooting"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 5.1: USE Method](../performance/module-5.1-use-method.md)
+- **Required**: [Module 5.1: USE Method](../performance/module-5.1-use-method/)
 - **Helpful**: Experience with production issues
 - **Helpful**: Basic Linux command line familiarity
 

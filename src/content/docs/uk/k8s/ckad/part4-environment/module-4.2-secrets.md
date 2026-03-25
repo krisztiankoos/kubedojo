@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.2: Secrets"
+slug: uk/k8s/ckad/part4-environment/module-4.2-secrets
 sidebar:
   order: 2
   label: "Part 4: Environment"
@@ -598,4 +599,4 @@ k delete pod drill6 secret drill6-db
 
 ## Наступний модуль
 
-[Модуль 4.3: Вимоги до ресурсів](module-4.3-resources.md) — Налаштування запитів та лімітів CPU і пам'яті.
+[Модуль 4.3: Вимоги до ресурсів](module-4.3-resources/) — Налаштування запитів та лімітів CPU і пам'яті.

@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: Linux Namespaces"
+slug: linux/foundations/container-primitives/module-2.1-namespaces
 sidebar:
   order: 2
   label: "Container Primitives"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: Kernel & Architecture](../system-essentials/module-1.1-kernel-architecture.md)
-- **Required**: [Module 1.2: Processes & systemd](../system-essentials/module-1.2-processes-systemd.md)
+- **Required**: [Module 1.1: Kernel & Architecture](../system-essentials/module-1.1-kernel-architecture/)
+- **Required**: [Module 1.2: Processes & systemd](../system-essentials/module-1.2-processes-systemd/)
 - **Helpful**: Basic understanding of networking concepts
 
 ---

@@ -9,8 +9,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Prometheus Module](../../platform/toolkits/observability/module-1.1-prometheus.md) — architecture, pull model, basic PromQL
-- [Observability Theory](../../platform/foundations/observability-theory/index.md) — metrics concepts
+- [Prometheus Module](../../platform/toolkits/observability/module-1.1-prometheus/) — architecture, pull model, basic PromQL
+- [Observability Theory](../../platform/foundations/observability-theory/) — metrics concepts
 - Basic Kubernetes knowledge
 - A running Prometheus instance (kind/minikube with kube-prometheus-stack)
 
@@ -1096,4 +1096,4 @@ Before moving on, ensure you understand:
 
 ## Next Module
 
-Continue to [Module 2: Instrumentation & Alerting](module-2-instrumentation-alerting.md) to learn about client libraries, metric naming, exporters, and Alertmanager configuration.
+Continue to [Module 2: Instrumentation & Alerting](module-2-instrumentation-alerting/) to learn about client libraries, metric naming, exporters, and Alertmanager configuration.

@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: RBAC Deep Dive"
+slug: k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive
 sidebar:
   order: 1
   label: "Part 2: Cluster Hardening"
@@ -610,4 +611,4 @@ kubectl delete clusterrole overpermissive
 
 ## Next Module
 
-[Module 2.2: ServiceAccount Security](module-2.2-serviceaccount-security.md) - Hardening ServiceAccounts and token management.
+[Module 2.2: ServiceAccount Security](module-2.2-serviceaccount-security/) - Hardening ServiceAccounts and token management.

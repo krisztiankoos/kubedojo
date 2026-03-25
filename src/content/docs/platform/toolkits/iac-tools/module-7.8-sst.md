@@ -1,5 +1,6 @@
 ---
 title: "Module 7.8: SST - The Modern Serverless Framework"
+slug: platform/toolkits/iac-tools/module-7.8-sst
 sidebar:
   order: 9
   label: "IaC Tools"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 7.1: Terraform](module-7.1-terraform.md) - Infrastructure as Code basics
-- [Module 7.5: CloudFormation](module-7.5-cloudformation.md) - AWS-native IaC
+- [Module 7.1: Terraform](module-7.1-terraform/) - Infrastructure as Code basics
+- [Module 7.5: CloudFormation](module-7.5-cloudformation/) - AWS-native IaC
 - JavaScript/TypeScript fundamentals
 - AWS account with CLI configured
 - Understanding of serverless concepts (Lambda, API Gateway)
@@ -918,9 +919,9 @@ One fintech company reported 40% fewer production bugs after migrating from Serv
 
 ## Next Steps
 
-- **Next Module**: [Module 7.9: System Initiative](module-7.9-system-initiative.md) — DevOps automation
-- **Related**: [Module 7.7: Wing](module-7.7-winglang.md) — Another unified approach
-- **Related**: [CI/CD Pipelines](../ci-cd-pipelines/index.md) — Deploy SST apps
+- **Next Module**: [Module 7.9: System Initiative](module-7.9-system-initiative/) — DevOps automation
+- **Related**: [Module 7.7: Wing](module-7.7-winglang/) — Another unified approach
+- **Related**: [CI/CD Pipelines](../ci-cd-pipelines/) — Deploy SST apps
 
 ---
 

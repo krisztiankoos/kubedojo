@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.6: \u041c\u0435\u0440\u0435\u0436\u0435\u0432\u0456 \u043f\u043e\u043b\u0456\u0442\u0438\u043a\u0438"
+slug: uk/k8s/cka/part3-services-networking/module-3.6-network-policies
 sidebar:
   order: 7
   label: "Part 3: Services & Networking"
@@ -1192,4 +1193,4 @@ k delete namespace secure
 
 ## Наступний модуль
 
-[Модуль 3.7: CNI та мережа кластера](module-3.7-cni.md) — Розуміння Container Network Interface.
+[Модуль 3.7: CNI та мережа кластера](module-3.7-cni/) — Розуміння Container Network Interface.

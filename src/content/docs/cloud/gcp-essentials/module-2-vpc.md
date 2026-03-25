@@ -866,4 +866,4 @@ echo "Cleanup complete."
 
 ## Next Module
 
-Next up: **[Module 3: Compute Engine](module-3-compute.md)** --- Learn machine families, preemptible and Spot VMs, instance templates, managed instance groups, and how to build a globally load-balanced application across two regions.
+Next up: **[Module 3: Compute Engine](module-3-compute/)** --- Learn machine families, preemptible and Spot VMs, instance templates, managed instance groups, and how to build a globally load-balanced application across two regions.

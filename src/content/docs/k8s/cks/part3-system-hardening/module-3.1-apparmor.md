@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: AppArmor for Containers"
+slug: k8s/cks/part3-system-hardening/module-3.1-apparmor
 sidebar:
   order: 1
   label: "Part 3: System Hardening"
@@ -562,4 +563,4 @@ annotations:
 
 ## Next Module
 
-[Module 3.2: Seccomp Profiles](module-3.2-seccomp.md) - System call filtering for containers.
+[Module 3.2: Seccomp Profiles](module-3.2-seccomp/) - System call filtering for containers.

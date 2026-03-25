@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 2.5 hours
 >
-> **Prerequisites**: [Cloud Architecture Patterns](../architecture-patterns/index.md), familiarity with at least one hyperscaler (AWS, GCP, or Azure)
+> **Prerequisites**: [Cloud Architecture Patterns](../architecture-patterns/), familiarity with at least one hyperscaler (AWS, GCP, or Azure)
 >
 > **Track**: Advanced Cloud Operations
 
@@ -1012,4 +1012,4 @@ This proportional model is the most common approach. Alternatives include equal 
 
 ## Next Module
 
-[Module 2: Advanced Cloud Networking & Transit Hubs](module-2-transit-hubs.md) -- Learn how to connect all these accounts without creating a networking nightmare. Hub-and-spoke, transit gateways, and the art of routing traffic across organizational boundaries.
+[Module 2: Advanced Cloud Networking & Transit Hubs](module-2-transit-hubs/) -- Learn how to connect all these accounts without creating a networking nightmare. Hub-and-spoke, transit gateways, and the art of routing traffic across organizational boundaries.

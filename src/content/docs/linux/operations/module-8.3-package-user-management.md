@@ -1,5 +1,6 @@
 ---
 title: "Module 8.3: Package Management & User Administration"
+slug: linux/operations/module-8.3-package-user-management
 sidebar:
   order: 3
   label: "System Administration"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.4: Users & Permissions](../foundations/system-essentials/module-1.4-users-permissions.md) for UID/GID fundamentals and file ownership
-- **Required**: [Module 1.2: Processes & systemd](../foundations/system-essentials/module-1.2-processes-systemd.md) for understanding services and system state
-- **Helpful**: [Module 4.1: Kernel Hardening](../security/hardening/module-4.1-kernel-hardening.md) for security context
+- **Required**: [Module 1.4: Users & Permissions](../foundations/system-essentials/module-1.4-users-permissions/) for UID/GID fundamentals and file ownership
+- **Required**: [Module 1.2: Processes & systemd](../foundations/system-essentials/module-1.2-processes-systemd/) for understanding services and system state
+- **Helpful**: [Module 4.1: Kernel Hardening](../security/hardening/module-4.1-kernel-hardening/) for security context
 
 ---
 
@@ -978,4 +979,4 @@ sudo rm /etc/skel/WELCOME.txt
 
 ## Next Module
 
-Continue with [Module 8.4: Service Configuration & Scheduling](module-8.4-scheduling-backups.md) to learn about systemd unit files, cron jobs, and timers — the tools that keep Linux services running and tasks executing on schedule.
+Continue with [Module 8.4: Service Configuration & Scheduling](module-8.4-scheduling-backups/) to learn about systemd unit files, cron jobs, and timers — the tools that keep Linux services running and tasks executing on schedule.

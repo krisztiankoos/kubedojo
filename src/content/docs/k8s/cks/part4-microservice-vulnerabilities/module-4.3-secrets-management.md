@@ -1,5 +1,6 @@
 ---
 title: "Module 4.3: Secrets Management"
+slug: k8s/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management
 sidebar:
   order: 3
   label: "Part 4: Microservice Vulnerabilities"
@@ -653,4 +654,4 @@ kubectl delete secret pre-encryption post-encryption
 
 ## Next Module
 
-[Module 4.4: Runtime Sandboxing](module-4.4-runtime-sandboxing.md) - gVisor and Kata Containers for container isolation.
+[Module 4.4: Runtime Sandboxing](module-4.4-runtime-sandboxing/) - gVisor and Kata Containers for container isolation.

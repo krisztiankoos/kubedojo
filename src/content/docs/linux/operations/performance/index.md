@@ -13,10 +13,10 @@ Performance analysis is more than running `top`. This section teaches systematic
 
 | # | Module | Description | Time |
 |---|--------|-------------|------|
-| 5.1 | [USE Method](module-5.1-use-method.md) | Systematic performance analysis: Utilization, Saturation, Errors | 25-30 min |
-| 5.2 | [CPU & Scheduling](module-5.2-cpu-scheduling.md) | CPU utilization, load average, CFS scheduler, priorities | 30-35 min |
-| 5.3 | [Memory Management](module-5.3-memory-management.md) | Virtual memory, caching, swap, OOM killer | 30-35 min |
-| 5.4 | [I/O Performance](module-5.4-io-performance.md) | Disk I/O, filesystems, block devices, storage tuning | 25-30 min |
+| 5.1 | [USE Method](module-5.1-use-method/) | Systematic performance analysis: Utilization, Saturation, Errors | 25-30 min |
+| 5.2 | [CPU & Scheduling](module-5.2-cpu-scheduling/) | CPU utilization, load average, CFS scheduler, priorities | 30-35 min |
+| 5.3 | [Memory Management](module-5.3-memory-management/) | Virtual memory, caching, swap, OOM killer | 30-35 min |
+| 5.4 | [I/O Performance](module-5.4-io-performance/) | Disk I/O, filesystems, block devices, storage tuning | 25-30 min |
 
 ## Why This Section Matters
 
@@ -31,8 +31,8 @@ Can't set proper resource limits without understanding what they measure.
 
 ## Prerequisites
 
-- [System Essentials](../../foundations/system-essentials/index.md) — Processes and filesystems
-- [Container Primitives](../../foundations/container-primitives/index.md) — cgroups and namespaces
+- [System Essentials](../../foundations/system-essentials/) — Processes and filesystems
+- [Container Primitives](../../foundations/container-primitives/) — cgroups and namespaces
 
 ## Key Takeaways
 
@@ -45,6 +45,6 @@ After completing this section, you'll understand:
 
 ## Related Sections
 
-- **Previous**: [Security Hardening](../../security/hardening/index.md)
-- **Next**: [Troubleshooting](../troubleshooting/index.md)
+- **Previous**: [Security Hardening](../../security/hardening/)
+- **Next**: [Troubleshooting](../troubleshooting/)
 - **CKA/CKAD**: Resource management, pod scheduling

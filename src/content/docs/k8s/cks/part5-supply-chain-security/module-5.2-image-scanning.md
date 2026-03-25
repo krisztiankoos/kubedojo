@@ -1,5 +1,6 @@
 ---
 title: "Module 5.2: Image Scanning with Trivy"
+slug: k8s/cks/part5-supply-chain-security/module-5.2-image-scanning
 sidebar:
   order: 2
   label: "Part 5: Supply Chain Security"
@@ -570,4 +571,4 @@ rm -f test-pod.yaml scan-report.json
 
 ## Next Module
 
-[Module 5.3: Static Analysis](module-5.3-static-analysis.md) - Analyzing Kubernetes manifests for security issues.
+[Module 5.3: Static Analysis](module-5.3-static-analysis/) - Analyzing Kubernetes manifests for security issues.

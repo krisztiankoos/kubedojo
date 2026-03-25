@@ -10,10 +10,10 @@ CI/CD fundamentals, application packaging with Helm and Kustomize, and release s
 
 | Module | Topic | Complexity | Time |
 |--------|-------|------------|------|
-| [4.1](module-4.1-ci-cd.md) | CI/CD Fundamentals | Medium | 25-30 min |
-| [4.2](module-4.2-application-packaging.md) | Application Packaging | Medium | 25-30 min |
-| [4.3](module-4.3-release-strategies.md) | Release Strategies (Theory) | Quick | 15-20 min |
+| [4.1](module-4.1-ci-cd/) | CI/CD Fundamentals | Medium | 25-30 min |
+| [4.2](module-4.2-application-packaging/) | Application Packaging | Medium | 25-30 min |
+| [4.3](module-4.3-release-strategies/) | Release Strategies (Theory) | Quick | 15-20 min |
 
 ---
 
-[← Part 3: Cloud Native Architecture](../part3-cloud-native-architecture/index.md)
+[← Part 3: Cloud Native Architecture](../part3-cloud-native-architecture/)

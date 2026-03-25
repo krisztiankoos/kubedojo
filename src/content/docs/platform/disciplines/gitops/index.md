@@ -34,12 +34,12 @@ Before starting this track, you should:
 
 | # | Module | Complexity | Time | Description |
 |---|--------|------------|------|-------------|
-| 3.1 | [What is GitOps?](module-3.1-what-is-gitops.md) | MEDIUM | 35-45 min | GitOps principles, pull vs push, reconciliation |
-| 3.2 | [Repository Strategies](module-3.2-repository-strategies.md) | MEDIUM | 35-45 min | Monorepo vs polyrepo, app vs config repos |
-| 3.3 | [Environment Promotion](module-3.3-environment-promotion.md) | MEDIUM | 40-50 min | Directory-based promotion, progressive delivery |
-| 3.4 | [Drift Detection](module-3.4-drift-detection.md) | MEDIUM | 40-50 min | Types of drift, auto-heal vs alert strategies |
-| 3.5 | [Secrets in GitOps](module-3.5-secrets.md) | COMPLEX | 50-60 min | Sealed Secrets, SOPS, External Secrets Operator |
-| 3.6 | [Multi-Cluster GitOps](module-3.6-multi-cluster.md) | COMPLEX | 55-65 min | Fleet management, bootstrapping, hub-spoke patterns |
+| 3.1 | [What is GitOps?](module-3.1-what-is-gitops/) | MEDIUM | 35-45 min | GitOps principles, pull vs push, reconciliation |
+| 3.2 | [Repository Strategies](module-3.2-repository-strategies/) | MEDIUM | 35-45 min | Monorepo vs polyrepo, app vs config repos |
+| 3.3 | [Environment Promotion](module-3.3-environment-promotion/) | MEDIUM | 40-50 min | Directory-based promotion, progressive delivery |
+| 3.4 | [Drift Detection](module-3.4-drift-detection/) | MEDIUM | 40-50 min | Types of drift, auto-heal vs alert strategies |
+| 3.5 | [Secrets in GitOps](module-3.5-secrets/) | COMPLEX | 50-60 min | Sealed Secrets, SOPS, External Secrets Operator |
+| 3.6 | [Multi-Cluster GitOps](module-3.6-multi-cluster/) | COMPLEX | 55-65 min | Fleet management, bootstrapping, hub-spoke patterns |
 
 **Total Time**: ~4-5 hours
 
@@ -135,17 +135,17 @@ Module 3.6: Multi-Cluster GitOps
 ## Related Tracks
 
 **Foundations** (Start here if new to these concepts):
-- [Systems Thinking](../../foundations/systems-thinking/index.md) - Feedback loops and emergent behavior
-- [Reliability Engineering](../../foundations/reliability-engineering/index.md) - Change management principles
+- [Systems Thinking](../../foundations/systems-thinking/) - Feedback loops and emergent behavior
+- [Reliability Engineering](../../foundations/reliability-engineering/) - Change management principles
 
 **Disciplines** (Apply GitOps in context):
-- [SRE Discipline](../sre/index.md) - Operationalizing GitOps for reliability
-- [DevSecOps Discipline](../devsecops/index.md) - Security in GitOps pipelines
-- [Platform Engineering](../platform-engineering/index.md) - Self-service GitOps platforms
-- [IaC Discipline](../iac/index.md) - Infrastructure as Code with GitOps delivery
+- [SRE Discipline](../sre/) - Operationalizing GitOps for reliability
+- [DevSecOps Discipline](../devsecops/) - Security in GitOps pipelines
+- [Platform Engineering](../platform-engineering/) - Self-service GitOps platforms
+- [IaC Discipline](../iac/) - Infrastructure as Code with GitOps delivery
 
 **Toolkits** (Deep dive into specific tools):
-- [GitOps Tools](../../toolkits/gitops-deployments/index.md) - ArgoCD, Flux, and related tools
+- [GitOps Tools](../../toolkits/gitops-deployments/) - ArgoCD, Flux, and related tools
 
 ## Tools You'll Encounter
 

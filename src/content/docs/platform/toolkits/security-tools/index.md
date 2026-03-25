@@ -10,13 +10,13 @@ sidebar:
 
 The Security Tools Toolkit covers the essential tools for securing Kubernetes clusters and workloads. From secrets management to runtime detection to supply chain integrity—these tools form the defense-in-depth security stack that production clusters require.
 
-This toolkit applies concepts from [Security Principles](../../foundations/security-principles/index.md) and [DevSecOps Discipline](../../disciplines/devsecops/index.md).
+This toolkit applies concepts from [Security Principles](../../foundations/security-principles/) and [DevSecOps Discipline](../../disciplines/devsecops/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) — Security concepts and practices
-- [Security Principles Foundations](../../foundations/security-principles/index.md)
+- [DevSecOps Discipline](../../disciplines/devsecops/) — Security concepts and practices
+- [Security Principles Foundations](../../foundations/security-principles/)
 - Kubernetes RBAC basics
 - Container fundamentals
 
@@ -24,14 +24,14 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 4.1 | [Vault & External Secrets](module-4.1-vault-eso.md) | `[COMPLEX]` | 45-50 min |
-| 4.2 | [OPA & Gatekeeper](module-4.2-opa-gatekeeper.md) | `[COMPLEX]` | 45-50 min |
-| 4.3 | [Falco](module-4.3-falco.md) | `[COMPLEX]` | 45-50 min |
-| 4.4 | [Supply Chain Security](module-4.4-supply-chain.md) | `[COMPLEX]` | 45-50 min |
-| 4.5 | [Tetragon](module-4.5-tetragon.md) | `[MEDIUM]` | 90 min |
-| 4.6 | [KubeArmor](module-4.6-kubearmor.md) | `[MEDIUM]` | 90 min |
-| 4.7 | [Kyverno](module-4.7-kyverno.md) | `[MEDIUM]` | 35-40 min |
-| 4.8 | [SPIFFE/SPIRE](module-4.8-spiffe-spire.md) | `[COMPLEX]` | 50 min |
+| 4.1 | [Vault & External Secrets](module-4.1-vault-eso/) | `[COMPLEX]` | 45-50 min |
+| 4.2 | [OPA & Gatekeeper](module-4.2-opa-gatekeeper/) | `[COMPLEX]` | 45-50 min |
+| 4.3 | [Falco](module-4.3-falco/) | `[COMPLEX]` | 45-50 min |
+| 4.4 | [Supply Chain Security](module-4.4-supply-chain/) | `[COMPLEX]` | 45-50 min |
+| 4.5 | [Tetragon](module-4.5-tetragon/) | `[MEDIUM]` | 90 min |
+| 4.6 | [KubeArmor](module-4.6-kubearmor/) | `[MEDIUM]` | 90 min |
+| 4.7 | [Kyverno](module-4.7-kyverno/) | `[MEDIUM]` | 35-40 min |
+| 4.8 | [SPIFFE/SPIRE](module-4.8-spiffe-spire/) | `[COMPLEX]` | 50 min |
 
 ## Learning Outcomes
 
@@ -231,11 +231,11 @@ Each module includes practical exercises:
 
 ## Related Tracks
 
-- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/index.md) — Security concepts
-- **Before**: [Security Principles](../../foundations/security-principles/index.md) — Theory
-- **Related**: [GitOps & Deployments](../gitops-deployments/index.md) — Secure deployments
-- **Related**: [IaC Tools](../iac-tools/index.md) — IaC security scanning with Checkov, tfsec
-- **After**: [Networking Toolkit](../networking/index.md) — Network security
+- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/) — Security concepts
+- **Before**: [Security Principles](../../foundations/security-principles/) — Theory
+- **Related**: [GitOps & Deployments](../gitops-deployments/) — Secure deployments
+- **Related**: [IaC Tools](../iac-tools/) — IaC security scanning with Checkov, tfsec
+- **After**: [Networking Toolkit](../networking/) — Network security
 
 ---
 

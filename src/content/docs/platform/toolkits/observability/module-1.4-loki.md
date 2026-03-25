@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Loki"
+slug: platform/toolkits/observability/module-1.4-loki
 sidebar:
   order: 5
   label: "Observability"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 1.1: Prometheus](module-1.1-prometheus.md) — Labels and querying concepts
-- [Module 1.3: Grafana](module-1.3-grafana.md) — Visualization and exploration
+- [Module 1.1: Prometheus](module-1.1-prometheus/) — Labels and querying concepts
+- [Module 1.3: Grafana](module-1.3-grafana/) — Visualization and exploration
 - Basic understanding of log aggregation
 - kubectl log experience
 
@@ -1162,7 +1163,7 @@ Before moving on, ensure you can:
 
 ## Next Module
 
-Continue to [Module 1.5: Distributed Tracing](module-1.5-tracing.md) where we'll connect logs to traces using Jaeger and Tempo.
+Continue to [Module 1.5: Distributed Tracing](module-1.5-tracing/) where we'll connect logs to traces using Jaeger and Tempo.
 
 ---
 

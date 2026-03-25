@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Users & Permissions"
+slug: linux/foundations/system-essentials/module-1.4-users-permissions
 sidebar:
   order: 5
   label: "System Essentials"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.3: Filesystem Hierarchy](module-1.3-filesystem-hierarchy.md)
+- **Required**: [Module 1.3: Filesystem Hierarchy](module-1.3-filesystem-hierarchy/)
 - **Helpful**: Understanding of basic file operations
 
 ---

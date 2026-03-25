@@ -1,5 +1,6 @@
 ---
 title: "Module 5.4: Worker Node Failures"
+slug: k8s/cka/part5-troubleshooting/module-5.4-worker-nodes
 sidebar:
   order: 5
   label: "Part 5: Troubleshooting"
@@ -780,4 +781,4 @@ du -sh /var/lib/containerd/
 
 ## Next Module
 
-Continue to [Module 5.5: Network Troubleshooting](module-5.5-networking.md) to learn how to diagnose and fix pod-to-pod, pod-to-service, and external connectivity issues.
+Continue to [Module 5.5: Network Troubleshooting](module-5.5-networking/) to learn how to diagnose and fix pod-to-pod, pod-to-service, and external connectivity issues.

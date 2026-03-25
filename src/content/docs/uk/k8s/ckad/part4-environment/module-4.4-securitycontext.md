@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.4: SecurityContexts"
+slug: uk/k8s/ckad/part4-environment/module-4.4-securitycontext
 sidebar:
   order: 4
   label: "Part 4: Environment"
@@ -570,4 +571,4 @@ k delete pod drill6
 
 ## Наступний модуль
 
-[Модуль 4.5: Сервісні акаунти](module-4.5-serviceaccounts.md) — Налаштування ідентифікації подів для доступу до API.
+[Модуль 4.5: Сервісні акаунти](module-4.5-serviceaccounts/) — Налаштування ідентифікації подів для доступу до API.

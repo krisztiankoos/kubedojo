@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.1: \u0422\u043e\u043c\u0438 (Volumes)"
+slug: uk/k8s/cka/part4-storage/module-4.1-volumes
 sidebar:
   order: 2
   label: "Part 4: Storage"
@@ -781,4 +782,4 @@ k delete ns volume-lab
 
 ## Наступний модуль
 
-Переходьте до [Модуль 4.2: PersistentVolumes та PersistentVolumeClaims](module-4.2-pv-pvc.md), щоб дізнатися про постійне сховище, яке переживає видалення Пода.
+Переходьте до [Модуль 4.2: PersistentVolumes та PersistentVolumeClaims](module-4.2-pv-pvc/), щоб дізнатися про постійне сховище, яке переживає видалення Пода.

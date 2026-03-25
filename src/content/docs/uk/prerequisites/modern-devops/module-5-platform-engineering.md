@@ -566,4 +566,4 @@ rm complex-deployment.yaml
 
 ## Наступний модуль
 
-[Модуль 6: Практики безпеки (DevSecOps)](module-6-devsecops.md) — Інтеграція безпеки в DevOps.
+[Модуль 6: Практики безпеки (DevSecOps)](module-6-devsecops/) — Інтеграція безпеки в DevOps.

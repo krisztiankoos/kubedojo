@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: Volumes"
+slug: k8s/cka/part4-storage/module-4.1-volumes
 sidebar:
   order: 2
   label: "Part 4: Storage"
@@ -781,4 +782,4 @@ Practice these scenarios for exam readiness:
 
 ## Next Module
 
-Continue to [Module 4.2: PersistentVolumes & PersistentVolumeClaims](module-4.2-pv-pvc.md) to learn about persistent storage that survives pod deletion.
+Continue to [Module 4.2: PersistentVolumes & PersistentVolumeClaims](module-4.2-pv-pvc/) to learn about persistent storage that survives pod deletion.

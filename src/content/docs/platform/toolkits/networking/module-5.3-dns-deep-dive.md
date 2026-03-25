@@ -1,5 +1,6 @@
 ---
 title: "Module 5.3: DNS Deep Dive"
+slug: platform/toolkits/networking/module-5.3-dns-deep-dive
 sidebar:
   order: 4
   label: "Networking"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [CKA Module: DNS in Kubernetes](../../../k8s/cka/index.md) - Core DNS concepts, Service discovery basics
-- [Module 5.1: Cilium](module-5.1-cilium.md) - Networking fundamentals
+- [CKA Module: DNS in Kubernetes](../../../k8s/cka/) - Core DNS concepts, Service discovery basics
+- [Module 5.1: Cilium](module-5.1-cilium/) - Networking fundamentals
 - Basic understanding of DNS (A records, CNAME, TTL)
 
 ---
@@ -628,12 +629,12 @@ kind delete cluster --name dns-lab
 ## Cross-References
 
 - **CKA DNS Module** - Covers foundational DNS concepts: Service discovery, `dnsPolicy`, and basic CoreDNS configuration that this module builds upon
-- [Module 5.1: Cilium](module-5.1-cilium.md) - Network fundamentals and CNI context
-- [Module 5.2: Service Mesh](module-5.2-service-mesh.md) - mTLS and service-to-service communication
-- [Module 1.1: Prometheus](../observability/module-1.1-prometheus.md) - Monitoring CoreDNS metrics
+- [Module 5.1: Cilium](module-5.1-cilium/) - Network fundamentals and CNI context
+- [Module 5.2: Service Mesh](module-5.2-service-mesh/) - mTLS and service-to-service communication
+- [Module 1.1: Prometheus](../observability/module-1.1-prometheus/) - Monitoring CoreDNS metrics
 
 ---
 
 ## Next Module
 
-Continue to the next networking module or explore [Module 1.1: Prometheus](../observability/module-1.1-prometheus.md) to set up monitoring for the CoreDNS metrics discussed in this module.
+Continue to the next networking module or explore [Module 1.1: Prometheus](../observability/module-1.1-prometheus/) to set up monitoring for the CoreDNS metrics discussed in this module.

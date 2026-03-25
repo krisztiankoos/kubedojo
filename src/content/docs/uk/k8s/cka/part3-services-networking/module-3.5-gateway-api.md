@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.5: Gateway API"
+slug: uk/k8s/cka/part3-services-networking/module-3.5-gateway-api
 sidebar:
   order: 6
   label: "Part 3: Services & Networking"
@@ -1205,4 +1206,4 @@ k delete svc frontend backend admin
 
 ## Наступний модуль
 
-[Модуль 3.6: Network Policies](module-3.6-network-policies.md) — Контроль взаємодії між подами.
+[Модуль 3.6: Network Policies](module-3.6-network-policies/) — Контроль взаємодії між подами.

@@ -1,5 +1,6 @@
 ---
 title: "Module 2.5: SLIs, SLOs, and Error Budgets \u2014 The Theory"
+slug: platform/foundations/reliability-engineering/module-2.5-slos-slis-error-budgets
 sidebar:
   order: 6
   label: "Reliability Engineering"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 40-50 minutes
 >
-> **Prerequisites**: [Module 2.1: What Is Reliability](module-2.1-what-is-reliability.md), [Module 2.4: Measuring and Improving Reliability](module-2.4-measuring-and-improving-reliability.md)
+> **Prerequisites**: [Module 2.1: What Is Reliability](module-2.1-what-is-reliability/), [Module 2.4: Measuring and Improving Reliability](module-2.4-measuring-and-improving-reliability/)
 >
 > **Track**: Foundations
 
@@ -78,7 +79,7 @@ SLIs, SLOs, and error budgets replace politics with math. They answer three ques
 2. **"What should we measure?"** — The SLI answers this.
 3. **"Should we ship or stabilize?"** — The error budget answers this.
 
-This module teaches the **theory** behind these concepts. You will learn what SLIs, SLOs, and error budgets are, why they work, and how to think about them correctly. Later modules cover the operational practices ([Module 1.2: SLO Discipline](../../disciplines/sre/index.md)), budget management ([Module 1.3: Error Budget Management](../../disciplines/sre/index.md)), and tooling ([Module 1.10: SLO Tooling — Sloth/Pyrra](../../toolkits/observability/index.md)).
+This module teaches the **theory** behind these concepts. You will learn what SLIs, SLOs, and error budgets are, why they work, and how to think about them correctly. Later modules cover the operational practices ([Module 1.2: SLO Discipline](../../disciplines/sre/)), budget management ([Module 1.3: Error Budget Management](../../disciplines/sre/)), and tooling ([Module 1.10: SLO Tooling — Sloth/Pyrra](../../toolkits/observability/)).
 
 > **The Restaurant Analogy**
 >
@@ -1370,7 +1371,7 @@ SLI / SLO / ERROR BUDGET FUNDAMENTALS
 
 This module covered the **theory** of SLIs, SLOs, and error budgets. The following modules build on this foundation with operational practice and tooling:
 
-- [Module 2.1: What Is Reliability](module-2.1-what-is-reliability.md) — Review the reliability fundamentals if any concepts here felt unclear
+- [Module 2.1: What Is Reliability](module-2.1-what-is-reliability/) — Review the reliability fundamentals if any concepts here felt unclear
 - **Module 1.2: SLO Discipline** (Disciplines track) — How to operationalize SLOs day-to-day: reviews, reporting, cultural adoption
 - **Module 1.3: Error Budget Management** (Disciplines track) — Deep dive on budget policies, negotiation, and organizational alignment
 - **Module 1.10: SLO Tooling — Sloth/Pyrra** (Toolkits track) — Hands-on with tools that automate SLO calculation, burn rate alerting, and budget dashboards

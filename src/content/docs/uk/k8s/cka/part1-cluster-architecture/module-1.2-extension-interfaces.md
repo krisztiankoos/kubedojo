@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.2: \u0406\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0438 \u0440\u043e\u0437\u0448\u0438\u0440\u0435\u043d\u043d\u044f \u2014 CNI, CSI, CRI"
+slug: uk/k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces
 sidebar:
   order: 3
   label: "Part 1: Cluster Architecture"
@@ -774,4 +775,4 @@ kubectl get sc
 
 ## Наступний модуль
 
-[Модуль 1.3: Helm](module-1.3-helm.md) — Управління пакунками для Kubernetes, розгортання застосунків за допомогою чартів.
+[Модуль 1.3: Helm](module-1.3-helm/) — Управління пакунками для Kubernetes, розгортання застосунків за допомогою чартів.

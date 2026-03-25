@@ -1,5 +1,6 @@
 ---
 title: "Module 9.3: Feature Stores"
+slug: platform/toolkits/ml-platforms/module-9.3-feature-stores
 sidebar:
   order: 4
   label: "ML Platforms"
@@ -21,7 +22,7 @@ Feature stores solve the most frustrating problem in ML: feature reuse. Data sci
 - Basic ML concepts
 - Python familiarity
 - Kubernetes fundamentals
-- [MLOps Discipline](../../disciplines/mlops/index.md) recommended
+- [MLOps Discipline](../../disciplines/mlops/) recommended
 
 ---
 

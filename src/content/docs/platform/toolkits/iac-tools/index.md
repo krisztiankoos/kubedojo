@@ -10,13 +10,13 @@ sidebar:
 
 The IaC Tools Toolkit covers the major infrastructure as code tools in depth. From HashiCorp's Terraform to OpenTofu, from Pulumi's programming language approach to Ansible's configuration management, from CloudFormation to Bicep—this toolkit gives you hands-on experience with the tools that define modern infrastructure.
 
-This toolkit applies concepts from [IaC Discipline](../../disciplines/iac/index.md).
+This toolkit applies concepts from [IaC Discipline](../../disciplines/iac/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [IaC Discipline](../../disciplines/iac/index.md) — IaC fundamentals, testing, security
-- [IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals.md) — Core concepts (minimum)
+- [IaC Discipline](../../disciplines/iac/) — IaC fundamentals, testing, security
+- [IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals/) — Core concepts (minimum)
 - Cloud provider account (AWS, Azure, or GCP for exercises)
 - Basic command-line experience
 
@@ -24,16 +24,16 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 7.1 | [Terraform Deep Dive](module-7.1-terraform.md) | `[COMPLEX]` | 60 min |
-| 7.2 | [OpenTofu](module-7.2-opentofu.md) | `[MEDIUM]` | 45-50 min |
-| 7.3 | [Pulumi](module-7.3-pulumi.md) | `[COMPLEX]` | 55-60 min |
-| 7.4 | [Ansible](module-7.4-ansible.md) | `[COMPLEX]` | 55-60 min |
-| 7.5 | [CloudFormation](module-7.5-cloudformation.md) | `[MEDIUM]` | 45-50 min |
-| 7.6 | [Bicep](module-7.6-bicep.md) | `[MEDIUM]` | 45-50 min |
-| 7.7 | [Wing](module-7.7-winglang.md) | `[COMPLEX]` | 50-55 min |
-| 7.8 | [SST](module-7.8-sst.md) | `[MEDIUM]` | 45-50 min |
-| 7.9 | [System Initiative](module-7.9-system-initiative.md) | `[COMPLEX]` | 50-55 min |
-| 7.10 | [Nitric](module-7.10-nitric.md) | `[MEDIUM]` | 45-50 min |
+| 7.1 | [Terraform Deep Dive](module-7.1-terraform/) | `[COMPLEX]` | 60 min |
+| 7.2 | [OpenTofu](module-7.2-opentofu/) | `[MEDIUM]` | 45-50 min |
+| 7.3 | [Pulumi](module-7.3-pulumi/) | `[COMPLEX]` | 55-60 min |
+| 7.4 | [Ansible](module-7.4-ansible/) | `[COMPLEX]` | 55-60 min |
+| 7.5 | [CloudFormation](module-7.5-cloudformation/) | `[MEDIUM]` | 45-50 min |
+| 7.6 | [Bicep](module-7.6-bicep/) | `[MEDIUM]` | 45-50 min |
+| 7.7 | [Wing](module-7.7-winglang/) | `[COMPLEX]` | 50-55 min |
+| 7.8 | [SST](module-7.8-sst/) | `[MEDIUM]` | 45-50 min |
+| 7.9 | [System Initiative](module-7.9-system-initiative/) | `[COMPLEX]` | 50-55 min |
+| 7.10 | [Nitric](module-7.10-nitric/) | `[MEDIUM]` | 45-50 min |
 
 ## Learning Outcomes
 
@@ -244,11 +244,11 @@ Module 7.10: Nitric
 
 ## Related Tracks
 
-- **Before**: [IaC Discipline](../../disciplines/iac/index.md) — IaC fundamentals (essential)
-- **Related**: [GitOps & Deployments](../gitops-deployments/index.md) — GitOps for infrastructure delivery
-- **Related**: [Security Tools](../security-tools/index.md) — Security scanning for IaC
-- **Related**: [CI/CD Pipelines](../ci-cd-pipelines/index.md) — IaC in pipelines
-- **Related**: [Platforms Toolkit](../platforms/index.md) — Crossplane as Kubernetes-native IaC
+- **Before**: [IaC Discipline](../../disciplines/iac/) — IaC fundamentals (essential)
+- **Related**: [GitOps & Deployments](../gitops-deployments/) — GitOps for infrastructure delivery
+- **Related**: [Security Tools](../security-tools/) — Security scanning for IaC
+- **Related**: [CI/CD Pipelines](../ci-cd-pipelines/) — IaC in pipelines
+- **Related**: [Platforms Toolkit](../platforms/) — Crossplane as Kubernetes-native IaC
 
 ---
 

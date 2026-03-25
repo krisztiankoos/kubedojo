@@ -539,4 +539,4 @@ rm -rf ~/gitops-demo
 
 ## Next Module
 
-[Module 3: CI/CD Pipelines](module-3-cicd-pipelines.md) - Automating build, test, and deployment.
+[Module 3: CI/CD Pipelines](module-3-cicd-pipelines/) - Automating build, test, and deployment.

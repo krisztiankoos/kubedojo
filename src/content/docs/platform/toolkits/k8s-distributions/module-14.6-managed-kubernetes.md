@@ -1,5 +1,6 @@
 ---
 title: "Module 14.6: Managed Kubernetes - EKS vs GKE vs AKS"
+slug: platform/toolkits/k8s-distributions/module-14.6-managed-kubernetes
 sidebar:
   order: 7
   label: "K8s Distributions"
@@ -12,11 +13,11 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 14.4: Talos](module-14.4-talos.md) - Self-managed Kubernetes concepts
-- [Module 14.5: OpenShift](module-14.5-openshift.md) - Enterprise distributions
+- [Module 14.4: Talos](module-14.4-talos/) - Self-managed Kubernetes concepts
+- [Module 14.5: OpenShift](module-14.5-openshift/) - Enterprise distributions
 - Kubernetes fundamentals (control plane, nodes, networking)
 - Cloud provider basics (one of AWS, GCP, or Azure)
-- [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) - Platform decisions
+- [Platform Engineering Discipline](../../disciplines/platform-engineering/) - Platform decisions
 
 ---
 
@@ -1027,9 +1028,9 @@ For most teams, managed is the right default.
 
 ## Next Steps
 
-- **Complete**: [Kubernetes Distributions Toolkit](./index.md) ✓
-- **Next Toolkit**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md)
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Terraform for multi-cloud
+- **Complete**: [Kubernetes Distributions Toolkit](./) ✓
+- **Next Toolkit**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/)
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform for multi-cloud
 
 ---
 

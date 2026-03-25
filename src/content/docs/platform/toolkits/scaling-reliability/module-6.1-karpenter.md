@@ -1,5 +1,6 @@
 ---
 title: "Module 6.1: Karpenter"
+slug: platform/toolkits/scaling-reliability/module-6.1-karpenter
 sidebar:
   order: 2
   label: "Scaling & Reliability"
@@ -18,7 +19,7 @@ Cluster Autoscaler was fine. Karpenter is better. Instead of scaling node groups
 
 **Prerequisites**:
 - Kubernetes scheduling concepts
-- [SRE Discipline](../../disciplines/sre/index.md) — Capacity planning basics
+- [SRE Discipline](../../disciplines/sre/) — Capacity planning basics
 - Cloud provider fundamentals (EC2, instance types)
 
 ---
@@ -687,7 +688,7 @@ Create a separate NodePool for ARM64/Graviton instances and deploy a workload th
 
 ## Next Module
 
-Continue to [Module 6.2: KEDA](module-6.2-keda.md) to learn event-driven autoscaling for workloads based on metrics, queues, and custom triggers.
+Continue to [Module 6.2: KEDA](module-6.2-keda/) to learn event-driven autoscaling for workloads based on metrics, queues, and custom triggers.
 
 ---
 

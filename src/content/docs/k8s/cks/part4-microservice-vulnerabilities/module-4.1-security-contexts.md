@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: Security Contexts"
+slug: k8s/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts
 sidebar:
   order: 1
   label: "Part 4: Microservice Vulnerabilities"
@@ -539,4 +540,4 @@ kubectl delete pod insecure hardened
 
 ## Next Module
 
-[Module 4.2: Pod Security Admission](module-4.2-pod-security-admission.md) - Enforcing security standards at namespace level.
+[Module 4.2: Pod Security Admission](module-4.2-pod-security-admission/) - Enforcing security standards at namespace level.

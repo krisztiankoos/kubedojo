@@ -1,5 +1,6 @@
 ---
 title: "Module 8.1: k9s & CLI Tools"
+slug: platform/toolkits/developer-experience/module-8.1-k9s-cli
 sidebar:
   order: 2
   label: "Developer Experience"
@@ -607,7 +608,7 @@ Set up kube-ps1 to show context/namespace in your prompt, with different colors 
 
 ## Next Module
 
-Continue to [Module 8.2: Telepresence & Tilt](module-8.2-telepresence-tilt.md) to learn about local development with remote Kubernetes clusters.
+Continue to [Module 8.2: Telepresence & Tilt](module-8.2-telepresence-tilt/) to learn about local development with remote Kubernetes clusters.
 
 ---
 

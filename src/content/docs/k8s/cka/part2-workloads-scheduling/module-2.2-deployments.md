@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: Deployments & ReplicaSets"
+slug: k8s/cka/part2-workloads-scheduling/module-2.2-deployments
 sidebar:
   order: 3
   label: "Part 2: Workloads & Scheduling"
@@ -921,4 +922,4 @@ kubectl delete deployment lifecycle-test
 
 ## Next Module
 
-[Module 2.3: DaemonSets & StatefulSets](module-2.3-daemonsets-statefulsets.md) - Specialized workload controllers.
+[Module 2.3: DaemonSets & StatefulSets](module-2.3-daemonsets-statefulsets/) - Specialized workload controllers.

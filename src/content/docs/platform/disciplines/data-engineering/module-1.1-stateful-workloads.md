@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Stateful Workloads & Storage Deep Dive"
+slug: platform/disciplines/data-engineering/module-1.1-stateful-workloads
 sidebar:
   order: 2
   label: "Data Engineering"
@@ -969,7 +970,7 @@ The most common mistake is not a technical one — it is treating stateful workl
 
 ## Next Module
 
-Continue to [Module 1.2: Apache Kafka on Kubernetes (Strimzi)](module-1.2-kafka.md) to learn how to deploy and operate the most widely-used distributed streaming platform on Kubernetes.
+Continue to [Module 1.2: Apache Kafka on Kubernetes (Strimzi)](module-1.2-kafka/) to learn how to deploy and operate the most widely-used distributed streaming platform on Kubernetes.
 
 ---
 

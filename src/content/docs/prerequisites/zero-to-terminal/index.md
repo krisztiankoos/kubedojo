@@ -59,16 +59,16 @@ This analogy will carry you all the way from here to Kubernetes, where you'll ma
 
 | Module | Title | Time | What You'll Learn |
 |--------|-------|------|-------------------|
-| 0.1 | [What is a Computer?](module-0.1-what-is-a-computer.md) | 20 min | CPU, RAM, disk, OS -- the kitchen hardware |
-| 0.2 | [What is a Terminal?](module-0.2-what-is-a-terminal.md) | 20 min | Opening and understanding the terminal |
-| 0.3 | [First Terminal Commands](module-0.3-first-commands.md) | 25 min | Navigate, create, move, and delete files |
-| 0.4 | [Files and Directories](module-0.4-files-and-directories.md) | 25 min | Paths, file types, organizing your filesystem |
-| 0.5 | [Editing Files](module-0.5-editing-files.md) | 25 min | Edit files with nano, write your first script |
-| 0.6 | [What is Networking?](module-0.6-what-is-networking.md) | 25 min | IPs, ports, DNS -- how computers talk to each other |
-| 0.7 | [Servers and SSH](module-0.7-servers-and-ssh.md) | 25 min | What servers are, how to connect remotely |
-| 0.8 | [Software and Packages](module-0.8-software-and-packages.md) | 25 min | Installing and managing software from the terminal |
-| 0.9 | [What is the Cloud?](module-0.9-what-is-the-cloud.md) | 20 min | Cloud computing, AWS/Azure/GCP, where K8s fits |
-| **0.10** | [**Your First Server**](module-0.10-your-first-server.md) | **45 min** | **Capstone: deploy a real website using everything you've learned** |
+| 0.1 | [What is a Computer?](module-0.1-what-is-a-computer/) | 20 min | CPU, RAM, disk, OS -- the kitchen hardware |
+| 0.2 | [What is a Terminal?](module-0.2-what-is-a-terminal/) | 20 min | Opening and understanding the terminal |
+| 0.3 | [First Terminal Commands](module-0.3-first-commands/) | 25 min | Navigate, create, move, and delete files |
+| 0.4 | [Files and Directories](module-0.4-files-and-directories/) | 25 min | Paths, file types, organizing your filesystem |
+| 0.5 | [Editing Files](module-0.5-editing-files/) | 25 min | Edit files with nano, write your first script |
+| 0.6 | [What is Networking?](module-0.6-what-is-networking/) | 25 min | IPs, ports, DNS -- how computers talk to each other |
+| 0.7 | [Servers and SSH](module-0.7-servers-and-ssh/) | 25 min | What servers are, how to connect remotely |
+| 0.8 | [Software and Packages](module-0.8-software-and-packages/) | 25 min | Installing and managing software from the terminal |
+| 0.9 | [What is the Cloud?](module-0.9-what-is-the-cloud/) | 20 min | Cloud computing, AWS/Azure/GCP, where K8s fits |
+| **0.10** | [**Your First Server**](module-0.10-your-first-server/) | **45 min** | **Capstone: deploy a real website using everything you've learned** |
 
 ---
 
@@ -90,13 +90,13 @@ After completing Zero to Terminal, the road forks into two paths:
 
 You loved the terminal? Go deeper into how Linux actually works -- the kernel, processes, networking internals, permissions, and security. This is the knowledge that makes you dangerous.
 
-> Start here: [Linux Fundamentals](../../linux/index.md)
+> Start here: [Linux Fundamentals](../../linux/)
 
 ### Path B: Cloud Native
 
 You want to build and deploy apps at scale? Learn containers, Docker, and Kubernetes. This is where the industry is heading.
 
-> Start here: [Cloud Native 101](../cloud-native-101/module-1-what-are-containers.md)
+> Start here: [Cloud Native 101](../cloud-native-101/module-1-what-are-containers/)
 
 ### Path C: Both
 

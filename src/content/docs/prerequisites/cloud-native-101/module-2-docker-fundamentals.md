@@ -550,4 +550,4 @@ Essential Docker for Kubernetes:
 
 ## Next Module
 
-[Module 3: What Is Kubernetes?](module-3-what-is-kubernetes.md) - High-level overview of container orchestration.
+[Module 3: What Is Kubernetes?](module-3-what-is-kubernetes/) - High-level overview of container orchestration.

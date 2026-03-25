@@ -1,11 +1,10 @@
 ---
-title: "Is the API server responding?"
+title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.1: \u041f\u043e\u0433\u043b\u0438\u0431\u043b\u0435\u043d\u0435 \u0432\u0438\u0432\u0447\u0435\u043d\u043d\u044f \u043f\u043b\u043e\u0449\u0438\u043d\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0456\u043d\u043d\u044f"
+slug: uk/k8s/cka/part1-cluster-architecture/module-1.1-control-plane
 sidebar:
   order: 2
   label: "Part 1: Cluster Architecture"
 ---
-  [watchdog] Output resumed after 204s stall
-
 > **Складність**: `[MEDIUM]` - Вимагає концептуального розуміння
 >
 > **Час на проходження**: 35-45 хвилин
@@ -138,7 +137,7 @@ API-сервер — це **єдиний** компонент, який спіл
 ### 2.3 Перевірка працездатності API-сервера
 
 ```bash
-
+# Is the API server responding?
 kubectl cluster-info
 
 # Check API server component status (legacy)
@@ -819,4 +818,4 @@ kubectl delete pod recovery-test
 
 ## Наступний модуль
 
-[Модуль 1.2: Інтерфейси розширення (CNI, CSI, CRI)](module-1.2-extension-interfaces.md) — Як Kubernetes підключає мережі, сховища та контейнерні середовища.
+[Модуль 1.2: Інтерфейси розширення (CNI, CSI, CRI)](module-1.2-extension-interfaces/) — Як Kubernetes підключає мережі, сховища та контейнерні середовища.

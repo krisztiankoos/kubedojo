@@ -19,7 +19,7 @@ The LFCS is a **performance-based (hands-on) exam** that validates practical Lin
 | **Validity** | 3 years |
 | **Distribution** | Ubuntu 22.04 |
 
-> **Important**: This is NOT a Kubernetes certification. It lives under `docs/k8s/` for organizational purposes alongside other Linux Foundation certs, but the content maps entirely to our [Linux Deep Dive Track](../../linux/index.md).
+> **Important**: This is NOT a Kubernetes certification. It lives under `docs/k8s/` for organizational purposes alongside other Linux Foundation certs, but the content maps entirely to our [Linux Deep Dive Track](../../linux/).
 
 ---
 
@@ -40,16 +40,16 @@ The LFCS is a **performance-based (hands-on) exam** that validates practical Lin
 
 | LFCS Topic | KubeDojo Module | Status |
 |-----------|-----------------|--------|
-| Log into local & remote graphical/text consoles | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) | Covered |
-| Search for files | [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing.md) | Covered |
-| Evaluate & compare basic file system features | [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy.md) | Covered |
-| Compare & manipulate file content | [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing.md) | Covered |
-| Use input/output redirection | [7.1 Bash Fundamentals](../../linux/operations/shell-scripting/module-7.1-bash-fundamentals.md) | Covered |
-| Analyze text using basic regex | [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing.md) | Covered |
-| Archive, backup, compress files | [7.3 Practical Scripts](../../linux/operations/shell-scripting/module-7.3-practical-scripts.md) | Partial |
-| Create, delete, copy, move files/dirs | [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy.md) | Covered |
-| Create/manage hard and soft links | [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy.md) | Covered |
-| List, set, change standard permissions | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions.md) | Covered |
+| Log into local & remote graphical/text consoles | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) | Covered |
+| Search for files | [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing/) | Covered |
+| Evaluate & compare basic file system features | [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/) | Covered |
+| Compare & manipulate file content | [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing/) | Covered |
+| Use input/output redirection | [7.1 Bash Fundamentals](../../linux/operations/shell-scripting/module-7.1-bash-fundamentals/) | Covered |
+| Analyze text using basic regex | [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing/) | Covered |
+| Archive, backup, compress files | [7.3 Practical Scripts](../../linux/operations/shell-scripting/module-7.3-practical-scripts/) | Partial |
+| Create, delete, copy, move files/dirs | [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/) | Covered |
+| Create/manage hard and soft links | [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/) | Covered |
+| List, set, change standard permissions | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions/) | Covered |
 | Read and use system documentation | General CLI skills | Covered |
 
 ### Domain 2: Operation of Running Systems (25%)
@@ -58,16 +58,16 @@ The LFCS is a **performance-based (hands-on) exam** that validates practical Lin
 
 | LFCS Topic | KubeDojo Module | Status |
 |-----------|-----------------|--------|
-| Boot, reboot, shut down safely | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) | Partial |
-| Boot into different targets (runlevels) | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) | Partial |
-| Install, configure, troubleshoot bootloaders | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) | Covered |
-| Manage processes (ps, top, kill, nice) | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) | Covered |
-| Manage startup services (systemctl) | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) | Covered |
-| Diagnose and manage processes | [6.3 Process Debugging](../../linux/operations/troubleshooting/module-6.3-process-debugging.md) | Covered |
-| Locate and analyze system log files | [6.2 Log Analysis](../../linux/operations/troubleshooting/module-6.2-log-analysis.md) | Covered |
-| Schedule tasks (cron, at) | [7.4 DevOps Automation](../../linux/operations/shell-scripting/module-7.4-devops-automation.md) | Partial |
-| Verify system integrity | [4.1 Kernel Hardening](../../linux/security/hardening/module-4.1-kernel-hardening.md) | Covered |
-| List and load kernel modules | [1.1 Kernel Architecture](../../linux/foundations/system-essentials/module-1.1-kernel-architecture.md) | Partial |
+| Boot, reboot, shut down safely | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) | Partial |
+| Boot into different targets (runlevels) | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) | Partial |
+| Install, configure, troubleshoot bootloaders | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) | Covered |
+| Manage processes (ps, top, kill, nice) | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) | Covered |
+| Manage startup services (systemctl) | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) | Covered |
+| Diagnose and manage processes | [6.3 Process Debugging](../../linux/operations/troubleshooting/module-6.3-process-debugging/) | Covered |
+| Locate and analyze system log files | [6.2 Log Analysis](../../linux/operations/troubleshooting/module-6.2-log-analysis/) | Covered |
+| Schedule tasks (cron, at) | [7.4 DevOps Automation](../../linux/operations/shell-scripting/module-7.4-devops-automation/) | Partial |
+| Verify system integrity | [4.1 Kernel Hardening](../../linux/security/hardening/module-4.1-kernel-hardening/) | Covered |
+| List and load kernel modules | [1.1 Kernel Architecture](../../linux/foundations/system-essentials/module-1.1-kernel-architecture/) | Partial |
 
 ### Domain 3: User and Group Management (10%)
 
@@ -75,11 +75,11 @@ The LFCS is a **performance-based (hands-on) exam** that validates practical Lin
 
 | LFCS Topic | KubeDojo Module | Status |
 |-----------|-----------------|--------|
-| Create, delete, modify local users/groups | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions.md) | Covered |
-| Manage user/group properties | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions.md) | Covered |
-| Configure user resource limits | [2.2 Control Groups](../../linux/foundations/container-primitives/module-2.2-cgroups.md) | Partial |
-| Manage user privileges (sudo) | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions.md) | Covered |
-| Configure PAM | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions.md) | Covered |
+| Create, delete, modify local users/groups | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions/) | Covered |
+| Manage user/group properties | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions/) | Covered |
+| Configure user resource limits | [2.2 Control Groups](../../linux/foundations/container-primitives/module-2.2-cgroups/) | Partial |
+| Manage user privileges (sudo) | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions/) | Covered |
+| Configure PAM | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions/) | Covered |
 
 ### Domain 4: Networking (25%)
 
@@ -87,15 +87,15 @@ The LFCS is a **performance-based (hands-on) exam** that validates practical Lin
 
 | LFCS Topic | KubeDojo Module | Status |
 |-----------|-----------------|--------|
-| Configure networking (IP, subnet, gateway) | [3.1 TCP/IP Essentials](../../linux/foundations/networking/module-3.1-tcp-ip-essentials.md) | Covered |
-| Configure hostname resolution | [3.2 DNS in Linux](../../linux/foundations/networking/module-3.2-dns-linux.md) | Covered |
-| Configure network services to start at boot | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) | Partial |
-| Implement packet filtering (firewalld/nftables) | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration.md) | **New** |
-| Configure firewall settings | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration.md) | **New** |
-| Configure NAT/masquerading | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration.md) | **New** |
-| Network bonding/bridging | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration.md) | **New** |
-| Statically route IP traffic | [3.1 TCP/IP Essentials](../../linux/foundations/networking/module-3.1-tcp-ip-essentials.md) | Partial |
-| Synchronize time (NTP/chrony) | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration.md) | **New** |
+| Configure networking (IP, subnet, gateway) | [3.1 TCP/IP Essentials](../../linux/foundations/networking/module-3.1-tcp-ip-essentials/) | Covered |
+| Configure hostname resolution | [3.2 DNS in Linux](../../linux/foundations/networking/module-3.2-dns-linux/) | Covered |
+| Configure network services to start at boot | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) | Partial |
+| Implement packet filtering (firewalld/nftables) | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration/) | **New** |
+| Configure firewall settings | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration/) | **New** |
+| Configure NAT/masquerading | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration/) | **New** |
+| Network bonding/bridging | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration/) | **New** |
+| Statically route IP traffic | [3.1 TCP/IP Essentials](../../linux/foundations/networking/module-3.1-tcp-ip-essentials/) | Partial |
+| Synchronize time (NTP/chrony) | [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration/) | **New** |
 
 ### Domain 5: Storage Management (20%)
 
@@ -103,15 +103,15 @@ The LFCS is a **performance-based (hands-on) exam** that validates practical Lin
 
 | LFCS Topic | KubeDojo Module | Status |
 |-----------|-----------------|--------|
-| List, create, delete partitions | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | **New** |
-| Create/configure file systems (ext4, xfs) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | **New** |
-| Mount filesystems at boot (fstab) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | **New** |
-| Configure and manage LVM | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | **New** |
-| Create and manage RAID (mdadm) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | Covered |
-| Configure NFS server/client | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | **New** |
-| Configure swap space | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | **New** |
-| Manage automount (autofs) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) | **New** |
-| Monitor storage (df, du, iostat) | [5.4 I/O Performance](../../linux/operations/performance/module-5.4-io-performance.md) | Covered |
+| List, create, delete partitions | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | **New** |
+| Create/configure file systems (ext4, xfs) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | **New** |
+| Mount filesystems at boot (fstab) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | **New** |
+| Configure and manage LVM | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | **New** |
+| Create and manage RAID (mdadm) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | Covered |
+| Configure NFS server/client | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | **New** |
+| Configure swap space | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | **New** |
+| Manage automount (autofs) | [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) | **New** |
+| Monitor storage (df, du, iostat) | [5.4 I/O Performance](../../linux/operations/performance/module-5.4-io-performance/) | Covered |
 
 ---
 
@@ -120,30 +120,30 @@ The LFCS is a **performance-based (hands-on) exam** that validates practical Lin
 If you are specifically preparing for LFCS, follow this sequence through our Linux track:
 
 ### Phase 1: Foundations (Week 1-2)
-1. [1.1 Kernel Architecture](../../linux/foundations/system-essentials/module-1.1-kernel-architecture.md)
-2. [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md)
-3. [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy.md)
-4. [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions.md)
+1. [1.1 Kernel Architecture](../../linux/foundations/system-essentials/module-1.1-kernel-architecture/)
+2. [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/)
+3. [1.3 Filesystem Hierarchy](../../linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/)
+4. [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions/)
 
 ### Phase 2: Networking Basics (Week 2-3)
-5. [3.1 TCP/IP Essentials](../../linux/foundations/networking/module-3.1-tcp-ip-essentials.md)
-6. [3.2 DNS in Linux](../../linux/foundations/networking/module-3.2-dns-linux.md)
-7. [3.4 iptables & netfilter](../../linux/foundations/networking/module-3.4-iptables-netfilter.md)
+5. [3.1 TCP/IP Essentials](../../linux/foundations/networking/module-3.1-tcp-ip-essentials/)
+6. [3.2 DNS in Linux](../../linux/foundations/networking/module-3.2-dns-linux/)
+7. [3.4 iptables & netfilter](../../linux/foundations/networking/module-3.4-iptables-netfilter/)
 
 ### Phase 3: Operations (Week 3-4)
-8. [7.1 Bash Fundamentals](../../linux/operations/shell-scripting/module-7.1-bash-fundamentals.md)
-9. [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing.md)
-10. [6.1 Systematic Troubleshooting](../../linux/operations/troubleshooting/module-6.1-systematic-troubleshooting.md)
-11. [6.2 Log Analysis](../../linux/operations/troubleshooting/module-6.2-log-analysis.md)
+8. [7.1 Bash Fundamentals](../../linux/operations/shell-scripting/module-7.1-bash-fundamentals/)
+9. [7.2 Text Processing](../../linux/operations/shell-scripting/module-7.2-text-processing/)
+10. [6.1 Systematic Troubleshooting](../../linux/operations/troubleshooting/module-6.1-systematic-troubleshooting/)
+11. [6.2 Log Analysis](../../linux/operations/troubleshooting/module-6.2-log-analysis/)
 
 ### Phase 4: LFCS-Specific (Week 4-5)
-12. [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management.md) — LVM, NFS, filesystems
-13. [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration.md) — Firewall, NAT, bonding
+12. [**8.1 Storage Management**](../../linux/operations/module-8.1-storage-management/) — LVM, NFS, filesystems
+13. [**8.2 Network Administration**](../../linux/operations/module-8.2-network-administration/) — Firewall, NAT, bonding
 
 ### Phase 5: Performance & Polish (Week 5-6)
-14. [5.1 The USE Method](../../linux/operations/performance/module-5.1-use-method.md)
-15. [5.4 I/O Performance](../../linux/operations/performance/module-5.4-io-performance.md)
-16. [6.3 Process Debugging](../../linux/operations/troubleshooting/module-6.3-process-debugging.md)
+14. [5.1 The USE Method](../../linux/operations/performance/module-5.1-use-method/)
+15. [5.4 I/O Performance](../../linux/operations/performance/module-5.4-io-performance/)
+16. [6.3 Process Debugging](../../linux/operations/troubleshooting/module-6.3-process-debugging/)
 
 ---
 
@@ -154,7 +154,7 @@ Just like CKA/CKAD, you get a terminal and must complete tasks. No multiple choi
 
 ### Time Management
 - **2 hours** for all tasks
-- Use the [Three-Pass Strategy](../../prerequisites/philosophy-design/index.md):
+- Use the [Three-Pass Strategy](../../prerequisites/philosophy-design/):
   - **Pass 1**: Quick wins — file creation, user management, basic commands
   - **Pass 2**: Medium tasks — filesystem, systemd, networking config
   - **Pass 3**: Complex tasks — LVM, NFS, firewall rules
@@ -181,10 +181,10 @@ These LFCS topics were previously gaps in KubeDojo but are now covered:
 
 | Topic | Covered In |
 |-------|------------|
-| Bootloader (GRUB2) installation/troubleshooting | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd.md) |
-| RAID management (mdadm) | [8.1 Storage Management](../../linux/operations/module-8.1-storage-management.md) |
-| PAM configuration | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions.md) |
-| System integrity verification (AIDE, rpm -V) | [4.1 Kernel Hardening](../../linux/security/hardening/module-4.1-kernel-hardening.md) |
+| Bootloader (GRUB2) installation/troubleshooting | [1.2 Processes & systemd](../../linux/foundations/system-essentials/module-1.2-processes-systemd/) |
+| RAID management (mdadm) | [8.1 Storage Management](../../linux/operations/module-8.1-storage-management/) |
+| PAM configuration | [1.4 Users & Permissions](../../linux/foundations/system-essentials/module-1.4-users-permissions/) |
+| System integrity verification (AIDE, rpm -V) | [4.1 Kernel Hardening](../../linux/security/hardening/module-4.1-kernel-hardening/) |
 
 Focus your time on the high-weight domains (Networking 25%, Operations 25%, Storage 20%) first.
 
@@ -194,4 +194,4 @@ Focus your time on the high-weight domains (Networking 25%, Operations 25%, Stor
 
 - [LFCS Exam Curriculum (Linux Foundation)](https://training.linuxfoundation.org/certification/linux-foundation-certified-sysadmin-lfcs/)
 - [Ubuntu 22.04 Server Guide](https://ubuntu.com/server/docs)
-- [KubeDojo Linux Track](../../linux/index.md) — Our primary content source
+- [KubeDojo Linux Track](../../linux/) — Our primary content source

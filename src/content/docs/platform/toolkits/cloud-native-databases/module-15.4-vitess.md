@@ -1,5 +1,6 @@
 ---
 title: "Module 15.4: Vitess - Scaling MySQL to YouTube Numbers"
+slug: platform/toolkits/cloud-native-databases/module-15.4-vitess
 sidebar:
   order: 5
   label: "Cloud-Native Databases"
@@ -12,11 +13,11 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 15.1: CockroachDB](module-15.1-cockroachdb.md) - Distributed database concepts
-- [Module 15.3: Neon & PlanetScale](module-15.3-serverless-databases.md) - PlanetScale is built on Vitess
+- [Module 15.1: CockroachDB](module-15.1-cockroachdb/) - Distributed database concepts
+- [Module 15.3: Neon & PlanetScale](module-15.3-serverless-databases/) - PlanetScale is built on Vitess
 - MySQL fundamentals (basic SQL, replication concepts)
 - Kubernetes fundamentals (StatefulSets, Services, Operators)
-- [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) - Sharding concepts
+- [Distributed Systems Foundation](../../foundations/distributed-systems/) - Sharding concepts
 
 ---
 
@@ -1062,9 +1063,9 @@ Don't use Vitess if:
 
 ## Next Steps
 
-- **Related**: [Module 15.3: PlanetScale](module-15.3-serverless-databases.md) — Managed Vitess experience
-- **Related**: [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) — Sharding theory
-- **Related**: [Observability Toolkit](../observability/index.md) — Monitoring Vitess
+- **Related**: [Module 15.3: PlanetScale](module-15.3-serverless-databases/) — Managed Vitess experience
+- **Related**: [Distributed Systems Foundation](../../foundations/distributed-systems/) — Sharding theory
+- **Related**: [Observability Toolkit](../observability/) — Monitoring Vitess
 
 ---
 

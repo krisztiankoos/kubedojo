@@ -1,5 +1,6 @@
 ---
 title: "Module 5.3: Memory Management"
+slug: linux/operations/performance/module-5.3-memory-management
 sidebar:
   order: 4
   label: "Performance"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 5.1: USE Method](module-5.1-use-method.md)
-- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups.md)
-- **Helpful**: [Module 1.3: Filesystem Hierarchy](../../foundations/system-essentials/module-1.3-filesystem-hierarchy.md)
+- **Required**: [Module 5.1: USE Method](module-5.1-use-method/)
+- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups/)
+- **Helpful**: [Module 1.3: Filesystem Hierarchy](../../foundations/system-essentials/module-1.3-filesystem-hierarchy/)
 
 ---
 

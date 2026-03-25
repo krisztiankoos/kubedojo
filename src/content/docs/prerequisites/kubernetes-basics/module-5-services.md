@@ -383,4 +383,4 @@ Services provide stable networking:
 
 ## Next Module
 
-[Module 6: ConfigMaps and Secrets](module-6-configmaps-secrets.md) - Managing configuration.
+[Module 6: ConfigMaps and Secrets](module-6-configmaps-secrets/) - Managing configuration.

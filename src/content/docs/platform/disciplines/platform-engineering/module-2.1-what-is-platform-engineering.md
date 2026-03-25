@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: What is Platform Engineering?"
+slug: platform/disciplines/platform-engineering/module-2.1-what-is-platform-engineering
 sidebar:
   order: 2
   label: "Platform Engineering"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Systems Thinking Track](../../foundations/systems-thinking/index.md) — Understanding complex systems
-- **Recommended**: [SRE Discipline](../sre/index.md) — Operations perspective
+- **Required**: [Systems Thinking Track](../../foundations/systems-thinking/) — Understanding complex systems
+- **Recommended**: [SRE Discipline](../sre/) — Operations perspective
 - **Helpful**: Experience in a DevOps or infrastructure role
 
 ---
@@ -776,7 +777,7 @@ The goal isn't to build a platform. It's to make developers more productive and 
 
 ## Next Module
 
-Continue to [Module 2.2: Developer Experience (DevEx)](module-2.2-developer-experience.md) to learn how to measure and improve developer experience—the core metric for platform success.
+Continue to [Module 2.2: Developer Experience (DevEx)](module-2.2-developer-experience/) to learn how to measure and improve developer experience—the core metric for platform success.
 
 ---
 

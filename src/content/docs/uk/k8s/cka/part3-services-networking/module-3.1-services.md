@@ -1,5 +1,6 @@
 ---
-title: "Internal-only access - most common type"
+title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.1: \u0421\u0435\u0440\u0432\u0456\u0441\u0438 \u2014 ClusterIP, NodePort, LoadBalancer"
+slug: uk/k8s/cka/part3-services-networking/module-3.1-services
 sidebar:
   order: 2
   label: "Part 3: Services & Networking"
@@ -137,7 +138,7 @@ sidebar:
 ### 2.2 ClusterIP (За замовчуванням)
 
 ```yaml
-
+# Internal-only access - most common type
 apiVersion: v1
 kind: Service
 metadata:
@@ -1030,4 +1031,4 @@ k delete svc challenge-app
 
 ## Наступний модуль
 
-[Модуль 3.2: Ендпоінти та EndpointSlices](module-3.2-endpoints.md) - Глибоке занурення в те, як сервіси відстежують поди.
+[Модуль 3.2: Ендпоінти та EndpointSlices](module-3.2-endpoints/) - Глибоке занурення в те, як сервіси відстежують поди.

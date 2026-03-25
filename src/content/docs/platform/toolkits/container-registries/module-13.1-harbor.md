@@ -1,5 +1,6 @@
 ---
 title: "Module 13.1: Harbor - Enterprise Container Registry"
+slug: platform/toolkits/container-registries/module-13.1-harbor
 sidebar:
   order: 2
   label: "Container Registries"
@@ -16,7 +17,7 @@ This module teaches you to deploy, configure, and operate Harbor for enterprise 
 
 - Docker fundamentals (building, pushing, tagging)
 - Kubernetes basics (Deployments, Services, PVCs)
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - Supply chain security concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) - Supply chain security concepts
 - Understanding of image registries and OCI format
 
 ## Why This Module Matters
@@ -1321,7 +1322,7 @@ rm -rf /tmp/harbor-test
 
 ## Next Module
 
-Continue to [Module 13.2: Zot](module-13.2-zot.md) — The lightweight, OCI-native alternative for minimal footprint requirements.
+Continue to [Module 13.2: Zot](module-13.2-zot/) — The lightweight, OCI-native alternative for minimal footprint requirements.
 
 ---
 

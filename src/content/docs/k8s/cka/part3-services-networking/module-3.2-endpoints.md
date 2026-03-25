@@ -1,5 +1,6 @@
 ---
 title: "Module 3.2: Endpoints & EndpointSlices"
+slug: k8s/cka/part3-services-networking/module-3.2-endpoints
 sidebar:
   order: 3
   label: "Part 3: Services & Networking"
@@ -992,4 +993,4 @@ k delete endpoints manual-svc
 
 ## Next Module
 
-[Module 3.3: DNS & CoreDNS](module-3.3-dns.md) - Deep-dive into Kubernetes DNS and service discovery.
+[Module 3.3: DNS & CoreDNS](module-3.3-dns/) - Deep-dive into Kubernetes DNS and service discovery.

@@ -1,5 +1,6 @@
 ---
 title: "Module 7.9: System Initiative - DevOps Automation Reimagined"
+slug: platform/toolkits/iac-tools/module-7.9-system-initiative
 sidebar:
   order: 10
   label: "IaC Tools"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 7.1: Terraform](module-7.1-terraform.md) - Traditional IaC concepts
-- [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) - IDP principles
+- [Module 7.1: Terraform](module-7.1-terraform/) - Traditional IaC concepts
+- [Platform Engineering Discipline](../../disciplines/platform-engineering/) - IDP principles
 - Understanding of reactive programming concepts
 - Experience with DevOps tooling and workflows
 
@@ -759,9 +760,9 @@ When should you consider adopting System Initiative over traditional IaC?
 
 ## Next Steps
 
-- **Next Module**: [Module 7.10: Nitric](module-7.10-nitric.md) — Cloud-native framework
-- **Related**: [Platform Engineering](../../disciplines/platform-engineering/index.md) — IDP concepts
-- **Related**: [Platforms Toolkit](../platforms/index.md) — Backstage, Crossplane
+- **Next Module**: [Module 7.10: Nitric](module-7.10-nitric/) — Cloud-native framework
+- **Related**: [Platform Engineering](../../disciplines/platform-engineering/) — IDP concepts
+- **Related**: [Platforms Toolkit](../platforms/) — Backstage, Crossplane
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 5.4: Admission Controllers"
+slug: k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers
 sidebar:
   order: 4
   label: "Part 5: Supply Chain Security"
@@ -639,4 +640,4 @@ You've finished **Supply Chain Security** (20% of CKS). You now understand:
 - Static analysis with kubesec and OPA
 - Admission controllers and webhooks
 
-**Next Part**: [Part 6: Monitoring, Logging & Runtime Security](../part6-runtime-security/module-6.1-audit-logging.md) - Detecting and responding to security incidents.
+**Next Part**: [Part 6: Monitoring, Logging & Runtime Security](../part6-runtime-security/module-6.1-audit-logging/) - Detecting and responding to security incidents.

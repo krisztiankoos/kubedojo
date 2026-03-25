@@ -17,21 +17,21 @@ This track covers the complete AIOps journey—from understanding what it is to 
 ## Prerequisites
 
 Before starting this track:
-- [Observability Theory Track](../../foundations/observability-theory/index.md) — Data sources for ML
-- [SRE Discipline](../sre/index.md) — Incident management context
-- [MLOps Discipline](../mlops/index.md) — ML fundamentals (recommended)
+- [Observability Theory Track](../../foundations/observability-theory/) — Data sources for ML
+- [SRE Discipline](../sre/) — Incident management context
+- [MLOps Discipline](../mlops/) — ML fundamentals (recommended)
 - Basic statistics (mean, standard deviation, distributions)
 
 ## Modules
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 6.1 | [AIOps Foundations](module-6.1-aiops-foundations.md) | `[MEDIUM]` | 35-40 min |
-| 6.2 | [Anomaly Detection](module-6.2-anomaly-detection.md) | `[COMPLEX]` | 40-45 min |
-| 6.3 | [Event Correlation](module-6.3-event-correlation.md) | `[COMPLEX]` | 40-45 min |
-| 6.4 | [Root Cause Analysis](module-6.4-root-cause-analysis.md) | `[COMPLEX]` | 40-45 min |
-| 6.5 | [Predictive Operations](module-6.5-predictive-operations.md) | `[COMPLEX]` | 40-45 min |
-| 6.6 | [Auto-Remediation](module-6.6-auto-remediation.md) | `[COMPLEX]` | 40-45 min |
+| 6.1 | [AIOps Foundations](module-6.1-aiops-foundations/) | `[MEDIUM]` | 35-40 min |
+| 6.2 | [Anomaly Detection](module-6.2-anomaly-detection/) | `[COMPLEX]` | 40-45 min |
+| 6.3 | [Event Correlation](module-6.3-event-correlation/) | `[COMPLEX]` | 40-45 min |
+| 6.4 | [Root Cause Analysis](module-6.4-root-cause-analysis/) | `[COMPLEX]` | 40-45 min |
+| 6.5 | [Predictive Operations](module-6.5-predictive-operations/) | `[COMPLEX]` | 40-45 min |
+| 6.6 | [Auto-Remediation](module-6.6-auto-remediation/) | `[COMPLEX]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -136,12 +136,12 @@ Module 6.6: Auto-Remediation
 
 ## Related Tracks
 
-- **Before**: [Observability Theory](../../foundations/observability-theory/index.md) — Data collection
-- **Before**: [SRE Discipline](../sre/index.md) — Operational practices
-- **Related**: [IaC Discipline](../iac/index.md) — Infrastructure automation for AIOps platforms
-- **Related**: [MLOps Discipline](../mlops/index.md) — ML fundamentals
-- **After**: [AIOps Tools Toolkit](../../toolkits/aiops-tools/index.md) — Hands-on implementations
-- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/index.md) — Automated infrastructure provisioning
+- **Before**: [Observability Theory](../../foundations/observability-theory/) — Data collection
+- **Before**: [SRE Discipline](../sre/) — Operational practices
+- **Related**: [IaC Discipline](../iac/) — Infrastructure automation for AIOps platforms
+- **Related**: [MLOps Discipline](../mlops/) — ML fundamentals
+- **After**: [AIOps Tools Toolkit](../../toolkits/aiops-tools/) — Hands-on implementations
+- **After**: [IaC Tools Toolkit](../../toolkits/iac-tools/) — Automated infrastructure provisioning
 
 ---
 

@@ -430,6 +430,6 @@ You've finished the **Philosophy & Design** prerequisite track. You now understa
 4. What technologies to avoid and why
 
 **Next Steps**:
-- [Cloud Native 101](../cloud-native-101/module-1-what-are-containers.md) - If you're new to containers
-- [Kubernetes Basics](../kubernetes-basics/module-1-first-cluster.md) - If you understand containers already
-- [CKA Curriculum](../../k8s/cka/part0-environment/module-0.1-cluster-setup.md) - If you're ready for certification prep
+- [Cloud Native 101](../cloud-native-101/module-1-what-are-containers/) - If you're new to containers
+- [Kubernetes Basics](../kubernetes-basics/module-1-first-cluster/) - If you understand containers already
+- [CKA Curriculum](../../k8s/cka/part0-environment/module-0.1-cluster-setup/) - If you're ready for certification prep

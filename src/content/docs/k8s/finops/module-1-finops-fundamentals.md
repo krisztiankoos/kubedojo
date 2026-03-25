@@ -675,4 +675,4 @@ FinOps is the practice of bringing financial accountability to cloud spending. I
 
 ## Next Module
 
-Continue to [Module 2: FinOps in Practice](module-2-finops-practice.md) to learn the applied skills — cost allocation, budgeting, rate optimization, workload optimization, and Kubernetes-specific FinOps.
+Continue to [Module 2: FinOps in Practice](module-2-finops-practice/) to learn the applied skills — cost allocation, budgeting, rate optimization, workload optimization, and Kubernetes-specific FinOps.

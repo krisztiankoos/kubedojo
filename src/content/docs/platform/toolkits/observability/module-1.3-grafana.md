@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Grafana"
+slug: platform/toolkits/observability/module-1.3-grafana
 sidebar:
   order: 4
   label: "Observability"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 1.1: Prometheus](module-1.1-prometheus.md)
-- [Module 1.2: OpenTelemetry](module-1.2-opentelemetry.md)
+- [Module 1.1: Prometheus](module-1.1-prometheus/)
+- [Module 1.2: OpenTelemetry](module-1.2-opentelemetry/)
 - Basic PromQL knowledge
 - Understanding of metrics and time series
 
@@ -904,4 +905,4 @@ Grafana transforms metrics into insights. The Four Golden Signals provide a fram
 
 ## Next Module
 
-Continue to [Module 1.4: Logging with Loki](module-1.4-loki.md) to learn about log aggregation and analysis.
+Continue to [Module 1.4: Logging with Loki](module-1.4-loki/) to learn about log aggregation and analysis.

@@ -1,5 +1,6 @@
 ---
 title: "Module 6.5: Chaos Engineering"
+slug: platform/toolkits/scaling-reliability/module-6.5-chaos-engineering
 sidebar:
   order: 6
   label: "Scaling & Reliability"
@@ -19,8 +20,8 @@ Your monitoring says everything is fine. Your dashboards are green. Your runbook
 
 **Prerequisites**:
 - Kubernetes Deployments, Services, and basic networking
-- [Systems Thinking: Complexity and Emergent Behavior](../../foundations/systems-thinking/module-1.4-complexity-and-emergent-behavior.md)
-- [SRE: Error Budgets](../../disciplines/sre/module-1.3-error-budgets.md)
+- [Systems Thinking: Complexity and Emergent Behavior](../../foundations/systems-thinking/module-1.4-complexity-and-emergent-behavior/)
+- [SRE: Error Budgets](../../disciplines/sre/module-1.3-error-budgets/)
 - Familiarity with Helm and kubectl
 
 ---
@@ -80,11 +81,11 @@ CHAOS ENGINEERING METHOD
 
 ### How It Connects to Error Budgets
 
-Chaos experiments consume error budget. If your SLO allows 99.9% availability (43 minutes of downtime per month), and a chaos experiment causes 2 minutes of degradation, that comes out of your budget. This is why chaos engineering and [error budgets](../../disciplines/sre/module-1.3-error-budgets.md) work hand-in-hand: you spend a small portion of your budget proactively to avoid spending all of it reactively during a real incident.
+Chaos experiments consume error budget. If your SLO allows 99.9% availability (43 minutes of downtime per month), and a chaos experiment causes 2 minutes of degradation, that comes out of your budget. This is why chaos engineering and [error budgets](../../disciplines/sre/module-1.3-error-budgets/) work hand-in-hand: you spend a small portion of your budget proactively to avoid spending all of it reactively during a real incident.
 
 ### Emergent Behavior
 
-Distributed systems exhibit [emergent behavior](../../foundations/systems-thinking/module-1.4-complexity-and-emergent-behavior.md) -- failures that no single component causes but that arise from interactions between components. A pod restart might trigger a cache stampede, which overwhelms the database, which causes timeouts in an unrelated service. Chaos engineering is the only reliable way to surface these emergent failure modes before production traffic does.
+Distributed systems exhibit [emergent behavior](../../foundations/systems-thinking/module-1.4-complexity-and-emergent-behavior/) -- failures that no single component causes but that arise from interactions between components. A pod restart might trigger a cache stampede, which overwhelms the database, which causes timeouts in an unrelated service. Chaos engineering is the only reliable way to surface these emergent failure modes before production traffic does.
 
 ---
 
@@ -726,7 +727,7 @@ Create a NetworkChaos experiment that adds 500ms latency between the web pods an
 
 ## Next Module
 
-Continue to [Module 5.2: Service Mesh](../networking/module-5.2-service-mesh.md) to learn how Istio and Linkerd add observability, security, and traffic management to your microservices.
+Continue to [Module 5.2: Service Mesh](../networking/module-5.2-service-mesh/) to learn how Istio and Linkerd add observability, security, and traffic management to your microservices.
 
 ---
 

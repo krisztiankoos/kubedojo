@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.2: \u041c\u0430\u0439\u0441\u0442\u0435\u0440\u043d\u0456\u0441\u0442\u044c \u0440\u043e\u0431\u043e\u0442\u0438 \u0437 \u0442\u0435\u0440\u043c\u0456\u043d\u0430\u043b\u043e\u043c"
+slug: uk/k8s/cka/part0-environment/module-0.2-shell-mastery
 sidebar:
   order: 2
   label: "Part 0: Environment"
@@ -643,4 +644,4 @@ kubectl config get-contexts
 
 ## Наступний модуль
 
-[Модуль 0.3: Vim для YAML](module-0.3-vim-yaml.md) — Необхідне налаштування Vim для ефективного редагування YAML-файлів.
+[Модуль 0.3: Vim для YAML](module-0.3-vim-yaml/) — Необхідне налаштування Vim для ефективного редагування YAML-файлів.

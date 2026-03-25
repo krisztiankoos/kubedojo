@@ -1,5 +1,6 @@
 ---
 title: "Module 4.2: AppArmor Profiles"
+slug: linux/security/hardening/module-4.2-apparmor
 sidebar:
   order: 3
   label: "Security Hardening"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms.md)
-- **Required**: [Module 1.4: Users & Permissions](../../foundations/system-essentials/module-1.4-users-permissions.md)
+- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms/)
+- **Required**: [Module 1.4: Users & Permissions](../../foundations/system-essentials/module-1.4-users-permissions/)
 - **Helpful**: Understanding of basic security concepts
 
 ---

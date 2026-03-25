@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Principles of Chaos Engineering & Resilience"
+slug: platform/disciplines/chaos-engineering/module-1.1-chaos-principles
 sidebar:
   order: 2
   label: "Chaos Engineering"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Kubernetes Basics](../../../prerequisites/kubernetes-basics/index.md) — Core cluster concepts and workloads
-- **Required**: [Release Engineering](../sre/index.md) — Understanding deployment pipelines and rollbacks
+- **Required**: [Kubernetes Basics](../../../prerequisites/kubernetes-basics/) — Core cluster concepts and workloads
+- **Required**: [Release Engineering](../sre/) — Understanding deployment pipelines and rollbacks
 - **Recommended**: Experience operating at least one production system
 - **Recommended**: Familiarity with monitoring concepts (Prometheus, Grafana)
 
@@ -619,4 +620,4 @@ In the next module, you'll put these principles into practice with Chaos Mesh, t
 
 ## Next Module
 
-Continue to [Module 1.2: Chaos Mesh Fundamentals](module-1.2-chaos-mesh.md) — Install, configure, and run your first chaos experiments using Chaos Mesh on a real Kubernetes cluster.
+Continue to [Module 1.2: Chaos Mesh Fundamentals](module-1.2-chaos-mesh/) — Install, configure, and run your first chaos experiments using Chaos Mesh on a real Kubernetes cluster.

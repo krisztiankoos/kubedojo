@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: Automating Chaos & Game Days"
+slug: platform/disciplines/chaos-engineering/module-1.5-automating-chaos
 sidebar:
   order: 6
   label: "Chaos Engineering"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.3: Network & Application Fault Injection](module-1.3-network-fault-injection.md) — Familiarity with multiple chaos experiment types
+- **Required**: [Module 1.3: Network & Application Fault Injection](module-1.3-network-fault-injection/) — Familiarity with multiple chaos experiment types
 - **Required**: CI/CD fundamentals — GitHub Actions, GitLab CI, or equivalent pipeline experience
-- **Recommended**: [SRE Module 1.2: SLOs](../sre/module-1.2-slos.md) — Understanding SLOs and error budgets
+- **Recommended**: [SRE Module 1.2: SLOs](../sre/module-1.2-slos/) — Understanding SLOs and error budgets
 - **Recommended**: Prometheus and Grafana basics
 
 ---
@@ -1155,4 +1156,4 @@ Key takeaways:
 
 ## Next Module
 
-Return to the [Chaos Engineering README](index.md) to review the complete discipline, explore further reading, and find links to related platform engineering tracks.
+Return to the [Chaos Engineering README]() to review the complete discipline, explore further reading, and find links to related platform engineering tracks.

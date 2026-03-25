@@ -241,4 +241,4 @@ If you scored less than 80%, review these areas:
 
 ## Next Part
 
-[Part 1: Application Design and Build](../part1-design-build/module-1.1-container-images.md) - Container images, Jobs, multi-container pods, and volumes.
+[Part 1: Application Design and Build](../part1-design-build/module-1.1-container-images/) - Container images, Jobs, multi-container pods, and volumes.

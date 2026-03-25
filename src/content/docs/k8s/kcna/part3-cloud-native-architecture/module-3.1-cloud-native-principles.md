@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: Cloud Native Principles"
+slug: k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles
 sidebar:
   order: 2
   label: "Part 3: Cloud Native Architecture"
@@ -386,4 +387,4 @@ The **12-Factor App** methodology is foundational to cloud native:
 
 ## Next Module
 
-[Module 3.2: CNCF Ecosystem](module-3.2-cncf-ecosystem.md) - Understanding the Cloud Native Computing Foundation and its landscape.
+[Module 3.2: CNCF Ecosystem](module-3.2-cncf-ecosystem/) - Understanding the Cloud Native Computing Foundation and its landscape.

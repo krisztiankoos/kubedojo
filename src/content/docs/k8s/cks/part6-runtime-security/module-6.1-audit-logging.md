@@ -1,5 +1,6 @@
 ---
 title: "Module 6.1: Kubernetes Audit Logging"
+slug: k8s/cks/part6-runtime-security/module-6.1-audit-logging
 sidebar:
   order: 1
   label: "Part 6: Runtime Security"
@@ -656,4 +657,4 @@ rm -f /tmp/audit-policy.yaml /tmp/sample-audit.json
 
 ## Next Module
 
-[Module 6.2: Runtime Security with Falco](module-6.2-falco.md) - Detecting suspicious container behavior.
+[Module 6.2: Runtime Security with Falco](module-6.2-falco/) - Detecting suspicious container behavior.

@@ -1,5 +1,6 @@
 ---
 title: "Module 2.5: Resource Management"
+slug: k8s/cka/part2-workloads-scheduling/module-2.5-resource-management
 sidebar:
   order: 6
   label: "Part 2: Workloads & Scheduling"
@@ -992,4 +993,4 @@ kubectl delete namespace challenge
 
 ## Next Module
 
-[Module 2.6: Scheduling](module-2.6-scheduling.md) - Node selection, affinity, taints, and tolerations.
+[Module 2.6: Scheduling](module-2.6-scheduling/) - Node selection, affinity, taints, and tolerations.

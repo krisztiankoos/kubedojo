@@ -1,5 +1,6 @@
 ---
 title: "Module 3.7: CNI & Cluster Networking"
+slug: k8s/cka/part3-services-networking/module-3.7-cni
 sidebar:
   order: 8
   label: "Part 3: Services & Networking"
@@ -854,4 +855,4 @@ Congratulations on completing Part 3! You now understand:
 - Network Policies for security
 - CNI and cluster networking
 
-Take the [Part 3 Cumulative Quiz](part3-cumulative-quiz.md) to test your knowledge.
+Take the [Part 3 Cumulative Quiz](part3-cumulative-quiz/) to test your knowledge.

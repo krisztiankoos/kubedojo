@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Ingress Security"
+slug: k8s/cks/part1-cluster-setup/module-1.3-ingress-security
 sidebar:
   order: 3
   label: "Part 1: Cluster Setup"
@@ -603,4 +604,4 @@ kubectl delete namespace secure-app
 
 ## Next Module
 
-[Module 1.4: Node Metadata Protection](module-1.4-node-metadata.md) - Protecting cloud provider metadata services.
+[Module 1.4: Node Metadata Protection](module-1.4-node-metadata/) - Protecting cloud provider metadata services.

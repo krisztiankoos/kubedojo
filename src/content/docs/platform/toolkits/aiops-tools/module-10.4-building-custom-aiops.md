@@ -1,5 +1,6 @@
 ---
 title: "Module 10.4: Building Custom AIOps"
+slug: platform/toolkits/aiops-tools/module-10.4-building-custom-aiops
 sidebar:
   order: 5
   label: "AIOps Tools"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [AIOps Discipline](../../disciplines/aiops/index.md) — Complete conceptual foundation
-- [Module 10.1: Anomaly Detection Tools](module-10.1-anomaly-detection-tools.md) — Detection libraries
+- [AIOps Discipline](../../disciplines/aiops/) — Complete conceptual foundation
+- [Module 10.1: Anomaly Detection Tools](module-10.1-anomaly-detection-tools/) — Detection libraries
 - Python proficiency (pandas, scikit-learn basics)
 - Kubernetes basics (Deployments, Services, ConfigMaps)
 - Basic understanding of Kafka or similar streaming platforms
@@ -1416,6 +1417,6 @@ Congratulations! You've completed the AIOps Tools Toolkit. You now understand:
 - **Building Custom AIOps** — Python + Kafka + Kubernetes pipelines
 
 Continue your learning:
-- [AIOps Discipline](../../disciplines/aiops/index.md) — Deepen conceptual understanding
-- [Observability Toolkit](../observability/index.md) — The data collection layer
-- [SRE Discipline](../../disciplines/sre/index.md) — Apply AIOps to reliability
+- [AIOps Discipline](../../disciplines/aiops/) — Deepen conceptual understanding
+- [Observability Toolkit](../observability/) — The data collection layer
+- [SRE Discipline](../../disciplines/sre/) — Apply AIOps to reliability

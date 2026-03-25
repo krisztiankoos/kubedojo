@@ -1,5 +1,6 @@
 ---
 title: "Module 4.4: Runtime Sandboxing"
+slug: k8s/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing
 sidebar:
   order: 4
   label: "Part 4: Microservice Vulnerabilities"
@@ -600,4 +601,4 @@ You've finished **Minimize Microservice Vulnerabilities** (20% of CKS). You now 
 - Secrets management and encryption
 - Runtime sandboxing with gVisor
 
-**Next Part**: [Part 5: Supply Chain Security](../part5-supply-chain-security/module-5.1-image-security.md) - Securing container images and the software supply chain.
+**Next Part**: [Part 5: Supply Chain Security](../part5-supply-chain-security/module-5.1-image-security/) - Securing container images and the software supply chain.

@@ -1,5 +1,6 @@
 ---
 title: "Module 3.5: Observability Tools"
+slug: k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools
 sidebar:
   order: 6
   label: "Part 3: Cloud Native Architecture"
@@ -423,4 +424,4 @@ You've finished **Cloud Native Architecture** (12% of the exam, including Observ
 - The three pillars of observability: metrics, logs, traces
 - Key tools: Prometheus, Grafana, Fluentd, Jaeger, OpenTelemetry
 
-**Next Part**: [Part 4: Application Delivery](../part4-application-delivery/module-4.1-ci-cd.md) - Continuous Integration, Continuous Delivery, and deployment strategies (16% of the exam).
+**Next Part**: [Part 4: Application Delivery](../part4-application-delivery/module-4.1-ci-cd/) - Continuous Integration, Continuous Delivery, and deployment strategies (16% of the exam).

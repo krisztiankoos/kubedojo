@@ -381,4 +381,4 @@ Key points:
 
 ## Next Module
 
-[Module 5: From Monolith to Microservices](module-5-monolith-to-microservices.md) - Understanding application architecture evolution.
+[Module 5: From Monolith to Microservices](module-5-monolith-to-microservices/) - Understanding application architecture evolution.

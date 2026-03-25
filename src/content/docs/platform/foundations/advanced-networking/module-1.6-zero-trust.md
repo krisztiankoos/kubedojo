@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Zero Trust Networking & VPN Alternatives"
+slug: platform/foundations/advanced-networking/module-1.6-zero-trust
 sidebar:
   order: 7
   label: "Advanced Networking"

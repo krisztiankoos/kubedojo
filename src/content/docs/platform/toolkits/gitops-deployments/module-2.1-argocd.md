@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: ArgoCD"
+slug: platform/toolkits/gitops-deployments/module-2.1-argocd
 sidebar:
   order: 2
   label: "GitOps & Deployments"
@@ -15,7 +16,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [GitOps Discipline](../../disciplines/gitops/index.md) — GitOps principles and practices
+- [GitOps Discipline](../../disciplines/gitops/) — GitOps principles and practices
 - Kubernetes basics (Deployments, Services, Namespaces)
 - Git fundamentals
 - kubectl experience
@@ -1300,7 +1301,7 @@ Before moving on, ensure you can:
 
 ## Next Module
 
-Continue to [Module 2.2: Argo Rollouts](module-2.2-argo-rollouts.md) where we'll implement progressive delivery with canary and blue-green deployments.
+Continue to [Module 2.2: Argo Rollouts](module-2.2-argo-rollouts/) where we'll implement progressive delivery with canary and blue-green deployments.
 
 ---
 

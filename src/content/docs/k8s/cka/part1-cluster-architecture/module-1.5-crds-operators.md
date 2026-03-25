@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: CRDs & Operators - Extending Kubernetes"
+slug: k8s/cka/part1-cluster-architecture/module-1.5-crds-operators
 sidebar:
   order: 6
   label: "Part 1: Cluster Architecture"
@@ -1020,4 +1021,4 @@ kubectl delete crd backups.backup.example.com
 
 ## Next Module
 
-[Module 1.6: RBAC](module-1.6-rbac.md) - Role-Based Access Control for securing your cluster.
+[Module 1.6: RBAC](module-1.6-rbac/) - Role-Based Access Control for securing your cluster.

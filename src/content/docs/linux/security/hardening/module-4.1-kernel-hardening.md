@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: Kernel Hardening & sysctl"
+slug: linux/security/hardening/module-4.1-kernel-hardening
 sidebar:
   order: 2
   label: "Security Hardening"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: Kernel & Architecture](../../foundations/system-essentials/module-1.1-kernel-architecture.md)
-- **Required**: [Module 3.1: TCP/IP Essentials](../../foundations/networking/module-3.1-tcp-ip-essentials.md)
+- **Required**: [Module 1.1: Kernel & Architecture](../../foundations/system-essentials/module-1.1-kernel-architecture/)
+- **Required**: [Module 3.1: TCP/IP Essentials](../../foundations/networking/module-3.1-tcp-ip-essentials/)
 - **Helpful**: Understanding of basic security concepts
 
 ---

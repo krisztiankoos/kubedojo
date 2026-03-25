@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Advanced GPU Scheduling & Sharing"
+slug: platform/disciplines/ai-infrastructure/module-1.2-gpu-scheduling
 sidebar:
   order: 3
   label: "AI Infrastructure"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: GPU Provisioning & Device Plugins](module-1.1-gpu-provisioning.md) — GPU Operator, Device Plugin API, DCGM
+- **Required**: [Module 1.1: GPU Provisioning & Device Plugins](module-1.1-gpu-provisioning/) — GPU Operator, Device Plugin API, DCGM
 - **Required**: Understanding of Kubernetes scheduling (affinity, taints, tolerations, topology)
 - **Recommended**: Familiarity with NVIDIA GPU architectures (Ampere, Hopper)
 - **Recommended**: Access to a cluster with at least one A100 or H100 GPU (for MIG exercises)
@@ -1004,7 +1005,7 @@ GPU sharing is the single highest-leverage optimization a platform team can make
 
 ## Next Module
 
-Continue to [Module 1.3: Distributed Training Infrastructure](module-1.3-distributed-training.md) to learn how to run training jobs across multiple nodes using InfiniBand, NCCL, and Kubernetes operators.
+Continue to [Module 1.3: Distributed Training Infrastructure](module-1.3-distributed-training/) to learn how to run training jobs across multiple nodes using InfiniBand, NCCL, and Kubernetes operators.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 14.5: OpenShift - Enterprise Kubernetes with Batteries Included"
+slug: platform/toolkits/k8s-distributions/module-14.5-openshift
 sidebar:
   order: 6
   label: "K8s Distributions"
@@ -12,10 +13,10 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 14.1: k3s](module-14.1-k3s.md) - Lightweight Kubernetes
-- [Module 14.4: Talos](module-14.4-talos.md) - Immutable infrastructure concepts
+- [Module 14.1: k3s](module-14.1-k3s/) - Lightweight Kubernetes
+- [Module 14.4: Talos](module-14.4-talos/) - Immutable infrastructure concepts
 - Kubernetes fundamentals (CRDs, Operators, RBAC)
-- [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) - IDP concepts
+- [Platform Engineering Discipline](../../disciplines/platform-engineering/) - IDP concepts
 - Understanding of enterprise software requirements
 
 ---
@@ -905,9 +906,9 @@ Most users use oc exclusively.
 
 ## Next Steps
 
-- **Next Module**: [Module 14.6: Managed Kubernetes Comparison](module-14.6-managed-kubernetes.md) — EKS vs GKE vs AKS
-- **Related**: [Platform Engineering Discipline](../../disciplines/platform-engineering/index.md) — Building IDPs
-- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) — Tekton deep dive
+- **Next Module**: [Module 14.6: Managed Kubernetes Comparison](module-14.6-managed-kubernetes/) — EKS vs GKE vs AKS
+- **Related**: [Platform Engineering Discipline](../../disciplines/platform-engineering/) — Building IDPs
+- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Tekton deep dive
 
 ---
 

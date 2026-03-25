@@ -971,4 +971,4 @@ k delete eventbus default -n argo-events
 
 ## Next Module
 
-[Module 3: Argo CD — GitOps Delivery](../../platform/toolkits/gitops-deployments/module-2.1-argocd.md) — Declarative, Git-driven continuous delivery for Kubernetes.
+[Module 3: Argo CD — GitOps Delivery](../../platform/toolkits/gitops-deployments/module-2.1-argocd/) — Declarative, Git-driven continuous delivery for Kubernetes.

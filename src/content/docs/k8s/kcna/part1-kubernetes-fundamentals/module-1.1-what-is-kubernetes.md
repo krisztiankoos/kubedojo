@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: What is Kubernetes?"
+slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes
 sidebar:
   order: 2
   label: "Part 1: K8s Fundamentals"
@@ -309,4 +310,4 @@ This flexibility is a key advantage—no vendor lock-in.
 
 ## Next Module
 
-[Module 1.2: Container Fundamentals](module-1.2-container-fundamentals.md) - Understanding containers before diving into Kubernetes architecture.
+[Module 1.2: Container Fundamentals](module-1.2-container-fundamentals/) - Understanding containers before diving into Kubernetes architecture.

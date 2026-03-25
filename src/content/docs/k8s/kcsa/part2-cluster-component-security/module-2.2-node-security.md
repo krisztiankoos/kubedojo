@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: Node Security"
+slug: k8s/kcsa/part2-cluster-component-security/module-2.2-node-security
 sidebar:
   order: 3
   label: "Part 2: Cluster Component Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 2.1: Control Plane Security](module-2.1-control-plane-security.md)
+> **Prerequisites**: [Module 2.1: Control Plane Security](module-2.1-control-plane-security/)
 
 ---
 
@@ -442,4 +443,4 @@ Key concepts:
 
 ## Next Module
 
-[Module 2.3: Network Security](module-2.3-network-security.md) - CNI plugins, service mesh security, and network-level controls.
+[Module 2.3: Network Security](module-2.3-network-security/) - CNI plugins, service mesh security, and network-level controls.

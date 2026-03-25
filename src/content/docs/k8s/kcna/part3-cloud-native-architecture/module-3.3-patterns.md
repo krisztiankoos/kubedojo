@@ -1,5 +1,6 @@
 ---
 title: "Module 3.3: Cloud Native Patterns"
+slug: k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns
 sidebar:
   order: 4
   label: "Part 3: Cloud Native Architecture"
@@ -410,4 +411,4 @@ Beyond basic concepts, cloud native includes patterns for solving complex proble
 
 ## Next Module
 
-[Module 3.4: Observability Fundamentals](module-3.4-observability-fundamentals.md) - Understanding the three pillars of observability: metrics, logs, and traces.
+[Module 3.4: Observability Fundamentals](module-3.4-observability-fundamentals/) - Understanding the three pillars of observability: metrics, logs, and traces.

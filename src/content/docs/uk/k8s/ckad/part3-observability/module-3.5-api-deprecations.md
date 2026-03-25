@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.5: \u0417\u0430\u0441\u0442\u0430\u0440\u0456\u0432\u0430\u043d\u043d\u044f API"
+slug: uk/k8s/ckad/part3-observability/module-3.5-api-deprecations
 sidebar:
   order: 5
   label: "Part 3: Observability"
@@ -424,4 +425,4 @@ done
 
 ## Наступні кроки
 
-Пройдіть [Кумулятивний тест Частини 3](part3-cumulative-quiz.md), щоб перевірити своє розуміння, а потім переходьте до [Частина 4: Середовище, конфігурація та безпека застосунків](../part4-environment/module-4.1-configmaps.md).
+Пройдіть [Кумулятивний тест Частини 3](part3-cumulative-quiz/), щоб перевірити своє розуміння, а потім переходьте до [Частина 4: Середовище, конфігурація та безпека застосунків](../part4-environment/module-4.1-configmaps/).

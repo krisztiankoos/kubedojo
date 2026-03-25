@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: CI/CD Fundamentals"
+slug: k8s/kcna/part4-application-delivery/module-4.1-ci-cd
 sidebar:
   order: 2
   label: "Part 4: Application Delivery"
@@ -400,4 +401,4 @@ Source → Build → Test → Package → Deploy
 
 ## Next Module
 
-[Module 4.2: Application Packaging](module-4.2-application-packaging.md) - Helm, Kustomize, and other tools for packaging Kubernetes applications.
+[Module 4.2: Application Packaging](module-4.2-application-packaging/) - Helm, Kustomize, and other tools for packaging Kubernetes applications.

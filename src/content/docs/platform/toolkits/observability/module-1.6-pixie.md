@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Pixie - Zero-Instrumentation Observability"
+slug: platform/toolkits/observability/module-1.6-pixie
 sidebar:
   order: 7
   label: "Observability"
@@ -744,4 +745,4 @@ eBPF programs run very efficiently in the kernel. The typical overhead is around
 
 ## Next Module
 
-Continue to [Module 1.7: Hubble - Network Observability with Cilium](module-1.7-hubble.md) to learn about eBPF-based network observability and visualization.
+Continue to [Module 1.7: Hubble - Network Observability with Cilium](module-1.7-hubble/) to learn about eBPF-based network observability and visualization.

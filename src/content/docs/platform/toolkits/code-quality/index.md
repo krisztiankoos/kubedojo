@@ -10,12 +10,12 @@ sidebar:
 
 The Code Quality & Security Scanning Toolkit covers the shift-left revolution—catching bugs, vulnerabilities, and misconfigurations before they reach production. From SonarQube's technical debt visualization to Semgrep's developer-friendly security rules, these tools transform security from a gate to a guardrail.
 
-This toolkit applies concepts from [DevSecOps Discipline](../../disciplines/devsecops/index.md) and integrates with [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md).
+This toolkit applies concepts from [DevSecOps Discipline](../../disciplines/devsecops/) and integrates with [CI/CD Pipelines Toolkit](../ci-cd-pipelines/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - Security integration concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) - Security integration concepts
 - Basic CI/CD understanding
 - Programming experience in at least one language
 - Understanding of common vulnerability types (OWASP Top 10)
@@ -24,11 +24,11 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 12.1 | [SonarQube](module-12.1-sonarqube.md) | `[COMPLEX]` | 50-60 min |
-| 12.2 | [Semgrep](module-12.2-semgrep.md) | `[MEDIUM]` | 45-50 min |
-| 12.3 | [CodeQL](module-12.3-codeql.md) | `[COMPLEX]` | 50-60 min |
-| 12.4 | [Snyk](module-12.4-snyk.md) | `[MEDIUM]` | 40-45 min |
-| 12.5 | [Checkov & Trivy](module-12.5-trivy.md) | `[MEDIUM]` | 40-45 min |
+| 12.1 | [SonarQube](module-12.1-sonarqube/) | `[COMPLEX]` | 50-60 min |
+| 12.2 | [Semgrep](module-12.2-semgrep/) | `[MEDIUM]` | 45-50 min |
+| 12.3 | [CodeQL](module-12.3-codeql/) | `[COMPLEX]` | 50-60 min |
+| 12.4 | [Snyk](module-12.4-snyk/) | `[MEDIUM]` | 40-45 min |
+| 12.5 | [Checkov & Trivy](module-12.5-trivy/) | `[MEDIUM]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -429,10 +429,10 @@ $100k+: Full enterprise stack
 
 ## Related Tracks
 
-- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/index.md) — Security concepts
-- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) — Pipeline integration
-- **Related**: [Source Control Toolkit](../source-control/index.md) — GitLab/GitHub security features
-- **After**: [Container Registries Toolkit](../container-registries/index.md) — Image security
+- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/) — Security concepts
+- **Related**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Pipeline integration
+- **Related**: [Source Control Toolkit](../source-control/) — GitLab/GitHub security features
+- **After**: [Container Registries Toolkit](../container-registries/) — Image security
 
 ---
 

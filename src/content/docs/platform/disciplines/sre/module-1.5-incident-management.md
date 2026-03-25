@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: Incident Management"
+slug: platform/disciplines/sre/module-1.5-incident-management
 sidebar:
   order: 6
   label: "SRE"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: What is SRE?](module-1.1-what-is-sre.md) — Understanding SRE fundamentals
-- **Required**: [Module 1.2: SLOs](module-1.2-slos.md) — Understanding service levels
-- **Recommended**: [Observability Theory Track](../../foundations/observability-theory/index.md) — Monitoring and debugging
+- **Required**: [Module 1.1: What is SRE?](module-1.1-what-is-sre/) — Understanding SRE fundamentals
+- **Required**: [Module 1.2: SLOs](module-1.2-slos/) — Understanding service levels
+- **Recommended**: [Observability Theory Track](../../foundations/observability-theory/) — Monitoring and debugging
 
 ---
 
@@ -913,7 +914,7 @@ Without it, incidents are chaos. With it, incidents are manageable.
 
 ## Next Module
 
-Continue to [Module 1.6: Postmortems and Learning](module-1.6-postmortems.md) to learn how to learn from incidents and prevent recurrence.
+Continue to [Module 1.6: Postmortems and Learning](module-1.6-postmortems/) to learn how to learn from incidents and prevent recurrence.
 
 ---
 

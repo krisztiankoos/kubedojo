@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.3: \u0417\u0431\u043e\u0457 \u043f\u043b\u043e\u0449\u0438\u043d\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0456\u043d\u043d\u044f"
+slug: uk/k8s/cka/part5-troubleshooting/module-5.3-control-plane
 sidebar:
   order: 4
   label: "Part 5: Troubleshooting"
@@ -782,4 +783,4 @@ curl -k https://localhost:6443/healthz
 
 ## Наступний модуль
 
-Переходьте до [Модуль 5.4: Збої робочих вузлів](module-5.4-worker-nodes.md), щоб навчитися усувати несправності kubelet, container runtime та проблеми на рівні вузлів.
+Переходьте до [Модуль 5.4: Збої робочих вузлів](module-5.4-worker-nodes/), щоб навчитися усувати несправності kubelet, container runtime та проблеми на рівні вузлів.

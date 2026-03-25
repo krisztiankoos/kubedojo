@@ -1,5 +1,6 @@
 ---
 title: "Module 4.5: Threat Modeling & Supply Chain Theory"
+slug: k8s/kcsa/part4-threat-model/module-4.5-threat-modeling-supply-chain-theory
 sidebar:
   order: 6
   label: "Part 4: Threat Model"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 4.1: Attack Surfaces](module-4.1-attack-surfaces.md), [Module 4.4: Supply Chain Threats](module-4.4-supply-chain.md)
+> **Prerequisites**: [Module 4.1: Attack Surfaces](module-4.1-attack-surfaces/), [Module 4.4: Supply Chain Threats](module-4.4-supply-chain/)
 
 ---
 
@@ -510,4 +511,4 @@ The goal isn't to eliminate all risk — it's to know exactly where your risks a
 
 ## Next Module
 
-[Module 5.1: Image Security](../part5-platform-security/module-5.1-image-security.md) - Securing container images through the lifecycle.
+[Module 5.1: Image Security](../part5-platform-security/module-5.1-image-security/) - Securing container images through the lifecycle.

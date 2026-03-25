@@ -1,5 +1,6 @@
 ---
 title: "Module 3.8: AI/ML on Cloud Native Infrastructure"
+slug: k8s/kcna/part3-cloud-native-architecture/module-3.8-ai-ml-cloud-native
 sidebar:
   order: 9
   label: "Part 3: Cloud Native Architecture"
@@ -299,4 +300,4 @@ D) Scheduling GPUs across different time zones
 
 ## Next Module
 
-[Module 3.9: WebAssembly and Cloud Native](module-3.9-webassembly.md) - The emerging technology that could complement (or sometimes replace) containers.
+[Module 3.9: WebAssembly and Cloud Native](module-3.9-webassembly/) - The emerging technology that could complement (or sometimes replace) containers.

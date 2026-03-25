@@ -692,4 +692,4 @@ az group delete --name "$RG" --yes --no-wait
 
 ## Next Module
 
-[Module 5: Azure DNS & Traffic Manager](module-5-dns.md) --- Learn how Azure handles DNS resolution for both public and private zones, and how Traffic Manager and Front Door route traffic across regions for high availability.
+[Module 5: Azure DNS & Traffic Manager](module-5-dns/) --- Learn how Azure handles DNS resolution for both public and private zones, and how Traffic Manager and Front Door route traffic across regions for high availability.

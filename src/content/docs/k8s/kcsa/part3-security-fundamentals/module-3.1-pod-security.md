@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: Pod Security"
+slug: k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security
 sidebar:
   order: 2
   label: "Part 3: Security Fundamentals"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 2.4: PKI and Certificates](../part2-cluster-component-security/module-2.4-pki-certificates.md)
+> **Prerequisites**: [Module 2.4: PKI and Certificates](../part2-cluster-component-security/module-2.4-pki-certificates/)
 
 ---
 
@@ -516,4 +517,4 @@ Pod Security Standards:
 
 ## Next Module
 
-[Module 3.2: RBAC Fundamentals](module-3.2-rbac.md) - Role-based access control for Kubernetes authorization.
+[Module 3.2: RBAC Fundamentals](module-3.2-rbac/) - Role-based access control for Kubernetes authorization.

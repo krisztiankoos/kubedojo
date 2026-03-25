@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: What is Systems Thinking?"
+slug: platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking
 sidebar:
   order: 2
   label: "Systems Thinking"
@@ -800,7 +801,7 @@ Apply the iceberg model:
 
 ## Next Module
 
-[Module 1.2: Feedback Loops](module-1.2-feedback-loops.md) — Understanding reinforcing and balancing feedback, and why your autoscaler sometimes makes things worse.
+[Module 1.2: Feedback Loops](module-1.2-feedback-loops/) — Understanding reinforcing and balancing feedback, and why your autoscaler sometimes makes things worse.
 
 ---
 

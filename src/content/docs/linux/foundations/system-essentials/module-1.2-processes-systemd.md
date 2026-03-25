@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Processes & systemd"
+slug: linux/foundations/system-essentials/module-1.2-processes-systemd
 sidebar:
   order: 3
   label: "System Essentials"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: Kernel & Architecture](module-1.1-kernel-architecture.md)
+- **Required**: [Module 1.1: Kernel & Architecture](module-1.1-kernel-architecture/)
 - **Helpful**: Have a Linux system available (VM, WSL, or native)
 
 ---

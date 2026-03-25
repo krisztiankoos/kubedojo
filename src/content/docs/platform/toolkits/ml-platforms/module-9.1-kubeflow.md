@@ -1,5 +1,6 @@
 ---
 title: "Module 9.1: Kubeflow"
+slug: platform/toolkits/ml-platforms/module-9.1-kubeflow
 sidebar:
   order: 2
   label: "ML Platforms"
@@ -21,7 +22,7 @@ Kubeflow brings machine learning workflows to Kubernetes. It's not a single tool
 - Kubernetes fundamentals
 - Basic ML concepts (training, inference)
 - Python familiarity
-- [MLOps Discipline](../../disciplines/mlops/index.md) recommended
+- [MLOps Discipline](../../disciplines/mlops/) recommended
 
 ---
 
@@ -802,7 +803,7 @@ Add a third component that takes the processed message and writes it to a file a
 
 ## Next Module
 
-Continue to [Module 9.2: MLflow](module-9.2-mlflow.md) to learn about experiment tracking and model registry.
+Continue to [Module 9.2: MLflow](module-9.2-mlflow/) to learn about experiment tracking and model registry.
 
 ---
 

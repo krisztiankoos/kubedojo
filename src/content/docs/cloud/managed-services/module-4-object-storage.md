@@ -1009,4 +1009,4 @@ kind delete cluster --name storage-lab
 
 ---
 
-**Next Module**: [Module 5: Advanced Caching Services (ElastiCache / Memorystore)](module-5-caching.md) -- Learn Redis and Memcached architectures for Kubernetes workloads, caching strategies, cache stampede prevention, and using Envoy as a sidecar cache.
+**Next Module**: [Module 5: Advanced Caching Services (ElastiCache / Memorystore)](module-5-caching/) -- Learn Redis and Memcached architectures for Kubernetes workloads, caching strategies, cache stampede prevention, and using Envoy as a sidecar cache.

@@ -1,5 +1,6 @@
 ---
 title: "Module 4.4: SecurityContexts"
+slug: k8s/ckad/part4-environment/module-4.4-securitycontext
 sidebar:
   order: 4
   label: "Part 4: Environment"
@@ -569,4 +570,4 @@ k delete pod drill6
 
 ## Next Module
 
-[Module 4.5: ServiceAccounts](module-4.5-serviceaccounts.md) - Configure pod identities for API access.
+[Module 4.5: ServiceAccounts](module-4.5-serviceaccounts/) - Configure pod identities for API access.

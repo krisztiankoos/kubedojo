@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.4: \u0417\u043d\u0456\u043c\u043a\u0438 \u0442\u043e\u043c\u0456\u0432 \u0442\u0430 \u043a\u043b\u043e\u043d\u0443\u0432\u0430\u043d\u043d\u044f"
+slug: uk/k8s/cka/part4-storage/module-4.4-snapshots
 sidebar:
   order: 5
   label: "Part 4: Storage"
@@ -715,4 +716,4 @@ k get volumesnapshot <name> -o jsonpath='{.status.boundVolumeSnapshotContentName
 
 ## Наступний модуль
 
-Переходьте до [Модуль 4.5: Усунення несправностей зберігання](module-4.5-troubleshooting.md), щоб дізнатися, як діагностувати та виправляти типові проблеми зберігання.
+Переходьте до [Модуль 4.5: Усунення несправностей зберігання](module-4.5-troubleshooting/), щоб дізнатися, як діагностувати та виправляти типові проблеми зберігання.

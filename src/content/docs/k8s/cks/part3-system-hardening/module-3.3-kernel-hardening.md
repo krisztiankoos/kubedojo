@@ -1,5 +1,6 @@
 ---
 title: "Module 3.3: Linux Kernel and OS Hardening"
+slug: k8s/cks/part3-system-hardening/module-3.3-kernel-hardening
 sidebar:
   order: 3
   label: "Part 3: System Hardening"
@@ -601,4 +602,4 @@ echo "5. ✓ seccompProfile applies syscall filtering"
 
 ## Next Module
 
-[Module 3.4: Network Security](module-3.4-network-security.md) - Host-level network hardening.
+[Module 3.4: Network Security](module-3.4-network-security/) - Host-level network hardening.

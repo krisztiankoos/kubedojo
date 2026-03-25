@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: Control Groups (cgroups)"
+slug: linux/foundations/container-primitives/module-2.2-cgroups
 sidebar:
   order: 3
   label: "Container Primitives"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.1: Linux Namespaces](module-2.1-namespaces.md)
+- **Required**: [Module 2.1: Linux Namespaces](module-2.1-namespaces/)
 - **Helpful**: Understanding of CPU and memory concepts
 
 ---

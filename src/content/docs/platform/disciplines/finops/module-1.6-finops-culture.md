@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: FinOps Culture & Automation"
+slug: platform/disciplines/finops/module-1.6-finops-culture
 sidebar:
   order: 7
   label: "FinOps"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.5: Storage & Network Cost Management](module-1.5-storage-network-costs.md) — Completing the technical FinOps modules
+- **Required**: [Module 1.5: Storage & Network Cost Management](module-1.5-storage-network-costs/) — Completing the technical FinOps modules
 - **Required**: Understanding of CI/CD pipelines (GitHub Actions, GitLab CI, or similar)
 - **Required**: Basic Terraform familiarity (for Infracost exercise)
 - **Recommended**: Experience with Infrastructure as Code workflows
@@ -993,10 +994,10 @@ Technical FinOps without cultural FinOps is a project. Technical FinOps *with* c
 
 You've completed the FinOps discipline track. To continue your learning:
 
-- **Review the [FinOps README](index.md)** for a summary of all modules and additional resources
+- **Review the [FinOps README]()** for a summary of all modules and additional resources
 - **Apply what you've learned** — start with Module 1.1's exercise on your own cloud bill
 - **Join the FinOps Foundation** at finops.org for community, certifications, and frameworks
-- **Explore related disciplines**: [SRE](../sre/index.md), [Platform Engineering](../platform-engineering/index.md), [GitOps](../gitops/index.md)
+- **Explore related disciplines**: [SRE](../sre/), [Platform Engineering](../platform-engineering/), [GitOps](../gitops/)
 
 ---
 

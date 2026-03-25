@@ -1,5 +1,6 @@
 ---
 title: "Module 5.7: Logging & Monitoring"
+slug: k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring
 sidebar:
   order: 8
   label: "Part 5: Troubleshooting"
@@ -870,4 +871,4 @@ With 30% of the CKA exam weight, troubleshooting is critical. Practice the drill
 
 ## Next Steps
 
-Continue to [Part 6: Mock Exams](../part6-mock-exams/index.md) to test your knowledge with realistic exam scenarios.
+Continue to [Part 6: Mock Exams](../part6-mock-exams/) to test your knowledge with realistic exam scenarios.

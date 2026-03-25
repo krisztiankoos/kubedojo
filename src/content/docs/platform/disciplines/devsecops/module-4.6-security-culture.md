@@ -1,5 +1,6 @@
 ---
 title: "Module 4.6: Security Culture and Automation"
+slug: platform/disciplines/devsecops/module-4.6-security-culture
 sidebar:
   order: 8
   label: "DevSecOps"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 4.5: Runtime Security](module-4.5-runtime-security.md) — Completed DevSecOps technical modules
+- **Required**: [Module 4.5: Runtime Security](module-4.5-runtime-security/) — Completed DevSecOps technical modules
 - **Required**: Experience working with development teams
 - **Recommended**: Basic understanding of organizational change
 - **Helpful**: Exposure to incident management
@@ -1241,7 +1242,7 @@ The goal is a world where security is "how we build," not "what blocks us."
 - Apply these concepts to your organization
 - Start a security champions program
 - Implement the metrics discussed
-- Continue to the [DevSecOps Toolkit](../../toolkits/security-tools/index.md) for hands-on tool implementations
+- Continue to the [DevSecOps Toolkit](../../toolkits/security-tools/) for hands-on tool implementations
 
 ---
 

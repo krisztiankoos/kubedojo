@@ -1,5 +1,6 @@
 ---
 title: "Module 1.6: Mentorship & Multiplying Impact"
+slug: platform/foundations/engineering-leadership/module-1.6-mentorship
 sidebar:
   order: 7
   label: "Engineering Leadership"
@@ -946,7 +947,7 @@ This function deletes user records with no dry-run mode, no logging, no backup, 
 
 ## Next Module
 
-Return to the [Engineering Leadership README](index.md) for the full module index and learning path.
+Return to the [Engineering Leadership README]() for the full module index and learning path.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: DNS at Scale & Global Traffic Management"
+slug: platform/foundations/advanced-networking/module-1.1-dns-at-scale
 sidebar:
   order: 2
   label: "Advanced Networking"
@@ -1358,4 +1359,4 @@ Before moving on, ensure you understand:
 
 ## Next Module
 
-[Module 1.2: CDN & Edge Computing](module-1.2-cdn-edge.md) — How content delivery networks minimize latency by caching at the edge, and how edge compute is changing application architecture.
+[Module 1.2: CDN & Edge Computing](module-1.2-cdn-edge/) — How content delivery networks minimize latency by caching at the edge, and how edge compute is changing application architecture.

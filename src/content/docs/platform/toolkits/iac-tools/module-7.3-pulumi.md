@@ -1,5 +1,6 @@
 ---
 title: "Module 7.3: Pulumi - Infrastructure as Real Code"
+slug: platform/toolkits/iac-tools/module-7.3-pulumi
 sidebar:
   order: 4
   label: "IaC Tools"
@@ -12,7 +13,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals.md) - Core IaC concepts
+- [Module 6.1: IaC Fundamentals](../../disciplines/iac/module-6.1-iac-fundamentals/) - Core IaC concepts
 - Basic programming experience (Python, TypeScript, Go, or C#)
 
 ---
@@ -1108,4 +1109,4 @@ pulumi stack output
 
 ## Next Module
 
-Continue to [Module 7.4: Ansible](module-7.4-ansible.md) to learn about configuration management and the differences between infrastructure provisioning and configuration management.
+Continue to [Module 7.4: Ansible](module-7.4-ansible/) to learn about configuration management and the differences between infrastructure provisioning and configuration management.

@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.7: \u041e\u0441\u043d\u043e\u0432\u0438 kubeadm \u2014 \u041f\u043e\u0447\u0430\u0442\u043a\u043e\u0432\u0435 \u043d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u043d\u043d\u044f \u043a\u043b\u0430\u0441\u0442\u0435\u0440\u0430"
+slug: uk/k8s/cka/part1-cluster-architecture/module-1.7-kubeadm
 sidebar:
   order: 8
   label: "Part 1: Cluster Architecture"
@@ -897,20 +898,20 @@ kubectl delete deployment maint-test
 
 | Модуль | Тема | Ключові навички |
 |--------|------|----------------|
-| [1.1](module-1.1-control-plane.md) | Глибоке занурення в площину управління | Ролі компонентів, усунення неполадок, статичні Поди |
-| [1.2](module-1.2-extension-interfaces.md) | Інтерфейси розширення | CNI/CSI/CRI, crictl, усунення неполадок плагінів |
-| [1.3](module-1.3-helm.md) | Helm | Встановлення, оновлення, відкат, values |
-| [1.4](module-1.4-kustomize.md) | Kustomize | Base/overlay, патчі, `kubectl -k` |
-| [1.5](module-1.5-crds-operators.md) | CRDs та Operators | Створення CRDs, управління користувацькими ресурсами |
-| [1.6](module-1.6-rbac.md) | RBAC | Roles, bindings, ServiceAccounts, `can-i` |
-| [1.7](module-1.7-kubeadm.md) | Основи kubeadm | Init, join, cordon, drain, токени |
+| [1.1](module-1.1-control-plane/) | Глибоке занурення в площину управління | Ролі компонентів, усунення неполадок, статичні Поди |
+| [1.2](module-1.2-extension-interfaces/) | Інтерфейси розширення | CNI/CSI/CRI, crictl, усунення неполадок плагінів |
+| [1.3](module-1.3-helm/) | Helm | Встановлення, оновлення, відкат, values |
+| [1.4](module-1.4-kustomize/) | Kustomize | Base/overlay, патчі, `kubectl -k` |
+| [1.5](module-1.5-crds-operators/) | CRDs та Operators | Створення CRDs, управління користувацькими ресурсами |
+| [1.6](module-1.6-rbac/) | RBAC | Roles, bindings, ServiceAccounts, `can-i` |
+| [1.7](module-1.7-kubeadm/) | Основи kubeadm | Init, join, cordon, drain, токени |
 
-**Перед тим як рухатися далі**: Пройдіть [Кумулятивний тест Частини 1](part1-cumulative-quiz.md), щоб перевірити засвоєння матеріалу.
+**Перед тим як рухатися далі**: Пройдіть [Кумулятивний тест Частини 1](part1-cumulative-quiz/), щоб перевірити засвоєння матеріалу.
 
 ---
 
 ## Наступні кроки
 
-Переходьте до [Частини 2: Навантаження та планування](../part2-workloads-scheduling/index.md) — Навчіться розгортати та управляти застосунками.
+Переходьте до [Частини 2: Навантаження та планування](../part2-workloads-scheduling/) — Навчіться розгортати та управляти застосунками.
 
 Ця частина охоплює 15% іспиту і безпосередньо базується на тому, що ви вивчили про архітектуру кластера.

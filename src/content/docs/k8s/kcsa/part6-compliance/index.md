@@ -10,9 +10,9 @@ This part covers compliance requirements and security frameworks relevant to Kub
 
 | Module | Topic | Complexity | Time |
 |--------|-------|------------|------|
-| [6.1](module-6.1-compliance-frameworks.md) | Compliance Frameworks | Medium | 25-30 min |
-| [6.2](module-6.2-cis-benchmarks.md) | CIS Benchmarks | Medium | 25-30 min |
-| [6.3](module-6.3-security-assessments.md) | Security Assessments | Medium | 25-30 min |
+| [6.1](module-6.1-compliance-frameworks/) | Compliance Frameworks | Medium | 25-30 min |
+| [6.2](module-6.2-cis-benchmarks/) | CIS Benchmarks | Medium | 25-30 min |
+| [6.3](module-6.3-security-assessments/) | Security Assessments | Medium | 25-30 min |
 
 ## What You'll Learn
 
@@ -31,8 +31,8 @@ This part covers the **Compliance and Security Frameworks (10%)** domain:
 
 ## Prerequisites
 
-Complete [Part 5: Platform Security](../part5-platform-security/index.md) before starting this part.
+Complete [Part 5: Platform Security](../part5-platform-security/) before starting this part.
 
 ---
 
-[← Part 5: Platform Security](../part5-platform-security/index.md) | [Back to KCSA Overview](../index.md)
+[← Part 5: Platform Security](../part5-platform-security/) | [Back to KCSA Overview](../)

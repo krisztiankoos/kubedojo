@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.1: \u041e\u0431\u0440\u0430\u0437\u0438 \u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440\u0456\u0432"
+slug: uk/k8s/ckad/part1-design-build/module-1.1-container-images
 sidebar:
   order: 1
   label: "Part 1: Design & Build"
@@ -657,4 +658,4 @@ k delete deploy webapp
 
 ## Наступний модуль
 
-[Модуль 1.2: Jobs та CronJobs](module-1.2-jobs-cronjobs.md) — Запуск одноразових та запланованих пакетних завдань.
+[Модуль 1.2: Jobs та CronJobs](module-1.2-jobs-cronjobs/) — Запуск одноразових та запланованих пакетних завдань.

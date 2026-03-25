@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: The 4 Cs of Cloud Native Security"
+slug: k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs
 sidebar:
   order: 2
   label: "Part 1: Cloud Native Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 0.2: Security Mindset](../part0-introduction/module-0.2-security-mindset.md)
+> **Prerequisites**: [Module 0.2: Security Mindset](../part0-introduction/module-0.2-security-mindset/)
 
 ---
 
@@ -462,4 +463,4 @@ Key principles:
 
 ## Next Module
 
-[Module 1.2: Cloud Provider Security](module-1.2-cloud-provider-security.md) - Deep dive into the Cloud layer, shared responsibility, and infrastructure security.
+[Module 1.2: Cloud Provider Security](module-1.2-cloud-provider-security/) - Deep dive into the Cloud layer, shared responsibility, and infrastructure security.

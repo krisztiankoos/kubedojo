@@ -386,4 +386,4 @@ kind get clusters
 
 ## Наступний модуль
 
-[Модуль 2: Основи kubectl](module-2-kubectl-basics.md) — ваш інтерфейс командного рядка до Kubernetes.
+[Модуль 2: Основи kubectl](module-2-kubectl-basics/) — ваш інтерфейс командного рядка до Kubernetes.

@@ -1,5 +1,6 @@
 ---
 title: "Module 5.3: Runtime Security"
+slug: k8s/kcsa/part5-platform-security/module-5.3-runtime-security
 sidebar:
   order: 4
   label: "Part 5: Platform Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 5.2: Security Observability](module-5.2-observability.md)
+> **Prerequisites**: [Module 5.2: Security Observability](module-5.2-observability/)
 
 ---
 
@@ -694,4 +695,4 @@ Key principles:
 
 ## Next Module
 
-[Module 5.4: Security Tooling](module-5.4-security-tooling.md) - Overview of security tools in the Kubernetes ecosystem.
+[Module 5.4: Security Tooling](module-5.4-security-tooling/) - Overview of security tools in the Kubernetes ecosystem.

@@ -1,5 +1,6 @@
 ---
 title: "Module 4.1: DevSecOps Fundamentals"
+slug: platform/disciplines/devsecops/module-4.1-devsecops-fundamentals
 sidebar:
   order: 2
   label: "DevSecOps"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Security Principles Track](../../foundations/security-principles/index.md) — Defense in depth, least privilege
+- **Required**: [Security Principles Track](../../foundations/security-principles/) — Defense in depth, least privilege
 - **Required**: Basic CI/CD concepts (build, test, deploy pipelines)
-- **Recommended**: [GitOps Track](../gitops/index.md) — Modern deployment practices
+- **Recommended**: [GitOps Track](../gitops/) — Modern deployment practices
 - **Helpful**: Experience with security scanning tools
 
 ---
@@ -831,7 +832,7 @@ The shift from "security reviews code" to "developers own security" requires cul
 
 ## Next Module
 
-Continue to [Module 4.2: Shift-Left Security](module-4.2-shift-left-security.md) to learn specific techniques for catching vulnerabilities early in development.
+Continue to [Module 4.2: Shift-Left Security](module-4.2-shift-left-security/) to learn specific techniques for catching vulnerabilities early in development.
 
 ---
 

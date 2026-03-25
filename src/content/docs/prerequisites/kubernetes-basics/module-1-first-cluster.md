@@ -386,4 +386,4 @@ You're ready to start working with Kubernetes!
 
 ## Next Module
 
-[Module 2: kubectl Basics](module-2-kubectl-basics.md) - Your command-line interface to Kubernetes.
+[Module 2: kubectl Basics](module-2-kubectl-basics/) - Your command-line interface to Kubernetes.

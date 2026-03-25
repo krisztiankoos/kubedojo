@@ -1,5 +1,6 @@
 ---
 title: "Module 4.2: Pod Security Admission (PSA)"
+slug: k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission
 sidebar:
   order: 2
   label: "Part 4: Microservice Vulnerabilities"
@@ -533,4 +534,4 @@ kubectl delete namespace psa-test
 
 ## Next Module
 
-[Module 4.3: Secrets Management](module-4.3-secrets-management.md) - Securing Kubernetes secrets.
+[Module 4.3: Secrets Management](module-4.3-secrets-management/) - Securing Kubernetes secrets.

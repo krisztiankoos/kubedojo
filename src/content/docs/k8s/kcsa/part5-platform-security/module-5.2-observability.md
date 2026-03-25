@@ -1,5 +1,6 @@
 ---
 title: "Module 5.2: Security Observability"
+slug: k8s/kcsa/part5-platform-security/module-5.2-observability
 sidebar:
   order: 3
   label: "Part 5: Platform Security"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 5.1: Image Security](module-5.1-image-security.md)
+> **Prerequisites**: [Module 5.1: Image Security](module-5.1-image-security/)
 
 ---
 
@@ -595,4 +596,4 @@ Key principles:
 
 ## Next Module
 
-[Module 5.3: Runtime Security](module-5.3-runtime-security.md) - Enforcing security policies at runtime.
+[Module 5.3: Runtime Security](module-5.3-runtime-security/) - Enforcing security policies at runtime.

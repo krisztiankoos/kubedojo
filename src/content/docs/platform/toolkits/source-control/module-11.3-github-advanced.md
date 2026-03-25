@@ -1,5 +1,6 @@
 ---
 title: "Module 11.3: GitHub Advanced - Beyond Basic Git Hosting"
+slug: platform/toolkits/source-control/module-11.3-github-advanced
 sidebar:
   order: 4
   label: "Source Control"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) - Security scanning concepts
-- [GitOps Discipline](../../disciplines/gitops/index.md) - Git-centric workflows
+- [DevSecOps Discipline](../../disciplines/devsecops/) - Security scanning concepts
+- [GitOps Discipline](../../disciplines/gitops/) - Git-centric workflows
 - Basic GitHub experience (repos, PRs, issues)
 - Understanding of CI/CD fundamentals
 
@@ -1183,9 +1184,9 @@ When GitHub detects a secret (like an AWS key or Stripe API key), it notifies th
 
 ## Next Steps
 
-- **Related**: [Module 12.3: CodeQL](../code-quality/module-12.3-codeql.md) - Deep dive into query writing
-- **Related**: [Module 4.4: Supply Chain Security](../security-tools/module-4.4-supply-chain.md) - SBOM and signing
-- **Related**: [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd.md) - GitOps deployments from GitHub
+- **Related**: [Module 12.3: CodeQL](../code-quality/module-12.3-codeql/) - Deep dive into query writing
+- **Related**: [Module 4.4: Supply Chain Security](../security-tools/module-4.4-supply-chain/) - SBOM and signing
+- **Related**: [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd/) - GitOps deployments from GitHub
 
 ---
 

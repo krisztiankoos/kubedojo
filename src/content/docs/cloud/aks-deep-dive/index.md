@@ -13,10 +13,10 @@ AKS is the fastest-growing managed Kubernetes service, tightly integrated with t
 
 | # | Module | Time | What You'll Learn |
 |---|--------|------|-------------------|
-| 1 | [AKS Architecture & Node Management](module-1-aks-architecture.md) | 2h | System/user node pools, VMSS, availability zones, Entra ID RBAC |
-| 2 | [AKS Advanced Networking](module-2-aks-networking.md) | 3.5h | Kubenet vs Azure CNI vs Overlay vs Cilium, network policies, Private Link |
-| 3 | [AKS Workload Identity & Security](module-3-aks-identity.md) | 1.5h | Entra Workload Identity, Secrets Store CSI, Azure Policy, Defender |
-| 4 | [AKS Storage, Observability & Scaling](module-4-aks-production.md) | 2.5h | Azure Disks/Files, Container Insights, Managed Prometheus, KEDA |
+| 1 | [AKS Architecture & Node Management](module-1-aks-architecture/) | 2h | System/user node pools, VMSS, availability zones, Entra ID RBAC |
+| 2 | [AKS Advanced Networking](module-2-aks-networking/) | 3.5h | Kubenet vs Azure CNI vs Overlay vs Cilium, network policies, Private Link |
+| 3 | [AKS Workload Identity & Security](module-3-aks-identity/) | 1.5h | Entra Workload Identity, Secrets Store CSI, Azure Policy, Defender |
+| 4 | [AKS Storage, Observability & Scaling](module-4-aks-production/) | 2.5h | Azure Disks/Files, Container Insights, Managed Prometheus, KEDA |
 
 **Total time**: ~9.5 hours
 
@@ -24,9 +24,9 @@ AKS is the fastest-growing managed Kubernetes service, tightly integrated with t
 
 ## Prerequisites
 
-- [Azure DevOps Essentials](../azure-essentials/index.md) -- Entra ID, VNets, VMs, Storage fundamentals
-- [Cloud Architecture Patterns](../architecture-patterns/index.md) -- managed K8s trade-offs, multi-cluster, IAM integration
+- [Azure DevOps Essentials](../azure-essentials/) -- Entra ID, VNets, VMs, Storage fundamentals
+- [Cloud Architecture Patterns](../architecture-patterns/) -- managed K8s trade-offs, multi-cluster, IAM integration
 
 ## What's Next
 
-After AKS Deep Dive, explore multi-cloud patterns or the [Platform Engineering Track](../../platform/index.md).
+After AKS Deep Dive, explore multi-cloud patterns or the [Platform Engineering Track](../../platform/).

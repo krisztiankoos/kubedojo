@@ -27,10 +27,10 @@ This isn't about memorizing checklists. It's about developing the security minds
 
 | # | Module | Time | Description |
 |---|--------|------|-------------|
-| 4.1 | [The Security Mindset](module-4.1-security-mindset.md) | 25-30 min | Attacker thinking, security principles, trust |
-| 4.2 | [Defense in Depth](module-4.2-defense-in-depth.md) | 30-35 min | Layered security, network/app/data layers |
-| 4.3 | [Identity and Access Management](module-4.3-identity-and-access.md) | 30-35 min | Authentication, authorization, least privilege |
-| 4.4 | [Secure by Default](module-4.4-secure-by-default.md) | 30-35 min | Secure defaults, guardrails, configuration |
+| 4.1 | [The Security Mindset](module-4.1-security-mindset/) | 25-30 min | Attacker thinking, security principles, trust |
+| 4.2 | [Defense in Depth](module-4.2-defense-in-depth/) | 30-35 min | Layered security, network/app/data layers |
+| 4.3 | [Identity and Access Management](module-4.3-identity-and-access/) | 30-35 min | Authentication, authorization, least privilege |
+| 4.4 | [Secure by Default](module-4.4-secure-by-default/) | 30-35 min | Secure defaults, guardrails, configuration |
 
 ---
 
@@ -112,8 +112,8 @@ Discipline     Toolkit        Systems
 
 ## Prerequisites
 
-- **Recommended**: [Systems Thinking Track](../systems-thinking/index.md) — Understanding system interactions
-- **Recommended**: [Reliability Engineering Track](../reliability-engineering/index.md) — Failure modes and defense
+- **Recommended**: [Systems Thinking Track](../systems-thinking/) — Understanding system interactions
+- **Recommended**: [Reliability Engineering Track](../reliability-engineering/) — Failure modes and defense
 - Helpful: Some experience with web applications or APIs
 - Helpful: Basic understanding of networking
 
@@ -125,10 +125,10 @@ After completing Security Principles, you're ready for:
 
 | Track | Why |
 |-------|-----|
-| [DevSecOps Discipline](../../disciplines/devsecops/index.md) | Put security into practice in CI/CD |
-| [Security Tools Toolkit](../../toolkits/security-tools/index.md) | Learn specific tools (Vault, OPA, Falco) |
-| [CKS Certification](../../../k8s/cks/index.md) | Kubernetes security specialization |
-| [Distributed Systems](../distributed-systems/index.md) | Security in distributed architectures |
+| [DevSecOps Discipline](../../disciplines/devsecops/) | Put security into practice in CI/CD |
+| [Security Tools Toolkit](../../toolkits/security-tools/) | Learn specific tools (Vault, OPA, Falco) |
+| [CKS Certification](../../../k8s/cks/) | Kubernetes security specialization |
+| [Distributed Systems](../distributed-systems/) | Security in distributed architectures |
 
 ---
 

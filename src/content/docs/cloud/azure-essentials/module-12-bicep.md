@@ -962,8 +962,8 @@ rm -rf /tmp/bicep-lab
 
 Congratulations on completing the Azure Essentials track! You now have a solid foundation in Azure's core services. To continue your learning:
 
-- **[Azure Essentials README](index.md)** --- Review the complete module index and identify areas for deeper study
-- **[Kubernetes Certifications Track](../../k8s/index.md)** --- Apply your Azure knowledge to AKS and container orchestration
-- **[Platform Engineering Track](../../platform/index.md)** --- Learn how to build internal developer platforms on Azure
+- **[Azure Essentials README]()** --- Review the complete module index and identify areas for deeper study
+- **[Kubernetes Certifications Track](../../k8s/)** --- Apply your Azure knowledge to AKS and container orchestration
+- **[Platform Engineering Track](../../platform/)** --- Learn how to build internal developer platforms on Azure
 
 The skills you have built across these 12 modules---identity, networking, compute, storage, DNS, containers, serverless, secrets, monitoring, CI/CD, and infrastructure as code---are the foundation of every production Azure environment. The difference between a junior and senior engineer is not knowing more services; it is knowing how to combine these fundamentals into reliable, secure, and cost-effective architectures.

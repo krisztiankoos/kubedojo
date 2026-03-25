@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.3: StorageClasses \u0442\u0430 \u0434\u0438\u043d\u0430\u043c\u0456\u0447\u043d\u0435 \u043d\u0430\u0434\u0430\u043d\u043d\u044f"
+slug: uk/k8s/cka/part4-storage/module-4.3-storageclasses
 sidebar:
   order: 4
   label: "Part 4: Storage"
@@ -745,4 +746,4 @@ k get sc standard -o jsonpath='{.volumeBindingMode}'
 
 ## Наступний модуль
 
-Переходьте до [Модуль 4.4: Знімки томів та клонування](module-4.4-snapshots.md), щоб дізнатися про функції резервного копіювання та захисту даних.
+Переходьте до [Модуль 4.4: Знімки томів та клонування](module-4.4-snapshots/), щоб дізнатися про функції резервного копіювання та захисту даних.

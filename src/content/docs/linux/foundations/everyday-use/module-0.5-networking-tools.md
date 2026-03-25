@@ -1,5 +1,6 @@
 ---
 title: "Module 0.5: Everyday Networking Tools"
+slug: linux/foundations/everyday-use/module-0.5-networking-tools
 sidebar:
   order: 6
   label: "Linux Everyday Use"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 0.2 — Environment & Permissions](module-0.2-environment-permissions.md) (you need to be comfortable with sudo and basic file paths)
-- **Helpful**: [Module 0.4 — Services & Logs Demystified](module-0.4-services-logs.md) (the exercise references checking services with `ss`)
+- **Required**: [Module 0.2 — Environment & Permissions](module-0.2-environment-permissions/) (you need to be comfortable with sudo and basic file paths)
+- **Helpful**: [Module 0.4 — Services & Logs Demystified](module-0.4-services-logs/) (the exercise references checking services with `ss`)
 
 ---
 
@@ -718,7 +719,7 @@ rm -f kubectl kubectl.sha256
 
 Congratulations — you've completed the **Everyday Use** series! You can now navigate the CLI, manage permissions, wrangle processes, work with services and logs, and investigate network issues like a pro. These are the tools you'll reach for every single day.
 
-You're ready for the deep dive. In [**Module 1.1: Kernel & Architecture**](../../foundations/system-essentials/module-1.1-kernel-architecture.md), you'll learn how Linux *actually* works under the hood — the kernel, system calls, and the architecture that makes everything you've learned so far possible. The everyday tools got you comfortable; now it's time to understand the machine.
+You're ready for the deep dive. In [**Module 1.1: Kernel & Architecture**](../../foundations/system-essentials/module-1.1-kernel-architecture/), you'll learn how Linux *actually* works under the hood — the kernel, system calls, and the architecture that makes everything you've learned so far possible. The everyday tools got you comfortable; now it's time to understand the machine.
 
 ---
 

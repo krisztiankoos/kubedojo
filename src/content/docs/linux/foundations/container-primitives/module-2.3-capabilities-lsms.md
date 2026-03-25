@@ -1,5 +1,6 @@
 ---
 title: "Module 2.3: Capabilities & Linux Security Modules"
+slug: linux/foundations/container-primitives/module-2.3-capabilities-lsms
 sidebar:
   order: 4
   label: "Container Primitives"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.4: Users & Permissions](../system-essentials/module-1.4-users-permissions.md)
-- **Required**: [Module 2.1: Linux Namespaces](module-2.1-namespaces.md)
+- **Required**: [Module 1.4: Users & Permissions](../system-essentials/module-1.4-users-permissions/)
+- **Required**: [Module 2.1: Linux Namespaces](module-2.1-namespaces/)
 - **Helpful**: Understanding of basic security concepts
 
 ---

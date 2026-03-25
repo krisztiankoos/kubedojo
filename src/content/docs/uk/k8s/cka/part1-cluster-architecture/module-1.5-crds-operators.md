@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.5: CRD \u0442\u0430 \u041e\u043f\u0435\u0440\u0430\u0442\u043e\u0440\u0438 \u2014 \u0440\u043e\u0437\u0448\u0438\u0440\u0435\u043d\u043d\u044f Kubernetes"
+slug: uk/k8s/cka/part1-cluster-architecture/module-1.5-crds-operators
 sidebar:
   order: 6
   label: "Part 1: Cluster Architecture"
@@ -1020,4 +1021,4 @@ kubectl delete crd backups.backup.example.com
 
 ## Наступний модуль
 
-[Модуль 1.6: RBAC](module-1.6-rbac.md) — контроль доступу на основі ролей для захисту вашого кластера.
+[Модуль 1.6: RBAC](module-1.6-rbac/) — контроль доступу на основі ролей для захисту вашого кластера.

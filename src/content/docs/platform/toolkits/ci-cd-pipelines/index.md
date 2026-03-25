@@ -10,12 +10,12 @@ sidebar:
 
 The CI/CD Pipelines Toolkit covers modern pipeline orchestration beyond traditional CI systems. These tools represent the next generation of build and deployment automation—programmable, Kubernetes-native, and designed for complex workflows.
 
-This toolkit builds on concepts from [DevSecOps Discipline](../../disciplines/devsecops/index.md) and complements the [GitOps & Deployments Toolkit](../gitops-deployments/index.md).
+This toolkit builds on concepts from [DevSecOps Discipline](../../disciplines/devsecops/) and complements the [GitOps & Deployments Toolkit](../gitops-deployments/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [DevSecOps Discipline](../../disciplines/devsecops/index.md) — CI/CD concepts
+- [DevSecOps Discipline](../../disciplines/devsecops/) — CI/CD concepts
 - Container fundamentals
 - Kubernetes basics
 - Programming experience (for Dagger)
@@ -24,9 +24,9 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 3.1 | [Dagger](module-3.1-dagger.md) | `[COMPLEX]` | 45-50 min |
-| 3.2 | [Tekton](module-3.2-tekton.md) | `[COMPLEX]` | 45-50 min |
-| 3.3 | [Argo Workflows](module-3.3-argo-workflows.md) | `[COMPLEX]` | 40-45 min |
+| 3.1 | [Dagger](module-3.1-dagger/) | `[COMPLEX]` | 45-50 min |
+| 3.2 | [Tekton](module-3.2-tekton/) | `[COMPLEX]` | 45-50 min |
+| 3.3 | [Argo Workflows](module-3.3-argo-workflows/) | `[COMPLEX]` | 40-45 min |
 
 ## Learning Outcomes
 
@@ -186,10 +186,10 @@ Tool: Dagger and Argo Workflows
 
 ## Related Tracks
 
-- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/index.md) — CI/CD concepts
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Terraform for pipeline infrastructure
-- **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/index.md) — Deploy what CI builds
-- **After**: [Security Tools Toolkit](../security-tools/index.md) — Secure the pipeline
+- **Before**: [DevSecOps Discipline](../../disciplines/devsecops/) — CI/CD concepts
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform for pipeline infrastructure
+- **Related**: [GitOps & Deployments Toolkit](../gitops-deployments/) — Deploy what CI builds
+- **After**: [Security Tools Toolkit](../security-tools/) — Secure the pipeline
 
 ---
 

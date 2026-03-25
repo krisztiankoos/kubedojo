@@ -1,5 +1,6 @@
 ---
 title: "Module 2.6: Platform Maturity"
+slug: platform/disciplines/platform-engineering/module-2.6-platform-maturity
 sidebar:
   order: 7
   label: "Platform Engineering"
@@ -10,11 +11,11 @@ sidebar:
 
 Before starting this module, you should:
 
-- Complete [Module 2.1: What is Platform Engineering?](module-2.1-what-is-platform-engineering.md) - Platform foundations
-- Complete [Module 2.2: Developer Experience](module-2.2-developer-experience.md) - DevEx measurement
-- Complete [Module 2.3: Internal Developer Platforms](module-2.3-internal-developer-platforms.md) - IDP components
-- Complete [Module 2.4: Golden Paths](module-2.4-golden-paths.md) - Template design
-- Complete [Module 2.5: Self-Service Infrastructure](module-2.5-self-service-infrastructure.md) - Self-service patterns
+- Complete [Module 2.1: What is Platform Engineering?](module-2.1-what-is-platform-engineering/) - Platform foundations
+- Complete [Module 2.2: Developer Experience](module-2.2-developer-experience/) - DevEx measurement
+- Complete [Module 2.3: Internal Developer Platforms](module-2.3-internal-developer-platforms/) - IDP components
+- Complete [Module 2.4: Golden Paths](module-2.4-golden-paths/) - Template design
+- Complete [Module 2.5: Self-Service Infrastructure](module-2.5-self-service-infrastructure/) - Self-service patterns
 - Have read or worked with a platform team
 
 ## Why This Module Matters
@@ -1259,16 +1260,16 @@ You now understand:
 ### Where to Go Next
 
 **Apply what you've learned:**
-- [GitOps Tools Toolkit](../../toolkits/gitops-deployments/index.md) - ArgoCD, Flux deep dive
-- [Platforms Toolkit](../../toolkits/platforms/index.md) - Backstage, Crossplane hands-on
+- [GitOps Tools Toolkit](../../toolkits/gitops-deployments/) - ArgoCD, Flux deep dive
+- [Platforms Toolkit](../../toolkits/platforms/) - Backstage, Crossplane hands-on
 
 **Related disciplines:**
-- [SRE Discipline](../sre/index.md) - Reliability practices for platforms
-- [GitOps Discipline](../gitops/index.md) - GitOps patterns for platform delivery
-- [DevSecOps Discipline](../devsecops/index.md) - Security in platform workflows
+- [SRE Discipline](../sre/) - Reliability practices for platforms
+- [GitOps Discipline](../gitops/) - GitOps patterns for platform delivery
+- [DevSecOps Discipline](../devsecops/) - Security in platform workflows
 
 **Foundations to review:**
-- [Systems Thinking](../../foundations/systems-thinking/index.md) - Feedback loops in platforms
-- [Reliability Engineering](../../foundations/reliability-engineering/index.md) - Platform reliability
+- [Systems Thinking](../../foundations/systems-thinking/) - Feedback loops in platforms
+- [Reliability Engineering](../../foundations/reliability-engineering/) - Platform reliability
 
 ---

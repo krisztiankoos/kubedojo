@@ -10,13 +10,13 @@ sidebar:
 
 The AIOps Tools Toolkit covers practical implementations of AIOps capabilities—from open-source anomaly detection libraries to enterprise correlation platforms. You'll learn when to use Prophet vs. Isolation Forest, how commercial platforms like BigPanda and Moogsoft work, and how to build custom AIOps pipelines on Kubernetes.
 
-This toolkit applies concepts from [AIOps Discipline](../../disciplines/aiops/index.md).
+This toolkit applies concepts from [AIOps Discipline](../../disciplines/aiops/).
 
 ## Prerequisites
 
 Before starting this toolkit:
-- [AIOps Discipline](../../disciplines/aiops/index.md) — Complete the conceptual foundation
-- [Observability Toolkit](../observability/index.md) — Data collection layer
+- [AIOps Discipline](../../disciplines/aiops/) — Complete the conceptual foundation
+- [Observability Toolkit](../observability/) — Data collection layer
 - Python proficiency for anomaly detection exercises
 - Kubernetes basics for custom pipeline exercises
 
@@ -24,10 +24,10 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 10.1 | [Anomaly Detection Tools](module-10.1-anomaly-detection-tools.md) | `[MEDIUM]` | 40-45 min |
-| 10.2 | [Event Correlation Platforms](module-10.2-event-correlation-platforms.md) | `[MEDIUM]` | 40-45 min |
-| 10.3 | [Observability AI Features](module-10.3-observability-ai-features.md) | `[MEDIUM]` | 40-45 min |
-| 10.4 | [Building Custom AIOps](module-10.4-building-custom-aiops.md) | `[COMPLEX]` | 50-60 min |
+| 10.1 | [Anomaly Detection Tools](module-10.1-anomaly-detection-tools/) | `[MEDIUM]` | 40-45 min |
+| 10.2 | [Event Correlation Platforms](module-10.2-event-correlation-platforms/) | `[MEDIUM]` | 40-45 min |
+| 10.3 | [Observability AI Features](module-10.3-observability-ai-features/) | `[MEDIUM]` | 40-45 min |
+| 10.4 | [Building Custom AIOps](module-10.4-building-custom-aiops/) | `[COMPLEX]` | 50-60 min |
 
 ## Learning Outcomes
 
@@ -317,10 +317,10 @@ Auto-Remediation (Kubernetes operators)
 
 ## Related Tracks
 
-- **Before**: [AIOps Discipline](../../disciplines/aiops/index.md) — Conceptual foundation
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Terraform modules for AIOps infrastructure
-- **Related**: [Observability Toolkit](../observability/index.md) — Data collection layer
-- **Related**: [SRE Discipline](../../disciplines/sre/index.md) — Operational practices
+- **Before**: [AIOps Discipline](../../disciplines/aiops/) — Conceptual foundation
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform modules for AIOps infrastructure
+- **Related**: [Observability Toolkit](../observability/) — Data collection layer
+- **Related**: [SRE Discipline](../../disciplines/sre/) — Operational practices
 - **After**: Build production AIOps!
 
 ---

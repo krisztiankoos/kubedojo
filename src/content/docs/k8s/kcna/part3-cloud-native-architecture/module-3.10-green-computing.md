@@ -1,5 +1,6 @@
 ---
 title: "Module 3.10: Green Computing and Sustainability"
+slug: k8s/kcna/part3-cloud-native-architecture/module-3.10-green-computing
 sidebar:
   order: 11
   label: "Part 3: Cloud Native Architecture"
@@ -407,4 +408,4 @@ D) Only development environments
 
 ## Next Module
 
-Congratulations! You have completed Part 3: Cloud Native Architecture. Continue to [Part 4](../part4-application-delivery/index.md) to explore Application Delivery.
+Congratulations! You have completed Part 3: Cloud Native Architecture. Continue to [Part 4](../part4-application-delivery/) to explore Application Delivery.

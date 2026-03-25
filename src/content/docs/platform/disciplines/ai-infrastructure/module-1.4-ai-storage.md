@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: High-Performance Storage for AI"
+slug: platform/disciplines/ai-infrastructure/module-1.4-ai-storage
 sidebar:
   order: 5
   label: "AI Infrastructure"
@@ -11,7 +12,7 @@ sidebar:
 Before starting this module:
 - **Required**: Kubernetes storage fundamentals (PersistentVolumes, PersistentVolumeClaims, StorageClasses, CSI drivers)
 - **Required**: Basic understanding of ML training data pipelines (datasets, batches, data loaders)
-- **Recommended**: [Module 1.1: GPU Provisioning](module-1.1-gpu-provisioning.md) — GPU workload basics
+- **Recommended**: [Module 1.1: GPU Provisioning](module-1.1-gpu-provisioning/) — GPU workload basics
 - **Recommended**: Experience with object storage (S3, GCS, MinIO)
 
 ---
@@ -1145,7 +1146,7 @@ Storage is the hidden bottleneck that prevents expensive GPUs from reaching thei
 
 ## Next Module
 
-Continue to [Module 1.5: Serving LLMs at Scale](module-1.5-llm-serving.md) to learn how to deploy large language models for inference with vLLM, continuous batching, and KEDA autoscaling.
+Continue to [Module 1.5: Serving LLMs at Scale](module-1.5-llm-serving/) to learn how to deploy large language models for inference with vLLM, continuous batching, and KEDA autoscaling.
 
 ---
 

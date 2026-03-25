@@ -1,5 +1,6 @@
 ---
 title: "Module 4.3: StorageClasses & Dynamic Provisioning"
+slug: k8s/cka/part4-storage/module-4.3-storageclasses
 sidebar:
   order: 4
   label: "Part 4: Storage"
@@ -740,4 +741,4 @@ k get sc standard -o jsonpath='{.volumeBindingMode}'
 
 ## Next Module
 
-Continue to [Module 4.4: Volume Snapshots & Cloning](module-4.4-snapshots.md) to learn about backup and data protection features.
+Continue to [Module 4.4: Volume Snapshots & Cloning](module-4.4-snapshots/) to learn about backup and data protection features.

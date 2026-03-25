@@ -447,4 +447,4 @@ kubectl delete namespace practice
 
 ## Наступний модуль
 
-[Модуль 3: Поди](module-3-pods.md) — Атомарна одиниця Kubernetes.
+[Модуль 3: Поди](module-3-pods/) — Атомарна одиниця Kubernetes.

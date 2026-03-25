@@ -1,5 +1,6 @@
 ---
 title: "Module 3.6: Multi-Cluster GitOps"
+slug: platform/disciplines/gitops/module-3.6-multi-cluster
 sidebar:
   order: 7
   label: "GitOps"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops.md) — GitOps fundamentals
-- **Required**: [Module 3.2: Repository Strategies](module-3.2-repository-strategies.md) — Repository structure
-- **Required**: [Module 3.5: Secrets in GitOps](module-3.5-secrets.md) — Secret management patterns
+- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops/) — GitOps fundamentals
+- **Required**: [Module 3.2: Repository Strategies](module-3.2-repository-strategies/) — Repository structure
+- **Required**: [Module 3.5: Secrets in GitOps](module-3.5-secrets/) — Secret management patterns
 - **Recommended**: Experience managing at least one Kubernetes cluster with GitOps
 
 ---

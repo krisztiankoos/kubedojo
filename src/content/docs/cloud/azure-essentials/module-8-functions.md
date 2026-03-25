@@ -734,4 +734,4 @@ rm -rf /tmp/functions-lab /tmp/test-data.json /tmp/readme.txt
 
 ## Next Module
 
-[Module 9: Azure Key Vault](module-9-key-vault.md) --- Learn how to securely manage secrets, encryption keys, and certificates with Azure Key Vault, and integrate it with your applications using Managed Identities.
+[Module 9: Azure Key Vault](module-9-key-vault/) --- Learn how to securely manage secrets, encryption keys, and certificates with Azure Key Vault, and integrate it with your applications using Managed Identities.

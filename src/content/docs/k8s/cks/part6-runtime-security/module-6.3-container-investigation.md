@@ -1,5 +1,6 @@
 ---
 title: "Module 6.3: Container Investigation"
+slug: k8s/cks/part6-runtime-security/module-6.3-container-investigation
 sidebar:
   order: 3
   label: "Part 6: Runtime Security"
@@ -593,4 +594,4 @@ echo "=== Investigation Complete ==="
 
 ## Next Module
 
-[Module 6.4: Immutable Infrastructure](module-6.4-immutable-infrastructure.md) - Building containers that can't be modified at runtime.
+[Module 6.4: Immutable Infrastructure](module-6.4-immutable-infrastructure/) - Building containers that can't be modified at runtime.

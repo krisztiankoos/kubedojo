@@ -1,5 +1,6 @@
 ---
 title: "Module 5.2: Feature Engineering & Stores"
+slug: platform/disciplines/mlops/module-5.2-feature-stores
 sidebar:
   order: 3
   label: "MLOps"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 5.1: MLOps Fundamentals](module-5.1-mlops-fundamentals.md)
+- [Module 5.1: MLOps Fundamentals](module-5.1-mlops-fundamentals/)
 - Basic understanding of data transformations
 - Familiarity with pandas DataFrames
 - Understanding of training vs. inference
@@ -740,4 +741,4 @@ Feature stores are the backbone of production ML. They ensure consistency betwee
 
 ## Next Module
 
-Continue to [Module 5.3: Model Training & Experimentation](module-5.3-model-training.md) to learn how to build reproducible training pipelines with experiment tracking.
+Continue to [Module 5.3: Model Training & Experimentation](module-5.3-model-training/) to learn how to build reproducible training pipelines with experiment tracking.

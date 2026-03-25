@@ -1,5 +1,6 @@
 ---
 title: "Module 4.3: Identity and Access Management"
+slug: platform/foundations/security-principles/module-4.3-identity-and-access
 sidebar:
   order: 4
   label: "Security Principles"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 4.2: Defense in Depth](module-4.2-defense-in-depth.md)
+> **Prerequisites**: [Module 4.2: Defense in Depth](module-4.2-defense-in-depth/)
 >
 > **Track**: Foundations
 
@@ -905,4 +906,4 @@ Before moving on, verify you can answer these:
 
 ## Next Module
 
-[Module 4.4: Secure by Default](module-4.4-secure-by-default.md) - Building security into systems from the start, not bolting it on later.
+[Module 4.4: Secure by Default](module-4.4-secure-by-default/) - Building security into systems from the start, not bolting it on later.

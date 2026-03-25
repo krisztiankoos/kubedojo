@@ -1,5 +1,6 @@
 ---
 title: "Module 2.9: Workload Autoscaling"
+slug: k8s/cka/part2-workloads-scheduling/module-2.9-autoscaling
 sidebar:
   order: 10
   label: "Part 2: Workloads & Scheduling"
@@ -302,4 +303,4 @@ k delete hpa challenge-web
 
 ## Next Module
 
-Return to [Part 2 Overview](../part2-workloads-scheduling/index.md).
+Return to [Part 2 Overview](../part2-workloads-scheduling/).

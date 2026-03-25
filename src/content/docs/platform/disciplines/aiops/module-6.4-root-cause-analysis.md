@@ -1,5 +1,6 @@
 ---
 title: "Module 6.4: Root Cause Analysis"
+slug: platform/disciplines/aiops/module-6.4-root-cause-analysis
 sidebar:
   order: 5
   label: "AIOps"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Module 6.3: Event Correlation](module-6.3-event-correlation.md) — Grouping related alerts
+- [Module 6.3: Event Correlation](module-6.3-event-correlation/) — Grouping related alerts
 - Understanding of directed graphs and traversal
 - Basic causal reasoning concepts
 - Familiarity with distributed systems
@@ -1085,4 +1086,4 @@ The key insight: different strategies catch different failure modes. Combine the
 
 ## Next Module
 
-Continue to [Module 6.5: Predictive Operations](module-6.5-predictive-operations.md) to learn how to forecast problems before they impact users.
+Continue to [Module 6.5: Predictive Operations](module-6.5-predictive-operations/) to learn how to forecast problems before they impact users.

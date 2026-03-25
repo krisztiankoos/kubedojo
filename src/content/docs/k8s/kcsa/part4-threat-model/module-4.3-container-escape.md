@@ -1,5 +1,6 @@
 ---
 title: "Module 4.3: Container Escape"
+slug: k8s/kcsa/part4-threat-model/module-4.3-container-escape
 sidebar:
   order: 4
   label: "Part 4: Threat Model"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 4.2: Common Vulnerabilities](module-4.2-vulnerabilities.md)
+> **Prerequisites**: [Module 4.2: Common Vulnerabilities](module-4.2-vulnerabilities/)
 
 ---
 
@@ -16,7 +17,7 @@ sidebar:
 
 Container escape—breaking out of a container to access the host—is the most severe container security failure. Understanding which configurations make escape possible helps you build secure defaults and recognize dangerous settings before they reach production.
 
-KCSA tests your ability to identify configurations that enable container escape and understand prevention strategies. You don't need to know specific exploitation commands—that's [CKS territory](../../cks/index.md)—but you must recognize the risky settings and know how to prevent them.
+KCSA tests your ability to identify configurations that enable container escape and understand prevention strategies. You don't need to know specific exploitation commands—that's [CKS territory](../../cks/)—but you must recognize the risky settings and know how to prevent them.
 
 ---
 
@@ -456,7 +457,7 @@ spec:
 
 </details>
 
-> **Want to learn hands-on exploitation and security testing techniques?** See the [CKS track](../../cks/index.md) for offensive security labs.
+> **Want to learn hands-on exploitation and security testing techniques?** See the [CKS track](../../cks/) for offensive security labs.
 
 ---
 
@@ -482,4 +483,4 @@ Defense strategy:
 
 ## Next Module
 
-[Module 4.4: Supply Chain Threats](module-4.4-supply-chain.md) - Understanding and mitigating software supply chain risks.
+[Module 4.4: Supply Chain Threats](module-4.4-supply-chain/) - Understanding and mitigating software supply chain risks.

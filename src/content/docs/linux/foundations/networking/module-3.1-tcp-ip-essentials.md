@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: TCP/IP Essentials"
+slug: linux/foundations/networking/module-3.1-tcp-ip-essentials
 sidebar:
   order: 2
   label: "Networking"
@@ -10,7 +11,7 @@ sidebar:
 
 Before starting this module:
 - **Required**: Basic understanding of what networks are
-- **Helpful**: [Module 1.1: Kernel & Architecture](../system-essentials/module-1.1-kernel-architecture.md)
+- **Helpful**: [Module 1.1: Kernel & Architecture](../system-essentials/module-1.1-kernel-architecture/)
 
 ---
 

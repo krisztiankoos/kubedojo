@@ -1,5 +1,6 @@
 ---
 title: "Module 3.4: Ingress"
+slug: k8s/cka/part3-services-networking/module-3.4-ingress
 sidebar:
   order: 5
   label: "Part 3: Services & Networking"
@@ -1152,4 +1153,4 @@ rm tls.key tls.crt
 
 ## Next Module
 
-[Module 3.5: Gateway API](module-3.5-gateway-api.md) - The next generation of Kubernetes ingress.
+[Module 3.5: Gateway API](module-3.5-gateway-api/) - The next generation of Kubernetes ingress.

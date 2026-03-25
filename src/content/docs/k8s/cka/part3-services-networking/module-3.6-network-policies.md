@@ -1,5 +1,6 @@
 ---
 title: "Module 3.6: Network Policies"
+slug: k8s/cka/part3-services-networking/module-3.6-network-policies
 sidebar:
   order: 7
   label: "Part 3: Services & Networking"
@@ -1192,4 +1193,4 @@ k delete namespace secure
 
 ## Next Module
 
-[Module 3.7: CNI & Cluster Networking](module-3.7-cni.md) - Understanding the Container Network Interface.
+[Module 3.7: CNI & Cluster Networking](module-3.7-cni/) - Understanding the Container Network Interface.

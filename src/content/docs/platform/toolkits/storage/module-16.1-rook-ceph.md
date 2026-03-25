@@ -1,5 +1,6 @@
 ---
 title: "Module 16.1: Rook/Ceph - Enterprise Storage for Kubernetes"
+slug: platform/toolkits/storage/module-16.1-rook-ceph
 sidebar:
   order: 2
   label: "Storage"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) - Replication, consistency
-- [Reliability Engineering Foundation](../../foundations/reliability-engineering/index.md) - SLOs, failure modes
+- [Distributed Systems Foundation](../../foundations/distributed-systems/) - Replication, consistency
+- [Reliability Engineering Foundation](../../foundations/reliability-engineering/) - SLOs, failure modes
 - Kubernetes fundamentals (PVCs, StorageClasses, CSI, StatefulSets)
 - Basic Linux storage concepts (block devices, filesystems)
 
@@ -852,9 +853,9 @@ Choose **RBD** when you need **ReadWriteOnce (RWO)**—a dedicated volume for a 
 
 ## Next Steps
 
-- **Next Module**: [Module 16.2: MinIO](module-16.2-minio.md) — S3-compatible object storage on Kubernetes
-- **Related**: [Cloud-Native Databases](../cloud-native-databases/index.md) — Databases that run on Ceph storage
-- **Related**: [Observability Toolkit](../observability/index.md) — Monitoring storage with Prometheus
+- **Next Module**: [Module 16.2: MinIO](module-16.2-minio/) — S3-compatible object storage on Kubernetes
+- **Related**: [Cloud-Native Databases](../cloud-native-databases/) — Databases that run on Ceph storage
+- **Related**: [Observability Toolkit](../observability/) — Monitoring storage with Prometheus
 
 ---
 

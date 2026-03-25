@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Union Filesystems"
+slug: linux/foundations/container-primitives/module-2.4-union-filesystems
 sidebar:
   order: 5
   label: "Container Primitives"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.3: Filesystem Hierarchy](../system-essentials/module-1.3-filesystem-hierarchy.md)
-- **Required**: [Module 2.1: Linux Namespaces](module-2.1-namespaces.md) (mount namespace concept)
+- **Required**: [Module 1.3: Filesystem Hierarchy](../system-essentials/module-1.3-filesystem-hierarchy/)
+- **Required**: [Module 2.1: Linux Namespaces](module-2.1-namespaces/) (mount namespace concept)
 - **Helpful**: Understanding of container images
 
 ---

@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: Release Engineering Metrics & Observability"
+slug: platform/disciplines/release-engineering/module-1.5-release-metrics
 sidebar:
   order: 6
   label: "Release Engineering"
@@ -10,8 +11,8 @@ sidebar:
 
 Before starting this module:
 - **Required**: Prometheus and Grafana basics — PromQL queries, dashboard creation, alert configuration
-- **Required**: [Module 1.1: Release Strategies](module-1.1-release-strategies.md) — Understanding of deployment strategies and progressive delivery
-- **Recommended**: [SRE Module: SLOs and Error Budgets](../../disciplines/sre/module-1.2-slos.md) — SLI/SLO/SLA concepts
+- **Required**: [Module 1.1: Release Strategies](module-1.1-release-strategies/) — Understanding of deployment strategies and progressive delivery
+- **Recommended**: [SRE Module: SLOs and Error Budgets](../../disciplines/sre/module-1.2-slos/) — SLI/SLO/SLA concepts
 - **Recommended**: Familiarity with CI/CD pipelines and deployment tooling
 
 ---
@@ -1239,7 +1240,7 @@ Release engineering metrics transform deployment from an act of faith into a mea
 
 ## Next Module
 
-You have completed the Release Engineering discipline fundamentals. Continue to the [Release Engineering Overview](index.md) for a summary of all modules and suggested next steps, including how to integrate release engineering with SRE, GitOps, and Platform Engineering practices.
+You have completed the Release Engineering discipline fundamentals. Continue to the [Release Engineering Overview]() for a summary of all modules and suggested next steps, including how to integrate release engineering with SRE, GitOps, and Platform Engineering practices.
 
 ---
 

@@ -10,7 +10,7 @@ sidebar:
 
 The Kubernetes Distributions Toolkit covers lightweight Kubernetes alternatives for edge, IoT, development, and resource-constrained environments. When vanilla Kubernetes is too heavy—requiring too much RAM, too many nodes, or too complex to manage—these distributions deliver Kubernetes-compatible APIs with dramatically lower overhead.
 
-This toolkit applies concepts from [Systems Thinking](../../foundations/systems-thinking/index.md) and [Platform Engineering](../../disciplines/platform-engineering/index.md).
+This toolkit applies concepts from [Systems Thinking](../../foundations/systems-thinking/) and [Platform Engineering](../../disciplines/platform-engineering/).
 
 ## Prerequisites
 
@@ -24,12 +24,12 @@ Before starting this toolkit:
 
 | # | Module | Complexity | Time |
 |---|--------|------------|------|
-| 14.1 | [k3s](module-14.1-k3s.md) | `[MEDIUM]` | 45-50 min |
-| 14.2 | [k0s](module-14.2-k0s.md) | `[MEDIUM]` | 40-45 min |
-| 14.3 | [MicroK8s](module-14.3-microk8s.md) | `[MEDIUM]` | 40-45 min |
-| 14.4 | [Talos](module-14.4-talos.md) | `[COMPLEX]` | 50-55 min |
-| 14.5 | [OpenShift](module-14.5-openshift.md) | `[COMPLEX]` | 50-55 min |
-| 14.6 | [Managed Kubernetes](module-14.6-managed-kubernetes.md) | `[COMPLEX]` | 55-60 min |
+| 14.1 | [k3s](module-14.1-k3s/) | `[MEDIUM]` | 45-50 min |
+| 14.2 | [k0s](module-14.2-k0s/) | `[MEDIUM]` | 40-45 min |
+| 14.3 | [MicroK8s](module-14.3-microk8s/) | `[MEDIUM]` | 40-45 min |
+| 14.4 | [Talos](module-14.4-talos/) | `[COMPLEX]` | 50-55 min |
+| 14.5 | [OpenShift](module-14.5-openshift/) | `[COMPLEX]` | 50-55 min |
+| 14.6 | [Managed Kubernetes](module-14.6-managed-kubernetes/) | `[COMPLEX]` | 55-60 min |
 
 ## Learning Outcomes
 
@@ -436,10 +436,10 @@ CPU                2 cores     2 cores     2 cores     2 cores
 
 ## Related Tracks
 
-- **Before**: [Container Registries Toolkit](../container-registries/index.md) — Store images for your cluster
-- **Related**: [Developer Experience Toolkit](../developer-experience/index.md) — Local K8s options
-- **Related**: [IaC Tools Toolkit](../iac-tools/index.md) — Automate cluster provisioning
-- **After**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/index.md) — Deploy to your clusters
+- **Before**: [Container Registries Toolkit](../container-registries/) — Store images for your cluster
+- **Related**: [Developer Experience Toolkit](../developer-experience/) — Local K8s options
+- **Related**: [IaC Tools Toolkit](../iac-tools/) — Automate cluster provisioning
+- **After**: [CI/CD Pipelines Toolkit](../ci-cd-pipelines/) — Deploy to your clusters
 
 ---
 

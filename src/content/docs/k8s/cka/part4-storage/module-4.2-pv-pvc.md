@@ -1,5 +1,6 @@
 ---
 title: "Module 4.2: PersistentVolumes & PersistentVolumeClaims"
+slug: k8s/cka/part4-storage/module-4.2-pv-pvc
 sidebar:
   order: 3
   label: "Part 4: Storage"
@@ -800,4 +801,4 @@ k delete pv lab-pv
 
 ## Next Module
 
-Continue to [Module 4.3: StorageClasses & Dynamic Provisioning](module-4.3-storageclasses.md) to learn about automatic PV creation.
+Continue to [Module 4.3: StorageClasses & Dynamic Provisioning](module-4.3-storageclasses/) to learn about automatic PV creation.

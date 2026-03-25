@@ -1,5 +1,6 @@
 ---
 title: "Module 15.1: CockroachDB - Distributed SQL That Survives Anything"
+slug: platform/toolkits/cloud-native-databases/module-15.1-cockroachdb
 sidebar:
   order: 2
   label: "Cloud-Native Databases"
@@ -12,8 +13,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) - Consensus, CAP theorem
-- [Reliability Engineering Foundation](../../foundations/reliability-engineering/index.md) - SLOs, failure modes
+- [Distributed Systems Foundation](../../foundations/distributed-systems/) - Consensus, CAP theorem
+- [Reliability Engineering Foundation](../../foundations/reliability-engineering/) - SLOs, failure modes
 - Basic SQL and PostgreSQL familiarity
 - Kubernetes fundamentals (StatefulSets, PVCs)
 
@@ -943,9 +944,9 @@ When a node fails:
 
 ## Next Steps
 
-- **Next Module**: [Module 15.2: CloudNativePG](module-15.2-cloudnativepg.md) — PostgreSQL on Kubernetes with operators
-- **Related**: [Distributed Systems Foundation](../../foundations/distributed-systems/index.md) — Deep dive on consensus
-- **Related**: [Observability Toolkit](../observability/index.md) — Monitoring distributed databases
+- **Next Module**: [Module 15.2: CloudNativePG](module-15.2-cloudnativepg/) — PostgreSQL on Kubernetes with operators
+- **Related**: [Distributed Systems Foundation](../../foundations/distributed-systems/) — Deep dive on consensus
+- **Related**: [Observability Toolkit](../observability/) — Monitoring distributed databases
 
 ---
 

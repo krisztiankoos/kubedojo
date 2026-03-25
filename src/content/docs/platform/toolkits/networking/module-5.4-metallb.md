@@ -1,5 +1,6 @@
 ---
 title: "Module 5.4: MetalLB - Load Balancing for Bare-Metal Kubernetes"
+slug: platform/toolkits/networking/module-5.4-metallb
 sidebar:
   order: 5
   label: "Networking"
@@ -51,7 +52,7 @@ That new hire saved the team from an architectural dead end. The problem was nev
 - Integrating MetalLB with Ingress controllers and Gateway API
 
 **Prerequisites**:
-- Kubernetes Services (ClusterIP, NodePort, LoadBalancer) -- see [CKA Module 3.1: Services](../../../k8s/cka/part3-services-networking/module-3.1-services.md)
+- Kubernetes Services (ClusterIP, NodePort, LoadBalancer) -- see [CKA Module 3.1: Services](../../../k8s/cka/part3-services-networking/module-3.1-services/)
 - Basic networking concepts (IP addresses, ARP, TCP/IP)
 - Helm basics for installation
 - A kind or minikube cluster for the exercise
@@ -74,7 +75,7 @@ MetalLB is that missing piece. It watches for LoadBalancer Services, assigns IP 
 >
 > 2. As of v0.13, MetalLB uses custom resources (IPAddressPool, L2Advertisement, BGPAdvertisement) instead of a ConfigMap. Older tutorials still reference the ConfigMap approach--if you see `config` in a ConfigMap, you are reading outdated documentation.
 >
-> 3. Lightweight distributions like [k3s](../k8s-distributions/module-14.1-k3s.md) and [k0s](../k8s-distributions/module-14.2-k0s.md) ship with their own built-in load balancer (Klipper LB for k3s, for example). MetalLB is the standard choice when you need more control, BGP support, or are running upstream Kubernetes or kubeadm clusters.
+> 3. Lightweight distributions like [k3s](../k8s-distributions/module-14.1-k3s/) and [k0s](../k8s-distributions/module-14.2-k0s/) ship with their own built-in load balancer (Klipper LB for k3s, for example). MetalLB is the standard choice when you need more control, BGP support, or are running upstream Kubernetes or kubeadm clusters.
 >
 > 4. MetalLB became a CNCF Sandbox project in 2021, signaling broad community adoption. Major companies including Equinix Metal and Scaleway run it in production to provide LoadBalancer services across thousands of bare-metal nodes.
 
@@ -317,7 +318,7 @@ Internet ──▶ LoadBalancer Service (e.g., 192.168.1.240)
 
 Your Ingress controller runs as a Deployment with a `type: LoadBalancer` Service. MetalLB gives that Service an external IP. The Ingress controller then routes traffic to backend services based on hostnames and paths.
 
-This pattern works identically with Kubernetes [Gateway API](../../../k8s/cka/part3-services-networking/module-3.5-gateway-api.md)--the Gateway resource gets a LoadBalancer Service, and MetalLB assigns the IP.
+This pattern works identically with Kubernetes [Gateway API](../../../k8s/cka/part3-services-networking/module-3.5-gateway-api/)--the Gateway resource gets a LoadBalancer Service, and MetalLB assigns the IP.
 
 ---
 
@@ -375,7 +376,7 @@ You forgot to create an L2Advertisement or BGPAdvertisement resource. An IPAddre
 <details>
 <summary>Show Answer</summary>
 
-Disable k3s's built-in Klipper LB by starting k3s with `--disable servicelb`. Otherwise, both MetalLB and Klipper will compete to handle LoadBalancer services, causing unpredictable behavior. See [Module 14.1: k3s](../k8s-distributions/module-14.1-k3s.md) for details.
+Disable k3s's built-in Klipper LB by starting k3s with `--disable servicelb`. Otherwise, both MetalLB and Klipper will compete to handle LoadBalancer services, causing unpredictable behavior. See [Module 14.1: k3s](../k8s-distributions/module-14.1-k3s/) for details.
 </details>
 
 ---
@@ -479,11 +480,11 @@ If you completed this exercise successfully, you have just solved the exact prob
 
 ## Next Steps
 
-- **[Module 5.1: Cilium](module-5.1-cilium.md)** -- MetalLB handles external traffic; Cilium handles everything inside the cluster
-- **[Module 5.2: Service Mesh](module-5.2-service-mesh.md)** -- For mTLS and advanced traffic management after traffic enters the cluster
-- **[CKA Module 3.1: Services](../../../k8s/cka/part3-services-networking/module-3.1-services.md)** -- Deep dive into Kubernetes service types
-- **[CKA Module 3.5: Gateway API](../../../k8s/cka/part3-services-networking/module-3.5-gateway-api.md)** -- The next-generation Ingress that pairs well with MetalLB
-- **[Module 14.1: k3s](../k8s-distributions/module-14.1-k3s.md)** / **[Module 14.2: k0s](../k8s-distributions/module-14.2-k0s.md)** -- Lightweight distros with built-in LB alternatives
+- **[Module 5.1: Cilium](module-5.1-cilium/)** -- MetalLB handles external traffic; Cilium handles everything inside the cluster
+- **[Module 5.2: Service Mesh](module-5.2-service-mesh/)** -- For mTLS and advanced traffic management after traffic enters the cluster
+- **[CKA Module 3.1: Services](../../../k8s/cka/part3-services-networking/module-3.1-services/)** -- Deep dive into Kubernetes service types
+- **[CKA Module 3.5: Gateway API](../../../k8s/cka/part3-services-networking/module-3.5-gateway-api/)** -- The next-generation Ingress that pairs well with MetalLB
+- **[Module 14.1: k3s](../k8s-distributions/module-14.1-k3s/)** / **[Module 14.2: k0s](../k8s-distributions/module-14.2-k0s/)** -- Lightweight distros with built-in LB alternatives
 
 ---
 

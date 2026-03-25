@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: Failure Modes and Effects"
+slug: platform/foundations/reliability-engineering/module-2.2-failure-modes-and-effects
 sidebar:
   order: 3
   label: "Reliability Engineering"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 40-45 minutes
 >
-> **Prerequisites**: [Module 2.1: What is Reliability?](module-2.1-what-is-reliability.md)
+> **Prerequisites**: [Module 2.1: What is Reliability?](module-2.1-what-is-reliability/)
 >
 > **Track**: Foundations
 
@@ -1022,4 +1023,4 @@ FAILURE MODES CHECKLIST
 
 ## Next Module
 
-[Module 2.3: Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance.md) - Now that you understand how systems fail, learn how to build systems that continue working when components fail.
+[Module 2.3: Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance/) - Now that you understand how systems fail, learn how to build systems that continue working when components fail.

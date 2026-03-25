@@ -1,5 +1,6 @@
 ---
 title: "Module 1.7: Capacity Planning"
+slug: platform/disciplines/sre/module-1.7-capacity-planning
 sidebar:
   order: 8
   label: "SRE"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: SLOs](module-1.2-slos.md) — Understanding service levels
-- **Required**: [Observability Theory Track](../../foundations/observability-theory/index.md) — Metrics and monitoring
-- **Recommended**: [Module 1.4: Toil and Automation](module-1.4-toil-automation.md) — Automation mindset
+- **Required**: [Module 1.2: SLOs](module-1.2-slos/) — Understanding service levels
+- **Required**: [Observability Theory Track](../../foundations/observability-theory/) — Metrics and monitoring
+- **Recommended**: [Module 1.4: Toil and Automation](module-1.4-toil-automation/) — Automation mindset
 - **Helpful**: Basic understanding of cloud infrastructure
 
 ---
@@ -951,10 +952,10 @@ You've learned:
 
 | Track | Why |
 |-------|-----|
-| [Platform Engineering Discipline](../platform-engineering/index.md) | Build internal developer platforms |
-| [GitOps Discipline](../gitops/index.md) | Declarative operations |
-| [Observability Toolkit](../../toolkits/observability/index.md) | Implement monitoring and tracing |
-| [CKA Certification](../../../k8s/cka/index.md) | Apply SRE to Kubernetes |
+| [Platform Engineering Discipline](../platform-engineering/) | Build internal developer platforms |
+| [GitOps Discipline](../gitops/) | Declarative operations |
+| [Observability Toolkit](../../toolkits/observability/) | Implement monitoring and tracing |
+| [CKA Certification](../../../k8s/cka/) | Apply SRE to Kubernetes |
 
 ---
 

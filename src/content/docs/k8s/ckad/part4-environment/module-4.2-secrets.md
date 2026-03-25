@@ -1,5 +1,6 @@
 ---
 title: "Module 4.2: Secrets"
+slug: k8s/ckad/part4-environment/module-4.2-secrets
 sidebar:
   order: 2
   label: "Part 4: Environment"
@@ -598,4 +599,4 @@ k delete pod drill6 secret drill6-db
 
 ## Next Module
 
-[Module 4.3: Resource Requirements](module-4.3-resources.md) - Configure CPU and memory requests and limits.
+[Module 4.3: Resource Requirements](module-4.3-resources/) - Configure CPU and memory requests and limits.

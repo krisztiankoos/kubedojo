@@ -1,5 +1,6 @@
 ---
 title: "Module 6.2: CIS Benchmarks"
+slug: k8s/kcsa/part6-compliance/module-6.2-cis-benchmarks
 sidebar:
   order: 3
   label: "Part 6: Compliance"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 6.1: Compliance Frameworks](module-6.1-compliance-frameworks.md)
+> **Prerequisites**: [Module 6.1: Compliance Frameworks](module-6.1-compliance-frameworks/)
 
 ---
 
@@ -621,4 +622,4 @@ Key practices:
 
 ## Next Module
 
-[Module 6.3: Security Assessments](module-6.3-security-assessments.md) - Conducting and responding to security assessments.
+[Module 6.3: Security Assessments](module-6.3-security-assessments/) - Conducting and responding to security assessments.

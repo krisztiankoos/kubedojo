@@ -10,11 +10,11 @@ This part introduces threat modeling for Kubernetes and common attack surfaces, 
 
 | Module | Topic | Complexity | Time |
 |--------|-------|------------|------|
-| [4.1](module-4.1-attack-surfaces.md) | Attack Surfaces | Medium | 20-30 min |
-| [4.2](module-4.2-vulnerabilities.md) | Vulnerabilities | Medium | 20-30 min |
-| [4.3](module-4.3-container-escape.md) | Container Escape | Medium | 20-30 min |
-| [4.4](module-4.4-supply-chain.md) | Supply Chain Risk | Medium | 20-30 min |
-| [4.5](module-4.5-threat-modeling-supply-chain-theory.md) | Threat Modeling & Supply Chain Theory | Medium | 20-30 min |
+| [4.1](module-4.1-attack-surfaces/) | Attack Surfaces | Medium | 20-30 min |
+| [4.2](module-4.2-vulnerabilities/) | Vulnerabilities | Medium | 20-30 min |
+| [4.3](module-4.3-container-escape/) | Container Escape | Medium | 20-30 min |
+| [4.4](module-4.4-supply-chain/) | Supply Chain Risk | Medium | 20-30 min |
+| [4.5](module-4.5-threat-modeling-supply-chain-theory/) | Threat Modeling & Supply Chain Theory | Medium | 20-30 min |
 
 ## What You'll Learn
 
@@ -25,4 +25,4 @@ This part introduces threat modeling for Kubernetes and common attack surfaces, 
 
 ---
 
-[← Back to Part 3](../part3-security-fundamentals/index.md) | [Part 5: Platform Security →](../part5-platform-security/index.md)
+[← Back to Part 3](../part3-security-fundamentals/) | [Part 5: Platform Security →](../part5-platform-security/)

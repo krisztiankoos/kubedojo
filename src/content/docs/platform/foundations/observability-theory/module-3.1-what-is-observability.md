@@ -1,5 +1,6 @@
 ---
 title: "Module 3.1: What is Observability?"
+slug: platform/foundations/observability-theory/module-3.1-what-is-observability
 sidebar:
   order: 2
   label: "Observability Theory"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Reliability Engineering Track](../reliability-engineering/index.md) (recommended)
+> **Prerequisites**: [Reliability Engineering Track](../reliability-engineering/) (recommended)
 >
 > **Track**: Foundations
 
@@ -813,4 +814,4 @@ Write down the steps you'd take to investigate:
 
 ## Next Module
 
-[Module 3.2: The Three Pillars](module-3.2-the-three-pillars.md) - Deep dive into logs, metrics, and traces—what each provides and how they work together.
+[Module 3.2: The Three Pillars](module-3.2-the-three-pillars/) - Deep dive into logs, metrics, and traces—what each provides and how they work together.

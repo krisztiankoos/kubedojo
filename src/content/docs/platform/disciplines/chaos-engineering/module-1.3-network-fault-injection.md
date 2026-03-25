@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Advanced Network & Application Fault Injection"
+slug: platform/disciplines/chaos-engineering/module-1.3-network-fault-injection
 sidebar:
   order: 4
   label: "Chaos Engineering"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: Chaos Mesh Fundamentals](module-1.2-chaos-mesh.md) — PodChaos, NetworkChaos basics, installation
-- **Required**: [Service Mesh basics](../../toolkits/observability/index.md) — Understanding of sidecar proxies, traffic management
+- **Required**: [Module 1.2: Chaos Mesh Fundamentals](module-1.2-chaos-mesh/) — PodChaos, NetworkChaos basics, installation
+- **Required**: [Service Mesh basics](../../toolkits/observability/) — Understanding of sidecar proxies, traffic management
 - **Recommended**: Familiarity with circuit breaker patterns (Envoy, Istio)
 - **Recommended**: Basic understanding of TCP/IP, DNS resolution, HTTP headers
 
@@ -888,4 +889,4 @@ Key takeaways:
 
 ## Next Module
 
-Continue to [Module 1.4: Stateful Chaos — Databases & Storage](module-1.4-stateful-chaos.md) — Test database failover, IO delays, split-brain scenarios, and storage detachment in stateful Kubernetes workloads.
+Continue to [Module 1.4: Stateful Chaos — Databases & Storage](module-1.4-stateful-chaos/) — Test database failover, IO delays, split-brain scenarios, and storage detachment in stateful Kubernetes workloads.

@@ -1,5 +1,6 @@
 ---
 title: "Module 7.3: cert-manager"
+slug: platform/toolkits/platforms/module-7.3-cert-manager
 sidebar:
   order: 4
   label: "Platforms"
@@ -735,7 +736,7 @@ Create an Ingress with the cert-manager annotation and verify it automatically c
 
 ## Next Module
 
-Continue to [Developer Experience Toolkit](../developer-experience/index.md) to learn about k9s, Telepresence, and local Kubernetes development.
+Continue to [Developer Experience Toolkit](../developer-experience/) to learn about k9s, Telepresence, and local Kubernetes development.
 
 ---
 

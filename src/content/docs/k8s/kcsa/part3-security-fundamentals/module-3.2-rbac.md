@@ -1,5 +1,6 @@
 ---
 title: "Module 3.2: RBAC Fundamentals"
+slug: k8s/kcsa/part3-security-fundamentals/module-3.2-rbac
 sidebar:
   order: 3
   label: "Part 3: Security Fundamentals"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 3.1: Pod Security](module-3.1-pod-security.md)
+> **Prerequisites**: [Module 3.1: Pod Security](module-3.1-pod-security/)
 
 ---
 
@@ -592,4 +593,4 @@ Best practices:
 
 ## Next Module
 
-[Module 3.3: Secrets Management](module-3.3-secrets.md) - How to securely handle sensitive data in Kubernetes.
+[Module 3.3: Secrets Management](module-3.3-secrets/) - How to securely handle sensitive data in Kubernetes.

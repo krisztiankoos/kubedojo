@@ -1,5 +1,6 @@
 ---
 title: "Module 6.4: FinOps with OpenCost"
+slug: platform/toolkits/scaling-reliability/module-6.4-finops-opencost
 sidebar:
   order: 5
   label: "Scaling & Reliability"
@@ -19,7 +20,7 @@ Your cluster is running. Pods are healthy. Alerts are quiet. But nobody can answ
 
 **Prerequisites**:
 - Kubernetes resource requests and limits
-- [Module 6.1: Karpenter](module-6.1-karpenter.md) — Node provisioning and spot strategies
+- [Module 6.1: Karpenter](module-6.1-karpenter/) — Node provisioning and spot strategies
 - Helm basics
 - Namespace and RBAC fundamentals
 
@@ -347,7 +348,7 @@ spec:
       terminationGracePeriodSeconds: 30
 ```
 
-See [Module 6.1: Karpenter](module-6.1-karpenter.md) for configuring NodePools that mix spot and on-demand capacity automatically.
+See [Module 6.1: Karpenter](module-6.1-karpenter/) for configuring NodePools that mix spot and on-demand capacity automatically.
 
 ---
 
@@ -844,11 +845,11 @@ kind delete cluster --name finops-lab
 
 ## Next Module
 
-You have completed the Scaling and Reliability Toolkit. Continue to the [Platforms Toolkit](../platforms/index.md) to learn about building internal developer platforms with Backstage, Crossplane, and more.
+You have completed the Scaling and Reliability Toolkit. Continue to the [Platforms Toolkit](../platforms/) to learn about building internal developer platforms with Backstage, Crossplane, and more.
 
 **Related modules**:
-- [Module 6.1: Karpenter](module-6.1-karpenter.md) — Configure spot instances and node consolidation that directly reduce compute costs
-- [Module 6.3: Velero](module-6.3-velero.md) — Backup strategies that affect storage costs
+- [Module 6.1: Karpenter](module-6.1-karpenter/) — Configure spot instances and node consolidation that directly reduce compute costs
+- [Module 6.3: Velero](module-6.3-velero/) — Backup strategies that affect storage costs
 
 ---
 

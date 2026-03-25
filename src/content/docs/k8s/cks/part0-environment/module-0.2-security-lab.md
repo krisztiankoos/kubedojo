@@ -1,5 +1,6 @@
 ---
 title: "Module 0.2: Security Lab Setup"
+slug: k8s/cks/part0-environment/module-0.2-security-lab
 sidebar:
   order: 2
   label: "Part 0: Environment"
@@ -534,4 +535,4 @@ This lab environment lets you practice every CKS exam domain hands-on.
 
 ## Next Module
 
-[Module 0.3: Security Tool Mastery](module-0.3-security-tools.md) - Deep dive into Trivy, Falco, and kube-bench usage.
+[Module 0.3: Security Tool Mastery](module-0.3-security-tools/) - Deep dive into Trivy, Falco, and kube-bench usage.

@@ -710,4 +710,4 @@ cd .. && rm -rf cba-lab
 
 ## Next Module
 
-[Module 2: Backstage Plugins and Extensions](module-2-backstage-plugin-development.md) - Build your first frontend and backend plugin, understand the plugin API system, and learn how Backstage's dependency injection works.
+[Module 2: Backstage Plugins and Extensions](module-2-backstage-plugin-development/) - Build your first frontend and backend plugin, understand the plugin API system, and learn how Backstage's dependency injection works.

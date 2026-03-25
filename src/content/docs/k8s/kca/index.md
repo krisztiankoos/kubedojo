@@ -22,8 +22,8 @@ These modules cover the areas between KubeDojo's existing Kyverno toolkit module
 
 | # | Module | Topic | Domains Covered |
 |---|--------|-------|-----------------|
-| 1 | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) | verifyImages, CEL expressions, cleanup policies, advanced validate/mutate/generate | Domain 5 (32%) |
-| 2 | [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) | kyverno apply/test/jp, policy exceptions, metrics, HA deployment | Domains 2, 3, 6 (40%) |
+| 1 | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/) | verifyImages, CEL expressions, cleanup policies, advanced validate/mutate/generate | Domain 5 (32%) |
+| 2 | [Kyverno Operations & CLI](module-2-kyverno-operations-cli/) | kyverno apply/test/jp, policy exceptions, metrics, HA deployment | Domains 2, 3, 6 (40%) |
 
 ---
 
@@ -33,10 +33,10 @@ These modules cover the areas between KubeDojo's existing Kyverno toolkit module
 |--------|--------|-------------------|
 | Fundamentals of Kyverno | 18% | Excellent (Kyverno toolkit module) |
 | Installation, Configuration & Upgrades | 18% | Good (Kyverno module + CKS modules) |
-| Kyverno CLI | 12% | Excellent ([Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) — apply/test/jp) |
+| Kyverno CLI | 12% | Excellent ([Kyverno Operations & CLI](module-2-kyverno-operations-cli/) — apply/test/jp) |
 | Applying Policies | 10% | Excellent (Kyverno + OPA modules) |
-| Writing Policies | 32% | Excellent ([Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) — CEL, verifyImages, cleanup) |
-| Policy Management | 10% | Excellent ([Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) — exceptions, metrics, HA) |
+| Writing Policies | 32% | Excellent ([Advanced Kyverno Policies](module-1-advanced-kyverno-policies/) — CEL, verifyImages, cleanup) |
+| Policy Management | 10% | Excellent ([Kyverno Operations & CLI](module-2-kyverno-operations-cli/) — exceptions, metrics, HA) |
 
 ---
 
@@ -54,16 +54,16 @@ These modules cover the areas between KubeDojo's existing Kyverno toolkit module
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Architecture, policy model, validate/mutate/generate | Direct |
-| [OPA & Gatekeeper 4.2](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md) | Policy engine concepts, admission control patterns | Context |
+| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno/) | Architecture, policy model, validate/mutate/generate | Direct |
+| [OPA & Gatekeeper 4.2](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper/) | Policy engine concepts, admission control patterns | Context |
 
 **Kubernetes foundations (admission controllers):**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [CKS Admission Controllers](../../k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers.md) | ValidatingWebhookConfiguration, MutatingWebhookConfiguration | Direct |
-| [CKS Pod Security Admission](../../k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission.md) | Built-in admission control, PSA vs policy engines | Context |
-| [CKS API Server Security](../../k8s/cks/part2-cluster-hardening/module-2.3-api-server-security.md) | API server admission chain | Context |
+| [CKS Admission Controllers](../../k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers/) | ValidatingWebhookConfiguration, MutatingWebhookConfiguration | Direct |
+| [CKS Pod Security Admission](../../k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission/) | Built-in admission control, PSA vs policy engines | Context |
+| [CKS API Server Security](../../k8s/cks/part2-cluster-hardening/module-2.3-api-server-security/) | API server admission chain | Context |
 
 ### Key Concepts to Master
 - **Admission webhook flow**: API request -> mutating webhooks -> validating webhooks -> persist to etcd
@@ -88,14 +88,14 @@ These modules cover the areas between KubeDojo's existing Kyverno toolkit module
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Installation, Helm values, basic configuration | Direct |
+| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno/) | Installation, Helm values, basic configuration | Direct |
 
 **Supporting Kubernetes concepts:**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [CKS Kubernetes Upgrades](../../k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades.md) | Upgrade strategies, version skew | Context |
-| [Helm & Kustomize](../../platform/toolkits/gitops-deployments/module-2.4-helm-kustomize.md) | Helm install, upgrade, rollback patterns | Direct |
+| [CKS Kubernetes Upgrades](../../k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades/) | Upgrade strategies, version skew | Context |
+| [Helm & Kustomize](../../platform/toolkits/gitops-deployments/module-2.4-helm-kustomize/) | Helm install, upgrade, rollback patterns | Direct |
 
 ### Key Concepts to Master
 - **Helm install**: `helm install kyverno kyverno/kyverno -n kyverno --create-namespace`
@@ -119,10 +119,10 @@ These modules cover the areas between KubeDojo's existing Kyverno toolkit module
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | CLI basics, CI/CD integration | Partial |
-| [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) | kyverno apply/test/jp, policy exceptions, metrics, HA deployment | Direct |
-| [DevSecOps 4.3](../../platform/disciplines/devsecops/module-4.3-security-cicd.md) | Security in CI/CD pipelines (policy-as-code pattern) | Context |
-| [CKS Static Analysis](../../k8s/cks/part5-supply-chain-security/module-5.3-static-analysis.md) | Pre-deploy scanning concepts | Context |
+| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno/) | CLI basics, CI/CD integration | Partial |
+| [Kyverno Operations & CLI](module-2-kyverno-operations-cli/) | kyverno apply/test/jp, policy exceptions, metrics, HA deployment | Direct |
+| [DevSecOps 4.3](../../platform/disciplines/devsecops/module-4.3-security-cicd/) | Security in CI/CD pipelines (policy-as-code pattern) | Context |
+| [CKS Static Analysis](../../k8s/cks/part5-supply-chain-security/module-5.3-static-analysis/) | Pre-deploy scanning concepts | Context |
 
 ### Key Concepts to Master
 
@@ -159,8 +159,8 @@ kyverno apply policies/ --resource manifests/ --detailed-results
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | match/exclude, resource selection | Direct |
-| [OPA & Gatekeeper 4.2](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper.md) | Constraint selectors (comparison) | Context |
+| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno/) | match/exclude, resource selection | Direct |
+| [OPA & Gatekeeper 4.2](../../platform/toolkits/security-tools/module-4.2-opa-gatekeeper/) | Constraint selectors (comparison) | Context |
 
 ### Key Concepts to Master
 
@@ -214,17 +214,17 @@ spec:
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Validate, mutate, generate policies with examples | Direct |
-| [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) | verifyImages, CEL expressions, cleanup policies, advanced patterns | Direct |
-| [Security Mindset 4.1](../../platform/foundations/security-principles/module-4.1-security-mindset.md) | Why policy enforcement matters | Context |
-| [Defense in Depth 4.2](../../platform/foundations/security-principles/module-4.2-defense-in-depth.md) | Layered security model | Context |
+| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno/) | Validate, mutate, generate policies with examples | Direct |
+| [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/) | verifyImages, CEL expressions, cleanup policies, advanced patterns | Direct |
+| [Security Mindset 4.1](../../platform/foundations/security-principles/module-4.1-security-mindset/) | Why policy enforcement matters | Context |
+| [Defense in Depth 4.2](../../platform/foundations/security-principles/module-4.2-defense-in-depth/) | Layered security model | Context |
 
 **Additional depth (verifyImages, CEL, cleanup):**
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Supply Chain Security 4.4](../../platform/toolkits/security-tools/module-4.4-supply-chain.md) | Cosign, image signing, attestations (verifyImages context) | Direct |
-| [DevSecOps Supply Chain 4.4](../../platform/disciplines/devsecops/module-4.4-supply-chain-security.md) | Supply chain theory, SLSA, SBOM | Context |
+| [Supply Chain Security 4.4](../../platform/toolkits/security-tools/module-4.4-supply-chain/) | Cosign, image signing, attestations (verifyImages context) | Direct |
+| [DevSecOps Supply Chain 4.4](../../platform/disciplines/devsecops/module-4.4-supply-chain-security/) | Supply chain theory, SLSA, SBOM | Context |
 
 ### Key Concepts to Master
 
@@ -292,7 +292,7 @@ spec:
           - Ingress
 ```
 
-**verifyImages (enforce image signatures) -- covered in [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md):**
+**verifyImages (enforce image signatures) -- covered in [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/):**
 ```yaml
 spec:
   rules:
@@ -314,7 +314,7 @@ spec:
               -----END PUBLIC KEY-----
 ```
 
-**CEL expressions (alternative to JMESPath) -- covered in [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md):**
+**CEL expressions (alternative to JMESPath) -- covered in [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/):**
 ```yaml
 spec:
   rules:
@@ -331,7 +331,7 @@ spec:
           message: "Deployments must have at least 2 replicas"
 ```
 
-**Cleanup policies (TTL-based deletion) -- covered in [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md):**
+**Cleanup policies (TTL-based deletion) -- covered in [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/):**
 ```yaml
 apiVersion: kyverno.io/v2beta1
 kind: ClusterCleanupPolicy
@@ -375,10 +375,10 @@ spec:
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno.md) | Policy reports, audit mode | Direct |
-| [Prometheus](../../platform/toolkits/observability/module-1.1-prometheus.md) | Prometheus metrics, ServiceMonitor | Context |
-| [SRE SLOs 1.2](../../platform/disciplines/sre/module-1.2-slos.md) | Measuring policy compliance as an SLO | Context |
-| [DevSecOps Fundamentals 4.1](../../platform/disciplines/devsecops/module-4.1-devsecops-fundamentals.md) | Policy-as-code lifecycle | Context |
+| [Kyverno 4.7](../../platform/toolkits/security-tools/module-4.7-kyverno/) | Policy reports, audit mode | Direct |
+| [Prometheus](../../platform/toolkits/observability/module-1.1-prometheus/) | Prometheus metrics, ServiceMonitor | Context |
+| [SRE SLOs 1.2](../../platform/disciplines/sre/module-1.2-slos/) | Measuring policy compliance as an SLO | Context |
+| [DevSecOps Fundamentals 4.1](../../platform/disciplines/devsecops/module-4.1-devsecops-fundamentals/) | Policy-as-code lifecycle | Context |
 
 ### Key Concepts to Master
 
@@ -487,13 +487,13 @@ KubeDojo's existing modules plus the two dedicated KCA modules now cover ~95% of
 
 | Topic | Status | Notes |
 |-------|--------|-------|
-| verifyImages policies | Covered | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) — Cosign, attestations, image verification |
-| CEL expressions in Kyverno | Covered | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) — CEL validate expressions |
-| Cleanup policies | Covered | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies.md) — ClusterCleanupPolicy, TTL-based deletion |
-| Kyverno CLI deep dive | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) — apply, test, jp commands |
-| Policy exceptions | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) — PolicyException CRD |
-| Kyverno Prometheus metrics | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) — admission, policy result, and execution metrics |
-| HA deployment details | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli.md) — replicas, anti-affinity, webhook config |
+| verifyImages policies | Covered | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/) — Cosign, attestations, image verification |
+| CEL expressions in Kyverno | Covered | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/) — CEL validate expressions |
+| Cleanup policies | Covered | [Advanced Kyverno Policies](module-1-advanced-kyverno-policies/) — ClusterCleanupPolicy, TTL-based deletion |
+| Kyverno CLI deep dive | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli/) — apply, test, jp commands |
+| Policy exceptions | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli/) — PolicyException CRD |
+| Kyverno Prometheus metrics | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli/) — admission, policy result, and execution metrics |
+| HA deployment details | Covered | [Kyverno Operations & CLI](module-2-kyverno-operations-cli/) — replicas, anti-affinity, webhook config |
 
 ### Recommended External Resources
 - **Kyverno documentation**: [kyverno.io/docs](https://kyverno.io/docs/) -- authoritative reference for all domains

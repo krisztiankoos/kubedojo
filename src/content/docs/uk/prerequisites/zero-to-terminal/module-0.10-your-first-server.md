@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.10: \u0412\u0430\u0448 \u043f\u0435\u0440\u0448\u0438\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u2014 \u0417\u0431\u0438\u0440\u0430\u0454\u043c\u043e \u0432\u0441\u0435 \u0440\u0430\u0437\u043e\u043c"
+slug: uk/prerequisites/zero-to-terminal/module-0.10-your-first-server
 sidebar:
   order: 11
   label: "Zero to Terminal"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Час на виконання**: 40–50 хвилин
 >
-> **Передумови**: [Модуль 0.1](module-0.1-what-is-a-computer.md) до [Модуль 0.9](module-0.9-what-is-the-cloud.md) — усі
+> **Передумови**: [Модуль 0.1](module-0.1-what-is-a-computer/) до [Модуль 0.9](module-0.9-what-is-the-cloud/) — усі
 
 ---
 
@@ -453,7 +454,7 @@ exit
 
 Якщо ви хочете стати системним інженером, SRE чи будь-ким, хто керує інфраструктурою, цей шлях робить вас по-справжньому сильним (у найкращому сенсі).
 
-> Почніть тут: [Linux Fundamentals](../../linux/index.md)
+> Почніть тут: [Linux Fundamentals](../../linux/)
 
 ### Шлях B: Cloud Native
 
@@ -463,7 +464,7 @@ exit
 
 Якщо ви хочете стати хмарним інженером, DevOps-інженером чи платформним інженером — це ваш шлях.
 
-> Почніть тут: [Cloud Native 101](../cloud-native-101/module-1-what-are-containers.md)
+> Почніть тут: [Cloud Native 101](../cloud-native-101/module-1-what-are-containers/)
 
 ### Шлях C: Обидва
 

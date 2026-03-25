@@ -27,10 +27,10 @@ This isn't about installing tools. It's about building the mental models that ma
 
 | # | Module | Time | Description |
 |---|--------|------|-------------|
-| 3.1 | [What is Observability?](module-3.1-what-is-observability.md) | 25-30 min | Control theory origins, monitoring vs observability |
-| 3.2 | [The Three Pillars](module-3.2-the-three-pillars.md) | 30-35 min | Logs, metrics, traces, and correlation |
-| 3.3 | [Instrumentation Principles](module-3.3-instrumentation-principles.md) | 30-35 min | What to instrument, patterns, context propagation |
-| 3.4 | [From Data to Insight](module-3.4-from-data-to-insight.md) | 35-40 min | Alerting, debugging workflows, mental models |
+| 3.1 | [What is Observability?](module-3.1-what-is-observability/) | 25-30 min | Control theory origins, monitoring vs observability |
+| 3.2 | [The Three Pillars](module-3.2-the-three-pillars/) | 30-35 min | Logs, metrics, traces, and correlation |
+| 3.3 | [Instrumentation Principles](module-3.3-instrumentation-principles/) | 30-35 min | What to instrument, patterns, context propagation |
+| 3.4 | [From Data to Insight](module-3.4-from-data-to-insight/) | 35-40 min | Alerting, debugging workflows, mental models |
 
 ---
 
@@ -112,8 +112,8 @@ Principles   Discipline        Toolkit
 
 ## Prerequisites
 
-- **Required**: [Systems Thinking Track](../systems-thinking/index.md) — Understanding feedback loops and emergence
-- **Recommended**: [Reliability Engineering Track](../reliability-engineering/index.md) — SLIs, SLOs, error budgets
+- **Required**: [Systems Thinking Track](../systems-thinking/) — Understanding feedback loops and emergence
+- **Recommended**: [Reliability Engineering Track](../reliability-engineering/) — SLIs, SLOs, error budgets
 - Helpful: Experience running any production system
 - Helpful: Basic understanding of HTTP and distributed systems
 
@@ -125,10 +125,10 @@ After completing Observability Theory, you're ready for:
 
 | Track | Why |
 |-------|-----|
-| [Security Principles](../security-principles/index.md) | Security monitoring uses same concepts |
-| [SRE Discipline](../../disciplines/sre/index.md) | Put observability into SRE practice |
-| [Observability Toolkit](../../toolkits/observability/index.md) | Learn specific tools (Prometheus, Grafana, OTel) |
-| [Platform Engineering](../../disciplines/platform-engineering/index.md) | Build observability into your platform |
+| [Security Principles](../security-principles/) | Security monitoring uses same concepts |
+| [SRE Discipline](../../disciplines/sre/) | Put observability into SRE practice |
+| [Observability Toolkit](../../toolkits/observability/) | Learn specific tools (Prometheus, Grafana, OTel) |
+| [Platform Engineering](../../disciplines/platform-engineering/) | Build observability into your platform |
 
 ---
 

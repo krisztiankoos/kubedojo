@@ -1,5 +1,6 @@
 ---
 title: "Module 4.4: Supply Chain Threats"
+slug: k8s/kcsa/part4-threat-model/module-4.4-supply-chain
 sidebar:
   order: 5
   label: "Part 4: Threat Model"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 4.3: Container Escape](module-4.3-container-escape.md)
+> **Prerequisites**: [Module 4.3: Container Escape](module-4.3-container-escape/)
 
 ---
 
@@ -588,4 +589,4 @@ Key controls:
 
 ## Next Module
 
-[Module 5.1: Image Security](../part5-platform-security/module-5.1-image-security.md) - Securing container images through the lifecycle.
+[Module 5.1: Image Security](../part5-platform-security/module-5.1-image-security/) - Securing container images through the lifecycle.

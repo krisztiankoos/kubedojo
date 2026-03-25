@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: The Operator Pattern & Kubebuilder"
+slug: k8s/extending/module-1.4-kubebuilder
 sidebar:
   order: 5
   label: "Extending Kubernetes"
@@ -907,4 +908,4 @@ kind delete cluster --name kubebuilder-lab
 
 ## Next Module
 
-[Module 1.5: Advanced Operator Development](module-1.5-advanced-operators.md) - Add finalizers, status conditions, Kubernetes events, and comprehensive testing with envtest.
+[Module 1.5: Advanced Operator Development](module-1.5-advanced-operators/) - Add finalizers, status conditions, Kubernetes events, and comprehensive testing with envtest.

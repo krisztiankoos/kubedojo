@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: Developer Experience (DevEx)"
+slug: platform/disciplines/platform-engineering/module-2.2-developer-experience
 sidebar:
   order: 3
   label: "Platform Engineering"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.1: What is Platform Engineering?](module-2.1-what-is-platform-engineering.md) — Platform foundations
-- **Recommended**: [Systems Thinking Track](../../foundations/systems-thinking/index.md) — Understanding feedback loops
+- **Required**: [Module 2.1: What is Platform Engineering?](module-2.1-what-is-platform-engineering/) — Platform foundations
+- **Recommended**: [Systems Thinking Track](../../foundations/systems-thinking/) — Understanding feedback loops
 - **Helpful**: Experience working on software development teams
 
 ---
@@ -946,7 +947,7 @@ The goal isn't to build cool platforms—it's to make developers more productive
 
 ## Next Module
 
-Continue to [Module 2.3: Internal Developer Platforms (IDPs)](module-2.3-internal-developer-platforms.md) to learn the components and architecture of Internal Developer Platforms.
+Continue to [Module 2.3: Internal Developer Platforms (IDPs)](module-2.3-internal-developer-platforms/) to learn the components and architecture of Internal Developer Platforms.
 
 ---
 

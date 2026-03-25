@@ -1,5 +1,6 @@
 ---
 title: "Module 5.1: MLOps Fundamentals"
+slug: platform/disciplines/mlops/module-5.1-mlops-fundamentals
 sidebar:
   order: 2
   label: "MLOps"
@@ -10,7 +11,7 @@ sidebar:
 
 Before starting this module:
 - Basic machine learning concepts (training, inference, models)
-- [DevOps fundamentals](../devsecops/module-4.1-devsecops-fundamentals.md)
+- [DevOps fundamentals](../devsecops/module-4.1-devsecops-fundamentals/)
 - Understanding of CI/CD pipelines
 - Python basics
 
@@ -533,4 +534,4 @@ MLOps brings engineering rigor to machine learning. By treating ML systems as so
 
 ## Next Module
 
-Continue to [Module 5.2: Feature Engineering & Stores](module-5.2-feature-stores.md) to learn how feature stores ensure consistency between training and serving.
+Continue to [Module 5.2: Feature Engineering & Stores](module-5.2-feature-stores/) to learn how feature stores ensure consistency between training and serving.

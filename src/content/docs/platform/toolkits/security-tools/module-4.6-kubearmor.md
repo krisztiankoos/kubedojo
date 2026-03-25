@@ -1,5 +1,6 @@
 ---
 title: "Module 4.6: KubeArmor - Runtime Security with Least Privilege"
+slug: platform/toolkits/security-tools/module-4.6-kubearmor
 sidebar:
   order: 7
   label: "Security Tools"
@@ -987,4 +988,4 @@ How do you view KubeArmor security events?
 
 ## Next Module
 
-You've completed the security tools toolkit! Continue to [Platform Engineering Disciplines](../../disciplines/index.md) to learn how to apply these tools in practice.
+You've completed the security tools toolkit! Continue to [Platform Engineering Disciplines](../../disciplines/) to learn how to apply these tools in practice.

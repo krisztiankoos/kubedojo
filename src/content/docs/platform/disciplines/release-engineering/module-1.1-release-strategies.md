@@ -1,5 +1,6 @@
 ---
 title: "Module 1.1: Release Strategies & Progressive Delivery Fundamentals"
+slug: platform/disciplines/release-engineering/module-1.1-release-strategies
 sidebar:
   order: 2
   label: "Release Engineering"
@@ -10,7 +11,7 @@ sidebar:
 
 Before starting this module:
 - **Required**: CI/CD Fundamentals — Understanding build pipelines, artifact promotion, and deployment automation
-- **Required**: [Kubernetes Deployments](../../../k8s/ckad/index.md) — Working knowledge of Deployments, Services, and label selectors
+- **Required**: [Kubernetes Deployments](../../../k8s/ckad/) — Working knowledge of Deployments, Services, and label selectors
 - **Recommended**: Basic understanding of load balancers and HTTP routing
 - **Recommended**: Familiarity with monitoring/observability concepts
 
@@ -891,7 +892,7 @@ The measure of great release engineering is how boring your deployments become.
 
 ## Next Module
 
-Continue to [Module 1.2: Advanced Canary Deployments with Argo Rollouts](module-1.2-argo-rollouts.md) to learn how to automate canary deployments with metrics-driven promotion and rollback.
+Continue to [Module 1.2: Advanced Canary Deployments with Argo Rollouts](module-1.2-argo-rollouts/) to learn how to automate canary deployments with metrics-driven promotion and rollback.
 
 ---
 

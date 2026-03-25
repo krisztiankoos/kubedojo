@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: Serving LLMs at Scale"
+slug: platform/disciplines/ai-infrastructure/module-1.5-llm-serving
 sidebar:
   order: 6
   label: "AI Infrastructure"
@@ -9,9 +10,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: Advanced GPU Scheduling & Sharing](module-1.2-gpu-scheduling.md) — GPU allocation, topology awareness
+- **Required**: [Module 1.2: Advanced GPU Scheduling & Sharing](module-1.2-gpu-scheduling/) — GPU allocation, topology awareness
 - **Required**: Kubernetes Services, Deployments, HPA basics
-- **Recommended**: [Module 1.4: High-Performance Storage for AI](module-1.4-ai-storage.md) — Model weight loading
+- **Recommended**: [Module 1.4: High-Performance Storage for AI](module-1.4-ai-storage/) — Model weight loading
 - **Recommended**: Basic understanding of transformer architecture and language models
 - **Recommended**: Access to a cluster with 1+ GPU that has at least 16GB VRAM
 
@@ -1082,7 +1083,7 @@ Serving LLMs at scale requires purpose-built inference engines (vLLM, TGI) that 
 
 ## Next Module
 
-Continue to [Module 1.6: Cost & Capacity Planning for AI](module-1.6-ai-cost.md) to learn how to optimize GPU spending with spot instances, Karpenter, Kueue, and utilization profiling.
+Continue to [Module 1.6: Cost & Capacity Planning for AI](module-1.6-ai-cost/) to learn how to optimize GPU spending with spot instances, Karpenter, Kueue, and utilization profiling.
 
 ---
 

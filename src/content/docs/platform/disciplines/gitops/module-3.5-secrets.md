@@ -1,5 +1,6 @@
 ---
 title: "Module 3.5: Secrets in GitOps"
+slug: platform/disciplines/gitops/module-3.5-secrets
 sidebar:
   order: 6
   label: "GitOps"
@@ -9,8 +10,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops.md) — GitOps fundamentals
-- **Required**: [Security Principles Track](../../foundations/security-principles/index.md) — Security fundamentals
+- **Required**: [Module 3.1: What is GitOps?](module-3.1-what-is-gitops/) — GitOps fundamentals
+- **Required**: [Security Principles Track](../../foundations/security-principles/) — Security fundamentals
 - **Recommended**: Understanding of Kubernetes Secrets
 - **Helpful**: Basic cryptography concepts (encryption, keys)
 
@@ -934,7 +935,7 @@ All approaches share the goal: keep plaintext secrets out of Git while maintaini
 
 ## Next Module
 
-Continue to [Module 3.6: Multi-Cluster GitOps](module-3.6-multi-cluster.md) to learn how to manage multiple clusters with GitOps.
+Continue to [Module 3.6: Multi-Cluster GitOps](module-3.6-multi-cluster/) to learn how to manage multiple clusters with GitOps.
 
 ---
 

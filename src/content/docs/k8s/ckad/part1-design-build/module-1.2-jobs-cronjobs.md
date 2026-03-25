@@ -1,5 +1,6 @@
 ---
 title: "Module 1.2: Jobs and CronJobs"
+slug: k8s/ckad/part1-design-build/module-1.2-jobs-cronjobs
 sidebar:
   order: 2
   label: "Part 1: Design & Build"
@@ -701,4 +702,4 @@ k delete configmap backup-script
 
 ## Next Module
 
-[Module 1.3: Multi-Container Pods](module-1.3-multi-container-pods.md) - Sidecar, init, and ambassador patterns.
+[Module 1.3: Multi-Container Pods](module-1.3-multi-container-pods/) - Sidecar, init, and ambassador patterns.

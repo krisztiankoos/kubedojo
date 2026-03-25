@@ -13,10 +13,10 @@ Troubleshooting isn't guesswork—it's methodology. This section teaches systema
 
 | # | Module | Description | Time |
 |---|--------|-------------|------|
-| 6.1 | [Systematic Troubleshooting](module-6.1-systematic-troubleshooting.md) | Methodologies: hypothesis-driven, divide & conquer, timeline | 25-30 min |
-| 6.2 | [Log Analysis](module-6.2-log-analysis.md) | journald, syslog, log patterns, correlation | 25-30 min |
-| 6.3 | [Process Debugging](module-6.3-process-debugging.md) | strace, ltrace, /proc, debugging hung processes | 30-35 min |
-| 6.4 | [Network Debugging](module-6.4-network-debugging.md) | tcpdump, ss, connectivity issues, DNS problems | 30-35 min |
+| 6.1 | [Systematic Troubleshooting](module-6.1-systematic-troubleshooting/) | Methodologies: hypothesis-driven, divide & conquer, timeline | 25-30 min |
+| 6.2 | [Log Analysis](module-6.2-log-analysis/) | journald, syslog, log patterns, correlation | 25-30 min |
+| 6.3 | [Process Debugging](module-6.3-process-debugging/) | strace, ltrace, /proc, debugging hung processes | 30-35 min |
+| 6.4 | [Network Debugging](module-6.4-network-debugging/) | tcpdump, ss, connectivity issues, DNS problems | 30-35 min |
 
 ## Why This Section Matters
 
@@ -29,9 +29,9 @@ Production issues don't come with error messages. Systematic debugging skills he
 
 ## Prerequisites
 
-- [Performance](../performance/index.md) — USE method and metrics
-- [Networking](../../foundations/networking/index.md) — TCP/IP and iptables
-- [Security Hardening](../../security/hardening/index.md) — SELinux/AppArmor denials
+- [Performance](../performance/) — USE method and metrics
+- [Networking](../../foundations/networking/) — TCP/IP and iptables
+- [Security Hardening](../../security/hardening/) — SELinux/AppArmor denials
 
 ## Key Takeaways
 
@@ -44,6 +44,6 @@ After completing this section, you'll understand:
 
 ## Related Sections
 
-- **Previous**: [Performance](../performance/index.md)
-- **Next**: [Shell Scripting](../shell-scripting/index.md)
+- **Previous**: [Performance](../performance/)
+- **Next**: [Shell Scripting](../shell-scripting/)
 - **CKA**: Cluster troubleshooting domain

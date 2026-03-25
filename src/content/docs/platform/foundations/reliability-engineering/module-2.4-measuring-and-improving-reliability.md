@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Measuring and Improving Reliability"
+slug: platform/foundations/reliability-engineering/module-2.4-measuring-and-improving-reliability
 sidebar:
   order: 5
   label: "Reliability Engineering"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 40-45 minutes
 >
-> **Prerequisites**: [Module 2.3: Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance.md)
+> **Prerequisites**: [Module 2.3: Redundancy and Fault Tolerance](module-2.3-redundancy-and-fault-tolerance/)
 >
 > **Track**: Foundations
 
@@ -1155,10 +1156,10 @@ Congratulations! You've completed the Reliability Engineering foundation. You no
 
 | Your Interest | Next Track |
 |---------------|------------|
-| Understanding what's happening | [Observability Theory](../observability-theory/index.md) |
-| Operating reliable systems | [SRE Discipline](../../disciplines/sre/index.md) |
-| Building secure systems | [Security Principles](../security-principles/index.md) |
-| Distributed system challenges | [Distributed Systems](../distributed-systems/index.md) |
+| Understanding what's happening | [Observability Theory](../observability-theory/) |
+| Operating reliable systems | [SRE Discipline](../../disciplines/sre/) |
+| Building secure systems | [Security Principles](../security-principles/) |
+| Distributed system challenges | [Distributed Systems](../distributed-systems/) |
 
 ---
 

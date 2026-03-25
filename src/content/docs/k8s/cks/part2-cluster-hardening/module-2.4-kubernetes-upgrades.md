@@ -1,5 +1,6 @@
 ---
 title: "Module 2.4: Kubernetes Security Upgrades"
+slug: k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades
 sidebar:
   order: 4
   label: "Part 2: Cluster Hardening"
@@ -525,4 +526,4 @@ echo "6. ✓ Verified NetworkPolicy support"
 
 ## Next Module
 
-[Module 2.5: Restricting API Access](module-2.5-restricting-api-access.md) - Network and authentication restrictions for the API server.
+[Module 2.5: Restricting API Access](module-2.5-restricting-api-access/) - Network and authentication restrictions for the API server.

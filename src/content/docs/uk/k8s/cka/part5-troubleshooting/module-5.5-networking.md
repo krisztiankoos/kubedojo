@@ -1,5 +1,6 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.5: \u0423\u0441\u0443\u043d\u0435\u043d\u043d\u044f \u043c\u0435\u0440\u0435\u0436\u0435\u0432\u0438\u0445 \u043d\u0435\u0441\u043f\u0440\u0430\u0432\u043d\u043e\u0441\u0442\u0435\u0439"
+slug: uk/k8s/cka/part5-troubleshooting/module-5.5-networking
 sidebar:
   order: 6
   label: "Part 5: Troubleshooting"
@@ -791,4 +792,4 @@ k get endpoints <service>              # Endpoints
 
 ## Наступний модуль
 
-Переходьте до [Модуль 5.6: Усунення несправностей Сервісів](module-5.6-services.md) для глибшого занурення в усунення несправностей Сервісів, Ingress та LoadBalancer.
+Переходьте до [Модуль 5.6: Усунення несправностей Сервісів](module-5.6-services/) для глибшого занурення в усунення несправностей Сервісів, Ingress та LoadBalancer.

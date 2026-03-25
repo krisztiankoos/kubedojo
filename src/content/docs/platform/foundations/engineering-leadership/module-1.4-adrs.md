@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Architecture Decision Records & Technical Writing"
+slug: platform/foundations/engineering-leadership/module-1.4-adrs
 sidebar:
   order: 5
   label: "Engineering Leadership"
@@ -269,7 +270,7 @@ Instead, mark the old ADR as `Superseded by ADR-XXX` and add a note at the top:
 ```markdown
 ## Status
 
-**Superseded by [ADR-042: Migration to Apache Pulsar](042-migration-to-pulsar.md)**
+**Superseded by [ADR-042: Migration to Apache Pulsar](042-migration-to-pulsar/)**
 
 > This ADR documented our 2023 decision to use AWS MSK. In 2025, we
 > migrated to Apache Pulsar due to multi-cloud requirements. See ADR-042
@@ -816,7 +817,7 @@ TRADE-OFF ANALYSIS FRAMEWORK
 
 ## Next Module
 
-[Module 1.5: Stakeholder Communication & Managing Expectations](module-1.5-stakeholders.md) --- Translating tech debt into business risk, saying "No" effectively, and communicating during crises to non-technical stakeholders.
+[Module 1.5: Stakeholder Communication & Managing Expectations](module-1.5-stakeholders/) --- Translating tech debt into business risk, saying "No" effectively, and communicating during crises to non-technical stakeholders.
 
 ---
 

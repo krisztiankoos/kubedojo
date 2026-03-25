@@ -1,5 +1,6 @@
 ---
 title: "Module 1.5: Advanced Operator Development"
+slug: k8s/extending/module-1.5-advanced-operators
 sidebar:
   order: 6
   label: "Extending Kubernetes"
@@ -1107,4 +1108,4 @@ kind delete cluster --name advanced-operator-lab
 
 ## Next Module
 
-[Module 1.6: Admission Webhooks](module-1.6-admission-webhooks.md) - Intercept and modify API requests with mutating and validating webhooks.
+[Module 1.6: Admission Webhooks](module-1.6-admission-webhooks/) - Intercept and modify API requests with mutating and validating webhooks.

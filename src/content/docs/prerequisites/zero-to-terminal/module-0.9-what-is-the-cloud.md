@@ -1,5 +1,6 @@
 ---
 title: "Module 0.9: What is the Cloud?"
+slug: prerequisites/zero-to-terminal/module-0.9-what-is-the-cloud
 sidebar:
   order: 10
   label: "Zero to Terminal"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 20 minutes
 >
-> **Prerequisites**: [Module 0.7 - Servers and SSH](module-0.7-servers-and-ssh.md)
+> **Prerequisites**: [Module 0.7 - Servers and SSH](module-0.7-servers-and-ssh/)
 
 ---
 
@@ -467,7 +468,7 @@ You started knowing nothing about computers or terminals, and now you understand
 - What servers are and how to connect to them
 - What the cloud is and where Kubernetes fits
 
-Your next step is [Cloud Native 101](../cloud-native-101/module-1-what-are-containers.md), where you'll learn about containers -- the technology that makes Kubernetes possible. Containers are like standardized shipping containers for software, and they changed everything about how we build and deploy applications.
+Your next step is [Cloud Native 101](../cloud-native-101/module-1-what-are-containers/), where you'll learn about containers -- the technology that makes Kubernetes possible. Containers are like standardized shipping containers for software, and they changed everything about how we build and deploy applications.
 
 The foundation is solid. The kitchen is built. Time to start cooking.
 

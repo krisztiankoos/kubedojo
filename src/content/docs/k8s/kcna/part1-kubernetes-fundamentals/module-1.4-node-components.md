@@ -1,5 +1,6 @@
 ---
 title: "Module 1.4: Kubernetes Architecture - Node Components"
+slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.4-node-components
 sidebar:
   order: 5
   label: "Part 1: K8s Fundamentals"
@@ -355,4 +356,4 @@ The **container runtime** actually runs containers:
 
 ## Next Module
 
-[Module 1.5: Pods](module-1.5-pods.md) - The fundamental building block of Kubernetes workloads.
+[Module 1.5: Pods](module-1.5-pods/) - The fundamental building block of Kubernetes workloads.

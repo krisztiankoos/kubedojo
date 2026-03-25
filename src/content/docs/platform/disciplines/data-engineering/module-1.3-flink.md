@@ -1,5 +1,6 @@
 ---
 title: "Module 1.3: Stream Processing with Apache Flink"
+slug: platform/disciplines/data-engineering/module-1.3-flink
 sidebar:
   order: 4
   label: "Data Engineering"
@@ -9,7 +10,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2 — Apache Kafka on Kubernetes](module-1.2-kafka.md) — Kafka fundamentals, topics, partitions, consumer groups
+- **Required**: [Module 1.2 — Apache Kafka on Kubernetes](module-1.2-kafka/) — Kafka fundamentals, topics, partitions, consumer groups
 - **Required**: Basic Java or Python programming knowledge
 - **Recommended**: Understanding of SQL (SELECT, GROUP BY, JOIN, window functions)
 - **Recommended**: Familiarity with event-driven architecture concepts
@@ -905,7 +906,7 @@ The combination of Kafka (for durable event transport) and Flink (for stateful s
 
 ## Next Module
 
-Continue to [Module 1.4: Batch Processing & Apache Spark on Kubernetes](module-1.4-spark.md) to learn how to handle large-scale batch processing — the other half of the data processing story.
+Continue to [Module 1.4: Batch Processing & Apache Spark on Kubernetes](module-1.4-spark/) to learn how to handle large-scale batch processing — the other half of the data processing story.
 
 ---
 

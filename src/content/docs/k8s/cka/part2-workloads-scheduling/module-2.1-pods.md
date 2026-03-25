@@ -1,5 +1,6 @@
 ---
 title: "Module 2.1: Pods Deep-Dive"
+slug: k8s/cka/part2-workloads-scheduling/module-2.1-pods
 sidebar:
   order: 2
   label: "Part 2: Workloads & Scheduling"
@@ -959,4 +960,4 @@ kubectl delete pod challenge
 
 ## Next Module
 
-[Module 2.2: Deployments & ReplicaSets](module-2.2-deployments.md) - Rolling updates, rollbacks, and scaling.
+[Module 2.2: Deployments & ReplicaSets](module-2.2-deployments/) - Rolling updates, rollbacks, and scaling.

@@ -737,4 +737,4 @@ echo "Cleanup complete."
 
 ## Next Module
 
-Next up: **[Module 6: Artifact Registry](module-6-artifact-registry.md)** --- Learn how to store container images, scan for vulnerabilities, configure IAM-based access control, and set up upstream caching for public registries.
+Next up: **[Module 6: Artifact Registry](module-6-artifact-registry/)** --- Learn how to store container images, scan for vulnerabilities, configure IAM-based access control, and set up upstream caching for public registries.

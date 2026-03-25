@@ -14,10 +14,10 @@ Before diving into EKS, GKE, or AKS, you need to understand the architectural de
 
 | # | Module | Time | What You'll Learn |
 |---|--------|------|-------------------|
-| 1 | [Managed vs Self-Managed Kubernetes](module-1-managed-vs-selfmanaged.md) | 2h | Trade-offs, decision frameworks, TCO analysis |
-| 2 | [Multi-Cluster and Multi-Region Architectures](module-2-multi-cluster.md) | 3h | Topology patterns, failover, service mesh, federation |
-| 3 | [Cloud IAM Integration for Kubernetes](module-3-cloud-iam.md) | 2.5h | Pod-level identity, OIDC federation, least privilege |
-| 4 | [Cloud-Native Networking and VPC Topologies](module-4-vpc-topologies.md) | 3.5h | CIDR planning, CNI models, IP exhaustion, peering |
+| 1 | [Managed vs Self-Managed Kubernetes](module-1-managed-vs-selfmanaged/) | 2h | Trade-offs, decision frameworks, TCO analysis |
+| 2 | [Multi-Cluster and Multi-Region Architectures](module-2-multi-cluster/) | 3h | Topology patterns, failover, service mesh, federation |
+| 3 | [Cloud IAM Integration for Kubernetes](module-3-cloud-iam/) | 2.5h | Pod-level identity, OIDC federation, least privilege |
+| 4 | [Cloud-Native Networking and VPC Topologies](module-4-vpc-topologies/) | 3.5h | CIDR planning, CNI models, IP exhaustion, peering |
 
 **Total time**: ~11 hours
 
@@ -25,13 +25,13 @@ Before diving into EKS, GKE, or AKS, you need to understand the architectural de
 
 ## Prerequisites
 
-- [Cloud Native 101](../../prerequisites/cloud-native-101/index.md) -- containers, Docker basics
+- [Cloud Native 101](../../prerequisites/cloud-native-101/) -- containers, Docker basics
 - Basic Kubernetes knowledge (Pods, Deployments, Services)
 
 ## What's Next
 
 After Architecture Patterns, pick your cloud provider deep dive:
 
-- [AWS EKS Deep Dive](../eks-deep-dive/index.md)
-- [GCP GKE Deep Dive](../gke-deep-dive/index.md)
-- [Azure AKS Deep Dive](../aks-deep-dive/index.md)
+- [AWS EKS Deep Dive](../eks-deep-dive/)
+- [GCP GKE Deep Dive](../gke-deep-dive/)
+- [Azure AKS Deep Dive](../aks-deep-dive/)

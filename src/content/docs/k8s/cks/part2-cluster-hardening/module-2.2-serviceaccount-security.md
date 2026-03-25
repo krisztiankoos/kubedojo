@@ -1,5 +1,6 @@
 ---
 title: "Module 2.2: ServiceAccount Security"
+slug: k8s/cks/part2-cluster-hardening/module-2.2-serviceaccount-security
 sidebar:
   order: 2
   label: "Part 2: Cluster Hardening"
@@ -545,4 +546,4 @@ kubectl create token myapp-sa --duration=1h
 
 ## Next Module
 
-[Module 2.3: API Server Security](module-2.3-api-server-security.md) - Securing the Kubernetes API server.
+[Module 2.3: API Server Security](module-2.3-api-server-security/) - Securing the Kubernetes API server.

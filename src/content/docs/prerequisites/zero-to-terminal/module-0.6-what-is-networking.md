@@ -1,5 +1,6 @@
 ---
 title: "Module 0.6: What is Networking?"
+slug: prerequisites/zero-to-terminal/module-0.6-what-is-networking
 sidebar:
   order: 7
   label: "Zero to Terminal"
@@ -8,7 +9,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 0.4: Files and Directories](module-0.4-files-and-directories.md) — You should be comfortable running commands and navigating directories.
+> **Prerequisites**: [Module 0.4: Files and Directories](module-0.4-files-and-directories/) — You should be comfortable running commands and navigating directories.
 
 ---
 
@@ -465,4 +466,4 @@ You've completed this exercise when you can:
 
 You now understand how computers find and talk to each other. IP addresses, ports, DNS, and basic networking commands are in your toolkit.
 
-**Next Module**: [Module 0.8: Software and Packages](module-0.8-software-and-packages.md) — Learn how software gets installed on your computer, what package managers are, and how to install tools from the terminal.
+**Next Module**: [Module 0.8: Software and Packages](module-0.8-software-and-packages/) — Learn how software gets installed on your computer, what package managers are, and how to install tools from the terminal.

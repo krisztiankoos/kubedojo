@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 2.5 hours
 >
-> **Prerequisites**: [Module 1: Multi-Account Architecture](module-1-multi-account.md), basic understanding of IAM roles and policies in at least one cloud
+> **Prerequisites**: [Module 1: Multi-Account Architecture](module-1-multi-account/), basic understanding of IAM roles and policies in at least one cloud
 >
 > **Track**: Advanced Cloud Operations
 
@@ -976,4 +976,4 @@ roleRef:
 
 ## Next Module
 
-[Module 5: Disaster Recovery: RTO/RPO for Kubernetes](module-5-disaster-recovery.md) -- Your multi-account architecture is secure, your clusters can communicate, and your identity is solid. Now learn what happens when everything falls over. RTO, RPO, etcd snapshots, Velero, and the art of recovering from the unthinkable.
+[Module 5: Disaster Recovery: RTO/RPO for Kubernetes](module-5-disaster-recovery/) -- Your multi-account architecture is secure, your clusters can communicate, and your identity is solid. Now learn what happens when everything falls over. RTO, RPO, etcd snapshots, Velero, and the art of recovering from the unthinkable.

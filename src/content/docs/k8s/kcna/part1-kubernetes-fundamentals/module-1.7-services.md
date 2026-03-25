@@ -1,5 +1,6 @@
 ---
 title: "Module 1.7: Services"
+slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.7-services
 sidebar:
   order: 8
   label: "Part 1: K8s Fundamentals"
@@ -390,4 +391,4 @@ Services use **Endpoints** to track Pod IPs:
 
 ## Next Module
 
-[Module 1.8: Namespaces and Labels](module-1.8-namespaces-labels.md) - Organizing and selecting resources in Kubernetes.
+[Module 1.8: Namespaces and Labels](module-1.8-namespaces-labels/) - Organizing and selecting resources in Kubernetes.

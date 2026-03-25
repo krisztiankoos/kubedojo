@@ -1,5 +1,6 @@
 ---
 title: "Module 0.2: KCNA Study Strategy"
+slug: k8s/kcna/part0-introduction/module-0.2-study-strategy
 sidebar:
   order: 3
   label: "Part 0: Introduction"
@@ -375,4 +376,4 @@ You now understand:
 - How to study for multiple choice
 - Strategies for exam day
 
-**Next Part**: [Part 1: Kubernetes Fundamentals](../part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes.md) - The core 46% of your exam.
+**Next Part**: [Part 1: Kubernetes Fundamentals](../part1-kubernetes-fundamentals/module-1.1-what-is-kubernetes/) - The core 46% of your exam.

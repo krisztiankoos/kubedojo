@@ -1,5 +1,6 @@
 ---
 title: "Module 5.2: Application Failures"
+slug: k8s/cka/part5-troubleshooting/module-5.2-application-failures
 sidebar:
   order: 3
   label: "Part 5: Troubleshooting"
@@ -885,4 +886,4 @@ k get pod <pod> -o yaml | grep -A 15 readinessProbe
 
 ## Next Module
 
-Continue to [Module 5.3: Control Plane Failures](module-5.3-control-plane.md) to learn how to troubleshoot API server, scheduler, controller manager, and etcd issues.
+Continue to [Module 5.3: Control Plane Failures](module-5.3-control-plane/) to learn how to troubleshoot API server, scheduler, controller manager, and etcd issues.

@@ -1,5 +1,6 @@
 ---
 title: "Module 6.2: KEDA"
+slug: platform/toolkits/scaling-reliability/module-6.2-keda
 sidebar:
   order: 3
   label: "Scaling & Reliability"
@@ -18,7 +19,7 @@ Kubernetes HPA scales on CPU and memory. But what if your app's bottleneck is qu
 
 **Prerequisites**:
 - Kubernetes HPA basics
-- [SRE Discipline](../../disciplines/sre/index.md) — Scaling concepts
+- [SRE Discipline](../../disciplines/sre/) — Scaling concepts
 - Understanding of message queues (nice to have)
 
 ---
@@ -655,7 +656,7 @@ Configure a cron trigger that scales the app to 5 replicas during work hours (9 
 
 ## Next Module
 
-Continue to [Module 6.3: Velero](module-6.3-velero.md) to learn backup and disaster recovery for Kubernetes clusters.
+Continue to [Module 6.3: Velero](module-6.3-velero/) to learn backup and disaster recovery for Kubernetes clusters.
 
 ---
 
