@@ -62,7 +62,7 @@ Azure organizes resources in a four-level hierarchy. Understanding this hierarch
 ```text
     ┌─────────────────────────────────────────────────────────┐
     │                  Root Management Group                   │
-    │          (Automatically created per tenant)              │
+    │    (Created when first user opts into Mgmt Groups)       │
     │                                                         │
     │   ┌─────────────────────┐  ┌──────────────────────┐     │
     │   │  MG: Production     │  │  MG: Non-Production  │     │
