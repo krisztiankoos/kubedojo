@@ -35,7 +35,7 @@ In this module, you will learn the AWS Code Suite -- CodeBuild for building and 
 
 - **OIDC federation for GitHub Actions** eliminates the need for IAM access keys entirely. GitHub's OIDC provider issues short-lived tokens (valid for about 15 minutes) that AWS trusts directly. This pattern, documented by AWS in 2021, has become the standard for GitHub-to-AWS authentication.
 
-- **Blue/green deployments on ECS** were originally a CodeDeploy-only feature. AWS later added native ECS blue/green support through ECS deployment circuits in 2023, but CodeDeploy remains the more feature-rich option with traffic shifting controls (linear, canary, all-at-once) and automatic rollback on CloudWatch alarm triggers.
+- **Blue/green deployments on ECS** require AWS CodeDeploy — there is no native ECS blue/green deployment controller. The ECS Deployment Circuit Breaker (introduced 2020) provides automated rollbacks for rolling updates only. CodeDeploy remains the only option for blue/green with traffic shifting controls (linear, canary, all-at-once) and automatic rollback on CloudWatch alarm triggers.
 
 ---
 
