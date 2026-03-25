@@ -73,6 +73,19 @@ docs/
     └── toolkits/           # 17 categories (75+ modules)
 ```
 
+## Commands Available
+
+- `/review-module [path]` — Review single module quality
+- `/review-part [dir]` — Review entire part for consistency
+- `/verify-technical [path]` — Verify commands and YAML accuracy
+
+## Practice Environment Approach
+
+- **Lightweight**: kind/minikube for most exercises
+- **Multi-node**: kubeadm only when topic requires
+- **Mock exams**: Questions + self-assessment, not simulation
+- **Recommend killer.sh** for realistic exam simulation
+
 ## Three-Pass Exam Strategy
 
 1. **Pass 1**: Quick wins (1-3 min) first
