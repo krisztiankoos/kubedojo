@@ -59,32 +59,26 @@ fi
 
 # Show KubeDojo status (dynamically from STATUS.md)
 echo ""
-echo "KUBEDOJO - Kubernetes Certification Training"
+echo "KUBEDOJO - Cloud Native Curriculum"
 
 if [ -f "STATUS.md" ]; then
-    # Extract current work line
-    CURRENT_WORK=$(grep -A1 "## Current Work" STATUS.md | tail -1 | sed 's/^\*\*//' | sed 's/\*\*.*//')
-    if [ -n "$CURRENT_WORK" ]; then
-        echo "   Status: $CURRENT_WORK"
+    # Extract current state line
+    CURRENT_STATE=$(grep -A1 "## Current State" STATUS.md | tail -1 | sed 's/^\*\*//' | sed 's/\*\*.*//')
+    if [ -n "$CURRENT_STATE" ]; then
+        echo "   Status: $CURRENT_STATE"
     fi
 
-    # Extract curriculum status table
-    echo "   Curricula:"
-    grep -E "^\| (CKA|CKAD|CKS|KCNA|KCSA|Prerequisites) \|" STATUS.md 2>/dev/null | while read line; do
+    # Extract curriculum summary table
+    echo "   Tracks:"
+    grep -E "^\| (Prerequisites|Linux|Cloud|Certifications|Platform) \|" STATUS.md 2>/dev/null | while read line; do
         NAME=$(echo "$line" | cut -d'|' -f2 | xargs)
-        STATUS=$(echo "$line" | cut -d'|' -f3 | xargs)
-        MODULES=$(echo "$line" | cut -d'|' -f4 | xargs)
-        if [[ "$STATUS" == *"Complete"* ]]; then
-            echo "       $NAME: $MODULES modules (complete)"
-        elif [[ "$STATUS" == *"Progress"* ]]; then
-            echo "       $NAME: In progress ($MODULES)"
-        elif [[ "$STATUS" == *"Next"* ]] || [[ "$STATUS" == *"Pending"* ]]; then
-            echo "       $NAME: Pending"
-        fi
+        MODULES=$(echo "$line" | cut -d'|' -f3 | xargs)
+        STATUS=$(echo "$line" | cut -d'|' -f4 | xargs)
+        echo "       $NAME: $MODULES modules ($STATUS)"
     done
 
-    # Extract next steps
-    NEXT=$(grep -A1 "## Next Steps" STATUS.md | tail -1 | sed 's/^- //')
+    # Extract first TODO item
+    NEXT=$(grep -m1 "^\- \[ \]" STATUS.md | sed 's/^- \[ \] //')
     if [ -n "$NEXT" ]; then
         echo "   Next: $NEXT"
     fi
@@ -92,7 +86,7 @@ else
     echo "   (STATUS.md not found - run from project root)"
 fi
 
-echo "   Issues: https://github.com/krisztiankoos/kubedojo/issues"
+echo "   Issues: https://github.com/kube-dojo/kube-dojo.github.io/issues"
 echo "   Commands: /review-module, /review-part, /verify-technical"
 
 # Check if kubectl can connect (optional)

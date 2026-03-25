@@ -41,7 +41,7 @@ fi
 
 # Start MkDocs server
 echo "🚀 Starting MkDocs server on http://127.0.0.1:$PORT"
-source .venv/bin/activate && nohup mkdocs serve --dev-addr=127.0.0.1:$PORT > "$LOG_FILE" 2>&1 &
+source .venv/bin/activate && NO_MKDOCS_2_WARNING=1 nohup mkdocs serve --dev-addr=127.0.0.1:$PORT --no-livereload --clean > "$LOG_FILE" 2>&1 &
 MKDOCS_PID=$!
 sleep 2
 
