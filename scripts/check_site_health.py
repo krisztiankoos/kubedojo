@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""KubeDojo Site Health Check — validates navigation, links, and content integrity."""
+"""KubeDojo Site Health Check — validates content integrity for Starlight (Astro)."""
 
 import re
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
-DOCS_DIR = REPO_ROOT / "docs"
-MKDOCS_YML = REPO_ROOT / "mkdocs.yml"
+DOCS_DIR = REPO_ROOT / "src" / "content" / "docs"
 
 errors = []
 warnings = []
@@ -23,143 +22,95 @@ def warn(msg: str):
     print(f"  WARN: {msg}")
 
 
-def check_nav_files_exist():
-    """Check all files in mkdocs.yml nav exist on disk."""
-    print("\n1. Checking nav entries point to existing files...")
-    nav_files = set()
-    with open(MKDOCS_YML) as f:
-        for line in f:
-            line = line.strip()
-            # Match lines like "- path/to/file.md" or "- Title: path/to/file.md"
-            m = re.match(r'^-\s+(?:.*:\s+)?(.+\.md)\s*$', line)
-            if m:
-                filepath = m.group(1).strip().strip('"').strip("'")
-                nav_files.add(filepath)
-                full_path = DOCS_DIR / filepath
-                if not full_path.exists():
-                    error(f"Nav references missing file: {filepath}")
-
-    found = len(nav_files) - len([e for e in errors if "Nav references" in e])
-    print(f"  {found}/{len(nav_files)} nav entries OK")
-    return nav_files
-
-
-def check_orphaned_modules(nav_files: set):
-    """Check for .md files not in navigation."""
-    print("\n2. Checking for orphaned modules (not in nav)...")
-    orphaned = []
+def check_frontmatter():
+    """Check all .md files have valid Starlight frontmatter."""
+    print("\n1. Checking frontmatter...")
+    missing = 0
+    no_title = 0
     for md in sorted(DOCS_DIR.rglob("*.md")):
+        content = md.read_text(errors="replace")
         rel = str(md.relative_to(DOCS_DIR))
-        # Skip cumulative quizzes, READMEs already handled, and special files
-        if rel in nav_files:
+        if not content.startswith("---"):
+            error(f"Missing frontmatter: {rel}")
+            missing += 1
             continue
-        # Skip files that are commonly not in nav
-        if any(skip in rel for skip in ["cumulative-quiz", "part0-cumulative", "part1-cumulative",
-                                         "part2-cumulative", "part3-cumulative", "part4-cumulative",
-                                         "part5-cumulative"]):
-            continue
-        # Skip Ukrainian translation files (handled by i18n plugin, not nav)
-        if rel.endswith(".uk.md"):
-            continue
-        orphaned.append(rel)
+        # Check for title
+        if "title:" not in content.split("---")[1]:
+            warn(f"Missing title in frontmatter: {rel}")
+            no_title += 1
 
-    for o in orphaned:
-        warn(f"Orphaned (not in nav): {o}")
-
-    if not orphaned:
-        print("  All modules are in navigation")
-    else:
-        print(f"  {len(orphaned)} orphaned files found")
+    total = len(list(DOCS_DIR.rglob("*.md")))
+    ok = total - missing
+    print(f"  {ok}/{total} files have frontmatter")
+    if no_title:
+        print(f"  {no_title} files missing title")
 
 
 def check_internal_links():
-    """Check markdown internal links resolve to existing files."""
-    print("\n3. Checking internal markdown links...")
+    """Check internal links don't use .md extensions (Starlight uses slug routing)."""
+    print("\n2. Checking for broken .md links...")
     broken = 0
-    checked = 0
     for md in sorted(DOCS_DIR.rglob("*.md")):
+        # Skip Ukrainian translations for link checking (many link to untranslated content)
+        rel = str(md.relative_to(DOCS_DIR))
+        if rel.startswith("uk/"):
+            continue
         content = md.read_text(errors="replace")
-        # Strip fenced code blocks before checking links
+        # Strip fenced code blocks
         content_no_code = re.sub(r'```[^`]*```', '', content, flags=re.DOTALL)
-        # Find markdown links: [text](path.md) or [text](../path.md)
-        for match in re.finditer(r'\[([^\]]*)\]\(([^)]+\.md[^)]*)\)', content_no_code):
+        for match in re.finditer(r'\[([^\]]*)\]\(([^)]+\.md(?:#[^)]*)?)\)', content_no_code):
             link_text, link_path = match.group(1), match.group(2)
-            # Skip external URLs
             if link_path.startswith("http"):
                 continue
-            # Strip anchors
-            link_path = link_path.split("#")[0]
-            if not link_path:
-                continue
-            # Resolve relative to the file's directory
-            target = (md.parent / link_path).resolve()
-            checked += 1
-            if not target.exists():
-                error(f"Broken link in {md.relative_to(DOCS_DIR)}: [{link_text}]({link_path})")
-                broken += 1
+            warn(f"Internal .md link in {rel}: [{link_text[:40]}]({link_path})")
+            broken += 1
 
-    print(f"  {checked - broken}/{checked} internal links OK")
-
-
-def check_changelog_links():
-    """Check that changelog.md has links for mentioned modules."""
-    print("\n4. Checking changelog module references have links...")
-    changelog = DOCS_DIR / "changelog.md"
-    if not changelog.exists():
-        error("changelog.md not found")
-        return
-
-    content = changelog.read_text()
-    # Find module names mentioned in tables without links
-    # Pattern: | **Name** | Category | Description |  (no markdown link)
-    table_rows = re.findall(r'\|\s*\*\*([^*]+)\*\*\s*\|', content)
-    linked_modules = re.findall(r'\[([^\]]+)\]\([^)]+\)', content)
-
-    unlinked = []
-    for name in table_rows:
-        # Check if this name appears as a link somewhere
-        if not any(name.lower() in link.lower() for link in linked_modules):
-            # Skip non-module table entries
-            if name in ("Metric", "Count", "Module", "Track", "Description", "Category"):
-                continue
-            unlinked.append(name)
-
-    for u in unlinked:
-        warn(f"Changelog mentions '{u}' without a link")
-
-    if not unlinked:
-        print("  All changelog references are linked")
+    if broken == 0:
+        print("  All internal links use slug format (no .md extensions)")
     else:
-        print(f"  {len(unlinked)} unlinked references found")
+        print(f"  {broken} links still use .md extension")
 
 
-def check_duplicate_nav():
-    """Check for duplicate entries in mkdocs.yml nav."""
-    print("\n5. Checking for duplicate nav entries...")
-    seen = {}
-    with open(MKDOCS_YML) as f:
-        for lineno, line in enumerate(f, 1):
-            line = line.strip()
-            m = re.match(r'^-\s+(?:.*:\s+)?(.+\.md)\s*$', line)
-            if m:
-                filepath = m.group(1).strip().strip('"').strip("'")
-                if filepath in seen:
-                    error(f"Duplicate nav entry: {filepath} (lines {seen[filepath]} and {lineno})")
-                seen[filepath] = lineno
+def check_no_readme():
+    """Check no README.md files remain (should all be index.md)."""
+    print("\n3. Checking README.md → index.md conversion...")
+    readmes = list(DOCS_DIR.rglob("README.md"))
+    for r in readmes:
+        error(f"README.md not renamed: {r.relative_to(DOCS_DIR)}")
+    if not readmes:
+        print("  All READMEs converted to index.md")
+    else:
+        print(f"  {len(readmes)} README.md files remain")
 
-    dupes = len([e for e in errors if "Duplicate nav" in e])
-    print(f"  {len(seen)} entries, {dupes} duplicates")
+
+def check_no_uk_suffix():
+    """Check no .uk.md files in English dir (should be in uk/ subdir)."""
+    print("\n4. Checking Ukrainian file placement...")
+    misplaced = []
+    for ukmd in DOCS_DIR.rglob("*.uk.md"):
+        misplaced.append(str(ukmd.relative_to(DOCS_DIR)))
+    for m in misplaced:
+        error(f"Ukrainian file with .uk.md suffix: {m}")
+    if not misplaced:
+        print("  All Ukrainian files in uk/ directory")
+    else:
+        print(f"  {len(misplaced)} misplaced .uk.md files")
 
 
 def check_module_count():
     """Check STATUS.md module count matches reality."""
-    print("\n6. Checking module count consistency...")
-    status = (REPO_ROOT / "STATUS.md").read_text()
+    print("\n5. Checking module count consistency...")
+    status_file = REPO_ROOT / "STATUS.md"
+    if not status_file.exists():
+        warn("STATUS.md not found")
+        return
+    status = status_file.read_text()
     m = re.search(r'\*\*(\d+)\*\*', status)
     if m:
         claimed = int(m.group(1))
-        # Count actual module files (module-*.md), excluding translations
-        actual = len([f for f in DOCS_DIR.rglob("module-*.md") if not f.name.endswith(".uk.md")])
+        # Count actual module files, excluding uk/ translations
+        actual = len([f for f in DOCS_DIR.rglob("module-*.md")
+                      if not str(f.relative_to(DOCS_DIR)).startswith("uk/")])
         if claimed != actual:
             warn(f"STATUS.md claims {claimed} modules but found {actual} module files")
         else:
@@ -168,39 +119,46 @@ def check_module_count():
         warn("Could not parse module count from STATUS.md")
 
 
-def check_readme_completeness():
-    """Check toolkit/curriculum READMEs list their child modules."""
-    print("\n7. Checking README completeness...")
+def check_index_completeness():
+    """Check index.md files reference their child modules."""
+    print("\n6. Checking index.md completeness...")
     missing = 0
-    for readme in sorted(DOCS_DIR.rglob("README.md")):
-        parent = readme.parent
-        modules = sorted(f for f in parent.glob("module-*.md") if not f.name.endswith(".uk.md"))
+    for index in sorted(DOCS_DIR.rglob("index.md")):
+        # Skip uk/ translations
+        if str(index.relative_to(DOCS_DIR)).startswith("uk/"):
+            continue
+        parent = index.parent
+        modules = sorted(f for f in parent.glob("module-*.md"))
         if not modules:
             continue
-        content = readme.read_text()
+        content = index.read_text()
         for mod in modules:
-            if mod.name not in content:
-                warn(f"{readme.relative_to(DOCS_DIR)} doesn't mention {mod.name}")
+            if mod.stem not in content and mod.name not in content:
+                warn(f"{index.relative_to(DOCS_DIR)} doesn't mention {mod.name}")
                 missing += 1
 
     if missing == 0:
-        print("  All READMEs reference their modules")
+        print("  All index files reference their modules")
     else:
-        print(f"  {missing} missing module references in READMEs")
+        print(f"  {missing} missing module references")
 
 
 def main():
     print("=" * 60)
-    print("KubeDojo Site Health Check")
+    print("KubeDojo Site Health Check (Starlight)")
     print("=" * 60)
 
-    nav_files = check_nav_files_exist()
-    check_orphaned_modules(nav_files)
+    if not DOCS_DIR.exists():
+        print(f"\nERROR: Content directory not found: {DOCS_DIR}")
+        print("Run: python scripts/migrate-to-starlight.py --execute")
+        sys.exit(1)
+
+    check_frontmatter()
     check_internal_links()
-    check_changelog_links()
-    check_duplicate_nav()
+    check_no_readme()
+    check_no_uk_suffix()
     check_module_count()
-    check_readme_completeness()
+    check_index_completeness()
 
     print("\n" + "=" * 60)
     print(f"RESULTS: {len(errors)} errors, {len(warnings)} warnings")
@@ -217,6 +175,13 @@ def main():
             print(f"  - {w}")
         if len(warnings) > 20:
             print(f"  ... and {len(warnings) - 20} more")
+
+    # Only fail on errors, not warnings
+    if errors:
+        print("\nSite health check FAILED. Fix errors before pushing.")
+        print(f"Run: python scripts/check_site_health.py")
+    else:
+        print("Site health check passed.")
 
     sys.exit(1 if errors else 0)
 

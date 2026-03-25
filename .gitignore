@@ -37,3 +37,4 @@ kubeconfig
 node_modules/
 dist/
 .astro/
+build-log.txt
