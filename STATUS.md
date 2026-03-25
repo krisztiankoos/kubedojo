@@ -78,27 +78,29 @@ All completed modules meet this standard. 329 modules adversary-reviewed by Gemi
 |---|-------|--------|
 | #14 | Curriculum Monitoring & Official Sources | Open |
 | #105 | Ukrainian Translation (Phase 1) | Open (~40%) |
-| #129 | Review and enrich .claude/skills/ | Open |
-| #130 | Migrate from MkDocs to Starlight (Astro) | Open |
-| #131 | Give Gemini proper tools | Done (dispatch.py replaces bridge) |
+
+## Recently Closed (Session 2)
+| # | Issue | Status |
+|---|-------|--------|
+| #129 | Review .claude/skills/ | Closed — 12→4 skills |
+| #130 | Migrate to Starlight | Closed — 1,298 pages, ~30s build |
+| #131 | Give Gemini proper tools | Closed — dispatch.py |
 
 ## TODO
 
-- [ ] Close #131 — dispatch.py migration complete
-- [ ] Run Gemini adversary review on ~100+ unreviewed modules
-- [ ] #130 — Starlight migration (MkDocs is dead)
-- [ ] #129 — Review/consolidate .claude/skills/
-- [ ] Ukrainian translations: CKS (30), KCNA (28), KCSA (26) + all new content
-- [ ] Push 36 unpushed commits to remote
+- [ ] Gemini adversary review ~95 unreviewed modules (5/100 done, 7 issues fixed)
+- [ ] Ukrainian translations: CKS (30), KCNA (28), KCSA (26)
+- [ ] Ukrainian sidebar labels (`src/content/i18n/uk.json`)
 
 ## Blockers
 None
 
 ## Key Decisions
-- Gemini drafts (350-400 lines) need Claude expansion to 700-900+ lines
-- Cloud track organized by provider, not by topic
-- MkDocs 2.0 blocked — pinned to <2.0.0, future migration to Starlight/Astro (#130)
+- Migrated from MkDocs Material to Starlight (Astro) — faster builds, proper i18n, modern stack
 - `scripts/dispatch.py` replaces `ai_agent_bridge/` — direct CLI dispatch, no SQLite broker
+- GH Actions pinned to commit SHA, requirements locked with hashes, Dependabot enabled
+- Pinned zod@3.25.76 (zod v4 breaks Starlight schema validation)
+- `defaultLocale: 'root'` for Starlight i18n — English at root URLs, Ukrainian at `/uk/`
 
 ---
 **Maintenance Rule**: Claude updates this file at session end or after completing modules.
