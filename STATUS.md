@@ -4,7 +4,7 @@
 
 ## Current State
 
-**541 English modules** across 5 tracks. **115 Ukrainian translations** (~40% of certs + prereqs).
+**528 modules** across 5 tracks. **115 Ukrainian translations** (~40% of certs + prereqs).
 
 **Website:** https://kube-dojo.github.io/ (MkDocs Material, pinned mkdocs<2.0.0, 0 warnings)
 
@@ -19,7 +19,7 @@
 | Cloud | 85 | Complete |
 | Certifications (CKA/CKAD/CKS/KCNA/KCSA/Extending) | 169 | Complete |
 | Platform Engineering | 217 | Complete |
-| **Total** | **541** | **Complete** |
+| **Total** | **528** | **Complete** |
 
 ### Certifications Breakdown
 | Cert | Modules |
@@ -63,7 +63,7 @@
 | CKS | 0 | 30 |
 | KCNA | 0 | 28 |
 | KCSA | 0 | 26 |
-| **Total** | **115** | **541** |
+| **Total** | **115** | **528** |
 
 ## Quality Standard
 10/10 quality = 4 "Did You Know?" facts, war stories with financial impact, 8 quiz questions, hands-on exercises.

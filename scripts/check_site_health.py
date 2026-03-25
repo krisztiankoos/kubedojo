@@ -58,6 +58,9 @@ def check_orphaned_modules(nav_files: set):
                                          "part2-cumulative", "part3-cumulative", "part4-cumulative",
                                          "part5-cumulative"]):
             continue
+        # Skip Ukrainian translation files (handled by i18n plugin, not nav)
+        if rel.endswith(".uk.md"):
+            continue
         orphaned.append(rel)
 
     for o in orphaned:
@@ -76,8 +79,10 @@ def check_internal_links():
     checked = 0
     for md in sorted(DOCS_DIR.rglob("*.md")):
         content = md.read_text(errors="replace")
+        # Strip fenced code blocks before checking links
+        content_no_code = re.sub(r'```[^`]*```', '', content, flags=re.DOTALL)
         # Find markdown links: [text](path.md) or [text](../path.md)
-        for match in re.finditer(r'\[([^\]]*)\]\(([^)]+\.md[^)]*)\)', content):
+        for match in re.finditer(r'\[([^\]]*)\]\(([^)]+\.md[^)]*)\)', content_no_code):
             link_text, link_path = match.group(1), match.group(2)
             # Skip external URLs
             if link_path.startswith("http"):
@@ -153,8 +158,8 @@ def check_module_count():
     m = re.search(r'\*\*(\d+)\*\*', status)
     if m:
         claimed = int(m.group(1))
-        # Count actual module files (module-*.md)
-        actual = len(list(DOCS_DIR.rglob("module-*.md")))
+        # Count actual module files (module-*.md), excluding translations
+        actual = len([f for f in DOCS_DIR.rglob("module-*.md") if not f.name.endswith(".uk.md")])
         if claimed != actual:
             warn(f"STATUS.md claims {claimed} modules but found {actual} module files")
         else:
@@ -169,7 +174,7 @@ def check_readme_completeness():
     missing = 0
     for readme in sorted(DOCS_DIR.rglob("README.md")):
         parent = readme.parent
-        modules = sorted(parent.glob("module-*.md"))
+        modules = sorted(f for f in parent.glob("module-*.md") if not f.name.endswith(".uk.md"))
         if not modules:
             continue
         content = readme.read_text()
