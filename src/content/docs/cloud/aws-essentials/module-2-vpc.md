@@ -25,7 +25,7 @@ Think of CIDR notation as choosing how big your plot of land is before you build
 
 | CIDR | Total IPs | Usable IPs (AWS) | Typical Use |
 | :--- | :--- | :--- | :--- |
-| `/16` | 65,536 | 65,531 | Large production VPC |
+| `/16` | 65,536 | Varies* | Large production VPC |
 | `/20` | 4,096 | 4,091 | Medium VPC or large subnet |
 | `/24` | 256 | 251 | Standard subnet |
 | `/28` | 16 | 11 | Minimal subnet (smallest AWS allows) |
@@ -75,7 +75,7 @@ This layering enforces the principle of least privilege at the network level: th
 >
 > - `.0` -- Network address
 > - `.1` -- VPC router
-> - `.2` -- DNS server
+> - `.2` -- Reserved (DNS server is at VPC base CIDR + 2, e.g. `10.0.0.2`)
 > - `.3` -- Reserved for future use
 > - `.255` -- Broadcast address (AWS does not support broadcast, but reserves it)
 >

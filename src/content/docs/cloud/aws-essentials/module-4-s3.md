@@ -535,7 +535,7 @@ No, the file is not gone. When versioning is enabled, a standard delete operatio
 <details>
 <summary>Question 5: Your team stores 50 million small JSON files (average 2 KB each) in S3 Standard. A cost optimization review suggests moving them to S3 Standard-IA. Will this save money?</summary>
 
-No, it will likely **increase** costs. S3 Standard-IA has a minimum billable object size of 128 KB. Each 2 KB file would be billed as if it were 128 KB, meaning you would pay for 6.4 TB of storage instead of the actual 100 GB. Additionally, Standard-IA charges a per-GB retrieval fee. The correct approach is to bundle the small files into larger archives (e.g., tar.gz files) before transitioning, or use S3 Intelligent-Tiering which has no minimum object size for the frequent-access tier.
+No, it will likely **increase** costs. S3 Standard-IA has a minimum billable object size of 128 KB. Each 2 KB file would be billed as if it were 128 KB, meaning you would pay for 6.4 TB of storage instead of the actual 100 GB. Additionally, Standard-IA charges a per-GB retrieval fee. S3 Intelligent-Tiering won't help either — while it accepts small files, objects under 128 KB are never transitioned to infrequent-access tiers, so they stay at the Standard rate plus a monitoring fee. The correct approach is to bundle the small files into larger archives (e.g., tar.gz files) before transitioning to a cheaper storage class.
 </details>
 
 <details>
@@ -586,8 +586,7 @@ aws s3api put-bucket-encryption \
             {
                 "ApplyServerSideEncryptionByDefault": {
                     "SSEAlgorithm": "AES256"
-                },
-                "BucketKeyEnabled": true
+                }
             }
         ]
     }'

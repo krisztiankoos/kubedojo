@@ -60,7 +60,7 @@ The table below compares commonly used instance types across the four most popul
 | `r6i.xlarge` | Memory Optimized | 4 | 32 | Up to 12.5 | ~$0.252 | PostgreSQL/MySQL, medium caches, real-time analytics |
 | `r6i.2xlarge` | Memory Optimized | 8 | 64 | Up to 12.5 | ~$0.504 | Large relational databases, Elasticsearch, SAP HANA |
 
-**Key insight**: Notice how `t3.xlarge` and `m6i.large` both offer 2 vCPUs—but the `m6i.large` provides 8 GiB of memory (double the t3's 4 GiB at the same vCPU count) and consistent performance without credit-based throttling. For production workloads that need reliable performance, General Purpose M-series instances usually make more sense than burstable T-series, despite the slightly higher hourly cost.
+**Key insight**: Notice how `t3.medium` and `m6i.large` both offer 2 vCPUs—but the `m6i.large` provides 8 GiB of memory (double the `t3.medium`'s 4 GiB at the same vCPU count) and consistent performance without credit-based throttling. For production workloads that need reliable performance, General Purpose M-series instances usually make more sense than burstable T-series, despite the slightly higher hourly cost.
 
 *Note on Graviton: Instance families ending in 'g' (like m6g, c6g, r6g) use AWS Graviton processors (ARM architecture) rather than x86. They generally offer 20-40% better price-performance ratios compared to their Intel equivalents. If your application stack supports ARM (most Linux workloads, containers, and interpreted languages do), Graviton instances are almost always the smarter choice.*
 
