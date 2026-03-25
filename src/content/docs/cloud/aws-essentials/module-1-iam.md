@@ -42,7 +42,7 @@ A principal is an entity that can make a request for an action or operation on a
 | **Rotation required** | Yes (keys, passwords) | No (auto-rotated by STS) | No (managed by AWS) |
 | **Max session duration** | Indefinite | 1-12 hours (configurable) | Service-dependent |
 
-**Service-Linked Roles** deserve special attention. These are roles that AWS services create in your account to perform actions on your behalf. For example, when you create an Application Load Balancer, AWS automatically creates a service-linked role (`AWSServiceRoleForElasticLoadBalancing`) that lets the ELB service manage ENIs and security groups in your VPC. You cannot modify their permissions policy---only the trust policy is editable in some cases. To list them:
+**Service-Linked Roles** deserve special attention. These are roles that AWS services create in your account to perform actions on your behalf. For example, when you create an Application Load Balancer, AWS automatically creates a service-linked role (`AWSServiceRoleForElasticLoadBalancing`) that lets the ELB service manage ENIs and security groups in your VPC. You cannot modify their permissions policy or trust policy---both are predefined and controlled by AWS. To list them:
 
 ```bash
 # List all service-linked roles in your account
