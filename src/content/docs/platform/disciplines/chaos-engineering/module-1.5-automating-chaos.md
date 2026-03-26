@@ -18,7 +18,7 @@ Before starting this module:
 
 ## Why This Module Matters
 
-On September 28, 2021, Facebook experienced a 6-hour global outage that affected 3.5 billion users and cost the company an estimated $65 million in revenue. The root cause was a configuration change to their backbone routers that disconnected Facebook's data centers from each other. But the real question isn't why it happened — network misconfigurations happen. The question is why it lasted 6 hours.
+On October 4, 2021, Facebook experienced a 6-hour global outage that affected 3.5 billion users and cost the company an estimated $65 million in revenue. The root cause was a configuration change to their backbone routers that disconnected Facebook's data centers from each other. But the real question isn't why it happened — network misconfigurations happen. The question is why it lasted 6 hours.
 
 The answer: Facebook's internal tools (including the ones engineers needed to fix the problem) ran on the same infrastructure that was down. Engineers couldn't access the admin panels, couldn't SSH into servers, couldn't even get into the buildings because the badge readers depended on Facebook's internal network. The recovery tools were victims of the same failure they were supposed to fix.
 
