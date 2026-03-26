@@ -313,7 +313,7 @@ az monitor activity-log alert create \
   --resource-group myRG \
   --name "rg-deleted-alert" \
   --description "Resource group was deleted" \
-  --condition category=Administrative operationName="Microsoft.Resources/subscriptions/resourceGroups/delete" \
+  --condition "category=Administrative and operationName=Microsoft.Resources/subscriptions/resourceGroups/delete" \
   --action-group "$ACTION_GROUP_ID"
 ```
 

@@ -57,7 +57,6 @@ az keyvault create \
   --name kubedojo-vault \
   --location eastus2 \
   --sku standard \
-  --enable-soft-delete true \
   --retention-days 90 \
   --enable-purge-protection true \
   --enable-rbac-authorization true
@@ -522,7 +521,6 @@ az keyvault create \
   --name "$VAULT_NAME" \
   --location "$LOCATION" \
   --enable-rbac-authorization true \
-  --enable-soft-delete true \
   --retention-days 7 \
   --enable-purge-protection false  # false for lab (easy cleanup)
 

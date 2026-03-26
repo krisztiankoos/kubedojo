@@ -45,12 +45,13 @@ The hosting plan determines the scaling behavior, available resources, and prici
 ```
 
 ```bash
-# Create a Consumption plan Function App
+# Create a Consumption plan Function App (Python requires Linux)
 az functionapp create \
   --resource-group myRG \
   --consumption-plan-location eastus2 \
   --runtime python \
   --runtime-version 3.11 \
+  --os-type Linux \
   --functions-version 4 \
   --name kubedojo-func-$(openssl rand -hex 4) \
   --storage-account "$STORAGE_NAME"
