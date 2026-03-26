@@ -113,7 +113,7 @@ Every production server has two power supply units (PSUs). Each connects to a di
 │   │         SERVER                     │                    │
 │   │  ┌─────────┐    ┌─────────┐       │                    │
 │   │  │  PSU A  │    │  PSU B  │       │                    │
-│   │  │ (active)│    │(standby)│       │                    │
+│   │  │(active) │    │(active) │       │                    │
 │   │  └─────────┘    └─────────┘       │                    │
 │   └───────────────────────────────────┘                    │
 │                                                               │
