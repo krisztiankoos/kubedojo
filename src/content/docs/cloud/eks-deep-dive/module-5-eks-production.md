@@ -47,14 +47,12 @@ Karpenter Workflow:
 
 ```bash
 # Install Karpenter using Helm
-helm repo add karpenter https://charts.karpenter.sh
-helm repo update
-
+# Install Karpenter v1.x from OCI registry (charts.karpenter.sh is deprecated)
 # Karpenter needs specific IAM roles and instance profiles
 # (Simplified here -- see Karpenter docs for full IAM setup)
-helm install karpenter karpenter/karpenter \
+helm install karpenter oci://public.ecr.aws/karpenter/karpenter \
   --namespace kube-system \
-  --set clusterName=my-cluster \
+  --set settings.clusterName=my-cluster \
   --set clusterEndpoint=$(aws eks describe-cluster --name my-cluster --query 'cluster.endpoint' --output text) \
   --set settings.isolatedVPC=false \
   --version 1.1.0 \

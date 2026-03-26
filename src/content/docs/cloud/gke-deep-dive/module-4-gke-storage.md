@@ -39,7 +39,7 @@ kubectl get storageclasses
 
 # NAME                     PROVISIONER             RECLAIMPOLICY   VOLUMEBINDINGMODE
 # premium-rwo              pd.csi.storage.gke.io   Delete          WaitForFirstConsumer
-# standard                 kubernetes.io/gce-pd    Delete          Immediate
+# standard                 pd.csi.storage.gke.io   Delete          Immediate
 # standard-rwo             pd.csi.storage.gke.io   Delete          WaitForFirstConsumer
 ```
 

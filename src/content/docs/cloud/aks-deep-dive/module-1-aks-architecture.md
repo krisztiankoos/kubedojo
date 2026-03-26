@@ -260,7 +260,7 @@ az aks update \
   --auto-upgrade-channel stable
 
 # Configure a maintenance window (avoid upgrades during business hours)
-az aks maintenancewindow add \
+az aks maintenanceconfiguration add \
   --resource-group rg-aks-prod \
   --cluster-name aks-prod-westeurope \
   --name default \
@@ -694,7 +694,7 @@ Configure maintenance windows so upgrades only happen during off-peak hours.
 
 ```bash
 # Add a weekly maintenance window for Kubernetes upgrades
-az aks maintenancewindow add \
+az aks maintenanceconfiguration add \
   --resource-group rg-aks-prod \
   --cluster-name aks-prod-westeurope \
   --name aksManagedAutoUpgradeSchedule \
@@ -705,7 +705,7 @@ az aks maintenancewindow add \
   --utc-offset "+01:00"
 
 # Add a separate window for node OS image upgrades
-az aks maintenancewindow add \
+az aks maintenanceconfiguration add \
   --resource-group rg-aks-prod \
   --cluster-name aks-prod-westeurope \
   --name aksManagedNodeOSUpgradeSchedule \
@@ -716,7 +716,7 @@ az aks maintenancewindow add \
   --utc-offset "+01:00"
 
 # Verify the configuration
-az aks maintenancewindow list \
+az aks maintenanceconfiguration list \
   --resource-group rg-aks-prod \
   --cluster-name aks-prod-westeurope -o table
 
