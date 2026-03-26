@@ -84,10 +84,10 @@ Physics does not care about your architecture.
 │  Cloud (cross-AZ)             :    1 - 2 ms                  │
 │  Cloud (cross-region)         :    20 - 100 ms               │
 │                                                               │
-│  For every 1ms of latency:                                   │
-│    Amazon: -1% revenue                                       │
-│    Google: -0.5% searches                                    │
-│    HFT firms: millions in lost trades                        │
+│  Latency impact (industry studies):                          │
+│    Amazon: 100ms added latency = -1% revenue                 │
+│    Google: 500ms delay = -20% traffic                        │
+│    HFT firms: every microsecond = competitive edge           │
 │                                                               │
 └─────────────────────────────────────────────────────────────┘
 ```

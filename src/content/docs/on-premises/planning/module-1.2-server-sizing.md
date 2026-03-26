@@ -17,7 +17,7 @@ In September 2022, a logistics company ordered twelve Dell PowerEdge R750xs serv
 
 First, the SATA SSDs could not keep up with etcd's fsync requirements. etcd commit latency exceeded 100ms during peak hours, causing leader elections every few minutes. The API server became unreliable. They needed NVMe drives for the control plane nodes — a $24,000 additional investment and two weeks of downtime for hardware replacement.
 
-Second, the vehicle tracking pods needed 2GB of RAM each but only 0.5 vCPU. With a 1:8 CPU-to-RAM ratio on their servers, they ran out of RAM with 40% of CPU unused. They had ordered compute-optimized servers for a memory-intensive workload. The remaining CPU capacity sat idle for the next three years.
+Second, the vehicle tracking pods needed 2GB of RAM each but only 0.5 vCPU — a 1:4 CPU-to-RAM ratio per pod. But their servers had a 1:2.7 ratio (96 vCPUs, 256GB RAM) — too CPU-heavy for this workload. They ran out of RAM with 40% of CPU unused. They had ordered compute-optimized servers for a memory-intensive workload. The remaining CPU capacity sat idle for the next three years.
 
 Hardware mistakes are expensive and permanent. You live with them for 3-5 years. This module teaches you how to size servers correctly the first time.
 
@@ -100,7 +100,7 @@ Non-Uniform Memory Access (NUMA) means each CPU socket has "local" memory that i
 │     Local RAM (Node 0):  ~80ns  ← Fast                      │
 │     Remote RAM (Node 1): ~180ns ← 2.25x slower              │
 │                                                               │
-│   Impact: etcd on cross-NUMA = 30-50% latency increase      │
+│   Impact: in-memory DBs (Redis) on cross-NUMA = 30-50% slower│
 │                                                               │
 └─────────────────────────────────────────────────────────────┘
 ```
