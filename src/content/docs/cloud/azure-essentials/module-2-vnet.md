@@ -65,7 +65,7 @@ Subnets are subdivisions of your VNet's address space. Every Azure resource that
     │                                                         │
     │  ┌─────────────────┐  ┌─────────────────────────────┐  │
     │  │   Subnet:       │  │   Subnet:                   │  │
-    │  │   AzureFirewall  │  │   GatewaySubnet             │  │
+    │  │ AzureFirewallSubnet│  │   GatewaySubnet             │  │
     │  │   10.0.3.0/26   │  │   10.0.255.0/27             │  │
     │  │   59 usable     │  │   27 usable                 │  │
     │  │                 │  │                             │  │

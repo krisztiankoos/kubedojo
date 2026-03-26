@@ -70,7 +70,7 @@ gcloud compute networks subnets create prod-us-central1 \
   --network=prod-vpc \
   --region=us-central1 \
   --range=10.10.0.0/20 \
-  --secondary-range=pods=10.20.0.0/16,services=10.30.0.0/20 \
+  --secondary-ranges=pods=10.20.0.0/16,services=10.30.0.0/20 \
   --enable-private-ip-google-access
 
 gcloud compute networks subnets create prod-europe-west1 \
