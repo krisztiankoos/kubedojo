@@ -41,7 +41,7 @@ By the end of this module, you will be able to:
 
 - **Kubernetes supports running multiple schedulers simultaneously**: You can have the default scheduler for most workloads and a custom scheduler for GPU workloads, each with different plugins enabled. Pods declare which scheduler to use via `spec.schedulerName`.
 
-- **The Scheduling Framework replaced all previous extension mechanisms**: Extenders (webhook-based), custom schedulers from scratch, and scheduler policy files are all deprecated. The Framework is the single supported extensibility mechanism since Kubernetes 1.19.
+- **The Scheduling Framework is the recommended extension mechanism** since Kubernetes 1.19. Scheduler extenders (webhook-based) and standalone custom schedulers are still supported but the Framework offers better performance and deeper integration. Scheduler policy files are deprecated.
 
 ---
 

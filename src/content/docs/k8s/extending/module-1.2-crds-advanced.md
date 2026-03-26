@@ -42,7 +42,7 @@ By the end of this module, you will be able to:
 
 - **CRDs are stored in etcd as JSON**, just like built-in resources. The API Server validates them on the way in and serves them on the way out, with no additional backend required. This is why CRDs are called "level 1" extensions -- they use the existing API Server machinery.
 
-- **Structural schemas became mandatory in Kubernetes 1.15**. Before that, CRDs had almost no validation, and users could store arbitrary JSON blobs. The switch to structural schemas was one of the most impactful API quality improvements in Kubernetes history.
+- **Structural schemas became mandatory in Kubernetes 1.16**. Before that, CRDs had almost no validation, and users could store arbitrary JSON blobs. The switch to structural schemas was one of the most impactful API quality improvements in Kubernetes history.
 
 ---
 
@@ -940,7 +940,7 @@ k get webapp my-frontend -o jsonpath='{.spec.replicas}'
 1. **What makes a CRD schema "structural"?**
    <details>
    <summary>Answer</summary>
-   A structural schema requires: (a) every field has an explicit `type` declaration, (b) no references (`$ref`), (c) `additionalProperties` is not used at the schema root, and (d) all validation keywords are inside typed fields. Structural schemas are mandatory since Kubernetes 1.15 and enable features like server-side pruning (removing unknown fields) and server-side apply.
+   A structural schema requires: (a) every field has an explicit `type` declaration, (b) no references (`$ref`), (c) `additionalProperties` is not used at the schema root, and (d) all validation keywords are inside typed fields. Structural schemas are mandatory since Kubernetes 1.16 and enable features like server-side pruning (removing unknown fields) and server-side apply.
    </details>
 
 2. **Explain the difference between the `status` subresource and just having a `status` field in your CRD.**
