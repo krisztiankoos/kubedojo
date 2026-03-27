@@ -45,13 +45,15 @@ export default defineConfig({
             { label: 'Cloud Native 101', autogenerate: { directory: 'prerequisites/cloud-native-101' }, collapsed: true },
             { label: 'Kubernetes Basics', autogenerate: { directory: 'prerequisites/kubernetes-basics' }, collapsed: true },
             { label: 'Modern DevOps', autogenerate: { directory: 'prerequisites/modern-devops' }, collapsed: true },
-            { label: 'Linux Deep Dive', autogenerate: { directory: 'linux/foundations' }, collapsed: true },
+            { label: 'Linux Deep Dive', link: '/linux/' },
+            { label: 'Linux Foundations', autogenerate: { directory: 'linux/foundations' }, collapsed: true },
           ],
         },
         {
           label: 'Cloud',
           collapsed: true,
           items: [
+            { label: 'Overview', link: '/cloud/' },
             { label: 'Rosetta Stone', link: '/cloud/hyperscaler-rosetta-stone/' },
             { label: 'AWS Essentials', autogenerate: { directory: 'cloud/aws-essentials' }, collapsed: true },
             { label: 'GCP Essentials', autogenerate: { directory: 'cloud/gcp-essentials' }, collapsed: true },
@@ -69,6 +71,7 @@ export default defineConfig({
           label: 'Certifications',
           collapsed: true,
           items: [
+            { label: 'Overview', link: '/k8s/' },
             { label: 'KCNA', autogenerate: { directory: 'k8s/kcna' }, collapsed: true },
             { label: 'KCSA', autogenerate: { directory: 'k8s/kcsa' }, collapsed: true },
             { label: 'CKA', autogenerate: { directory: 'k8s/cka' }, collapsed: true },
@@ -81,6 +84,7 @@ export default defineConfig({
           label: 'Platform Engineering',
           collapsed: true,
           items: [
+            { label: 'Overview', link: '/platform/' },
             { label: 'Foundations', autogenerate: { directory: 'platform/foundations' }, collapsed: true },
             { label: 'Disciplines', autogenerate: { directory: 'platform/disciplines' }, collapsed: true },
             { label: 'Toolkits', autogenerate: { directory: 'platform/toolkits' }, collapsed: true },
