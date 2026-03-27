@@ -45,8 +45,12 @@ export default defineConfig({
             { label: 'Cloud Native 101', autogenerate: { directory: 'prerequisites/cloud-native-101' }, collapsed: true },
             { label: 'Kubernetes Basics', autogenerate: { directory: 'prerequisites/kubernetes-basics' }, collapsed: true },
             { label: 'Modern DevOps', autogenerate: { directory: 'prerequisites/modern-devops' }, collapsed: true },
-            { label: 'Linux Deep Dive', link: '/linux/' },
-            { label: 'Linux Foundations', autogenerate: { directory: 'linux/foundations' }, collapsed: true },
+            { label: 'Linux Deep Dive', collapsed: true, items: [
+              { label: 'Overview', link: '/linux/' },
+              { label: 'System Essentials', autogenerate: { directory: 'linux/foundations/system-essentials' }, collapsed: true },
+              { label: 'Container Primitives', autogenerate: { directory: 'linux/foundations/container-primitives' }, collapsed: true },
+              { label: 'Networking', autogenerate: { directory: 'linux/foundations/networking' }, collapsed: true },
+            ]},
           ],
         },
         {
