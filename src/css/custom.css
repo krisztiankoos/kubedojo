@@ -1,44 +1,38 @@
 /* ============================================================
-   KubeDojo Design System — Module/Docs Pages
-   Issue: #136
-
-   Homepage is standalone (src/pages/index.astro).
-   This CSS transforms Starlight's module pages to match the POC.
+   KubeDojo Design System — Exact match to POC v2
    ============================================================ */
 
-/* ===== Design Tokens ===== */
 :root {
-  --kube-blue: #326CE5;
-  --kube-blue-light: #EBF1FF;
-  --kube-blue-dark: #1A3A7A;
-  --terminal-green: #00E676;
-  --terminal-green-light: #E8FFF0;
-  --terminal-green-dark: #00A651;
-  --pod-orange: #FF6D00;
-  --pod-orange-light: #FFF3E0;
-  --deploy-purple: #7C4DFF;
-  --deploy-purple-light: #F3EDFF;
-  --danger-red: #FF1744;
-  --danger-red-light: #FFEBEE;
-  --warning-amber: #FFD600;
-  --warning-amber-light: #FFFDE7;
-  --node-teal: #00BFA5;
-  --node-teal-light: #E0F7F4;
-  --kube-radius: 12px;
-  --kube-radius-sm: 8px;
-  --sl-font: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --sl-font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  /* Design tokens — identical to POC v2 */
+  --kube-blue: #326CE5; --kube-blue-light: #EBF1FF; --kube-blue-dark: #1A3A7A;
+  --terminal-green: #00E676; --terminal-green-light: #E8FFF0; --terminal-green-dark: #00A651;
+  --pod-orange: #FF6D00; --pod-orange-light: #FFF3E0;
+  --deploy-purple: #7C4DFF; --deploy-purple-light: #F3EDFF;
+  --danger-red: #FF1744; --danger-red-light: #FFEBEE;
+  --warning-amber: #FFD600; --warning-amber-light: #FFFDE7;
+  --node-teal: #00BFA5; --node-teal-light: #E0F7F4;
+  --g50: #FAFBFC; --g100: #F3F4F6; --g200: #E5E7EB; --g300: #D1D5DB;
+  --g400: #9CA3AF; --g500: #6B7280; --g600: #4B5563; --g700: #374151;
+  --g800: #1F2937; --g900: #0F172A;
+  --kube-radius: 12px; --kube-radius-sm: 8px;
+  --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+
+  /* Starlight token overrides */
+  --sl-font: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  --sl-font-mono: var(--mono);
 }
 
-/* Accent tokens per mode */
+/* Light mode: match POC exactly */
 :root[data-theme='light'] {
-  --sl-color-accent-low: #EBF1FF;
-  --sl-color-accent: #326CE5;
-  --sl-color-accent-high: #1A3A7A;
-  /* Gap #4 & #6: Light sidebar and page background */
-  --sl-color-bg-sidebar: #ffffff;
-  --sl-color-bg: #FAFBFC;
+  --sl-color-accent-low: var(--kube-blue-light);
+  --sl-color-accent: var(--kube-blue);
+  --sl-color-accent-high: var(--kube-blue-dark);
+  --sl-color-bg: var(--g50);
+  --sl-color-bg-sidebar: white;
+  --sl-color-bg-nav: white;
 }
+
+/* Dark mode */
 :root[data-theme='dark'] {
   --sl-color-accent-low: #172554;
   --sl-color-accent: #326CE5;
@@ -47,271 +41,165 @@
 
 body { -webkit-font-smoothing: antialiased; }
 
-/* Issue #8: Default to light mode (auto = system preference, light for most users) */
-/* Starlight defaults to dark. We set the default via ThemeProvider. */
+/* ===== SIDEBAR — exact POC values ===== */
+/* Sidebar background */
+.sidebar-pane { border-inline-end: 1px solid var(--g200) !important; }
+:root[data-theme='light'] .sidebar-pane { background-color: white !important; }
 
-/* Issue #3: Sidebar border-right separator */
-.sidebar-pane {
-  border-inline-end: 1px solid var(--sl-color-hairline-light) !important;
-}
-
-/* Issue #4 & #5: Style the module metadata blockquote (Complexity/Time/Prerequisites) as chips */
-.sl-markdown-content > blockquote:first-of-type {
-  background: var(--sl-color-bg-nav) !important;
-  border-left: 4px solid var(--sl-color-accent) !important;
-  border-radius: 0 var(--kube-radius-sm) var(--kube-radius-sm) 0;
-  padding: 0.75rem 1.25rem !important;
-  font-size: 0.875rem;
-}
-
-/* ===== SIDEBAR — Match POC: white bg, no dark buttons, clean links =====
- *
- * Starlight's sidebar groups use <details> with <summary> as the group toggle.
- * The summaries have dark backgrounds by default. We make them transparent/subtle.
- */
-
-/* All sidebar summary/group toggles — override Starlight's dark buttons */
-summary {
-  background: transparent !important;
-  border: 1px solid var(--sl-color-hairline-light) !important;
-  border-radius: var(--kube-radius-sm) !important;
-  font-weight: 600 !important;
-  color: var(--sl-color-text) !important;
-}
-summary:hover {
-  background: var(--sl-color-accent-low) !important;
-  border-color: var(--sl-color-accent) !important;
-}
-
-/* But NOT content details/summary (quizzes) — those are handled separately below */
-.sl-markdown-content summary {
-  background: var(--sl-color-bg-nav) !important;
-  border: none !important;
-  border-radius: 0 !important;
-}
-
-/* Active/current page link */
-a[aria-current="page"] {
-  background: var(--sl-color-accent-low) !important;
-  color: var(--sl-color-accent-high) !important;
-  font-weight: 600 !important;
-  border-radius: var(--kube-radius-sm) !important;
-}
-
-/* Sidebar links */
-.sidebar-content a {
-  border-radius: var(--kube-radius-sm);
-  transition: all 0.15s;
-}
-.sidebar-content a:hover {
-  background: var(--sl-color-bg-nav);
-}
-
-/* ===== CONTENT TYPOGRAPHY — match POC ===== */
+/* ===== CONTENT TYPOGRAPHY — exact POC values ===== */
 .sl-markdown-content h2 {
-  padding-bottom: 0.4rem;
-  border-bottom: 2px solid var(--sl-color-accent-low);
   font-size: 1.375rem;
   font-weight: 700;
+  margin: 2.25rem 0 0.875rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--kube-blue-light);
 }
+.sl-markdown-content h2:first-of-type { margin-top: 0; }
+.sl-markdown-content h3 { font-size: 1.0625rem; font-weight: 700; margin: 1.5rem 0 0.625rem; }
+.sl-markdown-content p { margin-bottom: 0.875rem; font-size: 0.9375rem; }
+:root[data-theme='light'] .sl-markdown-content p { color: var(--g700); }
+:root[data-theme='light'] .sl-markdown-content strong { color: var(--g900); }
 
-.sl-markdown-content h3 {
-  font-size: 1.0625rem;
-  font-weight: 700;
-}
-
-.sl-markdown-content p {
-  font-size: 0.9375rem;
-}
-
-/* ===== LINKS ===== */
-.sl-markdown-content a {
-  color: var(--sl-color-accent-high);
-  text-decoration: none;
-  font-weight: 500;
-}
+/* Links */
+.sl-markdown-content a { color: var(--kube-blue); text-decoration: none; font-weight: 500; }
 .sl-markdown-content a:hover { text-decoration: underline; }
 
-/* ===== TABLES — blue header, hover rows ===== */
+/* ===== TABLES — exact POC values ===== */
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; }
-.sl-markdown-content table { border-radius: var(--kube-radius-sm); overflow: hidden; }
-.sl-markdown-content th {
-  background: var(--sl-color-accent-low);
-  color: var(--sl-color-accent-high);
-  font-weight: 600; font-size: 0.85rem; letter-spacing: 0.02em;
-}
-.sl-markdown-content tr:hover td { background: var(--sl-color-accent-low); }
+.sl-markdown-content table { margin: 1rem 0; font-size: 0.875rem; border-radius: var(--kube-radius-sm); overflow: hidden; }
+:root[data-theme='light'] .sl-markdown-content th { background: var(--kube-blue-light); color: var(--kube-blue-dark); }
+.sl-markdown-content th { padding: 0.625rem 1rem; font-weight: 600; font-size: 0.8125rem; }
+.sl-markdown-content td { padding: 0.625rem 1rem; border-bottom: 1px solid var(--g200); }
+:root[data-theme='light'] .sl-markdown-content tr:hover td { background: var(--kube-blue-light); }
 
-/* ===== BLOCKQUOTES ===== */
+/* ===== BLOCKQUOTES — exact POC values ===== */
 .sl-markdown-content blockquote {
-  border-left: 4px solid var(--sl-color-accent);
-  background: var(--sl-color-accent-low);
+  border-left: 4px solid var(--kube-blue);
+  background: var(--kube-blue-light);
   padding: 1rem 1.25rem;
   border-radius: 0 var(--kube-radius-sm) var(--kube-radius-sm) 0;
   margin: 1.25rem 0;
 }
+:root[data-theme='dark'] .sl-markdown-content blockquote { background: rgba(50,108,229,0.1); }
 .sl-markdown-content blockquote p { margin: 0.25rem 0; }
 
 /* ===== CODE BLOCKS ===== */
 pre code { white-space: pre; word-wrap: normal; overflow-x: auto; }
 pre { border-radius: var(--kube-radius) !important; }
 
-/* ===== QUIZ / DETAILS-SUMMARY ===== */
+/* ===== QUIZ / DETAILS-SUMMARY — card style ===== */
 .sl-markdown-content details {
-  margin: 1rem 0; padding: 0;
-  border: 2px solid var(--sl-color-hairline-light);
-  border-radius: var(--kube-radius); overflow: hidden;
-  transition: border-color 0.2s;
+  margin: 1.375rem 0; padding: 0;
+  border: 2px solid var(--g200); border-radius: var(--kube-radius);
+  overflow: hidden; transition: border-color 0.2s;
+  background: white;
 }
+:root[data-theme='dark'] .sl-markdown-content details { background: var(--g800); border-color: var(--g700); }
 .sl-markdown-content details:hover { border-color: var(--kube-blue); }
-.sl-markdown-content details summary {
+.sl-markdown-content details > summary {
   cursor: pointer; font-weight: 600;
-  padding: 0.75rem 1rem;
-  background: var(--sl-color-bg-nav) !important;
-  border: none !important;
-  font-size: 0.9rem; transition: background 0.2s;
-  border-radius: 0 !important;
+  padding: 0.875rem 1.375rem !important;
+  background: var(--g50) !important; border: none !important;
+  font-size: 0.875rem; border-radius: 0 !important;
+  border-bottom: 1px solid transparent !important;
+  display: flex; align-items: center; gap: 0.625rem;
 }
-.sl-markdown-content details summary:hover { background: var(--sl-color-accent-low) !important; }
-.sl-markdown-content details[open] summary {
-  margin-bottom: 0;
-  border-bottom: 1px solid var(--sl-color-hairline-light) !important;
-  padding-bottom: 0.75rem;
-}
-.sl-markdown-content details[open] > :not(summary) { padding: 0 1rem; }
+:root[data-theme='dark'] .sl-markdown-content details > summary { background: var(--g800) !important; }
+.sl-markdown-content details > summary:hover { background: var(--kube-blue-light) !important; }
+.sl-markdown-content details[open] > summary { border-bottom: 1px solid var(--g200) !important; }
+.sl-markdown-content details[open] > :not(summary) { padding: 0 1.375rem; }
 
-/* ===== TOC (right panel) — Gap #5: match POC minimal blue-accent style ===== */
-starlight-toc nav {
-  font-size: 0.75rem !important;
+/* ===== CALLOUT / ASIDE — exact POC values ===== */
+.starlight-aside {
+  border-radius: var(--kube-radius);
+  padding: 1.125rem 1.375rem;
+  border-width: 0; border-left-width: 4px;
 }
+
+/* ===== TOC — exact POC values ===== */
+starlight-toc nav { font-size: 0.75rem !important; }
 starlight-toc h2 {
-  font-size: 0.6875rem !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.8px !important;
-  color: var(--sl-color-gray-3) !important;
+  font-size: 0.6875rem !important; font-weight: 700 !important;
+  text-transform: uppercase !important; letter-spacing: 0.8px !important;
+  color: var(--g400) !important; margin-bottom: 0.75rem !important;
 }
 starlight-toc a {
-  font-size: 0.75rem !important;
-  padding-block: 0.2rem !important;
+  font-size: 0.75rem !important; line-height: 1.4 !important;
+  padding: 0.25rem 0 0.25rem 0.75rem !important;
+  border-left: 2px solid transparent !important;
+  transition: all 0.15s !important;
 }
+starlight-toc a:hover { color: var(--g700) !important; border-left-color: var(--g300) !important; }
 starlight-toc a[aria-current="true"] {
-  color: var(--sl-color-accent) !important;
+  color: var(--kube-blue) !important; border-left-color: var(--kube-blue) !important;
   font-weight: 600 !important;
 }
 
-/* ===== CALLOUT / ASIDE — rounded ===== */
-.starlight-aside {
-  border-radius: var(--kube-radius);
-  border-width: 0;
-  border-left-width: 4px;
-}
-
-/* ===== PAGINATION (prev/next) — card style ===== */
+/* ===== PAGINATION — exact POC values ===== */
+.pagination-links { margin-top: 3rem !important; padding-top: 1.5rem !important; border-top: 1px solid var(--g200) !important; }
 .pagination-links a {
-  border-radius: var(--kube-radius) !important;
-  transition: all 0.2s !important;
+  padding: 1rem 1.25rem !important; border: 1px solid var(--g200) !important;
+  border-radius: var(--kube-radius) !important; transition: all 0.2s !important;
 }
-.pagination-links a:hover {
-  border-color: var(--kube-blue) !important;
-  background: var(--sl-color-accent-low) !important;
-}
+.pagination-links a:hover { border-color: var(--kube-blue) !important; background: var(--kube-blue-light) !important; }
 
-/* ===== TOC (right panel) ===== */
-starlight-toc a[aria-current="true"],
-.right-sidebar a[aria-current="true"] {
-  color: var(--sl-color-accent) !important;
-  border-inline-start-color: var(--sl-color-accent) !important;
-  font-weight: 600;
+/* ===== META CHIPS (content-enhancer) — exact POC layout ===== */
+.kd-meta-chips {
+  display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.75rem;
 }
-
-/* ===== META CHIPS (complexity badges) ===== */
 .kd-chip {
-  display: inline-block;
-  padding: 0.1rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  font-family: var(--sl-font-mono);
-  letter-spacing: 0.3px;
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.3rem 0.75rem; border-radius: 6px;
+  font-size: 0.75rem; font-weight: 600;
 }
+.kd-chip-time { background: var(--g100); color: var(--g600); }
 .kd-chip-quick { background: var(--terminal-green-light); color: var(--terminal-green-dark); }
 .kd-chip-medium { background: var(--warning-amber-light); color: #F57F17; }
 .kd-chip-advanced { background: var(--danger-red-light); color: var(--danger-red); }
 
-/* ===== WAR STORY (content-enhancer.ts) ===== */
-.kd-warstory {
-  background: var(--sl-color-bg);
-  border: 2px solid var(--sl-color-hairline-light);
-  border-radius: var(--kube-radius);
-  overflow: hidden; margin: 1.5rem 0;
-}
-.kd-warstory-header {
-  background: #0f172a; color: white;
-  padding: 0.875rem 1.25rem;
-  display: flex; align-items: center; gap: 0.5rem;
-  font-weight: 700; font-size: 0.9rem;
-}
-.kd-warstory-header .impact {
-  margin-left: auto; background: var(--danger-red);
-  padding: 0.15rem 0.625rem; border-radius: 4px;
-  font-size: 0.7rem; font-weight: 700;
-}
-.kd-warstory-body { padding: 1.25rem; }
+/* ===== WAR STORY (content-enhancer) — exact POC values ===== */
+.kd-warstory { background: white; border: 2px solid var(--g200); border-radius: var(--kube-radius); overflow: hidden; margin: 1.375rem 0; }
+:root[data-theme='dark'] .kd-warstory { background: var(--g800); border-color: var(--g700); }
+.kd-warstory-header { background: var(--g900); color: white; padding: 0.875rem 1.25rem; display: flex; align-items: center; gap: 0.625rem; font-weight: 700; font-size: 0.875rem; }
+.kd-warstory-header .impact { margin-left: auto; background: var(--danger-red); padding: 0.15rem 0.625rem; border-radius: 4px; font-size: 0.6875rem; }
+.kd-warstory-body { padding: 1.25rem; font-size: 0.875rem; line-height: 1.7; }
+:root[data-theme='light'] .kd-warstory-body { color: var(--g700); }
 
-/* ===== DID YOU KNOW (content-enhancer.ts) ===== */
-.kd-dyk {
-  background: linear-gradient(135deg, #F0F4FF 0%, #E8EEFF 100%);
-  border: 1px solid rgba(50,108,229,0.15);
-  border-radius: var(--kube-radius);
-  padding: 1.25rem 1.5rem; margin: 1.5rem 0;
-}
-[data-theme='dark'] .kd-dyk {
-  background: linear-gradient(135deg, rgba(50,108,229,0.1) 0%, rgba(50,108,229,0.05) 100%);
-  border-color: rgba(50,108,229,0.2);
-}
-.kd-dyk-header {
-  display: flex; align-items: center; gap: 0.5rem;
-  font-weight: 700; font-size: 0.9rem;
-  color: var(--kube-blue); margin-bottom: 0.625rem;
-}
+/* ===== DID YOU KNOW (content-enhancer) — exact POC values ===== */
+.kd-dyk { background: linear-gradient(135deg, #F0F4FF, #E8EEFF); border: 1px solid rgba(50,108,229,0.15); border-radius: var(--kube-radius); padding: 1.25rem 1.5rem; margin: 1.375rem 0; }
+:root[data-theme='dark'] .kd-dyk { background: linear-gradient(135deg, rgba(50,108,229,0.1), rgba(50,108,229,0.05)); border-color: rgba(50,108,229,0.2); }
+.kd-dyk-header { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 0.875rem; color: var(--kube-blue); margin-bottom: 0.625rem; }
+.kd-dyk-item { font-size: 0.875rem; line-height: 1.6; margin: 0.25rem 0; }
+:root[data-theme='light'] .kd-dyk-item { color: var(--g700); }
 
-/* ===== MARK COMPLETE BUTTON ===== */
+/* ===== MARK COMPLETE — exact POC values ===== */
 .kd-complete-btn {
   display: inline-flex; align-items: center; gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border: 2px solid var(--sl-color-hairline-light);
-  border-radius: var(--kube-radius-sm);
-  background: transparent; font-size: 0.85rem; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-  font-family: var(--sl-font); color: var(--sl-color-text);
+  padding: 0.5rem 1rem; border: 2px solid var(--g200);
+  border-radius: var(--kube-radius-sm); background: transparent;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  font-family: var(--sl-font); color: inherit;
 }
-.kd-complete-btn:hover {
-  border-color: var(--terminal-green-dark);
-  background: var(--terminal-green-light);
-}
-.kd-complete-btn.completed {
-  border-color: var(--terminal-green-dark);
-  background: var(--terminal-green-light);
-  color: var(--terminal-green-dark);
-}
+.kd-complete-btn:hover { border-color: var(--terminal-green-dark); background: var(--terminal-green-light); }
+.kd-complete-btn.completed { border-color: var(--terminal-green-dark); background: var(--terminal-green-light); color: var(--terminal-green-dark); }
 
 /* Sidebar checkmarks */
-nav.sidebar [data-completed]::after {
-  content: ' \2713';
-  color: var(--terminal-green-dark);
-  font-weight: 700;
-}
+[data-completed]::after { content: ' ✓'; color: var(--terminal-green-dark); font-weight: 700; font-size: 0.75rem; }
 
-/* ===== DEDICATION (content-enhancer.ts) ===== */
-.kd-dedication-wrap {
-  display: block !important;
-  background: linear-gradient(135deg, #0057B8 0%, #0057B8 50%, #FFD700 50%, #FFD700 100%);
-  padding: 3px; border-radius: var(--kube-radius); margin: 2rem 0;
-}
-.kd-dedication-wrap-inner {
-  display: block !important;
-  background: var(--sl-color-bg);
-  border-radius: 10px; padding: 1.75rem 2rem;
-}
+/* ===== DEDICATION (content-enhancer) ===== */
+.kd-dedication-wrap { display: block !important; background: linear-gradient(135deg, #0057B8 0%, #0057B8 50%, #FFD700 50%, #FFD700 100%); padding: 3px; border-radius: var(--kube-radius); margin: 2rem 0; }
+.kd-dedication-wrap-inner { display: block !important; background: white; border-radius: 10px; padding: 1.75rem 2rem; }
+:root[data-theme='dark'] .kd-dedication-wrap-inner { background: var(--g900); }
+
+/* ===== SECTION INDEX: module rows ===== */
+.sl-markdown-content .module-row { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--g200); border-radius: var(--kube-radius-sm); transition: all 0.15s; text-decoration: none; color: inherit; margin-bottom: 0.5rem; }
+.sl-markdown-content .module-row:hover { border-color: var(--kube-blue); background: var(--kube-blue-light); }
+
+/* ===== TRACK LANDING: section cards ===== */
+.sl-markdown-content .section-card { background: white; border: 1px solid var(--g200); border-radius: var(--kube-radius); padding: 1.5rem; transition: all 0.2s; position: relative; overflow: hidden; }
+.sl-markdown-content .section-card:hover { border-color: transparent; box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+
+/* ===== PROGRESS: bars ===== */
+.progress-bar-wrap { height: 8px; background: var(--g200); border-radius: 4px; overflow: hidden; margin: 0.375rem 0; }
+.progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }

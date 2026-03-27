@@ -1,12 +1,12 @@
 ---
 /**
- * Custom Sidebar — POC-style: clean toggles, monospace numbers, blue active
+ * Custom Sidebar — exact match to POC v2
+ * Section title with dot, part headers, monospace numbers, blue active, checkmarks
  */
 import type { Props } from '@astrojs/starlight/props';
 import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
 
 const { sidebar } = Astro.locals.starlightRoute;
-const slug = Astro.locals.starlightRoute.slug || '';
 
 function getModNum(label: string): string | null {
   const m = label.match(/^Module\s+(\d+\.?\d*)/i);
@@ -25,171 +25,174 @@ function hasCurrent(entries: any[]): boolean {
   return false;
 }
 
-/** Check if a group's entries are all leaf modules (Part-level group) */
-function isPartGroup(entry: any): boolean {
+function isLeafGroup(entry: any): boolean {
   if (entry.type !== 'group') return false;
+  // A leaf group contains only links (no nested groups)
   return entry.entries.every((e: any) => e.type === 'link');
 }
 
-function renderEntry(entry: any, depth = 0): string {
-  if (entry.type === 'link') {
-    const modNum = getModNum(entry.label);
-    const label = modNum ? cleanLabel(entry.label) : entry.label;
-    const cls = entry.isCurrent ? 'kd-link kd-active' : 'kd-link';
-    const aria = entry.isCurrent ? ' aria-current="page"' : '';
-    const numHtml = modNum ? `<span class="kd-num">${modNum}</span>` : '';
-    return `<a href="${entry.href}" class="${cls}"${aria}>${numHtml}<span>${label}</span></a>`;
-  }
+/** Check if a group's label looks like a "Part" (part0-environment style from autogenerate) */
+function isPartLevelGroup(entry: any): boolean {
+  if (entry.type !== 'group') return false;
+  // Starlight autogenerate labels use the sidebar.label from the index.md
+  // These are groups like "Part 0: Environment Setup", "Part 1: Cluster Architecture"
+  // They contain modules as links
+  return true; // At this depth, all groups are parts
+}
+
+function renderLink(e: any): string {
+  const modNum = getModNum(e.label);
+  const label = modNum ? cleanLabel(e.label) : e.label;
+  const cls = e.isCurrent ? 'kd-sl active' : 'kd-sl';
+  const aria = e.isCurrent ? ' aria-current="page"' : '';
+  const num = modNum ? `<span class="kd-sn">${modNum}</span>` : '';
+  return `<a href="${e.href}" class="${cls}"${aria}>${num}<span>${label}</span></a>`;
+}
+
+function renderEntry(entry: any, depth: number = 0): string {
+  if (entry.type === 'link') return renderLink(entry);
 
   const isOpen = hasCurrent(entry.entries) || !entry.collapsed;
-  const children = entry.entries.map((e: any) => renderEntry(e, depth + 1)).join('');
   const caret = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
 
-  // Part-level groups (depth >= 2, contains only links) → bold header + module links
-  // If the first child is an index page matching the group label, make the header a link to it
-  if (depth >= 2 && isPartGroup(entry)) {
-    const normalized = (s: string) => s.toLowerCase().replace(/[-_]/g, ' ').trim();
-    const indexEntry = entry.entries.find((e: any) =>
-      e.type === 'link' && normalized(e.label) === normalized(entry.label)
-    );
+  // Groups that contain only links: render as bold part header + flat links (no toggle)
+  if (isLeafGroup(entry)) {
+    // Find the index page (first link whose label doesn't start with "Module")
+    const indexEntry = entry.entries.find((e: any) => e.type === 'link' && !getModNum(e.label));
     const moduleEntries = entry.entries.filter((e: any) => e !== indexEntry);
-    const moduleChildren = moduleEntries.map((e: any) => renderEntry(e, depth + 1)).join('');
+    const links = moduleEntries.map((e: any) => renderLink(e)).join('');
+
+    // Use the index page's label if the group label is a raw directory name
+    const isRawDirName = entry.label.includes('-') && !entry.label.includes(':') && !entry.label.includes(' ');
+    const headerLabel = (isRawDirName && indexEntry) ? indexEntry.label : entry.label;
 
     if (indexEntry) {
-      // Header is a link to the index page
-      const activeCls = indexEntry.isCurrent ? ' kd-part-active' : '';
-      return `<a href="${indexEntry.href}" class="kd-part-header${activeCls}"${indexEntry.isCurrent ? ' aria-current="page"' : ''}>${entry.label}</a>${moduleChildren}`;
+      const cls = indexEntry.isCurrent ? 'kd-ph kd-ph-active' : 'kd-ph';
+      return `<a href="${indexEntry.href}" class="${cls}"${indexEntry.isCurrent ? ' aria-current="page"' : ''}>${headerLabel}</a>${links}`;
     }
-    return `<div class="kd-part-header">${entry.label}</div>${moduleChildren}`;
+    return `<div class="kd-ph">${headerLabel}</div>${links}`;
   }
 
+  // Regular group: collapsible toggle
+  const children = entry.entries.map((e: any) => renderEntry(e, depth + 1)).join('');
   return `<details${isOpen ? ' open' : ''}>
-    <summary class="kd-group">${entry.label}${caret}</summary>
-    <div class="kd-children">${children}</div>
+    <summary class="kd-sg">${entry.label}${caret}</summary>
+    <div class="kd-sc">${children}</div>
   </details>`;
 }
 
-// Find the current section name for the section title
-function findCurrentSection(): string {
-  for (const entry of sidebar) {
-    if (entry.type === 'group' && hasCurrent(entry.entries || [])) {
-      return entry.label;
+// Find the right sidebar scope by drilling to the deepest group
+// whose children are leaf groups (parts with modules).
+// If the deepest active group IS a leaf (only links, no sub-groups),
+// go up one level to show sibling parts.
+//
+// Examples:
+//   Certifications > CKA > Part3 (leaf) → show CKA (parent of Part3, has sibling Parts)
+//   Platform > Disciplines > SRE (leaf) → show SRE (no sibling structure worth showing)
+//   Fundamentals > Zero to Terminal (leaf) → show Zero to Terminal
+function findActiveBranch(entries: any[]): { label: string; entries: any[] } | null {
+  for (const e of entries) {
+    if (e.type !== 'group' || !hasCurrent(e.entries || [])) continue;
+
+    // Find the active child group
+    const activeChild = e.entries.find((c: any) => c.type === 'group' && hasCurrent(c.entries || []));
+
+    if (activeChild) {
+      // Check if the active child is a leaf group (only has links)
+      const activeChildIsLeaf = isLeafGroup(activeChild);
+      // Check if this group has multiple leaf-group siblings (like Parts in CKA)
+      const leafSiblings = e.entries.filter((c: any) => c.type === 'group' && isLeafGroup(c));
+
+      if (activeChildIsLeaf && leafSiblings.length > 1 && leafSiblings.length <= 8) {
+        // Active child is a leaf with a small number of sibling leaf groups
+        // (like CKA's 7 Parts) — show this level so user sees all parts
+        return { label: e.label, entries: e.entries };
+      }
+      if (activeChildIsLeaf && leafSiblings.length > 8) {
+        // Too many siblings (like 14 disciplines) — drill into the active one
+        return { label: activeChild.label, entries: activeChild.entries };
+      }
+
+      // Try to go deeper
+      const deeper = findActiveBranch(e.entries);
+      if (deeper) return deeper;
     }
+
+    // This group has the current page directly
+    return { label: e.label, entries: e.entries };
   }
-  return '';
+  return null;
 }
-const currentSection = findCurrentSection();
+
+const currentBranch = findActiveBranch(sidebar);
+const section = currentBranch?.label || '';
+const entriesToRender = currentBranch ? currentBranch.entries : sidebar;
 ---
 
-<div class="kd-sidebar">
-  {currentSection && (
-    <div class="kd-section-title">
-      <span class="kd-dot"></span>
-      <span>{currentSection}</span>
-    </div>
-  )}
-  <Fragment set:html={sidebar.map((e: any) => renderEntry(e)).join('')} />
+<div class="kd-sb">
+  {section && <div class="kd-st"><span class="kd-dot"></span><span>{section}</span></div>}
+  <Fragment set:html={entriesToRender.map((e: any) => renderEntry(e)).join('')} />
 </div>
-<div class="md:sl-hidden">
-  <MobileMenuFooter />
-</div>
+<div class="md:sl-hidden"><MobileMenuFooter /></div>
 
 <style>
-  .kd-sidebar { font-size: 0.8125rem; }
+  /* Exact POC v2 sidebar values */
+  .kd-sb { font-size: 0.8125rem; padding: 0 0.5rem; }
 
-  /* Section title — "CKA Curriculum" with blue dot (Gap #2) */
-  .kd-section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--sl-color-gray-3);
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.5rem;
-  }
-  .kd-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 2px;
-    background: var(--sl-color-accent);
-    flex-shrink: 0;
-  }
+  /* Section title with blue dot */
+  .kd-st { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #9CA3AF; padding: 0.5rem 0.75rem; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .kd-dot { width: 6px; height: 6px; border-radius: 2px; background: #326CE5; flex-shrink: 0; }
 
-  /* Group toggles */
-  .kd-sidebar :global(summary.kd-group) {
+  /* Group toggle — clean bordered button */
+  .kd-sb :global(summary.kd-sg) {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0.4rem 0.75rem; cursor: pointer; user-select: none;
-    border-radius: 0.5rem; background: transparent;
-    border: 1px solid var(--sl-color-hairline-light);
-    font-weight: 600; font-size: 0.875rem; color: var(--sl-color-text);
-    list-style: none; transition: all 0.15s; margin-bottom: 0.25rem;
+    border: 1px solid #E5E7EB; border-radius: 8px; padding: 0.4rem 0.75rem;
+    font-weight: 600; font-size: 0.875rem; cursor: pointer; user-select: none;
+    background: transparent; color: inherit; list-style: none;
+    transition: all 0.15s; margin-bottom: 0.25rem;
   }
-  .kd-sidebar :global(summary.kd-group:hover) {
-    background: var(--sl-color-accent-low); border-color: var(--sl-color-accent);
-  }
-  .kd-sidebar :global(summary.kd-group::marker),
-  .kd-sidebar :global(summary.kd-group::-webkit-details-marker) { display: none; }
-  .kd-sidebar :global(summary.kd-group svg) {
-    transition: transform 0.2s; color: var(--sl-color-gray-3); flex-shrink: 0;
-  }
-  .kd-sidebar :global(details[open] > summary.kd-group svg) { transform: rotate(90deg); }
+  :global([data-theme='dark']) .kd-sb :global(summary.kd-sg) { border-color: #374151; }
+  .kd-sb :global(summary.kd-sg:hover) { background: #EBF1FF; border-color: #326CE5; }
+  :global([data-theme='dark']) .kd-sb :global(summary.kd-sg:hover) { background: rgba(50,108,229,0.15); }
+  .kd-sb :global(summary.kd-sg::marker), .kd-sb :global(summary.kd-sg::-webkit-details-marker) { display: none; }
+  .kd-sb :global(summary.kd-sg svg) { transition: transform 0.2s; color: #9CA3AF; flex-shrink: 0; }
+  .kd-sb :global(details[open] > summary.kd-sg svg) { transform: rotate(90deg); }
 
-  /* Children */
-  .kd-sidebar :global(.kd-children) {
-    margin-left: 0.5rem; padding-left: 0.5rem;
-    border-left: 1px solid var(--sl-color-hairline-light);
+  /* Children container */
+  .kd-sb :global(.kd-sc) { margin-left: 0.5rem; padding-left: 0.5rem; border-left: 1px solid #E5E7EB; }
+  :global([data-theme='dark']) .kd-sb :global(.kd-sc) { border-left-color: #374151; }
+
+  /* Nested group toggles smaller */
+  .kd-sb :global(.kd-sc summary.kd-sg) { font-size: 0.8125rem; padding: 0.3rem 0.625rem; }
+
+  /* Part headers — bold, not collapsible */
+  .kd-sb :global(.kd-ph) {
+    display: block; font-weight: 700; font-size: 0.75rem; color: #374151;
+    padding: 0.625rem 0.75rem 0.25rem; margin-top: 0.5rem; text-decoration: none; border-radius: 0.375rem;
   }
-  .kd-sidebar :global(.kd-children summary.kd-group) {
-    font-size: 0.8125rem; padding: 0.3rem 0.625rem;
-  }
+  :global([data-theme='dark']) .kd-sb :global(.kd-ph) { color: #D1D5DB; }
+  .kd-sb :global(a.kd-ph:hover) { background: #F3F4F6; }
+  :global([data-theme='dark']) .kd-sb :global(a.kd-ph:hover) { background: #374151; }
+  .kd-sb :global(.kd-ph-active) { color: #326CE5 !important; background: #EBF1FF; }
+  :global([data-theme='dark']) .kd-sb :global(.kd-ph-active) { color: #93B4F5 !important; background: rgba(50,108,229,0.15); }
 
   /* Links */
-  .kd-sidebar :global(a.kd-link) {
+  .kd-sb :global(a.kd-sl) {
     display: flex; align-items: center; gap: 0.5rem;
     padding: 0.3rem 0.75rem; border-radius: 0.375rem;
-    color: var(--sl-color-gray-2); text-decoration: none;
-    line-height: 1.4; transition: all 0.15s;
+    color: #4B5563; text-decoration: none; line-height: 1.4; transition: all 0.15s;
   }
-  .kd-sidebar :global(a.kd-link:hover) {
-    color: var(--sl-color-white); background: var(--sl-color-bg-nav);
-  }
-  .kd-sidebar :global(a.kd-active) {
-    font-weight: 600; color: var(--sl-color-accent-high);
-    background: var(--sl-color-accent-low);
-  }
+  :global([data-theme='dark']) .kd-sb :global(a.kd-sl) { color: #9CA3AF; }
+  .kd-sb :global(a.kd-sl:hover) { color: #0F172A; background: #F3F4F6; }
+  :global([data-theme='dark']) .kd-sb :global(a.kd-sl:hover) { color: white; background: #374151; }
+  .kd-sb :global(a.kd-sl.active) { font-weight: 600; color: #326CE5; background: #EBF1FF; }
+  :global([data-theme='dark']) .kd-sb :global(a.kd-sl.active) { color: #93B4F5; background: rgba(50,108,229,0.15); }
 
   /* Module numbers */
-  .kd-sidebar :global(.kd-num) {
-    font-family: var(--sl-font-mono); font-size: 0.6875rem;
-    min-width: 1.75rem; flex-shrink: 0; color: var(--sl-color-gray-3);
-  }
-  .kd-sidebar :global(a.kd-active .kd-num) { color: var(--sl-color-accent-high); }
-
-  /* Part headers — bold, not collapsible (Gap #3) */
-  .kd-sidebar :global(.kd-part-header) {
-    display: block;
-    font-weight: 700;
-    font-size: 0.75rem;
-    color: var(--sl-color-text);
-    padding: 0.625rem 0.75rem 0.25rem;
-    margin-top: 0.5rem;
-    text-decoration: none;
-    border-radius: 0.375rem;
-  }
-  .kd-sidebar :global(a.kd-part-header:hover) {
-    background: var(--sl-color-bg-nav);
-  }
-  .kd-sidebar :global(.kd-part-active) {
-    color: var(--sl-color-accent-high);
-    background: var(--sl-color-accent-low);
-  }
+  .kd-sb :global(.kd-sn) { font-family: var(--sl-font-mono); font-size: 0.6875rem; color: #9CA3AF; min-width: 1.75rem; flex-shrink: 0; }
+  .kd-sb :global(a.kd-sl.active .kd-sn) { color: #326CE5; }
+  :global([data-theme='dark']) .kd-sb :global(a.kd-sl.active .kd-sn) { color: #93B4F5; }
 
   /* Spacing */
-  .kd-sidebar :global(details + details),
-  .kd-sidebar :global(details + a),
-  .kd-sidebar :global(a + details),
-  .kd-sidebar :global(a + a) { margin-top: 0.25rem; }
+  .kd-sb :global(details + details), .kd-sb :global(details + a), .kd-sb :global(a + details), .kd-sb :global(a + a) { margin-top: 0.25rem; }
 </style>

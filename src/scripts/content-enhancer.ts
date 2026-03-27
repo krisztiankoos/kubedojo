@@ -22,27 +22,47 @@ function enhanceContent(): void {
  * Meta Chips: Style the first blockquote (Complexity/Time/Prerequisites)
  * as colored badge chips matching the POC design.
  */
+/**
+ * Meta Chips: Transform the first blockquote (Complexity/Time/Prerequisites)
+ * into colored inline chips matching the POC design.
+ * POC shows: ⚠ Medium | ⏱ 45-55 min | 🏆 CKA Exam (as colored pills on one line)
+ */
 function enhanceMetaChips(root: Element): void {
   const firstBq = root.querySelector('blockquote');
   if (!firstBq || firstBq.closest('.kd-warstory') || firstBq.closest('.kd-dyk')) return;
 
   const text = firstBq.textContent || '';
-  // Only target the metadata blockquote (contains Complexity or Time to Complete)
   if (!text.includes('Complexity') && !text.includes('Time to Complete')) return;
   if (firstBq.classList.contains('kd-meta-enhanced')) return;
 
   firstBq.classList.add('kd-meta-enhanced');
 
-  // Style complexity badges inline
-  const html = firstBq.innerHTML;
-  const styled = html
-    .replace(/\[QUICK\]/g, '<span class="kd-chip kd-chip-quick">[QUICK]</span>')
-    .replace(/\[MEDIUM\]/g, '<span class="kd-chip kd-chip-medium">[MEDIUM]</span>')
-    .replace(/\[ADVANCED\]/g, '<span class="kd-chip kd-chip-advanced">[ADVANCED]</span>')
-    .replace(/\[EXPERT\]/g, '<span class="kd-chip kd-chip-advanced">[EXPERT]</span>');
+  // Extract complexity level
+  const complexityMatch = text.match(/\[(QUICK|MEDIUM|ADVANCED|EXPERT)\]/i);
+  const complexity = complexityMatch ? complexityMatch[1].toUpperCase() : null;
 
-  if (styled !== html) {
-    firstBq.innerHTML = styled;
+  // Extract time
+  const timeMatch = text.match(/Time to Complete:\s*(.+?)(?:\n|$)/);
+  const time = timeMatch ? timeMatch[1].trim() : null;
+
+  // Build chips row
+  const chips: string[] = [];
+  if (complexity) {
+    const cls = complexity === 'QUICK' ? 'kd-chip-quick' :
+                complexity === 'MEDIUM' ? 'kd-chip-medium' : 'kd-chip-advanced';
+    const icon = complexity === 'QUICK' ? '✓' : complexity === 'MEDIUM' ? '⚠' : '⚡';
+    chips.push(`<span class="kd-chip ${cls}">${icon} ${complexity.charAt(0) + complexity.slice(1).toLowerCase()}</span>`);
+  }
+  if (time) {
+    chips.push(`<span class="kd-chip kd-chip-time">⏱ ${time}</span>`);
+  }
+
+  if (chips.length > 0) {
+    // Replace blockquote with chips div
+    const chipsDiv = document.createElement('div');
+    chipsDiv.className = 'kd-meta-chips';
+    chipsDiv.innerHTML = chips.join('');
+    firstBq.replaceWith(chipsDiv);
   }
 }
 
