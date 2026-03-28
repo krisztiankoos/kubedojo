@@ -73,16 +73,6 @@ function renderEntry(entry: any, depth: number = 0): string {
     return `<div class="kd-ph">${headerLabel}</div>${links}`;
   }
 
-  // Non-leaf group: check if we're on a landing/overview page
-  // If so, show groups as clickable headers (not collapsible toggles)
-  const isOnOverview = entriesToRender.some((e: any) => e.type === 'link' && e.isCurrent);
-  if (isOnOverview) {
-    // Find this group's index link to make the header clickable
-    const indexLink = entry.entries.find((e: any) => e.type === 'link' && !getModNum(e.label));
-    const href = indexLink ? indexLink.href : '#';
-    return `<a href="${href}" class="kd-ph">${entry.label}</a>`;
-  }
-
   // Regular group: collapsible toggle
   const children = entry.entries.map((e: any) => renderEntry(e, depth + 1)).join('');
   return `<details${isOpen ? ' open' : ''}>
@@ -91,49 +81,38 @@ function renderEntry(entry: any, depth: number = 0): string {
   </details>`;
 }
 
-// Find the right sidebar scope by drilling to the deepest group
-// whose children are leaf groups (parts with modules).
-// If the deepest active group IS a leaf (only links, no sub-groups),
-// go up one level to show sibling parts.
+// Best UX practice: Show the second level (subsections within a track).
+// All siblings visible. Active one will auto-expand via Starlight's `open` attribute.
 //
 // Examples:
-//   Certifications > CKA > Part3 (leaf) → show CKA (parent of Part3, has sibling Parts)
-//   Platform > Disciplines > SRE (leaf) → show SRE (no sibling structure worth showing)
-//   Fundamentals > Zero to Terminal (leaf) → show Zero to Terminal
+//   In CKA Part 3 Module 3.4 → show CKA level (all Parts visible, Part 3 expanded)
+//   In SRE → show Disciplines level (all disciplines visible, SRE expanded)
+//   In Zero to Terminal → show Fundamentals level (all sections visible, ZtT expanded)
+//
+// Drill: Track (depth 0) → Subsection (depth 1) → STOP
+// Exception: if depth 1 has only 1-3 children AND those children have sub-groups, go one deeper
 function findActiveBranch(entries: any[]): { label: string; entries: any[] } | null {
   for (const e of entries) {
     if (e.type !== 'group' || !hasCurrent(e.entries || [])) continue;
 
-    // Find the active child group
+    // Find the active child
     const activeChild = e.entries.find((c: any) => c.type === 'group' && hasCurrent(c.entries || []));
 
     if (activeChild) {
-      // Check if the active child is a leaf group (only has links)
-      const activeChildIsLeaf = isLeafGroup(activeChild);
-      // Check if this group has multiple leaf-group siblings (like Parts in CKA)
-      const leafSiblings = e.entries.filter((c: any) => c.type === 'group' && isLeafGroup(c));
+      // Check if this level has very few children that each have sub-groups
+      // (like Platform with just Foundations/Disciplines/Toolkits — go one deeper)
+      const childGroups = e.entries.filter((c: any) => c.type === 'group');
+      const hasDeepChildren = childGroups.some((c: any) => c.entries?.some((gc: any) => gc.type === 'group'));
 
-      if (activeChildIsLeaf && leafSiblings.length > 1 && leafSiblings.length <= 8) {
-        // Active child is a leaf with a small number of sibling leaf groups
-        // (like CKA's 7 Parts) — show this level so user sees all parts
-        return { label: e.label, entries: e.entries };
+      if (childGroups.length <= 3 && hasDeepChildren) {
+        // Too few items at this level (Platform has 3) — go deeper
+        const deeper = findActiveBranch(e.entries);
+        if (deeper) return deeper;
       }
-      if (activeChildIsLeaf && leafSiblings.length > 8) {
-        // Too many siblings (like 14 disciplines) — drill into the active one
-        // Use the index page label if the group label is a raw directory name
-        const isRaw = activeChild.label.includes('-') && !activeChild.label.includes(':') && !activeChild.label.includes(' ');
-        const indexLink = isRaw ? activeChild.entries.find((e: any) => e.type === 'link' && !getModNum(e.label)) : null;
-        const label = (isRaw && indexLink) ? indexLink.label : activeChild.label;
-        return { label, entries: activeChild.entries };
-      }
-
-      // Try to go deeper
-      const deeper = findActiveBranch(e.entries);
-      if (deeper) return deeper;
     }
 
-    // This group has the current page directly
-    // Use clean label if the group label is a raw directory name
+    // This is the right level — show all children, active one will be expanded
+    // Clean raw directory name labels
     const isRawLabel = e.label.includes('-') && !e.label.includes(':') && !e.label.includes(' ');
     const idxLink = isRawLabel ? e.entries.find((c: any) => c.type === 'link' && !getModNum(c.label)) : null;
     const cleanedLabel = (isRawLabel && idxLink) ? idxLink.label : e.label;
