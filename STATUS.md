@@ -8,17 +8,17 @@
 
 **Website:** https://kube-dojo.github.io/ (Starlight/Astro, ~1,350 pages, ~30-40s build)
 
-**Site tabs:** Home | What's New | Fundamentals | Cloud | Certifications | Platform Engineering
+**Site tabs:** Home | Fundamentals | Linux | Cloud | Certifications | Platform | On-Premises
 
 ## Curriculum Summary
 
 | Track | Modules | Status |
 |-------|---------|--------|
-| Prerequisites | 33 | Complete |
-| Linux (Everyday Use + Deep Dive) | 37 | Complete |
-| Cloud | 85 | Complete |
-| Certifications (CKA/CKAD/CKS/KCNA/KCSA/Extending) | 169 | Complete |
-| Platform Engineering | 204 | Complete |
+| Fundamentals | 33 | Complete |
+| Linux Deep Dive | 37 | Complete |
+| Cloud | 84 | Complete |
+| Certifications (CKA/CKAD/CKS/KCNA/KCSA/Extending + 12 learning paths) | 175 | Complete |
+| Platform Engineering | 209 | Complete |
 | On-Premises Kubernetes | 30 | Complete (needs Gemini review) |
 | **Total** | **568** | **Complete** |
 

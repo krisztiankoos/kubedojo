@@ -73,6 +73,16 @@ function renderEntry(entry: any, depth: number = 0): string {
     return `<div class="kd-ph">${headerLabel}</div>${links}`;
   }
 
+  // Non-leaf group: check if we're on a landing/overview page
+  // If so, show groups as clickable headers (not collapsible toggles)
+  const isOnOverview = entriesToRender.some((e: any) => e.type === 'link' && e.isCurrent);
+  if (isOnOverview) {
+    // Find this group's index link to make the header clickable
+    const indexLink = entry.entries.find((e: any) => e.type === 'link' && !getModNum(e.label));
+    const href = indexLink ? indexLink.href : '#';
+    return `<a href="${href}" class="kd-ph">${entry.label}</a>`;
+  }
+
   // Regular group: collapsible toggle
   const children = entry.entries.map((e: any) => renderEntry(e, depth + 1)).join('');
   return `<details${isOpen ? ' open' : ''}>
@@ -110,7 +120,11 @@ function findActiveBranch(entries: any[]): { label: string; entries: any[] } | n
       }
       if (activeChildIsLeaf && leafSiblings.length > 8) {
         // Too many siblings (like 14 disciplines) — drill into the active one
-        return { label: activeChild.label, entries: activeChild.entries };
+        // Use the index page label if the group label is a raw directory name
+        const isRaw = activeChild.label.includes('-') && !activeChild.label.includes(':') && !activeChild.label.includes(' ');
+        const indexLink = isRaw ? activeChild.entries.find((e: any) => e.type === 'link' && !getModNum(e.label)) : null;
+        const label = (isRaw && indexLink) ? indexLink.label : activeChild.label;
+        return { label, entries: activeChild.entries };
       }
 
       // Try to go deeper
@@ -119,7 +133,11 @@ function findActiveBranch(entries: any[]): { label: string; entries: any[] } | n
     }
 
     // This group has the current page directly
-    return { label: e.label, entries: e.entries };
+    // Use clean label if the group label is a raw directory name
+    const isRawLabel = e.label.includes('-') && !e.label.includes(':') && !e.label.includes(' ');
+    const idxLink = isRawLabel ? e.entries.find((c: any) => c.type === 'link' && !getModNum(c.label)) : null;
+    const cleanedLabel = (isRawLabel && idxLink) ? idxLink.label : e.label;
+    return { label: cleanedLabel, entries: e.entries };
   }
   return null;
 }
