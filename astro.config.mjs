@@ -40,19 +40,23 @@ export default defineConfig({
           items: [
             { label: 'Overview', link: '/prerequisites/' },
             { label: 'Zero to Terminal', autogenerate: { directory: 'prerequisites/zero-to-terminal' }, collapsed: true },
-            { label: 'Linux Everyday Use', autogenerate: { directory: 'linux/foundations/everyday-use' }, collapsed: true },
             { label: 'Philosophy & Design', autogenerate: { directory: 'prerequisites/philosophy-design' }, collapsed: true },
             { label: 'Cloud Native 101', autogenerate: { directory: 'prerequisites/cloud-native-101' }, collapsed: true },
             { label: 'Kubernetes Basics', autogenerate: { directory: 'prerequisites/kubernetes-basics' }, collapsed: true },
             { label: 'Modern DevOps', autogenerate: { directory: 'prerequisites/modern-devops' }, collapsed: true },
-            { label: 'Linux Deep Dive', collapsed: true, items: [
-              { label: 'Overview', link: '/linux/' },
-              { label: 'System Essentials', autogenerate: { directory: 'linux/foundations/system-essentials' }, collapsed: true },
-              { label: 'Container Primitives', autogenerate: { directory: 'linux/foundations/container-primitives' }, collapsed: true },
-              { label: 'Networking', autogenerate: { directory: 'linux/foundations/networking' }, collapsed: true },
-              { label: 'Security', autogenerate: { directory: 'linux/security' }, collapsed: true },
-              { label: 'Operations', autogenerate: { directory: 'linux/operations' }, collapsed: true },
-            ]},
+          ],
+        },
+        {
+          label: 'Linux Deep Dive',
+          collapsed: true,
+          items: [
+            { label: 'Overview', link: '/linux/' },
+            { label: 'Linux Everyday Use', autogenerate: { directory: 'linux/foundations/everyday-use' }, collapsed: true },
+            { label: 'System Essentials', autogenerate: { directory: 'linux/foundations/system-essentials' }, collapsed: true },
+            { label: 'Container Primitives', autogenerate: { directory: 'linux/foundations/container-primitives' }, collapsed: true },
+            { label: 'Networking', autogenerate: { directory: 'linux/foundations/networking' }, collapsed: true },
+            { label: 'Security', autogenerate: { directory: 'linux/security' }, collapsed: true },
+            { label: 'Operations', autogenerate: { directory: 'linux/operations' }, collapsed: true },
           ],
         },
         {
