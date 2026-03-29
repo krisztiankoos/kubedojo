@@ -138,8 +138,8 @@ Pick a toolkit based on your current focus:
 - **Implementing GitOps?** Start with [ArgoCD](cicd-delivery/gitops-deployments/module-2.1-argocd/)
 - **Managing infrastructure?** Check out [Terraform](infrastructure-networking/iac-tools/module-7.1-terraform/)
 - **Building a platform?** Check out [Backstage](infrastructure-networking/platforms/module-7.1-backstage/)
-- **Securing clusters?** Start with [Falco](security-quality/security-tools/module-5.3-falco-tetragon/)
-- **ML workloads?** Begin with [Kubeflow](data-ai-platforms/ml-platforms/module-10.1-kubeflow/)
+- **Securing clusters?** Start with [Falco](security-quality/security-tools/module-4.3-falco/)
+- **ML workloads?** Begin with [Kubeflow](data-ai-platforms/ml-platforms/module-9.1-kubeflow/)
 
 ---
 

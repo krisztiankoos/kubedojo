@@ -85,7 +85,7 @@ Applied practices — how to do the work.
 |------------|---------|----------|
 | [SRE](disciplines/core-platform/sre/) | 7 | Operations, reliability, on-call |
 | [Platform Engineering](disciplines/core-platform/platform-engineering/) | 6 | Developer experience, self-service |
-| [Platform Leadership](disciplines/core-platform/platform-leadership/) | 5 | Strategy, adoption, evangelism |
+| [Platform Leadership](disciplines/core-platform/leadership/) | 5 | Strategy, adoption, evangelism |
 
 #### Delivery & Automation
 
