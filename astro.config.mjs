@@ -33,7 +33,9 @@ export default defineConfig({
       },
       customCss: ['./src/css/custom.css'],
       sidebar: [
-        { label: "What's New", link: '/changelog/' },
+
+        // ── 1. Foundations: beginner entry points ──
+
         {
           label: 'Fundamentals',
           collapsed: true,
@@ -47,36 +49,22 @@ export default defineConfig({
           ],
         },
         {
-          label: 'Linux Deep Dive',
+          label: 'Linux',
           collapsed: true,
           items: [
             { label: 'Overview', link: '/linux/' },
-            { label: 'Linux Everyday Use', autogenerate: { directory: 'linux/foundations/everyday-use' }, collapsed: true },
+            { label: 'Everyday Use', autogenerate: { directory: 'linux/foundations/everyday-use' }, collapsed: true },
             { label: 'System Essentials', autogenerate: { directory: 'linux/foundations/system-essentials' }, collapsed: true },
             { label: 'Container Primitives', autogenerate: { directory: 'linux/foundations/container-primitives' }, collapsed: true },
             { label: 'Networking', autogenerate: { directory: 'linux/foundations/networking' }, collapsed: true },
             { label: 'Security', autogenerate: { directory: 'linux/security' }, collapsed: true },
             { label: 'Operations', autogenerate: { directory: 'linux/operations' }, collapsed: true },
+            { label: 'LFCS: Linux SysAdmin', autogenerate: { directory: 'k8s/lfcs' }, collapsed: true },
           ],
         },
-        {
-          label: 'Cloud',
-          collapsed: true,
-          items: [
-            { label: 'Overview', link: '/cloud/' },
-            { label: 'Rosetta Stone', link: '/cloud/hyperscaler-rosetta-stone/' },
-            { label: 'AWS Essentials', autogenerate: { directory: 'cloud/aws-essentials' }, collapsed: true },
-            { label: 'GCP Essentials', autogenerate: { directory: 'cloud/gcp-essentials' }, collapsed: true },
-            { label: 'Azure Essentials', autogenerate: { directory: 'cloud/azure-essentials' }, collapsed: true },
-            { label: 'Architecture Patterns', autogenerate: { directory: 'cloud/architecture-patterns' }, collapsed: true },
-            { label: 'EKS Deep Dive', autogenerate: { directory: 'cloud/eks-deep-dive' }, collapsed: true },
-            { label: 'GKE Deep Dive', autogenerate: { directory: 'cloud/gke-deep-dive' }, collapsed: true },
-            { label: 'AKS Deep Dive', autogenerate: { directory: 'cloud/aks-deep-dive' }, collapsed: true },
-            { label: 'Advanced Operations', autogenerate: { directory: 'cloud/advanced-operations' }, collapsed: true },
-            { label: 'Managed Services', autogenerate: { directory: 'cloud/managed-services' }, collapsed: true },
-            { label: 'Enterprise & Hybrid', autogenerate: { directory: 'cloud/enterprise-hybrid' }, collapsed: true },
-          ],
-        },
+
+        // ── 2. Certifications: core K8s knowledge (before cloud-specific) ──
+
         {
           label: 'Certifications',
           collapsed: true,
@@ -102,12 +90,74 @@ export default defineConfig({
                 { label: 'CAPA: Argo', autogenerate: { directory: 'k8s/capa' }, collapsed: true },
                 { label: 'CNPE: Platform Engineer', autogenerate: { directory: 'k8s/cnpe' }, collapsed: true },
                 { label: 'CNPA: Platform Associate', autogenerate: { directory: 'k8s/cnpa' }, collapsed: true },
-                { label: 'LFCS: Linux SysAdmin', autogenerate: { directory: 'k8s/lfcs' }, collapsed: true },
                 { label: 'FinOps Practitioner', autogenerate: { directory: 'k8s/finops' }, collapsed: true },
               ],
             },
           ],
         },
+
+        // ── 3. Infrastructure: cloud + bare metal ──
+
+        {
+          label: 'Cloud',
+          collapsed: true,
+          items: [
+            { label: 'Overview', link: '/cloud/' },
+            { label: 'Rosetta Stone', link: '/cloud/hyperscaler-rosetta-stone/' },
+            {
+              label: 'AWS',
+              collapsed: true,
+              items: [
+                { label: 'AWS Essentials', autogenerate: { directory: 'cloud/aws-essentials' }, collapsed: true },
+                { label: 'EKS Deep Dive', autogenerate: { directory: 'cloud/eks-deep-dive' }, collapsed: true },
+              ],
+            },
+            {
+              label: 'Google Cloud',
+              collapsed: true,
+              items: [
+                { label: 'GCP Essentials', autogenerate: { directory: 'cloud/gcp-essentials' }, collapsed: true },
+                { label: 'GKE Deep Dive', autogenerate: { directory: 'cloud/gke-deep-dive' }, collapsed: true },
+              ],
+            },
+            {
+              label: 'Azure',
+              collapsed: true,
+              items: [
+                { label: 'Azure Essentials', autogenerate: { directory: 'cloud/azure-essentials' }, collapsed: true },
+                { label: 'AKS Deep Dive', autogenerate: { directory: 'cloud/aks-deep-dive' }, collapsed: true },
+              ],
+            },
+            {
+              label: 'Architecture & Enterprise',
+              collapsed: true,
+              items: [
+                { label: 'Architecture Patterns', autogenerate: { directory: 'cloud/architecture-patterns' }, collapsed: true },
+                { label: 'Advanced Operations', autogenerate: { directory: 'cloud/advanced-operations' }, collapsed: true },
+                { label: 'Managed Services', autogenerate: { directory: 'cloud/managed-services' }, collapsed: true },
+                { label: 'Enterprise & Hybrid', autogenerate: { directory: 'cloud/enterprise-hybrid' }, collapsed: true },
+              ],
+            },
+          ],
+        },
+        {
+          label: 'On-Premises',
+          collapsed: true,
+          items: [
+            { label: 'Overview', link: '/on-premises/' },
+            { label: 'Planning & Economics', autogenerate: { directory: 'on-premises/planning' }, collapsed: true },
+            { label: 'Bare Metal Provisioning', autogenerate: { directory: 'on-premises/provisioning' }, collapsed: true },
+            { label: 'Networking', autogenerate: { directory: 'on-premises/networking' }, collapsed: true },
+            { label: 'Storage', autogenerate: { directory: 'on-premises/storage' }, collapsed: true },
+            { label: 'Multi-Cluster', autogenerate: { directory: 'on-premises/multi-cluster' }, collapsed: true },
+            { label: 'Security & Compliance', autogenerate: { directory: 'on-premises/security' }, collapsed: true },
+            { label: 'Day-2 Operations', autogenerate: { directory: 'on-premises/operations' }, collapsed: true },
+            { label: 'Resilience & Migration', autogenerate: { directory: 'on-premises/resilience' }, collapsed: true },
+          ],
+        },
+
+        // ── 4. Advanced: practices + tools ──
+
         {
           label: 'Platform Engineering',
           collapsed: true,
@@ -151,13 +201,16 @@ export default defineConfig({
                 { label: 'AI Infrastructure', autogenerate: { directory: 'platform/disciplines/data-ai/ai-infrastructure' }, collapsed: true },
               ],
             },
+            { label: 'FinOps', autogenerate: { directory: 'platform/disciplines/business-value/finops' }, collapsed: true },
+          ],
+        },
+        {
+          label: 'Cloud Native Tools',
+          collapsed: true,
+          items: [
+            { label: 'Overview', link: '/platform/toolkits/' },
             {
-              label: 'FinOps',
-              autogenerate: { directory: 'platform/disciplines/business-value/finops' },
-              collapsed: true,
-            },
-            {
-              label: 'CI/CD & Delivery Tools',
+              label: 'CI/CD & Delivery',
               collapsed: true,
               items: [
                 { label: 'CI/CD Pipelines', autogenerate: { directory: 'platform/toolkits/cicd-delivery/ci-cd-pipelines' }, collapsed: true },
@@ -167,26 +220,26 @@ export default defineConfig({
               ],
             },
             {
-              label: 'Observability Tools',
+              label: 'Observability',
               collapsed: true,
               items: [
-                { label: 'Observability', autogenerate: { directory: 'platform/toolkits/observability-intelligence/observability' }, collapsed: true },
+                { label: 'Observability Stack', autogenerate: { directory: 'platform/toolkits/observability-intelligence/observability' }, collapsed: true },
                 { label: 'AIOps Tools', autogenerate: { directory: 'platform/toolkits/observability-intelligence/aiops-tools' }, collapsed: true },
               ],
             },
             {
-              label: 'Infrastructure Tools',
+              label: 'Infrastructure',
               collapsed: true,
               items: [
                 { label: 'IaC Tools', autogenerate: { directory: 'platform/toolkits/infrastructure-networking/iac-tools' }, collapsed: true },
                 { label: 'K8s Distributions', autogenerate: { directory: 'platform/toolkits/infrastructure-networking/k8s-distributions' }, collapsed: true },
-                { label: 'Networking', autogenerate: { directory: 'platform/toolkits/infrastructure-networking/networking' }, collapsed: true },
+                { label: 'Networking Tools', autogenerate: { directory: 'platform/toolkits/infrastructure-networking/networking' }, collapsed: true },
                 { label: 'Platforms', autogenerate: { directory: 'platform/toolkits/infrastructure-networking/platforms' }, collapsed: true },
                 { label: 'Storage', autogenerate: { directory: 'platform/toolkits/infrastructure-networking/storage' }, collapsed: true },
               ],
             },
             {
-              label: 'Security & Quality Tools',
+              label: 'Security & Quality',
               collapsed: true,
               items: [
                 { label: 'Security Tools', autogenerate: { directory: 'platform/toolkits/security-quality/security-tools' }, collapsed: true },
@@ -194,7 +247,7 @@ export default defineConfig({
               ],
             },
             {
-              label: 'Developer Experience Tools',
+              label: 'Developer Experience',
               collapsed: true,
               items: [
                 { label: 'DevEx Tools', autogenerate: { directory: 'platform/toolkits/developer-experience/devex-tools' }, collapsed: true },
@@ -211,21 +264,10 @@ export default defineConfig({
             },
           ],
         },
-        {
-          label: 'On-Premises',
-          collapsed: true,
-          items: [
-            { label: 'Overview', link: '/on-premises/' },
-            { label: 'Planning & Economics', autogenerate: { directory: 'on-premises/planning' }, collapsed: true },
-            { label: 'Bare Metal Provisioning', autogenerate: { directory: 'on-premises/provisioning' }, collapsed: true },
-            { label: 'Networking', autogenerate: { directory: 'on-premises/networking' }, collapsed: true },
-            { label: 'Storage', autogenerate: { directory: 'on-premises/storage' }, collapsed: true },
-            { label: 'Multi-Cluster', autogenerate: { directory: 'on-premises/multi-cluster' }, collapsed: true },
-            { label: 'Security & Compliance', autogenerate: { directory: 'on-premises/security' }, collapsed: true },
-            { label: 'Day-2 Operations', autogenerate: { directory: 'on-premises/operations' }, collapsed: true },
-            { label: 'Resilience & Migration', autogenerate: { directory: 'on-premises/resilience' }, collapsed: true },
-          ],
-        },
+
+        // ── Utility ──
+
+        { label: "What's New", link: '/changelog/' },
         { label: 'Glossary', link: '/glossary/' },
       ],
     }),
