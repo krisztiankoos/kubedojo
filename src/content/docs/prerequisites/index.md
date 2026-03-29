@@ -33,47 +33,47 @@ These tracks build foundational knowledge before diving into certifications or a
 
 | Module | Topic |
 |--------|-------|
-| 1 | [Why Kubernetes Won](philosophy-design/module-1.1-why-kubernetes-won/) |
-| 2 | [Declarative vs Imperative](philosophy-design/module-1.2-declarative-vs-imperative/) |
-| 3 | [What We Don't Cover](philosophy-design/module-1.3-what-we-dont-cover/) |
-| 4 | [Dead Ends - Technologies to Avoid](philosophy-design/module-1.4-dead-ends/) |
+| 1.1 | [Why Kubernetes Won](philosophy-design/module-1.1-why-kubernetes-won/) |
+| 1.2 | [Declarative vs Imperative](philosophy-design/module-1.2-declarative-vs-imperative/) |
+| 1.3 | [What We Don't Cover](philosophy-design/module-1.3-what-we-dont-cover/) |
+| 1.4 | [Dead Ends - Technologies to Avoid](philosophy-design/module-1.4-dead-ends/) |
 
 ### [Cloud Native 101](cloud-native-101/) — 5 modules
 *Containers, Docker, and the ecosystem.*
 
 | Module | Topic |
 |--------|-------|
-| 1 | [What Are Containers?](cloud-native-101/module-1.1-what-are-containers/) |
-| 2 | [Docker Fundamentals](cloud-native-101/module-1.2-docker-fundamentals/) |
-| 3 | [What is Kubernetes?](cloud-native-101/module-1.3-what-is-kubernetes/) |
-| 4 | [Cloud Native Ecosystem](cloud-native-101/module-1.4-cloud-native-ecosystem/) |
-| 5 | [Monolith to Microservices](cloud-native-101/module-1.5-monolith-to-microservices/) |
+| 1.1 | [What Are Containers?](cloud-native-101/module-1.1-what-are-containers/) |
+| 1.2 | [Docker Fundamentals](cloud-native-101/module-1.2-docker-fundamentals/) |
+| 1.3 | [What is Kubernetes?](cloud-native-101/module-1.3-what-is-kubernetes/) |
+| 1.4 | [Cloud Native Ecosystem](cloud-native-101/module-1.4-cloud-native-ecosystem/) |
+| 1.5 | [Monolith to Microservices](cloud-native-101/module-1.5-monolith-to-microservices/) |
 
 ### [Kubernetes Basics](kubernetes-basics/) — 8 modules
 *Hands-on fundamentals with kubectl.*
 
 | Module | Topic |
 |--------|-------|
-| 1 | [Your First Cluster](kubernetes-basics/module-1.1-first-cluster/) |
-| 2 | [kubectl Basics](kubernetes-basics/module-1.2-kubectl-basics/) |
-| 3 | [Pods - The Atomic Unit](kubernetes-basics/module-1.3-pods/) |
-| 4 | [Deployments - Managing Apps](kubernetes-basics/module-1.4-deployments/) |
-| 5 | [Services - Stable Networking](kubernetes-basics/module-1.5-services/) |
-| 6 | [ConfigMaps & Secrets](kubernetes-basics/module-1.6-configmaps-secrets/) |
-| 7 | [Namespaces & Labels](kubernetes-basics/module-1.7-namespaces-labels/) |
-| 8 | [YAML for Kubernetes](kubernetes-basics/module-1.8-yaml-kubernetes/) |
+| 1.1 | [Your First Cluster](kubernetes-basics/module-1.1-first-cluster/) |
+| 1.2 | [kubectl Basics](kubernetes-basics/module-1.2-kubectl-basics/) |
+| 1.3 | [Pods - The Atomic Unit](kubernetes-basics/module-1.3-pods/) |
+| 1.4 | [Deployments - Managing Apps](kubernetes-basics/module-1.4-deployments/) |
+| 1.5 | [Services - Stable Networking](kubernetes-basics/module-1.5-services/) |
+| 1.6 | [ConfigMaps & Secrets](kubernetes-basics/module-1.6-configmaps-secrets/) |
+| 1.7 | [Namespaces & Labels](kubernetes-basics/module-1.7-namespaces-labels/) |
+| 1.8 | [YAML for Kubernetes](kubernetes-basics/module-1.8-yaml-kubernetes/) |
 
 ### [Modern DevOps Practices](modern-devops/) — 6 modules
 *Infrastructure as Code, GitOps, and observability.*
 
 | Module | Topic |
 |--------|-------|
-| 1 | [Infrastructure as Code](modern-devops/module-1.1-infrastructure-as-code/) |
-| 2 | [GitOps](modern-devops/module-1.2-gitops/) |
-| 3 | [CI/CD Pipelines](modern-devops/module-1.3-cicd-pipelines/) |
-| 4 | [Observability Fundamentals](modern-devops/module-1.4-observability/) |
-| 5 | [Platform Engineering](modern-devops/module-1.5-platform-engineering/) |
-| 6 | [Security Practices (DevSecOps)](modern-devops/module-1.6-devsecops/) |
+| 1.1 | [Infrastructure as Code](modern-devops/module-1.1-infrastructure-as-code/) |
+| 1.2 | [GitOps](modern-devops/module-1.2-gitops/) |
+| 1.3 | [CI/CD Pipelines](modern-devops/module-1.3-cicd-pipelines/) |
+| 1.4 | [Observability Fundamentals](modern-devops/module-1.4-observability/) |
+| 1.5 | [Platform Engineering](modern-devops/module-1.5-platform-engineering/) |
+| 1.6 | [Security Practices (DevSecOps)](modern-devops/module-1.6-devsecops/) |
 
 ---
 
@@ -85,7 +85,7 @@ Zero to Terminal → Philosophy & Design → Cloud Native 101 → Kubernetes Bas
 
 Or jump directly to **Kubernetes Basics** if you already understand containers and the terminal.
 
-Want to go deeper into Linux? Continue to the [Linux Deep Dive](/linux/) track (37 modules covering kernel internals, container primitives, networking, security, and operations).
+Want to go deeper into Linux? Continue to the [Linux](/linux/) track (37 modules covering kernel internals, container primitives, networking, security, and operations).
 
 ---
 
@@ -98,4 +98,5 @@ Ready to continue? Choose your path:
 | Get certified | [Kubernetes Certifications](../k8s/) |
 | Learn cloud providers | [Cloud](../cloud/) |
 | Go deeper | [Platform Engineering](../platform/) |
-| Master Linux | [Linux Deep Dive](../linux/) |
+| Master Linux | [Linux](../linux/) |
+| Explore cloud native tools | [Cloud Native Tools](../cloud/) |

@@ -1,53 +1,147 @@
 ---
-title: "Toolkits"
+title: "Cloud Native Tools"
 sidebar:
   order: 1
 ---
-> **Current tools for platform engineering** - Practical guides to the most important cloud-native tools
+**Tools change. This is your reference guide to the current cloud native ecosystem.**
 
-## About Toolkits
+These are implementation guides for specific tools — how to install, configure, operate, and troubleshoot them. For the principles and practices behind these tools, see **[Platform Engineering](../)**.
 
-Toolkits are hands-on guides to specific tools. Unlike Foundations (timeless theory) and Disciplines (practices), toolkits evolve with the ecosystem. We focus on CNCF-graduated and widely-adopted tools.
+---
 
 ## Structure
 
-| Toolkit | Focus | Modules |
-|---------|-------|---------|
-| [Observability](observability-intelligence/observability/) | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble, Coroot | 8 |
-| [GitOps & Deployments](cicd-delivery/gitops-deployments/) | ArgoCD, Argo Rollouts, Flux, Helm | 4 |
-| [CI/CD Pipelines](cicd-delivery/ci-cd-pipelines/) | Dagger, Tekton, Argo Workflows | 3 |
-| [IaC Tools](infrastructure-networking/iac-tools/) | Terraform, OpenTofu, Pulumi, Ansible, Wing, SST, System Initiative, Nitric | 10 |
-| [Security Tools](security-quality/security-tools/) | Vault, OPA/Gatekeeper, Falco, Tetragon, KubeArmor | 6 |
-| [Networking](infrastructure-networking/networking/) | Cilium, Service Mesh | 2 |
-| [Scaling & Reliability](developer-experience/scaling-reliability/) | Karpenter, KEDA, Velero | 3 |
-| [Platforms](infrastructure-networking/platforms/) | Backstage, Crossplane, cert-manager | 3 |
-| [Developer Experience](developer-experience/) | K9s, Telepresence, Local K8s, DevPod, Gitpod/Codespaces | 5 |
-| [ML Platforms](data-ai-platforms/ml-platforms/) | Kubeflow, MLflow, Feature Stores, vLLM, Ray Serve, LangChain | 6 |
-| [AIOps Tools](observability-intelligence/aiops-tools/) | Anomaly detection, Event correlation | 4 |
-| [Source Control](cicd-delivery/source-control/) | GitLab, Gitea/Forgejo, GitHub Advanced | 3 |
-| [Code Quality](security-quality/code-quality/) | SonarQube, Semgrep, CodeQL, Snyk, Trivy | 5 |
-| [Container Registries](cicd-delivery/container-registries/) | Harbor, Zot, Dragonfly | 3 |
-| [K8s Distributions](infrastructure-networking/k8s-distributions/) | k3s, k0s, MicroK8s, Talos, OpenShift, Managed K8s | 6 |
-| [Cloud-Native Databases](data-ai-platforms/cloud-native-databases/) | CockroachDB, CloudNativePG, Neon/PlanetScale, Vitess | 4 |
-| [Storage](infrastructure-networking/storage/) | Rook/Ceph, MinIO, Longhorn | 3 |
-| **Total** | | **78** |
+```
+toolkits/
+├── cicd-delivery/                      # CI/CD & Delivery (13 modules)
+│   ├── ci-cd-pipelines/               # Dagger, Tekton, Argo Workflows
+│   ├── gitops-deployments/            # ArgoCD, Argo Rollouts, Flux, Helm
+│   ├── source-control/               # GitLab, Gitea/Forgejo, GitHub Advanced
+│   └── container-registries/          # Harbor, Zot, Dragonfly
+│
+├── observability-intelligence/         # Observability (14 modules)
+│   ├── observability/                 # Prometheus, OTel, Grafana, Loki, Pixie, Hubble, Coroot
+│   └── aiops-tools/                   # Anomaly detection, event correlation
+│
+├── infrastructure-networking/          # Infrastructure (33 modules)
+│   ├── iac-tools/                     # Terraform, OpenTofu, Pulumi, Ansible, Wing, SST, System Initiative, Nitric
+│   ├── k8s-distributions/            # k3s, k0s, MicroK8s, Talos, OpenShift, Managed K8s
+│   ├── networking/                    # Cilium, Service Mesh
+│   ├── platforms/                     # Backstage, Crossplane, cert-manager
+│   └── storage/                       # Rook/Ceph, MinIO, Longhorn
+│
+├── security-quality/                   # Security & Quality (13 modules)
+│   ├── security-tools/               # Vault, OPA/Gatekeeper, Falco, Tetragon, KubeArmor
+│   └── code-quality/                  # SonarQube, Semgrep, CodeQL, Snyk, Trivy
+│
+├── developer-experience/               # Developer Experience (11 modules)
+│   ├── devex-tools/                   # K9s, Telepresence, Local K8s, DevPod, Gitpod/Codespaces
+│   └── scaling-reliability/           # Karpenter, KEDA, Velero
+│
+└── data-ai-platforms/                  # Data & AI Platforms (12 modules)
+    ├── ml-platforms/                   # Kubeflow, MLflow, Feature Stores, vLLM, Ray Serve, LangChain
+    └── cloud-native-databases/        # CockroachDB, CloudNativePG, Neon/PlanetScale, Vitess
+```
+
+---
+
+## Toolkit Groups
+
+### CI/CD & Delivery (13 modules)
+
+| Toolkit | Modules | Key Tools |
+|---------|---------|-----------|
+| [CI/CD Pipelines](cicd-delivery/ci-cd-pipelines/) | 3 | Dagger, Tekton, Argo Workflows |
+| [GitOps & Deployments](cicd-delivery/gitops-deployments/) | 4 | ArgoCD, Argo Rollouts, Flux, Helm |
+| [Source Control](cicd-delivery/source-control/) | 3 | GitLab, Gitea/Forgejo, GitHub Advanced |
+| [Container Registries](cicd-delivery/container-registries/) | 3 | Harbor, Zot, Dragonfly |
+
+### Observability (14 modules)
+
+| Toolkit | Modules | Key Tools |
+|---------|---------|-----------|
+| [Observability Stack](observability-intelligence/observability/) | 8 | Prometheus, OpenTelemetry, Grafana, Loki, Pixie, Hubble, Coroot |
+| [AIOps Tools](observability-intelligence/aiops-tools/) | 6 | Anomaly detection, event correlation, root cause analysis |
+
+### Infrastructure (33 modules)
+
+| Toolkit | Modules | Key Tools |
+|---------|---------|-----------|
+| [IaC Tools](infrastructure-networking/iac-tools/) | 10 | Terraform, OpenTofu, Pulumi, Ansible, Wing, SST, System Initiative, Nitric |
+| [K8s Distributions](infrastructure-networking/k8s-distributions/) | 6 | k3s, k0s, MicroK8s, Talos, OpenShift, Managed K8s |
+| [Networking](infrastructure-networking/networking/) | 2 | Cilium, Service Mesh |
+| [Platforms](infrastructure-networking/platforms/) | 3 | Backstage, Crossplane, cert-manager |
+| [Storage](infrastructure-networking/storage/) | 3 | Rook/Ceph, MinIO, Longhorn |
+| **Subtotal** | **24** | |
+
+### Security & Quality (13 modules)
+
+| Toolkit | Modules | Key Tools |
+|---------|---------|-----------|
+| [Security Tools](security-quality/security-tools/) | 6 | Vault, OPA/Gatekeeper, Falco, Tetragon, KubeArmor |
+| [Code Quality](security-quality/code-quality/) | 5 | SonarQube, Semgrep, CodeQL, Snyk, Trivy |
+
+### Developer Experience (11 modules)
+
+| Toolkit | Modules | Key Tools |
+|---------|---------|-----------|
+| [DevEx Tools](developer-experience/devex-tools/) | 5 | K9s, Telepresence, Local K8s, DevPod, Gitpod/Codespaces |
+| [Scaling & Reliability](developer-experience/scaling-reliability/) | 3 | Karpenter, KEDA, Velero |
+
+### Data & AI Platforms (12 modules)
+
+| Toolkit | Modules | Key Tools |
+|---------|---------|-----------|
+| [ML Platforms](data-ai-platforms/ml-platforms/) | 6 | Kubeflow, MLflow, Feature Stores, vLLM, Ray Serve, LangChain |
+| [Cloud-Native Databases](data-ai-platforms/cloud-native-databases/) | 4 | CockroachDB, CloudNativePG, Neon/PlanetScale, Vitess |
+
+---
+
+## Summary
+
+| Group | Toolkits | Modules |
+|-------|----------|---------|
+| CI/CD & Delivery | 4 | 13 |
+| Observability | 2 | 14 |
+| Infrastructure | 5 | 24 |
+| Security & Quality | 2 | 11 |
+| Developer Experience | 2 | 8 |
+| Data & AI Platforms | 2 | 10 |
+| **Total** | **17** | **80** |
+
+---
 
 ## How to Use Toolkits
 
-1. **Read Foundations first** - Understand the theory
-2. **Read Disciplines** - Understand the practices
-3. **Pick tools based on need** - Not everything applies
-4. **Hands-on practice** - Toolkits include exercises
-5. **Stay current** - Tools evolve, check release notes
+1. **Read Foundations first** — understand the theory behind the tool
+2. **Read the Discipline** — understand the practices the tool implements
+3. **Pick tools based on need** — not everything applies to your stack
+4. **Hands-on practice** — every toolkit includes exercises
+5. **Stay current** — tools evolve, check release notes
 
 ## Tool Selection Philosophy
 
 We include tools that are:
 
-- **CNCF Graduated/Incubating** - Community validation
-- **Production-proven** - Battle-tested at scale
-- **Actively maintained** - Regular releases, active community
-- **Interoperable** - Works with the ecosystem
+- **CNCF Graduated/Incubating** — community validation
+- **Production-proven** — battle-tested at scale
+- **Actively maintained** — regular releases, active community
+- **Interoperable** — works with the broader ecosystem
+
+---
+
+## Quick Start
+
+Pick a toolkit based on your current focus:
+
+- **Starting observability?** Begin with [Prometheus](observability-intelligence/observability/module-1.1-prometheus/)
+- **Implementing GitOps?** Start with [ArgoCD](cicd-delivery/gitops-deployments/module-2.1-argocd/)
+- **Managing infrastructure?** Check out [Terraform](infrastructure-networking/iac-tools/module-7.1-terraform/)
+- **Building a platform?** Check out [Backstage](infrastructure-networking/platforms/module-7.1-backstage/)
+- **Securing clusters?** Start with [Falco](security-quality/security-tools/module-5.3-falco-tetragon/)
+- **ML workloads?** Begin with [Kubeflow](data-ai-platforms/ml-platforms/module-10.1-kubeflow/)
+
+---
 
 ## Prerequisites
 
@@ -57,11 +151,6 @@ Before diving into toolkits:
 - Understand the [Discipline](../disciplines/) the tool supports
 - Have a Kubernetes cluster (kind/minikube for learning)
 
-## Start Learning
+---
 
-Pick a toolkit based on your current focus:
-
-- **Starting observability?** Begin with [Prometheus](observability-intelligence/observability/module-1.1-prometheus/)
-- **Implementing GitOps?** Start with [ArgoCD](cicd-delivery/gitops-deployments/module-2.1-argocd/)
-- **Managing infrastructure?** Check out [Terraform](infrastructure-networking/iac-tools/module-7.1-terraform/)
-- **Building a platform?** Check out [Backstage](infrastructure-networking/platforms/module-7.1-backstage/)
+*"Principles tell you why. Tools tell you how."*

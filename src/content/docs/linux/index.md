@@ -1,8 +1,8 @@
 ---
-title: "Linux Deep Dive"
+title: "Linux"
 sidebar:
   order: 1
-  label: "Linux Deep Dive"
+  label: "Linux"
 ---
 
 **Essential Linux knowledge for Kubernetes and DevOps practitioners.**
@@ -130,4 +130,5 @@ Start with **Everyday Use** if you're new to Linux. Jump to **Container Primitiv
 
 - [CKA / CKAD / CKS certifications](/k8s/) — Linux knowledge is essential for these exams
 - [Platform Engineering](/platform/) — build on the foundation
+- [Cloud Native Tools](/cloud/) — explore the CNCF ecosystem
 - [On-Premises Kubernetes](/on-premises/) — run K8s on bare metal

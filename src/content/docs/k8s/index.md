@@ -45,12 +45,12 @@ sidebar:
 
 | Cert | Name | Type | Modules | Curriculum |
 |------|------|------|---------|------------|
-| [KCNA](kcna/) | Kubernetes & Cloud Native Associate | Multiple choice | 21 | [Details](kcna/) |
-| [KCSA](kcsa/) | Security Associate | Multiple choice | 25 | [Details](kcsa/) |
-| [CKAD](ckad/) | Application Developer | Hands-on lab | 28 | [Details](ckad/) |
-| [CKA](cka/) | Administrator | Hands-on lab | 38 | [Details](cka/) |
-| [CKS](cks/) | Security Specialist | Hands-on lab | 30 | [Details](cks/) |
-| | **Total** | | **142** | |
+| [KCNA](kcna/) | Kubernetes & Cloud Native Associate | Multiple choice | 28 | [Details](kcna/) |
+| [KCSA](kcsa/) | Kubernetes & Cloud Native Security Associate | Multiple choice | 26 | [Details](kcsa/) |
+| [CKAD](ckad/) | Certified Kubernetes Application Developer | Hands-on lab | 30 | [Details](ckad/) |
+| [CKA](cka/) | Certified Kubernetes Administrator | Hands-on lab | 47 | [Details](cka/) |
+| [CKS](cks/) | Certified Kubernetes Security Specialist | Hands-on lab | 30 | [Details](cks/) |
+| | **Total** | | **161** | |
 
 ---
 
