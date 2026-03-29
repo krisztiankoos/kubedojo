@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CKA Labs — KubeDojo</title>
+<style>
+:root {
+    --kube-blue: #326CE5; --kube-blue-light: #EBF1FF; --kube-blue-dark: #1A3A7A;
+    --terminal-green: #00E676; --terminal-green-light: #E8FFF0; --terminal-green-dark: #00A651;
+    --pod-orange: #FF6D00; --pod-orange-light: #FFF3E0;
+    --deploy-purple: #7C4DFF; --deploy-purple-light: #F3EDFF;
+    --danger-red: #FF1744; --danger-red-light: #FFEBEE;
+    --warning-amber: #FFD600; --warning-amber-light: #FFFDE7;
+    --node-teal: #00BFA5; --node-teal-light: #E0F7F4;
+    --g50: #FAFBFC; --g100: #F3F4F6; --g200: #E5E7EB; --g300: #D1D5DB;
+    --g400: #9CA3AF; --g500: #6B7280; --g600: #4B5563; --g700: #374151;
+    --g800: #1F2937; --g900: #0F172A;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+    --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+    background: var(--g50);
+    color: var(--g800);
+    line-height: 1.6;
+}
+
+/* ── Top Nav ── */
+.topnav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    height: 60px;
+    background: var(--g900);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.topnav-left { display: flex; align-items: center; gap: 32px; }
+.logo {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 18px; font-weight: 700; color: #fff; text-decoration: none;
+}
+.logo-icon {
+    width: 32px; height: 32px; background: var(--kube-blue);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+}
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+    color: var(--g400); text-decoration: none; font-size: 14px; font-weight: 500;
+    padding: 8px 14px; border-radius: var(--radius-sm);
+    transition: all 0.15s;
+}
+.nav-links a:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.nav-links a.active { color: #fff; background: rgba(50,108,229,0.25); }
+
+.topnav-right { display: flex; align-items: center; gap: 16px; }
+.search-box {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-sm); padding: 6px 14px;
+    color: var(--g400); font-size: 13px; cursor: pointer;
+    transition: all 0.15s;
+}
+.search-box:hover { border-color: rgba(255,255,255,0.15); background: rgba(255,255,255,0.08); }
+.search-box kbd {
+    font-family: var(--mono); font-size: 11px; background: rgba(255,255,255,0.1);
+    padding: 1px 6px; border-radius: 4px; color: var(--g400);
+}
+.topnav-icon {
+    width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+    color: var(--g400); text-decoration: none; font-size: 18px;
+    border-radius: var(--radius-sm); transition: all 0.15s;
+}
+.topnav-icon:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--kube-blue), var(--deploy-purple));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+
+/* ── Layout ── */
+.layout {
+    display: flex;
+    margin-top: 60px;
+    min-height: calc(100vh - 60px);
+}
+
+/* ── Left Sidebar ── */
+.sidebar {
+    width: 280px; min-width: 280px;
+    background: #fff;
+    border-right: 1px solid var(--g200);
+    padding: 20px 0;
+    overflow-y: auto;
+    height: calc(100vh - 60px);
+    position: sticky; top: 60px;
+}
+.sidebar-section { padding: 0 16px; margin-bottom: 20px; }
+.sidebar-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; color: var(--g400); margin-bottom: 8px;
+}
+
+.track-dropdown {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--g200);
+    border-radius: var(--radius-sm);
+    background: var(--g50);
+    font-size: 14px; font-weight: 600; color: var(--g800);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+.cert-list { display: flex; flex-direction: column; gap: 2px; }
+.cert-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-radius: var(--radius-sm);
+    font-size: 14px; cursor: pointer; transition: all 0.15s;
+    color: var(--g600); text-decoration: none;
+}
+.cert-item:hover { background: var(--g100); color: var(--g800); }
+.cert-item.active {
+    background: var(--kube-blue-light); color: var(--kube-blue-dark); font-weight: 600;
+}
+.cert-count {
+    font-size: 12px; color: var(--g400); font-weight: 500;
+    background: var(--g100); padding: 2px 8px; border-radius: 10px;
+}
+.cert-item.active .cert-count {
+    background: rgba(50,108,229,0.15); color: var(--kube-blue);
+}
+
+.divider { height: 1px; background: var(--g200); margin: 16px 0; }
+
+.part-section { margin-bottom: 4px; }
+.part-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; border-radius: var(--radius-sm);
+    cursor: pointer; font-size: 13px; font-weight: 600; color: var(--g700);
+    transition: all 0.15s; user-select: none;
+}
+.part-header:hover { background: var(--g100); }
+.part-header .arrow { font-size: 10px; color: var(--g400); transition: transform 0.2s; }
+.part-header.expanded .arrow { transform: rotate(90deg); }
+.part-meta {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 500; color: var(--g400);
+}
+.part-meta .completed-dot { color: var(--terminal-green-dark); }
+
+.module-list { display: none; padding: 2px 0 4px 12px; }
+.module-list.show { display: block; }
+.module-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 12px; font-size: 13px; color: var(--g500);
+    border-radius: var(--radius-sm); cursor: pointer;
+    transition: all 0.15s; text-decoration: none;
+}
+.module-item:hover { background: var(--g100); color: var(--g700); }
+.module-item.active { background: var(--kube-blue-light); color: var(--kube-blue-dark); font-weight: 500; }
+.module-check { font-size: 14px; }
+.module-check.done { color: var(--terminal-green-dark); }
+.module-check.pending { color: var(--g300); }
+
+/* ── Main Content ── */
+.main-content {
+    flex: 1;
+    padding: 28px 32px;
+    max-width: calc(100% - 280px - 240px);
+    min-width: 0;
+}
+
+.breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--g400); margin-bottom: 16px;
+}
+.breadcrumb a { color: var(--g500); text-decoration: none; }
+.breadcrumb a:hover { color: var(--kube-blue); }
+.breadcrumb .sep { color: var(--g300); }
+
+.page-title {
+    font-size: 26px; font-weight: 700; color: var(--g900);
+    margin-bottom: 6px; line-height: 1.3;
+}
+.page-subtitle { font-size: 14px; color: var(--g500); margin-bottom: 24px; }
+
+/* Progress bar */
+.progress-section {
+    background: #fff;
+    border: 1px solid var(--g200);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+.progress-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+}
+.progress-label { font-size: 14px; font-weight: 600; color: var(--g700); }
+.progress-pct { font-size: 13px; font-weight: 600; color: var(--kube-blue); }
+.progress-track {
+    height: 8px; background: var(--g100); border-radius: 4px; overflow: hidden;
+}
+.progress-fill {
+    height: 100%; border-radius: 4px;
+    background: linear-gradient(90deg, var(--kube-blue), var(--deploy-purple));
+    transition: width 0.5s ease;
+}
+
+/* Filter bar */
+.filter-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
+}
+.filter-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.filter-tab {
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500;
+    border: 1px solid var(--g200); background: #fff; color: var(--g600);
+    cursor: pointer; transition: all 0.15s;
+}
+.filter-tab:hover { border-color: var(--g300); color: var(--g700); }
+.filter-tab.active {
+    background: var(--kube-blue); color: #fff; border-color: var(--kube-blue);
+}
+.sort-select {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--g500);
+}
+.sort-select select {
+    padding: 6px 10px; border: 1px solid var(--g200); border-radius: var(--radius-sm);
+    font-size: 13px; color: var(--g700); background: #fff; cursor: pointer;
+}
+
+/* Lab cards */
+.lab-list { display: flex; flex-direction: column; gap: 8px; }
+
+.lab-card {
+    display: flex; align-items: center; gap: 16px;
+    background: #fff;
+    border: 1px solid var(--g200);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.lab-card:hover {
+    border-color: var(--kube-blue);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+.lab-card.completed {
+    border-left: 3px solid var(--terminal-green-dark);
+}
+
+.lab-number {
+    font-family: var(--mono);
+    font-size: 13px; font-weight: 600;
+    color: var(--g400); min-width: 36px;
+}
+.lab-status-icon { font-size: 20px; min-width: 28px; text-align: center; }
+.lab-status-icon.done { color: var(--terminal-green-dark); }
+.lab-status-icon.pending { color: var(--g300); }
+
+.lab-info { flex: 1; min-width: 0; }
+.lab-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+.lab-title { font-size: 15px; font-weight: 600; color: var(--g800); }
+.lab-desc { font-size: 13px; color: var(--g500); line-height: 1.4; }
+
+.lab-meta { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.badge {
+    display: inline-flex; align-items: center; padding: 3px 10px;
+    border-radius: 12px; font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+}
+.badge-tier1 { background: var(--terminal-green-light); color: var(--terminal-green-dark); }
+.badge-tier2 { background: var(--warning-amber-light); color: #B8860B; }
+.badge-tier3 { background: var(--danger-red-light); color: var(--danger-red); }
+.badge-beginner { background: var(--terminal-green-light); color: var(--terminal-green-dark); }
+.badge-intermediate { background: var(--warning-amber-light); color: #B8860B; }
+.badge-advanced { background: var(--danger-red-light); color: var(--danger-red); }
+
+.lab-duration {
+    font-size: 12px; color: var(--g500); display: flex; align-items: center; gap: 4px;
+    white-space: nowrap;
+}
+
+.btn-start {
+    padding: 6px 16px; border-radius: var(--radius-sm);
+    background: var(--kube-blue); color: #fff;
+    font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+    transition: all 0.15s; white-space: nowrap;
+}
+.btn-start:hover { background: var(--kube-blue-dark); }
+.btn-review {
+    padding: 6px 16px; border-radius: var(--radius-sm);
+    background: var(--terminal-green-light); color: var(--terminal-green-dark);
+    font-size: 13px; font-weight: 600; border: 1px solid rgba(0,166,81,0.2);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.btn-review:hover { background: #d0f5dc; }
+
+/* ── Right Panel ── */
+.right-panel {
+    width: 240px; min-width: 240px;
+    padding: 24px 16px;
+    height: calc(100vh - 60px);
+    position: sticky; top: 60px;
+    overflow-y: auto;
+}
+
+.stats-card {
+    background: #fff; border: 1px solid var(--g200); border-radius: var(--radius);
+    padding: 18px; margin-bottom: 14px;
+}
+.stats-card-title {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--g400); margin-bottom: 14px;
+}
+.stat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0; border-bottom: 1px solid var(--g100);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-label { font-size: 13px; color: var(--g500); }
+.stat-value { font-size: 14px; font-weight: 700; color: var(--g800); }
+.stat-value.highlight { color: var(--kube-blue); }
+
+.continue-card {
+    background: linear-gradient(135deg, var(--kube-blue), var(--deploy-purple));
+    border-radius: var(--radius);
+    padding: 18px; color: #fff;
+}
+.continue-label { font-size: 11px; font-weight: 600; text-transform: uppercase; opacity: 0.8; margin-bottom: 10px; }
+.continue-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+.continue-sub { font-size: 12px; opacity: 0.75; margin-bottom: 14px; }
+.continue-btn {
+    display: inline-block; background: rgba(255,255,255,0.2); color: #fff;
+    padding: 8px 16px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 600; text-decoration: none; transition: all 0.15s;
+    border: 1px solid rgba(255,255,255,0.25);
+}
+.continue-btn:hover { background: rgba(255,255,255,0.3); }
+
+.streak-card {
+    background: #fff; border: 1px solid var(--g200); border-radius: var(--radius);
+    padding: 18px; margin-bottom: 14px; text-align: center;
+}
+.streak-num { font-size: 36px; font-weight: 800; color: var(--pod-orange); line-height: 1; }
+.streak-label { font-size: 13px; color: var(--g500); margin-top: 4px; }
+.streak-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+.streak-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--g200);
+}
+.streak-dot.active { background: var(--pod-orange); }
+
+/* ── Section Heading ── */
+.section-heading {
+    font-size: 13px; font-weight: 700; color: var(--g400);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    margin: 24px 0 10px 0; padding-left: 4px;
+}
+
+/* ── Footer ── */
+.footer {
+    background: var(--g900); color: var(--g400); padding: 32px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px;
+}
+.footer a { color: var(--g400); text-decoration: none; }
+.footer a:hover { color: #fff; }
+.footer-links { display: flex; gap: 24px; }
+</style>
+</head>
+<body>
+
+<!-- ── Top Nav ── -->
+<nav class="topnav">
+    <div class="topnav-left">
+        <a href="#" class="logo">
+            <div class="logo-icon">&#9096;</div>
+            KubeDojo
+        </a>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Curriculum</a>
+            <a href="#" class="active">Labs</a>
+            <a href="#">Dashboard</a>
+        </div>
+    </div>
+    <div class="topnav-right">
+        <div class="search-box">
+            <span>&#128269;</span> Search labs...
+            <kbd>&#8984;K</kbd>
+        </div>
+        <a href="#" class="topnav-icon" title="GitHub">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        </a>
+        <div class="avatar">KK</div>
+    </div>
+</nav>
+
+<!-- ── Layout ── -->
+<div class="layout">
+
+    <!-- ── Left Sidebar ── -->
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-label">Track</div>
+            <select class="track-dropdown">
+                <option>K8s Certifications</option>
+                <option>Fundamentals</option>
+                <option>Cloud</option>
+                <option>Platform Engineering</option>
+            </select>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Certification</div>
+            <div class="cert-list">
+                <a class="cert-item active">
+                    <span>&#9670; CKA</span>
+                    <span class="cert-count">45 labs</span>
+                </a>
+                <a class="cert-item">
+                    <span>&#9670; CKAD</span>
+                    <span class="cert-count">38 labs</span>
+                </a>
+                <a class="cert-item">
+                    <span>&#9670; CKS</span>
+                    <span class="cert-count">32 labs</span>
+                </a>
+                <a class="cert-item">
+                    <span>&#9670; KCNA</span>
+                    <span class="cert-count">20 labs</span>
+                </a>
+                <a class="cert-item">
+                    <span>&#9670; KCSA</span>
+                    <span class="cert-count">15 labs</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="divider" style="margin: 8px 16px;"></div>
+
+        <div class="sidebar-section" style="margin-bottom: 0;">
+            <div class="sidebar-label">Modules</div>
+
+            <!-- Part 1 -->
+            <div class="part-section">
+                <div class="part-header expanded" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show');">
+                    <span>Part 1: Cluster Architecture</span>
+                    <div class="part-meta">
+                        <span class="completed-dot">3/8</span>
+                        <span class="arrow">&#9654;</span>
+                    </div>
+                </div>
+                <div class="module-list show">
+                    <a class="module-item active"><span class="module-check done">&#10003;</span> 1.1 Cluster Components</a>
+                    <a class="module-item"><span class="module-check done">&#10003;</span> 1.2 API Server Deep Dive</a>
+                    <a class="module-item"><span class="module-check done">&#10003;</span> 1.3 etcd Essentials</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 1.4 Scheduler Mechanics</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 1.5 Controller Manager</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 1.6 RBAC & Auth</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 1.7 Cluster Upgrades</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 1.8 HA Clusters</a>
+                </div>
+            </div>
+
+            <!-- Part 2 -->
+            <div class="part-section">
+                <div class="part-header expanded" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show');">
+                    <span>Part 2: Workloads</span>
+                    <div class="part-meta">
+                        <span class="completed-dot">1/10</span>
+                        <span class="arrow">&#9654;</span>
+                    </div>
+                </div>
+                <div class="module-list show">
+                    <a class="module-item"><span class="module-check done">&#10003;</span> 2.1 Pod Lifecycle</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.2 Deployments</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.3 ReplicaSets</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.4 StatefulSets</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.5 DaemonSets</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.6 Jobs & CronJobs</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.7 ConfigMaps & Secrets</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.8 Resource Mgmt</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.9 Probes & Health</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 2.10 Scaling</a>
+                </div>
+            </div>
+
+            <!-- Part 3 -->
+            <div class="part-section">
+                <div class="part-header" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show');">
+                    <span>Part 3: Services & Networking</span>
+                    <div class="part-meta">
+                        <span class="completed-dot">0/9</span>
+                        <span class="arrow">&#9654;</span>
+                    </div>
+                </div>
+                <div class="module-list">
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.1 Service Types</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.2 Ingress</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.3 Network Policies</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.4 DNS & CoreDNS</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.5 CNI Plugins</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.6 Gateway API</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.7 Service Mesh</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.8 Load Balancing</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 3.9 Troubleshooting</a>
+                </div>
+            </div>
+
+            <!-- Part 4 -->
+            <div class="part-section">
+                <div class="part-header" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show');">
+                    <span>Part 4: Storage</span>
+                    <div class="part-meta">
+                        <span class="completed-dot">0/6</span>
+                        <span class="arrow">&#9654;</span>
+                    </div>
+                </div>
+                <div class="module-list">
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 4.1 Volumes & Mounts</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 4.2 PV & PVC</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 4.3 Storage Classes</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 4.4 CSI Drivers</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 4.5 Dynamic Provisioning</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 4.6 Snapshots & Backup</a>
+                </div>
+            </div>
+
+            <!-- Part 5 -->
+            <div class="part-section">
+                <div class="part-header" onclick="this.classList.toggle('expanded'); this.nextElementSibling.classList.toggle('show');">
+                    <span>Part 5: Troubleshooting</span>
+                    <div class="part-meta">
+                        <span class="completed-dot">0/12</span>
+                        <span class="arrow">&#9654;</span>
+                    </div>
+                </div>
+                <div class="module-list">
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.1 Logs & Events</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.2 Node Issues</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.3 Pod Failures</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.4 Networking Debug</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.5 DNS Troubleshoot</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.6 Storage Issues</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.7 Resource Pressure</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.8 CrashLoopBackOff</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.9 Image Pull Errors</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.10 RBAC Denials</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.11 etcd Recovery</a>
+                    <a class="module-item"><span class="module-check pending">&#9675;</span> 5.12 Cluster Recovery</a>
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- ── Main Content ── -->
+    <main class="main-content">
+        <div class="breadcrumb">
+            <a href="#">Labs</a> <span class="sep">&#8250;</span>
+            <a href="#">K8s Certifications</a> <span class="sep">&#8250;</span>
+            <span style="color: var(--g700); font-weight: 500;">CKA</span>
+        </div>
+
+        <h1 class="page-title">CKA -- Certified Kubernetes Administrator Labs</h1>
+        <p class="page-subtitle">Hands-on labs covering all CKA exam domains. Build real clusters, break things, fix them.</p>
+
+        <!-- Progress -->
+        <div class="progress-section">
+            <div class="progress-header">
+                <span class="progress-label">4 of 45 labs completed</span>
+                <span class="progress-pct">9%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-fill" style="width: 9%;"></div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-tabs">
+                <button class="filter-tab active">All</button>
+                <button class="filter-tab">Beginner</button>
+                <button class="filter-tab">Intermediate</button>
+                <button class="filter-tab">Advanced</button>
+                <button class="filter-tab">Completed</button>
+                <button class="filter-tab">Not Started</button>
+            </div>
+            <div class="sort-select">
+                Sort by:
+                <select>
+                    <option>Order</option>
+                    <option>Duration</option>
+                    <option>Difficulty</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Lab List -->
+        <div class="section-heading">Part 1: Cluster Architecture, Installation & Configuration</div>
+
+        <div class="lab-list">
+            <!-- Lab 1.1 — Completed -->
+            <div class="lab-card completed">
+                <span class="lab-number">1.1</span>
+                <span class="lab-status-icon done">&#10003;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">Cluster Components Overview</span>
+                        <span class="badge badge-tier1">Tier 1</span>
+                        <span class="badge badge-beginner">Beginner</span>
+                    </div>
+                    <div class="lab-desc">Explore the control plane and worker node components. Inspect kube-apiserver, etcd, scheduler, and kubelet on a running cluster.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 30 min</span>
+                    <button class="btn-review">Review</button>
+                </div>
+            </div>
+
+            <!-- Lab 1.2 — Completed -->
+            <div class="lab-card completed">
+                <span class="lab-number">1.2</span>
+                <span class="lab-status-icon done">&#10003;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">API Server Deep Dive</span>
+                        <span class="badge badge-tier2">Tier 2</span>
+                        <span class="badge badge-intermediate">Intermediate</span>
+                    </div>
+                    <div class="lab-desc">Configure API server flags, enable audit logging, explore admission controllers, and test API request flow end-to-end.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 45 min</span>
+                    <button class="btn-review">Review</button>
+                </div>
+            </div>
+
+            <!-- Lab 1.3 — Completed -->
+            <div class="lab-card completed">
+                <span class="lab-number">1.3</span>
+                <span class="lab-status-icon done">&#10003;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">etcd Backup & Restore</span>
+                        <span class="badge badge-tier2">Tier 2</span>
+                        <span class="badge badge-intermediate">Intermediate</span>
+                    </div>
+                    <div class="lab-desc">Take etcd snapshots, restore from backup, verify cluster state recovery. Practice the #1 most-tested CKA task.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 45 min</span>
+                    <button class="btn-review">Review</button>
+                </div>
+            </div>
+
+            <!-- Lab 1.4 -->
+            <div class="lab-card">
+                <span class="lab-number">1.4</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">Scheduler Mechanics & Affinity</span>
+                        <span class="badge badge-tier2">Tier 2</span>
+                        <span class="badge badge-intermediate">Intermediate</span>
+                    </div>
+                    <div class="lab-desc">Configure nodeSelector, nodeAffinity, podAffinity/anti-affinity, taints and tolerations. Control exactly where pods land.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 45 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+
+            <!-- Lab 1.5 -->
+            <div class="lab-card">
+                <span class="lab-number">1.5</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">Controller Manager & Reconciliation</span>
+                        <span class="badge badge-tier2">Tier 2</span>
+                        <span class="badge badge-intermediate">Intermediate</span>
+                    </div>
+                    <div class="lab-desc">Observe controller loops in action. Break deployments, watch self-healing, tune controller-manager flags.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 30 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+
+            <!-- Lab 1.6 -->
+            <div class="lab-card">
+                <span class="lab-number">1.6</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">RBAC Roles & Bindings</span>
+                        <span class="badge badge-tier1">Tier 1</span>
+                        <span class="badge badge-beginner">Beginner</span>
+                    </div>
+                    <div class="lab-desc">Create Roles, ClusterRoles, RoleBindings. Test access with kubectl auth can-i. Set up a restricted namespace for a dev team.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 30 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+
+            <!-- Lab 1.7 -->
+            <div class="lab-card">
+                <span class="lab-number">1.7</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">Cluster Version Upgrade</span>
+                        <span class="badge badge-tier3">Tier 3</span>
+                        <span class="badge badge-advanced">Advanced</span>
+                    </div>
+                    <div class="lab-desc">Upgrade a kubeadm cluster from v1.31 to v1.32. Drain nodes, upgrade control plane, then workers. Verify zero downtime.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 60 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+
+            <!-- Lab 1.8 -->
+            <div class="lab-card">
+                <span class="lab-number">1.8</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">High Availability Clusters</span>
+                        <span class="badge badge-tier3">Tier 3</span>
+                        <span class="badge badge-advanced">Advanced</span>
+                    </div>
+                    <div class="lab-desc">Build a stacked HA cluster with 3 control plane nodes. Configure HAProxy, test failover by killing a master node.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 60 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-heading" style="margin-top: 32px;">Part 2: Workloads & Scheduling</div>
+
+        <div class="lab-list">
+            <!-- Lab 2.1 — Completed -->
+            <div class="lab-card completed">
+                <span class="lab-number">2.1</span>
+                <span class="lab-status-icon done">&#10003;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">Pod Lifecycle & Phases</span>
+                        <span class="badge badge-tier1">Tier 1</span>
+                        <span class="badge badge-beginner">Beginner</span>
+                    </div>
+                    <div class="lab-desc">Create pods from YAML, observe lifecycle phases, use init containers, understand restart policies and termination grace period.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 30 min</span>
+                    <button class="btn-review">Review</button>
+                </div>
+            </div>
+
+            <!-- Lab 2.2 -->
+            <div class="lab-card">
+                <span class="lab-number">2.2</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">Deployments & Rolling Updates</span>
+                        <span class="badge badge-tier1">Tier 1</span>
+                        <span class="badge badge-beginner">Beginner</span>
+                    </div>
+                    <div class="lab-desc">Create deployments, perform rolling updates, rollback to previous versions, configure update strategy and maxSurge/maxUnavailable.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 30 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+
+            <!-- Lab 2.3 -->
+            <div class="lab-card">
+                <span class="lab-number">2.3</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">ReplicaSets & Scaling</span>
+                        <span class="badge badge-tier1">Tier 1</span>
+                        <span class="badge badge-beginner">Beginner</span>
+                    </div>
+                    <div class="lab-desc">Manage ReplicaSets directly, understand label selectors, scale imperatively and declaratively, observe pod replacement.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 30 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+
+            <!-- Lab 2.4 -->
+            <div class="lab-card">
+                <span class="lab-number">2.4</span>
+                <span class="lab-status-icon pending">&#9675;</span>
+                <div class="lab-info">
+                    <div class="lab-title-row">
+                        <span class="lab-title">StatefulSets & Ordered Deployment</span>
+                        <span class="badge badge-tier2">Tier 2</span>
+                        <span class="badge badge-intermediate">Intermediate</span>
+                    </div>
+                    <div class="lab-desc">Deploy a StatefulSet with persistent storage. Observe ordered creation/deletion, headless services, and stable network identities.</div>
+                </div>
+                <div class="lab-meta">
+                    <span class="lab-duration">&#9201; 45 min</span>
+                    <button class="btn-start">Start Lab</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ── Right Panel ── -->
+    <aside class="right-panel">
+        <div class="stats-card">
+            <div class="stats-card-title">Quick Stats</div>
+            <div class="stat-row">
+                <span class="stat-label">Total Labs</span>
+                <span class="stat-value">45</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Completed</span>
+                <span class="stat-value highlight">4</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Time Spent</span>
+                <span class="stat-value">2h 15m</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">Avg Score</span>
+                <span class="stat-value">87%</span>
+            </div>
+        </div>
+
+        <div class="streak-card">
+            <div class="streak-num">3</div>
+            <div class="streak-label">day streak</div>
+            <div class="streak-dots">
+                <div class="streak-dot"></div>
+                <div class="streak-dot"></div>
+                <div class="streak-dot"></div>
+                <div class="streak-dot"></div>
+                <div class="streak-dot active"></div>
+                <div class="streak-dot active"></div>
+                <div class="streak-dot active"></div>
+            </div>
+        </div>
+
+        <div class="continue-card">
+            <div class="continue-label">Continue Learning</div>
+            <div class="continue-title">1.4 Scheduler Mechanics & Affinity</div>
+            <div class="continue-sub">Part 1 -- Cluster Architecture</div>
+            <a href="#" class="continue-btn">Resume Lab &#8594;</a>
+        </div>
+
+        <div class="stats-card" style="margin-top: 14px;">
+            <div class="stats-card-title">Difficulty Breakdown</div>
+            <div class="stat-row">
+                <span class="stat-label">&#9679; Beginner</span>
+                <span class="stat-value" style="color: var(--terminal-green-dark);">15</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">&#9679; Intermediate</span>
+                <span class="stat-value" style="color: #B8860B;">20</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">&#9679; Advanced</span>
+                <span class="stat-value" style="color: var(--danger-red);">10</span>
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+<!-- ── Footer ── -->
+<footer class="footer">
+    <div>&copy; 2026 KubeDojo. Open-source cloud native curriculum.</div>
+    <div class="footer-links">
+        <a href="#">GitHub</a>
+        <a href="#">Docs</a>
+        <a href="#">Community</a>
+        <a href="#">License</a>
+    </div>
+</footer>
+
+<script>
+// Filter tab toggling
+document.querySelectorAll('.filter-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+    });
+});
+
+// Cert item toggling
+document.querySelectorAll('.cert-item').forEach(item => {
+    item.addEventListener('click', () => {
+        document.querySelectorAll('.cert-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+    });
+});
+</script>
+
+</body>
+</html>

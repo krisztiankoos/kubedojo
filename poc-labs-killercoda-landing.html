@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KubeDojo Labs — Hands-On Kubernetes & Linux Practice</title>
+<style>
+:root {
+    --kube-blue: #326CE5; --kube-blue-light: #EBF1FF; --kube-blue-dark: #1A3A7A;
+    --terminal-green: #00E676; --terminal-green-light: #E8FFF0; --terminal-green-dark: #00A651;
+    --pod-orange: #FF6D00; --pod-orange-light: #FFF3E0;
+    --deploy-purple: #7C4DFF; --deploy-purple-light: #F3EDFF;
+    --danger-red: #FF1744; --danger-red-light: #FFEBEE;
+    --warning-amber: #FFD600; --warning-amber-light: #FFFDE7;
+    --node-teal: #00BFA5; --node-teal-light: #E0F7F4;
+    --g50: #FAFBFC; --g100: #F3F4F6; --g200: #E5E7EB; --g300: #D1D5DB;
+    --g400: #9CA3AF; --g500: #6B7280; --g600: #4B5563; --g700: #374151;
+    --g800: #1F2937; --g900: #0F172A;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+    --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--g800);
+    background: var(--g50);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Nav ── */
+.nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--g200);
+    padding: 0 24px;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+}
+.nav-left { display: flex; align-items: center; gap: 32px; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.logo-mark {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    background: var(--kube-blue); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 18px;
+}
+.logo-text { font-size: 18px; font-weight: 700; color: var(--g900); }
+.nav-links { display: flex; gap: 4px; }
+.nav-links a {
+    text-decoration: none; color: var(--g500); font-size: 14px; font-weight: 500;
+    padding: 8px 14px; border-radius: var(--radius-sm); transition: all 0.15s;
+}
+.nav-links a:hover { color: var(--g800); background: var(--g100); }
+.nav-links a.active { color: var(--kube-blue); background: var(--kube-blue-light); font-weight: 600; }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.search-box {
+    padding: 8px 14px; border: 1px solid var(--g200); border-radius: var(--radius-sm);
+    font-size: 13px; color: var(--g600); background: var(--g50); width: 200px;
+    outline: none; transition: border 0.15s;
+}
+.search-box:focus { border-color: var(--kube-blue); }
+.search-box::placeholder { color: var(--g400); }
+.gh-link {
+    width: 36px; height: 36px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--g600); text-decoration: none; transition: background 0.15s;
+}
+.gh-link:hover { background: var(--g100); }
+.gh-link svg { width: 20px; height: 20px; }
+.btn-signin {
+    padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
+    background: var(--g900); color: #fff; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 6px; transition: background 0.15s;
+}
+.btn-signin:hover { background: var(--g700); }
+
+/* ── Hero ── */
+.hero {
+    background: linear-gradient(135deg, var(--kube-blue-dark) 0%, #2D1B69 100%);
+    padding: 96px 24px 80px; text-align: center; position: relative; overflow: hidden;
+}
+.hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,77,255,0.15), transparent);
+}
+.hero-inner { max-width: 720px; margin: 0 auto; position: relative; z-index: 1; }
+.hero h1 { font-size: 48px; font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 16px; }
+.hero p { font-size: 18px; color: rgba(255,255,255,0.8); max-width: 540px; margin: 0 auto 32px; line-height: 1.7; }
+.btn-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 14px 32px; border-radius: var(--radius); font-size: 16px; font-weight: 700;
+    background: var(--terminal-green); color: var(--g900); border: none; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s; text-decoration: none;
+}
+.btn-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,230,118,0.3); }
+.powered-badge {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 20px;
+    padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.1);
+    font-size: 12px; color: rgba(255,255,255,0.6); text-decoration: none;
+    transition: background 0.15s;
+}
+.powered-badge:hover { background: rgba(255,255,255,0.18); }
+.hero-stats {
+    display: flex; justify-content: center; gap: 40px; margin-top: 48px;
+    flex-wrap: wrap;
+}
+.hero-stat { text-align: center; }
+.hero-stat .num { font-size: 28px; font-weight: 800; color: #fff; font-family: var(--mono); }
+.hero-stat .label { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+
+/* ── Sections ── */
+.section { padding: 80px 24px; }
+.section-inner { max-width: 1080px; margin: 0 auto; }
+.section-title { font-size: 28px; font-weight: 800; color: var(--g900); text-align: center; margin-bottom: 8px; letter-spacing: -0.01em; }
+.section-subtitle { font-size: 16px; color: var(--g500); text-align: center; margin-bottom: 48px; }
+
+/* ── How it works ── */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.step { text-align: center; padding: 24px 16px; position: relative; }
+.step-num {
+    width: 40px; height: 40px; border-radius: 50%; margin: 0 auto 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: #fff;
+    background: var(--kube-blue);
+}
+.step h3 { font-size: 15px; font-weight: 700; color: var(--g800); margin-bottom: 6px; }
+.step p { font-size: 13px; color: var(--g500); line-height: 1.6; }
+.step-arrow {
+    position: absolute; right: -16px; top: 44px;
+    font-size: 18px; color: var(--g300);
+}
+
+/* ── Track cards ── */
+.tracks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.track-card {
+    background: #fff; border: 1px solid var(--g200); border-radius: var(--radius);
+    padding: 28px; transition: box-shadow 0.2s, border-color 0.2s; position: relative;
+    display: flex; flex-direction: column;
+}
+.track-card:hover { box-shadow: var(--shadow-md); border-color: var(--g300); }
+.track-card-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+.track-icon { font-size: 32px; line-height: 1; flex-shrink: 0; }
+.track-card-header div { flex: 1; }
+.track-name { font-size: 17px; font-weight: 700; color: var(--g900); }
+.track-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.badge {
+    display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; gap: 4px;
+}
+.badge-green { background: var(--terminal-green-light); color: var(--terminal-green-dark); }
+.badge-blue { background: var(--kube-blue-light); color: var(--kube-blue-dark); }
+.badge-purple { background: var(--deploy-purple-light); color: var(--deploy-purple); }
+.badge-orange { background: var(--pod-orange-light); color: var(--pod-orange); }
+.badge-popular {
+    position: absolute; top: -1px; right: 20px;
+    background: var(--pod-orange); color: #fff; font-size: 11px; font-weight: 700;
+    padding: 4px 12px; border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+.track-count { font-size: 13px; color: var(--g500); font-weight: 600; }
+.track-difficulty { font-size: 12px; color: var(--g400); }
+.track-link {
+    margin-top: auto; padding-top: 16px;
+    font-size: 14px; font-weight: 600; color: var(--kube-blue);
+    text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+}
+.track-link:hover { text-decoration: underline; }
+
+/* ── Lab cards ── */
+.labs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.lab-card {
+    background: #fff; border: 1px solid var(--g200); border-radius: var(--radius);
+    padding: 24px; display: flex; flex-direction: column; transition: box-shadow 0.2s, border-color 0.2s;
+}
+.lab-card:hover { box-shadow: var(--shadow-md); border-color: var(--g300); }
+.lab-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.lab-title { font-size: 16px; font-weight: 700; color: var(--g900); margin-bottom: 10px; }
+.lab-meta { display: flex; gap: 12px; font-size: 12px; color: var(--g500); margin-bottom: 16px; }
+.lab-meta span { display: flex; align-items: center; gap: 4px; }
+.difficulty-chip {
+    display: inline-flex; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;
+}
+.diff-beginner { background: var(--terminal-green-light); color: var(--terminal-green-dark); }
+.diff-intermediate { background: var(--warning-amber-light); color: #B8860B; }
+.diff-advanced { background: var(--danger-red-light); color: var(--danger-red); }
+.btn-launch {
+    margin-top: auto; padding: 10px 16px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 700; text-align: center;
+    background: var(--kube-blue); color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s; text-decoration: none; position: relative;
+}
+.btn-launch:hover { background: var(--kube-blue-dark); }
+.btn-launch .launch-text { transition: opacity 0.15s; }
+.btn-launch .hover-text {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.15s; font-size: 12px; font-weight: 600;
+}
+.btn-launch:hover .launch-text { opacity: 0; }
+.btn-launch:hover .hover-text { opacity: 1; }
+
+/* ── Limitations ── */
+.limitations-section { background: var(--g100); }
+.limitations-card {
+    background: #fff; border: 1px solid var(--g200); border-radius: var(--radius);
+    max-width: 820px; margin: 0 auto; overflow: hidden;
+}
+.lim-header {
+    padding: 20px 28px; border-bottom: 1px solid var(--g200);
+    display: flex; align-items: center; gap: 10px;
+}
+.lim-header h3 { font-size: 16px; font-weight: 700; color: var(--g800); }
+.lim-body { display: grid; grid-template-columns: 1fr 1fr; }
+.lim-col { padding: 24px 28px; }
+.lim-col:first-child { border-right: 1px solid var(--g200); }
+.lim-col h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
+.lim-col.current h4 { color: var(--g500); }
+.lim-col.coming h4 { color: var(--terminal-green-dark); }
+.lim-col ul { list-style: none; }
+.lim-col li { font-size: 13px; color: var(--g600); padding: 4px 0; padding-left: 20px; position: relative; line-height: 1.5; }
+.lim-col.current li::before { content: '\2022'; position: absolute; left: 4px; color: var(--g400); }
+.lim-col.coming li::before { content: '\2713'; position: absolute; left: 2px; color: var(--terminal-green); font-weight: 700; }
+
+/* ── Footer ── */
+.footer {
+    background: var(--g900); color: var(--g400); padding: 40px 24px;
+    text-align: center; font-size: 13px;
+}
+.footer-inner { max-width: 1080px; margin: 0 auto; }
+.footer-top { display: flex; justify-content: center; align-items: center; gap: 24px; margin-bottom: 16px; flex-wrap: wrap; }
+.footer a { color: var(--g400); text-decoration: none; transition: color 0.15s; }
+.footer a:hover { color: var(--g200); }
+.footer-divider { color: var(--g700); }
+.footer-attr { margin-top: 12px; font-size: 12px; color: var(--g600); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .nav-links, .search-box { display: none; }
+    .hero h1 { font-size: 32px; }
+    .hero p { font-size: 16px; }
+    .hero-stats { gap: 24px; }
+    .hero-stat .num { font-size: 22px; }
+    .steps { grid-template-columns: 1fr 1fr; gap: 16px; }
+    .step-arrow { display: none; }
+    .tracks { grid-template-columns: 1fr; }
+    .labs-grid { grid-template-columns: 1fr; }
+    .lim-body { grid-template-columns: 1fr; }
+    .lim-col:first-child { border-right: none; border-bottom: 1px solid var(--g200); }
+}
+@media (max-width: 480px) {
+    .steps { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════ NAV ═══════ -->
+<nav class="nav">
+    <div class="nav-left">
+        <a href="/" class="logo">
+            <div class="logo-mark">K</div>
+            <span class="logo-text">KubeDojo</span>
+        </a>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/curriculum">Curriculum</a>
+            <a href="/labs" class="active">Labs</a>
+            <a href="/dashboard">Dashboard</a>
+        </div>
+    </div>
+    <div class="nav-right">
+        <input type="text" class="search-box" placeholder="Search labs...">
+        <a href="https://github.com/kube-dojo/kube-dojo.github.io" class="gh-link" target="_blank" rel="noopener" aria-label="GitHub">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+        <button class="btn-signin" onclick="alert('GitHub OAuth via Supabase — not wired in this prototype')">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            Sign in with GitHub
+        </button>
+    </div>
+</nav>
+
+<!-- ═══════ HERO ═══════ -->
+<section class="hero">
+    <div class="hero-inner">
+        <h1>Hands-On Labs</h1>
+        <p>Practice Kubernetes and Linux in real environments &mdash; powered by Killercoda. Free, no setup required.</p>
+        <a href="#tracks" class="btn-cta">Browse Labs &darr;</a>
+        <div>
+            <a href="https://killercoda.com" target="_blank" rel="noopener" class="powered-badge">
+                &#9889; Powered by Killercoda
+            </a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><div class="num">50+</div><div class="label">Labs</div></div>
+            <div class="hero-stat"><div class="num">4</div><div class="label">Tracks</div></div>
+            <div class="hero-stat"><div class="num">100%</div><div class="label">Free</div></div>
+            <div class="hero-stat"><div class="num">&check;</div><div class="label">Browser-based</div></div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════ HOW IT WORKS ═══════ -->
+<section class="section">
+    <div class="section-inner">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-subtitle">Four steps from sign-in to skill-up.</p>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>Sign in with GitHub</h3>
+                <p>One-click login to track your progress across sessions.</p>
+                <span class="step-arrow">&rarr;</span>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>Pick a Lab</h3>
+                <p>Browse by track or certification. Filter by difficulty.</p>
+                <span class="step-arrow">&rarr;</span>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>Launch on Killercoda</h3>
+                <p>Opens a real environment in a new tab. Nothing to install.</p>
+                <span class="step-arrow">&rarr;</span>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <h3>Mark Complete</h3>
+                <p>Come back and track your progress on the dashboard.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════ AVAILABLE TRACKS ═══════ -->
+<section class="section" style="background: var(--g100);" id="tracks">
+    <div class="section-inner">
+        <h2 class="section-title">Available Tracks</h2>
+        <p class="section-subtitle">Curated lab sequences aligned with the KubeDojo curriculum.</p>
+        <div class="tracks">
+            <!-- Prerequisites -->
+            <div class="track-card">
+                <div class="track-card-header">
+                    <div class="track-icon">&#128218;</div>
+                    <div>
+                        <div class="track-name">Prerequisites</div>
+                        <div class="track-meta">
+                            <span class="track-count">10 labs</span>
+                            <span class="badge badge-green">Ubuntu VM</span>
+                            <span class="track-difficulty">Beginner</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="track-link">Browse &rarr;</a>
+            </div>
+            <!-- Linux Deep Dive -->
+            <div class="track-card">
+                <div class="track-card-header">
+                    <div class="track-icon">&#128427;</div>
+                    <div>
+                        <div class="track-name">Linux Deep Dive</div>
+                        <div class="track-meta">
+                            <span class="track-count">25 labs</span>
+                            <span class="badge badge-green">Ubuntu VM</span>
+                            <span class="track-difficulty">Beginner &ndash; Intermediate</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="track-link">Browse &rarr;</a>
+            </div>
+            <!-- K8s Certifications -->
+            <div class="track-card">
+                <span class="badge-popular">Most Popular</span>
+                <div class="track-card-header">
+                    <div class="track-icon">&#9784;</div>
+                    <div>
+                        <div class="track-name">K8s Certifications</div>
+                        <div class="track-meta">
+                            <span class="track-count">80 labs</span>
+                            <span class="badge badge-blue">K8s Cluster</span>
+                            <span class="track-difficulty">Intermediate &ndash; Advanced</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="track-link">Browse &rarr;</a>
+            </div>
+            <!-- Platform Engineering -->
+            <div class="track-card">
+                <div class="track-card-header">
+                    <div class="track-icon">&#9881;</div>
+                    <div>
+                        <div class="track-name">Platform Engineering</div>
+                        <div class="track-meta">
+                            <span class="track-count">40 labs</span>
+                            <span class="badge badge-blue">K8s Cluster</span>
+                            <span class="track-difficulty">Advanced</span>
+                        </div>
+                    </div>
+                </div>
+                <a href="#" class="track-link">Browse &rarr;</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════ FEATURED LABS ═══════ -->
+<section class="section">
+    <div class="section-inner">
+        <h2 class="section-title">Featured Labs</h2>
+        <p class="section-subtitle">Popular starting points across every difficulty level.</p>
+        <div class="labs-grid">
+            <!-- Lab 1 -->
+            <div class="lab-card">
+                <div class="lab-badges">
+                    <span class="badge badge-purple">Prerequisites</span>
+                    <span class="badge badge-green">Ubuntu VM</span>
+                </div>
+                <div class="lab-title">Your First Terminal</div>
+                <div class="lab-meta">
+                    <span>&#9202; 15 min</span>
+                    <span class="difficulty-chip diff-beginner">Beginner</span>
+                </div>
+                <button class="btn-launch" onclick="alert('Opens killercoda.com in a new tab')">
+                    <span class="launch-text">Launch Lab</span>
+                    <span class="hover-text">Opens in Killercoda &nearr;</span>
+                </button>
+            </div>
+            <!-- Lab 2 -->
+            <div class="lab-card">
+                <div class="lab-badges">
+                    <span class="badge badge-purple">Linux</span>
+                    <span class="badge badge-green">Ubuntu VM</span>
+                </div>
+                <div class="lab-title">File Permissions Deep Dive</div>
+                <div class="lab-meta">
+                    <span>&#9202; 30 min</span>
+                    <span class="difficulty-chip diff-intermediate">Intermediate</span>
+                </div>
+                <button class="btn-launch" onclick="alert('Opens killercoda.com in a new tab')">
+                    <span class="launch-text">Launch Lab</span>
+                    <span class="hover-text">Opens in Killercoda &nearr;</span>
+                </button>
+            </div>
+            <!-- Lab 3 -->
+            <div class="lab-card">
+                <div class="lab-badges">
+                    <span class="badge badge-orange">CKA</span>
+                    <span class="badge badge-blue">K8s Cluster</span>
+                </div>
+                <div class="lab-title">Create Your First Pod</div>
+                <div class="lab-meta">
+                    <span>&#9202; 30 min</span>
+                    <span class="difficulty-chip diff-beginner">Beginner</span>
+                </div>
+                <button class="btn-launch" onclick="alert('Opens killercoda.com in a new tab')">
+                    <span class="launch-text">Launch Lab</span>
+                    <span class="hover-text">Opens in Killercoda &nearr;</span>
+                </button>
+            </div>
+            <!-- Lab 4 -->
+            <div class="lab-card">
+                <div class="lab-badges">
+                    <span class="badge badge-orange">CKA</span>
+                    <span class="badge badge-blue">K8s Cluster</span>
+                </div>
+                <div class="lab-title">Fix a Broken Deployment</div>
+                <div class="lab-meta">
+                    <span>&#9202; 45 min</span>
+                    <span class="difficulty-chip diff-intermediate">Intermediate</span>
+                </div>
+                <button class="btn-launch" onclick="alert('Opens killercoda.com in a new tab')">
+                    <span class="launch-text">Launch Lab</span>
+                    <span class="hover-text">Opens in Killercoda &nearr;</span>
+                </button>
+            </div>
+            <!-- Lab 5 -->
+            <div class="lab-card">
+                <div class="lab-badges">
+                    <span class="badge badge-orange">CKS</span>
+                    <span class="badge badge-blue">K8s Cluster</span>
+                </div>
+                <div class="lab-title">Network Policies</div>
+                <div class="lab-meta">
+                    <span>&#9202; 60 min</span>
+                    <span class="difficulty-chip diff-advanced">Advanced</span>
+                </div>
+                <button class="btn-launch" onclick="alert('Opens killercoda.com in a new tab')">
+                    <span class="launch-text">Launch Lab</span>
+                    <span class="hover-text">Opens in Killercoda &nearr;</span>
+                </button>
+            </div>
+            <!-- Lab 6 -->
+            <div class="lab-card">
+                <div class="lab-badges">
+                    <span class="badge badge-orange">CKAD</span>
+                    <span class="badge badge-blue">K8s Cluster</span>
+                </div>
+                <div class="lab-title">Deploy with Helm</div>
+                <div class="lab-meta">
+                    <span>&#9202; 30 min</span>
+                    <span class="difficulty-chip diff-intermediate">Intermediate</span>
+                </div>
+                <button class="btn-launch" onclick="alert('Opens killercoda.com in a new tab')">
+                    <span class="launch-text">Launch Lab</span>
+                    <span class="hover-text">Opens in Killercoda &nearr;</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════ LIMITATIONS ═══════ -->
+<section class="section limitations-section">
+    <div class="section-inner">
+        <h2 class="section-title">Transparency</h2>
+        <p class="section-subtitle">What to expect from the Killercoda-powered phase.</p>
+        <div class="limitations-card">
+            <div class="lim-header">
+                <span style="font-size: 18px;">&#9432;</span>
+                <h3>Current Limitations &amp; Roadmap</h3>
+            </div>
+            <div class="lim-body">
+                <div class="lim-col current">
+                    <h4>Current Limitations</h4>
+                    <ul>
+                        <li>1 session at a time on free Killercoda tier</li>
+                        <li>Sessions last approximately 60 minutes</li>
+                        <li>No auto-completion detection &mdash; you manually mark labs as complete</li>
+                        <li>Cloud track not yet available (no real AWS / GCP / Azure environments)</li>
+                    </ul>
+                </div>
+                <div class="lim-col coming">
+                    <h4>Coming Soon</h4>
+                    <ul>
+                        <li>Custom platform with embedded terminal</li>
+                        <li>Automatic validation of lab exercises</li>
+                        <li>Longer session durations</li>
+                        <li>Cloud provider sandbox environments</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════ FOOTER ═══════ -->
+<footer class="footer">
+    <div class="footer-inner">
+        <div class="footer-top">
+            <a href="/" style="font-weight: 700; color: var(--g300);">KubeDojo</a>
+            <span class="footer-divider">|</span>
+            <a href="https://github.com/kube-dojo/kube-dojo.github.io" target="_blank" rel="noopener">GitHub</a>
+            <span class="footer-divider">|</span>
+            <a href="/docs">Documentation</a>
+            <span class="footer-divider">|</span>
+            <a href="/curriculum">Curriculum</a>
+        </div>
+        <div>&copy; 2024&ndash;2026 KubeDojo Contributors. Open source under MIT.</div>
+        <div class="footer-attr">Powered by <a href="https://killercoda.com" target="_blank" rel="noopener">Killercoda</a> + <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a></div>
+    </div>
+</footer>
+
+</body>
+</html>

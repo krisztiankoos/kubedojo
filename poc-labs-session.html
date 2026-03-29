@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KubeDojo Lab — CKA 1.3 Fix a Broken Deployment</title>
+<style>
+:root {
+    --kube-blue: #326CE5; --kube-blue-light: #EBF1FF; --kube-blue-dark: #1A3A7A;
+    --terminal-green: #00E676; --terminal-green-light: #E8FFF0; --terminal-green-dark: #00A651;
+    --pod-orange: #FF6D00; --pod-orange-light: #FFF3E0;
+    --deploy-purple: #7C4DFF; --deploy-purple-light: #F3EDFF;
+    --danger-red: #FF1744; --danger-red-light: #FFEBEE;
+    --warning-amber: #FFD600; --warning-amber-light: #FFFDE7;
+    --node-teal: #00BFA5; --node-teal-light: #E0F7F4;
+    --g50: #FAFBFC; --g100: #F3F4F6; --g200: #E5E7EB; --g300: #D1D5DB;
+    --g400: #9CA3AF; --g500: #6B7280; --g600: #4B5563; --g700: #374151;
+    --g800: #1F2937; --g900: #0F172A;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+    --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--g900);
+    color: var(--g800);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Top Bar ── */
+.topbar {
+    height: 48px;
+    background: var(--g900);
+    border-bottom: 1px solid var(--g700);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+.topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #fff;
+    letter-spacing: -0.3px;
+}
+
+.logo-icon {
+    width: 26px;
+    height: 26px;
+    background: var(--kube-blue);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #fff;
+}
+
+.topbar-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--g700);
+}
+
+.lab-title {
+    font-size: 14px;
+    color: var(--g300);
+    font-weight: 500;
+}
+
+.topbar-center {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.timer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.timer-ring {
+    width: 28px;
+    height: 28px;
+    position: relative;
+}
+
+.timer-ring svg {
+    transform: rotate(-90deg);
+}
+
+.timer-ring circle {
+    fill: none;
+    stroke-width: 3;
+}
+
+.timer-ring .track { stroke: var(--g700); }
+.timer-ring .progress { stroke: var(--terminal-green); stroke-linecap: round; }
+
+.session-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--terminal-green);
+    font-weight: 500;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--terminal-green);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--terminal-green);
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-topbar {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+    background: transparent;
+}
+
+.btn-end {
+    border: 1.5px solid var(--danger-red);
+    color: var(--danger-red);
+}
+.btn-end:hover { background: var(--danger-red); color: #fff; }
+
+.btn-reset {
+    border: 1.5px solid var(--warning-amber);
+    color: var(--warning-amber);
+}
+.btn-reset:hover { background: var(--warning-amber); color: var(--g900); }
+
+.btn-icon {
+    height: 32px;
+    width: 32px;
+    border: 1px solid var(--g700);
+    color: var(--g400);
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+}
+.btn-icon:hover { border-color: var(--g500); color: #fff; }
+
+.avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--kube-blue), var(--deploy-purple));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    margin-left: 4px;
+}
+
+/* ── Main Content ── */
+.main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ── Instructions Panel ── */
+.panel-left {
+    width: 45%;
+    min-width: 320px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.instructions-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px 32px;
+}
+
+.instructions-scroll::-webkit-scrollbar { width: 6px; }
+.instructions-scroll::-webkit-scrollbar-track { background: transparent; }
+.instructions-scroll::-webkit-scrollbar-thumb { background: var(--g300); border-radius: 3px; }
+
+.lab-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.badge {
+    height: 24px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    letter-spacing: 0.3px;
+}
+
+.badge-cert { background: var(--kube-blue-light); color: var(--kube-blue-dark); }
+.badge-tier { background: var(--deploy-purple-light); color: var(--deploy-purple); }
+.badge-diff { background: var(--pod-orange-light); color: var(--pod-orange); }
+
+.scenario-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--g900);
+    line-height: 1.3;
+    margin-bottom: 12px;
+}
+
+.scenario-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--g600);
+    margin-bottom: 28px;
+    padding: 14px 16px;
+    background: var(--g50);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--kube-blue);
+}
+
+.scenario-desc code {
+    background: var(--kube-blue-light);
+    color: var(--kube-blue-dark);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+/* ── Stepper ── */
+.stepper { display: flex; flex-direction: column; gap: 0; }
+
+.step {
+    display: flex;
+    gap: 14px;
+    position: relative;
+}
+
+.step-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 32px;
+}
+
+.step-indicator {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+}
+
+.step-line {
+    width: 2px;
+    flex: 1;
+    min-height: 16px;
+    z-index: 1;
+}
+
+.step:last-child .step-line { display: none; }
+
+/* Completed */
+.step-completed .step-indicator {
+    background: var(--terminal-green);
+    color: #fff;
+}
+.step-completed .step-line { background: var(--terminal-green); }
+
+/* Current */
+.step-current .step-indicator {
+    background: var(--kube-blue);
+    color: #fff;
+    box-shadow: 0 0 0 4px var(--kube-blue-light);
+}
+.step-current .step-line { background: var(--g200); }
+
+@keyframes pulse-dot {
+    0%, 100% { box-shadow: 0 0 0 4px var(--kube-blue-light); }
+    50% { box-shadow: 0 0 0 8px rgba(50, 108, 229, 0.15); }
+}
+.step-current .step-indicator { animation: pulse-dot 2s ease-in-out infinite; }
+
+/* Locked */
+.step-locked .step-indicator {
+    background: var(--g100);
+    color: var(--g400);
+    border: 2px solid var(--g200);
+}
+.step-locked .step-line { background: var(--g200); }
+
+.step-content {
+    flex: 1;
+    padding-bottom: 20px;
+    min-width: 0;
+}
+
+.step-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--g900);
+    margin-bottom: 4px;
+    line-height: 32px;
+}
+
+.step-locked .step-label { color: var(--g400); }
+
+.step-desc {
+    font-size: 13px;
+    color: var(--g500);
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.step-locked .step-desc { color: var(--g400); }
+
+.step-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.btn-check {
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s;
+}
+
+.btn-check-active {
+    background: var(--kube-blue);
+    color: #fff;
+}
+.btn-check-active:hover { background: var(--kube-blue-dark); }
+
+.btn-check-done {
+    background: var(--terminal-green-light);
+    color: var(--terminal-green-dark);
+    cursor: default;
+}
+
+.btn-check-locked {
+    background: var(--g100);
+    color: var(--g400);
+    cursor: not-allowed;
+}
+
+.btn-hint {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--g200);
+    background: #fff;
+    color: var(--g600);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+}
+.btn-hint:hover { border-color: var(--g300); background: var(--g50); }
+
+.hint-box {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--warning-amber-light);
+    border-radius: var(--radius-sm);
+    border: 1px solid #FFF0B3;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--g700);
+}
+
+.hint-box code {
+    background: #fff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 12px;
+    border: 1px solid var(--g200);
+}
+
+.hint-collapsed { display: none; }
+
+/* ── Useful commands ── */
+.useful-commands {
+    margin-top: 24px;
+    border: 1px solid var(--g200);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.useful-commands-header {
+    padding: 10px 14px;
+    background: var(--g50);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--g700);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+}
+
+.useful-commands-body {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cmd-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: var(--g50);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--g700);
+}
+
+.cmd-copy {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--g400);
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.cmd-copy:hover { background: var(--g200); color: var(--g700); }
+
+/* ── Resizable Divider ── */
+.divider {
+    width: 4px;
+    background: var(--g700);
+    cursor: col-resize;
+    position: relative;
+    flex-shrink: 0;
+    z-index: 50;
+    transition: background 0.15s;
+}
+
+.divider:hover, .divider.dragging {
+    background: var(--kube-blue);
+}
+
+.divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 40px;
+    border-radius: 2px;
+    background: repeating-linear-gradient(
+        to bottom,
+        var(--g500) 0px,
+        var(--g500) 4px,
+        transparent 4px,
+        transparent 8px
+    );
+}
+
+.divider:hover::after, .divider.dragging::after {
+    background: repeating-linear-gradient(
+        to bottom,
+        #fff 0px,
+        #fff 4px,
+        transparent 4px,
+        transparent 8px
+    );
+}
+
+/* ── Terminal Panel ── */
+.panel-right {
+    flex: 1;
+    min-width: 400px;
+    display: flex;
+    flex-direction: column;
+    background: var(--g900);
+    overflow: hidden;
+}
+
+.terminal-tabs {
+    height: 38px;
+    background: #0D1117;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 8px;
+    gap: 2px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--g800);
+}
+
+.term-tab {
+    height: 32px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    background: transparent;
+    color: var(--g500);
+}
+
+.term-tab.active {
+    background: var(--g900);
+    color: var(--g200);
+}
+.term-tab:not(.active):hover { color: var(--g300); }
+
+.term-tab-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--terminal-green);
+}
+
+.term-tab-add {
+    height: 32px;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--g600);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    border-radius: 6px 6px 0 0;
+    transition: color 0.15s;
+}
+.term-tab-add:hover { color: var(--g300); }
+
+.terminal {
+    flex: 1;
+    padding: 16px 20px;
+    overflow-y: auto;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: #E6EDF3;
+    background: var(--g900);
+}
+
+.terminal::-webkit-scrollbar { width: 8px; }
+.terminal::-webkit-scrollbar-track { background: transparent; }
+.terminal::-webkit-scrollbar-thumb { background: var(--g700); border-radius: 4px; }
+
+.term-line { white-space: pre-wrap; word-break: break-all; }
+.term-prompt { color: var(--terminal-green); text-shadow: 0 0 8px rgba(0, 230, 118, 0.3); }
+.term-command { color: #E6EDF3; }
+.term-output { color: var(--g400); }
+.term-header { color: var(--g300); font-weight: 600; }
+
+.term-cursor {
+    display: inline-block;
+    width: 8px;
+    height: 17px;
+    background: var(--terminal-green);
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+    box-shadow: 0 0 6px rgba(0, 230, 118, 0.4);
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* ── Bottom Bar ── */
+.bottombar {
+    height: 24px;
+    background: var(--kube-blue-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    flex-shrink: 0;
+    z-index: 100;
+}
+
+.bottombar-left, .bottombar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.bottom-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bottom-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--terminal-green);
+    box-shadow: 0 0 4px var(--terminal-green);
+}
+
+/* ── Selection overlay prevention during resize ── */
+.resizing { user-select: none; cursor: col-resize; }
+.resizing iframe, .resizing .terminal { pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- ════ TOP BAR ════ -->
+<div class="topbar">
+    <div class="topbar-left">
+        <div class="logo">
+            <div class="logo-icon">K</div>
+            KubeDojo
+        </div>
+        <div class="topbar-divider"></div>
+        <div class="lab-title">CKA 1.3 &mdash; Fix a Broken Deployment</div>
+    </div>
+    <div class="topbar-center">
+        <div class="timer">
+            <div class="timer-ring">
+                <svg width="28" height="28" viewBox="0 0 28 28">
+                    <circle class="track" cx="14" cy="14" r="11" />
+                    <circle class="progress" cx="14" cy="14" r="11"
+                        stroke-dasharray="69.1"
+                        stroke-dashoffset="19.7" />
+                </svg>
+            </div>
+            42:18 remaining
+        </div>
+        <div class="session-status">
+            <span class="status-dot"></span>
+            Running
+        </div>
+    </div>
+    <div class="topbar-right">
+        <button class="btn-topbar btn-end">&#x2715; End Lab</button>
+        <button class="btn-topbar btn-reset">&#x21BB; Reset Lab</button>
+        <button class="btn-icon" title="Fullscreen">&#x26F6;</button>
+        <div class="avatar">KK</div>
+    </div>
+</div>
+
+<!-- ════ MAIN PANELS ════ -->
+<div class="main" id="main">
+
+    <!-- ── Left: Instructions ── -->
+    <div class="panel-left" id="panelLeft">
+        <div class="instructions-scroll">
+
+            <!-- Lab Header -->
+            <div class="lab-header">
+                <span class="badge badge-cert">&#x1F3AF; CKA</span>
+                <span class="badge badge-tier">Tier 3</span>
+                <span class="badge badge-diff">Intermediate</span>
+            </div>
+
+            <div class="scenario-title">Fix a Broken Deployment</div>
+
+            <div class="scenario-desc">
+                A deployment named <code>nginx-app</code> in the <code>production</code> namespace has 0 ready replicas.
+                Your task is to identify and fix the issues so all 3 replicas are running.
+            </div>
+
+            <!-- ── Stepper ── -->
+            <div class="stepper">
+
+                <!-- Step 1: Completed -->
+                <div class="step step-completed">
+                    <div class="step-rail">
+                        <div class="step-indicator">&#x2713;</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-label">Investigate the deployment</div>
+                        <div class="step-desc">Use kubectl to check the deployment status and identify why pods aren't running.</div>
+                        <div class="step-actions">
+                            <button class="btn-check btn-check-done">&#x2713; Verified</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Completed -->
+                <div class="step step-completed">
+                    <div class="step-rail">
+                        <div class="step-indicator">&#x2713;</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-label">Fix the image name</div>
+                        <div class="step-desc">The deployment is using an incorrect container image. Fix it to use <code>nginx:1.25</code>.</div>
+                        <div class="step-actions">
+                            <button class="btn-check btn-check-done">&#x2713; Verified</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Current -->
+                <div class="step step-current">
+                    <div class="step-rail">
+                        <div class="step-indicator">3</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-label">Verify all replicas are ready</div>
+                        <div class="step-desc">Ensure all 3 replicas are in Running state.</div>
+                        <div class="step-actions">
+                            <button class="btn-check btn-check-active">&#x25B6; Check</button>
+                            <button class="btn-hint" onclick="toggleHint()">
+                                <span id="hintIcon">&#x25B8;</span> Hint
+                            </button>
+                        </div>
+                        <div class="hint-box" id="hintBox" style="display:none;">
+                            &#x1F4A1; Use <code>kubectl get pods -n production</code> to check pod status. All should show <code>1/1 Running</code>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Locked -->
+                <div class="step step-locked">
+                    <div class="step-rail">
+                        <div class="step-indicator">&#x1F512;</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-label">Expose via ClusterIP Service</div>
+                        <div class="step-desc">Create a service named <code>nginx-svc</code> on port 80.</div>
+                        <div class="step-actions">
+                            <button class="btn-check btn-check-locked" disabled>&#x25B6; Check</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Locked -->
+                <div class="step step-locked">
+                    <div class="step-rail">
+                        <div class="step-indicator">&#x1F512;</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="step-content">
+                        <div class="step-label">Verify end-to-end connectivity</div>
+                        <div class="step-desc">Test that the service resolves and returns a 200 response.</div>
+                        <div class="step-actions">
+                            <button class="btn-check btn-check-locked" disabled>&#x25B6; Check</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ── Useful Commands ── -->
+            <div class="useful-commands">
+                <div class="useful-commands-header" onclick="toggleCommands()">
+                    <span>&#x2318; Useful Commands</span>
+                    <span id="cmdChevron">&#x25B8;</span>
+                </div>
+                <div class="useful-commands-body" id="cmdBody" style="display:none;">
+                    <div class="cmd-row">
+                        <span>kubectl get deploy -n production</span>
+                        <button class="cmd-copy" onclick="copyCmd(this)" title="Copy">&#x2398;</button>
+                    </div>
+                    <div class="cmd-row">
+                        <span>kubectl get pods -n production -o wide</span>
+                        <button class="cmd-copy" onclick="copyCmd(this)" title="Copy">&#x2398;</button>
+                    </div>
+                    <div class="cmd-row">
+                        <span>kubectl describe deploy nginx-app -n production</span>
+                        <button class="cmd-copy" onclick="copyCmd(this)" title="Copy">&#x2398;</button>
+                    </div>
+                    <div class="cmd-row">
+                        <span>kubectl logs -l app=nginx-app -n production</span>
+                        <button class="cmd-copy" onclick="copyCmd(this)" title="Copy">&#x2398;</button>
+                    </div>
+                    <div class="cmd-row">
+                        <span>kubectl get events -n production --sort-by='.lastTimestamp'</span>
+                        <button class="cmd-copy" onclick="copyCmd(this)" title="Copy">&#x2398;</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ── Resizable Divider ── -->
+    <div class="divider" id="divider"></div>
+
+    <!-- ── Right: Terminal ── -->
+    <div class="panel-right" id="panelRight">
+
+        <div class="terminal-tabs">
+            <button class="term-tab active">
+                <span class="term-tab-dot"></span>
+                Terminal 1
+            </button>
+            <button class="term-tab">
+                Terminal 2
+            </button>
+            <button class="term-tab-add" title="New terminal">+</button>
+        </div>
+
+        <div class="terminal">
+<div class="term-line"><span class="term-prompt">student@lab-node:~$ </span><span class="term-command">kubectl get deploy -n production</span></div>
+<div class="term-line"><span class="term-header">NAME        READY   UP-TO-DATE   AVAILABLE   AGE</span></div>
+<div class="term-line"><span class="term-output">nginx-app   0/3     3            0           5m12s</span></div>
+<div class="term-line">&nbsp;</div>
+<div class="term-line"><span class="term-prompt">student@lab-node:~$ </span><span class="term-command">kubectl describe deploy nginx-app -n production | grep Image</span></div>
+<div class="term-line"><span class="term-output">    Image:        ngnix:latest</span></div>
+<div class="term-line">&nbsp;</div>
+<div class="term-line"><span class="term-prompt">student@lab-node:~$ </span><span class="term-command">kubectl set image deploy/nginx-app nginx=nginx:1.25 -n production</span></div>
+<div class="term-line"><span class="term-output">deployment.apps/nginx-app image updated</span></div>
+<div class="term-line">&nbsp;</div>
+<div class="term-line"><span class="term-prompt">student@lab-node:~$ </span><span class="term-command">kubectl get pods -n production</span></div>
+<div class="term-line"><span class="term-header">NAME                         READY   STATUS    RESTARTS   AGE</span></div>
+<div class="term-line"><span class="term-output">nginx-app-7d4f8b6c9-abc12   1/1     Running   0          15s</span></div>
+<div class="term-line"><span class="term-output">nginx-app-7d4f8b6c9-def34   1/1     Running   0          12s</span></div>
+<div class="term-line"><span class="term-output">nginx-app-7d4f8b6c9-ghi56   1/1     Running   0          10s</span></div>
+<div class="term-line">&nbsp;</div>
+<div class="term-line"><span class="term-prompt">student@lab-node:~$ </span><span class="term-cursor"></span></div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- ════ BOTTOM BAR ════ -->
+<div class="bottombar">
+    <div class="bottombar-left">
+        <div class="bottom-item">&#x2638; vCluster v1.31 &nbsp;|&nbsp; 1 control plane + 2 workers &nbsp;|&nbsp; production namespace</div>
+    </div>
+    <div class="bottombar-right">
+        <div class="bottom-item">
+            <span class="bottom-dot"></span>
+            Connected
+        </div>
+        <div class="bottom-item">12ms</div>
+    </div>
+</div>
+
+<script>
+/* ── Hint toggle ── */
+function toggleHint() {
+    const box = document.getElementById('hintBox');
+    const icon = document.getElementById('hintIcon');
+    if (box.style.display === 'none') {
+        box.style.display = 'block';
+        icon.textContent = '\u25BE';
+    } else {
+        box.style.display = 'none';
+        icon.textContent = '\u25B8';
+    }
+}
+
+/* ── Commands toggle ── */
+function toggleCommands() {
+    const body = document.getElementById('cmdBody');
+    const chev = document.getElementById('cmdChevron');
+    if (body.style.display === 'none') {
+        body.style.display = 'flex';
+        chev.textContent = '\u25BE';
+    } else {
+        body.style.display = 'none';
+        chev.textContent = '\u25B8';
+    }
+}
+
+/* ── Copy command ── */
+function copyCmd(btn) {
+    const text = btn.parentElement.querySelector('span').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '&#x2713;';
+        btn.style.color = 'var(--terminal-green-dark)';
+        setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 1200);
+    });
+}
+
+/* ── Resizable panels ── */
+(function() {
+    const divider = document.getElementById('divider');
+    const main = document.getElementById('main');
+    const left = document.getElementById('panelLeft');
+    let dragging = false;
+
+    divider.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        dragging = true;
+        document.body.classList.add('resizing');
+        divider.classList.add('dragging');
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        const rect = main.getBoundingClientRect();
+        let pct = ((e.clientX - rect.left) / rect.width) * 100;
+        pct = Math.max(20, Math.min(75, pct));
+        left.style.width = pct + '%';
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (dragging) {
+            dragging = false;
+            document.body.classList.remove('resizing');
+            divider.classList.remove('dragging');
+        }
+    });
+})();
+</script>
+
+</body>
+</html>

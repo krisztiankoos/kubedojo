@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KubeDojo Labs — Admin Dashboard</title>
+<style>
+:root {
+    --kube-blue: #326CE5; --kube-blue-light: #EBF1FF; --kube-blue-dark: #1A3A7A;
+    --terminal-green: #00E676; --terminal-green-light: #E8FFF0; --terminal-green-dark: #00A651;
+    --pod-orange: #FF6D00; --pod-orange-light: #FFF3E0;
+    --deploy-purple: #7C4DFF; --deploy-purple-light: #F3EDFF;
+    --danger-red: #FF1744; --danger-red-light: #FFEBEE;
+    --warning-amber: #FFD600; --warning-amber-light: #FFFDE7;
+    --node-teal: #00BFA5; --node-teal-light: #E0F7F4;
+    --g50: #FAFBFC; --g100: #F3F4F6; --g200: #E5E7EB; --g300: #D1D5DB;
+    --g400: #9CA3AF; --g500: #6B7280; --g600: #4B5563; --g700: #374151;
+    --g800: #1F2937; --g900: #0F172A;
+    --radius: 12px; --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08); --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
+    --mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--g100);
+    color: var(--g800);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ── Top Nav ── */
+.topnav {
+    background: var(--g900);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.topnav-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.logo span { color: var(--kube-blue); }
+
+.admin-badge {
+    background: var(--danger-red);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 4px;
+    list-style: none;
+}
+
+.nav-links a {
+    color: var(--g400);
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.nav-links a:hover { color: #fff; background: rgba(255,255,255,0.08); }
+.nav-links a.active { color: #fff; background: var(--kube-blue); }
+
+.topnav-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    color: var(--g400);
+}
+
+.topnav-right .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--kube-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+
+/* ── Status Banner ── */
+.status-banner {
+    padding: 10px 24px;
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-banner.healthy {
+    background: var(--terminal-green-light);
+    color: var(--terminal-green-dark);
+    border-bottom: 2px solid var(--terminal-green);
+}
+
+.status-banner .pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--terminal-green);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ── Layout ── */
+.main { max-width: 1360px; margin: 0 auto; padding: 20px 24px 40px; }
+
+.section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--g500);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Metric Cards ── */
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.metric-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--g200);
+}
+
+.metric-card .label {
+    font-size: 12px;
+    color: var(--g500);
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.metric-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--g900);
+    line-height: 1.2;
+}
+
+.metric-card .value.green { color: var(--terminal-green-dark); }
+.metric-card .value.amber { color: var(--pod-orange); }
+.metric-card .value.red { color: var(--danger-red); }
+
+.metric-card .sub {
+    font-size: 11px;
+    color: var(--g400);
+    margin-top: 2px;
+}
+
+.sparkline {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 28px;
+    margin-top: 8px;
+}
+
+.sparkline .bar {
+    flex: 1;
+    background: var(--kube-blue-light);
+    border-radius: 2px;
+    min-width: 3px;
+    transition: background 0.15s;
+}
+
+.sparkline .bar:last-child { background: var(--kube-blue); }
+
+/* Gauge bar */
+.gauge-track {
+    height: 6px;
+    background: var(--g200);
+    border-radius: 3px;
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+.gauge-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+}
+
+.gauge-fill.green { background: var(--terminal-green); }
+.gauge-fill.amber { background: var(--warning-amber); }
+.gauge-fill.red { background: var(--danger-red); }
+
+/* ── Table ── */
+.card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--g200);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--g200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.card-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--g800);
+}
+
+.card-header .count {
+    background: var(--kube-blue-light);
+    color: var(--kube-blue);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+thead th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--g500);
+    background: var(--g50);
+    border-bottom: 1px solid var(--g200);
+}
+
+tbody td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--g100);
+    vertical-align: middle;
+}
+
+tbody tr:hover { background: var(--g50); }
+tbody tr.warn { background: var(--warning-amber-light); }
+tbody tr.warn:hover { background: #fff8c4; }
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.user-cell .avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--g300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--g700);
+    flex-shrink: 0;
+}
+
+.user-cell .name { font-weight: 500; }
+
+.tier-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.tier-1 { background: var(--terminal-green-light); color: var(--terminal-green-dark); }
+.tier-2 { background: var(--kube-blue-light); color: var(--kube-blue); }
+.tier-3 { background: var(--deploy-purple-light); color: var(--deploy-purple); }
+.tier-4 { background: var(--pod-orange-light); color: var(--pod-orange); }
+
+.status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.status-dot::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot.running::before { background: var(--terminal-green); }
+.status-dot.idle::before { background: var(--warning-amber); }
+.status-dot.terminating::before { background: var(--g400); }
+
+.btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-danger { background: var(--danger-red-light); color: var(--danger-red); }
+.btn-danger:hover { background: var(--danger-red); color: #fff; }
+.btn-default { background: var(--g100); color: var(--g600); }
+.btn-default:hover { background: var(--g200); }
+
+.actions { display: flex; gap: 6px; }
+
+/* ── Two Column Layout ── */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* ── Node Pool ── */
+.node-item {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--g100);
+}
+
+.node-item:last-child { border-bottom: none; }
+
+.node-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.node-name {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--g800);
+}
+
+.node-specs {
+    font-size: 11px;
+    color: var(--g500);
+}
+
+.node-bar-track {
+    height: 8px;
+    background: var(--g200);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.node-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+}
+
+.node-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--g500);
+    margin-top: 4px;
+}
+
+.node-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+.tag-scaledown { background: var(--warning-amber-light); color: #9a8000; }
+
+/* ── Resource Allocation ── */
+.alloc-stack {
+    padding: 20px;
+}
+
+.alloc-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--g600);
+    margin-bottom: 8px;
+}
+
+.stacked-bar {
+    display: flex;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.stacked-bar > div { transition: width 0.3s; }
+
+.alloc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--g600);
+}
+
+.legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.alloc-detail {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--g200);
+}
+
+.alloc-detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 4px 0;
+    color: var(--g600);
+}
+
+.alloc-detail-row span:last-child { font-weight: 600; color: var(--g800); }
+
+/* ── Cost Section ── */
+.cost-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.cost-summary { padding: 20px; }
+
+.cost-big {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--terminal-green-dark);
+}
+
+.cost-budget {
+    font-size: 13px;
+    color: var(--g500);
+    margin-top: 2px;
+}
+
+.cost-breakdown {
+    margin-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.cost-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+}
+
+.cost-row .cost-label { color: var(--g600); }
+.cost-row .cost-val { font-weight: 600; font-family: var(--mono); font-size: 12px; }
+
+.cost-bar-track {
+    flex: 1;
+    height: 4px;
+    background: var(--g200);
+    border-radius: 2px;
+    margin: 0 12px;
+    overflow: hidden;
+}
+
+.cost-bar-fill {
+    height: 100%;
+    background: var(--kube-blue);
+    border-radius: 2px;
+}
+
+.cost-per-session {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--g200);
+    font-size: 12px;
+    color: var(--g500);
+}
+
+.cost-per-session strong {
+    font-family: var(--mono);
+    color: var(--g800);
+}
+
+/* Daily Cost Chart */
+.daily-chart { padding: 20px; }
+
+.daily-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 120px;
+    padding-top: 10px;
+}
+
+.daily-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.daily-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    background: var(--kube-blue);
+    transition: height 0.3s;
+    position: relative;
+}
+
+.daily-bar:hover { background: var(--kube-blue-dark); }
+
+.daily-bar .tip {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--g600);
+    font-family: var(--mono);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.daily-bar:hover .tip { opacity: 1; }
+
+.daily-label {
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--g500);
+    font-weight: 500;
+}
+
+.daily-avg {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--g500);
+}
+
+.daily-avg strong { color: var(--g700); }
+
+/* ── Event Log ── */
+.event-log {
+    background: var(--g900);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-lg);
+}
+
+.event-log-header {
+    background: rgba(255,255,255,0.05);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.event-log-header h3 {
+    color: var(--g300);
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.event-log-header .live {
+    background: var(--terminal-green);
+    color: var(--g900);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse 2s infinite;
+}
+
+.event-list {
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.8;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.event-line {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.event-time { color: var(--g500); white-space: nowrap; }
+.event-level { font-weight: 600; white-space: nowrap; min-width: 44px; }
+.event-level.info { color: var(--kube-blue); }
+.event-level.ok { color: var(--terminal-green); }
+.event-level.warn { color: var(--warning-amber); }
+.event-level.err { color: var(--danger-red); }
+.event-msg { color: var(--g300); }
+.event-msg .hl { color: #fff; font-weight: 500; }
+.event-msg .val { color: var(--node-teal); }
+
+/* ── Footer ── */
+.footer {
+    background: var(--g900);
+    color: var(--g500);
+    padding: 24px;
+    text-align: center;
+    font-size: 12px;
+    margin-top: 40px;
+}
+
+.footer a { color: var(--kube-blue); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+.footer .sep { margin: 0 8px; color: var(--g700); }
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .metrics-row { grid-template-columns: repeat(3, 1fr); }
+    .two-col, .cost-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+    .metrics-row { grid-template-columns: 1fr 1fr; }
+    .topnav { padding: 0 12px; }
+    .main { padding: 16px 12px 40px; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Top Nav ═══ -->
+<nav class="topnav">
+    <div class="topnav-left">
+        <div class="logo">&#9096; <span>Kube</span>Dojo</div>
+        <span class="admin-badge">Admin</span>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Overview</a></li>
+            <li><a href="#">Sessions</a></li>
+            <li><a href="#">Infrastructure</a></li>
+            <li><a href="#">Costs</a></li>
+            <li><a href="#">Settings</a></li>
+        </ul>
+    </div>
+    <div class="topnav-right">
+        <span>us-central1-a</span>
+        <span style="color:var(--g700)">|</span>
+        <span>v0.4.2</span>
+        <div class="avatar">KK</div>
+    </div>
+</nav>
+
+<!-- ═══ Status Banner ═══ -->
+<div class="status-banner healthy">
+    <div class="pulse"></div>
+    All systems operational &mdash; 12 active sessions, 3 nodes, cluster v1.31.4
+</div>
+
+<div class="main">
+
+    <!-- ═══ Key Metrics ═══ -->
+    <div class="section-title">&#9635; Key Metrics</div>
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="label">Active Sessions</div>
+            <div class="value">12</div>
+            <div class="sub">+3 from 1h ago</div>
+            <div class="sparkline">
+                <div class="bar" style="height:30%"></div>
+                <div class="bar" style="height:20%"></div>
+                <div class="bar" style="height:25%"></div>
+                <div class="bar" style="height:35%"></div>
+                <div class="bar" style="height:30%"></div>
+                <div class="bar" style="height:45%"></div>
+                <div class="bar" style="height:40%"></div>
+                <div class="bar" style="height:55%"></div>
+                <div class="bar" style="height:50%"></div>
+                <div class="bar" style="height:60%"></div>
+                <div class="bar" style="height:70%"></div>
+                <div class="bar" style="height:65%"></div>
+                <div class="bar" style="height:75%"></div>
+                <div class="bar" style="height:80%"></div>
+                <div class="bar" style="height:70%"></div>
+                <div class="bar" style="height:60%"></div>
+                <div class="bar" style="height:55%"></div>
+                <div class="bar" style="height:65%"></div>
+                <div class="bar" style="height:70%"></div>
+                <div class="bar" style="height:85%"></div>
+                <div class="bar" style="height:75%"></div>
+                <div class="bar" style="height:80%"></div>
+                <div class="bar" style="height:90%"></div>
+                <div class="bar" style="height:85%"></div>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="label">Total Users (24h)</div>
+            <div class="value">47</div>
+            <div class="sub">Peak: 19 concurrent at 14:00</div>
+        </div>
+        <div class="metric-card">
+            <div class="label">Avg Session Duration</div>
+            <div class="value">28<span style="font-size:16px;font-weight:400;color:var(--g500)"> min</span></div>
+            <div class="sub">Median: 24 min &middot; Max: 58 min</div>
+        </div>
+        <div class="metric-card">
+            <div class="label">Cluster CPU</div>
+            <div class="value green">34%</div>
+            <div class="sub">4.1 / 12 vCPU allocated</div>
+            <div class="gauge-track">
+                <div class="gauge-fill green" style="width:34%"></div>
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="label">Cluster Memory</div>
+            <div class="value amber">52%</div>
+            <div class="sub">25 / 48 GB allocated</div>
+            <div class="gauge-track">
+                <div class="gauge-fill amber" style="width:52%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Active Sessions Table ═══ -->
+    <div class="card">
+        <div class="card-header">
+            <h3>&#9654; Active Sessions</h3>
+            <span class="count">12 active</span>
+        </div>
+        <div style="overflow-x:auto">
+        <table>
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Lab</th>
+                    <th>Tier</th>
+                    <th>Started</th>
+                    <th>Duration</th>
+                    <th>CPU</th>
+                    <th>Memory</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="warn">
+                    <td><div class="user-cell"><div class="avatar" style="background:var(--pod-orange)">AM</div><div class="name">alex-murphy</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">cka-3.2-scheduling</td>
+                    <td><span class="tier-badge tier-3">Tier 3</span></td>
+                    <td style="color:var(--g500)">13:38</td>
+                    <td style="font-family:var(--mono);font-weight:600;color:var(--pod-orange)">54m</td>
+                    <td>420m</td>
+                    <td>1.2Gi</td>
+                    <td><span class="status-dot running">Running</span></td>
+                    <td><div class="actions"><button class="btn btn-danger">Terminate</button><button class="btn btn-default">Extend</button></div></td>
+                </tr>
+                <tr>
+                    <td><div class="user-cell"><div class="avatar" style="background:var(--kube-blue)">JD</div><div class="name">john-doe</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">cka-1.3-rbac</td>
+                    <td><span class="tier-badge tier-3">Tier 3</span></td>
+                    <td style="color:var(--g500)">14:02</td>
+                    <td style="font-family:var(--mono)">30m</td>
+                    <td>380m</td>
+                    <td>1.0Gi</td>
+                    <td><span class="status-dot running">Running</span></td>
+                    <td><div class="actions"><button class="btn btn-danger">Terminate</button><button class="btn btn-default">Extend</button></div></td>
+                </tr>
+                <tr>
+                    <td><div class="user-cell"><div class="avatar" style="background:var(--deploy-purple)">SK</div><div class="name">sarah-k8s</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">ckad-2.1-pods</td>
+                    <td><span class="tier-badge tier-2">Tier 2</span></td>
+                    <td style="color:var(--g500)">14:10</td>
+                    <td style="font-family:var(--mono)">22m</td>
+                    <td>250m</td>
+                    <td>512Mi</td>
+                    <td><span class="status-dot running">Running</span></td>
+                    <td><div class="actions"><button class="btn btn-danger">Terminate</button><button class="btn btn-default">Extend</button></div></td>
+                </tr>
+                <tr>
+                    <td><div class="user-cell"><div class="avatar" style="background:var(--node-teal)">MO</div><div class="name">maria-ops</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">cks-4.1-network-policy</td>
+                    <td><span class="tier-badge tier-4">Tier 4</span></td>
+                    <td style="color:var(--g500)">14:15</td>
+                    <td style="font-family:var(--mono)">17m</td>
+                    <td>680m</td>
+                    <td>2.0Gi</td>
+                    <td><span class="status-dot running">Running</span></td>
+                    <td><div class="actions"><button class="btn btn-danger">Terminate</button><button class="btn btn-default">Extend</button></div></td>
+                </tr>
+                <tr>
+                    <td><div class="user-cell"><div class="avatar" style="background:var(--g500)">DZ</div><div class="name">dev-zero</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">kcna-1.1-basics</td>
+                    <td><span class="tier-badge tier-1">Tier 1</span></td>
+                    <td style="color:var(--g500)">14:20</td>
+                    <td style="font-family:var(--mono)">12m</td>
+                    <td>100m</td>
+                    <td>256Mi</td>
+                    <td><span class="status-dot idle">Idle</span></td>
+                    <td><div class="actions"><button class="btn btn-danger">Terminate</button><button class="btn btn-default">Extend</button></div></td>
+                </tr>
+                <tr>
+                    <td><div class="user-cell"><div class="avatar" style="background:#e67e22">TP</div><div class="name">tomasz-pl</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">cka-5.4-troubleshoot</td>
+                    <td><span class="tier-badge tier-3">Tier 3</span></td>
+                    <td style="color:var(--g500)">14:22</td>
+                    <td style="font-family:var(--mono)">10m</td>
+                    <td>350m</td>
+                    <td>1.0Gi</td>
+                    <td><span class="status-dot running">Running</span></td>
+                    <td><div class="actions"><button class="btn btn-danger">Terminate</button><button class="btn btn-default">Extend</button></div></td>
+                </tr>
+                <tr class="warn">
+                    <td><div class="user-cell"><div class="avatar" style="background:var(--danger-red)">LN</div><div class="name">lina-nguyen</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">ckad-4.2-services</td>
+                    <td><span class="tier-badge tier-2">Tier 2</span></td>
+                    <td style="color:var(--g500)">13:42</td>
+                    <td style="font-family:var(--mono);font-weight:600;color:var(--pod-orange)">50m</td>
+                    <td>280m</td>
+                    <td>512Mi</td>
+                    <td><span class="status-dot running">Running</span></td>
+                    <td><div class="actions"><button class="btn btn-danger">Terminate</button><button class="btn btn-default">Extend</button></div></td>
+                </tr>
+                <tr>
+                    <td><div class="user-cell"><div class="avatar" style="background:var(--terminal-green-dark)">RH</div><div class="name">ravi-helm</div></div></td>
+                    <td style="font-family:var(--mono);font-size:12px">kcsa-2.3-supply-chain</td>
+                    <td><span class="tier-badge tier-2">Tier 2</span></td>
+                    <td style="color:var(--g500)">14:28</td>
+                    <td style="font-family:var(--mono)">4m</td>
+                    <td>190m</td>
+                    <td>384Mi</td>
+                    <td><span class="status-dot terminating">Terminating</span></td>
+                    <td><div class="actions"><button class="btn btn-danger" disabled style="opacity:0.4">Terminate</button><button class="btn btn-default" disabled style="opacity:0.4">Extend</button></div></td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+    <!-- ═══ Infrastructure ═══ -->
+    <div class="section-title">&#9881; Infrastructure</div>
+    <div class="two-col">
+        <!-- Node Pool -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Node Pool &mdash; labs-pool</h3>
+                <span class="count">3 nodes</span>
+            </div>
+            <div class="node-item">
+                <div class="node-header">
+                    <span class="node-name">&#9632; node-1</span>
+                    <span class="node-specs">4 vCPU &middot; 16 GB &middot; 8 pods</span>
+                </div>
+                <div class="node-bar-track">
+                    <div class="node-bar-fill" style="width:72%;background:var(--pod-orange)"></div>
+                </div>
+                <div class="node-meta">
+                    <span>CPU: 72%</span>
+                    <span>Memory: 68%</span>
+                </div>
+            </div>
+            <div class="node-item">
+                <div class="node-header">
+                    <span class="node-name">&#9632; node-2</span>
+                    <span class="node-specs">4 vCPU &middot; 16 GB &middot; 3 pods</span>
+                </div>
+                <div class="node-bar-track">
+                    <div class="node-bar-fill" style="width:28%;background:var(--terminal-green)"></div>
+                </div>
+                <div class="node-meta">
+                    <span>CPU: 28%</span>
+                    <span>Memory: 34%</span>
+                </div>
+            </div>
+            <div class="node-item">
+                <div class="node-header">
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span class="node-name">&#9632; node-3</span>
+                        <span class="node-tag tag-scaledown">scale-down candidate</span>
+                    </div>
+                    <span class="node-specs">4 vCPU &middot; 16 GB &middot; 1 pod</span>
+                </div>
+                <div class="node-bar-track">
+                    <div class="node-bar-fill" style="width:12%;background:var(--kube-blue)"></div>
+                </div>
+                <div class="node-meta">
+                    <span>CPU: 12%</span>
+                    <span>Memory: 9%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resource Allocation -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Resource Allocation</h3>
+                <span class="count">12 / 20 slots</span>
+            </div>
+            <div class="alloc-stack">
+                <div class="alloc-label-row">
+                    <span>Utilization by Tier</span>
+                    <span style="font-weight:600">60% occupied</span>
+                </div>
+                <div class="stacked-bar">
+                    <div style="width:15%;background:var(--terminal-green)" title="Tier 1: 3 sessions"></div>
+                    <div style="width:25%;background:var(--kube-blue)" title="Tier 2: 5 sessions"></div>
+                    <div style="width:15%;background:var(--deploy-purple)" title="Tier 3: 3 sessions"></div>
+                    <div style="width:5%;background:var(--pod-orange)" title="Tier 4: 1 session"></div>
+                    <div style="width:40%;background:var(--g200)" title="Available"></div>
+                </div>
+                <div class="alloc-legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--terminal-green)"></div>Tier 1 (3)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--kube-blue)"></div>Tier 2 (5)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--deploy-purple)"></div>Tier 3 (3)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--pod-orange)"></div>Tier 4 (1)</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:var(--g200)"></div>Available (8)</div>
+                </div>
+                <div class="alloc-detail">
+                    <div class="alloc-detail-row"><span>Total vCPU allocated</span><span>4.1 / 12</span></div>
+                    <div class="alloc-detail-row"><span>Total memory allocated</span><span>25 / 48 GB</span></div>
+                    <div class="alloc-detail-row"><span>vCluster instances</span><span>12 running</span></div>
+                    <div class="alloc-detail-row"><span>Namespace count</span><span>26 (12 lab + 14 system)</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Cost Section ═══ -->
+    <div class="section-title">&#9733; Cost Tracking</div>
+    <div class="cost-grid">
+        <div class="card">
+            <div class="card-header">
+                <h3>March 2026 Estimate</h3>
+                <span class="count" style="background:var(--terminal-green-light);color:var(--terminal-green-dark)">Under budget</span>
+            </div>
+            <div class="cost-summary">
+                <div class="cost-big">$380</div>
+                <div class="cost-budget">Budget: $420 &middot; 90.5% utilized &middot; 2 days remaining</div>
+                <div class="cost-breakdown">
+                    <div class="cost-row">
+                        <span class="cost-label">Compute (GKE nodes)</span>
+                        <div class="cost-bar-track"><div class="cost-bar-fill" style="width:73%"></div></div>
+                        <span class="cost-val">$280</span>
+                    </div>
+                    <div class="cost-row">
+                        <span class="cost-label">Control Plane</span>
+                        <div class="cost-bar-track"><div class="cost-bar-fill" style="width:20%"></div></div>
+                        <span class="cost-val">$75</span>
+                    </div>
+                    <div class="cost-row">
+                        <span class="cost-label">Persistent Storage</span>
+                        <div class="cost-bar-track"><div class="cost-bar-fill" style="width:4%"></div></div>
+                        <span class="cost-val">$15</span>
+                    </div>
+                    <div class="cost-row">
+                        <span class="cost-label">Network / Egress</span>
+                        <div class="cost-bar-track"><div class="cost-bar-fill" style="width:3%"></div></div>
+                        <span class="cost-val">$10</span>
+                    </div>
+                </div>
+                <div class="cost-per-session">
+                    Avg cost per session: <strong>$0.018</strong> &middot; Avg cost per user: <strong>$0.31</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Daily Cost Trend</h3>
+                <span style="font-size:12px;color:var(--g500)">Last 7 days</span>
+            </div>
+            <div class="daily-chart">
+                <div class="daily-bars">
+                    <div class="daily-col">
+                        <div class="daily-bar" style="height:58%"><span class="tip">$10.40</span></div>
+                        <div class="daily-label">Mar 23</div>
+                    </div>
+                    <div class="daily-col">
+                        <div class="daily-bar" style="height:72%"><span class="tip">$12.90</span></div>
+                        <div class="daily-label">Mar 24</div>
+                    </div>
+                    <div class="daily-col">
+                        <div class="daily-bar" style="height:85%"><span class="tip">$15.20</span></div>
+                        <div class="daily-label">Mar 25</div>
+                    </div>
+                    <div class="daily-col">
+                        <div class="daily-bar" style="height:65%"><span class="tip">$11.60</span></div>
+                        <div class="daily-label">Mar 26</div>
+                    </div>
+                    <div class="daily-col">
+                        <div class="daily-bar" style="height:78%"><span class="tip">$13.90</span></div>
+                        <div class="daily-label">Mar 27</div>
+                    </div>
+                    <div class="daily-col">
+                        <div class="daily-bar" style="height:90%"><span class="tip">$16.10</span></div>
+                        <div class="daily-label">Mar 28</div>
+                    </div>
+                    <div class="daily-col">
+                        <div class="daily-bar" style="height:50%;background:var(--kube-blue);opacity:0.6"><span class="tip">$8.90*</span></div>
+                        <div class="daily-label">Today</div>
+                    </div>
+                </div>
+                <div class="daily-avg">7-day avg: <strong>$12.71/day</strong> &middot; projected today: <strong>$13.40</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Event Log ═══ -->
+    <div class="section-title">&#9617; Recent Events</div>
+    <div class="event-log">
+        <div class="event-log-header">
+            <h3>&#9618; Event Stream</h3>
+            <span class="live">LIVE</span>
+        </div>
+        <div class="event-list">
+            <div class="event-line">
+                <span class="event-time">14:32:01</span>
+                <span class="event-level info">INFO</span>
+                <span class="event-msg">Session created: user=<span class="hl">john-doe</span> lab=<span class="val">cka-1.3-rbac</span> tier=3 ns=lab-session-f7a1</span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:30:45</span>
+                <span class="event-level ok"> OK </span>
+                <span class="event-msg">vCluster provisioned: ns=<span class="val">lab-session-f7a1</span> version=<span class="val">1.31</span> ready in <span class="hl">8.2s</span></span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:28:12</span>
+                <span class="event-level warn">WARN</span>
+                <span class="event-msg">Session approaching TTL: user=<span class="hl">alex-murphy</span> duration=<span class="val">50m</span> limit=60m</span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:25:00</span>
+                <span class="event-level info">INFO</span>
+                <span class="event-msg">Node scale-up triggered: <span class="hl">node-3</span> joining pool, reason=pending-pods count=2</span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:22:33</span>
+                <span class="event-level ok"> OK </span>
+                <span class="event-msg">Health check passed: all <span class="val">3</span> nodes healthy, API server latency <span class="val">12ms</span></span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:18:47</span>
+                <span class="event-level info">INFO</span>
+                <span class="event-msg">Session terminated (TTL): user=<span class="hl">jane-smith</span> duration=<span class="val">30m</span> lab=ckad-3.1-configmaps</span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:15:21</span>
+                <span class="event-level info">INFO</span>
+                <span class="event-msg">Session created: user=<span class="hl">maria-ops</span> lab=<span class="val">cks-4.1-network-policy</span> tier=4 ns=lab-session-b2e9</span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:12:05</span>
+                <span class="event-level ok"> OK </span>
+                <span class="event-msg">Cleanup completed: <span class="val">4</span> expired namespaces deleted, <span class="val">2.1GB</span> storage reclaimed</span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:08:39</span>
+                <span class="event-level warn">WARN</span>
+                <span class="event-msg">Node <span class="hl">node-3</span> underutilized: CPU <span class="val">12%</span>, marked as scale-down candidate (cooldown=10m)</span>
+            </div>
+            <div class="event-line">
+                <span class="event-time">14:05:10</span>
+                <span class="event-level err"> ERR</span>
+                <span class="event-msg">Session start failed: user=<span class="hl">test-user</span> reason=<span style="color:var(--danger-red)">quota exceeded</span> &mdash; retried successfully at 14:05:42</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ═══ Footer ═══ -->
+<footer class="footer">
+    <div style="margin-bottom:6px">
+        <strong style="color:var(--g300)">KubeDojo Labs</strong> <span class="sep">|</span>
+        Admin Dashboard v0.4.2 <span class="sep">|</span>
+        Cluster: <span style="color:var(--node-teal)">gke-kubedojo-labs-us-c1</span> <span class="sep">|</span>
+        Kubernetes v1.31.4
+    </div>
+    <div>
+        <a href="https://github.com/kube-dojo">GitHub</a> <span class="sep">|</span>
+        <a href="https://kube-dojo.github.io/">Documentation</a> <span class="sep">|</span>
+        <a href="#">Runbooks</a> <span class="sep">|</span>
+        <a href="#">Grafana</a>
+    </div>
+</footer>
+
+</body>
+</html>

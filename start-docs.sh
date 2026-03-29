@@ -14,7 +14,7 @@ echo "Project: $PROJECT_DIR"
 cd "$PROJECT_DIR"
 
 # Port to use
-PORT=4321
+PORT=4333
 LOG_FILE="/tmp/astro-kubedojo.log"
 
 # Check if port is in use
