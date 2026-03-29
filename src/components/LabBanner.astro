@@ -1,0 +1,180 @@
+---
+/**
+ * LabBanner — Shows a lab launch/complete banner on module pages.
+ *
+ * Usage in frontmatter:
+ * lab:
+ *   id: "cka-2.1-pods"
+ *   url: "https://killercoda.com/kubedojo/scenario/cka-2.1-pods"
+ *   duration: "30 min"
+ *   difficulty: "intermediate"
+ *   environment: "kubernetes"
+ */
+interface Props {
+  id: string;
+  url: string;
+  duration: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  environment: 'ubuntu' | 'kubernetes';
+}
+
+const { id, url, duration, difficulty, environment } = Astro.props;
+
+const difficultyColors: Record<string, { bg: string; text: string }> = {
+  beginner: { bg: '#E8FFF0', text: '#00A651' },
+  intermediate: { bg: '#FFFDE7', text: '#F57F17' },
+  advanced: { bg: '#FFEBEE', text: '#FF1744' },
+};
+
+const envLabels: Record<string, { label: string; bg: string; text: string }> = {
+  ubuntu: { label: 'Ubuntu', bg: '#E8FFF0', text: '#00A651' },
+  kubernetes: { label: 'K8s Cluster', bg: '#EBF1FF', text: '#326CE5' },
+};
+
+const diff = difficultyColors[difficulty] ?? difficultyColors.intermediate;
+const env = envLabels[environment] ?? envLabels.ubuntu;
+---
+
+<div class="lab-banner" data-lab-id={id} data-lab-url={url}>
+  <div class="lab-banner-content">
+    <div class="lab-banner-header">
+      <span class="lab-banner-icon">&#9654;</span>
+      <span class="lab-banner-label">Hands-On Lab Available</span>
+    </div>
+    <div class="lab-banner-badges">
+      <span class="lab-badge" style={`background:${env.bg};color:${env.text}`}>{env.label}</span>
+      <span class="lab-badge" style={`background:${diff.bg};color:${diff.text}`}>{difficulty}</span>
+      <span class="lab-badge" style="background:#F3F4F6;color:#4B5563">{duration}</span>
+    </div>
+    <div class="lab-banner-actions">
+      <a href={url} target="_blank" rel="noopener" class="lab-btn lab-btn-launch" data-lab-launch>
+        Launch Lab &#8599;
+      </a>
+      <button class="lab-btn lab-btn-complete" data-lab-complete style="display:none">
+        Mark Complete &#10003;
+      </button>
+      <span class="lab-completed-msg" data-lab-done style="display:none">
+        &#10003; Completed
+      </span>
+    </div>
+    <p class="lab-banner-note">Opens in Killercoda in a new tab</p>
+  </div>
+</div>
+
+<style>
+  .lab-banner {
+    background: linear-gradient(135deg, #0F172A 0%, #1A3A7A 100%);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin: 1.5rem 0;
+    color: white;
+  }
+  .lab-banner-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .lab-banner-icon {
+    color: #00E676;
+    font-size: 1rem;
+  }
+  .lab-banner-label {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    letter-spacing: -0.2px;
+  }
+  .lab-banner-badges {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+  .lab-badge {
+    padding: 0.2rem 0.625rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  .lab-banner-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .lab-btn {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+  .lab-btn-launch {
+    background: #00E676;
+    color: #0F172A;
+  }
+  .lab-btn-launch:hover {
+    background: #00C853;
+    text-decoration: none;
+    color: #0F172A;
+  }
+  .lab-btn-complete {
+    background: transparent;
+    border: 2px solid #6B7280;
+    color: white;
+  }
+  .lab-btn-complete:hover {
+    border-color: #00E676;
+    color: #00E676;
+  }
+  .lab-completed-msg {
+    color: #00E676;
+    font-weight: 700;
+    font-size: 0.875rem;
+  }
+  .lab-banner-note {
+    margin-top: 0.5rem;
+    font-size: 0.6875rem;
+    color: #9CA3AF;
+  }
+</style>
+
+<script>
+  import { markStarted, markCompleted, getLabStatus } from './LabProgress';
+
+  document.querySelectorAll('.lab-banner').forEach((banner) => {
+    const el = banner as HTMLElement;
+    const labId = el.dataset.labId!;
+    const launchBtn = el.querySelector('[data-lab-launch]') as HTMLAnchorElement;
+    const completeBtn = el.querySelector('[data-lab-complete]') as HTMLButtonElement;
+    const doneMsg = el.querySelector('[data-lab-done]') as HTMLElement;
+
+    // Check current status
+    const status = getLabStatus(labId);
+    if (status?.status === 'completed') {
+      completeBtn.style.display = 'none';
+      doneMsg.style.display = 'inline';
+    } else if (status?.status === 'started') {
+      completeBtn.style.display = 'inline-flex';
+    }
+
+    // Launch button
+    launchBtn.addEventListener('click', () => {
+      markStarted(labId);
+      completeBtn.style.display = 'inline-flex';
+    });
+
+    // Complete button
+    completeBtn.addEventListener('click', () => {
+      markCompleted(labId);
+      completeBtn.style.display = 'none';
+      doneMsg.style.display = 'inline';
+    });
+  });
+</script>
