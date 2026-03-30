@@ -3,6 +3,12 @@ title: "Module 2.1: Pods Deep-Dive"
 slug: k8s/cka/part2-workloads-scheduling/module-2.1-pods
 sidebar:
   order: 2
+lab:
+  id: cka-2.1-pods
+  url: https://killercoda.com/kubedojo/scenario/cka-2.1-pods
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Foundation for all workloads
 >

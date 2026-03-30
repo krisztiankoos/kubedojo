@@ -3,6 +3,12 @@ title: "Module 2.4: Jobs & CronJobs"
 slug: k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs
 sidebar:
   order: 5
+lab:
+  id: cka-2.4-jobs-cronjobs
+  url: https://killercoda.com/kubedojo/scenario/cka-2.4-jobs-cronjobs
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[QUICK]` - Straightforward batch workloads
 >

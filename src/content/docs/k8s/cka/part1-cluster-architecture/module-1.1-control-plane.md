@@ -3,6 +3,12 @@ title: "Module 1.1: Control Plane Deep-Dive"
 slug: k8s/cka/part1-cluster-architecture/module-1.1-control-plane
 sidebar:
   order: 2
+lab:
+  id: cka-1.1-control-plane
+  url: https://killercoda.com/kubedojo/scenario/cka-1.1-control-plane
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual understanding required
 >

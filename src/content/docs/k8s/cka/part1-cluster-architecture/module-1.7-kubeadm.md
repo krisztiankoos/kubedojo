@@ -3,6 +3,12 @@ title: "Module 1.7: kubeadm Basics - Cluster Bootstrap"
 slug: k8s/cka/part1-cluster-architecture/module-1.7-kubeadm
 sidebar:
   order: 8
+lab:
+  id: cka-1.7-kubeadm
+  url: https://killercoda.com/kubedojo/scenario/cka-1.7-kubeadm
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Essential cluster management
 >

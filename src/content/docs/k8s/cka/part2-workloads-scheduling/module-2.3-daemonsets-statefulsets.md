@@ -3,6 +3,12 @@ title: "Module 2.3: DaemonSets & StatefulSets"
 slug: k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets
 sidebar:
   order: 4
+lab:
+  id: cka-2.3-daemonsets-statefulsets
+  url: https://killercoda.com/kubedojo/scenario/cka-2.3-daemonsets-statefulsets
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Specialized workload patterns
 >

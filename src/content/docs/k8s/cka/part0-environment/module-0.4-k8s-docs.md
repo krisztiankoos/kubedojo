@@ -3,6 +3,12 @@ title: "Module 0.4: kubernetes.io Navigation"
 slug: k8s/cka/part0-environment/module-0.4-k8s-docs
 sidebar:
   order: 4
+lab:
+  id: cka-0.4-k8s-docs
+  url: https://killercoda.com/kubedojo/scenario/cka-0.4-k8s-docs
+  duration: "20 min"
+  difficulty: beginner
+  environment: kubernetes
 ---
 > **Complexity**: `[QUICK]` - Know where things are, find them fast
 >

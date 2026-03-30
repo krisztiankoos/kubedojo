@@ -3,6 +3,12 @@ title: "Module 0.5: Exam Strategy - Three-Pass Method"
 slug: k8s/cka/part0-environment/module-0.5-exam-strategy
 sidebar:
   order: 5
+lab:
+  id: cka-0.5-exam-strategy
+  url: https://killercoda.com/kubedojo/scenario/cka-0.5-exam-strategy
+  duration: "15 min"
+  difficulty: beginner
+  environment: ubuntu
 ---
 > **Complexity**: `[QUICK]` - Strategy, not technical skills
 >

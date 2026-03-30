@@ -3,6 +3,12 @@ title: "Module 2.8: Scheduler & Pod Lifecycle Theory"
 slug: k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory
 sidebar:
   order: 9
+lab:
+  id: cka-2.8-scheduler-lifecycle
+  url: https://killercoda.com/kubedojo/scenario/cka-2.8-scheduler-lifecycle
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - High exam yield
 >

@@ -3,6 +3,12 @@ title: "Module 2.5: Resource Management"
 slug: k8s/cka/part2-workloads-scheduling/module-2.5-resource-management
 sidebar:
   order: 6
+lab:
+  id: cka-2.5-resource-management
+  url: https://killercoda.com/kubedojo/scenario/cka-2.5-resource-management
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical for production workloads
 >

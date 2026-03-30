@@ -3,6 +3,12 @@ title: "Module 1.5: CRDs & Operators - Extending Kubernetes"
 slug: k8s/cka/part1-cluster-architecture/module-1.5-crds-operators
 sidebar:
   order: 6
+lab:
+  id: cka-1.5-crds-operators
+  url: https://killercoda.com/kubedojo/scenario/cka-1.5-crds-operators
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - New to CKA 2025
 >

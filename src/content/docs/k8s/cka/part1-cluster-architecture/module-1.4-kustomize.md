@@ -3,6 +3,12 @@ title: "Module 1.4: Kustomize - Template-Free Configuration"
 slug: k8s/cka/part1-cluster-architecture/module-1.4-kustomize
 sidebar:
   order: 5
+lab:
+  id: cka-1.4-kustomize
+  url: https://killercoda.com/kubedojo/scenario/cka-1.4-kustomize
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Essential exam skill for 2025
 >

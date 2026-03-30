@@ -3,6 +3,12 @@ title: "Module 1.2: Extension Interfaces - CNI, CSI, CRI"
 slug: k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces
 sidebar:
   order: 3
+lab:
+  id: cka-1.2-extension-interfaces
+  url: https://killercoda.com/kubedojo/scenario/cka-1.2-extension-interfaces
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Conceptual with some hands-on
 >

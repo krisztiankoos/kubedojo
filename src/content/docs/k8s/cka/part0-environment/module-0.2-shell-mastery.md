@@ -3,6 +3,12 @@ title: "Module 0.2: Shell Mastery"
 slug: k8s/cka/part0-environment/module-0.2-shell-mastery
 sidebar:
   order: 2
+lab:
+  id: cka-0.2-shell-mastery
+  url: https://killercoda.com/kubedojo/scenario/cka-0.2-shell-mastery
+  duration: "30 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Complexity**: `[QUICK]` - Setup once, benefit forever
 >

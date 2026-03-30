@@ -3,6 +3,12 @@ title: "Module 2.9: Workload Autoscaling"
 slug: k8s/cka/part2-workloads-scheduling/module-2.9-autoscaling
 sidebar:
   order: 10
+lab:
+  id: cka-2.9-autoscaling
+  url: https://killercoda.com/kubedojo/scenario/cka-2.9-autoscaling
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - CKA exam topic
 >

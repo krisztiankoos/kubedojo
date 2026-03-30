@@ -3,6 +3,12 @@ title: "Module 0.3: Vim for YAML"
 slug: k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:
   order: 3
+lab:
+  id: cka-0.3-vim-yaml
+  url: https://killercoda.com/kubedojo/scenario/cka-0.3-vim-yaml
+  duration: "25 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Complexity**: `[QUICK]` - Learn 10 commands, use them forever
 >

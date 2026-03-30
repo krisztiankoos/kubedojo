@@ -3,6 +3,12 @@ title: "Module 2.6: Scheduling"
 slug: k8s/cka/part2-workloads-scheduling/module-2.6-scheduling
 sidebar:
   order: 7
+lab:
+  id: cka-2.6-scheduling
+  url: https://killercoda.com/kubedojo/scenario/cka-2.6-scheduling
+  duration: "45 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical exam topic
 >

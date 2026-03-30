@@ -3,6 +3,12 @@ title: "Module 1.3: Helm - Kubernetes Package Manager"
 slug: k8s/cka/part1-cluster-architecture/module-1.3-helm
 sidebar:
   order: 4
+lab:
+  id: cka-1.3-helm
+  url: https://killercoda.com/kubedojo/scenario/cka-1.3-helm
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Essential exam skill for 2025
 >

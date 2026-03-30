@@ -3,6 +3,12 @@ title: "Module 0.1: Cluster Setup"
 slug: k8s/cka/part0-environment/module-0.1-cluster-setup
 sidebar:
   order: 1
+lab:
+  id: cka-0.1-cluster-setup
+  url: https://killercoda.com/kubedojo/scenario/cka-0.1-cluster-setup
+  duration: "30 min"
+  difficulty: beginner
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Takes time but straightforward if you follow steps
 >

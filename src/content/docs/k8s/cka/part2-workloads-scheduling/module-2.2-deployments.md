@@ -3,6 +3,12 @@ title: "Module 2.2: Deployments & ReplicaSets"
 slug: k8s/cka/part2-workloads-scheduling/module-2.2-deployments
 sidebar:
   order: 3
+lab:
+  id: cka-2.2-deployments
+  url: https://killercoda.com/kubedojo/scenario/cka-2.2-deployments
+  duration: "45 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Core exam topic
 >
