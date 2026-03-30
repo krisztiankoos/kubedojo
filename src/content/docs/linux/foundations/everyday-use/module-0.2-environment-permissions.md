@@ -3,6 +3,12 @@ title: "Module 0.2: Environment & Permissions (Who You Are & Where You Are)"
 slug: linux/foundations/everyday-use/module-0.2-environment-permissions
 sidebar:
   order: 3
+lab:
+  id: "linux-0.2-environment-permissions"
+  url: "https://killercoda.com/kubedojo/scenario/linux-0.2-environment-permissions"
+  duration: "30 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 > **Everyday Use** | Complexity: `[QUICK]` | Time: 45 min
 

@@ -3,6 +3,12 @@ title: "Module 3.4: iptables & netfilter"
 slug: linux/foundations/networking/module-3.4-iptables-netfilter
 sidebar:
   order: 5
+lab:
+  id: "linux-3.4-iptables"
+  url: "https://killercoda.com/kubedojo/scenario/linux-3.4-iptables"
+  duration: "45 min"
+  difficulty: "advanced"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[COMPLEX]` | Time: 35-40 min
 

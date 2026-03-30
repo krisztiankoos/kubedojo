@@ -3,6 +3,12 @@ title: "Module 1.3: Filesystem Hierarchy"
 slug: linux/foundations/system-essentials/module-1.3-filesystem-hierarchy
 sidebar:
   order: 4
+lab:
+  id: "linux-1.3-filesystem-hierarchy"
+  url: "https://killercoda.com/kubedojo/scenario/linux-1.3-filesystem-hierarchy"
+  duration: "30 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

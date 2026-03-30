@@ -3,6 +3,12 @@ title: "Module 3.3: Network Namespaces & veth"
 slug: linux/foundations/networking/module-3.3-network-namespaces
 sidebar:
   order: 4
+lab:
+  id: "linux-3.3-network-namespaces"
+  url: "https://killercoda.com/kubedojo/scenario/linux-3.3-network-namespaces"
+  duration: "40 min"
+  difficulty: "advanced"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

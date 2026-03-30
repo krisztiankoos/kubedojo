@@ -3,6 +3,12 @@ title: "Module 1.4: Users & Permissions"
 slug: linux/foundations/system-essentials/module-1.4-users-permissions
 sidebar:
   order: 5
+lab:
+  id: "linux-1.4-users-permissions"
+  url: "https://killercoda.com/kubedojo/scenario/linux-1.4-users-permissions"
+  duration: "30 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

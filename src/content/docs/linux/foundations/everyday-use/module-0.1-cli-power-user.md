@@ -3,6 +3,12 @@ title: "Module 0.1: The CLI Power User (Search & Streams)"
 slug: linux/foundations/everyday-use/module-0.1-cli-power-user
 sidebar:
   order: 2
+lab:
+  id: "linux-0.1-cli-power-user"
+  url: "https://killercoda.com/kubedojo/scenario/linux-0.1-cli-power-user"
+  duration: "30 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 **Complexity:** [QUICK]
 **Time to Complete:** 45 minutes

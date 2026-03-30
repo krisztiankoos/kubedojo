@@ -3,6 +3,12 @@ title: "Module 3.1: TCP/IP Essentials"
 slug: linux/foundations/networking/module-3.1-tcp-ip-essentials
 sidebar:
   order: 2
+lab:
+  id: "linux-3.1-tcp-ip"
+  url: "https://killercoda.com/kubedojo/scenario/linux-3.1-tcp-ip"
+  duration: "35 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

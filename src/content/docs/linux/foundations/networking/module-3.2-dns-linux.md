@@ -3,6 +3,12 @@ title: "Module 3.2: DNS in Linux"
 slug: linux/foundations/networking/module-3.2-dns-linux
 sidebar:
   order: 3
+lab:
+  id: "linux-3.2-dns"
+  url: "https://killercoda.com/kubedojo/scenario/linux-3.2-dns"
+  duration: "30 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

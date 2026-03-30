@@ -3,6 +3,12 @@ title: "Module 0.5: Everyday Networking Tools"
 slug: linux/foundations/everyday-use/module-0.5-networking-tools
 sidebar:
   order: 6
+lab:
+  id: "linux-0.5-networking-tools"
+  url: "https://killercoda.com/kubedojo/scenario/linux-0.5-networking-tools"
+  duration: "35 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 > **Everyday Use** | Complexity: `[QUICK]` | Time: 45 min
 

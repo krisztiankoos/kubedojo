@@ -3,6 +3,12 @@ title: "Module 1.1: Kernel & Architecture"
 slug: linux/foundations/system-essentials/module-1.1-kernel-architecture
 sidebar:
   order: 2
+lab:
+  id: "linux-1.1-kernel-architecture"
+  url: "https://killercoda.com/kubedojo/scenario/linux-1.1-kernel-architecture"
+  duration: "35 min"
+  difficulty: "advanced"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

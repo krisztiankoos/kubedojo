@@ -3,6 +3,12 @@ title: "Module 1.2: Processes & systemd"
 slug: linux/foundations/system-essentials/module-1.2-processes-systemd
 sidebar:
   order: 3
+lab:
+  id: "linux-1.2-processes-systemd"
+  url: "https://killercoda.com/kubedojo/scenario/linux-1.2-processes-systemd"
+  duration: "35 min"
+  difficulty: "intermediate"
+  environment: "ubuntu"
 ---
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 
