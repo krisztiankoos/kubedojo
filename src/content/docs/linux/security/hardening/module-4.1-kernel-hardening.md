@@ -3,6 +3,12 @@ title: "Module 4.1: Kernel Hardening & sysctl"
 slug: linux/security/hardening/module-4.1-kernel-hardening
 sidebar:
   order: 2
+lab:
+  id: "linux-4.1-kernel-hardening"
+  url: "https://killercoda.com/kubedojo/scenario/linux-4.1-kernel-hardening"
+  duration: "35 min"
+  difficulty: "advanced"
+  environment: "ubuntu"
 ---
 > **Linux Security** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

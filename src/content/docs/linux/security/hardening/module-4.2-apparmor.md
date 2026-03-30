@@ -3,6 +3,12 @@ title: "Module 4.2: AppArmor Profiles"
 slug: linux/security/hardening/module-4.2-apparmor
 sidebar:
   order: 3
+lab:
+  id: "linux-4.2-apparmor"
+  url: "https://killercoda.com/kubedojo/scenario/linux-4.2-apparmor"
+  duration: "35 min"
+  difficulty: "advanced"
+  environment: "ubuntu"
 ---
 > **Linux Security** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

@@ -3,6 +3,12 @@ title: "Module 4.3: SELinux Contexts"
 slug: linux/security/hardening/module-4.3-selinux
 sidebar:
   order: 4
+lab:
+  id: "linux-4.3-selinux"
+  url: "https://killercoda.com/kubedojo/scenario/linux-4.3-selinux"
+  duration: "40 min"
+  difficulty: "advanced"
+  environment: "ubuntu"
 ---
 > **Linux Security** | Complexity: `[COMPLEX]` | Time: 35-40 min
 

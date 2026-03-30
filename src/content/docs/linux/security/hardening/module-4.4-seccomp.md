@@ -3,6 +3,12 @@ title: "Module 4.4: seccomp Profiles"
 slug: linux/security/hardening/module-4.4-seccomp
 sidebar:
   order: 5
+lab:
+  id: "linux-4.4-seccomp"
+  url: "https://killercoda.com/kubedojo/scenario/linux-4.4-seccomp"
+  duration: "30 min"
+  difficulty: "advanced"
+  environment: "ubuntu"
 ---
 > **Linux Security** | Complexity: `[MEDIUM]` | Time: 25-30 min
 
