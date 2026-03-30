@@ -3,6 +3,12 @@ title: "Module 5.6: Service Troubleshooting"
 slug: k8s/cka/part5-troubleshooting/module-5.6-services
 sidebar:
   order: 7
+lab:
+  id: cka-5.6-services
+  url: https://killercoda.com/kubedojo/scenario/cka-5.6-services
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical for application access
 >

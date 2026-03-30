@@ -3,6 +3,12 @@ title: "Module 3.5: Gateway API"
 slug: k8s/cka/part3-services-networking/module-3.5-gateway-api
 sidebar:
   order: 6
+lab:
+  id: cka-3.5-gateway-api
+  url: https://killercoda.com/kubedojo/scenario/cka-3.5-gateway-api
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - CKA exam topic
 >

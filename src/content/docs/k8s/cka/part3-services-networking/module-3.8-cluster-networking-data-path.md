@@ -3,6 +3,12 @@ title: "Module 3.8: Cluster Networking Data Path"
 slug: k8s/cka/part3-services-networking/module-3.8-cluster-networking-data-path
 sidebar:
   order: 9
+lab:
+  id: cka-3.8-cluster-networking
+  url: https://killercoda.com/kubedojo/scenario/cka-3.8-cluster-networking
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Core troubleshooting topic
 >

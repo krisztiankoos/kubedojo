@@ -3,6 +3,12 @@ title: "Module 4.2: PersistentVolumes & PersistentVolumeClaims"
 slug: k8s/cka/part4-storage/module-4.2-pv-pvc
 sidebar:
   order: 3
+lab:
+  id: cka-4.2-pv-pvc
+  url: https://killercoda.com/kubedojo/scenario/cka-4.2-pv-pvc
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Core storage abstraction
 >

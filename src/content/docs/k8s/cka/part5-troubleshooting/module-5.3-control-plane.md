@@ -3,6 +3,12 @@ title: "Module 5.3: Control Plane Failures"
 slug: k8s/cka/part5-troubleshooting/module-5.3-control-plane
 sidebar:
   order: 4
+lab:
+  id: cka-5.3-control-plane
+  url: https://killercoda.com/kubedojo/scenario/cka-5.3-control-plane
+  duration: "45 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[COMPLEX]` - Critical infrastructure troubleshooting
 >

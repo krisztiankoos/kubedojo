@@ -3,6 +3,12 @@ title: "Module 3.2: Endpoints & EndpointSlices"
 slug: k8s/cka/part3-services-networking/module-3.2-endpoints
 sidebar:
   order: 3
+lab:
+  id: cka-3.2-endpoints
+  url: https://killercoda.com/kubedojo/scenario/cka-3.2-endpoints
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Understanding service mechanics
 >

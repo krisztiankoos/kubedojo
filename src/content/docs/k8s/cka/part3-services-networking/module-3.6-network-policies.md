@@ -3,6 +3,12 @@ title: "Module 3.6: Network Policies"
 slug: k8s/cka/part3-services-networking/module-3.6-network-policies
 sidebar:
   order: 7
+lab:
+  id: cka-3.6-network-policies
+  url: https://killercoda.com/kubedojo/scenario/cka-3.6-network-policies
+  duration: "45 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Pod-level firewalling
 >

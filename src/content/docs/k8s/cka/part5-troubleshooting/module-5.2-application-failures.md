@@ -3,6 +3,12 @@ title: "Module 5.2: Application Failures"
 slug: k8s/cka/part5-troubleshooting/module-5.2-application-failures
 sidebar:
   order: 3
+lab:
+  id: cka-5.2-application-failures
+  url: https://killercoda.com/kubedojo/scenario/cka-5.2-application-failures
+  duration: "45 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Most common troubleshooting scenarios
 >

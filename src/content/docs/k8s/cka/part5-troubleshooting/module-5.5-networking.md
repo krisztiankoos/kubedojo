@@ -3,6 +3,12 @@ title: "Module 5.5: Network Troubleshooting"
 slug: k8s/cka/part5-troubleshooting/module-5.5-networking
 sidebar:
   order: 6
+lab:
+  id: cka-5.5-networking
+  url: https://killercoda.com/kubedojo/scenario/cka-5.5-networking
+  duration: "45 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[COMPLEX]` - Multiple layers to debug
 >

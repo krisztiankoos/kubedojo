@@ -3,6 +3,12 @@ title: "Module 4.5: Storage Troubleshooting"
 slug: k8s/cka/part4-storage/module-4.5-troubleshooting
 sidebar:
   order: 6
+lab:
+  id: cka-4.5-troubleshooting
+  url: https://killercoda.com/kubedojo/scenario/cka-4.5-troubleshooting
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Diagnosing and fixing storage issues
 >

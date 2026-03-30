@@ -3,6 +3,12 @@ title: "Module 5.1: Troubleshooting Methodology"
 slug: k8s/cka/part5-troubleshooting/module-5.1-methodology
 sidebar:
   order: 2
+lab:
+  id: cka-5.1-methodology
+  url: https://killercoda.com/kubedojo/scenario/cka-5.1-methodology
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Foundation for all troubleshooting
 >

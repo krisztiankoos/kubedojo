@@ -3,6 +3,12 @@ title: "Module 4.3: StorageClasses & Dynamic Provisioning"
 slug: k8s/cka/part4-storage/module-4.3-storageclasses
 sidebar:
   order: 4
+lab:
+  id: cka-4.3-storageclasses
+  url: https://killercoda.com/kubedojo/scenario/cka-4.3-storageclasses
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Automation of storage provisioning
 >

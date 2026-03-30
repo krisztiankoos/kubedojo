@@ -3,6 +3,12 @@ title: "Module 3.3: DNS & CoreDNS"
 slug: k8s/cka/part3-services-networking/module-3.3-dns
 sidebar:
   order: 4
+lab:
+  id: cka-3.3-dns
+  url: https://killercoda.com/kubedojo/scenario/cka-3.3-dns
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical infrastructure component
 >

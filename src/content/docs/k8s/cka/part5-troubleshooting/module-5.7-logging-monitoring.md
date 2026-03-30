@@ -3,6 +3,12 @@ title: "Module 5.7: Logging & Monitoring"
 slug: k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring
 sidebar:
   order: 8
+lab:
+  id: cka-5.7-logging-monitoring
+  url: https://killercoda.com/kubedojo/scenario/cka-5.7-logging-monitoring
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Essential observability skills
 >

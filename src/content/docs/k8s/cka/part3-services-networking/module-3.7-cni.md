@@ -3,6 +3,12 @@ title: "Module 3.7: CNI & Cluster Networking"
 slug: k8s/cka/part3-services-networking/module-3.7-cni
 sidebar:
   order: 8
+lab:
+  id: cka-3.7-cni
+  url: https://killercoda.com/kubedojo/scenario/cka-3.7-cni
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Understanding network infrastructure
 >

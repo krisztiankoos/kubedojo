@@ -3,6 +3,12 @@ title: "Module 3.4: Ingress"
 slug: k8s/cka/part3-services-networking/module-3.4-ingress
 sidebar:
   order: 5
+lab:
+  id: cka-3.4-ingress
+  url: https://killercoda.com/kubedojo/scenario/cka-3.4-ingress
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - HTTP/HTTPS routing
 >

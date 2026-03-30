@@ -3,6 +3,12 @@ title: "Module 4.1: Volumes"
 slug: k8s/cka/part4-storage/module-4.1-volumes
 sidebar:
   order: 2
+lab:
+  id: cka-4.1-volumes
+  url: https://killercoda.com/kubedojo/scenario/cka-4.1-volumes
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Foundation for all storage concepts
 >

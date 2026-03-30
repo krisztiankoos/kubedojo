@@ -3,6 +3,12 @@ title: "Module 4.4: Volume Snapshots & Cloning"
 slug: k8s/cka/part4-storage/module-4.4-snapshots
 sidebar:
   order: 5
+lab:
+  id: cka-4.4-snapshots
+  url: https://killercoda.com/kubedojo/scenario/cka-4.4-snapshots
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Data protection and cloning
 >
