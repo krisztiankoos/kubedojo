@@ -3,6 +3,12 @@ title: "Module 5.4: I/O Performance"
 slug: linux/operations/performance/module-5.4-io-performance
 sidebar:
   order: 5
+lab:
+  id: linux-5.4-io-performance
+  url: https://killercoda.com/kubedojo/scenario/linux-5.4-io-performance
+  duration: "30 min"
+  difficulty: advanced
+  environment: ubuntu
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

@@ -3,6 +3,12 @@ title: "Module 7.1: Bash Fundamentals"
 slug: linux/operations/shell-scripting/module-7.1-bash-fundamentals
 sidebar:
   order: 2
+lab:
+  id: linux-7.1-bash-fundamentals
+  url: https://killercoda.com/kubedojo/scenario/linux-7.1-bash-fundamentals
+  duration: "35 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Shell Scripting** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

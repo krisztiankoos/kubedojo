@@ -3,6 +3,12 @@ title: "Module 6.4: Network Debugging"
 slug: linux/operations/troubleshooting/module-6.4-network-debugging
 sidebar:
   order: 5
+lab:
+  id: linux-6.4-network-debugging
+  url: https://killercoda.com/kubedojo/scenario/linux-6.4-network-debugging
+  duration: "35 min"
+  difficulty: advanced
+  environment: ubuntu
 ---
 > **Linux Troubleshooting** | Complexity: `[COMPLEX]` | Time: 30-35 min
 

@@ -3,6 +3,12 @@ title: "Module 7.3: Practical Scripts"
 slug: linux/operations/shell-scripting/module-7.3-practical-scripts
 sidebar:
   order: 4
+lab:
+  id: linux-7.3-practical-scripts
+  url: https://killercoda.com/kubedojo/scenario/linux-7.3-practical-scripts
+  duration: "30 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Shell Scripting** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

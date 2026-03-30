@@ -3,6 +3,12 @@ title: "Module 8.3: Package Management & User Administration"
 slug: linux/operations/module-8.3-package-user-management
 sidebar:
   order: 3
+lab:
+  id: linux-8.3-package-user-management
+  url: https://killercoda.com/kubedojo/scenario/linux-8.3-package-user-management
+  duration: "30 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Operations — LFCS** | Complexity: `[MEDIUM]` | Time: 40-50 min
 

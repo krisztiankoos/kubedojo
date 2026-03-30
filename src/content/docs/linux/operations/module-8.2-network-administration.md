@@ -3,6 +3,12 @@ title: "Module 8.2: Network Administration"
 slug: linux/operations/module-8.2-network-administration
 sidebar:
   order: 2
+lab:
+  id: linux-8.2-network-administration
+  url: https://killercoda.com/kubedojo/scenario/linux-8.2-network-administration
+  duration: "35 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Operations — LFCS** | Complexity: `[COMPLEX]` | Time: 45-55 min
 

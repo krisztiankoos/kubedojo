@@ -3,6 +3,12 @@ title: "Module 8.4: Task Scheduling and Backup Strategies"
 slug: linux/operations/module-8.4-scheduling-backups
 sidebar:
   order: 4
+lab:
+  id: linux-8.4-scheduling-backups
+  url: https://killercoda.com/kubedojo/scenario/linux-8.4-scheduling-backups
+  duration: "30 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Operations — LFCS** | Complexity: `[COMPLEX]` | Time: 45-55 min
 

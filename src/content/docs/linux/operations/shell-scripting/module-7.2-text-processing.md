@@ -3,6 +3,12 @@ title: "Module 7.2: Text Processing"
 slug: linux/operations/shell-scripting/module-7.2-text-processing
 sidebar:
   order: 3
+lab:
+  id: linux-7.2-text-processing
+  url: https://killercoda.com/kubedojo/scenario/linux-7.2-text-processing
+  duration: "35 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Shell Scripting** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

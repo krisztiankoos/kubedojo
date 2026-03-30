@@ -3,6 +3,12 @@ title: "Module 5.1: USE Method"
 slug: linux/operations/performance/module-5.1-use-method
 sidebar:
   order: 2
+lab:
+  id: linux-5.1-use-method
+  url: https://killercoda.com/kubedojo/scenario/linux-5.1-use-method
+  duration: "30 min"
+  difficulty: advanced
+  environment: ubuntu
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

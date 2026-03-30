@@ -3,6 +3,12 @@ title: "Module 5.2: CPU & Scheduling"
 slug: linux/operations/performance/module-5.2-cpu-scheduling
 sidebar:
   order: 3
+lab:
+  id: linux-5.2-cpu-scheduling
+  url: https://killercoda.com/kubedojo/scenario/linux-5.2-cpu-scheduling
+  duration: "35 min"
+  difficulty: advanced
+  environment: ubuntu
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

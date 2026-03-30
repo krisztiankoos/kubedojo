@@ -3,6 +3,12 @@ title: "Module 6.3: Process Debugging"
 slug: linux/operations/troubleshooting/module-6.3-process-debugging
 sidebar:
   order: 4
+lab:
+  id: linux-6.3-process-debugging
+  url: https://killercoda.com/kubedojo/scenario/linux-6.3-process-debugging
+  duration: "35 min"
+  difficulty: advanced
+  environment: ubuntu
 ---
 > **Linux Troubleshooting** | Complexity: `[COMPLEX]` | Time: 30-35 min
 

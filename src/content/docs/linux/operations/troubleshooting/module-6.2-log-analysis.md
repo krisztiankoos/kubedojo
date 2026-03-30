@@ -3,6 +3,12 @@ title: "Module 6.2: Log Analysis"
 slug: linux/operations/troubleshooting/module-6.2-log-analysis
 sidebar:
   order: 3
+lab:
+  id: linux-6.2-log-analysis
+  url: https://killercoda.com/kubedojo/scenario/linux-6.2-log-analysis
+  duration: "30 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Linux Troubleshooting** | Complexity: `[MEDIUM]` | Time: 25-30 min
 

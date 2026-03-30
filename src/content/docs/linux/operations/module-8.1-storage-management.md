@@ -3,6 +3,12 @@ title: "Module 8.1: Storage Management"
 slug: linux/operations/module-8.1-storage-management
 sidebar:
   order: 1
+lab:
+  id: linux-8.1-storage-management
+  url: https://killercoda.com/kubedojo/scenario/linux-8.1-storage-management
+  duration: "35 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Operations — LFCS** | Complexity: `[COMPLEX]` | Time: 45-55 min
 

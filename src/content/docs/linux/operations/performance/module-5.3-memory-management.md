@@ -3,6 +3,12 @@ title: "Module 5.3: Memory Management"
 slug: linux/operations/performance/module-5.3-memory-management
 sidebar:
   order: 4
+lab:
+  id: linux-5.3-memory-management
+  url: https://killercoda.com/kubedojo/scenario/linux-5.3-memory-management
+  duration: "35 min"
+  difficulty: advanced
+  environment: ubuntu
 ---
 > **Linux Performance** | Complexity: `[MEDIUM]` | Time: 30-35 min
 

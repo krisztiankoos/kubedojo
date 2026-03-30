@@ -3,6 +3,12 @@ title: "Module 7.4: DevOps Automation"
 slug: linux/operations/shell-scripting/module-7.4-devops-automation
 sidebar:
   order: 5
+lab:
+  id: linux-7.4-devops-automation
+  url: https://killercoda.com/kubedojo/scenario/linux-7.4-devops-automation
+  duration: "35 min"
+  difficulty: advanced
+  environment: ubuntu
 ---
 > **Shell Scripting** | Complexity: `[MEDIUM]` | Time: 30-35 min
 
