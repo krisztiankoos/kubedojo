@@ -175,6 +175,33 @@ const env = envLabels[environment] ?? envLabels.ubuntu;
       markCompleted(labId);
       completeBtn.style.display = 'none';
       doneMsg.style.display = 'inline';
+      // Update reminder too
+      const reminderDone = document.querySelector('.lab-reminder [data-lab-done]') as HTMLElement;
+      const reminderBtn = document.querySelector('.lab-reminder [data-lab-complete]') as HTMLElement;
+      if (reminderDone) reminderDone.style.display = 'inline';
+      if (reminderBtn) reminderBtn.style.display = 'none';
     });
+
+    // Inject lab reminder before pagination (prev/next)
+    const pagination = document.querySelector('.sl-pagination, .pagination-links, nav[aria-label="Pagination"]');
+    if (pagination && labId) {
+      const status = getLabStatus(labId);
+      const labUrl = el.dataset.labUrl;
+      const isCompleted = status?.status === 'completed';
+      const reminder = document.createElement('div');
+      reminder.className = 'lab-reminder';
+      reminder.innerHTML = `
+        <div style="background:#EBF1FF;border:1px solid #326CE5;border-radius:12px;padding:1rem 1.25rem;margin:2rem 0 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <span style="font-size:1.25rem">&#9654;</span>
+          <div style="flex:1">
+            <strong style="color:#1A3A7A">Ready to practice?</strong>
+            <span style="color:#4B5563;font-size:0.875rem"> Launch the hands-on lab for this module.</span>
+          </div>
+          <a href="${labUrl}" target="_blank" rel="noopener" style="background:#326CE5;color:white;padding:0.4rem 1rem;border-radius:8px;font-size:0.8125rem;font-weight:600;text-decoration:none;display:${isCompleted ? 'none' : 'inline-flex'};align-items:center;gap:0.25rem" data-lab-launch>Launch Lab &#8599;</a>
+          <span data-lab-complete style="display:none;background:transparent;border:1px solid #9CA3AF;color:#374151;padding:0.4rem 1rem;border-radius:8px;font-size:0.8125rem;font-weight:600;cursor:pointer">Mark Complete</span>
+          <span data-lab-done style="display:${isCompleted ? 'inline' : 'none'};color:#00A651;font-weight:700;font-size:0.8125rem">&#10003; Completed</span>
+        </div>`;
+      pagination.parentNode?.insertBefore(reminder, pagination);
+    }
   });
 </script>

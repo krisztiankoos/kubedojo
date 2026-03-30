@@ -1,14 +1,27 @@
 ---
 /**
- * Custom PageTitle — breadcrumbs + title + lab banner
+ * Custom PageTitle — breadcrumbs + title + lab banner + progress bar on index pages
  */
 import type { Props } from '@astrojs/starlight/props';
 import LabBanner from './LabBanner.astro';
+import LabProgressBar from './LabProgressBar.astro';
 const PAGE_TITLE_ID = '_top';
 const route = Astro.locals.starlightRoute;
 const title = route.entry.data.title;
 const lab = (route.entry.data as any).lab;
+
+// Lab progress bars for index pages — prefix → total labs in that section
+const labTrackMap: Record<string, { prefix: string; total: number }> = {
+  'prerequisites/zero-to-terminal': { prefix: 'prereq-0.', total: 5 },
+  'prerequisites/kubernetes-basics': { prefix: 'prereq-k8s-', total: 5 },
+};
 const slug = route.slug || '';
+
+// Use URL pathname to detect index pages (slug can be empty for index pages)
+const pathname = Astro.url.pathname.replace(/^\/uk/, '').replace(/^\/|\/$/g, '');
+const isModulePage = pathname.includes('/module-');
+const trackKey = Object.keys(labTrackMap).find(k => pathname.includes(k));
+const labTrack = !isModulePage && trackKey ? labTrackMap[trackKey] : null;
 const isUk = Astro.url.pathname.startsWith('/uk/') || Astro.url.pathname === '/uk';
 // Strip 'uk/' prefix from parts so breadcrumbs work the same way
 const rawParts = slug.split('/').filter(Boolean);
@@ -62,6 +75,10 @@ if (parts.length > 1) {
   </nav>
 )}
 <h1 id={PAGE_TITLE_ID} class="kd-title">{title}</h1>
+
+{labTrack && (
+  <LabProgressBar prefix={labTrack.prefix} total={labTrack.total} />
+)}
 
 {lab && (
   <LabBanner
