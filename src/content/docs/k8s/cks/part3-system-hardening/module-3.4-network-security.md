@@ -3,6 +3,12 @@ title: "Module 3.4: Host Network Security"
 slug: k8s/cks/part3-system-hardening/module-3.4-network-security
 sidebar:
   order: 4
+lab:
+  id: cks-3.4-network-security
+  url: https://killercoda.com/kubedojo/scenario/cks-3.4-network-security
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Network administration with security focus
 >

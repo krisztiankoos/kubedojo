@@ -3,6 +3,12 @@ title: "Module 5.4: Admission Controllers"
 slug: k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers
 sidebar:
   order: 4
+lab:
+  id: cks-5.4-admission-controllers
+  url: https://killercoda.com/kubedojo/scenario/cks-5.4-admission-controllers
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS topic
 >

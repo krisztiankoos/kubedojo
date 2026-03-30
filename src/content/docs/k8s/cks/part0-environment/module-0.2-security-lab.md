@@ -3,6 +3,12 @@ title: "Module 0.2: Security Lab Setup"
 slug: k8s/cks/part0-environment/module-0.2-security-lab
 sidebar:
   order: 2
+lab:
+  id: cks-0.2-security-lab
+  url: https://killercoda.com/kubedojo/scenario/cks-0.2-security-lab
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Multiple tools to install
 >

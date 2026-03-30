@@ -3,6 +3,12 @@ title: "Module 3.3: Linux Kernel and OS Hardening"
 slug: k8s/cks/part3-system-hardening/module-3.3-kernel-hardening
 sidebar:
   order: 3
+lab:
+  id: cks-3.3-kernel-hardening
+  url: https://killercoda.com/kubedojo/scenario/cks-3.3-kernel-hardening
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - System administration with security focus
 >

@@ -3,6 +3,12 @@ title: "Module 6.4: Immutable Infrastructure"
 slug: k8s/cks/part6-runtime-security/module-6.4-immutable-infrastructure
 sidebar:
   order: 4
+lab:
+  id: cks-6.4-immutable-infrastructure
+  url: https://killercoda.com/kubedojo/scenario/cks-6.4-immutable-infrastructure
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Security architecture
 >

@@ -3,6 +3,12 @@ title: "Module 5.3: Static Analysis with kubesec and OPA"
 slug: k8s/cks/part5-supply-chain-security/module-5.3-static-analysis
 sidebar:
   order: 3
+lab:
+  id: cks-5.3-static-analysis
+  url: https://killercoda.com/kubedojo/scenario/cks-5.3-static-analysis
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Security tooling
 >

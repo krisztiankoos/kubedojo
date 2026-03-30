@@ -3,6 +3,12 @@ title: "Module 6.1: Kubernetes Audit Logging"
 slug: k8s/cks/part6-runtime-security/module-6.1-audit-logging
 sidebar:
   order: 1
+lab:
+  id: cks-6.1-audit-logging
+  url: https://killercoda.com/kubedojo/scenario/cks-6.1-audit-logging
+  duration: "45 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS skill
 >

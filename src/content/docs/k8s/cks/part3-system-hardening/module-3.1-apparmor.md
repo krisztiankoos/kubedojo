@@ -3,6 +3,12 @@ title: "Module 3.1: AppArmor for Containers"
 slug: k8s/cks/part3-system-hardening/module-3.1-apparmor
 sidebar:
   order: 1
+lab:
+  id: cks-3.1-apparmor
+  url: https://killercoda.com/kubedojo/scenario/cks-3.1-apparmor
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Linux security essential
 >

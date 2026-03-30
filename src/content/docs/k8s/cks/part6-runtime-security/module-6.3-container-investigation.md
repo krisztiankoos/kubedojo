@@ -3,6 +3,12 @@ title: "Module 6.3: Container Investigation"
 slug: k8s/cks/part6-runtime-security/module-6.3-container-investigation
 sidebar:
   order: 3
+lab:
+  id: cks-6.3-container-investigation
+  url: https://killercoda.com/kubedojo/scenario/cks-6.3-container-investigation
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Incident response skills
 >

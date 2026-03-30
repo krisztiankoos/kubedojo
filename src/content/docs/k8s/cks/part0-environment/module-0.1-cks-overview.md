@@ -3,6 +3,12 @@ title: "Module 0.1: CKS Exam Overview"
 slug: k8s/cks/part0-environment/module-0.1-cks-overview
 sidebar:
   order: 1
+lab:
+  id: cks-0.1-cks-overview
+  url: https://killercoda.com/kubedojo/scenario/cks-0.1-cks-overview
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[QUICK]` - Essential orientation
 >

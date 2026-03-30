@@ -3,6 +3,12 @@ title: "Module 2.5: Restricting API Access"
 slug: k8s/cks/part2-cluster-hardening/module-2.5-restricting-api-access
 sidebar:
   order: 5
+lab:
+  id: cks-2.5-restricting-api-access
+  url: https://killercoda.com/kubedojo/scenario/cks-2.5-restricting-api-access
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Essential for cluster security
 >

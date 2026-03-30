@@ -3,6 +3,12 @@ title: "Module 6.2: Runtime Security with Falco"
 slug: k8s/cks/part6-runtime-security/module-6.2-falco
 sidebar:
   order: 2
+lab:
+  id: cks-6.2-falco
+  url: https://killercoda.com/kubedojo/scenario/cks-6.2-falco
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS skill
 >

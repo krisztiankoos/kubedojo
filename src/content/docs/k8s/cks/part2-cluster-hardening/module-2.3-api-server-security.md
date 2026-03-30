@@ -3,6 +3,12 @@ title: "Module 2.3: API Server Security"
 slug: k8s/cks/part2-cluster-hardening/module-2.3-api-server-security
 sidebar:
   order: 3
+lab:
+  id: cks-2.3-api-server-security
+  url: https://killercoda.com/kubedojo/scenario/cks-2.3-api-server-security
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[COMPLEX]` - Critical infrastructure component
 >

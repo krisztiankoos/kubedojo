@@ -3,6 +3,12 @@ title: "Module 0.4: CKS Exam Strategy"
 slug: k8s/cks/part0-environment/module-0.4-exam-strategy
 sidebar:
   order: 4
+lab:
+  id: cks-0.4-exam-strategy
+  url: https://killercoda.com/kubedojo/scenario/cks-0.4-exam-strategy
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[QUICK]` - Critical for exam success
 >

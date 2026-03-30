@@ -3,6 +3,12 @@ title: "Module 0.3: Security Tool Mastery"
 slug: k8s/cks/part0-environment/module-0.3-security-tools
 sidebar:
   order: 3
+lab:
+  id: cks-0.3-security-tools
+  url: https://killercoda.com/kubedojo/scenario/cks-0.3-security-tools
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Essential exam tools
 >

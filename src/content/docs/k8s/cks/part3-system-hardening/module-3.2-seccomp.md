@@ -3,6 +3,12 @@ title: "Module 3.2: Seccomp Profiles"
 slug: k8s/cks/part3-system-hardening/module-3.2-seccomp
 sidebar:
   order: 2
+lab:
+  id: cks-3.2-seccomp
+  url: https://killercoda.com/kubedojo/scenario/cks-3.2-seccomp
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - System-level security
 >

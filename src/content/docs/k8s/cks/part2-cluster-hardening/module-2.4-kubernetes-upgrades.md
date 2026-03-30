@@ -3,6 +3,12 @@ title: "Module 2.4: Kubernetes Security Upgrades"
 slug: k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades
 sidebar:
   order: 4
+lab:
+  id: cks-2.4-kubernetes-upgrades
+  url: https://killercoda.com/kubedojo/scenario/cks-2.4-kubernetes-upgrades
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - CKA refresher with security focus
 >

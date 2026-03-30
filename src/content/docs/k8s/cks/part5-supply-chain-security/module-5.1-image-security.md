@@ -3,6 +3,12 @@ title: "Module 5.1: Container Image Security"
 slug: k8s/cks/part5-supply-chain-security/module-5.1-image-security
 sidebar:
   order: 1
+lab:
+  id: cks-5.1-image-security
+  url: https://killercoda.com/kubedojo/scenario/cks-5.1-image-security
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Core CKS skill
 >

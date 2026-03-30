@@ -3,6 +3,12 @@ title: "Module 4.3: Secrets Management"
 slug: k8s/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management
 sidebar:
   order: 3
+lab:
+  id: cks-4.3-secrets-management
+  url: https://killercoda.com/kubedojo/scenario/cks-4.3-secrets-management
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Critical CKS skill
 >

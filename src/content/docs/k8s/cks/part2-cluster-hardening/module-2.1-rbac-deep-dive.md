@@ -3,6 +3,12 @@ title: "Module 2.1: RBAC Deep Dive"
 slug: k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive
 sidebar:
   order: 1
+lab:
+  id: cks-2.1-rbac-deep-dive
+  url: https://killercoda.com/kubedojo/scenario/cks-2.1-rbac-deep-dive
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Core security skill
 >

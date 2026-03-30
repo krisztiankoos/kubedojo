@@ -3,6 +3,12 @@ title: "Module 4.2: Pod Security Admission (PSA)"
 slug: k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission
 sidebar:
   order: 2
+lab:
+  id: cks-4.2-pod-security-admission
+  url: https://killercoda.com/kubedojo/scenario/cks-4.2-pod-security-admission
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Core CKS skill
 >

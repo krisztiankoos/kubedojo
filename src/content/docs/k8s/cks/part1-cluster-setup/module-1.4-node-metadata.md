@@ -3,6 +3,12 @@ title: "Module 1.4: Node Metadata Protection"
 slug: k8s/cks/part1-cluster-setup/module-1.4-node-metadata
 sidebar:
   order: 4
+lab:
+  id: cks-1.4-node-metadata
+  url: https://killercoda.com/kubedojo/scenario/cks-1.4-node-metadata
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Complexity**: `[MEDIUM]` - Cloud-specific security critical skill
 >
