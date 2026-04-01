@@ -50,11 +50,11 @@ if git rev-parse --git-dir > /dev/null 2>&1; then
     fi
 fi
 
-# Deploy Claude extensions (always run to ensure up-to-date)
-if [ -f "claude_extensions/deploy.sh" ]; then
-    echo "Checking Claude extensions..."
-    bash claude_extensions/deploy.sh --quiet
-    echo "Extensions deployed"
+# Deploy Claude skills (always run to ensure up-to-date)
+if [ -f "package.json" ] && grep -q "claude:deploy" package.json 2>/dev/null; then
+    echo "Checking Claude skills..."
+    npm run claude:deploy --silent 2>/dev/null || true
+    echo "Skills deployed"
 fi
 
 # Show KubeDojo status (dynamically from STATUS.md)
@@ -101,25 +101,7 @@ fi
 
 echo ""
 
-# Try to update Claude
-echo "Checking for Claude updates..."
-claude install 2>/dev/null || true
-
-# Refresh command cache after potential update
-hash -r 2>/dev/null || true
-
-# Start Claude (use command -v to get actual path, avoiding stale cache)
-echo "Launching Claude Code in bypassPermissions mode..."
-CLAUDE_BIN="$(command -v claude)"
-if [ -z "$CLAUDE_BIN" ]; then
-    # Fallback to common install locations
-    if [ -x "$HOME/.local/bin/claude" ]; then
-        CLAUDE_BIN="$HOME/.local/bin/claude"
-    elif [ -x "/opt/homebrew/bin/claude" ]; then
-        CLAUDE_BIN="/opt/homebrew/bin/claude"
-    else
-        echo "Error: Cannot find claude binary after update"
-        exit 1
-    fi
-fi
-"$CLAUDE_BIN" --chrome --permission-mode bypassPermissions "$@"
+# Launch via npx to avoid cache bugs (stale binary + prompt caching issues)
+# See: https://reddit.com/r/ClaudeAI/comments/1s7mkn3/
+echo "Launching Claude Code via npx (cache-safe)..."
+npx @anthropic-ai/claude-code --chrome --permission-mode bypassPermissions "$@"
