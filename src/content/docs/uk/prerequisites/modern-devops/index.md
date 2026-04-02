@@ -9,9 +9,9 @@ sidebar:
 
 | # | Модуль | Опис |
 |---|--------|------|
-| 1 | [Infrastructure as Code](module-1-infrastructure-as-code/) | Керування інфраструктурою через код, а не кліки |
-| 2 | [GitOps](module-2-gitops/) | Git як єдине джерело істини |
-| 3 | [CI/CD Pipelines](module-3-cicd-pipelines/) | Автоматизація збірки, тестування та розгортання |
-| 4 | [Основи спостережуваності](module-4-observability/) | Логи, метрики та трейси |
-| 5 | [Концепції Platform Engineering](module-5-platform-engineering/) | Побудова внутрішніх платформ для розробників |
-| 6 | [Практики безпеки (DevSecOps)](module-6-devsecops/) | Зсув безпеки вліво |
+| 1.1 | [Інфраструктура як код (IaC)](module-1.1-infrastructure-as-code/) | Керування інфраструктурою через код, а не кліки |
+| 1.2 | [GitOps](module-1.2-gitops/) | Git як єдине джерело істини |
+| 1.3 | [CI/CD пайплайни](module-1.3-cicd-pipelines/) | Автоматизація збірки, тестування та розгортання |
+| 1.4 | [Основи спостережуваності](module-1.4-observability/) | Логи, метрики та траси |
+| 1.5 | [Концепції платформної інженерії](module-1.5-platform-engineering/) | Побудова внутрішніх платформ для розробників |
+| 1.6 | [Практики безпеки (DevSecOps)](module-1.6-devsecops/) | Зсув безпеки ліворуч |
