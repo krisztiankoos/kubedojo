@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.4: \u0406\u043d\u0433\u0440\u0435\u0441"
 slug: uk/k8s/cka/part3-services-networking/module-3.4-ingress
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: cka-3.4-ingress
+  url: https://killercoda.com/kubedojo/scenario/cka-3.4-ingress
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — HTTP/HTTPS маршрутизація
 >

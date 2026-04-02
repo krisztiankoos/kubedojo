@@ -1,8 +1,14 @@
 ---
 title: "Модуль 1.2: CIS Benchmarks та kube-bench"
 slug: uk/k8s/cks/part1-cluster-setup/module-1.2-cis-benchmarks
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cks-1.2-cis-benchmarks
+  url: https://killercoda.com/kubedojo/scenario/cks-1.2-cis-benchmarks
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Ключова навичка аудиту безпеки
 >

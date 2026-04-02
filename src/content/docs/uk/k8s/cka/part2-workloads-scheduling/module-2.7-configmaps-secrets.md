@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.7: ConfigMap \u0442\u0430 Secret"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets
-sidebar:
+sidebar: 
   order: 8
+lab: 
+  id: cka-2.7-configmaps-secrets
+  url: https://killercoda.com/kubedojo/scenario/cka-2.7-configmaps-secrets
+  duration: "45 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 **Складність:** `[MEDIUM]` | **Час на виконання:** 55 хвилин | **Вага CKA:** Частина 15%
 

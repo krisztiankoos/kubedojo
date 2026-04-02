@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.1: \u041f\u043e\u0433\u043b\u0438\u0431\u043b\u0435\u043d\u0435 \u0432\u0438\u0432\u0447\u0435\u043d\u043d\u044f \u041f\u043e\u0434\u0456\u0432"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.1-pods
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cka-2.1-pods
+  url: https://killercoda.com/kubedojo/scenario/cka-2.1-pods
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Основа для всіх робочих навантажень
 >

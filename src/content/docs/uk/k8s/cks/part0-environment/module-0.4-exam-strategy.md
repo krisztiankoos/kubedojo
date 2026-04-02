@@ -1,8 +1,14 @@
 ---
 title: "Модуль 0.4: Стратегія іспиту CKS"
 slug: uk/k8s/cks/part0-environment/module-0.4-exam-strategy
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cks-0.4-exam-strategy
+  url: https://killercoda.com/kubedojo/scenario/cks-0.4-exam-strategy
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[ШВИДКО]` — Критично для успіху на іспиті
 >

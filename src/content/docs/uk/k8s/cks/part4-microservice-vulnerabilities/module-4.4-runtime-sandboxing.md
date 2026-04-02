@@ -1,8 +1,14 @@
 ---
 title: "Модуль 4.4: Ізоляція середовища виконання"
 slug: uk/k8s/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cks-4.4-runtime-sandboxing
+  url: https://killercoda.com/kubedojo/scenario/cks-4.4-runtime-sandboxing
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Поглиблена ізоляція контейнерів
 >

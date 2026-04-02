@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.6: RBAC \u2014 \u0440\u043e\u043b\u044c\u043e\u0432\u0438\u0439 \u043a\u043e\u043d\u0442\u0440\u043e\u043b\u044c \u0434\u043e\u0441\u0442\u0443\u043f\u0443"
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.6-rbac
-sidebar:
+sidebar: 
   order: 7
+lab: 
+  id: cka-1.6-rbac
+  url: https://killercoda.com/kubedojo/scenario/cka-1.6-rbac
+  duration: "45 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — часта тема на іспиті
 >

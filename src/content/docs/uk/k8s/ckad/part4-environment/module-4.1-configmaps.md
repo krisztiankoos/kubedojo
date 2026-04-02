@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.1: ConfigMaps"
 slug: uk/k8s/ckad/part4-environment/module-4.1-configmaps
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: ckad-4.1-configmaps
+  url: https://killercoda.com/kubedojo/scenario/ckad-4.1-configmaps
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Кілька способів створення та використання
 >

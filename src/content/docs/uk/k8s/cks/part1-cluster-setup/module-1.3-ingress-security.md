@@ -1,8 +1,14 @@
 ---
 title: "Модуль 1.3: Безпека Ingress"
 slug: uk/k8s/cks/part1-cluster-setup/module-1.3-ingress-security
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cks-1.3-ingress-security
+  url: https://killercoda.com/kubedojo/scenario/cks-1.3-ingress-security
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Критична для безпеки зовнішнього доступу
 >

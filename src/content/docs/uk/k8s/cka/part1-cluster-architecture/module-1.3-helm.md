@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.3: Helm \u2014 \u043c\u0435\u043d\u0435\u0434\u0436\u0435\u0440 \u043f\u0430\u043a\u0435\u0442\u0456\u0432 Kubernetes"
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.3-helm
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cka-1.3-helm
+  url: https://killercoda.com/kubedojo/scenario/cka-1.3-helm
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — необхідна навичка для іспиту 2025
 >

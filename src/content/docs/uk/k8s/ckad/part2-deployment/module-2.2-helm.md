@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.2: \u041f\u0430\u043a\u0435\u0442\u043d\u0438\u0439 \u043c\u0435\u043d\u0435\u0434\u0436\u0435\u0440 Helm"
 slug: uk/k8s/ckad/part2-deployment/module-2.2-helm
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: ckad-2.2-helm
+  url: https://killercoda.com/kubedojo/scenario/ckad-2.2-helm
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — необхідний інструмент, доданий до CKAD 2025
 >

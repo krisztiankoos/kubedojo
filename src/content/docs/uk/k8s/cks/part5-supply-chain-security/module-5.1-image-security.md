@@ -1,8 +1,14 @@
 ---
 title: "Модуль 5.1: Безпека образів контейнерів"
 slug: uk/k8s/cks/part5-supply-chain-security/module-5.1-image-security
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: cks-5.1-image-security
+  url: https://killercoda.com/kubedojo/scenario/cks-5.1-image-security
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — основна навичка CKS
 >

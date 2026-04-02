@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.4: \u0421\u0442\u0440\u0430\u0442\u0435\u0433\u0456\u0457 \u0434\u0435\u043f\u043b\u043e\u0439\u043c\u0435\u043d\u0442\u0443"
 slug: uk/k8s/ckad/part2-deployment/module-2.4-deployment-strategies
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: ckad-2.4-deployment-strategies
+  url: https://killercoda.com/kubedojo/scenario/ckad-2.4-deployment-strategies
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — концептуальне розуміння з практичною реалізацією
 >

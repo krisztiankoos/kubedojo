@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.2: \u0406\u043d\u0442\u0435\u0440\u0444\u0435\u0439\u0441\u0438 \u0440\u043e\u0437\u0448\u0438\u0440\u0435\u043d\u043d\u044f \u2014 CNI, CSI, CRI"
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cka-1.2-extension-interfaces
+  url: https://killercoda.com/kubedojo/scenario/cka-1.2-extension-interfaces
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Концептуальний із практичними елементами
 >

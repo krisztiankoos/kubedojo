@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.5: CRD \u0442\u0430 \u041e\u043f\u0435\u0440\u0430\u0442\u043e\u0440\u0438 \u2014 \u0440\u043e\u0437\u0448\u0438\u0440\u0435\u043d\u043d\u044f Kubernetes"
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.5-crds-operators
-sidebar:
+sidebar: 
   order: 6
+lab: 
+  id: cka-1.5-crds-operators
+  url: https://killercoda.com/kubedojo/scenario/cka-1.5-crds-operators
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — нове в CKA 2025
 >

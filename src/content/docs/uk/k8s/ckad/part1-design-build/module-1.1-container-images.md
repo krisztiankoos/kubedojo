@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.1: \u041e\u0431\u0440\u0430\u0437\u0438 \u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440\u0456\u0432"
 slug: uk/k8s/ckad/part1-design-build/module-1.1-container-images
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: ckad-1.1-container-images
+  url: https://killercoda.com/kubedojo/scenario/ckad-1.1-container-images
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Потребує розуміння Dockerfile та реєстрів образів
 >

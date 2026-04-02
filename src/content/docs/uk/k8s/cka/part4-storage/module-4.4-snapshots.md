@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.4: \u0417\u043d\u0456\u043c\u043a\u0438 \u0442\u043e\u043c\u0456\u0432 \u0442\u0430 \u043a\u043b\u043e\u043d\u0443\u0432\u0430\u043d\u043d\u044f"
 slug: uk/k8s/cka/part4-storage/module-4.4-snapshots
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: cka-4.4-snapshots
+  url: https://killercoda.com/kubedojo/scenario/cka-4.4-snapshots
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Захист даних та клонування
 >

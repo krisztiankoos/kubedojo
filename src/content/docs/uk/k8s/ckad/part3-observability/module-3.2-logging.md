@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.2: \u041b\u043e\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440\u0456\u0432"
 slug: uk/k8s/ckad/part3-observability/module-3.2-logging
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: ckad-3.2-logging
+  url: https://killercoda.com/kubedojo/scenario/ckad-3.2-logging
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[QUICK]` — Необхідна щоденна навичка, прості команди
 >

@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.1: \u041f\u043e\u0433\u043b\u0438\u0431\u043b\u0435\u043d\u0435 \u0432\u0438\u0432\u0447\u0435\u043d\u043d\u044f \u043f\u043b\u043e\u0449\u0438\u043d\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0456\u043d\u043d\u044f"
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.1-control-plane
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cka-1.1-control-plane
+  url: https://killercoda.com/kubedojo/scenario/cka-1.1-control-plane
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Вимагає концептуального розуміння
 >

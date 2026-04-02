@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.7: CNI \u0442\u0430 \u043c\u0435\u0440\u0435\u0436\u0430 \u043a\u043b\u0430\u0441\u0442\u0435\u0440\u0430"
 slug: uk/k8s/cka/part3-services-networking/module-3.7-cni
-sidebar:
+sidebar: 
   order: 8
+lab: 
+  id: cka-3.7-cni
+  url: https://killercoda.com/kubedojo/scenario/cka-3.7-cni
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Розуміння мережевої інфраструктури
 >

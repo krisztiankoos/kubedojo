@@ -1,8 +1,14 @@
 ---
 title: "Модуль 5.3: Статичний аналіз з kubesec та OPA"
 slug: uk/k8s/cks/part5-supply-chain-security/module-5.3-static-analysis
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cks-5.3-static-analysis
+  url: https://killercoda.com/kubedojo/scenario/cks-5.3-static-analysis
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — інструменти безпеки
 >

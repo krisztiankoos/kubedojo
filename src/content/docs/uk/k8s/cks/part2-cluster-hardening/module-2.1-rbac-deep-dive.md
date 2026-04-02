@@ -1,8 +1,14 @@
 ---
 title: "Модуль 2.1: Глибоке занурення в RBAC"
 slug: uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: cks-2.1-rbac-deep-dive
+  url: https://killercoda.com/kubedojo/scenario/cks-2.1-rbac-deep-dive
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Основна навичка безпеки
 >

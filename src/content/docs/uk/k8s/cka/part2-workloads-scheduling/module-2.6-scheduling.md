@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.6: \u041f\u043b\u0430\u043d\u0443\u0432\u0430\u043d\u043d\u044f"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.6-scheduling
-sidebar:
+sidebar: 
   order: 7
+lab: 
+  id: cka-2.6-scheduling
+  url: https://killercoda.com/kubedojo/scenario/cka-2.6-scheduling
+  duration: "45 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Критична тема на іспиті
 >

@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.3: \u041f\u0456\u0434\u0438 \u0437 \u043a\u0456\u043b\u044c\u043a\u043e\u043c\u0430 \u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440\u0430\u043c\u0438"
 slug: uk/k8s/ckad/part1-design-build/module-1.3-multi-container-pods
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: ckad-1.3-multi-container-pods
+  url: https://killercoda.com/kubedojo/scenario/ckad-1.3-multi-container-pods
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Ключова навичка CKAD, що вимагає розпізнавання паттернів
 >

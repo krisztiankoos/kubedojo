@@ -1,8 +1,14 @@
 ---
 title: "Модуль 2.4: Оновлення безпеки Kubernetes"
 slug: uk/k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cks-2.4-kubernetes-upgrades
+  url: https://killercoda.com/kubedojo/scenario/cks-2.4-kubernetes-upgrades
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Повторення CKA з фокусом на безпеку
 >

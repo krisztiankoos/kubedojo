@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.3: \u041f\u0435\u0440\u0448\u0456 \u043a\u043e\u043c\u0430\u043d\u0434\u0438 \u0432 \u0442\u0435\u0440\u043c\u0456\u043d\u0430\u043b\u0456"
 slug: uk/prerequisites/zero-to-terminal/module-0.3-first-commands
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: "prereq-0.3-first-commands"
+  url: "https://killercoda.com/kubedojo/scenario/prereq-0.3-first-commands"
+  duration: "20 min"
+  difficulty: "beginner"
+  environment: "ubuntu"
 ---
 > **Складність**: `[QUICK]` — Слідкуйте й вводьте те, що бачите
 >

@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.8: \u0428\u043b\u044f\u0445 \u0434\u0430\u043d\u0438\u0445 \u043c\u0435\u0440\u0435\u0436\u0456 \u043a\u043b\u0430\u0441\u0442\u0435\u0440\u0430"
 slug: uk/k8s/cka/part3-services-networking/module-3.8-cluster-networking-data-path
-sidebar:
+sidebar: 
   order: 9
+lab: 
+  id: cka-3.8-cluster-networking
+  url: https://killercoda.com/kubedojo/scenario/cka-3.8-cluster-networking
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Ключова тема діагностики
 >

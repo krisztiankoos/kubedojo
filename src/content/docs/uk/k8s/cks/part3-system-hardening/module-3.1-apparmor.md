@@ -1,8 +1,14 @@
 ---
 title: "Модуль 3.1: AppArmor для контейнерів"
 slug: uk/k8s/cks/part3-system-hardening/module-3.1-apparmor
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: cks-3.1-apparmor
+  url: https://killercoda.com/kubedojo/scenario/cks-3.1-apparmor
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Основа безпеки Linux
 >

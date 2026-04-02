@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.3: DNS \u0442\u0430 CoreDNS"
 slug: uk/k8s/cka/part3-services-networking/module-3.3-dns
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cka-3.3-dns
+  url: https://killercoda.com/kubedojo/scenario/cka-3.3-dns
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — критичний компонент інфраструктури
 >

@@ -1,8 +1,14 @@
 ---
 title: "Модуль 2.5: Обмеження доступу до API"
 slug: uk/k8s/cks/part2-cluster-hardening/module-2.5-restricting-api-access
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: cks-2.5-restricting-api-access
+  url: https://killercoda.com/kubedojo/scenario/cks-2.5-restricting-api-access
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Необхідно для безпеки кластера
 >

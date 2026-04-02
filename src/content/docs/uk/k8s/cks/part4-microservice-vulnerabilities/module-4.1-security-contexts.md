@@ -1,8 +1,14 @@
 ---
 title: "Модуль 4.1: Контексти безпеки"
 slug: uk/k8s/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: cks-4.1-security-contexts
+  url: https://killercoda.com/kubedojo/scenario/cks-4.1-security-contexts
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — основна навичка CKS
 >

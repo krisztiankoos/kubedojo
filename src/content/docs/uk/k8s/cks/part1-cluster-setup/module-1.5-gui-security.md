@@ -1,8 +1,14 @@
 ---
 title: "Модуль 1.5: Безпека GUI (Kubernetes Dashboard)"
 slug: uk/k8s/cks/part1-cluster-setup/module-1.5-gui-security
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: cks-1.5-gui-security
+  url: https://killercoda.com/kubedojo/scenario/cks-1.5-gui-security
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Поширена поверхня атаки
 >

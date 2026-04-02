@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.5: \u0421\u0435\u0440\u0432\u0456\u0441\u043d\u0456 \u0430\u043a\u0430\u0443\u043d\u0442\u0438"
 slug: uk/k8s/ckad/part4-environment/module-4.5-serviceaccounts
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: ckad-4.5-serviceaccounts
+  url: https://killercoda.com/kubedojo/scenario/ckad-4.5-serviceaccounts
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Важливо для доступу до API та ідентифікації
 >

@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.2: Secrets"
 slug: uk/k8s/ckad/part4-environment/module-4.2-secrets
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: ckad-4.2-secrets
+  url: https://killercoda.com/kubedojo/scenario/ckad-4.2-secrets
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Схоже на ConfigMaps, але з міркуваннями безпеки
 >

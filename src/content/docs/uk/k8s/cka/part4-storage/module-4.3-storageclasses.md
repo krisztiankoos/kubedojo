@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.3: StorageClasses \u0442\u0430 \u0434\u0438\u043d\u0430\u043c\u0456\u0447\u043d\u0435 \u043d\u0430\u0434\u0430\u043d\u043d\u044f"
 slug: uk/k8s/cka/part4-storage/module-4.3-storageclasses
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cka-4.3-storageclasses
+  url: https://killercoda.com/kubedojo/scenario/cka-4.3-storageclasses
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Автоматизація надання сховища
 >

@@ -1,8 +1,14 @@
 ---
 title: "Модуль 1.1: Поглиблене вивчення Network Policies"
 slug: uk/k8s/cks/part1-cluster-setup/module-1.1-network-policies
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: cks-1.1-network-policies
+  url: https://killercoda.com/kubedojo/scenario/cks-1.1-network-policies
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Ключова навичка CKS
 >

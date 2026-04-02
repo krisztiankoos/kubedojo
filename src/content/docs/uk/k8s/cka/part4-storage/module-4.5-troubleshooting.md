@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.5: \u0423\u0441\u0443\u043d\u0435\u043d\u043d\u044f \u043d\u0435\u0441\u043f\u0440\u0430\u0432\u043d\u043e\u0441\u0442\u0435\u0439 \u0437\u0431\u0435\u0440\u0456\u0433\u0430\u043d\u043d\u044f"
 slug: uk/k8s/cka/part4-storage/module-4.5-troubleshooting
-sidebar:
+sidebar: 
   order: 6
+lab: 
+  id: cka-4.5-troubleshooting
+  url: https://killercoda.com/kubedojo/scenario/cka-4.5-troubleshooting
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Діагностика та виправлення проблем зберігання
 >

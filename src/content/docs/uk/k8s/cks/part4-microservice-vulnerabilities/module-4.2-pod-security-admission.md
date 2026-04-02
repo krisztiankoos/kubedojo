@@ -1,8 +1,14 @@
 ---
 title: "Модуль 4.2: Pod Security Admission (PSA)"
 slug: uk/k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cks-4.2-pod-security-admission
+  url: https://killercoda.com/kubedojo/scenario/cks-4.2-pod-security-admission
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — основна навичка CKS
 >

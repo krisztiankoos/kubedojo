@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.9: \u0410\u0432\u0442\u043e\u043c\u0430\u0441\u0448\u0442\u0430\u0431\u0443\u0432\u0430\u043d\u043d\u044f \u0440\u043e\u0431\u043e\u0447\u0438\u0445 \u043d\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u044c"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.9-autoscaling
-sidebar:
+sidebar: 
   order: 10
+lab: 
+  id: cka-2.9-autoscaling
+  url: https://killercoda.com/kubedojo/scenario/cka-2.9-autoscaling
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — тема іспиту CKA
 >

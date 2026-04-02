@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.6: Custom Resource Definitions (CRDs)"
 slug: uk/k8s/ckad/part4-environment/module-4.6-crds
-sidebar:
+sidebar: 
   order: 6
+lab: 
+  id: ckad-4.6-crds
+  url: https://killercoda.com/kubedojo/scenario/ckad-4.6-crds
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Нове у CKAD 2025, важливе концептуальне розуміння
 >

@@ -1,8 +1,14 @@
 ---
 title: "Модуль 5.2: Сканування образів з Trivy"
 slug: uk/k8s/cks/part5-supply-chain-security/module-5.2-image-scanning
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cks-5.2-image-scanning
+  url: https://killercoda.com/kubedojo/scenario/cks-5.2-image-scanning
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — критична навичка CKS
 >

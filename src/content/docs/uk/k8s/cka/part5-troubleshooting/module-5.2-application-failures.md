@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.2: \u0417\u0431\u043e\u0457 \u0434\u043e\u0434\u0430\u0442\u043a\u0456\u0432"
 slug: uk/k8s/cka/part5-troubleshooting/module-5.2-application-failures
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cka-5.2-application-failures
+  url: https://killercoda.com/kubedojo/scenario/cka-5.2-application-failures
+  duration: "45 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Найпоширеніші сценарії усунення несправностей
 >

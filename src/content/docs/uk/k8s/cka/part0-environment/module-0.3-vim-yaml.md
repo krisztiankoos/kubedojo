@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.3: Vim \u0434\u043b\u044f YAML"
 slug: uk/k8s/cka/part0-environment/module-0.3-vim-yaml
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cka-0.3-vim-yaml
+  url: https://killercoda.com/kubedojo/scenario/cka-0.3-vim-yaml
+  duration: "25 min"
+  difficulty: intermediate
+  environment: ubuntu
 ---
 > **Складність**: `[QUICK]` — Вивчіть 10 команд, використовуйте їх завжди
 >

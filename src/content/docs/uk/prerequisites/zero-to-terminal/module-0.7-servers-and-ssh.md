@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.7: \u0421\u0435\u0440\u0432\u0435\u0440\u0438 \u0442\u0430 SSH"
 slug: uk/prerequisites/zero-to-terminal/module-0.7-servers-and-ssh
-sidebar:
+sidebar: 
   order: 8
+lab: 
+  id: "prereq-0.7-servers-ssh"
+  url: "https://killercoda.com/kubedojo/scenario/prereq-0.7-servers-ssh"
+  duration: "25 min"
+  difficulty: "beginner"
+  environment: "ubuntu"
 ---
 > **Складність**: `[QUICK]` — Концепції та практичне підключення
 >

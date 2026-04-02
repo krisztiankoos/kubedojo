@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.4: Kustomize \u2014 \u043a\u043e\u043d\u0444\u0456\u0433\u0443\u0440\u0430\u0446\u0456\u044f \u0431\u0435\u0437 \u0448\u0430\u0431\u043b\u043e\u043d\u0456\u0432"
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.4-kustomize
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: cka-1.4-kustomize
+  url: https://killercoda.com/kubedojo/scenario/cka-1.4-kustomize
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — необхідний навик для іспиту 2025 року
 >

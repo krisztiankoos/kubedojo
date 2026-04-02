@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.5: \u0421\u0442\u0440\u0430\u0442\u0435\u0433\u0456\u044f \u0456\u0441\u043f\u0438\u0442\u0443 \u2014 \u041c\u0435\u0442\u043e\u0434 \u0442\u0440\u044c\u043e\u0445 \u043f\u0440\u043e\u0445\u043e\u0434\u0456\u0432"
 slug: uk/k8s/cka/part0-environment/module-0.5-exam-strategy
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: cka-0.5-exam-strategy
+  url: https://killercoda.com/kubedojo/scenario/cka-0.5-exam-strategy
+  duration: "15 min"
+  difficulty: beginner
+  environment: ubuntu
 ---
 > **Складність**: `[QUICK]` — Стратегія, а не технічні навички
 >

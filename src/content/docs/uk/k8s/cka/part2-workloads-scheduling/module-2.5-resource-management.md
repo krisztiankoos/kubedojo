@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.5: \u0423\u043f\u0440\u0430\u0432\u043b\u0456\u043d\u043d\u044f \u0440\u0435\u0441\u0443\u0440\u0441\u0430\u043c\u0438"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.5-resource-management
-sidebar:
+sidebar: 
   order: 6
+lab: 
+  id: cka-2.5-resource-management
+  url: https://killercoda.com/kubedojo/scenario/cka-2.5-resource-management
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Критично для продакшн-навантажень
 >

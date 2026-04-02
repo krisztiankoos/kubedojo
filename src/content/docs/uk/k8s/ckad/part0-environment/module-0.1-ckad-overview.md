@@ -1,8 +1,14 @@
 ---
 title: "Jobs and CronJobs"
 slug: uk/k8s/ckad/part0-environment/module-0.1-ckad-overview
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: ckad-0.1-ckad-overview
+  url: https://killercoda.com/kubedojo/scenario/ckad-0.1-ckad-overview
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[QUICK]` - Орієнтація та стратегія
 >

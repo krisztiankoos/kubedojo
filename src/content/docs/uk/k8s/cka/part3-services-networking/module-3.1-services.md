@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.1: \u0421\u0435\u0440\u0432\u0456\u0441\u0438 \u2014 ClusterIP, NodePort, LoadBalancer"
 slug: uk/k8s/cka/part3-services-networking/module-3.1-services
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cka-3.1-services
+  url: https://killercoda.com/kubedojo/scenario/cka-3.1-services
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Базова концепція мережі
 >

@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.4: \u041d\u0430\u0432\u0456\u0433\u0430\u0446\u0456\u044f \u043f\u043e kubernetes.io"
 slug: uk/k8s/cka/part0-environment/module-0.4-k8s-docs
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cka-0.4-k8s-docs
+  url: https://killercoda.com/kubedojo/scenario/cka-0.4-k8s-docs
+  duration: "20 min"
+  difficulty: beginner
+  environment: kubernetes
 ---
 > **Складність**: `[QUICK]` — Знайте, де що знаходиться, знаходьте швидко
 >

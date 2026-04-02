@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.5: \u0417\u0430\u0441\u0442\u0430\u0440\u0456\u0432\u0430\u043d\u043d\u044f API"
 slug: uk/k8s/ckad/part3-observability/module-3.5-api-deprecations
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: ckad-3.5-api-deprecations
+  url: https://killercoda.com/kubedojo/scenario/ckad-3.5-api-deprecations
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[QUICK]` — Концептуальне розуміння з практичними командами
 >

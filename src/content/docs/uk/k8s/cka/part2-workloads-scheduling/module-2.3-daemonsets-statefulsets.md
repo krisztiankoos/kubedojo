@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.3: DaemonSets \u0442\u0430 StatefulSets"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cka-2.3-daemonsets-statefulsets
+  url: https://killercoda.com/kubedojo/scenario/cka-2.3-daemonsets-statefulsets
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Спеціалізовані шаблони навантажень
 >

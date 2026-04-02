@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.5: Gateway API"
 slug: uk/k8s/cka/part3-services-networking/module-3.5-gateway-api
-sidebar:
+sidebar: 
   order: 6
+lab: 
+  id: cka-3.5-gateway-api
+  url: https://killercoda.com/kubedojo/scenario/cka-3.5-gateway-api
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — тема іспиту CKA
 >

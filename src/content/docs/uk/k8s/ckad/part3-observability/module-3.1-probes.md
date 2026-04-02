@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.1: \u041f\u0440\u043e\u0431\u0438 \u0437\u0430\u0441\u0442\u043e\u0441\u0443\u043d\u043a\u0456\u0432"
 slug: uk/k8s/ckad/part3-observability/module-3.1-probes
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: ckad-3.1-probes
+  url: https://killercoda.com/kubedojo/scenario/ckad-3.1-probes
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Критична тема іспиту з кількома типами проб
 >

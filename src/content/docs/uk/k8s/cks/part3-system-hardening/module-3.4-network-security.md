@@ -1,8 +1,14 @@
 ---
 title: "Модуль 3.4: Мережева безпека хоста"
 slug: uk/k8s/cks/part3-system-hardening/module-3.4-network-security
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cks-3.4-network-security
+  url: https://killercoda.com/kubedojo/scenario/cks-3.4-network-security
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Мережеве адміністрування з фокусом на безпеку
 >

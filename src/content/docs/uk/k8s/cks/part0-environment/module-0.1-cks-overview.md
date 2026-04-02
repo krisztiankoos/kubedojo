@@ -1,8 +1,14 @@
 ---
 title: "Модуль 0.1: Огляд іспиту CKS"
 slug: uk/k8s/cks/part0-environment/module-0.1-cks-overview
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: cks-0.1-cks-overview
+  url: https://killercoda.com/kubedojo/scenario/cks-0.1-cks-overview
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[ШВИДКО]` — Необхідна орієнтація
 >

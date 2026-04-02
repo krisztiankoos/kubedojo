@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 1.7: \u041e\u0441\u043d\u043e\u0432\u0438 kubeadm \u2014 \u041f\u043e\u0447\u0430\u0442\u043a\u043e\u0432\u0435 \u043d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u043d\u043d\u044f \u043a\u043b\u0430\u0441\u0442\u0435\u0440\u0430"
 slug: uk/k8s/cka/part1-cluster-architecture/module-1.7-kubeadm
-sidebar:
+sidebar: 
   order: 8
+lab: 
+  id: cka-1.7-kubeadm
+  url: https://killercoda.com/kubedojo/scenario/cka-1.7-kubeadm
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Основи управління кластером
 >

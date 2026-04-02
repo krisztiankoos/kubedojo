@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.1: \u0414\u0435\u043f\u043b\u043e\u0439\u043c\u0435\u043d\u0442\u0438 \u2014 \u0433\u043b\u0438\u0431\u043e\u043a\u0435 \u0437\u0430\u043d\u0443\u0440\u0435\u043d\u043d\u044f"
 slug: uk/k8s/ckad/part2-deployment/module-2.1-deployments
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: ckad-2.1-deployments
+  url: https://killercoda.com/kubedojo/scenario/ckad-2.1-deployments
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — ключова навичка CKAD з кількома операціями
 >

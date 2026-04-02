@@ -1,8 +1,14 @@
 ---
 title: "Модуль 6.2: Безпека виконання з Falco"
 slug: uk/k8s/cks/part6-runtime-security/module-6.2-falco
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cks-6.2-falco
+  url: https://killercoda.com/kubedojo/scenario/cks-6.2-falco
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — критична навичка CKS
 >

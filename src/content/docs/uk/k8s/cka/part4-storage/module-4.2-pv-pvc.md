@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 4.2: PersistentVolumes \u0442\u0430 PersistentVolumeClaims"
 slug: uk/k8s/cka/part4-storage/module-4.2-pv-pvc
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cka-4.2-pv-pvc
+  url: https://killercoda.com/kubedojo/scenario/cka-4.2-pv-pvc
+  duration: "40 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Основна абстракція зберігання
 >

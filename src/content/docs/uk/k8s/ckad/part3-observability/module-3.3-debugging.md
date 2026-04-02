@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.3: \u041d\u0430\u043b\u0430\u0433\u043e\u0434\u0436\u0435\u043d\u043d\u044f \u0432 Kubernetes"
 slug: uk/k8s/ckad/part3-observability/module-3.3-debugging
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: ckad-3.3-debugging
+  url: https://killercoda.com/kubedojo/scenario/ckad-3.3-debugging
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Критична навичка для іспиту, що вимагає системного підходу
 >

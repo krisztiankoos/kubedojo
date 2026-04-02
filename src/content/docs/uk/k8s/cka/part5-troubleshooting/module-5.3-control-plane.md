@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.3: \u0417\u0431\u043e\u0457 \u043f\u043b\u043e\u0449\u0438\u043d\u0438 \u0443\u043f\u0440\u0430\u0432\u043b\u0456\u043d\u043d\u044f"
 slug: uk/k8s/cka/part5-troubleshooting/module-5.3-control-plane
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cka-5.3-control-plane
+  url: https://killercoda.com/kubedojo/scenario/cka-5.3-control-plane
+  duration: "45 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[COMPLEX]` — Усунення несправностей критичної інфраструктури
 >

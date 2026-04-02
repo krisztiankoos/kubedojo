@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.2: \u0420\u043e\u0431\u043e\u0447\u0438\u0439 \u043f\u0440\u043e\u0446\u0435\u0441 \u0440\u043e\u0437\u0440\u043e\u0431\u043d\u0438\u043a\u0430"
 slug: uk/k8s/ckad/part0-environment/module-0.2-developer-workflow
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: ckad-0.2-developer-workflow
+  url: https://killercoda.com/kubedojo/scenario/ckad-0.2-developer-workflow
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[QUICK]` - Основні шаблони kubectl
 >

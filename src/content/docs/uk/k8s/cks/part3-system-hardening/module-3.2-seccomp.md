@@ -1,8 +1,14 @@
 ---
 title: "Модуль 3.2: Профілі Seccomp"
 slug: uk/k8s/cks/part3-system-hardening/module-3.2-seccomp
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cks-3.2-seccomp
+  url: https://killercoda.com/kubedojo/scenario/cks-3.2-seccomp
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Безпека на рівні системи
 >

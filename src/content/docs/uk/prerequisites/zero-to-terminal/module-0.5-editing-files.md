@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.5: \u0420\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u043d\u043d\u044f \u0444\u0430\u0439\u043b\u0456\u0432"
 slug: uk/prerequisites/zero-to-terminal/module-0.5-editing-files
-sidebar:
+sidebar: 
   order: 6
+lab: 
+  id: "prereq-0.5-editing-files"
+  url: "https://killercoda.com/kubedojo/scenario/prereq-0.5-editing-files"
+  duration: "20 min"
+  difficulty: "beginner"
+  environment: "ubuntu"
 ---
 > **Складність**: `[QUICK]` — Вводьте те, що бачите, збережіть, готово
 >

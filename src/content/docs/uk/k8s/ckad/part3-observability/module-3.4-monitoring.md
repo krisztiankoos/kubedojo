@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.4: \u041c\u043e\u043d\u0456\u0442\u043e\u0440\u0438\u043d\u0433 \u0437\u0430\u0441\u0442\u043e\u0441\u0443\u043d\u043a\u0456\u0432"
 slug: uk/k8s/ckad/part3-observability/module-3.4-monitoring
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: ckad-3.4-monitoring
+  url: https://killercoda.com/kubedojo/scenario/ckad-3.4-monitoring
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[QUICK]` — Базові команди, концептуальне розуміння
 >

@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.4: \u0424\u0430\u0439\u043b\u0438 \u0442\u0430 \u0434\u0438\u0440\u0435\u043a\u0442\u043e\u0440\u0456\u0457"
 slug: uk/prerequisites/zero-to-terminal/module-0.4-files-and-directories
-sidebar:
+sidebar: 
   order: 5
+lab: 
+  id: "prereq-0.4-files-directories"
+  url: "https://killercoda.com/kubedojo/scenario/prereq-0.4-files-directories"
+  duration: "20 min"
+  difficulty: "beginner"
+  environment: "ubuntu"
 ---
 > **Складність**: `[QUICK]` — Абсолютний початківець
 >

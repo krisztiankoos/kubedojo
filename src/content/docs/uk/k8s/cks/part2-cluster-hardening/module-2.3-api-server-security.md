@@ -1,8 +1,14 @@
 ---
 title: "Модуль 2.3: Безпека API-сервера"
 slug: uk/k8s/cks/part2-cluster-hardening/module-2.3-api-server-security
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cks-2.3-api-server-security
+  url: https://killercoda.com/kubedojo/scenario/cks-2.3-api-server-security
+  duration: "40 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[COMPLEX]` - Критичний компонент інфраструктури
 >

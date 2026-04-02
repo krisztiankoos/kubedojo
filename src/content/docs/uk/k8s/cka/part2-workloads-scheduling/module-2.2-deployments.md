@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 2.2: \u0414\u0435\u043f\u043b\u043e\u0439\u043c\u0435\u043d\u0442\u0438 \u0442\u0430 ReplicaSets"
 slug: uk/k8s/cka/part2-workloads-scheduling/module-2.2-deployments
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cka-2.2-deployments
+  url: https://killercoda.com/kubedojo/scenario/cka-2.2-deployments
+  duration: "45 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Основна тема іспиту
 >

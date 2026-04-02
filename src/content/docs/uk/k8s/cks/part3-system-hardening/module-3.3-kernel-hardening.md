@@ -1,8 +1,14 @@
 ---
 title: "Модуль 3.3: Зміцнення ядра Linux та ОС"
 slug: uk/k8s/cks/part3-system-hardening/module-3.3-kernel-hardening
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cks-3.3-kernel-hardening
+  url: https://killercoda.com/kubedojo/scenario/cks-3.3-kernel-hardening
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Системне адміністрування з фокусом на безпеку
 >

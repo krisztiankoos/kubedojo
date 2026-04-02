@@ -1,8 +1,14 @@
 ---
 title: "Модуль 0.3: Опанування інструментів безпеки"
 slug: uk/k8s/cks/part0-environment/module-0.3-security-tools
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cks-0.3-security-tools
+  url: https://killercoda.com/kubedojo/scenario/cks-0.3-security-tools
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Основні інструменти іспиту
 >

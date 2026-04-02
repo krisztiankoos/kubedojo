@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.1: \u041d\u0430\u043b\u0430\u0448\u0442\u0443\u0432\u0430\u043d\u043d\u044f \u043a\u043b\u0430\u0441\u0442\u0435\u0440\u0430"
 slug: uk/k8s/cka/part0-environment/module-0.1-cluster-setup
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: cka-0.1-cluster-setup
+  url: https://killercoda.com/kubedojo/scenario/cka-0.1-cluster-setup
+  duration: "30 min"
+  difficulty: beginner
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Займає час, але все просто, якщо дотримуватися кроків
 >

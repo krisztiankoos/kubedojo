@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.6: \u0423\u0441\u0443\u043d\u0435\u043d\u043d\u044f \u043d\u0435\u0441\u043f\u0440\u0430\u0432\u043d\u043e\u0441\u0442\u0435\u0439 \u0421\u0435\u0440\u0432\u0456\u0441\u0456\u0432"
 slug: uk/k8s/cka/part5-troubleshooting/module-5.6-services
-sidebar:
+sidebar: 
   order: 7
+lab: 
+  id: cka-5.6-services
+  url: https://killercoda.com/kubedojo/scenario/cka-5.6-services
+  duration: "35 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Критично для доступності додатків
 >

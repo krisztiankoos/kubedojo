@@ -1,8 +1,14 @@
 ---
 title: "Модуль 1.4: Захист метаданих вузлів"
 slug: uk/k8s/cks/part1-cluster-setup/module-1.4-node-metadata
-sidebar:
+sidebar: 
   order: 4
+lab: 
+  id: cks-1.4-node-metadata
+  url: https://killercoda.com/kubedojo/scenario/cks-1.4-node-metadata
+  duration: "30 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Критична навичка безпеки, специфічна для хмари
 >

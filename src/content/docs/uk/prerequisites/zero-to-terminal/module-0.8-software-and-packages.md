@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.8: \u041f\u0440\u043e\u0433\u0440\u0430\u043c\u043d\u0435 \u0437\u0430\u0431\u0435\u0437\u043f\u0435\u0447\u0435\u043d\u043d\u044f \u0442\u0430 \u043f\u0430\u043a\u0435\u0442\u0438"
 slug: uk/prerequisites/zero-to-terminal/module-0.8-software-and-packages
-sidebar:
+sidebar: 
   order: 9
+lab: 
+  id: "prereq-0.8-packages"
+  url: "https://killercoda.com/kubedojo/scenario/prereq-0.8-packages"
+  duration: "20 min"
+  difficulty: "beginner"
+  environment: "ubuntu"
 ---
 > **Складність**: `[QUICK]` — Абсолютний початківець
 >

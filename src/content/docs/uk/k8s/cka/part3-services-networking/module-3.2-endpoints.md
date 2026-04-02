@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 3.2: \u0415\u043d\u0434\u043f\u043e\u0456\u043d\u0442\u0438 \u0442\u0430 EndpointSlices"
 slug: uk/k8s/cka/part3-services-networking/module-3.2-endpoints
-sidebar:
+sidebar: 
   order: 3
+lab: 
+  id: cka-3.2-endpoints
+  url: https://killercoda.com/kubedojo/scenario/cka-3.2-endpoints
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Розуміння механіки сервісів
 >

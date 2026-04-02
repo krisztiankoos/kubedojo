@@ -1,8 +1,14 @@
 ---
 title: "\u041c\u043e\u0434\u0443\u043b\u044c 5.1: \u0421\u0435\u0440\u0432\u0456\u0441\u0438"
 slug: uk/k8s/ckad/part5-networking/module-5.1-services
-sidebar:
+sidebar: 
   order: 1
+lab: 
+  id: ckad-5.1-services
+  url: https://killercoda.com/kubedojo/scenario/ckad-5.1-services
+  duration: "30 min"
+  difficulty: intermediate
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` — Основна концепція мережі, кілька типів для розуміння
 >

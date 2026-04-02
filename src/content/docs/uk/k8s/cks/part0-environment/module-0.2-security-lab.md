@@ -1,8 +1,14 @@
 ---
 title: "Модуль 0.2: Налаштування лабораторії безпеки"
 slug: uk/k8s/cks/part0-environment/module-0.2-security-lab
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cks-0.2-security-lab
+  url: https://killercoda.com/kubedojo/scenario/cks-0.2-security-lab
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[СЕРЕДНЯ]` — Декілька інструментів для встановлення
 >

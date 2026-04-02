@@ -1,8 +1,14 @@
 ---
 title: "Модуль 2.2: Безпека ServiceAccount"
 slug: uk/k8s/cks/part2-cluster-hardening/module-2.2-serviceaccount-security
-sidebar:
+sidebar: 
   order: 2
+lab: 
+  id: cks-2.2-serviceaccount-security
+  url: https://killercoda.com/kubedojo/scenario/cks-2.2-serviceaccount-security
+  duration: "35 min"
+  difficulty: advanced
+  environment: kubernetes
 ---
 > **Складність**: `[MEDIUM]` - Критично для безпеки навантажень
 >
