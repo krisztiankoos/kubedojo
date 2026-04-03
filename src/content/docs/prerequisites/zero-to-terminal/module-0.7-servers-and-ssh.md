@@ -66,7 +66,7 @@ Think of it this way:
 
 - **A server** is a public library. It's a massive building that holds thousands of books (websites, data, applications) and serves them to many visitors at once. When you need something, you walk up to the desk, make a request, and the librarian finds it and hands it to you.
 
-When you visit a website, your browser (you, the library visitor) sends a request to a server (the library). The server finds the right data (the librarian locates your book) and sends it back to your browser (hands you the book). Thousands of other visitors can be making requests at the same time.
+When you visit a website, your browser (you, the visitor) sends a request to a server (the library). The library finds the right book (the server locates your data) and sends it back to you (displays the page). Thousands of other visitors can be making requests at the same time.
 
 ---
 
@@ -110,7 +110,7 @@ When you connect to a server and type `ls`, that command runs **remotely** -- on
 
 **SSH** stands for **S**ecure **Sh**ell. It's a program that lets you open a terminal session on a remote computer, securely.
 
-Think of SSH as a **secure direct line to a remote library**. You pick up the phone (open SSH), call the librarian (connect to the server), and start making requests (typing commands). The librarian carries them out and reads you back the results. Nobody can eavesdrop on the call -- that's the "Secure" part.
+Think of SSH as a **secure direct line to a remote library**. You pick up the phone (open SSH), call the library (connect to the server), and start making requests (typing commands). The library carries them out and sends you back the results. Nobody can eavesdrop on the call -- that's the "Secure" part.
 
 The "secure" part is important: everything you send over SSH is encrypted. Nobody can listen in on your conversation. It's like having a private, scrambled phone line.
 
