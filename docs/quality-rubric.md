@@ -190,13 +190,24 @@ Copy this template when auditing a module:
 
 ## Score Interpretation
 
-| Average Score | Rating | Action |
-|---------------|--------|--------|
-| **4.5 - 5.0** | Excellent | No action needed. Reference module. |
-| **3.5 - 4.4** | Good | Minor improvements. Low priority. |
-| **2.5 - 3.4** | Needs Work | Significant improvements needed. Medium priority. |
-| **1.5 - 2.4** | Poor | Major rewrite required. High priority. |
-| **1.0 - 1.4** | Critical | Stub or fundamentally broken. Immediate action. |
+Scoring uses **sum of all 7 dimensions** (max 35) with a **per-dimension floor**.
+
+| Sum | Rating | Action |
+|-----|--------|--------|
+| **29-35** | Pass | Ship it. Must excel in at least one dimension. |
+| **22-28** | Needs polish | Close — fix the weakest dimensions. |
+| **15-21** | Needs work | Significant gaps across multiple dimensions. |
+| **7-14** | Rewrite | Fundamentally broken. Start over. |
+
+### Scoring Tool
+
+```bash
+python scripts/score_module.py 4 5 4 4 5 4 4          # interactive
+python scripts/score_module.py 4 5 4 4 5 4 4 --json   # machine-readable
+echo "4 5 4 4 5 4 4" | python scripts/score_module.py -  # stdin
+```
+
+Dimension order: D1 Outcomes, D2 Scaffolding, D3 Active Learning, D4 Real-World, D5 Assessment, D6 Cognitive Load, D7 Engagement.
 
 ---
 
@@ -208,8 +219,11 @@ Visual aids (ASCII diagrams, Mermaid charts, illustrative code blocks) do NOT co
 
 ## Threshold for "Passing"
 
-A module passes the quality bar when:
-- **Average score >= 3.5** across all 7 dimensions
-- **No single dimension scores 1** (a score of 1 in any dimension is an automatic fail)
-- **Active Learning >= 3** (we don't ship passive content)
-- **Assessment Alignment >= 3** (every module must have working quiz + exercise)
+A module passes the quality bar when **both** conditions are met:
+
+1. **Every dimension >= 4** — a score of 3 or below in ANY dimension is an automatic fail, regardless of sum. Every dimension matters equally. You cannot compensate for weak real-world connection with strong quizzes.
+
+2. **Sum >= 29 out of 35** — all 4s (sum=28) is not enough. At least one dimension must be at 5, meaning the module excels somewhere, not just meets the bar everywhere.
+
+A module that scores 3-5-5-5-5-5-5 (sum=33) **fails** — the floor is violated.
+A module that scores 4-4-4-4-4-4-4 (sum=28) **fails** — it needs to excel somewhere.

@@ -24,7 +24,7 @@ paths:
 - At least 2 inline active learning prompts distributed through core content
 - At least 1 worked example before asking learner to solve a similar problem
 - Quiz questions must be scenario-based ("Your team deployed X and Y happens — what do you check?")
-- Reference rubric: `docs/quality-rubric.md` — all modules must score >= 3.5/5 average
+- Reference rubric: `docs/quality-rubric.md` — all modules must score >= 29/35 sum AND every dimension >= 4
 
 ## Visual Aid Standards
 
