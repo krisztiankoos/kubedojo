@@ -90,7 +90,8 @@ def get_module_state(state: dict, module_key: str) -> dict:
 
 def module_key_from_path(path: Path) -> str:
     """Convert file path to module key (e.g., 'k8s/cka/part1/module-1.1')."""
-    rel = path.relative_to(CONTENT_ROOT)
+    path = path.resolve()
+    rel = path.relative_to(CONTENT_ROOT.resolve())
     return str(rel).replace(".md", "")
 
 
