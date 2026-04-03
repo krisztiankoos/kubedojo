@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Navigate** the CNCF landscape and explain what categories of tools exist
+- **Match** common problems (observability, security, networking) to the tools that solve them
+- **Explain** the CNCF graduation process and what it means for tool maturity
+- **Identify** the 5-6 tools you'll encounter most in your first K8s job
+
+---
+
 ## Why This Module Matters
 
 Kubernetes doesn't exist in isolation. It's the center of a vast ecosystem of projects, tools, and practices. Understanding this ecosystem helps you:
@@ -65,6 +75,8 @@ The Cloud Native Computing Foundation (CNCF) hosts and governs cloud native proj
 ---
 
 ## Categories of Tools
+
+> **Don't panic**: The CNCF landscape has 1,000+ projects. You don't need to know them all. In your first Kubernetes job, you'll likely use 5-6 tools daily. The goal here is to know what categories exist so when someone says "we need a service mesh" or "set up observability," you know what they're talking about.
 
 ### 1. Orchestration (Core)
 

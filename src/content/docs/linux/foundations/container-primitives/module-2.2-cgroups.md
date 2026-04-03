@@ -14,6 +14,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Configure** cgroup resource limits for CPU, memory, and I/O
+- **Explain** how Kubernetes requests and limits map to cgroup settings
+- **Diagnose** OOMKilled containers by reading cgroup memory accounting
+- **Compare** cgroups v1 and v2 and explain why the industry is migrating to v2
+
+---
+
 ## Why This Module Matters
 
 While namespaces provide **isolation** (what a process can see), cgroups provide **limits** (how much a process can use).

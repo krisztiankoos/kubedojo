@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create** namespaces and deploy resources into specific namespaces
+- **Use** labels and selectors to organize and filter resources across a cluster
+- **Explain** what namespaces isolate (names, RBAC, resource quotas) and what they don't (networking by default)
+- **Design** a basic namespace strategy for a team with dev, staging, and production environments
+
+---
+
 ## Why This Module Matters
 
 As clusters grow, organization becomes critical. Namespaces provide isolation and scope. Labels enable selection and organization. Together, they keep large clusters manageable.

@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Query** logs efficiently with journalctl, grep, awk, and timestamp-based filtering
+- **Correlate** events across multiple log sources to build an incident timeline
+- **Identify** common error patterns and their root causes from log entries
+- **Design** a log aggregation strategy for a multi-service environment
+
+---
+
 ## Why This Module Matters
 
 Logs are the first source of truth for debugging. Every application, service, and the kernel itself writes logs. Knowing how to find, read, and analyze logs is fundamental to troubleshooting.

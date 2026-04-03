@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Compare** monolithic and microservice architectures with specific trade-offs for each
+- **Explain** why Kubernetes features (Services, Deployments, scaling) map to microservice needs
+- **Identify** when a monolith is actually the right choice (not everything should be microservices)
+- **Describe** the challenges microservices introduce (network complexity, distributed debugging, data consistency)
+
+---
+
 ## Why This Module Matters
 
 Kubernetes is designed for distributed, containerized applications—typically microservices. Understanding the evolution from monoliths to microservices helps you:
@@ -140,6 +150,8 @@ Microservices decompose an application into small, independent services:
 
 ---
 
+> **Stop and think**: A 5-person startup is building their first product. Should they use microservices from day one? Consider: they have limited engineers, they're still figuring out what their product even is, and every new service means more infrastructure to manage. Read on to see why the answer might surprise you.
+
 ## When to Choose What
 
 ### Monolith is Often Better When:
@@ -194,6 +206,8 @@ Microservices decompose an application into small, independent services:
 ```
 
 ---
+
+> **Connect the dots**: Each Kubernetes feature you'll learn maps to a microservices challenge. Deployments handle independent scaling. Services handle service discovery. ConfigMaps handle per-service configuration. Network Policies handle service-to-service security. Kubernetes wasn't designed for monoliths — it was designed to solve exactly these distributed system problems.
 
 ## How Kubernetes Enables Microservices
 

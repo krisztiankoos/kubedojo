@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Manage** services with systemctl (start, stop, enable, status) and read their configuration
+- **Query** logs with journalctl using time ranges, units, and priority filters
+- **Diagnose** a service that fails to start by reading journal entries and unit file dependencies
+- **Explain** the relationship between systemd, journald, and syslog
+
+---
+
 ## Why This Module Matters
 
 In the previous module, you learned how to see what is running on your system and how to stop runaway processes. But here is the thing: most of the important programs on a server are not started by typing a command in a terminal. They run quietly in the background, starting automatically when the machine boots and restarting themselves if they crash.

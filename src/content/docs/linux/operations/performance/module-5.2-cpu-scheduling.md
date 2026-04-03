@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** how the Linux CPU scheduler works (CFS, nice values, CPU affinity)
+- **Diagnose** CPU contention using mpstat, pidstat, and perf
+- **Configure** CPU pinning and cgroup CPU limits for performance-sensitive workloads
+- **Evaluate** whether a workload is CPU-bound, I/O-bound, or memory-bound
+
+---
+
 ## Why This Module Matters
 
 When your pod gets "throttled" or applications seem slow despite available CPU, the scheduler is involved. Understanding how Linux schedules processes explains why Kubernetes CPU limits work the way they do.

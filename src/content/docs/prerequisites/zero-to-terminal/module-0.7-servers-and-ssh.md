@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** what a server is and why it doesn't need a screen or keyboard
+- **Connect** to a remote machine using SSH and navigate it from the terminal
+- **Distinguish** between password and key-based SSH authentication and explain why keys are safer
+- **Verify** you're on the right machine after connecting (using `hostname`, `whoami`, `pwd`)
+
+---
+
 ## Why This Module Matters
 
 Everything you've done so far has been on *your* computer. Your kitchen, your files, your terminal. But in the real world of technology, most of the action happens on computers that are *somewhere else* -- in a data center, in the cloud, in a rack of machines you'll never physically touch.
@@ -197,6 +207,8 @@ Passwords work, but they have problems:
 
 ### SSH Keys (The Better Way)
 
+> **Think about it**: Passwords can be guessed, stolen, or phished. What if instead of telling the server a secret word, you could prove your identity with something only you possess — like a physical key that fits a specific lock? That's exactly what SSH keys do. The server never learns your "password" — it just checks if your key fits.
+
 SSH keys work like a lock-and-key system:
 
 ```
@@ -258,6 +270,8 @@ Your computer                          Remote server
     |                                       |  "Goodbye"
     |  (back to local terminal)             |
 ```
+
+> **Pause and predict**: If you're SSH'd into a server and you run `rm -rf /home/yourname/projects`, what happens? Does it delete files on your laptop or on the server? This is not a trick question — but it's the kind of mistake that has caused real outages. Always check `hostname` after connecting to confirm you're on the machine you think you are.
 
 **Key insight**: When you're connected via SSH, your terminal *looks* the same, but every command runs on the remote machine. If you create a file, it's created on the server, not your laptop. If you run `pwd`, it shows the server's directory, not yours.
 

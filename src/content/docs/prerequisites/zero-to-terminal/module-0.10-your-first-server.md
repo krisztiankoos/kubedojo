@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Deploy** a simple web server from the terminal and understand what it does under the hood
+- **Trace** an HTTP request from browser to server and back, explaining each step
+- **Test** a running server using `curl` from the command line
+- **Connect** the concepts from all previous modules: files, networking, ports, SSH — it all comes together here
+
+---
+
 ## Why This Module Matters
 
 This is the final exam. The capstone. The moment where everything clicks.
@@ -121,6 +131,8 @@ Let's break down every piece of that command (because understanding matters more
 
 Remember Module 0.6 on networking? Port 80 is the standard port for web traffic. We're mapping it to 8080 on your machine so it doesn't conflict with anything else.
 
+> **Connect the dots**: The `-p 8080:80` flag is Module 0.6 (ports) in action. Your browser sends a request to port 8080 on your machine. Docker forwards it to port 80 inside the container, where nginx is listening. The response travels back the same path. Every concept from these modules is working together right now.
+
 ### Step 3: See it working
 
 Open your web browser and go to:
@@ -134,6 +146,8 @@ You should see a page that says **"Welcome to nginx!"**
 That's a web server running on your machine. You just did that. With one command.
 
 ### Step 4: Create your own web page
+
+> **Pause and predict**: What do you think happens if you replace the default nginx page with your own HTML file inside the container? Will it show immediately, or do you need to restart something? Try to guess — then follow along and see if you were right.
 
 Now let's replace that default page with something you made. Open your terminal and create an HTML file:
 

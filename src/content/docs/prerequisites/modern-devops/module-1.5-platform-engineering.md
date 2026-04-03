@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** what Platform Engineering is and why it emerged as Kubernetes complexity grew
+- **Describe** the Internal Developer Platform (IDP) concept and how it reduces cognitive load on developers
+- **Compare** the Platform Engineer role with DevOps/SRE and explain how they complement each other
+- **Evaluate** when an organization needs a platform team (vs. when it's premature)
+
+---
+
 ## Why This Module Matters
 
 As organizations adopt Kubernetes, a problem emerges: Kubernetes is complex, and not every developer wants (or should need) to understand it deeply. Platform Engineering solves this by building internal platforms that abstract complexity, letting developers focus on code while platform teams handle infrastructure. Understanding this trend helps you position your skills effectively.

@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Navigate** the file system using `pwd`, `ls`, and `cd` without getting lost
+- **Create** files and directories, and explain the difference between `cp` and `mv`
+- **Delete** files safely with `rm` and explain why there is no undo
+- **Combine** commands using pipes (`|`) to filter and search output
+
+---
+
 ## Why This Module Matters
 
 The terminal is how professionals talk to computers. Clicking buttons in a graphical interface is fine for everyday tasks, but when you need to manage servers, automate work, or use Kubernetes, the terminal is your primary tool.
@@ -118,6 +128,8 @@ drwx------  12 yourname  staff   384 Mar 22 14:45 Downloads
 ```
 
 Don't worry about understanding every column yet. The important parts are the name (rightmost) and the date (when it was last changed).
+
+> **Try it yourself**: Run `ls` in your home directory. Now run `ls -l`. What extra information do you see? You should notice dates, sizes, and some cryptic letters on the left. Don't worry about understanding all of it yet — just notice that the `-l` flag gives you more detail than plain `ls`.
 
 Want to see hidden files too? (Files starting with a dot, like `.bashrc`, are hidden by default.)
 
@@ -307,6 +319,8 @@ The file `menu.txt` is gone. In its place is `daily-specials.txt`. Same file, ne
 
 ## Command 8: `rm` -- "Throw Away"
 
+> **Before you read on**: When you delete a file by dragging it to the Trash on your desktop, where does it go? You can still recover it, right? Now think — what do you think happens when you delete a file in the terminal? Is there a Trash can? Take a guess before reading.
+
 **rm** stands for **R**e**m**ove. It deletes a file.
 
 ```bash
@@ -435,10 +449,10 @@ You'll get more practice with pipes as the curriculum continues. For now, just r
 
 ## Quiz
 
-1. **What does `pwd` stand for, and what does it do?**
+1. **You ran `mkdir projects` but the folder appeared in a completely unexpected location. What command should you have run BEFORE `mkdir`, and why?**
    <details>
    <summary>Answer</summary>
-   pwd stands for Print Working Directory. It shows you the full path of the directory (folder) you're currently in. It's like asking "what room am I in?" in our kitchen analogy.
+   You should have run `pwd` first to check where you were. `mkdir` creates the folder in your current working directory, and if you navigated somewhere unexpected earlier without realizing it, the folder ends up in the wrong place. This is the #1 beginner mistake — always know where you are before creating or deleting anything. Run `pwd`, verify you're in the right place, then proceed.
    </details>
 
 2. **What's the difference between `cp` and `mv`?**

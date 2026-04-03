@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Write** AppArmor profiles that restrict a container's filesystem and network access
+- **Debug** AppArmor denials by reading audit logs and identifying the blocked operation
+- **Apply** AppArmor profiles to Kubernetes pods using annotations or security context
+- **Compare** AppArmor's approach (path-based) with SELinux (label-based) and choose appropriately
+
+---
+
 ## Why This Module Matters
 
 AppArmor provides **mandatory access control (MAC)** — security policies that applications cannot bypass, even as root. While traditional permissions (DAC) can be changed by the file owner, AppArmor policies are enforced by the kernel.

@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Name** the four core parts of any computer (CPU, RAM, disk, OS) and explain what each one does
+- **Predict** what happens when your computer runs out of RAM or disk space
+- **Find** your own computer's specs using system tools or terminal commands
+- **Explain** why servers run Linux and why that matters for Kubernetes
+
+---
+
 ## Why This Module Matters
 
 Every single thing you'll learn in this curriculum -- Kubernetes, containers, cloud computing -- runs on computers. But most people have never been told what's actually happening inside the box on their desk (or the slab in their pocket).
@@ -74,6 +84,8 @@ More RAM = More counter space = More things open at once
 
 **When RAM fills up**, your computer gets slow. Just like a chef with no counter space has to keep putting things away and getting them back out, your computer starts "swapping" data back and forth to disk. This is painfully slow.
 
+> **Pause and predict**: You have 8 GB of RAM and you open a web browser with 30 tabs, a video editor, and a music player — all at once. What do you think happens? If you guessed "the computer gets painfully slow" — you're right. Each program needs counter space, and 30 browser tabs alone can eat 4-6 GB. The OS starts shuffling data between RAM and disk (swapping), and everything grinds to a crawl.
+
 ---
 
 ## Disk/SSD: Your Pantry
@@ -120,6 +132,8 @@ The three main operating systems:
 ```
 
 Here's a fact that will matter a LOT in your Kubernetes journey: **almost every server in the world runs Linux.** Your laptop might run Windows or macOS, but the cloud? That's Linux territory. That's why we'll be learning Linux commands in the next modules.
+
+> **Think about it**: Why do you think servers don't use Windows or macOS? Think about what servers need — they run 24/7, they don't need a graphical interface, they need to be stable and efficient. Linux is free, customizable, and uses fewer resources because it doesn't need to render a desktop. That's why even Microsoft runs Linux on most of its Azure cloud servers.
 
 ---
 
@@ -218,10 +232,10 @@ You can't manage thousands of kitchens if you don't understand how *one* kitchen
    It disappears. RAM is temporary (volatile) memory. Like counter space in a kitchen, it only holds things while the kitchen is open. When power is off, RAM is wiped clean. That's why your files are saved to disk (the pantry), not kept only in RAM.
    </details>
 
-3. **What's the difference between an HDD and an SSD?**
+3. **Your friend says their computer is slow and asks if they should buy a bigger hard drive. What would you tell them, and what should they check first?**
    <details>
    <summary>Answer</summary>
-   An HDD (Hard Disk Drive) has spinning metal disks and a moving arm to read/write data -- it's like a record player. It's cheaper but slower. An SSD (Solid State Drive) stores data in electronic circuits with no moving parts -- it's faster, quieter, and more durable, but costs more per gigabyte.
+   A bigger hard drive won't make their computer faster — that's like building a bigger pantry when the problem is a slow chef or no counter space. First, check RAM usage — if it's maxed out, the computer is swapping to disk and that's what feels slow. If RAM is fine, the CPU might be overwhelmed (too many programs open). A bigger or faster SSD only helps if the disk itself is the bottleneck (full disk or old HDD), which is less common than RAM pressure.
    </details>
 
 4. **Why does almost every server run Linux?**

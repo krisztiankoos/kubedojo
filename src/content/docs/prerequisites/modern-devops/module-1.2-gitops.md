@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** the GitOps principle (Git as single source of truth) and how it differs from traditional CI/CD
+- **Compare** push-based vs pull-based deployment models and explain why pull is more secure
+- **Describe** how ArgoCD or Flux detects and corrects configuration drift automatically
+- **Design** a basic GitOps repository structure for a multi-environment application
+
+---
+
 ## Why This Module Matters
 
 GitOps takes Infrastructure as Code to its logical conclusion: Git becomes the single source of truth for everything. Changes to infrastructure happen through pull requests, not direct commands. This pattern is becoming the standard for Kubernetes operations and will make you much more effective.

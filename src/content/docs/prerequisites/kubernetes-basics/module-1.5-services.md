@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create** Services to expose pods and explain why pods need Services (pod IPs are ephemeral)
+- **Choose** between ClusterIP, NodePort, and LoadBalancer and explain when to use each
+- **Test** service connectivity from inside the cluster using `curl` and DNS names
+- **Debug** a service that can't reach its pods by checking labels, selectors, and endpoints
+
+---
+
 ## Why This Module Matters
 
 Pods are ephemeral—they come and go, each with a different IP address. Services provide stable networking: a fixed IP and DNS name that routes to your Pods, no matter how many there are or how often they change.

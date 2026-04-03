@@ -16,6 +16,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Chain** commands with pipes, redirects, and subshells to build powerful one-liners
+- **Search** files and content efficiently using find, grep, and xargs
+- **Process** text streams with cut, sort, uniq, awk, and sed for log analysis
+- **Redirect** stdout, stderr, and combine streams for scripting and debugging
+
+---
+
 ## Why This Module Matters
 
 Picture this: it is 2 AM and your pager goes off. The web application is returning 500 errors. Somewhere in 47 log files spread across `/var/log`, there is a clue -- a stack trace, a timeout, a connection refused. You could open each file one by one, scroll through thousands of lines with your tired eyes, and hope you spot the word "error" before sunrise. Or you could type one line:

@@ -80,37 +80,51 @@
 | **Total** | **115** | **558** |
 
 ## Quality Standard
-10/10 quality = 4 "Did You Know?" facts, war stories with financial impact, 8 quiz questions, hands-on exercises.
 
-All completed modules meet this standard. 329 modules adversary-reviewed by Gemini (4 phases, 95%+ scored 9.5-10/10).
+**Rubric-based quality system** (docs/quality-rubric.md): 7 dimensions scored 1-5. Pass = avg >= 3.5, no dimension at 1.
 
-**~95 modules reviewed in Session 2** (47 fixes applied). **~30 on-prem + ~30 discipline modules still need review.**
+**Audit results** (docs/quality-audit-results.md, 2026-04-03): 31 modules scored.
+- Overall avg: 3.3/5 (GOOD)
+- Gold standard: Systems Thinking (4.6), On-Prem Case (4.4)
+- 5 critical stubs fixed (expanded from 49-74 lines to 266-918 lines)
+- 3 high-priority modules improved (API Deprecations, etcd-operator, Deployments)
+- Remaining: 8 medium, 11 low priority modules need improvements
+
+**Systemic issues found & being addressed**:
+1. No modules had formal learning outcomes → added to all rewritten modules + codified in writer prompt
+2. Active learning back-loaded to end in 87% of modules → inline prompts added to rewrites
+3. Quiz questions tested recall not understanding → scenario-based quizzes in all rewrites
 
 ## Open GitHub Issues
 
 | # | Issue | Status |
 |---|-------|--------|
 | #14 | Curriculum Monitoring & Official Sources | Open |
-| #105 | Ukrainian Translation (Phase 1) | Open (~40%) |
-| #135 | On-Premises Track | Closed — 30 modules, 16,241 lines |
+| #143 | Ukrainian Translation — Full Coverage | Open (~40%) |
+| #157 | Supabase Auth + Progress Migration | Open |
+| #156 | CKA Parts 3-5 Labs | Open |
+| #165 | Epic: Pedagogical Quality Review | Open (Phases 1-3,5 done; Phase 4 in progress) |
+| #177 | Improve Lowest-Quality Modules | Open (8 critical/high done, ~19 remaining) |
+| #179 | Improve Lowest-Quality Labs | Open (blocked on Phase 3 lab audit) |
 
-## Recently Closed (Session 2)
+## Recently Closed (Session 3)
 | # | Issue | Status |
 |---|-------|--------|
-| #129 | Review .claude/skills/ | Closed — 12→4 skills |
-| #130 | Migrate to Starlight | Closed — 1,298 pages, ~30s build |
-| #131 | Give Gemini proper tools | Closed — dispatch.py |
-| #135 | On-Premises K8s Track | Closed — 30 modules |
+| #174 | Phase 1: Research Educational Frameworks | Closed — docs/pedagogical-framework.md |
+| #175 | Phase 2: Create Quality Rubric | Closed — docs/quality-rubric.md |
+| #176 | Phase 3: Audit Modules Against Rubric | Closed — 31 modules scored |
+| #178 | Phase 5: Codify Quality Standards | Closed — writer prompt, rules, skill updated |
+| #170-173 | Gemini's buzzword issues | Closed — replaced by concrete sub-tickets |
 
 ## TODO
 
-- [ ] Gemini adversary review ~10 remaining on-prem modules (20/30 done, 16 fixed)
-- [ ] Gemini adversary review ~32 discipline modules
-- [ ] Theme overhaul: visual verification in browser (#136, #137, #138, #139)
-- [ ] Theme overhaul Phase 3: MDX components (#140)
-- [ ] Theme overhaul Phase 4: breadcrumbs + prev/next (#141)
+- [x] Prerequisites: all 33 modules improved (outcomes, inline prompts, quiz upgrades, emoji fixes) — EN + UK complete
+- [x] Linux: all 37 modules improved (outcomes added) — EN complete, UK syncing
+- [ ] Remaining tracks: CKA (47), CKAD (30), CKS (30), KCNA (28), KCSA (26), Cloud (84), Platform (209), On-Prem (30) — #180
+- [ ] Lab quality audit and improvements — #179
+- [ ] Gemini adversary review remaining on-prem + discipline modules
 - [ ] Ukrainian translations: CKS (30), KCNA (28), KCSA (26)
-- [ ] Ukrainian sidebar labels (`src/content/i18n/uk.json`)
+- [ ] Visual aid beautification pass (alignment, ASCII formatting)
 
 ## Blockers
 None

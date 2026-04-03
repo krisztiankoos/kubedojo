@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Write** valid YAML for Kubernetes resources without syntax errors
+- **Debug** common YAML mistakes (indentation, wrong types, missing fields) by reading error messages
+- **Explain** the four required fields in every K8s manifest (apiVersion, kind, metadata, spec)
+- **Use** `kubectl explain` to discover the correct fields for any resource without googling
+
+---
+
 ## Why This Module Matters
 
 Every Kubernetes resource is defined in YAML. Understanding YAML syntax and K8s resource structure is essential for:

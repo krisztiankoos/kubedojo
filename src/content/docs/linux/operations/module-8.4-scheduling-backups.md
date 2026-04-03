@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create** cron jobs and systemd timers for recurring tasks and explain when to use each
+- **Implement** backup strategies (full, incremental, differential) using rsync, tar, and etcd snapshots
+- **Design** a backup schedule with retention policies and verify restore procedures
+- **Diagnose** cron job failures by checking logs, permissions, and environment variables
+
+---
+
 ## Why This Module Matters
 
 Every sysadmin eventually learns that there are two kinds of people: those who make backups, and those who wish they had. But backups are useless without automation, and automation is useless without scheduling. These two skills form a feedback loop that underpins all of operations.

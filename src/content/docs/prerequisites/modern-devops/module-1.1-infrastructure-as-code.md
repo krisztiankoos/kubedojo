@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** what Infrastructure as Code means and why it replaced manual server configuration
+- **Compare** IaC tools (Terraform, Ansible, Pulumi) and explain when to use each
+- **Write** a simple declarative configuration and explain how it differs from a script
+- **Identify** IaC anti-patterns (clickops, imperative scripts for declarative problems, configuration drift)
+
+---
+
 ## Why This Module Matters
 
 Before Infrastructure as Code (IaC), setting up servers was manual, error-prone, and impossible to reproduce. "It works on my machine" was everyone's excuse. IaC changed everything—infrastructure became versionable, testable, and repeatable. Understanding IaC is essential because Kubernetes itself is an IaC system.

@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Diagnose** network connectivity issues using ping, traceroute, dig, and ss
+- **Inspect** listening ports and active connections to identify what's running
+- **Configure** basic firewall rules with iptables or firewalld
+- **Debug** DNS resolution failures by querying nameservers directly with dig
+
+---
+
 ## Why This Module Matters
 
 Something is broken. The app won't connect. DNS isn't resolving. The API returns a weird status code. A pod can't reach its database.

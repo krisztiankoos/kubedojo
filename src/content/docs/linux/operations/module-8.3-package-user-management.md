@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Manage** packages using apt/dnf (install, update, pin, hold) and resolve dependency conflicts
+- **Administer** users and groups with proper access controls and password policies
+- **Configure** sudo access with fine-grained permissions for different admin roles
+- **Audit** installed packages for security vulnerabilities and unnecessary software
+
+---
+
 ## Why This Module Matters
 
 Two things happen on every Linux server, every day: software gets installed and people need access. Package management and user administration are the bread and butter of system administration — the skills you will use more often than anything else in your career.

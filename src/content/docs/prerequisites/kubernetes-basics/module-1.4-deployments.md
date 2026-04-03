@@ -18,9 +18,23 @@ lab:
 
 ---
 
+## Learning Outcomes
+
+After completing this module, you will be able to:
+- **Create** Deployments both imperatively and declaratively
+- **Scale** applications up and down and explain what happens to the underlying Pods
+- **Perform** rolling updates and rollbacks, and diagnose a stuck rollout
+- **Explain** the Deployment → ReplicaSet → Pod hierarchy and why each layer exists
+
+---
+
 ## Why This Module Matters
 
-In production, you never create Pods directly. You use Deployments. Deployments manage Pods for you—handling scaling, updates, and self-healing automatically.
+A startup's payment processing service ran as a single Pod. At 2 PM on a Friday, the Pod crashed due to a memory leak. Because it was a naked Pod — no Deployment, no ReplicaSet — it stayed dead. For 23 minutes, no one could process payments. When the on-call engineer finally `kubectl apply`'d a new Pod, they accidentally deployed the wrong image tag. Another 15 minutes of downtime.
+
+The total cost: $12K in lost transactions and a very stressed team. A Deployment would have restarted the Pod automatically in under 10 seconds. A rolling update strategy would have caught the bad image before it replaced all replicas.
+
+> **The Manager Analogy**: Think of a Deployment as a restaurant manager. You (the developer) say "I need 3 servers on the floor." The manager (Deployment) handles hiring (creating Pods), replacing someone who calls in sick (self-healing), and training new staff on a new menu (rolling updates). You describe WHAT you want; the Deployment handles HOW.
 
 ---
 
@@ -231,6 +245,8 @@ spec:
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+> **Pause and predict**: What happens if the v2 image is broken — the new Pod crashes on startup? With `maxUnavailable: 0`, Kubernetes won't terminate any v1 Pods until a v2 Pod is Ready. The rollout stalls with both versions running. This is exactly what you want — the broken update doesn't take down your existing service. You'd see it with `kubectl rollout status` showing "Waiting for deployment..." and then `kubectl rollout undo` to go back.
 
 ---
 

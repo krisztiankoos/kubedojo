@@ -15,6 +15,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** what Linux namespaces are and how they enable container isolation
+- **Create** and inspect namespaces using `unshare` and `nsenter`
+- **Trace** which namespaces a container uses and how they differ from the host
+- **Debug** container networking issues by examining network namespace configuration
+
+---
+
 ## Why This Module Matters
 
 Namespaces are the **foundation of container isolation**. When you run a Docker container or a Kubernetes pod, namespaces create the illusion of a separate system.

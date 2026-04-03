@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Write** custom seccomp profiles that allow only the system calls a container needs
+- **Apply** seccomp profiles to Kubernetes pods using the security context
+- **Debug** seccomp violations by tracing blocked syscalls with strace and audit logs
+- **Evaluate** the default Docker/containerd seccomp profile and decide when a custom profile is needed
+
+---
+
 ## Why This Module Matters
 
 **seccomp (Secure Computing Mode)** filters system calls at the kernel level. Unlike AppArmor or SELinux which control resource access, seccomp controls which kernel functions a process can call at all.

@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** how computers find each other using IP addresses and DNS
+- **Distinguish** between local and public IP addresses and know when each matters
+- **Use** `ping`, `curl`, and `nslookup` to diagnose basic connectivity issues
+- **Interpret** HTTP status codes (200, 404) and explain what they mean
+
+---
+
 ## Why This Module Matters
 
 Kubernetes is a system for running applications across **multiple computers** that talk to each other over a **network**. If you don't understand what a network is, what an IP address means, or what a port does, Kubernetes will feel like magic — and not the good kind.
@@ -104,6 +114,8 @@ $ curl -s ifconfig.me
 
 ## Ports: Many Doors on One Address
 
+> **Pause and think**: A server has one IP address, but it runs a web server, an email server, and a database — all at the same time. When a message arrives at the IP address, how does the computer know which program it's for? Think of how an apartment building works — one street address, many apartments...
+
 So every computer has an IP address. But a computer runs many programs at once — a web browser, an email client, a chat app. How does the computer know which program should receive an incoming message?
 
 That's what **ports** are for.
@@ -140,6 +152,8 @@ The colon `:` separates the IP address from the port number.
 ## DNS: The Phone Book of the Internet
 
 When you type `google.com` in your browser, your computer doesn't actually know where `google.com` is. Computers only understand IP addresses (numbers). So how does it work?
+
+> **Think about it**: When you type `google.com` in your browser, your computer needs to reach Google's server. But networks use IP addresses (numbers), not names. Something has to translate `google.com` into `142.250.80.46`. What do you think does that translation?
 
 **DNS** — the **Domain Name System** — translates human-friendly names into IP addresses.
 
@@ -457,7 +471,7 @@ You've completed this exercise when you can:
 
 ---
 
-> 💡 You just used a tool that senior engineers use every day. You belong here.
+> You just used a tool that senior engineers use every day. You belong here.
 
 ---
 

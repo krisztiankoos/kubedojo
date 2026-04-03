@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Build** a Docker image from a Dockerfile and explain what each instruction does
+- **Run** containers with port mapping, environment variables, and volume mounts
+- **Debug** a failing container by reading logs and exec-ing into it
+- **Explain** the image layer system and why layer ordering matters for build speed
+
+---
+
 ## Why This Module Matters
 
 Docker is the most common tool for building container images. Even though Kubernetes doesn't use Docker as its runtime anymore, Docker remains the standard for:
@@ -112,6 +122,8 @@ docker rm -f CONTAINER                 # Force remove (stop + rm)
 ```
 
 ### Inspecting Containers
+
+> **Debugging mindset**: When a container isn't behaving right, these three commands are your debugging toolkit — in this order: `docker logs` (what happened?), `docker exec -it ... bash` (let me look inside), `docker inspect` (show me the full configuration). This same pattern applies in Kubernetes later: `kubectl logs`, `kubectl exec`, `kubectl describe`.
 
 ```bash
 # View logs
@@ -267,6 +279,8 @@ docker rm -f $(docker ps -q --filter ancestor=hello-flask:v1)
 ---
 
 ## Layer Caching
+
+> **Before you read the example**: Think about this — if you change one line of your Python code, do you want Docker to reinstall all your dependencies (which might take 2 minutes)? Or just copy the changed file (which takes 1 second)? The answer depends entirely on the ORDER of instructions in your Dockerfile. Read the BAD vs GOOD example below and see if you can spot why ordering matters.
 
 Docker caches layers for faster builds. Order matters:
 

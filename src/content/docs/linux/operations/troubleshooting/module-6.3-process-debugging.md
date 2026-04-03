@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Diagnose** process hangs, crashes, and resource leaks using strace, lsof, and /proc
+- **Trace** system calls to understand what a process is actually doing
+- **Identify** file descriptor leaks, zombie processes, and stuck I/O operations
+- **Debug** container processes by entering their namespace with nsenter
+
+---
+
 ## Why This Module Matters
 
 When logs don't tell the whole story, you need to look deeper. Process debugging lets you see exactly what a program is doing: what files it opens, what system calls it makes, and where it's stuck.

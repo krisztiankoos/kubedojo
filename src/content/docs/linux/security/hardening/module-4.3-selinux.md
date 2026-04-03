@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** SELinux contexts (user:role:type:level) and how they control access
+- **Diagnose** "Permission denied" errors caused by SELinux using audit2why and sesearch
+- **Configure** SELinux for Kubernetes nodes (container_t, container_file_t contexts)
+- **Choose** between enforcing, permissive, and disabled modes and explain the trade-offs
+
+---
+
 ## Why This Module Matters
 
 **SELinux (Security-Enhanced Linux)** is the mandatory access control system used by RHEL, CentOS, Fedora, and their derivatives. It's more complex than AppArmor but provides finer-grained control.

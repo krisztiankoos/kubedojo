@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** what "the cloud" really means in plain terms (other people's computers that you rent)
+- **Compare** cloud computing with on-premises infrastructure and name the advantages of each
+- **Name** the three major cloud providers (AWS, GCP, Azure) and explain why they matter for Kubernetes
+- **Map** basic cloud services (compute, storage, networking) back to the computer parts from Module 0.1
+
+---
+
 ## Why This Module Matters
 
 "The cloud" is one of the most used and least understood terms in technology. People hear it and imagine something ethereal -- data floating in the sky, software living in the mist.
@@ -70,6 +80,8 @@ This is cloud computing. Someone else built and maintains the infrastructure. Yo
 ---
 
 ## Why the Cloud Exists
+
+> **Think about it**: You're a startup with a great app idea. You need 10 servers today to launch. Buying physical servers takes 8+ weeks and costs $50K+ upfront. What if someone already had those servers sitting in a warehouse, and you could just rent them for $200/month? That's the cloud's core value proposition. Keep reading to see the three specific problems it solves.
 
 The cloud exists because of three problems:
 
@@ -159,6 +171,8 @@ There are also smaller providers: DigitalOcean, Linode (now Akamai), Hetzner, OV
 ---
 
 ## What the Cloud Actually Offers
+
+> **Connect to Module 0.1**: Remember the computer parts from Module 0.1? CPU (the chef), RAM (counter space), Disk (pantry). The cloud sells each of these as a service: Compute = CPU + RAM, Storage = Disk, Networking = the intercom system. Same concepts, just rented instead of owned.
 
 Cloud providers sell services in categories. Here are the main ones, in kitchen terms:
 

@@ -15,6 +15,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** how overlay filesystems enable container image layers
+- **Trace** a file read/write through the overlay stack (lowerdir, upperdir, merged)
+- **Debug** storage issues in containers by inspecting the overlay mount
+- **Compare** OverlayFS with other union filesystem implementations and explain why OverlayFS won
+
+---
+
 ## Why This Module Matters
 
 Every time you pull a container image, run `docker build`, or start a Kubernetes pod, union filesystems are at work. They make containers efficient by:

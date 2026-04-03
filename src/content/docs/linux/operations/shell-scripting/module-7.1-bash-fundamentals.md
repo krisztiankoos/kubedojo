@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Write** bash scripts with variables, conditionals, loops, and functions
+- **Handle** errors safely using set -euo pipefail and trap
+- **Process** command-line arguments and validate input in scripts
+- **Debug** failing scripts using set -x, shellcheck, and systematic testing
+
+---
+
 ## Why This Module Matters
 
 Shell scripting is the glue of DevOps. Every operational task—deployments, backups, health checks, log analysis—can be automated with Bash. It's available on every Linux system, no installation required.

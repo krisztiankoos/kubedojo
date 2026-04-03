@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Write** production-ready scripts with logging, error handling, and configuration
+- **Automate** common sysadmin tasks (log rotation, health checks, deployment scripts)
+- **Design** scripts that are idempotent (safe to run multiple times)
+- **Test** scripts systematically with edge cases and validate output
+
+---
+
 ## Why This Module Matters
 
 Writing a script that works once is easy. Writing a script that works reliably in production is harder. This module covers patterns that make scripts maintainable, debuggable, and safe.

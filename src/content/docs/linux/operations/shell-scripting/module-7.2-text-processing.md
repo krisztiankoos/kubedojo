@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Transform** text using cut, sort, uniq, tr, and paste for log analysis
+- **Write** awk one-liners for column extraction, filtering, and calculations
+- **Use** sed for search-and-replace, line deletion, and in-place file editing
+- **Build** text processing pipelines that combine multiple tools for complex transformations
+
+---
+
 ## Why This Module Matters
 
 Linux is a text-based operating system. Configurations, logs, and data are mostly text. Mastering text processing tools lets you extract, transform, and analyze data without writing programs.

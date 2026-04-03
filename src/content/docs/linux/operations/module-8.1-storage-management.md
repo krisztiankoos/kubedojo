@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Configure** disk partitions, filesystems, and mount points using fdisk, mkfs, and fstab
+- **Manage** LVM volumes (create, extend, snapshot) for flexible storage allocation
+- **Diagnose** disk space issues using df, du, and lsblk and explain inode exhaustion
+- **Implement** a storage strategy appropriate for Kubernetes node storage requirements
+
+---
+
 ## Why This Module Matters
 
 Storage management is one of those skills that separates "I can use Linux" from "I can run Linux in production." When a disk fills up at 3 AM, when a database needs more space without downtime, when teams need shared storage across servers — that's when LVM, NFS, and filesystem skills become critical.

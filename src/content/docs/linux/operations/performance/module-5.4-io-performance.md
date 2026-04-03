@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Measure** disk I/O performance using iostat, iotop, and fio benchmarks
+- **Diagnose** I/O bottlenecks by interpreting await, %util, and queue depth metrics
+- **Configure** I/O schedulers and cgroup blkio limits for container workloads
+- **Evaluate** storage performance requirements for different workload types (database, logging, cache)
+
+---
+
 ## Why This Module Matters
 
 When applications are slow but CPU and memory look fine, the disk is often the culprit. I/O performance is harder to analyze than CPU or memory because multiple layers (filesystem, block layer, device) each add latency.

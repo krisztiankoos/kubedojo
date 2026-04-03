@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Recognize** the warning signs of a dying technology (declining community, vendor pivot, ecosystem shrinkage)
+- **Explain** why Docker Swarm, Mesos, rkt, and other technologies lost to their alternatives
+- **Evaluate** new container/orchestration tools by checking adoption, governance, and cloud provider support
+- **Avoid** betting your career on technology that shows signs of decline
+
+---
+
 ## Why This Module Matters
 
 In 2018, a Fortune 500 retailer bet $2.3 million on Apache Mesos as their container platform. They hired a team of 8 Mesos specialists, built custom frameworks, and deployed 200+ services. By 2020, Mesos was effectively dead — the Apache Foundation moved it to the attic. The entire platform had to be rebuilt on Kubernetes. Two years of work, discarded. The engineers' Mesos expertise? Worthless on the job market overnight.

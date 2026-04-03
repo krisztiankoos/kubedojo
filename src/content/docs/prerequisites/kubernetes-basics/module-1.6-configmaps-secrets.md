@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create** ConfigMaps and Secrets and inject them into pods as environment variables or mounted files
+- **Explain** why configuration should be separate from code (the 12-factor app principle)
+- **Choose** between ConfigMaps and Secrets and explain what Secrets actually protect (hint: not much by default)
+- **Update** configuration without rebuilding container images
+
+---
+
 ## Why This Module Matters
 
 Applications need configuration: database URLs, feature flags, API keys, credentials. Hardcoding these in container images is bad practice. ConfigMaps and Secrets let you manage configuration separately from your application code.

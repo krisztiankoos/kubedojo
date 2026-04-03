@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** the netfilter hook points and how iptables rules are evaluated (tables, chains, targets)
+- **Trace** how Kubernetes Services use iptables rules for load balancing (kube-proxy iptables mode)
+- **Write** iptables rules for basic packet filtering, NAT, and port forwarding
+- **Debug** network connectivity issues by reading iptables counters and rule chains
+
+---
+
 ## Why This Module Matters
 
 iptables (and netfilter) is the packet filtering and manipulation framework in Linux. It powers:

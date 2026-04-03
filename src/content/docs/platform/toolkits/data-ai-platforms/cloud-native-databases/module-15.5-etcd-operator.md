@@ -9,6 +9,16 @@ sidebar:
 
 ---
 
+## Learning Outcomes
+
+After completing this module, you will be able to:
+- **Explain** why operator-managed etcd is safer than manual management and what the operator automates
+- **Deploy** an etcd cluster with TLS using the etcd-operator and verify cluster health
+- **Diagnose** common etcd failures (split-brain, member loss, upgrade rejection) by reading operator status and events
+- **Evaluate** when to use the etcd-operator vs manual etcd management vs managed Kubernetes control planes
+
+---
+
 ## Prerequisites
 
 Before starting this module, you should have completed:
@@ -71,15 +81,42 @@ Six months later, after deploying the etcd-operator with automated TLS, anti-aff
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 Why Operator-Managed etcd?
+### 1.2 How the Operator Works
+
+The etcd-operator follows the standard Kubernetes operator pattern: a reconciliation loop that continuously compares desired state (your EtcdCluster spec) with actual state (the running etcd members).
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                  etcd-operator Reconciliation Loop             │
+│                                                                │
+│   ┌──────────┐     ┌──────────┐     ┌──────────┐             │
+│   │ Observe   │────▶│  Diff    │────▶│   Act    │             │
+│   │           │     │          │     │          │             │
+│   │ Read      │     │ Compare  │     │ Create/  │             │
+│   │ EtcdCluster│     │ spec vs  │     │ Delete/  │             │
+│   │ + check   │     │ actual   │     │ Upgrade  │             │
+│   │ member    │     │ members  │     │ members  │             │
+│   │ health    │     │          │     │          │             │
+│   └──────────┘     └──────────┘     └──────────┘             │
+│        ▲                                    │                  │
+│        └────────────────────────────────────┘                  │
+│                  (repeat every ~10 seconds)                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+> **Pause and think**: What happens if one etcd member dies unexpectedly? The operator observes 2/3 members healthy, diffs that against the desired 3, and acts by creating a new member. The new member joins the existing cluster, syncs data via Raft, and quorum is restored — all without human intervention.
+
+### 1.3 Why Operator-Managed etcd?
 
 | Aspect | Manual etcd | etcd-operator |
 |--------|------------|---------------|
 | TLS certificates | Generate, distribute, rotate manually | Automated (cert-manager or auto provider) |
 | Upgrades | Risky manual process, easy to break quorum | Managed with validation, one version at a time |
 | Member replacement | Complex manual procedure | Automatic detection and replacement |
-| Monitoring | Set up separately | Built-in health checks |
+| Monitoring | Set up separately | Built-in health checks via reconciliation loop |
 | Backup | Cron jobs, hope they work | Integrated snapshot management |
+
+> **When NOT to use an operator**: If you're running managed Kubernetes (EKS, GKE, AKS), the cloud provider manages etcd for you. The etcd-operator is for self-managed clusters — bare metal, kubeadm, or on-premises deployments where you own the control plane.
 
 ---
 
@@ -247,28 +284,34 @@ kubectl exec -it prod-etcd-0 -- etcdctl endpoint health --cluster
 
 ## Quiz
 
-1. **What's the difference between the etcd-io operator and the CoreOS operator?**
+1. **Your 3-member etcd cluster shows 2/3 READY. The operator hasn't replaced the failed member after 5 minutes. What would you check and why?**
    <details>
    <summary>Answer</summary>
-   The CoreOS etcd-operator (github.com/coreos/etcd-operator) has been archived and unmaintained since 2019. The etcd-io operator (github.com/etcd-io/etcd-operator) is the official, actively maintained operator from the etcd project itself.
+   First, check the operator logs (`kubectl logs -n etcd-operator-system deploy/etcd-operator-controller-manager`) for errors in the reconciliation loop. Common causes: insufficient cluster resources to schedule a new pod (check `kubectl describe pod` for Pending events), PVC binding failure if the storage class can't provision a new volume, or the operator itself being unhealthy. Also check if the failed member left data corruption that prevents the new member from joining — look at etcd member logs for Raft errors.
    </details>
 
-2. **Can you upgrade etcd from 3.4 directly to 3.6?**
+2. **You inherited a cluster running the CoreOS etcd-operator (github.com/coreos/etcd-operator). A security audit flagged it. Why is this a risk, and what's the migration path?**
    <details>
    <summary>Answer</summary>
-   No. etcd only supports upgrading one minor version at a time. You must go 3.4 → 3.5 → 3.6. The operator validates this and will reject the upgrade if you try to skip.
+   The CoreOS operator has been archived and unmaintained since 2019 — it has known CVEs that will never be patched, uses deprecated APIs, and doesn't support recent etcd versions. The migration path: deploy the official etcd-io operator alongside the old one, create a new EtcdCluster CR, restore from a snapshot of the old cluster into the new operator-managed cluster, verify data integrity, then redirect the API server's `--etcd-servers` flag to the new endpoints. This is a high-risk operation that should be rehearsed in staging first.
    </details>
 
-3. **What are the two TLS providers in etcd-operator v0.2.0?**
+3. **Your team wants to upgrade etcd from 3.4.28 to 3.6.0 to get the new livez/readyz health endpoints. You update the EtcdCluster spec to version "3.6.0" and apply it. What happens?**
    <details>
    <summary>Answer</summary>
-   **Auto** (self-signed, for development/testing) and **cert-manager** (CA-signed, for production). TLS is opt-in and covers both client-to-member and inter-member communication.
+   The operator rejects the upgrade because you're skipping minor version 3.5. etcd only supports upgrading one minor version at a time — this is a Raft consensus safety requirement, not an operator limitation. You must upgrade 3.4.28 → 3.5.x first, verify cluster health, then 3.5.x → 3.6.0. Each step involves a rolling restart of all members. The operator enforces this to prevent data corruption that could occur from incompatible Raft protocol versions.
    </details>
 
-4. **Why is pod anti-affinity important for etcd?**
+4. **You're choosing between the `auto` and `cert-manager` TLS providers for a production etcd cluster that processes financial transactions. Which do you choose and why?**
    <details>
    <summary>Answer</summary>
-   etcd requires a quorum (majority of members) to function. If all members run on the same node and that node fails, you lose quorum and the entire cluster becomes read-only. Anti-affinity ensures members are spread across different nodes.
+   cert-manager, without question. The auto provider generates self-signed certificates that don't integrate with your organization's PKI infrastructure, can't be audited by security tools that expect CA-signed certs, and don't follow certificate rotation policies mandated by compliance frameworks (PCI-DSS, SOC 2). cert-manager integrates with your existing certificate authority, supports automated rotation, and provides an audit trail. The auto provider is fine for development and testing where speed matters more than security posture.
+   </details>
+
+5. **A junior engineer asks: "We're on EKS — should we deploy the etcd-operator?" How do you respond?**
+   <details>
+   <summary>Answer</summary>
+   No. On managed Kubernetes (EKS, GKE, AKS), the cloud provider manages the etcd cluster as part of the control plane. You have no access to etcd directly, and the provider handles high availability, backups, upgrades, and TLS. The etcd-operator is designed for self-managed clusters — bare metal, kubeadm, or on-premises — where you own and operate the control plane yourself. Deploying it on EKS would create a separate etcd cluster that Kubernetes doesn't use, wasting resources and adding confusion.
    </details>
 
 ---

@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Identify** which K8s topics are exam-relevant vs interesting-but-off-scope
+- **Prioritize** your study time by knowing the 80/20 of what the exams actually test
+- **Explain** why we skip certain topics (e.g., custom CNI development, etcd internals) and where to learn them if curious
+- **Plan** an efficient learning path that avoids the 100+ hours trap
+
+---
+
 ## Why This Module Matters
 
 Here's a secret that paid certification courses won't tell you: **you can waste 100+ hours studying topics that will never appear on the exam.** We've seen it happen — engineers spending weeks deep-diving into etcd internals or building custom CNI plugins, only to discover the CKA doesn't test any of it.

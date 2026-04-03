@@ -15,6 +15,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** Linux capabilities as fine-grained alternatives to running as root
+- **Audit** a container's capabilities and identify which are unnecessary
+- **Configure** AppArmor and seccomp profiles to restrict container system calls
+- **Evaluate** the security trade-offs between dropping capabilities vs using LSM profiles
+
+---
+
 ## Why This Module Matters
 
 Traditional Unix had a simple security model: root can do everything, everyone else is restricted. This all-or-nothing approach is dangerous—why give a process full root power when it only needs to bind to port 80?

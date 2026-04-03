@@ -40,6 +40,9 @@ npx astro preview          # preview built site
 | `.claude/rules/` | Scoped rules (quality, translation, checklist, Gemini) |
 | `.claude/settings.json` | Shared permissions (committed) |
 | `.claude/settings.local.json` | Personal overrides (gitignored) |
+| `docs/pedagogical-framework.md` | Educational research & guidelines |
+| `docs/quality-rubric.md` | 1-5 rubric for module/lab quality |
+| `docs/quality-audit-results.md` | Audit of 31 modules (2026-04-03) |
 | `scripts/prompts/module-writer.md` | Standard prompt for module creation |
 | `scripts/dispatch.py` | Direct CLI dispatch for Gemini/Claude |
 | `astro.config.mjs` | Starlight config (sidebar, i18n, theme) |

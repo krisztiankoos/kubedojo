@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create** pods imperatively and from YAML, and explain what a pod actually is (vs a container)
+- **Inspect** a pod's status, events, and logs to understand what's happening inside
+- **Explain** the pod lifecycle (Pending → Running → Succeeded/Failed) and what each phase means
+- **Diagnose** common pod failures (CrashLoopBackOff, ImagePullBackOff) using describe and logs
+
+---
+
 ## Why This Module Matters
 
 Pods are the smallest deployable unit in Kubernetes. Every container you run in K8s runs inside a Pod. Understanding Pods is fundamental—everything else builds on this concept.

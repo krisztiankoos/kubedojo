@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create and edit** files using `nano` from the terminal without a graphical editor
+- **Write** a simple bash script that combines multiple commands into one file
+- **Make** a script executable with `chmod +x` and explain why this step is necessary
+- **Choose** between `nano` and `vim` and explain when you'd use each
+
+---
+
 ## Why This Module Matters
 
 In the last module, you created files with `touch` -- but they were empty. Empty files are like blank order tickets in a restaurant kitchen. Useful for reserving a spot, but not much else until someone writes on them.
@@ -269,6 +279,8 @@ Now let's do something powerful: write a script. A script is just a text file th
 nano my-first-script.sh
 ```
 
+> **Before you type**: This script starts with a strange line: `#!/bin/bash`. What do you think it does? It's called a "shebang" — it's the script's way of telling the computer "I'm written in bash, use the bash program to run me." Without it, the computer wouldn't know how to interpret the file. You'll see this line at the top of every shell script you encounter.
+
 Type the following exactly:
 
 ```bash
@@ -295,6 +307,8 @@ Let's understand each line:
 Press `Ctrl + O`, Enter, then `Ctrl + X`.
 
 ### Step 3: Make it executable
+
+> **Try and fail first**: Before running `chmod`, try to run the script directly: `./my-first-script.sh`. What happens? You should get "Permission denied." This is intentional — new files are just data by default. The computer needs explicit permission to treat a file as a program. This is a security feature, not a bug.
 
 Right now, the file is just text. The computer won't run it because it doesn't have *permission* to be executed. Let's fix that:
 
@@ -383,10 +397,10 @@ When you're ready, vim will be there. For now, nano is your friend.
    `chmod +x` adds execute permission to a file. By default, new text files are just data -- the system won't run them as programs. Adding execute permission tells the system "this file contains instructions that should be executed." Without it, you'll get a "Permission denied" error when trying to run the script.
    </details>
 
-5. **What's the difference between `nano hello.txt` and `cat hello.txt`?**
+5. **You wrote a script called `backup.sh` and tried to run it with `./backup.sh`. You got "Permission denied." Then you ran `chmod +x backup.sh` and tried again — now it says "line 1: syntax error." What are the TWO things that went wrong, and in what order should you fix them?**
    <details>
    <summary>Answer</summary>
-   `nano hello.txt` opens the file in an interactive editor where you can modify the contents, save, and exit. `cat hello.txt` simply prints the file's contents to the terminal screen and immediately returns you to the prompt -- it's read-only, just for viewing. Use `cat` when you want to look, and `nano` when you want to change.
+   First problem: the script wasn't executable (fixed with `chmod +x`). Second problem: the script likely has a syntax error — probably a missing or incorrect shebang (`#!/bin/bash`) on the first line, or a typo in the script body. Fix order: always make the script executable first (so you can actually run it), then debug the syntax errors using the error messages. The "line 1: syntax error" tells you exactly where to look — open the file with `nano backup.sh` and check line 1.
    </details>
 
 ---

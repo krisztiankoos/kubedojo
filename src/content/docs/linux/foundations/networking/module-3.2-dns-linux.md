@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Trace** a DNS resolution from /etc/resolv.conf through recursive resolvers to authoritative servers
+- **Debug** DNS failures using dig, nslookup, and /etc/hosts
+- **Configure** DNS resolution for containers and explain how CoreDNS works in Kubernetes
+- **Explain** DNS record types (A, AAAA, CNAME, SRV, TXT) and when each is used
+
+---
+
 ## Why This Module Matters
 
 DNS translates names to IP addresses. Every time you access a service by name—whether `google.com` or `my-service.default.svc.cluster.local`—DNS is involved.

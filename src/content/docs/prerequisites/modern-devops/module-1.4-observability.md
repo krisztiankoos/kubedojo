@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** the three pillars of observability (metrics, logs, traces) and what questions each answers
+- **Distinguish** between monitoring ("is it broken?") and observability ("why is it broken?")
+- **Describe** how Prometheus, Grafana, and Loki work together in a typical K8s stack
+- **Design** basic SLIs/SLOs for a web application and explain why they matter more than uptime %
+
+---
+
 ## Why This Module Matters
 
 "Is the system working?" seems like a simple question. In distributed systems like Kubernetes, it's not. Applications span multiple pods, nodes, and services. Observability gives you the ability to understand what's happening inside your system based on its external outputs. Without it, you're flying blind.

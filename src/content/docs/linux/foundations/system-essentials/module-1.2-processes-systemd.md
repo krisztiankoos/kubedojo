@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Manage** processes using `ps`, `top`, `kill`, and job control (bg, fg, nohup)
+- **Create** and manage systemd services with unit files
+- **Diagnose** service failures using `systemctl status`, `journalctl`, and dependency analysis
+- **Explain** the process lifecycle (fork, exec, wait, exit) and how orphan/zombie processes form
+
+---
+
 ## Why This Module Matters
 
 Everything running on Linux is a process. Your shell, your web server, your database, every container—they're all processes managed by the kernel.

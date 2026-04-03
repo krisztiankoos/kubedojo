@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Open** a terminal on your operating system and recognize the prompt
+- **Run** basic commands (`echo`, `date`, `whoami`) and read their output
+- **Explain** why engineers prefer the terminal over GUIs for server work
+- **Recover** from common beginner mistakes (missing quotes, stuck prompts) using Ctrl+C
+
+---
+
 ## Why This Module Matters
 
 Every single tool in modern software engineering — Kubernetes, Docker, cloud platforms, automation scripts — starts with one thing: **the terminal**.
@@ -112,6 +122,8 @@ Most servers (the powerful computers that run websites and apps) don't have scre
 
 When you click through a GUI, there's no record of what you did. But when you type commands, you have a history. You can share those commands with a teammate. You can write them down. You can repeat them perfectly every time.
 
+> **Stop and think**: Imagine you need to set up 10 identical servers for a new application. With a GUI, you'd click through the same setup screens 10 times, hoping you don't miss a checkbox on server #7. With a terminal, you write the setup commands once, save them in a script, and run that script on all 10 servers. Which approach is more likely to give you 10 identical servers?
+
 ---
 
 ## Did You Know?
@@ -209,6 +221,8 @@ You type: `echo "Hello"` and then press **Enter**. You don't type the `$`.
 ## Your First Command
 
 Ready? Let's type your very first terminal command.
+
+> **Before you type**: What do you think `echo "Hello, World!"` will do? The command is called `echo` — like an echo in a canyon. Take a guess before running it.
 
 In your terminal, type this and press **Enter**:
 
@@ -352,14 +366,12 @@ It means the terminal is ready and waiting for your command. You don't type the 
 
 </details>
 
-**Question 3**: What command would you use to see today's date and time?
+**Question 3**: You need to write a document that records exactly when you performed a server update. Why would `date` in a terminal script be more reliable than looking at the clock on your wall?
 
 <details>
 <summary>Show Answer</summary>
 
-```bash
-$ date
-```
+The `date` command gives you the exact timestamp from the computer's clock, including timezone information — and it's automatically captured in your script's output or log file. Looking at a wall clock introduces human error (wrong timezone, rounding to the nearest minute, forgetting to write it down). In a terminal script, the timestamp is precise, machine-readable, and part of the permanent record. This matters in production: incident timelines need second-level accuracy, not "around 2 PM."
 
 </details>
 
@@ -445,7 +457,7 @@ You've completed this exercise when you can:
 
 ---
 
-> 💡 You just used a tool that senior engineers use every day. You belong here.
+> You just used a tool that senior engineers use every day. You belong here.
 
 ---
 

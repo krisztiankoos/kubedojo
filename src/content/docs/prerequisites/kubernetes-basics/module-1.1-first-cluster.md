@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create** a local Kubernetes cluster using kind and verify it's running
+- **Run** your first pod and confirm it's healthy using `kubectl get pods`
+- **Explain** what a cluster is (control plane + worker nodes) and why you need one to learn K8s
+- **Troubleshoot** a cluster that won't start by checking Docker status and kind logs
+
+---
+
 ## Why This Module Matters
 
 Before you can learn Kubernetes, you need a Kubernetes cluster. This module gets you a working local cluster in minutes, so you can start practicing immediately.

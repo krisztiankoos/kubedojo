@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Build** automation scripts for deployment, monitoring, and incident response
+- **Integrate** scripts with APIs (curl + jq), Kubernetes (kubectl), and CI/CD pipelines
+- **Design** a script library that follows DRY principles and is maintainable by a team
+- **Evaluate** when to use bash vs Python/Go for automation tasks
+
+---
+
 ## Why This Module Matters
 
 DevOps work is repetitive. Deployments, health checks, log analysis, cluster management—all these tasks benefit from automation. Shell scripts are often the right tool: they're portable, require no installation, and compose well with existing tools.

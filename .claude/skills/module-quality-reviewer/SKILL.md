@@ -1,107 +1,93 @@
 ---
 name: module-quality-reviewer
-description: Review KubeDojo modules for quality. Use when reviewing, scoring, or checking modules. Triggers on "review module", "check quality", "score module".
+description: Review KubeDojo modules for quality against the pedagogical rubric. Use when reviewing, scoring, or checking modules. Triggers on "review module", "check quality", "score module".
 ---
 
 # Module Quality Reviewer Skill
 
-Expert skill for validating KubeDojo curriculum modules against established quality standards. Automatically invoked when reviewing educational content for quality assurance.
+Review KubeDojo modules against the quality rubric at `docs/quality-rubric.md`.
 
-## When to Use
-- Reviewing new or updated curriculum modules
-- Checking if content meets KubeDojo quality bar
-- Identifying gaps in educational content
-- Comparing modules for consistency
+## How to Review
 
-## Quality Standards
+1. Read the module fully
+2. Score against ALL 7 rubric dimensions (1-5 each)
+3. Be STRICT — a 4 means genuinely good, a 5 is exceptional
+4. Flag specific issues with line numbers
 
-### Structure (Must Have All)
-- [ ] Complexity tag: `[QUICK]`, `[MEDIUM]`, or `[COMPLEX]`
-- [ ] Time to Complete estimate
-- [ ] Prerequisites listed
-- [ ] "Why This Module Matters" section
-- [ ] "Did You Know?" section (2-3 items)
-- [ ] Common Mistakes table
-- [ ] Quiz with `<details>` hidden answers
-- [ ] Hands-On Exercise with Success Criteria
-- [ ] "Next Module" link
+## Rubric Dimensions (1-5 each)
 
-### Content Quality Criteria
+| Dimension | What to Check |
+|-----------|--------------|
+| **Learning Outcomes** | Are they stated? Measurable? Bloom's L3+? |
+| **Scaffolding** | Does content build simple→complex? Narrative bridges between sections? |
+| **Active Learning** | Are there inline prompts? Or is all practice back-loaded to the end? |
+| **Real-World Connection** | War stories with specific details? Or generic "in production" handwaving? |
+| **Assessment Alignment** | Do quiz questions test understanding (scenarios) or recall (what is X?)? |
+| **Cognitive Load** | Well-chunked? Diagrams integrated? Or information dump? |
+| **Engagement** | Memorable tone? Would you recommend this to a colleague? Or dry/robotic? |
 
-#### Theory Depth (25%)
-- Explains "why" not just "what"
-- No handwaving or glossing over complexity
-- Junior-friendly (treats reader as beginner)
-- Builds conceptual understanding before commands
+## Structure Checklist
 
-#### Practical Value (25%)
-- All code/commands are complete and runnable
-- Clear step-by-step instructions
-- Verification steps included
-- Realistic scenarios, not toy examples
+- [ ] Learning Outcomes (Bloom's L3+ verbs: debug, design, evaluate)
+- [ ] Why This Module Matters (war story with real impact)
+- [ ] Core content (3-6 sections with code, diagrams, tables)
+- [ ] Inline active learning (at least 2 prediction/try-it prompts in the body)
+- [ ] Did You Know? (4 facts with real numbers)
+- [ ] Common Mistakes table (6-8 rows: Mistake | Why | Fix)
+- [ ] Quiz (6-8 scenario-based questions with `<details>` answers)
+- [ ] Hands-On Exercise (multi-step with success criteria)
+- [ ] Next Module link
 
-#### Engagement (25%)
-- Memorable analogies that make concepts stick
-- War stories with real consequences
-- "Did You Know?" facts that reinforce learning
-- Conversational tone, not textbook dry
+## Passing Criteria
 
-#### Exam Relevance (25%)
-- Aligns with CKA 2025 curriculum
-- Speed tips for exam scenarios
-- Common exam mistakes highlighted
-- Complexity tags match exam question types
-
-## Scoring
-
-| Score | Meaning |
-|-------|---------|
-| 10/10 | Exceptional - Ready to publish, sets the standard |
-| 9/10 | Excellent - Minor polish needed |
-| 8/10 | Good - Ready for publication with small fixes |
-| 7/10 | Acceptable - Needs revision in 1-2 areas |
-| 6/10 | Needs Work - Multiple areas require attention |
-| <6/10 | Major Rewrite - Does not meet standards |
+- Average score >= 3.5/5
+- No single dimension scores 1
+- Active Learning >= 3
+- Assessment Alignment >= 3
 
 ## Output Format
 
-When reviewing, provide:
-
-```
+```markdown
 ## Module Review: [Name]
+**File**: [path]
+**Lines**: [count]
 
 ### Scores
-| Category | Score | Notes |
-|----------|-------|-------|
-| Theory Depth | X/10 | ... |
-| Practical Value | X/10 | ... |
-| Engagement | X/10 | ... |
-| Exam Relevance | X/10 | ... |
-| **Overall** | **X/10** | |
+
+| Dimension | Score | Notes |
+|-----------|-------|-------|
+| Learning Outcomes | /5 | |
+| Scaffolding | /5 | |
+| Active Learning | /5 | |
+| Real-World Connection | /5 | |
+| Assessment Alignment | /5 | |
+| Cognitive Load | /5 | |
+| Engagement | /5 | |
+| **Average** | **/5** | |
 
 ### Structure Checklist
 - [x] or [ ] for each required element
 
-### Strengths
+### Key Strengths
 1. ...
-2. ...
-3. ...
 
-### Areas for Improvement
+### Must Fix
 1. ...
-2. ...
-3. ...
 
-### Specific Recommendations
-- ...
+### Verdict: PASS / NEEDS WORK / FAIL
 ```
 
-## Reference Standard
+## Reference Modules (Gold Standard)
 
-Module 0.5 (Exam Strategy) represents the quality bar:
-- Score: 10/10
-- Memorable analogies throughout
-- War stories with real consequences
-- Clear "why" explanations for every concept
-- Practical, actionable content
-- Complete structural elements
+- **Platform: What is Systems Thinking?** (4.6/5) — narrative voice, inline exercises, scenario-based assessment
+- **On-Prem: The Case for On-Prem** (4.4/5) — balanced perspective, deliberate quiz traps, TCO exercise
+- **Cloud: AWS Secrets Management** (4.0/5) — envelope encryption diagram, debugging quiz scenarios
+
+## Anti-Patterns to Flag
+
+- "List of facts" style (bullet points without connecting narrative)
+- Quiz questions that test recall ("What is the command for X?")
+- All active learning back-loaded to the end
+- Diagrams with separate legends instead of inline labels
+- "Refer to official documentation for details"
+- Sections that could be rearranged in any order without losing coherence

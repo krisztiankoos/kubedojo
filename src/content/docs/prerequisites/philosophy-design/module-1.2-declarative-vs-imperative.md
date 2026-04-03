@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** the difference between declarative and imperative approaches with real K8s examples
+- **Predict** what Kubernetes will do when you manually change something it manages (and why)
+- **Write** declarative manifests instead of imperative commands for production workloads
+- **Diagnose** problems caused by imperative thinking in a declarative system
+
+---
+
 ## Why This Module Matters
 
 The on-call engineer at a SaaS company got paged at 2 AM — a critical pod was crash-looping. Half-asleep, she SSH'd into the node and manually restarted the container. Problem solved, back to sleep. Except Kubernetes immediately killed her manually-started container and replaced it with a new one — which also crash-looped. She restarted it again. Kubernetes killed it again. For 45 minutes, she fought the system, not realizing that **Kubernetes wasn't broken — she was thinking imperatively in a declarative world.**

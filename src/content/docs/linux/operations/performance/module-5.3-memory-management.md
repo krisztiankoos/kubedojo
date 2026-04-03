@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** Linux memory management (virtual memory, page cache, swap, OOM killer)
+- **Diagnose** memory issues using free, vmstat, and /proc/meminfo
+- **Configure** memory limits and OOM killer behavior for container workloads
+- **Predict** when the OOM killer will trigger and which process it will kill
+
+---
+
 ## Why This Module Matters
 
 Memory in Linux is more complex than "used vs free." The kernel aggressively caches data, reclaims pages under pressure, and kills processes when memory is exhausted. Understanding this explains why containers get OOM killed.

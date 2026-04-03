@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Configure** sysctl parameters to harden a Kubernetes node against network attacks
+- **Evaluate** CIS benchmark recommendations and decide which to apply
+- **Explain** how ASLR, stack protector, and SYN cookies protect against specific attack types
+- **Audit** a running system's kernel security posture using sysctl and /proc
+
+---
+
 ## Why This Module Matters
 
 The Linux kernel has hundreds of tunable parameters that affect security. Many are insecure by default for compatibility reasons. Proper hardening reduces attack surface and prevents common exploits.

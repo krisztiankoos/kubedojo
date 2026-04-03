@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Apply** the USE Method (Utilization, Saturation, Errors) systematically to any resource
+- **Diagnose** performance bottlenecks by checking CPU, memory, disk, and network in order
+- **Interpret** key metrics (load average, CPU steal, memory pressure) in the context of K8s node health
+- **Write** a USE checklist script that automates initial performance triage
+
+---
+
 ## Why This Module Matters
 
 When a system is slow, where do you start? Random debugging wastes time. The **USE Method** provides a systematic checklist for analyzing any performance problem.

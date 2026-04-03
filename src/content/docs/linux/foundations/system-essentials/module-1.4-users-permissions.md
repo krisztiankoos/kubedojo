@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Configure** users, groups, and file permissions using chmod, chown, and usermod
+- **Design** a permission scheme for a multi-user server with appropriate access controls
+- **Debug** "Permission denied" errors by tracing the user → group → permission chain
+- **Explain** setuid, setgid, and sticky bits and the security implications of each
+
+---
+
 ## Why This Module Matters
 
 Linux is a multi-user system. Every process runs as a user, every file has an owner, and permissions control who can do what.

@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** why Kubernetes won over Docker Swarm, Mesos, and Nomad with specific technical and ecosystem reasons
+- **Identify** the patterns that make a technology "win" (community, extensibility, cloud provider adoption)
+- **Evaluate** new technology claims by asking "does this have the ecosystem markers that Kubernetes had?"
+- **Describe** the timeline from Borg to Kubernetes and why Google open-sourced it
+
+---
+
 ## Why This Module Matters
 
 It was 3 AM on Black Friday 2014. A developer at a fast-growing e-commerce startup stared at 47 terminal windows, each SSH'd into a different server. Their flash sale had gone viral — 10x the expected traffic. Docker containers were crashing faster than he could restart them. "Scale up server 23... no wait, 23 is full, try 31... 31 is down, when did that happen?" By 4 AM, the site was offline. By Monday, the CEO was asking why they'd lost $340,000 in sales.

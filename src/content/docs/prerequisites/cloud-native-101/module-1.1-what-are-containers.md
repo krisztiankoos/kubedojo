@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** what containers are and the specific problem ("works on my machine") they solve
+- **Compare** containers to virtual machines and explain when you'd use each
+- **Describe** how containers use Linux kernel features (namespaces, cgroups) to isolate applications
+- **Predict** what happens when a container is stopped and restarted (what persists, what doesn't)
+
+---
+
 ## Why This Module Matters
 
 Containers are the building blocks of modern application deployment. Before you can understand Kubernetes (a container orchestrator), you need to understand what containers are and what problems they solve.
@@ -123,6 +133,8 @@ That's a container.
 ---
 
 ## How Containers Work
+
+> **Think about it**: If containers aren't virtual machines, how do they isolate applications? A VM creates a completely separate operating system. Containers share the host's OS kernel but trick each process into thinking it has its own filesystem, network, and process tree. The trick is in Linux itself — two kernel features called namespaces (for isolation) and cgroups (for resource limits).
 
 Containers use Linux kernel features to create isolated environments:
 
@@ -298,6 +310,8 @@ Rule: Never use :latest in production
 ---
 
 ## The Analogy: Shipping Containers
+
+> **Pause and predict**: If you write data inside a running container — say, a log file or a database entry — and then the container crashes and restarts, do you think that data survives? This is one of the most important things to understand about containers, and getting it wrong has caused real data loss in production. Containers are *ephemeral* by default — their filesystem is temporary. Anything not stored in a volume disappears when the container dies.
 
 The name "container" comes from shipping containers:
 

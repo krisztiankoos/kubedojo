@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Navigate** absolute and relative paths and explain the difference
+- **Read** files using `cat`, `head`, and `tail` and choose the right tool for the job
+- **Interpret** file permissions from `ls -l` output (who can read, write, execute)
+- **Find** hidden dotfiles and explain why they exist
+
+---
+
 ## Why This Module Matters
 
 Everything on your computer — every photo, every song, every application, every setting — is stored as a **file**. And those files are organized into **directories** (also called folders).
@@ -224,7 +234,9 @@ $ cd Documents                       # Relative path (works because we're in /ho
 
 ## Reading Files
 
-Now let's look inside files. You have several tools, each useful in different situations:
+Now let's look inside files. You have several tools, each useful in different situations.
+
+> **Think about it**: You need to check the last few lines of a log file that's 10,000 lines long. Would you use a command that shows the whole file, or one that shows just the end? Keep this in mind as you read about `cat`, `head`, and `tail` below — each exists because it solves a different problem.
 
 ### `cat` — Show the Whole File
 
@@ -330,6 +342,8 @@ Hidden files usually contain configuration and settings. Some common ones:
 
 ## File Permissions Basics
 
+> **Pause and predict**: When you run `ls -l`, you see something like `-rw-r--r--` next to each file. What do you think those letters mean? The `r` might remind you of "read", `w` of "write"... and the dashes? Take a guess before reading on.
+
 Remember when we ran `ls -l` and saw this?
 
 ```
@@ -412,10 +426,14 @@ Don't worry about changing permissions yet — just know how to read them. We'll
 
 ## Quiz
 
-**Question 1**: What command shows your current location in the directory tree?
+**Question 1**: A log file is 50,000 lines long and you only need to see the last 20 lines to check for recent errors. Which command would you use and why is `cat` the wrong choice here?
 
 <details>
 <summary>Show Answer</summary>
+
+`tail -20 logfile.txt` shows only the last 20 lines. Using `cat` on a 50,000-line file would flood your terminal with output, making it impossible to find what you need. `cat` dumps everything at once — fine for small files, terrible for large ones. The `tail` command exists precisely for this use case: checking the end of logs, which is where the most recent (and usually most relevant) information lives.
+
+
 
 ```bash
 $ pwd
@@ -571,7 +589,7 @@ You've completed this exercise when you can:
 
 ---
 
-> 💡 You just used a tool that senior engineers use every day. You belong here.
+> You just used a tool that senior engineers use every day. You belong here.
 
 ---
 

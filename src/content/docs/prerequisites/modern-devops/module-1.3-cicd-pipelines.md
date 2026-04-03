@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** the difference between Continuous Integration, Continuous Delivery, and Continuous Deployment
+- **Design** a basic CI/CD pipeline for a containerized application (build → test → scan → deploy)
+- **Compare** CI/CD tools (GitHub Actions, GitLab CI, Jenkins) and explain trade-offs
+- **Identify** pipeline anti-patterns (no tests, manual deploy gates, secrets in code)
+
+---
+
 ## Why This Module Matters
 
 Every time you push code, it should be automatically tested, built, and prepared for deployment. CI/CD pipelines eliminate the "it works on my machine" problem and ensure consistent, reliable releases. For Kubernetes applications, CI/CD is how container images get built and how deployments get triggered.

@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Monitor** system resources using top, htop, free, df, and du
+- **Identify** resource-hungry processes and decide whether to optimize or kill them
+- **Explain** load average, CPU steal, and memory pressure in the context of K8s node health
+- **Diagnose** a slow system by systematically checking CPU, memory, disk, and network
+
+---
+
 ## Why This Module Matters
 
 Your Linux machine is running dozens — sometimes hundreds — of programs right now, all at the same time. Your web browser, your terminal, your SSH session, that forgotten download script from two days ago. These running programs are called **processes**, and knowing how to find them, watch them, and stop them is one of the most important skills in DevOps.

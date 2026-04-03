@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Install** software from the terminal using your OS's package manager
+- **Explain** the difference between package managers (apt, brew, dnf) and why each OS has its own
+- **Update** and remove packages, and explain why regular updates matter
+- **Find** information about installed packages and their dependencies
+
+---
+
 ## Why This Module Matters
 
 To work with Kubernetes, Docker, and cloud tools, you'll need to **install software** on your computer — not by downloading installers from websites and clicking "Next, Next, Finish," but by typing a single command in the terminal.
@@ -194,6 +204,8 @@ The package manager figures out the whole chain of dependencies and installs the
 
 **The less-good news**: Sometimes dependencies conflict with each other. Program A needs version 1.0 of a library, but Program B needs version 2.0. This is called **dependency hell**, and it's one of the problems that containers (which you'll learn about soon) were invented to solve.
 
+> **Stop and think**: If two programs need different versions of the same library, and your OS can only have one version installed at a time — what would you do? This exact problem is why Docker and containers were invented. Each program gets its own isolated set of dependencies. Keep this in mind when you reach the containers module — you'll see the "aha" moment.
+
 ---
 
 ## Installing Your First Packages
@@ -201,6 +213,8 @@ The package manager figures out the whole chain of dependencies and installs the
 Let's install some useful tools. Follow the instructions for your operating system.
 
 ### Updating the Package List
+
+> **Before you install**: Why do you think you need to run `update` before `install`? Think about it: the package manager has a local catalog of what's available. But new versions come out every day. If you install without updating, you might get an old version — or fail entirely because the catalog doesn't know about the package yet.
 
 Before installing anything, update your package manager's catalog. Think of it as refreshing the list of what's available:
 
@@ -546,7 +560,7 @@ You've completed this exercise when you can:
 
 ---
 
-> 💡 You just used a tool that senior engineers use every day. You belong here.
+> You just used a tool that senior engineers use every day. You belong here.
 
 ---
 

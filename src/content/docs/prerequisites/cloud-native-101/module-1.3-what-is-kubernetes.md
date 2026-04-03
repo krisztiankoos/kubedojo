@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** what Kubernetes does and the specific problems (scaling, self-healing, rolling updates) it solves
+- **Name** the main control plane components (API server, scheduler, etcd, controller manager) and their roles
+- **Describe** the relationship between Pods, Deployments, and Services at a high level
+- **Distinguish** between managed Kubernetes (EKS/GKE/AKS), self-managed, and local clusters
+
+---
+
 ## Why This Module Matters
 
 You know what containers are. You can build and run them with Docker. But Docker runs containers on ONE machine. What happens when you need:
@@ -62,6 +72,8 @@ Docker is great for running a few containers on your laptop. But production need
 ```
 
 This is **container orchestration**, and Kubernetes is the industry standard.
+
+> **Pause and think**: You have 200 containers running across 15 servers. One server's hard drive fails at 3 AM. In a manual setup, someone gets paged, SSHs in, figures out what was running on that server, and manually redeploys those containers elsewhere. With Kubernetes, the system detects the failure, knows exactly what was running, and automatically reschedules those containers to healthy servers — all before your on-call engineer wakes up. That's the value of orchestration.
 
 ---
 
@@ -140,6 +152,8 @@ Kubernetes (K8s) is an open-source container orchestration platform. It:
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+> **Connect to Module 0.1**: Remember the restaurant kitchen from Module 0.1? The control plane is the restaurant management team. The API Server is the front desk (all orders go through it), the Scheduler is the floor manager (decides which kitchen handles which order), etcd is the order log (records everything), and the Controller Manager is the shift supervisor (makes sure the right number of staff are working).
 
 ### Control Plane Components
 

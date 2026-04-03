@@ -18,18 +18,27 @@ lab:
 
 ---
 
+## Learning Outcomes
+
+After completing this module, you will be able to:
+- **Diagnose** a failed `kubectl apply` caused by a removed API and fix it in under 2 minutes
+- **Find** the correct API version for any resource using `kubectl explain` and `kubectl api-resources`
+- **Update** a deprecated manifest to the current API version, including structural changes
+- **Explain** the Kubernetes deprecation policy and what guarantees it provides
+
+---
+
 ## Why This Module Matters
 
-Kubernetes evolves rapidly. APIs that work today might be deprecated tomorrow and removed in future versions. Understanding API deprecations prevents broken manifests and failed deployments.
+It was 2 AM on a Tuesday when the on-call engineer at a fintech startup ran `kubectl apply -f deploy/` after upgrading their cluster from 1.21 to 1.22. Every single Ingress resource failed. The CI/CD pipeline that had been deploying fine for two years was suddenly broken — 14 microservices went down because every manifest still used `networking.k8s.io/v1beta1`. The team had ignored deprecation warnings in their server logs for three releases. Total downtime: 3 hours. Revenue lost: $180K.
 
-The CKAD exam tests:
-- Awareness of deprecated APIs
-- How to identify API versions for resources
-- Updating manifests to use current APIs
+This wasn't a bug. It was entirely preventable. The API server had been printing warnings for over a year.
 
 > **The Road Construction Analogy**
 >
 > API deprecation is like road construction. First, signs warn you the road will close (deprecation). You have time to find alternate routes (new API version). Eventually, the old road closes completely (API removal). If you ignore the warnings, you're stuck when the road disappears.
+
+**The key skill isn't memorizing API versions** — it's knowing how to look them up instantly with `kubectl explain`. The exam cluster might be a different version than what you practiced on. The commands always work.
 
 ---
 
@@ -225,23 +234,21 @@ k explain cronjob
 k explain networkpolicy
 ```
 
-### Quick Reference for Common Resources
+### Don't Memorize — Look It Up
 
-| Resource | Current apiVersion |
-|----------|-------------------|
-| Pod | v1 |
-| Service | v1 |
-| ConfigMap | v1 |
-| Secret | v1 |
-| Deployment | apps/v1 |
-| StatefulSet | apps/v1 |
-| DaemonSet | apps/v1 |
-| Job | batch/v1 |
-| CronJob | batch/v1 |
-| Ingress | networking.k8s.io/v1 |
-| NetworkPolicy | networking.k8s.io/v1 |
-| Role/RoleBinding | rbac.authorization.k8s.io/v1 |
-| ClusterRole/ClusterRoleBinding | rbac.authorization.k8s.io/v1 |
+You might be tempted to memorize API versions for every resource. Don't. The exam environment might use a different Kubernetes version than what you studied. Instead, build muscle memory for the lookup:
+
+```bash
+# This is the ONLY command you need to remember
+k explain <resource> | head -5
+
+# Practice: what happens if you guess wrong?
+# Try applying a manifest with the wrong version and read the error.
+```
+
+> **Pause and predict**: If you applied a Deployment with `apiVersion: extensions/v1beta1` on a 1.35 cluster, what would happen? Would it warn you, error out, or silently succeed? Think about it before reading on.
+
+The answer: it would error out immediately. `extensions/v1beta1` Deployments were removed in 1.16 — that's almost 20 versions ago. The error message would say `no matches for kind "Deployment" in version "extensions/v1beta1"`. This is different from a deprecation warning, which only appears for APIs that still work but are scheduled for removal.
 
 ---
 
@@ -280,75 +287,160 @@ k explain networkpolicy
 
 | Mistake | Why It Hurts | Solution |
 |---------|--------------|----------|
-| Using beta APIs in new manifests | Will break in future | Always use stable v1 |
-| Copying old examples from internet | Deprecated APIs | Check version with `k explain` |
-| Ignoring deprecation warnings | Manifests break after upgrade | Update immediately |
-| Not knowing current versions | Time wasted in exam | Memorize common resources |
+| Copying YAML from old blog posts or Stack Overflow | Examples from 2019 use removed APIs (`extensions/v1beta1`) | Always verify with `k explain` on YOUR cluster |
+| Ignoring deprecation warnings in CI/CD logs | Warnings become errors after 3 releases — but the upgrade happens silently | Treat deprecation warnings as bugs; fix in the next sprint |
+| Memorizing API versions instead of learning the lookup | Exam cluster version may differ from what you studied | Build muscle memory for `k explain <resource>` — takes 3 seconds |
+| Only updating `apiVersion` without checking spec changes | Ingress, CronJob, and others changed their spec structure between versions | Always run `k explain <resource>.spec` after changing apiVersion |
+| Not testing manifests after a cluster upgrade | Old manifests silently become time bombs | Add `kubectl apply --dry-run=server` to your CI pipeline |
+| Using `kubectl convert` without understanding the changes | `convert` handles apiVersion but may miss structural changes | Use `convert` as a starting point, then verify with `explain` |
 
 ---
 
 ## Quiz
 
-1. **How do you find the current API version for a resource?**
+1. **Your team just upgraded a cluster from 1.24 to 1.25. Deployments work fine but all CronJobs fail to apply. What's likely wrong and how would you fix it?**
    <details>
    <summary>Answer</summary>
-   `kubectl explain <resource>` or `kubectl api-resources | grep <resource>`
+   CronJob moved from `batch/v1beta1` to `batch/v1` and `v1beta1` was removed in 1.25. The manifests still reference the old API version. Fix: run `k explain cronjob | head -5` to confirm the current version, then update every CronJob manifest's `apiVersion` to `batch/v1`. Also check if the CronJob spec structure changed between versions — in this case, it didn't significantly, but always verify with `k explain cronjob.spec`.
    </details>
 
-2. **What's the current apiVersion for Ingress?**
+2. **You run `kubectl apply -f ingress.yaml` and get: `no matches for kind "Ingress" in version "extensions/v1beta1"`. But your colleague says "it worked last week." What happened?**
    <details>
    <summary>Answer</summary>
-   `networking.k8s.io/v1`
+   The cluster was upgraded between last week and now. `extensions/v1beta1` Ingresses were removed in Kubernetes 1.22. Before that version, the API still worked but printed deprecation warnings. After the upgrade crossed that boundary, the API was completely removed. The fix isn't just changing the apiVersion to `networking.k8s.io/v1` — you also need to update the spec structure: `backend.serviceName` becomes `backend.service.name`, `backend.servicePort` becomes `backend.service.port.number`, and you must add `pathType: Prefix` (or `Exact`).
    </details>
 
-3. **What's the current apiVersion for CronJob?**
+3. **You're writing a manifest during the CKAD exam and you're not sure if NetworkPolicy uses `v1` or `v1beta1`. What's the fastest way to find out, and why shouldn't you guess?**
    <details>
    <summary>Answer</summary>
-   `batch/v1`
+   Run `k explain networkpolicy | head -5` — this shows the current VERSION on the exam cluster, which may differ from what you studied. Guessing is risky because the exam uses a specific Kubernetes version that you won't know in advance. Even if you memorized versions for 1.35, the exam might use 1.34 or 1.36. The `explain` command always gives you the truth for the cluster you're on. It takes 3 seconds and eliminates a category of errors entirely.
    </details>
 
-4. **What happens when you use a removed API version?**
+4. **Your CI pipeline applies manifests with `kubectl apply --server-side`. The server returns `Warning: batch/v1beta1 CronJob is deprecated`. The manifests still apply successfully. Should you fix this now or later?**
    <details>
    <summary>Answer</summary>
-   The API server returns an error, and the resource cannot be created/updated.
+   Fix it now. A deprecation warning means the API still works in the current version but has a removal date. Kubernetes guarantees at least 3 releases between deprecation and removal, so you have time — but ignoring it means your manifests will break silently during a future upgrade. The safest approach: update the apiVersion immediately, verify the spec structure hasn't changed, test in staging, and update all copies of the manifest (Helm charts, Kustomize bases, GitOps repos). The cost of fixing now is 5 minutes; the cost of fixing during a 2 AM outage after an upgrade is hours.
+   </details>
+
+5. **You find a Stack Overflow answer from 2019 that shows how to create a Deployment using `apiVersion: extensions/v1beta1`. Can you trust it? How would you adapt it?**
+   <details>
+   <summary>Answer</summary>
+   You cannot trust the apiVersion from any online example — only `kubectl explain` on your actual cluster tells you the truth. `extensions/v1beta1` Deployments were removed in Kubernetes 1.16 (released 2019). To adapt: change `apiVersion` to `apps/v1`, then verify the spec structure with `k explain deployment.spec`. For Deployments, the v1 spec is essentially the same as v1beta1, so the rest of the manifest likely works. For other resources like Ingress, the spec changed significantly between versions. Always validate with `--dry-run=client -o yaml` before applying.
+   </details>
+
+6. **What's the difference between a "deprecated" API and a "removed" API? Why does this distinction matter for your workflow?**
+   <details>
+   <summary>Answer</summary>
+   A deprecated API still works — the server accepts it and processes it, but prints a warning in the response. A removed API is gone — the server returns an error and refuses the request. This distinction matters because deprecated APIs give you a grace period (minimum 3 releases) to update. During this window, everything works but you're on borrowed time. Removed APIs cause immediate failures. The practical implication: if you see deprecation warnings in your CI/CD logs, treat them as non-critical bugs to fix in the next sprint. If you see removal errors, it's a production incident.
    </details>
 
 ---
 
-## Hands-On Exercise
+## Hands-On Exercise: Fix the Broken Manifests
 
-**Task**: Practice finding and using correct API versions.
+**Scenario**: You've inherited a repository of Kubernetes manifests from a team that left the company. The manifests were last updated for Kubernetes 1.21. Your cluster runs 1.35. Some manifests will fail to apply. Your job: find what's broken, fix it, and verify it works.
 
-**Part 1: Discover API Versions**
-```bash
-# List all API resources
-k api-resources | head -20
+**Part 1: Diagnose the Problem**
 
-# Find specific resources
-k api-resources | grep -i deployment
-k api-resources | grep -i ingress
-k api-resources | grep -i cronjob
-
-# Use explain
-k explain deployment
-k explain ingress
-k explain cronjob
+Save this broken manifest as `broken-ingress.yaml`:
+```yaml
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: legacy-app
+spec:
+  rules:
+  - host: app.example.com
+    http:
+      paths:
+      - path: /api
+        backend:
+          serviceName: api-service
+          servicePort: 8080
+      - path: /
+        backend:
+          serviceName: frontend
+          servicePort: 80
 ```
 
-**Part 2: Create Resources with Correct APIs**
-```bash
-# Create Deployment (apps/v1)
-k create deploy api-test --image=nginx --dry-run=client -o yaml | head -10
+Try to apply it: `k apply -f broken-ingress.yaml --dry-run=server`
 
-# Generate CronJob (batch/v1)
-k create cronjob api-cron --image=busybox --schedule="*/5 * * * *" -- echo hello --dry-run=client -o yaml | head -10
+What error do you get? Read it carefully — it tells you exactly what's wrong.
+
+<details>
+<summary>Expected error</summary>
+
+```
+error: resource mapping not found for name: "legacy-app" namespace: "" from "broken-ingress.yaml":
+no matches for kind "Ingress" in version "networking.k8s.io/v1beta1"
 ```
 
-**Part 3: Verify Existing Resources**
-```bash
-# Check what version existing resources use
-k get deployments -A -o jsonpath='{range .items[*]}{.apiVersion}{"\t"}{.metadata.name}{"\n"}{end}'
+This means `v1beta1` has been completely removed. You need `networking.k8s.io/v1`.
+</details>
+
+**Part 2: Fix the Manifest**
+
+Update `broken-ingress.yaml` to use the correct API version. Hint: the spec structure ALSO changed — use `k explain ingress.spec.rules.http.paths` to see the current structure.
+
+<details>
+<summary>Fixed manifest</summary>
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: legacy-app
+spec:
+  rules:
+  - host: app.example.com
+    http:
+      paths:
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: api-service
+            port:
+              number: 8080
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend
+            port:
+              number: 80
 ```
+
+Key changes: `apiVersion` updated, `pathType: Prefix` added (now required), `backend` structure completely changed from flat to nested (`service.name` and `service.port.number`).
+</details>
+
+**Part 3: Audit All Resources**
+
+Run this to check all API versions available on your cluster:
+```bash
+# Find the current version for every resource you commonly use
+for res in pod service deployment statefulset daemonset job cronjob ingress networkpolicy; do
+  version=$(k explain $res 2>/dev/null | grep "VERSION:" | awk '{print $2}')
+  echo "$res: $version"
+done
+```
+
+**Part 4: Generate Correct YAML from Scratch**
+
+Without looking at any reference, generate correct manifests using imperative commands:
+```bash
+k create deploy audit-app --image=nginx --dry-run=client -o yaml > deployment.yaml
+k create job audit-job --image=busybox -- echo done --dry-run=client -o yaml > job.yaml
+k create cronjob audit-cron --image=busybox --schedule="0 * * * *" -- echo check --dry-run=client -o yaml > cronjob.yaml
+```
+
+Verify each one: `grep apiVersion *.yaml`
+
+**Success Criteria**:
+- [ ] Broken ingress manifest diagnosed and fixed
+- [ ] Fixed manifest applies successfully with `--dry-run=server`
+- [ ] You can explain the 3 structural changes between v1beta1 and v1 Ingress
+- [ ] You can look up any resource's API version in under 10 seconds
 
 ---
 

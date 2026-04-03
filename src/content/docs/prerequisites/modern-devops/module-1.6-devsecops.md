@@ -12,6 +12,16 @@ sidebar:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** the "shift left" security principle and why it's cheaper to catch issues early
+- **Identify** the top Kubernetes security risks (misconfiguration, exposed dashboards, excessive RBAC)
+- **Describe** a secure CI/CD pipeline with image scanning, secret management, and policy enforcement
+- **Compare** DevSecOps tools (Trivy, OPA/Gatekeeper, Falco) and explain what each protects against
+
+---
+
 ## Why This Module Matters
 
 Security used to be an afterthought—a team that said "no" at the end of development. That doesn't work in cloud-native environments where you deploy multiple times per day. DevSecOps integrates security into every stage of the development lifecycle. For Kubernetes environments, where misconfiguration is the #1 security risk, this is critical.

@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Navigate** the FHS and explain the purpose of key directories (/etc, /var, /proc, /sys, /tmp)
+- **Find** any file or configuration on a Linux system by knowing which directory it belongs in
+- **Distinguish** between /bin, /sbin, /usr/bin and explain why they exist
+- **Use** /proc and /sys to inspect runtime kernel and hardware state
+
+---
+
 ## Why This Module Matters
 
 On Linux, **everything is a file**. Configuration, devices, processes, network connections—all represented in the filesystem.

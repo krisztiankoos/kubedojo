@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Configure** network interfaces, routes, and DNS resolution using nmcli and ip commands
+- **Secure** SSH access and manage firewall rules with firewalld
+- **Implement** network bonding and VLAN tagging for server redundancy
+- **Diagnose** network connectivity failures using a systematic approach (link → IP → route → DNS → firewall)
+
+---
+
 ## Why This Module Matters
 
 TCP/IP knowledge tells you how packets flow. This module teaches you how to control that flow — who gets in, who gets out, which interfaces bond together, and how to harden your network services.

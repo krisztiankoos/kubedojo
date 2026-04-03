@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Diagnose** network failures using a systematic layer-by-layer approach (physical → link → IP → transport → application)
+- **Capture** and analyze packets with tcpdump for debugging connectivity issues
+- **Trace** packet flow through iptables rules, bridges, and network namespaces
+- **Debug** Kubernetes networking issues (Service not reachable, DNS failure, CNI problems) at the Linux level
+
+---
+
 ## Why This Module Matters
 
 "The network is down" is the most common blame target for application issues. Network debugging skills let you verify whether the network is actually the problem—and pinpoint exactly where.

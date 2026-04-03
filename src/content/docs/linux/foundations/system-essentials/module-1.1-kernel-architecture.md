@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Explain** the role of the Linux kernel as the interface between hardware and software
+- **Trace** the boot process from BIOS/UEFI through kernel initialization to systemd
+- **Compare** monolithic vs microkernel architectures and explain why Linux chose monolithic
+- **Use** kernel information tools (`uname`, `/proc`, `dmesg`) to inspect a running system
+
+---
+
 ## Why This Module Matters
 
 Every container you run, every Kubernetes pod you deploy, every Linux server you manage—they all depend on **one piece of software**: the Linux kernel.

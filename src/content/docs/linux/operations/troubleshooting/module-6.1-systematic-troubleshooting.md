@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Apply** the scientific method to system debugging (observe → hypothesize → test → conclude)
+- **Reproduce** issues systematically and document findings for post-incident reviews
+- **Triage** problems by severity and identify the fastest path to resolution
+- **Avoid** common debugging anti-patterns (random changes, ignoring evidence, skipping reproduction)
+
+---
+
 ## Why This Module Matters
 
 When systems break, panic leads to random fixes. Methodical troubleshooting finds root causes faster and prevents recurrence. The difference between a 5-minute fix and hours of confusion is often just approach.

@@ -21,6 +21,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Create** network namespaces and connect them with veth pairs
+- **Explain** how container networking works at the Linux level (namespaces + bridges + veth)
+- **Trace** a packet from one container to another through the network stack
+- **Debug** container-to-container connectivity by inspecting bridges, routes, and iptables rules
+
+---
+
 ## Why This Module Matters
 
 Every container and Kubernetes pod has its own network namespace. Understanding how network namespaces work and how they're connected explains:

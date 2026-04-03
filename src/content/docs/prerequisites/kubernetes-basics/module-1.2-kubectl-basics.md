@@ -18,6 +18,16 @@ lab:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Navigate** Kubernetes resources using `kubectl get`, `kubectl describe`, and `kubectl explain`
+- **Create** resources both imperatively (quick commands) and declaratively (YAML files)
+- **Debug** resource issues using `kubectl describe` events and `kubectl logs`
+- **Use** output formatting (`-o wide`, `-o yaml`, `-o json`) to get the information you need
+
+---
+
 ## Why This Module Matters
 
 kubectl is your primary interface to Kubernetes. Every interaction—creating resources, debugging problems, checking status—goes through kubectl. Mastering it is essential for both daily work and certification exams.

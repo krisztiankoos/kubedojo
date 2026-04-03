@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Trace** a TCP connection from SYN to FIN and explain what happens at each step
+- **Calculate** subnet ranges from CIDR notation and determine if two IPs are on the same network
+- **Diagnose** network issues by interpreting ping, traceroute, and ss output
+- **Explain** how Linux routing tables determine where packets go
+
+---
+
 ## Why This Module Matters
 
 Every Kubernetes pod, every service, every ingress request—they all ride on TCP/IP. When networking doesn't work, you need to understand the fundamentals.

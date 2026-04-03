@@ -20,6 +20,16 @@ Before starting this module:
 
 ---
 
+## What You'll Be Able to Do
+
+After this module, you will be able to:
+- **Configure** shell environment variables (PATH, HOME, PS1) and explain how they're inherited
+- **Debug** "command not found" errors by tracing the PATH variable
+- **Use** sudo safely and explain why running as root is dangerous
+- **Manage** file ownership and permissions across users and groups
+
+---
+
 ## Why This Module Matters
 
 Picture this. You download a script from a tutorial. You type `./deploy.sh`. The terminal spits back:
