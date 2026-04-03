@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """Direct CLI dispatch for Gemini and Claude — no broker, no database.
 
-Replaces the ai_agent_bridge with simple subprocess calls.
-See: docs/AGENT-DISPATCH-MIGRATION.md (learn-ukrainian project)
+V2: Adds rate limit detection, inter-call pacing, MCP tool support for
+Ukrainian translations (shared RAG server from learn-ukrainian), and
+fallback model support. Based on learn-ukrainian V6 dispatch.
 
 Usage:
     python scripts/dispatch.py gemini "Review this module" [--model MODEL] [--github ISSUE_NUM]
-    python scripts/dispatch.py claude "Expand this draft" [--model MODEL]
+    python scripts/dispatch.py gemini "Translate this" --mcp --model gemini-3-flash-preview
+    python scripts/dispatch.py claude "Expand this draft" [--model MODEL] [--mcp]
+    python scripts/dispatch.py logs [-n 10] [--full]
 """
 
 import argparse
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -23,10 +25,10 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent
 LOG_DIR = REPO_ROOT / ".dispatch-logs"
+MCP_CONFIG = REPO_ROOT / ".mcp.json"
 
 # Resolve CLI paths at import time
 GEMINI_CLI = shutil.which("gemini") or "gemini"
-CLAUDE_CLI = shutil.which("claude") or "claude"
 
 # Environment for subprocesses
 _ENV = os.environ.copy()
@@ -36,13 +38,87 @@ _ENV["KUBEDOJO_PIPELINE"] = "1"     # Suppress inbox hooks during pipeline runs
 # GitHub comment char limit (65,536 minus safety margin)
 GH_CHAR_LIMIT = 64000
 
-# Gemini review context prepended to review prompts
+# ---------------------------------------------------------------------------
+# Model defaults
+# ---------------------------------------------------------------------------
+
+GEMINI_DEFAULT_MODEL = "gemini-3-flash-preview"
+GEMINI_FALLBACK_MODEL = "gemini-2.5-flash"
+CLAUDE_DEFAULT_MODEL = "claude-sonnet-4-6"
+
+# ---------------------------------------------------------------------------
+# Rate limit detection + pacing
+# ---------------------------------------------------------------------------
+
+_RATE_LIMIT_PATTERNS = (
+    "429",
+    "RESOURCE_EXHAUSTED",
+    "rate limit",
+    "rate_limit",
+    "quota exceeded",
+    "No capacity available",
+    "capacity",
+    "too many requests",
+    "Too Many Requests",
+)
+
+_GEMINI_INTER_CALL_DELAY = 3.0
+_last_gemini_call_time: float = 0.0
+
+
+def _is_rate_limited(text: str) -> bool:
+    """Check if a failure was caused by rate limiting."""
+    text_lower = text.lower()
+    return any(pat.lower() in text_lower for pat in _RATE_LIMIT_PATTERNS)
+
+
+def _pace_gemini_calls() -> None:
+    """Enforce minimum delay between Gemini CLI calls to avoid bursts."""
+    global _last_gemini_call_time
+    if _last_gemini_call_time > 0:
+        elapsed = time.monotonic() - _last_gemini_call_time
+        if elapsed < _GEMINI_INTER_CALL_DELAY:
+            wait = _GEMINI_INTER_CALL_DELAY - elapsed
+            time.sleep(wait)
+    _last_gemini_call_time = time.monotonic()
+
+
+# ---------------------------------------------------------------------------
+# MCP tools for Ukrainian translations (shared RAG server)
+# ---------------------------------------------------------------------------
+
+# Claude with MCP: Ukrainian verification + quality tools
+CLAUDE_TRANSLATION_TOOLS = (
+    "mcp__rag__verify_word,"
+    "mcp__rag__verify_words,"
+    "mcp__rag__verify_lemma,"
+    "mcp__rag__search_text,"
+    "mcp__rag__search_literary,"
+    "mcp__rag__query_pravopys,"
+    "mcp__rag__search_style_guide,"
+    "mcp__rag__query_cefr_level,"
+    "mcp__rag__search_definitions,"
+    "mcp__rag__search_etymology,"
+    "mcp__rag__search_idioms,"
+    "mcp__rag__search_synonyms,"
+    "mcp__rag__translate_en_uk,"
+    "mcp__rag__query_grac,"
+    "mcp__rag__query_ulif,"
+    "mcp__rag__query_r2u,"
+    "Read"
+)
+
+# ---------------------------------------------------------------------------
+# Gemini review context
+# ---------------------------------------------------------------------------
+
 REVIEW_CONTEXT = """PROJECT CONTEXT:
-KubeDojo is a free, open-source Kubernetes curriculum with 311+ modules:
+KubeDojo is a free, open-source Kubernetes curriculum with 568+ modules:
 - Certification tracks: CKA, CKAD, CKS, KCNA, KCSA (exam-aligned, K8s 1.35+)
-- Platform Engineering: SRE, GitOps, DevSecOps, MLOps (102 modules)
-- Deep Dives: Linux (28 modules), IaC (12 modules)
-- Quality standard: Every module has theory, hands-on exercises, quizzes, "Did You Know?" facts
+- Platform Engineering: SRE, GitOps, DevSecOps, MLOps (209 modules)
+- On-Premises Kubernetes: 30 modules
+- Cloud: AWS/GCP/Azure (84 modules)
+- Quality standard: Every module has learning outcomes, inline prompts, scenario-based quizzes
 
 REVIEW PROTOCOL:
 - Read every referenced file COMPLETELY before reviewing. Do not skim.
@@ -62,12 +138,21 @@ Respond with:
 """
 
 
-def dispatch_gemini(prompt: str, model: str = "gemini-3.1-pro-preview",
-                    review: bool = False, timeout: int = 900) -> tuple[bool, str]:
+# ---------------------------------------------------------------------------
+# Core dispatch functions
+# ---------------------------------------------------------------------------
+
+def dispatch_gemini(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
+                    review: bool = False, timeout: int = 900,
+                    mcp: bool = False) -> tuple[bool, str]:
     """Call Gemini CLI directly. Returns (success, output)."""
     full_prompt = f"{REVIEW_CONTEXT}\n---\n\nTASK:\n{prompt}" if review else prompt
     cmd = [GEMINI_CLI, "-m", model, "-y"]
+    if mcp:
+        cmd.extend(["--allowed-mcp-server-names", "rag"])
     t0 = time.time()
+
+    _pace_gemini_calls()
 
     try:
         proc = subprocess.Popen(
@@ -131,34 +216,52 @@ def dispatch_gemini(prompt: str, model: str = "gemini-3.1-pro-preview",
         return False, ""
 
 
-def dispatch_gemini_with_retry(prompt: str, model: str = "gemini-3.1-pro-preview",
+def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
                                review: bool = False, max_retries: int = 3,
-                               timeout: int = 900) -> tuple[bool, str]:
-    """Call Gemini with retry on rate limits."""
+                               timeout: int = 900, mcp: bool = False) -> tuple[bool, str]:
+    """Call Gemini with retry on rate limits + fallback model."""
     base_delay = 30
+    output = ""
     for attempt in range(max_retries):
-        ok, output = dispatch_gemini(prompt, model, review, timeout)
+        ok, output = dispatch_gemini(prompt, model, review, timeout, mcp)
         if ok:
             return True, output
+
         # Check for rate limit
-        if any(s in output.lower() for s in ["429", "quota", "exhausted", "rate"]):
+        if _is_rate_limited(output):
             if attempt < max_retries - 1:
                 delay = base_delay * (2 ** attempt)
-                print(f"Rate limited (attempt {attempt + 1}/{max_retries}). Waiting {delay}s...")
+                print(f"Rate limited (attempt {attempt + 1}/{max_retries}). Waiting {delay}s...",
+                      file=sys.stderr)
                 time.sleep(delay)
                 continue
+            # All retries exhausted on rate limit — don't try fallback (same quota)
+            return False, output
+
+        # Non-rate-limit failure — try fallback model once
+        if model != GEMINI_FALLBACK_MODEL:
+            print(f"Retrying with fallback model: {GEMINI_FALLBACK_MODEL}", file=sys.stderr)
+            return dispatch_gemini(prompt, GEMINI_FALLBACK_MODEL, review, timeout, mcp)
+
         return False, output
+
     return False, output
 
 
-def dispatch_claude(prompt: str, model: str = "claude-sonnet-4-6",
-                    timeout: int = 600) -> tuple[bool, str]:
+def dispatch_claude(prompt: str, model: str = CLAUDE_DEFAULT_MODEL,
+                    timeout: int = 600, mcp: bool = False) -> tuple[bool, str]:
     """Call Claude CLI directly. Returns (success, output)."""
     cmd = [
-        CLAUDE_CLI, "-p",
+        "npx", "@anthropic-ai/claude-code@latest", "-p",
         "--model", model,
         "--output-format", "text",
     ]
+    if mcp and MCP_CONFIG.exists():
+        cmd.extend([
+            "--mcp-config", str(MCP_CONFIG),
+            "--allowedTools", CLAUDE_TRANSLATION_TOOLS,
+        ])
+
     t0 = time.time()
 
     try:
@@ -218,7 +321,9 @@ def post_to_github(issue_num: int, content: str, model: str) -> bool:
     return True
 
 
-# --- Logging ---
+# ---------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------
 
 def _log(agent: str, model: str, prompt: str, output: str, ok: bool,
          duration_s: float, stderr: str = "") -> Path:
@@ -246,7 +351,9 @@ def _log(agent: str, model: str, prompt: str, output: str, ok: bool,
     return log_file
 
 
-# --- Helpers ---
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _stream_with_timeout(proc, timeout: int) -> tuple[list[str], bool]:
     """Stream stdout lines, kill if timeout exceeded. Returns (lines, timed_out)."""
@@ -300,19 +407,22 @@ def _split_content(content: str, limit: int = GH_CHAR_LIMIT) -> list[str]:
     return chunks
 
 
-# --- CLI ---
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Direct CLI dispatch for Gemini/Claude — no broker needed",
+        description="Direct CLI dispatch for Gemini/Claude — V2 with rate limiting + MCP",
     )
     subparsers = parser.add_subparsers(dest="agent", help="Target agent")
 
     # gemini
     gp = subparsers.add_parser("gemini", help="Dispatch prompt to Gemini CLI")
     gp.add_argument("prompt", help="Prompt text (use '-' to read from stdin)")
-    gp.add_argument("--model", default="gemini-3.1-pro-preview", help="Gemini model")
+    gp.add_argument("--model", default=GEMINI_DEFAULT_MODEL, help=f"Gemini model (default: {GEMINI_DEFAULT_MODEL})")
     gp.add_argument("--review", action="store_true", help="Prepend KubeDojo review context")
+    gp.add_argument("--mcp", action="store_true", help="Enable RAG MCP tools (for translations)")
     gp.add_argument("--github", type=int, metavar="ISSUE", help="Post output to GitHub issue")
     gp.add_argument("--retry", type=int, default=3, help="Max retries on rate limit (default: 3)")
     gp.add_argument("--timeout", type=int, default=900, help="Timeout in seconds (default: 900)")
@@ -320,14 +430,15 @@ def main():
     # claude
     cp = subparsers.add_parser("claude", help="Dispatch prompt to Claude CLI")
     cp.add_argument("prompt", help="Prompt text (use '-' to read from stdin)")
-    cp.add_argument("--model", default="claude-sonnet-4-6", help="Claude model")
+    cp.add_argument("--model", default=CLAUDE_DEFAULT_MODEL, help=f"Claude model (default: {CLAUDE_DEFAULT_MODEL})")
+    cp.add_argument("--mcp", action="store_true", help="Enable RAG MCP tools (for translations)")
     cp.add_argument("--timeout", type=int, default=600, help="Timeout in seconds (default: 600)")
 
     # logs
     lp = subparsers.add_parser("logs", help="Show recent dispatch logs")
     lp.add_argument("-n", type=int, default=10, help="Number of entries (default: 10)")
     lp.add_argument("--full", action="store_true", help="Show full prompt/output (not truncated)")
-    lp.add_argument("--id", dest="log_id", help="Show a specific log file by timestamp prefix (e.g. 20260325-141523)")
+    lp.add_argument("--id", dest="log_id", help="Show a specific log file by timestamp prefix")
 
     args = parser.parse_args()
 
@@ -338,7 +449,7 @@ def main():
     if args.agent == "gemini":
         prompt = sys.stdin.read() if args.prompt == "-" else args.prompt
         ok, output = dispatch_gemini_with_retry(
-            prompt, args.model, args.review, args.retry, args.timeout,
+            prompt, args.model, args.review, args.retry, args.timeout, args.mcp,
         )
         if ok and args.github:
             post_to_github(args.github, output, args.model)
@@ -346,7 +457,7 @@ def main():
 
     elif args.agent == "claude":
         prompt = sys.stdin.read() if args.prompt == "-" else args.prompt
-        ok, output = dispatch_claude(prompt, args.model, args.timeout)
+        ok, output = dispatch_claude(prompt, args.model, args.timeout, args.mcp)
         if ok:
             print(output)
         sys.exit(0 if ok else 1)

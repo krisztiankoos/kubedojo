@@ -12,10 +12,16 @@ python scripts/dispatch.py gemini "prompt" --review
 # Review and post to GitHub issue
 python scripts/dispatch.py gemini "prompt" --review --github 66
 
+# With MCP RAG tools (for Ukrainian translations — requires learn-ukrainian RAG server on :8766)
+python scripts/dispatch.py gemini "Translate this" --mcp
+
+# Claude with MCP tools (Ukrainian verification)
+python scripts/dispatch.py claude "Review translation" --mcp
+
 # Read prompt from stdin
 echo "prompt" | python scripts/dispatch.py gemini - --review
 ```
-Default model: `gemini-3.1-pro-preview`
+Default model: `gemini-3-flash-preview` (fallback: `gemini-2.5-flash`)
 
 ## Programmatic Usage (from Python)
 ```python
@@ -23,7 +29,10 @@ from scripts.dispatch import dispatch_gemini_with_retry, post_to_github
 
 ok, output = dispatch_gemini_with_retry("Review this module...", review=True)
 if ok:
-    post_to_github(66, output, "gemini-3.1-pro-preview")
+    post_to_github(66, output, "gemini-3-flash-preview")
+
+# With MCP tools for translation
+ok, output = dispatch_gemini_with_retry("Translate...", mcp=True)
 ```
 
 ## Gemini Roles
