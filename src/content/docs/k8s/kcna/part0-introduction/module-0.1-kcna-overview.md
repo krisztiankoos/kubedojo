@@ -125,6 +125,8 @@ Master these, and you're most of the way there.
 
 ---
 
+> **Pause and predict**: Given that Kubernetes Fundamentals is worth 46% and Container Orchestration is worth 22%, how would you structure a two-week study plan to maximize your score? What would you study first, and why?
+
 ## What KCNA Tests
 
 ### You Need to Know
@@ -187,6 +189,8 @@ Since KCNA is conceptual, your study approach differs from hands-on exams:
 - Don't stress about edge cases
 
 ---
+
+> **Stop and think**: KCNA is multiple-choice while CKA/CKAD/CKS are hands-on. How does this change what you need to study? If you can recognize the right answer but cannot recall it from memory, is that enough for KCNA? What about for CKA?
 
 ## Sample Questions
 
@@ -256,28 +260,28 @@ A) Cloud Native Computing Foundation. CNCF hosts Kubernetes and other cloud nati
 
 ## Quiz
 
-1. **How long is the KCNA exam?**
+1. **A colleague who just passed CKA tells you to spend most of your KCNA study time practicing kubectl commands in a lab cluster. Is this good advice? Why or why not?**
    <details>
    <summary>Answer</summary>
-   90 minutes for approximately 60 multiple choice questions.
+   This is not good advice for KCNA. CKA is a hands-on exam where kubectl fluency is essential, but KCNA is a multiple-choice conceptual exam. You will never type a command during KCNA. Your study time is better spent understanding concepts, relationships between components, and the "why" behind Kubernetes features. Practicing kubectl helps for CKA/CKAD/CKS, but for KCNA, focus on reading, flashcards, and practice quizzes instead.
    </details>
 
-2. **What percentage of the exam covers Kubernetes Fundamentals?**
+2. **You have exactly two weeks to prepare for KCNA. Your background is in frontend development with no Kubernetes experience. How would you allocate your study time across the five domains to maximize your chances of passing?**
    <details>
    <summary>Answer</summary>
-   46% - nearly half the exam. This is where you should focus most study time.
+   Allocate roughly proportional to exam weights: spend ~46% of time on Kubernetes Fundamentals (7 days), ~22% on Container Orchestration (3 days), ~16% on Cloud Native Architecture (2 days), and split the remaining time between Observability and Application Delivery (~1 day each). Since you have no K8s background, the fundamentals are both the highest-weighted domain and where you need the most learning. Mastering Fundamentals and Container Orchestration covers 68% of the exam, giving you the best chance of passing the 75% threshold.
    </details>
 
-3. **What's the minimum passing score for KCNA?**
+3. **Your manager asks whether KCNA certification proves you can administer a Kubernetes cluster in production. What would you explain?**
    <details>
    <summary>Answer</summary>
-   75%. You need to answer approximately 45 out of 60 questions correctly.
+   KCNA proves conceptual understanding, not hands-on ability. It certifies that you understand what Kubernetes is, how its components work, and the cloud native ecosystem. It does not prove you can troubleshoot a production cluster, write YAML manifests, or debug scheduling failures under pressure. For production administration skills, CKA (Certified Kubernetes Administrator) is the appropriate certification. KCNA is an entry point that validates foundational knowledge.
    </details>
 
-4. **Is KCNA a hands-on or multiple choice exam?**
+4. **A team member scored 73% on a KCNA practice test. They are disappointed and want to reschedule the exam to study more. What factors should they consider?**
    <details>
    <summary>Answer</summary>
-   Multiple choice. Unlike CKA, CKAD, and CKS, you won't use a terminal or type commands.
+   At 73% they are only 2% below the 75% passing threshold, meaning they can miss about 15 questions and still pass. They should analyze which domains they scored lowest in and focus study there. Since Kubernetes Fundamentals alone is 46% of the exam, improving even slightly in that domain could push them over the threshold. Practice tests also tend to be harder than the real exam. Rather than postponing significantly, a few more days of targeted review on weak areas would likely be sufficient.
    </details>
 
 ---

@@ -87,6 +87,8 @@ Key concepts at KCNA level:
 
 ---
 
+> **Pause and predict**: GPUs are "non-compressible" resources in Kubernetes, unlike CPU which can be throttled. If a Pod requests a GPU but none is available, what happens? How is this different from what happens when a Pod requests more CPU than is available?
+
 ## AI/ML Workload Patterns
 
 ```
@@ -138,6 +140,8 @@ Key concepts at KCNA level:
 | **Failure handling** | Checkpointing + restart | Load balancer reroutes |
 
 ---
+
+> **Stop and think**: Training a model runs for days and then completes. Inference serves predictions continuously and must be fast. Which Kubernetes workload resource (Job or Deployment) fits each pattern, and why?
 
 ## LLM Inference on Kubernetes
 

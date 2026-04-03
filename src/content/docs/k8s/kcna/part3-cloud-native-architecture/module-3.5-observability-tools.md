@@ -75,6 +75,8 @@ Knowing the concepts is one thing; knowing the tools is another. KCNA tests your
 
 ---
 
+> **Pause and predict**: Most monitoring systems use a push model where applications send metrics to a central server. Prometheus uses a pull model where it actively scrapes metrics from applications. What advantage might pulling have over pushing for detecting when a service goes down?
+
 ## Prometheus
 
 ```
@@ -291,6 +293,8 @@ Knowing the concepts is one thing; knowing the tools is another. KCNA tests your
 
 ---
 
+> **Stop and think**: OpenTelemetry provides a single API for metrics, traces, and logs. Before OpenTelemetry, teams had to use separate instrumentation libraries for each pillar. Why is having one unified standard important, especially for organizations with services written in different programming languages?
+
 ## Kubernetes-Specific Observability
 
 ```
@@ -370,34 +374,34 @@ Knowing the concepts is one thing; knowing the tools is another. KCNA tests your
 
 ## Quiz
 
-1. **How does Prometheus collect metrics?**
+1. **Your team runs a short-lived batch Job that completes in 30 seconds. Prometheus scrapes metrics every 15 seconds. By the time Prometheus scrapes, the Job's Pod is already terminated. How would you get metrics from this Job into Prometheus?**
    <details>
    <summary>Answer</summary>
-   Pull-based model: Prometheus scrapes HTTP endpoints (usually /metrics) at configured intervals. Targets expose metrics in Prometheus format. This is different from push-based systems.
+   Use the Prometheus Pushgateway. Since Prometheus uses a pull model (scraping endpoints), it cannot collect metrics from Pods that have already terminated. The Pushgateway is specifically designed for short-lived jobs: the Job pushes its metrics to the Pushgateway before exiting, and Prometheus scrapes the Pushgateway at its normal interval. The metrics persist on the Pushgateway until they are scraped. This is the exception to Prometheus's pull model and is one of the few valid use cases for push-based metrics in the Prometheus ecosystem.
    </details>
 
-2. **What is the relationship between Fluentd and Fluent Bit?**
+2. **Your cluster runs 500 Pods across 20 nodes. You need to collect logs from every Pod and send them to a centralized logging system. Would you deploy Fluent Bit as a Deployment with 3 replicas or as a DaemonSet? Why?**
    <details>
    <summary>Answer</summary>
-   Both are CNCF graduated log collectors. Fluent Bit is a lightweight version of Fluentd, using fewer resources. Fluent Bit is often used as an agent on nodes, sometimes forwarding to Fluentd for more complex processing.
+   Deploy Fluent Bit as a DaemonSet so one instance runs on every node. Container logs are stored on the node's filesystem (in `/var/log/containers/`), so the log collector must run on the same node to access them. A Deployment with 3 replicas would only collect logs from the 3 nodes those replicas happen to run on, missing logs from the other 17 nodes. DaemonSets also automatically add a Fluent Bit Pod when new nodes join the cluster. Fluent Bit is preferred over Fluentd as a per-node agent because it is more lightweight (lower CPU and memory footprint).
    </details>
 
-3. **What is OpenTelemetry?**
+3. **Your company uses Prometheus for metrics, Elasticsearch for logs, and Jaeger for traces. A new CTO wants to standardize instrumentation across 15 services written in Go, Python, and Java. Currently, each service uses different client libraries. What CNCF project would unify this, and what benefits would it provide?**
    <details>
    <summary>Answer</summary>
-   A CNCF incubating project providing vendor-neutral APIs, SDKs, and tools for generating and collecting telemetry data (metrics, traces, logs). It unifies observability instrumentation across languages and tools.
+   OpenTelemetry (CNCF Incubating) provides a single, vendor-neutral instrumentation API with SDKs for Go, Python, Java, and many other languages. Instead of each service using a different Prometheus client, Jaeger client, and logging library, teams instrument once with OpenTelemetry and the OTel Collector routes telemetry to the appropriate backends. If you later switch from Jaeger to Tempo for traces, you change the Collector configuration -- not the application code. OpenTelemetry replaced both OpenTracing and OpenCensus, becoming the industry standard for telemetry instrumentation.
    </details>
 
-4. **What does Grafana do?**
+4. **An engineer sets up Grafana dashboards showing Prometheus metrics, Loki logs, and Jaeger traces. A manager asks why they need Grafana when Prometheus already has a built-in UI. What does Grafana provide that individual tool UIs do not?**
    <details>
    <summary>Answer</summary>
-   Visualization and dashboarding. It queries multiple data sources (Prometheus for metrics, Loki for logs, Jaeger for traces) and displays them in customizable dashboards. It's the common UI for the observability stack.
+   Grafana provides a unified visualization layer across all three observability pillars. While Prometheus has a basic UI for running PromQL queries, it cannot display logs or traces. Each tool's native UI only shows its own data. Grafana connects to multiple data sources simultaneously, enabling dashboards that correlate metrics, logs, and traces in one view. You can click from a metric spike to the related logs and traces without switching tools. This cross-pillar correlation is what makes debugging efficient -- a single pane of glass for the entire observability stack.
    </details>
 
-5. **What is Jaeger used for?**
+5. **Your HPA needs CPU metrics to make scaling decisions, and your dashboards need detailed application metrics like request latency and error rates. What is the difference between Metrics Server and Prometheus in this context, and do you need both?**
    <details>
    <summary>Answer</summary>
-   Distributed tracing. It tracks requests as they flow through microservices, showing the path, timing, and relationships between services. It's a CNCF graduated project originally from Uber.
+   Yes, you typically need both. Metrics Server provides lightweight, real-time resource metrics (CPU and memory usage per Pod) that the HPA and `kubectl top` command consume. It only stores the most recent data point, not historical time series. Prometheus provides rich, customizable application metrics (request rates, latency percentiles, error counts) stored as time series over time. Prometheus can also feed custom metrics to HPA via the custom metrics API adapter. Metrics Server handles the "how much CPU is this Pod using right now?" question. Prometheus handles "what is the p99 latency trend over the last 24 hours?" question.
    </details>
 
 ---

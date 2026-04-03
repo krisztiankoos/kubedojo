@@ -124,6 +124,8 @@ spec:
         averageUtilization: 50  # Target 50% CPU
 ```
 
+> **Pause and predict**: HPA scales based on average CPU utilization. If your target is 50% and current average is 80% with 2 replicas, how many replicas will HPA create? What happens when the traffic spike ends and CPU drops to 20%?
+
 ### HPA Metrics Types
 
 | Type | Description | Example |
@@ -243,6 +245,8 @@ The **Cluster Autoscaler** adds or removes nodes:
 
 ---
 
+> **Stop and think**: The Cluster Autoscaler adds nodes when Pods are Pending, but adding a new cloud VM takes several minutes. What happens to your users during those minutes? How could you design your system to handle this delay?
+
 ## Manual Scaling
 
 You can also scale manually:
@@ -326,34 +330,34 @@ You can also scale manually:
 
 ## Quiz
 
-1. **What does HPA scale?**
+1. **Your web application experiences a traffic spike every morning at 9 AM when users log in. Currently, a human operator manually scales the Deployment each morning. Which Kubernetes autoscaler would you use to automate this, and what metric would you target?**
    <details>
    <summary>Answer</summary>
-   HPA scales the number of Pod replicas (horizontal scaling). It doesn't change the resources per Pod.
+   Use the Horizontal Pod Autoscaler (HPA) targeting CPU utilization or custom metrics like requests-per-second. HPA monitors average CPU utilization across all Pods in the Deployment and automatically adds replicas when usage exceeds the target (e.g., 50%). When the morning spike subsides and CPU drops, HPA scales back down after a cooldown period. This eliminates the need for manual intervention while keeping the application responsive during peak traffic.
    </details>
 
-2. **What metric does HPA use by default?**
+2. **A developer sets their Deployment's resource requests to 100m CPU and 128Mi memory, but VPA observes the application actually uses 500m CPU and 512Mi memory. What happens to the application without VPA's intervention, and what would VPA recommend?**
    <details>
    <summary>Answer</summary>
-   CPU utilization. It can also use memory and custom metrics.
+   Without VPA, the application is under-provisioned. It will be CPU-throttled (running slower than it could) and may be OOMKilled when memory usage exceeds the 128Mi limit. VPA would recommend increasing requests to approximately 500m CPU and 600Mi memory (with some buffer above observed usage). In "Auto" mode, VPA would recreate Pods with updated resource requests. This prevents throttling and OOMKills while also giving the scheduler accurate information for placement decisions.
    </details>
 
-3. **What triggers Cluster Autoscaler to add nodes?**
+3. **Your HPA is configured with `minReplicas: 1` and targets 50% CPU utilization. During a brief traffic spike, it scales from 1 to 8 replicas. Once traffic drops, all 8 replicas are nearly idle. An outage occurs because the single remaining Pod after scale-down cannot handle a sudden request burst. What configuration would you change?**
    <details>
    <summary>Answer</summary>
-   Pending Pods that can't be scheduled because no node has enough resources.
+   Set `minReplicas` to at least 2 (preferably 3) to eliminate the single point of failure. With only 1 minimum replica, the application has no redundancy during low-traffic periods, and any sudden spike must wait for HPA to detect the load increase and for new Pods to start -- which takes at least a few seconds. Keeping 2-3 minimum replicas provides both high availability and some buffer capacity to absorb initial traffic increases before HPA adds more replicas.
    </details>
 
-4. **What's the difference between HPA and VPA?**
+4. **Your cluster runs in AWS. HPA has scaled a Deployment to 50 Pods, but only 3 nodes exist and they are all at capacity. New Pods are stuck in Pending. What component detects this situation and what does it do?**
    <details>
    <summary>Answer</summary>
-   HPA scales horizontally (adds/removes Pods). VPA scales vertically (changes resource requests/limits of Pods). HPA has no downtime; VPA requires Pod restart.
+   The Cluster Autoscaler detects Pending Pods that cannot be scheduled due to insufficient resources. It requests new EC2 instances from the AWS Auto Scaling Group to add nodes to the cluster. Once the new nodes register with the cluster and become Ready, the scheduler places the Pending Pods on them. This process typically takes 2-5 minutes depending on the instance type and AMI. HPA and Cluster Autoscaler work together: HPA scales Pods, and Cluster Autoscaler ensures there are enough nodes to run them.
    </details>
 
-5. **Why shouldn't you use HPA and VPA together on the same Deployment?**
+5. **A colleague configures both HPA (targeting CPU) and VPA (in Auto mode) on the same Deployment. After a few hours, the Deployment oscillates wildly between 2 and 20 replicas. What is causing this, and how would you fix it?**
    <details>
    <summary>Answer</summary>
-   They can conflict. VPA changes requests, which affects CPU utilization percentage, which affects HPA's calculations. This can cause unpredictable scaling behavior.
+   HPA and VPA are conflicting. VPA increases CPU requests (say from 100m to 500m), which changes the denominator in HPA's utilization calculation. With higher requests, the same actual CPU usage appears as a lower percentage, so HPA scales down. With fewer replicas, each Pod gets more load, VPA observes higher usage and may adjust again, and the cycle repeats. The fix is to not use both on the same Deployment for CPU. Either use HPA for horizontal scaling or VPA for right-sizing, but not both on the same resource metric. You can use VPA in "Off" mode just for recommendations while HPA handles scaling.
    </details>
 
 ---

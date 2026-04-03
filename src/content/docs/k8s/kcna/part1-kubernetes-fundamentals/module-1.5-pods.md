@@ -125,6 +125,8 @@ Most Pods have just one container:
 
 ---
 
+> **Pause and predict**: If a Pod is the smallest deployable unit and most Pods contain a single container, why didn't Kubernetes just make the container the smallest unit? What does the Pod abstraction give you that a bare container does not?
+
 ## Multi-Container Pods
 
 Sometimes you need multiple containers in one Pod:
@@ -281,6 +283,8 @@ spec:
 
 ---
 
+> **Stop and think**: In the sidecar pattern, a log shipper container runs alongside the main application. Why put them in the same Pod instead of separate Pods? What advantage does sharing the same network namespace and storage give you?
+
 ## Pod vs Deployment
 
 ```
@@ -335,34 +339,34 @@ spec:
 
 ## Quiz
 
-1. **What is the smallest deployable unit in Kubernetes?**
+1. **Your application writes logs to a file on disk. You want to ship those logs to a centralized logging system. Would you run the log shipper as a separate Pod or in the same Pod as the application? Explain your reasoning.**
    <details>
    <summary>Answer</summary>
-   The Pod. Not the container—Kubernetes schedules and manages Pods, not containers directly.
+   Run the log shipper in the same Pod as the application using the sidecar pattern. This way both containers share the same volume, so the log shipper can read the application's log files directly. If they were in separate Pods, they would have different storage and network namespaces, making it much harder to share files. The sidecar container also follows the same lifecycle as the application -- it starts and stops together, ensuring no logs are missed.
    </details>
 
-2. **How many IP addresses does a Pod get?**
+2. **A junior developer creates a Pod directly using `kubectl run` for a production web service. The Pod crashes overnight and is not restarted. What went wrong, and what should they have used instead?**
    <details>
    <summary>Answer</summary>
-   One. All containers in a Pod share the same IP address and can communicate via localhost.
+   Pods created directly are not managed by any controller. When a standalone Pod crashes, nothing recreates it -- it is gone permanently. The developer should have created a Deployment, which manages Pods through a ReplicaSet. If a managed Pod crashes, the ReplicaSet controller detects that the current state does not match the desired state and creates a new Pod automatically. Deployments also provide scaling, rolling updates, and rollback capabilities that standalone Pods lack entirely.
    </details>
 
-3. **What do containers in the same Pod share?**
+3. **Two containers in the same Pod need to communicate. One runs a web server on port 8080 and the other runs a metrics exporter on port 9090. How do they reach each other, and how would an external Pod reach either of them?**
    <details>
    <summary>Answer</summary>
-   Network namespace (same IP, can use localhost), storage volumes, and IPC namespace. They do NOT share filesystem unless via volumes.
+   Within the same Pod, containers share a network namespace, so they reach each other via localhost -- the web server calls `localhost:9090` for metrics, and the exporter calls `localhost:8080` for the web server. From an external Pod, both containers are reached using the Pod's single IP address: `<pod-ip>:8080` for the web server and `<pod-ip>:9090` for the exporter. The key insight is that containers in a Pod share one IP but must use different ports, just like processes on the same machine.
    </details>
 
-4. **What is the sidecar pattern?**
+4. **Your team debates whether to put a Redis cache in the same Pod as the application that uses it, or in a separate Pod. What are the trade-offs, and which approach would you recommend?**
    <details>
    <summary>Answer</summary>
-   A multi-container Pod pattern where a helper container runs alongside the main application container to provide supporting functionality (logging, monitoring, proxying).
+   Putting Redis in the same Pod means they always run together on the same node with low-latency localhost communication, but they cannot scale independently -- if the application needs 5 replicas, you get 5 Redis instances. Running Redis in a separate Pod (via its own Deployment or StatefulSet) allows independent scaling, independent lifecycle management, and the ability for multiple application Pods to share one Redis instance via a Service. The separate Pod approach is almost always better because Redis and the application have different scaling and persistence requirements.
    </details>
 
-5. **Why shouldn't you create Pods directly?**
+5. **A Pod has status "Running" but the application inside is not responding to HTTP requests. The Pod has not restarted. What might explain this situation, and what Kubernetes feature could prevent it?**
    <details>
    <summary>Answer</summary>
-   Pods are ephemeral—if they die, they're gone. Deployments manage Pods and ensure the desired number always exist, providing resilience, scaling, and rolling updates.
+   The container process is alive (so the Pod stays "Running") but the application logic is stuck, deadlocked, or in an error state. Without health checks, Kubernetes only knows the process is running, not whether it is functioning correctly. Readiness probes would solve this: a readiness probe checks a specific endpoint or port, and if it fails, Kubernetes removes the Pod from Service endpoints so it stops receiving traffic. A liveness probe would go further by restarting the container if the application becomes unresponsive.
    </details>
 
 ---

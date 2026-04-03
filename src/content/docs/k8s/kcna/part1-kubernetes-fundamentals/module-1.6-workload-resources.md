@@ -167,6 +167,8 @@ A **ReplicaSet** maintains a stable set of replica Pods:
 
 ---
 
+> **Pause and predict**: Deployments create ReplicaSets, which create Pods. Why this three-level hierarchy? What would you lose if Deployments created Pods directly without the ReplicaSet layer in between?
+
 ## StatefulSets
 
 For **stateful applications** that need stable identities:
@@ -304,6 +306,8 @@ For **batch and scheduled workloads**:
 
 ---
 
+> **Stop and think**: A database cluster needs Pods with stable network identities (e.g., mysql-0, mysql-1, mysql-2) that persist across restarts. Why can't a regular Deployment provide this? What would happen to a database replication setup if Pod names were random?
+
 ## When to Use What?
 
 ```
@@ -356,34 +360,34 @@ For **batch and scheduled workloads**:
 
 ## Quiz
 
-1. **What workload resource manages ReplicaSets?**
+1. **Your team needs to run a PostgreSQL database cluster on Kubernetes with three replicas that maintain their data across restarts. A colleague suggests using a Deployment. Why would this not work, and what resource should they use instead?**
    <details>
    <summary>Answer</summary>
-   Deployment. When you create a Deployment, it creates and manages ReplicaSets, which in turn create and manage Pods.
+   A Deployment would not work because its Pods get random names (e.g., postgres-7b8d6c-abc12) that change on restart, and all Pods share the same storage configuration. A PostgreSQL cluster needs stable identities (postgres-0 is always the primary, postgres-1 and postgres-2 are replicas) and each Pod needs its own persistent volume. A StatefulSet provides both: stable, predictable Pod names, individual PersistentVolumeClaims per Pod, and ordered startup/shutdown so the primary starts before replicas.
    </details>
 
-2. **What makes StatefulSet different from Deployment?**
+2. **You need to collect logs from every node in your cluster using Fluent Bit. New nodes are added weekly as the cluster scales. Which workload resource ensures Fluent Bit runs on every node, including new ones, without manual intervention?**
    <details>
    <summary>Answer</summary>
-   StatefulSet provides stable, persistent identity (Pod names like mysql-0), stable storage (each Pod gets its own PVC), and ordered deployment/scaling. Deployment Pods have random names and share storage.
+   A DaemonSet is the right choice. It ensures exactly one Pod runs on every node in the cluster. When a new node joins, the DaemonSet automatically schedules a Fluent Bit Pod on it. When a node is removed, the DaemonSet's Pod is cleaned up. This is the standard pattern for per-node agents like log collectors, monitoring exporters, and CNI plugins. Using a Deployment would not guarantee one Pod per node and could place multiple Pods on some nodes while leaving others without any.
    </details>
 
-3. **When would you use a DaemonSet?**
+3. **Your application needs to run a database migration script once before a new version is deployed. The script takes about 5 minutes and should not run again if it succeeds. Which workload resource fits this requirement, and why?**
    <details>
    <summary>Answer</summary>
-   When you need exactly one Pod running on every node (or a subset of nodes). Common uses: log collectors, monitoring agents, network plugins.
+   A Job is the right resource. Jobs create Pods that run to completion -- the Pod executes the migration script, exits with code 0 on success, and is not restarted. If the Pod fails, the Job retries based on the backoffLimit setting. Unlike a Deployment (which would keep restarting the migration forever) or a standalone Pod (which provides no retry mechanism), a Job tracks completions and ensures the task finishes successfully exactly the required number of times.
    </details>
 
-4. **What's the difference between Job and Deployment?**
+4. **During a rolling update, you change the image tag in a Deployment from nginx:1.25 to nginx:1.26. Kubernetes creates a new ReplicaSet. After the update completes, the old ReplicaSet still exists with 0 replicas. Why does Kubernetes keep it instead of deleting it?**
    <details>
    <summary>Answer</summary>
-   A Job runs Pods to completion (finite tasks like backups). A Deployment runs Pods continuously (long-running services). Jobs end; Deployments keep running.
+   Kubernetes keeps old ReplicaSets to enable rollbacks. If the new version has problems, you can run `kubectl rollout undo` and Kubernetes will scale the old ReplicaSet back up and scale the new one down, reverting to the previous version without needing to redeploy. By default, Kubernetes retains the last 10 ReplicaSets (configurable via revisionHistoryLimit). Each old ReplicaSet represents a previous version of your application that you can quickly roll back to.
    </details>
 
-5. **What does a ReplicaSet do?**
+5. **Your company runs nightly data processing jobs at 2 AM and weekly report generation every Monday at 6 AM. How would you implement this in Kubernetes, and what happens if a Monday job overlaps with the nightly job?**
    <details>
    <summary>Answer</summary>
-   A ReplicaSet ensures that a specified number of identical Pods are running at all times. If Pods die, it creates new ones. If there are too many, it removes some.
+   Use two CronJobs: one with schedule "0 2 * * *" for the nightly job and one with "0 6 * * 1" for the weekly report. Each CronJob creates a Job at its scheduled time, and each Job creates Pods that run to completion. If both run simultaneously on Monday, they execute independently as separate Jobs on the cluster -- Kubernetes schedules both sets of Pods normally. The CronJob resource also has concurrencyPolicy settings (Allow, Forbid, Replace) to control what happens if a previous run has not finished when the next one is scheduled.
    </details>
 
 ---

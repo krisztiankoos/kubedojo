@@ -92,6 +92,8 @@ CNCF projects have three maturity levels:
 
 ---
 
+> **Pause and predict**: CNCF has sandbox, incubating, and graduated project levels. If you were evaluating two monitoring tools -- one Graduated and one Sandbox -- for your company's production Kubernetes cluster, what does the maturity level tell you about risk, governance, and long-term viability?
+
 ## Key Graduated Projects
 
 These are production-ready projects you should know:
@@ -299,6 +301,8 @@ These are production-ready projects you should know:
 
 ---
 
+> **Stop and think**: The CNCF Landscape has over 1,000 entries, but not all of them are CNCF projects. Many are commercial products or projects hosted elsewhere. Why would the landscape include non-CNCF tools, and how could this be misleading for someone choosing production tooling?
+
 ## CNCF Certifications
 
 ```
@@ -364,34 +368,34 @@ These are production-ready projects you should know:
 
 ## Quiz
 
-1. **What are the three CNCF project maturity levels?**
+1. **Your team needs a container registry with built-in vulnerability scanning and image signing for production use. A colleague suggests Docker Hub. What CNCF Graduated project is designed specifically for this use case, and what advantages does it offer over a public registry?**
    <details>
    <summary>Answer</summary>
-   Sandbox (early stage), Incubating (growing adoption), and Graduated (production ready). Projects progress through these levels based on adoption and technical criteria.
+   Harbor is a CNCF Graduated container registry that provides vulnerability scanning, image signing (with Notary/cosign), role-based access control, and image replication across registries. Unlike Docker Hub, Harbor can be self-hosted within your infrastructure, giving you control over where images are stored (important for compliance and data residency). It integrates with Trivy for scanning and supports OCI artifacts beyond container images. Its Graduated status means it has passed independent security audits and has proven production governance.
    </details>
 
-2. **What is Prometheus used for?**
+2. **A startup is evaluating two service mesh options: Linkerd (CNCF Graduated) and a newer mesh that just entered CNCF Sandbox with more features. The startup handles financial transactions. Which factors from the CNCF maturity model should guide their decision?**
    <details>
    <summary>Answer</summary>
-   Monitoring and alerting. It collects and stores metrics as time-series data, provides PromQL for querying, and AlertManager for alerting. It's a graduated CNCF project.
+   For financial transactions, the Graduated project (Linkerd) is the safer choice. Graduated status means: independent security audit completed, diverse maintainer base (no single-vendor dependency), proven production adoption across many organizations, and committed long-term governance. The Sandbox project may have attractive features, but it has not proven its security posture or governance resilience. Sandbox projects are early-stage experiments -- good for evaluation in non-critical environments, but risky for production financial workloads. Features matter less than stability and security when processing money.
    </details>
 
-3. **What is Envoy?**
+3. **An engineer says "we need monitoring, so let's install Prometheus for metrics, Fluentd for logs, and Jaeger for traces." Map each tool to which observability pillar it serves and explain why all three are needed together rather than just one.**
    <details>
    <summary>Answer</summary>
-   A graduated CNCF project that provides L7 proxy functionality. It's the data plane for service meshes like Istio. It handles traffic routing, load balancing, and observability at the network edge.
+   Prometheus serves the metrics pillar (numerical measurements over time -- CPU usage, request rates, error counts). Fluentd serves the logs pillar (event records with context -- error messages, audit trails, application events). Jaeger serves the traces pillar (request paths across distributed services -- which service is slow, where did the request fail). All three are needed because each answers a different question: metrics detect that something is wrong, traces locate where the problem is across services, and logs explain why the problem occurred. Using only one pillar leaves you blind to the other two dimensions.
    </details>
 
-4. **What is the CNCF Landscape?**
+4. **A developer asks why Kubernetes uses CoreDNS instead of just relying on the standard DNS server that comes with the operating system. What role does CoreDNS (a CNCF Graduated project) play specifically in Kubernetes?**
    <details>
    <summary>Answer</summary>
-   An interactive map at landscape.cncf.io showing cloud native technologies. It includes CNCF projects and commercial products, organized by category. It helps discover and compare tools.
+   CoreDNS is the cluster DNS server in Kubernetes. It provides DNS-based service discovery -- when a Pod looks up `backend.default.svc.cluster.local`, CoreDNS resolves it to the Service's ClusterIP. The host OS DNS server does not know about Kubernetes Services, Pods, or the `cluster.local` domain. CoreDNS watches the Kubernetes API to maintain an up-to-date mapping of Service names to IPs, enabling Pods to discover each other by name rather than hardcoded IP addresses. It is the default DNS server in Kubernetes and is essential for Service discovery to work.
    </details>
 
-5. **What five certifications make a Kubestronaut?**
+5. **After passing KCNA, you want to pursue more Kubernetes certifications. You have a developer background and want to eventually earn all five for Kubestronaut status. In what order should you take the remaining certifications, and why does CKS require CKA first?**
    <details>
    <summary>Answer</summary>
-   KCNA (Associate), KCSA (Security Associate), CKA (Administrator), CKAD (Application Developer), and CKS (Security Specialist). All five must be earned and maintained.
+   A recommended path after KCNA: take CKAD (since you have a developer background, application development is the natural next step), then CKA (administration skills build on your CKAD experience), then CKS (security specialization). KCSA can be taken at any time since it is multiple-choice like KCNA. CKS requires a valid CKA certification because security hardening requires hands-on cluster administration skills -- you need to know how to configure RBAC, admission controllers, and audit logging before you can secure them. The Kubestronaut title requires all five to be valid simultaneously.
    </details>
 
 ---

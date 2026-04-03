@@ -95,6 +95,8 @@ The **kubelet** is the primary node agent:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: The kubelet runs on every node and watches the API server for Pod assignments. But what if the API server goes down temporarily -- do existing Pods on the node stop running? Why or why not?
+
 ### 2. kube-proxy
 
 The **kube-proxy** handles networking:
@@ -256,6 +258,8 @@ The **container runtime** actually runs containers:
 
 ---
 
+> **Stop and think**: kube-proxy is described as a "network proxy," but it actually maintains iptables rules rather than proxying traffic directly. Why is this distinction important for understanding how Services work at scale?
+
 ## Node vs Control Plane Summary
 
 ```
@@ -307,34 +311,34 @@ The **container runtime** actually runs containers:
 
 ## Quiz
 
-1. **What is the primary function of kubelet?**
+1. **A node in your cluster loses network connectivity to the control plane but the hardware is fine. What happens to the Pods running on that node, and what does the control plane do in response?**
    <details>
    <summary>Answer</summary>
-   kubelet is the node agent that ensures containers are running in Pods. It watches for Pod assignments and works with the container runtime to create/manage containers.
+   The Pods continue running on the node because kubelet manages them locally and does not need constant API server connectivity. However, the kubelet cannot send heartbeats, so the Node Controller marks the node's status as Unknown, then NotReady. After a timeout (default 5 minutes), the control plane considers the Pods on that node as potentially dead and may reschedule replacement Pods on healthy nodes. When the node's network recovers, kubelet reconnects and reports the actual state, and duplicate Pods are cleaned up.
    </details>
 
-2. **What does kube-proxy do?**
+2. **Your team is choosing between containerd and CRI-O as the container runtime for a new cluster. A developer asks why Kubernetes does not just bundle its own runtime. What would you explain about the CRI architecture and its benefits?**
    <details>
    <summary>Answer</summary>
-   kube-proxy maintains network rules on nodes that enable the Service abstraction. It forwards traffic destined for Service IPs to the appropriate Pod IPs.
+   Kubernetes uses the Container Runtime Interface (CRI), a standard API that decouples Kubernetes from any specific runtime. The kubelet communicates with the runtime through CRI via gRPC, meaning any CRI-compliant runtime can be swapped in. This pluggable design means Kubernetes does not need to maintain runtime code, runtimes can evolve independently, and organizations can choose the runtime that best fits their needs. containerd is the most popular default; CRI-O is optimized specifically for Kubernetes with a smaller footprint.
    </details>
 
-3. **What is CRI?**
+3. **An engineer notices that a node shows DiskPressure: True in its conditions. What impact will this have on scheduling, and what might happen to existing Pods on that node?**
    <details>
    <summary>Answer</summary>
-   Container Runtime Interface - the standard API that kubelet uses to communicate with container runtimes like containerd and CRI-O.
+   When a node reports DiskPressure, the scheduler will avoid placing new Pods on it because the node does not have sufficient disk space. For existing Pods, kubelet may begin evicting Pods to free disk space, starting with those exceeding their ephemeral storage limits. The eviction order prioritizes Pods with the lowest priority class and those using the most resources above their requests. This is why setting appropriate resource requests and monitoring node conditions is important for cluster health.
    </details>
 
-4. **Which components run on EVERY node?**
+4. **kube-proxy runs on every node, but newer CNI plugins like Cilium can replace it entirely. Why would an organization choose to replace kube-proxy, and what technology enables this?**
    <details>
    <summary>Answer</summary>
-   kubelet, kube-proxy, and a container runtime (like containerd). These three are required on every node.
+   kube-proxy uses iptables (or IPVS) rules to handle Service routing, which can become a performance bottleneck in large clusters with thousands of Services because the number of rules grows linearly. Cilium replaces kube-proxy using eBPF (extended Berkeley Packet Filter), which programs the Linux kernel directly for networking decisions. This is more efficient because eBPF avoids the overhead of processing long iptables chains and provides better observability. Organizations with large clusters or high-performance networking requirements benefit most from this switch.
    </details>
 
-5. **What happens when a node misses heartbeats?**
+5. **Walk through what happens on a worker node from the moment the scheduler assigns a Pod to it until the application is serving traffic. Which node components are involved at each step?**
    <details>
    <summary>Answer</summary>
-   The node's status changes to Unknown. If it remains unreachable, the Node Controller marks it NotReady and Pods may be rescheduled to healthy nodes.
+   The sequence involves all three node components: (1) kubelet watches the API server and detects a new Pod assigned to its node, (2) kubelet instructs the container runtime (containerd) via CRI to pull the container image from the registry, (3) the container runtime creates and starts the container with the appropriate namespaces and cgroups, (4) kubelet monitors container health through configured probes (liveness, readiness), (5) once the readiness probe passes, kubelet reports the Pod as Ready to the API server, (6) kube-proxy updates its iptables/IPVS rules so that Service traffic can now reach the new Pod. Only after all these steps is the application actually serving traffic.
    </details>
 
 ---

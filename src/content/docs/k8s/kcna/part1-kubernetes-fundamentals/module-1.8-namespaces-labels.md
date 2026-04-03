@@ -107,6 +107,8 @@ Every cluster has these built-in namespaces:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: Two teams share the same Kubernetes cluster. Team A accidentally deploys a Pod named "backend" that conflicts with Team B's "backend" Pod. How could namespaces have prevented this, and what other isolation benefits would they provide?
+
 ### What's NOT Namespaced
 
 Some resources are **cluster-scoped** (exist across all namespaces):
@@ -249,6 +251,8 @@ Some resources are **cluster-scoped** (exist across all namespaces):
 
 ---
 
+> **Stop and think**: A Service uses the selector `app: frontend` to find its Pods. If you add a new label `version: v2` to some Pods but not others, will the Service still route traffic to all of them? What would happen if you changed the Service selector to require both `app: frontend` AND `version: v2`?
+
 ## Common Label Conventions
 
 Kubernetes recommends these standard labels:
@@ -324,34 +328,34 @@ Kubernetes recommends these standard labels:
 
 ## Quiz
 
-1. **What are the default namespaces in Kubernetes?**
+1. **Your company has three teams sharing one Kubernetes cluster. Team A complains that Team B accidentally deleted their ConfigMap because both teams named it "app-config" in the default namespace. How would you restructure the cluster to prevent this, and what additional protections could namespaces provide?**
    <details>
    <summary>Answer</summary>
-   `default`, `kube-system`, `kube-public`, and `kube-node-lease`.
+   Create separate namespaces for each team (e.g., `team-a`, `team-b`, `team-c`). Namespaces provide name scoping, so both teams can have a ConfigMap called "app-config" without conflict. Additionally, apply RBAC so each team can only access their own namespace, and set ResourceQuotas to prevent any single team from consuming all cluster resources. Namespaces are the primary organizational unit for multi-team clusters.
    </details>
 
-2. **Are Nodes namespace-scoped or cluster-scoped?**
+2. **A new engineer wants to set resource quotas on Nodes to limit how much CPU each physical server can allocate. Why won't this work with namespace-level ResourceQuotas, and what type of resource are Nodes?**
    <details>
    <summary>Answer</summary>
-   Cluster-scoped. Nodes exist across all namespaces because they're physical/virtual machines that the whole cluster uses.
+   Nodes are cluster-scoped resources, not namespace-scoped. ResourceQuotas only apply within namespaces and control resources like Pods, Services, ConfigMaps, and compute requests/limits. Since Nodes exist outside of any namespace (they are physical or virtual machines shared by the entire cluster), they cannot be managed by namespace-level quotas. Other cluster-scoped resources include PersistentVolumes, ClusterRoles, and Namespaces themselves.
    </details>
 
-3. **How does a Service find its Pods?**
+3. **A Deployment has the selector `matchLabels: {app: api, version: v2}`, but its Pod template only has the label `app: api`. What will happen when you try to create this Deployment?**
    <details>
    <summary>Answer</summary>
-   Using label selectors. The Service's `selector` field specifies labels, and any Pod with matching labels becomes an endpoint.
+   The Deployment will fail validation. The Deployment's selector must match the labels in its Pod template. Since the template is missing the `version: v2` label, the selector would never match the Pods it creates, which makes no sense. Kubernetes requires that the selector matches the template labels to ensure the Deployment can manage its own Pods. You must either add `version: v2` to the Pod template labels or remove it from the selector.
    </details>
 
-4. **What's the difference between labels and annotations?**
+4. **Your team stores build timestamps, Git commit hashes, and team contact emails on Kubernetes resources. A colleague puts all of these as labels. What problem might this cause, and what should they use instead for some of this metadata?**
    <details>
    <summary>Answer</summary>
-   Labels are for identification and selection (used by Kubernetes). Annotations are for arbitrary metadata (used by tools and humans). You can't select by annotations.
+   Labels have a 63-character value limit and are indexed by the API server, so using them for long or frequently changing metadata wastes resources and can hit length limits (Git commit hashes are 40+ characters). More importantly, labels are meant for identification and selection by Kubernetes -- using them for metadata that no selector will ever query is wasteful. Git commit hashes, build timestamps, and contact emails should be stored as annotations, which can hold longer values and are designed for tool and human metadata rather than selection.
    </details>
 
-5. **Can two Pods have the same name in different namespaces?**
+5. **A security engineer says "we put our teams in separate namespaces, so they are isolated from each other." Is this statement fully correct? What critical piece might be missing?**
    <details>
    <summary>Answer</summary>
-   Yes. Namespaces provide name scoping. `frontend` in namespace `prod` is different from `frontend` in namespace `dev`.
+   This is only partially correct. Namespaces provide name scoping and can be used with RBAC for access control and ResourceQuotas for resource limits, but they do NOT provide network isolation by default. Pods in different namespaces can still communicate freely over the network. To achieve true network isolation, you must apply NetworkPolicies that restrict cross-namespace traffic. Without NetworkPolicies, a compromised Pod in one namespace can reach any Pod in any other namespace.
    </details>
 
 ---

@@ -125,6 +125,8 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
+> **Pause and predict**: RBAC has Roles (namespace-scoped) and ClusterRoles (cluster-wide). If a developer only needs to manage Pods in one namespace, would you give them a Role or a ClusterRole? What could go wrong if you default to ClusterRoles for convenience?
+
 ### The Principle of Least Privilege
 
 Every subject should have only the permissions it needs and nothing more. In practice this means:
@@ -198,6 +200,8 @@ Kubernetes defines three levels of pod security restriction, enforced by the bui
 | **Restricted** | Requires running as non-root, drops all capabilities, enforces read-only root filesystem | Security-sensitive and hardened workloads |
 
 Think of these as presets. Most workloads should target Baseline at minimum. Security-conscious teams aim for Restricted.
+
+> **Stop and think**: By default, every Pod in a Kubernetes cluster can communicate with every other Pod. If an attacker compromises a single Pod in the frontend namespace, what resources could they access without NetworkPolicies in place?
 
 ### Network Segmentation with NetworkPolicies
 

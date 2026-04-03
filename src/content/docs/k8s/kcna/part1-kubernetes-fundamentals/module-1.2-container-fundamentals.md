@@ -143,6 +143,8 @@ Containers use Linux kernel features:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: If containers share the host kernel (unlike VMs which have their own), what security implications does this have? What happens if a container exploits a kernel vulnerability?
+
 ### 2. Cgroups (Resource Limits)
 
 ```
@@ -235,6 +237,8 @@ Parts:
 | Quay.io | Red Hat registry |
 
 ---
+
+> **Stop and think**: Docker was deprecated as a Kubernetes runtime in version 1.24. If Docker is the most popular container tool, why would Kubernetes drop support for it? What does Kubernetes actually need from a runtime?
 
 ## Container Runtimes
 
@@ -333,34 +337,34 @@ Kubernetes doesn't run containers directly—it uses a **container runtime**:
 
 ## Quiz
 
-1. **What Linux feature provides process isolation for containers?**
+1. **A developer says "containers are just lightweight VMs." How would you correct this misconception, and why does the distinction matter?**
    <details>
    <summary>Answer</summary>
-   Namespaces. They isolate PIDs, network, mounts, hostname, IPC, and users for each container.
+   Containers and VMs have fundamentally different architectures. VMs include a full guest operating system and run on a hypervisor, providing strong isolation at the cost of heavy resource usage. Containers share the host kernel and use Linux namespaces and cgroups for isolation -- they are isolated processes, not virtual machines. This distinction matters because sharing the kernel means containers start in seconds (not minutes), use megabytes (not gigabytes), and you can run hundreds per host (not just tens). However, it also means containers have weaker isolation than VMs since a kernel vulnerability could affect all containers on the host.
    </details>
 
-2. **What Linux feature limits container resource usage?**
+2. **Your team builds a container image on a developer's laptop using Docker. Can that same image run in a Kubernetes cluster that uses containerd instead of Docker? Why or why not?**
    <details>
    <summary>Answer</summary>
-   Control groups (cgroups). They limit CPU, memory, disk I/O, and network bandwidth.
+   Yes, the image will work. Container images follow the OCI (Open Container Initiative) standard, which defines a common image format. Docker, containerd, and CRI-O all understand OCI images. The image you build with Docker produces an OCI-compliant image that any compliant runtime can execute. This portability is one of the key benefits of container standardization -- you build once and run on any OCI-compatible runtime.
    </details>
 
-3. **What's the relationship between an image and a container?**
+3. **A container image has four layers: base OS, runtime, dependencies, and application code. If you update only your application code, what happens to the other three layers when you rebuild?**
    <details>
    <summary>Answer</summary>
-   An image is a read-only template (like a recipe). A container is a running instance created from that image (like a cake from a recipe).
+   The other three layers are reused from cache. Container images use a union filesystem where each layer builds on the previous one. Only layers that change (and layers above them) need rebuilding. Since your application code is the top layer, the base OS, runtime, and dependency layers remain cached. This is why layer ordering matters in Dockerfiles -- put frequently-changing content in later layers. It also means that multiple containers sharing the same base layers on a node only store those layers once, saving disk space.
    </details>
 
-4. **What is the default container runtime in modern Kubernetes?**
+4. **You learn that Kubernetes deprecated Docker as a runtime in version 1.24. A worried colleague asks if all their Docker-built images will stop working. What would you explain?**
    <details>
    <summary>Answer</summary>
-   containerd. Docker as a runtime was deprecated in Kubernetes 1.24.
+   Their images will continue working perfectly. Kubernetes deprecated Docker as a container runtime (the component that runs containers), not Docker images. Docker images are OCI-standard images that containerd (the new default runtime) fully supports. What was removed was the "dockershim" -- a compatibility layer that let Kubernetes talk to Docker's API. Since containerd was always the component inside Docker that actually ran containers, removing Docker just removes an unnecessary middle layer. Images built with `docker build` work identically on containerd.
    </details>
 
-5. **Why are containers more efficient than VMs?**
+5. **An organization needs strong security isolation between workloads from different customers on the same host. Would containers alone provide sufficient isolation? What alternative approach might they consider?**
    <details>
    <summary>Answer</summary>
-   Containers share the host kernel instead of running a full OS. This makes them smaller (MBs vs GBs), faster to start (seconds vs minutes), and allows higher density (100s vs 10s per host).
+   Containers alone may not provide sufficient isolation for multi-tenant workloads with strict security requirements. Since containers share the host kernel, a kernel vulnerability could allow one tenant's container to access another's data. For stronger isolation, the organization could consider: running containers inside lightweight VMs (like Kata Containers or Firecracker), using gVisor which interposes a user-space kernel between containers and the host, or using separate nodes per tenant. The choice depends on the security requirements versus the performance and cost trade-offs.
    </details>
 
 ---

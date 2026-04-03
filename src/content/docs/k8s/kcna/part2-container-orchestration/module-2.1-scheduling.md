@@ -132,6 +132,8 @@ The scheduler ranks feasible nodes:
 
 ---
 
+> **Pause and predict**: The scheduler uses filtering and then scoring. Why not just pick the first node that passes filtering? What could go wrong if the scheduler always placed Pods on the same node that happens to be evaluated first?
+
 ## Node Selection Methods
 
 ### 1. nodeSelector
@@ -255,6 +257,8 @@ Place Pods relative to other Pods:
 
 ---
 
+> **Stop and think**: A node has a taint `gpu=true:NoSchedule`. You deploy a regular web application Pod without any tolerations. Will it run on that node? Now imagine a machine learning Pod that needs GPUs -- what would you add to its spec so it can be scheduled there?
+
 ## Resource Requests and Limits
 
 Resources affect scheduling decisions:
@@ -315,34 +319,34 @@ Resources affect scheduling decisions:
 
 ## Quiz
 
-1. **What two phases does the scheduler use?**
+1. **A Pod has been stuck in Pending state for 15 minutes. The events show "0/5 nodes are available: 2 Insufficient cpu, 3 node(s) had taint {gpu=true:NoSchedule}." What does this tell you about the cluster, and what are your options to get the Pod scheduled?**
    <details>
    <summary>Answer</summary>
-   Filtering (which nodes CAN run the Pod) and Scoring (which node is BEST). After these, the Pod is bound to the winning node.
+   The scheduler evaluated all 5 nodes and rejected each one. Two nodes lack sufficient CPU to satisfy the Pod's resource requests. Three nodes have a GPU taint that the Pod does not tolerate. Options include: reducing the Pod's CPU request if the application can run with less, adding a toleration for the GPU taint if the Pod can run on GPU nodes, scaling down other workloads to free CPU, or adding new nodes. The event message tells you exactly which filter rejected each node.
    </details>
 
-2. **What's the difference between nodeSelector and node affinity?**
+2. **Your team runs a critical database with 3 replicas. You notice all 3 Pods are running on the same node. If that node fails, all replicas go down simultaneously. How would you configure the Deployment to spread replicas across different nodes?**
    <details>
    <summary>Answer</summary>
-   nodeSelector is simple label matching (must have exact labels). Node affinity is more expressive with required/preferred rules and operators like In, NotIn, Exists.
+   Use pod anti-affinity with `requiredDuringSchedulingIgnoredDuringExecution` to force each replica onto a different node. The anti-affinity rule would match Pods with the same app label and use `topologyKey: kubernetes.io/hostname` to ensure no two replicas share a node. Alternatively, you could use topology spread constraints for a more flexible approach. Without anti-affinity, the scheduler may co-locate Pods on the same node if that node scores highest.
    </details>
 
-3. **What does a taint do?**
+3. **A developer sets their Pod's resource requests to 4 CPU and 8GB memory "just to be safe," but the application actually uses 0.5 CPU and 1GB. What problem does this create for scheduling, and what Kubernetes feature could help right-size these values?**
    <details>
    <summary>Answer</summary>
-   A taint repels Pods from scheduling on a node. Only Pods with matching tolerations can schedule on tainted nodes.
+   Over-requesting wastes cluster capacity. The scheduler uses requests (not actual usage) to place Pods, so 4 CPU of allocatable capacity is reserved on the node even though only 0.5 CPU is used. This means 3.5 CPU is wasted and unavailable for other Pods, potentially causing new Pods to stay Pending due to "insufficient CPU" even though the cluster is mostly idle. The Vertical Pod Autoscaler (VPA) can observe actual usage over time and recommend or automatically adjust requests to match real needs.
    </details>
 
-4. **Are resource requests or limits used for scheduling?**
+4. **Your cluster has dedicated GPU nodes for machine learning workloads. You want to ensure regular web application Pods never get scheduled on these expensive GPU nodes. What Kubernetes mechanism would you use, and how does it work?**
    <details>
    <summary>Answer</summary>
-   Requests. The scheduler checks if a node has enough allocatable resources to satisfy the Pod's requests. Limits are enforced at runtime.
+   Apply a taint to the GPU nodes, for example `kubectl taint nodes gpu-node-1 gpu=true:NoSchedule`. This repels all Pods that do not have a matching toleration. Only ML workloads with the corresponding toleration (`key: gpu, value: "true", effect: NoSchedule`) in their Pod spec can be scheduled on those nodes. Regular web Pods will be filtered out during the scheduling phase and placed on other nodes. This prevents expensive GPU resources from being used by workloads that do not need them.
    </details>
 
-5. **What is pod anti-affinity used for?**
+5. **You want a Pod to prefer running in the us-west region but still be schedulable in us-east if us-west has no capacity. Would you use `requiredDuringSchedulingIgnoredDuringExecution` or `preferredDuringSchedulingIgnoredDuringExecution` for the node affinity rule? What happens with each option if us-west nodes are full?**
    <details>
    <summary>Answer</summary>
-   Spreading Pods across nodes/zones. For example, ensuring replicas of a Deployment run on different nodes for high availability.
+   Use `preferredDuringSchedulingIgnoredDuringExecution`. With "preferred," the scheduler will try to place the Pod on us-west nodes (giving them a higher score), but if no us-west nodes have capacity, the Pod still gets scheduled on us-east. With "required," the Pod would stay Pending indefinitely if us-west is full, because the scheduler treats it as a hard constraint that cannot be violated. The "preferred" option provides soft preference while maintaining availability.
    </details>
 
 ---

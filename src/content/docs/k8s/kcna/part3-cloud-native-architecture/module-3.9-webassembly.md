@@ -92,6 +92,8 @@ Think of WASI as "POSIX for Wasm" — a standard interface between Wasm modules 
 
 ---
 
+> **Pause and predict**: Docker's co-founder said "if WASM+WASI existed in 2008, we wouldn't have needed to create Docker." Containers start in seconds and include a full OS userspace. Wasm modules start in milliseconds and are kilobytes in size. In what scenarios would this dramatic difference in startup time and size actually matter?
+
 ## Wasm vs Containers
 
 This is the comparison KCNA is most likely to test. Know the trade-offs.
@@ -228,6 +230,8 @@ Kubernetes uses **RuntimeClass** to select which runtime handles a Pod. A cluste
 | **Legacy applications** | Recompiling to Wasm is non-trivial for large codebases |
 
 ---
+
+> **Stop and think**: Wasm runs on Kubernetes through the same containerd interface as containers, using RuntimeClass to select the runtime. What does this tell you about Kubernetes' extensibility? Could a single cluster run containers and Wasm side by side?
 
 ## The Component Model
 

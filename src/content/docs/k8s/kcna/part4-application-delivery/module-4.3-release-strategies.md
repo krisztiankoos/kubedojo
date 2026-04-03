@@ -69,6 +69,8 @@ Step 5: Complete
   [v2] [v2] [v2] [v2]                    4 pods running
 ```
 
+> **Pause and predict**: During a rolling update, some Pods run v1 and others run v2 simultaneously. What would happen if v2 introduces a database schema change that v1 cannot understand? Would the rolling update still be safe?
+
 ### When to Use Rolling Updates
 
 Rolling updates work well when:
@@ -217,6 +219,8 @@ There is no universally best strategy. The right choice depends on your risk tol
 | **Complexity** | Low (built into Kubernetes) | Medium (two Deployments + routing) | High (needs metrics + routing) |
 | **Best for** | Routine, backward-compatible updates | Breaking changes, database migrations | Risky changes, new features, large user bases |
 | **Worst for** | Schema-breaking changes | Resource-constrained environments | Changes without observable metrics |
+
+> **Stop and think**: A canary deployment sends 5% of traffic to the new version. But 5% of 10 million daily users is 500,000 people. Is 5% always "safe"? What factors beyond percentage should you consider when setting your canary traffic split?
 
 ### Thinking in Blast Radius
 

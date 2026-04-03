@@ -107,6 +107,8 @@ A **ConfigMap** stores non-sensitive configuration data:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: The 12-Factor App methodology says "store config in the environment." If you bake a database password into your container image, what problems does that create when you need to deploy the same application to dev, staging, and production environments?
+
 ### Using ConfigMaps
 
 ```
@@ -274,6 +276,8 @@ A **Secret** stores sensitive data:
 
 ---
 
+> **Stop and think**: Secrets in Kubernetes are base64 encoded, not encrypted. If someone has access to run `kubectl get secret db-creds -o yaml`, they can decode the password instantly. What additional security measures would you need for real production secret management?
+
 ## Immutable ConfigMaps and Secrets
 
 ```
@@ -337,34 +341,34 @@ A **Secret** stores sensitive data:
 
 ## Quiz
 
-1. **What's the difference between ConfigMap and Secret?**
+1. **A developer stores an API key in a ConfigMap because "it's just a string." During a security audit, the API key is found in plain text in kubectl output and etcd. What should they have done differently, and why does the distinction between ConfigMap and Secret matter even though Secrets are also not encrypted by default?**
    <details>
    <summary>Answer</summary>
-   ConfigMaps store non-sensitive configuration data in plain text. Secrets store sensitive data (passwords, keys) and are base64 encoded. Both can be consumed as environment variables or mounted as volumes.
+   The API key should be stored in a Secret, not a ConfigMap. While Secrets are only base64 encoded by default (not truly encrypted), they receive additional protections: RBAC can be configured to restrict Secret access separately from ConfigMaps, Secrets can be encrypted at rest in etcd when encryption is enabled, and Secret data is not displayed in `kubectl describe` output. ConfigMaps are designed for non-sensitive data and have none of these protections. For production, enable encryption at rest for Secrets in etcd and consider external secret management tools.
    </details>
 
-2. **Is base64 encoding secure?**
+2. **Your application reads its database URL from an environment variable injected via a ConfigMap. You update the ConfigMap to point to a new database, but the application still connects to the old one. What is happening, and how would you fix it?**
    <details>
    <summary>Answer</summary>
-   No! Base64 is encoding, not encryption. Anyone can decode it. For real security, enable encryption at rest for Secrets in etcd.
+   Environment variables are set when the Pod starts and do not update when the underlying ConfigMap changes. The Pod must be restarted for the new value to take effect. To avoid this, mount the ConfigMap as a volume instead. Volume-mounted ConfigMaps automatically update when the ConfigMap changes (with a delay of up to a minute). The application would then read the configuration from a file rather than an environment variable, and could watch for file changes to reload without a restart.
    </details>
 
-3. **How can an application consume ConfigMap data?**
+3. **A new hire asks: "Why not just put the database password directly in the Deployment YAML as an environment variable value?" What are the problems with this approach compared to using a Secret?**
    <details>
    <summary>Answer</summary>
-   Two ways: (1) As environment variables using envFrom or valueFrom, (2) As files by mounting the ConfigMap as a volume. Environment variables require Pod restart to update; volume mounts can update automatically.
+   Hardcoding secrets in YAML means: the password is visible in version control (Git) to anyone with repository access, the same password is baked into the Deployment definition making it impossible to use different credentials per environment without duplicating the YAML, changing the password requires editing and redeploying the Deployment, and the plain text password appears in `kubectl get deployment -o yaml` output. Using a Secret separates the credential from the workload definition, allows different Secrets per namespace (dev/staging/prod), enables RBAC control over who can read Secrets, and keeps sensitive values out of Git.
    </details>
 
-4. **What does immutable: true do?**
+4. **Your team runs 500 Pods that all reference the same ConfigMap. Every time someone updates the ConfigMap, all 500 Pods detect the change and the API server experiences a load spike. What Kubernetes feature would solve this problem?**
    <details>
    <summary>Answer</summary>
-   Makes the ConfigMap or Secret unchangeable after creation. This protects against accidental changes and improves performance. To update, you must delete and recreate it.
+   Mark the ConfigMap as `immutable: true`. Immutable ConfigMaps cannot be modified after creation, which means Kubernetes does not need to maintain watches for changes on them, significantly reducing API server load. When you need to update the configuration, create a new ConfigMap with a different name (e.g., `app-config-v2`), update the Pod specs to reference it, and delete the old one. This also protects against accidental configuration changes that could affect all 500 Pods simultaneously.
    </details>
 
-5. **Why separate configuration from container images?**
+5. **You deploy the same application to dev, staging, and production. Each environment needs a different database host and different replica count, but the container image is identical. How do ConfigMaps enable this pattern, and how does it relate to the 12-Factor App methodology?**
    <details>
    <summary>Answer</summary>
-   To use the same image across environments (dev/staging/prod), change configuration without rebuilding images, and keep sensitive data out of image layers.
+   Create a separate ConfigMap in each namespace (dev, staging, prod) with the appropriate database host value. The Deployment references the ConfigMap by name, which resolves to the namespace-local ConfigMap. The same container image runs everywhere -- only the injected configuration differs. This implements 12-Factor App principle #3 ("Store config in the environment") by strictly separating configuration from code. The build artifact (container image) is immutable and environment-agnostic, while ConfigMaps provide environment-specific settings at deploy time.
    </details>
 
 ---

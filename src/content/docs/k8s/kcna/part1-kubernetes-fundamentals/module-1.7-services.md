@@ -106,6 +106,8 @@ A **Service** is an abstraction that defines a logical set of Pods and a policy 
 
 ---
 
+> **Pause and predict**: If Pod IPs change every time a Pod restarts, how would a frontend application reliably communicate with a backend that has 3 replicas? What mechanism would you need to abstract away the changing IPs?
+
 ## Service Types
 
 ### 1. ClusterIP (Default)
@@ -291,6 +293,8 @@ Kubernetes provides two ways to discover Services:
 
 ---
 
+> **Stop and think**: A LoadBalancer Service creates an external cloud load balancer, which costs money. If you have 10 microservices that all need external access, would you create 10 LoadBalancer Services? What alternative approach might reduce cost while still routing external HTTP traffic to the right service?
+
 ## Endpoints
 
 Services use **Endpoints** to track Pod IPs:
@@ -345,34 +349,34 @@ Services use **Endpoints** to track Pod IPs:
 
 ## Quiz
 
-1. **What is the default Service type?**
+1. **Your frontend Deployment connects to a backend using the backend Pod's IP address directly. After a routine update, the backend Pods are recreated with new IPs and the frontend can no longer reach them. What went wrong, and how should the frontend discover the backend?**
    <details>
    <summary>Answer</summary>
-   ClusterIP. It provides internal cluster access only—no external access.
+   Pod IPs are ephemeral -- they change every time a Pod is recreated. The frontend should connect through a Service, which provides a stable ClusterIP and DNS name (e.g., `backend.default.svc.cluster.local`). The Service uses label selectors to automatically track the current Pod IPs via Endpoints, so even when Pods are replaced, the Service routes traffic correctly.
    </details>
 
-2. **How does a Service find which Pods to route to?**
+2. **A developer creates a Service with selector `app: web`, but no Pods are receiving traffic. When they run `kubectl get endpoints`, the list is empty. What is the most likely cause?**
    <details>
    <summary>Answer</summary>
-   Using label selectors. The Service's selector matches Pod labels. Kubernetes automatically creates Endpoints listing matching Pod IPs.
+   The Pods do not have a matching label. The Service selector `app: web` must exactly match a label on the Pods. Common causes include a typo in the label key or value (e.g., `app: Web` vs `app: web`), the Pods being in a different namespace, or the Pods not having the label at all. Check the Pod labels with `kubectl get pods --show-labels` and compare against the Service selector.
    </details>
 
-3. **What's the DNS format for a Service?**
+3. **Your team runs a Kubernetes cluster on-premises with no cloud provider. A colleague wants to expose an application externally using a LoadBalancer Service. What will happen, and what alternative would you suggest?**
    <details>
    <summary>Answer</summary>
-   `<service>.<namespace>.svc.cluster.local`. For example, `backend.production.svc.cluster.local`.
+   Without a cloud provider, a LoadBalancer Service will stay in "Pending" state indefinitely because there is no cloud controller to provision an external load balancer. Alternatives include using a NodePort Service (accessible via any node's IP on a port in the 30000-32767 range), installing a bare-metal load balancer like MetalLB, or using an Ingress controller with NodePort to handle HTTP routing.
    </details>
 
-4. **When would you use NodePort vs LoadBalancer?**
+4. **A microservices application has a frontend in the `web` namespace and a database in the `data` namespace. The frontend tries to connect to `postgres:5432` but gets a DNS resolution error. What is wrong, and how should the frontend reference the database Service?**
    <details>
    <summary>Answer</summary>
-   NodePort for development/testing or when you manage your own load balancer. LoadBalancer for production external access in cloud environments (it provisions a cloud load balancer).
+   Short DNS names like `postgres` only resolve within the same namespace. Since the frontend is in the `web` namespace and the database Service is in the `data` namespace, the frontend must use the fully qualified name: `postgres.data.svc.cluster.local` (or at minimum `postgres.data`). Services are namespace-scoped, and DNS resolution requires specifying the target namespace when communicating across namespace boundaries.
    </details>
 
-5. **What is a headless Service?**
+5. **Your StatefulSet runs a 3-node database cluster where each replica has a different role (primary, replica-1, replica-2). A regular ClusterIP Service would load-balance across all three, but clients need to connect to specific instances. What type of Service would solve this problem?**
    <details>
    <summary>Answer</summary>
-   A Service with `clusterIP: None`. Instead of a single ClusterIP, DNS returns the IPs of all matching Pods. Used with StatefulSets for direct Pod access.
+   A headless Service (with `clusterIP: None`) solves this. Instead of providing a single virtual IP with load balancing, a headless Service returns the individual Pod IPs via DNS. Combined with a StatefulSet, each Pod gets a predictable DNS name (e.g., `db-0.db-svc.default.svc.cluster.local`), allowing clients to connect directly to the primary or a specific replica by name.
    </details>
 
 ---

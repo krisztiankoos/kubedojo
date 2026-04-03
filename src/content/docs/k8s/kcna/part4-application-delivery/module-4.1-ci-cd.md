@@ -118,6 +118,8 @@ Modern software delivery requires automation. **Continuous Integration** and **C
 
 ---
 
+> **Pause and predict**: Continuous Delivery means code is always ready to deploy (manual trigger). Continuous Deployment means every change deploys automatically. Which one requires more confidence in your automated tests? What could happen if you adopt Continuous Deployment with inadequate test coverage?
+
 ## CI/CD Benefits
 
 ```
@@ -283,6 +285,8 @@ Modern software delivery requires automation. **Continuous Integration** and **C
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Stop and think**: In a canary deployment, only 10% of users see the new version initially. If the canary shows increased error rates, you roll back and only 10% of users were affected. In a rolling update, by the time you notice problems, 50% of Pods may already be running the new version. How does this difference in blast radius affect which strategy you choose for a risky change?
+
 ### Strategy Comparison
 
 | Strategy | Downtime | Rollback | Resource Cost | Complexity |
@@ -355,34 +359,34 @@ Modern software delivery requires automation. **Continuous Integration** and **C
 
 ## Quiz
 
-1. **What's the difference between Continuous Delivery and Continuous Deployment?**
+1. **Your team currently deploys by having a senior engineer SSH into a server and run deployment scripts manually. Deployments happen once a month and often fail. The CTO wants to move to CI/CD. What specific problems would a CI/CD pipeline solve, and what stages would you include?**
    <details>
    <summary>Answer</summary>
-   Continuous Delivery means code is always ready to deploy (manual trigger). Continuous Deployment automatically deploys every change that passes tests. Delivery = CAN deploy; Deployment = DOES deploy.
+   The manual process causes: inconsistent builds ("works on my machine"), human error during deployment, infrequent releases that bundle many changes (making failures harder to diagnose), no automated testing, and dependence on one person. A CI/CD pipeline would include: Source (Git commit triggers pipeline), Build (compile code, build container image), Test (unit tests, integration tests, security scans), Package (push image to registry, create Helm chart), and Deploy (deploy to staging, run smoke tests, then production). This makes deployments reproducible, frequent, and safe -- turning monthly risky events into routine daily operations.
    </details>
 
-2. **What is GitOps?**
+2. **Your company uses a traditional push-based CI/CD pipeline where Jenkins has admin credentials to your production Kubernetes cluster. A security audit flags this as a risk. How would switching to GitOps with Argo CD or Flux improve the security posture?**
    <details>
    <summary>Answer</summary>
-   A CD approach where Git is the source of truth for infrastructure and application state. An agent in the cluster pulls desired state from Git and reconciles it. Changes are made via Git commits, not direct kubectl commands.
+   In push-based CI/CD, Jenkins needs cluster admin credentials stored outside the cluster, creating a large attack surface -- if Jenkins is compromised, the attacker has production access. In GitOps, the agent (Argo CD or Flux) runs inside the cluster and pulls desired state from Git. No external system needs cluster credentials. The cluster reaches out to Git (read-only access), and all changes flow through Git where they are auditable, reviewable, and reversible via `git revert`. This eliminates the credential exposure problem and creates a complete audit trail of every change through Git history.
    </details>
 
-3. **What is a canary deployment?**
+3. **You are deploying a new payment processing feature to 2 million users. A colleague suggests a standard rolling update. Why might you choose a canary deployment instead, and what metrics would you monitor to decide whether to promote the canary?**
    <details>
    <summary>Answer</summary>
-   A deployment strategy where a small percentage of traffic is routed to the new version while most traffic goes to the old version. If the canary performs well, traffic is gradually shifted. If not, the canary is removed.
+   A rolling update gradually replaces all Pods, and by the time you detect a problem, a significant percentage of users may be affected. A canary deployment limits the blast radius -- you send 5% of traffic (100,000 users) to the new version first. Monitor error rate (5xx responses compared to baseline), latency (p99 response time within acceptable bounds), and business metrics (payment success rate, conversion rate). If the canary shows degradation on any metric, you roll back instantly and only 5% of users were impacted. For a payment feature where errors mean lost revenue, the controlled exposure of canary deployment is worth the added complexity.
    </details>
 
-4. **Name two Kubernetes-native CI/CD tools.**
+4. **Your DORA metrics show: deployment frequency is once per week, lead time is 14 days, change failure rate is 25%, and mean time to recovery is 4 hours. Which metric is most concerning, and what would you address first?**
    <details>
    <summary>Answer</summary>
-   Tekton (CI/CD pipelines as Kubernetes resources), Argo CD (GitOps continuous delivery), Flux (GitOps), Argo Workflows (workflow engine). All are CNCF projects.
+   The 25% change failure rate is most concerning -- one in four deployments causes problems. This suggests insufficient testing in the CI/CD pipeline. Address this first by adding comprehensive automated tests (unit, integration, and end-to-end) to the pipeline so failures are caught before production. Once the change failure rate drops, the team will gain confidence to deploy more frequently (improving deployment frequency) and with shorter lead times. Frequent small deployments are inherently less risky than infrequent large ones because each change is smaller and easier to diagnose and roll back.
    </details>
 
-5. **What are the DORA metrics?**
+5. **A blue-green deployment runs both the old version (blue) and new version (green) simultaneously, then switches all traffic at once. What is the main advantage over a rolling update, and what is the biggest cost trade-off?**
    <details>
    <summary>Answer</summary>
-   Deployment Frequency (how often you deploy), Lead Time (time from commit to production), Change Failure Rate (% of deployments causing issues), Mean Time to Recovery (time to fix production issues). These measure DevOps performance.
+   The main advantage is instant rollback. If the green version has problems after the traffic switch, you switch back to blue in seconds (just change the Service selector). With a rolling update, rollback means doing another rolling update in reverse, which takes minutes. The biggest trade-off is resource cost: blue-green requires double the resources during the switchover period (both versions running at full scale). For a service running 20 Pods, you need capacity for 40. This makes blue-green expensive for large services but ideal for breaking changes where you need the safety of instant rollback.
    </details>
 
 ---

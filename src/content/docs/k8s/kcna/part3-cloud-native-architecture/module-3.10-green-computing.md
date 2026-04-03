@@ -84,6 +84,8 @@ This simple principle drives everything in this module: eliminate waste first, t
 
 ---
 
+> **Pause and predict**: Most Kubernetes clusters run at only 15-25% utilization, meaning 75-85% of provisioned resources are wasted. If a team requests 4 CPU for a Pod that uses 0.5 CPU, who pays for the waste -- in both money and carbon emissions? What Kubernetes feature could automatically fix this?
+
 ## CNCF TAG Environmental Sustainability
 
 The **CNCF TAG Environmental Sustainability** is the community's organized effort to address cloud native's environmental impact.
@@ -245,6 +247,8 @@ The single most impactful thing most organizations can do is stop over-provision
 | **Efficient images** | Smaller container images, distroless bases | Less network transfer, faster pulls |
 
 ---
+
+> **Stop and think**: Carbon-aware scheduling delays workloads to times when the electricity grid is cleaner. But your production API must respond immediately -- it cannot wait until midnight. Which types of workloads in your cluster could actually benefit from temporal shifting, and which cannot?
 
 ## GreenOps: Where FinOps Meets Sustainability
 

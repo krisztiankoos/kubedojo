@@ -66,6 +66,8 @@ THE ER TRIAGE MODEL FOR KUBERNETES
 
 The golden rule: **never skip to surgery before checking vitals**. In Kubernetes terms, never start editing YAML or deleting pods before you understand what is actually wrong.
 
+> **Pause and predict**: A pod shows status `CrashLoopBackOff`. Before reading further, what do you think this status means? Is the pod running, stopped, or something in between? Why would Kubernetes keep restarting a container that keeps failing?
+
 ### 1.2 The Clue Map
 
 Every debugging session follows this sequence. Memorize it.
@@ -225,6 +227,8 @@ kubectl describe pod <pod-name>   # Events will say WHY it cannot be scheduled
 # Look for: "Insufficient cpu", "Insufficient memory", "didn't match Pod's node affinity"
 kubectl get nodes -o wide         # Are nodes Ready? How many exist?
 ```
+
+> **Stop and think**: You see `ImagePullBackOff` on a pod. The image name looks correct. What are three different reasons the image pull could fail, even when the name is right?
 
 ### 3.4 OOMKilled
 

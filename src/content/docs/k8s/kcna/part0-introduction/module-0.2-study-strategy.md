@@ -139,6 +139,8 @@ Create flashcards for key terms:
 | What is a ReplicaSet? | Ensures specified number of Pod replicas |
 | What is CNCF? | Cloud Native Computing Foundation |
 
+> **Pause and predict**: You are about to study the difference between a Pod and a Deployment. Which study technique from the list above would be most effective for this concept on a multiple-choice exam: flashcards, concept mapping, or the "explain it simply" test? Why?
+
 ### 3. The "Explain It Simply" Test
 
 If you can explain a concept to a non-technical person, you understand it:
@@ -264,6 +266,8 @@ Don't get stuck:
 
 ---
 
+> **Stop and think**: You see a practice question where two answers both seem correct. Before reading the strategies below, what approach would you use to pick between them? How is this different from a hands-on exam where you either solve the problem or you don't?
+
 ## Exam Day Tips
 
 ### Before the Exam
@@ -334,28 +338,28 @@ Don't get stuck:
 
 ## Quiz
 
-1. **How much time should you spend per question on average?**
+1. **You are 50 minutes into the KCNA exam and realize you have only completed 30 of 60 questions. Several flagged questions are about the CNCF ecosystem, which you studied the least. How should you adjust your approach for the remaining 40 minutes?**
    <details>
    <summary>Answer</summary>
-   About 1.5 minutes (90 minutes / 60 questions). Aim for under 1 minute on easy questions to bank time for harder ones.
+   First, stop spending extra time on difficult questions. Move through the remaining 30 unanswered questions quickly, spending about 1 minute each on questions you know, and making your best guess on uncertain ones. Flag uncertain ones but do not dwell. After completing all 60, use any remaining time to revisit flagged questions. For the CNCF ecosystem questions, use elimination to rule out obviously wrong answers. Never leave questions blank, as there is no penalty for guessing.
    </details>
 
-2. **What percentage of study time should go to Kubernetes Fundamentals?**
+2. **A friend suggests studying Kubernetes by building a complex multi-node cluster with kubeadm to prepare for KCNA. Another friend recommends spending that same time on flashcards and practice quizzes. Who is right, and why?**
    <details>
    <summary>Answer</summary>
-   About 46% - matching the exam weight. This is approximately 10-14 hours of a 20-30 hour study plan.
+   The second friend is right for KCNA preparation. Building a cluster develops hands-on skills tested in CKA, but KCNA is a multiple-choice conceptual exam. The time spent fighting with kubeadm, networking, and troubleshooting would be better spent on recognition-based learning: flashcards for key terms, concept maps for understanding relationships, and practice quizzes for exam-format familiarity. Recognition is easier than recall, and KCNA only requires recognition.
    </details>
 
-3. **What's the best strategy when you don't know an answer?**
+3. **During a practice test, you encounter this question: "Which Kubernetes component stores all cluster state?" You can narrow it down to etcd and kube-apiserver but cannot decide between them. Walk through how you would apply the elimination and "best answer" strategies to choose correctly.**
    <details>
    <summary>Answer</summary>
-   Use elimination to remove obviously wrong answers, make your best guess, flag for review, and return later with fresh eyes. Never leave questions blank.
+   First, apply elimination: you already removed other options. Now apply the "best answer" strategy. The API server receives all state changes and communicates with etcd, but it does not store data itself -- it is stateless. etcd is the distributed key-value store that persists all cluster state. The key word in the question is "stores," which points directly to etcd. The API server is the gateway to stored data, not the storage itself. When two answers seem close, focus on the exact verb in the question.
    </details>
 
-4. **Should you change your answers during review?**
+4. **You scored 82% on Cloud Native Architecture questions in practice but only 60% on Kubernetes Fundamentals. You have 3 days left before the exam. How should you allocate your remaining study time?**
    <details>
    <summary>Answer</summary>
-   Generally no—first instincts are often correct. Only change an answer if you're certain you made an error or misread the question.
+   Focus heavily on Kubernetes Fundamentals, which is worth 46% of the exam. At 60%, you are failing that domain, and it represents nearly half your score. Even a modest improvement from 60% to 70% in Fundamentals would add more points than going from 82% to 92% in Cloud Native Architecture (which is only 16%). Spend at least 2 of the 3 days reviewing Fundamentals concepts: architecture components, Pods, Deployments, Services, and namespaces. Use the final day for a full practice test and targeted review of any remaining weak spots.
    </details>
 
 ---

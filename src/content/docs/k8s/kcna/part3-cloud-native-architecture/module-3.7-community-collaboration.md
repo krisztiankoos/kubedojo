@@ -103,6 +103,8 @@ If governance is the constitution, **SIGs (Special Interest Groups)** are the le
 
 There are currently about 20 SIGs, plus subprojects within them. **Working Groups (WGs)** are temporary -- they form around cross-cutting problems (like "WG Policy" or "WG Batch") and disband when the work is done.
 
+> **Pause and predict**: Kubernetes has about 20 SIGs, each owning a different area (networking, storage, security, etc.). Why do you think the project is organized this way instead of having a single committee make all decisions? What advantage does this distributed governance model provide for a project with 3,200+ contributors?
+
 ### The KEP Process: From Idea to Feature
 
 When someone wants to make a significant change to Kubernetes, they do not just open a pull request. They write a **KEP (Kubernetes Enhancement Proposal)**. Think of it as an architectural design document that must survive public scrutiny.
@@ -152,6 +154,8 @@ Every Kubernetes contributor started the same way: watching. There is no shame i
 - Become an **Approver** for a subproject (technical authority over merges)
 - Run for SIG lead positions
 - Author KEPs for features you care about
+
+> **Stop and think**: The KEP process requires features to go through Alpha (disabled by default), Beta (enabled by default), and GA (permanent). Why would the Kubernetes project force features through this slow progression instead of shipping directly to GA? What would happen to a project with millions of users if a breaking API change shipped as GA without this process?
 
 ### What Makes a Good Contribution
 

@@ -90,6 +90,8 @@ Beyond basic concepts, cloud native includes patterns for solving complex proble
 | **Observability** | Automatic metrics, traces, logs |
 | **Access control** | Service-to-service authorization |
 
+> **Pause and predict**: A service mesh adds a sidecar proxy to every Pod. This means for 100 application Pods, you now have 200 containers running. What trade-off is being made, and when would the overhead be worth it?
+
 ### Popular Service Meshes
 
 | Mesh | Key Characteristics |
@@ -296,6 +298,8 @@ Beyond basic concepts, cloud native includes patterns for solving complex proble
 
 ---
 
+> **Stop and think**: In traditional CI/CD, the CI server pushes changes to the cluster. In GitOps, the cluster pulls from Git. Why is the pull-based model considered more secure? Think about what credentials each approach needs and where they are stored.
+
 ## Multi-Tenancy Patterns
 
 ```
@@ -360,34 +364,34 @@ Beyond basic concepts, cloud native includes patterns for solving complex proble
 
 ## Quiz
 
-1. **What is a service mesh?**
+1. **Your company has 30 microservices, and each team independently implements retry logic, timeouts, and circuit breakers in their application code. Bugs in one team's retry logic caused a cascading failure last month. How would a service mesh solve this problem, and what is the trade-off?**
    <details>
    <summary>Answer</summary>
-   An infrastructure layer that handles service-to-service communication. It provides mTLS, traffic management, observability, and retries transparently via sidecar proxies or eBPF, without changing application code.
+   A service mesh moves retry logic, timeouts, circuit breakers, and mTLS out of application code and into the infrastructure layer (sidecar proxies like Envoy). Each team no longer needs to implement these patterns -- the mesh handles them transparently. This eliminates inconsistencies between teams and ensures uniform behavior. The trade-off is operational complexity (managing the mesh control plane), additional resource consumption (sidecar containers alongside every Pod), and added latency (traffic passes through the proxy). The overhead is justified when you have many services with complex communication patterns.
    </details>
 
-2. **What is the difference between control plane and data plane in a service mesh?**
+2. **An engineer wants to deploy their application using GitOps with Argo CD. They commit a YAML change to Git, but the cluster does not update. A colleague suggests running `kubectl apply` directly to fix it. Why is this a bad idea in a GitOps workflow, and what should they do instead?**
    <details>
    <summary>Answer</summary>
-   The control plane manages configuration, certificates, and policies. The data plane consists of proxies (sidecars like Envoy) that handle actual network traffic between services.
+   Direct `kubectl apply` violates the core GitOps principle: Git is the single source of truth. If you make changes directly to the cluster, Git and the cluster diverge. The next time Argo CD syncs, it will detect the drift and revert the manual change to match Git. The engineer should instead check why Argo CD is not syncing -- perhaps the Git webhook is not configured, the sync is paused, or there is a validation error in the YAML. The whole point of GitOps is that changes flow through Git, providing audit trails and the ability to revert via `git revert`.
    </details>
 
-3. **What makes GitOps different from regular CI/CD?**
+3. **A team manages PostgreSQL on Kubernetes by manually creating StatefulSets, Services, PVCs, ConfigMaps, and Secrets. When the primary database fails, a human must intervene to promote a replica. How would a Kubernetes Operator improve this, and what does "codifying operational knowledge" mean?**
    <details>
    <summary>Answer</summary>
-   In GitOps, an agent in the cluster pulls desired state from Git and reconciles it. Git is the source of truth. Traditional CI/CD pushes changes to the cluster from outside.
+   A PostgreSQL Operator (like Crunchy Data or Zalando's operator) uses a Custom Resource Definition to let you declare `kind: PostgresCluster` with desired replicas and version. The Operator's controller automatically creates all necessary resources (StatefulSet, Services, PVCs, Secrets) and -- critically -- handles failover automatically. When the primary fails, the Operator promotes a replica, updates the Service endpoint, and reconfigures replication without human intervention. "Codifying operational knowledge" means translating the steps a DBA would take during failover into automated controller logic that runs 24/7.
    </details>
 
-4. **What is an Operator in Kubernetes?**
+4. **Your application processes uploaded images. Traffic is unpredictable -- sometimes 0 requests per hour, sometimes 10,000. Standard HPA has a minimum of 1 replica, so you are paying for an idle Pod most of the time. What CNCF project addresses this, and how does it differ from standard HPA?**
    <details>
    <summary>Answer</summary>
-   Software that extends Kubernetes to manage complex applications. It uses Custom Resource Definitions (CRDs) to define new resource types and controllers that automate operational tasks like backups, scaling, and failover.
+   KEDA (Kubernetes Event-Driven Autoscaler, CNCF Graduated) addresses this. Unlike standard HPA which scales based on Pod metrics like CPU and has a minimum of 1 replica, KEDA can scale to zero -- removing all Pods when there are no events (no images to process). When a new image is uploaded (triggering an event from a queue, HTTP request, or storage notification), KEDA creates Pods to handle the work. KEDA supports dozens of event sources beyond just CPU/memory. This eliminates the cost of idle Pods for bursty, event-driven workloads.
    </details>
 
-5. **What is KEDA used for?**
+5. **Your cluster hosts multiple teams, and you need to isolate them so Team A cannot see Team B's resources. You could create separate clusters per team or use namespaces within one cluster. What are the trade-offs of each approach, and what newer technology offers a middle ground?**
    <details>
    <summary>Answer</summary>
-   Kubernetes Event-Driven Autoscaler. It scales workloads based on external events like queue length, database metrics, or custom sources. It can scale to zero, unlike standard HPA.
+   Separate clusters provide the strongest isolation (completely independent control planes and etcd), but they are expensive and operationally complex (managing multiple clusters, distributing shared services). Namespace-based isolation is cheaper and simpler, but provides weaker isolation: it relies on RBAC, ResourceQuotas, and NetworkPolicies, and a misconfiguration could expose resources across namespaces. Virtual clusters (like vCluster) offer a middle ground: they create isolated "virtual" Kubernetes clusters inside a single physical cluster, each with its own virtual control plane, providing stronger isolation than namespaces but less overhead than separate clusters.
    </details>
 
 ---
