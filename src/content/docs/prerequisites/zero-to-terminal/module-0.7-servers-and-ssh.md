@@ -30,7 +30,7 @@ After this module, you will be able to:
 
 ## Why This Module Matters
 
-Everything you've done so far has been on *your* computer. Your kitchen, your files, your terminal. But in the real world of technology, most of the action happens on computers that are *somewhere else* -- in a data center, in the cloud, in a rack of machines you'll never physically touch.
+Everything you've done so far has been on *your* computer. Your bookshelf, your files, your terminal. But in the real world of technology, most of the action happens on computers that are *somewhere else* -- in a data center, in the cloud, in a rack of machines you'll never physically touch.
 
 These other computers are called **servers**, and the way you talk to them is through **SSH**.
 
@@ -58,15 +58,15 @@ A server:
   - It hosts websites, runs databases, processes data
 ```
 
-### The Kitchen Analogy
+### The Library Analogy
 
 Think of it this way:
 
-- **Your laptop** is a home kitchen. You cook for yourself. You eat in the same room where you cook. The "chef" and the "customer" are the same person.
+- **Your laptop** is your personal bookshelf at home. You have your own books, you can read them whenever you want, but space is limited and only you can see them.
 
-- **A server** is a restaurant kitchen. It exists to prepare food and send it *out* to a dining room full of customers. The kitchen has no dining tables -- that's not its job. Its job is to cook and serve.
+- **A server** is a public library. It's a massive building that holds thousands of books (websites, data, applications) and serves them to many visitors at once. When you need something, you walk up to the desk, make a request, and the librarian finds it and hands it to you.
 
-When you visit a website, your browser (the customer in the dining room) sends a request to a server (the kitchen in the back). The server prepares the response (cooks the meal) and sends it back to your browser (serves the dish).
+When you visit a website, your browser (you, the library visitor) sends a request to a server (the library). The server finds the right data (the librarian locates your book) and sends it back to your browser (hands you the book). Thousands of other visitors can be making requests at the same time.
 
 ---
 
@@ -96,8 +96,8 @@ Two words you'll hear constantly:
 - **Remote** = a different computer, somewhere else, that you connect to over a network
 
 ```
-Local:  Your kitchen. You're standing in it.
-Remote: A kitchen in another city. You call them on the phone to give orders.
+Local:  Your bookshelf at home. You're standing in front of it.
+Remote: A library in another city. You call them to request a book.
 ```
 
 When you type `ls` in your terminal right now, that command runs **locally** -- on your computer.
@@ -106,11 +106,11 @@ When you connect to a server and type `ls`, that command runs **remotely** -- on
 
 ---
 
-## SSH: Your Secure Tunnel to Remote Kitchens
+## SSH: Your Secure Line to Remote Libraries
 
 **SSH** stands for **S**ecure **Sh**ell. It's a program that lets you open a terminal session on a remote computer, securely.
 
-Think of SSH as a **secure phone line to a remote kitchen**. You pick up the phone (open SSH), dial the number (connect to the server), and start giving orders (typing commands). The chef in the remote kitchen carries them out, and you hear the results through the phone.
+Think of SSH as a **secure direct line to a remote library**. You pick up the phone (open SSH), call the librarian (connect to the server), and start making requests (typing commands). The librarian carries them out and reads you back the results. Nobody can eavesdrop on the call -- that's the "Secure" part.
 
 The "secure" part is important: everything you send over SSH is encrypted. Nobody can listen in on your conversation. It's like having a private, scrambled phone line.
 
@@ -141,30 +141,30 @@ ssh username@ip-address
 Let's break that down:
 
 - `ssh` -- the program you're running
-- `username` -- your account name on the remote server (like your name badge at the remote kitchen)
+- `username` -- your account name on the remote server (like your library card number)
 - `@` -- just a separator (the "at" sign)
-- `ip-address` -- the address of the remote server (like the phone number of the kitchen)
+- `ip-address` -- the address of the remote server (like the library's phone number)
 
 A real example might look like:
 
 ```bash
-ssh chef@192.168.1.100
+ssh admin@192.168.1.100
 ```
 
 Or with a domain name instead of an IP address:
 
 ```bash
-ssh chef@kitchen.example.com
+ssh admin@myserver.example.com
 ```
 
 ### What Happens When You Connect
 
 ```
-1. You type: ssh chef@kitchen.example.com
+1. You type: ssh admin@myserver.example.com
 2. SSH contacts the remote server
 3. The server asks: "Who are you? Prove it."
 4. You provide proof (password or key -- more on this below)
-5. The server says: "Welcome, chef. Here's your terminal."
+5. The server says: "Welcome, admin. Here's your terminal."
 6. Your prompt changes to show the remote server's name
 7. Every command you type now runs on the REMOTE server
 8. Type "exit" to disconnect and return to your local terminal
@@ -179,7 +179,7 @@ yourname@your-laptop ~ $
 to:
 
 ```
-chef@remote-server ~ $
+admin@remote-server ~ $
 ```
 
 That's how you know you're connected to a different machine.
@@ -195,8 +195,8 @@ There are two ways to prove your identity to a remote server:
 The simple way. The server asks for a password, you type it.
 
 ```bash
-ssh chef@kitchen.example.com
-# Server asks: chef@kitchen.example.com's password:
+ssh admin@myserver.example.com
+# Server asks: admin@myserver.example.com's password:
 # You type your password (it won't show on screen -- that's normal)
 ```
 
@@ -222,7 +222,7 @@ When you connect:
 4. If no: "Access denied."
 ```
 
-This is like having a physical key to the remote kitchen's door. You don't need to tell anyone a password -- you just unlock the door.
+This is like having a staff badge to the remote library. You don't need to show ID every time -- you just swipe your badge and walk in.
 
 **Generating SSH keys** (you don't need to do this right now, just know how):
 
@@ -244,9 +244,9 @@ You copy the public key to the server, and from then on, you can connect without
 
 | Option | What It Does | Example |
 |--------|-------------|---------|
-| `-p` | Connect on a different port (default is 22) | `ssh -p 2222 chef@server.com` |
-| `-i` | Use a specific key file | `ssh -i ~/.ssh/mykey chef@server.com` |
-| `-v` | Verbose mode (shows what's happening -- useful for debugging) | `ssh -v chef@server.com` |
+| `-p` | Connect on a different port (default is 22) | `ssh -p 2222 admin@server.com` |
+| `-i` | Use a specific key file | `ssh -i ~/.ssh/mykey admin@server.com` |
+| `-v` | Verbose mode (shows what's happening -- useful for debugging) | `ssh -v admin@server.com` |
 
 ---
 
@@ -255,7 +255,7 @@ You copy the public key to the server, and from then on, you can connect without
 ```
 Your computer                          Remote server
     |                                       |
-    |  --- ssh chef@server.com ---------->  |
+    |  --- ssh admin@server.com ---------->  |
     |                                       |  "Connection request received"
     |  <--- "Prove your identity" --------  |
     |                                       |
@@ -281,8 +281,8 @@ Your computer                          Remote server
 
 Kubernetes runs on servers -- usually many of them. A typical Kubernetes cluster might have:
 
-- 3 servers for the "control plane" (the restaurant management office)
-- 10-100+ servers as "worker nodes" (the kitchens that do the actual cooking)
+- 3 servers for the "control plane" (the management office that decides what goes where)
+- 10-100+ servers as "worker nodes" (the ones that actually run your applications)
 
 You'll use SSH to connect to these servers, troubleshoot problems, check logs, and manage configurations. The commands you learned in previous modules -- `ls`, `cd`, `nano`, `cat` -- work exactly the same on these remote servers.
 

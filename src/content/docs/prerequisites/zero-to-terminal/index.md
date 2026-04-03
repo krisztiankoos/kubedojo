@@ -48,7 +48,7 @@ Throughout these modules, we use a **restaurant kitchen** as our running analogy
 | Operating System | The restaurant manager |
 | Programs | Recipes |
 | Terminal | Talking directly to the kitchen staff |
-| Server | A kitchen that serves other kitchens |
+| Server | A public library (serves many visitors remotely) |
 | Cloud | Renting a commercial kitchen instead of building your own |
 
 This analogy will carry you all the way from here to Kubernetes, where you'll manage **thousands of kitchens** automatically.
