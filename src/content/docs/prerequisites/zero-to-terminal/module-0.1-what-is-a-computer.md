@@ -319,9 +319,9 @@ Write down (yes, physically write it down or type it somewhere):
 
 ## What's Next?
 
-In [Module 0.3: First Terminal Commands](../module-0.3-first-commands/), you'll open the terminal and start typing commands. You'll navigate your computer's file system, create folders and files, and move things around -- all without clicking a single button.
+In [Module 0.2: What is a Terminal?](../module-0.2-what-is-a-terminal/), you'll learn what the terminal actually is, why it exists alongside the graphical interface, and why every engineer eventually learns to use it.
 
-The graphical interface is the dining room. The terminal is the kitchen. Time to step into the kitchen.
+The graphical interface is the dining room. The terminal is the kitchen. Time to find out what's behind that door.
 
 ---
 
