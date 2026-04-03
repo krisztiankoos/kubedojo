@@ -371,14 +371,14 @@ def step_check(content: str, path: Path) -> tuple[bool, list]:
 # ---------------------------------------------------------------------------
 
 def run_module(module_path: Path, state: dict, max_retries: int = 2,
-               models: dict | None = None) -> bool:
+               models: dict | None = None, dry_run: bool = False) -> bool:
     """Run a single module through the full pipeline."""
     m = models or MODELS
     key = module_key_from_path(module_path)
     ms = get_module_state(state, key)
 
     print(f"\n{'='*60}")
-    print(f"  PIPELINE: {key}")
+    print(f"  PIPELINE: {key}{'  [DRY RUN]' if dry_run else ''}")
     print(f"  Current phase: {ms['phase']}")
     print(f"{'='*60}")
 
@@ -405,6 +405,11 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
         plan = audit.get("plan", "")
         if not plan or plan == "PASS":
             plan = f"Improve weak dimensions. Scores: {audit['scores']}. Notes: {audit.get('notes', {})}"
+
+        if dry_run:
+            print(f"\n  [DRY RUN] Would improve: {[f'D{i+1}={s}' for i, s in enumerate(audit['scores']) if s < 4]}")
+            print(f"  [DRY RUN] Plan: {plan[:300]}")
+            return False
 
         ms["phase"] = "write"
         save_state(state)
@@ -595,7 +600,7 @@ def cmd_run(args):
         models["review"] = args.review_model
 
     state = load_state()
-    ok = run_module(path, state, models=models)
+    ok = run_module(path, state, models=models, dry_run=getattr(args, "dry_run", False))
     sys.exit(0 if ok else 1)
 
 
@@ -644,6 +649,7 @@ def cmd_run_section(args):
     state = load_state()
     passed = 0
     failed = 0
+    dry_run = getattr(args, "dry_run", False)
 
     workers = args.workers or 1
 
@@ -651,7 +657,7 @@ def cmd_run_section(args):
         for i, path in enumerate(modules, 1):
             key = module_key_from_path(path)
             print(f"\n[{i}/{len(modules)}] {key}")
-            ok = run_module(path, state, models=models)
+            ok = run_module(path, state, models=models, dry_run=dry_run)
             if ok:
                 passed += 1
             else:
@@ -659,7 +665,7 @@ def cmd_run_section(args):
     else:
         with ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {
-                executor.submit(run_module, path, state, 2, models): path
+                executor.submit(run_module, path, state, 2, models, dry_run): path
                 for path in modules
             }
             for future in as_completed(futures):
@@ -675,10 +681,28 @@ def cmd_run_section(args):
                     failed += 1
 
     print(f"\n{'='*60}")
-    print(f"  DONE: {passed} passed, {failed} failed out of {len(modules)}")
+    if dry_run:
+        print(f"  DRY RUN: {passed} already pass, {failed} need improvement out of {len(modules)}")
+        # Show summary of weak dimensions across all audited modules
+        all_scores = {k: v.get("scores") for k, v in state.get("modules", {}).items()
+                      if v.get("scores") and k.startswith(args.section.replace("/", "/")[:20])}
+        if all_scores:
+            weak_counts = [0] * 7
+            for scores in all_scores.values():
+                for i, s in enumerate(scores):
+                    if s < 4:
+                        weak_counts[i] += 1
+            dim_names = ["D1:Outcomes", "D2:Scaffold", "D3:Active", "D4:RealWorld",
+                         "D5:Assess", "D6:CogLoad", "D7:Engage"]
+            print(f"\n  Weak dimensions across section:")
+            for name, count in zip(dim_names, weak_counts):
+                if count > 0:
+                    print(f"    {name}: {count} modules below 4")
+    else:
+        print(f"  DONE: {passed} passed, {failed} failed out of {len(modules)}")
     print(f"{'='*60}")
 
-    sys.exit(0 if failed == 0 else 1)
+    sys.exit(0 if (dry_run or failed == 0) else 1)
 
 
 def cmd_status(args):
@@ -809,6 +833,7 @@ def main():
     # run
     rp = subparsers.add_parser("run", help="Run a module through the full pipeline")
     rp.add_argument("module", help="Module path or key")
+    rp.add_argument("--dry-run", action="store_true", help="Audit only — show plan without making changes")
 
     # run-section
     rsp = subparsers.add_parser("run-section", help="Run all modules in a section")
@@ -817,6 +842,7 @@ def main():
     rsp.add_argument("--track", help="Track type for gap check (auto-detected if omitted)",
                      choices=["prerequisites", "linux", "cloud", "k8s"])
     rsp.add_argument("--skip-gaps", action="store_true", help="Skip gap check even if errors found")
+    rsp.add_argument("--dry-run", action="store_true", help="Audit only — show plan without making changes")
 
     # gap-check
     gcp = subparsers.add_parser("gap-check", help="Detect scaffolding gaps in a track/section")
