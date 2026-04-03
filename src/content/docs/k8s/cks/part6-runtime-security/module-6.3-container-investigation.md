@@ -71,6 +71,8 @@ CKS tests your ability to investigate suspicious container behavior.
 
 ---
 
+> **Stop and think**: You receive a Falco alert about suspicious activity in a production pod. Your first instinct is to `kubectl exec` into it and look around. But the attacker might still be active. How does your investigation itself change the evidence, and what should you do BEFORE exec-ing in?
+
 ## Investigation Tools
 
 ### kubectl Commands
@@ -177,6 +179,8 @@ sudo nsenter -t $PID -p -n netstat -tulnp
 ```
 
 ---
+
+> **What would happen if**: You find a compromised pod and immediately `kubectl delete pod compromised-pod`. The pod is gone. Now the security team asks "what processes were running? what files were modified? what network connections were active?" Can you answer any of these questions?
 
 ## Network Investigation
 
@@ -402,6 +406,8 @@ kubectl exec suspicious-pod -- ls -la /etc/init.d/
 
 ---
 
+> **Pause and predict**: The compromised pod uses a distroless image with no shell, no `ps`, no `find`, no `netstat`. How do you investigate its processes, files, and network connections without being able to exec a shell?
+
 ## Evidence Preservation
 
 ### Capture Container State
@@ -462,28 +468,28 @@ sudo crictl export $CONTAINER_ID > container-export.tar
 
 ## Quiz
 
-1. **How do you check running processes in a container without exec access?**
+1. **Falco alerts that a shell was spawned in a production pod running a distroless image (no shell, no debugging tools). Yet the alert says `/bin/sh` was executed. How is this possible, and how do you investigate a container that has no built-in tools?**
    <details>
    <summary>Answer</summary>
-   Use `kubectl debug` to create an ephemeral debug container, or use `crictl inspect` and `nsenter` from the node to enter the container's namespaces.
+   The attacker likely downloaded a shell binary into a writable volume (emptyDir, /tmp) or exploited a vulnerability that allowed writing to memory and executing code. Even distroless images can have shells injected at runtime if the filesystem isn't fully read-only. Investigation without built-in tools: use `kubectl debug -it <pod> --image=busybox --target=<container>` to create an ephemeral debug container that shares the target's process and network namespaces. From there you can run `ps`, `ls`, `netstat`. Alternatively, SSH to the node and use `crictl inspect <container-id>` to get the PID, then `nsenter -t <pid> -p -n` to enter the container's namespaces from the host.
    </details>
 
-2. **What command finds files modified in the last 30 minutes?**
+2. **During incident response, a junior admin panics and runs `kubectl delete pod compromised-pod`. The pod is replaced by the deployment controller. The security team arrives and asks what the attacker was doing. What evidence is now lost, and what should the admin have done instead?**
    <details>
    <summary>Answer</summary>
-   `find / -mmin -30 -type f 2>/dev/null`. The `-mmin` flag specifies minutes, and `-mtime` specifies days.
+   Lost evidence: all in-memory processes (attacker's tools, reverse shells), network connections (C2 server IPs), modified files in the container filesystem (not on persistent volumes), and runtime state. The new pod is clean -- it tells you nothing about the attack. Correct procedure: (1) First, isolate the pod with a deny-all NetworkPolicy to stop active exfiltration. (2) Capture evidence: `kubectl exec <pod> -- ps aux`, `kubectl exec <pod> -- find / -mmin -30`, `kubectl exec <pod> -- netstat -tulpn`, `kubectl logs <pod>`. (3) Save the pod spec: `kubectl get pod <pod> -o yaml`. (4) If possible, snapshot the container filesystem. (5) Only delete after evidence is preserved. Containment first, then investigation, then remediation.
    </details>
 
-3. **How do you isolate a suspicious pod while investigating?**
+3. **You discover a compromised pod with active network connections to an external IP (likely a C2 server). You need to stop the data exfiltration immediately but preserve the pod for forensics. What's the fastest way to isolate it without deleting it?**
    <details>
    <summary>Answer</summary>
-   Apply a NetworkPolicy with empty egress rules to block all outbound traffic. This prevents data exfiltration while you investigate.
+   Apply a NetworkPolicy that denies all egress: `kubectl apply -f - <<< '{"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"name":"isolate-pod","namespace":"<ns>"},"spec":{"podSelector":{"matchLabels":{"<pod-label-key>":"<pod-label-value>"}},"policyTypes":["Egress"],"egress":[]}}'`. This immediately blocks all outbound traffic including the C2 connection, while keeping the pod running for investigation. Alternative: change the pod's labels so it no longer matches any Service, disconnecting it from receiving traffic. The NetworkPolicy approach is faster and more reliable. Don't delete the pod, and don't restart it -- preserve the evidence.
    </details>
 
-4. **What's the advantage of using ephemeral debug containers?**
+4. **Your investigation reveals that an attacker modified files inside a container. You need to find exactly which files were changed from the original image. The container uses an overlay filesystem. What command or technique compares the container's current state to its original image?**
    <details>
    <summary>Answer</summary>
-   They work with distroless images that have no shell, share the target container's namespaces for full visibility, and don't modify the original container.
+   Use `kubectl exec <pod> -- find / -mmin -<minutes-since-deploy> -type f 2>/dev/null` to find recently modified files. On the node, use `crictl inspect <container-id>` to find the container's overlay filesystem diff directory -- this contains only files that were added or modified from the base image. For Docker: `docker diff <container-id>` lists all changed files (A=added, C=changed, D=deleted). For containerd: inspect the overlay upper directory directly. If the container uses `readOnlyRootFilesystem: true`, any modified files must be on mounted volumes, significantly narrowing the investigation scope -- this is another reason immutable containers are more secure.
    </details>
 
 ---

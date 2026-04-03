@@ -146,6 +146,8 @@ cat /etc/apparmor.d/containers/docker-default 2>/dev/null || \
 
 ---
 
+> **Stop and think**: AppArmor's `complain` mode logs violations without blocking them, while `enforce` mode blocks and logs. If you're deploying a new profile to production for the first time, why is jumping straight to `enforce` mode risky? What workflow minimizes the chance of breaking your application?
+
 ## Creating Custom AppArmor Profiles
 
 ### Profile Location
@@ -295,6 +297,8 @@ container.apparmor.security.beta.kubernetes.io/<container-name>: <profile-ref>
 
 ---
 
+> **What would happen if**: You create an AppArmor profile and load it on `node-1`, but not on `node-2`. Your pod has no nodeSelector. The pod starts successfully on `node-1`. Then the pod is rescheduled to `node-2` after a node drain. What happens?
+
 ## Common Profiles for Containers
 
 ### Deny Write to Root Filesystem
@@ -356,6 +360,8 @@ profile k8s-deny-sensitive flags=(attach_disconnected,mediate_deleted) {
 ```
 
 ---
+
+> **Pause and predict**: You apply an AppArmor profile that has `deny /etc/** w,` to a container running nginx. Nginx needs to write to `/etc/nginx/conf.d/` during startup for configuration templating. Will the container start successfully, or will it crash?
 
 ## Real Exam Scenarios
 
@@ -461,28 +467,28 @@ sudo journalctl -k | grep -i apparmor
 
 ## Quiz
 
-1. **What annotation applies an AppArmor profile to a container?**
+1. **During a CKS exam task, you're asked to apply an AppArmor profile called `k8s-restricted` to a container named `web` in a pod. You write the annotation as `container.apparmor.security.beta.kubernetes.io/nginx: localhost/k8s-restricted`. The pod starts but the profile isn't applied. What went wrong?**
    <details>
    <summary>Answer</summary>
-   `container.apparmor.security.beta.kubernetes.io/<container-name>: localhost/<profile-name>` - The container name must match the container in the pod spec.
+   The container name in the annotation key must match the container name in the pod spec exactly. The annotation references `nginx` but the container is named `web`. The correct annotation is `container.apparmor.security.beta.kubernetes.io/web: localhost/k8s-restricted`. This is a common exam mistake because the annotation key embeds the container name, not the image name. Always verify with `kubectl describe pod` to check if the AppArmor profile is actually applied -- the events section will show whether the profile was loaded.
    </details>
 
-2. **How do you load an AppArmor profile on a node?**
+2. **A Falco alert fires: "Sensitive file read: `/etc/shadow` was read by process `cat` in container `app-server`." Your team wants to prevent this using AppArmor. Write the minimal profile rules needed, and explain why you'd test in complain mode first.**
    <details>
    <summary>Answer</summary>
-   `sudo apparmor_parser -r /etc/apparmor.d/<profile-file>` - The -r flag reloads if already loaded.
+   Add `deny /etc/shadow r,` and `deny /etc/gshadow r,` rules to the AppArmor profile. Test in complain mode first (`aa-complain /etc/apparmor.d/<profile>`) because blocking file access can have unintended consequences -- some applications legitimately read `/etc/passwd` (which is near shadow in the rules) or other `/etc/` files. Complain mode logs what would be blocked without actually blocking, letting you verify the profile doesn't break the application. Once verified, switch to enforce mode with `aa-enforce /etc/apparmor.d/<profile>`. Load the profile on all nodes where the pod might run with `apparmor_parser -r`.
    </details>
 
-3. **What is complain mode used for?**
+3. **You deploy an AppArmor profile to all 5 worker nodes using a DaemonSet. The profile works on 4 nodes, but pods on `node-5` fail with "AppArmor profile not found." You verify the DaemonSet pod is running on `node-5`. What could cause this inconsistency?**
    <details>
    <summary>Answer</summary>
-   Testing profiles without blocking. In complain mode, AppArmor logs violations but allows them, letting you refine the profile before enforcing.
+   The DaemonSet pod running doesn't guarantee the profile is loaded into the kernel's AppArmor module. Possible causes: (1) The DaemonSet's init script failed silently on `node-5` -- check `apparmor_parser` exit code in pod logs. (2) AppArmor may not be enabled on `node-5` (`cat /sys/module/apparmor/parameters/enabled` returns `N`). (3) The profile file may have a syntax error that only manifests on a different kernel version on `node-5`. (4) The DaemonSet may not have the required privileges (`privileged: true` or `CAP_MAC_ADMIN`) to load profiles. Debug with `ssh node-5 'sudo aa-status | grep <profile-name>'` to verify the profile is actually loaded in the kernel.
    </details>
 
-4. **What happens if the specified AppArmor profile doesn't exist on the node?**
+4. **Your organization wants to adopt AppArmor for all production containers but has 200+ microservices. Creating individual profiles per service would take months. What pragmatic approach provides immediate security improvement?**
    <details>
    <summary>Answer</summary>
-   The pod fails to start with an error indicating the profile cannot be found. The kubelet validates profile existence before running the container.
+   Apply the `runtime/default` profile to all containers immediately -- this is the container runtime's built-in AppArmor profile that blocks common dangerous operations (mounting filesystems, accessing `/proc/sys`, raw network access) without breaking most applications. Set it via the annotation `container.apparmor.security.beta.kubernetes.io/<container>: runtime/default`. This gives immediate security improvement. Then incrementally create custom profiles for high-risk services using `aa-genprof` or `aa-logprof` to generate profiles from observed behavior. Start with complain mode, refine, then enforce. This two-phase approach provides defense in depth without months of upfront work.
    </details>
 
 ---

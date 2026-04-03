@@ -102,6 +102,8 @@ CKS tests your ability to secure or restrict web-based cluster access.
 
 ---
 
+> **Stop and think**: The Tesla breach happened because their dashboard was exposed without authentication. But the dashboard needed a ServiceAccount with permissions to read secrets. Why would anyone give a dashboard cluster-admin? Think about the convenience-vs-security trade-off that leads to this misconfiguration.
+
 ## Secure Dashboard Installation
 
 ### Step 1: Deploy Dashboard
@@ -219,6 +221,10 @@ spec:
 **Warning**: NodePort exposes on all nodes. Use NetworkPolicy to restrict access!
 
 ---
+
+> **What would happen if**: You deploy the dashboard with a read-only ServiceAccount, but a user logs in with a token from a *different* ServiceAccount that has cluster-admin. Does the dashboard's ServiceAccount RBAC protect you? (Hint: the dashboard acts on behalf of the logged-in user.)
+
+> **Pause and predict**: Your team exposes the dashboard via a LoadBalancer Service for convenience. What's the attack surface compared to `kubectl proxy`? List at least 3 additional risks.
 
 ## Restricting Dashboard Access
 
@@ -472,28 +478,28 @@ EOF
 
 ## Quiz
 
-1. **What is the most secure way to access the Kubernetes dashboard?**
+1. **Your SOC team discovers an unknown IP address accessing the Kubernetes dashboard at 3 AM. The dashboard is exposed via a LoadBalancer Service, and the attacker is browsing secrets across all namespaces. When you check the dashboard's ServiceAccount, it's bound to `cluster-admin`. What immediate steps do you take, and how should the dashboard have been deployed to prevent this?**
    <details>
    <summary>Answer</summary>
-   Using `kubectl proxy` - it binds only to localhost and uses your kubeconfig credentials. The dashboard inherits your RBAC permissions.
+   Immediate response: delete or scale down the dashboard deployment to stop the breach, then rotate any secrets the attacker viewed. Long-term fix: never bind the dashboard to `cluster-admin` -- create a read-only ClusterRole with minimal permissions (get/list on specific resources only). Access should be through `kubectl proxy` (binds to localhost only, uses your kubeconfig credentials), not a LoadBalancer. Add a NetworkPolicy to restrict ingress sources, and disable the skip button with `--enable-skip-login=false`. The dashboard should inherit the logged-in user's RBAC permissions, not have its own elevated access.
    </details>
 
-2. **What argument disables the dashboard skip button?**
+2. **A developer reports they can access the Kubernetes dashboard without entering a token -- they just click "Skip" and get full visibility into the cluster. The security team is alarmed. What dashboard argument prevents this, and why is the skip button dangerous even if the dashboard's ServiceAccount has read-only permissions?**
    <details>
    <summary>Answer</summary>
-   `--enable-skip-login=false` - Add this to the dashboard container arguments to prevent anonymous access.
+   Add `--enable-skip-login=false` to the dashboard container arguments to remove the skip button. Even with read-only permissions, the skip button is dangerous because it allows completely unauthenticated access -- anyone who can reach the dashboard URL can view pod logs, ConfigMaps, environment variables, and service configurations. This reconnaissance data helps attackers plan further attacks. Additionally, if someone later escalates the ServiceAccount permissions (intentionally or accidentally), all anonymous users inherit those elevated permissions. Authentication should always be required.
    </details>
 
-3. **Why shouldn't the dashboard use a cluster-admin ServiceAccount?**
+3. **During a penetration test, the tester discovers the Kubernetes dashboard is exposed via NodePort 30443. They can reach it from any machine on the corporate network. The dashboard requires a token, but the tester finds a ServiceAccount token in a ConfigMap in the `default` namespace. They use it to log in and see workloads. What chain of security failures led to this compromise?**
    <details>
    <summary>Answer</summary>
-   Cluster-admin has full access to everything. If the dashboard is compromised, attackers get complete control over the cluster. Use minimal permissions instead.
+   Multiple failures combined: (1) The dashboard was exposed via NodePort instead of using `kubectl proxy` or port-forward, making it accessible from the network. (2) No NetworkPolicy restricted which sources could reach the dashboard pods. (3) A ServiceAccount token was stored in a ConfigMap -- tokens should never be stored in ConfigMaps as they're not encrypted. (4) The token had sufficient permissions to view workloads. The fix requires defense in depth: switch to `kubectl proxy` access, add a NetworkPolicy limiting ingress to the dashboard, remove the token from the ConfigMap, use short-lived tokens via `kubectl create token`, and apply RBAC least privilege.
    </details>
 
-4. **What happened in the Tesla Kubernetes breach?**
+4. **Your organization is debating whether to install the Kubernetes dashboard in production. The ops team wants it for convenience; the security team wants to ban it. A compromise is proposed: install it but restrict access. Design a security configuration that makes the dashboard acceptable -- cover access method, RBAC, authentication, and network controls.**
    <details>
    <summary>Answer</summary>
-   Tesla exposed their Kubernetes dashboard without authentication. Attackers accessed it, discovered AWS credentials in environment variables, and used cluster resources for cryptocurrency mining.
+   A secure dashboard deployment requires four layers: (1) Access method: use `kubectl proxy` only -- this binds to localhost and requires kubeconfig authentication, eliminating network exposure entirely. Never use LoadBalancer, NodePort, or Ingress. (2) RBAC: create a custom ClusterRole with only `get` and `list` verbs on specific resources (pods, services, deployments) -- never use `cluster-admin`. Exclude secrets from viewable resources. (3) Authentication: disable the skip button with `--enable-skip-login=false` and require token-based login with short-lived tokens from `kubectl create token`. (4) Network: apply a NetworkPolicy with `ingress: []` (deny all ingress) so only `kubectl proxy` works. If the ops team needs more than this allows, consider Lens or K9s as alternatives that use local kubeconfig without cluster-side components.
    </details>
 
 ---

@@ -219,6 +219,8 @@ The benchmark is organized into sections:
 
 ---
 
+> **Stop and think**: kube-bench reports `[FAIL] 1.2.1 - Ensure anonymous authentication is disabled`. But you know some health check endpoints require anonymous access. Should you blindly follow every CIS recommendation, or are there cases where a [FAIL] is acceptable?
+
 ## Common CIS Failures and Fixes
 
 ### Category 1.2: API Server
@@ -291,6 +293,8 @@ tlsPrivateKeyFile: /var/lib/kubelet/pki/kubelet.key
 # After changes, restart kubelet
 sudo systemctl restart kubelet
 ```
+
+> **What would happen if**: You fix `--anonymous-auth=false` on the API server and save the manifest. The API server restarts automatically (it's a static pod). But you made a typo: `--anonymous-auth=flase`. What happens to your cluster, and how do you recover?
 
 ### File Permission Fixes
 
@@ -397,6 +401,8 @@ echo "Done. Re-run kube-bench to verify fixes."
 
 ---
 
+> **Pause and predict**: Your organization runs Kubernetes on EKS (managed). You run kube-bench and get dozens of [FAIL] results for control plane checks. Should you panic? What's different about running CIS benchmarks on managed Kubernetes?
+
 ## CIS Benchmark Levels
 
 ```
@@ -455,28 +461,28 @@ echo "Done. Re-run kube-bench to verify fixes."
 
 ## Quiz
 
-1. **What does a [FAIL] status in kube-bench output indicate?**
+1. **During a security audit, kube-bench reports 23 [FAIL] results. Your manager wants all 23 fixed by end of day. You notice that 5 of them are [WARN] items that kube-bench categorized as failures due to manual checks. How do you prioritize and explain the distinction?**
    <details>
    <summary>Answer</summary>
-   A security configuration issue that violates the CIS benchmark and should be fixed. kube-bench provides remediation instructions for each failure.
+   [FAIL] means an automated check found a concrete security misconfiguration -- these have clear remediation steps (e.g., `chmod 600`, add a flag). [WARN] means the check requires manual verification -- kube-bench can't automatically determine compliance. Prioritize actual [FAIL] items first since they have definitive fixes. For [WARN] items, review each manually to determine if action is needed. Not all CIS recommendations apply equally -- Level 1 checks are foundational and should be fixed first, Level 2 checks may require planning as they can impact workloads.
    </details>
 
-2. **Where are API server configuration changes typically made?**
+2. **You SSH to the control plane node to fix a kube-bench failure. You edit `/etc/kubernetes/manifests/kube-apiserver.yaml` to add `--audit-log-path=/var/log/kubernetes/audit.log`. After saving, the API server doesn't come back. You check with `crictl ps` and see the API server container is in a restart loop. What went wrong?**
    <details>
    <summary>Answer</summary>
-   In `/etc/kubernetes/manifests/kube-apiserver.yaml` for kubeadm clusters. The API server pod will automatically restart when this file changes.
+   Adding `--audit-log-path` requires that the directory `/var/log/kubernetes/` exists and that the corresponding volume mount is configured in the API server manifest. You also need `--audit-policy-file` pointing to a valid audit policy YAML. Without these, the API server fails to start. The fix: create the directory (`mkdir -p /var/log/kubernetes`), create a valid audit policy file, add both the `--audit-policy-file` flag and the volume/volumeMount entries for both the policy file and log directory. Use `crictl logs <container-id>` to see the specific error.
    </details>
 
-3. **What command runs kube-bench against only the control plane?**
+3. **Your team runs kube-bench weekly. This week's report shows 8 [FAIL] results -- the same as last week. A junior admin says "nothing changed, so we're fine." Why is this reasoning dangerous?**
    <details>
    <summary>Answer</summary>
-   `./kube-bench run --targets=master` - This runs only control plane checks (sections 1.x, 2.x, 3.x).
+   Same failure count doesn't mean same failures. New misconfigurations may have been introduced (someone changed API server flags, updated kubelet config, or modified file permissions) while old ones were coincidentally fixed. You need to compare the specific check IDs, not just the count. Additionally, the CIS benchmark version may have updated with new checks. Run `--json` output and diff against previous results to detect drift. Ideally, automate this comparison and alert on any new failures, not just count changes.
    </details>
 
-4. **After fixing kubelet configuration, what must you do?**
+4. **After fixing kubelet anonymous authentication (`authentication.anonymous.enabled: false`) in `/var/lib/kubelet/config.yaml`, you run `kubectl get nodes` and it still works fine. But kube-bench still shows the check as [FAIL]. What step did you forget?**
    <details>
    <summary>Answer</summary>
-   Restart the kubelet service with `sudo systemctl restart kubelet` for changes to take effect.
+   You forgot to restart the kubelet service with `sudo systemctl restart kubelet`. Unlike the API server (which restarts automatically when its static pod manifest changes), the kubelet requires a manual restart after its configuration file changes. The kubelet reads its config at startup and doesn't watch for file changes. After restarting, verify with `systemctl status kubelet` and re-run kube-bench to confirm the fix.
    </details>
 
 ---

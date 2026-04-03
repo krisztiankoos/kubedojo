@@ -88,6 +88,8 @@ All use the same IP: **169.254.169.254** (link-local address)
 
 ---
 
+> **Stop and think**: An attacker compromises an application pod and runs `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/`. They get temporary AWS credentials with S3 read access. Trace the full attack path: what can they do next, and how far can they go?
+
 ## Protection Method 1: NetworkPolicy
 
 Block egress to the metadata IP using NetworkPolicy:
@@ -201,6 +203,8 @@ spec:
 ```
 
 ---
+
+> **What would happen if**: You set `--http-put-response-hop-limit 1` on your EC2 instances with IMDSv2. A pod running with `hostNetwork: true` tries to access the metadata service. Does the hop limit protect you? Why or why not?
 
 ## Protection Method 3: Cloud Provider Features
 
@@ -375,6 +379,8 @@ spec:
 
 ---
 
+> **Pause and predict**: You block metadata access for the `production` namespace with a NetworkPolicy. But you don't apply it to `kube-system`. Why might this be intentional, and what risk does it introduce?
+
 ## Defense in Depth
 
 ```
@@ -430,28 +436,28 @@ spec:
 
 ## Quiz
 
-1. **What IP address do cloud metadata services use?**
+1. **A penetration tester reports they obtained temporary AWS credentials from inside a pod by running `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/node-role`. Using those credentials, they listed all S3 buckets in the account. What is the IP they targeted, and what two layers of defense would have prevented this?**
    <details>
    <summary>Answer</summary>
-   169.254.169.254 - This is a link-local address used by AWS, GCP, Azure, and other cloud providers for their instance metadata services.
+   The IP 169.254.169.254 is the cloud metadata service link-local address, used by all major cloud providers (AWS, GCP, Azure). Two layers of defense: (1) A NetworkPolicy with egress rules using `ipBlock` with `except: [169.254.169.254/32]` to block pods from reaching the metadata service at the network level. (2) AWS IMDSv2 enforcement with `--http-tokens required` and `--http-put-response-hop-limit 1` -- this requires a session token that containers can't obtain because their requests traverse multiple network hops. Defense in depth means using both.
    </details>
 
-2. **Why is blocking metadata access important for security?**
+2. **You apply a metadata-blocking NetworkPolicy to the `production` namespace. The next day, the cloud provider's node autoscaler stops working. Investigation reveals a system pod in `kube-system` needs metadata access to function. How do you fix this without compromising production security?**
    <details>
    <summary>Answer</summary>
-   The metadata service exposes sensitive information including IAM credentials. A compromised pod can query this endpoint to obtain credentials and access cloud resources, enabling lateral movement and privilege escalation.
+   Don't apply the metadata-blocking NetworkPolicy to `kube-system` -- system components like cloud controller managers, node autoscalers, and CSI drivers legitimately need metadata access to interact with cloud APIs. Apply metadata blocking only to workload namespaces (`production`, `staging`, etc.) and leave system namespaces unblocked. For additional security on system namespaces, use IMDSv2 enforcement and ensure node IAM roles follow least privilege. This is an intentional trade-off: system components need metadata, application pods don't.
    </details>
 
-3. **What Kubernetes resource is used to block egress to the metadata IP?**
+3. **Your cluster runs on AWS with IMDSv2 enforced (`--http-tokens required`, `--http-put-response-hop-limit 1`). A security engineer argues that NetworkPolicies for metadata blocking are now redundant. Is she correct?**
    <details>
    <summary>Answer</summary>
-   NetworkPolicy with egress rules using ipBlock with except for 169.254.169.254/32.
+   She is partially correct but not entirely. IMDSv2 with hop limit 1 prevents most container-based metadata attacks because pod network traffic traverses multiple hops. However, pods with `hostNetwork: true` share the node's network namespace and can access metadata as if they were the node itself (only 1 hop). Also, IMDSv2 is AWS-specific -- if workloads move to GCP or Azure, you lose that protection. NetworkPolicies provide cloud-agnostic defense and catch edge cases. Best practice is defense in depth: use both IMDSv2 AND NetworkPolicies.
    </details>
 
-4. **What is AWS IMDSv2 and why does it help?**
+4. **You write a NetworkPolicy to block metadata but forget to include a DNS egress rule. Your application pods start failing with "could not resolve host" errors even though they never accessed the metadata service. Explain the connection between metadata blocking and DNS, and write the fix.**
    <details>
    <summary>Answer</summary>
-   Instance Metadata Service version 2 requires a session token obtained via PUT request before accessing metadata. With hop limit 1, containers can't obtain tokens because their requests traverse multiple hops.
+   If you specify `policyTypes: [Egress]` in a NetworkPolicy, all egress traffic not explicitly allowed is denied. This includes DNS queries to kube-dns (UDP port 53). Even though DNS has nothing to do with metadata, the egress policy blocks ALL traffic except what you whitelist. The fix is to add a DNS egress rule: allow UDP/TCP port 53 to pods labeled `k8s-app: kube-dns` in any namespace. A complete metadata-blocking policy needs both the DNS allow rule AND the `ipBlock` with `except: [169.254.169.254/32]` for all other traffic.
    </details>
 
 ---

@@ -71,6 +71,8 @@ CKS tests both ad-hoc analysis (kubesec) and policy enforcement (OPA).
 
 ---
 
+> **Stop and think**: Image scanning finds CVEs in dependencies. Static analysis finds misconfigurations in your YAML. Which one catches a deployment with `privileged: true` and no security context? Which catches a vulnerable version of openssl? Why do you need both?
+
 ## kubesec
 
 kubesec analyzes Kubernetes manifests and assigns a security score.
@@ -263,6 +265,8 @@ deployment.yaml: (object: default/nginx apps/v1, Kind=Deployment)
 > **kubesec vs KubeLinter**: kubesec scores overall security posture (good for audits). KubeLinter catches specific issues with actionable remediations (good for CI pipelines). Use both.
 
 ---
+
+> **What would happen if**: You deploy OPA Gatekeeper with a constraint that requires all pods to have resource limits. Existing pods without limits continue running, but no new pods without limits can be created. A deployment scales up -- will the new replicas be created?
 
 ## OPA Gatekeeper
 
@@ -496,6 +500,8 @@ spec:
 
 ---
 
+> **Pause and predict**: You scan a pod manifest with kubesec and get a score of +7. Your colleague scans a nearly identical manifest that adds `privileged: true` and gets -23. The score dropped by 30 points from a single field. Why does kubesec weight this so heavily?
+
 ## Real Exam Scenarios
 
 ### Scenario 1: Scan Pod with kubesec
@@ -640,28 +646,28 @@ kubectl get constraints -A -o json | \
 
 ## Quiz
 
-1. **What does a negative kubesec score indicate?**
+1. **A developer submits a deployment manifest for review. You scan it with kubesec and get a score of -30. Without seeing the manifest, what configuration is almost certainly present, and what does the score tell you about deployment readiness?**
    <details>
    <summary>Answer</summary>
-   A negative score indicates critical security issues like privileged containers, hostNetwork, or dangerous capabilities. These issues should be addressed immediately.
+   A score of -30 almost certainly means `privileged: true` is set (it carries a -30 penalty alone). Other possibilities include `hostNetwork: true` or `hostPID: true` combined with other issues. The score tells you this manifest has critical security misconfigurations that enable container escape and full host access -- it should never be deployed to production. kubesec scores: positive means reasonable security posture, zero means minimal controls, negative means critical issues. A -30 is the worst category and indicates the deployment needs fundamental security redesign before proceeding.
    </details>
 
-2. **What are the two resources needed to create a Gatekeeper policy?**
+2. **Your organization uses OPA Gatekeeper to enforce that all pods must have resource limits. A deployment with 5 replicas is running without limits (created before the policy). The deployment scales to 10 replicas. What happens to the 5 new pods?**
    <details>
    <summary>Answer</summary>
-   ConstraintTemplate (defines the policy logic in Rego) and Constraint (applies the policy to specific resources). The template is reusable, and constraints parameterize it.
+   The 5 new pods are blocked by Gatekeeper. Admission controllers only validate new requests -- they don't retroactively enforce on existing resources. The existing 5 pods continue running without limits, but any new pod creation (including scale-up, rolling updates, or pod restarts) is blocked until the deployment spec includes resource limits. This is why Gatekeeper's audit feature is important: it identifies existing resources that violate policies. Use `enforcementAction: dryrun` during rollout to identify all violations before switching to `deny` enforcement.
    </details>
 
-3. **How do you test Gatekeeper policies without blocking deployments?**
+3. **During a CKS exam, you need to create a Gatekeeper policy that blocks images from untrusted registries. You write the ConstraintTemplate in Rego and apply it, but the Constraint you create doesn't seem to block anything. `kubectl get constraints` shows the constraint exists. What's the most common reason it's not working?**
    <details>
    <summary>Answer</summary>
-   Use audit mode by setting `enforcementAction: dryrun` on the Constraint. Violations are recorded but not blocked.
+   The most common issues: (1) The Constraint's `match` field doesn't select the right resources -- check that `kinds` includes `Pod` (with the `""` API group) and optionally `Deployment`, `StatefulSet`, etc. (2) The namespace where you're testing is excluded in the Constraint's `excludedNamespaces`. (3) The ConstraintTemplate has a Rego syntax error -- check `kubectl get constrainttemplate <name> -o yaml` for status errors. (4) The Constraint's `parameters` don't match what the Rego code expects. (5) Gatekeeper pods aren't running -- check `kubectl get pods -n gatekeeper-system`. Debug by creating a pod that should be blocked and checking `kubectl describe` for admission rejection messages.
    </details>
 
-4. **What language does OPA Gatekeeper use for policies?**
+4. **Your team runs kubesec in CI/CD and blocks deployments with score below 0. A developer argues this is too strict because some legitimate workloads need `NET_ADMIN` capability (for a service mesh sidecar), which lowers the score. How do you balance security policy with legitimate needs?**
    <details>
    <summary>Answer</summary>
-   Rego - a declarative query language specifically designed for expressing policies over complex hierarchical data.
+   Use a tiered approach: (1) Block score below -10 (critical issues like `privileged`) unconditionally -- no exceptions. (2) For scores between -10 and 0, require a security review and documented exception. (3) Use kubesec's JSON output to check specific critical findings rather than just the aggregate score. (4) Create namespace-specific policies: service mesh namespaces can have different kubesec thresholds than application namespaces. (5) Combine kubesec with Gatekeeper for more granular control -- Gatekeeper can enforce "NET_ADMIN only if the pod has a specific label" rather than a blanket score threshold. The goal is blocking truly dangerous configs while allowing justified exceptions with audit trails.
    </details>
 
 ---

@@ -70,6 +70,8 @@ CKS tests your ability to harden ServiceAccounts and minimize exposure.
 
 ---
 
+> **Stop and think**: Every namespace gets a `default` ServiceAccount automatically, and every pod uses it unless told otherwise. If you never touch ServiceAccount configuration, what token is available inside every pod in your cluster right now? What could an attacker do with it?
+
 ## Disable Automatic Token Mounting
 
 ### Method 1: At ServiceAccount Level
@@ -173,6 +175,8 @@ Kubernetes 1.22+ uses bound tokens by default—short-lived, audience-bound toke
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **What would happen if**: An attacker steals a legacy (secret-based) ServiceAccount token from a pod that was deleted yesterday. Can they still use it to authenticate to the API server? Now compare: what if they steal a bound token from a pod that was deleted yesterday?
+
 ### Create Bound Token Manually
 
 ```bash
@@ -242,6 +246,8 @@ spec:
 ```
 
 ---
+
+> **Pause and predict**: You set `automountServiceAccountToken: false` on a ServiceAccount, but a pod using that SA sets `automountServiceAccountToken: true` in its pod spec. Which setting wins -- the ServiceAccount or the pod?
 
 ## Auditing ServiceAccounts
 
@@ -434,28 +440,28 @@ echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null | jq .
 
 ## Quiz
 
-1. **What path is the ServiceAccount token mounted at by default?**
+1. **During incident response, you discover an attacker extracted a token from `/var/run/secrets/kubernetes.io/serviceaccount/token` inside a compromised pod. Using that token, they listed all secrets in the namespace. The pod was a simple web app that never needed API access. What two configuration changes would have prevented this attack chain?**
    <details>
    <summary>Answer</summary>
-   `/var/run/secrets/kubernetes.io/serviceaccount/` - Contains `token`, `ca.crt`, and `namespace` files.
+   Two changes: (1) Set `automountServiceAccountToken: false` on either the ServiceAccount or the pod spec to prevent the token from being mounted at all -- the web app didn't need API access, so there was no reason to mount credentials. (2) Create a dedicated ServiceAccount for the web app with zero RBAC permissions instead of using the default SA. Even if a token were mounted, it would have no permissions to list secrets. The default SA in many clusters has accumulated permissions through ClusterRoleBindings that were meant for other purposes. Defense in depth means doing both.
    </details>
 
-2. **How do you disable automatic token mounting for a ServiceAccount?**
+2. **Your security team finds 47 pods across the cluster using the `default` ServiceAccount. They want to patch the default SA to disable automount. A developer objects, saying their app reads ConfigMaps from the API and will break. How do you satisfy both security and the developer?**
    <details>
    <summary>Answer</summary>
-   Set `automountServiceAccountToken: false` in the ServiceAccount spec or in the Pod spec. Pod spec takes precedence.
+   Patch the default ServiceAccount with `automountServiceAccountToken: false` to protect the 46 pods that don't need API access. For the developer's app, create a dedicated ServiceAccount (e.g., `configmap-reader`) with `automountServiceAccountToken: true`, bind a Role that grants only `get` and `list` on `configmaps` (using `resourceNames` if possible), and update the pod spec to use `serviceAccountName: configmap-reader`. The pod-level setting overrides the SA-level setting, so even if the default SA has automount disabled, the explicit pod spec wins. This gives the developer what they need while protecting everyone else.
    </details>
 
-3. **What are bound tokens and why are they more secure?**
+3. **A compliance audit flags that your cluster has 12 Secrets of type `kubernetes.io/service-account-token` -- legacy long-lived tokens. The auditor says these are a risk because they never expire. Your team says some are still needed for CI/CD pipelines. What's the migration path to eliminate legacy tokens?**
    <details>
    <summary>Answer</summary>
-   Bound tokens are short-lived, audience-bound, and tied to a specific pod. They expire and are invalidated when the pod is deleted, unlike legacy long-lived token secrets.
+   Legacy token secrets never expire and remain valid even after the associated pod is deleted -- a stolen token works forever. Migration: (1) Audit which secrets are actually referenced by running workloads using `kubectl get pods -A -o jsonpath` to check `serviceAccountName` usage. (2) For CI/CD pipelines, switch to `kubectl create token <sa-name> --duration=1h` to generate short-lived bound tokens instead. (3) For in-cluster workloads, use projected volumes with `serviceAccountToken` source and `expirationSeconds` for automatic rotation. (4) Delete unused legacy token secrets. Bound tokens are invalidated when pods are deleted and expire automatically, eliminating the "stolen token works forever" risk.
    </details>
 
-4. **Why shouldn't all pods use the default ServiceAccount?**
+4. **You configure a pod with `automountServiceAccountToken: false` on the ServiceAccount AND `automountServiceAccountToken: true` on the pod spec. The pod starts and you find a token mounted. Your colleague says "the SA setting should override the pod." Who is right, and how does Kubernetes resolve this conflict?**
    <details>
    <summary>Answer</summary>
-   Shared ServiceAccounts make permissions harder to audit and control. If one app needs more permissions, all apps using that SA get them. Dedicated SAs enable least privilege.
+   The pod spec wins -- the token is mounted. Kubernetes uses the pod-level `automountServiceAccountToken` setting when it's explicitly set, regardless of the ServiceAccount-level setting. The precedence is: pod spec (if set) > ServiceAccount spec (if set) > default behavior (mount). This is by design -- it allows administrators to disable automount by default on the ServiceAccount while individual pods can opt in when they legitimately need API access. The important implication: to guarantee no token is mounted, you must control both the SA and the pod spec, or use admission control to enforce the policy.
    </details>
 
 ---

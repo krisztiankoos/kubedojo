@@ -71,6 +71,8 @@ CKS tests your understanding of OS-level security measures.
 
 ---
 
+> **Stop and think**: All containers on a node share the same Linux kernel. If a container exploits a kernel vulnerability and gains root on the host, what happens to every other container on that node? How is this fundamentally different from virtual machines?
+
 ## Host OS Hardening Checklist
 
 ### 1. Minimize Installed Packages
@@ -190,6 +192,8 @@ net.netfilter.nf_conntrack_max = 131072
 ```
 
 ---
+
+> **What would happen if**: You set `net.ipv4.ip_forward = 0` on a Kubernetes worker node to harden it. What breaks immediately, and why is this sysctl setting required for Kubernetes to function?
 
 ## Protecting /proc and /sys
 
@@ -324,6 +328,8 @@ sudo chmod 644 /etc/kubernetes/pki/*.crt
 
 ---
 
+> **Pause and predict**: You SSH to a Kubernetes worker node and run `dpkg -l | wc -l` -- it shows 847 packages installed. A container-optimized OS like Talos would have fewer than 50. How many of those 847 packages are potential attack surface for an attacker who escapes a container?
+
 ## Audit System Configuration
 
 ### Enable auditd
@@ -443,28 +449,28 @@ ls -la /var/lib/kubelet/config.yaml
 
 ## Quiz
 
-1. **Why is it important that containers share the host kernel?**
+1. **An attacker escapes a container and lands on the host node. They run `dmesg` to understand the kernel version and find exploit targets. Then they check `/proc/kallsyms` for kernel function addresses. What two sysctl parameters would have blocked this reconnaissance, and what values should they be set to?**
    <details>
    <summary>Answer</summary>
-   A kernel vulnerability can be exploited by any container to compromise the host and all other containers. The kernel is the shared security boundary.
+   `kernel.dmesg_restrict = 1` prevents unprivileged users from reading kernel ring buffer messages (dmesg), which reveal kernel version, loaded modules, and hardware information useful for exploit selection. `kernel.kptr_restrict = 1` (or 2) hides kernel pointer addresses in `/proc/kallsyms`, preventing attackers from finding the memory addresses they need for kernel exploits like return-oriented programming. Without these, a container escape gives the attacker a roadmap to further exploitation. Set both in `/etc/sysctl.d/99-security.conf` and apply with `sysctl -p`.
    </details>
 
-2. **What sysctl parameter enables Address Space Layout Randomization?**
+2. **During a security audit, you find that a Kubernetes worker node has 847 packages installed, including `gcc`, `make`, `python3`, and `netcat`. The node's sole purpose is running container workloads. The admin says "we might need debugging tools someday." What's the security argument against this, and what's the minimum set of packages needed?**
    <details>
    <summary>Answer</summary>
-   `kernel.randomize_va_space = 2` - Value 2 enables full randomization for the stack, VDSO, shared memory, and data segments.
+   Every installed package is attack surface: `gcc` and `make` let an attacker compile exploits on the node, `python3` enables script-based attacks, and `netcat` enables reverse shells and data exfiltration. If an attacker escapes a container, these tools turn a difficult privilege escalation into trivial exploitation. A Kubernetes worker node needs only: container runtime (containerd), kubelet, kube-proxy (if not a pod), networking tools for the CNI, and basic utilities. Container-optimized OSes like Talos, Flatcar, and Bottlerocket have fewer than 50 packages by design. For debugging, use ephemeral debug containers (`kubectl debug`) or temporary privileged pods rather than leaving tools on the host permanently.
    </details>
 
-3. **Why should Kubernetes node hosts have minimal packages installed?**
+3. **Your organization's compliance team requires that all Kubernetes nodes disable IP forwarding (`net.ipv4.ip_forward = 0`) for security hardening. Your cluster stops working immediately. Explain why, and how you satisfy both the compliance requirement and Kubernetes's networking needs.**
    <details>
    <summary>Answer</summary>
-   Each installed package is potential attack surface. Fewer packages mean fewer vulnerabilities to patch and fewer tools available to attackers who compromise the system.
+   Kubernetes requires `net.ipv4.ip_forward = 1` because pod-to-pod and pod-to-service networking depends on the node forwarding IP packets between network interfaces (pod veth interfaces, bridge interfaces, and physical interfaces). Disabling it breaks all cross-node pod communication and service routing. To satisfy compliance: explain that this specific sysctl is a functional requirement for Kubernetes networking, not a security weakness. The "no IP forwarding" rule exists for general-purpose servers where forwarding could create unintended routes. In Kubernetes, forwarding is controlled by CNI and iptables/nftables rules. Compensating controls include NetworkPolicies, firewalling the node's external interface, and restricting `net.ipv4.conf.all.accept_redirects = 0` and `net.ipv4.conf.all.accept_source_route = 0`.
    </details>
 
-4. **What file contains SSH server security settings?**
+4. **You run `systemctl list-units --type=service --state=running` on a worker node and find 27 running services. Beyond kubelet and containerd, you see avahi-daemon, cups, bluetooth, and rpcbind. A security scanner flags these as unnecessary. What's the risk, and what's the safe order for disabling them?**
    <details>
    <summary>Answer</summary>
-   `/etc/ssh/sshd_config` - Configure `PermitRootLogin no` and `PasswordAuthentication no` for better security.
+   Each unnecessary service is a potential attack vector: avahi-daemon exposes mDNS (network discovery), cups enables network printing, bluetooth opens wireless attack surface, and rpcbind enables remote procedure calls -- none are needed for Kubernetes. The risk is that vulnerabilities in these services (like the 2024 CUPS remote code execution CVE) can be exploited even without container escapes if the services listen on network interfaces. Safe removal order: (1) Check for dependencies first with `systemctl list-dependencies <service>`. (2) Disable in non-critical order: bluetooth first, then avahi-daemon, cups, rpcbind. (3) Verify kubelet and containerd still run after each disable. (4) Test pod scheduling. Use `systemctl disable --now <service>` to stop and prevent restart.
    </details>
 
 ---

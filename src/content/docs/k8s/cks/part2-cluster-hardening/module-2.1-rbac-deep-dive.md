@@ -146,6 +146,8 @@ rules:
 
 ---
 
+> **Stop and think**: A developer has a Role that allows `create` on `pods` but nothing else. They claim they can't do anything dangerous. But what if they create a pod with `serviceAccountName: cluster-admin-sa` and `automountServiceAccountToken: true`? How does pod creation become a privilege escalation vector?
+
 ## Least Privilege Examples
 
 ### Good: Specific Resource Access
@@ -296,6 +298,8 @@ kubectl describe clusterrolebinding suspicious-binding
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **What would happen if**: You find a ClusterRoleBinding that grants `cluster-admin` to a ServiceAccount called `monitoring-agent` in the `monitoring` namespace. The monitoring team says they need it to "see everything." What's the risk if an attacker compromises a pod running as that ServiceAccount?
+
 ### The Escalate and Bind Verbs
 
 ```yaml
@@ -435,6 +439,8 @@ EOF
 
 ---
 
+> **Pause and predict**: You run `kubectl auth can-i --list --as=system:serviceaccount:default:default` and see permissions to `get`, `list`, and `watch` secrets cluster-wide. You didn't create any RoleBindings for the default ServiceAccount. Where are these permissions coming from?
+
 ## RBAC Debugging
 
 ```bash
@@ -483,28 +489,28 @@ kubectl auth who-can delete secrets -n production
 
 ## Quiz
 
-1. **What's the difference between Role and ClusterRole?**
+1. **During a security audit, you discover a ClusterRole with `apiGroups: ["*"], resources: ["*"], verbs: ["*"]` bound to a ServiceAccount called `deploy-bot` in the `ci-cd` namespace. The CI/CD team says they need broad access to deploy applications. How do you reduce the risk while keeping their pipeline functional?**
    <details>
    <summary>Answer</summary>
-   Role is namespace-scoped and can only grant permissions within a namespace. ClusterRole is cluster-wide and can grant permissions on cluster-scoped resources (like nodes) or be used with RoleBinding for reusable namespace-scoped permissions.
+   A wildcard ClusterRole is effectively `cluster-admin` -- if the CI/CD pipeline is compromised, an attacker controls the entire cluster. Replace it with a scoped Role (not ClusterRole) in the target namespaces, granting only the specific resources and verbs the pipeline needs: typically `create`, `update`, `patch` on `deployments`, `services`, `configmaps`, and `secrets` in specific namespaces. Use `resourceNames` where possible. The pipeline should never need access to RBAC resources, nodes, or cluster-wide secrets. Audit with `kubectl auth can-i --list` before and after to verify the reduction.
    </details>
 
-2. **How do you check what permissions a ServiceAccount has?**
+2. **A penetration tester reports they escalated from a compromised application pod to cluster-admin. The pod's ServiceAccount only had `get` and `list` on `pods`. Investigation reveals the SA also had `create` on `pods` in a namespace where a ServiceAccount with `cluster-admin` binding existed. Explain the escalation path.**
    <details>
    <summary>Answer</summary>
-   `kubectl auth can-i --list --as=system:serviceaccount:<namespace>:<sa-name>` - This lists all permissions the ServiceAccount has.
+   The attacker created a new pod with `serviceAccountName` set to the cluster-admin ServiceAccount and `automountServiceAccountToken: true`. When the pod started, the cluster-admin token was mounted at `/var/run/secrets/kubernetes.io/serviceaccount/token`. The attacker exec'd into the pod and used the token to call the API with full cluster-admin privileges. This is why pod creation is a dangerous permission -- it's an indirect escalation path. Prevention requires Pod Security Admission to restrict ServiceAccount usage, and the `bind` verb should be tightly controlled.
    </details>
 
-3. **Why are wildcard (*) permissions dangerous?**
+3. **Your SOC team detects unusual API calls: someone is listing secrets across all namespaces using a ServiceAccount from the `monitoring` namespace. The monitoring team says their tools only need pod metrics. How do you trace the source of these permissions and fix it?**
    <details>
    <summary>Answer</summary>
-   Wildcards grant access to all resources, verbs, or API groups—including secrets, RBAC resources, and sensitive system components. They effectively grant cluster-admin level access.
+   Trace the permissions: run `kubectl get clusterrolebindings -o json | jq '.items[] | select(.subjects[]?.name == "<sa-name>")' ` to find which ClusterRoleBinding grants the access. Then inspect the referenced ClusterRole with `kubectl get clusterrole <name> -o yaml`. Likely someone bound the SA to `view` or `cluster-admin` instead of creating a custom role. Fix by deleting the overpermissive binding and creating a new Role with only `get` and `list` on `pods` and `pods/metrics` in the namespaces the monitoring tool actually needs. Verify with `kubectl auth can-i get secrets --as=system:serviceaccount:monitoring:<sa-name>` -- it should return "no."
    </details>
 
-4. **What are the 'bind' and 'escalate' verbs for?**
+4. **A junior admin creates a ClusterRole that includes `verbs: ["create"]` on `clusterrolebindings` in the `rbac.authorization.k8s.io` API group and assigns it to a developer. The admin says "it's fine, they can only create bindings, not modify existing ones." Why is this a critical security misconfiguration?**
    <details>
    <summary>Answer</summary>
-   These are privilege escalation prevention verbs. 'bind' allows creating bindings to roles with permissions you don't have. 'escalate' allows modifying roles to add permissions you don't have. Both should be tightly controlled.
+   The ability to create ClusterRoleBindings is one of the most dangerous permissions in Kubernetes. The developer can create a new ClusterRoleBinding that binds themselves (or any ServiceAccount) to the `cluster-admin` ClusterRole, instantly gaining full cluster control. Kubernetes prevents this with the `bind` verb -- but if the developer also has `bind` on ClusterRoles, the escalation is trivial. Even without `bind`, creating RoleBindings to existing powerful roles is dangerous. Only cluster administrators should ever have write access to RBAC resources. Audit `escalate` and `bind` verbs regularly.
    </details>
 
 ---

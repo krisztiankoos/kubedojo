@@ -177,6 +177,8 @@ spec:
 
 ---
 
+> **Stop and think**: You've configured TLS on your Ingress with `ssl-redirect: "true"`. But a penetration tester shows they can still access your app over HTTP by sending requests directly to the backend Service's ClusterIP, bypassing the Ingress entirely. What additional protection is needed?
+
 ## TLS Version Enforcement
 
 ### Disable Weak TLS Versions
@@ -295,6 +297,10 @@ spec:
 ```
 
 ---
+
+> **What would happen if**: You configure mTLS on your Ingress, requiring client certificates. A legitimate user's certificate expires over the weekend. What happens to their requests, and how should you design your certificate lifecycle to prevent this?
+
+> **Pause and predict**: Your Ingress uses TLS 1.2 minimum. A compliance audit says you need TLS 1.3 *only*. What percentage of legitimate clients might you break, and how would you plan this migration?
 
 ## Rate Limiting
 
@@ -503,28 +509,28 @@ kubectl annotate ingress webapp -n production \
 
 ## Quiz
 
-1. **What annotation forces HTTP to HTTPS redirect in nginx-ingress?**
+1. **A security scanner reports that your production Ingress is serving HTTP traffic alongside HTTPS. Users who type `http://app.example.com` get the application without encryption. What annotation fixes this, and what broader security header should accompany it to prevent future downgrades?**
    <details>
    <summary>Answer</summary>
-   `nginx.ingress.kubernetes.io/ssl-redirect: "true"` - This redirects all HTTP requests to HTTPS.
+   Add `nginx.ingress.kubernetes.io/ssl-redirect: "true"` to force HTTP-to-HTTPS redirects. However, redirects alone don't prevent downgrade attacks -- an attacker can intercept the initial HTTP request before the redirect. Enable HSTS (HTTP Strict Transport Security) with `nginx.ingress.kubernetes.io/hsts: "true"` and `hsts-max-age: "31536000"`. HSTS tells browsers to always use HTTPS for your domain, eliminating the vulnerable HTTP request entirely after the first visit.
    </details>
 
-2. **What is the minimum recommended TLS version for production?**
+2. **During a compliance audit for PCI-DSS, the auditor flags that your Ingress controller accepts TLS 1.1 connections. You check the Ingress annotations and see no TLS version configuration. Where is the TLS version configured for nginx-ingress, and what's the minimum version for PCI-DSS compliance?**
    <details>
    <summary>Answer</summary>
-   TLS 1.2. TLS 1.0 and 1.1 are deprecated and have known vulnerabilities. TLS 1.3 is preferred but 1.2 is the minimum for compliance.
+   TLS version settings are configured at the controller level in the nginx-ingress ConfigMap (not per-Ingress annotations): set `ssl-protocols: "TLSv1.2 TLSv1.3"` in the ConfigMap `nginx-ingress-controller` in the `ingress-nginx` namespace. PCI-DSS requires TLS 1.2 as the minimum since 2018. TLS 1.0 and 1.1 have known vulnerabilities (POODLE, BEAST) and must be disabled. Also configure strong cipher suites to prevent weak encryption even under TLS 1.2.
    </details>
 
-3. **What header prevents clickjacking attacks?**
+3. **Your SOC team detects that an attacker is embedding your application inside an iframe on a phishing site to steal credentials. Which security header stops this attack, and what other headers should you add as defense-in-depth?**
    <details>
    <summary>Answer</summary>
-   `X-Frame-Options: DENY` or `X-Frame-Options: SAMEORIGIN` - These prevent the page from being embedded in iframes on other sites.
+   `X-Frame-Options: DENY` (or `SAMEORIGIN` if you need self-framing) prevents the page from being embedded in iframes on other sites, stopping clickjacking. For defense-in-depth, also add: `X-Content-Type-Options: nosniff` (prevents MIME type sniffing), `X-XSS-Protection: 1; mode=block` (enables browser XSS filtering), `Referrer-Policy: strict-origin-when-cross-origin` (controls referrer leakage), and `Content-Security-Policy: default-src 'self'` (restricts resource loading sources). These are configured via the `configuration-snippet` annotation in nginx-ingress.
    </details>
 
-4. **How do you create a TLS secret in Kubernetes?**
+4. **You need to expose an internal API that only trusted partners should access. Passwords are not secure enough. Your team suggests mutual TLS. Walk through the steps to configure mTLS on a Kubernetes Ingress -- what secrets do you need and what happens when an unauthorized client connects?**
    <details>
    <summary>Answer</summary>
-   `kubectl create secret tls <name> --cert=<cert-file> --key=<key-file>` - The secret type is `kubernetes.io/tls` and contains `tls.crt` and `tls.key` keys.
+   For mTLS, you need two secrets: a TLS secret (`kubectl create secret tls`) with the server certificate and key, and a generic secret containing the CA certificate (`kubectl create secret generic ca-secret --from-file=ca.crt`) used to verify client certificates. Configure annotations: `auth-tls-verify-client: "on"` and `auth-tls-secret: "namespace/ca-secret"`. When an unauthorized client connects without a valid client certificate signed by your CA, the TLS handshake fails with a 400 error before any application code executes. This is stronger than password auth because certificates are cryptographically verified and can't be phished.
    </details>
 
 ---

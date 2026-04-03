@@ -102,6 +102,8 @@ trivy config ./manifests/
 trivy k8s --report summary cluster
 ```
 
+> **Pause and predict**: Trivy reports 142 vulnerabilities in `nginx:latest` -- 89 LOW, 42 MEDIUM, 10 HIGH, 1 CRITICAL. Which would you fix first, and would you fix all 142? What's the practical threshold for a CI/CD gate?
+
 ### Practical Exam Scenarios
 
 ```bash
@@ -197,6 +199,8 @@ kubectl logs -n falco -l app.kubernetes.io/name=falco -f
 # - priority: EMERGENCY, ALERT, CRITICAL, ERROR, WARNING, NOTICE, INFO, DEBUG
 # - tags: Categories for filtering
 ```
+
+> **Stop and think**: Falco monitors system calls in real-time. If an attacker opens a reverse shell inside a container, which Falco condition elements would detect it? Think about what system calls a shell spawn triggers versus what a network connection triggers.
 
 ### Common Falco Conditions
 
@@ -384,6 +388,8 @@ cat pod.yaml | kubesec scan /dev/stdin
 # ]
 ```
 
+> **What would happen if**: You run `kube-bench` and get 15 [FAIL] results. You fix all 15 and re-run -- but now you get 3 new [FAIL] results that weren't there before. How is that possible?
+
 ### Understanding kubesec Scores
 
 ```
@@ -436,28 +442,28 @@ cat pod.yaml | kubesec scan /dev/stdin
 
 ## Quiz
 
-1. **What Trivy flag makes the scan fail if CRITICAL vulnerabilities are found?**
+1. **Your CI/CD pipeline uses Trivy to scan images before deployment. A developer complains that their build keeps failing even though "the app works fine." The Trivy output shows 3 CRITICAL CVEs in the base image. What flags would you configure in the pipeline, and how should the developer fix their build?**
    <details>
    <summary>Answer</summary>
-   `--exit-code 1 --severity CRITICAL`. The exit-code flag controls whether Trivy returns non-zero on findings.
+   The pipeline likely uses `--exit-code 1 --severity CRITICAL` which returns non-zero when CRITICAL vulnerabilities are found, causing the build to fail. The developer should update their base image to a version with the CVEs fixed (check the "Fixed Version" column in Trivy output), or switch to a minimal base image like distroless. "The app works fine" is irrelevant -- a working app with critical CVEs is a security liability. The developer should also run `trivy image --severity HIGH,CRITICAL` locally before pushing.
    </details>
 
-2. **Where are custom Falco rules typically placed?**
+2. **A security incident occurs: someone exec'd into a production container and read `/etc/shadow`. Your Falco installation didn't alert. You check and find the rule exists in `falco_rules.yaml`. What's the most likely cause, and where should custom rules actually live?**
    <details>
    <summary>Answer</summary>
-   `/etc/falco/falco_rules.local.yaml`. The default rules in `falco_rules.yaml` should not be edited directly.
+   Custom rules belong in `/etc/falco/falco_rules.local.yaml`, not the default `falco_rules.yaml`. The default file may have been overwritten during a Falco upgrade, or the rule may have been disabled by a later rule. For production, custom rules should be deployed via Helm values (`customRules` in values.yaml) or ConfigMaps so they persist across pod restarts and upgrades. Never edit rules by exec-ing into Falco pods -- those changes are lost when pods restart.
    </details>
 
-3. **What does a [FAIL] status in kube-bench output indicate?**
+3. **You run kube-bench and see: `[FAIL] 1.2.6 Ensure --authorization-mode argument is not set to AlwaysAllow`. The remediation says to edit the API server manifest. You make the change, but `kubectl` stops responding for 2 minutes. What happened and how do you avoid panic?**
    <details>
    <summary>Answer</summary>
-   A security configuration issue that should be fixed. kube-bench provides remediation instructions for each failed check.
+   When you edit `/etc/kubernetes/manifests/kube-apiserver.yaml`, the kubelet detects the change and restarts the API server as a static pod. During restart, `kubectl` is unavailable because it connects through the API server. This is normal behavior -- wait 1-2 minutes for the API server to come back. If it doesn't recover, you likely introduced a syntax error. Check with `crictl ps` and `crictl logs` on the control plane node. Always verify your changes are syntactically correct before saving.
    </details>
 
-4. **What does a negative kubesec score indicate?**
+4. **You scan a pod manifest with kubesec and get a score of -30. Your colleague scans a different manifest and gets a score of +3. Without seeing the manifests, what can you infer about the security posture of each?**
    <details>
    <summary>Answer</summary>
-   Security concerns that require review. Critical issues like `privileged: true` can result in scores of -30 or lower.
+   A score of -30 indicates critical security issues -- almost certainly `privileged: true` (which alone is -30) or similar dangerous configurations like `hostNetwork`, `hostPID`, or running as root. A score of +3 indicates a reasonable security posture with some positive controls (like `runAsNonRoot: true`, `readOnlyRootFilesystem: true`, or defined resource limits -- each worth +1). The first manifest needs immediate remediation; the second could still be improved but passes basic security checks.
    </details>
 
 ---

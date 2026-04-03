@@ -68,6 +68,8 @@ CKS heavily tests image security—scanning, hardening, and verification.
 
 ---
 
+> **Stop and think**: Your team pulls `nginx:latest` from Docker Hub. That image was uploaded by someone you don't know, could contain malware, and "latest" might change at any time. How many assumptions about trust are you making with a single `docker pull`?
+
 ## Base Image Selection
 
 ### Choosing Secure Base Images
@@ -228,6 +230,8 @@ ENTRYPOINT ["/myapp"]
 
 ---
 
+> **What would happen if**: An attacker compromises Docker Hub and replaces the `nginx:1.25` image with a backdoored version. You redeploy your production pods (which use `image: nginx:1.25`). Would you notice? What image reference format would have protected you?
+
 ## Image Tags and Digests
 
 ### The Problem with Tags
@@ -360,6 +364,8 @@ spec:
 
 ---
 
+> **Pause and predict**: A distroless image has no shell, no package manager, and no debugging tools. An attacker compromises the application inside it. What can they do compared to compromising an application inside an Ubuntu-based image?
+
 ## Real Exam Scenarios
 
 ### Scenario 1: Fix Insecure Image Reference
@@ -485,28 +491,28 @@ grep "^ENTRYPOINT\|^CMD" Dockerfile
 
 ## Quiz
 
-1. **Why should you avoid the :latest tag?**
+1. **Your production deployment uses `image: myapp:latest`. After a routine pod restart, the application starts behaving differently -- new endpoints appear that weren't in your code. Investigation reveals the `:latest` tag now points to a compromised image. How did this happen, and what image reference format prevents it?**
    <details>
    <summary>Answer</summary>
-   The :latest tag is mutable—it can point to different images over time. This makes deployments unpredictable and could introduce vulnerabilities or breaking changes without your knowledge.
+   The `:latest` tag is mutable -- someone (or an attacker who compromised the registry) pushed a new image with the same tag. When the pod restarted, kubelet pulled the new (compromised) image. Use image digests instead: `image: myapp@sha256:abc123...`. Digests are content-addressable and immutable -- they always point to the exact same image bytes. Even if an attacker replaces the tag, the digest reference continues pulling the original verified image. Additionally, set `imagePullPolicy: IfNotPresent` (not `Always`) and use a private registry with access controls and image signing (cosign/Notary) to verify image provenance.
    </details>
 
-2. **What's the benefit of using distroless images?**
+2. **A security scanner reports that your `ubuntu:22.04`-based application image has 142 vulnerabilities, including 3 CRITICAL ones in OpenSSL and curl. Your application is a compiled Go binary that doesn't use OpenSSL or curl. Are these vulnerabilities still a risk, and how do you eliminate them?**
    <details>
    <summary>Answer</summary>
-   Distroless images contain only the application runtime, with no shell, package manager, or unnecessary tools. This dramatically reduces the attack surface and makes it harder for attackers to exploit the container.
+   Yes, they're still a risk. Even though your Go binary doesn't use OpenSSL directly, an attacker who compromises the container can use the installed `curl` and vulnerable OpenSSL for lateral movement, data exfiltration, and further exploitation. The base image's tools become the attacker's toolkit. Solution: switch to a distroless or scratch base image. For Go: `FROM gcr.io/distroless/static-debian12` (or `FROM scratch` for fully static binaries). This eliminates all 142 vulnerabilities because there are no extra packages -- just your binary. Use multi-stage builds: compile in an `ubuntu` stage, copy only the binary to distroless. The 3 CRITICAL CVEs disappear entirely because the vulnerable libraries aren't present.
    </details>
 
-3. **How do you use image digests in Kubernetes?**
+3. **Your CI/CD pipeline builds images and pushes them to a private registry. A developer notices that the `staging` and `production` deployments show different application behavior even though they reference the same tag `myapp:v2.1`. How is this possible, and what supply chain controls prevent it?**
    <details>
    <summary>Answer</summary>
-   Use the format `image: name@sha256:digest` instead of `image: name:tag`. For example: `nginx@sha256:0d17b565...`. Digests are immutable and guarantee you always get the exact same image.
+   Tags are mutable -- someone pushed a new image with the same `v2.1` tag between the staging and production deployments. Staging pulled the original, production pulled the replacement. Prevention: (1) Use image digests in deployment manifests so both environments reference the exact same image bytes. (2) Implement image signing with cosign -- sign images in CI and verify signatures before deployment. (3) Use an admission controller (or ImagePolicyWebhook) that rejects unsigned or unverified images. (4) Configure the registry to be immutable (prevent tag overwrites). (5) Pin CI/CD to promote the exact digest from staging to production, never re-resolving tags.
    </details>
 
-4. **Why are multi-stage builds more secure?**
+4. **Your Dockerfile starts with `FROM ubuntu:22.04`, installs `gcc`, `make`, and `python3` for building, then copies the compiled binary. The final image is 850MB with 200+ packages. How do you reduce this to under 20MB while maintaining the same build process?**
    <details>
    <summary>Answer</summary>
-   Multi-stage builds exclude build tools, compilers, and dependencies from the final image. Only the compiled application is included, reducing attack surface and image size.
+   Use a multi-stage build. Stage 1 (`builder`): `FROM ubuntu:22.04`, install build tools, compile the binary. Stage 2 (`final`): `FROM gcr.io/distroless/static-debian12` (or `scratch`), `COPY --from=builder /app/binary /app/binary`. The final image contains only the compiled binary -- no gcc, make, python3, or any Ubuntu packages. This reduces the image from 850MB to under 20MB, eliminates 200+ packages of attack surface, and removes all build tools an attacker could use. The build process is identical -- only the final artifact changes. Add `USER nonroot` in the distroless stage for non-root execution.
    </details>
 
 ---

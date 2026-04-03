@@ -91,6 +91,8 @@ trivy --version
 
 ---
 
+> **Stop and think**: Trivy reports 142 vulnerabilities in `nginx:latest`. Your manager says "fix them all before deploying." But 89 are LOW severity with no known exploit and no fix available. How do you prioritize, and what's a realistic CI/CD gate threshold?
+
 ## Basic Image Scanning
 
 ### Scan a Container Image
@@ -223,6 +225,8 @@ trivy image --timeout 10m large-image:1.0
 ```
 
 ---
+
+> **What would happen if**: Your CI/CD pipeline uses `trivy image --exit-code 1 --severity CRITICAL` to gate deployments. A new CRITICAL CVE is published in a base library. Suddenly, no team in the organization can deploy anything -- even unrelated services. How do you design a scanning gate that catches real issues without causing deployment paralysis?
 
 ## Scanning Kubernetes Clusters
 
@@ -360,6 +364,8 @@ pipeline {
 
 ---
 
+> **Pause and predict**: You scan `myapp:v1.0` and find 0 vulnerabilities. You scan again 24 hours later without changing anything -- now there are 3 CRITICAL CVEs. The image hasn't changed. What happened?
+
 ## Real Exam Scenarios
 
 ### Scenario 1: Scan Image and Report Critical CVEs
@@ -478,28 +484,28 @@ trivy image --download-db-only
 
 ## Quiz
 
-1. **What command scans an image for only CRITICAL and HIGH vulnerabilities?**
+1. **Your CI/CD pipeline blocks a deployment because Trivy found a CRITICAL CVE in the `openssl` package of the base image. The developer says "our Go binary doesn't use openssl, this is a false positive." Is the developer right to dismiss this, and what Trivy flags would help make a more nuanced decision?**
    <details>
    <summary>Answer</summary>
-   `trivy image --severity CRITICAL,HIGH <image>`. The --severity flag filters results to only show specified severity levels.
+   The developer has a point about direct exploitability, but it's not a false positive -- the vulnerability exists in the image. An attacker who compromises the container could use the vulnerable openssl for further attacks. For a nuanced approach: use `trivy image --ignore-unfixed` to filter CVEs with no available patch (you can't fix what has no fix), and `trivy image --severity CRITICAL,HIGH` to focus on actionable issues. Better yet, switch to a distroless base image that doesn't include openssl at all, eliminating the CVE entirely. For immediate unblocking, use a `.trivyignore` file to document and explicitly accept the risk for specific CVEs with justification.
    </details>
 
-2. **How do you make a CI/CD pipeline fail if critical vulnerabilities are found?**
+2. **You scan an image on Monday and find 0 vulnerabilities. On Tuesday, without changing the image, the same scan finds 3 CRITICAL CVEs. The development team is confused. What happened, and what does this imply about scanning frequency?**
    <details>
    <summary>Answer</summary>
-   Use `trivy image --exit-code 1 --severity CRITICAL <image>`. The --exit-code 1 flag causes trivy to return exit code 1 if vulnerabilities matching the criteria are found.
+   Trivy's vulnerability database was updated between scans. New CVEs were published for packages that already existed in the image -- the image didn't change, but our knowledge of its vulnerabilities did. This is why one-time scanning is insufficient. Implications: (1) Scan images continuously, not just at build time -- vulnerabilities are discovered constantly. (2) Re-scan running workloads on a schedule (daily minimum). (3) Subscribe to security advisories for your base images. (4) Use `trivy k8s --report summary cluster` to scan all running images in the cluster periodically. An image that was "clean" yesterday may be critically vulnerable today.
    </details>
 
-3. **How do you scan only for vulnerabilities that have fixes available?**
+3. **During a CKS exam task, you need to find which images in the `production` namespace have CRITICAL vulnerabilities and output only the image names. What single command pipeline achieves this?**
    <details>
    <summary>Answer</summary>
-   Use `trivy image --ignore-unfixed <image>`. This filters out vulnerabilities where no patched version is available.
+   Combine kubectl to get images with Trivy to scan each: `kubectl get pods -n production -o jsonpath='{.items[*].spec.containers[*].image}' | tr ' ' '\n' | sort -u | while read img; do trivy image --severity CRITICAL --exit-code 1 "$img" > /dev/null 2>&1 || echo "$img"; done`. This lists all unique images, scans each for CRITICAL CVEs, and outputs only the names that have them (Trivy returns non-zero exit code). For the exam, you might also use `trivy image --severity CRITICAL -q <image>` to get a quick summary and manually identify affected images. Speed matters in the exam -- use `--severity CRITICAL` to skip lower severities.
    </details>
 
-4. **What does trivy config do?**
+4. **Your security policy requires "no CRITICAL vulnerabilities in production." A team uses `trivy image --ignore-unfixed --severity CRITICAL` and gets clean results, then deploys. A week later, a fix for a previously unfixed CRITICAL CVE is released. Their production image is now in violation. What process prevents this gap?**
    <details>
    <summary>Answer</summary>
-   `trivy config` scans configuration files (Kubernetes manifests, Terraform, Dockerfile, etc.) for security misconfigurations, not CVEs.
+   The `--ignore-unfixed` flag hides CVEs that have no patch available. When a fix is released, the CVE becomes "fixable" and reappears in scans. Prevention: (1) Run scheduled re-scans of all production images (not just at build time). (2) Set up Trivy in a cron job or CI pipeline that scans running images daily and alerts when new fixable CVEs appear. (3) Use an admission controller that re-validates images periodically. (4) Establish SLAs: CRITICAL with fix available = 48-hour remediation window. (5) Track `--ignore-unfixed` separately and re-evaluate when fixes land. The policy should be "no fixable CRITICAL vulnerabilities" with continuous monitoring, not point-in-time scans.
    </details>
 
 ---

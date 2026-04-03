@@ -102,6 +102,8 @@ CKS expects you to understand both container and host network security.
 
 ---
 
+> **Stop and think**: The kubelet read-only port (10255) exposes pod information without any authentication. An attacker on the network can enumerate every pod, container, and their images just by curling that port. Why would this exist, and why is it a goldmine for reconnaissance?
+
 ## Checking Open Ports
 
 ```bash
@@ -236,6 +238,8 @@ spec:
 # - Bypass NetworkPolicies
 ```
 
+> **What would happen if**: A pod is deployed with `hostNetwork: true` in a namespace that has a strict default-deny NetworkPolicy. Does the NetworkPolicy apply to this pod? Think about which network namespace the pod is using.
+
 ### Restricting hostNetwork
 
 ```yaml
@@ -367,6 +371,8 @@ sudo iptables -L INPUT -n | grep 10250
 
 ---
 
+> **Pause and predict**: You run `ss -tlnp` on a worker node and see port 10255 listening. You set `readOnlyPort: 0` in kubelet config and restart kubelet. You run `ss -tlnp` again and still see 10255. What could cause it to persist?
+
 ## Securing etcd Network Access
 
 ```bash
@@ -409,28 +415,28 @@ sudo iptables -A INPUT -p tcp --dport 2380 -j DROP
 
 ## Quiz
 
-1. **What is the kubelet read-only port and why should it be disabled?**
+1. **A penetration tester on your corporate network runs `curl http://<worker-node-ip>:10255/pods` and gets a full JSON listing of every pod on the node -- including environment variables and image names. Your NetworkPolicies are all in place. How did the tester bypass them, and what two changes stop this?**
    <details>
    <summary>Answer</summary>
-   Port 10255 serves pod information without authentication. Attackers can enumerate pods, containers, and their configurations. Disable with `readOnlyPort: 0` in kubelet config.
+   The tester accessed the kubelet's read-only port (10255), which serves pod information without any authentication and operates at the host network level -- completely outside the scope of Kubernetes NetworkPolicies. NetworkPolicies only control pod-to-pod traffic through the CNI, not direct host port access. Two fixes: (1) Set `readOnlyPort: 0` in `/var/lib/kubelet/config.yaml` and restart kubelet to disable the unauthenticated endpoint. (2) Add host-level firewall rules (`iptables -A INPUT -p tcp --dport 10255 -j DROP`) as defense in depth. The authenticated kubelet API on port 10250 provides the same information but requires valid credentials.
    </details>
 
-2. **Which pods bypass Kubernetes NetworkPolicies?**
+2. **Your security policy says "no pods may use hostNetwork." You enforce this with Pod Security Admission in `restricted` mode. However, you notice the Calico CNI pods, kube-proxy, and Falco all use `hostNetwork: true` and are in `kube-system`. How do you enforce the policy for application namespaces while allowing system components to function?**
    <details>
    <summary>Answer</summary>
-   Pods with `hostNetwork: true` bypass NetworkPolicies because they use the host's network namespace directly instead of the pod network managed by the CNI.
+   Pod Security Admission is applied per-namespace via labels, so don't apply the `restricted` profile to `kube-system` (or use `privileged` mode there). Apply `pod-security.kubernetes.io/enforce: restricted` to all workload namespaces (production, staging, etc.) where hostNetwork should be blocked. System namespaces (`kube-system`, `calico-system`, `falco`) legitimately need hostNetwork for CNI, kube-proxy, and security monitoring. This is intentional -- system components require host access to function, while application pods should never need it. Document the exception and audit `kube-system` separately for unauthorized workloads.
    </details>
 
-3. **What ports does etcd use and who should access them?**
+3. **During a security audit, you run `nmap -p 2379 <control-plane-ip>` from a worker node and discover etcd is accessible. The auditor says this is critical because etcd stores all cluster data including secrets in plain text. What firewall rules do you add, and what happens if you accidentally block the API server's access to etcd?**
    <details>
    <summary>Answer</summary>
-   Port 2379 for client connections (only API server should access) and 2380 for peer connections (only other etcd nodes). Both should be firewalled.
+   Add iptables rules on the control plane node: `iptables -A INPUT -p tcp --dport 2379 -s <api-server-ip> -j ACCEPT` followed by `iptables -A INPUT -p tcp --dport 2379 -j DROP`. This allows only the API server to connect. For multi-node etcd, also allow peer traffic on 2380 from other etcd nodes. If you accidentally block the API server's access, the entire cluster becomes non-functional: no API calls work, no pod scheduling occurs, and `kubectl` hangs. Recovery requires SSH to the control plane node and removing the misconfigured iptables rule. Always test firewall changes in a maintenance window and have SSH access as a backup path.
    </details>
 
-4. **How can you verify that insecure ports are disabled?**
+4. **You discover that a NodePort service on port 31337 is exposed on all 10 worker nodes, even though the backing pod only runs on 2 of them. An attacker is scanning all nodes on the NodePort range. What's the security implication, and what alternatives reduce the attack surface?**
    <details>
    <summary>Answer</summary>
-   Use `ss -tlnp | grep -E '10255|8080'` to check if these ports are listening. Empty output means they're disabled.
+   NodePort services expose on every node's IP in the 30000-32767 range, regardless of where pods actually run. This means all 10 nodes become entry points for the service, multiplying the attack surface by 5x compared to the 2 nodes running the pods. Alternatives: (1) Use a LoadBalancer Service which provides a single entry point with cloud provider firewalling. (2) Use Ingress/Gateway API to route through a controlled ingress point with TLS, rate limiting, and authentication. (3) If NodePort is required, add host-level firewall rules to restrict source IPs on the NodePort range. (4) Use `externalTrafficPolicy: Local` to make the service only respond on nodes where pods actually run, reducing the responding surface to 2 nodes.
    </details>
 
 ---

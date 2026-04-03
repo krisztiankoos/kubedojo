@@ -72,6 +72,8 @@ This module builds your security lab: a cluster equipped with all tools you'll e
 
 ---
 
+> **Stop and think**: Why do you think audit logging is not enabled by default in Kubernetes? What trade-off is being made, and why is enabling it essential for CKS?
+
 ## Option 1: Kind Cluster (Recommended for Learning)
 
 For most CKS study, a kind cluster with security tools works well:
@@ -302,6 +304,8 @@ sudo aa-status
 
 ---
 
+> **What would happen if**: You install Falco on a kind cluster using the modern_ebpf driver, but the cluster node's kernel doesn't support eBPF CO-RE. What symptoms would you see and how would you fix it?
+
 ## Verify Seccomp Support
 
 ```bash
@@ -317,6 +321,8 @@ sudo mkdir -p /var/lib/kubelet/seccomp/profiles
 ```
 
 ---
+
+> **Pause and predict**: You're about to deploy intentionally insecure containers. In a real cluster, what would prevent these from being created? Think about which CKS topics (Pod Security Admission, image scanning, RBAC) would block each one.
 
 ## Deploy Vulnerable Apps (Practice Targets)
 
@@ -468,28 +474,28 @@ echo "=== Validation Complete ==="
 
 ## Quiz
 
-1. **What does Trivy scan for?**
+1. **You run `trivy image nginx:latest` and get over 140 vulnerabilities. Your manager panics and says to switch to Alpine-based images immediately. Is this the right response, and what would you actually do?**
    <details>
    <summary>Answer</summary>
-   Vulnerabilities (CVEs) in container images, filesystem, git repos, and Kubernetes misconfigurations. It's primarily used for image vulnerability scanning in CKS.
+   Switching to Alpine may reduce the vulnerability count since Alpine has fewer packages, but it's not a complete solution. The right approach is to filter by severity (`trivy image --severity HIGH,CRITICAL nginx:latest`), focus on fixing CRITICAL and HIGH vulnerabilities first, check if fixed versions exist, and consider using distroless or minimal base images. Trivy scans images, filesystems, git repos, and Kubernetes manifests -- use all these capabilities to build a comprehensive security posture, not just react to raw numbers.
    </details>
 
-2. **Where do seccomp profiles need to be stored for Kubernetes to use them?**
+2. **During CKS lab setup, you create a custom seccomp profile and place it in `/etc/seccomp/profiles/` on the node. When you reference it in a pod spec, the pod fails to start. What went wrong?**
    <details>
    <summary>Answer</summary>
-   In /var/lib/kubelet/seccomp/ on the node where the pod runs. Kubernetes references profiles relative to this directory.
+   Kubernetes expects seccomp profiles in `/var/lib/kubelet/seccomp/` on the node where the pod runs, not `/etc/seccomp/profiles/`. Kubernetes references profiles relative to the kubelet's seccomp directory. Moving the profile to the correct path (`/var/lib/kubelet/seccomp/profiles/`) will fix the issue. This is a common gotcha because the path isn't intuitive.
    </details>
 
-3. **What is the purpose of deploying intentionally vulnerable applications?**
+3. **Your security team asks why you're deploying a container image called `vulnerables/web-dvwa` into the cluster. Explain the security rationale for intentionally deploying vulnerable applications.**
    <details>
    <summary>Answer</summary>
-   Practice targets for security scanning and hardening. You can scan them with Trivy, detect issues with Falco, and practice remediation—all in a safe environment.
+   Intentionally vulnerable applications serve as practice targets in an isolated lab environment. They let you practice scanning with Trivy (finding real CVEs), detecting suspicious activity with Falco (runtime monitoring), hardening with security contexts and Pod Security Admission, and writing NetworkPolicies to isolate them. Without realistic targets, you can't practice the remediation workflows that CKS tests. The key is these are deployed in a dedicated lab namespace, never in production.
    </details>
 
-4. **What driver options does Falco support?**
+4. **You install Falco via Helm with `driver.kind=modern_ebpf` on your lab cluster, but the Falco pods are in CrashLoopBackOff. The logs mention "kernel version not supported." How do you diagnose and fix this?**
    <details>
    <summary>Answer</summary>
-   Kernel module (kmod), eBPF probe, or modern_ebpf. Modern eBPF is preferred when supported. Kernel module is most compatible but requires kernel headers.
+   Modern eBPF requires a kernel version that supports eBPF CO-RE (typically 5.8+). If your kernel doesn't support it, Falco can't load its driver. The fix is to switch to an alternative driver: use `driver.kind=kmod` (kernel module, most compatible but requires kernel headers) or `driver.kind=ebpf` (classic eBPF probe). For kind clusters, the kernel module driver is often the safest choice. Upgrade Falco with `helm upgrade falco falcosecurity/falco --set driver.kind=kmod -n falco`.
    </details>
 
 ---

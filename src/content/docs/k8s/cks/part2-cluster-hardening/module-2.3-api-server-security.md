@@ -126,6 +126,8 @@ spec:
 
 ---
 
+> **Stop and think**: The API server manifest lives at `/etc/kubernetes/manifests/kube-apiserver.yaml`. When you edit this file, the kubelet detects the change and restarts the API server. What happens to your cluster if you introduce a typo in a flag? How would you recover if `kubectl` stops working?
+
 ## Security-Critical Settings
 
 ```
@@ -264,6 +266,8 @@ rules:
 
 ---
 
+> **What would happen if**: You set `--authorization-mode=RBAC` without including `Node` in the mode list. The cluster seems to work fine for users. But what subtle security risk have you introduced for kubelet communication?
+
 ## Encryption at Rest
 
 ### Enable etcd Encryption
@@ -332,6 +336,8 @@ serverTLSBootstrap: true
 ```
 
 ---
+
+> **Pause and predict**: You enable encryption at rest for secrets using `aescbc` provider. Existing secrets were created before encryption was enabled. Are they now encrypted, or do you need to take additional action?
 
 ## Real Exam Scenarios
 
@@ -460,28 +466,28 @@ kubectl get $POD -n kube-system -o yaml | grep -E "profiling=false" || echo "  M
 
 ## Quiz
 
-1. **What authorization modes should be configured for production?**
+1. **A security scanner reports that your API server accepts anonymous requests and returns namespace listings to unauthenticated clients. You check the API server manifest and don't see `--anonymous-auth` at all. Why is anonymous access working, and what change fixes it?**
    <details>
    <summary>Answer</summary>
-   `--authorization-mode=Node,RBAC` - Node authorizer restricts kubelet access, RBAC provides role-based access control. Never use AlwaysAllow.
+   When `--anonymous-auth` is not explicitly set, it defaults to `true` -- anonymous authentication is enabled by default in Kubernetes. This means any unauthenticated request is assigned the `system:anonymous` user and `system:unauthenticated` group. If any ClusterRoleBinding grants permissions to these identities, anonymous users get access. Fix by explicitly adding `--anonymous-auth=false` to the API server manifest at `/etc/kubernetes/manifests/kube-apiserver.yaml`. The API server will restart automatically. Verify with `curl -k https://<api-server>:6443/api/v1/namespaces` -- it should return 401 Unauthorized.
    </details>
 
-2. **What does the NodeRestriction admission plugin do?**
+2. **After enabling audit logging on the API server, you notice the API server pod is in CrashLoopBackOff. The `crictl logs` output shows "open /var/log/kubernetes/audit.log: no such file or directory." You added `--audit-log-path` and `--audit-policy-file` flags. What did you miss?**
    <details>
    <summary>Answer</summary>
-   It limits kubelets to only modifying pods scheduled on their node and their own Node object. Prevents a compromised kubelet from affecting other nodes.
+   The API server container needs both the directory to exist AND volume mounts configured. Three things are required: (1) Create the log directory on the host: `mkdir -p /var/log/kubernetes`. (2) Add a `hostPath` volume in the API server manifest pointing to both the audit policy file and the log directory. (3) Add corresponding `volumeMounts` in the container spec. You also need the `--audit-policy-file` pointing to a valid audit policy YAML -- without a valid policy, the API server also fails. Always use `crictl logs` to diagnose static pod failures when `kubectl` is unavailable.
    </details>
 
-3. **How do you verify etcd encryption is working?**
+3. **During a compliance audit, the auditor asks you to prove that secrets stored in etcd are encrypted at rest. You show them the EncryptionConfiguration with `aescbc` provider. They say "prove it's actually encrypting, not just configured." How do you demonstrate this?**
    <details>
    <summary>Answer</summary>
-   Read a secret directly from etcd using etcdctl. The data should appear encrypted (not plain text). The command includes the encryption key prefix in the output.
+   Read a secret directly from etcd using etcdctl: `ETCDCTL_API=3 etcdctl get /registry/secrets/default/<secret-name> --endpoints=https://127.0.0.1:2379 --cacert=... --cert=... --key=... | hexdump -C | head`. If encryption is working, the output shows binary/encrypted data with the encryption provider prefix (e.g., `k8s:enc:aescbc:v1:key1`), not the plain-text secret value. If you see the actual secret data in readable form, encryption is not working despite being configured. Also important: existing secrets created before encryption was enabled remain unencrypted until you re-create them or run `kubectl get secrets -A -o json | kubectl replace -f -`.
    </details>
 
-4. **What audit log level records both request and response bodies?**
+4. **A compromised kubelet on worker node `node-3` is making API calls to modify pods on `node-1` and `node-2`. Your API server uses `--authorization-mode=RBAC` (without Node). Why doesn't RBAC prevent this cross-node manipulation, and what authorization mode is missing?**
    <details>
    <summary>Answer</summary>
-   `RequestResponse` - This is the most verbose level and captures everything. Use it selectively for sensitive resources like secrets and RBAC.
+   RBAC alone grants permissions based on identity and role, not on node affinity. If the kubelet's credentials have a ClusterRoleBinding to `system:node` (which grants broad pod access), RBAC allows it to modify pods on any node. The missing mode is `Node` -- the Node authorizer restricts kubelets to only accessing resources related to pods scheduled on their own node. With `--authorization-mode=Node,RBAC`, a kubelet on `node-3` can only read/modify pods assigned to `node-3`. The NodeRestriction admission plugin adds further limits, preventing kubelets from modifying labels on other Node objects. Always use both: `Node,RBAC`.
    </details>
 
 ---

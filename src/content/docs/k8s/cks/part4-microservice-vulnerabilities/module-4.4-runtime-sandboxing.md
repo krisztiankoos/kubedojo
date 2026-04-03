@@ -101,6 +101,8 @@ CKS tests your understanding of container isolation techniques.
 
 ---
 
+> **Stop and think**: Standard containers share the host kernel directly -- all 300+ syscalls go straight to the kernel. gVisor intercepts these syscalls and reimplements them in userspace. What does this mean for an attacker trying to exploit a kernel vulnerability from inside a gVisor-sandboxed container?
+
 ## gVisor Architecture
 
 ```
@@ -175,6 +177,8 @@ CKS tests your understanding of container isolation techniques.
 ```
 
 ---
+
+> **What would happen if**: You deploy a high-performance database (PostgreSQL) inside a gVisor sandbox. The database uses memory-mapped files and direct I/O heavily. Would you expect the same performance as runc, and what trade-off are you making?
 
 ## RuntimeClass
 
@@ -430,6 +434,8 @@ metadata:
 
 ---
 
+> **Pause and predict**: Your cluster runs both trusted internal microservices and untrusted customer-submitted code (like a CI/CD runner). Which workloads benefit most from runtime sandboxing, and would you sandbox everything or just specific workloads?
+
 ## Comparison: runc vs gVisor vs Kata
 
 ```
@@ -484,28 +490,28 @@ metadata:
 
 ## Quiz
 
-1. **What is the main security benefit of gVisor?**
+1. **A critical kernel CVE is announced that allows container escape via a specific syscall. Your cluster runs 200 pods with standard runc and 10 pods with gVisor. Which pods are vulnerable, and why does gVisor protect against this class of attack?**
    <details>
    <summary>Answer</summary>
-   gVisor intercepts syscalls in user space, so kernel vulnerabilities in the host can't be directly exploited from the container. It reduces the attack surface from ~300+ syscalls to ~50.
+   The 200 runc pods are vulnerable because their syscalls go directly to the host kernel -- the CVE exploit works directly. The 10 gVisor pods are likely protected because gVisor intercepts syscalls in its own userspace "Sentry" process, reimplementing them without touching the host kernel for most operations. The vulnerable syscall either isn't implemented by gVisor (blocked by default) or is handled in userspace where the kernel exploit doesn't apply. This is gVisor's core security model: reducing the kernel attack surface from 300+ syscalls to ~50 that actually reach the host kernel.
    </details>
 
-2. **How does Kata Containers achieve isolation?**
+2. **Your team wants to sandbox CI/CD runner pods that execute untrusted customer code. They test with gVisor but the runners fail because they need to build Docker images (which requires `mount` syscalls and `overlayfs`). What alternative sandboxing approach would work for this use case?**
    <details>
    <summary>Answer</summary>
-   Kata runs each container (or pod) in a lightweight VM with its own Linux kernel. Container syscalls go to the guest kernel, not the host kernel, providing hardware-level isolation.
+   Kata Containers would be a better fit. Kata runs each pod in a lightweight VM with its own kernel, providing hardware-level isolation while supporting the full Linux syscall interface (including `mount`). gVisor doesn't support all syscalls needed for container-in-container builds. Alternatively, use rootless BuildKit or Kaniko for image building inside gVisor (they don't need privileged syscalls). Another option is dedicating specific nodes with Kata runtime for CI/CD workloads and using RuntimeClass (`spec.runtimeClassName: kata`) to schedule them appropriately. The trade-off with Kata is higher resource overhead (each pod gets a VM) but full syscall compatibility.
    </details>
 
-3. **What Kubernetes resource specifies the container runtime?**
+3. **You create a RuntimeClass called `gvisor` and a pod with `runtimeClassName: gvisor`. The pod starts on `node-1` successfully but fails on `node-2` with "handler not found." What's the likely cause, and how do you ensure consistent runtime availability?**
    <details>
    <summary>Answer</summary>
-   RuntimeClass. It maps a name (used in pod spec) to a handler (configured in containerd). Pods reference it with `spec.runtimeClassName`.
+   The gVisor runtime handler (`runsc`) is installed and configured in containerd on `node-1` but not on `node-2`. RuntimeClass is a cluster-level resource, but the actual runtime binary must be installed on each node. Fix: (1) Install gVisor on all nodes, or (2) Use RuntimeClass `scheduling` field with `nodeSelector` to ensure gVisor pods only schedule on nodes with the runtime installed. Label gVisor-capable nodes (e.g., `runtime/gvisor: "true"`) and set `scheduling.nodeSelector` in the RuntimeClass. This prevents scheduling failures and ensures consistent behavior.
    </details>
 
-4. **What are the limitations of gVisor?**
+4. **Your security architect says "sandbox everything with gVisor for maximum security." Your performance team objects because database pods show 30% I/O latency increase under gVisor. How do you balance security and performance across different workload types?**
    <details>
    <summary>Answer</summary>
-   Not all syscalls supported, some applications may not work, higher I/O overhead, incompatible with hostNetwork/hostPID/privileged containers.
+   Don't sandbox everything uniformly. Use a risk-based approach: (1) High-risk workloads (untrusted code execution, public-facing services, multi-tenant workloads) get gVisor or Kata sandboxing via RuntimeClass. (2) Performance-sensitive workloads (databases, caches, message queues) stay on runc but get hardened with seccomp, AppArmor, non-root, read-only filesystem, and dropped capabilities. (3) Internal trusted services get standard security contexts without sandboxing. Create multiple RuntimeClasses (`standard`, `gvisor`, `kata`) and assign them based on workload risk profile. The 30% I/O overhead for databases is unacceptable, but for a web frontend handling untrusted input, it's a worthwhile security trade-off.
    </details>
 
 ---

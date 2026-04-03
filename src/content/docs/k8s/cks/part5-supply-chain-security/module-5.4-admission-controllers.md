@@ -80,6 +80,8 @@ CKS tests admission controller configuration and usage.
 
 ---
 
+> **Stop and think**: Every pod creation, update, and deletion passes through admission controllers. If you add a ValidatingAdmissionWebhook that validates images against a policy server, and that server goes down, what happens to ALL pod operations in the cluster? What's the critical `failurePolicy` setting?
+
 ## Built-in Admission Controllers
 
 ### Security-Critical Controllers
@@ -235,6 +237,8 @@ objectSelector:
 
 ---
 
+> **What would happen if**: A MutatingAdmissionWebhook silently injects a sidecar container into every pod. An attacker compromises the webhook service and changes the sidecar image to a malicious one. Every new pod in the cluster now contains the attacker's container. How do you protect against this?
+
 ## ImagePolicyWebhook
 
 ImagePolicyWebhook validates image names before pods are created.
@@ -381,6 +385,8 @@ webhooks:
 ```
 
 ---
+
+> **Pause and predict**: You configure an ImagePolicyWebhook with `defaultAllow: false`. The webhook service crashes. A developer tries to deploy a pod. What happens -- does the pod get created, or is it blocked?
 
 ## Real Exam Scenarios
 
@@ -536,28 +542,28 @@ sudo vi /etc/kubernetes/manifests/kube-apiserver.yaml
 
 ## Quiz
 
-1. **What's the difference between Mutating and Validating admission webhooks?**
+1. **Your service mesh uses a MutatingAdmissionWebhook to inject sidecar proxies into every pod. A security audit reveals the webhook service itself runs with no NetworkPolicy and its TLS certificate expired 2 months ago. The auditor calls this "the keys to the kingdom." Why is a compromised mutating webhook so dangerous?**
    <details>
    <summary>Answer</summary>
-   Mutating webhooks can modify the request (add labels, inject sidecars). Validating webhooks can only approve or deny requests. Mutating runs before Validating.
+   A MutatingAdmissionWebhook can modify any pod creation request -- it runs before validation. A compromised webhook could inject malicious sidecar containers (cryptominers, reverse shells), modify environment variables to steal secrets, change image references to backdoored versions, or add `privileged: true` to security contexts. Since it processes every pod in matched namespaces, the blast radius is the entire cluster. Protection: secure the webhook with mTLS, apply strict NetworkPolicies, use RBAC to restrict who can modify the webhook configuration, and add a ValidatingAdmissionWebhook that runs after mutation to verify pods haven't been tampered with.
    </details>
 
-2. **What does failurePolicy: Fail do?**
+2. **You deploy a ValidatingAdmissionWebhook with `failurePolicy: Fail` that checks all images against an allowlist. The webhook service pod gets OOMKilled during a traffic spike. Suddenly, no pods can be created or updated anywhere in the cluster -- including the webhook pod itself trying to restart. How do you recover from this deadlock?**
    <details>
    <summary>Answer</summary>
-   If the webhook is unavailable or times out, the API request is rejected. This is more secure but can cause cluster issues if the webhook service is down.
+   This is a classic webhook deadlock. Recovery: (1) Delete the ValidatingWebhookConfiguration with `kubectl delete validatingwebhookconfiguration <name>` -- this removes the admission check and unblocks pod creation. (2) Fix the webhook service (increase memory limits, add resource requests). (3) Re-apply the webhook configuration with safeguards. Prevention: always exclude `kube-system` and the webhook's own namespace from the webhook rules using `namespaceSelector`. Set `timeoutSeconds` to a low value (5s). Consider `failurePolicy: Ignore` for non-critical webhooks. For critical security webhooks, use `Fail` but ensure high availability (multiple replicas, PodDisruptionBudget).
    </details>
 
-3. **How do you enable an admission controller in kubeadm clusters?**
+3. **During a CKS exam, you're asked to configure an ImagePolicyWebhook that blocks images not from `registry.internal.io`. You set `defaultAllow: false` and configure the admission controller. Pods with internal images work, but system pods in `kube-system` that use `registry.k8s.io` images stop being created. What did you miss?**
    <details>
    <summary>Answer</summary>
-   Add it to the `--enable-admission-plugins` flag in `/etc/kubernetes/manifests/kube-apiserver.yaml`. The API server will automatically restart.
+   ImagePolicyWebhook applies to all image pull requests unless specifically exempted. System images from `registry.k8s.io` are now blocked because they're not from your internal registry. Fix: the webhook's image review logic should allowlist both `registry.internal.io` AND `registry.k8s.io` (and any other system image registries your cluster needs). Alternatively, configure the admission controller configuration to exempt the `kube-system` namespace. With `defaultAllow: false`, everything not explicitly allowed is denied -- including system components. Always test admission policies against system namespaces before enforcement.
    </details>
 
-4. **What does the ImagePolicyWebhook defaultAllow setting control?**
+4. **Your cluster has both a MutatingAdmissionWebhook (injecting resource limits) and a ValidatingAdmissionWebhook (checking security contexts). A pod is submitted without resource limits and without `runAsNonRoot`. In what order do the webhooks process it, and what's the final result?**
    <details>
    <summary>Answer</summary>
-   It determines what happens when the webhook is unavailable. `defaultAllow: false` denies all images if the webhook can't be reached (more secure).
+   Order: Mutating webhooks run first, then Validating webhooks. The mutating webhook adds resource limits to the pod spec. Then the validating webhook checks the (now-mutated) pod for security contexts. The pod is rejected because it still lacks `runAsNonRoot` -- the mutating webhook only added limits, not security contexts. The developer must add the security context. This ordering is important: validation sees the final mutated version of the request, so mutating webhooks can fix some issues before validation. But validation catches anything that mutation didn't address. They work as complementary layers.
    </details>
 
 ---

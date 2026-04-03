@@ -71,6 +71,8 @@ This module covers network-level and authentication-based API access restriction
 
 ---
 
+> **Stop and think**: Your API server is accessible at a public IP on port 6443. It requires client certificates for authentication. An attacker can't authenticate, but they can reach the endpoint. What attacks are still possible even without valid credentials?
+
 ## Network-Level Restrictions
 
 ### Firewall Rules (External)
@@ -196,6 +198,8 @@ curl -k https://<api-server>:6443/api/v1/namespaces
 ```
 
 ---
+
+> **Pause and predict**: You create a NetworkPolicy that blocks pods in the `production` namespace from reaching the API server's ClusterIP (10.96.0.1). But pods can still use `kubectl` from inside the container. What did you miss? (Hint: how does `kubectl` resolve `kubernetes.default.svc`?)
 
 ## Webhook Authentication
 
@@ -404,6 +408,8 @@ kubectl config set-context limited \
 
 ---
 
+> **What would happen if**: A developer's laptop with a valid kubeconfig file is stolen. The kubeconfig has cluster-admin credentials and the API server is publicly accessible. What's the blast radius, and what controls would have limited the damage?
+
 ## Defense in Depth for API
 
 ```
@@ -462,28 +468,28 @@ kubectl config set-context limited \
 
 ## Quiz
 
-1. **How do you make the API server accessible only from internal network?**
+1. **Your SOC team detects thousands of failed authentication attempts against the API server from an external IP address. The API server is exposed publicly with `--bind-address=0.0.0.0`. No brute-force succeeded yet. What immediate and long-term actions do you take?**
    <details>
    <summary>Answer</summary>
-   Set `--bind-address` to internal IP, use firewall rules to block external access, or use cloud provider's private endpoint feature.
+   Immediate: Block the attacking IP with firewall rules (`iptables -A INPUT -s <attacker-ip> -p tcp --dport 6443 -j DROP`). Verify no successful authentications from that IP in audit logs. Long-term: Change `--bind-address` to an internal IP or use a cloud provider private endpoint to remove public API access entirely. Require VPN for external access. Enable the EventRateLimit admission controller to throttle requests. Configure API Priority and Fairness to deprioritize unauthenticated traffic. Enable audit logging if not already configured to detect future attempts. Even though no brute-force succeeded, the public endpoint is an unnecessary attack surface.
    </details>
 
-2. **What happens when anonymous authentication is disabled and an unauthenticated request arrives?**
+2. **A developer's laptop is stolen at a conference. Their kubeconfig contains a client certificate for the production cluster, which has a public API endpoint. The certificate doesn't expire for 364 more days. What's the blast radius and how do you revoke access?**
    <details>
    <summary>Answer</summary>
-   The API server returns 401 Unauthorized. The request is rejected before any authorization check.
+   Blast radius depends on the RBAC permissions bound to the certificate's CN/O fields -- if it's cluster-admin, full cluster compromise is possible. Kubernetes has no built-in certificate revocation. Options: (1) Rotate the cluster CA certificate (drastic -- breaks all existing certificates). (2) Add the stolen certificate's CN to a deny list using a webhook authorizer. (3) If using OIDC, disable the user's account immediately. (4) Restrict the API server to private endpoint/VPN so the stolen cert is useless without network access. This incident highlights why short-lived credentials (OIDC tokens, bound SA tokens) are preferred over long-lived certificates, and why private API endpoints are critical.
    </details>
 
-3. **What is the purpose of the EventRateLimit admission controller?**
+3. **Your cluster's API server uses `--authorization-mode=AlwaysAllow` because "RBAC was too complicated" for the dev team. A security audit flags this. The team argues that authentication is strong (client certs) so authorization doesn't matter. Explain why they're wrong with a concrete attack scenario.**
    <details>
    <summary>Answer</summary>
-   It limits the rate of events (and other API requests) per namespace or user, preventing DoS attacks and excessive API load from misbehaving clients.
+   With `AlwaysAllow`, any authenticated user can do anything: read all secrets (database passwords, TLS keys, API tokens), create privileged pods that escape to the host, delete production workloads, modify RBAC to grant others access, and access the cloud metadata service. Concrete scenario: a developer with a valid client cert could `kubectl get secrets -A` to read every secret in every namespace, including admin credentials they shouldn't have. With RBAC (`--authorization-mode=Node,RBAC`), each user gets only the permissions they need. The Node authorizer additionally restricts kubelets to their own node's resources. Authentication proves identity; authorization enforces what that identity can do. Both are essential.
    </details>
 
-4. **Why should you combine multiple API access restrictions?**
+4. **You notice a compromised pod is making API calls despite having `automountServiceAccountToken: false`. Investigation shows the pod is using a token from a different source. Where could the token have come from, and how do you prevent this?**
    <details>
    <summary>Answer</summary>
-   Defense in depth. Network restrictions prevent access, but if bypassed, authentication stops unauthenticated users, RBAC limits what authenticated users can do, and audit logs everything.
+   Possible token sources: (1) A token was injected via environment variable from a Secret or ConfigMap. (2) The attacker obtained a token from another pod via network access. (3) A legacy ServiceAccount token Secret exists and is mounted as a volume. (4) The application was configured with credentials in code or a mounted kubeconfig. Prevention: use NetworkPolicy to block pods from reaching the API server IP, audit all Secrets for tokens and kubeconfigs, remove legacy SA token Secrets, scan environment variables for credentials, and combine `automountServiceAccountToken: false` with RBAC restrictions on the ServiceAccount. Defense in depth means restricting at both the token-mounting level and the network level.
    </details>
 
 ---

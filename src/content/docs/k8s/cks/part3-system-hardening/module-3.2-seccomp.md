@@ -97,6 +97,8 @@ CKS tests your ability to apply and create seccomp profiles.
 
 ---
 
+> **Stop and think**: A container application only needs about 40-50 system calls out of 300+ available in the Linux kernel. The rest are potential attack surface. If you set `defaultAction: SCMP_ACT_ERRNO` (deny all by default) and only allow the 50 syscalls your app needs, what percentage of the kernel's syscall attack surface have you eliminated?
+
 ## Default Seccomp Profile
 
 Kubernetes 1.22+ applies the `RuntimeDefault` profile by default when Pod Security Admission is configured.
@@ -270,6 +272,8 @@ seccompProfile:
 
 ---
 
+> **What would happen if**: You create a custom seccomp profile and place it in `/etc/seccomp/profiles/custom.json` on the node. Your pod spec references `localhostProfile: profiles/custom.json`. The pod fails to start. The profile JSON is valid. What path mistake did you make?
+
 ## Creating Custom Profiles
 
 ### Profile That Blocks ptrace
@@ -410,6 +414,8 @@ sudo journalctl | grep -i seccomp
 
 ---
 
+> **Pause and predict**: You apply a seccomp profile with `defaultAction: SCMP_ACT_KILL` instead of `SCMP_ACT_ERRNO`. Your application makes an unlisted syscall. What happens to the container process compared to using `SCMP_ACT_ERRNO`?
+
 ## Finding Syscalls Used by Application
 
 ```bash
@@ -456,28 +462,28 @@ sysdig -p "%proc.name %syscall.type" container.name=mycontainer
 
 ## Quiz
 
-1. **What is the default seccomp profile in Kubernetes 1.22+?**
+1. **An application container keeps crashing with "operation not permitted" errors. The pod has a custom seccomp profile applied. The same container runs fine without the profile. How do you identify which syscalls the profile is blocking, and what's the safest debugging approach?**
    <details>
    <summary>Answer</summary>
-   `RuntimeDefault` - The container runtime's default profile. This is applied when Pod Security Admission is configured appropriately.
+   Use `SCMP_ACT_LOG` as the default action temporarily -- this allows all syscalls but logs the ones that would have been blocked. Check kernel logs with `dmesg | grep seccomp` or `journalctl | grep seccomp` to see which syscalls are being denied. Alternatively, use `strace -c -f <command>` on a test system to enumerate all syscalls the application uses. Once you know the needed syscalls, add them to the allow list. Never debug in production by switching to `Unconfined` -- use `SCMP_ACT_LOG` to maintain visibility while temporarily allowing traffic. The safest approach is to run `strace` in a staging environment and build the profile from that data.
    </details>
 
-2. **Where should custom seccomp profiles be placed?**
+2. **During a CKS exam, you create a seccomp profile at `/var/lib/kubelet/seccomp/profiles/block-mount.json` and reference it as `localhostProfile: block-mount.json` in the pod spec. The pod enters `CreateContainerError`. What's wrong with the path?**
    <details>
    <summary>Answer</summary>
-   `/var/lib/kubelet/seccomp/` - Profiles are specified relative to this directory in pod specs.
+   The `localhostProfile` path is relative to `/var/lib/kubelet/seccomp/`, so the full path Kubernetes looks for is `/var/lib/kubelet/seccomp/block-mount.json` -- but your file is at `/var/lib/kubelet/seccomp/profiles/block-mount.json`. The correct reference is `localhostProfile: profiles/block-mount.json` (include the `profiles/` subdirectory). This is a common exam gotcha because the path is relative, not absolute. Always verify the file exists at the expected full path: `ls /var/lib/kubelet/seccomp/<localhostProfile-value>`.
    </details>
 
-3. **What does `SCMP_ACT_ERRNO` do?**
+3. **Your security team wants to block the `ptrace` syscall cluster-wide because it enables container escape techniques. You have 50 namespaces with different workloads. What's the most efficient way to enforce this without creating 50 individual seccomp profiles?**
    <details>
    <summary>Answer</summary>
-   It blocks the syscall and returns an error to the calling process. The process doesn't crash but the operation fails.
+   Use the `RuntimeDefault` seccomp profile which already blocks `ptrace` (along with ~44 other dangerous syscalls). Apply it cluster-wide by configuring Pod Security Admission with the `restricted` profile in `enforce` mode on all workload namespaces -- this requires `RuntimeDefault` or `Localhost` seccomp. Alternatively, create a single custom profile that uses `defaultAction: SCMP_ACT_ALLOW` with only `ptrace` blocked, and deploy it to all nodes via a DaemonSet. Then reference it at the pod level. The `RuntimeDefault` approach is simpler and blocks more than just ptrace, providing broader security.
    </details>
 
-4. **How do you apply a seccomp profile to a specific container in a multi-container pod?**
+4. **You have a multi-container pod with an nginx reverse proxy and a Python application. The nginx container needs `accept`, `bind`, and `listen` syscalls for networking. The Python container needs `fork` and `execve` for subprocesses. Can you apply different seccomp profiles to each container, and how?**
    <details>
    <summary>Answer</summary>
-   Set `securityContext.seccompProfile` at the container level instead of pod level. Each container can have its own profile.
+   Yes, seccomp profiles can be set at the container level, not just the pod level. Set `securityContext.seccompProfile` on each container individually: nginx gets a profile allowing network-related syscalls, Python gets a profile allowing process-related syscalls. Place each profile in `/var/lib/kubelet/seccomp/profiles/` and reference them separately. If set at both pod and container level, the container-level setting takes precedence. This follows least privilege -- each container only gets the syscalls it needs, reducing attack surface. A compromised nginx container can't fork subprocesses, and a compromised Python container can't bind to ports.
    </details>
 
 ---

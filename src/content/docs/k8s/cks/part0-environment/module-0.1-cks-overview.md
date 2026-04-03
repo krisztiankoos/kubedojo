@@ -123,6 +123,8 @@ During the exam, you may access:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: Looking at the domain weights above, why do you think Cluster Setup is only 10% while Supply Chain Security and Runtime Security are each 20%? What does this tell you about what the exam values?
+
 ### Where to Focus
 
 **60% of the exam** comes from three domains:
@@ -148,6 +150,8 @@ You must be proficient with these tools:
 | **seccomp** | System call filtering | Restrict container syscalls |
 
 ---
+
+> **Stop and think**: You have a cluster running in production with workloads deployed. Everything is "working." Now put on your security hat -- what are the first three things you would check to determine if the cluster is actually *secure*?
 
 ## Security Mindset Shift
 
@@ -234,6 +238,8 @@ Same strategy as CKA, security-focused:
 
 ---
 
+> **What would happen if**: You walked into the CKS exam having only studied CKA-level topics (RBAC basics, pod deployment, services). Which 60% of the exam would catch you completely off guard?
+
 ## Common Mistakes
 
 | Mistake | Why It Hurts | Solution |
@@ -248,28 +254,28 @@ Same strategy as CKA, security-focused:
 
 ## Quiz
 
-1. **What is the prerequisite for taking the CKS exam?**
+1. **A colleague passed the CKA two years ago but their certification expired last month. They want to register for the CKS. Can they, and what should they expect to be different from their CKA experience?**
    <details>
    <summary>Answer</summary>
-   A CKA certification — you must have passed CKA at any point (it no longer needs to be active/unexpired).
+   Yes, they can register. CKS requires that you have passed CKA at any point -- it no longer needs to be active. However, they should expect a very different exam: CKS is security-focused with tools like Trivy and Falco, covers supply chain security and runtime threat detection, and requires Linux security knowledge (AppArmor, seccomp) that CKA doesn't test. The mindset shifts from "make it work" to "make it secure."
    </details>
 
-2. **What percentage of the CKS exam covers runtime security and monitoring?**
+2. **Your team has 4 weeks to prepare for CKS. Your study plan allocates equal time to all 6 domains. A senior engineer reviews it and says this is wrong. Why?**
    <details>
    <summary>Answer</summary>
-   20%. Combined with Supply Chain Security (20%) and Microservice Vulnerabilities (20%), these three domains make up 60% of the exam.
+   Three domains -- Microservice Vulnerabilities (20%), Supply Chain Security (20%), and Runtime Security (20%) -- make up 60% of the exam. These are the "new" security-specific skills beyond CKA. The study plan should allocate more time to these high-weight domains. Cluster Setup (10%) and the other lower-weight domains build on existing CKA knowledge and need less dedicated study time.
    </details>
 
-3. **What security tool documentation is explicitly allowed during the CKS exam?**
+3. **During the CKS exam, you encounter a Falco rule task but can't remember the syntax. You try to search kubernetes.io/docs but find nothing about Falco. What went wrong?**
    <details>
    <summary>Answer</summary>
-   Trivy (aquasecurity.github.io/trivy) and Falco (falco.org/docs) documentation, in addition to standard Kubernetes docs.
+   Falco documentation is at falco.org/docs, not kubernetes.io/docs. The CKS exam explicitly allows access to Trivy docs (aquasecurity.github.io/trivy) and Falco docs (falco.org/docs) in addition to standard Kubernetes documentation. Knowing which tool documentation is available and where to find it is critical for exam success -- bookmark these URLs at the start of the exam.
    </details>
 
-4. **Why does the CKS require CKA as a prerequisite?**
+4. **An administrator says "I already know Kubernetes inside out from CKA, so CKS should be easy." Their pod runs as root, has no NetworkPolicy, and the image has 47 CVEs. What fundamental misconception do they have?**
    <details>
    <summary>Answer</summary>
-   You can't secure what you don't understand. Security requires deep operational knowledge of Kubernetes architecture, networking, and workload management that CKA provides.
+   They confuse "working" with "secure." CKA teaches you to build and maintain clusters -- CKS teaches you to harden them against attack. A pod running as root, with no NetworkPolicy, and a vulnerable image is functional but deeply insecure. CKS requires a completely different security mindset: every running pod is a potential attack vector, every open port is an entry point, and every unscanned image is a liability. Security requires new tools, new concepts (AppArmor, seccomp, supply chain), and new thinking.
    </details>
 
 ---

@@ -73,6 +73,8 @@ CKS heavily tests audit log configuration and analysis.
 
 ---
 
+> **Stop and think**: You set audit level `RequestResponse` for secrets. Now every secret creation and read logs the full secret value in plain text to your audit log. Who has access to your audit log storage? You may have just created a second copy of every secret in your cluster.
+
 ## Audit Levels
 
 ```
@@ -231,6 +233,8 @@ rules:
 
 ---
 
+> **What would happen if**: An attacker gains cluster access and their first action is `kubectl delete` on the audit policy ConfigMap and modifying the API server to disable audit logging. If audit logs are stored only locally on the control plane node, how would you detect this?
+
 ## Enabling Audit Logging
 
 ### Configure API Server
@@ -362,6 +366,8 @@ cat audit.log | jq 'select(.objectRef.resource == "secrets" and .verb == "get") 
 ```
 
 ---
+
+> **Pause and predict**: Your audit policy logs all `create` and `delete` operations on pods at `Request` level. An attacker runs `kubectl exec -it compromised-pod -- /bin/bash`. Would this appear in your audit logs? (Hint: what API operation is `exec`?)
 
 ## Real Exam Scenarios
 
@@ -545,28 +551,28 @@ current-context: audit
 
 ## Quiz
 
-1. **What's the difference between Metadata and RequestResponse audit levels?**
+1. **Your SOC team discovers unauthorized secret access in production. They check the audit logs but find secrets are logged at `RequestResponse` level -- the full secret values appear in the logs. Now the audit log storage (accessible by 20 people) contains every production password. What's the correct audit level for secrets, and how do you fix this exposure?**
    <details>
    <summary>Answer</summary>
-   Metadata logs only request metadata (user, timestamp, resource, verb). RequestResponse also logs the full request and response bodies. RequestResponse generates much larger logs.
+   Secrets should be logged at `Metadata` level only -- this records who accessed which secret, when, and from where, without logging the actual secret values. At `Request` or `RequestResponse` level, the full base64-encoded secret data appears in logs, effectively creating a second unencrypted copy of every secret accessible to anyone with log access. Fix: (1) Update the audit policy to use `level: Metadata` for secrets resources. (2) Rotate all secrets that were exposed in logs. (3) Purge or encrypt the existing audit logs containing secret values. (4) Restrict audit log access to security team only. This is a common misconfiguration that turns audit logging into a vulnerability.
    </details>
 
-2. **Why should secrets never be logged at Request or RequestResponse level?**
+2. **After a security incident, investigators search audit logs for `kubectl exec` commands but find nothing, even though they know the attacker exec'd into pods. The audit policy logs `create` and `delete` on pods at `Request` level. What's missing from the audit policy?**
    <details>
    <summary>Answer</summary>
-   Because the secret values would be logged in plain text. Anyone with access to audit logs could read all secrets. Always use Metadata level for secrets.
+   `kubectl exec` is not a `create` or `delete` on pods -- it's a `create` on the `pods/exec` subresource. The audit policy must explicitly include subresources. Add a rule: `resources: [{group: "", resources: ["pods/exec", "pods/attach", "pods/portforward"]}]` at `RequestResponse` level. Similarly, `kubectl logs` is `pods/log`. The audit policy should cover these subresources because they're the most dangerous operations an attacker performs -- getting shell access, attaching to processes, and setting up port forwards for lateral movement. Always include pod subresources in your audit policy.
    </details>
 
-3. **What API server flags are needed to enable audit logging?**
+3. **You enable audit logging on the API server, but after a week the control plane node's disk fills up and the API server crashes. The audit log is 47GB. What configuration prevents this, and what's the best practice for audit log management?**
    <details>
    <summary>Answer</summary>
-   `--audit-policy-file` (path to policy) and `--audit-log-path` (path to log file). Optionally `--audit-log-maxsize`, `--audit-log-maxbackup`, `--audit-log-maxage` for rotation.
+   Add log rotation flags: `--audit-log-maxsize=100` (100MB per file), `--audit-log-maxbackup=10` (keep 10 files), `--audit-log-maxage=30` (delete after 30 days). This caps storage at ~1GB. Also optimize the audit policy: use `level: None` for noisy, low-value events (kube-proxy watching endpoints, kubelet health checks, system:node status updates). Use `omitStages: [RequestReceived]` to skip duplicate stage logging. For production, stream audit logs to an external SIEM via webhook backend (`--audit-webhook-config-file`) instead of local files -- this prevents disk issues and provides centralized, tamper-resistant log storage.
    </details>
 
-4. **How do you find all pod exec commands in audit logs?**
+4. **An attacker with cluster access wants to cover their tracks. They modify the API server manifest to disable audit logging, then delete the audit log file. If your audit logs are only stored locally on the control plane node, is the evidence gone? What architecture prevents evidence destruction?**
    <details>
    <summary>Answer</summary>
-   `cat audit.log | jq 'select(.objectRef.subresource == "exec")'` - Pod exec is logged as a subresource of pods.
+   If logs are only stored locally, yes -- the evidence can be destroyed. The attacker modifying the API server manifest would itself be logged (briefly, before the restart), but the log file deletion removes that too. Prevention: use an audit webhook backend that streams events to an external, immutable log store in real-time. The attacker can disable future logging, but events already shipped to the external system are safe. Use both file and webhook backends for redundancy. Additionally: monitor the API server manifest with a file integrity tool, alert on audit configuration changes, and restrict SSH access to control plane nodes. The audit log is only valuable if it can't be tampered with.
    </details>
 
 ---

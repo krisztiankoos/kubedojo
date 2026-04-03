@@ -67,6 +67,8 @@ This module focuses on the security aspects of upgrades, not the mechanical proc
 
 ---
 
+> **Stop and think**: Your cluster is running Kubernetes 1.32 and the current supported versions are 1.33, 1.34, and 1.35. A critical CVE was just announced affecting all versions up to 1.34.2. Your version is out of the support window. What are your options, and how urgent is this?
+
 ## Checking Current Versions
 
 ```bash
@@ -189,6 +191,8 @@ kubectl get psp 2>&1 | grep -q "the server doesn't have" && echo "PSP already re
 ```
 
 ---
+
+> **What would happen if**: You upgrade the API server to 1.35 first (correct order), but a junior admin accidentally upgrades one worker node's kubelet to 1.35 before upgrading the controller-manager (still on 1.33). Does this violate the version skew policy? What could break?
 
 ## Version Skew Policy
 
@@ -330,6 +334,8 @@ kubeadm upgrade plan | grep -E "v1\.[0-9]+\.[0-9]+"
 
 ---
 
+> **Pause and predict**: After upgrading from 1.34 to 1.35, you run `kube-bench` and see 3 new [FAIL] results that weren't there before the upgrade. You didn't change any configuration. How is that possible?
+
 ## Managed Kubernetes Upgrades
 
 ```
@@ -387,28 +393,28 @@ kubeadm upgrade plan | grep -E "v1\.[0-9]+\.[0-9]+"
 
 ## Quiz
 
-1. **How many minor versions does Kubernetes support with security patches?**
+1. **Your security team receives a CVE advisory for a container escape vulnerability affecting Kubernetes 1.33 through 1.34.3. Your production cluster runs 1.34.1. The fix is in 1.34.4 and 1.35.0. You have a change freeze for the next two weeks. What do you recommend, and what interim mitigations could you apply?**
    <details>
    <summary>Answer</summary>
-   Three minor versions. For example, if 1.35 is current, versions 1.35, 1.34, and 1.33 receive security patches.
+   A container escape CVE is critical -- it could allow an attacker to break out of a container and access the host node. Recommend an emergency patch to 1.34.4 (patch version upgrade, minimal risk) even during the change freeze. If the freeze is absolutely unbreakable, apply interim mitigations: restrict pod security with Pod Security Admission in `enforce` mode using the `restricted` profile, ensure AppArmor/seccomp profiles are applied to all workloads, disable privileged containers, and increase monitoring with Falco rules targeting container escapes. But these are stopgaps -- the upgrade should happen as soon as possible because known CVEs get actively exploited.
    </details>
 
-2. **What component should be upgraded first in a cluster?**
+2. **After upgrading your cluster from 1.34 to 1.35, you run `kubectl get nodes` and notice worker node `node-2` shows version 1.33 -- it was missed during the upgrade. The API server is 1.35. Is this a security problem even though the cluster "works"?**
    <details>
    <summary>Answer</summary>
-   The kube-apiserver (control plane). It must always be the newest component. Then upgrade controller-manager, scheduler, and finally kubelets.
+   Yes, this is a security problem on multiple levels. First, the kubelet version skew policy allows kubelets up to 2 minor versions older than the API server, so 1.33 is technically within skew for a 1.35 API server -- but just barely. However, 1.33 won't receive security patches much longer (only 3 versions are supported), and any security fixes in 1.34 and 1.35 are not applied to that node. Second, the node may lack security features introduced in newer versions. Third, inconsistent versions make security auditing unreliable -- kube-bench results differ per node. Upgrade node-2 immediately to 1.35 to maintain a consistent security posture.
    </details>
 
-3. **How can you check if your cluster uses deprecated APIs?**
+3. **You run `kubeadm upgrade plan` and it shows an available upgrade to 1.35.0. A colleague says "just run `kubeadm upgrade apply` and we're done." What security-critical steps are they skipping before and after the upgrade?**
    <details>
    <summary>Answer</summary>
-   Check API server metrics: `kubectl get --raw /metrics | grep apiserver_requested_deprecated` or review kubectl deprecation warnings when accessing resources.
+   Before upgrade: (1) Back up etcd with `etcdctl snapshot save` -- if the upgrade fails, you need to recover. (2) Review the release notes for security-relevant changes, deprecated APIs, and removed features. (3) Check for deprecated API usage with `kubectl get --raw /metrics | grep apiserver_requested_deprecated`. (4) Verify current workloads are healthy as a baseline. After upgrade: (1) Upgrade kubelet and kubectl on the control plane node. (2) Upgrade worker nodes one at a time with drain/uncordon. (3) Run `kube-bench` to verify security configuration survived the upgrade. (4) Verify RBAC, admission controllers, and audit logging are still functioning. (5) Check that security contexts on running pods are enforced.
    </details>
 
-4. **Why is running an unsupported Kubernetes version a security risk?**
+4. **Your organization runs three clusters: dev (1.33), staging (1.34), and production (1.34). Kubernetes 1.36 is released, making 1.33 unsupported. The dev team says "it's just dev, we don't need to upgrade." Why is this thinking dangerous from a security perspective?**
    <details>
    <summary>Answer</summary>
-   Unsupported versions don't receive security patches. Known CVEs remain unpatched, leaving the cluster vulnerable to exploits.
+   Running an unsupported version in dev is dangerous because: (1) Dev clusters often have access to production secrets, container registries, and cloud credentials. An exploited CVE in dev could lead to production compromise. (2) Dev clusters are often less hardened than production, making them easier targets. (3) No security patches means known vulnerabilities accumulate over time. (4) Developers may test and deploy images from a compromised dev cluster to production. (5) Compliance requirements often apply to all environments, not just production. The upgrade path: dev to 1.34, then staging and production to 1.35, maintaining dev always at or near production version.
    </details>
 
 ---

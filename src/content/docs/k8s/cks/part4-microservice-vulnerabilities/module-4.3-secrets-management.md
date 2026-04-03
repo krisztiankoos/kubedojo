@@ -64,6 +64,8 @@ CKS heavily tests secrets security practices.
 
 ---
 
+> **Stop and think**: Run `echo "mysecretpassword" | base64` -- you get `bXlzZWNyZXRwYXNzd29yZAo=`. Now run `echo "bXlzZWNyZXRwYXNzd29yZAo=" | base64 -d`. You get the password back. If anyone with `get secrets` RBAC permission can decode every secret in the namespace, is Kubernetes actually protecting your passwords?
+
 ## Creating Secrets
 
 ### Generic Secret
@@ -180,6 +182,8 @@ spec:
 ```
 
 ---
+
+> **What would happen if**: You mount a secret as an environment variable (`env.valueFrom.secretKeyRef`) and the application crashes. The crash dump includes environment variables and gets logged to your centralized logging system. Who can now see the secret?
 
 ## Encryption at Rest
 
@@ -352,6 +356,8 @@ kubectl get clusterroles -o json | jq '.items[] | select(.rules[]?.resources[]? 
 ```
 
 ---
+
+> **Pause and predict**: You enable encryption at rest for secrets using `aescbc`. You then use `etcdctl get` to read a secret directly from etcd. Will you see the plain text or encrypted data? What about secrets that were created *before* you enabled encryption?
 
 ## Preventing Secret Exposure
 
@@ -559,28 +565,28 @@ EOF
 
 ## Quiz
 
-1. **Is base64 encoding encryption?**
+1. **A junior developer commits a Kubernetes Secret manifest to Git. The manifest contains `data: password: bXlwYXNzd29yZA==`. They say "it's fine, the password is encrypted." Why is this a security incident, and what's the immediate remediation?**
    <details>
    <summary>Answer</summary>
-   No! Base64 is reversible encoding, not encryption. Anyone can decode it with `base64 -d`. Secrets need encryption at rest for actual security.
+   Base64 is encoding, not encryption -- anyone can decode it (`echo "bXlwYXNzd29yZA==" | base64 -d` reveals "mypassword"). This is a credential leak. Immediate remediation: (1) Rotate the compromised password immediately. (2) Remove the secret from Git history (not just the latest commit -- use `git filter-branch` or BFG Repo Cleaner). (3) Consider the password permanently compromised since Git history persists in forks and caches. Prevention: use SealedSecrets or SOPS to encrypt secrets before committing, or use external secret managers (Vault, AWS Secrets Manager) that store references rather than values.
    </details>
 
-2. **Where should encryption config be stored?**
+2. **During a security audit, you discover that application pods use `env.valueFrom.secretKeyRef` to inject database passwords. The auditor flags this as a risk. The developer says "environment variables are standard practice." Who is right, and what's the concrete attack scenario?**
    <details>
    <summary>Answer</summary>
-   On the control plane node, typically `/etc/kubernetes/enc/encryption-config.yaml`, and referenced by API server flag `--encryption-provider-config`.
+   The auditor is right. Environment variables are visible in `/proc/<pid>/environ`, can leak to child processes, appear in crash dumps, and are often captured in logging systems and error reporting tools. Concrete attack: if the application crashes and the error handler logs environment variables (common in frameworks like Django, Rails), the database password ends up in the logging system accessible to anyone with log access. Volume mounts are preferred because they're stored in tmpfs (memory-only), respect file permissions, auto-update when secrets change, and don't leak through `/proc` or crash dumps. Mount secrets as files and read them at runtime.
    </details>
 
-3. **Why are volume mounts preferred over environment variables for secrets?**
+3. **You enable encryption at rest for secrets with the `aescbc` provider. A compliance auditor asks you to prove all secrets are encrypted in etcd. You run `etcdctl get /registry/secrets/default/db-password` and see encrypted data. But when you check `/registry/secrets/kube-system/coredns-token`, you see plain text. What happened?**
    <details>
    <summary>Answer</summary>
-   Volume mounts: stored in tmpfs (memory), have file permissions, auto-update when secret changes. Environment variables: visible in /proc, may leak to child processes, often logged.
+   Enabling encryption at rest only affects newly created or updated secrets. Existing secrets created before encryption was enabled remain stored in plain text. The `db-password` was created after encryption, so it's encrypted. The `coredns-token` existed before and was never re-written. Fix: re-encrypt all existing secrets by reading and replacing them: `kubectl get secrets -A -o json | kubectl replace -f -`. This forces each secret to be re-written through the API server, which now encrypts them. Always verify with `etcdctl` after re-encryption. The `identity` provider in the encryption config serves as a fallback to read these old unencrypted secrets.
    </details>
 
-4. **How do you verify secrets are encrypted in etcd?**
+4. **Your cluster stores database credentials, API keys, and TLS certificates as Kubernetes Secrets. An attacker gains `get secrets` RBAC permission in the `production` namespace. What is the blast radius, and what layers of defense should have limited it?**
    <details>
    <summary>Answer</summary>
-   Read directly from etcd using etcdctl. If encrypted, you'll see random bytes. If not encrypted, you'll see the secret values in plain text.
+   Blast radius: the attacker can read every secret in the `production` namespace -- all database passwords, API keys, and TLS private keys. They can decode base64 values instantly. Defense layers that should have limited this: (1) Use `resourceNames` in RBAC to restrict access to specific secrets, not all secrets in the namespace. (2) Enable encryption at rest so secrets are encrypted in etcd backups. (3) Use an external secrets manager (Vault, AWS Secrets Manager) so Kubernetes only stores references, not actual values. (4) Mount secrets as volumes (not env vars) to limit exposure paths. (5) Audit secret access with audit logging to detect unauthorized reads. No single layer is sufficient -- secrets management requires defense in depth.
    </details>
 
 ---

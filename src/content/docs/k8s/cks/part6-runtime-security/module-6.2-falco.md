@@ -120,6 +120,8 @@ sudo journalctl -u falco -f
 
 ---
 
+> **Stop and think**: Kubernetes audit logs tell you WHO accessed WHAT through the API. Falco tells you WHAT HAPPENED inside containers at the system call level. If an attacker `kubectl exec`s into a pod and reads `/etc/shadow`, which tool detects the exec and which detects the file read?
+
 ## Falco Architecture
 
 ```
@@ -278,6 +280,8 @@ inbound            # Inbound network connection
 
 ---
 
+> **What would happen if**: You write a Falco rule to detect shells spawned in containers, but you set the priority to `DEBUG` instead of `WARNING`. Would your SOC team see the alert, and why does priority level matter for incident response?
+
 ## Custom Rules
 
 ### Creating Custom Rules
@@ -406,6 +410,8 @@ DEBUG       # Debug-level messages
 ```
 
 ---
+
+> **Pause and predict**: You deploy Falco and immediately see thousands of alerts about shells in containers. Most are from legitimate health check scripts that run `sh -c 'curl localhost:8080/health'`. How do you tune Falco to distinguish between legitimate shells and attacker shells without disabling the rule entirely?
 
 ## Real Exam Scenarios
 
@@ -553,28 +559,28 @@ cat /var/log/falco/events.json | jq 'select(.rule | contains("shell"))'
 
 ## Quiz
 
-1. **What does Falco monitor to detect threats?**
+1. **Your SOC team detects an alert: "Shell spawned in container (user=root container=web-app shell=/bin/bash parent=python3)". The web application is Python-based and should never spawn a shell. What does this alert tell you about what's happening, and what's your immediate response?**
    <details>
    <summary>Answer</summary>
-   Falco monitors system calls (syscalls) from the kernel. It intercepts calls like open, exec, connect, etc. and evaluates them against rules.
+   This alert indicates a likely compromise: someone (or something) has gained code execution in the web-app container and spawned an interactive bash shell as root. The parent process being `python3` suggests the attacker exploited a vulnerability in the Python application (possibly remote code execution via unsanitized input). Immediate response: (1) Apply a NetworkPolicy to isolate the pod (block all egress to prevent data exfiltration). (2) Capture evidence: pod logs, `kubectl describe pod`, Falco alert context. (3) Check for lateral movement: review what ServiceAccount token is mounted, what RBAC permissions it has. (4) Do NOT delete the pod yet -- preserve it for forensics. (5) Check audit logs for who/what initially accessed the pod.
    </details>
 
-2. **What's the difference between a Falco rule and a macro?**
+2. **During a CKS exam, you're asked to write a Falco rule that detects when any process reads `/etc/shadow` inside a container. You write the condition but get syntax errors. What are the required fields in a Falco rule, and write the correct rule structure?**
    <details>
    <summary>Answer</summary>
-   A rule defines a complete detection with condition, output, and priority. A macro is a reusable condition fragment that can be used in multiple rules.
+   A complete Falco rule requires: `rule` (name), `desc` (description), `condition` (when to trigger), `output` (what to log), and `priority` (severity level). The correct rule: `- rule: Shadow file read in container`, `desc: Detect reading shadow file`, `condition: open_read and container and fd.name = /etc/shadow`, `output: "Shadow file read (user=%user.name container=%container.name file=%fd.name)"`, `priority: WARNING`. Key syntax: `open_read` is a Falco macro for read file operations, `container` filters to containerized processes, and `fd.name` matches the file path. Place this in `/etc/falco/rules.d/custom.yaml` or deploy via Helm `customRules` to persist across restarts.
    </details>
 
-3. **How do you add custom Falco rules without modifying the default rules file?**
+3. **After deploying Falco, you get 5,000 alerts per hour about shells in containers. Investigation reveals 90% are legitimate health check scripts running `sh -c 'curl localhost/health'`. How do you reduce noise without disabling shell detection entirely?**
    <details>
    <summary>Answer</summary>
-   Create files in `/etc/falco/rules.d/` directory. Falco automatically loads all YAML files from this directory.
+   Add exceptions to the rule condition to exclude known-good patterns. Options: (1) Create a macro for allowed parent processes: `and not (proc.pname in (health-check, liveness-probe))`. (2) Exclude specific containers: `and not container.image contains "health-checker"`. (3) Filter by parent command line: `and not proc.pcmdline contains "curl localhost/health"`. (4) Use Falco's `exceptions` field (Falco 0.28+) which provides structured exception lists. Best practice: create a `falco_rules.local.yaml` with an `append` rule that adds exceptions without modifying the original rule. This way, when Falco updates its default rules, your exceptions survive. Alert fatigue is a real security risk -- noisy alerts train teams to ignore them.
    </details>
 
-4. **What Falco fields identify Kubernetes context?**
+4. **Your team modifies Falco rules by exec-ing into the Falco pod and editing `/etc/falco/falco_rules.yaml` directly. After a node restart, all custom rules are gone. What's the correct way to persist Falco rule changes in a Kubernetes environment?**
    <details>
    <summary>Answer</summary>
-   `k8s.pod.name`, `k8s.ns.name`, `k8s.deployment.name`, `container.name`, `container.id`, `container.image`.
+   Never edit files inside pods -- those changes are lost when pods restart, are upgraded, or get rescheduled. Correct approaches: (1) Use Helm values with `customRules` to define rules in your Helm release values file, then `helm upgrade` to apply. (2) Use ConfigMaps mounted into the Falco pods. (3) Place custom rules in `/etc/falco/rules.d/` via a DaemonSet init container. For the exam, the Helm approach is most reliable: create a values file with your rules under `customRules:` and run `helm upgrade falco falcosecurity/falco --reuse-values -f custom-rules.yaml -n falco`. This survives pod restarts, node reboots, and Falco version upgrades.
    </details>
 
 ---

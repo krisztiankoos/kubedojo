@@ -252,6 +252,8 @@ spec:
     - port: 443
 ```
 
+> **What would happen if**: You create a default-deny-egress NetworkPolicy but forget to add a DNS allow rule. You then deploy a new application that connects to `postgres.database.svc.cluster.local`. What error does the application see, and why is this confusing to debug?
+
 ### Pattern 5: Allow DNS (Critical!)
 
 ```yaml
@@ -279,6 +281,8 @@ spec:
 ```
 
 ---
+
+> **Stop and think**: You apply a default-deny-ingress NetworkPolicy to a namespace, then create an allow rule for `app: frontend` to reach `app: api`. But a new pod `app: debug` deployed in the same namespace can still reach `app: api`. Why? (Hint: think about how NetworkPolicies are additive.)
 
 ## Combining Selectors
 
@@ -423,6 +427,8 @@ spec:
     - port: 5432
 ```
 
+> **Pause and predict**: In the multi-tier policy above, the web tier allows ingress only from the ingress-nginx namespace. But what if an attacker compromises a pod in the ingress-nginx namespace that is *not* the ingress controller? Would they get access to the web tier?
+
 ### Scenario 3: Block Metadata Service
 
 ```yaml
@@ -505,28 +511,28 @@ encryption:
 
 ## Quiz
 
-1. **What happens if a NetworkPolicy specifies `policyTypes: [Ingress]` but has no `ingress` rules?**
+1. **A security audit reveals that your production namespace has a default-deny-ingress NetworkPolicy, but the API pod is still receiving traffic from pods in the `kube-system` namespace. The team is confused because the deny-all should block everything. What's happening?**
    <details>
    <summary>Answer</summary>
-   All ingress traffic to selected pods is denied. Specifying a policyType with no rules means "deny all for this type."
+   A NetworkPolicy with `policyTypes: [Ingress]` and no ingress rules denies all ingress to selected pods *from within the NetworkPolicy's enforcement scope*. However, if your CNI plugin doesn't enforce policies on system namespaces, or if there's a second NetworkPolicy that allows traffic from `kube-system` (policies are additive -- the union of all rules applies), traffic will still flow. Check for additional policies with `kubectl get networkpolicies -n production` and verify your CNI enforces policies on all namespaces.
    </details>
 
-2. **How do you allow traffic from any pod in a specific namespace?**
+2. **You write a NetworkPolicy to allow the `monitoring` namespace to scrape metrics from production pods. It uses `namespaceSelector: {matchLabels: {name: monitoring}}`. Prometheus can't reach the pods. You verify Prometheus is running in the `monitoring` namespace. What did you miss?**
    <details>
    <summary>Answer</summary>
-   Use `namespaceSelector` with labels matching that namespace. The namespace must have a label to select on, e.g., `namespaceSelector: {matchLabels: {name: monitoring}}`.
+   The `monitoring` namespace likely doesn't have the label `name: monitoring`. Kubernetes namespaces don't automatically get a `name` label matching their name (though `kubernetes.io/metadata.name` is auto-applied in newer versions). You need to explicitly label it: `kubectl label namespace monitoring name=monitoring`. This is a common exam gotcha -- always verify namespace labels with `kubectl get namespace monitoring --show-labels` before writing namespaceSelector rules.
    </details>
 
-3. **What's the difference between two `from` items vs two selectors in one `from` item?**
+3. **During a penetration test, the tester creates a pod in the `production` namespace and successfully curls the database pod. Your NetworkPolicy allows ingress to the database only from pods with `app: api`. The tester's pod has no labels. How did they get through?**
    <details>
    <summary>Answer</summary>
-   Two `from` items = OR (match either). Two selectors in one item = AND (match both). This is critical for complex policies.
+   Check whether you have separate `from` items (OR logic) versus combined selectors (AND logic) in your policy. If the policy has `- podSelector: {matchLabels: {app: api}}` and `- namespaceSelector: {}` as separate list items, it means "from pods labeled `app: api` OR from any namespace" -- the OR makes it too permissive. To require both, put them in the same item: `- podSelector: {matchLabels: {app: api}}` combined with `namespaceSelector` in a single `from` entry. Also verify the policy actually selects the database pod with the correct `podSelector`.
    </details>
 
-4. **Why do egress policies often break DNS resolution?**
+4. **After applying a default-deny-egress NetworkPolicy, your application pods can't connect to external APIs. You add an egress rule allowing `0.0.0.0/0`. The pods still can't connect -- `curl` returns "Could not resolve host." What's the root cause?**
    <details>
    <summary>Answer</summary>
-   DNS uses UDP port 53 to kube-dns pods. Egress policies that don't explicitly allow this block DNS, breaking name resolution for the affected pods.
+   Even though you allowed all egress IP traffic, DNS resolution uses UDP port 53 to kube-dns pods in the `kube-system` namespace. Without an explicit DNS egress rule, pods can't resolve hostnames, so all connections to domain names fail (even though IP-based connections would work). Add a DNS egress rule allowing UDP/TCP port 53 to kube-dns pods. This is the most common NetworkPolicy mistake and catches many CKS candidates.
    </details>
 
 ---

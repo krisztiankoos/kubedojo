@@ -70,6 +70,8 @@ PSA replaced PodSecurityPolicy (removed in Kubernetes 1.25). This is a critical 
 
 ---
 
+> **Stop and think**: You enable Pod Security Admission in `enforce` mode with the `restricted` profile on the `kube-system` namespace. What happens to your control plane components (kube-proxy, CoreDNS, CNI pods) that need privileged access?
+
 ## PSA Modes
 
 ```
@@ -184,6 +186,8 @@ containers:
 
 ---
 
+> **What would happen if**: You label a namespace with `pod-security.kubernetes.io/enforce: baseline` and `pod-security.kubernetes.io/warn: restricted`. A developer deploys a pod that passes `baseline` but fails `restricted`. Does the pod run? What does the developer see?
+
 ## Practical Examples
 
 ### Create Restricted Namespace
@@ -285,6 +289,8 @@ kubectl label namespace kube-system pod-security.kubernetes.io/enforce=privilege
 ```
 
 ---
+
+> **Pause and predict**: Your cluster has 50 namespaces with no PSA labels. You want to enforce `restricted` everywhere. If you apply the label to all namespaces at once, what percentage of existing pods would likely be rejected on recreation? What's the safer migration path?
 
 ## Migration Strategy
 
@@ -423,28 +429,28 @@ kubectl apply -f pod.yaml -n production --dry-run=server
 
 ## Quiz
 
-1. **What are the three Pod Security Standards?**
+1. **A developer deploys a pod to the `production` namespace and gets: "violates PodSecurity 'restricted:latest': allowPrivilegeEscalation != false." They fix that but hit another error about `runAsNonRoot`. How many fields total does the `restricted` profile require, and what's the best way to avoid this one-at-a-time debugging?**
    <details>
    <summary>Answer</summary>
-   Privileged (no restrictions), Baseline (prevents known escalations), and Restricted (maximum security). Each level is progressively more secure.
+   The `restricted` profile requires: `runAsNonRoot: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: ["ALL"]`, `seccompProfile.type: RuntimeDefault` or `Localhost`, plus no `hostNetwork`, `hostPID`, `hostIPC`, or `privileged`. PSA validates each independently, so developers hit errors one at a time. The best approach is providing a secure pod template that satisfies all restricted requirements at once. Use `kubectl --dry-run=server` to validate before deploying, or set `warn: restricted` alongside `enforce: baseline` so developers see all warnings upfront before restricted enforcement is enabled.
    </details>
 
-2. **What's the difference between enforce, warn, and audit modes?**
+2. **Your team rolls out `pod-security.kubernetes.io/enforce: restricted` to the `production` namespace. Eight of twelve deployments break immediately. Management says PSA is too disruptive. What migration strategy would have prevented this?**
    <details>
    <summary>Answer</summary>
-   Enforce: Reject violating pods. Warn: Allow but show warning. Audit: Log to audit log but allow. You can use different profiles for each mode.
+   Use a three-phase migration: Phase 1 -- Apply `audit: restricted` and `warn: restricted` (no enforcement). This logs violations and warns developers without blocking pods. Review audit logs to see what fails. Phase 2 -- Fix pod specs across teams (add security contexts, non-root images, drop capabilities). Phase 3 -- Apply `enforce: baseline` first (catches the worst issues), then gradually upgrade to `enforce: restricted` per namespace as pods are remediated. The key mistake was jumping directly to enforcement. The warn/audit modes exist precisely for gradual migration.
    </details>
 
-3. **What security context fields are required for the restricted profile?**
+3. **During an incident response, your security team needs to deploy a privileged debug container in a namespace with `enforce: restricted`. PSA blocks it. How do you get the debug capabilities without weakening the namespace's security policy?**
    <details>
    <summary>Answer</summary>
-   runAsNonRoot: true, allowPrivilegeEscalation: false, capabilities.drop: ["ALL"], and seccompProfile.type: RuntimeDefault (or Localhost).
+   Never remove the PSA label from the compromised namespace -- that weakens security during active investigation. Instead: (1) Use `kubectl debug node/<node-name> --image=busybox` which deploys in a system namespace with elevated privileges. (2) Create a dedicated `incident-response` namespace with `privileged` PSA that is normally empty and heavily audited. (3) Configure PSA exemptions in the admission configuration for specific incident response ServiceAccounts. (4) Deploy debug pods in `kube-system` which should have `privileged` PSA. These approaches maintain production security while enabling investigation.
    </details>
 
-4. **How do you apply PSA to a namespace?**
+4. **You accidentally label `kube-system` with `enforce: restricted`. CoreDNS pods are terminated and DNS fails cluster-wide. New pods can't pull images because they can't resolve registry hostnames. How do you recover?**
    <details>
    <summary>Answer</summary>
-   Using labels: `pod-security.kubernetes.io/enforce: <profile>` and optionally `-version: latest` on the namespace.
+   Remove the label immediately: `kubectl label namespace kube-system pod-security.kubernetes.io/enforce-` (trailing dash removes it). CoreDNS should self-heal once the restriction is lifted. If `kubectl` itself fails due to DNS issues, access the API server directly via IP: `kubectl --server=https://<api-server-ip>:6443 label namespace kube-system pod-security.kubernetes.io/enforce-`. The lesson: `kube-system` must use `privileged` PSA because system components (kube-proxy, CNI, CoreDNS) legitimately need elevated permissions. Apply `restricted` only to workload namespaces, never system namespaces.
    </details>
 
 ---

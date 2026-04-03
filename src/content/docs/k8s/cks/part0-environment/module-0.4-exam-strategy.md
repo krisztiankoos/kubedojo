@@ -76,6 +76,8 @@ This module adapts the three-pass strategy for security-specific challenges.
 
 ---
 
+> **Stop and think**: You open the CKS exam and the first task asks you to write a custom Falco rule to detect cryptomining. It's worth 7% of the total score. Do you tackle it immediately or skip it? Why?
+
 ## Task Classification
 
 Learn to recognize task complexity in seconds:
@@ -256,6 +258,10 @@ spec:
 
 ---
 
+> **Pause and predict**: You've completed Pass 1 in 45 minutes and scored an estimated 35%. You have 75 minutes left. Is that on track to pass, or should you be worried?
+
+> **What would happen if**: You spend 20 minutes on a complex Falco rule task during Pass 1, get it partially working, but now have only 55 minutes for the remaining 12 tasks. Calculate your likely final score versus the 67% passing threshold.
+
 ## When to Skip
 
 **Skip immediately if**:
@@ -316,28 +322,28 @@ trivy image <image>  # Scans correctly?
 
 ## Quiz
 
-1. **In the three-pass strategy, what tasks should you do first?**
+1. **You're 30 minutes into the CKS exam. You've completed 6 quick tasks (RBAC fix, two NetworkPolicies, securityContext addition, AppArmor annotation, Trivy scan). You encounter a task asking you to create a seccomp profile from scratch. Which pass does this belong to, and what do you do next?**
    <details>
    <summary>Answer</summary>
-   Quick wins (Pass 1): Simple RBAC fixes, basic NetworkPolicies, securityContext additions, AppArmor annotation additions. Tasks taking 1-3 minutes each.
+   Creating a seccomp profile from scratch is a Pass 2 (medium) task, typically taking 4-5 minutes. Since you're still in Pass 1 territory at 30 minutes, you should flag this task and continue scanning for remaining quick wins (1-3 minute tasks). Return to the seccomp task during Pass 2 when you've exhausted all quick wins. This maximizes your points-per-minute in the critical first hour.
    </details>
 
-2. **How much time should you reserve for Pass 3 (complex tasks)?**
+2. **At the 90-minute mark, you've completed 12 of 17 tasks. The remaining 5 include: writing a custom Falco rule, investigating a runtime incident, a multi-namespace NetworkPolicy, fixing kube-bench failures, and configuring Pod Security Admission. You have 30 minutes. How do you prioritize?**
    <details>
    <summary>Answer</summary>
-   20-30 minutes. Complex tasks like Falco rules and incident investigation need more time. But don't start here—earn points with quick wins first.
+   With 30 minutes left, prioritize by points-per-minute: kube-bench failures (5 min, follow remediation steps) and Pod Security Admission (4-5 min, label namespaces) are medium tasks -- do these first. The multi-namespace NetworkPolicy (5-6 min) is next if time permits. Save Falco rules and incident investigation for last since they're the most time-consuming (7-10+ min each). Reserve 5 minutes at the end for verification of completed tasks. You already have ~70% if 12 tasks are correct -- focus on cementing the pass, not perfection.
    </details>
 
-3. **What should you do if you encounter a completely unfamiliar task?**
+3. **During the exam, you create a NetworkPolicy but forget to verify it. You move on and complete 3 more tasks. Later you realize the NetworkPolicy had a label mismatch and wasn't actually selecting any pods. What was the cost of skipping verification?**
    <details>
    <summary>Answer</summary>
-   Flag it and skip. Return in Pass 3 if time permits. Spending 15 minutes on one task you can't solve wastes time better spent on tasks you can complete.
+   A NetworkPolicy that doesn't select any pods effectively does nothing -- it scores zero. You lost the full point value of that task. Worse, you lost the 30 seconds it would have taken to verify (`kubectl describe networkpolicy` and `kubectl exec` to test connectivity). Always verify before moving on: check that pods are selected, test connectivity, confirm RBAC with `kubectl auth can-i`, or verify security contexts with `kubectl get pod -o yaml`. The cost of not verifying is always higher than the time spent verifying.
    </details>
 
-4. **Why verify each task before moving on?**
+4. **A friend says "CKS is open-book, so I don't need to memorize anything -- I'll just look everything up during the exam." They score 45% and fail. What went wrong with their strategy?**
    <details>
    <summary>Answer</summary>
-   Partial solutions don't score. A NetworkPolicy that doesn't apply, a pod that doesn't run, or RBAC that doesn't work scores zero. Verification catches these.
+   While CKS allows access to documentation, looking everything up is far too slow under time pressure. With ~15-20 tasks in 120 minutes, you average 6-8 minutes per task. If each lookup takes 2-3 minutes, you lose half your time to navigation. You need security context fields, NetworkPolicy patterns, common Trivy/Falco commands, and kube-bench remediation steps in muscle memory. Use documentation for specific syntax details or edge cases, not for basic patterns. Practice until common tasks are automatic, then use docs as a reference, not a tutorial.
    </details>
 
 ---

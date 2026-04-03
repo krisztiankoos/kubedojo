@@ -71,6 +71,8 @@ CKS tests immutable container configuration as a core security practice.
 
 ---
 
+> **Stop and think**: An attacker compromises your application and tries to install a cryptominer binary in the container. With `readOnlyRootFilesystem: true`, the write fails. But what if there's an emptyDir mounted at `/tmp`? Can the attacker write the cryptominer there instead?
+
 ## Implementing Immutable Containers
 
 ### Read-Only Root Filesystem
@@ -186,6 +188,8 @@ ENTRYPOINT ["/myapp"]
 
 ---
 
+> **What would happen if**: You switch from `ubuntu:22.04` (850MB, 200+ packages) to `gcr.io/distroless/static` (2MB, no packages) as your base image. An attacker gets code execution. What tools do they have available for reconnaissance and lateral movement?
+
 ## Non-Root Containers
 
 ### Configure Non-Root
@@ -298,6 +302,8 @@ spec:
 ```
 
 ---
+
+> **Pause and predict**: You enforce `readOnlyRootFilesystem: true` on all pods. A developer reports their application crashes because it writes to `/var/log/app.log`. Rather than mounting an emptyDir, they ask "can we just set readOnlyRootFilesystem to false for this one container?" What's the security cost of that exception?
 
 ## Enforcing Immutability
 
@@ -519,28 +525,28 @@ kubectl delete pod immutable-test
 
 ## Quiz
 
-1. **What does readOnlyRootFilesystem: true prevent?**
+1. **An attacker compromises a web application running with `readOnlyRootFilesystem: true`. They try to write a web shell to `/var/www/html/shell.php` -- it fails. They try writing a cryptominer to `/usr/local/bin/miner` -- it fails. But they notice `/tmp` is writable (emptyDir mount) and write their tools there. What additional control prevents execution from `/tmp`?**
    <details>
    <summary>Answer</summary>
-   It prevents any writes to the container's root filesystem. This blocks malware installation, configuration tampering, and web shell creation. Applications can still write to mounted volumes.
+   `readOnlyRootFilesystem` blocks writes to the root filesystem, but emptyDir mounts are writable by design. To prevent execution from `/tmp`: (1) Mount the emptyDir with `noexec` option (not natively supported in Kubernetes, but achievable via seccomp/AppArmor profiles that deny `execve` from `/tmp` paths). (2) Use a seccomp profile that blocks `execve` for non-whitelisted paths. (3) Use an AppArmor profile with `deny /tmp/** x,` to deny execution from tmp. (4) Drop all capabilities so the process can't execute new binaries even if written. (5) Combine with Falco rules to detect any execution from `/tmp`. Defense in depth: `readOnlyRootFilesystem` + `noexec mounts` + `seccomp` + `capabilities drop ALL` makes exploitation extremely difficult.
    </details>
 
-2. **Why combine read-only filesystem with non-root?**
+2. **Your team wants to make all containers immutable but 15 out of 80 applications write to the filesystem at runtime (logs, temp files, caches, session data). The developers say immutability is "impossible" for their apps. Design a pragmatic approach that achieves immutability without rewriting the applications.**
    <details>
    <summary>Answer</summary>
-   Defense in depth. Read-only prevents file modifications. Non-root prevents privileged actions. Together, they significantly limit what an attacker can do even after gaining code execution.
+   Set `readOnlyRootFilesystem: true` on all 80 containers and mount emptyDir volumes only for the specific directories each application writes to (`/tmp`, `/var/log/app`, `/var/cache`, `/var/run`). This makes the root filesystem immutable while allowing writes to well-defined, minimal locations. Key: mount the minimum number of writable paths. For logging, consider switching to stdout/stderr (Kubernetes captures these automatically) instead of file logging, eliminating the need for a writable `/var/log`. For session data, use Redis or a database instead of filesystem sessions. For caches, emptyDir is fine -- it's ephemeral anyway. This approach gives you 80/80 immutable containers without any application rewrites.
    </details>
 
-3. **How do you allow writes for applications with read-only filesystem?**
+3. **During forensic investigation of a compromised container, you find that `readOnlyRootFilesystem` was set to `true` but the attacker still managed to modify files. The container has emptyDir mounts at `/tmp` and `/var/cache`. What does the investigation scope narrow down to, and why is this a security advantage of immutability?**
    <details>
    <summary>Answer</summary>
-   Mount emptyDir volumes for directories the application needs to write to (like /tmp, /var/cache). These directories become writable while the rest of the filesystem stays read-only.
+   With `readOnlyRootFilesystem: true`, the attacker can ONLY have modified files in the two writable mounts: `/tmp` and `/var/cache`. This dramatically narrows the forensic investigation from "check every file in the entire filesystem" to "check only these two directories." You immediately know the attacker couldn't have modified application binaries, system libraries, configuration files, or cron jobs. Run `find /tmp /var/cache -mmin -60 -type f` to find recently modified files. This is the security advantage: immutability doesn't just prevent attacks -- it makes investigations faster and more conclusive by constraining where modifications can occur.
    </details>
 
-4. **What's the advantage of distroless images for immutability?**
+4. **A security architect proposes using distroless images for all microservices. An operator objects: "How do we debug production issues without a shell?" A developer adds: "How do we install hotfixes?" Address both concerns while maintaining the security benefits of distroless.**
    <details>
    <summary>Answer</summary>
-   Distroless images have no shell or package manager, so attackers can't easily install tools or explore the system. They contain only the application runtime, minimizing attack surface.
+   For debugging: use `kubectl debug -it <pod> --image=busybox --target=<container>` to create an ephemeral debug container that shares the target's process and network namespaces. This gives you a full shell with debugging tools without modifying the production container. For hotfixes: you don't install hotfixes in running containers -- that's the point of immutability. Instead, build a new image with the fix, push it to the registry, and roll out a deployment update. This takes minutes with CI/CD and ensures the fix is reproducible, tested, and tracked in version control. The "no shell" concern is a feature, not a limitation: if you can't get a shell, neither can an attacker. Distroless images reduce the attack surface by 99%+ while modern Kubernetes tooling provides all the debugging capabilities you need.
    </details>
 
 ---

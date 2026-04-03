@@ -114,6 +114,8 @@ spec:
 # - Exploits that rely on privilege escalation
 ```
 
+> **Stop and think**: A container runs as root by default unless you explicitly set `runAsNonRoot: true`. But many popular images (nginx, redis, postgres) are built to run as root. What happens when you enforce `runAsNonRoot: true` on these images, and what's the proper fix?
+
 ### readOnlyRootFilesystem
 
 ```yaml
@@ -217,6 +219,8 @@ spec:
 ```
 
 ---
+
+> **What would happen if**: You set `capabilities: drop: ["ALL"]` on a container that needs to bind to port 80. The container crashes with "permission denied" on startup. What single capability do you need to add back, and why is the "drop all, add back" approach safer than the default?
 
 ## Complete Secure Pod Example
 
@@ -370,6 +374,8 @@ EOF
 
 ---
 
+> **Pause and predict**: You deploy a pod with `readOnlyRootFilesystem: true` and `runAsNonRoot: true`. The application writes temporary files to `/tmp` and logs to `/var/log/app/`. Without any volume mounts, which writes will fail and why?
+
 ## Debugging Security Context Issues
 
 ```bash
@@ -416,33 +422,28 @@ kubectl describe pod mypod | grep -i error
 
 ## Quiz
 
-1. **What happens if you set runAsNonRoot: true but the image runs as root?**
+1. **You deploy an nginx pod with `runAsNonRoot: true` but without specifying `runAsUser`. The pod fails with "container has runAsNonRoot and image will run as root." A developer says "just remove runAsNonRoot." What's the correct fix that maintains security?**
    <details>
    <summary>Answer</summary>
-   The pod fails to start with error "container has runAsNonRoot and image will run as root". You must also specify runAsUser with a non-zero UID.
+   Don't remove `runAsNonRoot` -- add `runAsUser: 1000` (or any non-zero UID) to force the container to run as a non-root user. The nginx official image defaults to root, so `runAsNonRoot: true` correctly catches this. Better yet, use the `nginx:alpine` image with a non-root user configured, or build a custom image with `USER 1000` in the Dockerfile. The `runAsNonRoot` check is a safety net -- it validates at pod admission time that the container won't run as UID 0, preventing privilege escalation if an attacker compromises the application.
    </details>
 
-2. **What does allowPrivilegeEscalation: false prevent?**
+2. **During a security audit, you find a container running with all default Linux capabilities (14 capabilities including NET_RAW, SYS_CHROOT, and SETUID). The application only serves HTTP on port 8080. A penetration tester uses NET_RAW to perform ARP spoofing within the pod network. How should the security context be configured to prevent this?**
    <details>
    <summary>Answer</summary>
-   It prevents setuid/setgid binaries from gaining additional privileges and blocks execve from gaining more capabilities than the parent process.
+   Use `capabilities: drop: ["ALL"]` to remove all 14 default capabilities. Since the app runs on port 8080 (above 1024), it doesn't even need `NET_BIND_SERVICE`. The "drop all, add back only what's needed" approach is the gold standard. NET_RAW enables packet crafting and ARP spoofing, SETUID enables privilege escalation, and SYS_CHROOT can be used for container escape techniques. By dropping all capabilities, the penetration tester's ARP spoofing attack is blocked because NET_RAW is unavailable. Always combine with `allowPrivilegeEscalation: false` to prevent regaining capabilities through setuid binaries.
    </details>
 
-3. **How do you drop all Linux capabilities and add only NET_BIND_SERVICE?**
+3. **Your application writes logs to `/var/log/app/`, caches data in `/tmp/`, and needs to update `/etc/nginx/conf.d/` at startup. You set `readOnlyRootFilesystem: true`. The pod crashes. What emptyDir volumes do you need, and is there a path you should NOT make writable?**
    <details>
    <summary>Answer</summary>
-   ```yaml
-   securityContext:
-     capabilities:
-       drop: ["ALL"]
-       add: ["NET_BIND_SERVICE"]
-   ```
+   Mount emptyDir volumes at `/var/log/app/` and `/tmp/` for logs and cache. For `/etc/nginx/conf.d/`, mount an emptyDir there too if nginx must write configs at startup. However, be cautious about making `/etc/` paths writable -- an attacker who compromises the application could modify nginx configuration to redirect traffic or expose sensitive data. The better approach is to use an initContainer to generate configs into a shared emptyDir volume, then mount it read-only in the main container. `readOnlyRootFilesystem: true` is powerful because it prevents attackers from writing malware, scripts, or modified binaries to the container filesystem.
    </details>
 
-4. **What extra configuration is needed with readOnlyRootFilesystem: true?**
+4. **A multi-container pod has security context set at both pod and container level. The pod-level sets `runAsUser: 1000`, but one container sets `runAsUser: 0` (root). Which setting takes effect for that container, and how do you prevent individual containers from overriding pod-level security?**
    <details>
    <summary>Answer</summary>
-   You need to mount emptyDir volumes for any paths the application needs to write to (like /tmp, /var/cache, /var/run).
+   The container-level setting wins -- that container runs as root (UID 0) despite the pod-level setting of 1000. Container-level security context always overrides pod-level for the same field. To prevent this override, use Pod Security Admission with the `restricted` profile in `enforce` mode on the namespace. PSA validates the final effective security context (including container-level overrides) and rejects pods where any container runs as root. This is why security contexts alone are insufficient -- they can be set by anyone who can create pods. PSA provides the policy enforcement layer that prevents bypasses.
    </details>
 
 ---
