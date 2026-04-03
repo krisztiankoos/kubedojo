@@ -125,6 +125,8 @@ CRI defines how kubelet communicates with container runtimes. Without CRI, kubel
 └────────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: Why does Kubernetes use a gRPC interface (CRI) to talk to container runtimes instead of just calling containerd functions directly? What advantage does this indirection give you as a cluster operator?
+
 ### 2.2 Common Container Runtimes
 
 | Runtime | Description | Used By |
@@ -206,6 +208,8 @@ CNI handles pod networking:
 │                                                                 │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+> **Stop and think**: You just ran `kubeadm init` and the node shows as Ready, but CoreDNS pods are stuck in Pending. What's missing, and why does this specific component fail before others?
 
 ### 3.2 Common CNI Plugins
 
@@ -315,6 +319,8 @@ CSI handles persistent storage:
 │                                                                 │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+> **What would happen if**: The CSI controller pod crashes but the CSI node plugins on each worker are still running. Can existing pods still read and write to their mounted volumes? Can new PVCs be provisioned?
 
 ### 4.2 CSI Components
 
@@ -449,31 +455,28 @@ kubectl logs -n kube-system <csi-controller-pod>
 
 ## Quiz
 
-1. **What's the difference between CNI and CSI?**
+1. **Your team migrated from an on-prem cluster using Flannel to a new cluster using Cilium. A developer asks: "Do I need to change my Deployment manifests?" What's your answer, and what does this tell you about how CNI works?**
    <details>
    <summary>Answer</summary>
-   CNI (Container Network Interface) handles pod networking—IP assignment, routing, and network policies. CSI (Container Storage Interface) handles persistent storage—provisioning, attaching, and mounting volumes.
+   No manifest changes are needed. CNI is an interface — Kubernetes defines a contract for pod networking (assign IPs, set up routes, enable pod-to-pod communication), and any compliant plugin fulfills that contract transparently. From the application's perspective, pods still get IPs, DNS works, and Services resolve the same way regardless of whether Flannel or Cilium handles the underlying networking. This is the core benefit of the plugin architecture: you can swap implementations without changing workloads. The only differences are operational — Cilium adds eBPF-based observability and network policy enforcement that Flannel lacks.
    </details>
 
-2. **Where are CNI configuration files stored?**
+2. **After a node reboot, pods on that node are stuck in ContainerCreating. You SSH into the node and find that `/etc/cni/net.d/` contains two files: `10-calico.conflist` and `05-flannel.conflist`. What's the problem and how do you fix it?**
    <details>
    <summary>Answer</summary>
-   `/etc/cni/net.d/` on each node. The first file alphabetically is used, which is why files are typically prefixed with numbers like `10-calico.conflist`.
+   Kubernetes uses the first CNI configuration file alphabetically in `/etc/cni/net.d/`. Since `05-flannel.conflist` comes before `10-calico.conflist`, kubelet is trying to use Flannel for networking — but if your cluster runs Calico, the Flannel binaries and agents aren't present, causing the ContainerCreating state. The fix is to remove the stale Flannel config: `sudo rm /etc/cni/net.d/05-flannel.conflist`. This commonly happens when a previous CNI installation wasn't cleaned up properly. After removing it, the pods should start using Calico correctly.
    </details>
 
-3. **A pod is stuck in ContainerCreating with "network plugin not ready". What should you check?**
+3. **A PersistentVolumeClaim has been in Pending state for 5 minutes. You run `kubectl get csidrivers` and see your EBS CSI driver listed. The CSI controller pods are running. Where should you look next, and what are two likely causes?**
    <details>
    <summary>Answer</summary>
-   1. Check if CNI pods are running: `kubectl get pods -n kube-system | grep -E "calico|cilium|flannel"`
-   2. Check CNI config exists: `ls /etc/cni/net.d/`
-   3. Check CNI binaries exist: `ls /opt/cni/bin/`
-   4. Check CNI pod logs for errors
+   Run `kubectl describe pvc <name>` and check the Events section for provisioning error messages. Then check the CSI controller logs: `kubectl logs -n kube-system -l app=ebs-csi-controller -c ebs-plugin`. Two likely causes: (1) The StorageClass specified in the PVC doesn't match any available StorageClass, or the StorageClass references a different CSI driver than what's installed. (2) The CSI controller lacks IAM permissions to provision EBS volumes in AWS — the controller pod needs the right ServiceAccount and IAM role to call the AWS API. You can also check `kubectl get sc` to verify the StorageClass exists and its provisioner matches the CSI driver name.
    </details>
 
-4. **Why did Kubernetes deprecate Docker as a container runtime?**
+4. **A colleague upgrades a cluster from Kubernetes 1.23 to 1.25 and reports that all `docker ps` commands on nodes return "command not found," even though containers are still running. They're panicking about data loss. What do you tell them?**
    <details>
    <summary>Answer</summary>
-   Docker wasn't CRI-compliant—it required a shim (dockershim) built into kubelet. Maintaining this shim was burdensome. containerd and CRI-O implement CRI natively, simplifying the architecture. Docker images still work because they're OCI-compliant.
+   There's no data loss. Starting with Kubernetes 1.24, Docker (dockershim) was removed as a supported container runtime. The cluster now uses containerd directly, which was already running containers under Docker previously. The containers are still running — they just need to use `crictl ps` instead of `docker ps` to inspect them. All existing Docker images continue to work because they're OCI-compliant, meaning containerd can pull and run them without modification. The key distinction is that Docker was the runtime interface, not the image format — and containerd implements CRI natively, which is what kubelet actually needs.
    </details>
 
 ---

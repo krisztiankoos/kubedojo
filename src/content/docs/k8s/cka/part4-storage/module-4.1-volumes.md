@@ -208,6 +208,8 @@ volumes:
 
 If the pod exceeds the size limit, it will be evicted.
 
+> **Pause and predict**: A pod has two containers sharing an `emptyDir` volume. Container A writes 200Mi of cache data, then crashes. The kubelet restarts Container A on the same node. Is the 200Mi of data still there? What if the entire pod gets evicted?
+
 ---
 
 ## Part 3: hostPath Volumes
@@ -293,6 +295,8 @@ volumes:
 - DaemonSets that need node access (log collectors, monitoring agents)
 - Node-level debugging (temporary)
 - Docker socket access for CI/CD (use with extreme caution)
+
+> **Stop and think**: A developer proposes mounting `hostPath: /var/run/docker.sock` into their CI/CD pod to build container images. What specific security risks does this create, and what alternative approaches would you recommend?
 
 ### 3.5 hostPath in DaemonSets
 
@@ -547,6 +551,8 @@ volumeMounts:
 
 **Warning**: subPath mounts don't receive updates when the ConfigMap/Secret changes!
 
+> **Pause and predict**: You mount a ConfigMap as a volume at `/etc/config` (without subPath). You then update the ConfigMap with `kubectl edit`. After a minute, you `exec` into the pod and `cat /etc/config/app.conf`. Do you see the old or new content? Now imagine you used a `subPath` mount instead -- does your answer change?
+
 ---
 
 ## Common Mistakes
@@ -564,66 +570,63 @@ volumeMounts:
 
 ## Quiz
 
-### Q1: Volume Lifetime
-What happens to emptyDir data when a container crashes but the pod stays running?
+### Q1: Data Loss Investigation
+A developer has a sidecar logging pod with two containers: a `writer` that produces logs to `/logs/app.log` and a `reader` that tails the log file. They use an `emptyDir` volume. The writer container crashes due to an OOM kill, but the pod stays running. The developer panics and says all logs are gone. Are they correct? What if the node itself reboots and the pod is rescheduled to a different node?
 
 <details>
 <summary>Answer</summary>
 
-The emptyDir data **persists**. emptyDir lifetime is tied to the pod, not the container. Only when the pod is deleted or evicted from the node is the emptyDir deleted.
+The developer is wrong about the first scenario. When a container crashes but the pod stays running, emptyDir data **persists** because emptyDir lifetime is tied to the pod, not individual containers. The kubelet restarts the container, and `/logs/app.log` is still there. However, if the node reboots and the pod is rescheduled to a different node, the emptyDir data **is lost** because emptyDir storage lives on the original node's filesystem (or RAM). For logs that must survive pod rescheduling, they should use a PersistentVolumeClaim instead.
 
 </details>
 
-### Q2: Memory-Backed emptyDir
-What's the key consideration when using `emptyDir.medium: Memory`?
+### Q2: Memory Pressure Mystery
+A team deploys a pod with `emptyDir.medium: Memory` and `sizeLimit: 256Mi`. The pod's container has `resources.limits.memory: 512Mi`. During a load test, the container writes 200Mi of temp data to the emptyDir. Shortly after, the pod gets OOM-killed despite the application itself only using 350Mi of heap memory. What happened?
 
 <details>
 <summary>Answer</summary>
 
-Memory-backed emptyDir counts against the container's memory limit. You must set a sizeLimit to prevent OOM issues, and the total must fit within your pod's memory allocation.
+Memory-backed emptyDir counts against the container's memory limit. The container was using 350Mi of heap memory **plus** 200Mi of tmpfs data in the emptyDir, totaling 550Mi -- which exceeds the 512Mi memory limit. The kubelet saw total memory usage exceed the limit and OOM-killed the pod. The fix is to either increase the memory limit to account for emptyDir usage (e.g., `768Mi`), reduce the sizeLimit on the emptyDir, or switch to disk-backed emptyDir if the data is not sensitive and speed is not critical.
 
 </details>
 
-### Q3: hostPath Security
-Why is hostPath type `""` (empty string) risky?
+### Q3: Security Audit Failure
+During a security audit, a DaemonSet for log collection is flagged. It mounts `hostPath: /` with type `""` (empty string) and no `readOnly` setting. The team argues they only read `/var/log`. Why did the auditor flag this, and how should the DaemonSet be reconfigured?
 
 <details>
 <summary>Answer</summary>
 
-Type `""` performs no checks before mounting. The path might not exist, might be the wrong type (file vs directory), or might be a symlink to somewhere unexpected. Use explicit types like `Directory` or `File` for validation.
+The auditor flagged it for three reasons: (1) mounting `/` gives the pod access to the **entire node filesystem**, including `/etc/shadow`, kubelet credentials, and other sensitive files -- far more than `/var/log`; (2) type `""` performs no validation, so the mount could follow symlinks or mount unexpected paths; (3) without `readOnly: true`, the container can **write** to the node filesystem, enabling container escape attacks. The fix: mount only the specific paths needed (`/var/log` and `/var/lib/docker/containers`), use type `Directory` for validation, and set `readOnly: true` on both volume mounts.
 
 </details>
 
-### Q4: Projected Volume Sources
-Name the four types of sources that can be combined in a projected volume.
+### Q4: Config Injection Architecture
+Your application needs its config file (`app.conf`), a database password, the pod's own labels, and a short-lived service account token -- all in `/etc/app/`. A junior developer creates four separate volume mounts. What single Kubernetes feature replaces all four, and what are the four source types it combines?
 
 <details>
 <summary>Answer</summary>
 
-1. **configMap** - ConfigMap data
-2. **secret** - Secret data
-3. **downwardAPI** - Pod metadata and resource info
-4. **serviceAccountToken** - Projected service account tokens
+A **projected volume** combines all four sources into a single mount point. The four source types are: (1) **configMap** for the `app.conf` file, (2) **secret** for the database password, (3) **downwardAPI** for the pod's labels, and (4) **serviceAccountToken** for a short-lived, audience-scoped token. This is cleaner than four separate mounts because it presents a unified `/etc/app/` directory and simplifies the pod spec. Projected service account tokens are also more secure than legacy tokens because they are time-limited and audience-bound.
 
 </details>
 
-### Q5: ConfigMap Auto-Update
-A ConfigMap is mounted as a volume. You update the ConfigMap. What must the application do?
+### Q5: Rolling Config Update Gone Wrong
+A team mounts a ConfigMap as a volume at `/etc/nginx/conf.d/`. They update the ConfigMap with a new `nginx.conf`. After 2 minutes, they exec into the pod and see the new config file. But nginx is still serving the old configuration. Separately, another team member used `subPath` to mount a single ConfigMap key as `/etc/app/settings.yaml`. After the same ConfigMap update, that file still shows the old content. Explain both behaviors and the fix for each.
 
 <details>
 <summary>Answer</summary>
 
-The application must **detect and reload** the configuration. While Kubernetes automatically updates the files in the mounted volume (within ~1 minute), the application must watch for changes and reload - this is not automatic. Alternatively, restart the pod to pick up changes.
+For the nginx case: Kubernetes **did** auto-update the mounted files (within ~1 minute via atomic symlink swap), but nginx does not watch for file changes -- it loads config at startup. The fix is to either restart the pod (`kubectl rollout restart`) or send nginx a reload signal (`nginx -s reload`). For the subPath case: subPath mounts **never auto-update** when the source ConfigMap changes -- this is a fundamental limitation. The kubelet's symlink-swap mechanism only works for full directory mounts. The fix is to either use a full directory mount instead of subPath, or restart the pod to pick up changes. This is a common exam trap -- knowing the subPath update limitation is critical.
 
 </details>
 
-### Q6: subPath Behavior
-Why would you use subPath, and what's the trade-off?
+### Q6: Choosing the Right Volume Type
+A StatefulSet's pods keep losing their data on restart. The developer used `emptyDir` volumes for the database data directory. What is wrong with this design, what volume type should they use instead, and what Kubernetes resources need to be created to support it?
 
 <details>
 <summary>Answer</summary>
 
-Use subPath to mount a single file from a ConfigMap/Secret into an existing directory without overwriting other files. The trade-off is that subPath mounts **do not auto-update** when the source changes - you must restart the pod.
+`emptyDir` is tied to the pod's lifecycle -- when the pod is deleted or rescheduled, the data is gone. For a database that needs persistent data, they should use a **PersistentVolumeClaim** instead. For StatefulSets specifically, they should use `volumeClaimTemplates` in the StatefulSet spec, which automatically creates a unique PVC for each replica. The required resources are: a **StorageClass** (or use the cluster default) to enable dynamic provisioning, and the **volumeClaimTemplates** section in the StatefulSet spec. Each pod will get its own PV that persists across restarts and rescheduling. The reclaim policy should be set to `Retain` for production databases to prevent accidental data loss.
 
 </details>
 

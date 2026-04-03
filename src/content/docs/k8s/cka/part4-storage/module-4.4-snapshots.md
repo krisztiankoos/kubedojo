@@ -246,6 +246,8 @@ status:
   error:                                  # If failed, error message here
 ```
 
+> **Pause and predict**: You take a snapshot of a 50Gi PVC that only has 2Gi of data written. When you restore from this snapshot, must the new PVC request 50Gi, or can it request just 2Gi? What does the `restoreSize` field tell you?
+
 ---
 
 ## Part 4: Restoring from Snapshots
@@ -370,6 +372,8 @@ spec:
 - Clone size must be >= source size
 - Same StorageClass typically required
 
+> **Stop and think**: You need to create a test environment with a copy of production data. You have two options: (1) snapshot the production PVC and restore in the test namespace, or (2) clone the production PVC directly. Which approach works for cross-namespace scenarios, and which does not? What are the trade-offs?
+
 ### 5.4 Clone Use Cases
 
 | Use Case | Description |
@@ -412,6 +416,8 @@ k get volumesnapshot -l backup-type=daily --sort-by=.metadata.creationTimestamp
 
 ### 6.3 Application Consistency
 
+> **Pause and predict**: You take a snapshot of a MySQL database PVC while the database is actively processing transactions. When you restore from this snapshot, will the database start cleanly, or will it be in an inconsistent state? What should you do before taking the snapshot?
+
 For consistent snapshots:
 1. **Pause writes** before snapshot (if possible)
 2. **Flush buffers** to disk
@@ -442,63 +448,53 @@ k exec mysql-pod -- mysql -e "UNLOCK TABLES;"
 
 ## Quiz
 
-### Q1: Snapshot vs Clone
-What's the key difference between restoring from a snapshot and cloning a PVC?
+### Q1: Disaster Recovery Decision
+Your production PostgreSQL database has corrupted data after a bad migration. You have both a VolumeSnapshot from 1 hour ago and the original PVC (now corrupted) still running. Your manager asks: "Should we clone the PVC or restore from the snapshot?" What do you recommend and why?
 
 <details>
 <summary>Answer</summary>
 
-**Snapshot restore** uses a VolumeSnapshot as an intermediary - you create a snapshot, then create a new PVC from that snapshot. The snapshot persists and can be used multiple times.
-
-**Cloning** creates a new PVC directly from an existing PVC without an intermediate snapshot. It's a one-step process with no persistent artifact.
+You should **restore from the snapshot**, not clone the PVC. Cloning copies the PVC's **current** state, which contains the corrupted data from the bad migration. The VolumeSnapshot captured a point-in-time copy from 1 hour ago, before the corruption occurred. Create a new PVC with `dataSource` referencing the snapshot (`kind: VolumeSnapshot`), then point the application at the restored PVC. The key distinction: snapshots preserve historical state (a "photo" of a past moment), while clones copy the live current state. In a corruption scenario, you always want the historical snapshot, not a clone of the corruption.
 
 </details>
 
-### Q2: VolumeSnapshotClass Purpose
-What role does VolumeSnapshotClass play?
+### Q2: Snapshot Setup Failure
+A developer creates a VolumeSnapshot resource, but it stays in `readyToUse: false` indefinitely. Running `kubectl get volumesnapshotclass` returns "No resources found." The cluster uses the AWS EBS CSI driver for storage. What is missing, and what are all the components that must be in place before snapshots work?
 
 <details>
 <summary>Answer</summary>
 
-VolumeSnapshotClass defines **how** snapshots are created, similar to how StorageClass defines how PVs are provisioned. It specifies:
-- Which CSI driver creates snapshots
-- Deletion policy (Delete or Retain)
-- Driver-specific parameters
+The cluster is missing the snapshot infrastructure. Three things must be installed: (1) **Snapshot CRDs** -- the custom resource definitions for VolumeSnapshot, VolumeSnapshotClass, and VolumeSnapshotContent (install from the kubernetes-csi/external-snapshotter repository). (2) **Snapshot controller** -- a controller deployment that watches VolumeSnapshot resources and orchestrates the lifecycle (deployed in kube-system). (3) **VolumeSnapshotClass** -- defines which CSI driver handles snapshots and the deletion policy. Without the VolumeSnapshotClass, the snapshot controller does not know which driver to call. Note that just having the EBS CSI driver installed is not enough -- the snapshot sidecar and controller are separate components that must be explicitly deployed.
 
 </details>
 
-### Q3: Snapshot Prerequisites
-What three things must be installed before you can use volume snapshots?
+### Q3: Cross-Namespace Test Environment
+You need to create a test environment in the `staging` namespace using production data from the `production` namespace. You try cloning the production PVC from staging, but it fails. You then try creating a VolumeSnapshot in `production` and restoring it in `staging`. Explain why the clone failed and whether the snapshot approach works.
 
 <details>
 <summary>Answer</summary>
 
-1. **Snapshot CRDs** - The custom resource definitions for VolumeSnapshot, VolumeSnapshotClass, VolumeSnapshotContent
-2. **Snapshot controller** - Watches VolumeSnapshot resources and manages lifecycle
-3. **CSI driver with snapshot support** - The actual driver that creates snapshots on the storage backend
+The clone failed because PVC cloning requires the **source and destination to be in the same namespace** -- this is a hard limitation. The snapshot approach **does work** because VolumeSnapshotContent (the actual snapshot reference) is **cluster-scoped**, not namespaced. The workflow is: (1) Create a VolumeSnapshot in the `production` namespace pointing at the production PVC. (2) In the `staging` namespace, create a new PVC with `dataSourceRef` referencing the snapshot (using the `namespace: production` field, available in Kubernetes 1.26+). The new PVC gets a fresh PV provisioned from the snapshot data. This is the standard pattern for cross-namespace data copies and disaster recovery testing.
 
 </details>
 
-### Q4: Cross-Namespace Restore
-Can you restore a VolumeSnapshot in a different namespace than where it was created?
+### Q4: Restore Size Gotcha
+You snapshot a 100Gi PVC that only contains 5Gi of actual data. When restoring, you create a new PVC with `resources.requests.storage: 10Gi`, thinking you only need enough for the 5Gi of data. The restore fails. Why, and what size should you request?
 
 <details>
 <summary>Answer</summary>
 
-**Yes**, because VolumeSnapshotContent (which holds the actual snapshot reference) is cluster-scoped. You can create a PVC in a different namespace that references the VolumeSnapshot using `dataSourceRef` with a namespace field (requires Kubernetes 1.26+).
+The restore fails because the new PVC's requested size must be **greater than or equal to the snapshot's `restoreSize`**, which reflects the original PVC's capacity (100Gi), not the amount of data written. The `restoreSize` field in the VolumeSnapshot status tells you the minimum size required. Even though only 5Gi of data exists, the snapshot captures the entire volume structure at 100Gi. You must request at least 100Gi for the new PVC. You can request more (e.g., 200Gi) but never less. This is important for capacity planning -- snapshots of large volumes require equally large (or larger) restore targets.
 
 </details>
 
-### Q5: dataSource Field
-What's the difference between using `kind: VolumeSnapshot` vs `kind: PersistentVolumeClaim` in a PVC's dataSource?
+### Q5: Application Consistency Dilemma
+A team takes hourly VolumeSnapshots of their MySQL database PVC using a CronJob. After a failure, they restore from the latest snapshot, but MySQL reports corrupted InnoDB tables and refuses to start. The snapshot was taken while the database was actively processing transactions. What went wrong, and how should the backup strategy be redesigned?
 
 <details>
 <summary>Answer</summary>
 
-- `kind: VolumeSnapshot` - Restore from a snapshot (creates new volume from snapshot)
-- `kind: PersistentVolumeClaim` - Clone an existing PVC (copies data directly)
-
-Both use the dataSource field but create the new volume differently.
+The snapshot captured the volume while MySQL had **unflushed data in memory buffers** and **uncommitted transactions in flight**. This creates a "crash-consistent" snapshot (equivalent to pulling the power cord), not an "application-consistent" one. InnoDB can usually recover from crash-consistent state, but complex in-flight transactions may cause corruption. The fix is to make snapshots **application-consistent**: before each snapshot, run `FLUSH TABLES WITH READ LOCK` to flush all buffers to disk and pause writes, take the snapshot, then `UNLOCK TABLES` to resume. In production, tools like Velero with pre-snapshot hooks automate this. Alternatively, use MySQL's built-in replication to take snapshots from a read-replica that can be temporarily paused without affecting production.
 
 </details>
 

@@ -141,6 +141,8 @@ The scheduler creates a `Binding` object that sets `spec.nodeName` on the pod. T
 
 ## Part 2: Priority and Preemption
 
+> **Pause and predict**: A high-priority pod (priority 1000000) is Pending because no node has enough resources. The cluster has nodes full of low-priority batch jobs (priority 100). Will Kubernetes automatically make room for the high-priority pod, or does it just wait? What determines which pods get evicted?
+
 ### 2.1 PriorityClasses
 
 A PriorityClass assigns a numeric priority value to pods. Higher values mean higher priority. The scheduler uses this value during preemption decisions.
@@ -502,6 +504,8 @@ When a pod is terminated (whether by deletion, preemption, eviction, or scale-do
 └──────────────────────────────────────────────────────────────────┘
 ```
 
+> **Stop and think**: You set `terminationGracePeriodSeconds: 30` and a PreStop hook that runs `sleep 20`. After the PreStop completes, your app receives SIGTERM. How many seconds does it have before SIGKILL? What if your PreStop hook takes 35 seconds -- longer than the grace period?
+
 ### 5.2 Configuring Graceful Shutdown
 
 ```yaml
@@ -537,6 +541,8 @@ spec:
 | Database | 60-120s | Must flush WAL, checkpoint, close connections |
 | Batch processor | 60-300s | May need to checkpoint partial work |
 | Message queue consumer | 30-60s | Must finish processing current message |
+
+> **Pause and predict**: A 3-replica Deployment has a PDB with `minAvailable: 3`. A cluster administrator runs `kubectl drain` on a node hosting one of those replicas. What happens -- does the drain succeed, block, or partially proceed? Now consider: what if the node crashes instead of being drained?
 
 ### 5.4 PodDisruptionBudgets (PDBs)
 

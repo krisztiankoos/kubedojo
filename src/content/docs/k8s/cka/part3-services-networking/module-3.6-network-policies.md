@@ -133,6 +133,8 @@ spec:
 
 ---
 
+> **Pause and predict**: You create a NetworkPolicy that selects pods with label `app: web` but the policy has empty ingress rules (`ingress: []`). Can anything reach those pods? What if you had written `ingress: [{}]` instead -- how does that single pair of curly braces change everything?
+
 ## Part 2: Basic Network Policies
 
 ### 2.1 Deny All Ingress (Default Deny)
@@ -332,6 +334,8 @@ spec:
 
 ## Part 4: Combining Selectors
 
+> **Stop and think**: Look at the two YAML snippets below in section 4.1. One allows traffic from frontend pods OR from the monitoring namespace. The other allows traffic only from frontend pods that are IN the monitoring namespace. The only difference is indentation. Can you spot which is which before reading the explanation?
+
 ### 4.1 AND vs OR Logic
 
 ```yaml
@@ -425,6 +429,8 @@ spec:
 ```
 
 ---
+
+> **What would happen if**: You apply a deny-all egress policy to your backend pods but forget to add a DNS exception. The pods can still reach the database pod by IP, but `curl db-service` fails. Why does direct IP access work but service name resolution does not?
 
 ## Part 5: Egress Policies
 
@@ -688,48 +694,44 @@ spec:
 
 ## Quiz
 
-1. **What happens when a NetworkPolicy selects a pod?**
+1. **Your security team wants to lock down a production namespace so that no pod can receive traffic unless explicitly allowed. You apply a deny-all ingress policy, but the monitoring team reports their Prometheus scraper can still reach pods. What could explain this?**
    <details>
    <summary>Answer</summary>
-   The pod becomes "isolated" for the policy types specified (Ingress/Egress). Traffic not explicitly allowed by rules is denied.
+   The most likely cause is that the CNI plugin does not support NetworkPolicy enforcement. If the cluster uses Flannel (which does not implement NetworkPolicy), the policy is accepted by the API server but never enforced -- traffic flows freely regardless. Verify with `k get pods -n kube-system | grep -E "calico|cilium|weave"`. If using an unsupported CNI, you must switch to Calico, Cilium, or Weave for policy enforcement. Another possibility: the Prometheus scraper runs with `hostNetwork: true`, and some CNI implementations do not enforce policies on host-networked pods.
    </details>
 
-2. **How do you deny all ingress traffic to pods in a namespace?**
+2. **You write a NetworkPolicy to allow your backend pods to talk only to the database. It works, but now the backend pods cannot resolve DNS names -- `curl db-service` fails while `curl 10.244.2.5` (the DB pod IP) works fine. What did you forget, and how do you fix it without opening up all egress?**
    <details>
    <summary>Answer</summary>
-   Create a NetworkPolicy with empty `podSelector: {}` (selects all pods), `policyTypes: [Ingress]`, and no `ingress` rules.
+   The egress policy blocked DNS traffic (UDP/TCP port 53) to CoreDNS. Service name resolution requires the pod to send a DNS query to CoreDNS in kube-system, which the egress policy blocks. Add a DNS egress rule: allow egress to port 53 (both UDP and TCP) targeting the kube-system namespace with `namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}`. This is the most common NetworkPolicy mistake -- any time you restrict egress, you must explicitly allow DNS or service discovery breaks.
    </details>
 
-3. **What's the difference between these two ingress rules?**
+3. **A colleague writes this NetworkPolicy and claims it allows traffic from frontend pods in the monitoring namespace only. But in testing, ALL pods in the monitoring namespace can reach the backend. Find the bug.**
    ```yaml
-   # Version A
    ingress:
    - from:
-     - podSelector: {matchLabels: {app: a}}
-     - namespaceSelector: {matchLabels: {name: x}}
-
-   # Version B
-   ingress:
-   - from:
-     - podSelector: {matchLabels: {app: a}}
-       namespaceSelector: {matchLabels: {name: x}}
+     - podSelector:
+         matchLabels:
+           app: frontend
+     - namespaceSelector:
+         matchLabels:
+           name: monitoring
    ```
    <details>
    <summary>Answer</summary>
-   Version A uses OR logic: allows from pods with `app=a` OR from any pod in namespace with `name=x`.
-   Version B uses AND logic: allows only from pods with `app=a` that are also in namespace with `name=x`.
+   The bug is the OR vs AND logic. The two selectors are separate list items (note the two dashes under `from:`), which means OR: allow from pods with `app=frontend` (in any namespace) OR from any pod in the `monitoring` namespace. To make it AND (only frontend pods IN monitoring), combine them in a single list item by removing the second dash: `- podSelector: {matchLabels: {app: frontend}} \n   namespaceSelector: {matchLabels: {name: monitoring}}`. This single-character indentation difference is one of the most common and dangerous NetworkPolicy mistakes.
    </details>
 
-4. **Why is allowing DNS egress important?**
+4. **You are designing network policies for a three-tier app: web (receives external traffic), app (receives from web only), and database (receives from app only on port 5432). The web tier also needs to call an external payment API. Describe the policies you would create and in what order.**
    <details>
    <summary>Answer</summary>
-   Pods need DNS to resolve service names. Without port 53 egress, pods can't look up `my-service.default.svc.cluster.local`, breaking service discovery.
+   First, create a default-deny ingress policy for the namespace (`podSelector: {}`, no ingress rules). Then create three allow policies: (1) Web tier: allow ingress from the ingress controller's namespace using a `namespaceSelector`. (2) App tier: allow ingress from pods with `tier: web` on the app port using `podSelector`. (3) Database tier: allow ingress only from pods with `tier: app` on port 5432. For the web tier's external API access, add an egress policy: allow egress to the payment API's IP block using `ipBlock.cidr`, plus DNS egress (port 53) to kube-system. Order matters for implementation: apply the deny-all first, then the allow policies, so there is no window where traffic is unrestricted.
    </details>
 
-5. **NetworkPolicy is created but traffic isn't blocked. What's wrong?**
+5. **After applying NetworkPolicies, a developer reports that inter-pod communication works in the `staging` namespace but the same policies fail in `production`. The policies use `namespaceSelector` with `matchLabels: {env: production}`. What is the likely issue?**
    <details>
    <summary>Answer</summary>
-   Most likely the CNI plugin doesn't support NetworkPolicy. Flannel, for example, doesn't enforce NetworkPolicy. Use Calico, Cilium, or Weave.
+   The `production` namespace likely does not have the label `env: production`. Unlike pods (which inherit labels from their Deployment template), namespaces must be labeled manually. Kubernetes does not automatically label namespaces with their name. Run `k get namespace production --show-labels` to verify. Fix with `k label namespace production env=production`. Note that newer Kubernetes versions do auto-apply `kubernetes.io/metadata.name: <name>`, so using that built-in label is more reliable than custom labels.
    </details>
 
 ---

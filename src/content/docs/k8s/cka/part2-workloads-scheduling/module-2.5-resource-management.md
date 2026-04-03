@@ -203,6 +203,8 @@ kubectl describe node <node-name> | grep -A10 "Conditions"
 
 ## Part 3: How Limits Are Enforced
 
+> **Pause and predict**: Two containers are running on the same node. Container A exceeds its CPU limit. Container B exceeds its memory limit. One of them gets killed; the other just slows down. Which is which, and why does Kubernetes treat CPU and memory differently?
+
 ### 3.1 CPU Limits (Throttling)
 
 When a container exceeds CPU limits:
@@ -259,6 +261,8 @@ spec:
 ---
 
 ## Part 4: QoS Classes
+
+> **Pause and predict**: A pod has `requests: {cpu: 100m, memory: 128Mi}` and `limits: {memory: 256Mi}` (no CPU limit). What QoS class will it get -- Guaranteed, Burstable, or BestEffort? What happens if it tries to use 300Mi of memory?
 
 ### 4.1 The Three QoS Classes
 
@@ -405,6 +409,8 @@ kubectl get pod test -n development -o yaml | grep -A10 resources
 ---
 
 ## Part 6: ResourceQuotas
+
+> **Stop and think**: You create a ResourceQuota in a namespace with `pods: 10` and `requests.cpu: 4`. A developer tries to create a pod without specifying any resource requests. Will it succeed? Why or why not?
 
 ### 6.1 What Is a ResourceQuota?
 
@@ -612,28 +618,28 @@ spec:
 
 ## Quiz
 
-1. **What happens when a container exceeds its memory limit?**
+1. **A developer's pod keeps restarting with exit code 137. They've checked the application logs but see no errors -- the process just stops. `kubectl describe pod` shows `Last State: Terminated, Reason: OOMKilled`. The container's memory limit is 256Mi. What is happening, and what are two ways to fix it?**
    <details>
    <summary>Answer</summary>
-   The container is killed with OOMKilled status. The pod may restart based on its restartPolicy.
+   Exit code 137 means the process was killed by SIGKILL, and the OOMKilled reason confirms the container exceeded its 256Mi memory limit. The Linux kernel's OOM killer terminated the process because the container's memory usage surpassed what cgroups allow. There are no application-level error logs because the kill happens at the OS level, not within the application. Two fixes: (1) Increase the memory limit to accommodate actual usage (profile the app first with `kubectl top pod`), or (2) fix the memory leak in the application if usage grows unboundedly. A third option for Kubernetes 1.35+ is to use in-place pod resize to increase the limit without restarting.
    </details>
 
-2. **What happens when a container exceeds its CPU limit?**
+2. **Your team's Node.js application responds slowly during peak hours but `kubectl top pod` shows CPU usage at only 50m while the limit is 200m. However, the developer insists the app is CPU-bound. How can the CPU be throttled when usage appears to be well below the limit?**
    <details>
    <summary>Answer</summary>
-   The container is throttled—it gets less CPU time but continues running. Unlike memory, CPU excess doesn't cause termination.
+   CPU throttling can occur even when average usage appears low. `kubectl top` shows average CPU over a measurement window, but CPU throttling happens on a per-100ms time slice basis. The app might burst to 200m+ for brief moments (handling a request) and get throttled during those spikes, even though the average over the sampling period looks like 50m. This is a well-known issue with CPU limits -- they penalize bursty workloads. Solutions: increase the CPU limit to allow higher bursts, remove the CPU limit entirely (some teams do this, relying only on requests for scheduling), or investigate whether the app is single-threaded and bottlenecking on one core.
    </details>
 
-3. **A pod has requests but no limits. What's its QoS class?**
+3. **You have three pods on the same node: Pod A (Guaranteed, using exactly its 512Mi request), Pod B (Burstable, using 800Mi against a 256Mi request), and Pod C (BestEffort, using 200Mi). The node enters memory pressure. In what order will the kubelet evict these pods, and why?**
    <details>
    <summary>Answer</summary>
-   **Burstable**. To be Guaranteed, requests must equal limits for all containers. BestEffort requires no resources at all.
+   The kubelet evicts in QoS order: BestEffort first, then Burstable pods exceeding their requests, then Guaranteed pods. So Pod C (BestEffort, 200Mi, no guarantees) is evicted first. If pressure persists, Pod B (Burstable, using 800Mi against a 256Mi request -- 3x over its reservation) is evicted next. Pod A (Guaranteed, using exactly its request) is evicted last and only if the node is still critically low after evicting the other two. This ordering exists because BestEffort pods made no resource commitment, and Burstable pods exceeding their requests are "borrowing" capacity they didn't reserve.
    </details>
 
-4. **How do you set default resource limits for all pods in a namespace?**
+4. **A new team joins your cluster and starts deploying pods without resource requests, consuming all available node resources. Other teams' pods start getting evicted. Design a namespace-level governance strategy using LimitRange and ResourceQuota to prevent this from happening again.**
    <details>
    <summary>Answer</summary>
-   Create a LimitRange in the namespace with `default` and `defaultRequest` values.
+   Create both a LimitRange and ResourceQuota in the team's namespace. The LimitRange sets default requests/limits so pods without explicit resources still get sensible values (e.g., `defaultRequest: {cpu: 100m, memory: 128Mi}`, `default: {cpu: 500m, memory: 256Mi}`). Set `min` and `max` to prevent absurdly large or tiny pods. The ResourceQuota caps the total namespace consumption (e.g., `requests.cpu: 4`, `requests.memory: 8Gi`, `pods: 20`). With both in place, pods without resource specs get defaults from LimitRange, and total consumption is bounded by ResourceQuota. Note: when a ResourceQuota with compute constraints exists, all pods MUST have resource requests -- the LimitRange defaults ensure this requirement is met automatically.
    </details>
 
 ---

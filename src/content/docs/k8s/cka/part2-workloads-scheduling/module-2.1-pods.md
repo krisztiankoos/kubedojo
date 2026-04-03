@@ -96,6 +96,8 @@ A pod is:
 | Storage | Own filesystem | Can share volumes |
 | Lifecycle | Managed by pod | Managed by Kubernetes |
 
+> **Pause and predict**: Two containers in the same pod both try to listen on port 8080. What happens? Now consider if they were in separate pods -- would the outcome differ?
+
 ### 1.3 Why Pods, Not Just Containers?
 
 Pods enable:
@@ -419,6 +421,8 @@ spec:
     emptyDir: {}
 ```
 
+> **Stop and think**: Your web application needs a configuration file that must be generated from a template before the app starts. You also need a log-shipping sidecar that runs alongside it. Which container pattern handles each requirement -- and can you use both in the same pod?
+
 ### 5.4 Init Containers
 
 Init containers run **before** app containers and must complete successfully:
@@ -531,6 +535,8 @@ kubectl get pods -o custom-columns='NAME:.metadata.name,IP:.status.podIP'
 
 ## Part 7: Restart Policies
 
+> **Pause and predict**: A pod with `restartPolicy: Always` has a container that exits with code 0 (success). Will Kubernetes restart it? What about a pod with `restartPolicy: OnFailure`?
+
 ### 7.1 Restart Policy Options
 
 | Policy | Behavior | Use Case |
@@ -580,32 +586,28 @@ kubectl describe pod nginx | grep -A5 "Last State"
 
 ## Quiz
 
-1. **What command generates pod YAML without creating the pod?**
+1. **You need to quickly create a pod manifest for the CKA exam, customize it (add a volume mount and a liveness probe), and apply it. What's the fastest workflow, and why is it faster than writing YAML from scratch?**
    <details>
    <summary>Answer</summary>
-   `kubectl run nginx --image=nginx --dry-run=client -o yaml`
-
-   The `--dry-run=client` flag prevents creation, and `-o yaml` outputs the manifest.
+   Run `kubectl run nginx --image=nginx --dry-run=client -o yaml > pod.yaml`, then edit the file to add the volume mount and probe before applying. This is faster because `--dry-run=client -o yaml` generates a valid base manifest with correct apiVersion, kind, metadata, and container spec already filled in. You only need to add the specific fields you need rather than remembering the entire YAML structure from memory. On the exam, this can save 2-3 minutes per task.
    </details>
 
-2. **A pod is in CrashLoopBackOff. What's the first debugging step?**
+2. **A developer reports that their pod keeps restarting every 30-60 seconds. Running `kubectl get pods` shows `CrashLoopBackOff` with 12 restarts. The pod's `restartPolicy` is `Always`. Walk through your debugging steps and explain why `--previous` matters here.**
    <details>
    <summary>Answer</summary>
-   `kubectl logs <pod-name> --previous`
-
-   This shows logs from the previous (crashed) container instance. The container is crashing, so `--previous` captures what happened before the crash.
+   First, run `kubectl logs <pod-name> --previous` to see the logs from the last crashed container instance. The `--previous` flag is critical because the current container may have just restarted and not yet produced useful output -- the crash evidence is in the previous instance's logs. Next, run `kubectl describe pod <pod-name>` to check the Events section for image pull issues, resource constraints, or probe failures. Look at the `Last State` section to see the exit code -- exit code 1 usually means an application error, 137 means OOMKilled, and 143 means SIGTERM. If logs are empty, the container may be crashing before producing output, so check if the command or entrypoint is correct.
    </details>
 
-3. **How do containers in the same pod communicate?**
+3. **Your team runs a pod with an nginx container on port 80 and a metrics-exporter sidecar on port 9090. A new developer asks: "Can't I just put the exporter in a separate pod and use the pod's IP?" What would you lose by separating them, and when would separation actually be better?**
    <details>
    <summary>Answer</summary>
-   Via `localhost`. Containers in the same pod share the network namespace, so they can reach each other on localhost using their respective ports.
+   Keeping them in the same pod means they share a network namespace and communicate via `localhost`, which is faster and requires no service discovery. They also share the same lifecycle (scheduled, scaled, and deleted together) and can share volumes for exchanging data. You would lose all of these by separating them. However, separation is better when the sidecar needs to scale independently, has a different lifecycle (e.g., updated on a different schedule), or when the exporter needs to serve metrics for multiple pods. The key question is coupling: tightly coupled helpers belong in the same pod, loosely coupled services belong in separate pods.
    </details>
 
-4. **What's the difference between init containers and sidecar containers?**
+4. **You have a pod that must wait for a database to be ready, then run a schema migration, and finally start the main application alongside a log-shipping sidecar. Design the pod spec structure. What happens if the migration init container fails?**
    <details>
    <summary>Answer</summary>
-   **Init containers** run before app containers, must complete successfully, and run sequentially. **Sidecar containers** run alongside the main container for the pod's entire lifecycle.
+   Use two init containers (run sequentially) and two regular containers (run in parallel). The first init container waits for the database (e.g., `until nc -z db-service 5432`), the second runs the migration script. The regular containers are the main app and the log-shipping sidecar. If the migration init container fails, the pod restarts from the beginning (re-running the first init container too, unless `restartPolicy: Never`). Init containers run in order and all must succeed before app containers start. This design ensures the app never starts with an incompatible schema, and the sidecar ships logs for the entire app lifetime.
    </details>
 
 ---

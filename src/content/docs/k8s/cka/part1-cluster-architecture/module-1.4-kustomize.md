@@ -205,6 +205,8 @@ kustomize build base/
 
 ## Part 3: Creating Overlays
 
+> **Pause and predict**: You have a base Deployment with `replicas: 1` and two overlays — dev and prod. If you apply the dev overlay, does the base file change? What happens if another team member applies the prod overlay at the same time from their machine?
+
 ### 3.1 Simple Overlay
 
 ```yaml
@@ -368,6 +370,8 @@ spec:
         command: ["sleep", "infinity"]
 ```
 
+> **What would happen if**: Your strategic merge patch references a container name `myapp` but the base Deployment has a container named `app`. Will the patch fail, silently add a new container, or do something else?
+
 ### 5.2 JSON 6902 Patch
 
 More precise control using JSON Patch syntax:
@@ -445,6 +449,8 @@ secretGenerator:
 
 # Creates Secret with hashed name suffix
 ```
+
+> **Stop and think**: If you update a ConfigMap that's already mounted in running pods, the pods won't automatically restart to pick up changes. How does Kustomize's ConfigMap generator solve this problem without requiring a manual pod restart?
 
 ### 6.3 Why Hashed Names?
 
@@ -620,34 +626,28 @@ kubectl kustomize overlays/production/ | kubectl apply --dry-run=client -f -
 
 ## Quiz
 
-1. **What's the difference between base and overlay in Kustomize?**
+1. **Your team has the same web application deployed to dev, staging, and production. A new developer copies the base Deployment YAML into three separate files and edits each one. What problem does this create, and how would you restructure it using Kustomize?**
    <details>
    <summary>Answer</summary>
-   A **base** contains the original, reusable resource definitions. An **overlay** references a base and adds environment-specific customizations (patches, labels, namespaces). Overlays modify bases without duplicating them.
+   Copying creates a duplication nightmare. When the base Deployment needs a change (new health check, updated security context), you must remember to update all three copies — and inevitably one gets missed, causing environment drift. With Kustomize, you create a single `base/` directory with the shared Deployment, then create `overlays/dev/`, `overlays/staging/`, and `overlays/production/` directories. Each overlay has its own `kustomization.yaml` that references `../../base` and applies only the differences (replica count, image tag, resource limits, namespace). Changes to the base automatically propagate to all environments, and each overlay only contains what's different.
    </details>
 
-2. **How do you apply a Kustomize configuration to your cluster?**
+2. **During the CKA exam, you're told to deploy an application using Kustomize to the `staging` namespace with a name prefix of `stg-`. You run `kubectl apply -k overlays/staging/` but get an error: "resource not found." The base directory exists with valid YAML. What's the most likely cause?**
    <details>
    <summary>Answer</summary>
-   `kubectl apply -k <directory>` where the directory contains a kustomization.yaml file. Example: `kubectl apply -k overlays/production/`
+   The most likely cause is a wrong relative path in the overlay's `kustomization.yaml`. The `resources` field must correctly reference the base directory relative to the overlay's location. If your overlay is at `overlays/staging/kustomization.yaml`, the base reference should be `../../base`, not `../base` or `./base`. Run `kubectl kustomize overlays/staging/` to see the error details before applying — this renders the output without applying, making it easier to debug path issues. Also check that the base directory has its own `kustomization.yaml` file listing its resources, and that the overlay's `kustomization.yaml` has the correct `apiVersion` and `kind` fields.
    </details>
 
-3. **Why does Kustomize add a hash suffix to generated ConfigMaps?**
+3. **You update an application's config file and re-apply your Kustomize overlay. The ConfigMap is updated, but existing pods are still using the old configuration. However, your colleague's team using the same setup gets automatic pod restarts. What's different about their Kustomize configuration?**
    <details>
    <summary>Answer</summary>
-   The hash is based on the ConfigMap's content. When content changes, the hash changes, which changes the ConfigMap name. Pods referencing the ConfigMap detect the new name and trigger a rolling update, ensuring they get the new configuration.
+   Your colleague is using `configMapGenerator` in their `kustomization.yaml`, which appends a content-based hash suffix to the ConfigMap name (e.g., `app-config-8h2k9d`). When the config content changes, the hash changes, the ConfigMap name changes, and the Deployment's reference to it changes — triggering a rolling update. You're probably using a static ConfigMap listed under `resources`, which keeps the same name even when content changes. Kubernetes doesn't automatically restart pods when a mounted ConfigMap's content changes in-place. To get automatic restarts, switch to `configMapGenerator`. If you need to keep the static name for other reasons, you can use `generatorOptions: disableNameSuffixHash: true`, but then you lose the auto-restart behavior.
    </details>
 
-4. **You need to change the image tag for production without modifying the base. How?**
+4. **A production incident requires you to urgently change the image tag from `v2.1` to `v2.0` across all environments. With Helm, you'd run `helm rollback`. What's the equivalent approach with Kustomize, and what limitation does this reveal?**
    <details>
    <summary>Answer</summary>
-   Use the `images` transformer in your overlay's kustomization.yaml:
-   ```yaml
-   images:
-     - name: nginx
-       newTag: "1.25-production"
-   ```
-   This changes all references to the nginx image without touching base files.
+   Kustomize has no built-in rollback mechanism. You'd need to change the `images` transformer in your overlay's `kustomization.yaml` back to `newTag: "v2.0"` and re-apply with `kubectl apply -k overlays/production/`. Alternatively, if you're using Git (which you should be), you'd `git revert` or `git checkout` the previous commit and re-apply. This reveals a key limitation of Kustomize vs Helm: Kustomize doesn't track release history or versions. It's a rendering engine, not a release manager. The common solution is to pair Kustomize with a GitOps tool like Argo CD or Flux, which tracks Git history as the release history and can revert by syncing to a previous commit.
    </details>
 
 ---

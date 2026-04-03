@@ -137,6 +137,8 @@ sudo kubeadm init --apiserver-advertise-address=192.168.1.10
 sudo kubeadm init --kubernetes-version=v1.35.0
 ```
 
+> **Pause and predict**: After running `kubeadm init`, you immediately try `kubectl get nodes` as a regular user and it fails. Why can't you use kubectl yet, even though the cluster is initialized?
+
 ### 2.2 After init - Setup kubectl Access
 
 ```bash
@@ -256,6 +258,8 @@ ls /etc/kubernetes/manifests/
 # kube-controller-manager.yaml
 # kube-scheduler.yaml
 ```
+
+> **What would happen if**: You run `kubectl delete pod kube-apiserver-controlplane -n kube-system`. Does the API server go down? Does the pod come back? Who recreates it — the Deployment controller, the ReplicaSet controller, or something else entirely?
 
 ### 4.2 How Static Pods Work
 
@@ -377,6 +381,8 @@ kubectl get nodes -o wide
 # Node details
 kubectl describe node <node-name>
 ```
+
+> **Stop and think**: What's the difference between `kubectl cordon` and `kubectl drain`? If you only cordon a node before maintenance, what risk remains that drain would have handled?
 
 ### 6.2 Draining a Node
 
@@ -570,28 +576,28 @@ kubeadm reset
 
 ## Quiz
 
-1. **Where are control plane static pod manifests stored?**
+1. **It's 2 AM and your monitoring alerts that the API server certificate expires in 12 hours. You SSH into the control plane node. What commands do you run to check the certificate status and renew it, and what must happen after renewal for the new certificate to take effect?**
    <details>
    <summary>Answer</summary>
-   `/etc/kubernetes/manifests/` on the control plane node. kubelet watches this directory and manages the pods defined there.
+   First, verify the expiration: `kubeadm certs check-expiration` shows all certificate expiry dates. Then renew: `kubeadm certs renew all` regenerates all certificates (or `kubeadm certs renew apiserver` for just the API server cert). After renewal, the control plane static pods must restart to load the new certificates. Since they're managed by kubelet via manifests in `/etc/kubernetes/manifests/`, you can trigger a restart by temporarily moving and restoring the manifests, or simply restarting kubelet with `systemctl restart kubelet`. Verify the new certificate: `openssl x509 -in /etc/kubernetes/pki/apiserver.crt -text -noout | grep "Not After"`. Also update your kubeconfig if the admin certificate was renewed: copy the new `/etc/kubernetes/admin.conf` to `$HOME/.kube/config`.
    </details>
 
-2. **You lost the kubeadm join command. How do you get a new one?**
+2. **A new worker node was set up last week, but the engineer who did it left the company and didn't document the join command. The original bootstrap token has expired. How do you generate a new join command, and what two pieces of information does the worker node need to securely join the cluster?**
    <details>
    <summary>Answer</summary>
-   Run `kubeadm token create --print-join-command` on the control plane. This creates a new token and outputs the complete join command with the CA cert hash.
+   On the control plane, run `kubeadm token create --print-join-command`. This generates a complete join command with both required pieces: (1) a bootstrap token for initial authentication — this is a short-lived shared secret that proves the node is authorized to join, and (2) a CA certificate hash (`--discovery-token-ca-cert-hash`) that the joining node uses to verify it's connecting to the legitimate API server, preventing man-in-the-middle attacks. The token expires in 24 hours by default (configurable with `--ttl`). You can list existing tokens with `kubeadm token list` and delete old ones with `kubeadm token delete <token>`. The CA cert hash doesn't change unless you rotate the cluster CA.
    </details>
 
-3. **How do you prevent new pods from being scheduled on a node without evicting existing pods?**
+3. **You need to perform kernel maintenance on a worker node running production pods managed by Deployments. A junior admin suggests just rebooting the node. What's the correct procedure, and what could go wrong if you skip the drain step?**
    <details>
    <summary>Answer</summary>
-   `kubectl cordon <node-name>` marks the node as unschedulable. Existing pods continue running, but no new pods will be scheduled there.
+   The correct procedure is: (1) `kubectl cordon <node>` to prevent new pods from being scheduled, (2) `kubectl drain <node> --ignore-daemonsets --delete-emptydir-data` to gracefully evict all pods — the Deployment controllers will recreate them on other nodes, (3) perform maintenance and reboot, (4) `kubectl uncordon <node>` to allow scheduling again. If you skip drain and just reboot, all pods on that node die abruptly without graceful shutdown. Pods with long-running requests or in-flight transactions will be interrupted. While Deployments will eventually recreate pods elsewhere (after the node's kubelet stops reporting and the node controller marks it NotReady, which takes ~5 minutes by default), there's an unnecessary outage window. Pods with `PodDisruptionBudgets` won't be respected either, potentially violating availability guarantees.
    </details>
 
-4. **You edited /etc/kubernetes/manifests/kube-apiserver.yaml. What happens next?**
+4. **You added a custom flag to `/etc/kubernetes/manifests/kube-apiserver.yaml` but made a YAML syntax error. Now `kubectl` commands hang and return connection refused. You can't use kubectl to diagnose the problem. How do you investigate and fix this?**
    <details>
    <summary>Answer</summary>
-   kubelet detects the file change and automatically restarts the kube-apiserver pod with the new configuration. No manual restart needed.
+   Since the API server is down, kubectl is useless — you must troubleshoot directly on the control plane node. SSH in and check: (1) `crictl ps` to see if the API server container is running or crash-looping, (2) `crictl logs <container-id>` or check `/var/log/pods/kube-system_kube-apiserver-*/` for error messages that will point to the YAML issue, (3) `journalctl -u kubelet -f` to see kubelet's attempts to start the static pod. To fix, edit the manifest directly: `sudo vi /etc/kubernetes/manifests/kube-apiserver.yaml` and correct the syntax error. Kubelet will automatically detect the file change and restart the API server. Pro tip: always run `kubectl apply --dry-run=client -f` on manifest changes before editing static pod files, or keep a backup: `sudo cp kube-apiserver.yaml kube-apiserver.yaml.bak` before making changes.
    </details>
 
 ---

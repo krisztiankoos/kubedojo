@@ -149,6 +149,8 @@ When you run `kubectl create -f pod.yaml`:
 
 The pod doesn't exist yet as a running container—it's just stored in etcd. The scheduler and kubelet take it from there.
 
+> **Pause and predict**: If the API server is the only component that talks to etcd, what happens to the rest of the cluster when the API server goes down? Can existing pods keep running? Think about it before reading on.
+
 ### 2.3 Checking API Server Health
 
 ```bash
@@ -286,6 +288,8 @@ The scheduler watches for pods with no assigned node and finds the best node for
 └────────────────────────────────────────────────────────────────┘
 ```
 
+> **Stop and think**: A pod requests 4 CPU cores and 8Gi of memory, but no single node in your cluster has that much available. What state will the pod be in, and what message will you see in `kubectl describe pod`?
+
 ### 4.2 Filtering vs. Scoring
 
 **Filtering** (hard constraints): "Can this node run the pod at all?"
@@ -371,6 +375,8 @@ There are 40+ controllers. Key ones:
 | **Endpoint** | Services, Pods | Updates Service endpoints |
 | **ServiceAccount** | Namespaces | Creates default ServiceAccount |
 | **Namespace** | Namespaces | Cleans up resources when namespace deleted |
+
+> **What would happen if**: The controller manager crashes but the API server, scheduler, and etcd are still running. Can you still create new pods manually? Can Deployments scale automatically? Think about which operations depend on the controller manager.
 
 ### 5.3 Example: ReplicaSet Controller
 
@@ -547,28 +553,28 @@ kubectl create deployment nginx --image=nginx --replicas=3
 
 ## Quiz
 
-1. **Which component is the only one that directly communicates with etcd?**
+1. **Your monitoring alert fires: "etcd latency exceeding 500ms." Within minutes, developers report that `kubectl` commands are slow or timing out. Why does etcd latency affect kubectl, and which other cluster behaviors would degrade?**
    <details>
    <summary>Answer</summary>
-   The kube-apiserver. All other components (scheduler, controllers, kubelet) communicate through the API server, never directly with etcd.
+   The kube-apiserver is the only component that communicates directly with etcd, and every kubectl command goes through the API server. When etcd is slow, the API server blocks waiting for reads and writes, causing kubectl timeouts. Beyond kubectl, the scheduler cannot persist pod binding decisions, controllers cannot update resource status, and kubelets cannot report node conditions. Essentially, the entire control loop stalls because etcd is the single source of truth and all state changes must flow through it.
    </details>
 
-2. **A pod is stuck in Pending state. Which component should you investigate first?**
+2. **A developer reports that their new Deployment shows `0/3` replicas ready. You run `kubectl get pods` and see three pods stuck in Pending. The scheduler pod in kube-system is Running. What are the most likely causes, and how would you investigate?**
    <details>
    <summary>Answer</summary>
-   The kube-scheduler. Pending means the pod hasn't been assigned to a node yet, which is the scheduler's job. Check scheduler logs and run `kubectl describe pod` to see why scheduling failed.
+   Even though the scheduler is running, Pending pods mean the scheduler cannot find a suitable node. Run `kubectl describe pod <pod-name>` and check the Events section for scheduling failure messages. The most likely causes are: insufficient CPU or memory on all nodes ("Insufficient cpu/memory"), taints on nodes that the pods don't tolerate (e.g., control-plane taint), node affinity or nodeSelector rules that no node satisfies, or unbound PersistentVolumeClaims. Check node capacity with `kubectl describe node` and compare against pod resource requests.
    </details>
 
-3. **You delete a pod from a ReplicaSet. What happens and why?**
+3. **During an incident, you discover the kube-controller-manager pod has been down for 10 minutes. Existing pods are still running and serving traffic. However, you notice a Deployment was scaled from 3 to 5 replicas 8 minutes ago, but only 3 pods exist. Explain why existing pods survived but the scale-up didn't happen.**
    <details>
    <summary>Answer</summary>
-   A new pod is created automatically. The ReplicaSet controller continuously watches for pods matching its selector. When it sees fewer pods than desired (spec.replicas), it creates new ones to reconcile the difference.
+   Existing pods continue running because the controller manager doesn't directly manage running containers — kubelet does that independently on each node. The controller manager runs reconciliation loops that compare desired state (in etcd) with current state. Without it, no controller is watching the Deployment to create a new ReplicaSet or watching the ReplicaSet to create additional pods. The scale-up was written to etcd via the API server, but the ReplicaSet controller wasn't running to act on it. Once the controller manager restarts, it will immediately detect the discrepancy (3 pods vs 5 desired) and create the missing 2 pods.
    </details>
 
-4. **Where are the manifests for control plane static pods located?**
+4. **A colleague accidentally deleted the file `/etc/kubernetes/manifests/kube-scheduler.yaml` on the control plane node. You try `kubectl delete pod kube-scheduler -n kube-system` to "restart" it, but nothing happens. What went wrong with this recovery approach, and what is the correct fix?**
    <details>
    <summary>Answer</summary>
-   `/etc/kubernetes/manifests/` on the control plane node. kubelet watches this directory and automatically starts/stops pods based on the YAML files there.
+   Static pods are managed by kubelet directly, not by the API server. The pod you see in `kubectl get pods -n kube-system` is a "mirror pod" — a read-only representation. Deleting the mirror pod does nothing because kubelet is the actual manager, and without the manifest file, kubelet has nothing to run. The correct fix is to restore the manifest file to `/etc/kubernetes/manifests/kube-scheduler.yaml` (from a backup, another control plane node, or by recreating it). Once the file is back, kubelet detects it and automatically starts the scheduler pod. This is why backing up the manifests directory is critical.
    </details>
 
 ---

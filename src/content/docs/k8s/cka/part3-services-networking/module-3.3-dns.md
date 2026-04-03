@@ -166,6 +166,8 @@ curl api.production             # ✓ Works (cross-namespace)
 curl api.production.svc.cluster.local   # ✓ Works (FQDN)
 ```
 
+> **Pause and predict**: A pod in namespace `staging` runs `curl api-service`. The cluster has an `api-service` in both `staging` and `production` namespaces. Which one does the pod reach, and why?
+
 ### 2.3 How Search Domains Work
 
 ```
@@ -308,6 +310,8 @@ k rollout restart deployment coredns -n kube-system
 
 ---
 
+> **Stop and think**: A pod reports "connection timed out" when calling another service by name. Is this necessarily a DNS problem? What steps would you take to determine whether DNS or the network is at fault?
+
 ## Part 4: DNS Debugging
 
 ### 4.1 DNS Debugging Workflow
@@ -397,6 +401,8 @@ k delete pod dns-debug
 | External domains fail | Forward config wrong | Check Corefile forward directive |
 
 ---
+
+> **What would happen if**: You set `dnsPolicy: Default` on a pod running in your cluster. The pod tries to resolve `my-service.default.svc.cluster.local`. Does it succeed? Why or why not?
 
 ## Part 5: DNS Policies
 
@@ -516,34 +522,34 @@ dig SRV _http._tcp.web-svc.default.svc.cluster.local
 
 ## Quiz
 
-1. **What DNS server do pods use by default?**
+1. **After a cluster upgrade, all pods start failing with "could not resolve host" errors. You check and CoreDNS pods are running. What would you investigate next, and what commands would you use?**
    <details>
    <summary>Answer</summary>
-   The CoreDNS service in kube-system namespace, typically at IP 10.96.0.10. This is configured via `/etc/resolv.conf` injected by kubelet.
+   Running does not mean healthy. First, verify CoreDNS is actually responding: `k run test --rm -it --image=busybox:1.36 --restart=Never -- nslookup kubernetes.default`. If that fails, check CoreDNS logs for errors: `k logs -n kube-system -l k8s-app=kube-dns --tail=50`. Then verify the CoreDNS Service has endpoints: `k get endpoints kube-dns -n kube-system`. Also check if a pod's `/etc/resolv.conf` still points to the correct nameserver IP. The upgrade might have changed the CoreDNS ClusterIP or corrupted the Corefile ConfigMap.
    </details>
 
-2. **How would a pod in namespace "app" reach a service "db" in namespace "data"?**
+2. **A pod in namespace `team-a` calls `curl db` and accidentally reaches a database in its own namespace instead of the one in namespace `shared`. The developer expected to reach the shared database. Explain what happened and how to prevent this.**
    <details>
    <summary>Answer</summary>
-   Use `db.data` or the FQDN `db.data.svc.cluster.local`. The short name `db` alone won't work from a different namespace.
+   The search domain in `/etc/resolv.conf` appends the pod's own namespace first, so `db` resolves to `db.team-a.svc.cluster.local`. Since a service named `db` exists in `team-a`, it matches before ever trying other namespaces. To reach the shared database, the developer must use `db.shared` or the full FQDN `db.shared.svc.cluster.local`. To prevent this, establish a naming convention where team-local services have prefixed names (e.g., `team-a-db`) and shared services use explicit cross-namespace references in application config.
    </details>
 
-3. **Where is CoreDNS configuration stored?**
+3. **You need to add a custom DNS entry so that `legacy-api.internal` resolves to `10.0.5.100` for all pods in the cluster. Where do you make this change and what is the risk?**
    <details>
    <summary>Answer</summary>
-   In a ConfigMap named `coredns` in the `kube-system` namespace. The configuration is in the `Corefile` key.
+   Edit the `coredns` ConfigMap in the `kube-system` namespace. Add a `hosts` block inside the Corefile: `hosts { 10.0.5.100 legacy-api.internal \n fallthrough }`. Then restart CoreDNS with `k rollout restart deployment coredns -n kube-system`. The risk is that editing the CoreDNS ConfigMap affects all DNS resolution cluster-wide. A syntax error in the Corefile will break ALL DNS, taking down service discovery for every pod. Always validate the config and have a rollback plan. Also note that `fallthrough` is essential -- without it, the hosts plugin will stop processing and other DNS queries will fail.
    </details>
 
-4. **What does `ndots:5` mean in `/etc/resolv.conf`?**
+4. **A developer complains that API calls to `api.external-partner.com` from their pod take 2 seconds, but only 50ms from their laptop. Both are on the same network. What is happening and how do you fix it?**
    <details>
    <summary>Answer</summary>
-   If a query has fewer than 5 dots, try appending search domains first before querying as absolute. This optimizes resolution for Kubernetes names like `web-svc.default.svc.cluster.local` (4 dots).
+   The `ndots:5` default in Kubernetes resolv.conf means `api.external-partner.com` (only 2 dots) is treated as a relative name. Before the actual query succeeds, the resolver tries: `api.external-partner.com.default.svc.cluster.local`, then `.svc.cluster.local`, then `.cluster.local` -- each returning NXDOMAIN after a timeout. This adds ~1.5 seconds of wasted DNS lookups. Fix options: set `dnsConfig.options.ndots: 2` in the pod spec, use a trailing dot in the URL (`api.external-partner.com.`), or configure the app to use the FQDN with trailing dot.
    </details>
 
-5. **A pod can't resolve `google.com`. What's likely wrong?**
+5. **You have a pod with `hostNetwork: true` that cannot resolve cluster service names. It can resolve external domains like `google.com` fine. What is the cause and fix?**
    <details>
    <summary>Answer</summary>
-   The `forward` directive in CoreDNS Corefile might be misconfigured, or there's no network path from the cluster to external DNS servers. Check Corefile and pod network connectivity.
+   When `hostNetwork: true` is set, the pod uses the node's network namespace, including its `/etc/resolv.conf`. The node's resolv.conf points to the node's DNS server (not CoreDNS), which knows nothing about cluster service names like `my-svc.default.svc.cluster.local`. External domains work because the node's DNS can resolve them. The fix is to set `dnsPolicy: ClusterFirstWithHostNet`, which tells the kubelet to inject the CoreDNS address into the pod's resolv.conf even though it uses the host network.
    </details>
 
 ---

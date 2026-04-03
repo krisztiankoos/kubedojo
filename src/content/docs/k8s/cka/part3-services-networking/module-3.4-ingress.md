@@ -249,6 +249,8 @@ spec:
 └────────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: You have two Ingress path rules: `/api` with `pathType: Prefix` and `/api/v1` with `pathType: Exact`. A request arrives for `/api/v1/users`. Which rule matches, and what happens to a request for `/api/v1` exactly?
+
 ### 3.3 Path Types
 
 | PathType | Behavior | Example |
@@ -340,6 +342,8 @@ spec:
 ```
 
 ---
+
+> **Stop and think**: Your Ingress serves both `api.example.com` and `web.example.com`. You want HTTPS for both but with different certificates. How many TLS secrets do you need, and where does TLS termination happen -- at the Ingress controller or at the backend pods?
 
 ## Part 4: TLS/HTTPS Configuration
 
@@ -481,6 +485,8 @@ spec:
 
 ---
 
+> **What would happen if**: You create an Ingress resource but forget to specify `ingressClassName`. There are two Ingress controllers installed in the cluster (nginx and traefik), and neither is marked as default. What happens to your Ingress?
+
 ## Part 6: Debugging Ingress
 
 ### 6.1 Debugging Workflow
@@ -594,36 +600,34 @@ Requests that don't match any rule go to the `defaultBackend`.
 
 ## Quiz
 
-1. **What's the difference between Ingress and LoadBalancer service?**
+1. **Your company runs 15 microservices, each needing external HTTPS access. A junior engineer proposes creating a LoadBalancer Service for each. What is wrong with this approach, and what would you recommend instead?**
    <details>
    <summary>Answer</summary>
-   Ingress is Layer 7 (HTTP/HTTPS) routing with path/host-based rules, while LoadBalancer is Layer 4 (TCP/UDP) with no routing intelligence. Ingress can serve many services with one external IP.
+   Each LoadBalancer Service provisions a separate cloud load balancer, meaning 15 external IPs and 15 times the cost. Instead, deploy a single Ingress controller (exposed via one LoadBalancer) and create Ingress resources with path-based and host-based routing rules to route to all 15 services. This uses one external IP, one load balancer, and gives you Layer 7 features like TLS termination, path routing, and virtual hosts. For new deployments, Gateway API is recommended over Ingress for even richer routing capabilities.
    </details>
 
-2. **An Ingress shows no ADDRESS. What's the likely cause?**
+2. **You create an Ingress and `kubectl get ingress` shows the resource but the ADDRESS column is empty. You wait 5 minutes and it is still empty. Walk through your troubleshooting steps.**
    <details>
    <summary>Answer</summary>
-   No Ingress controller is installed, or the `ingressClassName` doesn't match any installed controller. Install an Ingress controller and verify the IngressClass.
+   An empty ADDRESS means no controller is processing the Ingress. First, check if an Ingress controller is installed: `k get pods -n ingress-nginx` (or whichever namespace your controller uses). Second, verify the IngressClass: `k get ingressclass` and confirm your Ingress specifies a matching `ingressClassName`. If no IngressClass is marked as default and your Ingress omits `ingressClassName`, no controller will claim it. Third, check the controller logs for errors: `k logs -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx`. The ADDRESS populates only after a controller successfully processes the Ingress and assigns it an IP.
    </details>
 
-3. **What's the difference between `pathType: Prefix` and `pathType: Exact`?**
+3. **You have an Ingress routing `/api` to an API service and `/` to a frontend service. Users report that requests to `/api/users` return the frontend page instead of the API response. The Ingress looks correct. What is going on?**
    <details>
    <summary>Answer</summary>
-   `Prefix` matches any path starting with the specified prefix (`/api` matches `/api/users`). `Exact` requires an exact match (`/api` only matches `/api`, not `/api/`).
+   The order of path rules matters, and the `/` Prefix rule matches everything including `/api/users`. Check if the `pathType` is correct: both should be `Prefix`. With Prefix matching, the controller should match the longest prefix first (`/api` before `/`), but verify the Ingress controller's behavior. Also check if the rules are under the same host -- if they are split across different Ingress objects, the controller may not merge them correctly. Describe the Ingress and check the events for any warnings about overlapping paths.
    </details>
 
-4. **How do you configure HTTPS for an Ingress?**
+4. **A security audit requires that your Ingress serves HTTPS only, with HTTP requests redirected to HTTPS. The TLS certificate is stored in a Secret named `prod-tls`. Write the Ingress configuration and explain what happens if the Secret is in a different namespace than the Ingress.**
    <details>
    <summary>Answer</summary>
-   1. Create a TLS secret with certificate and key
-   2. Add a `tls` section to the Ingress spec with the hosts and secretName
-   3. The Ingress controller handles TLS termination
+   Add a `tls` section referencing the host and `secretName: prod-tls`, and set the annotation `nginx.ingress.kubernetes.io/ssl-redirect: "true"` to force HTTP-to-HTTPS redirect. The critical detail: the TLS Secret MUST be in the same namespace as the Ingress resource. If `prod-tls` is in a different namespace, the Ingress controller cannot access it and TLS will fail silently -- the controller will use a default/fake certificate instead. There is no cross-namespace Secret reference in the Ingress API. Gateway API solves this with ReferenceGrant.
    </details>
 
-5. **Requests to `/app/users` should reach the backend as `/users`. How?**
+5. **Your backend service expects requests at `/` but the Ingress routes `/app/(.*)` to it. Users visiting `/app/dashboard` see a 404 from the backend. How do you fix this, and why does the 404 occur?**
    <details>
    <summary>Answer</summary>
-   Use the rewrite annotation: `nginx.ingress.kubernetes.io/rewrite-target: /$1` with path `/app/(.*)` and `pathType: ImplementationSpecific`.
+   The 404 occurs because the Ingress forwards the full path `/app/dashboard` to the backend, but the backend only has routes defined under `/` (e.g., `/dashboard`, not `/app/dashboard`). Use the rewrite annotation to strip the prefix: set `nginx.ingress.kubernetes.io/rewrite-target: /$1` with path `/app/(.*)` and `pathType: ImplementationSpecific`. This rewrites `/app/dashboard` to `/dashboard` before forwarding to the backend. Note that rewrite annotations are controller-specific and not portable across different Ingress controllers, which is one reason Gateway API's native URLRewrite filter is preferred.
    </details>
 
 ---

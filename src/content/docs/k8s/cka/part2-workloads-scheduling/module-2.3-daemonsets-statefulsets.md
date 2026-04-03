@@ -132,6 +132,8 @@ spec:
 kubectl apply -f fluentd-daemonset.yaml
 ```
 
+> **Pause and predict**: You have a 5-node cluster and create a DaemonSet. Then a 6th node joins the cluster. What happens automatically? Now imagine you do the same with a Deployment set to 5 replicas -- what happens when the 6th node joins?
+
 ### 1.4 DaemonSet vs Deployment
 
 | Aspect | DaemonSet | Deployment |
@@ -296,6 +298,8 @@ StatefulSets manage stateful applications with:
 | Search engines | Elasticsearch |
 | Message queues | RabbitMQ |
 
+> **Pause and predict**: If you delete pod `web-1` from a StatefulSet, what name will the replacement pod get -- `web-1` or `web-3`? What happens to the PVC that was bound to `web-1`?
+
 ### 3.3 StatefulSet Requirements
 
 StatefulSets require a **Headless Service** for network identity:
@@ -415,6 +419,8 @@ spec:
 |--------|----------|
 | `OrderedReady` | Sequential creation/deletion (default) |
 | `Parallel` | All pods created/deleted simultaneously |
+
+> **Stop and think**: You're running a 3-replica StatefulSet for a database cluster. You want to test a new version on just one replica before rolling it out to all. How would you use the `partition` field to achieve a canary deployment? Which pod gets updated first -- web-0 or web-2?
 
 ### 4.3 Update Strategy
 
@@ -574,28 +580,28 @@ nslookup nginx-headless
 
 ## Quiz
 
-1. **What ensures exactly one pod runs on each node?**
+1. **Your monitoring team needs exactly one log collector pod on every node, including nodes added later. A colleague suggests using a Deployment with `replicas` set to the node count and pod anti-affinity. Why would a DaemonSet be a better choice, and what happens when a new node joins the cluster?**
    <details>
    <summary>Answer</summary>
-   A **DaemonSet**. It automatically creates a pod on each node (or selected nodes via nodeSelector) and removes pods when nodes are removed.
+   A DaemonSet is better because it automatically creates a pod on every new node that joins the cluster and removes pods from nodes that leave. With a Deployment and anti-affinity, you'd need to manually increase the replica count each time a node is added, and the anti-affinity only *prefers* spreading -- it doesn't guarantee one-per-node. Additionally, DaemonSets can tolerate taints that normal Deployments cannot, ensuring coverage on special-purpose nodes like GPU nodes or control plane nodes.
    </details>
 
-2. **Why do StatefulSets need a headless Service?**
+2. **You're deploying a 3-node PostgreSQL cluster with primary-standby replication. The standby nodes need to connect to the primary by a stable DNS name, and each node needs its own persistent volume that survives pod restarts. Which controller do you use, and what additional resource is required? What happens if `web-1` (a standby) crashes?**
    <details>
    <summary>Answer</summary>
-   A headless Service (clusterIP: None) provides stable DNS names for each pod. Without it, pods wouldn't have predictable network identities. The DNS format is `<pod-name>.<service-name>.<namespace>.svc.cluster.local`.
+   Use a StatefulSet with a headless Service (`clusterIP: None`). The headless Service is required because it provides stable DNS names like `web-0.postgres.default.svc.cluster.local` for each pod. The `volumeClaimTemplates` field ensures each pod gets its own PVC (e.g., `data-web-0`, `data-web-1`). When `web-1` crashes, the StatefulSet controller recreates it with the exact same name `web-1` (not `web-3`), and it reattaches to its original PVC `data-web-1`, preserving all data. The standby configuration pointing to `web-0.postgres` continues to work because the DNS name is stable.
    </details>
 
-3. **What happens to PVCs when you delete a StatefulSet?**
+3. **You deleted a StatefulSet with `kubectl delete sts web`, but your storage costs haven't decreased. A colleague says the data should have been cleaned up automatically. What actually happened, and what must you do to reclaim the storage?**
    <details>
    <summary>Answer</summary>
-   PVCs are **NOT** automatically deleted. This is a safety feature to preserve data. You must manually delete the PVCs if you want to remove the storage.
+   PVCs created by a StatefulSet's `volumeClaimTemplates` are NOT automatically deleted when the StatefulSet is deleted. This is an intentional safety feature to prevent accidental data loss -- database data is precious. The PVCs (e.g., `data-web-0`, `data-web-1`, `data-web-2`) still exist and are bound to their PersistentVolumes, consuming storage. You must manually delete them with `kubectl delete pvc data-web-0 data-web-1 data-web-2`. Always audit PVCs after deleting StatefulSets to avoid ongoing storage costs.
    </details>
 
-4. **How does StatefulSet scaling differ from Deployment?**
+4. **You need to scale a StatefulSet from 3 replicas to 5. In what order are the new pods created? Then you scale back down to 2. In what order are pods terminated, and why does this ordering matter for distributed databases?**
    <details>
    <summary>Answer</summary>
-   StatefulSets scale **sequentially**. Scale up: web-0, then web-1, then web-2 (each waits for previous to be Ready). Scale down: reverse order. Deployments scale pods in parallel.
+   Scaling up: `web-3` is created first and must become Running and Ready before `web-4` is created. Scaling down: `web-4` is terminated first, then `web-3`, then `web-2`. This reverse-ordinal ordering matters for distributed databases because higher-numbered replicas are typically the newest members of the cluster. Removing them first ensures the most established members (which may hold leadership roles or have the most data) are the last to be removed. For example, in a database cluster, `web-0` is often the primary, and removing it last prevents unnecessary leader elections during scale-down.
    </details>
 
 ---

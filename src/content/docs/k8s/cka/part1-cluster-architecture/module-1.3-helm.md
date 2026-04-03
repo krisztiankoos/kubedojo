@@ -231,6 +231,8 @@ helm get manifest my-nginx
 
 ## Part 4: Customizing with Values
 
+> **Pause and predict**: You run `helm install my-app bitnami/nginx --set replicaCount=3 -f values.yaml` where `values.yaml` contains `replicaCount: 5`. How many replicas will you get? Think about which source of values takes priority.
+
 ### 4.1 Values Hierarchy
 
 Values can be set in multiple ways. Priority (highest to lowest):
@@ -334,6 +336,8 @@ helm upgrade --install my-nginx bitnami/nginx
 helm upgrade my-nginx bitnami/nginx --reuse-values --set replicaCount=5
 ```
 
+> **Stop and think**: You run `helm upgrade my-app bitnami/nginx` without `--reuse-values` and without specifying any values. What happens to all the custom values you set during the original install? Where does Helm get the values for this upgrade?
+
 ### 5.2 Release History
 
 ```bash
@@ -398,6 +402,8 @@ mychart/
 │   └── NOTES.txt       # Post-install message
 └── README.md           # Documentation
 ```
+
+> **What would happen if**: You delete the Kubernetes Secret that stores a Helm release's metadata (the ones labeled `owner=helm`). Can you still run `helm upgrade` or `helm rollback` on that release?
 
 ### 7.1 How Templates Work
 
@@ -498,32 +504,28 @@ helm status web
 
 ## Quiz
 
-1. **What command shows all configurable options for a chart?**
+1. **During the CKA exam, you need to install a chart but you don't know the exact parameter name for setting the Service type to NodePort. The exam environment has no internet access. How do you find the correct parameter name, and what command do you use?**
    <details>
    <summary>Answer</summary>
-   `helm show values <chart-name>` displays all the values that can be customized. Example: `helm show values bitnami/nginx`
+   Run `helm show values <chart-name>` to display all configurable values with their defaults and structure. You can pipe it through grep to narrow down: `helm show values bitnami/nginx | grep -i service` to find service-related parameters. This works entirely offline since the chart is already in your local repository cache. For the actual install, you'd use something like `helm install my-app bitnami/nginx --set service.type=NodePort`. The key exam skill is knowing that `helm show values` is your documentation when you can't access the internet.
    </details>
 
-2. **You installed a release in namespace "production" but `helm list` shows nothing. Why?**
+2. **A teammate installed a Helm release last week, but now `helm list` shows nothing and `helm status my-app` returns "release not found." However, `kubectl get deploy my-app` shows the deployment still running. What are two possible explanations?**
    <details>
    <summary>Answer</summary>
-   Helm releases are namespaced. You need to specify the namespace: `helm list -n production`. Or use `helm list -A` to see all namespaces.
+   First, the release may have been installed in a different namespace — Helm releases are namespaced, so you need `helm list -n <namespace>` or `helm list -A` to find it. Second, someone may have run `helm uninstall my-app` without `--keep-history`, which removes the Helm release metadata (stored as Secrets labeled `owner=helm`) but doesn't delete the Kubernetes resources if they were modified outside Helm or if the uninstall partially failed. You can verify by checking `kubectl get secrets -l owner=helm -A` to see if any release secrets exist. The running deployment is now "orphaned" from Helm's perspective and must be managed directly with kubectl.
    </details>
 
-3. **How do you upgrade a release while keeping existing values and changing only replicas?**
+3. **You upgraded a production Helm release, and now the application is returning 500 errors. You need to revert immediately. The release has 4 revisions in its history. What commands do you run, and how do you verify the rollback succeeded?**
    <details>
    <summary>Answer</summary>
-   `helm upgrade my-release chart-name --reuse-values --set replicaCount=5`
-
-   The `--reuse-values` flag keeps all previously set values, and `--set` overrides only the specified value.
+   First, check the history: `helm history my-app -n production` to see which revision was the last working one. Then roll back: `helm rollback my-app 3 -n production` (assuming revision 3 was the last good state, since revision 4 caused the issue). Verify with: `helm status my-app -n production` to confirm the release status is "deployed" at the expected revision, then `kubectl get pods -n production` to check pods are Running and not in CrashLoopBackOff. You can also run `helm get values my-app -n production` to confirm the values match the known-good configuration. Helm rollback creates a new revision (5) with the same config as revision 3, so your history is preserved.
    </details>
 
-4. **What's the difference between `helm template` and `helm install --dry-run`?**
+4. **Your CI/CD pipeline runs `helm template my-app ./chart > manifests.yaml && kubectl apply -f manifests.yaml` instead of `helm install`. A colleague suggests using `helm install --dry-run` for validation instead. What critical difference would this catch that `helm template` misses?**
    <details>
    <summary>Answer</summary>
-   `helm template` renders templates locally without connecting to the cluster—it can't validate if resources already exist or if the API types are valid.
-
-   `helm install --dry-run` connects to the cluster, performs validation, but doesn't create resources. It's a more accurate test.
+   `helm template` renders templates locally without connecting to the Kubernetes cluster. It cannot validate whether the API resources actually exist on the cluster (e.g., if you reference a CRD that isn't installed), whether resource names conflict with existing objects, or whether the cluster's API version supports the resources in the chart. `helm install --dry-run` connects to the cluster and runs server-side validation, catching issues like "no matches for kind 'ServiceMonitor'" (missing CRD) or invalid API versions. However, neither approach actually creates resources. For the CI/CD pipeline, using `helm install` or `helm upgrade --install` is better than the template-and-apply pattern because it also gives you Helm's release tracking, history, and rollback capabilities.
    </details>
 
 ---

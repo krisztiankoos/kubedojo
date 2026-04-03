@@ -139,6 +139,8 @@ By the end of this module, you'll be able to:
 
 ---
 
+> **Pause and predict**: You have a frontend deployment and a backend deployment. The frontend needs to call the backend, and external users need to reach the frontend. What service type would you choose for each, and why?
+
 ## Part 2: Service Types
 
 ### 2.1 The Four Service Types
@@ -529,6 +531,8 @@ Use case: Pointing to external databases or services outside the cluster.
 
 ---
 
+> **Stop and think**: A developer tells you "my service isn't working." Before you touch the keyboard, what three things would you check first, and in what order? Think about the chain from Service to Endpoints to Pods.
+
 ## Part 6: Debugging Services
 
 ### 6.1 Service Debugging Workflow
@@ -629,6 +633,8 @@ spec:
 
 ---
 
+> **What would happen if**: You create a Service with `sessionAffinity: ClientIP` and then scale your deployment from 3 replicas to 1 replica. What happens to clients that were pinned to the deleted pods?
+
 ## Traffic Distribution (K8s 1.35+)
 
 Kubernetes 1.35 graduated **PreferSameNode** traffic distribution to GA, giving you fine-grained control over where service traffic is routed:
@@ -669,39 +675,34 @@ This is particularly useful for latency-sensitive workloads like caches, sidecar
 
 ## Quiz
 
-1. **What's the difference between `port` and `targetPort` in a service?**
+1. **A developer has a Service with `port: 80` and `targetPort: 8080`, but their app container listens on port 80. Users report "connection refused" when hitting the Service. What went wrong and how would you fix it?**
    <details>
    <summary>Answer</summary>
-   `port` is the port the service listens on. `targetPort` is the port on the pod that receives the traffic. Example: Service listens on 80, forwards to pod's 8080.
+   The `targetPort` (8080) does not match the port the container is actually listening on (80). When kube-proxy forwards traffic to the pod, it sends it to port 8080, but nothing is listening there. The fix is to either change `targetPort` to 80 in the Service spec, or change the container to listen on 8080. The key distinction: `port` is what clients use to reach the Service, `targetPort` is where the pod actually receives the traffic.
    </details>
 
-2. **A service shows "No endpoints". What's the most likely cause?**
+2. **You deploy a new microservice and create a Service for it, but `kubectl get endpoints` shows `<none>`. The pods are running and show `1/1 READY`. Walk through your debugging process.**
    <details>
    <summary>Answer</summary>
-   The service's selector doesn't match any running pod's labels. Check that the selector labels exactly match the pod labels using `k get pods --show-labels`.
+   Since pods are running and ready, the most likely cause is a selector mismatch. First, check the Service selector with `k get svc <name> -o yaml | grep -A5 selector`. Then compare with pod labels using `k get pods --show-labels`. Even a single character difference (e.g., `app: web-app` vs `app: webapp`) will cause zero endpoints. Also check that the Service and pods are in the same namespace -- Services only select pods within their own namespace.
    </details>
 
-3. **How do you access a ClusterIP service from outside the cluster?**
+3. **A developer created a ClusterIP Service for their frontend app but external users can't reach it. They ask you to fix it. What's wrong, what are the options, and what trade-offs should you consider?**
    <details>
    <summary>Answer</summary>
-   You can't directly. ClusterIP is internal only. You need to either:
-   - Change to NodePort or LoadBalancer type
-   - Use `kubectl port-forward`
-   - Access via an Ingress or Gateway
+   ClusterIP is internal-only and cannot be reached from outside the cluster. The options are: (1) Change to NodePort -- free, but uses high ports (30000-32767) and exposes on every node; (2) Change to LoadBalancer -- clean external IP, but costs money per LB in cloud environments; (3) Put an Ingress or Gateway in front -- single entry point for many services with path/host routing, but requires an Ingress controller. For production, Ingress/Gateway is usually the right choice because it consolidates external access through one load balancer.
    </details>
 
-4. **What command exposes a deployment as a NodePort service on port 80?**
+4. **During a CKA exam, you need to expose a deployment called `payment-api` as a NodePort service on port 80, targeting container port 3000, with a specific NodePort of 30100. Write the command and explain what happens if you omit the `--target-port` flag.**
    <details>
    <summary>Answer</summary>
-   `k expose deployment <name> --port=80 --type=NodePort`
-
-   The nodePort will be auto-assigned (30000-32767) unless specified.
+   The imperative approach requires YAML since `kubectl expose` cannot set a specific nodePort. Use: `k expose deployment payment-api --port=80 --target-port=3000 --type=NodePort --dry-run=client -o yaml > svc.yaml`, then edit the YAML to add `nodePort: 30100` and apply it. If you omit `--target-port`, it defaults to the same value as `--port` (80), so traffic would be forwarded to port 80 on the pod instead of 3000, resulting in connection refused if the app listens on 3000.
    </details>
 
-5. **What DNS name can a pod in namespace "prod" use to reach service "api" in namespace "staging"?**
+5. **Your team runs services in namespaces `frontend`, `backend`, and `database`. A pod in `frontend` needs to call service `api` in `backend`. It works with `curl api.backend` but fails with just `curl api`. Explain why and when you'd use the full FQDN instead.**
    <details>
    <summary>Answer</summary>
-   `api.staging` or the full FQDN `api.staging.svc.cluster.local`
+   The short name `api` only works within the same namespace because the search domain in `/etc/resolv.conf` appends the pod's own namespace first (`api.frontend.svc.cluster.local`), which does not exist. Using `api.backend` works because the search domain appends `.svc.cluster.local` to make `api.backend.svc.cluster.local`. You would use the full FQDN (`api.backend.svc.cluster.local`) in application configuration files for clarity and to avoid ambiguity, especially in production where misconfigured search domains could silently route to the wrong service.
    </details>
 
 ---

@@ -143,6 +143,8 @@ Kubernetes networking has four fundamental requirements:
 
 ## Part 2: CNI Plugins
 
+> **Pause and predict**: You are choosing a CNI for a new cluster. The requirements are: must support NetworkPolicy, must work on bare metal (no cloud), and the team has limited networking expertise. Looking at the comparison table below, which CNI would you choose and why?
+
 ### 2.1 Popular CNI Plugins
 
 | Plugin | Network Policy | Performance | Use Case |
@@ -389,6 +391,8 @@ ipvsadm -Ln
 
 ---
 
+> **Stop and think**: A new pod is stuck in `ContainerCreating` state. You check events and see "network plugin is not ready". Before you start changing CNI configuration, what three things would you check first to determine if this is a CNI installation issue or a node-specific problem?
+
 ## Part 5: Troubleshooting Network Issues
 
 ### 5.1 Network Debugging Workflow
@@ -499,6 +503,8 @@ kubeadm init --pod-network-cidr=10.244.0.0/16 --service-cidr=10.96.0.0/12
 
 ---
 
+> **What would happen if**: You set `hostNetwork: true` on a pod running nginx on port 80, and there is already another pod with `hostNetwork: true` running on port 80 on the same node. What happens when Kubernetes tries to schedule your pod?
+
 ## Part 7: Host Network and Node Ports
 
 ### 7.1 hostNetwork Pods
@@ -560,34 +566,34 @@ Differences:
 
 ## Quiz
 
-1. **What is the CNI responsible for?**
+1. **After initializing a cluster with `kubeadm init`, you notice all pods except those in `kube-system` are stuck in `Pending` or `ContainerCreating`. CoreDNS pods also show `ContainerCreating`. What is the root cause and what must you do before deploying any workloads?**
    <details>
    <summary>Answer</summary>
-   CNI handles pod IP allocation (IPAM), network namespace setup, pod-to-pod routing, and optionally Network Policy enforcement. kube-proxy handles service routing separately.
+   No CNI plugin is installed. Kubernetes does not ship with networking -- you must install a CNI plugin (Calico, Cilium, Flannel, etc.) before pods can get IP addresses and communicate. CoreDNS pods are also stuck because they need pod networking to start. The fix: install a CNI plugin that matches the `--pod-network-cidr` specified during `kubeadm init`. For example, if you used `--pod-network-cidr=10.244.0.0/16`, install Calico or Flannel configured for that CIDR. Until the CNI is installed, the node will show `NotReady` status.
    </details>
 
-2. **Why doesn't Flannel support Network Policies?**
+2. **Your cluster uses Flannel and a security team member creates NetworkPolicies to isolate the production namespace. After deploying the policies, they test and find that pods can still communicate freely across namespaces. The YAML is correct. What went wrong?**
    <details>
    <summary>Answer</summary>
-   Flannel is a simple overlay network focused only on pod connectivity. It doesn't implement the network policy controller needed to enforce rules. Use Calico, Cilium, or Weave for policy support.
+   Flannel does not support NetworkPolicy enforcement. The API server accepts the NetworkPolicy objects (they are valid Kubernetes resources), but without a CNI that implements the network policy controller, they are never enforced. This is a dangerous situation because it gives a false sense of security. The options are: (1) Replace Flannel with Calico, Cilium, or Weave which natively support NetworkPolicy; (2) Install Canal, which combines Flannel's networking with Calico's policy engine; or (3) add a standalone policy engine alongside Flannel (e.g., Calico policy-only mode).
    </details>
 
-3. **How does kube-proxy route traffic to services?**
+3. **Pods on Node A can reach pods on Node A, but cannot reach pods on Node B. All pods have IPs and are in Running state. Both nodes show `Ready`. Where in the networking stack is the problem, and how would you diagnose it?**
    <details>
    <summary>Answer</summary>
-   kube-proxy watches the API server for Service and Endpoint changes, then programs iptables (or IPVS) rules on each node. When traffic hits a Service IP, these rules DNAT (redirect) it to a backend pod IP.
+   This is a CNI cross-node routing issue. Same-node traffic works (the bridge handles it), but cross-node traffic fails, pointing to the overlay or routing layer. Diagnosis steps: (1) Check CNI daemon pods on both nodes: `k get pods -n kube-system -o wide | grep -E "calico|flannel|cilium"`. (2) Check if the CNI tunnel interface exists on both nodes (e.g., `flannel.1` for VXLAN, `tunl0` for Calico IPIP). (3) Verify the node-to-node path allows the CNI protocol (VXLAN uses UDP 4789, BGP uses TCP 179 -- check cloud security groups or host firewalls). (4) Check routes on each node: `ip route` should show routes to the other node's pod CIDR.
    </details>
 
-4. **What's the difference between iptables and IPVS mode?**
+4. **Your cluster runs 8,000 Services. During peak traffic, kube-proxy on each node takes 30 seconds to update rules after a Service change, and CPU spikes on all nodes. The cluster uses iptables mode. What is happening and what is the recommended fix?**
    <details>
    <summary>Answer</summary>
-   iptables mode uses chain rules (O(n) lookup), works well for small clusters. IPVS uses kernel-level load balancing (O(1) lookup), better for large clusters with many services/pods, and supports more load balancing algorithms.
+   In iptables mode, kube-proxy creates iptables rules for every Service and Endpoint combination. With 8,000 Services, this generates tens of thousands of rules. Every change requires rewriting a large portion of the iptables ruleset, causing the CPU spike. Rule evaluation is also O(n), slowing packet processing. The fix is to switch kube-proxy to IPVS mode (edit the kube-proxy ConfigMap: `mode: "ipvs"`) which uses a kernel-level hash table for O(1) lookups and handles rule updates more efficiently. Alternatively, for even better performance, consider using Cilium in eBPF kube-proxy replacement mode, which moves Service routing entirely into eBPF programs.
    </details>
 
-5. **A pod is stuck in ContainerCreating. What network issue might cause this?**
+5. **A developer created a pod with `hostNetwork: true` but did not set `dnsPolicy`. The pod can reach external websites by IP but cannot resolve any cluster service names. External DNS resolution (like `google.com`) works fine. Explain the root cause and the one-line fix.**
    <details>
    <summary>Answer</summary>
-   The CNI plugin might not be installed, misconfigured, or failing. Check CNI pods in kube-system, CNI configuration in /etc/cni/net.d/, and CNI logs.
+   When `hostNetwork: true` is set, the pod shares the node's network namespace, including its `/etc/resolv.conf`. The node's resolv.conf points to the infrastructure DNS server (e.g., the cloud provider's DNS or a corporate DNS), not CoreDNS. This DNS server knows about external names like `google.com` but nothing about cluster-internal names like `my-svc.default.svc.cluster.local`. The fix: set `dnsPolicy: ClusterFirstWithHostNet` in the pod spec. This tells the kubelet to inject the CoreDNS address into the pod's resolv.conf, enabling cluster DNS resolution even though the pod uses the host network.
    </details>
 
 ---

@@ -173,6 +173,8 @@ spec:
 | Delete | PV and underlying storage deleted | Dynamic provisioning, dev/test |
 | Recycle | Basic scrub (`rm -rf /data/*`) | **Deprecated** - don't use |
 
+> **Stop and think**: A junior admin creates a PV with `reclaimPolicy: Delete` for a production PostgreSQL database. A developer accidentally deletes the PVC. What happens to the data? What reclaim policy should have been used, and what additional steps would be needed to reuse that PV after a PVC deletion?
+
 ### 2.4 Volume Modes
 
 ```yaml
@@ -385,6 +387,8 @@ spec:
 - A PVC with `ReadWriteMany` access mode, OR
 - A StatefulSet with volumeClaimTemplates (each replica gets its own PVC)
 
+> **Pause and predict**: You create a Deployment with 3 replicas, each mounting the same PVC with access mode `ReadWriteOnce`. Replica 1 starts fine on node-1. What happens when replica 2 gets scheduled to node-2? Would changing to `ReadWriteOncePod` (RWOP) make things better or worse?
+
 ### 4.3 Read-Only PVC Mount
 
 ```yaml
@@ -502,6 +506,8 @@ For Retain policy, data remains on the storage. Clean up steps:
 2. Delete data from underlying storage
 3. Remove claimRef (as above) or delete/recreate PV
 
+> **Pause and predict**: You have a PV in `Released` state after its PVC was deleted. You patch the PV to remove the `claimRef`, making it `Available` again. A new PVC binds to it. Will the new PVC see the old data that was on the volume, or will it be empty?
+
 ---
 
 ## Common Mistakes
@@ -520,66 +526,63 @@ For Retain policy, data remains on the storage. Clean up steps:
 
 ## Quiz
 
-### Q1: PV Scope
-Are PersistentVolumes namespaced or cluster-scoped?
+### Q1: Cross-Namespace Storage Mystery
+A developer in the `frontend` namespace creates a PVC requesting 10Gi with `storageClassName: manual`. An admin has created a 50Gi PV with `storageClassName: manual` in the cluster. The PVC binds successfully. But when the developer tries to reference this PVC from a pod in the `backend` namespace, the pod fails. Why does the pod fail, and what is the correct approach?
 
 <details>
 <summary>Answer</summary>
 
-**Cluster-scoped**. PersistentVolumes don't belong to any namespace - they're available cluster-wide. PersistentVolumeClaims are namespaced and can only be used by pods in the same namespace.
+PersistentVolumes are **cluster-scoped** (no namespace), so the PV itself is visible everywhere. However, PersistentVolumeClaims are **namespaced** -- the PVC `my-claim` in `frontend` cannot be referenced by a pod in `backend`. The pod fails because it cannot find a PVC with that name in its own namespace. The correct approach is to create a separate PVC in the `backend` namespace. Note that the 50Gi PV is already bound to the `frontend` PVC exclusively, so the `backend` PVC would need its own PV or dynamic provisioning.
 
 </details>
 
-### Q2: Binding Size
-A PVC requests 20Gi. Available PVs are 10Gi, 50Gi, and 100Gi. Which one binds?
+### Q2: Wasted Storage Investigation
+Your cluster has three PVs: 10Gi, 50Gi, and 100Gi, all with `storageClassName: standard` and `accessModes: [ReadWriteOnce]`. A developer creates a PVC requesting 20Gi with the same StorageClass. After binding, they complain that `kubectl get pvc` shows 50Gi capacity, not 20Gi. They ask: "Where did the extra 30Gi go? Can another PVC use it?"
 
 <details>
 <summary>Answer</summary>
 
-**50Gi** - Kubernetes selects the smallest PV that satisfies the request. The 10Gi is too small. Between 50Gi and 100Gi, 50Gi is the better match to minimize wasted space.
+Kubernetes selects the **smallest PV that satisfies the request** -- the 10Gi PV is too small, so the 50Gi PV binds. The binding is exclusive: the entire 50Gi PV is reserved for this PVC, even though only 20Gi was requested. No other PVC can use the remaining 30Gi -- it is effectively wasted. This is a key reason dynamic provisioning (via StorageClasses) is preferred in production: it creates PVs sized exactly to the request. To avoid waste with static provisioning, admins should create PVs that closely match expected PVC sizes.
 
 </details>
 
-### Q3: Access Mode Compatibility
-Can a PVC requesting `ReadWriteOnce` bind to a PV with `ReadWriteMany`?
+### Q3: Multi-Replica Deployment Failure
+A team deploys a 3-replica Deployment where each pod mounts the same PVC (access mode `ReadWriteOnce`). Replica 1 starts on node-A. Replica 2 is scheduled to node-B but gets stuck in `ContainerCreating` with a Multi-Attach error. What is the root cause, and what are two different solutions?
 
 <details>
 <summary>Answer</summary>
 
-**Yes**. The PVC's requested access modes must be a subset of what the PV offers. RWX includes RWO capability, so a RWO request can be satisfied by a RWX PV.
+`ReadWriteOnce` (RWO) means the volume can only be mounted by a **single node** at a time. Replica 2 on node-B cannot attach the volume that is already mounted on node-A. Two solutions: (1) Switch to a storage backend that supports `ReadWriteMany` (RWX) like NFS, and change the PVC access mode to RWX so all replicas on different nodes can mount it simultaneously. (2) Convert the Deployment to a **StatefulSet** with `volumeClaimTemplates`, which gives each replica its own independent PVC and PV -- this is the correct pattern for stateful workloads like databases where each replica needs its own storage.
 
 </details>
 
-### Q4: Released PV
-A PV shows status "Released". What does this mean and what happens next?
+### Q4: Released PV Recovery
+A production PostgreSQL PVC was accidentally deleted. The PV has `reclaimPolicy: Retain` and now shows status `Released`. The team needs to recover the data. They try creating a new PVC with the same name and spec, but it stays `Pending` instead of binding to the Released PV. What is blocking the binding, and what are the exact steps to recover?
 
 <details>
 <summary>Answer</summary>
 
-"Released" means the bound PVC was deleted but the PV still has a claimRef. With **Retain** policy, the PV stays Released until an admin manually clears claimRef. With **Delete** policy, the PV and underlying storage are automatically deleted.
+A Released PV still has a `claimRef` pointing to the old, deleted PVC. Even though a new PVC has the same name, the PV controller will not rebind it automatically because the UID in the claimRef does not match. The recovery steps are: (1) Verify the PV still has data: `kubectl get pv <name> -o yaml` and check the backend path. (2) Remove the stale claimRef: `kubectl patch pv <name> -p '{"spec":{"claimRef": null}}'`. This changes the PV status to `Available`. (3) Create the new PVC with matching storageClassName, access modes, and optionally `volumeName: <pv-name>` to force binding to that specific PV. The data on the underlying storage is preserved throughout this process because the Retain policy prevents deletion.
 
 </details>
 
-### Q5: StorageClass Empty String
-What's the difference between `storageClassName: ""` and not specifying storageClassName at all?
+### Q5: Static Binding Trap
+A developer creates a PVC without specifying `storageClassName`. The cluster has a default StorageClass. Meanwhile, an admin has manually created a PV with `storageClassName: ""`. The PVC never binds to the manual PV and instead triggers dynamic provisioning. Why, and how should the PVC be configured for manual binding?
 
 <details>
 <summary>Answer</summary>
 
-- `storageClassName: ""` (empty string): Only bind to PVs with no storageClassName, disable dynamic provisioning
-- Not specified: Use the cluster's default StorageClass (if one exists), may trigger dynamic provisioning
-
-For manual PV-to-PVC binding, explicitly set `storageClassName: ""` on both.
+When `storageClassName` is **omitted** from a PVC, Kubernetes uses the cluster's **default StorageClass**, which triggers dynamic provisioning -- it does not look for PVs with empty storageClassName. To explicitly opt out of dynamic provisioning and bind to the manual PV, the PVC must set `storageClassName: ""` (empty string). This tells Kubernetes: "only bind to PVs that also have no StorageClass, and do not trigger any provisioner." Both the PV and PVC must have `storageClassName: ""` for manual binding to work. This distinction between "omitted" and "empty string" is a common exam gotcha.
 
 </details>
 
-### Q6: Local PV Requirements
-What special configuration does a local PersistentVolume require?
+### Q6: Local PV Scheduling Failure
+A team creates a local PV backed by an SSD at `/mnt/disks/ssd1` on `worker-node-1`, but forgets to add `nodeAffinity`. A pod using this PV gets scheduled to `worker-node-2` and fails with a mount error. Explain why the nodeAffinity is required for local PVs (but not for NFS or cloud PVs), and write the nodeAffinity section needed.
 
 <details>
 <summary>Answer</summary>
 
-Local PVs require **nodeAffinity** to specify which node has the storage. Without this, pods could be scheduled to nodes without access to the local storage.
+Local PVs reference storage that is **physically attached to a specific node** -- the path `/mnt/disks/ssd1` only exists on `worker-node-1`. Without nodeAffinity, the scheduler does not know which node has the storage and may schedule the pod anywhere. NFS and cloud PVs do not need this because NFS is network-accessible from all nodes, and cloud PVs are attached dynamically by the CSI driver. The required nodeAffinity section constrains the scheduler to place pods on the correct node:
 
 ```yaml
 nodeAffinity:
@@ -589,8 +592,10 @@ nodeAffinity:
       - key: kubernetes.io/hostname
         operator: In
         values:
-        - specific-node-name
+        - worker-node-1
 ```
+
+This ensures pods using the local PV are only scheduled to `worker-node-1` where the disk exists.
 
 </details>
 

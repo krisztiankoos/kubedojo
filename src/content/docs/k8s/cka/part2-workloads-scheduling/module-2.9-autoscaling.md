@@ -118,6 +118,8 @@ spec:
         averageUtilization: 85
 ```
 
+> **Pause and predict**: You create an HPA with `targetCPUUtilization: 50%` and `min: 2, max: 10`. Your 3 pods are currently at 90% CPU utilization. How many replicas will the HPA calculate as needed? (Hint: the formula is `ceil(currentReplicas * (currentMetric / targetMetric))`)
+
 ### 1.3 How HPA Decides
 
 ```
@@ -189,6 +191,8 @@ k get hpa web -w
 
 VPA automatically adjusts CPU and memory requests/limits based on observed usage. Unlike HPA (more pods), VPA adjusts the *size* of each pod.
 
+> **Stop and think**: Your team runs a PostgreSQL database as a StatefulSet with a single replica. During peak hours, the database needs more CPU and memory, but you can't just add more replicas (that's not how databases work). What autoscaling approach would you use here -- HPA or VPA? What mode would you start with if you're cautious?
+
 ### 3.1 When to Use VPA vs HPA
 
 | Scenario | Use |
@@ -226,6 +230,8 @@ spec:
 
 ---
 
+> **Pause and predict**: You set up HPA on a Deployment but `kubectl get hpa` shows `TARGETS: <unknown>/80%`. The HPA never scales. What is likely missing from your cluster, and what else might be missing from your pod spec?
+
 ## Common Mistakes
 
 | Mistake | Problem | Solution |
@@ -241,28 +247,28 @@ spec:
 
 ## Quiz
 
-1. **What does HPA need to function?**
+1. **You deployed an HPA for your web application, but `kubectl get hpa` shows `TARGETS: <unknown>/80%` and the replica count never changes. The application is clearly under heavy load. Walk through your troubleshooting steps to get the HPA working.**
    <details>
    <summary>Answer</summary>
-   metrics-server must be installed to provide CPU/memory metrics. Without it, HPA shows `<unknown>` for current values and cannot make scaling decisions.
+   The `<unknown>` target means the HPA cannot read metrics. First, check if metrics-server is installed: run `kubectl top nodes` -- if it returns an error ("Metrics API not available"), install metrics-server. Second, even with metrics-server running, the HPA needs the Deployment's pods to have `resources.requests.cpu` set. Without CPU requests, HPA cannot calculate utilization percentage (utilization = current usage / request). Fix by running `kubectl set resources deployment/web --requests=cpu=100m`. After both fixes, the HPA should show actual utilization within 15-30 seconds and begin making scaling decisions.
    </details>
 
-2. **Create an HPA for deployment `api` that scales between 3-15 pods at 70% CPU.**
+2. **Your e-commerce API has an HPA with `min: 2, max: 20, targetCPU: 50%`. During Black Friday, traffic spikes and all 20 replicas are running at 95% CPU. The HPA can't scale beyond 20, and users are getting timeouts. What are three approaches to handle this situation, both for the immediate crisis and for next year?**
    <details>
    <summary>Answer</summary>
-   `kubectl autoscale deployment api --min=3 --max=15 --cpu-percent=70`
+   For the immediate crisis: (1) Increase the HPA's `maxReplicas` with `kubectl patch hpa web --patch '{"spec":{"maxReplicas":40}}'` to allow more pods. (2) If nodes are full, the cluster autoscaler needs to add more nodes -- verify it's enabled and has headroom in the node group's max size. For next year: (3) Pre-scale before the event by manually setting a higher `minReplicas` before traffic hits (e.g., `kubectl patch hpa web --patch '{"spec":{"minReplicas":15}}'`). This avoids the latency of reactive scaling. Also consider using HPA with custom metrics (requests-per-second) instead of CPU, which responds faster to traffic changes than CPU utilization does.
    </details>
 
-3. **What's the difference between HPA and VPA?**
+3. **Your team runs a single-replica Redis cache as a StatefulSet. During peak hours, it needs more CPU and memory but adding replicas isn't an option since the app uses a single Redis instance. A colleague suggests HPA. Why won't HPA work here, what should you use instead, and what mode would you start with?**
    <details>
    <summary>Answer</summary>
-   HPA scales *horizontally* — adds/removes pod replicas based on metrics. VPA scales *vertically* — adjusts CPU/memory requests on individual pods. HPA is for stateless apps; VPA is for stateful workloads or right-sizing.
+   HPA won't work because Redis is a single-instance stateful workload -- adding replicas doesn't create a clustered cache, it creates independent caches that the application doesn't know about. Use VPA (Vertical Pod Autoscaler) instead, which adjusts the CPU and memory requests/limits on the existing pod rather than adding replicas. Start with `updateMode: "Off"` (recommendation-only mode) to observe what VPA suggests without making changes. Once you trust the recommendations, switch to `updateMode: "Auto"` which, on Kubernetes 1.35+, uses in-place pod resize to adjust resources without restarting the container -- critical for a cache that would lose data on restart.
    </details>
 
-4. **Why shouldn't you use HPA and VPA on the same CPU metric?**
+4. **An engineer configured both HPA (targeting CPU at 50%) and VPA on the same Deployment. During a load test, they notice erratic behavior: the pod count oscillates between 3 and 8 replicas while resource requests keep changing. Explain why this happens and how to properly use both autoscalers together.**
    <details>
    <summary>Answer</summary>
-   They'll conflict: HPA tries to add pods to reduce per-pod CPU, while VPA tries to increase per-pod CPU. Use HPA for replica scaling and VPA for resource right-sizing on different metrics.
+   HPA and VPA conflict when targeting the same metric (CPU). Here's the oscillation cycle: VPA increases the CPU request on each pod (making pods "bigger"). HPA sees that per-pod CPU utilization dropped (because the request denominator increased) and scales down replicas. With fewer replicas, per-pod CPU usage rises again, HPA scales back up, and VPA sees high utilization and increases requests further. To use both together correctly, configure HPA to scale on custom metrics (like requests-per-second or queue depth) rather than CPU, and let VPA handle CPU/memory right-sizing. This way they operate on orthogonal dimensions: HPA adjusts replica count based on traffic, while VPA adjusts pod size based on resource consumption patterns. Never let both autoscalers compete over the same metric.
    </details>
 
 ---

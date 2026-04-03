@@ -204,6 +204,8 @@ k get sc fast-ssd -o jsonpath='{.volumeBindingMode}'
 
 **Solution**: This is expected behavior! Create a pod that uses the PVC, and it will bind.
 
+> **Pause and predict**: You see a PVC in `Pending` status with no error events. Before diving into debugging, what single piece of information should you check on the StorageClass that might immediately explain the Pending status as normal behavior?
+
 ### 2.3 Access Mode Mismatch
 
 **Symptoms**: PVC won't bind even though PV exists
@@ -333,6 +335,8 @@ volumes:
     path: /data/myapp
     type: DirectoryOrCreate    # Instead of Directory
 ```
+
+> **Stop and think**: A pod is stuck in `ContainerCreating` and `kubectl describe pod` shows "Multi-Attach error for volume." You know the volume is RWO. Before force-deleting the old pod, what should you check first? Could force-deleting cause data corruption?
 
 ### 3.3 Mount Timeout
 
@@ -479,6 +483,8 @@ k get sa -n kube-system ebs-csi-controller-sa -o yaml
 **GCP**: Workload Identity or node service account
 **Azure**: Managed Identity or service principal
 
+> **Pause and predict**: You see a CSI controller pod in `CrashLoopBackOff`. The pod logs show "failed to assume IAM role." The EBS CSI driver was working yesterday. What could have changed, and where would you look to verify the IAM configuration?
+
 ---
 
 ## Part 6: Quick Reference: Error Messages
@@ -524,104 +530,63 @@ echo "=== Recent Events ===" && k get events --sort-by='.lastTimestamp' | tail -
 
 ## Quiz
 
-### Q1: First Debug Step
-A pod is stuck in ContainerCreating. What's the first command you should run?
+### Q1: Systematic Triage
+A developer reports their pod has been stuck in `ContainerCreating` for 10 minutes. They have already tried deleting and recreating the pod twice. Walk through the exact sequence of commands you would run to diagnose this, starting from the pod and working down through the storage stack. At each step, what specific information are you looking for?
 
 <details>
 <summary>Answer</summary>
 
-```bash
-k describe pod <pod-name>
-```
-
-This shows the Events section which typically contains the specific error message about why the pod can't start. Look for volume-related errors like FailedMount or FailedAttach.
+Start with `kubectl describe pod <name>` and look at the **Events section** for volume-related errors (FailedMount, FailedAttach, timeout). This tells you whether the issue is a missing PVC, a mount error, or an attach error. Next, `kubectl get pvc <name>` to check if the PVC is `Bound` -- if it shows `Pending`, the problem is upstream. If Pending, `kubectl describe pvc <name>` reveals why: "storageclass not found," "no persistent volumes available," or "waiting for first consumer." Then check `kubectl get sc` to verify the StorageClass exists and has the right provisioner. Finally, `kubectl get pods -n kube-system | grep csi` to verify the CSI driver is running, and check its logs with `kubectl logs`. Each step narrows the problem: pod events tell you the symptom, PVC status tells you where the chain breaks, and CSI logs reveal the root cause.
 
 </details>
 
-### Q2: PVC Pending Analysis
-A PVC is stuck in Pending status. How do you find out why?
+### Q2: The Pending PVC That Is Not Broken
+A new team member files an urgent ticket: "PVC `data-volume` has been Pending for 2 hours, nothing is working!" You check `kubectl describe pvc data-volume` and see no error events -- just a normal "waiting for first consumer to be created" message. The team member insists something is wrong because other PVCs bind immediately. How do you explain what is happening, and what should the team member do next?
 
 <details>
 <summary>Answer</summary>
 
-```bash
-k describe pvc <pvc-name>
-```
-
-Check the Events section for warnings like:
-- "no persistent volumes available" - no matching PV
-- "storageclass not found" - wrong SC name
-- "waiting for first consumer" - expected with WaitForFirstConsumer
+The PVC is using a StorageClass with `volumeBindingMode: WaitForFirstConsumer`. This means the PV is deliberately **not provisioned until a pod that uses the PVC is scheduled**. This is the correct behavior for zone-specific storage (like AWS EBS or GCE PD) to ensure the volume is created in the same availability zone as the pod. The "other PVCs" that bind immediately likely use a StorageClass with `Immediate` binding mode or an NFS-type provisioner. The team member needs to create a pod that references this PVC in its volumes section. Once the scheduler assigns the pod to a node, the provisioner will create the PV in the correct zone, the PVC will bind, and the pod will start. This is not a bug -- it is a feature that prevents cross-zone mount failures.
 
 </details>
 
-### Q3: Multi-Attach Error
-You see "Multi-Attach error for volume". What does this mean and how do you fix it?
+### Q3: Node Failure and Multi-Attach
+A 3-node cluster loses node-2 (it goes `NotReady`). A StatefulSet pod on node-2 used an RWO EBS volume. Kubernetes tries to reschedule the pod to node-3, but the new pod is stuck in `ContainerCreating` with "Multi-Attach error for volume: Volume is already exclusively attached to node-2." The old pod shows `Terminating` but will not complete because node-2 is down. What are the steps to recover, and what are the risks of force-deleting the old pod?
 
 <details>
 <summary>Answer</summary>
 
-The error means a **RWO** (ReadWriteOnce) volume is already attached to another node, typically from an old pod that didn't cleanly unmount.
-
-Fix:
-1. Find and delete the old pod: `k get pods -o wide` to find pod using volume
-2. If pod is stuck terminating: `k delete pod <name> --force --grace-period=0`
-3. Check VolumeAttachment if needed: `k get volumeattachment`
+The RWO volume is still attached to the unreachable node-2, and the new pod on node-3 cannot attach it simultaneously. Recovery steps: (1) Verify node-2 is truly down: `kubectl get node node-2` and check conditions. (2) Force-delete the stuck pod: `kubectl delete pod <name> --force --grace-period=0`. This removes the pod from the API server but does **not** cleanly unmount the volume on node-2. (3) Delete the stale VolumeAttachment: `kubectl get volumeattachment`, find the one for this volume, and `kubectl delete volumeattachment <name>`. This tells the control plane to release the volume. (4) The new pod on node-3 should now be able to attach the volume. **Risk**: force-deleting without clean unmount can cause **data corruption** if the application was mid-write when node-2 went down. EBS volumes have built-in consistency, but application-level data (like database WAL files) may be incomplete. After recovery, run an application-level integrity check (e.g., `fsck` or database repair).
 
 </details>
 
-### Q4: WaitForFirstConsumer
-A PVC shows Pending but there are no error events. The StorageClass uses WaitForFirstConsumer. Is this a problem?
+### Q4: Permission Denied After Migration
+A team migrates their application to a new container image that runs as `uid 1000` (previously ran as root). After the migration, the pod starts but the application logs show "Permission denied: cannot write to /data/app.log." The PVC mounts successfully and `kubectl describe pod` shows no errors. What is the root cause, and what is the correct fix without reverting to running as root?
 
 <details>
 <summary>Answer</summary>
 
-**No, this is expected behavior**. With WaitForFirstConsumer, the PVC stays Pending until a pod that uses it is scheduled. This is actually desirable for zonal storage to ensure the volume is created in the same zone as the pod.
-
-To proceed, create a pod that references the PVC, and the PV will be provisioned when the pod is scheduled.
+The root cause is a **filesystem ownership mismatch**. The PV's files were created by the previous container running as root (`uid 0`), so they are owned by root. The new container runs as `uid 1000` and cannot write to root-owned files. The correct fix is to set `fsGroup` in the pod's security context: `spec.securityContext.fsGroup: 1000`. This tells the kubelet to recursively change the group ownership of all files in the mounted volume to GID 1000, and set the setgid bit so new files inherit this group. Additionally, set `runAsUser: 1000` and `runAsNonRoot: true` in the container's securityContext. Do NOT revert to running as root -- that would be a security regression. For volumes with many files, the fsGroup change can cause slow pod startup on first mount, which is a known trade-off.
 
 </details>
 
-### Q5: Permission Denied
-A volume mounts but the application gets "permission denied" when writing. What should you check?
+### Q5: Dynamic Provisioning Silently Failing
+A PVC referencing StorageClass `premium-ssd` stays Pending. `kubectl describe pvc` shows the event: "waiting for a volume to be created, either by external provisioner 'ebs.csi.aws.com' or manually created by system administrator." The StorageClass exists and looks correct. Other PVCs using the default StorageClass work fine. Where do you look next, and what are the three most likely causes?
 
 <details>
 <summary>Answer</summary>
 
-Check the pod's security context:
-
-```yaml
-spec:
-  securityContext:
-    fsGroup: <gid>      # Group for volume ownership
-  containers:
-  - securityContext:
-      runAsUser: <uid>   # User the container runs as
-```
-
-The fsGroup should match the GID that owns the volume's files, or the container user should have write permissions.
+The error means the PVC reached the provisioner but the provisioner has not acted. Next step: check the CSI driver pods in `kube-system` with `kubectl get pods -n kube-system | grep csi` and then check their logs with `kubectl logs -n kube-system <csi-controller-pod> -c csi-provisioner`. The three most likely causes: (1) **CSI controller is crashlooping or not running** -- the provisioner sidecar cannot process the request. Check pod status and restart counts. (2) **IAM/permission issue** -- the CSI driver lacks permission to create EBS volumes (e.g., expired IAM role, wrong IRSA annotation on the service account, or missing `ec2:CreateVolume` permission). Check `kubectl get sa -n kube-system ebs-csi-controller-sa -o yaml` for the role-arn annotation. (3) **Invalid StorageClass parameters** -- the `parameters` section contains values the provisioner cannot use (wrong `type`, invalid `kmsKeyId`, or unsupported `iopsPerGB` value). The CSI provisioner logs will show the specific error from the AWS API.
 
 </details>
 
-### Q6: Finding CSI Errors
-Where do you look for CSI driver errors?
+### Q6: Full Troubleshooting Scenario
+On exam day, you are given this scenario: A Deployment with 2 replicas is failing. Pod-1 is `Running`, Pod-2 is `ContainerCreating`. Both reference PVC `app-data`. The PVC is `Bound` to a PV with access mode `RWO`. The StorageClass uses `volumeBindingMode: WaitForFirstConsumer` and `reclaimPolicy: Delete`. `kubectl get pods -o wide` shows Pod-1 on node-A and Pod-2 scheduled to node-B. What is the problem, and provide two distinct solutions (one quick fix for the exam, one proper production fix).
 
 <details>
 <summary>Answer</summary>
 
-```bash
-# Find CSI pods
-k get pods -n kube-system | grep csi
-
-# Check logs of CSI controller
-k logs -n kube-system <csi-controller-pod> -c csi-provisioner
-k logs -n kube-system <csi-controller-pod> -c csi-attacher
-
-# Check logs of CSI node plugin
-k logs -n kube-system <csi-node-pod> -c csi-driver
-```
-
-Also check `k get csidrivers` and `k get csinode` for driver registration status.
+The problem is that both pods share one PVC with **RWO** access mode, and they are on different nodes. RWO means the volume can only be attached to one node at a time. Pod-1 on node-A has the volume, so Pod-2 on node-B gets a Multi-Attach error. **Quick exam fix**: Scale the Deployment to 1 replica (`kubectl scale deploy <name> --replicas=1`) so only one pod needs the volume. Or, add a `nodeAffinity`/`nodeSelector` to force all pods onto the same node (RWO allows multiple pods on the same node). **Proper production fix**: Convert the Deployment to a **StatefulSet** with `volumeClaimTemplates`, giving each replica its own independent PVC and PV. Alternatively, if the workload truly needs shared storage, switch to a storage backend that supports `ReadWriteMany` (RWX) like NFS or EFS, and update the PVC access mode. The `reclaimPolicy: Delete` is also risky for a stateful app -- consider changing to `Retain` on the PV.
 
 </details>
 

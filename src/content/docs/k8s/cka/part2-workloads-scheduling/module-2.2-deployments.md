@@ -230,6 +230,8 @@ kubectl get replicasets
 kubectl get pods --show-labels
 ```
 
+> **Pause and predict**: After updating a Deployment's image twice (v1 -> v2 -> v3), how many ReplicaSets will exist? What are their replica counts? Why does Kubernetes keep the old ones?
+
 ### 3.2 ReplicaSet Naming
 
 ```
@@ -299,6 +301,8 @@ kubectl rollout status deployment/nginx
 ---
 
 ## Part 5: Rolling Updates
+
+> **Pause and predict**: You have a Deployment with 4 replicas, `maxSurge: 1`, and `maxUnavailable: 0`. During a rolling update, what is the maximum number of pods running at any point? What happens if the new version fails its readiness probe?
 
 ### 5.1 Update Strategy
 
@@ -495,6 +499,8 @@ kubectl rollout status deployment/nginx
 
 ## Part 8: Recreate Strategy
 
+> **Stop and think**: You need to update a legacy application that writes to a shared file on a PersistentVolume. Running two versions simultaneously would corrupt the file. Would a RollingUpdate strategy work here? What strategy should you use instead, and what is the trade-off?
+
 ### 8.1 When to Use Recreate
 
 Use `Recreate` when:
@@ -583,29 +589,28 @@ kubectl describe deployment nginx | grep -A10 Conditions
 
 ## Quiz
 
-1. **What happens when you update a Deployment's image?**
+1. **Your team pushed image `api:v2.1` to a Deployment running `api:v2.0` with 4 replicas. Five minutes later, users report 500 errors from about half their requests. You check and see 2 pods running v2.0 and 2 running v2.1 (one of which is in CrashLoopBackOff). What happened during the rolling update, and what should you do right now?**
    <details>
    <summary>Answer</summary>
-   A rolling update is triggered: A new ReplicaSet is created with the new image. Pods are gradually created in the new ReplicaSet while pods in the old ReplicaSet are terminated, controlled by `maxSurge` and `maxUnavailable`.
+   The rolling update is stuck because the v2.1 pods are crashing and failing readiness probes, so the rollout cannot proceed -- the Deployment controller waits for new pods to become Ready before terminating more old pods. This is actually the RollingUpdate strategy protecting you from a full outage. You should immediately run `kubectl rollout undo deployment/api` to roll back to v2.0, which restores all 4 replicas to the working version. Then investigate the v2.1 crash using `kubectl logs` and `kubectl describe pod` before attempting the update again.
    </details>
 
-2. **How do you rollback a deployment to revision 3?**
+2. **An engineer on your team wants to rollback a Deployment but isn't sure which revision to target. When they run `kubectl rollout history`, they see revisions 1, 2, 4, and 5 (revision 3 is missing). Explain why revision 3 is gone and how to safely rollback to the version that was running two releases ago.**
    <details>
    <summary>Answer</summary>
-   `kubectl rollout undo deployment/nginx --to-revision=3`
-
-   This scales up the ReplicaSet from revision 3 and scales down the current ReplicaSet.
+   Revision 3 is "missing" because when you roll back to a previous revision, that revision gets renumbered to the latest revision number. For example, if you rolled back from revision 3 to revision 2, the old revision 2 became the new revision 4 (and original revision 3 was consumed). To find the right target, use `kubectl rollout history deployment/nginx --revision=2` to inspect each revision's pod template (image, env vars, resources). Once you identify the correct revision, run `kubectl rollout undo deployment/nginx --to-revision=N`. Always inspect before rolling back to avoid restoring a known-bad version.
    </details>
 
-3. **What's the difference between RollingUpdate and Recreate strategies?**
+3. **Your application writes to a shared database. During a RollingUpdate, both the old and new versions run simultaneously. A colleague suggests using Recreate strategy instead to avoid running two versions at once. What are the trade-offs, and is there a better approach that avoids downtime AND version conflicts?**
    <details>
    <summary>Answer</summary>
-   **RollingUpdate**: Gradually replaces old pods with new ones, maintaining availability. **Recreate**: Terminates all existing pods first, then creates new ones—causes downtime.
+   The Recreate strategy terminates all old pods before creating new ones, which avoids running two versions simultaneously but causes complete downtime during the transition. For database-backed applications, a better approach is to make your application backward-compatible: design database migrations to work with both old and new code (e.g., add new columns but don't remove old ones until the next release). This lets you safely use RollingUpdate with zero downtime. If backward compatibility is truly impossible, Recreate is the right choice, but you should accept the downtime window and communicate it to users.
    </details>
 
-4. **You need to change image, resources, and env vars. How do you make one rollout instead of three?**
+4. **During an on-call shift, you need to update a production Deployment's image, resource limits, and environment variables. You're worried about triggering three separate rollouts, which would churn pods unnecessarily. How do you batch all changes into a single rollout? Write the exact commands.**
    <details>
    <summary>Answer</summary>
+   Use the pause/resume pattern to batch all changes into one atomic rollout:
    ```bash
    kubectl rollout pause deployment/nginx
    kubectl set image deployment/nginx nginx=nginx:1.26
@@ -613,6 +618,7 @@ kubectl describe deployment nginx | grep -A10 Conditions
    kubectl set env deployment/nginx ENV=production
    kubectl rollout resume deployment/nginx
    ```
+   While paused, the Deployment records all changes but does not create new pods. When you resume, a single rolling update applies all three changes at once. This is especially important in production to minimize pod churn and keep the rollout history clean (one revision instead of three).
    </details>
 
 ---

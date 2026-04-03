@@ -127,6 +127,8 @@ Here is what happens at each step:
 6. **Delivery**: On the destination node, the packet is decapsulated (if needed) and routed to Pod B's veth pair.
 7. **Pod receives**: Pod B sees a packet from Pod A's IP destined for its own IP on port 80.
 
+> **Pause and predict**: In the packet walk above, the conntrack table records the NAT mapping at step 3. When Pod B sends its response back, the destination is Pod A's IP -- not the Service ClusterIP. How does Pod A know the response came from the Service it called, and not from a random pod?
+
 ### 1.2 NodePort Packet Walk
 
 NodePort adds an extra step at the front:
@@ -344,6 +346,8 @@ DNS is the glue that makes Service names work. When a pod calls `curl web-servic
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+> **Stop and think**: The DNS path involves kube-proxy DNAT (step 4 above) to reach the actual CoreDNS pod. This means DNS resolution itself depends on kube-proxy working correctly. If kube-proxy is down, can pods resolve service names? Can they resolve external names like `google.com`?
+
 ### 3.2 The ndots Trap
 
 The `ndots:5` default in Kubernetes means any name with fewer than 5 dots is treated as a relative name. This triggers search domain expansion:
@@ -493,6 +497,8 @@ k exec <pod> -- ip link show eth0
 # Check routes inside a pod
 k exec <pod> -- ip route
 ```
+
+> **What would happen if**: You delete a backend pod and Kubernetes immediately creates a replacement pod that happens to get the same IP address as the deleted one. A client has an active TCP connection to the old pod through the Service. Does the connection survive, fail gracefully, or hang?
 
 ### 4.3 Conntrack: The Hidden State
 

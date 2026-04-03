@@ -116,6 +116,8 @@ spec:
 
 ## Part 2: Node Affinity
 
+> **Pause and predict**: You want a pod to run on SSD nodes but also accept NVMe nodes. With `nodeSelector`, you can only specify one value per key. How would you express "disk must be SSD OR NVMe" as a scheduling constraint?
+
 ### 2.1 Why Node Affinity?
 
 Node affinity is more expressive than nodeSelector:
@@ -324,6 +326,8 @@ Taints are applied to **nodes** and repel pods unless the pod has a matching tol
 └────────────────────────────────────────────────────────────────┘
 ```
 
+> **Stop and think**: An SRE needs to perform maintenance on a node. They want to prevent new pods from being scheduled there, but existing pods should keep running until they complete naturally. Which taint effect should they use -- `NoSchedule`, `PreferNoSchedule`, or `NoExecute`? What if they need to evict existing pods too?
+
 ### 4.2 Taint Effects
 
 | Effect | Behavior |
@@ -409,6 +413,8 @@ tolerations:
 ---
 
 ## Part 5: Pod Topology Spread Constraints
+
+> **Pause and predict**: You have a 3-replica Deployment with pod anti-affinity using `requiredDuringSchedulingIgnoredDuringExecution` on `kubernetes.io/hostname`, but your cluster only has 2 nodes. What happens to the third replica?
 
 ### 5.1 Why Topology Spread?
 
@@ -557,36 +563,28 @@ kubectl get pods -o wide  # See where pods landed
 
 ## Quiz
 
-1. **What's the difference between nodeSelector and node affinity?**
+1. **Your team needs pods to run on SSD nodes but also accept NVMe nodes. A junior engineer used `nodeSelector: {disk: ssd}` but that excludes NVMe nodes. You need both SSD and NVMe without creating two separate Deployments. How do you solve this, and what type of affinity rule do you write?**
    <details>
    <summary>Answer</summary>
-   **nodeSelector** is simple key-value matching (AND logic, must match all). **Node affinity** is more expressive with operators (In, NotIn, Exists), soft preferences, and multiple options (OR logic within nodeSelectorTerms).
+   Use `requiredDuringSchedulingIgnoredDuringExecution` node affinity with the `In` operator, which supports multiple values (OR logic). Write a `matchExpressions` rule with `key: disk, operator: In, values: [ssd, nvme]`. This schedules the pod on any node where the `disk` label is either `ssd` or `nvme`. `nodeSelector` can't do this because it only supports exact single-value matching. Node affinity also supports soft preferences via `preferredDuringSchedulingIgnoredDuringExecution`, which nodeSelector cannot express at all.
    </details>
 
-2. **A node has taint `gpu=nvidia:NoSchedule`. What must a pod have to schedule there?**
+2. **Your cluster has 3 nodes. Node-1 has taint `gpu=nvidia:NoSchedule`, node-2 has taint `dedicated=ml-team:NoSchedule`, and node-3 has no taints. You deploy a pod with only a toleration for `gpu=nvidia:NoSchedule`. On which node(s) can this pod be scheduled, and why?**
    <details>
    <summary>Answer</summary>
-   A toleration matching the taint:
-   ```yaml
-   tolerations:
-   - key: "gpu"
-     operator: "Equal"
-     value: "nvidia"
-     effect: "NoSchedule"
-   ```
-   Or use `operator: Exists` to match any value.
+   The pod can schedule on node-1 and node-3. Node-1 has the `gpu=nvidia:NoSchedule` taint, which the pod tolerates, so it passes the taint filter. Node-3 has no taints, so any pod can schedule there (tolerations are only needed when taints exist). Node-2 has a taint `dedicated=ml-team:NoSchedule` that the pod does NOT tolerate, so it is excluded. A common misconception is that a toleration *requires* the taint to be present -- it doesn't. Tolerations are permissive: they allow scheduling on tainted nodes but don't prevent scheduling on untainted ones. To restrict a pod to only tainted nodes, combine tolerations with node affinity or nodeSelector.
    </details>
 
-3. **What does topologyKey: kubernetes.io/hostname mean in pod anti-affinity?**
+3. **You're deploying a critical web application across 3 availability zones for high availability. You have 6 replicas. Using pod anti-affinity with `requiredDuringSchedulingIgnoredDuringExecution` and `topologyKey: topology.kubernetes.io/zone`, you notice some pods stay Pending. Why? What would you use instead for a more flexible approach?**
    <details>
    <summary>Answer</summary>
-   It means "spread pods across different nodes." Each node hostname is a separate topology domain. The anti-affinity rule prevents pods with matching labels from running on the same node.
+   With `required` anti-affinity by zone and 6 replicas across 3 zones, the first 3 pods schedule fine (one per zone). But the 4th pod cannot find a zone without an existing pod, so it stays Pending -- the hard constraint means "never place two pods in the same zone." Switch to `preferredDuringSchedulingIgnoredDuringExecution` (soft preference) or use `topologySpreadConstraints` with `maxSkew: 1`, which distributes pods evenly (2 per zone for 6 replicas) rather than requiring strict uniqueness. Topology spread constraints are generally better for HA because they balance pods across domains instead of imposing a hard one-per-domain limit.
    </details>
 
-4. **A pod is Pending with event "0/3 nodes are available: 1 node(s) had taint". What's wrong?**
+4. **During a CKA exam scenario, you see a pod stuck in Pending with the event: `0/3 nodes are available: 2 insufficient cpu, 1 node(s) had taint {node-role.kubernetes.io/control-plane: NoSchedule}`. Walk through your diagnosis. What are the two separate issues, and what are your options to resolve each?**
    <details>
    <summary>Answer</summary>
-   The pod doesn't have tolerations for at least one node's taint. Either add the appropriate toleration to the pod, or remove the taint from the node.
+   There are two distinct issues. First, 2 worker nodes don't have enough allocatable CPU for this pod's resource requests -- check with `kubectl describe node` and compare the pod's `requests.cpu` against the node's available capacity. Fix by reducing the pod's CPU request, scaling down other workloads on those nodes, or adding nodes with more capacity. Second, the third node is a control plane node with the standard `NoSchedule` taint. Fix by adding a toleration for `node-role.kubernetes.io/control-plane` (only appropriate for infrastructure pods, not application workloads) or by adding more worker nodes. In production, the control plane node should generally stay reserved for system components.
    </details>
 
 ---

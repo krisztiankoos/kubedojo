@@ -264,6 +264,8 @@ spec:
         path: nginx.conf       # Filename in volume
 ```
 
+> **Pause and predict**: You update a ConfigMap that is injected into a pod two ways: one key is used as an environment variable, and another key is mounted as a volume. After updating the ConfigMap, which value changes automatically in the pod and which one stays stale? What about if the volume uses `subPath`?
+
 ### ConfigMap Update Behavior
 
 | Injection Method | Auto-Updates? | Notes |
@@ -288,6 +290,8 @@ Kubernetes supports several Secret types:
 | `kubernetes.io/service-account-token` | ServiceAccount token | Yes |
 | `kubernetes.io/basic-auth` | Username + password | No |
 | `kubernetes.io/ssh-auth` | SSH private key | No |
+
+> **Pause and predict**: You write a Secret YAML with `data: {password: MyPassword123}` and apply it. When your app reads the password, it gets garbled text. What went wrong, and what field should you use instead of `data` to avoid this issue?
 
 ### Creating Secrets
 
@@ -486,6 +490,8 @@ echo 'UzNjdXIzUEBzcyE=' | base64 -d
 2. **Encryption at rest**: Enable etcd encryption
 3. **Audit logging**: Track Secret access
 4. **External secret stores**: HashiCorp Vault, AWS Secrets Manager
+
+> **Stop and think**: A security auditor tells you that storing database passwords as environment variables is risky. They recommend volume mounts instead. What specific attack vector do environment variables create that mounted files avoid?
 
 ### Environment Variables vs Volume Mounts
 
@@ -694,133 +700,86 @@ rm /tmp/nginx.conf
 ## Quiz
 
 ### Question 1
-What's the difference between `--from-file` and `--from-env-file` when creating ConfigMaps?
+You have a config file `app.properties` with 20 key-value pairs. You need each pair as a separate environment variable in your pod. A teammate used `--from-file=app.properties`, but all 20 pairs ended up as a single key. What did they do wrong, and what's the correct command?
 
 <details>
 <summary>Show Answer</summary>
 
-**`--from-file`**: Creates one key with the filename as key and entire file contents as value.
+They used `--from-file`, which stores the entire file as a single key (the filename becomes the key, the file contents become the value). For individual key-value pairs, they should use `--from-env-file`:
+
 ```bash
-k create configmap test --from-file=config.properties
-# Result: data: { "config.properties": "key1=value1\nkey2=value2" }
+# Wrong: single key "app.properties" with all content as value
+k create configmap test --from-file=app.properties
+# Result: data: { "app.properties": "key1=value1\nkey2=value2\n..." }
+
+# Correct: each line becomes its own key-value pair
+k create configmap test --from-env-file=app.properties
+# Result: data: { "key1": "value1", "key2": "value2", ... }
 ```
 
-**`--from-env-file`**: Parses the file and creates separate keys for each line.
-```bash
-k create configmap test --from-env-file=config.properties
-# Result: data: { "key1": "value1", "key2": "value2" }
-```
-
-Use `--from-env-file` when you want each property as a separate key; use `--from-file` when you want to mount the entire file.
+Use `--from-file` when you need to mount the entire file (e.g., nginx.conf, application.yaml). Use `--from-env-file` when you need individual properties as separate environment variables. This distinction is a common exam trap.
 </details>
 
 ### Question 2
-A ConfigMap is mounted as a volume. You update the ConfigMap. What happens?
+You deploy an nginx pod with a ConfigMap-mounted `nginx.conf` using `subPath`. Later, you update the ConfigMap to add a new `location /api` block. Users report the change isn't taking effect even after 10 minutes. What's wrong, and what are your options?
 
 <details>
 <summary>Show Answer</summary>
 
-**The mounted files are automatically updated** by the kubelet, typically within 60 seconds.
-
-**Exceptions:**
-- If using `subPath` mount, updates do NOT propagate
-- If ConfigMap is marked `immutable: true`, it cannot be updated
-- Applications must re-read files to see changes (some cache file contents)
-
-For environment variables from ConfigMaps, the Pod must be restarted to see updates.
+When a ConfigMap is mounted using `subPath`, updates do NOT automatically propagate to the pod. This is because `subPath` mounts a specific file rather than a symlinked directory, bypassing the kubelet's automatic update mechanism. You have three options: (1) Delete and recreate the pod to pick up the new ConfigMap (simplest for exam), (2) switch from `subPath` to a full volume mount at a directory path (enables auto-updates but may overwrite other files in the directory), or (3) use an immutable ConfigMap naming scheme (e.g., `nginx-config-v2`) and update the pod spec to reference the new ConfigMap. Option 2 is the best long-term solution if auto-updates are important, but be aware that a full volume mount replaces the entire directory contents.
 </details>
 
 ### Question 3
-What's wrong with this Secret YAML?
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-creds
-type: Opaque
-data:
-  password: MySecurePassword123
-```
+A junior developer wrote a Secret YAML with `data: {password: MySecurePassword123}` and applied it. Authentication to the database fails, but `kubectl get secret db-creds -o yaml` shows the password field has a value. They're confused because the value "is right there." What are two things wrong with this scenario, and how should the YAML be written?
 
 <details>
 <summary>Show Answer</summary>
 
-**The password value is not base64 encoded.** The `data` field requires base64-encoded values.
+Two issues: (1) The `data` field requires base64-encoded values, but `MySecurePassword123` is plain text. Kubernetes will try to base64-decode this value when injecting it into a pod, producing garbled output. (2) The developer may also be confused because `kubectl get secret -o yaml` shows base64-encoded values, which look valid but are actually a double-encoding issue. The fix is to either base64-encode the value yourself (`echo -n 'MySecurePassword123' | base64`) in the `data` field, or use `stringData` instead, which accepts plain text and Kubernetes handles the encoding:
 
-Two fixes:
-
-1. Encode the value:
-```yaml
-data:
-  password: TXlTZWN1cmVQYXNzd29yZDEyMw==
-```
-
-2. Use `stringData` instead (Kubernetes encodes it automatically):
 ```yaml
 stringData:
   password: MySecurePassword123
 ```
+
+Always use `echo -n` (not `echo`) when encoding to avoid including a trailing newline, which is another common cause of authentication failures.
 </details>
 
 ### Question 4
-How do you decode a Secret value from the command line?
+A security audit found that your team's database passwords are visible when running `kubectl exec <pod> -- env` on any pod that uses them. The auditor requires that secrets not be retrievable via process introspection. What injection method are you using now, what should you switch to, and what additional hardening step should you take?
 
 <details>
 <summary>Show Answer</summary>
 
-```bash
-# Method 1: Get specific key and decode
-k get secret db-creds -o jsonpath='{.data.password}' | base64 -d
-
-# Method 2: Using go-template for all keys
-k get secret db-creds -o go-template='{{range $k,$v := .data}}{{$k}}: {{$v | base64decode}}{{"\n"}}{{end}}'
-
-# Method 3: View full secret and manually decode
-k get secret db-creds -o yaml
-echo 'base64string' | base64 -d
-```
+You're currently injecting secrets as environment variables (via `envFrom` or `env.valueFrom.secretKeyRef`), which makes them visible to `kubectl exec -- env`, child process inheritance, and crash dump logging. Switch to volume-mounted secrets, which are stored as files at a mount path (e.g., `/etc/secrets/password`). Applications must explicitly read the file to access the value. Additionally, set `readOnly: true` on the volume mount and use restrictive file permissions with `defaultMode: 0400` on the volume definition. This ensures the files can only be read by the container's process owner and cannot be modified. For deeper security, combine this with RBAC rules that limit which service accounts can access the Secret, and enable encryption at rest for etcd to protect the stored Secret data.
 </details>
 
 ### Question 5
-Why might you prefer mounting Secrets as files instead of environment variables?
+You created a Secret with `echo 'S3cur3P@ss!' | base64` and stored the result in your YAML. When the application tries to authenticate, it fails with "invalid credentials." You've triple-checked the password is correct. What went wrong?
 
 <details>
 <summary>Show Answer</summary>
 
-**Security reasons:**
+The `echo` command adds a trailing newline character by default. When you pipe to base64, the newline is encoded along with the password, so the decoded value becomes `S3cur3P@ss!\n` instead of `S3cur3P@ss!`. The database rejects the password because of the invisible extra character. The fix is to use `echo -n` (no newline):
 
-1. **Less visible**: `kubectl exec -- env` shows all env vars, but files require explicit reading
+```bash
+# Wrong: includes newline
+echo 'S3cur3P@ss!' | base64    # encodes "S3cur3P@ss!\n"
 
-2. **No process inheritance**: Child processes automatically inherit env vars, potentially exposing secrets to subprocesses
+# Correct: no newline
+echo -n 'S3cur3P@ss!' | base64  # encodes "S3cur3P@ss!"
+```
 
-3. **Logging risk**: Env vars are often logged by accident (debug logs, crash reports), file contents less so
-
-4. **Auto-updates**: Volume-mounted secrets update automatically (~1 min), env vars require Pod restart
-
-5. **Permission control**: Can set restrictive file permissions (0400) on mounted files
-
+This is one of the most common Kubernetes Secret pitfalls. Alternatively, use `stringData` in your YAML to avoid base64 entirely, or use `kubectl create secret generic --from-literal=password='S3cur3P@ss!'` which handles encoding correctly.
 </details>
 
 ### Question 6
-You created a Secret with `echo 'password' | base64`. When your app reads it, there's an extra character. What went wrong?
+Your application reads its config from a file at `/etc/config/app.yaml` mounted from a ConfigMap. After a ConfigMap update, the application picks up the new config automatically within a minute. Your team wants the same auto-update behavior for a TLS certificate stored in a Secret and mounted at `/etc/nginx/ssl/server.crt`. But they're using `subPath` for the certificate mount. Will the TLS certificate auto-update? What's the best approach?
 
 <details>
 <summary>Show Answer</summary>
 
-**`echo` adds a newline character by default.** The encoded value includes `\n`.
-
-```bash
-# Wrong - includes newline
-echo 'password' | base64
-# cGFzc3dvcmQK (K at end = newline encoded)
-
-# Correct - use -n flag
-echo -n 'password' | base64
-# cGFzc3dvcmQ=
-```
-
-When the app decodes this, it gets `password\n` instead of `password`, which can break authentication.
+No, the TLS certificate will NOT auto-update because `subPath` mounts bypass the kubelet's automatic update mechanism. The ConfigMap at `/etc/config/app.yaml` auto-updates because it uses a full volume mount (the kubelet creates symlinks that get updated). For the TLS certificate, remove the `subPath` and mount the entire secret volume to a directory (e.g., `/etc/nginx/ssl/`), then reference the files within that directory. The certificate will auto-update within approximately 60 seconds of a Secret change. However, note that nginx caches TLS certificates in memory, so you may also need a sidecar or process that watches for file changes and triggers a config reload (e.g., `nginx -s reload`).
 </details>
 
 ---

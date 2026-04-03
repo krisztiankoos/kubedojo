@@ -357,6 +357,8 @@ Node: us-east-1a          Node: us-east-1b
 | Immediate | NFS, distributed storage, zone-less storage |
 | WaitForFirstConsumer | Zone-specific storage (EBS, GCE PD, Azure Disk), local storage |
 
+> **Pause and predict**: You have a StorageClass with `volumeBindingMode: Immediate` for AWS EBS. A developer creates a PVC, and a PV is immediately provisioned in `us-east-1a`. The scheduler then places the pod on a node in `us-east-1b`. What happens when the pod tries to start? How would changing the binding mode prevent this?
+
 ---
 
 ## Part 5: Volume Expansion
@@ -422,6 +424,8 @@ k describe pvc my-claim
 ```
 
 **Important**: You can only **increase** PVC size. Shrinking is not supported!
+
+> **Stop and think**: A PVC was created with a StorageClass that has `allowVolumeExpansion: false`. The database is running out of space. Can you change the StorageClass to `allowVolumeExpansion: true` and then expand the PVC? Or do you need to recreate the PVC? What would your recovery strategy be?
 
 ---
 
@@ -490,74 +494,69 @@ parameters:
 | Wrong parameters for provisioner | Provisioning fails | Check provisioner documentation |
 | Trying to shrink PVC | Not supported | Only expansion works |
 
+> **Pause and predict**: Your cluster has two StorageClasses both annotated with `storageclass.kubernetes.io/is-default-class: "true"`. A developer creates a PVC without specifying a storageClassName. What happens? Which StorageClass is used?
+
 ---
 
 ## Quiz
 
-### Q1: Default StorageClass
-What happens when you create a PVC without specifying storageClassName in a cluster with a default StorageClass?
+### Q1: Unexpected Dynamic Provisioning
+A developer creates a PVC in a cluster that has a default StorageClass called `gp3-standard`. The developer intended to use a manually created PV, so they created the PVC without specifying `storageClassName`. Instead of binding to the manual PV, a new 10Gi EBS volume appears in AWS. The developer is confused and asks why Kubernetes ignored the pre-created PV. What happened, and how should the PVC be configured to bind to the manual PV instead?
 
 <details>
 <summary>Answer</summary>
 
-The PVC automatically uses the **default StorageClass** and triggers dynamic provisioning. A new PV will be created automatically by the provisioner.
+When `storageClassName` is omitted from a PVC, Kubernetes uses the **default StorageClass** (`gp3-standard`), which triggers dynamic provisioning -- it creates a brand new PV via the EBS CSI driver instead of looking for existing manual PVs. To bind to a manually created PV, the developer must explicitly set `storageClassName: ""` (empty string) on the PVC. This tells Kubernetes to skip dynamic provisioning entirely and only look for PVs that also have no StorageClass. The manual PV must also have `storageClassName: ""` for the match to work. This is one of the most common misunderstandings about StorageClasses.
 
 </details>
 
-### Q2: Opt-Out Dynamic Provisioning
-How do you create a PVC that explicitly doesn't use dynamic provisioning?
+### Q2: Cross-Zone Mount Failure
+A team in a multi-AZ AWS cluster uses a StorageClass with `volumeBindingMode: Immediate`. A developer creates a PVC, and a PV backed by an EBS volume is provisioned in `us-east-1a`. Later, the scheduler places the pod on a node in `us-east-1c`. The pod is stuck in `ContainerCreating` with an attach error. What caused the mismatch, what binding mode should have been used, and why does this problem not affect NFS-backed StorageClasses?
 
 <details>
 <summary>Answer</summary>
 
-Set `storageClassName: ""` (empty string) in the PVC spec. This prevents any StorageClass from being used, including the default, and the PVC will only bind to manually created PVs.
+With `Immediate` binding mode, the PV is provisioned as soon as the PVC is created, **before** the scheduler decides where to place the pod. EBS volumes are zone-specific -- a volume in `us-east-1a` cannot be attached to a node in `us-east-1c`. The fix is to use `volumeBindingMode: WaitForFirstConsumer`, which delays provisioning until the pod is scheduled. The provisioner then creates the EBS volume in the same AZ as the scheduled node. NFS is not affected because NFS is **network storage** accessible from any node in any zone -- it has no zone affinity, so Immediate binding works fine.
 
 </details>
 
-### Q3: WaitForFirstConsumer
-Why is WaitForFirstConsumer important for cloud storage like AWS EBS?
+### Q3: Disk Full Emergency
+A production database is running out of disk space. The PVC uses a StorageClass with `allowVolumeExpansion: true`. The admin patches the PVC to increase from 50Gi to 100Gi. After 10 minutes, `kubectl get pvc` still shows 50Gi capacity, but `kubectl describe pvc` shows a condition `FileSystemResizePending`. The admin panics. Is something broken? What needs to happen next?
 
 <details>
 <summary>Answer</summary>
 
-EBS volumes are **zone-specific**. With Immediate binding, the volume might be provisioned in a different zone than where the pod gets scheduled, causing mount failures. WaitForFirstConsumer delays provisioning until after pod scheduling, ensuring the volume is created in the same zone as the pod.
+Nothing is broken -- this is the **expected two-phase expansion process**. Phase 1 (backend resize) already completed: the underlying cloud disk was resized to 100Gi. Phase 2 (filesystem resize) is pending because the filesystem inside the volume needs to be grown, which for many storage backends requires the volume to be mounted by a pod. If the pod is running, the kubelet will expand the filesystem on the next mount. If the pod is not running, you may need to start a pod that mounts the PVC. After the filesystem resize completes, the `FileSystemResizePending` condition clears and `kubectl get pvc` will show 100Gi. Some CSI drivers support online expansion (no pod restart needed), while others require a pod restart.
 
 </details>
 
-### Q4: Volume Expansion
-A PVC is using a StorageClass with `allowVolumeExpansion: false`. Can you expand it?
+### Q4: Multiple Defaults Chaos
+An admin accidentally marks two StorageClasses as default: `gp3-fast` and `standard-hdd`. A developer creates a PVC without specifying a storageClassName. What happens, and how should the admin fix this?
 
 <details>
 <summary>Answer</summary>
 
-**No**. Volume expansion must be enabled on the StorageClass before the PVC can be expanded. You cannot change this setting after PVC creation (unless you recreate the StorageClass and PVC).
+With **multiple default StorageClasses**, the behavior is unpredictable -- the admission controller may select either one, or in some Kubernetes versions, the PVC creation may fail or a warning is emitted. The Kubernetes documentation explicitly states only one StorageClass should be marked as default. The admin should fix this by removing the default annotation from one of the StorageClasses: `kubectl patch sc standard-hdd -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'`. Best practice is to verify with `kubectl get sc` that exactly one StorageClass shows `(default)`.
 
 </details>
 
-### Q5: Identifying Default
-How do you check which StorageClass is the default?
+### Q5: StorageClass Immutability Problem
+After creating a StorageClass with `reclaimPolicy: Delete`, the admin realizes it should be `Retain` for production use. Existing PVCs have already provisioned PVs using this StorageClass. Can the admin change the reclaimPolicy on the StorageClass? What happens to the already-provisioned PVs?
 
 <details>
 <summary>Answer</summary>
 
-```bash
-k get sc
-```
-The default StorageClass will show `(default)` next to its name. Or check the annotation:
-```bash
-k get sc -o jsonpath='{.items[?(@.metadata.annotations.storageclass\.kubernetes\.io/is-default-class=="true")].metadata.name}'
-```
+StorageClasses are **immutable** once created -- you cannot change fields like `reclaimPolicy` or `parameters`. The admin must delete and recreate the StorageClass with the corrected policy. However, **already-provisioned PVs keep their original reclaim policy** -- changing the StorageClass does not retroactively update existing PVs. To protect existing production data, the admin should manually patch each PV's reclaim policy: `kubectl patch pv <pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'`. New PVCs will use the recreated StorageClass with the correct Retain policy, but every existing PV must be patched individually.
 
 </details>
 
-### Q6: Reclaim Policy Difference
-What's the practical difference between Delete and Retain reclaimPolicy in StorageClasses?
+### Q6: Dev vs Production StorageClass Design
+You are designing StorageClasses for a cluster used by both dev and production teams. Dev needs cheap, ephemeral storage. Production needs encrypted, high-IOPS storage with data protection. Design the two StorageClasses and explain your choice of reclaimPolicy, volumeBindingMode, and whether to enable volume expansion for each.
 
 <details>
 <summary>Answer</summary>
 
-- **Delete**: When PVC is deleted, the dynamically provisioned PV and underlying storage are automatically deleted. Good for dev/test.
-- **Retain**: When PVC is deleted, the PV becomes "Released" but storage is kept. Admin must manually clean up. Good for production data.
+For **dev**: Use `reclaimPolicy: Delete` (auto-cleanup when PVCs are deleted, no orphaned volumes), `volumeBindingMode: WaitForFirstConsumer` (avoid zone mismatch), `allowVolumeExpansion: true` (devs may need to grow storage during experimentation), and cheap storage parameters (e.g., `type: gp3` with default IOPS). For **production**: Use `reclaimPolicy: Retain` (protect data even if PVC is accidentally deleted), `volumeBindingMode: WaitForFirstConsumer` (same zone rationale), `allowVolumeExpansion: true` (databases grow over time), and add `encrypted: "true"` plus a KMS key in parameters for encryption at rest. The Delete policy for dev prevents storage cost leaks from forgotten PVCs, while Retain for production ensures a human must explicitly approve data deletion.
 
 </details>
 

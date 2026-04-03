@@ -115,6 +115,8 @@ By the end of this module, you'll be able to:
 └────────────────────────────────────────────────────────────────┘
 ```
 
+> **Pause and predict**: In a large organization, the platform team manages infrastructure and the app teams manage their own routing. With Ingress, both teams edit the same resource type. What problems does this cause, and how does Gateway API's resource model solve them?
+
 ### 1.3 Role-Oriented Design
 
 | Role | Resources | Responsibilities |
@@ -341,6 +343,8 @@ spec:
       port: 80
 ```
 
+> **Stop and think**: You want to roll out a new version of your API to 10% of users. With a standard Kubernetes Deployment, you could adjust replica counts (9 old, 1 new), but that couples scaling with routing. How does Gateway API's traffic splitting decouple these concerns?
+
 ### 4.5 Traffic Splitting (Canary/Blue-Green)
 
 ```yaml
@@ -461,6 +465,8 @@ spec:
 ```
 
 ---
+
+> **What would happen if**: An HTTPRoute in namespace `team-a` tries to reference a Service in namespace `team-b`, but no ReferenceGrant exists in `team-b`. Does the route silently fail, return an error, or route somewhere unexpected?
 
 ## Part 6: Cross-Namespace Routing
 
@@ -605,48 +611,34 @@ k get httproute my-route -o jsonpath='{.status.parents[0].conditions}'
 
 ## Quiz
 
-1. **What's the main difference between Ingress and Gateway API?**
+1. **Your team is migrating from ingress-nginx (now retired) to Gateway API. A colleague asks why you can't just keep using Ingress resources with a different controller. What limitations of Ingress does Gateway API solve that would justify the migration effort?**
    <details>
    <summary>Answer</summary>
-   Gateway API uses multiple resources with role-based separation (GatewayClass, Gateway, HTTPRoute) and supports multiple protocols natively. Ingress uses a single resource and relies on annotations for advanced features.
+   Ingress relies on controller-specific annotations for advanced features (rewrite rules, rate limiting, header routing), making configurations non-portable between controllers. Gateway API provides these features natively: traffic splitting with `weight`, header-based routing with `matches.headers`, URL rewriting with `URLRewrite` filters, and cross-namespace routing with `ReferenceGrant`. It also supports TCP, UDP, gRPC, and TLS natively (not just HTTP). The role-oriented model (GatewayClass/Gateway/HTTPRoute) lets platform teams manage infrastructure separately from app teams managing routes, improving security and separation of concerns.
    </details>
 
-2. **Who typically creates the Gateway resource?**
+2. **You are a cluster operator. The security team requires that only the `payments` namespace can create HTTPRoutes that attach to the production Gateway, while all other namespaces can use the staging Gateway. How do you configure this?**
    <details>
    <summary>Answer</summary>
-   The Cluster Operator creates the Gateway. Infrastructure Providers create GatewayClass, and Application Developers create HTTPRoute.
+   On the production Gateway, set the listener's `allowedRoutes.namespaces.from: Selector` with a `namespaceSelector` matching a label like `gateway-access: production`, then label only the `payments` namespace with that label. On the staging Gateway, set `allowedRoutes.namespaces.from: All`. This way, only HTTPRoutes in the `payments` namespace can attach to the production Gateway. If a team in another namespace tries to reference the production Gateway in their HTTPRoute's `parentRefs`, the route will not be accepted and the status conditions will show it was rejected.
    </details>
 
-3. **How do you configure traffic splitting (90/10) in Gateway API?**
+3. **You are deploying a canary release. The stable version handles 95% of traffic and the canary handles 5%. After monitoring for an hour, you want to shift to 50/50. With a Deployment-based approach, you would need to scale replicas. How does Gateway API handle this differently, and what is the advantage?**
    <details>
    <summary>Answer</summary>
-   Use `weight` in backendRefs:
-   ```yaml
-   backendRefs:
-   - name: stable
-     weight: 90
-   - name: canary
-     weight: 10
-   ```
+   With Gateway API, you change the `weight` values in the HTTPRoute's `backendRefs` from `95/5` to `50/50`. The key advantage is that traffic splitting is decoupled from scaling. You can have 10 stable pods and 2 canary pods but still send 50% of traffic to each -- the gateway handles the distribution. With Deployment-based canary (adjusting replica counts), you would need 5 stable and 5 canary pods to achieve 50/50, forcing you to over-provision the canary. Gateway API lets you scale each version independently based on actual load, not traffic percentage.
    </details>
 
-4. **What's a ReferenceGrant used for?**
+4. **An app team creates an HTTPRoute that references a backend Service in a different namespace, but traffic returns 404. The HTTPRoute status shows "ResolvedRefs: False". What is missing and how do you fix it?**
    <details>
    <summary>Answer</summary>
-   ReferenceGrant allows resources in one namespace to reference resources in another namespace. For example, allowing an HTTPRoute in `default` to route to a Service in `backend-ns`.
+   A `ReferenceGrant` is missing in the target namespace. Gateway API requires explicit permission for cross-namespace references as a security measure. Create a ReferenceGrant in the backend Service's namespace that allows HTTPRoutes from the app team's namespace to reference Services. Without it, the gateway controller refuses to resolve the backend reference. This is a deliberate security feature -- unlike Ingress where any namespace could reference any Service, Gateway API enforces explicit trust boundaries between namespaces.
    </details>
 
-5. **How does header-based routing work in Gateway API?**
+5. **You need to route requests to API v2 only when the header `X-API-Version: 2` is present, otherwise default to v1. With Ingress, this required a controller-specific annotation. Write the Gateway API HTTPRoute rules and explain why this is more portable.**
    <details>
    <summary>Answer</summary>
-   Use `matches.headers` in HTTPRoute rules:
-   ```yaml
-   matches:
-   - headers:
-     - name: X-Version
-       value: v2
-   ```
-   This routes requests with matching headers to specific backends.
+   Create an HTTPRoute with two rules: the first matches `headers: [{name: X-API-Version, value: "2"}]` and routes to the v2 backend; the second has no header match (default) and routes to v1. The more specific match (with header) takes priority. This is more portable because `matches.headers` is part of the Gateway API spec, not an annotation. Any conformant Gateway API implementation (Envoy Gateway, Cilium, Traefik, Kong) will handle it identically. With Ingress, you would use something like `nginx.ingress.kubernetes.io/canary-header: X-API-Version` which only works with nginx and has completely different syntax on other controllers.
    </details>
 
 ---

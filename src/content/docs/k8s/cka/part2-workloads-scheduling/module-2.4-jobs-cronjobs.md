@@ -126,6 +126,8 @@ kubectl logs job/pi-calculation
 kubectl delete job pi-calculation
 ```
 
+> **Pause and predict**: A Job has `restartPolicy: Never` and `backoffLimit: 4`. The container fails on every attempt. How many pods will you see in `kubectl get pods` after the Job gives up? Now consider the same scenario with `restartPolicy: OnFailure` -- how many pods would you see?
+
 ### 1.4 Restart Policy
 
 Jobs require either `Never` or `OnFailure`:
@@ -224,6 +226,8 @@ kubectl get jobs parallel-job -w
 ---
 
 ## Part 3: Job Failure Handling
+
+> **Pause and predict**: A Job with `activeDeadlineSeconds: 60` and `backoffLimit: 10` runs a container that takes 15 seconds per attempt and always fails. Will the Job hit the backoff limit or the deadline first? How many pods will be created?
 
 ### 3.1 backoffLimit
 
@@ -376,6 +380,8 @@ kubectl patch cronjob backup -p '{"spec":{"suspend":false}}'
 kubectl delete cronjob backup
 ```
 
+> **Stop and think**: You have a CronJob that runs a database backup every hour, but sometimes the backup takes 90 minutes. With the default `concurrencyPolicy: Allow`, two backup jobs would overlap. What could go wrong with concurrent backups, and which concurrency policy would you choose instead?
+
 ### 4.5 CronJob Concurrency Policy
 
 ```yaml
@@ -457,30 +463,28 @@ kubectl get events --field-selector involvedObject.name=myjob
 
 ## Quiz
 
-1. **What restartPolicy options are valid for Jobs?**
+1. **A developer creates a Job with `restartPolicy: Always` and wonders why it gets rejected. They argue that retrying should mean restarting. Explain why `Always` is invalid for Jobs and describe the practical difference between `Never` and `OnFailure` for a Job that might fail.**
    <details>
    <summary>Answer</summary>
-   `Never` or `OnFailure`. `Always` is not valid for Jobs because Jobs expect pods to terminate.
+   `restartPolicy: Always` is invalid for Jobs because it would create a pod that never terminates -- the kubelet would restart the container forever, and the Job could never reach a "completed" state. Jobs need pods to eventually exit. With `Never`, each failure creates a new pod (the old failed pod stays for log inspection), so with `backoffLimit: 4` you might see 5 pods total. With `OnFailure`, the same pod's container is restarted in place, so you see only 1 pod but with multiple restarts. Use `Never` when you need to inspect failed pod logs side-by-side; use `OnFailure` to keep your pod count clean.
    </details>
 
-2. **A Job has completions: 5 and parallelism: 2. What happens?**
+2. **Your data pipeline needs to process 100 items. Each item takes about 30 seconds. You want to finish in under 10 minutes. Design the Job spec with appropriate `completions` and `parallelism` values, and explain what happens if one of the parallel pods fails halfway through.**
    <details>
    <summary>Answer</summary>
-   The Job runs 2 pods in parallel. When pods complete successfully, new pods start until 5 total successful completions are achieved.
+   Set `completions: 100` and `parallelism: 6` (or higher). With 6 pods running in parallel, each taking 30 seconds, you can complete 100 items in roughly `ceil(100/6) * 30s = 510s` (about 8.5 minutes), safely under 10 minutes. If one pod fails, the Job controller creates a replacement pod to redo that specific completion (failed completions don't count toward the 100). The `backoffLimit` controls how many total failures are tolerated before the Job is marked as failed. Set it high enough to handle transient failures (e.g., `backoffLimit: 10`) but not so high that a systematic bug creates hundreds of failed pods.
    </details>
 
-3. **How do you manually trigger a CronJob?**
+3. **It's 3 AM and your on-call pager fires because a CronJob-created backup hasn't run. The CronJob schedule is `0 2 * * *` (daily at 2 AM). You run `kubectl get cronjobs` and see `LAST SCHEDULE: <none>`. How do you investigate, and how do you immediately trigger the backup while you fix the root cause?**
    <details>
    <summary>Answer</summary>
-   `kubectl create job --from=cronjob/<cronjob-name> <job-name>`
-
-   This creates a Job from the CronJob template immediately.
+   First, check if the CronJob is suspended: `kubectl get cronjob backup -o yaml | grep suspend`. If `suspend: true`, that explains it. Next, check `kubectl describe cronjob backup` for events -- the CronJob controller may have logged failures. Also verify the cron schedule syntax is correct (a common mistake is swapping minute/hour fields). To trigger the backup immediately while investigating, run `kubectl create job --from=cronjob/backup backup-emergency`. This creates a Job using the CronJob's template without waiting for the next scheduled time. After the emergency run succeeds, fix the root cause (unsuspend, fix schedule, or check RBAC permissions).
    </details>
 
-4. **What does concurrencyPolicy: Forbid do?**
+4. **You have a CronJob that runs every 5 minutes to aggregate metrics, but sometimes the aggregation takes 7 minutes. With `concurrencyPolicy: Allow` (the default), overlapping runs are causing duplicate data. You switch to `Forbid`, but now some scheduled runs are being skipped entirely. What is the trade-off between `Forbid` and `Replace`, and which would you choose for this use case?**
    <details>
    <summary>Answer</summary>
-   If a previous Job from the CronJob is still running when a new scheduled run occurs, the new Job is skipped entirely.
+   With `Forbid`, the new scheduled run is silently skipped if the previous is still running. You avoid duplicates but miss data from the skipped interval. With `Replace`, the running Job is terminated and a new one starts fresh, which means the in-progress aggregation is lost but you always have the most recent run executing. For a metrics aggregation use case, `Forbid` is usually better because the long-running job will eventually complete and cover that interval's data. `Replace` would waste the 7 minutes of work already done. However, the real fix is to optimize the aggregation to finish within 5 minutes, or change the schedule to every 10 minutes to prevent overlap entirely.
    </details>
 
 ---

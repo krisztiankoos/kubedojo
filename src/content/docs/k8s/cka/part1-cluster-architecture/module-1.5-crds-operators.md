@@ -139,6 +139,8 @@ kubectl get crontabs
 
 ## Part 2: Creating Custom Resources
 
+> **Pause and predict**: You've just applied a CRD that defines a new "Database" resource type. You then create a Database custom resource with `replicas: 3`. Will Kubernetes automatically create 3 pods for your database? Why or why not?
+
 ### 2.1 Custom Resource Instance
 
 Once the CRD exists, you can create instances:
@@ -233,6 +235,8 @@ A CRD alone doesn't do anything—it's just data storage. An **Operator** is a c
 │                                                                 │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+> **What would happen if**: The cert-manager operator pod crashes but the CRDs remain. Can you still create Certificate custom resources? Will existing certificates continue to serve TLS traffic?
 
 ### 3.2 Operator Components
 
@@ -361,6 +365,8 @@ kubectl get pods -A | grep -E "cert-manager|prometheus"
 ---
 
 ## Part 5: CRD Deep Dive
+
+> **Stop and think**: What happens if you delete a CRD while there are still custom resources of that type in the cluster? Do the custom resources survive, or are they deleted too?
 
 ### 5.1 Schema Validation
 
@@ -542,29 +548,28 @@ kubectl api-resources --namespaced=true
 
 ## Quiz
 
-1. **What's the difference between a CRD and a CR?**
+1. **You join a new team and run `kubectl get pods -A` but only see a handful of system pods. A colleague says "the databases are managed by an operator." How would you discover what CRDs are installed, find the database custom resources, and determine which operator manages them?**
    <details>
    <summary>Answer</summary>
-   A **CRD (Custom Resource Definition)** defines a new resource type—like a template. A **CR (Custom Resource)** is an instance of that type—like an object from the template. CRD defines "Certificate", CR creates "my-app-certificate".
+   Start with `kubectl get crd` to list all Custom Resource Definitions in the cluster — this shows you every custom type available. Look for database-related names (e.g., `postgresqls.acid.zalan.do` or `databases.example.com`). Then list instances: `kubectl get <resource-name> -A` (e.g., `kubectl get postgresqls -A`). To find the operator managing them, run `kubectl get pods -A | grep operator` or check the CRD's API group and search for pods in kube-system or a dedicated namespace. You can also run `kubectl api-resources` which shows all resource types including their API group, helping you trace which operator project owns them.
    </details>
 
-2. **A CRD is installed but nothing happens when you create a CR. Why?**
+2. **A developer creates a `Certificate` custom resource for cert-manager, but after 10 minutes the certificate Secret hasn't been created. The CRD exists and `kubectl get certificate my-cert` shows the resource. What are the three things you should check, in order?**
    <details>
    <summary>Answer</summary>
-   CRDs alone are just data storage. An **Operator** (controller) must be running to watch for CRs and take action. Without the operator, CRs are stored in etcd but nothing reconciles them.
+   First, check if the cert-manager operator pods are running: `kubectl get pods -n cert-manager`. A CRD without its operator is just data storage — no controller is watching to act on the Certificate CR. Second, if the operator is running, check the operator logs: `kubectl logs -n cert-manager deploy/cert-manager` for reconciliation errors, such as missing ClusterIssuer, DNS challenge failures, or rate limiting from Let's Encrypt. Third, describe the Certificate resource: `kubectl describe certificate my-cert` and check the Status and Events sections for specific error messages like "issuer not found" or "ACME challenge failed." The operator writes status conditions to the CR, which is your most direct diagnostic.
    </details>
 
-3. **How do you find all custom resource types in a cluster?**
+3. **Your team wants to create a "BackupPolicy" CRD that should apply to entire clusters, not individual namespaces. A junior engineer sets `scope: Namespaced`. What problems will this cause, and what should the scope be?**
    <details>
    <summary>Answer</summary>
-   `kubectl get crd` lists all Custom Resource Definitions. For all resource types (built-in and custom): `kubectl api-resources`.
+   With `scope: Namespaced`, every team would need to create their own BackupPolicy in each namespace, leading to duplication and inconsistency. More critically, cluster-wide backup policies (like "back up all PVs every 6 hours") don't logically belong to any single namespace. The scope should be `Cluster`, making BackupPolicy resources cluster-wide — similar to how cert-manager uses `ClusterIssuer` for cluster-wide certificate issuers vs `Issuer` for namespace-scoped ones. With cluster scope, names must be globally unique, you don't use `-n namespace` with kubectl commands, and RBAC requires ClusterRoles (not Roles) to manage them. Choose Namespaced for resources owned by a team or application, and Cluster for shared infrastructure policies.
    </details>
 
-4. **What does `scope: Namespaced` vs `scope: Cluster` mean for a CRD?**
+4. **You accidentally run `kubectl delete crd certificates.cert-manager.io`. What happens to all the Certificate custom resources in the cluster, and can you recover them?**
    <details>
    <summary>Answer</summary>
-   **Namespaced**: Resources exist within a namespace, must specify `-n` when querying, can have same name in different namespaces.
-   **Cluster**: Resources are cluster-wide, no namespace needed, names must be unique cluster-wide.
+   Deleting a CRD cascades and deletes ALL custom resources of that type across all namespaces. Every Certificate CR in the cluster is immediately removed from etcd. The TLS Secrets that were already created by cert-manager still exist (they're regular Kubernetes Secrets, not custom resources), so existing TLS traffic continues working. However, no new certificates can be issued, and existing certificates won't auto-renew since the Certificate CRs are gone. Recovery requires reinstalling cert-manager (which recreates the CRD) and then recreating all Certificate CRs. This is why the "Common Mistakes" section warns to delete CRs first, then the CRD — and why you should always have your CRs defined in version control (GitOps) for disaster recovery.
    </details>
 
 ---

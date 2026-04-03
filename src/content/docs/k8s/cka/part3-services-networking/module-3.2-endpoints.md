@@ -171,6 +171,8 @@ subsets:
 
 ---
 
+> **Pause and predict**: You have a Service with 3 endpoints. You add a readiness probe to the deployment that checks `/healthz`, but the endpoint on your app returns 500 for that path. What happens to the Service's endpoints, and can clients still reach the app?
+
 ## Part 2: Debugging with Endpoints
 
 ### 2.1 No Endpoints = No Traffic
@@ -316,6 +318,8 @@ subsets:
 
 ---
 
+> **Stop and think**: Imagine a Service backed by 5,000 pods. Every time a single pod is added or removed, the entire Endpoints object (containing all 5,000 IPs) must be sent to every node watching it. What problem does this create, and how would you design a better solution?
+
 ## Part 4: EndpointSlices
 
 ### 4.1 Why EndpointSlices?
@@ -413,6 +417,8 @@ k get endpointslice web-svc-abc12 -o yaml
 | Topology hints | No | Yes |
 
 ---
+
+> **What would happen if**: You set `clusterIP: None` on a Service. A pod does `nslookup` on that service name. Instead of getting one IP, it gets three. Why is this useful, and when would you NOT want this behavior?
 
 ## Part 5: Headless Services
 
@@ -541,36 +547,34 @@ spec:
 
 ## Quiz
 
-1. **Why might a service show `<none>` for endpoints?**
+1. **You deploy a new version of your app and `kubectl get endpoints my-svc` suddenly shows `<none>`, even though `kubectl get pods` shows 3 pods in Running state. The previous version worked fine. What is your debugging process?**
    <details>
    <summary>Answer</summary>
-   The service's selector doesn't match any running pods' labels, OR no pods with matching labels are in Running state.
+   First, check if the pods are actually READY (not just Running) with `k get pods` -- look at the READY column. If they show `0/1`, the new version likely has a failing readiness probe. Second, verify the pod labels still match the Service selector: the new deployment might have changed labels. Run `k get svc my-svc -o yaml | grep -A5 selector` and compare with `k get pods --show-labels`. A common cause during version updates is changing the label (e.g., adding `version: v2`) while the Service selector still expects the old labels.
    </details>
 
-2. **How do you create endpoints for an external service?**
+2. **Your company has a PostgreSQL database running on a VM at 192.168.1.50, outside the Kubernetes cluster. You want pods to reach it as `external-db.default.svc.cluster.local:5432`. How do you set this up, and what happens if the database IP changes?**
    <details>
    <summary>Answer</summary>
-   1. Create a Service without a selector
-   2. Create an Endpoints object with the same name as the service
-   3. Add the external IP addresses to the Endpoints subsets
+   Create a Service without a selector and a matching Endpoints object. The Service defines `port: 5432` with no selector, and the Endpoints object (with the exact same name `external-db`) lists `192.168.1.50` in its addresses. If the database IP changes, you must manually update the Endpoints object -- there is no automatic tracking since there is no selector. For a more maintainable approach, consider using an ExternalName Service that points to a DNS name instead of a raw IP.
    </details>
 
-3. **What's the difference between `addresses` and `notReadyAddresses` in endpoints?**
+3. **You run `kubectl describe endpoints my-svc` and see 2 IPs under `Addresses` and 1 IP under `NotReadyAddresses`. A colleague says "just delete the not-ready pod to fix it." Is this the right approach? What should you investigate first?**
    <details>
    <summary>Answer</summary>
-   `addresses` contains pod IPs that are ready and receiving traffic. `notReadyAddresses` contains pod IPs that aren't passing their readiness probe and won't receive traffic.
+   Deleting the pod is a band-aid, not a fix. The pod is in NotReadyAddresses because its readiness probe is failing, which means the pod is alive but not healthy enough to serve traffic. First investigate WHY the readiness probe fails: check `k describe pod <pod>` for probe failure events, check the pod logs for errors, and verify the readiness endpoint is correct. The pod might be overloaded, have a configuration error, or be waiting for a dependency. Kubernetes is correctly protecting users from receiving traffic on an unhealthy pod -- that is exactly what readiness probes are for.
    </details>
 
-4. **Why were EndpointSlices introduced?**
+4. **Your cluster has a Service backed by 3,000 pods. An SRE reports that every time a rolling update occurs, the API server's memory spikes and kube-proxy takes 10+ seconds to update rules. What is causing this, and what Kubernetes feature addresses it?**
    <details>
    <summary>Answer</summary>
-   To handle large services better. A single Endpoints object for thousands of pods caused performance issues. EndpointSlices split endpoints into chunks of 100, so updates only affect one slice.
+   With 3,000 pods, the single Endpoints object is enormous. Every pod change during a rolling update requires the entire object to be rewritten and sent to every node's kube-proxy. EndpointSlices solve this by splitting endpoints into chunks of 100 (so ~30 slices). When a pod changes, only the affected slice (~100 entries) is updated and transmitted, reducing API server load and kube-proxy processing time by roughly 30x. EndpointSlices have been the default since Kubernetes 1.21.
    </details>
 
-5. **What makes a service "headless" and what's special about its endpoints?**
+5. **You are deploying a StatefulSet for a Kafka cluster where each broker needs to be individually addressable. A regular ClusterIP Service gives you a single virtual IP. How do you configure DNS so that producers can connect to `kafka-0`, `kafka-1`, and `kafka-2` individually?**
    <details>
    <summary>Answer</summary>
-   Setting `clusterIP: None` makes a service headless. Its endpoints are returned directly via DNS (multiple A records) instead of through a virtual ClusterIP.
+   Create a headless Service (with `clusterIP: None`) and set it as the StatefulSet's `serviceName`. With a headless Service, DNS returns individual A records for each pod rather than a single ClusterIP. Each StatefulSet pod gets a stable DNS name in the format `<pod-name>.<service-name>.<namespace>.svc.cluster.local`, so `kafka-0.kafka-headless.default.svc.cluster.local` always resolves to the specific pod. This is essential for stateful workloads where clients need to connect to specific instances, unlike stateless apps where any backend works.
    </details>
 
 ---
