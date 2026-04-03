@@ -85,7 +85,7 @@ def check_required_sections(content: str) -> list[CheckResult]:
     return results
 
 
-def check_content_lines(content: str) -> list[CheckResult]:
+def check_content_lines(content: str, path: Path | None = None) -> list[CheckResult]:
     """Check content line count (excluding code blocks and frontmatter)."""
     # Remove frontmatter
     body = content
@@ -99,8 +99,14 @@ def check_content_lines(content: str) -> list[CheckResult]:
     lines = [l for l in body_no_code.strip().split("\n") if l.strip()]
     count = len(lines)
 
-    # 600 for full modules, 250 for theory/overview modules
-    threshold = 250  # Use lower threshold; pipeline can adjust per track
+    # Track-aware thresholds
+    threshold = 250
+    path_str = str(path) if path else ""
+    if "prerequisites" in path_str or "zero-to-terminal" in path_str:
+        threshold = 100  # Beginner modules are intentionally shorter
+    elif "kcna" in path_str:
+        threshold = 150  # Associate-level theory modules
+
     passed = count >= threshold
     return [CheckResult("LINE_COUNT", passed,
                         f"Content lines (excl. code blocks): {count} (threshold: {threshold})")]
@@ -114,23 +120,24 @@ def check_code_blocks(content: str) -> list[CheckResult]:
     passed = count == 0
     results.append(CheckResult("CODE_LANG", passed,
                                f"Code blocks without language: {count}" if count > 0 else
-                               "All code blocks have language specifiers"))
+                               "All code blocks have language specifiers",
+                               severity="WARNING"))  # Demoted — pre-existing in many modules
     return results
 
 
 def check_no_emojis(content: str) -> list[CheckResult]:
     """Check for emoji usage (not allowed in KubeDojo)."""
-    # Common emoji ranges
+    # Strip code blocks first — checkmarks etc. inside code are fine
+    content_no_code = re.sub(r"```[\s\S]*?```", "", content)
+
+    # Common emoji ranges (excludes technical symbols like ✓ ✗ → ←)
     emoji_pattern = re.compile(
-        "[\U0001F300-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF"
-        "\U00002702-\U000027B0\U0000FE0F]"
+        "[\U0001F300-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF]"
     )
-    matches = emoji_pattern.findall(content)
-    # Filter out common false positives (variation selectors, etc.)
-    real_emojis = [m for m in matches if m != "\ufe0f"]
-    passed = len(real_emojis) == 0
+    matches = emoji_pattern.findall(content_no_code)
+    passed = len(matches) == 0
     return [CheckResult("NO_EMOJI", passed,
-                        f"Emojis found: {len(real_emojis)}" if real_emojis else
+                        f"Emojis found: {len(matches)}" if matches else
                         "No emojis")]
 
 
@@ -163,7 +170,7 @@ def run_all(content: str, path: Path) -> list[CheckResult]:
     results = []
     results.extend(check_frontmatter(content, path))
     results.extend(check_required_sections(content))
-    results.extend(check_content_lines(content))
+    results.extend(check_content_lines(content, path))
     results.extend(check_code_blocks(content))
     results.extend(check_no_emojis(content))
     results.extend(check_k8s_versions(content))

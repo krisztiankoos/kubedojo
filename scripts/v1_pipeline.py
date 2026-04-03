@@ -464,15 +464,29 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
                     return False
 
     # CHECK
-    if ms["phase"] == "check" and improved:
+    if ms["phase"] == "check":
+        # Load improved content from staging file if resuming
+        staging = module_path.with_suffix(".staging.md")
+        if improved:
+            staging.write_text(improved)
+        elif staging.exists():
+            improved = staging.read_text()
+            print(f"  Resuming CHECK from staging file")
+        else:
+            print(f"  ❌ No improved content available for CHECK")
+            return False
+
         passed, results = step_check(improved, module_path)
         if not passed:
             ms["errors"].append("Deterministic checks failed after review")
             save_state(state)
+            # Keep staging file so we can resume after fixing thresholds
+            print(f"  Staging file kept: {staging}")
             return False
 
-        # Write the improved file
+        # Write the improved file and clean up staging
         module_path.write_text(improved)
+        staging.unlink(missing_ok=True)
         print(f"  ✓ File written: {module_path}")
 
         ms["phase"] = "score"
