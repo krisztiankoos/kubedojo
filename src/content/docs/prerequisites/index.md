@@ -28,15 +28,16 @@ These tracks build foundational knowledge before diving into certifications or a
 | 0.9 | [What is the Cloud?](zero-to-terminal/module-0.9-what-is-the-cloud/) |
 | 0.10 | [Your First Server](zero-to-terminal/module-0.10-your-first-server/) |
 
-### [Philosophy & Design](philosophy-design/) — 4 modules
-*Why Kubernetes exists and how to think about it.*
+### [Everyday Linux](/linux/foundations/everyday-use/) — 5 modules
+*You learned the terminal. Now learn to USE Linux day-to-day: shell power tricks, permissions, processes, services, and networking tools.*
 
 | Module | Topic |
 |--------|-------|
-| 1.1 | [Why Kubernetes Won](philosophy-design/module-1.1-why-kubernetes-won/) |
-| 1.2 | [Declarative vs Imperative](philosophy-design/module-1.2-declarative-vs-imperative/) |
-| 1.3 | [What We Don't Cover](philosophy-design/module-1.3-what-we-dont-cover/) |
-| 1.4 | [Dead Ends - Technologies to Avoid](philosophy-design/module-1.4-dead-ends/) |
+| 0.1 | [CLI Power User](/linux/foundations/everyday-use/module-0.1-cli-power-user/) |
+| 0.2 | [Environment & Permissions](/linux/foundations/everyday-use/module-0.2-environment-permissions/) |
+| 0.3 | [Processes & Resources](/linux/foundations/everyday-use/module-0.3-processes-resources/) |
+| 0.4 | [Services & Logs](/linux/foundations/everyday-use/module-0.4-services-logs/) |
+| 0.5 | [Networking Tools](/linux/foundations/everyday-use/module-0.5-networking-tools/) |
 
 ### [Cloud Native 101](cloud-native-101/) — 5 modules
 *Containers, Docker, and the ecosystem.*
@@ -63,6 +64,16 @@ These tracks build foundational knowledge before diving into certifications or a
 | 1.7 | [Namespaces & Labels](kubernetes-basics/module-1.7-namespaces-labels/) |
 | 1.8 | [YAML for Kubernetes](kubernetes-basics/module-1.8-yaml-kubernetes/) |
 
+### [Philosophy & Design](philosophy-design/) — 4 modules
+*Now that you know what Kubernetes is, understand WHY it works the way it does.*
+
+| Module | Topic |
+|--------|-------|
+| 1.1 | [Why Kubernetes Won](philosophy-design/module-1.1-why-kubernetes-won/) |
+| 1.2 | [Declarative vs Imperative](philosophy-design/module-1.2-declarative-vs-imperative/) |
+| 1.3 | [What We Don't Cover](philosophy-design/module-1.3-what-we-dont-cover/) |
+| 1.4 | [Dead Ends - Technologies to Avoid](philosophy-design/module-1.4-dead-ends/) |
+
 ### [Modern DevOps Practices](modern-devops/) — 6 modules
 *Infrastructure as Code, GitOps, and observability.*
 
@@ -80,10 +91,10 @@ These tracks build foundational knowledge before diving into certifications or a
 ## Suggested Order
 
 ```
-Zero to Terminal → Philosophy & Design → Cloud Native 101 → Kubernetes Basics → Modern DevOps
+Zero to Terminal → Everyday Linux → Cloud Native 101 → Kubernetes Basics → Philosophy & Design → Modern DevOps
 ```
 
-Or jump directly to **Kubernetes Basics** if you already understand containers and the terminal.
+Or jump directly to **Cloud Native 101** if you already know Linux, or to **Kubernetes Basics** if you already understand containers.
 
 Want to go deeper into Linux? Continue to the [Linux](/linux/) track (37 modules covering kernel internals, container primitives, networking, security, and operations — plus the LFCS certification path).
 

@@ -9,7 +9,7 @@ KubeDojo — free, open-source cloud native curriculum.
 **Site tabs**: Home | What's New | Fundamentals | Cloud | Certifications | Platform Engineering
 
 **Tracks**:
-- **Fundamentals** — Zero to Terminal, Linux Everyday Use, Philosophy, Cloud Native 101, K8s Basics, Modern DevOps, Linux Deep Dive
+- **Fundamentals** — Zero to Terminal, Everyday Linux, Cloud Native 101, K8s Basics, Philosophy & Design, Modern DevOps
 - **Cloud** — Rosetta Stone, AWS/GCP/Azure Essentials (12 each), Architecture Patterns, EKS/GKE/AKS Deep Dives, Advanced Ops, Managed Services, Enterprise & Hybrid
 - **Certifications** — CKA, CKAD, CKS, KCNA, KCSA, Extending K8s, 10+ tool certs
 - **Platform Engineering** — Foundations (7 sections), Disciplines (12 sections), Toolkits (17 categories)
