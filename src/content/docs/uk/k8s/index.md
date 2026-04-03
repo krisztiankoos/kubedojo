@@ -1,7 +1,8 @@
 ---
-title: "\u0421\u0435\u0440\u0442\u0438\u0444\u0456\u043a\u0430\u0446\u0456\u0457 Kubernetes"
+title: "Сертифікації Kubernetes"
 sidebar:
   order: 1
+  label: "Сертифікації"
 ---
 **Шлях до Kubestronaut** — усі 5 сертифікацій, необхідних для отримання статусу [Kubestronaut](https://www.cncf.io/training/kubestronaut/).
 
@@ -45,12 +46,12 @@ sidebar:
 
 | Серт. | Назва | Тип | Модулі | Програма |
 |-------|-------|-----|--------|----------|
-| [KCNA](kcna/) | Kubernetes & Cloud Native Associate | Тестові запитання | 21 | [Детальніше](kcna/) |
-| [KCSA](kcsa/) | Security Associate | Тестові запитання | 25 | [Детальніше](kcsa/) |
-| [CKAD](ckad/) | Application Developer | Практична лабораторна | 28 | [Детальніше](ckad/) |
-| [CKA](cka/) | Administrator | Практична лабораторна | 38 | [Детальніше](cka/) |
+| [KCNA](kcna/) | Kubernetes & Cloud Native Associate | Тестові запитання | 28 | [Детальніше](kcna/) |
+| [KCSA](kcsa/) | Security Associate | Тестові запитання | 26 | [Детальніше](kcsa/) |
+| [CKAD](ckad/) | Application Developer | Практична лабораторна | 30 | [Детальніше](ckad/) |
+| [CKA](cka/) | Administrator | Практична лабораторна | 47 | [Детальніше](cka/) |
 | [CKS](cks/) | Security Specialist | Практична лабораторна | 30 | [Детальніше](cks/) |
-| | **Разом** | | **142** | |
+| | **Разом** | | **161** | |
 
 ---
 
@@ -75,6 +76,30 @@ KCNA → CKAD → (зупинитися тут або продовжити до 
 ```
 CKA → CKS → KCSA
 ```
+
+## Спеціалізовані сертифікації
+
+Окрім Kubestronaut, CNCF пропонує сертифікації за конкретними інструментами. KubeDojo структурує наявні модулі як навчальні шляхи для кожної з них:
+
+| Серт. | Назва | Навчальний шлях |
+|-------|-------|-----------------|
+| [PCA](pca/) | Prometheus Certified Associate | Prometheus, PromQL, алертинг |
+| [ICA](ica/) | Istio Certified Associate | Service mesh, керування трафіком |
+| [CCA](cca/) | Cilium Certified Associate | eBPF мережі, політики |
+| [CGOA](cgoa/) | Certified GitOps Associate | ArgoCD, Flux, принципи GitOps |
+| [CBA](cba/) | Certified Backstage Associate | IDP, портали розробників |
+| [OTCA](otca/) | OpenTelemetry Certified Associate | Спостережуваність, трасування |
+| [KCA](kca/) | Kyverno Certified Associate | Політики як код |
+| [CAPA](capa/) | Certified Argo Project Associate | Argo Workflows, Rollouts |
+| [CNPE](cnpe/) | Cloud Native Platform Engineer | Крос-трековий шлях навчання |
+| [CNPA](cnpa/) | Cloud Native Platform Associate | Основи платформної інженерії |
+| [FinOps](finops/) | FinOps Practitioner | Оптимізація хмарних витрат |
+
+## Розширення Kubernetes
+
+| Розділ | Модулі | Опис |
+|---------|---------|-------------|
+| [Extending K8s](extending/) | 8 | Контролери, оператори, вебуки, агрегація API, CRD |
 
 ---
 

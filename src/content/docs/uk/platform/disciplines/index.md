@@ -10,17 +10,17 @@ sidebar:
 
 | # | Розділ | Опис |
 |---|--------|------|
-| 1 | [SRE](sre/) | Застосування програмної інженерії до операцій |
-| 2 | [Platform Engineering](platform-engineering/) | Побудова внутрішніх продуктів для розробників |
-| 3 | [GitOps](gitops/) | Git як єдине джерело істини для інфраструктури |
-| 4 | [DevSecOps](devsecops/) | Безпека, інтегрована в конвеєр доставки |
-| 5 | [MLOps](mlops/) | Управління життєвим циклом моделей |
-| 6 | [Infrastructure as Code](iac/) | Декларативне управління інфраструктурою |
-| 7 | [Chaos Engineering](chaos-engineering/) | Проактивне впровадження відмов для стійкості |
-| 8 | [FinOps](finops/) | Фінансова відповідальність за хмарні витрати |
-| 9 | [Release Engineering](release-engineering/) | Надійна доставка програмного забезпечення у масштабі |
-| 10 | [AIOps](aiops/) | Операції на базі AI |
-| 11 | [AI Infrastructure](ai-infrastructure/) | Планування GPU, розподілене навчання, обслуговування LLM |
-| 12 | [Data Engineering](data-engineering/) | Запуск інфраструктури даних на Kubernetes |
-| 13 | [Kubernetes Networking](networking/) | CNI, мережеві політики, service mesh, ingress, мультикластер |
-| 14 | [Platform Leadership](leadership/) | Побудова команди, досвід розробника, впровадження, масштабування |
+| 1 | [SRE](core-platform/sre/) | Застосування програмної інженерії до операцій |
+| 2 | [Platform Engineering](core-platform/platform-engineering/) | Побудова внутрішніх продуктів для розробників |
+| 3 | [GitOps](delivery-automation/gitops/) | Git як єдине джерело істини для інфраструктури |
+| 4 | [DevSecOps](reliability-security/devsecops/) | Безпека, інтегрована в конвеєр доставки |
+| 5 | [MLOps](data-ai/mlops/) | Управління життєвим циклом моделей |
+| 6 | [Infrastructure as Code](delivery-automation/iac/) | Декларативне управління інфраструктурою |
+| 7 | [Chaos Engineering](reliability-security/chaos-engineering/) | Проактивне впровадження відмов для стійкості |
+| 8 | [FinOps](business-value/finops/) | Фінансова відповідальність за хмарні витрати |
+| 9 | [Release Engineering](delivery-automation/release-engineering/) | Надійна доставка програмного забезпечення у масштабі |
+| 10 | [AIOps](data-ai/aiops/) | Операції на базі AI |
+| 11 | [AI Infrastructure](data-ai/ai-infrastructure/) | Планування GPU, розподілене навчання, обслуговування LLM |
+| 12 | [Data Engineering](data-ai/data-engineering/) | Запуск інфраструктури даних на Kubernetes |
+| 13 | [Kubernetes Networking](reliability-security/networking/) | CNI, мережеві політики, service mesh, ingress, мультикластер |
+| 14 | [Platform Leadership](core-platform/leadership/) | Побудова команди, досвід розробника, впровадження, масштабування |
