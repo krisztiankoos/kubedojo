@@ -123,14 +123,14 @@
 - [x] Linux: all 37 modules improved (outcomes added) — EN + UK complete
 - [x] CKA: all 41 modules — outcomes + inline prompts + scenario quizzes (Parts 0-5 complete) — EN complete, UK outcomes synced
 - [x] CKAD: all 24 modules — outcomes + inline prompts + scenario quizzes — EN complete, UK outcomes synced
-- [x] CKS: 30 modules — outcomes added, UK outcomes synced
-- [x] KCNA: 28 modules — outcomes added, UK outcomes synced
-- [x] KCSA: 26 modules — outcomes added, UK outcomes synced
+- [x] CKS: 30 modules — outcomes + inline prompts + scenario quizzes — EN complete, UK outcomes synced
+- [x] KCNA: 28 modules — outcomes + inline prompts + scenario quizzes — EN complete, UK outcomes synced
+- [x] KCSA: 26 modules — outcomes + inline prompts + scenario quizzes — EN complete, UK outcomes synced
 - [x] On-Premises: all 30 modules — inline prompts + narrative between code blocks + quiz improvements
 - [x] Fundamentals track reorder: Zero to Terminal → Everyday Linux → Cloud Native 101 → K8s Basics → Philosophy & Design → Modern DevOps
 - [x] Zero to Terminal: Next Module link fixes (0.1→0.2, UK 0.2→0.3)
-- [ ] CKS/KCNA/KCSA: inline prompts + scenario quiz upgrades (outcomes done, deeper treatment pending)
-- [ ] Remaining: Cloud (84), Platform (209) — outcomes + inline prompts — #180
+- [ ] Gemini review of 109 Ukrainian outcome translations — #187
+- [ ] Remaining: Cloud (84), Platform (209) — outcomes + inline prompts — #180 (waiting for new dispatch.py)
 - [ ] Lab quality audit and improvements — #179
 - [ ] Gemini adversary review remaining on-prem + discipline modules
 - [ ] Visual aid beautification pass (alignment, ASCII formatting)
