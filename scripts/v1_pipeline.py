@@ -662,6 +662,22 @@ def cmd_run_section(args):
         for issue in gap_issues:
             print(issue)
         print(f"\n  Gaps: {len(gap_errors)} errors, {len(gap_warnings)} warnings")
+
+        # Persist gaps to file for later review
+        gaps_file = REPO_ROOT / ".pipeline" / "gaps-report.json"
+        gaps_file.parent.mkdir(parents=True, exist_ok=True)
+        existing = json.loads(gaps_file.read_text()) if gaps_file.exists() else {"sections": {}}
+        existing["sections"][args.section] = {
+            "timestamp": datetime.now(UTC).isoformat(),
+            "track": track,
+            "issues": [
+                {"module_a": i.module_a, "module_b": i.module_b,
+                 "type": i.gap_type, "severity": i.severity, "message": i.message}
+                for i in gap_issues
+            ],
+        }
+        gaps_file.write_text(json.dumps(existing, indent=2, ensure_ascii=False))
+        print(f"  Gaps saved to .pipeline/gaps-report.json")
     else:
         print("  ✓ No scaffolding gaps detected")
 
@@ -770,6 +786,22 @@ def cmd_learning_path(args):
         print(f"  EXPAND EXISTING: {len(expansions)} transitions need existing modules expanded")
     if cross_refs:
         print(f"  CROSS-REFERENCES: {len(cross_refs)} transitions just need \"see Module X\" links")
+
+    # Persist to file
+    gaps_file = REPO_ROOT / ".pipeline" / "gaps-report.json"
+    gaps_file.parent.mkdir(parents=True, exist_ok=True)
+    existing = json.loads(gaps_file.read_text()) if gaps_file.exists() else {"sections": {}}
+    existing["cross_track"] = {
+        "timestamp": datetime.now(UTC).isoformat(),
+        "issues": [
+            {"from": i.from_section, "to": i.to_section,
+             "type": i.gap_type, "severity": i.severity,
+             "message": i.message, "suggestion": i.suggestion}
+            for i in issues
+        ],
+    }
+    gaps_file.write_text(json.dumps(existing, indent=2, ensure_ascii=False))
+    print(f"\n  Saved to .pipeline/gaps-report.json")
 
     sys.exit(1 if errors else 0)
 
