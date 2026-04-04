@@ -149,6 +149,8 @@ Example output:
              └─1237 "nginx: worker process" "" "" "" "" "" ...
 ```
 
+> **Pause and predict**: Look at the "Active:" line in the output above. It says "active (running)". If a service had crashed, what do you think this line would say? How would the "Main PID" field change?
+
 Let's break this down:
 
 | Field | What It Tells You |
@@ -168,6 +170,8 @@ The colored dot at the beginning tells you the health at a glance:
 - Red `●` -- failed
 
 ### Starting, Stopping, and Restarting
+
+> **Stop and think**: If you restart a web server, it stops the main process and starts a new one, terminating all active user downloads. Is there a way to tell the server to just re-read its configuration file without dropping current users?
 
 ```bash
 # Start a stopped service
@@ -195,6 +199,8 @@ sudo systemctl try-restart nginx
 > **Tip**: Not sure if a service supports reload? Use `systemctl reload-or-restart nginx` -- it will try reload first and fall back to restart.
 
 ### Enabling and Disabling on Boot
+
+> **Pause and predict**: If you run `systemctl enable nginx`, does it start the service immediately? What exactly changes on the system to ensure it starts on the next boot?
 
 Starting a service makes it run *right now*. Enabling a service makes it start *automatically on boot*:
 
@@ -369,6 +375,8 @@ journalctl -u sshd
 journalctl -u nginx -f
 ```
 
+> **Try It Now**: Run `journalctl -b -p err` on your system. This shows all error-level logs since your last boot. Are there any unexpected failures hiding in your system's background?
+
 ### Limiting Output (the -n Flag)
 
 ```bash
@@ -493,96 +501,72 @@ This workflow applies to debugging kubelet issues, containerd problems, etcd fai
 ## Quiz
 
 ### Question 1
-What is the difference between `systemctl start nginx` and `systemctl enable nginx`?
+**Scenario**: You just installed a new monitoring agent (`datadog-agent`) on a production database server. You ran `systemctl start datadog-agent` and confirmed it is collecting metrics. A week later, the server is rebooted for kernel patching. When it comes back online, the monitoring dashboard shows the server is completely down, but you can SSH in and see the database is running perfectly. What did you forget to do, and why did this happen?
 
 <details>
 <summary>Show Answer</summary>
 
-- **`systemctl start nginx`** starts the service *right now*. It will run until stopped or the system reboots.
-- **`systemctl enable nginx`** configures the service to start *automatically on boot*. It does not start it right now.
-
-To do both at once, use `systemctl enable --now nginx`.
+You forgot to run `systemctl enable datadog-agent`. Running `systemctl start` only launches the service for the current session; it does not configure systemd to start it automatically upon the next boot. When the server rebooted, systemd brought up the enabled services (like the database and SSH), but ignored the monitoring agent because the symlinks in the `multi-user.target.wants` directory were never created. To fix this and prevent future occurrences, you must use the `enable` command, or `enable --now` to do both at once.
 
 </details>
 
 ### Question 2
-You changed a configuration file for nginx and need to apply the changes. Should you use `systemctl restart nginx` or `systemctl reload nginx`?
+**Scenario**: You are managing an HAProxy load balancer handling thousands of active user sessions. You just added a new backend server to the `haproxy.cfg` file. You need HAProxy to start routing traffic to this new server immediately. A junior admin suggests running `systemctl restart haproxy`. Why is this a bad idea, and what command should you run instead?
 
 <details>
 <summary>Show Answer</summary>
 
-Use **`systemctl reload nginx`** if possible. Reload sends a signal (SIGHUP) to nginx telling it to re-read its configuration without dropping existing connections. This is graceful and avoids downtime.
-
-Use **`systemctl restart nginx`** only if reload is not supported by the service, or if you need a completely clean start (e.g., after updating the nginx binary itself).
-
-If you are unsure whether the service supports reload, use `systemctl reload-or-restart nginx`.
+Restarting the service is a bad idea because `systemctl restart haproxy` will completely kill the existing process and start a new one, which will abruptly drop all thousands of active user sessions. Instead, you should use `systemctl reload haproxy`. The reload command sends a specific signal (like SIGHUP) to the master process, instructing it to gracefully re-read its configuration file and start routing new requests according to the updated rules. The existing worker processes are allowed to finish their current connections before terminating, ensuring zero downtime for your users.
 
 </details>
 
 ### Question 3
-How would you view the last 25 lines of logs for the `sshd` service and then continue following new log entries in real time?
+**Scenario**: Developers report that the `payment-processor` service occasionally throws an exception when communicating with the bank, but they aren't sure when it happens. You need to watch the logs live as the developers run a series of test transactions. What exact command would you use to view only the last 20 lines of context and then stream new logs as they arrive?
 
 <details>
 <summary>Show Answer</summary>
 
-```bash
-journalctl -u sshd -n 25 -f
-```
-
-- `-u sshd` filters to the sshd unit
-- `-n 25` shows the last 25 lines
-- `-f` follows (streams) new entries as they appear
-
-Press `Ctrl+C` to stop following.
+You should run `journalctl -u payment-processor -n 20 -f`. The `-u payment-processor` flag filters the massive system journal down to only the logs generated by that specific service unit. The `-n 20` argument provides the last 20 lines of historical context so you can see the immediate state before the tests begin. Finally, the `-f` (follow) flag keeps the stream open, outputting new log entries in real-time exactly like `tail -f`, allowing you to watch the transaction results as the developers trigger them.
 
 </details>
 
 ### Question 4
-A service called `myapp` keeps crashing and restarting. How do you find out why?
+**Scenario**: The `backup-worker` service is configured to run with 512MB of memory, but it keeps running out of memory and crashing. You edit `/etc/systemd/system/backup-worker.service` using vim and change `MemoryLimit=512M` to `MemoryLimit=2G`. You save the file and run `systemctl restart backup-worker`. However, when you check `systemctl status backup-worker`, it still shows the 512M limit and crashes again. Why didn't your changes take effect, and what step did you miss?
 
 <details>
 <summary>Show Answer</summary>
 
-1. Check the current status and recent log output:
-   ```bash
-   systemctl status myapp
-   ```
-
-2. View more detailed recent logs:
-   ```bash
-   journalctl -u myapp -n 50 --no-pager
-   ```
-
-3. If the crash happened a while ago, filter by time:
-   ```bash
-   journalctl -u myapp --since "1 hour ago"
-   ```
-
-4. Filter for errors only:
-   ```bash
-   journalctl -u myapp -p err
-   ```
-
-The logs will almost always tell you the exact error message -- a missing config file, a port already in use, a permission denied, etc.
+Your changes didn't take effect because systemd loads unit files into memory when it starts, and it does not automatically monitor them for changes on disk to save performance. Even though you edited the file on disk, systemd is still using the old configuration cached in its memory. You must run `systemctl daemon-reload` to force systemd to re-read all unit files from disk. After running that command, you can restart the service, and it will pick up the new 2G memory limit.
 
 </details>
 
 ### Question 5
-Why should you use `systemctl stop nginx` instead of `kill <nginx-pid>` to stop a service?
+**Scenario**: Your web server stopped responding at some point during the night. You look at `journalctl -u nginx --since yesterday`, but it outputs 50,000 lines of normal HTTP access requests, making it impossible to find the actual crash event. You need to filter out the noise. What command would you use to view only the critical failures and errors from yesterday?
 
 <details>
 <summary>Show Answer</summary>
 
-When you use `kill` directly:
-- systemd does not know the service was intentionally stopped
-- If the service has `Restart=always` in its unit file, systemd will immediately restart it
-- You end up playing whack-a-mole with a service that keeps coming back
+You should use `journalctl -u nginx --since yesterday -p err`. The `-p err` (priority error) flag is the critical addition here. It filters the journal output to only show messages logged at the `error` level (level 3) or higher severity, such as `critical`, `alert`, and `emerg`. By applying this filter, you strip away all the informational (level 6) access logs and warnings, immediately isolating the exact error messages that explain why the web server crashed.
 
-When you use `systemctl stop`:
-- systemd knows you want the service stopped
-- It will not auto-restart it
-- It runs the proper `ExecStop` command defined in the unit file for a clean shutdown
-- The service state is correctly tracked as "inactive"
+</details>
+
+### Question 6
+**Scenario**: You have written a custom Python service called `data-fetcher` that downloads files from an external API on boot. However, every time you reboot the server, `data-fetcher` fails with a "Network is unreachable" error. If you manually restart it 5 minutes later, it works perfectly. You check the unit file and see `WantedBy=multi-user.target`. What is structurally missing from your unit file, and how does it explain this boot failure?
+
+<details>
+<summary>Show Answer</summary>
+
+Your unit file is missing dependency ordering, specifically an `After=network-online.target` directive in the `[Unit]` section. During boot, systemd starts services in parallel as aggressively as possible to minimize boot time. Because you didn't specify that `data-fetcher` requires the network to be fully initialized, systemd starts it at the exact same time it brings up the network interfaces. The script executes before the IP address is assigned or routing is established, causing the "Network unreachable" error. Adding the `After=` directive forces systemd to wait for network connectivity before launching your service.
+
+</details>
+
+### Question 7
+**Scenario**: A legacy Java application `inventory-sync` is consuming 100% CPU and ignoring normal requests. A junior developer logs into the server, finds the process ID using `htop`, and runs `kill -9 4512` to terminate it. Five seconds later, the process is back, consuming 100% CPU again with a new PID. The developer is confused. Explain to them why `kill` didn't permanently stop the application and what they should have done instead.
+
+<details>
+<summary>Show Answer</summary>
+
+The `kill` command didn't permanently stop the application because systemd is actively supervising the service. When the developer killed the process, systemd detected that its main PID terminated unexpectedly and, acting on the `Restart=always` or `Restart=on-failure` directive in the unit file, immediately spawned a replacement process to heal the system. To intentionally stop a service, the developer should have run `systemctl stop inventory-sync`. This command tells systemd itself to gracefully shut down the service and marks it as intentionally inactive, ensuring the supervisor does not attempt to restart it.
 
 </details>
 

@@ -104,6 +104,8 @@ def check_content_lines(content: str, path: Path | None = None) -> list[CheckRes
     path_str = str(path) if path else ""
     if "prerequisites" in path_str or "zero-to-terminal" in path_str:
         threshold = 100  # Beginner modules are intentionally shorter
+    elif "linux" in path_str:
+        threshold = 150  # Linux practical modules — command-heavy, less prose
     elif "kcna" in path_str:
         threshold = 150  # Associate-level theory modules
 

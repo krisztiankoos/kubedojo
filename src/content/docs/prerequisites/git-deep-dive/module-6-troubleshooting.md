@@ -345,6 +345,10 @@ Sometimes, you don't have a broken file to blame. Sometimes a configuration valu
 
 Imagine your application requires an environment variable `DB_MAX_CONNECTIONS=100`. You inspect the current `deployment.yaml` and the variable is completely gone. Because the lines are deleted, `git blame` is useless (it can only annotate lines that physically exist in the current file).
 
+> **Pause and predict**: You run `git grep` for the deleted environment variable and get nothing. Why?
+>
+> *Answer*: `git grep` exclusively searches the files as they exist in your *current* working directory (the snapshot). Because the variable was deleted in a previous commit, it physically no longer exists to be grepped. You need a tool that searches historical diffs instead of current files.
+
 To find ghost code, you need the Git "Pickaxe".
 
 ### The `-S` Flag (String Addition/Deletion)
@@ -419,6 +423,10 @@ If you *are* searching for something that currently exists in your repository sn
 
 ### Searching Alternate Dimensions (Branches)
 
+> **Which tool would you choose?**: How would you search a colleague's branch for a specific configuration without checking it out or stashing your current uncommitted work?
+>
+> *Answer*: You append the remote branch name to `git grep`. Because `git grep` natively reads Git's internal tree objects, running `git grep "search-term" origin/their-branch` searches their snapshot directly from your current working directory.
+
 Suppose a colleague sends a Slack message: "I added a `PodDisruptionBudget` manifest on my feature branch, but I can't remember what I named the file, and I need you to review it."
 
 You don't need to stash your local changes and checkout their branch. You can search the tip of their branch directly from where you sit:
@@ -444,7 +452,7 @@ git grep -e "kind: Service" --and -e "type: LoadBalancer"
 You can even combine this with Git's tree objects to search the entire repository history simultaneously. To search all branches and all historical commits for a specific, highly deprecated API version:
 
 ```bash
-git grep "apiVersion: policy/v1beta1" $(git rev-list --all)
+git grep "apiVersion: policy/v1" $(git rev-list --all)
 ```
 *(Warning: This command searches the raw contents of every single commit ever made across all branches. It may take several seconds on massive monorepos, but it is an incredibly powerful audit tool).*
 

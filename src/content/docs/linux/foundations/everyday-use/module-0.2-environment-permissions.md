@@ -141,6 +141,8 @@ If nothing found in any directory:
   → "bash: kubectl: command not found"
 ```
 
+> **Pause and predict**: If you type `kubectl` and the shell searches through all directories in your `$PATH` but doesn't find it, what exact error message will it print?
+
 This is why `./deploy.sh` works but `deploy.sh` does not. The current directory (`.`) is **not** in your `$PATH` by default. When you type `deploy.sh`, the shell looks through every `$PATH` directory, never finds it, and gives up. When you type `./deploy.sh`, you are giving an explicit path — you are saying "run the file right here" — so the shell does not need `$PATH` at all.
 
 ### Finding Where Commands Live
@@ -179,11 +181,21 @@ Putting your directory at the **front** means your custom scripts get found firs
 
 To make it permanent, add the `export PATH=...` line to your shell config file (covered in Section 4).
 
+### Trade-off: Convenience vs. Security in $PATH
+
+It might be tempting to add the current directory (`.`) to your `$PATH` like this: `export PATH=".:$PATH"`. This way, you could just type `deploy.sh` instead of `./deploy.sh`.
+
+**War Story**: A sysadmin once added `.` to the *beginning* of their root user's `$PATH` for convenience. An attacker created a malicious script named `ls` and placed it in a world-writable directory like `/tmp`. When the sysadmin `cd`'d into `/tmp` and typed `ls`, the shell searched `.` first, found the malicious script, and executed it as root. The server was instantly compromised. The trade-off is clear: saving two keystrokes (`./`) is never worth giving an attacker an easy execution vector. Always keep `.` out of your `$PATH` and use explicit paths for local files.
+
 ---
 
 ## 3. Setting Variables: `export` vs No `export`
 
-This distinction trips up almost everyone. Watch carefully:
+This distinction trips up almost everyone. 
+
+> **Stop and think**: If you set `API_KEY="12345"` in your terminal without `export`, and then run a deployment script that needs to read `$API_KEY`, will the script succeed? Why or why not?
+
+Watch carefully:
 
 ```bash
 # Setting a variable WITHOUT export
@@ -491,6 +503,8 @@ chmod 700 ~/.ssh
 chmod 444 important-record.txt
 ```
 
+> **Pause and predict**: You have a directory. You want users to be able to `cd` into it and `ls` its contents, but NOT be able to create or delete files. What is the numeric `chmod` value for this exact set of permissions?
+
 ### The Most Common Permission Patterns
 
 | Pattern | Numeric | Use Case |
@@ -637,56 +651,56 @@ sudo vim notes.txt     # The file will end up owned by root — now YOU cannot e
 
 ---
 
-## Quiz
+## Quiz (Testing Your Outcomes)
 
 **Test yourself.** Try to answer before revealing the solution.
 
 <details>
-<summary>1. What does the $PATH variable do?</summary>
+<summary><strong>Q1 [Outcome: Debug "command not found"]</strong>: You are helping a junior developer. They downloaded a binary called <code>kubens</code> into <code>~/downloads</code> and typed <code>kubens</code>. The terminal returns "command not found". They prove the file is there by running <code>ls ~/downloads</code> and seeing <code>kubens</code> listed. Why did this happen and how do they fix it?</summary>
 
-`$PATH` is a colon-separated list of directories. When you type a command name, the shell searches these directories from left to right to find the program to execute. If the command is not found in any `$PATH` directory, you get "command not found."
+The shell only looks for commands in the directories listed in the `$PATH` environment variable. By default, `~/downloads` is not in `$PATH`, and the current directory (`.`) is also not checked automatically for security reasons. Because of this, the shell cannot resolve the command name to the actual file location on disk. To fix this, the developer must either provide the explicit relative or absolute path (e.g., `./kubens` or `~/downloads/kubens`) or move the binary to a directory that is already in `$PATH`, like `/usr/local/bin`.
 </details>
 
 <details>
-<summary>2. What is the difference between setting a variable with and without `export`?</summary>
+<summary><strong>Q2 [Outcome: Configure environment]</strong>: You set a database password using <code>DB_PASS=secret</code> in your terminal. You then run a Python script <code>python3 connect.py</code> that reads the <code>DB_PASS</code> environment variable, but the script crashes complaining that the variable is missing. You type <code>echo $DB_PASS</code> and see "secret". What is happening?</summary>
 
-Without `export`, the variable exists only in the current shell. With `export`, the variable is passed to all child processes (every command or script you run). Use `export` when programs need to see the variable (like `$KUBECONFIG`).
+The variable was set locally in the current shell, but it was not exported to the environment. When you run a script or program, it spawns as a child process of your current shell. Child processes only inherit environment variables that have been explicitly flagged with the `export` command. Because it was missing, the Python script spawned with an environment that did not contain `DB_PASS`. To fix this, you need to run `export DB_PASS=secret` before running the Python script, or pass it inline like `DB_PASS=secret python3 connect.py`.
 </details>
 
 <details>
-<summary>3. You see `-rwxr--r--` on a file. Who can execute it?</summary>
+<summary><strong>Q3 [Outcome: Manage permissions]</strong>: A web server running as the user <code>www-data</code> needs to read a configuration file <code>app.conf</code>. The file is currently owned by <code>alice:developers</code> with permissions <code>-rw-r-----</code>. The <code>www-data</code> user is not part of the <code>developers</code> group. What is the most secure way to grant the web server read access without exposing the file to every user on the system?</summary>
 
-Only the **owner** (user) can execute it. The group has `r--` (read only) and others have `r--` (read only). Neither group nor others have the `x` bit.
+The most secure approach is to change the group ownership of the file to a group that `www-data` already belongs to, or change the owner directly to `www-data`. You should avoid using broad permissions like `chmod 777` or `chmod o+r` (which results in `644`), as these would allow any other user on the system to read the potentially sensitive configuration. By using a command like `chown alice:www-data app.conf` (assuming `www-data` acts as a group), the group permissions (`r--`) will apply exclusively to the web server. This keeps the "others" permissions at zero (`---`), ensuring the principle of least privilege is maintained.
 </details>
 
 <details>
-<summary>4. What is the numeric chmod equivalent of rwxr-xr-x?</summary>
+<summary><strong>Q4 [Outcome: Manage permissions]</strong>: You have a directory <code>/opt/scripts/</code> with permissions <code>drwxr-x---</code> owned by <code>root:devops</code>. You are logged in as <code>bob</code>, who is a member of the <code>devops</code> group. You try to create a new script inside this directory using <code>touch /opt/scripts/new.sh</code>, but you receive a "Permission denied" error. Why?</summary>
 
-**755**. Owner: r(4)+w(2)+x(1)=7. Group: r(4)+x(1)=5. Others: r(4)+x(1)=5.
+File creation within a Linux directory is governed by the write (`w`) permission of the directory itself, not the permissions of the files inside it. As a member of the `devops` group, the directory's group permissions `r-x` apply to your user. The `r` (read) allows you to list the directory contents, and the `x` (execute) allows you to enter the directory using the `cd` command. However, since the group lacks the `w` (write) permission, you are forbidden from modifying the directory's inventory, which means you cannot create, delete, or rename files within it.
 </details>
 
 <details>
-<summary>5. Why should you NOT use `chmod 777` to fix permission errors?</summary>
+<summary><strong>Q5 [Outcome: Use sudo safely]</strong>: You need to append a new line to a protected system file <code>/etc/hosts</code>. You try running <code>sudo echo "10.0.0.5 myserver" >> /etc/hosts</code>, but you get a "Permission denied" error, even though you used <code>sudo</code>. Why did this fail, and how do you fix it?</summary>
 
-`chmod 777` gives read, write, and execute permissions to every user on the system. This is a serious security risk — any user or process could read, modify, or execute the file. Instead, determine what specific permission is needed and grant only that. For scripts, `755` is usually correct. For regular files, `644`. For private files, `600`.
+The failure happens because the shell handles output redirection (`>>`) before `sudo` ever executes the command. As a result, `sudo` only applies to the `echo` command itself, while your current, unprivileged shell attempts to open `/etc/hosts` for writing, which it lacks the permissions to do. To fix this safely without switching entirely to a root shell, you can use the `tee` command combined with `sudo`. Running `echo "10.0.0.5 myserver" | sudo tee -a /etc/hosts` executes `tee` with root privileges, allowing it to successfully append the text to the protected file.
 </details>
 
 <details>
-<summary>6. What is the difference between ~/.bashrc and ~/.bash_profile?</summary>
+<summary><strong>Q6 [Outcome: Use sudo safely]</strong>: An application running on your server is crashing, and the logs are in <code>/var/log/app/error.log</code>, which is owned by <code>root:root</code> with <code>-rw-------</code> permissions. You type <code>sudo vim /var/log/app/error.log</code> to investigate. Why is this a bad practice, and what should you do instead?</summary>
 
-`~/.bash_profile` runs for **login shells** (SSH sessions, first console login). `~/.bashrc` runs for **interactive non-login shells** (new terminal tabs, typing `bash`). Best practice is to put your settings in `~/.bashrc` and have `~/.bash_profile` source it, so you get the same config everywhere.
+Using an interactive editor like `vim` with `sudo` simply to view a file is highly dangerous because it runs the entire editor program with root privileges. If you accidentally bump the keyboard, you might unintentionally modify critical system logs or configuration files. Furthermore, if the editor contains vulnerabilities or automatically executes macros, those actions will execute with full system-level authority. Instead, you should always use commands specifically designed for read-only viewing, such as `sudo less`, `sudo cat`, or `sudo tail`, which eliminate the risk of accidental modification or privilege escalation.
 </details>
 
 <details>
-<summary>7. You run `sudo vim config.yaml` and later your app cannot read the file. What happened?</summary>
+<summary><strong>Q7 [Outcome: Manage permissions]</strong>: You downloaded a bash script <code>setup.sh</code> that automates a complex installation. When you run <code>./setup.sh</code>, the system says "Permission denied". You run <code>ls -l</code> and see <code>-rw-r--r--</code>. You are tempted to run <code>chmod 777 setup.sh</code> to get it working quickly. What is the numeric permission you should actually use, and why is <code>777</code> a bad idea?</summary>
 
-`sudo vim` created or saved the file as root (owner: root, group: root). Your application runs as a normal user and no longer has permission to read it. Fix it with `sudo chown $USER config.yaml`. Lesson: do not use `sudo` with editors unless you are editing system files.
+The correct numeric permission for a script you want to run is `755` (or simply `chmod u+x` if only the owner needs to execute it). Using `chmod 777` is a massive security risk because it grants read, write, and execute permissions to every single user on the entire system. This means any other user could maliciously modify the script to inject harmful commands, which you would unknowingly execute the next time you ran it. By using `755` (`-rwxr-xr-x`), you ensure that only the owner can modify the file, while everyone else is restricted to merely reading and executing it.
 </details>
 
 <details>
-<summary>8. A directory has permissions `drwxr-x---`. Can a user who belongs to the group list files in it? Can they create new files?</summary>
+<summary><strong>Q8 [Outcome: Configure environment]</strong>: You want to override the system's version of <code>python3</code> (located in <code>/usr/bin/python3</code>) with a newer version you compiled yourself and placed in <code>/opt/custom/bin/python3</code>. However, when you type <code>python3 --version</code>, it still shows the old system version. How do you modify your environment to fix this?</summary>
 
-The group has `r-x`: they can **list** files (`r`) and **enter** the directory (`x`). But they cannot **create** new files because they do not have write (`w`) permission. Only the owner (who has `rwx`) can create, rename, or delete files inside.
+The shell searches through the directories listed in your `$PATH` variable from left to right and immediately stops at the first matching executable it finds. Because `/usr/bin` is already present in your default `$PATH` and your custom directory is not (or is placed at the very end), the shell discovers the system version first. To override this behavior, you must prepend your custom directory to the absolute front of the `$PATH` by adding a line like `export PATH="/opt/custom/bin:$PATH"` to your `~/.bashrc`. This guarantees that the shell evaluates `/opt/custom/bin` prior to `/usr/bin`, allowing your custom compiled version to take precedence.
 </details>
 
 ---
@@ -791,14 +805,13 @@ ls -la ~/lab-project/secrets/
 
 ### Success Criteria
 
-You have completed this exercise successfully if:
+You have completed this exercise successfully if you can demonstrate the following module outcomes:
 
-- [ ] You can explain what `$PATH` does and why `./script.sh` works but `script.sh` does not
-- [ ] Your aliases are saved in `~/.bashrc` and persist after running `source ~/.bashrc`
-- [ ] `deploy.sh` has execute permission for the owner (`-rwxr--r--` or similar)
-- [ ] `db.env` is locked down to owner-only access (`-rw-------` / `600`)
-- [ ] The `secrets/` directory is locked to owner-only (`drwx------` / `700`)
-- [ ] You did not use `sudo` for anything in this exercise (you should not need it for files you own)
+- [ ] **[Outcome: Debug "command not found"]** You can explain what `$PATH` does and why `./script.sh` works but `script.sh` does not.
+- [ ] **[Outcome: Configure environment]** Your aliases and environment variables are saved in `~/.bashrc` and persist after running `source ~/.bashrc`.
+- [ ] **[Outcome: Manage permissions]** `deploy.sh` has execute permission for the owner (`-rwxr--r--` or similar).
+- [ ] **[Outcome: Manage permissions]** `db.env` is locked down to owner-only access (`-rw-------` / `600`) and the `secrets/` directory is locked to owner-only (`drwx------` / `700`).
+- [ ] **[Outcome: Use sudo safely]** You did not use `sudo` for anything in this exercise, proving you understand it is not needed for files you own.
 
 ### Cleanup
 
