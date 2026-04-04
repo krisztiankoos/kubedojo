@@ -54,6 +54,8 @@ Getting this wrong in production means leaked credentials or broken applications
 
 - **The 1MB limit** on ConfigMaps and Secrets exists because they're stored in etcd. Larger configurations need different solutions (external config stores, init containers downloading configs).
 
+- **Projected volumes** allow you to mount multiple ConfigMaps, Secrets, and Downward API information into a single directory, which is extremely useful when an application expects all its configuration files in one place.
+
 ---
 
 ## The Real-World Analogy
@@ -301,7 +303,7 @@ Kubernetes supports several Secret types:
 # Values are automatically base64 encoded
 k create secret generic db-creds \
   --from-literal=username=admin \
-  --from-literal=password='S3cur3P@ss!'
+  --from-literal=password='S3cur3P@ssw0rd!'
 ```
 
 **Method 2: From files**
@@ -309,7 +311,7 @@ k create secret generic db-creds \
 ```bash
 # Create credential files
 echo -n 'admin' > username.txt
-echo -n 'S3cur3P@ss!' > password.txt
+echo -n 'S3cur3P@ssw0rd!' > password.txt
 
 k create secret generic db-creds \
   --from-file=username=username.txt \
@@ -349,7 +351,7 @@ type: Opaque
 data:
   # Values must be base64 encoded
   username: YWRtaW4=           # echo -n 'admin' | base64
-  password: UzNjdXIzUEBzcyE=   # echo -n 'S3cur3P@ss!' | base64
+  password: UzNjdXIzUEBzc3cwcmQh   # echo -n 'S3cur3P@ssw0rd!' | base64
 ```
 
 Or use `stringData` for plain text (Kubernetes encodes it):
@@ -362,7 +364,7 @@ metadata:
 type: Opaque
 stringData:
   username: admin              # Plain text - Kubernetes encodes
-  password: S3cur3P@ss!
+  password: S3cur3P@ssw0rd!
 ```
 
 ### Using Secrets in Pods
@@ -480,8 +482,8 @@ Base64 is encoding, not encryption:
 
 ```bash
 # Anyone can decode
-echo 'UzNjdXIzUEBzcyE=' | base64 -d
-# Output: S3cur3P@ss!
+echo 'UzNjdXIzUEBzc3cwcmQh' | base64 -d
+# Output: S3cur3P@ssw0rd!
 ```
 
 **Security measures:**
@@ -516,7 +518,7 @@ metadata:
 type: Opaque
 immutable: true              # Cannot be modified
 data:
-  password: UzNjdXIzUEBzcyE=
+  password: UzNjdXIzUEBzc3cwcmQh
 ```
 
 Benefits:
@@ -755,22 +757,22 @@ You're currently injecting secrets as environment variables (via `envFrom` or `e
 </details>
 
 ### Question 5
-You created a Secret with `echo 'S3cur3P@ss!' | base64` and stored the result in your YAML. When the application tries to authenticate, it fails with "invalid credentials." You've triple-checked the password is correct. What went wrong?
+You created a Secret with `echo 'S3cur3P@ssw0rd!' | base64` and stored the result in your YAML. When the application tries to authenticate, it fails with "invalid credentials." You've triple-checked the password is correct. What went wrong?
 
 <details>
 <summary>Show Answer</summary>
 
-The `echo` command adds a trailing newline character by default. When you pipe to base64, the newline is encoded along with the password, so the decoded value becomes `S3cur3P@ss!\n` instead of `S3cur3P@ss!`. The database rejects the password because of the invisible extra character. The fix is to use `echo -n` (no newline):
+The `echo` command adds a trailing newline character by default. When you pipe to base64, the newline is encoded along with the password, so the decoded value becomes `S3cur3P@ssw0rd!\n` instead of `S3cur3P@ssw0rd!`. The database rejects the password because of the invisible extra character. The fix is to use `echo -n` (no newline):
 
 ```bash
 # Wrong: includes newline
-echo 'S3cur3P@ss!' | base64    # encodes "S3cur3P@ss!\n"
+echo 'S3cur3P@ssw0rd!' | base64    # encodes "S3cur3P@ssw0rd!\n"
 
 # Correct: no newline
-echo -n 'S3cur3P@ss!' | base64  # encodes "S3cur3P@ss!"
+echo -n 'S3cur3P@ssw0rd!' | base64  # encodes "S3cur3P@ssw0rd!"
 ```
 
-This is one of the most common Kubernetes Secret pitfalls. Alternatively, use `stringData` in your YAML to avoid base64 entirely, or use `kubectl create secret generic --from-literal=password='S3cur3P@ss!'` which handles encoding correctly.
+This is one of the most common Kubernetes Secret pitfalls. Alternatively, use `stringData` in your YAML to avoid base64 entirely, or use `kubectl create secret generic --from-literal=password='S3cur3P@ssw0rd!'` which handles encoding correctly.
 </details>
 
 ### Question 6
@@ -780,6 +782,15 @@ Your application reads its config from a file at `/etc/config/app.yaml` mounted 
 <summary>Show Answer</summary>
 
 No, the TLS certificate will NOT auto-update because `subPath` mounts bypass the kubelet's automatic update mechanism. The ConfigMap at `/etc/config/app.yaml` auto-updates because it uses a full volume mount (the kubelet creates symlinks that get updated). For the TLS certificate, remove the `subPath` and mount the entire secret volume to a directory (e.g., `/etc/nginx/ssl/`), then reference the files within that directory. The certificate will auto-update within approximately 60 seconds of a Secret change. However, note that nginx caches TLS certificates in memory, so you may also need a sidecar or process that watches for file changes and triggers a config reload (e.g., `nginx -s reload`).
+</details>
+
+### Question 7
+You have a ConfigMap mounted as a volume in your Pod. You set `immutable: true` on the ConfigMap, but later need to update a configuration value. What is the correct procedure to apply this change to your application?
+
+<details>
+<summary>Show Answer</summary>
+
+Because the ConfigMap is marked as immutable, you cannot update it in place. The kubelet also stops watching immutable ConfigMaps for changes, which improves cluster performance. To apply a change, you must: (1) Create a new ConfigMap with a new name (e.g., `app-config-v2`) containing the updated values, and (2) Update the Pod template (usually via its Deployment) to reference the new ConfigMap name. This triggers a rolling update of the Pods, ensuring a safe and version-controlled configuration rollout.
 </details>
 
 ---
@@ -972,6 +983,45 @@ spec:
 ```
 
 Note: This requires the ConfigMap to have a key named `db.host`. If your ConfigMap was created with `--from-file`, the key would be `app.properties` (the filename).
+</details>
+
+### Drill 9: Troubleshooting Missing ConfigMap
+**Target Time:** 2 minutes
+
+A Pod named `api-server` is crashing with `CreateContainerConfigError`. Troubleshoot and find out why it won't start. (Simulate this by creating a pod referencing a non-existent ConfigMap).
+
+<details>
+<summary>Show Solution</summary>
+
+```bash
+# Check the pod status and events
+k describe pod api-server
+
+# Look at the Events section at the bottom. You will see an error like:
+# Warning  Failed  ...  Error: configmap "missing-config" not found
+
+# To fix it, either create the missing ConfigMap or update the Pod to reference the correct one.
+```
+</details>
+
+### Drill 10: Troubleshooting Secret Base64 Error
+**Target Time:** 2 minutes
+
+You created a Secret using YAML, but the application is getting rejected due to invalid credentials. You suspect an encoding issue. How do you verify the exact decoded value Kubernetes is passing to the Pod?
+
+<details>
+<summary>Show Solution</summary>
+
+```bash
+# Get the base64 encoded value from the secret
+k get secret my-secret -o jsonpath='{.data.password}'
+
+# Decode it and pipe through xxd or cat -e to reveal hidden characters (like trailing newlines)
+k get secret my-secret -o jsonpath='{.data.password}' | base64 -d | cat -e
+
+# If you see "mypassword%$" (where $ is a newline) instead of just "mypassword%", 
+# it means it was encoded with a newline. Fix it by recreating the secret with echo -n.
+```
 </details>
 
 ---
