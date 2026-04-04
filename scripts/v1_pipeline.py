@@ -220,10 +220,13 @@ def step_audit(module_path: Path, model: str = MODELS["audit"]) -> dict | None:
 # WRITE step — Gemini drafts improvements
 # ---------------------------------------------------------------------------
 
-WRITE_PROMPT_TEMPLATE = """You are improving a KubeDojo module. You will receive the current module content and an improvement plan.
+WRITE_PROMPT_TEMPLATE = """CRITICAL INSTRUCTION: Your response must be ONLY the raw markdown content of the improved module. Start your response with the --- frontmatter delimiter. No preamble, no explanation, no summary, no "I have improved..." — ONLY the markdown file content from first line to last.
+
+You are improving a KubeDojo module. You will receive the current module content and an improvement plan.
 
 RULES:
 - Output the COMPLETE improved module (full file replacement)
+- Your response IS the file — start with --- and end with the last line of content
 - Do NOT remove or rewrite sections that are already good
 - Do NOT change code blocks, YAML examples, or diagrams unless they contain errors
 - Do NOT add emojis
