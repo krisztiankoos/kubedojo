@@ -737,6 +737,43 @@ def cmd_run_section(args):
     sys.exit(0 if (dry_run or failed == 0) else 1)
 
 
+def cmd_learning_path(args):
+    """Detect gaps across the full learning path (cross-track transitions)."""
+    print(f"\nCross-Track Gap Analysis")
+    print(f"{'='*60}")
+    print(f"  Learning path: {' → '.join(d.split('/')[-1] for d, _ in gaps.LEARNING_PATH)}")
+    print()
+
+    issues = gaps.detect_cross_track_gaps(CONTENT_ROOT)
+
+    if not issues:
+        print("  ✓ No cross-track gaps detected")
+        return
+
+    for issue in issues:
+        print(issue)
+        print()
+
+    errors = [i for i in issues if i.severity == "ERROR"]
+    warnings = [i for i in issues if i.severity == "WARNING"]
+
+    print(f"  Summary: {len(errors)} errors, {len(warnings)} warnings")
+
+    # Categorize fixes
+    new_modules = [i for i in issues if i.suggestion == "new_module"]
+    expansions = [i for i in issues if i.suggestion == "expand"]
+    cross_refs = [i for i in issues if i.suggestion == "cross_reference"]
+
+    if new_modules:
+        print(f"\n  NEW MODULES NEEDED: {len(new_modules)} transitions have too many gaps to fix inline")
+    if expansions:
+        print(f"  EXPAND EXISTING: {len(expansions)} transitions need existing modules expanded")
+    if cross_refs:
+        print(f"  CROSS-REFERENCES: {len(cross_refs)} transitions just need \"see Module X\" links")
+
+    sys.exit(1 if errors else 0)
+
+
 def cmd_status(args):
     """Show pipeline status."""
     state = load_state()
@@ -883,6 +920,9 @@ def main():
                      choices=["prerequisites", "linux", "cloud", "k8s"],
                      help="Track type for jargon lookup (default: k8s)")
 
+    # learning-path
+    subparsers.add_parser("learning-path", help="Detect gaps across the full learning path (cross-track)")
+
     # status
     subparsers.add_parser("status", help="Show pipeline status")
 
@@ -901,6 +941,7 @@ def main():
         "run": cmd_run,
         "run-section": cmd_run_section,
         "gap-check": cmd_gap_check,
+        "learning-path": cmd_learning_path,
         "status": cmd_status,
         "resume": cmd_resume,
     }

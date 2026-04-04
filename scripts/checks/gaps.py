@@ -1,11 +1,13 @@
-"""Gap detection — find scaffolding gaps between consecutive modules.
+"""Gap detection — find scaffolding gaps at three levels:
 
-Detects:
-1. Concept jumps: Module N+1 uses terms/concepts never introduced
-2. Missing prerequisites: Module claims prereqs that don't exist
-3. Broken "Next Module" links
-4. Orphan modules: not reachable from any learning path
-5. Complexity jumps: difficulty spikes between consecutive modules
+1. Within-module: term used without definition
+2. Between-module: module N+1 assumes knowledge module N didn't teach
+3. Between-track: the jump from one track to the next
+
+Also detects:
+- Missing prerequisites
+- Broken "Next Module" links
+- Complexity jumps (difficulty spikes)
 """
 
 from __future__ import annotations
@@ -219,5 +221,200 @@ def run_track_gap_analysis(track_root: Path, track: str = "k8s") -> list[GapIssu
     for section in sections:
         issues = detect_gaps_in_directory(section, track)
         all_issues.extend(issues)
+
+    return all_issues
+
+
+# ---------------------------------------------------------------------------
+# Full learning path — cross-track gap detection
+# ---------------------------------------------------------------------------
+
+# The recommended learning path (directories under src/content/docs/)
+LEARNING_PATH = [
+    ("prerequisites/zero-to-terminal", "prerequisites"),
+    ("linux/foundations/everyday-use", "linux"),
+    ("prerequisites/cloud-native-101", "prerequisites"),
+    ("prerequisites/kubernetes-basics", "prerequisites"),
+    ("prerequisites/philosophy-design", "prerequisites"),
+    ("prerequisites/modern-devops", "prerequisites"),
+]
+
+# Extended paths branching from the fundamentals
+CERT_PATHS = {
+    "cka": [
+        ("k8s/cka/part0-environment", "k8s"),
+        ("k8s/cka/part1-cluster-architecture", "k8s"),
+        ("k8s/cka/part2-workloads-scheduling", "k8s"),
+        ("k8s/cka/part3-services-networking", "k8s"),
+        ("k8s/cka/part4-storage", "k8s"),
+        ("k8s/cka/part5-troubleshooting", "k8s"),
+    ],
+    "ckad": [
+        ("k8s/ckad/part0-environment", "k8s"),
+        ("k8s/ckad/part1-design-build", "k8s"),
+        ("k8s/ckad/part2-deployment", "k8s"),
+        ("k8s/ckad/part3-observability", "k8s"),
+        ("k8s/ckad/part4-environment", "k8s"),
+        ("k8s/ckad/part5-networking", "k8s"),
+    ],
+}
+
+
+@dataclass
+class TrackTransition:
+    """A gap found at the boundary between two tracks/sections."""
+    from_section: str
+    to_section: str
+    gap_type: str  # BRIDGE_MISSING, CONCEPT_CLIFF, COMPLEXITY_CLIFF
+    severity: str
+    message: str
+    suggestion: str  # "expand" or "new_module" or "cross_reference"
+
+    def __str__(self):
+        icon = "❌" if self.severity == "ERROR" else "⚠️"
+        action = {"expand": "EXPAND existing module", "new_module": "NEW bridging module needed",
+                  "cross_reference": "ADD cross-reference"}
+        return (f"  {icon} [{self.gap_type}] {self.from_section} → {self.to_section}\n"
+                f"      {self.message}\n"
+                f"      Fix: {action.get(self.suggestion, self.suggestion)}")
+
+
+def _get_section_taught_concepts(directory: Path, content_root: Path) -> set[str]:
+    """Get ALL concepts taught across ALL modules in a section (not just last)."""
+    full_path = content_root / directory
+    if not full_path.exists():
+        return set()
+    modules = sorted(full_path.glob("module-*.md"), key=_numeric_sort_key)
+
+    defined = set()
+    all_terms = set().union(*TRACK_JARGON.values())
+    for mod in modules:
+        content = mod.read_text().lower()
+        for term in all_terms:
+            # Broader detection: bold, heading, OR explained inline ("X is ...", "X means ...", "called X")
+            patterns = [
+                rf"\*\*{re.escape(term)}\*\*",
+                rf"##.*{re.escape(term)}",
+                rf"{re.escape(term)}\s+(is|means|stands for|refers to)",
+                rf"called\s+{re.escape(term)}",
+                rf"\({re.escape(term)}\)",  # parenthetical definition
+            ]
+            for pattern in patterns:
+                if re.search(pattern, content, re.IGNORECASE):
+                    defined.add(term)
+                    break
+    return defined
+
+
+def _get_first_module_assumptions(directory: Path, content_root: Path, track: str) -> set[str]:
+    """Get concepts assumed in the first 2 modules of a section.
+
+    Only checks terms relevant to the TARGET track's jargon, not all tracks.
+    """
+    full_path = content_root / directory
+    if not full_path.exists():
+        return set()
+    modules = sorted(full_path.glob("module-*.md"), key=_numeric_sort_key)
+    if not modules:
+        return set()
+
+    # Check first 2 modules (the transition zone)
+    check_modules = modules[:2]
+
+    # Only check terms relevant to this track
+    track_terms = TRACK_JARGON.get(track, set())
+    # Also include terms from the "prerequisites" set (universal basics)
+    track_terms = track_terms | TRACK_JARGON.get("prerequisites", set())
+
+    assumed = set()
+    for mod in check_modules:
+        content = mod.read_text().lower()
+        body_start = content.find("---", content.find("---") + 3)
+        body = content[body_start:] if body_start > 0 else content
+
+        for term in track_terms:
+            if term in body:
+                # Check if it's defined in this module
+                patterns = [
+                    rf"\*\*{re.escape(term)}\*\*",
+                    rf"##.*{re.escape(term)}",
+                    rf"{re.escape(term)}\s+(is|means|stands for|refers to)",
+                    rf"called\s+{re.escape(term)}",
+                    rf"\({re.escape(term)}\)",
+                ]
+                defined_here = any(re.search(p, body, re.IGNORECASE) for p in patterns)
+                if not defined_here:
+                    assumed.add(term)
+    return assumed
+
+
+def detect_cross_track_gaps(content_root: Path,
+                            path: list[tuple[str, str]] | None = None) -> list[TrackTransition]:
+    """Detect gaps at transitions between tracks/sections in the learning path."""
+    learning_path = path or LEARNING_PATH
+    issues = []
+
+    for i in range(len(learning_path) - 1):
+        from_dir, from_track = learning_path[i]
+        to_dir, to_track = learning_path[i + 1]
+
+        from_name = from_dir.split("/")[-1]
+        to_name = to_dir.split("/")[-1]
+
+        # Build cumulative knowledge from ALL prior sections
+        cumulative_taught: set[str] = set()
+        for j in range(i + 1):
+            prior_dir = Path(learning_path[j][0])
+            cumulative_taught |= _get_section_taught_concepts(prior_dir, content_root)
+
+        # Get concepts assumed by the next section (using target track's jargon)
+        assumed = _get_first_module_assumptions(Path(to_dir), content_root, to_track)
+
+        real_gaps = assumed - cumulative_taught
+
+        if real_gaps:
+            # Categorize: small gaps → cross-reference, big gaps → new module
+            if len(real_gaps) <= 3:
+                suggestion = "cross_reference"
+                severity = "WARNING"
+            elif len(real_gaps) <= 8:
+                suggestion = "expand"
+                severity = "WARNING"
+            else:
+                suggestion = "new_module"
+                severity = "ERROR"
+
+            issues.append(TrackTransition(
+                from_section=from_name,
+                to_section=to_name,
+                gap_type="CONCEPT_CLIFF" if len(real_gaps) > 5 else "BRIDGE_MISSING",
+                severity=severity,
+                message=f"{len(real_gaps)} concepts assumed but never taught: {', '.join(sorted(real_gaps)[:10])}{'...' if len(real_gaps) > 10 else ''}",
+                suggestion=suggestion,
+            ))
+
+        # Check complexity transition
+        from_path = content_root / Path(from_dir)
+        to_path = content_root / Path(to_dir)
+        if from_path.exists() and to_path.exists():
+            from_modules = sorted(from_path.glob("module-*.md"), key=_numeric_sort_key)
+            to_modules = sorted(to_path.glob("module-*.md"), key=_numeric_sort_key)
+            if from_modules and to_modules:
+                last_complexity = extract_complexity(from_modules[-1].read_text())
+                first_complexity = extract_complexity(to_modules[0].read_text())
+                if last_complexity and first_complexity:
+                    last_level = COMPLEXITY_ORDER.get(last_complexity, 2)
+                    first_level = COMPLEXITY_ORDER.get(first_complexity, 2)
+                    if first_level - last_level > 1:
+                        issues.append(TrackTransition(
+                            from_section=from_name,
+                            to_section=to_name,
+                            gap_type="COMPLEXITY_CLIFF",
+                            severity="WARNING",
+                            message=f"Complexity jumps from [{last_complexity}] to [{first_complexity}]",
+                            suggestion="expand",
+                        ))
+
+    return issues
 
     return all_issues
