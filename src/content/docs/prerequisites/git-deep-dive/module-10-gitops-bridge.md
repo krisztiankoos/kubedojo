@@ -60,8 +60,7 @@ git push origin main
 # The pipeline ends here. The cluster operator takes over autonomously.
 ```
 
-> **Active Learning Moment: Pause and Predict**  
-> Imagine a scenario where a developer with cluster access manually runs `kubectl delete service frontend -n production`. In a traditional Push pipeline, what happens next? In a GitOps Pull architecture, what happens next? Consider the state of the cluster 10 minutes after the manual deletion in both scenarios.
+> **Pause and predict**: Imagine a scenario where a developer with cluster access manually runs `kubectl delete service frontend -n production`. In a traditional Push pipeline, what happens next? In a GitOps Pull architecture, what happens next? Consider the state of the cluster 10 minutes after the manual deletion in both scenarios.
 
 In the push scenario, the service remains deleted until the next time a developer happens to merge code that triggers the CI pipeline to run `kubectl apply` again. The application remains broken for hours or days. In the GitOps scenario, the internal operator detects the missing service during its next reconciliation loop (typically within 3 minutes) and immediately recreates it based on the definition still present in the Git repository, effectively self-healing the cluster and rejecting the manual mutation.
 
@@ -191,10 +190,10 @@ sequenceDiagram
     ProdOp->>ProdOp: Reconciles Prod Cluster to v1.5.0 state
 ```
 
-To implement this practically using Kubernetes version 1.35+ and standard GitOps primitives, you would define your production environment application manifest (the resource that tells the GitOps operator what to deploy) to strictly target a semantic version. 
+To implement this practically using Kubernetes version 1.35+ and standard GitOps primitives, you must define an instruction set for the GitOps operator. Tools like ArgoCD extend the Kubernetes API with Custom Resource Definitions (CRDs), introducing new object types that the cluster understands. The most fundamental of these is the `Application` custom resource. Instead of directly applying Deployments and Services, you submit an `Application` manifest to the cluster. This manifest acts as a pointer, instructing the ArgoCD operator exactly which Git repository to watch, which path contains the manifests (e.g., the Kustomize overlay), and which cluster namespace to target for deployment. In a mature setup, you configure this `Application` to strictly target a semantic version tag rather than a moving branch.
 
 ```yaml
-# The definition instructing the GitOps tool to manage the frontend in production
+# The ArgoCD Application CRD instructing the GitOps tool to manage the frontend in production
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -218,8 +217,7 @@ spec:
 
 When it is time to promote the next release, the operational procedure is strictly defined in Git. An engineer cuts the new tag, and then submits a pull request updating the `targetRevision` from `v1.5.0` to `v1.6.0` in the application manifest. 
 
-> **Active Learning Moment: Architectural Decision**  
-> You have discovered a critical security vulnerability in the production Ingress controller that requires an immediate configuration patch. Your staging environment is currently testing a large, disruptive database upgrade on the `main` branch. Which approach would you choose to deploy the hotfix to production, and why?
+> **Stop and think**: You have discovered a critical security vulnerability in the production Ingress controller that requires an immediate configuration patch. Your staging environment is currently testing a large, disruptive database upgrade on the `main` branch. Which approach would you choose to deploy the hotfix to production, and why?
 > A) Merge the hotfix into `main`, then tag `main` as the new production release.
 > B) Checkout the specific Git commit corresponding to the current production tag, branch from it, apply the hotfix, tag the new branch, and point production to the new tag.
 > Think about the isolation of changes before continuing.
@@ -231,6 +229,10 @@ The correct architectural choice is B. By branching from the current production 
 Moving the keys to the kingdom from the CI server into the cluster itself significantly reduces the external attack surface, but it fundamentally shifts the security boundary. The Git repository is now the ultimate control plane for your infrastructure. Whoever controls the repository controls the cluster. Therefore, securing the GitOps pipeline requires applying rigorous access controls and cryptographic verification directly to the version control system.
 
 The most critical security implementation in a GitOps architecture is the requirement for cryptographically signed commits. If an attacker gains access to an engineer's workstation or steals their Git credentials, they could push malicious infrastructure changes (such as opening a NodePort to expose an internal database) while impersonating the legitimate engineer. 
+
+> **Stop and think**: If an attacker compromises a developer's cloud provider credentials (like an AWS access key) but does not have their Git SSH signing key, can they successfully deploy a malicious workload to the production cluster in a Zero-Trust GitOps model?
+
+They cannot. Because the CI pipeline no longer pushes changes and the cluster operator has the sole authority to mutate state, external cloud credentials are useless for deployment. If the attacker attempts to push changes to the repository, branch protection rules will reject the commit because it lacks a valid cryptographic signature. The trust boundary has shifted securely to the version control system.
 
 To prevent this supply chain attack, engineers must sign their commits using GPG keys or SSH keys tied to hardware security modules or strict identity providers. When a commit is signed, Git generates a cryptographic signature proving that the person who authored the commit holds the private key associated with their identity. 
 
@@ -249,6 +251,29 @@ However, signing commits locally is useless unless the infrastructure enforces t
 1. **Require signed commits**: The version control system must reject any commit pushed to the repository that lacks a valid cryptographic signature.
 2. **Require pull request reviews before merging**: No single engineer can push code directly to the main branch. A minimum of two approvals from designated code owners is required.
 3. **Require status checks to pass**: Automated validation scripts (such as YAML linting, Kubernetes schema validation, and security scanning tools like Checkov or KubeLinter) must pass before the merge button is enabled.
+
+Consider how the trust boundary shifts from the CI infrastructure to the Git repository, as illustrated in the following diagram:
+
+```mermaid
+graph TD
+    subgraph Traditional Push Model
+        Developer1[Developer] -->|git push| GitRepo1[(Git Repository)]
+        GitRepo1 -->|webhook| CIServer[CI Server]
+        CIServer -->|kubectl apply| Cluster1((Kubernetes Cluster))
+        Attacker1[Attacker] -.->|Compromises| CIServer
+    end
+
+    subgraph Zero-Trust GitOps Pull Model
+        Developer2[Developer] -->|Signed git push| GitRepo2[(Git Repository)]
+        GitRepo2 -.->|Branch Protection| Validated[(Validated Source of Truth)]
+        Validated <--|git pull| Operator[GitOps Operator]
+        Operator -->|Reconciles| Cluster2((Kubernetes Cluster))
+        Attacker2[Attacker] -.->|Cannot access| Operator
+    end
+
+    style CIServer fill:#f9a8d4,stroke:#be185d,stroke-width:2px
+    style Operator fill:#a7f3d0,stroke:#047857,stroke-width:2px
+```
 
 When these controls are in place, the security posture of the infrastructure changes dramatically. Let us evaluate the differences:
 
@@ -282,8 +307,8 @@ By implementing branch protection and signed commits, you ensure that every chan
 ## Quiz
 
 <details>
-<summary>1. Your team is migrating a legacy application to GitOps. The application requires a Kubernetes Secret containing a database password. An engineer suggests putting the plain YAML Secret directly into the infrastructure repository since Git is now the "single source of truth." Why is this a severe security violation, and what should be done instead?</summary>
-Git history is immutable and often widely accessible to many engineers in an organization. Committing plaintext secrets exposes them permanently, even if deleted in a later commit. While GitOps demands that all state be declarative, secrets must be handled differently. You should use a solution like Mozilla SOPS to encrypt the file before committing, or use the External Secrets Operator to declare a reference in Git that fetches the actual password from a secure vault (like AWS Secrets Manager) at runtime inside the cluster.
+<summary>1. A developer updates their application code, builds a new container image tagged `v3.0.0`, and pushes it to the registry. They are confused why the production cluster has not updated yet. In a strict GitOps architecture, what missing step must occur before the cluster recognizes the new image?</summary>
+The cluster operates strictly on the Pull model based on the infrastructure repository. Pushing a new image to a registry does not change the declarative state in Git. The missing step is that a commit must be made to the infrastructure repository updating the Kubernetes deployment manifest to reference the new `v3.0.0` image tag. Only once that commit is merged into the tracked branch (or a new release tag is cut) will the GitOps operator detect the intended change and pull the new image into the cluster.
 </details>
 
 <details>
@@ -297,18 +322,23 @@ You should not touch the `base/deployment.yaml` file, as that would affect all e
 </details>
 
 <details>
-<summary>4. During a massive marketing campaign, traffic spikes unpredictably. To handle the load, the Horizontal Pod Autoscaler (HPA) automatically scales the frontend deployment from 5 to 50 replicas. The Git repository, however, still specifies `replicas: 5` in the deployment manifest. Why doesn't the GitOps operator immediately scale the deployment back down to 5?</summary>
-A properly configured GitOps setup relies on ignoring specific fields that are expected to be mutated by other cluster controllers. In this case, the GitOps operator must be configured to ignore the `spec.replicas` field of the Deployment object when an HPA is present. If it were not configured to ignore this drift, the GitOps operator and the HPA would fight in an infinite loop: the HPA scaling up based on metrics, and the GitOps operator scaling down based on the Git manifest.
+<summary>4. Your team is migrating a legacy application to GitOps. The application requires a Kubernetes Secret containing a database password. An engineer suggests putting the plain YAML Secret directly into the infrastructure repository since Git is now the "single source of truth." Why is this a severe security violation, and what should be done instead?</summary>
+Git history is immutable and often widely accessible to many engineers in an organization. Committing plaintext secrets exposes them permanently, even if deleted in a later commit. While GitOps demands that all state be declarative, secrets must be handled differently. You should use a solution like Mozilla SOPS to encrypt the file before committing, or use the External Secrets Operator to declare a reference in Git that fetches the actual password from a secure vault (like AWS Secrets Manager) at runtime inside the cluster.
 </details>
 
 <details>
-<summary>5. You are designing the release strategy for a highly regulated financial platform. Compliance requires that no single individual can push a change to production, and the exact state of production must be verifiable at any historical point in time. How do you configure the Git repository and the GitOps operator to satisfy these requirements?</summary>
-First, you must enforce strict branch protection rules on the infrastructure repository: require cryptographically signed commits to prove identity, and mandate at least one approving pull request review to prevent unilateral changes. Second, instead of having the production GitOps operator track a moving branch like `main`, you configure its `targetRevision` to track specific immutable Git tags (e.g., `v2.0.1`). To promote a change, engineers create a signed tag and update the operator's target, ensuring explicit, point-in-time traceability.
+<summary>5. You are investigating a staging environment where an application fails to connect to its cache. A developer insists they merged the correct ConfigMap update to the `staging` overlay two hours ago. You query the live cluster and see the old values. Using a GitOps operator, what specific diagnostic steps must you take to determine why the reconciliation loop has failed to synchronize the cluster state?</summary>
+First, you must check the GitOps operator's application resource status (e.g., `kubectl describe application frontend-staging -n argocd`) to determine if its sync state is reporting as 'Degraded' or 'OutOfSync'. Next, you must inspect the operator's controller logs or the Application resource events to find the exact error halting the reconciliation. Most commonly, this reveals a schema validation error, a missing Kustomize base reference, or a syntax error in the recently merged YAML patch. Because the GitOps operator validates the entire declarative state before applying it, a single malformed manifest will cause the reconciliation loop to safely abort, preventing the drift correction from reaching the cluster.
 </details>
 
 <details>
-<summary>6. A developer updates their application code, builds a new container image tagged `v3.0.0`, and pushes it to the registry. They are confused why the production cluster has not updated yet. In a strict GitOps architecture, what missing step must occur before the cluster recognizes the new image?</summary>
-The cluster operates strictly on the Pull model based on the infrastructure repository. Pushing a new image to a registry does not change the declarative state in Git. The missing step is that a commit must be made to the infrastructure repository updating the Kubernetes deployment manifest to reference the new `v3.0.0` image tag. Only once that commit is merged into the tracked branch (or a new release tag is cut) will the GitOps operator detect the intended change and pull the new image into the cluster.
+<summary>6. During a massive marketing campaign, traffic spikes unpredictably. To handle the load, the Horizontal Pod Autoscaler (HPA) automatically scales the frontend deployment from 5 to 50 replicas. The Git repository, however, still specifies `replicas: 5` in the deployment manifest. Why doesn't the GitOps operator immediately scale the deployment back down to 5?</summary>
+A properly configured GitOps setup relies on ignoring specific fields that are expected to be mutated by other cluster controllers. In this case, the GitOps operator must be configured to ignore the `spec.replicas` field of the Deployment object when an HPA is present. If it were not configured to ignore this drift, the GitOps operator and the HPA would fight in an infinite loop: the HPA scaling up based on metrics, and the GitOps operator scaling down based on the Git manifest. This conflict would severely degrade cluster performance and prevent the application from scaling out during the traffic spike.
+</details>
+
+<details>
+<summary>7. You are designing the release strategy for a highly regulated financial platform. Compliance requires that no single individual can push a change to production, and the exact state of production must be verifiable at any historical point in time. How do you configure the Git repository and the GitOps operator to satisfy these requirements?</summary>
+First, you must enforce strict branch protection rules on the infrastructure repository: require cryptographically signed commits to prove identity, and mandate at least one approving pull request review to prevent unilateral changes. Second, instead of having the production GitOps operator track a moving branch like `main`, you configure its `targetRevision` to track specific immutable Git tags (e.g., `v2.0.1`). To promote a change, engineers create a signed tag and update the operator's target, ensuring explicit, point-in-time traceability. This guarantees that production always matches an audited, approved version of the repository.
 </details>
 
 ## Hands-On Exercise
