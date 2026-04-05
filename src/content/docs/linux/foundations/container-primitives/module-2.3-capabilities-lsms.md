@@ -80,6 +80,8 @@ Traditional Unix:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> **Stop and think**: If a web server process is compromised, why might it be significantly worse if it was running as a traditional root user compared to running as a non-root user that has only been granted the `CAP_NET_BIND_SERVICE` capability? What specific actions could an attacker take in the first scenario that are blocked in the second?
+
 ### Capabilities: Granular Privileges
 
 ```
@@ -219,6 +221,8 @@ docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE nginx
 docker run --privileged nginx
 ```
 
+> **Pause and predict**: If you run a container with `--cap-drop=ALL` but do not change the user, the processes inside will still technically be running as user ID 0 (root). If this containerized root user attempts to modify a file owned by another user, will the operation succeed? Why or why not?
+
 ### Kubernetes SecurityContext
 
 ```yaml
@@ -354,6 +358,8 @@ cat /etc/apparmor.d/usr.bin.evince
   # Deny everything else by default
 }
 ```
+
+> **Stop and think**: If an attacker successfully gains code execution inside your Nginx process and attempts to overwrite an HTML file in `/var/www/`, what will AppArmor do based on the profile above? Will standard Linux file permissions (DAC) even be evaluated?
 
 ### Container AppArmor
 
@@ -494,92 +500,52 @@ spec:
 ## Quiz
 
 ### Question 1
-Why is CAP_SYS_ADMIN considered dangerous for containers?
+You are auditing a Kubernetes cluster and notice a Pod specification where the developer has requested the `CAP_SYS_ADMIN` capability "just in case" they need to debug network issues later. What is the actual security risk of allowing this capability in a container environment?
 
 <details>
 <summary>Show Answer</summary>
 
-CAP_SYS_ADMIN is a "catch-all" capability that grants many privileges including:
-- Mounting filesystems
-- Using ptrace on processes
-- Configuring namespaces
-- Many other administrative operations
-
-With CAP_SYS_ADMIN, a container can often escape to the host. It's sometimes called "the new root."
+`CAP_SYS_ADMIN` is often referred to as "the new root" because it is a massive catch-all capability that grants a wide array of powerful administrative privileges. If a container has this capability, a compromised process within the container can potentially mount filesystems, manipulate namespaces, and use `ptrace` on other processes. This drastically increases the likelihood of a container escape, allowing the attacker to gain full control over the underlying host node. Therefore, it violates the principle of least privilege and should never be granted merely for convenience or debugging.
 
 </details>
 
 ### Question 2
-What's the difference between AppArmor and seccomp?
+Your team wants to secure a legacy application container. One engineer suggests using AppArmor to prevent the application from reading `/etc/shadow`, while another suggests using seccomp to block the `execve` system call so it can't spawn a shell. How do these two security mechanisms fundamentally differ in their approach to restricting the container?
 
 <details>
 <summary>Show Answer</summary>
 
-| AppArmor | Seccomp |
-|----------|---------|
-| Path-based access control | System call filtering |
-| Controls file/network access | Controls which syscalls allowed |
-| Profiles per application | Filters per process |
-| Higher level (paths, networks) | Lower level (syscall numbers) |
-
-They complement each other—AppArmor controls what resources are accessed, seccomp controls how they're accessed (which syscalls).
+AppArmor and seccomp operate at different layers of the Linux security stack to provide complementary protections. AppArmor is a Mandatory Access Control (MAC) system that uses path-based rules to restrict which files, directories, and network resources an application can access, making it ideal for blocking reads to specific locations like `/etc/shadow`. In contrast, seccomp filters at a lower level by restricting the actual system calls (like `execve`, `open`, or `kill`) that a process is allowed to make to the kernel, regardless of the target file path. Using both together provides defense-in-depth: AppArmor controls *what* resources can be touched, while seccomp controls *how* the process can interact with the kernel.
 
 </details>
 
 ### Question 3
-How do you give a container only the capability to bind to port 80?
+You are deploying an Nginx reverse proxy container that needs to listen on port 80. By default, the container runs as root, which your security team has flagged as a policy violation. You change the user to a non-root user in the Dockerfile, but now Nginx crashes on startup because it cannot bind to the port. How should you configure the container's capabilities to solve this securely?
 
 <details>
 <summary>Show Answer</summary>
 
-```bash
-# Docker
-docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE nginx
-```
-
-```yaml
-# Kubernetes
-securityContext:
-  capabilities:
-    drop:
-      - ALL
-    add:
-      - NET_BIND_SERVICE
-```
-
-This follows least privilege—drop all capabilities, add only what's needed.
+To securely allow the non-root container to bind to a privileged port (under 1024), you should explicitly drop all default capabilities and only add `NET_BIND_SERVICE`. In Docker, this is done using the flags `--cap-drop=ALL --cap-add=NET_BIND_SERVICE`, and in Kubernetes, it is configured within the `securityContext.capabilities` block of the manifest. This approach adheres to the principle of least privilege by stripping away the default set of capabilities (like `CAP_CHOWN` or `CAP_KILL`) that Nginx does not actually need to function as a web server. By doing this, even if the Nginx process is compromised, the attacker's ability to pivot or escalate privileges is severely limited.
 
 </details>
 
 ### Question 4
-What does `--privileged` do in Docker?
+A developer is struggling to get a containerized VPN client to work because it needs to create virtual network interfaces (`tun`/`tap` devices). Frustrated, they add the `--privileged` flag to their `docker run` command, which immediately solves the problem. Why must you reject this pull request and require a different approach?
 
 <details>
 <summary>Show Answer</summary>
 
-`--privileged` gives the container:
-- ALL capabilities
-- Access to all devices
-- Disables seccomp
-- Disables AppArmor
-- Mounts /dev fully
-
-The container is essentially as powerful as root on the host. **Never use in production** unless absolutely necessary (and even then, reconsider).
+The `--privileged` flag effectively disables almost all of the security isolation mechanisms that make containers safe to run on a shared host. It grants the container all available Linux capabilities, removes AppArmor and seccomp filtering, and exposes all host devices to the container. If the VPN client in this container is compromised, the attacker essentially has full root access to the underlying Docker host and can trivially escape the container boundary. Instead of using `--privileged`, the developer should identify the exact capability needed (like `CAP_NET_ADMIN`) and explicitly add only that capability, perhaps alongside exposing only the specific `/dev/net/tun` device.
 
 </details>
 
 ### Question 5
-What happens when a process tries to make a syscall blocked by seccomp?
+You have applied a strict seccomp profile to your application container that blocks the `mkdir` system call. The application has a bug and attempts to create a directory for caching on startup. What exactly happens to the application process when it makes this system call, assuming the seccomp rule is configured with the `SCMP_ACT_ERRNO` action?
 
 <details>
 <summary>Show Answer</summary>
 
-Depends on the action configured:
-- **SCMP_ACT_ERRNO**: Returns error (like EPERM)
-- **SCMP_ACT_KILL**: Process is terminated immediately
-- **SCMP_ACT_LOG**: Allowed but logged
-
-Default Docker profile uses ERRNO for most blocked calls, allowing the process to handle the error gracefully.
+When the application attempts to invoke the blocked `mkdir` system call, the kernel's seccomp BPF filter intercepts the request and evaluates it against the loaded profile. Because the action is defined as `SCMP_ACT_ERRNO`, the kernel immediately blocks the system call from executing and returns a standard permission error (typically `EPERM` or `EACCES`) back to the application. The application process itself is not automatically killed by the kernel; it merely receives a failure code from the system call. It is then up to the application's internal error handling logic to decide whether to gracefully shut down, log the error and continue, or crash ungracefully.
 
 </details>
 
