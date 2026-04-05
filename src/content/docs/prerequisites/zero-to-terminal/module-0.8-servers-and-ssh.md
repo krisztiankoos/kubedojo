@@ -1,8 +1,8 @@
 ---
-title: "Module 0.7: Servers and SSH"
-slug: prerequisites/zero-to-terminal/module-0.7-servers-and-ssh
+title: "Module 0.8: Servers and SSH"
+slug: prerequisites/zero-to-terminal/module-0.8-servers-and-ssh
 sidebar:
-  order: 8
+  order: 9
 lab:
   id: "prereq-0.7-servers-ssh"
   url: "https://killercoda.com/kubedojo/scenario/prereq-0.7-servers-ssh"
@@ -511,7 +511,7 @@ It would look, feel, and work exactly like the localhost exercise. The only diff
 
 ## What's Next?
 
-**Next Module**: [Module 0.8: Software and Packages](../module-0.8-software-and-packages/) — Learn how software gets installed on your computer, what package managers are, and how to install tools from the terminal.
+**Next Module**: [Module 0.9: Software and Packages](../module-0.9-software-and-packages/) — Learn how software gets installed on your computer, what package managers are, and how to install tools from the terminal.
 
 ---
 

@@ -1,8 +1,8 @@
 ---
-title: "Module 0.6: What is Networking?"
-slug: prerequisites/zero-to-terminal/module-0.6-what-is-networking
+title: "Module 0.7: What is Networking?"
+slug: prerequisites/zero-to-terminal/module-0.7-what-is-networking
 sidebar:
-  order: 7
+  order: 8
 ---
 > **Complexity**: `[QUICK]` - Absolute beginner
 >
@@ -460,4 +460,4 @@ You've completed this exercise when you can:
 
 You now understand how computers find and talk to each other. IP addresses, ports, DNS, and basic networking commands are in your toolkit.
 
-**Next Module**: [Module 0.7: Servers and SSH](../module-0.7-servers-and-ssh/) — Learn what a server is, where they live, and how to connect to them remotely.
+**Next Module**: [Module 0.8: Servers and SSH](../module-0.8-servers-and-ssh/) — Learn what a server is, where they live, and how to connect to them remotely.

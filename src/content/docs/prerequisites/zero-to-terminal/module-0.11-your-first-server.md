@@ -1,8 +1,8 @@
 ---
-title: "Module 0.10: Your First Server -- Putting It All Together"
-slug: prerequisites/zero-to-terminal/module-0.10-your-first-server
+title: "Module 0.11: Your First Server -- Putting It All Together"
+slug: prerequisites/zero-to-terminal/module-0.11-your-first-server
 sidebar:
-  order: 11
+  order: 12
 ---
 > **Complexity**: `[MEDIUM]` - Capstone project
 >

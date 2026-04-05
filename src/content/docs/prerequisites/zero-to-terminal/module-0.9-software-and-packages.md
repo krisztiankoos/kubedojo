@@ -1,8 +1,8 @@
 ---
-title: "Module 0.8: Software and Packages"
-slug: prerequisites/zero-to-terminal/module-0.8-software-and-packages
+title: "Module 0.9: Software and Packages"
+slug: prerequisites/zero-to-terminal/module-0.9-software-and-packages
 sidebar:
-  order: 9
+  order: 10
 lab:
   id: "prereq-0.8-packages"
   url: "https://killercoda.com/kubedojo/scenario/prereq-0.8-packages"

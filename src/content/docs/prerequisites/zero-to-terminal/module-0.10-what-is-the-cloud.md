@@ -1,8 +1,8 @@
 ---
-title: "Module 0.9: What is the Cloud?"
-slug: prerequisites/zero-to-terminal/module-0.9-what-is-the-cloud
+title: "Module 0.10: What is the Cloud?"
+slug: prerequisites/zero-to-terminal/module-0.10-what-is-the-cloud
 sidebar:
-  order: 10
+  order: 11
 ---
 > **Complexity**: `[QUICK]` - Concepts that click into place
 >
@@ -505,7 +505,7 @@ You started knowing nothing about computers or terminals, and now you understand
 - What servers are and how to connect to them
 - What the cloud is and where Kubernetes fits
 
-**Next Module**: [Module 0.10: Your First Server](../module-0.10-your-first-server/) — The capstone project. Put everything you've learned together and deploy your first website. The kitchen is built. Time to start cooking.
+**Next Module**: [Module 0.11: Your First Server](../module-0.11-your-first-server/) — The capstone project. Put everything you've learned together and deploy your first website. The kitchen is built. Time to start cooking.
 
 ---
 

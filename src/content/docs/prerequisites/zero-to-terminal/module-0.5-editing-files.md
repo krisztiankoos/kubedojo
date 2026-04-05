@@ -531,7 +531,7 @@ rm hello.txt kitchen-memo.txt kitchen-report.sh my-first-script.sh
 
 ## What's Next?
 
-**Next Module**: [Module 0.6: What is Networking?](../module-0.6-what-is-networking/) — Learn how computers talk to each other across the internet, and run your first network commands.
+**Next Module**: [Module 0.6: Git Basics](../module-0.6-git-basics/) — Learn to track your work with version control, the foundation of all modern software delivery.
 
 ---
 

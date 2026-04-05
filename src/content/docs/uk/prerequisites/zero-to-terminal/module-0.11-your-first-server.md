@@ -1,8 +1,8 @@
 ---
-title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.10: \u0412\u0430\u0448 \u043f\u0435\u0440\u0448\u0438\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u2014 \u0417\u0431\u0438\u0440\u0430\u0454\u043c\u043e \u0432\u0441\u0435 \u0440\u0430\u0437\u043e\u043c"
-slug: uk/prerequisites/zero-to-terminal/module-0.10-your-first-server
+title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.11: \u0412\u0430\u0448 \u043f\u0435\u0440\u0448\u0438\u0439 \u0441\u0435\u0440\u0432\u0435\u0440 \u2014 \u0417\u0431\u0438\u0440\u0430\u0454\u043c\u043e \u0432\u0441\u0435 \u0440\u0430\u0437\u043e\u043c"
+slug: uk/prerequisites/zero-to-terminal/module-0.11-your-first-server
 sidebar:
-  order: 11
+  order: 12
 ---
 > **Складність**: `[MEDIUM]` — Підсумковий проєкт
 >

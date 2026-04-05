@@ -53,3 +53,4 @@ demo-cluster.yaml
 test_script.sh
 .venv/
 *.staging.md
+.pids/

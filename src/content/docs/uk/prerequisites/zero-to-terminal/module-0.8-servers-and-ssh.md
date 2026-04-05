@@ -1,8 +1,8 @@
 ---
-title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.7: \u0421\u0435\u0440\u0432\u0435\u0440\u0438 \u0442\u0430 SSH"
-slug: uk/prerequisites/zero-to-terminal/module-0.7-servers-and-ssh
+title: "\u041c\u043e\u0434\u0443\u043b\u044c 0.8: \u0421\u0435\u0440\u0432\u0435\u0440\u0438 \u0442\u0430 SSH"
+slug: uk/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh
 sidebar: 
-  order: 8
+  order: 9
 lab: 
   id: "prereq-0.7-servers-ssh"
   url: "https://killercoda.com/kubedojo/scenario/prereq-0.7-servers-ssh"
@@ -448,7 +448,7 @@ exit
 
 ## Що далі?
 
-**Наступний модуль**: [Модуль 0.8: Програмне забезпечення та пакети](module-0.8-software-and-packages/) — Дізнайтесь, як програми встановлюються на комп'ютер, що таке менеджери пакетів і як встановлювати інструменти з терміналу.
+**Наступний модуль**: [Модуль 0.9: Програмне забезпечення та пакети](module-0.9-software-and-packages/) — Дізнайтесь, як програми встановлюються на комп'ютер, що таке менеджери пакетів і як встановлювати інструменти з терміналу.
 
 ---
 
