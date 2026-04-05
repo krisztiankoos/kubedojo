@@ -376,7 +376,8 @@ RULES:
 
 FRONTMATTER RULES:
 - Translate the title to Ukrainian
-- Keep slug and sidebar.order exactly as in English
+- CRITICAL: The slug MUST start with "uk/" prefix. If the English slug is "prerequisites/foo", the Ukrainian slug must be "uk/prerequisites/foo". Without this prefix, the Ukrainian page will overwrite the English sidebar.
+- Keep sidebar.order exactly as in English
 - Add en_commit and en_file fields (provided below)
 
 Use your MCP tools to verify Ukrainian quality:
@@ -460,6 +461,12 @@ def translate_new_module(en_path: Path) -> bool:
     except Exception as e:
         print(f"  ✗ Broken YAML frontmatter: {e}")
         return False
+
+    # Fix slug: must have uk/ prefix
+    slug = fm.get("slug", "")
+    if slug and not slug.startswith("uk/"):
+        output = re.sub(r'^slug:\s*.+$', f'slug: uk/{slug}', output, count=1, flags=re.MULTILINE)
+        print(f"  Fixed slug: {slug} → uk/{slug}")
 
     # Ensure en_commit is present
     if en_commit and "en_commit:" not in output:
