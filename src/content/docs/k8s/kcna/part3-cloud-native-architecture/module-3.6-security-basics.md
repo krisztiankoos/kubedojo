@@ -52,13 +52,13 @@ THE THREE SECURITY GATES
   │ "What can you  │  │  bringing in?" │  │  do once        │
   │  access?"      │  │                │  │  inside?"      │
   │                │  │                │  │                │
-  │ K8s: RBAC      │  │ K8s: Image     │  │ K8s: Pod       │
-  │ Identity &     │  │ trust, scans,  │  │ Security,      │
-  │ permissions    │  │ provenance     │  │ NetworkPolicy  │
+  │ K8s: API Auth  │  │ K8s: Image     │  │ K8s: Pod       │
+  │ & RBAC         │  │ trust, scans,  │  │ Security,      │
+  │                │  │ provenance     │  │ NetworkPolicy  │
   └────────────────┘  └────────────────┘  └────────────────┘
 ```
 
-**Gate 1 -- Badge (Identity & Access)**: Your badge determines who you are and which doors you can open. In Kubernetes, RBAC controls which users and service accounts can perform which actions on which resources.
+**Gate 1 -- Badge (Identity & Access)**: Your badge determines who you are and which doors you can open. In Kubernetes, this involves authenticating your identity and using RBAC to control which actions you can perform on which resources.
 
 **Gate 2 -- Bag Check (Image Trust)**: Security scans your bag before you enter. In Kubernetes, image scanning and provenance verification ensure that only trusted, vulnerability-free software runs in your cluster.
 
@@ -68,13 +68,21 @@ Each gate is independent. A failure at any single gate can lead to a breach, eve
 
 ---
 
-## Gate 1: Identity and Access Control (RBAC)
+## Gate 1: Identity and Access Control
 
-Role-Based Access Control (RBAC) is the primary authorization mechanism in Kubernetes. It answers two questions: "Who is this?" and "What are they allowed to do?"
+### The API Request Lifecycle
 
-### Subjects, Roles, and Bindings
+Before diving into permissions, it is crucial to understand the three stages every request to the Kubernetes API must pass through. Think of this as the complete security checkpoint at Gate 1:
 
-RBAC has three building blocks:
+1. **Authentication (AuthN)**: *Who are you?* Kubernetes verifies your identity using certificates, bearer tokens, or external identity providers (like OIDC). If it cannot identify you, the request is rejected immediately with a `401 Unauthorized`.
+2. **Authorization (AuthZ)**: *Are you allowed to do this?* Once identified, Kubernetes checks if you have the right permissions. This is where **RBAC** (Role-Based Access Control) lives. If you lack permission, the request gets a `403 Forbidden`.
+3. **Admission Control**: *Is this request safe and well-formed?* Even if you are authenticated and authorized to create a Pod, Admission Controllers can intercept the request to mutate it (e.g., automatically inject a sidecar container) or validate it (e.g., reject it if it violates a security policy). 
+
+These three layers work together to protect the cluster's control plane.
+
+### Subjects, Roles, and Bindings (RBAC)
+
+Role-Based Access Control (RBAC) is the primary authorization mechanism in Kubernetes. 
 
 ```
 RBAC FLOW
@@ -159,7 +167,7 @@ If a single byte changes, the digest changes.
 Tags can be re-pointed. Digests cannot be faked.
 ```
 
-For production workloads, referencing images by digest guarantees you are running exactly the image you tested.
+For production workloads, referencing images by digest guarantees you are running exactly the image you tested. **However, this introduces a trade-off**: pinning by digest means you will not automatically pull patch updates (like moving seamlessly from `1.25.1` to `1.25.2`). You must use automation tools (like Dependabot or Renovate) to systematically update digests in your manifests, which increases your operational complexity.
 
 ### Image Scanning
 
@@ -199,7 +207,9 @@ Kubernetes defines three levels of pod security restriction, enforced by the bui
 | **Baseline** | Blocks the most dangerous settings (hostNetwork, privileged containers, hostPath) while remaining broadly compatible | General-purpose workloads with minimal changes |
 | **Restricted** | Requires running as non-root, drops all capabilities, enforces read-only root filesystem | Security-sensitive and hardened workloads |
 
-Think of these as presets. Most workloads should target Baseline at minimum. Security-conscious teams aim for Restricted.
+Think of these as presets. **There is a strict trade-off between security and developer friction:**
+- **Baseline** is acceptable for most general-purpose or legacy workloads because it blocks the worst offenses without requiring code changes.
+- **Restricted** provides the highest security but creates friction; developers must explicitly design their applications to run as non-root and handle dropped capabilities gracefully.
 
 > **Stop and think**: By default, every Pod in a Kubernetes cluster can communicate with every other Pod. If an attacker compromises a single Pod in the frontend namespace, what resources could they access without NetworkPolicies in place?
 
@@ -222,7 +232,7 @@ WITHOUT NetworkPolicy          WITH NetworkPolicy
   └─────┘     └─────┘          └─────┘     └─────┘
 
   Everyone can reach              Only Web can
-  everything                      reach DB
+  reach everything                reach DB
 ```
 
 At the KCNA level, know that NetworkPolicies exist, that they are namespace-scoped, and that they implement a default-deny posture when configured -- meaning traffic is blocked unless a policy explicitly allows it.
@@ -301,36 +311,53 @@ The blast radius is severe: every one of those 200 pods can read every Secret in
 
 </details>
 
+**Question 6**: A developer successfully authenticates to the cluster and has an RBAC Role allowing them to `create` Pods. However, when they try to deploy a Pod with `hostNetwork: true`, the API server rejects the request. Compare the roles of authentication, authorization, and admission control in this scenario. Which layer blocked the request?
+
+<details>
+<summary>Answer</summary>
+
+The developer successfully passed **Authentication** (their identity was verified as a valid user) and **Authorization** (RBAC confirmed they had the specific permission to `create` Pods). The request was blocked by **Admission Control** (specifically, a Pod Security Admission controller). While RBAC checks *if* you have permission to interact with a resource endpoint, Admission Control inspects the *contents* of the resource payload to ensure it complies with cluster-wide policies (like blocking the dangerous `hostNetwork` setting) before it is finally written to the database.
+
+</details>
+
 ---
 
 ## Security Audit Exercise
 
-Review the following eight pod configurations. For each one, identify which of the Three Gates it violates (Badge, Bag Check, or Seatbelt) and explain why.
+### Worked Example: Applying the Three Gates
 
-| # | Pod Configuration | Which Gate? | Why? |
+Before you try the exercise below, let's look at how to evaluate a configuration using the Three Gates framework.
+
+**Scenario**: A developer provides the following snippet for a new internal analytics tool:
+- `image: internal-registry/analytics:v2`
+- `serviceAccountName: default`
+- `securityContext: { privileged: true }`
+
+**Analysis & Remediation**:
+1. **Gate 1 (Badge)**: It uses the `default` ServiceAccount, which might share excessive permissions with other pods. *Fix*: Create a dedicated `analytics-sa` ServiceAccount with least-privilege RBAC.
+2. **Gate 2 (Bag Check)**: It uses a mutable tag (`:v2`). *Fix*: Resolve the tag to an immutable digest (`@sha256:...`) and ensure the image is scanned in the CI pipeline.
+3. **Gate 3 (Seatbelt)**: It requests `privileged: true`. *Fix*: Remove the privileged flag and apply the Baseline Pod Security Standard to the namespace.
+
+### Your Turn
+
+Review the following scenarios. For each one, identify which of the Three Gates it primarily violates (Badge, Bag Check, or Seatbelt) and **propose a specific configuration fix** to secure it.
+
+| # | Scenario | Gate Violated | Proposed Fix |
 |---|---|---|---|
-| 1 | Uses the `default` ServiceAccount with `cluster-admin` binding | ? | ? |
-| 2 | Image referenced as `myapp:latest` from Docker Hub | ? | ? |
-| 3 | `privileged: true` in the security context | ? | ? |
-| 4 | No NetworkPolicy in the namespace; pod connects to all backends | ? | ? |
-| 5 | ServiceAccount with `verbs: ["*"]` on all resources | ? | ? |
-| 6 | Image from a private registry, pinned by digest, but not scanned | ? | ? |
-| 7 | Runs as root with `hostPath: /` mounted | ? | ? |
-| 8 | Uses a scoped SA and scanned image, but `hostNetwork: true` | ? | ? |
+| 1 | A web app deployment mounts the node's root filesystem using `hostPath: /`. | ? | ? |
+| 2 | A CI/CD pipeline uses a ServiceAccount bound to a ClusterRole with `verbs: ["*"]`. | ? | ? |
+| 3 | A deployment pulls `nginx:latest` directly from Docker Hub for a production app. | ? | ? |
+| 4 | All pods in the `backend` namespace can freely receive traffic from the `frontend` and `testing` namespaces. | ? | ? |
 
 <details>
 <summary>Answers</summary>
 
-| # | Gate Violated | Explanation |
+| # | Gate Violated | Proposed Fix |
 |---|---|---|
-| 1 | Badge (Gate 1) | The default SA with cluster-admin means every pod in the namespace has unlimited access. This is an identity and access control failure. |
-| 2 | Bag Check (Gate 2) | The `:latest` tag is mutable and the image comes from a public registry with no mention of scanning. You do not know what you are running. |
-| 3 | Seatbelt (Gate 3) | Privileged mode removes all container isolation. A compromised process has full host access. |
-| 4 | Seatbelt (Gate 3) | No NetworkPolicy means no network segmentation. The pod can reach any other pod, expanding the blast radius. |
-| 5 | Badge (Gate 1) | Wildcard verbs on all resources violates least privilege. This SA can delete, create, and escalate anything. |
-| 6 | Bag Check (Gate 2) | Pinning by digest ensures immutability, but without scanning you do not know if the image contains known vulnerabilities. |
-| 7 | Seatbelt (Gate 3) | Running as root with the entire host filesystem mounted means a container escape gives full node control. |
-| 8 | Seatbelt (Gate 3) | Host networking bypasses all Kubernetes network controls. The pod can sniff traffic and bind to node ports. |
+| 1 | Seatbelt (Gate 3) | Remove the `hostPath` mount. Enforce the Baseline or Restricted Pod Security Standard on the namespace to block host filesystem access, preventing container escapes. |
+| 2 | Badge (Gate 1) | Remove the wildcard verbs. Create a namespace-scoped Role that explicitly lists only the exact verbs (e.g., `create`, `update`, `get`) and resources (e.g., `deployments`, `services`) the pipeline actually needs. |
+| 3 | Bag Check (Gate 2) | Change `nginx:latest` to a specific image digest (`nginx@sha256:...`). Ensure the image is pulled from a trusted, scanned internal registry rather than directly from Docker Hub. |
+| 4 | Seatbelt (Gate 3) | Implement a default-deny NetworkPolicy in the `backend` namespace. Then, create a specific NetworkPolicy that only allows ingress traffic from pods labeled as part of the `frontend` namespace. |
 
 </details>
 
