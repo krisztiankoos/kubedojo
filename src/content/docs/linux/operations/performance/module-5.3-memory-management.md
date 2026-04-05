@@ -127,6 +127,8 @@ cat /proc/meminfo | grep -E "Cached|Buffers"
 echo 3 | sudo tee /proc/sys/vm/drop_caches  # Drop caches (for testing)
 ```
 
+> **Stop and think**: If dropping the page cache frees up memory, why shouldn't you run `echo 3 > /proc/sys/vm/drop_caches` as a regular cron job to keep memory "free"?
+
 ---
 
 ## Memory Metrics
@@ -297,6 +299,8 @@ free | grep Swap
 # Swap can cause unpredictable latency
 # Better to OOM than to thrash
 ```
+
+> **Pause and predict**: If a Kubernetes node has swap enabled and a pod starts leaking memory beyond its limit, what impact would this have on other perfectly healthy pods running on the same node?
 
 ### Swappiness Tuning
 
@@ -504,123 +508,52 @@ kubectl describe pod <pod> | grep -A 10 "Last State"
 ## Quiz
 
 ### Question 1
-What's the difference between "free" and "available" memory?
+You receive a PagerDuty alert at 3 AM stating that a critical database server has only 150MB of "free" memory out of 64GB total. When you log in, the database is responding normally and no OOM events have occurred. Why is this alert likely a false positive, and what metric should the monitoring system be using instead?
 
 <details>
 <summary>Show Answer</summary>
 
-**free** = Completely unused memory
-- Not allocated to any process
-- Not used for cache
-- Often very small on busy systems
-
-**available** = Memory that can be given to new allocations
-- Includes free memory
-- Plus reclaimable cache/buffers
-- This is what matters for capacity planning
-
-A system with 100MB free but 10GB available is healthy — Linux is using spare RAM efficiently for caching.
+The alert is a false positive because Linux intentionally uses unused RAM to cache file system data, which improves overall read performance. The "free" metric only represents memory that is completely unused, which should naturally be close to zero on a healthy, active system. The monitoring system should instead alert on "available" memory, which represents the true amount of RAM that can be allocated to new processes by instantly reclaiming cache if needed. Triggering alerts on "free" memory demonstrates a fundamental misunderstanding of how the Linux virtual memory subsystem operates.
 
 </details>
 
 ### Question 2
-Why does Kubernetes kill pods that exceed memory limits instead of throttling them?
+A developer complains that since migrating their application to Kubernetes, it randomly crashes and restarts during traffic spikes. Previously, on a traditional VM, the same application would just respond very slowly during these spikes but never crash. Why does the containerized application behave differently under memory pressure?
 
 <details>
 <summary>Show Answer</summary>
 
-Memory is a **non-compressible resource**:
-
-- CPU: Process can wait, gets time later
-- Memory: Page must exist somewhere NOW
-
-When memory is exhausted:
-- Can't "pause" and wait for more
-- Must either reclaim or kill
-
-Throttling memory would mean swapping, which:
-- Causes 1000x latency increase
-- Makes behavior unpredictable
-- Can cascade to other pods
-
-Clean kill + restart is more predictable than swap thrashing.
+The containerized application crashes because Kubernetes enforces strict memory limits using cgroups, which results in an immediate OOM (Out of Memory) kill when the limit is exceeded. On the traditional VM without strict cgroup limits, the kernel likely resorted to using swap space when memory was exhausted, which kept the application running but severely throttled its performance due to disk I/O latency. Because memory is a non-compressible resource, the kernel cannot simply "pause" a process to wait for more RAM to become available; it must either page out to disk or terminate the process. In a Kubernetes environment where swap is disabled, termination is the only option.
 
 </details>
 
 ### Question 3
-How does the OOM killer choose which process to kill?
+A Kubernetes node experiences sudden, severe memory exhaustion. The node runs a logging daemon configured as a Guaranteed pod, and a batch processing worker configured as a BestEffort pod. Which pod is the OOM killer most likely to terminate first, and what exact factors does the kernel use to make this mathematical decision?
 
 <details>
 <summary>Show Answer</summary>
 
-Each process has an **oom_score** (0-1000):
-
-Factors:
-- Memory usage (higher = higher score)
-- Nice value (lower priority = higher score)
-- oom_score_adj setting (-1000 to +1000)
-- Root processes get slight bonus
-
-The process with **highest oom_score** is killed first.
-
-In Kubernetes:
-- BestEffort: oom_score_adj = 1000 (first to die)
-- Burstable: 2-999 (middle)
-- Guaranteed: -997 (last to die)
+The OOM killer will terminate the BestEffort batch processing pod first because it will have a significantly higher `oom_score`. The kernel calculates this score based on several factors: the percentage of RAM the process is using, its nice value (lower priority processes get higher scores), whether it is a root process (which receives a slight protective bonus), and the crucial `oom_score_adj` value. Kubernetes explicitly configures the `oom_score_adj` for BestEffort pods to 1000 (maximum vulnerability) and Guaranteed pods to -997 (maximum protection). Therefore, regardless of slight variations in actual memory usage, the BestEffort pod's artificially inflated score ensures it is sacrificed to save the node.
 
 </details>
 
 ### Question 4
-What does active swapping (si/so > 0) indicate?
+You are troubleshooting a legacy application server that has suddenly become completely unresponsive. The CPU usage is low, but when you run `vmstat 1`, you notice the `si` and `so` columns are consistently showing values in the thousands. What specific state is the system in, and why is this state causing the application to freeze?
 
 <details>
 <summary>Show Answer</summary>
 
-**Memory saturation** — the system doesn't have enough RAM for active workloads.
-
-- `si` (swap in): Pages being read from swap into RAM
-- `so` (swap out): Pages being written from RAM to swap
-
-When both are continuously > 0:
-- System is "thrashing"
-- Performance degrades severely
-- Applications become unresponsive
-
-Solutions:
-- Add more RAM
-- Reduce memory usage
-- Kill memory-heavy processes
-- In containers: increase memory limit
+The system is in a state known as "swap thrashing," which occurs when active memory demands greatly exceed the available physical RAM. The high `si` (swap in) and `so` (swap out) values indicate the kernel is desperately and continuously moving memory pages between RAM and the much slower disk storage. This causes the application to freeze because the CPU spends almost all its time waiting for these incredibly slow disk I/O operations to complete just to access the data it needs to execute the next instruction. This severe latency multiplier effectively halts forward progress for any process trying to access memory.
 
 </details>
 
 ### Question 5
-Why might a pod be OOM killed even though `kubectl top` shows it's under its memory limit?
+A Java application pod is repeatedly getting OOMKilled by Kubernetes. The pod has a memory limit of 512Mi. The developer shows you a dashboard based on `kubectl top pod` that indicates the pod never uses more than 350Mi of memory before crashing. Why is the pod being killed despite the metric dashboard showing it is well under the limit?
 
 <details>
 <summary>Show Answer</summary>
 
-Several reasons:
-
-1. **Kernel memory**: Page tables, slab cache counted against cgroup
-
-2. **Page cache**: File I/O counted as memory usage in cgroups
-
-3. **Timing**: Memory spike between samples
-
-4. **`kubectl top` shows RSS**: But limit is enforced on total cgroup usage
-
-Check actual usage:
-```bash
-cat /sys/fs/cgroup/memory/.../memory.usage_in_bytes
-```
-
-vs RSS:
-```bash
-cat /sys/fs/cgroup/memory/.../memory.stat | grep rss
-```
-
-Usage includes cache, RSS doesn't.
+The discrepancy occurs because `kubectl top pod` typically reports the Resident Set Size (RSS), which only accounts for anonymous memory like the application's heap and stack. However, the cgroup memory limit enforced by the kernel applies to the total memory footprint, which also includes the page cache generated by file I/O and kernel memory structures like page tables. If the Java application writes heavily to logs or reads large files, that file cache counts against its 512Mi limit, pushing the total usage over the edge. To see the true usage that triggers the OOM killer, you must check `memory.usage_in_bytes` directly from the cgroup filesystem rather than relying on RSS-based metrics.
 
 </details>
 
