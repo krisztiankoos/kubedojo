@@ -1,6 +1,6 @@
 ---
 title: "Модуль 0.5: Редагування файлів"
-slug: prerequisites/zero-to-terminal/module-0.5-editing-files
+slug: uk/prerequisites/zero-to-terminal/module-0.5-editing-files
 sidebar:
   order: 6
 lab:

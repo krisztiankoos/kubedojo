@@ -1,6 +1,6 @@
 ---
 title: "Модуль 0.9: Програмне забезпечення та пакети"
-slug: prerequisites/zero-to-terminal/module-0.9-software-and-packages
+slug: uk/prerequisites/zero-to-terminal/module-0.9-software-and-packages
 sidebar:
   order: 10
 lab:

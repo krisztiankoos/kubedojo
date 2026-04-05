@@ -1,6 +1,6 @@
 ---
 title: "Модуль 0.8: Сервери та SSH"
-slug: prerequisites/zero-to-terminal/module-0.8-servers-and-ssh
+slug: uk/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh
 sidebar:
   order: 9
 lab:

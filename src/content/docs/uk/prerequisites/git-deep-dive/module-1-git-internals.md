@@ -1,6 +1,6 @@
 ---
 title: "Модуль 1: Привид у машині — Внутрішня будова Git"
-slug: module-1-git-internals
+slug: uk/module-1-git-internals
 sidebar:
   order: 1
 en_commit: "4d03ede8267dc21c6dc1866aa03702a35c3925cb"
