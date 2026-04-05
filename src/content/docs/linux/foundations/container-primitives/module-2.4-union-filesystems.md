@@ -58,6 +58,8 @@ Understanding union filesystems helps you:
 
 A **union filesystem** merges multiple directories (layers) into a single unified view.
 
+> **Stop and think**: If you delete a file in a container that originated from the base image, how does the filesystem remember it's deleted without actually modifying the read-only base image?
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    UNION FILESYSTEM VIEW                         │
@@ -197,6 +199,8 @@ rm -rf /tmp/overlay
 ---
 
 ## Container Image Layers
+
+> **Pause and predict**: If you change a single line of code in your application, which layers of the Docker image will need to be rebuilt?
 
 ### Anatomy of an Image
 
@@ -463,36 +467,27 @@ docker builder prune       # Clear build cache
 ## Quiz
 
 ### Question 1
-Why don't 100 containers from the same image use 100x the storage?
+**Scenario**: You are deploying a microservices architecture and you spin up 100 replica pods of your Node.js application using the exact same container image. Your infrastructure team is concerned about storage capacity, assuming each 500MB container will consume 50GB total. Why is their assumption incorrect and what actually happens at the storage level?
 
 <details>
 <summary>Show Answer</summary>
 
-**Layer sharing.** Union filesystems share read-only layers between containers. Only ONE copy of the image layers exists, regardless of how many containers use it.
-
-Each container only needs its own thin writable layer for changes. Most containers write very little, so the actual storage overhead is minimal.
+Their assumption is incorrect because container runtimes utilize union filesystems to share read-only layers across all instances. When you start 100 containers from the same image, the runtime only keeps a single 500MB copy of the base image on disk. Each of the 100 containers simply gets a thin, empty read-write layer placed on top of those shared read-only layers. Therefore, the total storage consumed initially will be just slightly over 500MB, saving massive amounts of disk space.
 
 </details>
 
 ### Question 2
-What is copy-on-write, and when does it happen?
+**Scenario**: A developer execs into a running container to troubleshoot an issue and uses `vim` to append a single line to a 2GB log file located in a lower image layer. Suddenly, the monitoring system alerts that the container's disk usage has spiked by 2GB. What specific mechanism caused this storage spike, and what exactly happened under the hood?
 
 <details>
 <summary>Show Answer</summary>
 
-**Copy-on-write (COW)** means files are only copied when modified:
-
-1. File exists in lower (read-only) layer
-2. Container tries to modify the file
-3. File is copied to upper (writable) layer
-4. Modification applies to the copy
-
-This saves storage (unmodified files aren't duplicated) but can be slow for large files that are frequently modified.
+The storage spike was caused by the copy-on-write (COW) mechanism inherent to union filesystems. Because the lower layers of a container image are strictly read-only, the runtime cannot modify the 2GB log file in place. Instead, the moment the developer saves the file, the entire 2GB file is copied up from the read-only layer into the container's ephemeral read-write layer. The modification is then applied to this new copy, resulting in an additional 2GB of storage being consumed on the host disk.
 
 </details>
 
 ### Question 3
-Why doesn't this Dockerfile optimization work?
+**Scenario**: A junior engineer submits a pull request with the following Dockerfile snippet, claiming they have optimized the image size by cleaning up the apt cache. However, the CI/CD pipeline shows the image size hasn't decreased at all. Why did this optimization fail, and how must the syntax change to actually reduce the image size?
 
 ```dockerfile
 RUN apt-get update
@@ -503,46 +498,27 @@ RUN rm -rf /var/lib/apt/lists/*
 <details>
 <summary>Show Answer</summary>
 
-Each `RUN` creates a separate layer. The `rm` command runs in layer 3, but the apt cache from layers 1 and 2 is already committed and stored.
-
-Layers are immutable—you can't remove data from earlier layers, only hide it with whiteouts (which doesn't reclaim space in the image).
-
-**Fix**: Combine into one layer:
-```dockerfile
-RUN apt-get update && \
-    apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/*
-```
+The optimization failed because each `RUN` instruction in a Dockerfile creates and commits a brand-new, immutable filesystem layer. By the time the third `RUN` instruction executes the `rm` command, the package cache has already been permanently baked into the layers created by the first two instructions. The `rm` command simply creates a "whiteout" file in the third layer to hide the cache, but the data still exists in the underlying layers and consumes space. To fix this, all three commands must be chained together using `&&` within a single `RUN` instruction so the cache is deleted before the layer is committed.
 
 </details>
 
 ### Question 4
-What happens to the container writable layer when the container is deleted?
+**Scenario**: Your team has deployed a stateful database inside a container without configuring any external volume mounts. After a routine node reboot, the container restarts, but the database is completely empty and all customer records are gone. Based on how union filesystems manage the container lifecycle, why did this data loss occur?
 
 <details>
 <summary>Show Answer</summary>
 
-**It's deleted too.** The writable layer only exists for the lifetime of the container. This is why:
-
-- Container data is ephemeral by default
-- Volumes are needed for persistent data
-- Logs and temp files should go to volumes if they need to persist
+The data loss occurred because the container's read-write layer is strictly ephemeral and tightly coupled to the lifecycle of that specific container instance. When the container process terminates or is removed, the union filesystem simply discards the writable upper layer where all the database changes were being stored. A restarted container is actually a brand-new container instance with a fresh, empty read-write layer placed over the original image. To persist data beyond a container's lifecycle, you must bypass the union filesystem entirely by mounting an external volume to the host filesystem.
 
 </details>
 
 ### Question 5
-Why should frequently changing files be in volumes, not the container layer?
+**Scenario**: You are designing a high-throughput application that constantly updates millions of small temporary files per second. When running this app locally on your laptop, it performs fine, but inside a container without volumes, the disk I/O latency becomes unacceptably high. Why does the union filesystem cause a performance bottleneck in this specific write-heavy scenario?
 
 <details>
 <summary>Show Answer</summary>
 
-Two reasons:
-
-1. **Performance**: Every write to an existing file triggers copy-on-write. For frequently modified files (logs, databases), this creates overhead.
-
-2. **Persistence**: Container layer is deleted with the container. Volumes persist independently.
-
-Volumes bypass the union filesystem entirely, writing directly to the host filesystem—no COW overhead.
+The performance bottleneck occurs because union filesystems impose significant overhead for copy-on-write and namespace merging operations. Every time a new file is created or an existing file from a lower layer is modified, the filesystem must intercept the call and manage the allocation in the upper read-write layer. When this happens millions of times per second, the metadata operations and copy overhead overwhelm the storage driver compared to native filesystem speeds. For extremely high-throughput or write-heavy workloads, you must use volume mounts which write directly to the host filesystem, bypassing the overlay driver entirely.
 
 </details>
 
