@@ -446,6 +446,21 @@ def translate_new_module(en_path: Path) -> bool:
                 print(f"  ✗ Output has no frontmatter")
                 return False
 
+    # Validate YAML frontmatter
+    parts = output.split("---", 2)
+    if len(parts) < 3:
+        print(f"  ✗ Malformed frontmatter — no closing ---")
+        return False
+    try:
+        import yaml
+        fm = yaml.safe_load(parts[1])
+        if not isinstance(fm, dict) or "title" not in fm:
+            print(f"  ✗ Frontmatter missing 'title' field")
+            return False
+    except Exception as e:
+        print(f"  ✗ Broken YAML frontmatter: {e}")
+        return False
+
     # Ensure en_commit is present
     if en_commit and "en_commit:" not in output:
         output = output.replace("\n---\n", f'\nen_commit: "{en_commit}"\nen_file: "{en_file}"\n---\n', 1)
@@ -661,9 +676,11 @@ def cmd_fix_section(args):
 
 def cmd_translate(args):
     """Translate a single EN module to Ukrainian."""
-    en_path = Path(args.file)
+    en_path = Path(args.file).resolve()
     if not en_path.exists():
-        en_path = CONTENT_ROOT / f"{args.file}.md"
+        en_path = (CONTENT_ROOT / args.file).resolve()
+    if not en_path.exists():
+        en_path = (CONTENT_ROOT / f"{args.file}.md").resolve()
     if not en_path.exists():
         print(f"EN file not found: {args.file}")
         sys.exit(1)
