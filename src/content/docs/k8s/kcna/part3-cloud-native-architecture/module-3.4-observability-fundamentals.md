@@ -87,6 +87,11 @@ You can't fix what you can't see. **Observability** is how you understand what's
 └─────────────────────────────────────────────────────────────┘
 ```
 
+Think of observability like diagnosing a patient in a hospital:
+- **Metrics** are the **Vitals** (heart rate, blood pressure). They tell you *if* something is wrong right now.
+- **Traces** are the **MRI / X-ray**. They show you exactly *where* the problem is across the entire body (the distributed system).
+- **Logs** are the **Patient History**. They give you the detailed text notes of *what* exactly happened at a specific time.
+
 ---
 
 > **Pause and predict**: Monitoring tells you "the system is down." Observability tells you "why the system is down." What type of data would you need beyond simple up/down checks to understand why a checkout page suddenly became slow across a microservices architecture?
@@ -298,6 +303,9 @@ For resources, track:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+> **War Story: The Black Friday Outage**
+> During a massive holiday sale, the monitoring dashboard lit up red: order success rates plummeted (Metrics/Vitals). The team didn't panic. They pulled up the tracing tool, which showed that requests were getting stuck specifically in the `inventory-service` span (Traces/MRI). Armed with the Trace ID, they queried the logging system. The logs revealed the smoking gun: `ERR: Connection timeout to legacy database: max_connections exceeded` (Logs/History). Because they had all three pillars connected, a critical outage was diagnosed and mitigated in 4 minutes instead of 4 hours.
+
 ---
 
 > **Stop and think**: You have metrics, logs, and traces. A user reports slow checkout. Using the three pillars in sequence, how would you diagnose the issue? Which pillar do you start with, and why?
@@ -359,6 +367,22 @@ For resources, track:
 | Unstructured logs | Hard to search | Use structured JSON logs |
 | Too many alerts | Alert fatigue | Alert on symptoms, not causes |
 | Not propagating trace context | Broken traces | Pass trace IDs between services |
+| High cardinality metrics | Explodes storage costs | Use labels with bounded values |
+| Alerting on internal causes | Unnecessary wake-ups | Alert on user-facing symptoms |
+| Logging sensitive data | Security breaches | Sanitize and mask PII |
+| Infinite metric retention | Consumes expensive storage | Downsample older metrics |
+
+---
+
+## Hands-On Exercise: Observability Triage
+
+**Scenario**: You are the on-call engineer for a cloud-native e-commerce platform. Users are reporting that the shopping cart is occasionally failing to load. You need to use the three pillars of observability to find the root cause.
+
+**Success Criteria**:
+- [ ] **Identify the symptom**: Look at the RED metrics dashboard and find the service with the highest latency (Duration).
+- [ ] **Follow the trace**: Open the distributed tracing tool, filter for traces from the slow service, and find the longest span.
+- [ ] **Check the logs**: Using the Trace ID from the slowest trace, query the centralized logging system to see the specific error or timeout message.
+- [ ] **Find the root cause**: Combine the data to identify that the `inventory-service` database connection pool was exhausted.
 
 ---
 
@@ -392,6 +416,24 @@ For resources, track:
    <details>
    <summary>Answer</summary>
    A likely explanation is that the service is partially failing, causing clients to receive errors and give up (reducing total request rate through timeouts or circuit breakers on the client side). Alternatively, a deployment went bad -- new Pods are returning errors while old Pods were taken out of service, and the load balancer sees fewer healthy endpoints (reducing capacity and thus throughput). Another possibility: an upstream service is failing, sending fewer requests downstream (lower rate) and the requests that do arrive trigger errors due to missing dependencies. The combination of increased error rate and decreased request rate is a strong signal of a systemic problem rather than just increased load.
+   </details>
+
+6. **A developer adds a `user_id` label to the `http_requests_total` metric to track how many requests each individual user makes. The system has 5 million active users. Within an hour, the Prometheus monitoring server crashes out of memory. What concept did the developer violate?**
+   <details>
+   <summary>Answer</summary>
+   The developer caused a cardinality explosion. In time-series databases like Prometheus, every unique combination of labels creates a brand new time series. By adding a label with 5 million possible values, they instantly created 5 million new time series in memory. Labels should only be used for bounded, low-cardinality data like HTTP status codes, while high-cardinality data should be stored in logs or traces.
+   </details>
+
+7. **During a security audit, the team discovers that plain-text passwords and credit card numbers are visible in the centralized logging system. How should the team modify their observability practices to prevent this while still being able to debug issues?**
+   <details>
+   <summary>Answer</summary>
+   The team needs to implement log sanitization and strict structured logging. Instead of logging raw HTTP request payloads or full database queries, they should log specific, safe fields like user IDs and action types. Any sensitive data must be explicitly masked or dropped before the log is written to the output stream. Structured logging makes this easier because security filters can automatically redact specific JSON keys before they leave the application.
+   </details>
+
+8. **Your team is defining alerts for a new microservice. Engineer A wants to alert when CPU usage exceeds 85%. Engineer B wants to alert when the 99th percentile response time exceeds 2 seconds. Which approach aligns with modern site reliability engineering (SRE) practices and why?**
+   <details>
+   <summary>Answer</summary>
+   Engineer B's approach is correct because it alerts on a symptom that directly impacts the user experience. Alerting on a cause like high CPU usage often leads to alert fatigue, as a background batch job might legitimately use 100% CPU without slowing down user requests. You should monitor causes on dashboards for debugging purposes, but only page humans for symptoms like latency or elevated error rates. Every alert that wakes an engineer should represent a real, actionable problem.
    </details>
 
 ---
