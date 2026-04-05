@@ -133,15 +133,20 @@
 - [x] v1 quality pipeline built: AUDIT→WRITE→REVIEW→CHECK→SCORE — #188
 - [x] Gap detection (within-track + cross-track) — #188
 - [x] Zero to Terminal: 10/10 modules pass pipeline (29+/35)
-- [ ] Pipeline runs in progress: Git Deep Dive, Cloud Native 101, K8s Basics, Philosophy, Modern DevOps, Everyday Linux
-- [ ] Ukrainian sync: CKA + CKAD being synced via uk_sync.py — #191
+- [x] All prerequisites pass pipeline (43/44 done, 29+/35) — #180
+- [x] 6 rejected prereq modules rewritten by Gemini + passed pipeline (35/35, 34/35)
+- [x] ZTT module numbering collision fixed (0.6 git-basics + 0.6 networking → renumbered 0.7-0.11)
+- [x] Pipeline v2: Gemini defaults, e2e command, track aliases, safety hardening
+- [x] uk_sync.py consolidated: status/detect/fix/translate/e2e with track aliases
+- [ ] Cert tracks pipeline: CKA 5/75, CKAD 0/47, CKS 0/60, KCNA 14/41, KCSA 1/50 — 110 stuck at CHECK, 19 at WRITE
+- [ ] UK prereqs translation: ZTT done (10/11), other prereq sections in progress via uk_sync.py e2e
+- [ ] UK git-basics (module-0.6) has broken frontmatter — delete and re-translate via uk_sync.py
 - [ ] Remaining pipeline: Cloud (84), Platform (209), On-Premises (30) — #180
-- [ ] Gemini review of 109 Ukrainian outcome translations — #187
 - [ ] Lab quality audit and improvements — #179
-- [ ] Visual aid beautification pass (alignment, ASCII formatting)
 
 ## Blockers
-None
+- uk_sync.py needs frontmatter validation on Gemini output (same guard as v1_pipeline step_check)
+- Gemini CLI output inconsistency: sometimes writes to files, sometimes returns to stdout — handled but fragile
 
 ## Key Decisions
 - Migrated from MkDocs Material to Starlight (Astro) — faster builds, proper i18n, modern stack
