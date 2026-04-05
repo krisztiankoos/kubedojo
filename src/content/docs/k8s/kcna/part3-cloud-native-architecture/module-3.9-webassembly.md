@@ -133,6 +133,26 @@ This is the comparison KCNA is most likely to test. Know the trade-offs.
 
 > **Key insight for KCNA**: Wasm does not replace containers. They are complementary. Use containers for complex, full-featured applications. Use Wasm where startup speed, size, and sandboxing matter most.
 
+> **Exercise: Classify the Workload**
+>
+> Review the following 5 scenarios. Would you choose **Containers** or **WebAssembly** for each?
+>
+> 1. A massive legacy Java Spring Boot monolith connected to an Oracle database.
+> 2. A lightweight image-resizing function that executes thousands of times per second and scales to zero when idle.
+> 3. A multi-tenant SaaS platform where untrusted customer-provided code snippets need to run safely without accessing the host network.
+> 4. A stateful PostgreSQL database requiring heavy disk I/O and specific Linux kernel tuning.
+> 5. A tiny data-parsing microservice deployed to a Raspberry Pi on a constrained edge network with limited bandwidth.
+>
+> <details>
+> <summary>Reveal Answers & Reasoning</summary>
+>
+> 1. **Containers**: Complex, legacy, heavy applications with deep OS dependencies and specific library requirements are best suited for traditional containers.
+> 2. **WebAssembly**: The millisecond cold-start times and tiny footprint make Wasm ideal for high-volume, scale-to-zero functions where container startup latency would be unacceptable.
+> 3. **WebAssembly**: Wasm's default-deny capability-based sandboxing provides excellent, fast isolation for untrusted third-party code execution.
+> 4. **Containers**: Databases require deep OS integration, mature storage drivers, and heavy I/O performance that the Wasm and WASI ecosystems do not yet fully support.
+> 5. **WebAssembly**: The extremely small binary size and architecture-neutral nature of Wasm make it perfect for constrained edge devices where bandwidth and storage are at a premium.
+> </details>
+
 ---
 
 ## Wasm Runtimes
@@ -205,6 +225,33 @@ Kubernetes uses **RuntimeClass** to select which runtime handles a Pod. A cluste
 └──────────────────────────────────────────┘
 ```
 
+> **Exercise: Design the RuntimeClass Architecture**
+>
+> Imagine you are architecting an e-commerce application on Kubernetes. You have three components:
+> 1. `payment-processor`: A complex Java application managing core database transactions.
+> 2. `tax-calculator`: A lightweight Rust function that calculates local taxes instantly based on a zip code.
+> 3. `recommendation-engine`: A Python service utilizing a massive, specific GPU-bound machine learning library.
+>
+> Sketch out which Pods would use the default container runtime and which would use a Wasm RuntimeClass.
+>
+> <details>
+> <summary>Reveal Architecture</summary>
+>
+> - **`payment-processor`**: Default container runtime. Needs the mature Java ecosystem, standard JVM profiling tools, and full OS networking capabilities.
+> - **`tax-calculator`**: Wasm RuntimeClass (e.g., `runtimeClassName: wasmtime`). Perfect for Wasm: it is a fast, stateless, isolated function written in Rust that benefits from millisecond scaling during checkout surges.
+> - **`recommendation-engine`**: Default container runtime. Needs direct hardware access (GPU) and complex Python machine learning libraries, which are currently difficult to compile and run efficiently within a restricted Wasm sandbox.
+> </details>
+
+---
+
+> **Stop and think**: You just learned that Kubernetes uses `containerd` shims and `RuntimeClass` to run Wasm. What does this architectural decision tell you about how Kubernetes handles extensibility, and what is the practical impact for cluster operators?
+>
+> <details>
+> <summary>Reveal Analysis</summary>
+>
+> This demonstrates that Kubernetes was designed with **strong abstraction boundaries**. Because the `kubelet` talks to a standardized interface (CRI - Container Runtime Interface), it doesn't actually care if the underlying workload is a Linux namespace, a Windows container, a VM (like Kata Containers), or a Wasm module. The practical impact is massive: operators do not need to build, maintain, and secure a separate "Wasm cluster." They can run Wasm side-by-side with containers on the exact same nodes, leveraging the exact same Kubernetes APIs (Deployments, Services, Ingress) they already know.
+> </details>
+
 ---
 
 ## When to Use Wasm
@@ -231,7 +278,22 @@ Kubernetes uses **RuntimeClass** to select which runtime handles a Pod. A cluste
 
 ---
 
-> **Stop and think**: Wasm runs on Kubernetes through the same containerd interface as containers, using RuntimeClass to select the runtime. What does this tell you about Kubernetes' extensibility? Could a single cluster run containers and Wasm side by side?
+## Real-World Adoption
+
+Wasm is not just theoretical. Several major platforms have already rebuilt their infrastructure around it to achieve massive scale:
+
+- **Shopify**: Rebuilt their application extension platform using WebAssembly. Previously, they allowed third-party developers to run custom logic, but it required heavy, slow, and expensive infrastructure. By moving to Wasm, they achieved execution times under 5ms, allowing untrusted third-party code to run safely synchronously during the checkout process without slowing down the user experience.
+- **Fastly Compute**: Built their entire edge computing platform on Wasm. By bypassing traditional container orchestration entirely, they achieved cold start times of ~35 microseconds (not milliseconds—microseconds). This allows them to instantiate a secure sandbox, run the function, and tear it down for every single request.
+- **Cloudflare Workers**: Uses V8 isolates (closely related to the Wasm ecosystem) and natively supports executing Wasm modules. This allows developers to write high-performance image rendering or cryptography logic in Rust, compile to Wasm, and execute it across hundreds of edge locations globally with zero cold-start penalty.
+
+> **Migration Reality Check**
+>
+> While the metrics above are impressive, adopting Wasm today is not as simple as running `docker build`. Teams migrating to Wasm often encounter severe tooling pain points:
+> - **Language Support**: Rust, C++, and Zig work perfectly. Go's TinyGo compiler is excellent, but standard Go produces bloated Wasm binaries. Python and JavaScript run by embedding their entire interpreters inside Wasm, which negates the size benefits.
+> - **Debugging**: When a container crashes, you can `kubectl exec` into it and run `top` or `cat /var/log/syslog`. When a Wasm module crashes, you often get a cryptic memory trap error. The debugging ecosystem is still in its infancy.
+> - **Networking**: WASI networking is still evolving. If your application relies on complex socket manipulation or specific HTTP client libraries, compiling to Wasm often fails due to missing system interfaces.
+
+---
 
 ## The Component Model
 
@@ -275,46 +337,46 @@ This is still early, but it represents a fundamentally different approach to bui
 
 ## Quiz
 
-**1. What was WebAssembly originally designed for?**
+**1. You are explaining WebAssembly's origins to a backend developer who only knows it as a modern cloud-native technology. What was its original design purpose?**
 
 A) Replacing Docker containers
-B) Running near-native code in web browsers
-C) GPU computing
-D) Database query optimization
+B) Running near-native code safely inside web browsers
+C) Accelerating GPU computing workloads
+D) Optimizing database query execution plans
 
 <details>
 <summary>Answer</summary>
 
-**B) Running near-native code in web browsers.** Wasm was created to run performance-sensitive code (like games and video editing) in browsers at near-native speed. Its use in server-side and cloud native computing came later.
+**B) Running near-native code safely inside web browsers.** WebAssembly was originally created to run performance-sensitive code (like games, 3D rendering, and video editing) within web browsers at near-native speed. It was designed as a secure, sandboxed bytecode format that could execute alongside JavaScript. Its adoption in server-side and cloud native computing came later, once developers realized that a fast, secure, portable sandbox was exactly what modern cloud infrastructure needed.
 </details>
 
-**2. What is WASI?**
+**2. Your Rust application compiled to WebAssembly needs to read a configuration file from the host filesystem. By default, Wasm cannot do this because it is strictly sandboxed. What standard makes file access possible?**
 
 A) A Wasm-based container image format
 B) A web framework for building Wasm apps
-C) A system interface that lets Wasm modules access host resources like files and network
+C) WASI (WebAssembly System Interface)
 D) A Kubernetes controller for Wasm workloads
 
 <details>
 <summary>Answer</summary>
 
-**C) A system interface that lets Wasm modules access host resources like files and network.** WASI (WebAssembly System Interface) is the standard API between Wasm modules and the operating system, using a capability-based security model.
+**C) WASI (WebAssembly System Interface).** By design, WebAssembly executes in a restricted sandbox with no access to the outside world. WASI provides a standardized, capability-based API between the Wasm module and the host operating system. It acts as a "POSIX for Wasm," allowing the runtime to explicitly grant granular permissions for file access, network connections, and environment variables without compromising the security model.
 </details>
 
-**3. How does Kubernetes run Wasm workloads alongside containers?**
+**3. Your platform team wants to add Wasm support to an existing Kubernetes cluster that currently runs Linux containers. How do they achieve this without building a separate, dedicated Wasm cluster?**
 
-A) A separate Wasm cluster is required
-B) Using runwasi as a containerd shim, selected via RuntimeClass
-C) Wasm Pods replace all container Pods on a node
-D) By converting Wasm to container images first
+A) A separate Wasm cluster is technically required by the Kubernetes API
+B) Using runwasi as a containerd shim, and selecting it via a RuntimeClass on the Pod
+C) By converting the Wasm binary into an OCI container image first
+D) By replacing containerd with Wasmtime across all worker nodes
 
 <details>
 <summary>Answer</summary>
 
-**B) Using runwasi as a containerd shim, selected via RuntimeClass.** runwasi plugs into containerd just like runc does for containers. RuntimeClass tells Kubernetes which runtime to use for each Pod, so containers and Wasm run side by side on the same cluster.
+**B) Using runwasi as a containerd shim, and selecting it via a RuntimeClass on the Pod.** Kubernetes abstracts the container runtime through the Container Runtime Interface (CRI). By installing a shim like `runwasi` under `containerd`, the kubelet can schedule Wasm workloads just like standard containers. The operator simply defines a `RuntimeClass` object, and developers specify `runtimeClassName` in their Pod spec to route the workload to the Wasm engine, allowing both to run side-by-side on the same node.
 </details>
 
-**4. Which of the following is a CNCF project in the WebAssembly space?**
+**4. Your organization's architecture board mandates using only CNCF-hosted projects for core infrastructure. Which Wasm runtime meets this strict requirement?**
 
 A) Wasmtime
 B) Spin
@@ -324,33 +386,33 @@ D) Docker
 <details>
 <summary>Answer</summary>
 
-**C) WasmEdge.** WasmEdge is a CNCF Sandbox project optimized for edge and cloud native use cases. Wasmtime is a Bytecode Alliance project. Spin is by Fermyon. wasmCloud is also a CNCF Sandbox project.
+**C) WasmEdge.** WasmEdge is a CNCF Sandbox project specifically optimized for edge and cloud native use cases, meeting the organization's governance requirements. While Wasmtime is an excellent production-grade runtime, it is governed by the Bytecode Alliance, not the CNCF. Spin is a framework developed by Fermyon, and Docker is primarily focused on containerization rather than being a pure Wasm runtime.
 </details>
 
-**5. What is the biggest advantage of Wasm over containers for serverless functions?**
+**5. A financial services company is building a scale-to-zero trading algorithm that must execute immediately when a market event occurs. Why might they choose WebAssembly over traditional containers for this specific function?**
 
-A) Better language support
-B) Millisecond cold start times vs seconds for containers
-C) More mature ecosystem
-D) Built-in database support
+A) Wasm natively supports advanced financial mathematics libraries
+B) Wasm modules start in milliseconds, eliminating the multi-second cold start penalty of containers
+C) Wasm has a more mature ecosystem of pre-built trading algorithms
+D) Wasm bypasses the Linux kernel's network stack entirely
 
 <details>
 <summary>Answer</summary>
 
-**B) Millisecond cold start times vs seconds for containers.** Serverless functions that scale to zero need to start quickly when a request arrives. Wasm modules start in 1-5 milliseconds compared to 1-5 seconds for containers, eliminating the cold start penalty.
+**B) Wasm modules start in milliseconds, eliminating the multi-second cold start penalty of containers.** Serverless functions that scale to zero must spin up instantly when a request arrives to avoid latency spikes. Traditional containers require spinning up a Linux namespace and OS userspace, which often takes 1-5 seconds. Because WebAssembly only requires initializing a lightweight sandbox and executing bytecode, it achieves cold starts in 1-5 milliseconds, making it ideal for event-driven, instantaneous execution.
 </details>
 
-**6. Which statement best describes the relationship between Wasm and containers?**
+**6. Your CTO reads an article claiming "Wasm is the new Docker" and asks you to plan a migration of your entire monolithic Java backend and PostgreSQL database to WebAssembly. What is the most architecturally sound response?**
 
-A) Wasm will replace containers within 5 years
-B) Containers are always better than Wasm
-C) They are complementary — each excels at different use cases
-D) Wasm is just a container image format
+A) "We can start the migration immediately, as Wasm runs all Java and database workloads faster."
+B) "Containers are always better than Wasm, so we should ignore the article entirely."
+C) "Wasm and containers are complementary. Wasm is great for fast, edge functions, but containers are still the right choice for complex apps and databases."
+D) "We just need to package the Wasm binaries inside Docker containers."
 
 <details>
 <summary>Answer</summary>
 
-**C) They are complementary — each excels at different use cases.** Containers are mature and work for almost anything. Wasm excels where fast startup, small size, and strong sandboxing matter (serverless, edge, plugins). Most organizations will use both.
+**C) "Wasm and containers are complementary. Wasm is great for fast, edge functions, but containers are still the right choice for complex apps and databases."** WebAssembly does not replace containers; it solves different architectural problems. Complex monolithic applications and heavy stateful workloads like PostgreSQL rely on deep OS integration, mature storage drivers, and heavy I/O performance that Wasm cannot currently provide. Conversely, containers carry heavy overhead that makes them suboptimal for tiny edge functions, meaning a hybrid approach is the most effective cloud native strategy.
 </details>
 
 ---
