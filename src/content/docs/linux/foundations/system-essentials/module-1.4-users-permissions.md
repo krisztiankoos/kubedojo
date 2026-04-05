@@ -34,6 +34,8 @@ After this module, you will be able to:
 
 Linux is a multi-user system. Every process runs as a user, every file has an owner, and permissions control who can do what.
 
+> **Stop and think**: If a container process runs as UID 1000, and it tries to write to a volume owned by UID 0 with permissions 755, what will happen and why?
+
 Understanding users and permissions is essential because:
 
 - **Container security** — Containers run as users; root in container = dangerous
@@ -68,6 +70,8 @@ Every user has:
 - **Default shell** — What runs when they log in
 
 ### /etc/passwd — User Database
+
+> **Pause and predict**: If you change the UID of an existing user in `/etc/passwd` from 1000 to 2000, what will happen to the files they previously created?
 
 ```bash
 cat /etc/passwd | head -5
@@ -206,6 +210,8 @@ groups newuser
 
 ### Permission Meanings
 
+> **Stop and think**: Why do directories require the execute (`x`) permission just to list their contents? What happens if a directory has `r--` permissions?
+
 | Permission | For Files | For Directories |
 |------------|-----------|-----------------|
 | r (read) | View contents | List contents |
@@ -289,6 +295,8 @@ chown -R ubuntu:ubuntu /home/ubuntu/
 
 ### setuid (Set User ID)
 
+> **Pause and predict**: If a binary is owned by root and has the setuid bit set (`-rwsr-xr-x`), and a regular user executes it, what UID will the process run as?
+
 When executed, runs as the file's owner (not the caller).
 
 ```
@@ -359,6 +367,8 @@ chmod 1777 /shared/
 
 ### /etc/sudoers Configuration
 
+> **Stop and think**: Why is it dangerous to allow a user to run `sudo vi` or `sudo awk` without a password in `/etc/sudoers`?
+
 ```bash
 # View sudoers (NEVER edit directly, use visudo)
 sudo cat /etc/sudoers
@@ -403,6 +413,8 @@ sudo -l
 PAM (Pluggable Authentication Modules) is the framework Linux uses for authentication. Every time someone logs in, runs `sudo`, or changes a password, PAM modules handle it. Understanding PAM is essential for password policies and account lockout on the LFCS.
 
 ### How PAM Works
+
+> **Pause and predict**: If you lock yourself out of a server because `pam_faillock` triggered after 5 failed attempts, how does the system know when to let you try again?
 
 ```
 User action (login, sudo, su)
@@ -578,89 +590,52 @@ securityContext:
 ## Quiz
 
 ### Question 1
-What does permission mode 750 mean?
+You are deploying a sensitive configuration script on a shared server. You set the permissions of the script to `750`. A junior developer who is a member of the file's group attempts to modify the script to add a new feature, but gets a "Permission denied" error. However, they can still run the script. Why is this happening based on the `750` permission mode?
 
 <details>
 <summary>Show Answer</summary>
 
-- **7** (owner) = rwx (read, write, execute)
-- **5** (group) = r-x (read, execute)
-- **0** (other) = --- (no access)
-
-Owner can do everything, group can read and execute, others have no access.
+The permission mode `750` breaks down into `7` (rwx) for the owner, `5` (r-x) for the group, and `0` (---) for others. The junior developer is in the file's group, so the `5` (read and execute) permissions apply to them. They can read the script and execute it, but they lack the `w` (write) permission, which has a value of `2`. In octal notation, write access for the group would require a `6` (rw-) or `7` (rwx) in the middle digit. Therefore, the system correctly denies their attempt to modify the file while allowing execution.
 
 </details>
 
 ### Question 2
-Why is running containers as root dangerous?
+Your team deploys a third-party application container to your Kubernetes cluster without specifying a `securityContext`. A vulnerability in the application allows an attacker to execute arbitrary commands inside the container. The attacker then discovers a host volume mounted into the container. What UID does the attacker have, and why is this configuration highly dangerous to the node?
 
 <details>
 <summary>Show Answer</summary>
 
-Container root (UID 0) often maps to host root (UID 0). If an attacker escapes the container:
-
-1. They have root on the host
-2. Can access all containers on that node
-3. Can access Kubernetes secrets
-4. Can potentially compromise the cluster
-
-Always use `runAsNonRoot: true` in production.
+By default, Docker and Kubernetes run container processes as root (UID 0) unless `runAsUser` or `runAsNonRoot: true` is specified. Without user namespace remapping, UID 0 inside the container is exactly the same as UID 0 on the host node. If an attacker gains code execution inside this container, they operate with root privileges. When they access the mounted host volume, they can read, modify, or delete any host files as the host's root user, potentially leading to a complete compromise of the underlying Kubernetes node and the cluster itself.
 
 </details>
 
 ### Question 3
-What's the difference between chmod and chown?
+You have created a private SSH key file `id_rsa` and need to share it securely with a service account named `deployer`. You run `chmod 600 id_rsa` and then tell the `deployer` user to use the key. The `deployer` user reports they cannot read the file. What command is missing, and why did `chmod` alone not solve the problem?
 
 <details>
 <summary>Show Answer</summary>
 
-- **chmod** changes **permissions** (what actions are allowed: rwx)
-- **chown** changes **ownership** (who owns the file: user and group)
-
-```bash
-chmod 644 file.txt  # Set permissions
-chown bob:staff file.txt  # Set owner to bob, group to staff
-```
+The missing command is `chown deployer id_rsa` (or `chown deployer:deployer id_rsa`). The `chmod 600` command correctly sets the file permissions so that only the owner can read and write to it (rw-------), stripping all access from the group and others. However, `chmod` only changes *what* actions are permitted, not *who* the owner is. Because you created the file, you are still the owner. To allow the `deployer` user to read it under the `600` permission mask, you must change the file's ownership to `deployer` using the `chown` command.
 
 </details>
 
 ### Question 4
-What is the sticky bit and why is /tmp sticky?
+You notice that a malicious user is filling up the `/tmp` directory with large files. You decide to write a cleanup script running under your own regular user account to delete these files. However, when your script tries to `rm` the malicious user's files in `/tmp`, it fails with "Operation not permitted", even though `/tmp` has `777` (rwxrwxrwx) permissions. Why can't you delete files in a directory where you have write access?
 
 <details>
 <summary>Show Answer</summary>
 
-The sticky bit (shown as `t`) on a directory means only the file owner can delete their files, even if others have write permission on the directory.
-
-/tmp is sticky because:
-- Everyone needs to create temp files (777)
-- But users shouldn't delete each other's files
-- The sticky bit provides this protection
-
-```bash
-ls -ld /tmp
-# drwxrwxrwt 10 root root 4096 /tmp
-```
+You cannot delete the files because the `/tmp` directory has the sticky bit set (indicated by the `t` in its `drwxrwxrwt` permissions). Normally, write access to a directory allows you to create, delete, or rename any file within it, regardless of who owns the file. However, when the sticky bit is applied to a directory, the kernel enforces a special restriction: only the file's owner, the directory's owner, or the root user can delete or rename files within it. This is crucial for shared directories like `/tmp` so that users can write their own temporary files without being able to destroy other users' data.
 
 </details>
 
 ### Question 5
-What does fsGroup do in a Kubernetes security context?
+You deploy a Pod that mounts an AWS EBS volume. For security reasons, you configured the Pod to run as `runAsUser: 1000`. When the application tries to write its database files to the volume mount path `/data`, it crashes with "Permission denied". An investigation reveals that the `/data` directory is owned by `root:root` with `755` permissions. How does adding `fsGroup: 2000` to the Pod's `securityContext` fix this exact issue?
 
 <details>
 <summary>Show Answer</summary>
 
-**fsGroup** sets the group ownership of mounted volumes:
-
-1. All files in the volume are owned by the specified GID
-2. New files created are also owned by that GID
-3. The container's process has that GID as a supplementary group
-
-This solves permission issues with volume mounts:
-```yaml
-securityContext:
-  fsGroup: 1000  # Volumes writable by GID 1000
-```
+Adding `fsGroup: 2000` instructs Kubernetes to automatically change the group ownership of the mounted volume to GID `2000` before starting the containers. It also adds GID `2000` to the list of supplementary groups for the container's process (which is running as UID `1000`). Once the volume's group ownership is updated, the permissions typically look like `root:2000` with `775` (or similar group-writable permissions). Because the container process now effectively belongs to group `2000`, it gains the necessary write access to the volume, resolving the "Permission denied" error while maintaining a non-root execution context.
 
 </details>
 
