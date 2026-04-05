@@ -41,15 +41,25 @@ from dispatch import (
     dispatch_claude,
 )
 
+
+def dispatch_auto(prompt: str, model: str, timeout: int = 120) -> tuple[bool, str]:
+    """Route to Gemini or Claude based on model name."""
+    if model.startswith("gemini"):
+        return dispatch_gemini_with_retry(prompt, model=model, timeout=timeout)
+    if model.startswith("claude"):
+        return dispatch_claude(prompt, model=model, timeout=timeout)
+    raise ValueError(f"Unknown model family: {model!r} — must start with 'gemini' or 'claude'")
+
+
 # ---------------------------------------------------------------------------
 # Model configuration (overridable via CLI)
 # ---------------------------------------------------------------------------
 
 MODELS = {
-    "audit": "claude-opus-4-6",          # AUDIT+PLAN: nuanced rubric evaluation + plan
-    "write": "gemini-3.1-pro-preview",   # WRITE: draft improvements (Pro for quality)
-    "review": "claude-opus-4-6",         # REVIEW: strict rubric review (Opus catches more)
-    "translate": "gemini-3.1-pro-preview",  # TRANSLATE: Ukrainian with MCP
+    "audit": "gemini-3.1-pro-preview",     # AUDIT+PLAN: rubric evaluation + plan
+    "write": "gemini-3.1-pro-preview",     # WRITE: draft improvements
+    "review": "gemini-3.1-pro-preview",    # REVIEW: strict rubric review
+    "translate": "gemini-3.1-pro-preview", # TRANSLATE: Ukrainian with MCP
 }
 
 # Pipeline phases in order
@@ -66,13 +76,15 @@ def load_state() -> dict:
 
 
 def save_state(state: dict) -> None:
-    """Save state with file locking for thread safety."""
+    """Save state with file locking + atomic write to prevent corruption."""
     STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
     lock_file = STATE_FILE.with_suffix(".lock")
+    tmp_file = STATE_FILE.with_suffix(".tmp")
     with open(lock_file, "w") as lf:
         fcntl.flock(lf, fcntl.LOCK_EX)
         try:
-            STATE_FILE.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False))
+            tmp_file.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False))
+            tmp_file.replace(STATE_FILE)  # atomic on POSIX
         finally:
             fcntl.flock(lf, fcntl.LOCK_UN)
 
@@ -169,7 +181,7 @@ def step_audit(module_path: Path, model: str = MODELS["audit"]) -> dict | None:
     prompt = f"{RUBRIC_PROMPT}\n\n---\n\nMODULE PATH: {key}\n\n{content}"
 
     print(f"\n  Scoring with {model}...")
-    ok, output = dispatch_claude(prompt, model=model, timeout=120)
+    ok, output = dispatch_auto(prompt, model=model, timeout=120)
 
     if not ok:
         print(f"  ❌ LLM scoring failed")
@@ -189,9 +201,19 @@ def step_audit(module_path: Path, model: str = MODELS["audit"]) -> dict | None:
         print(f"  Raw: {output[:500]}")
         return None
 
-    scores = result.get("scores", [])
-    if len(scores) != 7:
-        print(f"  ❌ Expected 7 scores, got {len(scores)}")
+    if not isinstance(result, dict):
+        print(f"  ❌ Expected JSON object, got {type(result).__name__}")
+        return None
+
+    scores = result.get("scores") or []
+    if not isinstance(scores, list) or len(scores) != 7:
+        print(f"  ❌ Expected 7 scores, got {scores!r}")
+        return None
+
+    try:
+        scores = [int(s) for s in scores]
+    except (ValueError, TypeError):
+        print(f"  ❌ Non-numeric scores: {scores}")
         return None
 
     total = sum(scores)
@@ -330,7 +352,7 @@ def step_review(module_path: Path, improved: str, model: str = MODELS["review"])
 
     prompt = REVIEW_PROMPT_TEMPLATE.format(original=original, improved=improved)
 
-    ok, output = dispatch_claude(prompt, model=model, timeout=120)
+    ok, output = dispatch_auto(prompt, model=model, timeout=120)
 
     if not ok:
         print(f"  ❌ REVIEW failed")
@@ -348,8 +370,17 @@ def step_review(module_path: Path, improved: str, model: str = MODELS["review"])
         print(f"  Raw: {output[:500]}")
         return None
 
+    if not isinstance(result, dict):
+        print(f"  ❌ Expected JSON object, got {type(result).__name__}")
+        return None
+
     verdict = result.get("verdict", "REJECT")
-    scores = result.get("scores", [])
+    scores = result.get("scores") or []
+    if isinstance(scores, list):
+        try:
+            scores = [int(s) for s in scores]
+        except (ValueError, TypeError):
+            scores = []
     feedback = result.get("feedback", "")
 
     print(f"  Verdict: {verdict}")
@@ -809,34 +840,118 @@ def cmd_learning_path(args):
     sys.exit(1 if errors else 0)
 
 
+def _track_from_key(key: str) -> str:
+    """Map a module key to its track name."""
+    parts = key.split("/")
+    if parts[0] == "k8s":
+        return "/".join(parts[:2])
+    if parts[0] == "prerequisites":
+        return "prerequisites"
+    if parts[0] == "linux":
+        return "linux"
+    if parts[0] in ("cloud", "platform", "on-premises"):
+        return parts[0]
+    return parts[0]
+
+
 def cmd_status(args):
     """Show pipeline status."""
     state = load_state()
     modules = state.get("modules", {})
+    verbose = getattr(args, "verbose", False)
 
-    if not modules:
-        print("No modules processed yet.")
-        return
+    # Discover ALL EN modules on disk
+    all_en = sorted(CONTENT_ROOT.glob("**/module-*.md"))
+    all_en = [m for m in all_en if "/uk/" not in str(m)]
+    disk_keys = {module_key_from_path(m) for m in all_en}
 
-    by_phase = {}
-    for key, ms in modules.items():
-        phase = ms.get("phase", "unknown")
-        by_phase.setdefault(phase, []).append(key)
+    # Discover UK translations
+    all_uk = sorted((CONTENT_ROOT / "uk").glob("**/module-*.md")) if (CONTENT_ROOT / "uk").exists() else []
+    uk_keys = set()
+    for m in all_uk:
+        # uk/k8s/cka/... -> k8s/cka/...
+        rel = str(m.relative_to(CONTENT_ROOT / "uk")).replace(".md", "")
+        uk_keys.add(rel)
 
-    print(f"\nPipeline status: {len(modules)} modules tracked\n")
-    for phase in PHASES + ["unknown"]:
-        if phase in by_phase:
-            print(f"  {phase:10s}: {len(by_phase[phase])}")
+    # Build track data from disk + state
+    tracks: dict[str, dict] = {}
+    for key in disk_keys:
+        track = _track_from_key(key)
+        t = tracks.setdefault(track, {
+            "total": 0, "pass": 0, "fail": 0, "wip": 0, "todo": 0,
+            "scores": [], "uk": 0,
+        })
+        t["total"] += 1
+        if key in uk_keys:
+            t["uk"] += 1
+        ms = modules.get(key, {})
+        phase = ms.get("phase")
+        s = ms.get("sum")
+        if s is not None:
+            t["scores"].append(s)
+        if phase == "done":
+            t["pass"] += 1
+        elif phase in ("write",):
+            # stuck at write = rejected, effectively failing
+            t["fail"] += 1
+        elif phase and phase not in ("pending",):
+            t["wip"] += 1
+        else:
+            t["todo"] += 1
 
-    # Show failures
+    # Totals
+    g_total = sum(t["total"] for t in tracks.values())
+    g_pass = sum(t["pass"] for t in tracks.values())
+    g_fail = sum(t["fail"] for t in tracks.values())
+    g_wip = sum(t["wip"] for t in tracks.values())
+    g_todo = sum(t["total"] - t["pass"] - t["fail"] - t["wip"] for t in tracks.values())
+    g_uk = sum(t["uk"] for t in tracks.values())
+    all_scores = [s for t in tracks.values() for s in t["scores"]]
+
+    print(f"\n  Modules: {g_total} total | {g_pass} pass (29+) | {g_fail} fail | {g_wip} in progress | {g_todo} not started")
+    print(f"  Translations: {g_uk}/{g_total} UK")
+    if all_scores:
+        print(f"  Scores: avg {sum(all_scores)/len(all_scores):.1f} | lo {min(all_scores)} | hi {max(all_scores)} ({len(all_scores)} scored)")
+    print()
+    hdr = f"  {'track':30s} {'pass':>6s} {'fail':>5s} {'wip':>5s} {'todo':>5s} {'total':>5s}  {'avg':>4s} {'lo':>3s}  {'uk':>3s}"
+    print(hdr)
+    print(f"  {'-'*85}")
+
+    for track in sorted(tracks):
+        t = tracks[track]
+        todo = t["total"] - t["pass"] - t["fail"] - t["wip"]
+        avg = f'{sum(t["scores"])/len(t["scores"]):.0f}' if t["scores"] else "--"
+        lo = f'{min(t["scores"])}' if t["scores"] else "--"
+        uk = str(t["uk"]) if t["uk"] else "--"
+        # Color hint: checkmark if all pass
+        mark = " ok" if t["pass"] == t["total"] else ""
+        print(f"  {track:30s} {t['pass']:>6d} {t['fail']:>5d} {t['wip']:>5d} {todo:>5d} {t['total']:>5d}  {avg:>4s} {lo:>3s}  {uk:>3s}{mark}")
+
+    # Errors (only with --verbose)
     failed = [k for k, m in modules.items() if m.get("errors")]
     if failed:
-        print(f"\n  Modules with errors: {len(failed)}")
-        for k in failed[:10]:
-            latest_error = modules[k]["errors"][-1] if modules[k]["errors"] else "?"
-            print(f"    {k}: {latest_error}")
-        if len(failed) > 10:
-            print(f"    ... and {len(failed) - 10} more")
+        print(f"\n  {len(failed)} modules with errors", end="")
+        if verbose:
+            print(":")
+            for k in failed[:20]:
+                latest_error = modules[k]["errors"][-1] if modules[k]["errors"] else "?"
+                print(f"    {k}: {latest_error}")
+            if len(failed) > 20:
+                print(f"    ... and {len(failed) - 20} more")
+        else:
+            print(" (use --verbose to list)")
+
+
+def _apply_model_overrides(args) -> dict:
+    """Build models dict from defaults + CLI overrides."""
+    models = dict(MODELS)
+    if getattr(args, "audit_model", None):
+        models["audit"] = args.audit_model
+    if getattr(args, "write_model", None):
+        models["write"] = args.write_model
+    if getattr(args, "review_model", None):
+        models["review"] = args.review_model
+    return models
 
 
 def cmd_resume(args):
@@ -854,14 +969,120 @@ def cmd_resume(args):
 
     print(f"Resuming {len(incomplete)} incomplete modules")
 
-    models = dict(MODELS)
-    if args.audit_model:
-        models["audit"] = args.audit_model
+    models = _apply_model_overrides(args)
 
     for key, ms in incomplete.items():
         path = find_module_path(key)
         if path and path.exists():
             run_module(path, state, models=models)
+
+
+def cmd_e2e(args):
+    """End-to-end pipeline: resume stuck modules, then process all sections."""
+    models = _apply_model_overrides(args)
+    state = load_state()
+
+    # Ordered by priority — all sections, skips already-done automatically
+    ALL_SECTIONS = [
+        # Prerequisites
+        "prerequisites/zero-to-terminal", "prerequisites/git-deep-dive",
+        "prerequisites/cloud-native-101", "prerequisites/kubernetes-basics",
+        "prerequisites/philosophy-design", "prerequisites/modern-devops",
+        # Certs (highest priority)
+        "k8s/cka", "k8s/ckad", "k8s/cks", "k8s/kcna", "k8s/kcsa",
+        "k8s/extending",
+        # Specialty certs
+        "k8s/pca", "k8s/cba", "k8s/capa", "k8s/kca", "k8s/otca",
+        "k8s/ica", "k8s/cca", "k8s/finops",
+        # Cloud
+        "cloud/aws-essentials", "cloud/gcp-essentials", "cloud/azure-essentials",
+        "cloud/architecture-patterns", "cloud/eks-deep-dive", "cloud/gke-deep-dive",
+        "cloud/aks-deep-dive", "cloud/advanced-operations", "cloud/managed-services",
+        "cloud/enterprise-hybrid",
+        # Platform
+        "platform/foundations", "platform/disciplines", "platform/toolkits",
+        # On-prem
+        "on-premises/planning", "on-premises/provisioning", "on-premises/networking",
+        "on-premises/storage", "on-premises/multi-cluster", "on-premises/security",
+        "on-premises/operations", "on-premises/resilience",
+        # Linux deep dive
+        "linux/foundations/container-primitives", "linux/foundations/networking",
+        "linux/foundations/system-essentials", "linux/foundations/everyday-use",
+        "linux/operations", "linux/security",
+    ]
+
+    # Phase 1: Resume stuck modules (check, write, review phases)
+    incomplete = {k: m for k, m in state.get("modules", {}).items()
+                  if m.get("phase") not in ("done", "pending")}
+    if incomplete:
+        print(f"\n{'='*60}")
+        print(f"  PHASE 1: Resuming {len(incomplete)} stuck modules")
+        print(f"{'='*60}")
+        resumed = 0
+        for key, ms in incomplete.items():
+            path = find_module_path(key)
+            if path and path.exists():
+                ok = run_module(path, state, models=models)
+                if ok:
+                    resumed += 1
+        print(f"\n  Resumed: {resumed}/{len(incomplete)} completed")
+
+    # Phase 2: Process all sections
+    sections_to_run = ALL_SECTIONS
+    if args.sections:
+        sections_to_run = args.sections
+
+    for section in sections_to_run:
+        section_path = CONTENT_ROOT / section
+        if not section_path.exists():
+            continue
+
+        modules = sorted(section_path.glob("**/module-*.md"))
+        modules = [m for m in modules if "/uk/" not in str(m)]
+        if not modules:
+            continue
+
+        # Skip sections where all modules are already done
+        all_done = all(
+            state.get("modules", {}).get(module_key_from_path(m), {}).get("phase") == "done"
+            for m in modules
+        )
+        if all_done:
+            print(f"\n  SKIP: {section} — all {len(modules)} modules done")
+            continue
+
+        print(f"\n{'='*60}")
+        print(f"  SECTION: {section} ({len(modules)} modules)")
+        print(f"{'='*60}")
+
+        passed = 0
+        failed = 0
+        skipped = 0
+        for i, path in enumerate(modules, 1):
+            key = module_key_from_path(path)
+            ms = state.get("modules", {}).get(key, {})
+
+            # Skip already done
+            if ms.get("phase") == "done":
+                skipped += 1
+                continue
+
+            print(f"\n[{i}/{len(modules)}] {key}")
+            ok = run_module(path, state, models=models)
+            if ok:
+                passed += 1
+            else:
+                failed += 1
+
+        print(f"\n  {section}: {passed} passed, {failed} failed, {skipped} skipped")
+
+    # Final summary
+    state = load_state()
+    total = len(state.get("modules", {}))
+    done = sum(1 for m in state["modules"].values() if m.get("phase") == "done")
+    print(f"\n{'='*60}")
+    print(f"  E2E COMPLETE: {done}/{total} modules done")
+    print(f"{'='*60}")
 
 
 def _infer_track(section: str) -> str:
@@ -959,10 +1180,15 @@ def main():
     subparsers.add_parser("learning-path", help="Detect gaps across the full learning path (cross-track)")
 
     # status
-    subparsers.add_parser("status", help="Show pipeline status")
+    sp = subparsers.add_parser("status", help="Show pipeline status")
+    sp.add_argument("--verbose", "-v", action="store_true", help="Show error details")
 
     # resume
     subparsers.add_parser("resume", help="Resume incomplete modules")
+
+    # e2e
+    e2e_parser = subparsers.add_parser("e2e", help="End-to-end: resume stuck + process all sections")
+    e2e_parser.add_argument("sections", nargs="*", help="Limit to specific sections (default: all)")
 
     args = parser.parse_args()
 
@@ -979,6 +1205,7 @@ def main():
         "learning-path": cmd_learning_path,
         "status": cmd_status,
         "resume": cmd_resume,
+        "e2e": cmd_e2e,
     }
 
     cmd_map[args.command](args)

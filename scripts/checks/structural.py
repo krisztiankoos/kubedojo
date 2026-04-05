@@ -69,7 +69,7 @@ def check_required_sections(content: str) -> list[CheckResult]:
         results.append(CheckResult(check_id, found, f"{label}: {'found' if found else 'MISSING'}"))
 
     # Inline prompts (at least 2)
-    prompt_pattern = r">\s*\*\*(Pause and predict|Stop and think|What would happen|Try it yourself|Before you look|Зупиніться|Подумайте)"
+    prompt_pattern = r">\s*\*\*(Pause and predict|Stop and think|What would happen|Try it yourself|Before you look|Active Learning|Try this now|Before running|Think about this|Зупиніться|Подумайте)"
     prompts = re.findall(prompt_pattern, body)
     count = len(prompts)
     passed = count >= 2
