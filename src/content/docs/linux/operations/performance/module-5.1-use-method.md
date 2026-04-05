@@ -162,6 +162,8 @@ dmesg | grep -i "cpu\|mce\|error"
 # These are rare but critical
 ```
 
+> **Stop and think**: If `uptime` shows a load average of 10.0 on a 4-core machine, but `top` shows 90% idle CPU, what is happening? (Hint: Check the `wa` or `b` state in `vmstat`).
+
 ---
 
 ## Memory Metrics
@@ -216,6 +218,8 @@ dmesg | grep -i "memory\|ecc\|error"
 # Uncorrectable errors = hardware failing
 ```
 
+> **Pause and predict**: If `free -h` shows 100Mi free and 8Gi available, and `vmstat 1` shows `si` and `so` consistently at 0, is the system experiencing memory saturation?
+
 ---
 
 ## Disk I/O Metrics
@@ -264,6 +268,8 @@ sudo smartctl -a /dev/sda | grep -i error
 sudo fsck -n /dev/sda1
 ```
 
+> **Stop and think**: You see `%util` at 99% for `/dev/sda`, but `avgqu-sz` is 0.5. Is the disk saturated, or just fully utilized?
+
 ---
 
 ## Network Metrics
@@ -309,6 +315,8 @@ ip -s link show eth0
 # Network errors in dmesg
 dmesg | grep -i "network\|eth\|link"
 ```
+
+> **Pause and predict**: If `sar -n DEV 1` shows bandwidth well below the interface's maximum capacity, but `netstat -s` shows a rapidly increasing number of TCP retransmits, what USE category does this fall under?
 
 ---
 
@@ -423,98 +431,93 @@ resources:
 ## Quiz
 
 ### Question 1
-What does high CPU utilization with low saturation indicate?
+You are investigating a slow application and run the `uptime` and `lscpu` commands. 
+
+```bash
+$ nproc
+8
+$ uptime
+ 14:32:01 up 12 days,  3:14,  2 users,  load average: 14.52, 12.21, 9.18
+```
+Based on the USE method, what does this output indicate about the CPU, and what should be your next step?
 
 <details>
 <summary>Show Answer</summary>
 
-The CPU is working hard but keeping up. Processes are being scheduled without waiting.
-
-This is **normal and healthy** — you're using your CPU effectively. High utilization only becomes a problem when combined with high saturation (processes waiting).
+This output clearly indicates **CPU saturation**. The load average represents the number of processes wanting to run. Since the 1-minute load average (14.52) is significantly higher than the number of available CPU cores (8), it means that over 6 processes are constantly waiting in the queue for CPU time. When saturation occurs, latency increases because processes cannot execute immediately. Your next step should be running `top` or `pidstat` to identify exactly which processes are consuming the CPU resources and causing the backlog.
 
 </details>
 
 ### Question 2
-How do you check memory saturation on Linux?
+A Kubernetes node is marked as `NotReady`. You SSH into the node and run `vmstat 1`. 
+
+```bash
+$ vmstat 1
+procs -----------memory---------- ---swap-- -----io---- -system-- ------cpu-----
+ r  b   swpd   free   buff  cache   si   so    bi    bo   in   cs us sy id wa st
+ 2  0 204800 152432   1024 456789 4500 5200   120  4500 1500 2300 15 25  5 55  0
+ 3  0 209920 148112    900 455000 5100 6000   100  5100 1450 2400 12 30  3 55  0
+```
+Diagnose the bottleneck using the USE method. What is happening to this node?
 
 <details>
 <summary>Show Answer</summary>
 
-Check for swap activity with `vmstat`:
-
-```bash
-vmstat 1
-# si = swap in, so = swap out
-# Non-zero values = memory saturation
-```
-
-Also check for OOM killer activity:
-```bash
-dmesg | grep -i oom
-```
-
-"Free" memory being low is NOT saturation — check "available" instead.
+The node is experiencing severe **memory saturation**. The critical indicators here are the `si` (swap in) and `so` (swap out) columns in the `vmstat` output, which show very high, continuous page swapping activity (thousands of blocks per second). This means the system has run out of available RAM and is desperately moving memory pages to and from the slow disk swap space to keep processes running. This phenomenon, known as thrashing, destroys performance and causes the high I/O wait (`wa` at 55%) seen in the CPU columns. To fix this, you need to identify memory-hungry pods or adjust Kubernetes memory limits to trigger the OOM killer before the node starts swapping.
 
 </details>
 
 ### Question 3
-What does a load average of 8.0 mean on a 4-core system?
+Users complain about slow database queries. You check the database server and run `iostat -xz 1`.
+
+```bash
+$ iostat -xz 1
+Device            r/s     w/s     rkB/s     wkB/s   rrqm/s   wrqm/s  %rrqm  %wrqm r_await w_await aqu-sz rareq-sz wareq-sz  svctm  %util
+sda             12.00  345.00     48.00  14500.00     0.00    25.00   0.00   6.76    2.50  145.20  45.30     4.00    42.03   2.10 100.00
+```
+Apply the USE method to this output. What is the state of the disk, and why is it impacting performance?
 
 <details>
 <summary>Show Answer</summary>
 
-**CPU saturation**. Load average represents processes wanting to run.
-
-- 4 cores can run 4 processes simultaneously
-- Load of 8 = 4 running + 4 waiting
-- On average, 4 processes are queued
-
-Rule: Load > CPU count = saturation
-8 > 4 = saturated
-
-Check with `uptime` and `nproc`.
+The disk is experiencing both 100% **utilization** and heavy **saturation**. You can see utilization is maxed out because `%util` is 100.00, meaning the disk is busy servicing I/O requests the entire time. More importantly, the saturation is visible in the `aqu-sz` (average queue size) of 45.30, meaning over 45 requests are constantly backed up waiting for the disk. This saturation directly causes the terrible write latency seen in `w_await` (145.20 ms average wait time per write request). The database is slow because its write operations are getting stuck in the OS storage queue, confirming the disk is the primary bottleneck.
 
 </details>
 
 ### Question 4
-What's the difference between disk utilization and saturation?
+Your web application occasionally drops connections. You run standard utilization and saturation checks (CPU, Memory, Disk), and all look healthy. You then run the following command:
+
+```bash
+$ ip -s link show eth0
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 02:42:ac:11:00:02 brd ff:ff:ff:ff:ff:ff
+    RX: bytes  packets  errors  dropped overrun mcast   
+    154321234  150432   0       1432    0       0       
+    TX: bytes  packets  errors  dropped carrier collsns 
+    987654321  854321   0       0       0       0       
+```
+Based on the USE method, what have you found, and what does it mean?
 
 <details>
 <summary>Show Answer</summary>
 
-**Utilization** (`%util`): How much time the disk was busy
-- 100% = disk was busy the whole time
-
-**Saturation** (`avgqu-sz`): Requests waiting in queue
-- High queue = disk can't keep up
-
-A disk can be 100% utilized but still not saturated (if it handles requests fast enough). Saturation means requests are backing up.
-
-Check with `iostat -x`:
-```bash
-# %util = utilization
-# avgqu-sz = queue length (saturation)
-# await = total time including queue wait
-```
+You have found a clear issue in the **Errors/Drops** category for the network resource. The output shows 1,432 `dropped` packets on the Receive (RX) side of the `eth0` interface. While utilization might be low, a non-zero drop count indicates that the network stack or the interface buffer couldn't process incoming packets fast enough at some point, leading to discarded data. TCP will attempt to retransmit these dropped packets, which explains the intermittent connection drops and latency experienced by the users. This means you need to investigate network ring buffers, interrupt handling, or sudden micro-bursts of traffic.
 
 </details>
 
 ### Question 5
-When all USE metrics are fine, where is the problem likely?
+An application owner states that their API is taking 5 seconds to respond. You run a comprehensive USE method checklist script. 
+- Load average is 0.5 on a 4-core machine.
+- Available memory is 12GB out of 16GB, swap usage is 0.
+- Disk `%util` is under 5%, and `aqu-sz` is 0.
+- Network bandwidth is low, with 0 drops and 0 errors.
+
+According to the USE method philosophy, what is your conclusion and next step?
 
 <details>
 <summary>Show Answer</summary>
 
-**Application level**. If Linux resources (CPU, memory, disk, network) all show low utilization, no saturation, and no errors, the system isn't the bottleneck.
-
-Common application issues:
-- Lock contention
-- Database queries
-- External API calls
-- Application bugs
-- Configuration problems
-
-Use application-level profiling (tracing, APM) to find the cause.
+Your conclusion is that the **OS resources are not the bottleneck**, and the problem lies at the application level. The USE method has successfully ruled out CPU, memory, disk, and network hardware/OS limits, saving you from blindly tweaking system configurations. Since the system has plenty of capacity (low utilization) and no queues (no saturation), the application is likely waiting on something else. Your next step should be using application-level tracing (like APM tools, Jaeger, or profiling) to check for issues like lock contention, slow external API calls, inefficient database queries, or application bugs.
 
 </details>
 
