@@ -36,7 +36,7 @@ The CKA exam heavily tests services. You'll need to create services quickly, exp
 
 > **The Restaurant Analogy**
 >
-> Imagine a restaurant (your application). Pods are the individual chefs—they might change shifts, get sick, or be replaced. The restaurant's phone number (Service) stays the same regardless of which chefs are working. Customers (clients) call the same number, and the call gets routed to an available chef. That's exactly what Services do in Kubernetes.
+> Imagine a restaurant (your application). Pods are individual chefs—they might change shifts, get sick, or be replaced. The restaurant's phone number (Service) stays the same regardless of which chefs are working. Customers (clients) call the same number, and the call gets routed to an available chef. That's exactly what Services do in Kubernetes.
 
 ---
 
@@ -67,10 +67,10 @@ By the end of this module, you'll be able to:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                     The Problem                                 │
-│                                                                 │
+│                     The Problem                                │
+│                                                                │
 │   Client wants to reach "web app"                              │
-│                                                                 │
+│                                                                │
 │   ┌─────────────────────────────────────────────────────┐      │
 │   │  Pod: web-abc123   IP: 10.244.1.5   ← Created       │      │
 │   │  Pod: web-def456   IP: 10.244.2.8   ← Running       │      │
@@ -78,28 +78,28 @@ By the end of this module, you'll be able to:
 │   │  Pod: web-abc123   IP: 10.244.1.5   ← Deleted!      │      │
 │   │  Pod: web-xyz999   IP: 10.244.3.2   ← New pod       │      │
 │   └─────────────────────────────────────────────────────┘      │
-│                                                                 │
+│                                                                │
 │   Which IP should the client use? They keep changing!          │
-│                                                                 │
+│                                                                │
 └────────────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────────────┐
-│                     The Solution: Services                      │
-│                                                                 │
+│                     The Solution: Services                     │
+│                                                                │
 │   ┌───────────────────────────────────────────────────────┐    │
-│   │            Service: web-service                        │    │
+│   │            Service: web-service                       │    │
 │   │            ClusterIP: 10.96.45.123                    │    │
-│   │            (Never changes!)                            │    │
-│   │                                                        │    │
-│   │     Selector: app=web                                  │    │
-│   │         │                                              │    │
+│   │            (Never changes!)                           │    │
+│   │                                                       │    │
+│   │     Selector: app=web                                 │    │
+│   │         │                                             │    │
 │   │         ├──► Pod: web-def456 (10.244.2.8)             │    │
 │   │         ├──► Pod: web-ghi789 (10.244.1.12)            │    │
 │   │         └──► Pod: web-xyz999 (10.244.3.2)             │    │
 │   └───────────────────────────────────────────────────────┘    │
-│                                                                 │
+│                                                                │
 │   Client always uses 10.96.45.123 - Kubernetes handles rest    │
-│                                                                 │
+│                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -117,23 +117,23 @@ By the end of this module, you'll be able to:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                   Service Request Flow                          │
-│                                                                 │
+│                   Service Request Flow                         │
+│                                                                │
 │   1. Client sends request to Service IP (10.96.45.123:80)      │
-│                         │                                       │
-│                         ▼                                       │
+│                         │                                      │
+│                         ▼                                      │
 │   2. kube-proxy (on each node) intercepts                      │
-│                         │                                       │
-│                         ▼                                       │
+│                         │                                      │
+│                         ▼                                      │
 │   3. kube-proxy uses iptables/nftables rules                   │
-│                         │                                       │
-│                         ▼                                       │
+│                         │                                      │
+│                         ▼                                      │
 │   4. Request forwarded to one of the pod IPs                   │
 │      (load balanced - round robin by default)                  │
-│                         │                                       │
-│                         ▼                                       │
+│                         │                                      │
+│                         ▼                                      │
 │   5. Pod receives request on targetPort                        │
-│                                                                 │
+│                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -171,25 +171,25 @@ spec:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                     ClusterIP Service                           │
-│                                                                 │
+│                     ClusterIP Service                          │
+│                                                                │
 │   Only accessible from within the cluster                      │
-│                                                                 │
-│   ┌────────────────┐        ┌────────────────┐                │
-│   │  Other Pod     │───────►│  ClusterIP     │                │
-│   │  (client)      │        │  10.96.45.123  │                │
-│   └────────────────┘        │                │                │
-│                             │  ┌──────────┐  │                │
-│                             │  │ Pod      │  │                │
-│                             │  │ app=web  │  │                │
-│   ┌────────────────┐        │  └──────────┘  │                │
-│   │  External      │───X───►│                │                │
-│   │  (blocked)     │        │  ┌──────────┐  │                │
-│   └────────────────┘        │  │ Pod      │  │                │
-│                             │  │ app=web  │  │                │
-│                             │  └──────────┘  │                │
-│                             └────────────────┘                │
-│                                                                 │
+│                                                                │
+│   ┌────────────────┐        ┌────────────────┐                 │
+│   │  Other Pod     │───────►│  ClusterIP     │                 │
+│   │  (client)      │        │  10.96.45.123  │                 │
+│   └────────────────┘        │                │                 │
+│                             │  ┌──────────┐  │                 │
+│                             │  │ Pod      │  │                 │
+│                             │  │ app=web  │  │                 │
+│   ┌────────────────┐        │  └──────────┘  │                 │
+│   │  External      │───X───►│                │                 │
+│   │  (blocked)     │        │  ┌──────────┐  │                 │
+│   └────────────────┘        │  │ Pod      │  │                 │
+│                             │  │ app=web  │  │                 │
+│                             │  └──────────┘  │                 │
+│                             └────────────────┘                 │
+│                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -213,24 +213,24 @@ spec:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                     NodePort Service                            │
-│                                                                 │
+│                     NodePort Service                           │
+│                                                                │
 │   External access via <NodeIP>:<NodePort>                      │
-│                                                                 │
+│                                                                │
 │   ┌─────────────────────────────────────────────────────────┐  │
-│   │                    Cluster                               │  │
-│   │                                                          │  │
-│   │  Node 1 (192.168.1.10)     Node 2 (192.168.1.11)       │  │
-│   │  ┌──────────────────┐      ┌──────────────────┐        │  │
-│   │  │ :30080 ──────────┼──────┼─► Pod (app=web)  │        │  │
-│   │  └──────────────────┘      └──────────────────┘        │  │
-│   │                                                          │  │
+│   │                    Cluster                              │  │
+│   │                                                         │  │
+│   │  Node 1 (192.168.1.10)     Node 2 (192.168.1.11)        │  │
+│   │  ┌──────────────────┐      ┌──────────────────┐         │  │
+│   │  │ :30080 ──────────┼──────┼─► Pod (app=web)  │         │  │
+│   │  └──────────────────┘      └──────────────────┘         │  │
+│   │                                                         │  │
 │   └─────────────────────────────────────────────────────────┘  │
 │                 ▲                          ▲                   │
 │                 │                          │                   │
-│   External: 192.168.1.10:30080  OR  192.168.1.11:30080        │
-│             (Both work!)                                        │
-│                                                                 │
+│   External: 192.168.1.10:30080  OR  192.168.1.11:30080         │
+│             (Both work!)                                       │
+│                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -253,31 +253,31 @@ spec:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                   LoadBalancer Service                          │
-│                                                                 │
+│                   LoadBalancer Service                         │
+│                                                                │
 │   Cloud provider creates an external load balancer             │
-│                                                                 │
+│                                                                │
 │   ┌──────────────────┐                                         │
 │   │   Internet       │                                         │
 │   └────────┬─────────┘                                         │
-│            │                                                    │
-│            ▼                                                    │
+│            │                                                   │
+│            ▼                                                   │
 │   ┌──────────────────┐     External IP: 34.85.123.45           │
 │   │   Cloud LB       │                                         │
 │   │   (AWS/GCP/Azure)│                                         │
 │   └────────┬─────────┘                                         │
-│            │                                                    │
-│            ▼                                                    │
+│            │                                                   │
+│            ▼                                                   │
 │   ┌──────────────────────────────────────────────────┐         │
-│   │             NodePort (auto-created)               │         │
-│   │                      │                            │         │
+│   │             NodePort (auto-created)              │         │
+│   │                      │                           │         │
 │   │        ┌─────────────┼─────────────┐             │         │
 │   │        ▼             ▼             ▼             │         │
-│   │    ┌──────┐     ┌──────┐     ┌──────┐           │         │
-│   │    │ Pod  │     │ Pod  │     │ Pod  │           │         │
-│   │    └──────┘     └──────┘     └──────┘           │         │
+│   │    ┌──────┐     ┌──────┐     ┌──────┐            │         │
+│   │    │ Pod  │     │ Pod  │     │ Pod  │            │         │
+│   │    └──────┘     └──────┘     └──────┘            │         │
 │   └──────────────────────────────────────────────────┘         │
-│                                                                 │
+│                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -297,10 +297,10 @@ spec:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                   ExternalName Service                          │
-│                                                                 │
+│                   ExternalName Service                         │
+│                                                                │
 │   DNS alias - no ClusterIP, no proxying                        │
-│                                                                 │
+│                                                                │
 │   ┌────────────────┐                                           │
 │   │  Pod           │                                           │
 │   │                │──► DNS: external-db.default.svc           │
@@ -314,7 +314,7 @@ spec:
 │                     │  External DB     │                       │
 │                     │  (outside K8s)   │                       │
 │                     └──────────────────┘                       │
-│                                                                 │
+│                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
 
@@ -594,6 +594,37 @@ k run test --rm -it --image=busybox:1.36 --restart=Never -- \
 # Check port on pod directly
 k exec <pod> -- netstat -tlnp
 ```
+
+### 6.4 Advanced Debugging: Tracing kube-proxy Rules
+
+While not strictly required for everyday administration, understanding how `kube-proxy` routes traffic is invaluable for advanced debugging. When a Service is created, `kube-proxy` configures netfilter rules (using `iptables`, `ipvs`, or `nftables`) on every node to intercept traffic to the virtual ClusterIP.
+
+To practically trace a request from a client, through a Service, to a Pod using `iptables-save`:
+
+```bash
+# 1. Get the Service ClusterIP
+kubectl get svc web-service
+# Example IP: 10.96.45.123
+
+# 2. SSH into a Kubernetes Node
+ssh user@node-01
+
+# 3. Search iptables rules for the Service IP
+sudo iptables-save | grep 10.96.45.123
+# You will see a rule redirecting traffic to a KUBE-SVC-* chain:
+# -A KUBE-SERVICES -d 10.96.45.123/32 -p tcp -m tcp --dport 80 -j KUBE-SVC-XXXXXXXXXXXXXXXX
+
+# 4. Inspect the KUBE-SVC chain to find the load balancing logic
+sudo iptables-save | grep KUBE-SVC-XXXXXXXXXXXXXXXX
+# You will see rules distributing traffic to KUBE-SEP-* chains (one for each Pod endpoint) using probabilities.
+
+# 5. Inspect a KUBE-SEP (Service Endpoint) chain to find the actual Pod IP
+sudo iptables-save | grep KUBE-SEP-YYYYYYYYYYYYYYYY
+# You will see the DNAT rule translating the destination to the Pod IP:
+# -A KUBE-SEP-YYYYYYYYYYYYYYYY -p tcp -m tcp -j DNAT --to-destination 10.244.1.5:8080
+```
+
+This demonstrates exactly how the "magic" of virtual IPs works under the hood. For clusters using `nftables` (the recommended replacement for IPVS in K8s 1.35+), you would use `nft list ruleset | grep 10.96.45.123` to trace similar Network Address Translation (NAT) structures.
 
 > **War Story: The Selector Mismatch**
 >
