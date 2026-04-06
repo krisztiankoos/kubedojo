@@ -92,6 +92,8 @@ This is a subtle but important setting:
 | `Immediate` | PV is provisioned as soon as PVC is created | Pre-provisioning, when zone does not matter |
 | `WaitForFirstConsumer` | PV is provisioned when a pod mounts it | Regional clusters (ensures disk is in the same zone as the pod) |
 
+> **Stop and think**: You just created a PVC using a StorageClass with `Immediate` binding in a regional cluster spanning three zones. The disk provisions instantly in zone A. What happens if the Kubernetes scheduler later decides the only node with enough CPU for your pod is in zone B?
+
 **War Story**: A team used `Immediate` binding mode in a regional cluster. The PD was provisioned in `us-central1-a`, but the pod was scheduled to `us-central1-c`. The pod hung in `Pending` with the error "disk is in zone us-central1-a, which does not match the zone of node us-central1-c." Always use `WaitForFirstConsumer` in regional clusters.
 
 ---
@@ -114,8 +116,8 @@ Regional PDs synchronously replicate data to two zones within the same region. T
   │  If zone fails: │               ┌─────────────────┐
   │  DATA IS        │               │  us-central1-b  │
   │  INACCESSIBLE   │               │  ┌─────────┐    │
-  └─────────────────┘               │  │ PD-SSD  │◄──── If zone-a fails:
-                                    │  │ (copy 2)│    │  Pod restarts in
+  │                 │               │  │ PD-SSD  │◄──── If zone-a fails:
+  └─────────────────┘               │  │ (copy 2)│    │  Pod restarts in
                                     │  └─────────┘    │  zone-b, mounts
                                     └─────────────────┘  copy 2 (<60 sec)
 ```
@@ -632,6 +634,8 @@ Choosing the right storage for your workload:
   └── YES → Cloud Storage FUSE (or use GCS client libraries directly)
 ```
 
+> **Pause and predict**: You are deploying a highly available legacy CMS. The application requires three replicas of the web tier to share a single directory for user-uploaded media (images, PDFs), which currently totals around 2 TiB. Based on the decision matrix below, which GKE storage solution should you choose and why?
+
 | Factor | PD (Block) | Filestore (NFS) | Cloud Storage FUSE |
 | :--- | :--- | :--- | :--- |
 | **Access mode** | ReadWriteOnce | ReadWriteMany | ReadWriteMany |
@@ -674,39 +678,39 @@ Choosing the right storage for your workload:
 ## Quiz
 
 <details>
-<summary>1. What is the difference between a zonal Persistent Disk and a Regional Persistent Disk?</summary>
+<summary>1. Your e-commerce database runs on a single GKE node with a standard zonal Persistent Disk attached. During a major sales event, the Google Cloud zone hosting that node experiences a complete power failure. The cluster has nodes in other healthy zones. What happens to your database, and how would configuring a Regional Persistent Disk have changed this outcome?</summary>
 
-A **zonal PD** stores data in a single zone. If that zone becomes unavailable, the disk cannot be accessed or attached to nodes in other zones. A **Regional PD** synchronously replicates data to two zones within the same region. Every write is confirmed in both zones before returning to the application. During a zone failure, the regional PD can be attached to a node in the surviving zone, typically within 60 seconds. Regional PDs cost approximately twice as much as zonal PDs because they store two copies, but they provide zero data loss (RPO=0) and rapid failover (RTO under 1 minute). For any stateful production workload, regional PDs are strongly recommended.
+With a zonal Persistent Disk, your database goes completely offline and cannot be recovered until the specific zone is restored by Google Cloud, because the disk physically resides only in that failed zone. The Kubernetes scheduler might create a replacement pod in a healthy zone, but it will remain `Pending` because it cannot mount the zonal disk. If you had configured a Regional Persistent Disk, the data would have been synchronously replicated to a second zone in real-time. The scheduler would spin up the replacement pod in that second healthy zone, attach the replica disk within 60 seconds, and your database would resume operations with zero data loss (RPO=0).
 </details>
 
 <details>
-<summary>2. Why is `WaitForFirstConsumer` volume binding mode important in regional clusters?</summary>
+<summary>2. You deploy a new application to a regional GKE cluster using a StorageClass with `Immediate` volume binding. The PersistentVolumeClaim bounds successfully, but the pod remains in a `Pending` state indefinitely, with an error citing a zone mismatch. Why did this happen, and how does changing the binding mode resolve the underlying issue?</summary>
 
-In a regional cluster, nodes exist across multiple zones (typically 3). With `Immediate` binding, the PV is created as soon as the PVC is submitted, and the PD CSI driver picks a zone for the disk. If the scheduler later places the pod in a different zone, the pod cannot mount the volume because PDs can only be attached to nodes in the same zone (for zonal PDs) or one of two zones (for regional PDs). `WaitForFirstConsumer` delays volume provisioning until a pod references the PVC. At that point, the scheduler picks a node, and the CSI driver creates the disk in the same zone as the node. This guarantees the disk and pod are always co-located.
+This happens because `Immediate` binding forces the Persistent Disk CSI driver to provision the storage instantly, picking a zone for the disk before the Kubernetes scheduler has decided where the pod will run. If the scheduler later places the pod on a node in a different zone than the newly created disk, the pod cannot mount it. By changing the StorageClass to use `WaitForFirstConsumer`, you instruct the CSI driver to delay volume creation until the pod is actually scheduled. This ensures the scheduler picks the optimal node first, and the disk is subsequently provisioned in the exact same zone, guaranteeing they are co-located.
 </details>
 
 <details>
-<summary>3. When would you choose Filestore over Cloud Storage FUSE?</summary>
+<summary>3. A machine learning team needs to mount a 50 TB dataset of training images into 20 concurrent training pods. The data is read-only, and cost is a major concern. The DevOps team initially suggests Filestore Enterprise, but you propose Cloud Storage FUSE instead. Why is Cloud Storage FUSE the better architectural choice for this specific workload?</summary>
 
-Choose Filestore when your workload requires **true POSIX filesystem semantics**: atomic renames, file locking (`flock`), hard links, or low-latency random reads and writes. Common examples include content management systems with concurrent file uploads, legacy applications that rely on NFS mounts, and build systems with shared caches. Choose Cloud Storage FUSE when you need to access **large datasets** (especially read-heavy ML training data), when data is already in GCS, or when cost is the primary concern. Cloud Storage FUSE is roughly 10x cheaper per GB than Filestore, but it lacks full POSIX compliance and has higher per-operation latency.
+Cloud Storage FUSE is the better choice because the workload involves large-scale, read-heavy data access where cost is the primary constraint and full POSIX compliance (like file locking or atomic renames) is not required. Filestore Enterprise would cost significantly more (around $0.20-$0.36/GB/month) and is designed for low-latency, complex file operations that ML training typically doesn't need. Cloud Storage FUSE leverages standard Google Cloud Storage buckets, dropping the cost to roughly $0.020/GB/month while easily scaling to 50 TB and supporting simultaneous `ReadWriteMany` access across all 20 pods. You can also enable FUSE file caching to mitigate the higher per-operation latency associated with object storage.
 </details>
 
 <details>
-<summary>4. How does Backup for GKE differ from simply taking PD snapshots?</summary>
+<summary>4. A junior engineer accidentally deletes an entire production namespace, including the StatefulSet, ConfigMaps, Secrets, and the associated PersistentVolumeClaims. You have daily PD snapshots enabled on the underlying disks. Why are these PD snapshots alone insufficient for a rapid recovery, and how would Backup for GKE have prevented a prolonged outage?</summary>
 
-PD snapshots capture only the **disk data** for a single Persistent Disk. They do not capture any Kubernetes resource configuration. To restore an application from PD snapshots alone, you need to manually recreate all Kubernetes resources (Deployments, Services, ConfigMaps, Secrets, etc.) and then attach the restored PV. Backup for GKE captures **both** the Kubernetes resource state and the volume data in a single backup. It can restore complete application stacks, including custom resources and CRDs, to the same or a different cluster. It also supports selective namespace restore, backup scheduling, retention policies, and delete locks to prevent accidental deletion of backups.
+Persistent Disk snapshots only capture the raw block data residing on the physical disk; they do not back up any Kubernetes state or configuration. To recover using only PD snapshots, you would have to manually recreate the deleted namespace, reconstruct the ConfigMaps and Secrets, redefine the StatefulSet, and manually orchestrate creating new PVCs from the snapshots. Backup for GKE solves this by capturing both the Kubernetes resource configurations (the "state") and the underlying volume data in a unified snapshot. In this disaster scenario, Backup for GKE would allow you to execute a single restore command to recreate the namespace, all its resources, and the populated volumes automatically, drastically reducing your Recovery Time Objective (RTO).
 </details>
 
 <details>
-<summary>5. Can you shrink a Persistent Volume after expanding it?</summary>
+<summary>5. To handle a temporary spike in log generation, you edit a PersistentVolumeClaim to increase its storage request from 100Gi to 500Gi. A week later, log volume returns to normal, and you want to reduce the PVC back to 100Gi to save costs. Describe the exact process you must follow to achieve this size reduction.</summary>
 
-**No.** Persistent Volume expansion is a one-way operation. Once you increase the size of a PVC, you cannot decrease it. The underlying Google Cloud Persistent Disk does not support shrinking. If you need a smaller volume, you must: (1) create a new PVC with the desired smaller size, (2) copy the data from the old volume to the new one (using a pod that mounts both volumes), (3) update your workload to reference the new PVC, and (4) delete the old PVC. This is an important consideration when planning storage---over-provisioning is hard to undo.
+You cannot simply edit the existing PersistentVolumeClaim to reduce its size, because Google Cloud Persistent Disks do not support shrinking and volume expansion is strictly a one-way operation. To achieve the size reduction, you must manually create a brand new PVC requesting the desired 100Gi size. You then need to deploy a temporary pod that mounts both the old 500Gi volume and the new 100Gi volume to copy the data across using tools like `rsync`. Finally, you must update your application's deployment manifests to reference the new PVC, restart the application, and delete the original 500Gi PVC.
 </details>
 
 <details>
-<summary>6. What are the minimum capacity requirements for Filestore tiers?</summary>
+<summary>6. You are tasked with providing shared filesystem storage for a small internal application that only generates about 50 GB of data. You decide to create a Basic SSD Filestore instance, but the provisioning command fails. Why does Filestore reject this configuration, and what is a more appropriate storage alternative for this workload?</summary>
 
-Filestore has significant minimum capacity requirements that surprise many users. **Basic HDD** requires a minimum of 1 TiB. **Basic SSD** requires a minimum of 2.5 TiB. **Zonal** (high-performance) requires a minimum of 1 TiB. **Enterprise** requires a minimum of 1 TiB. These minimums exist because Filestore provisions dedicated infrastructure for each instance. If you need less than 1 TiB of shared storage, Filestore may be overkill. Consider alternatives like using a PD with an NFS server deployment, or Cloud Storage FUSE if your workload tolerates eventual consistency.
+Filestore rejects the configuration because it enforces hard minimum capacity requirements to accommodate its dedicated underlying infrastructure; a Basic SSD tier requires an absolute minimum of 2.5 TiB. Attempting to provision only 50 GB violates this boundary, and provisioning the full 2.5 TiB would be a massive waste of resources and budget for such a small dataset. A more appropriate alternative would be to deploy a lightweight, in-cluster NFS server backed by a single 50 GB regional Persistent Disk, or to rewrite the application to use Cloud Storage FUSE if it simply needs object storage without strict POSIX filesystem requirements.
 </details>
 
 ---
