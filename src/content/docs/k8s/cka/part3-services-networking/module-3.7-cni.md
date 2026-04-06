@@ -503,7 +503,7 @@ kubeadm init --pod-network-cidr=10.244.0.0/16 --service-cidr=10.96.0.0/12
 
 ---
 
-> **What would happen if**: You set `hostNetwork: true` on a pod running nginx on port 80, and there is already another pod with `hostNetwork: true` running on port 80 on the same node. What happens when Kubernetes tries to schedule your pod?
+> **Pause and predict**: You set `hostNetwork: true` on a pod running nginx on port 80, and there is already another pod with `hostNetwork: true` running on port 80 on the same node. What happens when Kubernetes tries to schedule your pod?
 
 ## Part 7: Host Network and Node Ports
 
