@@ -128,6 +128,8 @@ allowVolumeExpansion: true
 
 ### Azure Files: Shared Storage for Multi-Pod Access
 
+> **Pause and predict**: If you have a legacy CMS that writes user uploads to a local filesystem and you want to scale it to 3 replicas across different nodes, which Azure storage solution must you use and why?
+
 Azure Files provides SMB and NFS file shares that multiple pods across multiple nodes can mount simultaneously (`ReadWriteMany` / RWX). This is essential for workloads that need shared storage: CMS platforms, shared configuration files, machine learning training data, and legacy applications that expect a shared filesystem.
 
 ```text
@@ -262,6 +264,8 @@ az monitor log-analytics query \
 ```
 
 ### Cost Control for Container Insights
+
+> **Pause and predict**: You just deployed Container Insights on a busy cluster and your Log Analytics bill spiked by $500 in one day. What is the most likely culprit, and what configuration component will fix it?
 
 Container Insights can generate significant Log Analytics costs if you send every log line from every container. Use the ConfigMap to control what gets collected:
 
@@ -580,6 +584,91 @@ KEDA scales pods. The cluster autoscaler scales nodes. They work together beauti
 
 ---
 
+## Cost Optimization: Spot Instances and Right-Sizing
+
+Compute costs dominate the typical Kubernetes bill. While auto-scaling ensures you only run the nodes you need, cost optimization ensures you pay the lowest possible price for those nodes and pack them as efficiently as possible.
+
+### Spot Node Pools
+
+Azure Spot Virtual Machines offer unutilized Azure capacity at a deep discount—up to 90% off the pay-as-you-go rate. The trade-off is that Azure can evict these VMs at any time with only a 30-second warning if the capacity is needed for full-price customers.
+
+Spot VMs are perfect for fault-tolerant, interruptible workloads:
+- Batch processing and background jobs
+- Stateless web servers (if you run enough replicas across both Spot and regular nodes)
+- CI/CD build agents
+- Machine learning training jobs
+
+```bash
+# Add a Spot node pool to an existing cluster
+az aks nodepool add \
+  --resource-group rg-aks-prod \
+  --cluster-name aks-prod-westeurope \
+  --name spotpool \
+  --priority Spot \
+  --eviction-policy Delete \
+  --spot-max-price -1 \
+  --enable-cluster-autoscaler \
+  --min-count 1 \
+  --max-count 10 \
+  --node-vm-size Standard_D4s_v5
+```
+
+When you create a Spot node pool, AKS automatically adds the taint `kubernetes.azure.com/scalesetpriority=spot:NoSchedule`. This prevents normal pods from being scheduled on Spot nodes unless they explicitly tolerate the taint. 
+
+```yaml
+# Pod configured to run on Spot nodes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: batch-worker
+spec:
+  template:
+    spec:
+      tolerations:
+      - key: "kubernetes.azure.com/scalesetpriority"
+        operator: "Equal"
+        value: "spot"
+        effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: kubernetes.azure.com/scalesetpriority
+                operator: In
+                values:
+                - spot
+```
+
+> **Stop and think**: If your entire web frontend is running on a Spot node pool and Azure experiences a sudden surge in demand for that VM size in your region, what happens to your application? How should you architect a production deployment to utilize Spot savings without risking downtime?
+
+To use Spot instances safely in production, employ a mixed strategy: run your baseline minimum replicas on regular (On-Demand) nodes, and use KEDA or HPA to scale out onto Spot nodes during traffic spikes.
+
+### Workload Right-Sizing
+
+Running workloads with CPU and memory requests that are vastly larger than their actual usage leads to "slack" capacity. The cluster autoscaler provisions new nodes because the *requested* resources exceed capacity, even if the nodes are physically sitting at 10% CPU utilization.
+
+Right-sizing involves aligning your container requests with reality. 
+
+1. **Analyze Historical Usage**: Use Azure Monitor Container Insights or Grafana dashboards to compare `kube_pod_container_resource_requests` against actual `container_cpu_usage_seconds_total`.
+2. **Vertical Pod Autoscaler (VPA)**: Run the VPA in `Recommendation` mode. It analyzes pod metrics over time and suggests optimal CPU and memory requests without actively restarting your pods.
+3. **Set Requests = Limits for Memory**: To prevent unexpected Out-Of-Memory (OOM) kills during traffic spikes, a common best practice is to set memory requests equal to memory limits.
+4. **Allow CPU Throttling (Carefully)**: Unlike memory, CPU is a compressible resource. Setting CPU limits higher than requests allows a pod to burst during startup or brief spikes, though aggressive throttling can cause latency.
+
+```yaml
+# A well-sized container specification
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"     # 1/10th of a core for baseline
+  limits:
+    memory: "256Mi" # Equal to request to prevent OOM
+    cpu: "500m"     # Allowed to burst up to half a core
+```
+
+---
+
 ## Did You Know?
 
 1. **Azure Disk IOPS scale with disk size on Premium SSD, but Ultra Disk decouples them.** A 256 GB Premium SSD v1 gets 1,100 IOPS. To get 5,000 IOPS you need a 1 TB disk, even if you only store 50 GB of data. Ultra Disk lets you provision 50,000 IOPS on a 64 GB disk. This decoupling can save thousands of dollars per month for I/O-intensive databases that do not need large storage volumes.
@@ -610,52 +699,52 @@ KEDA scales pods. The cluster autoscaler scales nodes. They work together beauti
 ## Quiz
 
 <details>
-<summary>1. Why is `volumeBindingMode: WaitForFirstConsumer` critical for Azure Disk StorageClasses in AKS?</summary>
+<summary>1. Scenario: You deployed a StatefulSet using a Premium SSD StorageClass with `Immediate` binding mode across a 3-zone AKS cluster. The first pod comes up fine, but the second pod is permanently stuck in `Pending` state. What architectural constraint caused this, and how does `WaitForFirstConsumer` solve it?</summary>
 
-Azure Disks are zone-locked---a disk created in Availability Zone 1 can only be attached to a node in Zone 1. With `Immediate` binding mode, the PVC creates the disk as soon as the PVC is created, before any pod references it. If the disk lands in Zone 1 but the pod gets scheduled to Zone 2, the pod will be stuck in Pending forever because the disk cannot be attached across zones. `WaitForFirstConsumer` delays disk creation until a pod actually claims the PVC, ensuring the disk is created in the same zone as the node where the pod will run.
+Azure Disks are zone-locked resources, meaning a disk created in Availability Zone 1 can only be attached to a virtual machine physically located in Zone 1. When you use `Immediate` binding mode, the Kubernetes control plane creates the disk immediately upon seeing the PersistentVolumeClaim, without knowing which node the scheduler will eventually choose for the pod. If the disk happens to be created in Zone 1, but the pod is scheduled onto a node in Zone 2, the pod cannot mount the volume and remains stuck in `Pending`. Using `WaitForFirstConsumer` solves this by delaying the disk creation API call until the exact moment the scheduler places the pod on a specific node, ensuring the disk is provisioned in the correct matching zone.
 </details>
 
 <details>
-<summary>2. When should you choose Ultra Disk over Premium SSD?</summary>
+<summary>2. Scenario: Your DBA team needs to migrate a high-transaction PostgreSQL database to AKS. The database is only 50 GB in size, but requires a guaranteed 15,000 IOPS to handle peak loads. Why would provisioning a 50 GB Premium SSD fail to meet this requirement, and what storage tier is mathematically required instead?</summary>
 
-Choose Ultra Disk when your workload requires high IOPS or throughput that exceeds what Premium SSD can deliver at your needed storage size. Premium SSD ties IOPS to disk size (a 256 GB P15 provides only 1,100 IOPS), so getting 20,000 IOPS requires provisioning a 1 TB+ disk even if you store far less data. Ultra Disk decouples IOPS, throughput, and capacity---you can provision 50,000 IOPS on a 64 GB disk. Ultra Disk also delivers sub-millisecond latency compared to Premium SSD's ~1ms. The trade-off is higher cost per GB and the requirement to enable Ultra Disk support on the node pool.
+Standard Premium SSDs tie their IOPS and throughput performance directly to the provisioned capacity of the disk. A 64 GB Premium SSD (P6) provides only 240 IOPS, meaning you would have to provision and pay for a 1 TB disk just to achieve the 5,000 IOPS tier, and even larger to hit 15,000. Ultra Disks and Premium SSD v2 solve this by decoupling capacity from performance, allowing you to independently dial in exact IOPS and throughput metrics. By using Ultra Disk, you can provision a 50 GB disk but explicitly set the `DiskIOPSReadWrite` parameter to 15,000, paying only for the performance you need without wasting money on empty terabytes of storage.
 </details>
 
 <details>
-<summary>3. What is the difference between Azure Files SMB and NFS, and when should you use each?</summary>
+<summary>3. Scenario: A machine learning pipeline needs to train a model using 5 TB of image data shared across 20 GPU pods simultaneously. The data scientists initially used Azure Files SMB but are complaining that the data loading phase takes hours due to network bottlenecking. Which Azure Files protocol should they switch to, and what specific mount option will drastically reduce their load times?</summary>
 
-SMB (Server Message Block) is the default protocol for Azure Files, supported on both Windows and Linux. It uses authentication-based access (AD/Entra ID) and is broadly compatible with applications. NFS (Network File System) is available only on Premium tier, supports only Linux, and provides POSIX-compliant file system semantics with higher throughput. Use SMB when you need Windows compatibility or AD-based access control. Use NFS for Linux workloads that need high throughput (ML training data, media processing), especially with the `nconnect=4` mount option that multiplies throughput by opening multiple parallel TCP connections.
+The data scientists should switch their StorageClass to use Azure Files with the NFS protocol, which avoids the authentication overhead and Windows-centric design of SMB. NFS on Azure Files Premium provides significantly higher throughput for Linux-based workloads like machine learning containers. Furthermore, they must add the `nconnect=4` (or up to 16) setting in their StorageClass mount options. By default, an NFS mount uses a single TCP connection that tops out at around 300-400 MB/s due to TCP window limits; `nconnect` opens multiple parallel TCP connections to the storage account, multiplying the throughput and drastically reducing data load times.
 </details>
 
 <details>
-<summary>4. How does KEDA differ from the standard Kubernetes HPA?</summary>
+<summary>4. Scenario: An e-commerce backend uses standard HPA (CPU/Memory) to scale its order processing workers. During a flash sale, 10,000 orders hit the Azure Service Bus queue in seconds. The workers process them so quickly that their CPU never exceeds 40%, so the HPA never scales them up, resulting in a 2-hour processing backlog. How would KEDA fundamentally change how this scaling decision is made?</summary>
 
-KEDA extends the HPA in three important ways: (1) it can scale based on external event sources beyond CPU and memory---Azure Service Bus queue depth, Event Hub consumer lag, Prometheus metrics, cron schedules, and over 60 other triggers, (2) it can scale to zero replicas, which the HPA cannot do (HPA minimum is 1), and (3) it supports authentication to external systems through TriggerAuthentication resources that integrate with Workload Identity. KEDA works alongside the HPA, not instead of it---KEDA creates and manages HPA objects under the hood.
+The standard HPA is entirely blind to external business metrics like queue depth, relying solely on lagging infrastructure metrics like CPU utilization which may not correlate with the actual backlog. KEDA replaces this paradigm by connecting directly to the Azure Service Bus API and reading the exact number of pending messages waiting to be processed. Instead of waiting for CPU to spike, KEDA can be configured to instantly provision one worker pod for every 50 messages in the queue. This event-driven approach ensures the deployment scales out preemptively the moment the queue begins to fill, processing the 10,000 orders in minutes rather than hours, and then safely scaling back down to zero when the queue is empty.
 </details>
 
 <details>
-<summary>5. How do KEDA and the cluster autoscaler work together?</summary>
+<summary>5. Scenario: You configure KEDA to scale a consumer deployment to 100 replicas based on queue depth, but your AKS cluster currently only has 3 nodes which can fit 30 pods total. Walk through the exact sequence of events that occurs between KEDA and the Cluster Autoscaler when 1,000 messages suddenly arrive in the queue.</summary>
 
-They operate at different levels. KEDA scales pods based on external event sources (e.g., queue depth). When KEDA scales a deployment to many replicas and the existing nodes do not have enough resources, some pods enter Pending state. The cluster autoscaler detects pending pods, calculates how many additional nodes are needed, and scales the VMSS. When the workload completes and KEDA scales pods back down, the cluster autoscaler detects underutilized nodes (below 50% utilization for 10 minutes by default) and removes them. The full cycle---from zero pods to many pods on new nodes, back to zero pods with nodes removed---is fully automated.
+When the messages arrive, the KEDA operator detects the queue depth and immediately updates the deployment's target replica count to 100. The Kubernetes scheduler successfully places 30 pods on the existing 3 nodes, but the remaining 70 pods transition into a `Pending` state due to insufficient CPU or memory resources on the cluster. The Cluster Autoscaler constantly watches for `Pending` pods; upon detecting them, it calculates how many new nodes are required and makes an API call to Azure to expand the Virtual Machine Scale Set. Once the new VMs boot up and join the AKS cluster as Ready nodes, the scheduler automatically places the remaining 70 pods onto them, allowing all 100 consumers to process the queue in parallel.
 </details>
 
 <details>
-<summary>6. Why should you filter container logs in Container Insights rather than collecting everything?</summary>
+<summary>6. Scenario: A junior engineer enables Container Insights on a production cluster with default settings to troubleshoot a specific microservice. A week later, the Azure Log Analytics bill arrives at $2,000. Why did this happen by default, and what specific configuration changes in the `container-azm-ms-agentconfig` ConfigMap are required to stop the bleeding while still monitoring the application?</summary>
 
-Container Insights sends logs to Azure Log Analytics, which charges based on data ingestion volume. A typical AKS cluster generates gigabytes of logs daily, and much of it is low-value noise from system namespaces (kube-system, gatekeeper-system), health checks, and verbose debug logging. Without filtering, Log Analytics costs can easily exceed the cost of the cluster itself. Use the Container Insights ConfigMap to exclude noisy namespaces from stdout/stderr collection, disable environment variable collection, and set appropriate Prometheus scrape intervals. Start with aggressive filtering and add log sources as needed, not the other way around.
+By default, the Azure Monitor Agent deployed by Container Insights captures every single line of standard output (stdout) and standard error (stderr) from every container in the cluster, including incredibly noisy system components. This massive ingestion volume is billed per gigabyte by Log Analytics, leading to the rapid cost spike. To fix this, the engineer must deploy a custom ConfigMap named `container-azm-ms-agentconfig` in the `kube-system` namespace. In this configuration, they need to explicitly add `kube-system` and other high-volume namespaces to the `exclude_namespaces` array for stdout and stderr, and disable environment variable collection (`env_var.enabled = false`), ensuring only relevant application logs are ingested and billed.
 </details>
 
 <details>
-<summary>7. What does the `maxShares` parameter on an Azure Disk StorageClass enable, and what is the critical caveat?</summary>
+<summary>7. Scenario: To save money, a team creates a single 1 TB Premium SSD with `maxShares: 3` and mounts it to three different web server pods using the default `ext4` filesystem so they can share static assets. Within an hour, the filesystem is completely corrupted and the data is lost. What architectural rule of Shared Disks did they violate, and what is required to share block storage safely?</summary>
 
-The `maxShares` parameter enables Azure Shared Disks, allowing a single Premium SSD or Ultra Disk to be attached to multiple nodes simultaneously. This is used for cluster-aware applications like SQL Server Failover Cluster Instances that need shared block storage. The critical caveat is that Shared Disks provide raw block access, not a shared filesystem. You must NOT mount a shared disk with a standard filesystem like ext4 or xfs from multiple nodes, because these filesystems are not cluster-aware and concurrent writes will corrupt your data. You need a cluster filesystem (like GFS2 or OCFS2) or an application that coordinates its own block-level access.
+The team misunderstood the difference between block storage and file storage; Azure Shared Disks provide concurrent block-level access to the underlying storage device, not a managed filesystem. Standard Linux filesystems like `ext4` or `xfs` cache data in memory and are completely unaware that other operating systems might be modifying the same underlying disk blocks simultaneously, inevitably leading to catastrophic data corruption. To share a disk safely, the pods must either utilize a specialized cluster-aware filesystem (like GFS2) that coordinates locks across nodes, or the application itself must be explicitly designed to manage concurrent block-level arbitration, such as SQL Server Failover Cluster Instances. For simple shared static assets, the team should have used Azure Files (NFS or SMB) instead.
 </details>
 
 ---
 
 ## Hands-On Exercise: KEDA + Azure Service Bus Queue Scaling + Monitor Alerts
 
-In this exercise, you will set up event-driven autoscaling where a consumer deployment scales from zero to many replicas based on Azure Service Bus queue depth, with monitoring alerts that fire when the queue exceeds a threshold.
+In this exercise, you will set up event-driven autoscaling where a consumer deployment scales from zero to many replicas based on Azure Service Bus queue depth, with monitoring alerts that fire when the queue exceeds a threshold. You will also create a zone-aware StorageClass to properly deploy stateful workloads.
 
 ### Prerequisites
 
@@ -663,7 +752,54 @@ In this exercise, you will set up event-driven autoscaling where a consumer depl
 - Azure CLI authenticated
 - Workload Identity configured (from Module 7.3)
 
-### Task 1: Create the Azure Service Bus Namespace and Queue
+### Task 1: Create a Zone-Aware StorageClass and PVC
+
+Before setting up scaling, provision a Premium SSD v2 StorageClass that correctly handles availability zones, and create a PersistentVolumeClaim.
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Create a zone-aware StorageClass
+k apply -f - <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: premium-ssd-v2-zone-aware
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: PremiumV2_LRS
+  DiskIOPSReadWrite: "3000"
+  DiskMBpsReadWrite: "125"
+  cachingMode: None
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+EOF
+
+# Create a PersistentVolumeClaim
+k apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: order-db-pvc
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: premium-ssd-v2-zone-aware
+  resources:
+    requests:
+      storage: 100Gi
+EOF
+
+# Verify the PVC stays in Pending state (because WaitForFirstConsumer delays provisioning until a Pod uses it)
+k get pvc order-db-pvc
+```
+
+</details>
+
+### Task 2: Create the Azure Service Bus Namespace and Queue
 
 <details>
 <summary>Solution</summary>
@@ -699,7 +835,7 @@ echo "Service Bus Namespace: $SB_NAMESPACE"
 
 </details>
 
-### Task 2: Set Up Workload Identity for KEDA and the Consumer
+### Task 3: Set Up Workload Identity for KEDA and the Consumer
 
 Create a managed identity that KEDA and the consumer pods will use to read from the queue.
 
@@ -758,7 +894,7 @@ EOF
 
 </details>
 
-### Task 3: Deploy the Consumer Application and KEDA ScaledObject
+### Task 4: Deploy the Consumer Application and KEDA ScaledObject
 
 Deploy the consumer and configure KEDA to scale it based on queue depth.
 
@@ -851,7 +987,7 @@ k get hpa -n orders
 
 </details>
 
-### Task 4: Send Messages and Observe Scaling
+### Task 5: Send Messages and Observe Scaling
 
 Flood the queue with messages and watch KEDA scale the consumer.
 
@@ -895,7 +1031,7 @@ az servicebus queue show \
 
 </details>
 
-### Task 5: Set Up Azure Monitor Alert for Queue Backlog
+### Task 6: Set Up Azure Monitor Alert for Queue Backlog
 
 Create an alert that fires when the queue depth exceeds a threshold, indicating consumers cannot keep up.
 
@@ -945,7 +1081,7 @@ az monitor metrics alert create \
 
 </details>
 
-### Task 6: Verify Scale-to-Zero
+### Task 7: Verify Scale-to-Zero
 
 Drain the queue and confirm KEDA scales the deployment back to zero.
 
@@ -982,6 +1118,7 @@ echo "az group delete --name rg-aks-prod --yes --no-wait"
 
 ### Success Criteria
 
+- [ ] Premium SSD v2 zone-aware StorageClass and PVC created
 - [ ] Azure Service Bus namespace and queue created
 - [ ] Workload Identity configured for the consumer (managed identity + federated credential + service account)
 - [ ] Consumer deployment starts at 0 replicas
