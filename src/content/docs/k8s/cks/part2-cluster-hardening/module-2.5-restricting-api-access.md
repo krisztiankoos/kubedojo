@@ -33,7 +33,9 @@ After completing this module, you will be able to:
 
 The Kubernetes API is the crown jewel—access to it means control over everything. While RBAC controls what authenticated users can do, restricting WHO can even reach the API is equally important.
 
-This module covers network-level and authentication-based API access restrictions.
+**The Tesla Cryptojacking Incident:** In 2018, attackers compromised Tesla's cloud infrastructure not through a sophisticated zero-day, but by finding a Kubernetes API server that was exposed to the internet without password protection. Because the administrative dashboard was openly accessible, the attackers deployed cryptomining containers and stole AWS credentials that were stored in plaintext. This incident perfectly illustrates the catastrophic business impact of an exposed API: once the control plane is breached, the entire cluster—and potentially the underlying cloud environment—is compromised.
+
+This module covers network-level and authentication-based API access restrictions to prevent such scenarios.
 
 ---
 
