@@ -1037,6 +1037,100 @@ kubectl delete crd backups.backup.example.com
 
 </details>
 
+### Drill 8: Deploy a Basic Educational Operator (Target: 10 minutes)
+
+To truly understand operators, let's deploy a basic educational operator. We'll use a Bash script that acts as the controller for a `Website` CRD. The script's `while` loop simulates the operator's continuous reconciliation process, actively managing Kubernetes Deployments based on your Custom Resources.
+
+> **Stop and think**: What happens if you scale the deployment directly using `kubectl scale deployment my-portfolio-site --replicas=5`? How will the operator react during its next loop?
+
+```bash
+# 1. First, create the Website CRD
+cat << 'EOF' | kubectl apply -f -
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: websites.stable.example.com
+spec:
+  group: stable.example.com
+  scope: Namespaced
+  names:
+    plural: websites
+    singular: website
+    kind: Website
+    shortNames: [ws]
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                image: {type: string, default: "nginx:alpine"}
+                replicas: {type: integer, default: 1}
+EOF
+
+# 2. Create the Operator Script
+# This represents the controller's reconciliation loop
+cat << 'EOF' > website-operator.sh
+#!/bin/bash
+echo "Starting Website Operator..."
+while true; do
+  # Find all Website custom resources
+  for ws in $(kubectl get websites -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+    image=$(kubectl get website $ws -o jsonpath='{.spec.image}')
+    replicas=$(kubectl get website $ws -o jsonpath='{.spec.replicas}')
+    
+    # Reconcile: Ensure a Deployment exists with the desired state
+    kubectl create deployment $ws-site --image=$image --replicas=$replicas --dry-run=client -o yaml | kubectl apply -f - >/dev/null 2>&1
+    echo "Reconciled Website: $ws -> Image: $image, Replicas: $replicas"
+  done
+  sleep 5
+done
+EOF
+chmod +x website-operator.sh
+
+# 3. Run the operator in the background
+./website-operator.sh &
+OPERATOR_PID=$!
+
+# 4. Create a Custom Resource
+cat << 'EOF' | kubectl apply -f -
+apiVersion: stable.example.com/v1
+kind: Website
+metadata:
+  name: my-portfolio
+spec:
+  image: "nginx:alpine"
+  replicas: 2
+EOF
+
+# 5. Observe the reconciliation (Wait a few seconds for the loop)
+sleep 6
+kubectl get deployments
+kubectl get pods
+
+# 6. Test the Reconciliation Loop
+# The operator should fight back if we delete the managed deployment
+echo "Deleting the managed deployment to simulate a failure..."
+kubectl delete deployment my-portfolio-site
+
+# 7. Check again in 5-10 seconds
+sleep 6
+kubectl get deployments
+# The operator recreated it! This is the reconciliation loop in action.
+
+# 8. Clean up
+kill $OPERATOR_PID
+kubectl delete website my-portfolio
+kubectl delete deployment my-portfolio-site
+kubectl delete crd websites.stable.example.com
+rm website-operator.sh
+```
+
 ---
 
 ## Next Module
