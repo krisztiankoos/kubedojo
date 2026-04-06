@@ -57,6 +57,7 @@ This module teaches you to build exactly what you'll encounter in the exam.
 │   │ • etcd      │    │ • kube-proxy│    │ • kube-proxy│        │
 │   │ • scheduler │    │ • containerd│    │ • containerd│        │
 │   │ • ctrl-mgr  │    │             │    │             │        │
+│   │ • containerd│    │             │    │             │        │
 │   └─────────────┘    └─────────────┘    └─────────────┘        │
 │         │                   │                   │               │
 │         └───────────────────┴───────────────────┘               │
@@ -260,6 +261,8 @@ sudo systemctl status kubelet
 # Check kubeadm version
 kubeadm version
 ```
+
+> **Stop and think**: You've installed kubelet, containerd, and kubeadm, but `systemctl status kubelet` shows it is activating/crashlooping. Why is this expected behavior right now? The kubelet is constantly restarting because it's looking for its configuration file (`/var/lib/kubelet/config.yaml`), which won't exist until `kubeadm init` or `kubeadm join` is run.
 
 ---
 
@@ -507,28 +510,28 @@ sudo kubeadm reset
 
 ## Quiz
 
-1. **Why must swap be disabled for Kubernetes?**
+1. **Scenario**: Your team is provisioning new bare-metal servers for a Kubernetes cluster. A systems engineer suggests leaving 16GB of swap space enabled to prevent out-of-memory kernel panics. You advise against this. Why must swap be disabled for the kubelet to function correctly?
    <details>
    <summary>Answer</summary>
-   Kubernetes expects to manage memory directly. With swap enabled, the kubelet can't accurately report memory usage, leading to over-scheduling and unpredictable behavior. The scheduler needs reliable memory information.
+   Kubernetes expects to manage memory allocation directly and definitively for all scheduled pods. When swap is enabled, the underlying operating system can silently move memory pages to disk, completely blinding the kubelet to the true memory utilization of the node. This breaks the Kubernetes scheduler's ability to make accurate placement decisions and guarantees, leading to severe performance degradation and unpredictable out-of-memory (OOM) behavior. If the kubelet detects swap is enabled without explicit overrides, it will immediately crash to prevent the cluster from entering this degraded state.
    </details>
 
-2. **What's the purpose of the `--pod-network-cidr` flag in `kubeadm init`?**
+2. **Scenario**: You are initializing a new cluster with `kubeadm init` and plan to use Flannel for your CNI. A colleague asks why you are explicitly defining `--pod-network-cidr=10.244.0.0/16` instead of just running `kubeadm init` without flags. What is the technical reason for providing this flag?
    <details>
    <summary>Answer</summary>
-   It defines the IP range for pod networking. The CNI plugin (like Calico) uses this range to assign IPs to pods. Different CNIs have different requirements—Calico is flexible, but Flannel requires 10.244.0.0/16 by default.
+   The control plane needs to know which IP addresses are reserved for pods so it doesn't assign overlapping addresses to different nodes. The `--pod-network-cidr` flag reserves a massive block of IPs for the entire cluster, which the Kubernetes controller manager then carves up into smaller subnets (/24 blocks) for each individual node. The Container Network Interface (CNI) plugin, like Flannel or Calico, reads this configuration to know exactly which IP addresses it is legally allowed to assign to the pods running on that specific host. Without this flag, the CNI wouldn't know the network boundaries and pod-to-pod routing would fail.
    </details>
 
-3. **A node shows `NotReady` after joining. What's the most likely cause?**
+3. **Scenario**: You successfully joined `worker-02` to the cluster using the kubeadm token. However, 15 minutes later, `kubectl get nodes` still shows `worker-02` with a status of `NotReady`. You verify the kubelet is running on the node. What is the most likely architectural component missing or failing?
    <details>
    <summary>Answer</summary>
-   CNI plugin not installed or not running. Without a CNI, pods can't get network addresses, and the node reports NotReady. Check `kubectl get pods -n kube-system` for CNI pod status.
+   The most likely cause is that a Container Network Interface (CNI) plugin has not been properly deployed, or its pods are crashing. When a kubelet starts up, it checks for a valid CNI configuration file in `/etc/cni/net.d/`. If this configuration is missing, the kubelet intentionally marks the node as `NotReady` because it physically cannot assign IP addresses to any pods scheduled there. You must apply a CNI manifest (like Calico) to the cluster, which will deploy DaemonSet pods to configure the network on each node and transition them to a `Ready` state.
    </details>
 
-4. **You need to add a new worker node but lost the join command. How do you get it?**
+4. **Scenario**: Three days after creating your cluster, you decide to scale out by adding a new worker node. You SSH into the new machine, install containerd and kubelet, but realize you didn't save the original `kubeadm join` output. How do you generate the exact command and token needed to authenticate this new node to the API server?
    <details>
    <summary>Answer</summary>
-   Run `kubeadm token create --print-join-command` on the control plane node. This generates a new token and prints the complete join command.
+   You must run `kubeadm token create --print-join-command` on the control plane node. Bootstrap tokens generated during `kubeadm init` have a hardcoded security lifespan of exactly 24 hours to prevent unauthorized machines from joining the cluster if the token is leaked. Because three days have passed, the original token has expired and been purged from etcd. This command generates a fresh, cryptographically secure token and immediately outputs the full `kubeadm join` string, complete with the API server endpoint and the required CA certificate hash for secure mutual TLS authentication.
    </details>
 
 ---
