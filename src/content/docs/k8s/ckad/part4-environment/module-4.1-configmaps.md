@@ -341,6 +341,16 @@ k delete configmap NAME
 
 ---
 
+## From the Trenches: The "Masked Directory" Outage
+
+A platform team was deploying a new logging agent DaemonSet across a production cluster. The agent required a custom configuration file, which the team provided via a ConfigMap. To inject it, they mounted the ConfigMap volume directly to `/etc/agent/` where the agent looked for its configuration. 
+
+As soon as the DaemonSet was applied, the logging agent crashed cluster-wide. The logs showed `FATAL: Missing required default certificates`. 
+
+**The post-mortem revealed the root cause**: The base container image included critical default files (like internal certificates and base configuration) baked into the `/etc/agent/` directory. By mounting the ConfigMap volume directly to the directory path (`mountPath: /etc/agent/`), Kubernetes effectively "masked" all the existing contents of that directory with the contents of the ConfigMap. The agent couldn't find its certificates and crashed. The team fixed the outage by using a `subPath` mount (`mountPath: /etc/agent/custom.conf` with `subPath: custom.conf`), which injects only the specific file into the directory without hiding the existing baked-in files.
+
+---
+
 ## Common Mistakes
 
 | Mistake | Why It Hurts | Solution |
@@ -376,7 +386,7 @@ k delete configmap NAME
 4. **You create a ConfigMap from a file: `kubectl create configmap app-config --from-file=settings.conf`. When you mount it as a volume, you expect a file called `settings.conf` at the mount path. Instead, the application can't find it. You check and the file is there but the application config parser is looking for `app.conf`. How do you make the ConfigMap mount use a different filename?**
    <details>
    <summary>Answer</summary>
-   Use the `items` field in the volume definition to remap the key to a different file path: `volumes: - name: config, configMap: name: app-config, items: - key: settings.conf, path: app.conf`. This tells Kubernetes to take the ConfigMap key `settings.conf` and project it as a file named `app.conf` in the mounted volume directory. Alternatively, you could create the ConfigMap with a custom key name from the start: `kubectl create configmap app-config --from-file=app.conf=settings.conf`.
+   Use the `items` field in the volume definition to remap the key to a different file path: `volumes: - name: config, configMap: name: app-config, items: - key: settings.conf, path: app.conf`. This tells Kubernetes to take the ConfigMap key `settings.conf` and project it as a file named `app.conf` in the mounted volume directory. Alternatively, you could create the ConfigMap with a custom key name from the start: `kubectl create configmap app-config --from-file=app.conf=settings.conf`. Either approach solves the file path discrepancy at the infrastructure level rather than requiring an application code change.
    </details>
 
 ---
