@@ -111,6 +111,13 @@ By the end of this module, you will be able to:
 | Typical use | Inject sidecars, set defaults, add labels | Enforce policies, naming rules |
 | Runs how many times | May run again if other mutating webhooks change the object | Once (after all mutations) |
 
+> **Stop and think**: Categorize these three real-world requirements. Are they Mutating or Validating?
+> 1. Ensuring every Service uses `type: ClusterIP` unless explicitly approved.
+> 2. Automatically adding a `team-owner` label based on the namespace the Pod is deployed to.
+> 3. Blocking the deployment of any Pod that requests running as the `root` user.
+> 
+> *Answers: 1. Validating (rejecting invalid configs). 2. Mutating (modifying the object before saving). 3. Validating (enforcing a security policy).*
+
 ### 1.3 AdmissionReview API
 
 The API Server sends an `AdmissionReview` request:
@@ -759,6 +766,10 @@ webhooks:
   timeoutSeconds: 3
 ```
 
+> **Pause and predict**: Imagine you maintain two webhooks. One enforces that images only come from your private corporate registry to prevent malware. The other injects a monitoring sidecar into deployments. If your webhook server goes down, which failure policy should each webhook use?
+>
+> *Answer: The registry enforcer MUST use `Fail`. If it fails open (`Ignore`), developers could deploy malicious images from public registries during an outage, compromising the cluster. The monitoring sidecar should use `Ignore`. If it fails closed (`Fail`), no new applications can be deployed just because the monitoring system is temporarily down, which is a massive blast radius for a non-critical component.*
+
 ### 5.2 Matching and Filtering
 
 ```yaml
@@ -885,40 +896,40 @@ k logs -n kube-system kube-apiserver-<node> | grep webhook
 
 ## Quiz
 
-1. **What is the execution order of mutating and validating webhooks?**
+1. **You write a validating webhook that blocks any Pod with more than 2 containers. You also have a mutating webhook that injects a logging sidecar into every Pod. If a user submits a Pod with 2 containers, will it be admitted to the cluster?**
    <details>
    <summary>Answer</summary>
-   Mutating webhooks run first. They can modify the incoming object. Then schema validation runs. Then validating webhooks run on the final, mutated object. Validating webhooks cannot modify the object, only accept or reject it. Within mutating webhooks, execution order is undefined unless you use ordered webhook configurations.
+   The Pod will be rejected. This happens because mutating webhooks always execute first in the API server's admission pipeline. The mutating webhook intercepts the 2-container Pod and injects the sidecar, modifying the definition to have 3 containers. Afterwards, the validating webhook evaluates this final, mutated state. Since the Pod now has 3 containers, the validating webhook's policy is triggered and it rejects the request, preventing it from being stored in etcd.
    </details>
 
-2. **A mutating webhook adds a sidecar container. A validating webhook then rejects the pod because it has too many containers. What happens?**
+2. **A developer creates a deployment, but forgets to set resource limits. A mutating webhook catches this and injects default CPU and memory limits. A subsequent validating webhook rejects the deployment because the environment label is missing. Is the deployment saved in etcd with the new resource limits?**
    <details>
    <summary>Answer</summary>
-   The entire request is rejected. The pod is not created. The mutation (sidecar injection) has no effect because the object was never persisted to etcd. The client receives the validation error message. This is by design -- validating webhooks see the final mutated object and can reject changes made by mutating webhooks.
+   No, the deployment is not saved in etcd at all, and the mutation is effectively discarded. The admission control process is an all-or-nothing transaction at the API Server door. Even though the mutating webhook successfully processed the request and injected the resource limits, the subsequent validating webhook rejected the overall transaction. The client will receive an error about the missing environment label, and they will need to resubmit the corrected manifest, which will then go through the entire webhook chain again from the beginning.
    </details>
 
-3. **Why must webhook servers use TLS, and what role does `caBundle` play?**
+3. **You deploy a new webhook server and configure the `ValidatingWebhookConfiguration` with the correct service URL, but the API server refuses to send requests to it, logging an "x509: certificate signed by unknown authority" error. Why is this happening and how does `caBundle` solve it?**
    <details>
    <summary>Answer</summary>
-   The API Server communicates with webhooks over HTTPS to prevent man-in-the-middle attacks. Since webhook servers use self-signed or internally-issued certificates (not public CA certificates), the API Server needs to know which CA to trust. `caBundle` is the base64-encoded CA certificate that the API Server uses to verify the webhook server's TLS certificate. Without it, the API Server would reject the connection as untrusted.
+   This happens because the Kubernetes API server strictly requires all webhook communication to be secured via HTTPS to prevent tampering. When you deploy a webhook, you are typically using a self-signed certificate or an internal CA (like cert-manager) rather than a globally trusted root CA. The API server does not automatically trust your internal certificates. You must provide the `caBundle` (the base64-encoded Certificate Authority public certificate) in the webhook configuration so the API server has the cryptographic proof needed to verify and trust the webhook server's TLS certificate during the handshake.
    </details>
 
-4. **What is `reinvocationPolicy: IfNeeded` and when is it useful?**
+4. **You have Webhook A (injects a database proxy sidecar) and Webhook B (adds a specific security context to all containers in a Pod). Both are mutating webhooks. Sometimes, the proxy sidecar injected by Webhook A is missing the security context from Webhook B. How does `reinvocationPolicy: IfNeeded` solve this race condition?**
    <details>
    <summary>Answer</summary>
-   When multiple mutating webhooks exist, webhook A might change the object in a way that affects webhook B's decision. `reinvocationPolicy: IfNeeded` tells the API Server to re-run this webhook if another webhook modified the object after this one ran. This ensures the webhook sees the final mutated state. It is useful for webhooks that make decisions based on the full object (e.g., a resource quota webhook that needs to see all injected sidecars).
+   This race condition occurs because mutating webhooks do not have a guaranteed execution order. If Webhook B runs first, it adds the security context to the user's containers, and then Webhook A runs and injects the proxy sidecar (which won't have the security context). By setting `reinvocationPolicy: IfNeeded`, you instruct the API server to perform multiple passes through the mutating webhooks. If Webhook A modifies the Pod after Webhook B has already run, the API server will re-invoke Webhook B on the newly mutated object, ensuring the security context is applied to the newly injected sidecar container as well.
    </details>
 
-5. **You deploy a validating webhook with `failurePolicy: Fail` and the webhook pod crashes. What happens to all API requests that match the webhook's rules?**
+5. **A cluster administrator configures a validating webhook to strictly enforce company naming conventions on all namespaces, setting `failurePolicy: Fail`. Later that night, the node hosting the webhook server goes offline. How will this impact users trying to create new namespaces?**
    <details>
    <summary>Answer</summary>
-   All matching API requests are rejected with a webhook connection error. If the webhook matches Pods (a common pattern), no new Pods can be created in matching namespaces. This effectively makes the webhook a critical dependency of the API Server. This is why `failurePolicy: Ignore` is safer for non-security-critical webhooks, and why you should always exclude `kube-system` via `namespaceSelector`.
+   Users will be completely blocked from creating new namespaces until the webhook server is restored. Because the `failurePolicy` is set to `Fail`, the API server treats the unavailability of the webhook as an automatic rejection of the admission request. The API server prioritizes strict policy enforcement over availability in this configuration. To prevent this from causing cluster-wide outages, critical webhooks should have highly available deployments (multiple replicas across different nodes) or, if strict enforcement isn't required, use `failurePolicy: Ignore` to allow requests through during an outage.
    </details>
 
-6. **How do admission warnings work, and when should you use them?**
+6. **Your platform team wants to deprecate the use of the `latest` image tag across the cluster, but instantly blocking them with a validating webhook would break several legacy CI/CD pipelines. How can you use a webhook to prepare users for this change without causing immediate outages?**
    <details>
    <summary>Answer</summary>
-   Admission warnings are non-blocking messages returned alongside an "allowed" response. They appear as warnings in the kubectl output (yellow text). Use them for: (a) deprecation notices ("this field will be removed in v2"), (b) best practice suggestions ("using :latest tag is not recommended"), (c) informational notices ("high replica count may exceed cluster capacity"). Warnings do not block the request -- the object is still created/updated. They are ideal for soft policies.
+   You can configure a validating webhook to allow the request but return an admission warning message. When the API server processes this response, it allows the object to be saved in etcd but passes the warning message back to the client, displaying it in yellow text in the user's `kubectl` output. This allows the legacy CI/CD pipelines to continue functioning without interruption while explicitly notifying developers that their manifests violate upcoming policies. Once developers have had time to update their manifests to use pinned versions, you can switch the webhook to return a hard denial.
    </details>
 
 ---
