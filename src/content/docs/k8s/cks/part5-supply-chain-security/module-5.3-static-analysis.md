@@ -355,6 +355,18 @@ spec:
         }
 ```
 
+#### Understanding Rego Syntax
+
+To write custom policies, you need to understand how Gatekeeper evaluates Rego. Let's break down the `rego` block from the template above line-by-line:
+
+- `package k8srequiredlabels`: Defines the namespace for your Rego code. It must match the name of the ConstraintTemplate.
+- `violation[{"msg": msg}] {`: This is the entrypoint Gatekeeper looks for. If all statements inside the curly braces evaluate to `true`, a violation is generated.
+- `provided := {label | input.review.object.metadata.labels[label]}`: Extracts the labels from the resource being evaluated. `input.review.object` represents the incoming Kubernetes API request payload (the YAML you are applying).
+- `required := {label | label := input.parameters.labels[_]}`: Extracts the required labels passed from the Constraint's `parameters` block.
+- `missing := required - provided`: Uses Rego's built-in set operations to find required labels that are not present on the object.
+- `count(missing) > 0`: The actual condition. If the number of missing labels is greater than zero, the condition is true, and the evaluation continues. If false, evaluation stops, and no violation occurs.
+- `msg := sprintf("Missing required labels: %v", [missing])`: Formats the error message that will be returned to the user who attempted to apply the manifest.
+
 #### Step 2: Constraint
 
 ```yaml
