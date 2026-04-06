@@ -47,6 +47,8 @@ The first rule of database connectivity from Kubernetes: **never expose your dat
 +---------------------------+          +---------------------------+
 ```
 
+> **Stop and think**: If your pod in `us-east-1a` queries a database in `us-east-1b`, the traffic is private and secure. However, what other consequence does crossing an Availability Zone boundary have? (Hint: Think about your cloud provider's monthly billing statement).
+
 ### AWS: RDS with VPC Private Subnets
 
 On AWS, your EKS cluster and RDS instance should share the same VPC or use VPC peering. RDS instances deployed into private subnets are accessible from any resource within the VPC.
@@ -308,6 +310,8 @@ spec:
 | **transaction** | Connection returned after each transaction | Most web applications | Cannot use session-level features |
 | **statement** | Connection returned after each statement | Simple read workloads | Breaks multi-statement transactions |
 
+> **Pause and predict**: If you use `session` pooling with a modern microservice that opens and closes database connections rapidly for each HTTP request, what will happen to the backend connections on your PostgreSQL server?
+
 For 90% of Kubernetes workloads, `transaction` mode is the correct choice. It provides the best balance of connection reuse and compatibility.
 
 ---
@@ -403,6 +407,20 @@ Never make breaking schema changes in a single step. Instead:
 Phase 1: EXPAND   - Add new column (nullable or with default)
 Phase 2: MIGRATE  - Application writes to both old and new columns
 Phase 3: CONTRACT - Remove old column after all pods use new schema
+```
+
+```text
++-------------------+------------------------------------------+-----------------------+
+| Phase             | Database Schema                          | Application Behavior  |
++-------------------+------------------------------------------+-----------------------+
+| 1: EXPAND         | [ id | name | email (NEW, nullable) ]    | App v1: Writes [name] |
++-------------------+------------------------------------------+-----------------------+
+| 2: MIGRATE        | [ id | name | email ]                    | App v2: Writes both   |
+|                   | (Backfill script populates email)        |         Reads [email] |
++-------------------+------------------------------------------+-----------------------+
+| 3: CONTRACT       | [ id | email ]                           | App v3: Writes [email]|
+|                   | (name column dropped)                    |                       |
++-------------------+------------------------------------------+-----------------------+
 ```
 
 ### Kubernetes Job for Migrations
@@ -556,45 +574,45 @@ If your application in AZ-a talks to a database in AZ-b, every query and respons
 ## Quiz
 
 <details>
-<summary>1. Why should you use an ExternalName Service to point to your managed database instead of hardcoding the endpoint in application config?</summary>
+<summary>1. Your team is migrating a legacy application to Kubernetes. The application currently hardcodes the RDS endpoint `prod-db.abc123.us-east-1.rds.amazonaws.com` in its configuration files. You suggest creating a Kubernetes Service to represent the database instead. If the database is still hosted in RDS, how does introducing a Kubernetes Service improve the architecture, and what specific type of Service should you use?</summary>
 
-An ExternalName Service provides a layer of indirection. Your application connects to `db-write.production.svc.cluster.local`, and the actual database endpoint is defined in one place. If you migrate from RDS to Cloud SQL, or change regions, or switch to a different instance, you update the Service definition once rather than reconfiguring every application Deployment. This also makes it easy to swap endpoints for testing -- point the Service at a test database without touching application code.
+An ExternalName Service provides a layer of indirection, decoupling the application's configuration from the physical database location. By using an ExternalName Service, the application connects to a stable internal DNS name like `db-write.production.svc.cluster.local`. If you need to migrate the database, promote a read replica to primary, or switch to a different cloud provider, you only update the Service definition once. The application pods do not need to be reconfigured or restarted, minimizing risk and operational overhead during database maintenance.
 </details>
 
 <details>
-<summary>2. What is the difference between PgBouncer's `transaction` and `session` pool modes, and why does `transaction` mode work better for Kubernetes workloads?</summary>
+<summary>2. A high-traffic e-commerce API is experiencing latency spikes. You notice the PostgreSQL database is hitting its maximum connection limit. The API is written in Go and opens a connection, runs a quick SELECT query, and closes it for every request. You deploy PgBouncer, but the database connection count doesn't drop significantly. You realize PgBouncer is using `session` mode. Why did `session` mode fail to solve the problem, and how would switching to `transaction` mode fix it?</summary>
 
-In `session` mode, a server connection is assigned to a client for the entire session (until disconnect). In `transaction` mode, the server connection is returned to the pool after each transaction completes. Kubernetes workloads benefit from `transaction` mode because pods scale horizontally, creating many concurrent clients. Transaction pooling multiplexes hundreds of client connections over a small pool of server connections, reducing the load on the database. The tradeoff is that session-level features like PREPARE, LISTEN/NOTIFY, and SET statements do not work in transaction mode.
+In `session` mode, PgBouncer assigns a backend server connection to a client for the entire duration of the client's session. Because the Go API opens and closes connections rapidly, each request ties up a backend connection, providing minimal pooling benefits. Switching to `transaction` mode resolves this by returning the backend connection to the pool immediately after each transaction completes. This allows PgBouncer to multiplex thousands of brief client transactions over a small, stable pool of backend database connections, drastically reducing memory overhead and connection churn on the PostgreSQL server.
 </details>
 
 <details>
-<summary>3. Explain the expand-contract pattern for database schema migrations. Why is it necessary in a Kubernetes environment?</summary>
+<summary>3. Your team needs to rename the `user_status` column to `account_state` in the primary database. The lead developer plans to run `ALTER TABLE users RENAME COLUMN user_status TO account_state;` during the next Argo CD sync. You block the PR, explaining that this will cause an outage during the rolling deployment. Why will a simple rename cause an outage in Kubernetes, and how should the team apply the expand-contract pattern to execute this change safely?</summary>
 
-The expand-contract pattern splits breaking schema changes into safe phases. First, you "expand" by adding new columns or tables (backward-compatible). Then you deploy code that writes to both old and new structures. Finally, you "contract" by removing the old columns. In Kubernetes, this is necessary because rolling deployments mean old and new application versions run simultaneously. If you drop a column that old pods still reference, those pods crash immediately. The pattern ensures every version of your application can work with the current schema.
+A simple rename causes an outage because Kubernetes rolling deployments run old and new pod versions simultaneously. The old pods still running during the rollout will attempt to query the `user_status` column, which no longer exists, causing them to crash immediately. The expand-contract pattern solves this by breaking the change into phases. First, you expand by adding the new `account_state` column. Next, you deploy application code that writes to both columns. Finally, once all pods are updated and data is backfilled, you contract by removing the old `user_status` column. This ensures every version of the application can safely interact with the database schema at any given moment.
 </details>
 
 <details>
-<summary>4. What happens during an RDS Multi-AZ failover, and how does Kubernetes handle it?</summary>
+<summary>4. At 3:00 AM, the primary RDS instance in `us-east-1a` suffers a hardware failure. The database is configured for Multi-AZ, and a standby exists in `us-east-1b`. The failover completes in 60 seconds, but your Kubernetes pods continue throwing connection errors for 5 minutes before recovering. Assuming the pods are using an ExternalName Service pointing to the RDS endpoint, what caused this extended downtime, and how does Kubernetes eventually resolve the connection?</summary>
 
-During an RDS Multi-AZ failover, AWS promotes the standby instance in another AZ to primary. The DNS CNAME record for the RDS endpoint is updated to point to the new primary (this takes 60-120 seconds). Kubernetes pods using the ExternalName Service will automatically resolve to the new IP after the DNS TTL expires. During the failover window, database connections will fail. Applications must implement retry logic with exponential backoff. PgBouncer helps here by queuing client requests briefly during the failover rather than immediately returning errors.
+During an RDS Multi-AZ failover, AWS promotes the standby instance and updates the DNS CNAME record of the database endpoint to point to the new primary's IP address. However, Kubernetes pods and nodes often cache DNS lookups based on the Time-To-Live (TTL) of the record. The extended downtime occurs because the pods continue sending traffic to the old, dead IP address until their local DNS cache expires. Once the TTL expires, the pods re-resolve the ExternalName Service, receive the new IP address of the promoted instance, and successfully re-establish their database connections.
 </details>
 
 <details>
-<summary>5. How does cross-AZ data transfer affect costs when your pods and database are in different Availability Zones?</summary>
+<summary>5. Your monthly cloud bill shows a massive spike in "Cross-AZ Data Transfer" costs. Your EKS nodes are spread across `us-west-2a`, `2b`, and `2c`, while your RDS instance is primarily in `us-west-2a`. The application makes thousands of small queries per second. Why is this architecture generating data transfer charges, and what are two architectural changes you could make to reduce this specific line item on the bill?</summary>
 
-Cross-AZ data transfer costs $0.01/GB per direction on AWS and GCP (Azure is free within the same region as of 2025). For a chatty application making thousands of queries per second, this can add up to hundreds of dollars per month. The cost is bilateral -- both the query and the response incur charges. Mitigation strategies include topology-aware routing to prefer same-AZ database replicas, connection pooling to reduce round-trips, read caching, and query batching.
+Cloud providers charge for data transfer that crosses Availability Zone boundaries, even within the same region. Because your pods are distributed across three AZs but the database is in one, roughly two-thirds of your application queries and their corresponding result sets are crossing AZ boundaries, incurring bilateral charges. To reduce this cost, you can implement topology-aware routing to force pods to prefer reading from a read replica in their local AZ. Alternatively, you can implement connection pooling or application-level caching to drastically reduce the total volume of round-trips made to the database.
 </details>
 
 <details>
-<summary>6. Why does the Argo CD PreSync hook use `backoffLimit: 0` for database migration Jobs?</summary>
+<summary>6. A developer notices that a database migration Job deployed via an Argo CD PreSync hook occasionally fails due to a timeout. To ensure the deployment eventually succeeds, they propose changing the Job's `backoffLimit` from `0` to `3`. You reject this change. What is the danger of automatically retrying a failed database migration Job, and why is failing the entire deployment process the safer alternative?</summary>
 
-Setting `backoffLimit: 0` means the Job will not retry if the migration fails. This is intentional -- database migrations should not be retried automatically because a partial migration that failed midway could cause data corruption or duplicate schema changes if rerun. If the migration fails, the PreSync hook fails, which prevents Argo CD from deploying the new application version. The engineer must investigate the failure, fix the migration, and redeploy manually. This fail-fast behavior is a safety mechanism.
+Automatically retrying a database migration Job is dangerous because migrations are rarely idempotent by default. If a migration script fails halfway through—for example, it successfully creates a table but times out creating an index—retrying the Job will cause it to attempt creating the table again, resulting in a fatal error that requires manual database surgery to fix. By keeping `backoffLimit: 0`, a failure immediately stops the Argo CD sync process. This fail-fast behavior preserves the state of the database and forces an engineer to investigate the partial migration, manually rectify the schema, and safely resume the deployment.
 </details>
 
 <details>
-<summary>7. What is the dual-user rotation strategy and why is it safer than rotating a single user's password?</summary>
+<summary>7. Your security team mandates that database passwords be rotated every 30 days. You write a script that updates the password in RDS, then updates the Kubernetes Secret, and finally triggers a rolling restart of the application Deployments. During the next rotation, the application experiences 45 seconds of downtime where database authentication fails. How would implementing a dual-user rotation strategy eliminate this downtime window?</summary>
 
-The dual-user strategy maintains two database users (e.g., user_a and user_b). At any time, one is "active" (used by pods) and one is "standby." To rotate, you change the standby user's password, then update the Kubernetes Secret to point to the standby user, then do a rolling restart. Throughout this process, the old active user's password has not changed, so pods still running with old credentials continue to work. Only after all pods have rolled to the new credentials do you rotate the old user's password. Single-user rotation has a dangerous window where old pods have the old password but the database only accepts the new one.
+The downtime occurs because there is an unavoidable race condition: old pods still running during the rolling restart have the old password, but the database only accepts the new password. The dual-user rotation strategy eliminates this by maintaining two active database users. When rotation occurs, you change the password of the standby user, update Kubernetes to use the standby user, and trigger the rolling restart. Because the original user's password was never changed, the old pods continue to function perfectly while the new pods seamlessly connect using the newly rotated credentials.
 </details>
 
 ---
@@ -862,6 +880,60 @@ k run read-test --rm -it --image=postgres:16 --restart=Never -- \
 ```
 </details>
 
+### Task 6: Simulate Credential Rotation
+
+Implement a manual credential rotation to see how workloads behave when secrets change.
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# 1. Create a dummy Deployment using the secret
+cat <<EOF | k apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-worker
+  template:
+    metadata:
+      labels:
+        app: api-worker
+    spec:
+      containers:
+        - name: worker
+          image: postgres:16
+          command: ["sleep", "3600"]
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+EOF
+
+k wait --for=condition=available deployment/api-worker --timeout=30s
+
+# 2. Update the secret in Kubernetes (simulating an external rotation)
+k create secret generic db-credentials \
+  --from-literal=username=appadmin \
+  --from-literal=password=new-rotated-secret-456 \
+  --dry-run=client -o yaml | k apply -f -
+
+# 3. Notice the pod doesn't automatically get the new password
+# In a real environment, you need Reloader to trigger this automatically
+k rollout restart deployment api-worker
+k rollout status deployment api-worker
+
+# 4. Verify the new pod has the new password
+k exec deploy/api-worker -- env | grep DB_PASSWORD
+```
+</details>
+
 ### Success Criteria
 
 - [ ] ExternalName/headless Service resolves to PostgreSQL container
@@ -869,6 +941,7 @@ k run read-test --rm -it --image=postgres:16 --restart=Never -- \
 - [ ] Test pod connects through PgBouncer successfully
 - [ ] Migration Job completes and creates the `users` table
 - [ ] Read endpoint returns data from the simulated replica
+- [ ] Credential rotation successfully triggers new pod creation via rollout
 
 ### Cleanup
 
