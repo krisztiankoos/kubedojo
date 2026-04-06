@@ -138,6 +138,43 @@ k describe deploy web-app | grep -A5 Replicas
 
 Rolling updates replace Pods gradually, ensuring zero downtime.
 
+```mermaid
+graph TD
+    subgraph Deployment ["Deployment (Orchestrator)"]
+        D[web-app]
+    end
+
+    subgraph RS_New ["New ReplicaSet (v1.22)"]
+        RS2[ReplicaSet 2]
+        P4((Pod 4<br/>v1.22))
+        P5((Pod 5<br/>v1.22))
+    end
+
+    subgraph RS_Old ["Old ReplicaSet (v1.21)"]
+        RS1[ReplicaSet 1]
+        P1((Pod 1<br/>v1.21))
+        P2((Pod 2<br/>Terminating))
+    end
+
+    D -- "Scales up" --> RS2
+    D -- "Scales down" --> RS1
+
+    RS2 --> P4
+    RS2 --> P5
+    RS1 --> P1
+    RS1 -.-> P2
+    
+    classDef deploy fill:#326ce5,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef rs fill:#2b3a42,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef pod fill:#68a063,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef terminating fill:#e53935,stroke:#fff,stroke-width:2px,color:#fff,stroke-dasharray: 5 5;
+    
+    class D deploy;
+    class RS1,RS2 rs;
+    class P1,P4,P5 pod;
+    class P2 terminating;
+```
+
 ### Update Image
 
 ```bash
