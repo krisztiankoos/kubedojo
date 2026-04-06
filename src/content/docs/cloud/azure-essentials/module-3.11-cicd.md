@@ -10,7 +10,7 @@ sidebar:
 
 After completing this module, you will be able to:
 
-- **Deploy Azure DevOps pipelines with YAML-based multi-stage builds, tests, and release approvals**
+- **Design multi-stage CI/CD pipelines incorporating container builds and release approvals for platforms like Azure DevOps and GitHub Actions**
 - **Configure GitHub Actions workflows with Azure login, container builds, and AKS deployment steps**
 - **Implement deployment strategies (blue/green, canary, ring-based) using Azure DevOps environments and gates**
 - **Secure CI/CD pipelines with service connections, managed identities, and environment protection rules**
@@ -362,6 +362,8 @@ Then add to GitHub repository secrets:
 
 No secrets or passwords---OIDC handles authentication using short-lived tokens generated per workflow run.
 
+> **Stop and think**: If an OIDC token is valid for only 10 minutes, how does a pipeline that takes 45 minutes to run maintain authentication to Azure?
+
 ---
 
 ## Self-Hosted Agents and Runners
@@ -412,6 +414,8 @@ az vm create \
 
 For production, use the official **Actions Runner Controller (ARC)** on AKS, which auto-scales runners based on pending jobs.
 
+> **Pause and predict**: Why might deploying a self-hosted runner inside your production virtual network introduce new security risks compared to using Microsoft-hosted runners?
+
 ---
 
 ## Pipeline Security Best Practices
@@ -439,6 +443,8 @@ For production, use the official **Actions Runner Controller (ARC)** on AKS, whi
 | **Use branch protection rules** | Prevent direct pushes to main | Require PRs, status checks, and code review |
 
 **War Story**: A startup used a service principal with Contributor access to their production subscription, stored as a GitHub secret. An attacker submitted a pull request that modified the workflow file to echo the secret to the pipeline logs. Because the repository did not have branch protection requiring approval for workflow changes, the PR was auto-merged by a bot. The secret appeared in the workflow run logs, which were public because the repository was public. Within minutes, the attacker had Contributor access to the production subscription. The fix: OIDC (no secret to leak), environment protection rules (require approval), and branch protection (require review for workflow changes).
+
+> **Stop and think**: If you use branch protection rules to require pull request reviews, how could an attacker with Contributor access to the repository still compromise the pipeline without merging a PR?
 
 ---
 
@@ -472,39 +478,39 @@ For production, use the official **Actions Runner Controller (ARC)** on AKS, whi
 ## Quiz
 
 <details>
-<summary>1. What is OIDC federation, and why is it more secure than using a client secret for CI/CD authentication with Azure?</summary>
+<summary>1. Your team currently uses an Azure Service Principal client secret stored as a GitHub secret for CI/CD deployments. Security mandates that all static credentials be rotated every 30 days. How does migrating to OIDC federation solve this operational burden, and why does it improve the pipeline's security posture?</summary>
 
-OIDC (OpenID Connect) federation allows a CI/CD platform (GitHub Actions or Azure DevOps) to authenticate with Azure without any stored secrets. The CI/CD platform generates a short-lived OIDC token (valid for ~10 minutes) that includes claims about the workflow (repository, branch, environment). Azure Entra ID is configured to trust the CI/CD platform as an OIDC token issuer. When the pipeline presents the token, Entra ID validates it and issues an Azure access token. This is more secure than client secrets because: no secret is stored that can be leaked, tokens are ephemeral (10 minutes vs 1-2 years), tokens are scoped to the specific workflow run, and there is nothing to rotate.
+OIDC (OpenID Connect) federation allows a CI/CD platform to authenticate with Azure without any stored secrets. The CI/CD platform generates a short-lived OIDC token that includes claims about the workflow. Azure Entra ID is configured to trust the CI/CD platform as an OIDC token issuer. When the pipeline presents the token, Entra ID validates it and issues an Azure access token. This eliminates manual rotation because no secret is stored that can be leaked, tokens are ephemeral, and they are scoped to the specific workflow run.
 </details>
 
 <details>
-<summary>2. In a GitHub Actions workflow, what does the `permissions: id-token: write` setting do?</summary>
+<summary>2. You are configuring a new GitHub Actions workflow to deploy to Azure using OIDC. However, the `azure/login` step fails with an error stating it cannot retrieve an OIDC token. You verify the Entra ID federated credential is correct. What configuration is likely missing from your workflow YAML, and why is this required?</summary>
 
-This setting grants the workflow permission to request an OIDC token from GitHub's token endpoint. Without this permission, the `azure/login` action cannot generate the JWT needed for OIDC authentication with Azure. By default, GitHub workflows do not have this permission, so you must explicitly request it. This is a security feature: only workflows that explicitly declare they need OIDC token generation can request one. You should set this at the job level (not the workflow level) to follow the principle of least privilege, granting token generation only to the jobs that need Azure access.
+The workflow is likely missing the `permissions: id-token: write` setting at the job or workflow level. This setting grants the workflow permission to request an OIDC token from GitHub's token endpoint. Without this permission, the `azure/login` action cannot generate the JWT needed for OIDC authentication with Azure. By default, GitHub workflows do not have this permission to enforce the principle of least privilege. You must explicitly declare that the workflow needs OIDC token generation capabilities to ensure secure access control.
 </details>
 
 <details>
-<summary>3. Why would you use a self-hosted runner instead of a GitHub-hosted runner?</summary>
+<summary>3. Your company is building a container image that must pull proprietary dependencies from an internal Nexus repository hosted on an Azure Virtual Network without public internet access. Since GitHub-hosted runners operate on public IPs, how can you execute this build process successfully, and what new responsibilities does this introduce?</summary>
 
-Use self-hosted runners when you need to: access resources in a private VNet (private endpoints, internal databases) that hosted runners cannot reach; use specialized hardware (GPU, high-memory, ARM architecture); maintain persistent caches for large dependencies (node_modules, Maven cache) to avoid re-downloading every run; comply with regulations that require builds to run in your controlled environment; or reduce build times with pre-installed tools and warm caches. The tradeoffs are: you must manage runner security, patching, and scaling. Self-hosted runners persist between jobs, so you must ensure proper isolation to prevent one job from accessing another's data.
+To access the internal Nexus repository, you must deploy a self-hosted runner within your Azure Virtual Network. This runner operates inside your private network boundary, allowing it to communicate with internal resources that Microsoft-hosted runners cannot reach. However, choosing self-hosted runners shifts the operational burden to your team. You become responsible for managing the runner's underlying virtual machine, applying security patches, and ensuring proper isolation between pipeline jobs to prevent data contamination. Additionally, you must implement scaling mechanisms, such as using Actions Runner Controller (ARC) on AKS, to handle fluctuating CI/CD workloads efficiently.
 </details>
 
 <details>
-<summary>4. Explain the purpose of GitHub Environments and protection rules in a deployment pipeline.</summary>
+<summary>4. A junior developer accidentally pushes a commit directly to the `main` branch that drops all tables in the database. The automated pipeline successfully builds the code and deploys it to the staging environment. How can you configure your CI/CD pipeline to ensure this destructive change does not automatically deploy to the production environment?</summary>
 
-GitHub Environments define deployment targets (staging, production) with configurable protection rules. Protection rules can require: manual approval from designated reviewers before deployment proceeds, specific branches (only main can deploy to production), a wait timer (delay deployment by N minutes), and environment-specific secrets (production secrets are only available in the production environment). This prevents accidental or unauthorized production deployments. Even if someone pushes malicious code to main, the production deployment requires a human reviewer to approve it. Environment secrets are also scoped: a staging pipeline cannot access production secrets even if the workflow is modified.
+You should utilize GitHub Environments to define deployment targets with specific protection rules, such as required manual approvals. By configuring the production environment to require designated reviewers, the pipeline will pause after the staging deployment and wait for human authorization. This acts as a critical safety gate, giving the team time to verify the staging deployment and realize the destructive nature of the commit before it reaches users. Furthermore, environments allow you to scope secrets, ensuring that the staging pipeline step cannot accidentally or maliciously access production database credentials. This combination of approvals and secret scoping prevents unauthorized or accidental production changes.
 </details>
 
 <details>
-<summary>5. How does pinning GitHub Actions to a commit SHA prevent supply chain attacks?</summary>
+<summary>5. Your pipeline uses a popular third-party GitHub Action referenced via the tag `@v2`. An attacker gains control of the third-party repository, injects a cryptocurrency miner into the action's code, and moves the `v2` tag to point to this malicious commit. How could you have designed your pipeline to prevent this supply chain attack from executing the malware?</summary>
 
-When you reference an action by tag (e.g., `actions/checkout@v4`), the tag is a mutable pointer---it can be moved to point to any commit. An attacker who compromises the action's repository can move the tag to a malicious commit, and all workflows using that tag will execute the malicious code. When you pin to a commit SHA (e.g., `actions/checkout@a12a3943...`), the reference is immutable---it always points to the exact same code. Even if the repository is compromised, the SHA cannot be changed to point to different code. Use tools like Dependabot or Renovate to automatically update pinned SHAs when new versions are released.
+You could have prevented this attack by referencing the third-party action using its immutable commit SHA instead of a mutable version tag. When you reference an action by a tag, the pointer can be moved to any commit, meaning your pipeline will unknowingly pull down the newly tagged malicious code. Pinning to a specific commit SHA guarantees that the pipeline always executes the exact same code, regardless of repository compromises or tag manipulations. Even if an attacker modifies the action's repository, the SHA remains cryptographically tied to the original, safe code. Teams can use automated dependency management tools to safely update these SHAs when new, verified versions are released.
 </details>
 
 <details>
-<summary>6. You need a pipeline that builds a Docker image, pushes it to ACR, and deploys to Container Apps. It must work for both staging and production. How would you design this?</summary>
+<summary>6. You are tasked with consolidating three separate, redundant GitHub Actions workflows into a single unified pipeline. This new pipeline must build a Docker image upon a push to the main branch, deploy it to a staging Azure Container App, run automated tests, and finally deploy to the production Container App only after management approval. How would you design the workflow jobs and Entra ID authentication to achieve this securely?</summary>
 
-Use a single GitHub Actions workflow with multiple jobs and environments. The build job runs on every push to main: it logs into Azure via OIDC, builds the image, tags it with the Git SHA, and pushes to ACR. The staging deploy job depends on the build job, runs in the `staging` environment, and deploys the image to the staging Container App. The production deploy job depends on the staging job, runs in the `production` environment (which has required reviewers configured), and deploys the same image tag to the production Container App. Use environment-specific variables for resource names. The OIDC federated credential should have separate `subject` claims for each environment, allowing different RBAC scopes (e.g., staging gets Contributor on staging RG, production gets Contributor on production RG).
+You should design a single workflow with three sequential jobs: a build job, a staging deploy job, and a production deploy job. The staging and production jobs must be associated with their respective GitHub Environments to leverage environment-specific variables and enforce the required manual approval gate on the production environment. For secure authentication, you should configure separate OIDC federated credentials in Entra ID for both the staging and production environments by matching the `subject` claims to those specific environments. This approach ensures the principle of least privilege, as the staging job will only receive an Azure token with Contributor access to the staging resource group. By scoping access at the environment level, you completely isolate the pipeline stages and prevent staging compromise from affecting production infrastructure.
 </details>
 
 ---
