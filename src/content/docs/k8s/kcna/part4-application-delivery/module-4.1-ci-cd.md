@@ -25,7 +25,7 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-Modern software delivery requires automation. **Continuous Integration** and **Continuous Delivery/Deployment** (CI/CD) are foundational practices for getting code from development to production reliably. KCNA tests your understanding of these concepts.
+Imagine launching a new feature, only for it to crash the entire application, costing your company hundreds of thousands of dollars in lost revenue and reputational damage. The stakes of software delivery are higher than ever. Modern software development isn't just about writing code; it's about *reliably and rapidly delivering* that code to users. **Continuous Integration** and **Continuous Delivery/Deployment** (CI/CD) are foundational practices designed to prevent such disasters by automating the journey of code from development to production, ensuring quality and speed. KCNA tests your understanding of these critical concepts because they underpin effective, modern cloud-native operations.
 
 ---
 
@@ -54,8 +54,6 @@ Modern software delivery requires automation. **Continuous Integration** and **C
 │  ─────────────────────────────────────────────────────────  │
 │  Automatically deploy every change to production         │
 │  No manual intervention                                   │
-│                                                             │
-│  CI → Package → Stage → [Auto Deploy]                    │
 │                                                             │
 │  The difference:                                          │
 │  • Continuous Delivery: CAN deploy at any time           │
@@ -119,6 +117,44 @@ Modern software delivery requires automation. **Continuous Integration** and **C
 ---
 
 > **Pause and predict**: Continuous Delivery means code is always ready to deploy (manual trigger). Continuous Deployment means every change deploys automatically. Which one requires more confidence in your automated tests? What could happen if you adopt Continuous Deployment with inadequate test coverage?
+
+## Container Registries
+
+Container images are fundamental to modern cloud-native applications. Once your CI pipeline has successfully built and tested an image (the **PACKAGE** stage), it needs a place to be stored and managed before deployment. This is the role of a container registry.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│              CONTAINER REGISTRIES                           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  Where container images are stored                        │
+│                                                             │
+│  CI builds image → Push to registry → K8s pulls image    │
+│                                                             │
+│  Public registries:                                       │
+│  ─────────────────────────────────────────────────────────  │
+│  • Docker Hub (docker.io)                                │
+│  • GitHub Container Registry (ghcr.io)                   │
+│  • Google Container Registry (gcr.io)                    │
+│  • Quay.io                                               │
+│                                                             │
+│  Private registries:                                      │
+│  ─────────────────────────────────────────────────────────  │
+│  • Harbor (CNCF Graduated)                               │
+│  • AWS ECR                                               │
+│  • Azure ACR                                             │
+│  • Google Artifact Registry                              │
+│                                                             │
+│  Harbor features:                                         │
+│  • Vulnerability scanning                                 │
+│  • Image signing                                          │
+│  • Role-based access                                      │
+│  • Replication                                            │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
 
 ## CI/CD Benefits
 
@@ -239,10 +275,15 @@ Modern software delivery requires automation. **Continuous Integration** and **C
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+> **Analogy**: Think of a busy restaurant kitchen. In a **traditional push-based** system, the chef (CI Server) cooks a dish and then *forces* it onto a waiting customer's (Kubernetes Cluster) table. This means the chef needs direct access to every customer's table, and if the chef is messy or makes a mistake, the customer directly experiences it.
+>
+> In a **GitOps pull-based** system, the chef cooks the dish, places it on a clean pass (your Git repository), and a dedicated waiter (Argo CD or Flux, running inside the cluster) constantly checks the pass. The waiter only takes dishes *when the customer's table is ready* and matches the order specified on the pass. The chef never directly touches the customer's table. This approach makes the delivery process more secure, transparent, and ensures the "customer's table" is always in the desired state.
 
 ---
 
 ## Deployment Strategies
+
+When it's time to actually roll out a new version of your application to production, how do you do it? The way you approach this "deployment" aspect of Continuous Delivery/Deployment is crucial for minimizing downtime, reducing risk, and ensuring a smooth user experience. Let's explore common deployment strategies.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -295,42 +336,6 @@ Modern software delivery requires automation. **Continuous Integration** and **C
 | **Blue-Green** | None | Instant | 2x during deploy | Medium |
 | **Canary** | None | Fast | Slight increase | High |
 | **Recreate** | Yes | Slow | Normal | Lowest |
-
----
-
-## Container Registries
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│              CONTAINER REGISTRIES                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Where container images are stored                        │
-│                                                             │
-│  CI builds image → Push to registry → K8s pulls image    │
-│                                                             │
-│  Public registries:                                       │
-│  ─────────────────────────────────────────────────────────  │
-│  • Docker Hub (docker.io)                                │
-│  • GitHub Container Registry (ghcr.io)                   │
-│  • Google Container Registry (gcr.io)                    │
-│  • Quay.io                                               │
-│                                                             │
-│  Private registries:                                      │
-│  ─────────────────────────────────────────────────────────  │
-│  • Harbor (CNCF Graduated)                               │
-│  • AWS ECR                                               │
-│  • Azure ACR                                             │
-│  • Google Artifact Registry                              │
-│                                                             │
-│  Harbor features:                                         │
-│  • Vulnerability scanning                                 │
-│  • Image signing                                          │
-│  • Role-based access                                      │
-│  • Replication                                            │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
 
 ---
 
