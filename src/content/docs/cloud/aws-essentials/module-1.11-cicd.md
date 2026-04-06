@@ -150,6 +150,8 @@ Let's break down the important parts:
 
 **Cache** speeds up subsequent builds by preserving directories like pip's download cache or Docker layers.
 
+> **Stop and think**: The buildspec.yml example caches `/root/.cache/pip/**/*` and `/var/lib/docker/**/*`. While caching significantly accelerates build times, what architectural or security risks might emerge if your CI pipeline relies on a stale Docker layer cache for months without invalidation, particularly regarding base OS dependencies?
+
 ### Creating a CodeBuild Project
 
 ```bash
@@ -299,6 +301,8 @@ Hooks:
 ```
 
 Each hook references a Lambda function that CodeDeploy invokes at that point in the deployment. If any hook function returns failure, CodeDeploy rolls back automatically.
+
+> **Pause and predict**: In a CodeDeploy Blue/Green deployment, traffic is shifted to the new Green environment. If a `BeforeAllowTraffic` lifecycle hook Lambda function fails or times out due to a missing IAM permission, how will CodeDeploy handle the active ALB listener rules, and will any customer traffic be routed to the Green tasks?
 
 ### Automatic Rollback
 
@@ -683,6 +687,8 @@ The critical trust policy condition is `StringLike` on the `sub` claim. This res
 | `repo:org/*:ref:refs/heads/main` | Main branch of any repo in the org |
 | `repo:org/myapp:environment:production` | Only the "production" environment |
 
+> **Stop and think**: The OIDC trust policy example strictly matches the `sub` claim to a specific repository and branch (`repo:YOUR_ORG/myapp:ref:refs/heads/main`). If you omitted the branch restriction (`:ref:refs/heads/main`), what specific attack vector would this open up regarding untrusted code execution in your AWS environment?
+
 ---
 
 ## Decision Matrix: CodePipeline vs GitHub Actions
@@ -721,39 +727,39 @@ There is no single right answer. Many teams use a hybrid: GitHub Actions for CI 
 ## Quiz
 
 <details>
-<summary>1. What is the difference between the CodePipeline ECS deploy action and the CodeDeployToECS deploy action?</summary>
+<summary>1. Your team wants to deploy a new microservice. You need the ability to roll back instantly if error rates spike. Should you use the CodePipeline ECS deploy action or the CodeDeployToECS deploy action?</summary>
 
-The **ECS deploy action** (`provider: ECS`) performs a standard rolling update -- it updates the ECS service's task definition and lets ECS replace tasks gradually. The **CodeDeployToECS action** (`provider: CodeDeployToECS`) uses AWS CodeDeploy to perform a blue/green deployment with traffic shifting. CodeDeployToECS provisions a new set of tasks (green), validates them with optional lifecycle hooks, then shifts ALB traffic from the old tasks (blue) to the new ones. CodeDeployToECS supports canary and linear traffic shifting, automatic rollback on CloudWatch alarms, and a manual approval window before cutting over full traffic. Use the ECS action for non-critical services; use CodeDeployToECS for production workloads where rollback speed matters.
+The **ECS deploy action** performs a standard rolling update, which replaces tasks gradually but does not provide an instant, traffic-shifting rollback mechanism if errors occur. In your scenario, you should use the **CodeDeployToECS action**, which provisions a completely new set of "green" tasks and shifts traffic away from the "blue" tasks at the ALB level. This strategy gives you the ability to monitor error rates during the shift and instantly route 100% of traffic back to the blue tasks if a spike occurs. Furthermore, CodeDeploy integrates directly with CloudWatch Alarms to automate this rollback, completely removing human reaction time from the incident response. Using the standard ECS action would require a full re-deployment to roll back, causing prolonged downtime.
 </details>
 
 <details>
-<summary>2. Why does OIDC federation eliminate the need for IAM access keys in GitHub Actions?</summary>
+<summary>2. A security audit flags your GitHub repository for storing AWS IAM access keys as long-lived secrets to deploy your application. You propose migrating to OIDC federation. How does this architectural shift resolve the auditor's security concerns?</summary>
 
-With OIDC federation, GitHub's identity provider issues a short-lived JWT token that contains claims about the workflow (repository name, branch, actor). AWS IAM is configured to trust GitHub's OIDC provider and validate these tokens. When the GitHub Actions workflow calls `AssumeRoleWithWebIdentity`, AWS verifies the token's signature against GitHub's public keys and checks the claims against the IAM role's trust policy conditions. If everything matches, AWS returns temporary credentials (valid for about 15 minutes). No long-lived access key or secret key is stored anywhere -- not in GitHub Secrets, not in the repository, not in environment variables. This eliminates the risk of key leakage and removes the operational burden of rotating keys.
+With OIDC federation, GitHub's identity provider issues a short-lived JSON Web Token (JWT) that contains claims about the workflow executing the deployment. AWS IAM is configured to mathematically verify this token's signature and check its claims against the role's trust policy before returning temporary STS credentials. Because these credentials are generated dynamically and expire automatically after a short period (typically 15 to 60 minutes), there is no static key file that can be committed to source control or leaked in build logs. This architectural shift resolves the auditor's concerns by eliminating long-lived secrets entirely, removing both the risk of permanent credential theft and the operational overhead of rotating keys.
 </details>
 
 <details>
-<summary>3. A CodeBuild build succeeds but the Docker image is not pushed to ECR. The push command is in the post_build phase. What happened?</summary>
+<summary>3. During a critical hotfix, your CodeBuild logs show that the unit tests in the `build` phase failed. However, the `post_build` phase still attempted to push an image to ECR, causing confusion. Why did the pipeline attempt to push the image despite test failures, and how can you prevent this?</summary>
 
-The `post_build` phase runs regardless of whether the `build` phase succeeded or failed. If the `build` phase failed (perhaps a test failed or the Docker build had an error), the `post_build` phase still executes, but the Docker image was never built. The push command runs, tries to push a nonexistent image, and fails -- but since `post_build` already has a "build failed" status, this failure may not be prominently displayed. The fix is to check the `$CODEBUILD_BUILD_SUCCEEDING` environment variable at the start of `post_build` and skip the push if it equals `0`. Alternatively, move the push command to the end of the `build` phase.
+By design, CodeBuild executes the `post_build` phase regardless of whether the `build` phase succeeded or failed. Because your `build` phase failed, the Docker image was never successfully constructed, but the `post_build` commands still attempted to execute the `docker push` operation. This behavior ensures that cleanup tasks or failure notifications can always run, but it can lead to confusing logs if you assume execution stops immediately upon failure. To prevent this, you must explicitly check the `$CODEBUILD_BUILD_SUCCEEDING` environment variable at the beginning of the `post_build` phase and conditionally skip the push command if the value is `0`. Alternatively, the push command can be moved to the end of the `build` phase, which does halt on failure.
 </details>
 
 <details>
-<summary>4. Your OIDC trust policy uses "StringLike": "repo:myorg/*". Why is this dangerous?</summary>
+<summary>4. You are reviewing a pull request for an OIDC trust policy that uses `"StringLike": "repo:myorg/*"`. The developer argues this is efficient because it allows all 50 of the organization's repositories to use the same IAM deployment role. Why should you reject this PR from a security standpoint?</summary>
 
-This condition allows **any repository** in the `myorg` GitHub organization to assume the IAM role. If a less-critical repository (say, a documentation site or an internal tool) is compromised -- through a malicious pull request, a compromised dependency, or a disgruntled contributor -- the attacker can use that repository's GitHub Actions workflow to assume the IAM role and access whatever AWS resources the role permits. The principle of least privilege demands that each role's trust policy specifies the exact repository and ideally the exact branch or environment. Use `repo:myorg/myapp:ref:refs/heads/main` to restrict to a single repo's main branch, and create separate roles for separate repositories.
+From a security standpoint, using a wildcard for the repository in the `sub` claim violates the principle of least privilege by allowing any repository in the organization to assume the production deployment role. If an attacker or a disgruntled employee compromises a low-security internal tool repository, they can modify its GitHub Actions workflow to assume this shared IAM role. Once assumed, the attacker gains full access to the AWS resources permitted by that role, potentially allowing them to modify production infrastructure or exfiltrate data. To secure the federation, the trust policy must explicitly scope access to the specific repository and branch (e.g., `repo:myorg/myapp:ref:refs/heads/main`) that legitimately requires the permissions.
 </details>
 
 <details>
-<summary>5. What is the imagedefinitions.json file, and when do you need it?</summary>
+<summary>5. You have configured a CodePipeline with a standard ECS deploy action, but the pipeline is failing with an error about missing artifact configurations. You are currently passing the raw Docker image URI as an output variable from CodeBuild. What missing file is preventing the ECS deploy action from knowing which image to deploy, and what is its purpose?</summary>
 
-`imagedefinitions.json` is a JSON file that tells the CodePipeline ECS deploy action which container image to use. Its format is an array of objects: `[{"name":"container-name","imageUri":"123456789012.dkr.ecr.us-east-1.amazonaws.com/myapp:abc123"}]`. The `name` field must match the container name in your ECS task definition. You need this file when using the **standard ECS deploy action** in CodePipeline. When using **CodeDeployToECS** (blue/green), you instead need an `appspec.yml` and optionally a `taskdef.json` template. This distinction is a common source of confusion -- the wrong file format for the wrong deploy provider causes cryptic deployment failures.
+The `imagedefinitions.json` file is a required artifact for the standard CodePipeline ECS deploy action because the action cannot parse raw string outputs to know which container image to update in the task definition. This JSON file must contain an array of objects specifying the exact container name (as defined in your ECS task definition) and the newly built image URI (e.g., `[{"name":"my-container","imageUri":".../myapp:abc123"}]`). Without this file mapping the logical container name to the physical image artifact, the deployment stage fails because it does not know how to generate the new task definition revision. It serves as the critical translation layer between the build phase's output and the deployment phase's input requirements.
 </details>
 
 <details>
-<summary>6. How does CodeDeploy's canary deployment strategy reduce blast radius compared to all-at-once?</summary>
+<summary>6. Your e-commerce site is launching a major checkout page redesign. Management is terrified of a bug preventing all users from checking out, but they want to deploy during business hours. How does choosing a `Canary10Percent5Minutes` strategy over an `AllAtOnce` strategy specifically mitigate their concerns?</summary>
 
-A canary deployment (e.g., `CodeDeployDefault.ECSCanary10Percent5Minutes`) shifts only 10% of traffic to the new version initially. During the 5-minute wait period, CloudWatch Alarms monitor error rates, latency, and other health metrics. If alarms trigger, CodeDeploy automatically rolls back, and only 10% of users were ever exposed to the bad deployment. With an all-at-once strategy, 100% of traffic shifts immediately, meaning all users are affected if the deployment is faulty. The canary approach gives you a validation window with real production traffic at minimal risk -- you catch regressions before they affect your entire user base.
+A canary deployment reduces the blast radius by initially routing only a small fraction of customer traffic (e.g., 10%) to the new checkout page, rather than exposing all users simultaneously. During the 5-minute canary window, CodeDeploy actively monitors predefined CloudWatch Alarms for issues like HTTP 500 errors or elevated latency. If a critical bug is present, only the 10% of users in the canary group will experience the failure, and CodeDeploy will automatically halt the deployment and roll traffic back to the stable version. In contrast, an `AllAtOnce` deployment would immediately subject 100% of your business traffic to the bug, maximizing the financial impact and customer frustration before a manual rollback could be initiated.
 </details>
 
 ---
