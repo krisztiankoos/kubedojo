@@ -342,6 +342,14 @@ spec:
 
 Karpenter tries the higher-weight NodePool first. If Spot capacity is unavailable (InsufficientInstanceCapacity), it falls back to On-Demand automatically.
 
+### Compute Savings Plans
+
+While Spot instances offer the deepest discounts (up to 90%), they are not suitable for stateful, singleton, or latency-sensitive workloads that cannot tolerate interruptions. For these On-Demand workloads, AWS Compute Savings Plans provide the next best optimization.
+
+By committing to a consistent amount of compute usage (e.g., $10/hour) for a 1- or 3-year term, you can reduce On-Demand costs by up to 50%. Savings Plans apply automatically across instance families, sizes, and regions. This flexibility is critical for Kubernetes clusters using Karpenter, as the specific instance types provisioned will constantly change based on dynamic bin-packing decisions.
+
+> **Stop and think**: If Karpenter provisions a Spot instance for your workload and AWS reclaims it with a two-minute warning, how does your application ensure zero downtime? (Hint: Think about PodDisruptionBudgets, replicas, and the pod lifecycle.)
+
 ---
 
 ## Control Plane Logging
@@ -489,6 +497,8 @@ sum(kube_node_status_condition{condition="Ready", status="true"} == 0) by (node)
 histogram_quantile(0.99, sum(rate(karpenter_provisioner_scheduling_duration_seconds_bucket[5m])) by (le))
 ```
 
+> **Pause and predict**: You notice that `kube_pod_container_status_restarts_total` is rapidly increasing for your core API namespace, but `node_cpu_utilization` is completely normal. What might be causing the pods to restart if it isn't node-level resource starvation? (Hint: Think about memory limits, liveness probes, or application-level crashes.)
+
 ---
 
 ## Cost Allocation with Kubecost and OpenCost
@@ -605,6 +615,23 @@ The "idle" cost represents resources (CPU, memory) that are provisioned but not 
 
 ---
 
+## EKS Upgrade Runbooks
+
+Kubernetes releases minor versions three times a year, and AWS supports each EKS version for 14 months (with extended support available at an additional cost). Falling behind means risking security vulnerabilities and losing community support. A production upgrade runbook ensures safe, zero-downtime cluster upgrades.
+
+### The Standard Upgrade Sequence
+
+1. **Pre-flight API Checks**: Verify that no deprecated or removed Kubernetes APIs are in use by your manifests or Helm charts (using open-source tools like `pluto` or `kubent`). Update your CI/CD pipelines to deploy the new API versions.
+2. **Control Plane Upgrade**: Trigger the EKS control plane upgrade via the AWS API, CLI, or Terraform. This process takes 10-20 minutes. AWS manages a highly available control plane, so API requests may experience slight latency, but running pods are unaffected.
+3. **Core Add-on Upgrades**: Update the Amazon VPC CNI, CoreDNS, and kube-proxy add-ons to the specific versions recommended for your new Kubernetes control plane version.
+4. **Data Plane (Node) Rotation**: 
+   - **With Karpenter**: If using an AMI alias like `al2023@latest` in your `EC2NodeClass`, Karpenter automatically discovers the latest EKS Optimized AMI for the new control plane version. You can trigger rotation by setting `expireAfter: 1m` temporarily or using Karpenter's node drift feature, which automatically replaces nodes when the underlying AMI changes.
+   - **With Managed Node Groups**: Trigger a rolling update. EKS will automatically cordon, drain, and replace nodes one by one.
+
+> **Stop and think**: Why must you upgrade the EKS control plane *before* upgrading the worker nodes? (Hint: The Kubernetes version skew policy dictates compatibility rules between the kube-apiserver and the kubelet running on nodes.)
+
+---
+
 ## Did You Know?
 
 1. Karpenter evaluates over 600 EC2 instance types when deciding what to launch. For each set of pending pods, it simulates packing them onto every compatible instance type, calculates the cost, and selects the cheapest option. This evaluation happens in milliseconds thanks to an in-memory instance type database that Karpenter refreshes from the EC2 pricing API every 6 hours.
@@ -635,13 +662,13 @@ The "idle" cost represents resources (CPU, memory) that are provisioned but not 
 ## Quiz
 
 <details>
-<summary>Question 1: Why is Karpenter significantly faster than Cluster Autoscaler at provisioning new nodes?</summary>
+<summary>Question 1: During a massive traffic spike, your application needs 50 new nodes. With Cluster Autoscaler, this took 8 minutes, causing an outage. You switch to Karpenter and it takes 45 seconds. What architectural difference allows Karpenter to provision nodes so much faster in this scenario?</summary>
 
 Cluster Autoscaler works by adjusting the desired capacity of existing Auto Scaling Groups. It must: (1) detect pending pods, (2) evaluate which ASG to scale, (3) increment the ASG desired count, (4) wait for the ASG to launch an instance. This involves multiple AWS API calls with propagation delays. Karpenter bypasses ASGs entirely and calls the **EC2 Fleet API directly**, requesting a specific instance type in a specific subnet. It also pre-calculates the optimal instance type based on pending pod requirements, eliminating the trial-and-error of ASG scaling. The result is 30-90 seconds vs 3-10 minutes.
 </details>
 
 <details>
-<summary>Question 2: You have a Karpenter NodePool that allows both Spot and On-Demand. How does Karpenter decide which to use for a specific pod?</summary>
+<summary>Question 2: You configure a Karpenter NodePool for a batch processing job and include both `spot` and `on-demand` in the capacity-type requirements. When 100 pending batch pods appear, how does Karpenter decide whether to launch Spot or On-Demand instances to fulfill the request?</summary>
 
 Karpenter evaluates the cost of both capacity types for each pending pod batch. It first attempts to provision **Spot instances** because they are cheaper. If Spot capacity is unavailable for the requested instance types (InsufficientInstanceCapacity error from EC2), Karpenter automatically falls back to **On-Demand**. You can influence this behavior using NodePool `weight` -- create a Spot-preferred NodePool with weight 100 and an On-Demand fallback NodePool with weight 10. Karpenter tries higher-weight NodePools first. Pods can also force On-Demand using `nodeSelector: {karpenter.sh/capacity-type: on-demand}`.
 </details>
@@ -665,15 +692,15 @@ When a Spot interruption notice arrives, Karpenter (or the AWS Node Termination 
 </details>
 
 <details>
-<summary>Question 6: What is the difference between Container Insights metrics and Prometheus metrics for EKS observability? When would you use each?</summary>
+<summary>Question 6: Your startup just launched and needs robust EKS monitoring. The platform team is debating between enabling CloudWatch Container Insights or deploying a self-managed Prometheus stack. What scenario or cluster characteristics would make Prometheus the better choice?</summary>
 
 **Container Insights** sends metrics to CloudWatch as custom metrics. It provides pre-built dashboards, integrates with CloudWatch Alarms, and requires no infrastructure to run (just the agent DaemonSet). However, it charges per-metric ($0.30/metric/month) and can become expensive for large clusters ($1,500-3,000/month). **Prometheus** is an open-source metrics system that stores metrics locally (or in AMP) with powerful PromQL querying. It is free to run (self-managed) or lower-cost (AMP charges $0.03/10M samples). Use Container Insights for small clusters (under 20 nodes) or teams that want zero-ops monitoring. Use Prometheus for larger clusters, teams that need custom metrics, or organizations with existing Grafana dashboards.
 </details>
 
 <details>
-<summary>Question 7: Why is it critical to set resource requests on pods when using Karpenter?</summary>
+<summary>Question 7: A developer deploys a new memory-intensive application to your Karpenter-managed EKS cluster but forgets to define CPU and memory requests in the pod spec. What will happen when Karpenter attempts to provision capacity for these pods?</summary>
 
-Karpenter uses pod **resource requests** (not limits) to determine what instance type to provision. If a pod has no CPU or memory request, Karpenter assumes it needs zero resources and may pack it onto an already-full node, leading to resource contention and OOM kills. Without accurate requests, Karpenter also cannot effectively bin-pack pods -- it might provision a `m6i.2xlarge` when a `m6i.large` would suffice, wasting money. Furthermore, the Kubernetes scheduler uses requests to make scheduling decisions. Pods without requests are treated as "BestEffort" QoS class and are the first to be evicted under memory pressure. Always set resource requests that reflect actual usage, and use VPA recommendations to find the right values.
+Karpenter uses pod **resource requests** (not limits) to determine what instance type to provision. If a pod has no CPU or memory request, Karpenter assumes it needs zero resources and may pack it onto an already-full node, leading to severe resource contention and OOM (Out of Memory) kills. Without accurate requests, Karpenter cannot effectively bin-pack pods—it might provision the wrong instance sizes, wasting money. Furthermore, the Kubernetes scheduler treats pods without requests as "BestEffort", making them the first to be evicted under node pressure. Always set resource requests that reflect actual usage.
 </details>
 
 ---
