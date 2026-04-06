@@ -456,6 +456,15 @@ k delete svc probe-demo
 
 ### Drill 1: HTTP Liveness Probe (Target: 2 minutes)
 
+**Objective**: Create a pod named `drill1` running the `nginx` image with an HTTP liveness probe.
+**Constraints**:
+- The probe should check the `/` path on port 80.
+- It should wait 5 seconds before the first check.
+- It should run every 10 seconds.
+
+<details>
+<summary>Solution</summary>
+
 ```bash
 # Create pod with HTTP liveness probe
 cat << 'EOF' | k apply -f -
@@ -481,8 +490,18 @@ k describe pod drill1 | grep Liveness
 # Cleanup
 k delete pod drill1
 ```
+</details>
 
 ### Drill 2: Exec Probe (Target: 2 minutes)
+
+**Objective**: Create a pod named `drill2` running the `busybox` image that executes `touch /tmp/healthy && sleep 3600` on startup. Configure an exec liveness probe.
+**Constraints**:
+- The probe should run the command `cat /tmp/healthy`.
+- It should wait 5 seconds before the first check.
+- It should run every 5 seconds.
+
+<details>
+<summary>Solution</summary>
 
 ```bash
 # Create pod with exec probe
@@ -511,8 +530,18 @@ k get pod drill2
 # Cleanup
 k delete pod drill2
 ```
+</details>
 
 ### Drill 3: TCP Probe (Target: 2 minutes)
+
+**Objective**: Create a pod named `drill3` running the `redis` image with a TCP socket liveness probe.
+**Constraints**:
+- The probe should check port 6379.
+- It should wait 10 seconds before the first check.
+- It should run every 5 seconds.
+
+<details>
+<summary>Solution</summary>
 
 ```bash
 # Create pod with TCP probe
@@ -538,8 +567,19 @@ k describe pod drill3 | grep Liveness
 # Cleanup
 k delete pod drill3
 ```
+</details>
 
 ### Drill 4: Readiness Probe (Target: 3 minutes)
+
+**Objective**: Create a deployment named `drill4` with 2 replicas running the `nginx` image and expose it as a service. Configure an HTTP readiness probe.
+**Constraints**:
+- The probe should check the `/` path on port 80.
+- It should wait 2 seconds before the first check.
+- It should run every 3 seconds.
+- The service should expose port 80.
+
+<details>
+<summary>Solution</summary>
 
 ```bash
 # Create deployment with readiness probe
@@ -579,8 +619,20 @@ k get endpoints drill4
 k delete deploy drill4
 k delete svc drill4
 ```
+</details>
 
 ### Drill 5: Combined Probes (Target: 4 minutes)
+
+**Objective**: Create a pod named `drill5` running the `nginx` image that includes startup, liveness, and readiness probes, and expose it as a service.
+**Constraints**:
+- All probes should be HTTP GET probes checking the `/` path on port 80.
+- **Startup probe**: Allow up to 30 failures, checking every 10 seconds.
+- **Liveness probe**: Check every 10 seconds.
+- **Readiness probe**: Check every 5 seconds.
+- The pod should have the label `app: drill5`.
+
+<details>
+<summary>Solution</summary>
 
 ```bash
 # Create pod with startup, liveness, and readiness
@@ -625,10 +677,25 @@ k get ep drill5
 # Cleanup
 k delete pod drill5 svc drill5
 ```
+</details>
 
 ### Drill 6: Failing Probe Scenario (Target: 5 minutes)
 
-**Scenario**: Debug a pod that keeps restarting.
+**Scenario**: You are tasked with debugging a pod that keeps restarting due to a misconfigured liveness probe, and then fixing it.
+
+**Objective**:
+1. First, create a pod with an intentionally broken liveness probe (pointing to `/nonexistent`).
+2. Observe the pod's behavior and diagnose the issue using Kubernetes commands.
+3. Fix the pod so that the liveness probe checks the correct path (`/`) and works successfully.
+
+**Constraints for initial broken pod**:
+- Name: `drill6`
+- Image: `nginx`
+- Liveness Probe: HTTP GET to `/nonexistent` on port 80.
+- Probe Timing: 5s initial delay, 3s period, 2 failure threshold.
+
+<details>
+<summary>Solution</summary>
 
 ```bash
 # Create intentionally broken probe
@@ -681,6 +748,7 @@ k get pod drill6
 # Cleanup
 k delete pod drill6
 ```
+</details>
 
 ---
 
