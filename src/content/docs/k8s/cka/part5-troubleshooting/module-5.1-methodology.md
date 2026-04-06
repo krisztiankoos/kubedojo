@@ -59,7 +59,7 @@ By the end of this module, you'll be able to:
 
 ## Part 1: The Troubleshooting Framework
 
-> **Before you read**: Think about what you do when something breaks. Do you immediately start changing things? Most people do. But random changes make things worse — you lose the ability to tell what fixed it (or what broke it more). The framework below forces you to understand BEFORE you act. It feels slower at first, but it's faster in the long run because you fix the right thing the first time.
+> **Stop and think**: Think about what you do when something breaks. Do you immediately start changing things? Most people do. But random changes make things worse — you lose the ability to tell what fixed it (or what broke it more). The framework below forces you to understand BEFORE you act. It feels slower at first, but it's faster in the long run because you fix the right thing the first time.
 
 ### 1.1 The Four-Step Process
 
@@ -303,7 +303,7 @@ k get endpointslices -l kubernetes.io/service-name=<service>
 
 ## Part 4: Reading Pod Status
 
-> **Quick quiz for yourself**: A pod shows `Running` but your application isn't working. Is the pod healthy? Not necessarily — `Running` means at least one container started, but it doesn't mean the application is serving traffic. The pod could be in a crash loop (restarting), failing readiness probes (excluded from service), or running but returning errors. Status ≠ health. This distinction trips up even experienced engineers.
+> **Pause and predict**: A pod shows `Running` but your application isn't working. Is the pod healthy? Not necessarily — `Running` means at least one container started, but it doesn't mean the application is serving traffic. The pod could be in a crash loop (restarting), failing readiness probes (excluded from service), or running but returning errors. Status ≠ health. This distinction trips up even experienced engineers.
 
 ### 4.1 Pod Phase Meanings
 
@@ -480,58 +480,53 @@ For a 2-hour exam with troubleshooting worth 30%:
 
 ## Quiz
 
-### Q1: First Command
-A pod is in CrashLoopBackOff. What's the first command you should run?
+### Q1: The Restarting Application
+You've just deployed a new release of your backend API, but the deployment is failing to progress. When you check the pods, you see they are in a `CrashLoopBackOff` state. What is the very first kubectl command you should run to begin your investigation, and why?
 
 <details>
 <summary>Answer</summary>
 
-`k describe pod <pod-name>` - Check the Events section first. It will show why the container is crashing (image issues, volume problems, etc.). Then check `k logs <pod> --previous` to see the crash logs.
+You should run `kubectl describe pod <pod-name>`. While it's tempting to immediately jump to checking the logs, the `describe` command provides the critical Events section at the bottom of its output. These events will often tell you immediately if the issue is a failure to pull an image, a missing ConfigMap, or a failing liveness probe. Only after checking the events and confirming it's an application-level crash should you move on to checking `kubectl logs <pod-name> --previous` to view the actual crash logs.
 
 </details>
 
-### Q2: Event Retention
-Why is it important to check events quickly after a problem occurs?
+### Q2: The Disappearing Evidence
+A developer reports that their batch job failed mysteriously over the weekend. When you check the cluster on Monday morning, the pod is gone and you can't find any obvious errors. Why might you struggle to find the root cause using standard Kubernetes event logs?
 
 <details>
 <summary>Answer</summary>
 
-Kubernetes events are only retained for **1 hour by default**. If you don't check soon after an incident, the evidence may be gone. The Events section in `describe` output also truncates, so recent events may push out older relevant ones.
+You will struggle because Kubernetes events are only retained for 1 hour by default in etcd. By the time you check on Monday, the cluster will have already garbage-collected the events related to the weekend failure. Furthermore, the Events section in the `describe` output truncates, meaning a flood of newer events can quickly push out the older, relevant ones even within that one-hour window. This is why it is critical to capture cluster state and events immediately when an issue occurs, or rely on external logging and monitoring systems for historical data.
 
 </details>
 
-### Q3: Exit Codes
-A container has exit code 137. What does this indicate?
+### Q3: The Silent Killer
+Your data processing pod suddenly stops working. When you inspect the pod status, you see that the container terminated with an exit code of 137. What does this specific exit code tell you about how the container died, and where should you look next?
 
 <details>
 <summary>Answer</summary>
 
-Exit code 137 = 128 + 9 (SIGKILL). This usually means:
-1. **OOMKilled** - Container exceeded memory limit
-2. System killed the process (node pressure)
-
-Check `k describe pod` for OOMKilled status and verify memory limits.
+An exit code of 137 indicates that the container was terminated forcefully with a SIGKILL signal (128 + 9). In a Kubernetes environment, this almost always means the container was OOMKilled (Out Of Memory) because it tried to consume more memory than its configured limits allowed. Alternatively, it could mean the node itself was under memory pressure and the kubelet killed the pod to protect system stability. You should immediately run `kubectl describe pod <pod-name>` to check the `Last State` section for the exact reason (like `OOMKilled`), and then review the pod's resource limits compared to its actual usage.
 
 </details>
 
-### Q4: Pending vs ContainerCreating
-What's the difference between Pending and ContainerCreating status?
+### Q4: The Stuck Deployment
+You've applied a new Deployment, but the pods never seem to reach the `Running` state. Some pods show a `Pending` status, while others are stuck in `ContainerCreating`. How do these two states differ in terms of where the failure is occurring in the pod lifecycle?
 
 <details>
 <summary>Answer</summary>
 
-- **Pending**: Pod not yet scheduled to a node (scheduler issues, no suitable node, taints, resource constraints)
-- **ContainerCreating**: Pod is scheduled, node is preparing to run it (pulling images, mounting volumes, setting up network)
-
-Check `describe` Events to see which step is stuck.
+The difference lies in whether the Kubernetes scheduler has successfully assigned the pod to a node. A `Pending` status means the pod has not yet been scheduled; this typically points to cluster-level issues like a lack of available resources (CPU/Memory), untolerated taints, or a misconfigured node selector. Conversely, `ContainerCreating` means the scheduler has assigned the pod to a node, but the node's kubelet is struggling to start the container. This usually points to node-level or dependency issues, such as failing to pull the container image, inability to mount a required PersistentVolume, or Secret/ConfigMap resolution failures. Check `describe` Events to see which step is stuck.
 
 </details>
 
-### Q5: Multi-Container Logs
-How do you view logs from a specific container in a multi-container pod?
+### Q5: The Sidecar Mystery
+You have a pod running a web application alongside a logging sidecar container. The web application is returning 500 errors, but when you run `kubectl logs <pod-name>`, you only see the sidecar's output, which looks completely healthy. How do you retrieve the logs for the failing web application container?
 
 <details>
 <summary>Answer</summary>
+
+By default, when you run `kubectl logs` against a multi-container pod without specifying a container, Kubernetes will either output the logs of the first container defined in the pod spec, or return an error prompting you to choose one. To view the logs of the specific web application container, you must use the `-c` flag followed by the container's name. If you aren't sure of the container's exact name, you can use a `jsonpath` query to list all containers within that pod before checking the logs.
 
 ```bash
 k logs <pod-name> -c <container-name>
@@ -540,15 +535,15 @@ k logs <pod-name> -c <container-name>
 k get pod <pod-name> -o jsonpath='{.spec.containers[*].name}'
 ```
 
-Without `-c`, kubectl shows logs from the first container (or errors if multiple exist).
-
 </details>
 
-### Q6: Node Troubleshooting
-A node shows NotReady status. What's your systematic approach?
+### Q6: The Unresponsive Node
+During a routine cluster check, you notice that one of your worker nodes is marked as `NotReady`. All the pods on that node are beginning to transition to an `Unknown` state. Walk through the systematic steps you would take to diagnose why this node has dropped out of the cluster.
 
 <details>
 <summary>Answer</summary>
+
+When a node becomes `NotReady`, it means the control plane has lost communication with the node's kubelet. Your first step should be to run `kubectl describe node <node>` from the control plane to check the `Conditions` section for issues like memory or disk pressure that might have preceded the disconnect. If the cluster-level info isn't conclusive, you must shift to node-level debugging.
 
 1. `k describe node <node>` - Check Conditions section
 2. SSH to node if accessible
