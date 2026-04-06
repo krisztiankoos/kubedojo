@@ -111,6 +111,8 @@ m5.xlarge:                              m5.xlarge:
 
 EKS caps the maximum pods at 110 for most instance types (250 for some larger types), even if Prefix Delegation provides more IPs than that. The bottleneck shifts from IP addresses to node CPU and memory.
 
+> **Stop and think**: If Prefix Delegation multiplies IP capacity by 16x, why does EKS still cap an m5.xlarge at 110 pods instead of the theoretical 960? (Hint: IP addresses are not the only resource a pod consumes on a node).
+
 ```bash
 # Enable Prefix Delegation
 k set env daemonset aws-node -n kube-system \
@@ -235,6 +237,8 @@ After enabling Custom Networking, the architecture looks like this:
 │  └─────────────────────────────────────────┘                  │
 └────────────────────────────────────────────────────────────────┘
 ```
+
+> **Pause and predict**: If we place pod ENIs into a separate subnet from the node's primary ENI, what happens to the ENI slot that the node's primary interface occupies? Can pods still use it?
 
 > **Important**: With Custom Networking, the node's primary ENI is NOT used for pod IPs. This means the max-pods formula loses one ENI: `Max Pods = ((ENIs - 1) x (IPs per ENI - 1)) + 2`. For `m5.xlarge`, that drops from 58 to 44 in secondary IP mode. Combine Custom Networking with Prefix Delegation to get the best of both worlds.
 
@@ -411,6 +415,8 @@ spec:
 | **Cost** | $0.0225/hr + LCU | $0.0225/hr + NLCU |
 | **Best for** | Web apps, REST APIs | gRPC, databases, gaming, IoT |
 
+> **Pause and predict**: If your application uses WebSockets which require long-lived persistent connections, which load balancer type would provide the most efficient routing without connection drops during scaling events?
+
 ---
 
 ## IPv6 on EKS
@@ -479,15 +485,15 @@ You forgot to update the **max-pods setting** on the nodes. Prefix Delegation ch
 </details>
 
 <details>
-<summary>Question 2: Explain the difference between `WARM_ENI_TARGET=1` (default) and `WARM_IP_TARGET=2`. When would you use each?</summary>
+<summary>Question 2: Your EKS cluster is running 50 nodes of `m5.xlarge`. You notice that even though you only have 100 pods deployed across the entire cluster, you have exhausted over 700 IPs from your VPC subnet. The cluster is using default VPC CNI settings. A colleague suggests changing `WARM_ENI_TARGET` to 0 and setting `WARM_IP_TARGET=2`. Will this resolve the IP exhaustion, and what trade-off are you making?</summary>
 
-`WARM_ENI_TARGET=1` keeps one fully pre-allocated ENI in reserve on each node. For an m5.xlarge, that means 14 IPs pre-allocated and idle, ready for instant pod scheduling. This is ideal for latency-sensitive workloads where pod startup speed matters. `WARM_IP_TARGET=2` instead keeps only 2 individual IPs warm, regardless of ENI count. This saves 12 IPs per node but may add 1-2 seconds of pod startup latency when a new ENI needs to be attached. Use `WARM_IP_TARGET` in IP-constrained environments or when running many nodes with few pods each.
+Yes, this will immediately recover a massive number of IPs. By default, `WARM_ENI_TARGET=1` keeps an entire ENI (up to 14 secondary IPs on an m5.xlarge) fully pre-allocated per node, which means 50 nodes waste about 700 IPs just sitting idle in the warm pool. By switching to `WARM_IP_TARGET=2`, you instruct the VPC CNI to only keep 2 IPs pre-allocated per node, returning the rest to the VPC. The trade-off is that when a node needs to schedule a 3rd pod rapidly, it must make an AWS API call to attach a new ENI or assign a new IP, introducing 1-2 seconds of pod startup latency.
 </details>
 
 <details>
-<summary>Question 3: Why does Custom Networking reduce the max-pods formula by one ENI? What formula should you use?</summary>
+<summary>Question 3: You just migrated your EKS cluster to use Custom Networking to solve IP exhaustion, mapping pod IPs to a massive `100.64.0.0/16` secondary CIDR. However, immediately after rolling out the new node groups, you get alerts that `m5.xlarge` nodes are failing to schedule more than 44 pods, even though they used to schedule 58 pods before the migration. What is causing this capacity reduction, and how can you fix it?</summary>
 
-With Custom Networking enabled, the node's **primary ENI** is excluded from pod IP assignment because it resides in the node subnet, not the pod subnet defined by the ENIConfig. Only secondary ENIs (attached to the pod subnet via ENIConfig) are used for pod IPs. The formula becomes: `Max Pods = ((Number of ENIs - 1) x (IPs per ENI - 1)) + 2`. For m5.xlarge: `(4-1) x (15-1) + 2 = 44 pods`. To recover that capacity loss, combine Custom Networking with Prefix Delegation, which gives you `(4-1) x 15 x 16 = 720` allocatable IPs, capped at 110 pods by EKS.
+The reduction is happening because Custom Networking reserves the node's primary ENI exclusively for node-level communication in the primary subnet, completely removing it from the pod IP allocation pool. Previously, the primary ENI could host secondary IPs for pods, but now only the secondary ENIs (which are attached to the Custom Networking subnets) can host pods. For an m5.xlarge, this reduces the usable ENIs from 4 to 3, dropping max pods from 58 to 44. To fix this and massively increase capacity, you should enable Prefix Delegation alongside Custom Networking, which will assign `/28` prefixes to those remaining ENI slots and allow the node to easily hit the EKS hard cap of 110 pods.
 </details>
 
 <details>
@@ -503,9 +509,9 @@ When you assign security groups to pods via SecurityGroupPolicy, those pods use 
 </details>
 
 <details>
-<summary>Question 6: What is the benefit of using the ALB `group.name` annotation, and what is a potential risk?</summary>
+<summary>Question 6: Your platform hosts 45 different microservices, each with its own standard Kubernetes Ingress resource using the `alb` ingress class. Finance just flagged your AWS bill because you are spending over $700 per month just on Application Load Balancers. You need to reduce this cost immediately without changing the routing behavior for the clients. How can you architect this change using the AWS Load Balancer Controller, and what operational risk does it introduce?</summary>
 
-The `group.name` annotation allows multiple Ingress resources to share a single ALB, saving significant cost ($16+/month per ALB). Instead of each microservice getting its own ALB, they share one ALB with path-based or host-based routing rules. The potential risk is a **blast radius**: if the shared ALB has a configuration error, misconfigured health check, or hits its listener rule limit (100 rules per ALB), all services sharing that ALB are affected. Best practice is to group related services (e.g., all services in a single product domain) but keep critical services like authentication on a dedicated ALB.
+You can consolidate all 45 microservices behind a single Application Load Balancer by adding the `alb.ingress.kubernetes.io/group.name: shared-alb` annotation to all 45 Ingress resources. The AWS Load Balancer Controller will merge these into a single ALB with path-based or host-based listener rules, reducing your fixed ALB hourly costs from 45 LBs down to just 1. However, this introduces a shared blast radius risk: if someone deploys a misconfigured Ingress that breaks the ALB listener rules, or if you exceed the AWS quota of 100 rules per ALB, all 45 microservices could experience routing failures simultaneously. It is best practice to group non-critical services together while keeping highly critical domains on dedicated ALBs.
 </details>
 
 <details>
