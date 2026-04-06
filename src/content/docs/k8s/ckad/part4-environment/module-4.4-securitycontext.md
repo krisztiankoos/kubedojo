@@ -32,6 +32,10 @@ After completing this module, you will be able to:
 
 SecurityContexts define privilege and access control settings for pods and containers. They control who the container runs as, what capabilities it has, and what it can access on the host.
 
+> **War Story: The Root Compromise**
+> 
+> In a highly publicized real-world incident, a vulnerable web application was deployed running as `root` without dropping default Linux capabilities. Attackers exploited an application flaw to gain remote code execution inside the container. Because the container had excessive privileges, they used the `CAP_SYS_PTRACE` and `CAP_SYS_ADMIN` capabilities to break out of the container boundary, compromising the underlying host node and extracting the cluster's credentials. Enforcing `runAsNonRoot: true`, using `readOnlyRootFilesystem`, and dropping all capabilities would have confined the attackers to a sandboxed, low-privilege environment, neutralizing the blast radius of the initial exploit.
+
 The CKAD exam tests:
 - Setting user and group IDs
 - Running as non-root
