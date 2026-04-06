@@ -52,6 +52,8 @@ Vim has modes. This confuses everyone at first.
 >
 > Vim modes are like a car's gearshift. In **Normal mode** (drive), you're navigating—moving around, not typing. In **Insert mode** (park), you're stationary and typing. In **Command mode** (reverse), you're doing special operations like saving. You wouldn't try to park while driving. Vim forces you to "shift gears" deliberately. It feels weird at first, but it's what makes vim so fast once you internalize it.
 
+> **Pause and predict**: If you are typing text and suddenly your backspace stops working or you start deleting lines by accident, what mode are you likely in, and how do you fix it?
+
 | Mode | How to Enter | What It Does |
 |------|-------------|--------------|
 | Normal | `Esc` | Navigate, delete, copy, paste |
@@ -154,6 +156,8 @@ EOF
 | `autoindent` | New lines maintain indentation |
 | `number` | Line numbers help with error messages |
 | `set paste` | Prevents auto-indent issues when pasting |
+
+> **Stop and think**: Why might setting `tabstop=2` not be enough on its own to prevent YAML parsing errors when you press the Tab key?
 
 > **Gotcha: Tabs vs Spaces**
 >
@@ -375,28 +379,36 @@ EOF
 
 ## Quiz
 
-1. **How do you delete 3 lines in vim?**
+1. **Scenario: You are in the middle of the CKA exam and need to quickly remove a broken volume mount block that spans exactly three lines from your deployment manifest. How do you achieve this efficiently in vim without repeatedly pressing the delete key?**
    <details>
    <summary>Answer</summary>
-   Position cursor on first line, type `3dd` in Normal mode.
+   You should position your cursor on the first line of the volume mount block, ensure you are in Normal mode (press `Esc`), and type `3dd`. 
+   
+   **Why:** The `d` command in vim stands for delete, and typing it twice (`dd`) deletes the current line. By prefixing it with a number like `3`, you instruct vim to repeat the action that many times, instantly removing the block. This is significantly faster than manually deleting characters or lines, saving precious seconds during the time-constrained exam.
    </details>
 
-2. **You pasted YAML and the indentation is broken. What happened and how do you prevent it?**
+2. **Scenario: You just found a perfect snippet of YAML in the Kubernetes documentation. You copy it and paste it directly into your terminal running vim, but the indentation instantly becomes a cascading mess of misaligned blocks. What caused this formatting disaster, and how do you correctly paste the snippet next time?**
    <details>
    <summary>Answer</summary>
-   Vim's auto-indent mangled the paste. Use `:set paste` before pasting, then `:set nopaste` after.
+   Vim's auto-indentation feature interpreted your pasted spaces as new indentation levels for each line, mangling the format. To prevent this, you must type `:set paste` before pasting your clipboard contents, and `:set nopaste` afterward. 
+   
+   **Why:** The paste mode temporarily disables auto-indentation and other formatting automation. This ensures that vim accepts the characters exactly as they exist in your clipboard without trying to "helpfully" adjust the spacing, keeping the YAML structure intact. If you forget this step, vim tries to apply its own indentation rules on top of the already-indented text.
    </details>
 
-3. **What's the command to save and quit vim?**
+3. **Scenario: You have just finished adding a missing environment variable to a critical manifest. You need to apply these changes immediately, but you are currently in Insert mode typing the last quote. What exact sequence of keystrokes do you use to save your changes and exit the file?**
    <details>
    <summary>Answer</summary>
-   `:wq` (write and quit). Or `ZZ` in Normal mode (less common).
+   You must first press `Esc`, followed by typing `:wq` and pressing `Enter`. 
+   
+   **Why:** Vim requires you to exit Insert mode to execute file-level commands, which is why `Esc` is necessary to return to Normal mode. The colon `:` enters Command mode, `w` writes (saves) the file to disk, and `q` quits the editor. Combining them as `:wq` safely persists your critical changes and returns you to the terminal in one fluid motion, ready to run `kubectl apply`.
    </details>
 
-4. **Why must you use spaces instead of tabs in YAML?**
+4. **Scenario: You create a quick Pod manifest and visually align all the fields perfectly. However, when you run `kubectl apply`, you get a cryptic error parsing your YAML. You realize you used the Tab key to align some fields. Why did this happen, and how should you configure vim to prevent it?**
    <details>
    <summary>Answer</summary>
-   YAML requires consistent indentation. Mixing tabs and spaces (or using tabs when the parser expects spaces) causes syntax errors. Kubernetes manifests expect 2-space indentation.
+   The Kubernetes YAML parser strictly expects spaces for indentation and fundamentally rejects or misinterprets tab characters, breaking the document structure. You should add `set expandtab` to your `~/.vimrc` file. 
+   
+   **Why:** YAML relies on exact whitespace character counts to determine the hierarchy of objects, and a tab character does not equal a consistent number of spaces across different systems. The `expandtab` setting fixes this automatically by converting any Tab key press into the correct number of spaces (defined by `tabstop`), ensuring your manifests always parse correctly regardless of how you type. This completely eliminates a common source of invisible, time-wasting syntax errors.
    </details>
 
 ---
