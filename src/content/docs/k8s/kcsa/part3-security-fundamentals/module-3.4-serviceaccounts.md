@@ -25,9 +25,11 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-ServiceAccounts are how pods authenticate to the Kubernetes API. Every pod runs with a ServiceAccount, and by default, that account may have more access than needed. Understanding ServiceAccount security is crucial for implementing least privilege for workloads.
+Imagine checking into a hotel and receiving a keycard that doesn't just open your room, but also grants access to the gym, the manager's office, and the master server room. Even worse, the card never expires. If you drop it in the lobby, anyone who finds it has permanent VIP access to the entire building. 
 
-Misconfigured ServiceAccounts are a common attack vector for lateral movement within clusters.
+In Kubernetes, ServiceAccounts are the keycards for your pods, allowing them to authenticate to the Kubernetes API. Historically, every pod was automatically handed a token that never expired, and by default, these accounts often possess far more access than a typical application needs. 
+
+Understanding ServiceAccount security is about transitioning to a model of least privilege. You must ensure that each pod is issued a strictly time-limited, audience-bound token that opens *only* the specific doors it needs—and if a pod doesn't need to leave its room at all, it shouldn't be given a keycard in the first place. Misconfigured ServiceAccounts remain one of the most widely exploited attack vectors for lateral movement within compromised clusters.
 
 ---
 
@@ -211,6 +213,12 @@ metadata:
   namespace: production
 automountServiceAccountToken: false
 ```
+
+### War Story: The $50,000 Dashboard Breach
+
+In a real-world incident at a mid-sized tech company, developers deployed an internal monitoring dashboard using the `default` ServiceAccount in a production namespace. To make setup "easier," someone had previously bound a `ClusterRole` with `get secrets` permissions to this default account. 
+
+When an attacker discovered a simple Server-Side Request Forgery (SSRF) vulnerability in the dashboard application, they didn't need to break out of the container to inflict massive damage. They simply directed the vulnerable application to read the auto-mounted token at `/var/run/secrets/kubernetes.io/serviceaccount/token`. Using this token, the attacker queried the Kubernetes API, downloaded every Secret in the cluster, extracted cloud provider credentials, and spun up cryptocurrency miners. The result was a $50,000 cloud bill and a frantic, full-scale credentials rotation—all stemming from a leaked token that should never have been mounted in the first place.
 
 ---
 
