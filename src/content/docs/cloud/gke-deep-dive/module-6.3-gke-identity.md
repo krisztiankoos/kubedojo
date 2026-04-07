@@ -12,8 +12,8 @@ After completing this module, you will be able to:
 
 - **Configure GKE Workload Identity to map Kubernetes service accounts to GCP IAM service accounts**
 - **Implement Binary Authorization to enforce container image provenance and deploy-time attestation policies**
-- **Deploy GKE security posture features including Security Command Center integration and vulnerability scanning**
-- **Design namespace-level identity isolation using Workload Identity with least-privilege IAM bindings**
+- **Deploy GKE security posture features to identify workload misconfigurations and enforce Pod Security Standards**
+- **Integrate Google Cloud Secret Manager using the CSI driver for secure external secret management**
 
 ---
 
@@ -31,29 +31,18 @@ In this module, you will learn how Workload Identity Federation for GKE works, h
 
 Without Workload Identity, GKE pods access GCP services using the **node's service account**. Every VM (node) in a node pool runs with a GCP service account attached, and every pod on that node can access the metadata server to obtain OAuth tokens for that account.
 
-```text
-  Without Workload Identity:
-  ┌─────────────────────────────────────────────────────┐
-  │  Node (VM)                                          │
-  │  Service Account: node-sa@project.iam               │
-  │  Roles: Editor (or similar broad role)              │
-  │                                                     │
-  │  ┌──────────┐  ┌──────────┐  ┌──────────┐         │
-  │  │  App Pod  │  │  Debug   │  │  Rogue   │         │
-  │  │          │  │  Pod     │  │  Pod     │         │
-  │  │  Needs:  │  │  Needs:  │  │  Wants:  │         │
-  │  │  GCS     │  │  Nothing │  │  EVERYTHING│        │
-  │  │  read    │  │          │  │          │         │
-  │  └────┬─────┘  └────┬─────┘  └────┬─────┘         │
-  │       │              │              │               │
-  │       ▼              ▼              ▼               │
-  │  ┌─────────────────────────────────────────┐       │
-  │  │  Metadata Server (169.254.169.254)      │       │
-  │  │  Returns: node-sa token (Editor access) │       │
-  │  └─────────────────────────────────────────┘       │
-  └─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Node ["Node (VM) - SA: node-sa@project.iam (Editor)"]
+        A["App Pod<br/>(Needs: GCS read)"]
+        B["Debug Pod<br/>(Needs: Nothing)"]
+        C["Rogue Pod<br/>(Wants: EVERYTHING)"]
+        M["Metadata Server (169.254.169.254)<br/>Returns: node-sa token (Editor access)"]
+    end
 
-  ALL three pods get the SAME token with the SAME permissions.
+    A --> M
+    B --> M
+    C --> M
 ```
 
 This is a violation of the **principle of least privilege**. The app pod only needs GCS read access, but it gets Editor. The debug pod needs nothing, but it gets Editor. The rogue pod gets Editor too.
@@ -66,30 +55,23 @@ Workload Identity Federation (WIF) for GKE maps Kubernetes ServiceAccounts to GC
 
 ### How It Works
 
-```text
-  With Workload Identity:
-  ┌─────────────────────────────────────────────────────┐
-  │  Node (VM)                                          │
-  │  Node SA: restricted-node-sa (minimal permissions)  │
-  │                                                     │
-  │  ┌──────────┐  ┌──────────┐  ┌──────────┐         │
-  │  │  App Pod  │  │  Debug   │  │  Batch   │         │
-  │  │  KSA:     │  │  Pod     │  │  Pod     │         │
-  │  │  app-sa   │  │  KSA:    │  │  KSA:    │         │
-  │  │          │  │  default  │  │  batch-sa│         │
-  │  └────┬─────┘  └────┬─────┘  └────┬─────┘         │
-  │       │              │              │               │
-  │       ▼              ▼              ▼               │
-  │  ┌───────────────────────────────────────────┐     │
-  │  │  GKE Metadata Server (replaces default)   │     │
-  │  │                                           │     │
-  │  │  app-sa → gcs-reader@proj.iam             │     │
-  │  │  default → (no GCP SA, access denied)     │     │
-  │  │  batch-sa → pubsub-writer@proj.iam        │     │
-  │  └───────────────────────────────────────────┘     │
-  └─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Node ["Node (VM) - Node SA: restricted-node-sa (minimal permissions)"]
+        A["App Pod<br/>(KSA: app-sa)"]
+        B["Debug Pod<br/>(KSA: default)"]
+        C["Batch Pod<br/>(KSA: batch-sa)"]
+        
+        subgraph Meta ["GKE Metadata Server (replaces default)"]
+            M1["app-sa → gcs-reader@proj.iam"]
+            M2["default → (no GCP SA, access denied)"]
+            M3["batch-sa → pubsub-writer@proj.iam"]
+        end
+    end
 
-  Each pod gets ONLY its own GCP identity.
+    A --> M1
+    B --> M2
+    C --> M3
 ```
 
 ### Setting Up Workload Identity
@@ -180,6 +162,8 @@ gcloud projects add-iam-policy-binding OTHER_PROJECT_ID \
   --role="roles/storage.objectViewer"
 ```
 
+> **Stop and think**: If a pod in the `default` namespace does not have a `serviceAccountName` specified in its spec, which Kubernetes ServiceAccount does it use? How does this impact Workload Identity if that ServiceAccount is not annotated?
+
 ---
 
 ## Binary Authorization
@@ -188,32 +172,17 @@ Binary Authorization ensures that only trusted container images can be deployed 
 
 ### How Binary Authorization Works
 
-```text
-  Developer pushes code
-       │
-       ▼
-  Cloud Build builds image
-       │
-       ▼
-  Image pushed to Artifact Registry
-       │
-       ▼
-  Attestor signs the image digest ◄── Human review, vulnerability scan pass, etc.
-       │
-       ▼
-  Developer creates Deployment
-       │
-       ▼
-  GKE Admission Controller checks:
-  ┌──────────────────────────────────────────┐
-  │  1. Is Binary Authorization enabled?     │
-  │  2. Does the image have a valid          │
-  │     attestation from a trusted attestor? │
-  │  3. Does the image match the policy?     │
-  │                                          │
-  │  YES → Allow pod to start               │
-  │  NO  → Block pod, log violation          │
-  └──────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A[Developer pushes code] --> B[Cloud Build builds image]
+    B --> C[Image pushed to Artifact Registry]
+    C --> D[Attestor signs the image digest<br/>Human review, vulnerability scan pass]
+    D --> E[Developer creates Deployment]
+    
+    E --> F[GKE Admission Controller checks:<br/>1. Is Binary Authorization enabled?<br/>2. Does the image have a valid attestation?<br/>3. Does the image match the policy?]
+    
+    F -->|YES| G[Allow pod to start]
+    F -->|NO| H[Block pod, log violation]
 ```
 
 ### Setting Up Binary Authorization
@@ -332,6 +301,8 @@ gcloud logging read \
 
 **War Story**: A team enabled Binary Authorization in enforce mode on a Friday afternoon. On Monday morning, their CI/CD pipeline had broken because Cloud Build was pushing images but not creating attestations. Every deployment for 48 hours was blocked. Start with `DRYRUN_AUDIT_LOG_ONLY` mode to identify what would be blocked before switching to enforce mode.
 
+> **Pause and predict**: You enable Binary Authorization in enforce mode with a policy requiring an attestation from a specific KMS key. A developer deploys an image signed by a different, older KMS key that was recently removed from the attestor. What will happen when the pod starts, and where would you look to verify this?
+
 ---
 
 ## Shielded GKE Nodes and Confidential Nodes
@@ -359,7 +330,7 @@ gcloud container clusters update my-cluster \
   --enable-shielded-nodes
 ```
 
-### Confidential GKE Nodes
+### Confidential Nodes
 
 Confidential Nodes go beyond Shielded Nodes by encrypting data **in memory** using AMD SEV (Secure Encrypted Virtualization). Even if an attacker has physical access to the server or can perform a cold-boot attack, they cannot read the node's memory.
 
@@ -384,6 +355,8 @@ gcloud container node-pools create confidential-pool \
 | **Machine types** | All | N2D only (AMD) |
 | **Cost** | No additional cost | ~10% premium |
 | **Use case** | All production clusters | Financial, healthcare, PII |
+
+> **Stop and think**: Your compliance team requires that data in use (in memory) must be encrypted. Which node type must you choose, and what specific CPU architecture is required to support this feature?
 
 ---
 
@@ -457,6 +430,8 @@ spec:
         cpu: 200m
         memory: 256Mi
 ```
+
+> **Pause and predict**: You apply the `restricted` Pod Security Standard to a namespace in `enforce` mode. A developer tries to deploy a pod with `runAsNonRoot: false`. Will the pod be created? What happens if the namespace was set to `warn` mode instead?
 
 ---
 
@@ -551,6 +526,8 @@ kubectl exec app-with-secrets -- cat /var/secrets/db-password
 | **Cross-cluster sharing** | Not supported | Same secret across clusters/projects |
 | **Access control** | RBAC (namespace-scoped) | IAM (project/org-scoped) |
 
+> **Stop and think**: A developer wants to roll back a deployment that uses Secret Manager for database credentials. The older version of the deployment needs an older password. How does the Secret Manager CSI driver handle versioning compared to native Kubernetes Secrets?
+
 ---
 
 ## Did You Know?
@@ -583,39 +560,39 @@ kubectl exec app-with-secrets -- cat /var/secrets/db-password
 ## Quiz
 
 <details>
-<summary>1. How does Workload Identity Federation prevent the "shared identity" problem?</summary>
+<summary>1. Your security team discovers that three different applications running on the same GKE node can all read from a sensitive Cloud Storage bucket, even though only one application actually requires this access. You are tasked with implementing Workload Identity to fix this. How will configuring Workload Identity fundamentally change the way these pods authenticate with Google Cloud APIs?</summary>
 
-Without Workload Identity, every pod on a node shares the node VM's GCP service account. Any pod can call the metadata server (`169.254.169.254`) and receive an access token for that shared identity. Workload Identity Federation replaces this by running a **GKE metadata server** as a DaemonSet on each node. This server intercepts metadata requests from pods and, instead of returning the node's credentials, it checks which Kubernetes ServiceAccount the pod uses. It then exchanges the pod's Kubernetes SA token for a short-lived GCP access token scoped to the specific GCP service account mapped to that Kubernetes SA. Pods without a mapping receive no GCP credentials at all. This ensures each pod has only the permissions explicitly granted to its identity.
+Without Workload Identity, every pod on a node shares the node VM's GCP service account, allowing any pod to retrieve an access token for that shared identity from the default metadata server. Workload Identity Federation solves this by running a specialized GKE metadata server as a DaemonSet on each node, which intercepts metadata requests from pods. Instead of returning the node's credentials, the GKE metadata server checks the pod's specific Kubernetes ServiceAccount and exchanges it for a short-lived GCP access token scoped only to the mapped GCP service account. This ensures that the two applications not requiring bucket access receive permission denied errors, while the authorized application successfully authenticates.
 </details>
 
 <details>
-<summary>2. What is the difference between Binary Authorization "enforce" mode and "dry run" mode?</summary>
+<summary>2. You are preparing to roll out Binary Authorization across all production GKE clusters. The lead developer is concerned that enabling this feature might block emergency hotfixes if the automated attestation pipeline fails during an incident. How should you configure the rollout to address this concern while still gaining visibility into unsigned images?</summary>
 
-In **enforce** mode (`ENFORCED_BLOCK_AND_AUDIT_LOG`), Binary Authorization actively blocks pods from starting if their container images do not have valid attestations matching the policy. The pod creation fails with an admission webhook error, and the event is logged to Cloud Audit Logs. In **dry run** mode (`DRYRUN_AUDIT_LOG_ONLY`), Binary Authorization evaluates every pod against the policy but does not block anything. Instead, it logs what **would** have been blocked. This allows you to deploy the policy, observe its impact for days or weeks, fix any legitimate images that lack attestations, and then switch to enforce mode with confidence. Always start with dry run in production.
+You should configure the Binary Authorization policy to use "dry run" mode (`DRYRUN_AUDIT_LOG_ONLY`) instead of the default enforce mode (`ENFORCED_BLOCK_AND_AUDIT_LOG`). In dry run mode, Binary Authorization evaluates every pod creation request against the policy but does not actually block the pod from starting, even if it lacks the required attestations. Instead, it logs a detailed violation event to Cloud Audit Logs indicating that the pod would have been blocked. This allows you to deploy the policy and observe its impact over time, ensuring emergency hotfixes can still deploy while you identify and fix pipeline gaps before switching to full enforcement.
 </details>
 
 <details>
-<summary>3. Why should you deploy container images by digest rather than by tag?</summary>
+<summary>3. During a routine audit, an inspector notices that your deployment manifests use tags like `image: frontend:v2.1` instead of SHA-256 digests. They flag this as a critical violation of your Binary Authorization policy, even though the images are successfully passing the attestation checks. Why is deploying by tag considered a security risk when using Binary Authorization?</summary>
 
-Tags are **mutable**: someone can push a new image with the same tag (e.g., `v1.0`), replacing the original image with completely different content. The digest (SHA-256 hash of the image manifest) is **immutable** and uniquely identifies the exact bytes of the image. For Binary Authorization, attestations are bound to the digest, not the tag. If you deploy by tag and the underlying image changes, the attestation from the original image does not apply to the new one. Deploying by digest (`image: repo/app@sha256:abc123...`) guarantees you are running the exact image that was scanned, tested, and attested. This is critical for supply chain security and audit compliance.
+Container image tags are mutable, meaning a developer or an attacker can push a new image with the exact same tag, overwriting the original content in the registry. Binary Authorization attestations are cryptographically bound to the immutable SHA-256 digest of the image, not the mutable tag. If you deploy by tag, Kubernetes might pull a modified image, and the original attestation will no longer be valid for the new digest, which could lead to unexpected deployment failures or bypasses if caching is involved. Deploying by digest guarantees that the cluster runs the exact identical bits that were scanned, tested, and attested during your secure supply chain process.
 </details>
 
 <details>
-<summary>4. How does Secret Manager CSI driver differ from creating Kubernetes Secrets manually?</summary>
+<summary>4. Your architecture currently uses native Kubernetes Secrets to store third-party API keys. A security review mandates that all secrets must have a verifiable access audit trail and must not be stored in the cluster's etcd database. Why is migrating to the Google Cloud Secret Manager CSI driver the correct architectural choice to meet these requirements?</summary>
 
-With Kubernetes Secrets, secret values are stored in the cluster's etcd database and managed through the Kubernetes API. Anyone with RBAC access to read Secrets in a namespace can see the values. With the Secret Manager CSI driver, secrets are stored in Google Cloud Secret Manager (outside the cluster) and mounted into pods as files at runtime. The secrets never pass through etcd. Access is controlled by IAM (not RBAC), providing finer-grained access control. Secret Manager also offers versioning, automatic rotation support, cross-cluster sharing, and comprehensive audit logging through Cloud Audit Logs. The trade-off is additional complexity in setup and a dependency on an external service.
+With native Kubernetes Secrets, the secret values are stored directly within the cluster's etcd database, meaning anyone with administrative access to the control plane or broad RBAC permissions can view them without generating a granular access log. The Secret Manager CSI driver fundamentally changes this architecture by storing the secrets externally in Google Cloud Secret Manager and mounting them into pods as temporary, in-memory files at runtime. Because the secrets are fetched directly from the external service, they never pass through or rest in etcd. Furthermore, every retrieval of the secret by a workload generates a distinct entry in Cloud Audit Logs, satisfying the requirement for a verifiable access audit trail.
 </details>
 
 <details>
-<summary>5. What protections do Shielded GKE Nodes provide that standard nodes do not?</summary>
+<summary>5. Your company is hosting a multi-tenant SaaS application on GKE and needs to protect the node's boot sequence from being compromised by persistent rootkits. You are deciding between Shielded Nodes and Confidential Nodes. Why would Shielded Nodes be sufficient for this specific requirement?</summary>
 
-Shielded Nodes add three protections. **Secure Boot** ensures that only Google-signed boot components (bootloader, kernel, kernel modules) are loaded during startup, blocking rootkits and bootkits. **Virtual Trusted Platform Module (vTPM)** creates a measured boot chain where each component's hash is recorded before execution. These measurements can be remotely verified to prove the node booted in a known-good state. **Integrity Monitoring** continuously compares the boot measurements against a known-good baseline and raises alerts if tampering is detected. Together, these prevent an attacker from modifying the node's boot process to install persistent malware that survives reboots.
+Shielded Nodes are specifically designed to provide verifiable integrity for the node's boot process by utilizing Secure Boot, which ensures that only Google-signed boot components and kernel modules are loaded. They also leverage a Virtual Trusted Platform Module (vTPM) to create a measured boot chain, continuously monitoring for any tampering against a known-good baseline. While Confidential Nodes offer these same boot protections, their primary differentiating feature is the encryption of data in use (in memory) using specialized hardware. Since your specific requirement is focused solely on protecting the boot sequence from rootkits rather than encrypting active memory, Shielded Nodes fully address the threat model without incurring the performance or cost overhead of Confidential Nodes.
 </details>
 
 <details>
-<summary>6. What happens if you enable Workload Identity on a cluster that already has pods using the node's service account?</summary>
+<summary>6. You have just enabled Workload Identity on a legacy GKE cluster that has been running in production for two years. Immediately after the update completes, several applications begin crashing because they are receiving "403 Permission Denied" errors when trying to read from Cloud Storage. What architectural change caused this outage, and how do you resolve it?</summary>
 
-Enabling Workload Identity on an existing cluster changes how the metadata server responds to pods. Pods that previously obtained tokens from the node's service account by calling `169.254.169.254` will now receive responses from the GKE metadata server instead. If those pods do not have a Kubernetes ServiceAccount annotated with a GCP service account mapping, they will **lose access** to GCP services. This can break running applications. The safe migration path is to: (1) enable Workload Identity on the cluster, (2) create and configure the KSA/GSA mappings for each workload, (3) update Deployments to use the new ServiceAccounts, and (4) verify access before removing the old node SA permissions. Do this during a maintenance window.
+Enabling Workload Identity on an existing cluster changes the behavior of the metadata server interception for all pods on the affected nodes. Pods that previously defaulted to the node's underlying Compute Engine service account now have their metadata requests intercepted by the Workload Identity DaemonSet, which requires a specific mapping to grant access. Because these legacy applications lacked a configured Kubernetes ServiceAccount annotated with a GCP service account mapping, the metadata server denied them access to GCP credentials entirely. To resolve the outage, you must create the necessary GCP service accounts, bind them to Kubernetes ServiceAccounts with the `iam.workloadIdentityUser` role, annotate the KSAs, and update the application Deployments to explicitly reference these new ServiceAccounts.
 </details>
 
 ---
@@ -649,6 +626,7 @@ gcloud services enable \
   pubsub.googleapis.com \
   binaryauthorization.googleapis.com \
   cloudkms.googleapis.com \
+  secretmanager.googleapis.com \
   --project=$PROJECT_ID
 
 # Create cluster with Workload Identity
@@ -813,7 +791,131 @@ echo "3. Switch to ENFORCED_BLOCK_AND_AUDIT_LOG mode"
 ```
 </details>
 
-**Task 6: Clean Up**
+**Task 6: Enable Security Posture and Test Pod Security Standards**
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Enable Security Posture on the cluster
+gcloud container clusters update security-demo \
+  --region=$REGION \
+  --security-posture=standard \
+  --workload-vulnerability-scanning=standard
+
+# Create a namespace with restricted Pod Security Standards
+kubectl create namespace secure-ns
+kubectl label namespace secure-ns \
+  pod-security.kubernetes.io/enforce=restricted \
+  pod-security.kubernetes.io/warn=restricted
+
+# Try to deploy a privileged pod (should be blocked)
+kubectl apply -n secure-ns -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.27
+    securityContext:
+      privileged: true
+EOF
+# The API server will reject this pod creation immediately
+
+# Deploy a compliant pod
+kubectl apply -n secure-ns -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: good-pod
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: nginx
+    image: nginx:1.27
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+EOF
+# This pod will be created successfully
+```
+</details>
+
+**Task 7: Mount External Secrets using Secret Manager CSI Driver**
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Enable Secret Manager add-on
+gcloud container clusters update security-demo \
+  --region=$REGION \
+  --enable-secret-manager
+
+# Create a secret in GCP Secret Manager
+echo -n "super-secret-api-key" | gcloud secrets create demo-api-key \
+  --data-file=- \
+  --replication-policy=automatic
+
+# Grant the Workload Identity SA access to the secret
+gcloud secrets add-iam-policy-binding demo-api-key \
+  --member="serviceAccount:pubsub-publisher@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/secretmanager.secretAccessor"
+
+# Create SecretProviderClass in the cluster
+kubectl apply -f - <<EOF
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: gcp-secrets
+spec:
+  provider: gcp
+  parameters:
+    secrets: |
+      - resourceName: "projects/$PROJECT_ID/secrets/demo-api-key/versions/latest"
+        path: "api-key.txt"
+EOF
+
+# Deploy a pod that mounts the secret
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: Pod
+metadata:
+  name: secret-reader
+spec:
+  serviceAccountName: pubsub-sa
+  containers:
+  - name: reader
+    image: google/cloud-sdk:slim
+    command: ["sleep", "3600"]
+    volumeMounts:
+    - name: secrets-volume
+      mountPath: /var/secrets
+      readOnly: true
+  volumes:
+  - name: secrets-volume
+    csi:
+      driver: secrets-store.csi.k8s.io
+      readOnly: true
+      volumeAttributes:
+        secretProviderClass: gcp-secrets
+EOF
+
+# Verify the secret is mounted correctly
+kubectl wait --for=condition=Ready pod/secret-reader --timeout=120s
+kubectl exec secret-reader -- cat /var/secrets/api-key.txt
+```
+</details>
+
+**Task 8: Clean Up**
 
 <details>
 <summary>Solution</summary>
@@ -826,6 +928,9 @@ gcloud container clusters delete security-demo \
 # Delete Pub/Sub resources
 gcloud pubsub subscriptions delete demo-orders-sub --quiet
 gcloud pubsub topics delete demo-orders --quiet
+
+# Delete the secret
+gcloud secrets delete demo-api-key --quiet
 
 # Delete the GCP service account
 gcloud iam service-accounts delete \
@@ -855,6 +960,8 @@ echo "Cleanup complete."
 - [ ] Pod cannot access resources not granted to its service account
 - [ ] Binary Authorization enabled in dry run mode
 - [ ] Audit logs show denied images from untrusted sources
+- [ ] Security Posture enabled and Pod Security Standards enforce `restricted` mode
+- [ ] Secret Manager CSI driver mounts an external secret successfully
 - [ ] All resources cleaned up
 
 ---
