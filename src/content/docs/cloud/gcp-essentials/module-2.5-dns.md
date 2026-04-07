@@ -10,7 +10,7 @@ sidebar:
 
 After completing this module, you will be able to:
 
-- **Configure Cloud DNS managed zones with A, CNAME, and alias records for internal and external resolution**
+- **Configure Cloud DNS managed zones with A and CNAME records for internal and external resolution**
 - **Implement DNS-based routing policies (weighted, geolocation, failover) for multi-region traffic distribution**
 - **Deploy private DNS zones for VPC-internal name resolution between GCP services and Kubernetes clusters**
 - **Design split-horizon DNS architectures that serve different records to internal and external clients**
@@ -31,27 +31,23 @@ In this module, you will learn how Cloud DNS works as a globally distributed, ma
 
 Before diving into Cloud DNS, a quick refresher on how DNS resolution works is essential for understanding the configurations that follow.
 
-```text
-  User types: app.example.com
-       │
-       ▼
-  ┌──────────────────┐
-  │  Recursive        │     1. "Who knows about .com?"
-  │  Resolver          │ ──────────────────────────────────>  Root DNS (.)
-  │  (ISP / 8.8.8.8)  │ <──────────────────────────────────  "Ask .com TLD servers"
-  │                    │
-  │                    │     2. "Who knows about example.com?"
-  │                    │ ──────────────────────────────────>  .com TLD servers
-  │                    │ <──────────────────────────────────  "Ask ns-cloud-X.googledomains.com"
-  │                    │
-  │                    │     3. "What is app.example.com?"
-  │                    │ ──────────────────────────────────>  Cloud DNS (authoritative)
-  │                    │ <──────────────────────────────────  "34.120.55.100"
-  └────────┬───────────┘
-           │
-           │  4. Returns 34.120.55.100
-           ▼
-       User connects to 34.120.55.100
+```mermaid
+sequenceDiagram
+    actor User
+    participant Resolver as Recursive Resolver<br/>(ISP / 8.8.8.8)
+    participant Root as Root DNS (.)
+    participant TLD as .com TLD servers
+    participant Auth as Cloud DNS<br/>(authoritative)
+    
+    User->>Resolver: User types: app.example.com
+    Resolver->>Root: 1. "Who knows about .com?"
+    Root-->>Resolver: "Ask .com TLD servers"
+    Resolver->>TLD: 2. "Who knows about example.com?"
+    TLD-->>Resolver: "Ask ns-cloud-X.googledomains.com"
+    Resolver->>Auth: 3. "What is app.example.com?"
+    Auth-->>Resolver: "34.120.55.100"
+    Resolver-->>User: 4. Returns 34.120.55.100
+    Note over User,Resolver: User connects to 34.120.55.100
 ```
 
 ### Record Types You Will Use
@@ -179,33 +175,60 @@ TTL (Time to Live) controls how long resolvers cache a DNS response. Choosing th
 
 **Pro tip**: Before a planned migration, lower the TTL to 60 seconds at least 24 hours in advance (equal to the current TTL). This ensures that by migration time, all caches have the short TTL and will pick up the new IP quickly.
 
+> **Stop and think**: You are planning to switch a critical database to a new instance this coming Saturday at midnight. The current `db.example.com` A record has a TTL of 86400 (24 hours). What specific action should you take on Friday, and what should you do after the migration is complete?
+
+---
+
+## DNS Routing Policies
+
+Cloud DNS allows you to configure routing policies that intelligently direct traffic based on weight, geolocation, or health checks. This is essential for building highly available, multi-region architectures.
+
+### Weighted Round Robin
+Weighted routing distributes traffic across multiple IP addresses based on weights you define. This is incredibly useful for A/B testing, canary deployments, or gradually shifting traffic to a new environment (e.g., sending 10% of traffic to a new version of your application).
+
+```bash
+# Add a weighted round-robin policy to split traffic 80/20
+gcloud dns record-sets transaction add "34.120.55.200,34.120.55.201" \
+  --name="api.example.com." \
+  --ttl=300 \
+  --type=A \
+  --zone=example-zone \
+  --routing-policy-type=WRR \
+  --routing-policy-data="34.120.55.200=80;34.120.55.201=20"
+```
+
+### Geolocation Routing
+Geolocation routing minimizes latency by directing users to the endpoint geographically closest to them. If you run application clusters in both `us-central1` and `europe-west1`, you can ensure users in Europe are routed to the European cluster automatically.
+
+```bash
+# Add a geolocation routing policy
+gcloud dns record-sets transaction add "34.120.55.200,34.120.55.202" \
+  --name="app.example.com." \
+  --ttl=300 \
+  --type=A \
+  --zone=example-zone \
+  --routing-policy-type=GEO \
+  --routing-policy-data="us-central1=34.120.55.200;europe-west1=34.120.55.202"
+```
+
 ---
 
 ## Private Zones: Internal DNS
 
 Private DNS zones are visible only from within specified VPC networks. They are essential for internal service discovery---allowing you to give friendly names to internal resources without exposing those names to the internet.
 
-```text
-  ┌────────────────────────────────────────────┐
-  │  VPC: prod-vpc                              │
-  │                                              │
-  │  Private Zone: internal.example.com          │
-  │                                              │
-  │  ┌──────────┐     ┌──────────┐              │
-  │  │ VM: web-1 │     │ VM: db-1  │             │
-  │  │           │     │           │             │
-  │  │ Resolves: │     │ 10.10.1.5 │             │
-  │  │ db.internal│    │           │             │
-  │  │ .example  │     │           │             │
-  │  │ .com      │     │           │             │
-  │  │ → 10.10.1.5│    │           │             │
-  │  └──────────┘     └──────────┘              │
-  │                                              │
-  │  DNS queries to internal.example.com are     │
-  │  answered by Cloud DNS (private zone).       │
-  │  DNS queries to www.google.com go to         │
-  │  public DNS as normal.                       │
-  └────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph "VPC: prod-vpc"
+        direction LR
+        VM1["VM: web-1"]
+        DNS[("Cloud DNS<br/>Private Zone:<br/>internal.example.com")]
+        VM2["VM: db-1<br/>IP: 10.10.1.5"]
+        
+        VM1 -- "Query: db.internal.example.com" --> DNS
+        DNS -- "Response: 10.10.1.5" --> VM1
+        VM1 -. "Connects" .-> VM2
+    end
 ```
 
 ### Creating a Private Zone
@@ -246,6 +269,8 @@ gcloud compute ssh vm-in-prod-vpc --zone=us-central1-a \
   --command="dig db.internal.example.com +short"
 ```
 
+> **Pause and predict**: You have a VPC with a private zone for `internal.company.com`. You just spun up a new VM in a completely different VPC in the same project and want it to resolve `db.internal.company.com`. Will the new VM be able to resolve it out of the box? If not, what must you do?
+
 ### Making a Private Zone Visible to Multiple VPCs
 
 ```bash
@@ -284,21 +309,21 @@ DNS forwarding allows you to forward queries for specific domains to external DN
 
 ### Outbound Forwarding (GCP to On-Premises)
 
-```text
-  ┌──────────────────────────┐      ┌───────────────────────┐
-  │  GCP VPC                  │      │  On-Premises           │
-  │                            │      │                        │
-  │  VM queries:               │      │  DNS Server             │
-  │  db.corp.company.com       │      │  10.200.0.53            │
-  │         │                  │      │                        │
-  │         ▼                  │      │  Knows about:           │
-  │  Cloud DNS checks:         │      │  *.corp.company.com     │
-  │  "Is there a private zone?"│      │                        │
-  │  "No → check forwarding"  │      │                        │
-  │  "Yes! Forward to         │──────│→ Resolves and returns   │
-  │   10.200.0.53"            │ VPN  │  10.200.5.20            │
-  │                            │      │                        │
-  └──────────────────────────┘      └───────────────────────┘
+```mermaid
+flowchart LR
+    subgraph "GCP VPC"
+        VM["VM"]
+        CloudDNS["Cloud DNS<br/>1. Check private zone? No.<br/>2. Check forwarding? Yes!"]
+        VM -- "Query: db.corp.company.com" --> CloudDNS
+    end
+    
+    subgraph "On-Premises"
+        OnPremDNS["DNS Server<br/>(10.200.0.53)<br/>Authoritative for *.corp.company.com"]
+    end
+    
+    CloudDNS -- "Forward to 10.200.0.53<br/>via VPN/Interconnect" --> OnPremDNS
+    OnPremDNS -. "Returns 10.200.5.20" .-> CloudDNS
+    CloudDNS -. "Returns 10.200.5.20" .-> VM
 ```
 
 ```bash
@@ -364,18 +389,21 @@ gcloud dns policies delete custom-dns
 
 DNS peering zones allow one VPC to resolve DNS names using another VPC's private zones, without creating a full VPC peering or sharing the zones directly. This is useful when you have a central "DNS hub" VPC.
 
-```text
-  ┌──────────────────────┐     DNS Peering     ┌──────────────────────┐
-  │  VPC: app-vpc         │ ──────────────────> │  VPC: dns-hub-vpc     │
-  │                        │                     │                        │
-  │  VM queries:           │                     │  Has private zones:    │
-  │  db.internal.com       │                     │  - internal.com        │
-  │                        │                     │  - staging.internal.com│
-  │  "I don't have a       │                     │                        │
-  │   zone for this...     │                     │  Has forwarding zones: │
-  │   but I peer with      │                     │  - corp.company.com    │
-  │   dns-hub-vpc"        │                     │    → on-premises DNS   │
-  └────────────────────────┘                     └────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph "VPC: app-vpc"
+        VM["VM"]
+        AppDNS["Cloud DNS<br/>No local zone match.<br/>Forward to peered VPC."]
+        VM -- "Query: db.internal.com" --> AppDNS
+    end
+    
+    subgraph "VPC: dns-hub-vpc"
+        HubDNS["Cloud DNS<br/>Matches private zone:<br/>internal.com"]
+    end
+    
+    AppDNS -- "DNS Peering" --> HubDNS
+    HubDNS -. "Returns IP" .-> AppDNS
+    AppDNS -. "Returns IP" .-> VM
 ```
 
 ```bash
@@ -469,39 +497,39 @@ gcloud logging read 'resource.type="dns_query"' \
 ## Quiz
 
 <details>
-<summary>1. What happens if you create a private DNS zone for "example.com" in a VPC, and you also have a public DNS zone for "example.com"?</summary>
+<summary>1. You are running a production web application with a public DNS zone for "company.com" that resolves to your public load balancer. An engineer creates a private DNS zone for "company.com" in your production VPC to handle internal service discovery for a new database, but they only add the database records. Several minutes later, applications in the production VPC start throwing connection errors when trying to reach the public website API. What caused this outage?</summary>
 
-The **private zone takes precedence** for VMs within that VPC. All DNS queries from VMs in the VPC for `example.com` and any subdomains will be resolved using the private zone, completely ignoring the public zone. This is called "split-horizon DNS." If the private zone does not contain a record for a specific subdomain (e.g., `app.example.com`), the query will return `NXDOMAIN` rather than falling through to the public zone. This behavior is intentional for security (preventing internal VMs from reaching untrusted external endpoints) but can be a trap if you need some records from the public zone.
+The **private zone takes precedence** over the public zone for VMs within that specific VPC. When the engineer created the private zone for "company.com", it established a split-horizon DNS architecture, meaning all DNS queries from VMs in that VPC for "company.com" and any of its subdomains were routed exclusively to the private zone. Because the private zone only contained the database records, queries for the public API endpoints returned an NXDOMAIN (not found) error rather than falling back to the public zone. To resolve this, the engineer must either add all required public records to the private zone, or preferably, use a dedicated internal subdomain like "internal.company.com" for the private zone to avoid shadowing the public namespace.
 </details>
 
 <details>
-<summary>2. How does DNS peering differ from simply adding multiple VPCs to a private zone?</summary>
+<summary>2. Your organization has 50 different GCP projects, each with its own VPC network. The platform team manages a set of 20 private DNS zones containing core infrastructure endpoints. A junior engineer suggests iterating through all 50 VPCs and adding each one directly to the "visibility" list of all 20 private DNS zones. You suggest using DNS peering instead. Why is DNS peering the superior architectural choice in this scenario?</summary>
 
-When you add multiple VPCs to a private zone, each VPC gets direct visibility into the zone's records. This works but does not scale: if you have 50 VPCs and 20 private zones, you need to manage 1,000 zone-to-VPC bindings. **DNS peering** creates a delegation relationship where one VPC (the "consumer") forwards its DNS queries to another VPC (the "producer") for resolution. The consumer does not need to be listed on every private zone---it just peers with the hub VPC, which has access to all zones. This creates a clean hub-spoke architecture for DNS management.
+When you add multiple VPCs directly to a private zone, each VPC gets direct visibility, but this approach does not scale well organizationally or operationally. In the junior engineer's proposal, you would need to manage and maintain 1,000 separate zone-to-VPC bindings (50 VPCs x 20 zones), creating massive administrative overhead every time a new VPC or zone is created. **DNS peering** allows you to create a delegation relationship where the 50 "spoke" VPCs simply forward their DNS queries to a single central "hub" VPC for resolution. The hub VPC acts as the single source of truth that is directly attached to the private zones, dramatically simplifying lifecycle management and ensuring consistent resolution across the enterprise.
 </details>
 
 <details>
-<summary>3. An on-premises server needs to resolve a private Cloud DNS zone in GCP. What do you need to configure?</summary>
+<summary>3. Your company recently established a dedicated Cloud Interconnect between your on-premises data center and a GCP VPC. You have a private DNS zone in GCP (`gcp.internal`) and you want an on-premises legacy application server to resolve a GCP database hostname (`db.gcp.internal`). However, when you query the hostname from the on-premises server, it fails to resolve. What two specific configuration steps are required to establish this inbound resolution path?</summary>
 
-You need two things. First, create a **DNS server policy** with inbound forwarding enabled on the VPC where the private zone is attached (`--enable-inbound-forwarding`). This creates special forwarding IP addresses in each subnet. Second, configure your **on-premises DNS server** to forward queries for the private zone's domain to the inbound forwarding IP address. Traffic flows from the on-premises DNS server through the VPN or Cloud Interconnect to the inbound forwarder IP in GCP, which resolves the query against the private zone and returns the answer.
+To enable on-premises systems to resolve GCP private DNS zones, you must establish an explicit inbound resolution path. First, you must create a **DNS server policy** with inbound forwarding enabled on the VPC where the private zone is attached, which provisions dedicated inbound forwarding IP addresses in each of your VPC subnets. Second, you must configure your **on-premises DNS server** with a conditional forwarding rule that directs queries for the `gcp.internal` domain to those specific inbound forwarding IP addresses. The query will then travel across the Cloud Interconnect to the GCP forwarder, which resolves the name against the private zone and returns the result back to the on-premises server.
 </details>
 
 <details>
-<summary>4. Why can you not create a CNAME record at the zone apex (e.g., "example.com" without a subdomain)?</summary>
+<summary>4. You are migrating your company's main marketing website to a new managed hosting provider. The provider gives you a hostname (`proxy.hostingprovider.com`) and instructs you to map your root domain (`example.com`) to this hostname. You open Cloud DNS and attempt to create a CNAME record for `example.com` (the zone apex) pointing to `proxy.hostingprovider.com`, but the Google Cloud Console rejects the change with an error. Why does this operation fail, and what is the standard workaround?</summary>
 
-The DNS specification (RFC 1034) prohibits CNAME records at the zone apex because the apex must also have SOA and NS records, and the CNAME specification states that no other record types can coexist with a CNAME. If you try to create a CNAME for `example.com.`, Cloud DNS will reject it. The solution is to use an **A record** (or AAAA record) at the apex pointing directly to your load balancer's IP address. Some DNS providers offer proprietary "ALIAS" or "ANAME" records that work around this limitation, but Cloud DNS does not---you must use A/AAAA records at the apex.
+The operation fails because the fundamental DNS specification (RFC 1034) strictly prohibits creating CNAME records at the zone apex. The zone apex must always contain Start of Authority (SOA) and Name Server (NS) records to function, and the DNS protocol explicitly dictates that a CNAME record cannot coexist with any other record types at the same namespace level. Because Cloud DNS strictly adheres to DNS RFCs, it rejects the configuration. The standard solution is to use an **A record** (or AAAA record) at the zone apex pointing directly to the application's static IPv4 address, while using CNAME records only for subdomains like `www.example.com`.
 </details>
 
 <details>
-<summary>5. What is the purpose of DNS response policies (RPZs), and how might you use them for security?</summary>
+<summary>5. Your security team alerts you that several developer VMs in your GCP environment have been compromised and are attempting to communicate with a known malicious command-and-control server at `c2.hacker-network.com`. You need to immediately prevent any further communication with this domain across your entire GCP organization without modifying individual VM firewalls. How can Cloud DNS Response Policy Zones (RPZs) solve this immediate crisis?</summary>
 
-Response Policy Zones (RPZs) allow you to override DNS responses for specific domains. You create a response policy with rules that match domain names and return custom responses (like `NXDOMAIN`, a sinkhole IP address, or passthrough to normal resolution). For security, you can use RPZs to block known malicious domains, phishing sites, or command-and-control servers by returning `NXDOMAIN` for those domains. This provides a DNS-level firewall without requiring agents on VMs or additional network appliances. RPZs are evaluated before normal DNS resolution.
+Response Policy Zones (RPZs) provide a mechanism to intercept and override normal DNS resolution behavior for specific domains at the network level. In this crisis scenario, you can create a response policy rule that explicitly matches the malicious domain `c2.hacker-network.com` and configures it to return an NXDOMAIN (not found) response or redirect traffic to a safe internal sinkhole IP address. Because Cloud DNS evaluates RPZs before standard resolution, this effectively creates a network-wide DNS firewall. The compromised VMs will immediately fail to resolve the command-and-control server's IP address, severing the communication channel without requiring any agent deployments or complex firewall rule updates.
 </details>
 
 <details>
-<summary>6. You need to migrate a web application to a new IP address. The current DNS record has a TTL of 86400 (24 hours). What is the correct migration procedure?</summary>
+<summary>6. It is Thursday afternoon, and your team is preparing for a high-stakes migration of your primary payment gateway API to a new GCP load balancer scheduled for Saturday at 2:00 AM. The API currently uses an A record with a Time to Live (TTL) of 86400 seconds (24 hours). A junior engineer suggests simply updating the A record to the new IP address on Saturday at 2:00 AM. Why will this plan cause an extended outage, and what is the correct sequence of steps to ensure a seamless migration?</summary>
 
-The correct procedure involves multiple steps. First, **lower the TTL** from 86400 to 60 seconds at least 24-48 hours before the migration. This ensures that all caches worldwide will have the short TTL by migration time. Second, **perform the migration** by updating the A record to the new IP address. Because the TTL is now 60 seconds, most resolvers will pick up the new IP within 1-2 minutes. Third, **monitor** traffic on both the old and new IP for stragglers (some resolvers do not strictly respect TTLs). Fourth, after the migration is confirmed successful and all traffic has shifted, **increase the TTL** back to an appropriate value to reduce DNS query load.
+The junior engineer's plan will cause an extended outage because recursive DNS resolvers across the internet will have cached the old IP address for up to 24 hours, meaning global traffic will slowly trickle to the new load balancer over a full day while many users continue hitting the old, potentially decommissioned endpoint. The correct procedure requires proactive preparation by lowering the TTL to a very short duration (e.g., 60 seconds) on Thursday—at least 24 hours before the migration window—giving global caches time to expire and pick up the short TTL. When Saturday at 2:00 AM arrives, you can safely update the A record to the new IP, and the short TTL will ensure global traffic shifts within a matter of minutes. Finally, after validating the migration, you should increase the TTL back to a longer duration to optimize performance and reduce query volume.
 </details>
 
 ---
@@ -510,7 +538,7 @@ The correct procedure involves multiple steps. First, **lower the TTL** from 864
 
 ### Objective
 
-Create and manage public and private DNS zones, demonstrate split-horizon DNS behavior, and configure DNS forwarding.
+Create and manage public and private DNS zones, demonstrate split-horizon DNS behavior, configure DNS routing policies, and set up DNS forwarding.
 
 ### Prerequisites
 
@@ -599,7 +627,31 @@ gcloud dns record-sets list --zone=lab-public-zone \
 ```
 </details>
 
-**Task 3: Create a Private DNS Zone**
+**Task 3: Create a Weighted Routing Policy**
+
+<details>
+<summary>Solution</summary>
+
+```bash
+# Create a weighted round-robin record to split traffic
+gcloud dns record-sets transaction start --zone=lab-public-zone
+
+gcloud dns record-sets transaction add "34.120.55.200,34.120.55.201" \
+  --name="api.lab.example.com." \
+  --ttl=300 \
+  --type=A \
+  --zone=lab-public-zone \
+  --routing-policy-type=WRR \
+  --routing-policy-data="34.120.55.200=80;34.120.55.201=20"
+
+gcloud dns record-sets transaction execute --zone=lab-public-zone
+
+# List records to verify the routing policy
+gcloud dns record-sets list --zone=lab-public-zone
+```
+</details>
+
+**Task 4: Create a Private DNS Zone**
 
 <details>
 <summary>Solution</summary>
@@ -641,7 +693,7 @@ gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap \
 ```
 </details>
 
-**Task 4: Enable DNS Logging**
+**Task 5: Enable DNS Logging**
 
 <details>
 <summary>Solution</summary>
@@ -665,7 +717,7 @@ gcloud logging read 'resource.type="dns_query"' \
 ```
 </details>
 
-**Task 5: Modify Records (Simulating a Migration)**
+**Task 6: Modify Records (Simulating a Migration)**
 
 <details>
 <summary>Solution</summary>
@@ -695,7 +747,7 @@ gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap \
 ```
 </details>
 
-**Task 6: Clean Up**
+**Task 7: Clean Up**
 
 <details>
 <summary>Solution</summary>
@@ -706,6 +758,10 @@ gcloud dns policies delete dns-logging --quiet
 
 # Delete record sets (must delete non-default records before zone)
 gcloud dns record-sets transaction start --zone=lab-public-zone
+gcloud dns record-sets transaction remove "34.120.55.200,34.120.55.201" \
+  --name="api.lab.example.com." --ttl=300 --type=A --zone=lab-public-zone \
+  --routing-policy-type=WRR \
+  --routing-policy-data="34.120.55.200=80;34.120.55.201=20"
 gcloud dns record-sets transaction remove "34.120.55.100" \
   --name="web.lab.example.com." --ttl=300 --type=A --zone=lab-public-zone
 gcloud dns record-sets transaction remove "web.lab.example.com." \
@@ -738,6 +794,7 @@ echo "Cleanup complete."
 ### Success Criteria
 
 - [ ] Public DNS zone created with A and CNAME records
+- [ ] Weighted routing policy created for traffic distribution
 - [ ] Private DNS zone created and resolvable from within the VPC
 - [ ] DNS logging enabled and queries visible in Cloud Logging
 - [ ] DNS record modified (simulated migration)
