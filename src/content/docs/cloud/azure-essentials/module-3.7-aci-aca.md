@@ -12,7 +12,7 @@ After completing this module, you will be able to:
 
 - **Deploy Azure Container Instances for burst workloads with virtual network integration and GPU support**
 - **Configure Azure Container Apps with Dapr integration, KEDA-based autoscaling, and revision traffic splitting**
-- **Implement event-driven container architectures using Container Apps with Azure Event Grid and Service Bus triggers**
+- **Implement event-driven container architectures using Container Apps with Azure Storage Queue triggers**
 - **Evaluate ACI vs Container Apps vs AKS to select the right container platform for each workload pattern**
 
 ---
@@ -72,22 +72,16 @@ az container delete -g myRG -n hello-world --yes
 
 A **container group** is ACI's equivalent of a Kubernetes Pod. It is a collection of containers that are scheduled on the same host, share the same network namespace (they can reach each other on `localhost`), and can share volumes.
 
-```text
-    ┌──────────────────────────────────────────────────┐
-    │            Container Group (= K8s Pod)            │
-    │                                                  │
-    │  ┌──────────────┐  ┌──────────────────────────┐  │
-    │  │ App Container│  │ Sidecar Container        │  │
-    │  │              │  │                          │  │
-    │  │ nginx:alpine │  │ fluentd:latest           │  │
-    │  │ Port 80      │  │ Reads /var/log/nginx     │  │
-    │  │              │  │ Ships to Log Analytics   │  │
-    │  └──────────────┘  └──────────────────────────┘  │
-    │                                                  │
-    │  Shared: Network (localhost), Volumes, Lifecycle  │
-    │  Public IP: 20.50.100.150                        │
-    │  DNS: myapp.eastus2.azurecontainer.io            │
-    └──────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph CG [Container Group = K8s Pod]
+        direction LR
+        A[App Container<br/>nginx:alpine<br/>Port 80]
+        B[Sidecar Container<br/>fluentd:latest<br/>Reads /var/log/nginx<br/>Ships to Log Analytics]
+    end
+    Shared[Shared: Network localhost, Volumes, Lifecycle<br/>Public IP: 20.50.100.150<br/>DNS: myapp.eastus2.azurecontainer.io]
+    CG --- Shared
+    style Shared fill:none,stroke:none
 ```
 
 ```yaml
@@ -174,6 +168,8 @@ az container create \
 
 A container running 1 vCPU and 2 GB for an hour costs approximately: (0.0000135 x 3600) + (0.0000015 x 2 x 3600) = $0.049 + $0.011 = **$0.06/hour** or about **$43/month** if running 24/7.
 
+> **Pause and predict**: If you had a monolithic web application that receives consistent, heavy traffic 24/7, would ACI be a cost-effective hosting choice compared to a standard VM? Why or why not?
+
 ---
 
 ## Azure Container Apps (ACA): The Sweet Spot
@@ -182,36 +178,30 @@ Azure Container Apps is built on Kubernetes (specifically, a managed AKS cluster
 
 ### Architecture
 
-```text
-    ┌──────────────────────────────────────────────────────────────┐
-    │            Azure Container Apps Environment                  │
-    │            (Shared boundary for related apps)                │
-    │                                                              │
-    │  ┌─────────────────────────────────────────────────────┐     │
-    │  │                    Envoy Proxy                      │     │
-    │  │         (Ingress, Traffic Splitting)                │     │
-    │  └──────────────────┬──────────────────┬───────────────┘     │
-    │                     │                  │                     │
-    │       80% traffic   │    20% traffic   │                     │
-    │                     ▼                  ▼                     │
-    │  ┌──────────────────────┐  ┌──────────────────────┐         │
-    │  │  Container App:      │  │  Container App:      │         │
-    │  │  web-api              │  │  web-api              │         │
-    │  │  Revision: v2        │  │  Revision: v3        │         │
-    │  │  (3 replicas)        │  │  (1 replica)         │         │
-    │  └──────────────────────┘  └──────────────────────┘         │
-    │                                                              │
-    │  ┌──────────────────────┐  ┌──────────────────────┐         │
-    │  │  Container App:      │  │  Container App:      │         │
-    │  │  worker               │  │  queue-processor     │         │
-    │  │  (KEDA: scale on     │  │  (KEDA: scale on     │         │
-    │  │   HTTP concurrency)  │  │   queue depth)       │         │
-    │  │  (0-20 replicas)     │  │  (0-50 replicas)     │         │
-    │  └──────────────────────┘  └──────────────────────┘         │
-    │                                                              │
-    │  Shared: Log Analytics workspace, virtual network            │
-    │  Built on: Managed Kubernetes + KEDA + Envoy + Dapr          │
-    └──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Env [Azure Container Apps Environment]
+        direction TB
+        Envoy[Envoy Proxy<br/>Ingress, Traffic Splitting]
+        
+        subgraph WebApp [Container App: web-api]
+            direction LR
+            Rev2[Revision: v2<br/>3 replicas]
+            Rev3[Revision: v3<br/>1 replica]
+        end
+        
+        Envoy -- 80% traffic --> Rev2
+        Envoy -- 20% traffic --> Rev3
+        
+        subgraph Workers [Worker Apps]
+            direction LR
+            Worker1[Container App: worker<br/>KEDA: scale on HTTP concurrency<br/>0-20 replicas]
+            Worker2[Container App: queue-processor<br/>KEDA: scale on queue depth<br/>0-50 replicas]
+        end
+    end
+    SharedInfo[Shared: Log Analytics workspace, virtual network<br/>Built on: Managed Kubernetes + KEDA + Envoy + Dapr]
+    Env --- SharedInfo
+    style SharedInfo fill:none,stroke:none
 ```
 
 ### Container Apps vs ACI vs AKS
@@ -338,23 +328,28 @@ Available KEDA scale triggers in Container Apps:
 
 Dapr (Distributed Application Runtime) is built into Container Apps and provides building blocks for microservice communication without requiring you to learn Kubernetes networking.
 
-```text
-    ┌─────────────────────────────────────────────────────────┐
-    │              Dapr Building Blocks in Container Apps      │
-    ├─────────────────┬───────────────────────────────────────┤
-    │ Service Invoke  │ Call other services by name            │
-    │ Pub/Sub         │ Publish/subscribe messaging            │
-    │ State Store     │ Key/value state management             │
-    │ Bindings        │ Input/output bindings (queues, DBs)    │
-    │ Secrets         │ Secret store integration               │
-    └─────────────────┴───────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Dapr Blocks
+        direction TB
+        B1["Service Invoke: Call other services by name"]
+        B2["Pub/Sub: Publish/subscribe messaging"]
+        B3["State Store: Key/value state management"]
+        B4["Bindings: Input/output bindings (queues, DBs)"]
+        B5["Secrets: Secret store integration"]
+    end
 
-    Without Dapr:
-    App → HTTP call → http://web-api.internal.company.com:8080/orders
+    subgraph Flow Without Dapr
+        direction LR
+        App1[App] -- HTTP call --> API1[http://web-api.internal.company.com:8080/orders]
+    end
 
-    With Dapr:
-    App → Dapr sidecar → http://localhost:3500/v1.0/invoke/web-api/method/orders
-    (Dapr handles service discovery, retries, mTLS, observability)
+    subgraph Flow With Dapr
+        direction LR
+        App2[App] -- HTTP call --> Sidecar[Dapr sidecar<br/>http://localhost:3500/v1.0/invoke/web-api/method/orders]
+        Sidecar -.-> Magic[Dapr handles service discovery, retries, mTLS, observability]
+        style Magic fill:none,stroke:none
+    end
 ```
 
 ```bash
@@ -391,6 +386,8 @@ az containerapp env dapr-component set \
 
 **War Story**: A logistics startup had 8 microservices communicating via direct HTTP calls. When one service was slow, the calling services would timeout and retry, creating cascading failures. They enabled Dapr on Container Apps, which added automatic retries with exponential backoff, circuit breaking, and distributed tracing---all without changing application code. Their P99 latency dropped from 2.3 seconds to 180 milliseconds, and cascading failures stopped entirely because Dapr's circuit breaker would trip before the cascade could propagate.
 
+> **Stop and think**: If your team is migrating a complex microservices architecture to Azure and wants to avoid the operational overhead of managing a full Kubernetes cluster, how does ACA's built-in Dapr integration reduce the custom code you need to write?
+
 ---
 
 ## Did You Know?
@@ -423,39 +420,39 @@ az containerapp env dapr-component set \
 ## Quiz
 
 <details>
-<summary>1. What is the fundamental architectural difference between ACI and Azure Container Apps?</summary>
+<summary>1. Scenario: Your team is debating between ACI and Azure Container Apps for a new microservices deployment. A junior developer states they are essentially the same service, just with different pricing. How would you explain the fundamental architectural differences to correct this misconception?</summary>
 
-ACI is a raw container execution engine---you provide a container image and resources, and Azure runs it. There is no orchestration, no auto-scaling, no traffic management, and no service discovery. Each container group is an independent unit. Azure Container Apps is built on a managed Kubernetes cluster with KEDA, Envoy, and Dapr. It provides auto-scaling (including scale to zero), traffic splitting between revisions, built-in service discovery, custom domains with automatic TLS, and microservice communication building blocks. Container Apps abstracts the Kubernetes layer so you never interact with it directly.
+Azure Container Instances (ACI) and Azure Container Apps (ACA) operate on fundamentally different architectures. ACI functions as a raw container execution engine, simply taking a container image and providing compute resources to run it without any built-in orchestration, traffic routing, or auto-scaling. In contrast, Azure Container Apps is built on top of a fully managed Kubernetes cluster under the hood, pre-configured with KEDA for event-driven scaling, Envoy for traffic splitting, and Dapr for microservice communication. Because ACA abstracts away the Kubernetes control plane, you receive orchestration benefits like scale-to-zero and seamless service discovery without having to manage nodes or complex YAML manifests yourself.
 </details>
 
 <details>
-<summary>2. When would you choose ACI over Container Apps?</summary>
+<summary>2. Scenario: You have been tasked with migrating two distinct workloads to Azure: a nightly PDF generation script that runs for ten minutes and stops, and an e-commerce shopping cart API that experiences highly variable traffic throughout the day. Which container service would you choose for each workload, and why?</summary>
 
-Choose ACI for simple, short-lived tasks that do not need scaling: batch jobs, CI/CD build agents, one-off data processing tasks, or sidecar patterns with container groups. ACI is also the right choice for burstable overflow from AKS via virtual nodes. The key criteria: if your workload is a "run once and exit" task, or if it has a fixed number of instances with no need for auto-scaling, load balancing, or traffic management, ACI is simpler and often cheaper. If your workload needs any of those features, Container Apps is the better choice.
+For the nightly PDF generation script, Azure Container Instances (ACI) is the optimal choice because it is a simple, short-lived task that requires no auto-scaling, load balancing, or persistent network identity. You simply pay per second of execution, and the container group terminates once the job completes, making it highly cost-effective and operationally simple. For the e-commerce shopping cart API, Azure Container Apps (ACA) is the required solution. This workload demands responsive HTTP auto-scaling to handle traffic spikes, built-in ingress, and zero-downtime deployments via traffic splitting, all of which ACA provides natively through its managed Kubernetes foundation and Envoy proxy.
 </details>
 
 <details>
-<summary>3. How does KEDA scaling in Container Apps differ from traditional CPU-based auto-scaling?</summary>
+<summary>3. Scenario: Your background processing service needs to scale based on the number of pending orders in an Azure Storage Queue. A colleague suggests just using a standard CPU utilization metric of 70% to trigger scale-out events. Why is this approach flawed for queue processors, and how does KEDA scaling in Container Apps provide a better solution?</summary>
 
-Traditional auto-scaling (like HPA on CPU/memory) reacts to resource utilization---it scales when CPU exceeds a threshold. KEDA scaling reacts to external event sources---queue depth, HTTP concurrency, topic lag, cron schedules, or custom metrics. This is fundamentally different because the scaling signal comes from the demand source, not from the compute resource. A queue-based worker with KEDA scales when messages arrive in the queue, even if current CPU is at 0%. CPU-based scaling would not scale because there is nothing using CPU yet. KEDA also supports scale-to-zero, which traditional CPU-based scaling cannot do (you need at least one instance to measure CPU).
+Relying on CPU-based auto-scaling for queue processors is fundamentally flawed because CPU utilization is a lagging indicator that only measures current compute usage, not the actual backlog of pending work. If your queue suddenly receives 10,000 messages while your existing instances are idle, the CPU metric won't trigger a scale-out until the instances start pulling messages and actually consume CPU cycles. KEDA solves this by directly monitoring external event sources, such as queue depth, HTTP concurrency, or topic lag, meaning it scales based on the demand signal rather than the resource consumption. Additionally, KEDA enables scaling completely to zero when the queue is empty, which is impossible with CPU scaling since you must have at least one running instance to measure CPU usage.
 </details>
 
 <details>
-<summary>4. You deploy a Container App with two revisions and configure 80/20 traffic splitting. What happens to existing client connections when you change the split to 100/0?</summary>
+<summary>4. Scenario: You are performing a canary deployment for a critical payment gateway running on Container Apps. You currently have 80% of traffic routing to revision v1 and 20% to revision v2. When you observe no errors in v2, you update the ingress rules to route 100% of traffic to v2. What happens to the users currently in the middle of processing a payment on revision v1?</summary>
 
-Existing connections to the 20% revision continue to be served until they naturally close or timeout. Container Apps (via Envoy proxy) performs graceful drain on the deactivated revision, meaning it stops sending new connections but allows existing ones to complete. New connections are immediately routed 100% to the promoted revision. The old revision's replicas are eventually scaled down after the drain period completes. This ensures zero-downtime traffic shifts.
+Users currently processing payments on revision v1 will not experience drops or interruptions. When you shift the traffic weights to 100% for revision v2, the Envoy proxy within Azure Container Apps performs a graceful drain on the newly deactivated v1 revision. This means Envoy stops routing any new incoming requests to v1, but actively allows all existing, established connections to complete their processing naturally. Once those active connections are closed or timeout according to configuration, the replicas for revision v1 will eventually be scaled down, ensuring a safe, zero-downtime transition for your users.
 </details>
 
 <details>
-<summary>5. What problem does Dapr solve that direct HTTP calls between Container Apps do not?</summary>
+<summary>5. Scenario: Your architecture consists of an order service, an inventory service, and a shipping service communicating via standard REST calls over HTTP. During a recent outage, a database slowdown in the inventory service caused cascading timeouts that brought down the entire application. How would enabling Dapr on your Container Apps have mitigated this specific failure?</summary>
 
-Dapr provides a service mesh with built-in retries, circuit breaking, timeouts, mutual TLS, distributed tracing, and observability---all without application code changes. Direct HTTP calls between services have none of these features unless you implement them yourself. Additionally, Dapr provides abstractions for pub/sub messaging, state stores, and bindings, meaning your application code interacts with Dapr's API and Dapr handles the underlying infrastructure (Service Bus, Redis, Cosmos DB, etc.). This makes your application portable across different backends. Swap Redis for Cosmos DB by changing a Dapr component YAML---zero code changes.
+Direct HTTP calls between services lack inherent resilience mechanisms; if a downstream service slows down, upstream services simply wait and time out, quickly exhausting connection pools and causing cascading system failures. By enabling Dapr in Container Apps, a sidecar proxy is injected alongside your application container that intercepts these inter-service calls. Dapr automatically provides a robust service mesh layer that includes retries with exponential backoff, circuit breakers, and distributed tracing without requiring any changes to your application code. In the scenario of a slow inventory database, Dapr's circuit breaker would quickly trip, immediately rejecting calls from the order service to prevent connection pool exhaustion and allowing the rest of the system to remain stable while the inventory service recovers.
 </details>
 
 <details>
-<summary>6. A Container App processes messages from a Service Bus queue. You set min-replicas to 0 and max-replicas to 50. Describe what happens when 1,000 messages arrive in the queue simultaneously.</summary>
+<summary>6. Scenario: You deploy an ACA background worker configured to process video rendering jobs from a Service Bus queue, with a target of 1 replica per 5 messages, min-replicas set to 0, and max-replicas set to 50. During off-peak hours, a batch upload system suddenly pushes 1,000 video jobs into the queue. Detail the exact sequence of scaling events that Container Apps will execute in response.</summary>
 
-KEDA detects the queue depth increasing and begins scaling from zero. The first replica starts in 5-10 seconds (cold start: image pull + container initialization). KEDA evaluates the scale rule metadata (e.g., messageCount=5, meaning 1 replica per 5 messages) and calculates the desired replica count: 1000/5 = 200, but capped at max-replicas of 50. Over the next 30-60 seconds, Container Apps scales to 50 replicas. Each replica processes messages concurrently. As messages are consumed, queue depth decreases. When the queue empties, KEDA begins the cool-down period (default 300 seconds). If no new messages arrive during cool-down, replicas scale back to zero.
+Initially, KEDA detects the sudden spike in queue depth and triggers a scale-out from zero replicas, with the first instance starting up after a brief 5-10 second cold start to pull the image and initialize the container. Next, KEDA evaluates your scaling rule (1 replica per 5 messages) against the backlog of 1,000 messages, calculating a desired state of 200 replicas, but strictly caps the deployment at your configured `max-replicas` limit of 50. The environment rapidly spins up to 50 concurrent replicas to chew through the queue backlog. Once the queue is entirely empty and the default cool-down period of 300 seconds passes without any new messages arriving, KEDA will gracefully scale the worker back down to zero replicas, ensuring you pay absolutely nothing for compute while the system is idle.
 </details>
 
 ---
