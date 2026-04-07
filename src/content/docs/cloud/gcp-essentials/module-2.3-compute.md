@@ -33,35 +33,14 @@ GCP offers four machine families, each optimized for different workload characte
 
 ### The Four Families
 
-```text
-  ┌───────────────────────────────────────────────────────────┐
-  │                    Machine Families                         │
-  │                                                             │
-  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-  │  │  General      │  │  Compute     │  │  Memory      │     │
-  │  │  Purpose      │  │  Optimized   │  │  Optimized   │     │
-  │  │              │  │              │  │              │     │
-  │  │  E2, N2, N2D │  │  C2, C2D,   │  │  M2, M3     │     │
-  │  │  T2D, N1     │  │  C3, H3     │  │              │     │
-  │  │              │  │              │  │              │     │
-  │  │  Web servers  │  │  HPC, gaming │  │  SAP HANA,   │     │
-  │  │  Dev/test     │  │  batch jobs  │  │  in-memory   │     │
-  │  │  microservices│  │  scientific  │  │  databases   │     │
-  │  │              │  │  simulations │  │              │     │
-  │  └──────────────┘  └──────────────┘  └──────────────┘     │
-  │                                                             │
-  │  ┌──────────────┐                                          │
-  │  │  Accelerator  │                                          │
-  │  │  Optimized   │                                          │
-  │  │              │                                          │
-  │  │  A2, A3, G2  │                                          │
-  │  │              │                                          │
-  │  │  ML training  │                                          │
-  │  │  inference    │                                          │
-  │  │  video trans- │                                          │
-  │  │  coding       │                                          │
-  │  └──────────────┘                                          │
-  └───────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph "Machine Families"
+        A["<b>General Purpose</b><br/>E2, N2, N2D, T2D, N1<br/><i>Web servers, Dev/test, microservices</i>"]
+        B["<b>Compute Optimized</b><br/>C2, C2D, C3, H3<br/><i>HPC, gaming, batch jobs, scientific simulations</i>"]
+        C["<b>Memory Optimized</b><br/>M2, M3<br/><i>SAP HANA, in-memory databases</i>"]
+        D["<b>Accelerator Optimized</b><br/>A2, A3, G2<br/><i>ML training, inference, video transcoding</i>"]
+    end
 ```
 
 ### General Purpose: The Workhorse
@@ -216,6 +195,8 @@ gcloud compute commitments list --region=us-central1
 
 Sustained Use Discounts (SUDs) apply automatically---no commitment required. If a VM runs for more than 25% of the month, GCP automatically applies increasing discounts. By the end of the month, you effectively get a ~20% discount for VMs that ran the entire time.
 
+> **Pause and predict**: You are designing a video rendering pipeline. If a rendering job is interrupted, it must start over from the beginning. Some jobs take up to 36 hours. Should you use Spot VMs to save costs here?
+
 ---
 
 ## Custom Images and Image Families
@@ -279,6 +260,8 @@ gcloud compute images deprecate my-app-v1-1 \
   --state=DEPRECATED \
   --replacement=my-app-v1-0
 ```
+
+> **Pause and predict**: You need to apply a critical security patch to an OS used by 50 VMs. If you're using image families, what steps must you take to ensure all VMs run the patched OS?
 
 ---
 
@@ -412,21 +395,26 @@ gcloud compute instance-groups managed rolling-action start-update web-mig \
 
 When a health check fails, the MIG automatically recreates the unhealthy VM. This is the simplest form of self-healing in GCP.
 
-```text
-  Normal Operation:                    Self-Healing:
-  ┌──────┐ ┌──────┐ ┌──────┐         ┌──────┐ ┌──────┐ ┌──────┐
-  │ VM-1 │ │ VM-2 │ │ VM-3 │         │ VM-1 │ │ VM-2 │ │ VM-3 │
-  │  OK   │ │  OK   │ │  OK  │         │  OK  │ │ FAIL │ │  OK  │
-  └──────┘ └──────┘ └──────┘         └──────┘ └──┬───┘ └──────┘
-                                                  │
-                                           Health check fails
-                                           3 consecutive times
-                                                  │
-                                                  ▼
-                                        MIG deletes VM-2
-                                        and creates VM-2-new
-                                        from the template
+```mermaid
+flowchart LR
+    subgraph "Normal Operation"
+        direction LR
+        VM1["VM-1<br/>OK"]
+        VM2["VM-2<br/>OK"]
+        VM3["VM-3<br/>OK"]
+    end
+
+    subgraph "Self-Healing"
+        direction LR
+        VM1b["VM-1<br/>OK"]
+        VM2b["VM-2<br/>FAIL"]
+        VM3b["VM-3<br/>OK"]
+        
+        VM2b -- "Health check fails<br/>3 consecutive times" --> Action["MIG deletes VM-2<br/>and creates VM-2-new<br/>from the template"]
+    end
 ```
+
+> **Stop and think**: If you manually SSH into a VM managed by a MIG and update a configuration file, what will happen if the VM fails a health check later that day?
 
 ---
 
@@ -446,34 +434,13 @@ GCP offers multiple load balancer types, but the most common is the **External A
 
 ### Architecture of the External Application Load Balancer
 
-```text
-  Users (Internet)
-       │
-       ▼
-  ┌─────────────────────────┐
-  │  Google Global Anycast   │  ← Single IP, served from 100+ edge locations
-  │  IP Address              │
-  └────────────┬────────────┘
-               │
-  ┌────────────▼────────────┐
-  │  URL Map                 │  ← Routes based on host/path
-  │  /api/*  → backend-api   │     (e.g., /api → API MIG, /static → GCS bucket)
-  │  /static → cdn-bucket    │
-  │  /*      → backend-web   │
-  └────────────┬────────────┘
-               │
-  ┌────────────▼────────────┐
-  │  Backend Service         │  ← Health checks, session affinity,
-  │  (or Backend Bucket)     │     connection draining
-  └────────────┬────────────┘
-               │
-     ┌─────────┼──────────┐
-     │                     │
-  ┌──▼─────────┐  ┌───────▼────┐
-  │ MIG         │  │ MIG         │
-  │ us-central1 │  │ europe-west1│
-  │ (3 VMs)     │  │ (3 VMs)     │
-  └─────────────┘  └─────────────┘
+```mermaid
+flowchart TD
+    Users["Users (Internet)"] --> Anycast["Google Global Anycast IP Address<br/><i>Single IP, served from 100+ edge locations</i>"]
+    Anycast --> URLMap["URL Map<br/><i>/api/* → backend-api<br/>/static → cdn-bucket<br/>/* → backend-web</i>"]
+    URLMap --> BackendSvc["Backend Service (or Backend Bucket)<br/><i>Health checks, session affinity, connection draining</i>"]
+    BackendSvc --> MIG_US["MIG us-central1<br/>(3 VMs)"]
+    BackendSvc --> MIG_EU["MIG europe-west1<br/>(3 VMs)"]
 ```
 
 ### Setting Up a Global Load Balancer
@@ -583,6 +550,27 @@ gcloud compute resource-policies create snapshot-schedule daily-snapshot \
 
 ---
 
+## Securing Access: OS Login and SSH Keys
+
+Historically, accessing a Linux VM involved generating an SSH key pair and pasting the public key into the project or instance metadata. This approach does not scale well: when an employee leaves, you must hunt down and remove their keys across all instances. 
+
+OS Login solves this by linking SSH access to IAM (Identity and Access Management). Instead of managing individual SSH keys, you assign IAM roles (`roles/compute.osLogin` or `roles/compute.osAdminLogin`) to users or groups.
+
+```bash
+# Enable OS Login at the project level
+gcloud compute project-info add-metadata \
+  --metadata enable-oslogin=TRUE
+
+# Grant OS Login IAM role to a user
+gcloud projects add-iam-policy-binding my-project \
+  --member="user:alice@example.com" \
+  --role="roles/compute.osLogin"
+```
+
+When a user connects using `gcloud compute ssh`, GCP automatically generates a short-lived SSH key, pushes it to their OS Login profile, and allows them to log in. The moment their IAM permissions are revoked, their access to all VMs is instantly cut off. For VMs that do not have external IPs, you combine OS Login with Identity-Aware Proxy (IAP) TCP forwarding to securely tunnel SSH traffic without exposing ports to the internet.
+
+---
+
 ## Did You Know?
 
 1. **GCP's global load balancer uses Anycast routing**, meaning a single IP address is advertised from over 100 Google edge locations worldwide. When a user in Tokyo connects to your load balancer IP, they are routed to the nearest Google edge, which then forwards the request to the closest healthy backend. This happens at the network layer---no DNS-based routing tricks needed.
@@ -613,39 +601,45 @@ gcloud compute resource-policies create snapshot-schedule daily-snapshot \
 ## Quiz
 
 <details>
-<summary>1. What is the difference between a Spot VM and a Preemptible VM in GCP?</summary>
+<summary>1. Your team is running a batch processing workload that takes 30 hours to complete. A junior engineer suggests using Preemptible VMs to save money. How would you explain to them why Spot VMs are a better choice for this specific scenario?</summary>
 
-Spot VMs are the successor to Preemptible VMs and are the recommended choice for fault-tolerant workloads. The key differences: Preemptible VMs have a **maximum lifetime of 24 hours**---GCP will always terminate them after 24 hours even if capacity is available. Spot VMs have **no maximum lifetime**; they run indefinitely as long as capacity is available. Both can be preempted at any time with 30 seconds of warning, and both offer the same 60-91% discount. Spot VMs also support the `STOP` termination action (where the VM is stopped and can be restarted later), while Preemptible VMs are always deleted.
+Preemptible VMs have a hard limitation: GCP will always terminate them after exactly 24 hours of uptime, regardless of whether there is available capacity in the zone. Because your workload takes 30 hours to complete, it would never finish on a Preemptible VM without being interrupted. Spot VMs are the modern successor to Preemptible VMs and remove this 24-hour maximum lifetime restriction. While Spot VMs can still be preempted at any time if GCP needs the capacity, they are allowed to run indefinitely during periods of low demand, making them the only viable low-cost option for uninterrupted jobs longer than 24 hours.
 </details>
 
 <details>
-<summary>2. You have a MIG with 3 instances. One instance fails its health check 3 consecutive times. What happens?</summary>
+<summary>2. During a high-traffic event, one of the three VMs in your Managed Instance Group (MIG) runs out of memory and starts returning 502 Bad Gateway errors. The MIG is configured with an HTTP health check requiring 3 consecutive failures. Describe the exact sequence of events the MIG and load balancer will trigger to resolve this.</summary>
 
-The MIG's self-healing mechanism kicks in. The MIG detects that the instance has failed the configured health check threshold (3 consecutive failures in this case). It will **delete the unhealthy instance** and **create a new instance** from the instance template to replace it. The new instance must pass the health check after the `initial-delay` period before it is considered healthy. During this process, if the MIG is behind a load balancer, the load balancer stops sending traffic to the unhealthy instance as soon as its health check fails, ensuring users are not affected.
+As soon as the VM fails the health check three consecutive times, the load balancer instantly stops routing new user traffic to that specific VM to prevent further errors. Concurrently, the MIG's self-healing mechanism detects the unhealthy state and forcefully deletes the unresponsive VM. The MIG then automatically provisions a brand new VM using the exact specifications defined in the attached instance template. Once the newly created VM boots up and successfully passes its own health checks, the load balancer resumes sending it user traffic, restoring the group to full capacity without manual intervention.
 </details>
 
 <details>
-<summary>3. Why is a regional MIG generally preferred over a zonal MIG?</summary>
+<summary>3. Your company is deploying a mission-critical payment processing API. The architecture review board has rejected your proposal to use a zonal Managed Instance Group (MIG) in us-central1-a. Why is a regional MIG a strictly better choice for this architecture?</summary>
 
-A regional MIG distributes instances across **all zones in a region**, providing protection against zone-level failures. If one zone experiences an outage, the MIG continues serving traffic from the remaining zones. A zonal MIG places all instances in a single zone, creating a single point of failure. Regional MIGs also integrate better with global load balancing and allow the autoscaler to place new instances in the zone with the most available capacity. The only reason to use a zonal MIG is when you need a specific feature that is zone-dependent, like attaching a local SSD that must be in the same zone.
+A zonal MIG places all of your VM instances into a single datacenter zone, which creates a single point of failure if that specific facility experiences a power outage or network partition. By contrast, a regional MIG automatically distributes your VMs across multiple independent zones (like us-central1-a, us-central1-b, and us-central1-c) within the same region. This ensures that even if an entire Google Cloud zone goes offline, your application continues to serve traffic from the remaining healthy zones. Furthermore, a regional MIG allows the autoscaler to intelligently provision new instances in whichever zone currently has the most available hardware capacity.
 </details>
 
 <details>
-<summary>4. How does a canary deployment work with a MIG rolling update?</summary>
+<summary>4. You have just built a new instance template containing a major software update. Instead of updating all 100 production VMs at once, you want to test the new version on just 10% of your traffic. How do you execute this safely using a MIG?</summary>
 
-A canary deployment in a MIG uses the `--canary-version` flag during a rolling update. You specify two versions: the primary (existing template) and the canary (new template) with a `target-size` percentage. For example, `--canary-version=template=web-v2,target-size=20%` will update 20% of instances to the new template while keeping 80% on the old template. You can then monitor the canary instances for errors or performance regressions. If the canary is healthy, you proceed with a full rollout. If not, you roll back by updating with only the old template. This allows you to test changes in production with limited blast radius.
+You can achieve this by triggering a rolling update on the MIG using the `--canary-version` flag and specifying the new instance template. By setting the target size to 10%, the MIG will gradually replace only 10 of your existing VMs with the new template, while leaving the other 90 VMs untouched. You can then monitor application logs and error rates for those specific canary instances to ensure the new software is stable under real-world traffic. If everything looks good, you issue a subsequent command to roll out the update to 100%, or simply rollback the 10% if errors spike.
 </details>
 
 <details>
-<summary>5. What is the difference between pd-balanced, pd-ssd, and pd-standard persistent disks?</summary>
+<summary>5. You are provisioning a new Compute Engine VM that will host a high-throughput PostgreSQL database. Your colleague suggests using the `pd-standard` disk type because it is the cheapest option. Why is this a poor choice for a database, and what should you choose instead?</summary>
 
-The three disk types differ in performance and cost. **pd-standard** (HDD-backed) offers the lowest IOPS (0.75 per GB) and throughput, suitable only for sequential reads/writes like log storage. **pd-balanced** offers moderate IOPS (6 per GB) and is the default recommended choice for general workloads---boot disks, web servers, and applications that do not have extreme I/O needs. **pd-ssd** offers the highest IOPS (30 per GB) and throughput, making it the right choice for databases, caches, and any latency-sensitive workload. All three are network-attached persistent disks that survive VM deletion and can be snapshotted.
+The `pd-standard` persistent disk is backed by standard Hard Disk Drives (HDDs) and offers extremely low IOPS (0.75 per GB), making it suitable only for sequential data like log archives or backups. A database requires random, high-speed read/write operations, and running it on a standard HDD will result in severe I/O bottlenecks and unacceptable latency. For a high-throughput database, you must choose `pd-ssd` or `pd-extreme`, which are backed by Solid State Drives (SSDs) and deliver massively higher IOPS and throughput. While `pd-balanced` offers a middle-ground of performance and cost, `pd-ssd` is strictly recommended for latency-sensitive workloads like enterprise databases.
 </details>
 
 <details>
-<summary>6. What is live migration, and which VM types do NOT support it?</summary>
+<summary>6. Google Cloud notifies you that the physical host running your primary web server requires emergency hardware maintenance. You are using standard e2-medium VMs, and you panic because you cannot afford any downtime. Why shouldn't you worry, and under what circumstances would this actually cause an outage?</summary>
 
-Live migration is a GCP feature that transparently moves a running VM from one physical host to another without rebooting the VM. Google triggers live migration during host maintenance events (hardware updates, security patches, etc.). The VM experiences less than a second of degraded performance during migration. **Preemptible VMs, Spot VMs, and VMs with GPUs attached** do not support live migration. Preemptible and Spot VMs are terminated instead of migrated. GPU VMs must be configured with `--maintenance-policy=TERMINATE` because GPU state cannot be migrated.
+You shouldn't worry because standard Compute Engine VMs benefit from a feature called live migration, which transparently moves your running VM from the failing physical host to a healthy one. This process happens automatically without rebooting the VM and typically results in less than a second of degraded performance, meaning your users will not notice the event. However, this would cause an outage if you were using Spot VMs, Preemptible VMs, or VMs with attached GPUs. These specific VM types do not support live migration, and would instead be terminated or stopped entirely when Google performs host maintenance.
+</details>
+
+<details>
+<summary>7. A developer who recently left the company claims they still have SSH access to several production VMs because they manually added their public SSH key to the `~/.ssh/authorized_keys` file on those machines. How could your organization have prevented this by using OS Login?</summary>
+
+When OS Login is enabled at the project level, Compute Engine completely bypasses local SSH key files like `~/.ssh/authorized_keys` and exclusively relies on IAM policies to authorize access. With OS Login, a user's ability to SSH into a VM is directly tied to their Google Cloud identity and IAM roles (like `roles/compute.osLogin`). The moment the departed developer's Google Workspace account is suspended or their IAM role is revoked, their SSH access is instantly cut off across all VMs in the project. This eliminates the operational nightmare of hunting down and deleting rogue public keys scattered across individual instances.
 </details>
 
 ---
