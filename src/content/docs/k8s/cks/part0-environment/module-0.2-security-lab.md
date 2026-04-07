@@ -304,7 +304,7 @@ sudo aa-status
 
 ---
 
-> **What would happen if**: You install Falco on a kind cluster using the modern_ebpf driver, but the cluster node's kernel doesn't support eBPF CO-RE. What symptoms would you see and how would you fix it?
+> **Pause and predict**: You install Falco on a kind cluster using the modern_ebpf driver, but the cluster node's kernel doesn't support eBPF CO-RE. What symptoms would you see and how would you fix it?
 
 ## Verify Seccomp Support
 
@@ -477,25 +477,25 @@ echo "=== Validation Complete ==="
 1. **You run `trivy image nginx:latest` and get over 140 vulnerabilities. Your manager panics and says to switch to Alpine-based images immediately. Is this the right response, and what would you actually do?**
    <details>
    <summary>Answer</summary>
-   Switching to Alpine may reduce the vulnerability count since Alpine has fewer packages, but it's not a complete solution. The right approach is to filter by severity (`trivy image --severity HIGH,CRITICAL nginx:latest`), focus on fixing CRITICAL and HIGH vulnerabilities first, check if fixed versions exist, and consider using distroless or minimal base images. Trivy scans images, filesystems, git repos, and Kubernetes manifests -- use all these capabilities to build a comprehensive security posture, not just react to raw numbers.
+   Switching to Alpine may reduce the vulnerability count since Alpine has fewer packages, but it is not a complete or guaranteed solution. The right approach is to filter by severity using `trivy image --severity HIGH,CRITICAL nginx:latest` and focus on fixing CRITICAL and HIGH vulnerabilities first. You should also check if patched versions of the specific vulnerable packages exist before swapping the entire base image. Furthermore, consider adopting distroless or truly minimal base images if the application supports it. Trivy scans images, filesystems, git repos, and Kubernetes manifests, so you must use all these capabilities to build a comprehensive security posture rather than just reacting to raw vulnerability counts.
    </details>
 
-2. **During CKS lab setup, you create a custom seccomp profile and place it in `/etc/seccomp/profiles/` on the node. When you reference it in a pod spec, the pod fails to start. What went wrong?**
+2. **During CKS lab setup, you create a custom seccomp profile and place it in `/etc/seccomp/profiles/` on the node. When you reference it in a pod spec, the pod fails to start with a create error. What went wrong?**
    <details>
    <summary>Answer</summary>
-   Kubernetes expects seccomp profiles in `/var/lib/kubelet/seccomp/` on the node where the pod runs, not `/etc/seccomp/profiles/`. Kubernetes references profiles relative to the kubelet's seccomp directory. Moving the profile to the correct path (`/var/lib/kubelet/seccomp/profiles/`) will fix the issue. This is a common gotcha because the path isn't intuitive.
+   Kubernetes expects custom seccomp profiles to be located in `/var/lib/kubelet/seccomp/` on the node where the pod is scheduled to run, rather than the standard OS path `/etc/seccomp/profiles/`. The kubelet constructs the profile path relative to its own configured seccomp directory. Because the profile was placed in the wrong directory, the container runtime could not find the file and refused to start the container. Moving the JSON profile to the correct path, specifically `/var/lib/kubelet/seccomp/profiles/`, and updating the pod spec to reference `localhost/profiles/your-profile.json` will resolve the issue.
    </details>
 
-3. **Your security team asks why you're deploying a container image called `vulnerables/web-dvwa` into the cluster. Explain the security rationale for intentionally deploying vulnerable applications.**
+3. **Your security team notices an alert and asks why you are deploying a container image called `vulnerables/web-dvwa` into the cluster. Explain the security rationale for intentionally deploying vulnerable applications.**
    <details>
    <summary>Answer</summary>
-   Intentionally vulnerable applications serve as practice targets in an isolated lab environment. They let you practice scanning with Trivy (finding real CVEs), detecting suspicious activity with Falco (runtime monitoring), hardening with security contexts and Pod Security Admission, and writing NetworkPolicies to isolate them. Without realistic targets, you can't practice the remediation workflows that CKS tests. The key is these are deployed in a dedicated lab namespace, never in production.
+   Intentionally vulnerable applications serve as highly realistic practice targets in an isolated lab environment. They allow you to practice scanning with Trivy to find real CVEs and configuring Falco to detect actual runtime exploitation attempts. These applications also give you a baseline to practice hardening techniques using security contexts, Pod Security Admission, and NetworkPolicies. Without these realistic, flawed targets, you cannot adequately simulate the remediation workflows that the CKS exam tests. The critical mitigating factor is that these deployments are strictly confined to a dedicated, isolated lab namespace and never allowed in a production cluster.
    </details>
 
-4. **You install Falco via Helm with `driver.kind=modern_ebpf` on your lab cluster, but the Falco pods are in CrashLoopBackOff. The logs mention "kernel version not supported." How do you diagnose and fix this?**
+4. **You install Falco via Helm with `driver.kind=modern_ebpf` on your lab cluster, but the Falco pods are stuck in CrashLoopBackOff. The logs mention "kernel version not supported." How do you diagnose and fix this?**
    <details>
    <summary>Answer</summary>
-   Modern eBPF requires a kernel version that supports eBPF CO-RE (typically 5.8+). If your kernel doesn't support it, Falco can't load its driver. The fix is to switch to an alternative driver: use `driver.kind=kmod` (kernel module, most compatible but requires kernel headers) or `driver.kind=ebpf` (classic eBPF probe). For kind clusters, the kernel module driver is often the safest choice. Upgrade Falco with `helm upgrade falco falcosecurity/falco --set driver.kind=kmod -n falco`.
+   The modern eBPF driver requires a Linux kernel version that supports eBPF CO-RE (Compile Once - Run Everywhere), which is typically found in kernels 5.8 or newer. If your cluster node's kernel is older or lacks these specific features, Falco cannot successfully load its modern eBPF probe, resulting in the crash. To fix this, you must switch Falco to an alternative driver that is compatible with your environment. You can use the kernel module driver by running `helm upgrade falco falcosecurity/falco --set driver.kind=kmod -n falco`, which requires kernel headers, or fall back to the classic eBPF driver. For environments like kind clusters, the kernel module driver is frequently the most reliable choice.
    </details>
 
 ---
