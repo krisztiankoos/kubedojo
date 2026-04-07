@@ -67,6 +67,8 @@ gcloud functions deploy my-function-v1 \
 
 **Why Gen 2 matters**: Because Gen 2 is built on Cloud Run, each function instance can handle multiple concurrent requests. A Gen 1 function processing 100 concurrent requests needs 100 instances. A Gen 2 function with concurrency set to 50 needs only 2 instances. This drastically reduces costs and cold starts.
 
+> **Stop and think**: If Gen 2 instances can handle multiple requests concurrently, how does this affect the memory and CPU requirements of the instance itself compared to a Gen 1 instance handling a single request?
+
 ---
 
 ## HTTP Triggers: Request-Response Functions
@@ -244,26 +246,36 @@ gcloud functions logs read process-upload \
 
 Eventarc is the unified event routing layer for GCP. It connects event sources (Cloud Storage, Pub/Sub, Cloud Audit Logs, and 100+ GCP services) to event targets (Cloud Functions, Cloud Run, GKE, Workflows).
 
-```text
-  Event Sources                    Eventarc                    Targets
-  ─────────────                    ────────                    ───────
-  ┌──────────────┐               ┌──────────────┐
-  │ Cloud Storage │──────────────>│              │           ┌──────────────┐
-  └──────────────┘               │              │──────────>│Cloud Functions│
-                                 │   Eventarc   │           └──────────────┘
-  ┌──────────────┐               │   Triggers   │
-  │  Pub/Sub     │──────────────>│              │           ┌──────────────┐
-  └──────────────┘               │              │──────────>│  Cloud Run   │
-                                 │              │           └──────────────┘
-  ┌──────────────┐               │              │
-  │ Audit Logs   │──────────────>│              │           ┌──────────────┐
-  │ (any GCP svc)│               │              │──────────>│   Workflows  │
-  └──────────────┘               └──────────────┘           └──────────────┘
+```mermaid
+graph LR
+    subgraph Sources[Event Sources]
+        GCS[Cloud Storage]
+        PS[Pub/Sub]
+        AL[Audit Logs <br/> any GCP svc]
+        CA[Custom Apps]
+    end
 
-  ┌──────────────┐
-  │ Custom Apps  │───(via Pub/Sub)
-  └──────────────┘
+    subgraph Eventarc[Eventarc]
+        ET[Eventarc Triggers]
+    end
+
+    subgraph Targets[Targets]
+        CF[Cloud Functions]
+        CR[Cloud Run]
+        WF[Workflows]
+    end
+
+    GCS --> ET
+    PS --> ET
+    AL --> ET
+    CA -. via Pub/Sub .-> PS
+
+    ET --> CF
+    ET --> CR
+    ET --> WF
 ```
+
+> **Pause and predict**: If Eventarc relies on Cloud Audit Logs for many of its triggers, what does that mean for the latency between an action occurring and your function being triggered?
 
 ### Creating Eventarc Triggers
 
@@ -367,26 +379,15 @@ gcloud functions logs read process-message \
 
 A common pattern: a file upload triggers a Cloud Function that processes the file and publishes results to Pub/Sub for downstream consumers.
 
-```text
-  ┌──────────────┐     Upload      ┌──────────────┐     Process     ┌──────────────┐
-  │  Lab Partner  │ ──────────────> │  GCS Bucket   │ ──────────────> │  Cloud        │
-  │  (external)   │   CSV file      │  (raw-data)   │   GCS Event     │  Function     │
-  └──────────────┘                 └──────────────┘                 │  (parse-csv)  │
-                                                                     └──────┬───────┘
-                                                                            │
-                                                                     Publish results
-                                                                            │
-                                                                     ┌──────▼───────┐
-                                                                     │  Pub/Sub      │
-                                                                     │  (results)    │
-                                                                     └──────┬───────┘
-                                                                            │
-                                                              ┌─────────────┼─────────────┐
-                                                              │             │             │
-                                                       ┌──────▼──┐  ┌──────▼──┐  ┌──────▼──┐
-                                                       │Dashboard │  │Database  │  │Alerting │
-                                                       │(sub 1)   │  │(sub 2)   │  │(sub 3)  │
-                                                       └──────────┘  └──────────┘  └──────────┘
+```mermaid
+graph TD
+    Partner[Lab Partner<br/>external] -- Upload CSV file --> GCS[GCS Bucket<br/>raw-data]
+    GCS -- GCS Event --> CF[Cloud Function<br/>parse-csv]
+    CF -- Publish results --> PS[Pub/Sub<br/>results]
+
+    PS --> Dash[Dashboard<br/>sub 1]
+    PS --> DB[Database<br/>sub 2]
+    PS --> Alert[Alerting<br/>sub 3]
 ```
 
 ### The Pipeline Function
@@ -519,6 +520,8 @@ gcloud functions deploy my-function \
 
 Event-driven functions **must be idempotent**---processing the same event twice should produce the same result. Events can be delivered more than once.
 
+> **Stop and think**: If an event ID is the best way to deduplicate events, where should you store these processed IDs, and how long should you retain them?
+
 ```python
 # BAD: Not idempotent (counter increments on every retry)
 def process_event(cloud_event):
@@ -570,39 +573,39 @@ def process_event(cloud_event):
 ## Quiz
 
 <details>
-<summary>1. What is the key architectural difference between Gen 1 and Gen 2 Cloud Functions?</summary>
+<summary>1. You are migrating a high-traffic image processing API to Cloud Functions. The API receives sporadic bursts of thousands of requests per second. Your team is debating whether to use Gen 1 or Gen 2 functions. Which generation should you choose and why is its underlying architecture better suited for this scenario?</summary>
 
-Gen 1 Cloud Functions run in a Google-managed sandboxed environment that is purpose-built for functions. Gen 2 Cloud Functions are **built on Cloud Run**---when you deploy a Gen 2 function, GCP creates a Cloud Run service behind the scenes. This architectural difference gives Gen 2 functions all the benefits of Cloud Run: multi-request concurrency (up to 1,000 per instance), traffic splitting, min instances for eliminating cold starts, longer timeouts (up to 60 minutes vs 9 minutes), more memory (32 GB vs 8 GB), and Direct VPC Egress. Gen 1 processes only one request per instance, which means it needs more instances and costs more for the same traffic.
+You should choose Gen 2 Cloud Functions because it is built entirely on Cloud Run. This architectural shift allows a single Gen 2 instance to handle up to 1,000 concurrent requests, whereas Gen 1 can only handle one request per instance. For bursty workloads, Gen 2 will drastically reduce the number of instances required, significantly lowering your costs. Additionally, Gen 2 supports setting minimum instances to eliminate cold starts during traffic spikes.
 </details>
 
 <details>
-<summary>2. Why must event-driven Cloud Functions be idempotent?</summary>
+<summary>2. A financial services company deployed a Cloud Function triggered by Pub/Sub to process bank transfers. A week later, they discovered several duplicate transfers in their database. The code logic for creating the transfer is correct. What fundamental property of event-driven architectures in GCP did the developers likely ignore, and how should it be addressed?</summary>
 
-Event-driven Cloud Functions must be idempotent because GCP guarantees **at-least-once delivery**, not exactly-once delivery. An event might be delivered multiple times due to retries (when the function crashes, times out, or returns an error), duplicate event generation (Cloud Storage can sometimes generate duplicate notifications), or infrastructure issues. If your function is not idempotent, processing the same event twice could lead to duplicate database entries, double charges, or corrupted data. Implement idempotency by tracking processed event IDs and checking for duplicates before processing.
+The developers likely ignored the principle of idempotency, failing to account for GCP's "at-least-once" delivery guarantee. Event-driven systems in GCP, like Pub/Sub and Eventarc, may deliver the same event multiple times due to retries or network anomalies. If the function does not check whether a transfer was already processed, a duplicate event will result in a duplicate database entry. The function must be made idempotent by verifying the unique event ID against a database of processed events before executing the transfer logic.
 </details>
 
 <details>
-<summary>3. How can a Cloud Function triggered by GCS uploads avoid creating an infinite loop?</summary>
+<summary>3. A developer writes a Gen 2 Cloud Function to resize images. The function triggers when an image is uploaded to `company-media-bucket`, resizes it, and saves the new image back to `company-media-bucket`. Shortly after deployment, the GCP billing alert triggers due to massive function invocations. What caused this, and what are two architectural ways to fix it?</summary>
 
-An infinite loop occurs when a function writes to the same bucket that triggers it. For example, if a function is triggered by object creation in `my-bucket` and it writes a receipt file back to `my-bucket`, the receipt file triggers the function again, which writes another receipt, and so on. Solutions: (1) Write output to a **different bucket** than the trigger bucket. (2) Use **prefix filtering**---trigger only on `raw/` prefix and write output to `processed/` prefix, then configure the trigger to only match `raw/`. (3) Check the filename in the function and skip files that match the output pattern (e.g., skip files starting with `receipts/`).
+The function created an infinite loop because saving the resized image back to the same bucket triggered the function again, and this cycle continued indefinitely. To fix this, the developer should separate the input and output boundaries. The most robust solution is to use a completely different bucket for the output images. Alternatively, if using the same bucket is mandatory, the developer must use prefix filtering (e.g., trigger only on `raw/` uploads) and ensure the resized image is saved to a different prefix (e.g., `processed/`) that the function is not listening to.
 </details>
 
 <details>
-<summary>4. What is Eventarc, and how does it extend Cloud Functions' event capabilities?</summary>
+<summary>4. Your security team requires a Cloud Function to run and notify a Slack channel whenever a new IAM policy is applied or a Cloud SQL instance is restarted anywhere in your GCP project. Standard Cloud Functions triggers (HTTP, GCS, Pub/Sub) do not support these services directly. Which GCP service must you use to route these events to your function, and how does it integrate with them?</summary>
 
-Eventarc is GCP's unified event routing service. It extends Cloud Functions beyond the basic triggers (HTTP, Cloud Storage, Pub/Sub) by allowing functions to be triggered by **over 120 GCP event types** through Cloud Audit Logs. Any GCP service action that generates an audit log entry can trigger a function---VM creation, IAM policy changes, BigQuery job completion, Cloud SQL restarts, and more. Eventarc also supports filtering events using attributes (like method name or resource type) so you only trigger on specific events. It provides a consistent CloudEvents-format payload regardless of the source.
+You must use Eventarc to route these complex events to your Cloud Function. Eventarc acts as a unified event router that can trigger functions based on actions from over 120 GCP services by hooking into Cloud Audit Logs. Whenever an action (like an IAM change or SQL restart) writes an entry to Cloud Audit Logs, Eventarc captures it and forwards it as a standardized CloudEvent to your function. You can use Eventarc's filtering capabilities to ensure the function only triggers for the specific resource types and methods the security team cares about.
 </details>
 
 <details>
-<summary>5. When should you set concurrency higher than 1 on a Gen 2 Cloud Function?</summary>
+<summary>5. You have two Gen 2 Cloud Functions. Function A calls a third-party REST API and waits 5 seconds for a response. Function B transcodes a 4K video using FFmpeg, utilizing 100% of the CPU for 30 seconds. To optimize costs and performance, how should you configure the concurrency setting for each function?</summary>
 
-Set concurrency higher than 1 when your function is **I/O-bound** (spending most of its time waiting for network responses, database queries, or API calls). In this case, a single instance can handle many concurrent requests because each request is mostly waiting. Examples: REST APIs, database query handlers, functions that call external APIs. Keep concurrency at 1 when your function is **CPU-bound** (spending most of its time computing, processing, or transforming data). Examples: image processing, video transcoding, ML inference. With concurrency at 1, each request gets the full CPU. Setting it to 80 for an I/O-bound function reduces the number of instances from 80 to 1, saving significant cost.
+You should set a high concurrency (e.g., 80) for Function A and leave concurrency at 1 for Function B. Function A is heavily I/O-bound; it spends almost all its time waiting for the network, so a single instance can easily juggle many concurrent requests while waiting, significantly reducing instance costs. Function B is completely CPU-bound; if you increased its concurrency, multiple transcoding tasks would fight for the same CPU resources, drastically slowing down processing and likely causing timeouts.
 </details>
 
 <details>
-<summary>6. A Cloud Function receives a Cloud Storage event for a file in the "raw-data" bucket. The event payload contains fields like bucket, name, and contentType. How do you access this data in a Gen 2 Python function?</summary>
+<summary>6. A new team member is writing a Gen 2 Python Cloud Function triggered by Cloud Storage uploads. They need to extract the filename and the unique event identifier to ensure idempotency. They are using the `@functions_framework.cloud_event` decorator but are unsure how to parse the incoming object. Where precisely in the function arguments will they find the filename and the event ID?</summary>
 
-In a Gen 2 Python function using the `@functions_framework.cloud_event` decorator, the event data is accessed through the `cloud_event.data` dictionary. The Cloud Storage event fields are: `cloud_event.data["bucket"]` for the bucket name, `cloud_event.data["name"]` for the object name (full path including "directories"), `cloud_event.data["contentType"]` for the MIME type, `cloud_event.data["size"]` for the object size in bytes, and `cloud_event.data["timeCreated"]` for the creation timestamp. The `cloud_event` object also has metadata like `cloud_event["id"]` (unique event ID, useful for idempotency) and `cloud_event["type"]` (the event type string).
+The team member will find these values within the attributes of the `cloud_event` object passed to the function. The filename (along with bucket name, content type, and size) is located inside the data payload dictionary, accessed via `cloud_event.data["name"]`. The unique event identifier, which is crucial for building idempotent logic, is a top-level attribute of the CloudEvent standard and is accessed directly via `cloud_event["id"]`.
 </details>
 
 ---
