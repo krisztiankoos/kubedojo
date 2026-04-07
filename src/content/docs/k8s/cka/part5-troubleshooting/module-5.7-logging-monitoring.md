@@ -112,6 +112,8 @@ k logs <pod> --timestamps
 k logs <pod> --tail=100 --timestamps -f
 ```
 
+> **Stop and think**: If a pod has multiple containers and you run `kubectl logs <pod>`, what happens? How does Kubernetes know which container's logs to show?
+
 ### 1.3 Multi-Container Pod Logs
 
 ```bash
@@ -181,6 +183,8 @@ k logs -l app=nginx -c <container>
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
+
+> **Pause and predict**: If a pod was created 3 days ago and has been CrashLoopBackOff ever since, will `kubectl get events` show the original scheduling and creation events? Why or why not?
 
 ### 2.2 Viewing Events
 
@@ -302,6 +306,8 @@ k top pods --containers
 # Specific pod
 k top pod <pod-name>
 ```
+
+> **Stop and think**: If `kubectl top pods` shows a pod using 200m CPU, but its limit is 100m, what is likely happening to the application running inside that pod?
 
 ### 3.4 Interpreting Metrics
 
@@ -564,110 +570,63 @@ k run debug -n <namespace> --image=busybox:1.36 --rm -it --restart=Never -- sh
 
 ## Quiz
 
-### Q1: Previous Logs
-When do you use `kubectl logs --previous`?
+### Q1: Investigating a Crash
+You deploy a new version of your application. The pod enters a `CrashLoopBackOff` state. When you run `kubectl logs my-app`, you only see a single line saying "Starting application...", but the application keeps crashing. How do you find the actual error that caused the crash, and why does the standard log command hide it?
 
 <details>
 <summary>Answer</summary>
 
-Use `--previous` when a container has **crashed and restarted**. It shows logs from the **previous instance** of the container before it died. Essential for troubleshooting CrashLoopBackOff - without it, you only see logs from the newly started (probably crashing again) container.
-
-```bash
-k logs <pod> --previous
-```
+You must use the command `kubectl logs my-app --previous` to see the actual error. When a pod is in a `CrashLoopBackOff` state, it means the container is repeatedly dying and being restarted by the kubelet. The standard `kubectl logs` command only shows the output of the *currently running* container instance. Since the current instance just started and hasn't crashed yet, you only see the initial startup message. By appending the `--previous` flag, you instruct Kubernetes to retrieve the logs from the container instance that most recently terminated, which will contain the stack trace or error message explaining why it died.
 
 </details>
 
-### Q2: Event Retention
-How long are Kubernetes events retained by default?
+### Q2: Missing Historical Context
+A developer reports that their batch job failed sometime over the weekend, about 48 hours ago. They ask you to check the Kubernetes events to see if there were any node scheduling issues or image pull errors at that time. When you run `kubectl get events --field-selector involvedObject.name=batch-job`, it returns "No resources found". What happened to the events, and how could you have preserved them?
 
 <details>
 <summary>Answer</summary>
 
-**1 hour** by default. Events are stored in etcd with a TTL. After expiration, they're garbage collected. This is why it's important to check events soon after an incident - the evidence disappears.
-
-The retention can be changed via the API server's `--event-ttl` flag.
+Kubernetes events have a default time-to-live (TTL) of exactly one hour. They are not designed for long-term auditing or historical logging; rather, they are transient objects stored in etcd to provide immediate feedback about cluster operations. After the one-hour window expires, the Kubernetes garbage collector automatically deletes them to prevent etcd from running out of storage space. To preserve events for long-term analysis, you must export them to an external logging system or observability platform using a dedicated event-shipping tool (like eventrouter or a fluentd plugin) before they expire.
 
 </details>
 
-### Q3: Metrics Server
-kubectl top pods returns "metrics not available". What's wrong?
+### Q3: Missing Resource Metrics
+You are trying to determine if a specific deployment needs its memory limits increased. You run the command `kubectl top pods -n production`, but the API server returns an error stating "metrics not available". You verify that your kubeconfig is correct and you have the necessary RBAC permissions. What cluster component is likely missing or failing, and why does this command depend on it?
 
 <details>
 <summary>Answer</summary>
 
-**Metrics Server is not installed** or not working. kubectl top requires the Metrics Server to be running.
-
-Check:
-```bash
-k -n kube-system get pods | grep metrics-server
-k get apiservices | grep metrics.k8s.io
-```
-
-Install Metrics Server if missing.
+The cluster is likely missing the Metrics Server, or the Metrics Server deployment is currently unhealthy. The `kubectl top` command does not directly query the nodes or the kubelet for resource utilization data. Instead, it queries the `metrics.k8s.io` API, which must be served by an aggregation layer component. The Metrics Server acts as this component; it continuously polls the kubelet API on each node, aggregates the CPU and memory usage data, and exposes it through the metrics API. Without this server running and correctly registered with the main API server, the metrics endpoint will not exist, causing the command to fail.
 
 </details>
 
-### Q4: Multi-Container Logs
-How do you get logs from all containers in a pod?
+### Q4: Aggregating Sidecar Logs
+You have a pod named `web-app` that runs your main application container and a sidecar container running a log forwarding agent. You suspect the log forwarder is failing to authenticate, but you also want to see if the main application is logging any connection errors at the same time. How can you view the logs from both containers simultaneously in a single command, and why is this useful?
 
 <details>
 <summary>Answer</summary>
 
-```bash
-k logs <pod> --all-containers=true
-```
-
-Or specify each container individually:
-```bash
-k logs <pod> -c container1
-k logs <pod> -c container2
-```
-
-List containers first:
-```bash
-k get pod <pod> -o jsonpath='{.spec.containers[*].name}'
-```
+You can view the combined output by using the command `kubectl logs web-app --all-containers=true`. By default, if you run `kubectl logs` against a multi-container pod without specifying a container, Kubernetes will either prompt you to specify one or just pick the first one listed in the pod spec. Using the `--all-containers` flag instructs the API server to fetch the logs from every container within the specified pod and interleave them in the output. This is highly useful for correlating events across tightly coupled containers, as it allows you to see the exact sequence of events occurring across both the main application and its sidecar.
 
 </details>
 
-### Q5: Log Location
-Where are container logs stored on a node?
+### Q5: Bypassing the API Server
+The Kubernetes API server is currently unresponsive due to a certificate expiration issue. You have SSH access to the worker node where a critical database pod is running, and you need to check its logs immediately to ensure it hasn't corrupted its data volume. How do you view the logs for this specific container directly on the node, and what component manages these files?
 
 <details>
 <summary>Answer</summary>
 
-```
-/var/log/containers/<pod>_<namespace>_<container>-<id>.log
-```
-
-These are actually symlinks to the real log files managed by the container runtime. kubelet is responsible for log rotation.
-
-You can access them directly via SSH to the node.
+You can view the logs directly by navigating to the `/var/log/containers/` directory on the worker node. Inside this directory, you will find log files named using the pattern `<pod-name>_<namespace>_<container-name>-<container-id>.log`. These files are actually symbolic links that point to the actual log files generated by the container runtime (such as containerd or CRI-O). The kubelet is responsible for managing these symlinks and also handles the log rotation based on its configured maximum size and file count limits, ensuring the node's disk does not fill up.
 
 </details>
 
-### Q6: Events vs Logs
-When would you check events vs logs?
+### Q6: Diagnosis Strategy
+A pod is stuck in the `Pending` state. A junior administrator suggests running `kubectl logs my-pending-pod` to see what the application is complaining about. Why is this the wrong approach, and what command should they run instead to understand why the pod is stuck?
 
 <details>
 <summary>Answer</summary>
 
-**Events** first - for:
-- Scheduling issues (why pod not scheduled)
-- Container lifecycle (creation, start, kill)
-- Volume mounts
-- Image pulls
-- High-level "what happened"
-
-**Logs** second - for:
-- Application-level issues
-- Why the app is failing
-- Detailed error messages
-- Stack traces
-- "What the app is doing"
-
-Events tell you about Kubernetes operations; logs tell you about application behavior.
+Running `kubectl logs` is the wrong approach because a pod in the `Pending` state has not yet been scheduled to a node, or its containers have not yet started executing. Since no container runtime is running the application process, there is absolutely no standard output or standard error to capture, meaning the logs command will return an error or nothing at all. Instead, the administrator should check the Kubernetes events by running `kubectl describe pod my-pending-pod` or `kubectl get events`. Events will reveal cluster-level scheduling issues, such as a lack of node resources, failed persistent volume claims, or unmet node affinity rules that are preventing the pod from starting.
 
 </details>
 
