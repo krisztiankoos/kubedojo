@@ -35,67 +35,64 @@ Istio supports multiple ways to connect clusters. The choice depends on your net
 
 One cluster runs the full Istio control plane (the "primary"), while other clusters connect as "remotes" that share the same control plane.
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  PRIMARY-REMOTE TOPOLOGY                                       │
-│                                                                │
-│  ┌───────────────────────────┐  ┌───────────────────────────┐ │
-│  │  PRIMARY CLUSTER (AWS)    │  │  REMOTE CLUSTER (GCP)     │ │
-│  │                            │  │                            │ │
-│  │  ┌──────────────────────┐ │  │  ┌──────────────────────┐ │ │
-│  │  │  Istiod              │ │  │  │  (No Istiod)         │ │ │
-│  │  │  (Control Plane)     │◄├──├──┤  Proxies connect     │ │ │
-│  │  │  ┌────────────────┐  │ │  │  │  to primary's Istiod │ │ │
-│  │  │  │ Service Registry│  │ │  │  │                      │ │ │
-│  │  │  │ (both clusters) │  │ │  │  │                      │ │ │
-│  │  │  └────────────────┘  │ │  │  └──────────────────────┘ │ │
-│  │  └──────────────────────┘ │  │                            │ │
-│  │                            │  │  Envoy sidecars here      │ │
-│  │  Envoy sidecars here      │  │  ┌─────┐ ┌─────┐ ┌─────┐ │ │
-│  │  ┌─────┐ ┌─────┐ ┌─────┐ │  │  │Svc-C│ │Svc-D│ │Svc-E│ │ │
-│  │  │Svc-A│ │Svc-B│ │Svc-C│ │  │  └─────┘ └─────┘ └─────┘ │ │
-│  │  └─────┘ └─────┘ └─────┘ │  │                            │ │
-│  └───────────────────────────┘  └───────────────────────────┘ │
-│                                                                │
-│  Pros: Simple, single control plane to manage                  │
-│  Cons: Primary is SPOF for config distribution                 │
-│  Best for: Active-passive, DR scenarios                        │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Primary["PRIMARY CLUSTER (AWS)"]
+        direction TB
+        Istiod["Istiod (Control Plane)<br>Service Registry (both clusters)"]
+        SvcA["Svc-A sidecar"]
+        SvcB["Svc-B sidecar"]
+        SvcC["Svc-C sidecar"]
+    end
+
+    subgraph Remote["REMOTE CLUSTER (GCP)"]
+        direction TB
+        NoCP["(No Istiod)<br>Proxies connect to primary's Istiod"]
+        SvcC2["Svc-C sidecar"]
+        SvcD["Svc-D sidecar"]
+        SvcE["Svc-E sidecar"]
+    end
+
+    SvcC2 -.->|Connects to| Istiod
+    SvcD -.->|Connects to| Istiod
+    SvcE -.->|Connects to| Istiod
 ```
+
+- **Pros**: Simple, single control plane to manage
+- **Cons**: Primary is SPOF for config distribution
+- **Best for**: Active-passive, DR scenarios
 
 ### Topology 2: Multi-Primary
 
 Each cluster runs its own Istio control plane, and the clusters share service discovery information.
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  MULTI-PRIMARY TOPOLOGY                                        │
-│                                                                │
-│  ┌───────────────────────────┐  ┌───────────────────────────┐ │
-│  │  CLUSTER-1 (AWS)          │  │  CLUSTER-2 (GCP)          │ │
-│  │                            │  │                            │ │
-│  │  ┌──────────────────────┐ │  │  ┌──────────────────────┐ │ │
-│  │  │  Istiod-1            │◄├──├──►│  Istiod-2            │ │ │
-│  │  │  (Local CP)          │ │  │  │  (Local CP)          │ │ │
-│  │  │                      │ │  │  │                      │ │ │
-│  │  │  Knows about         │ │  │  │  Knows about         │ │ │
-│  │  │  Cluster-1 & 2 svcs  │ │  │  │  Cluster-1 & 2 svcs  │ │ │
-│  │  └──────────────────────┘ │  │  └──────────────────────┘ │ │
-│  │                            │  │                            │ │
-│  │  ┌─────┐ ┌─────┐ ┌─────┐ │  │  ┌─────┐ ┌─────┐ ┌─────┐ │ │
-│  │  │Svc-A│ │Svc-B│ │Svc-C│ │  │  │Svc-A│ │Svc-B│ │Svc-D│ │ │
-│  │  └─────┘ └─────┘ └─────┘ │  │  └─────┘ └─────┘ └─────┘ │ │
-│  └───────────────────────────┘  └───────────────────────────┘ │
-│                                                                │
-│  Svc-A and Svc-B exist in BOTH clusters (multi-region)        │
-│  Svc-C only in Cluster-1, Svc-D only in Cluster-2            │
-│  Both Istiods know about ALL services across both clusters    │
-│                                                                │
-│  Pros: No SPOF, each cluster independent if other fails        │
-│  Cons: More complex, config must be synchronized               │
-│  Best for: Active-active, multi-region production              │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Cluster1["CLUSTER-1 (AWS)"]
+        direction TB
+        Istiod1["Istiod-1 (Local CP)<br>Knows about Cluster-1 & 2 svcs"]
+        SvcA1["Svc-A sidecar"]
+        SvcB1["Svc-B sidecar"]
+        SvcC["Svc-C sidecar"]
+    end
+
+    subgraph Cluster2["CLUSTER-2 (GCP)"]
+        direction TB
+        Istiod2["Istiod-2 (Local CP)<br>Knows about Cluster-1 & 2 svcs"]
+        SvcA2["Svc-A sidecar"]
+        SvcB2["Svc-B sidecar"]
+        SvcD["Svc-D sidecar"]
+    end
+
+    Istiod1 <-->|Shares service discovery| Istiod2
 ```
+
+- Svc-A and Svc-B exist in BOTH clusters (multi-region)
+- Svc-C only in Cluster-1, Svc-D only in Cluster-2
+- Both Istiods know about ALL services across both clusters
+- **Pros**: No SPOF, each cluster independent if other fails
+- **Cons**: More complex, config must be synchronized
+- **Best for**: Active-active, multi-region production
 
 ### Topology Decision Matrix
 
@@ -114,31 +111,32 @@ Each cluster runs its own Istio control plane, and the clusters share service di
 
 For mTLS to work across clusters, every sidecar proxy needs to trust certificates issued by proxies in other clusters. This requires a **shared root of trust**.
 
+> **Stop and think**: If Cluster 1 and Cluster 2 have completely different, self-signed root CAs, what exact error would a client sidecar proxy throw when attempting an mTLS handshake with a server proxy in the other cluster?
+
 ### Root CA Distribution
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  TRUST HIERARCHY                                               │
-│                                                                │
-│              ┌─────────────────────┐                           │
-│              │    Shared Root CA    │                           │
-│              │    (offline, HSM)    │                           │
-│              └─────────┬───────────┘                           │
-│                        │                                       │
-│           ┌────────────┼────────────┐                          │
-│           │            │            │                          │
-│  ┌────────▼──────┐ ┌──▼───────────┐ ┌───────▼──────┐        │
-│  │ Intermediate  │ │ Intermediate  │ │ Intermediate  │        │
-│  │ CA (Cluster1) │ │ CA (Cluster2) │ │ CA (Cluster3) │        │
-│  └────────┬──────┘ └──┬───────────┘ └───────┬──────┘        │
-│           │            │                     │                │
-│     Workload     Workload              Workload               │
-│     Certs        Certs                 Certs                  │
-│                                                                │
-│  All workload certs chain to the SAME root CA                 │
-│  Therefore: Cluster1 trusts Cluster2's certificates           │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Root["Shared Root CA<br>(offline, HSM)"]
+    
+    Int1["Intermediate CA (Cluster1)"]
+    Int2["Intermediate CA (Cluster2)"]
+    Int3["Intermediate CA (Cluster3)"]
+    
+    Root --> Int1
+    Root --> Int2
+    Root --> Int3
+    
+    W1["Workload Certs"]
+    W2["Workload Certs"]
+    W3["Workload Certs"]
+    
+    Int1 --> W1
+    Int2 --> W2
+    Int3 --> W3
 ```
+
+All workload certs chain to the SAME root CA. Therefore: Cluster1 trusts Cluster2's certificates.
 
 ### Creating a Shared Root CA
 
@@ -208,34 +206,24 @@ kubectl --context cluster2 create secret generic cacerts -n istio-system \
 
 For production environments, SPIFFE (Secure Production Identity Framework For Everyone) and SPIRE (SPIFFE Runtime Environment) provide a more robust identity system than Istio's built-in CA.
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  SPIFFE IDENTITY IN MULTI-CLUSTER ISTIO                       │
-│                                                                │
-│  SPIFFE ID format:                                             │
-│  spiffe://company.com/ns/production/sa/payment-service         │
-│                                                                │
-│  ┌───────────────────┐     ┌───────────────────┐             │
-│  │  SPIRE Server     │────►│  SPIRE Server     │             │
-│  │  (Cluster 1)      │     │  (Cluster 2)      │             │
-│  │                    │     │                    │             │
-│  │  Trust Domain:     │     │  Trust Domain:     │             │
-│  │  company.com       │     │  company.com       │             │
-│  └─────────┬─────────┘     └─────────┬─────────┘             │
-│            │                          │                        │
-│  ┌─────────▼─────────┐     ┌─────────▼─────────┐             │
-│  │  SPIRE Agent      │     │  SPIRE Agent      │             │
-│  │  (per node)       │     │  (per node)       │             │
-│  │                    │     │                    │             │
-│  │  Issues SVIDs to  │     │  Issues SVIDs to  │             │
-│  │  Envoy sidecars   │     │  Envoy sidecars   │             │
-│  └───────────────────┘     └───────────────────┘             │
-│                                                                │
-│  Both clusters use the same trust domain (company.com)        │
-│  SVIDs from Cluster 1 are trusted by Cluster 2 and vice versa│
-│  No shared CA key needed - SPIRE federation handles trust     │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph C1["Cluster 1"]
+        SS1["SPIRE Server<br>Trust Domain: company.com"]
+        SA1["SPIRE Agent (per node)<br>Issues SVIDs to sidecars"]
+        SS1 --> SA1
+    end
+    
+    subgraph C2["Cluster 2"]
+        SS2["SPIRE Server<br>Trust Domain: company.com"]
+        SA2["SPIRE Agent (per node)<br>Issues SVIDs to sidecars"]
+        SS2 --> SA2
+    end
+    
+    SS1 <-->|Federated Trust| SS2
 ```
+
+Both clusters use the same trust domain (`company.com`). SVIDs from Cluster 1 are trusted by Cluster 2 and vice versa. No shared CA key needed - SPIRE federation handles trust.
 
 ---
 
@@ -383,6 +371,8 @@ done
 ---
 
 ## Cross-Cloud Routing and Failover
+
+> **Pause and predict**: If you configure a failover from `us-east-1` to `us-central1`, but forget to define an `outlierDetection` policy in your `DestinationRule`, what behavior will you observe when `us-east-1` endpoints start returning HTTP 500 errors?
 
 ### Locality-Aware Load Balancing
 
@@ -557,45 +547,39 @@ istioctl --context kind-cluster1 analyze -n production --all-namespaces
 ## Quiz
 
 <details>
-<summary>Question 1: Explain the difference between Primary-Remote and Multi-Primary Istio topologies. When would you choose each?</summary>
+<summary>Question 1: Your organization is designing a multi-cluster mesh across two data centers (Active and Standby). The network team wants to minimize the number of control planes to manage, but the architecture board is concerned about single points of failure. How do Primary-Remote and Multi-Primary topologies differ in addressing these concerns, and which would you recommend for this specific Active/Standby scenario?</summary>
 
-In **Primary-Remote**, one cluster runs the Istio control plane (Istiod) and remote clusters connect their Envoy sidecars to the primary's Istiod. The primary is a single point of failure for configuration distribution -- if it goes down, remote clusters continue routing with stale configuration but cannot receive updates. Choose this for DR/failover scenarios where simplicity is valued and one cluster is clearly the primary.
-
-In **Multi-Primary**, each cluster runs its own Istiod. Cross-cluster service discovery is achieved by exchanging remote secrets, which give each Istiod read access to the other cluster's Kubernetes API. Each cluster is independent -- if one goes down, the other continues with full control plane functionality. Choose this for active-active production where both clusters serve traffic and neither can be a single point of failure.
-
-The practical implication: multi-primary is more resilient but requires more operational complexity (two Istiod instances to monitor, two sets of certificates to manage, configuration must be consistent across both).
+In the Primary-Remote topology, one cluster hosts the centralized control plane (Istiod), and the other cluster's Envoy proxies connect across the network to retrieve their configurations. This significantly reduces management overhead since there is only one control plane to maintain, but introduces a single point of failure if the primary cluster experiences an outage. Multi-Primary addresses this by running an independent Istiod in every cluster, ensuring that each environment can continue operating autonomously even if network connectivity between data centers is lost. For an Active/Standby architecture, Primary-Remote is often recommended because the Standby data center is inherently dependent on the Active one anyway, and managing a single control plane simplifies disaster recovery workflows.
 </details>
 
 <details>
-<summary>Question 2: Why is a shared root CA necessary for multi-cluster mTLS? What happens if each cluster generates its own root CA?</summary>
+<summary>Question 2: Two development teams merge their independent Kubernetes clusters into a multi-cluster Istio mesh. They configure cross-cluster service discovery, but all cross-cluster traffic immediately fails with TLS handshake errors. Based on how mTLS establishes trust, what is the root cause of this failure, and how must they reconfigure their certificate authorities to fix it?</summary>
 
-mTLS requires that each party trust the other's certificate. Trust is established by verifying that the peer's certificate chains up to a trusted root CA. If Cluster-1 uses Root-CA-A and Cluster-2 uses Root-CA-B, Cluster-1's Envoy proxies do not have Root-CA-B in their trust store, so they reject connections from Cluster-2's proxies. The TLS handshake fails with a "certificate unknown" or "bad certificate" error. To fix this, all clusters must share the same root CA. Each cluster can have its own intermediate CA (for key isolation), but all intermediates must chain to the shared root. This way, any workload certificate, regardless of which cluster issued it, can be verified by any proxy in the mesh.
+The root cause of the failure is that the two independent clusters are using different, unshared root Certificate Authorities (CAs). For mTLS to succeed, the Envoy proxy in the client cluster must be able to cryptographically verify the certificate presented by the server proxy in the destination cluster. This verification requires both proxies to share a common root of trust in their trust stores. To fix this, the teams must generate a single shared Root CA, use it to sign intermediate CA certificates for each specific cluster, and distribute those intermediate certificates to their respective Istio control planes. Once both clusters issue workload certificates derived from the same root, the TLS handshakes will successfully validate.
 </details>
 
 <details>
 <summary>Question 3: Your multi-cluster Istio setup uses locality-aware load balancing. Service-A in us-east-1 calls Service-B, which has endpoints in both us-east-1 and eu-west-1. Under normal conditions, where does the traffic go? What if all us-east-1 endpoints for Service-B fail?</summary>
 
-Under normal conditions, traffic goes to **us-east-1 endpoints** because locality-aware load balancing prefers the closest endpoints. The preference order is: same zone > same region > different region. So Service-A's traffic stays within us-east-1.
-
-When all us-east-1 endpoints fail (detected via outlier detection -- consecutive 5xx errors), Istio ejects those endpoints and falls back to the next locality in the failover configuration. If the DestinationRule specifies `failover: from: us-east-1, to: eu-west-1`, traffic shifts to eu-west-1 endpoints. This happens within seconds (based on the outlier detection interval, typically 10 seconds). When us-east-1 endpoints recover, traffic gradually shifts back (controlled by the base ejection time). The failover is transparent to Service-A -- it still calls `service-b.production.svc.cluster.local` and Istio handles the routing.
+Under normal conditions, traffic goes to us-east-1 endpoints because locality-aware load balancing prefers the closest endpoints. The preference order dictates that requests stay within the same zone first, then the same region, and finally a different region. When all us-east-1 endpoints fail—detected via outlier detection rules such as consecutive 5xx errors—Istio ejects those local endpoints from the load balancing pool. It then falls back to the next available locality defined in your failover configuration, shifting traffic to the eu-west-1 endpoints. This failover process occurs transparently to Service-A, ensuring high availability while automatically reverting back to local endpoints once the us-east-1 instances recover.
 </details>
 
 <details>
-<summary>Question 4: What is the east-west gateway and how does it differ from the ingress gateway?</summary>
+<summary>Question 4: A junior engineer is confused about why they need an east-west gateway when they already have an ingress gateway routing external traffic into the mesh. How would you explain a scenario where the east-west gateway is explicitly required, and how does its traffic handling differ from the standard ingress gateway?</summary>
 
-The **ingress gateway** handles north-south traffic: requests from external clients entering the mesh. It typically terminates TLS, applies routing rules, and forwards requests to internal services. The **east-west gateway** handles cross-cluster traffic within the mesh. It uses AUTO_PASSTHROUGH mode, meaning it does not terminate TLS -- it inspects the SNI (Server Name Indication) in the TLS ClientHello to determine which service the traffic is destined for, then forwards the encrypted connection to the correct pod in its cluster. The east-west gateway operates on port 15443 and only accepts mTLS connections from other Istio proxies. It is the bridge that allows pods in one cluster to communicate with pods in another cluster when the clusters are on different networks (which is almost always the case in multi-cloud).
+The standard ingress gateway is designed for north-south traffic, meaning it typically terminates client-facing TLS connections, applies HTTP routing rules, and forwards the requests to internal mesh services. However, when services in Cluster A need to communicate with services in Cluster B across a network boundary, they require an east-west gateway to bridge the two environments. Unlike the ingress gateway, the east-west gateway uses AUTO_PASSTHROUGH mode, which means it does not terminate the mTLS connection established by the client sidecar. Instead, it inspects the Server Name Indication (SNI) in the TLS handshake to identify the target service and routes the encrypted connection directly to the destination pod, preserving end-to-end encryption across clusters.
 </details>
 
 <details>
-<summary>Question 5: A developer reports that cross-cluster calls from Cluster-1 to Cluster-2 fail with "upstream connect error or disconnect/reset before headers." What is your troubleshooting process?</summary>
+<summary>Question 5: A developer reports that cross-cluster calls from Cluster-1 to Cluster-2 fail with "upstream connect error or disconnect/reset before headers." What is your troubleshooting process to isolate the cause of this connection failure?</summary>
 
-This error indicates a connection-level failure between the Envoy proxy in Cluster-1 and the target in Cluster-2. Systematic troubleshooting: (1) **Check east-west gateway reachability**: Can Cluster-1 pods reach Cluster-2's east-west gateway IP on port 15443? Network policies, security groups, or firewall rules may block this. (2) **Verify remote secrets**: Run `istioctl proxy-config endpoints` on the source pod to confirm it has endpoints for the target service in Cluster-2. If endpoints are missing, the remote secret may be invalid or the Istiod cannot reach Cluster-2's API server. (3) **Check certificate trust**: Compare root CA fingerprints across clusters. If they do not match, mTLS handshake fails. (4) **Examine proxy logs**: Enable debug logging on the source proxy (`istioctl proxy-config log <pod> --level debug`) and look for TLS handshake errors. (5) **Check DNS**: Verify that Cluster-1 can resolve the east-west gateway's hostname. Common root causes in order of frequency: firewall blocking port 15443, root CA mismatch, remote secret API server URL unreachable.
+This specific error indicates a connection-level failure between the Envoy proxy in Cluster-1 and the target in Cluster-2. Your first troubleshooting step should be verifying east-west gateway reachability to ensure Cluster-1 pods can successfully connect to Cluster-2's gateway IP on port 15443. If network paths are clear, you must verify the remote secrets by running `istioctl proxy-config endpoints` on the source pod to confirm it has correctly populated endpoints for the target service. If endpoints are present but connections still fail, you should compare the root CA fingerprints across both clusters to rule out an mTLS trust mismatch. Finally, enabling debug logging on the source proxy can reveal detailed TLS handshake errors that pinpoint whether the issue is related to certificate validation or network timeouts.
 </details>
 
 <details>
-<summary>Question 6: Is it practical to run Istio multi-cluster with one cluster on AWS and another on-premises connected via a VPN? What are the challenges?</summary>
+<summary>Question 6: Your infrastructure team wants to deploy a Multi-Primary Istio mesh stretching across an AWS EKS cluster and an on-premises Kubernetes cluster connected via a standard site-to-site VPN. What specific network and reliability challenges will this scenario introduce, and how should you adapt your Istio configuration to mitigate them?</summary>
 
-**Yes, it is practical but comes with challenges.** The primary challenge is **latency**: a VPN typically adds 20-100ms of latency to cross-cluster calls. For synchronous request-response patterns, this means any cross-cluster service call adds 40-200ms round trip. Applications must be designed to tolerate this latency. The second challenge is **east-west gateway exposure**: the on-premises cluster needs a stable, routable IP for its east-west gateway that the AWS cluster can reach through the VPN tunnel. If the on-premises network uses NAT, this requires careful configuration. The third challenge is **reliability**: VPN tunnels over the internet have variable latency and occasional packet loss. Istio's outlier detection may incorrectly eject healthy on-premises endpoints during VPN latency spikes, causing unnecessary failovers. Tuning outlier detection thresholds (longer intervals, higher error counts) for the VPN path is essential. For production, Direct Connect or ExpressRoute is strongly recommended over VPN for multi-cluster mesh deployments.
+Running a multi-cluster mesh across a standard VPN introduces significant latency and reliability challenges, as VPN tunnels over the public internet often experience variable ping times and occasional packet loss. This added network friction can cause Istio's outlier detection to falsely identify healthy on-premises endpoints as failing during temporary latency spikes, triggering unnecessary cross-cluster failovers. To mitigate this, you must carefully tune your outlier detection thresholds in your DestinationRules, using longer evaluation intervals and higher error count limits for cross-cluster traffic. Furthermore, the on-premises cluster must provide a stable, routable IP address for its east-west gateway that remains accessible through the VPN tunnel, which often requires complex NAT configuration. For true production reliability, migrating from a VPN to a dedicated private link like AWS Direct Connect is highly recommended.
 </details>
 
 ---
@@ -606,15 +590,20 @@ In this exercise, you will create two kind clusters, establish cross-cluster ser
 
 **What you will build:**
 
-```text
-┌───────────────────┐          ┌───────────────────┐
-│  cluster1 (kind)  │  ◄────►  │  cluster2 (kind)  │
-│                   │  Docker   │                   │
-│  frontend ──►     │  network  │  ◄── backend      │
-│  backend (local)  │          │  backend (remote) │
-│                   │          │                   │
-│  Priority: local  │          │  Failover target  │
-└───────────────────┘          └───────────────────┘
+```mermaid
+flowchart LR
+    subgraph C1["cluster1 (kind)"]
+        direction TB
+        F["frontend"]
+        B1["backend (local)<br>Priority: local"]
+        F --> B1
+    end
+    
+    subgraph C2["cluster2 (kind)"]
+        B2["backend (remote)<br>Failover target"]
+    end
+    
+    C1 <-->|"Docker network"| C2
 ```
 
 ### Task 1: Create Two Clusters
