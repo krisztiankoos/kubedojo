@@ -44,47 +44,26 @@ Lambda's execution model is fundamentally different from containers or VMs. Unde
 
 ### The Execution Environment Lifecycle
 
-```
-Lambda Execution Environment Lifecycle:
+```mermaid
+graph TD
+    A[Request 1 (Cold Start)] --> B[INIT Phase<br><i>(billed as part of invocation duration)</i><br>Download code -> Start runtime -> Run init code<br>Extension init -> Runtime init -> Function init<br>~100ms-10s depending on language, package size, VPC]
+    B --> C[INVOKE Phase<br><i>(billed per invocation)</i><br>Run handler function -> Return response<br>This is your actual code executing]
 
-Request 1 (Cold Start):
-+------------------------------------------------------------+
-| INIT Phase (billed as part of invocation duration)          |
-| [Download code] -> [Start runtime] -> [Run init code]      |
-| Extension init -> Runtime init -> Function init              |
-| ~100ms-10s depending on language, package size, VPC          |
-+------------------------------------------------------------+
-| INVOKE Phase (billed per invocation)                        |
-| [Run handler function] -> [Return response]                 |
-| This is your actual code executing                          |
-+------------------------------------------------------------+
+    C --> D[Request 2 (Warm Start - same environment reused)]
+    D --> E[INVOKE Phase only<br><i>(no INIT)</i><br>Run handler function -> Return response<br>Init code NOT re-executed, connections reused]
 
-Request 2 (Warm Start - same environment reused):
-+------------------------------------------------------------+
-| INVOKE Phase only (no INIT)                                 |
-| [Run handler function] -> [Return response]                 |
-| Init code NOT re-executed, connections reused               |
-+------------------------------------------------------------+
+    E --> F[Request 3 (Warm Start - reused again)]
+    F --> G[INVOKE Phase only<br>Run handler function -> Return response]
 
-Request 3 (Warm Start - reused again):
-+------------------------------------------------------------+
-| INVOKE Phase only                                           |
-| [Run handler function] -> [Return response]                 |
-+------------------------------------------------------------+
-
-... (Environment stays warm for 5-15 minutes of inactivity)
-
-Request N (after idle timeout - Cold Start again):
-+------------------------------------------------------------+
-| INIT Phase                                                   |
-| [Download code] -> [Start runtime] -> [Run init code]       |
-+------------------------------------------------------------+
-| INVOKE Phase                                                 |
-| [Run handler function] -> [Return response]                 |
-+------------------------------------------------------------+
+    G -- "..." --> H[Environment stays warm for 5-15 minutes of inactivity]
+    H --> I[Request N (after idle timeout - Cold Start again)]
+    I --> J[INIT Phase<br>Download code -> Start runtime -> Run init code]
+    J --> K[INVOKE Phase<br>Run handler function -> Return response]
 ```
 
 The critical insight: **code outside your handler function runs once per cold start, then is reused across invocations.** This is where you should initialize database connections, load configuration, and import heavy libraries.
+
+> **Stop and think**: How might this affect your approach to handling environment variables or API keys in a Lambda function?
 
 ```python
 # lambda_function.py
@@ -269,6 +248,8 @@ VPC cold starts used to add 8-12 seconds. Since 2019 (Hyperplane ENI), VPC cold 
 
 ### Minimizing Cold Starts
 
+> **Pause and predict**: Based on what you know about Lambda's execution environment, what strategies do you think might help reduce cold start times?
+
 **1. Keep your deployment package small:**
 
 ```bash
@@ -385,6 +366,8 @@ aws lambda update-function-configuration \
 
 ### When to Use Layers vs Container Images
 
+> **Pause and predict**: Considering the deployment package limits and the nature of different applications, when would you choose Lambda Layers over a Container Image for your function?
+
 | Approach | Best For | Limits |
 |----------|---------|--------|
 | Zip package only | Simple functions < 50 MB | 50 MB zipped, 250 MB unzipped |
@@ -401,46 +384,47 @@ When a single Lambda function is not enough, AWS Step Functions lets you chain L
 
 ### Why Not Just Call Lambda from Lambda?
 
+> **Pause and predict**: If you have multiple Lambda functions that need to execute in a specific sequence, what are the potential downsides of one Lambda function directly invoking another?
+
 You could have one Lambda function invoke another, but this creates several problems:
 
+```mermaid
+graph TD
+    A[Lambda A (15 min timeout)] --> B[Lambda B (15 min timeout)]
+    B --> C[Lambda C (15 min timeout)]
+    C --> D[Lambda D]
 ```
-Anti-Pattern: Lambda calling Lambda
-
-Lambda A (15 min timeout)
-  |
-  +-> Lambda B (15 min timeout)
-  |     |
-  |     +-> Lambda C (15 min timeout)
-  |           |
-  |           +-> Lambda D
-  |
-  Problem 1: Lambda A is WAITING (and PAYING) while B, C, D run
-  Problem 2: If C fails, how does A know? Error handling is manual
-  Problem 3: If A times out, B/C/D become orphans
-  Problem 4: No visibility into the workflow state
+- Problem 1: Lambda A is WAITING (and PAYING) while B, C, D run
+- Problem 2: If C fails, how does A know? Error handling is manual
+- Problem 3: If A times out, B/C/D become orphans
+- Problem 4: No visibility into the workflow state
 
 Better: Step Functions
 
-Step Function State Machine
-  |
-  +-> State 1: Invoke Lambda A
-  |     Success -> State 2
-  |     Failure -> Error Handler
-  |
-  +-> State 2: Invoke Lambda B
-  |     Success -> State 3
-  |     Failure -> Retry (3x) -> Error Handler
-  |
-  +-> State 3: Choice
-        Condition A -> Invoke Lambda C
-        Condition B -> Invoke Lambda D
-        Default -> End
+```mermaid
+graph TD
+    SM[Step Function State Machine]
+    SM --> S1[State 1: Invoke Lambda A]
 
-  Each Lambda runs independently (no waiting)
-  Built-in retries, error handling, and timeout management
-  Visual workflow in the AWS Console
-  Full execution history for debugging
+    S1 -- Success --> S2[State 2: Invoke Lambda B]
+    S1 -- Failure --> EH1[Error Handler]
+
+    S2 -- Success --> S3{State 3: Choice}
+    S2 -- Failure --> R1[Retry (3x)]
+    R1 --> EH2[Error Handler]
+
+    S3 -- Condition A --> LC[Invoke Lambda C]
+    S3 -- Condition B --> LD[Invoke Lambda D]
+    S3 -- Default --> E[End]
+
+    LC --> E
+    LD --> E
 ```
+
+Each Lambda runs independently (no waiting)
+Built-in retries, error handling, and timeout management
+Visual workflow in the AWS Console
+Full execution history for debugging
 
 ### Creating a Step Function
 
@@ -570,6 +554,8 @@ Use Standard for order processing, approval workflows, and anything that needs t
 
 Lambda enables powerful event-driven patterns. Here are the three you will use most often.
 
+> **Pause and predict**: How can you leverage different AWS services to trigger your Lambda functions and build robust event-driven systems?
+
 ### Pattern 1: S3 Event Processing
 
 ```
@@ -662,13 +648,13 @@ aws events put-targets \
 
 ## Did You Know?
 
-1. **Lambda was announced at AWS re:Invent 2014 and initially supported only Node.js.** The launch demo was a function that resized images uploaded to S3 -- the exact exercise at the end of this module. Tim Wagner, the "father of Lambda," later said the hardest engineering problem was not running the code but making the billing work at millisecond granularity. AWS had to build entirely new metering infrastructure to charge in 1ms increments.
+1.  **Lambda was announced at AWS re:Invent 2014 and initially supported only Node.js.** The launch demo was a function that resized images uploaded to S3 -- the exact exercise at the end of this module. Tim Wagner, the "father of Lambda," later said the hardest engineering problem was not running the code but making the billing work at millisecond granularity. AWS had to build entirely new metering infrastructure to charge in 1ms increments.
 
-2. **Every Lambda function runs inside a Firecracker microVM**, the same open-source virtualization technology that powers Fargate. Firecracker was specifically built for Lambda and later open-sourced. Each microVM provides hardware-level isolation between tenants, booting in under 125 milliseconds. Before Firecracker, Lambda used containers on shared EC2 instances -- Firecracker was built because containers alone did not provide strong enough security isolation for a multi-tenant compute platform.
+2.  **Every Lambda function runs inside a Firecracker microVM**, the same open-source virtualization technology that powers Fargate. Firecracker was specifically built for Lambda and later open-sourced. Each microVM provides hardware-level isolation between tenants, booting in under 125 milliseconds. Before Firecracker, Lambda used containers on shared EC2 instances -- Firecracker was built because containers alone did not provide strong enough security isolation for a multi-tenant compute platform.
 
-3. **Lambda's theoretical maximum concurrency** across all functions in a region defaults to 1,000, but AWS routinely grants increases to 100,000+ for enterprise accounts. Netflix runs hundreds of thousands of concurrent Lambda executions during peak hours for tasks like video encoding, data validation, and internal automation. At that scale, Lambda is managing more compute resources than most companies' entire infrastructure.
+3.  **Lambda's theoretical maximum concurrency** across all functions in a region defaults to 1,000, but AWS routinely grants increases to 100,000+ for enterprise accounts. Netflix runs hundreds of thousands of concurrent Lambda executions during peak hours for tasks like video encoding, data validation, and internal automation. At that scale, Lambda is managing more compute resources than most companies' entire infrastructure.
 
-4. **Lambda@Edge and CloudFront Functions let you run code at 450+ edge locations worldwide**, executing within single-digit milliseconds of the end user. Lambda@Edge supports full Lambda runtimes (Node.js, Python) with up to 5-second execution time, while CloudFront Functions use a restricted JavaScript runtime but execute in under 1 millisecond. Common uses include request/response manipulation, A/B testing, authentication, and URL rewriting -- all without the request ever reaching your origin server.
+4.  **Lambda@Edge and CloudFront Functions let you run code at 450+ edge locations worldwide**, executing within single-digit milliseconds of the end user. Lambda@Edge supports full Lambda runtimes (Node.js, Python) with up to 5-second execution time, while CloudFront Functions use a restricted JavaScript runtime but execute in under 1 millisecond. Common uses include request/response manipulation, A/B testing, authentication, and URL rewriting -- all without the request ever reaching your origin server.
 
 ---
 
@@ -688,6 +674,8 @@ aws events put-targets \
 ---
 
 ## Quiz
+
+> **Stop and think**: Take a moment to reflect on the core concepts covered in this module. Can you articulate the main benefits and challenges of serverless computing with AWS Lambda?
 
 <details>
 <summary>1. Why should you initialize database connections and SDK clients outside the Lambda handler function?</summary>
@@ -1109,3 +1097,4 @@ echo "Cleanup complete"
 ## Next Module
 
 Next up: **[Module 1.9: Secrets Manager](../module-1.9-secrets/)** -- Learn to manage sensitive configuration data (database credentials, API keys, certificates) securely with automatic rotation, cross-account sharing, and integration with Lambda, ECS, and EKS.
+---
