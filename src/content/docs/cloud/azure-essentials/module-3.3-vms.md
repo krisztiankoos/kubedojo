@@ -19,7 +19,7 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-In November 2020, a SaaS company running their entire production workload on a single Azure VM in the East US region experienced an outage that lasted 9 hours. The VM's host server had a hardware failure. Because the company had not configured Availability Zones, had no VM Scale Set, and had no load balancer, their application was completely offline. Their customers, many of whom were running end-of-month financial reports, could not access the platform. The post-incident review revealed that the monthly cost to run their single D4s_v3 VM was $140. Adding a second VM in a different Availability Zone behind a Standard Load Balancer would have added $165/month. A $165/month insurance policy could have prevented a $420,000 revenue loss and a wave of customer churn.
+In November 2020, a SaaS company running their entire production workload on a single Azure VM in the East US region experienced an outage that lasted 9 hours. The VM's host server had a hardware failure. Because the company had not configured Availability Zones, had no VM Scale Set, and had no load balancer, their application was completely offline. Their customers, many of whom are running end-of-month financial reports, could not access the platform. The post-incident review revealed that the monthly cost to run their single D4s_v3 VM was $140. Adding a second VM in a different Availability Zone behind a Standard Load Balancer would have added $165/month. A $165/month insurance policy could have prevented a $420,000 revenue loss and a wave of customer churn.
 
 Virtual machines remain the workhorse of cloud computing. Even in a world of containers, serverless functions, and managed services, VMs are the foundation that most of those higher-level services are built on. Understanding VM sizes, high availability constructs, disk types, and auto-scaling is fundamental to running reliable workloads on Azure. When you need full control over the operating system, when you are running software that cannot be containerized, or when you need specific hardware (like GPUs or high-memory instances), VMs are the answer.
 
@@ -63,6 +63,8 @@ Azure VM sizes follow a naming convention that tells you a lot if you know how t
     p = ARM-based (Ampere)  (Standard_D4ps_v5)
 ```
 
+> **Stop and think**: If you needed to deploy a high-performance computing (HPC) cluster with tightly coupled nodes requiring very fast inter-node communication, which VM size family would you immediately investigate? Why?
+
 ```bash
 # List all available VM sizes in a region
 az vm list-sizes --location eastus2 -o table
@@ -80,28 +82,24 @@ az vm list-vm-resize-options -g myRG -n myVM -o table
 
 The B-series deserves special attention because it is the most cost-effective option for workloads that do not need sustained CPU. B-series VMs accumulate CPU credits when idle and spend them during bursts.
 
-```text
-    B-Series CPU Credit Model:
+```mermaid
+stateDiagram-v2
+    direction LR
+    Idle_Below_Baseline: CPU Usage < Baseline (20%)<br>Earning Credits
+    Bursting_Above_Baseline: CPU Usage > Baseline (20%)<br>Spending Credits
+    Throttled: Credits depleted<br>CPU throttled to Baseline
 
-    CPU Usage
-    100% ─────────────────────────────────────────────────
-         │            ▓▓▓▓ Burst         ▓▓▓▓ Burst
-         │            ▓▓▓▓ (spending     ▓▓▓▓
-         │            ▓▓▓▓  credits)      ▓▓▓▓
-    20%  │────────────▓▓▓▓────────────────▓▓▓▓──── Baseline
-         │ ░░░░░░░░░░ ▓▓▓▓ ░░░░░░░░░░░░░ ▓▓▓▓
-         │ ░ Earning ░ ▓▓▓▓ ░ Earning  ░░ ▓▓▓▓
-         │ ░ credits ░      ░ credits  ░░
-    0%   └──────────────────────────────────────── Time
-
-    Below baseline = earning credits
-    Above baseline = spending credits
-    Credits depleted = throttled to baseline
+    Idle_Below_Baseline --> Bursting_Above_Baseline: Workload increases (burst)
+    Bursting_Above_Baseline --> Idle_Below_Baseline: Workload decreases (credits remain)
+    Bursting_Above_Baseline --> Throttled: Credits exhausted (sustained burst)
+    Throttled --> Idle_Below_Baseline: Workload decreases (credits accumulate)
 ```
 
 A Standard_B2s (2 vCPUs, 4 GB RAM) costs about $30/month, while an equivalent Standard_D2s_v5 costs about $70/month. For a dev/test VM that sits idle 80% of the time, B-series saves you 57%.
 
 **War Story**: A team running 15 CI/CD build agents on D4s_v5 instances (4 vCPUs, 16 GB, ~$140/month each) was spending $2,100/month. They analyzed their build patterns and found that agents were busy only 25% of the time, with builds coming in bursts. Switching to B4ms instances (same specs, burstable) at ~$67/month each cut their compute bill to $1,005/month---a 52% reduction with no performance impact on build times.
+
+> **Pause and predict**: You're designing an application that processes large batch jobs nightly. These jobs run for 2-3 hours and require significant CPU, but the VMs are idle for the remaining 21 hours. Would B-series VMs be a good fit? Why or why not?
 
 ---
 
@@ -113,45 +111,41 @@ Azure provides two mechanisms to protect your VMs from infrastructure failures. 
 
 An Availability Zone is a physically separate location within an Azure region. Each zone has independent power, cooling, and networking. If a fire destroys Zone 1, Zones 2 and 3 continue operating. Azure guarantees a **99.99% SLA** for VMs deployed across two or more zones.
 
-```text
-    Azure Region: East US 2
-    ┌─────────────────────────────────────────────────────┐
-    │                                                     │
-    │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
-    │  │   Zone 1    │  │   Zone 2    │  │   Zone 3    │ │
-    │  │             │  │             │  │             │ │
-    │  │  [VM-1]     │  │  [VM-2]     │  │  [VM-3]     │ │
-    │  │             │  │             │  │             │ │
-    │  │  Own power  │  │  Own power  │  │  Own power  │ │
-    │  │  Own cooling│  │  Own cooling│  │  Own cooling│ │
-    │  │  Own network│  │  Own network│  │  Own network│ │
-    │  └─────────────┘  └─────────────┘  └─────────────┘ │
-    │                                                     │
-    │  Low-latency interconnect between zones (<2ms)      │
-    └─────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph "Azure Region: East US 2"
+        Z1["Zone 1<br>Isolated Power, Cooling, Network<br>VM-1"]
+        Z2["Zone 2<br>Isolated Power, Cooling, Network<br>VM-2"]
+        Z3["Zone 3<br>Isolated Power, Cooling, Network<br>VM-3"]
+
+        Z1 --- Z2
+        Z2 --- Z3
+        note over Z1,Z3: Low-latency interconnect (<2ms)
+    end
 ```
 
 ### Availability Sets
 
 An Availability Set distributes VMs across **Fault Domains** (separate physical racks) and **Update Domains** (groups that Azure reboots sequentially during maintenance). Availability Sets provide a **99.95% SLA**.
 
-```text
-    Availability Set (3 Fault Domains, 5 Update Domains)
-    ┌─────────────────────────────────────────────────┐
-    │                                                 │
-    │   Fault Domain 0    FD 1           FD 2         │
-    │   ┌──────────┐   ┌──────────┐   ┌──────────┐   │
-    │   │ Rack 1   │   │ Rack 2   │   │ Rack 3   │   │
-    │   │          │   │          │   │          │   │
-    │   │ VM-1(UD0)│   │ VM-2(UD1)│   │ VM-3(UD2)│   │
-    │   │ VM-4(UD3)│   │ VM-5(UD4)│   │          │   │
-    │   │          │   │          │   │          │   │
-    │   └──────────┘   └──────────┘   └──────────┘   │
-    │                                                 │
-    │   During maintenance, Azure reboots one UD      │
-    │   at a time: UD0, then UD1, then UD2, etc.      │
-    └─────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Availability Set (3 Fault Domains, 5 Update Domains)"
+        FD0[("Fault Domain 0<br>Rack 1")]
+        FD1[("Fault Domain 1<br>Rack 2")]
+        FD2[("Fault Domain 2<br>Rack 3")]
+
+        FD0 --- VM1(VM-1 (UD0))
+        FD0 --- VM4(VM-4 (UD3))
+        FD1 --- VM2(VM-2 (UD1))
+        FD1 --- VM5(VM-5 (UD4))
+        FD2 --- VM3(VM-3 (UD2))
+
+        note over FD0,FD2: During maintenance, Azure reboots one Update Domain (UD) at a time: UD0, then UD1, then UD2, etc.
+    end
 ```
+
+> **Stop and think**: Your company has a strict RPO (Recovery Point Objective) of 0 and an RTO (Recovery Time Objective) of under 5 minutes for a critical financial application. The application is currently running on a single VM. You need to implement high availability. Which Azure HA mechanism would you choose first, and why?
 
 ### When to Use Which
 
@@ -162,7 +156,7 @@ An Availability Set distributes VMs across **Fault Domains** (separate physical 
 | **Latency between instances** | ~1-2ms (cross-zone) | <1ms (same data center) |
 | **Region support** | Most major regions, but not all | All regions |
 | **Cost** | No extra charge for the VM, but cross-zone data transfer costs | No extra charge |
-| **Recommendation** | Use whenever the region supports zones | Use only when zones are unavailable |
+| **Recommendation** | Use whenever the region supports zones | Use only when zones are unavailable in a region for the desired VM size |
 
 ```bash
 # Create a VM in a specific Availability Zone
@@ -208,6 +202,8 @@ Every Azure VM needs at least one disk: the **OS disk**. Most production VMs als
 | **Premium SSD** | 7,500 | 250 MB/s | Production databases, high IOPS | ~$19/month |
 | **Premium SSD v2** | 80,000 | 1,200 MB/s | Tier-1 databases, demanding workloads | ~$10+/month (pay per IOPS/throughput) |
 | **Ultra Disk** | 160,000 | 4,000 MB/s | SAP HANA, transaction-heavy databases | ~$67+/month |
+
+> **Pause and predict**: Your application team reports slow database queries. You investigate and find the database VM's disk queue length is consistently high. The VM is currently using a Standard SSD for its data disk. What's your immediate recommendation, and why?
 
 ```bash
 # Create a VM with a Premium SSD OS disk and a 256 GB data disk
@@ -299,6 +295,8 @@ runcmd:
   - systemctl start nginx
 ```
 
+> **Stop and think**: You need to deploy a complex application that requires a specific version of a Java Development Kit (JDK) and a set of proprietary libraries. You plan to use cloud-init. What's a potential pitfall of putting the entire installation logic in a single cloud-init script?
+
 ```bash
 # Create a VM with cloud-init
 az vm create \
@@ -344,31 +342,33 @@ A VM Scale Set is a group of identical, load-balanced VMs that can automatically
 
 ### VMSS Architecture
 
-```text
-    ┌──────────────────────────────────────────────────────────┐
-    │                 VM Scale Set: web-vmss                    │
-    │                                                          │
-    │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐      │
-    │  │  Instance 0 │  │  Instance 1 │  │  Instance 2 │      │
-    │  │  Zone 1     │  │  Zone 2     │  │  Zone 3     │      │
-    │  │             │  │             │  │             │      │
-    │  │  nginx      │  │  nginx      │  │  nginx      │      │
-    │  │  app code   │  │  app code   │  │  app code   │      │
-    │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘      │
-    │         │                │                │              │
-    │         └────────────────┼────────────────┘              │
-    │                          │                                │
-    │              ┌───────────┴───────────┐                    │
-    │              │   Standard Load       │                    │
-    │              │   Balancer (Layer 4)  │                    │
-    │              │   or App Gateway (L7) │                    │
-    │              └───────────┬───────────┘                    │
-    │                          │                                │
-    │              Autoscale Rules:                             │
-    │              - CPU > 70% for 5 min → add 2 instances     │
-    │              - CPU < 30% for 10 min → remove 1 instance  │
-    │              - Min: 2, Max: 20, Default: 3               │
-    └──────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Client[("Client Traffic")] --> LB("Standard Load Balancer<br>(Layer 4 / App Gateway L7)")
+    LB -- Distributes To --> VMSS_Entry(VM Scale Set: web-vmss)
+
+    subgraph "VM Scale Set: web-vmss Instances"
+        direction LR
+        I0(Instance 0<br>Zone 1<br>nginx, app code)
+        I1(Instance 1<br>Zone 2<br>nginx, app code)
+        I2(Instance 2<br>Zone 3<br>nginx, app code)
+    end
+
+    VMSS_Entry --- I0
+    VMSS_Entry --- I1
+    VMSS_Entry --- I2
+
+    subgraph "Autoscale Rules"
+        AR1("CPU > 70% for 5 min<br>→ Add 2 instances")
+        AR2("CPU < 30% for 10 min<br>→ Remove 1 instance")
+        AR3("Min: 2, Max: 20, Default: 3")
+    end
+
+    I0 -- Monitoring Data --> AR1
+    I1 -- Monitoring Data --> AR1
+    I2 -- Monitoring Data --> AR1
+    AR1 -- Scales --> VMSS_Entry
+    AR2 -- Scales --> VMSS_Entry
 ```
 
 ### Orchestration Modes
@@ -383,6 +383,36 @@ VMSS has two orchestration modes:
 | **Instance protection** | Limited | Full control |
 | **Networking** | VMSS-managed NICs | Standard NICs |
 | **Fault domains** | Configurable (max 5) | Max spreading (recommended) |
+
+> **Pause and predict**: You have an existing application running on several standalone Azure VMs. You want to leverage the auto-scaling and high availability features of VM Scale Sets without re-creating all your VMs. Which orchestration mode would you choose, and why?
+
+### Custom Images with VMSS
+
+For complex applications or hardened environments, you'll often need to deploy VMs from a custom image rather than a marketplace image. This allows you to pre-install software, apply specific configurations, or include security baselines. Custom images can be created from existing VMs or built using tools like Azure Image Builder or Packer, and then stored in a Managed Image resource or a Shared Image Gallery.
+
+A **Shared Image Gallery (SIG)** (now Azure Compute Gallery) is recommended for managing custom images. It provides versioning, global replication, and access control for your images.
+
+```bash
+# Example: Deploy a VMSS using a custom image from a Shared Image Gallery
+# First, you need an image definition and an image version in a Shared Image Gallery.
+# (Steps to create SIG, image definition, and image version are omitted for brevity)
+
+# Assuming you have an Image Definition ID (e.g., /subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.Compute/galleries/<galleryName>/images/<imageDefinitionName>)
+IMAGE_DEFINITION_ID="/subscriptions/<your-subscription-id>/resourceGroups/mySIGRG/providers/Microsoft.Compute/galleries/mySIG/images/myWebAppImage"
+
+az vmss create \
+  --resource-group myRG \
+  --name web-vmss-custom \
+  --image "$IMAGE_DEFINITION_ID" \
+  --vm-sku Standard_B2s \
+  --instance-count 3 \
+  --zones 1 2 3 \
+  --orchestration-mode Flexible \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --lb-sku Standard \
+  --upgrade-policy-mode Automatic
+```
 
 ```bash
 # Create a VMSS in Flexible orchestration mode across Availability Zones
@@ -498,15 +528,69 @@ az network lb rule create \
 
 ---
 
+## Optimizing Costs: Spot VMs and Reserved Instances
+
+Managing cloud costs is as critical as managing performance and availability. Azure provides several options to significantly reduce compute expenses, especially for workloads with flexible requirements.
+
+### Azure Spot VMs
+
+Azure Spot Virtual Machines allow you to utilize unused Azure compute capacity at a significant discount (up to 90% off pay-as-you-go prices). The trade-off is that Azure can evict Spot VMs at any time if it needs the capacity back.
+
+**Use Cases**:
+- **Batch processing**: Jobs that can be interrupted and restarted.
+- **Development/test environments**: Non-production workloads where occasional interruptions are acceptable.
+- **High-throughput stateless applications**: Workloads like rendering or media encoding where progress can be saved or work redistributed upon eviction.
+- **VM Scale Sets**: Ideal for Spot VMs, as the scale set can automatically replace evicted instances or balance workload.
+
+**Key Considerations**:
+- **Eviction policy**: You can choose to deallocate the VM or hibernate (for Windows VMs) upon eviction.
+- **Price caps**: You can set a maximum price you're willing to pay, but it's often more effective to let Azure choose the current Spot price for higher availability.
+- **VM size and region**: Spot availability and pricing vary by VM size and region.
+
+```bash
+# Create a single Azure Spot VM
+az vm create \
+  --resource-group myRG \
+  --name spot-batch-vm \
+  --image Ubuntu2204 \
+  --size Standard_D2s_v5 \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --priority Spot \
+  --eviction-policy Deallocate \
+  --max-price -1 # -1 means pay current price up to on-demand price
+```
+
+> **Pause and predict**: Your data science team needs to run daily machine learning training jobs that take several hours. These jobs are fault-tolerant and can resume from checkpoints. The budget is very constrained. What Azure VM offering would you recommend to them, and what's the primary risk they need to be aware of?
+
+### Azure Reserved Virtual Machine Instances (RIs)
+
+Azure Reserved Instances allow you to commit to a specific VM size and region for a one-year or three-year term in exchange for a significant discount (up to 72% compared to pay-as-you-go). When you purchase a reservation, it applies to any qualifying VM in that region, regardless of the specific VM running.
+
+**Use Cases**:
+- **Steady-state workloads**: Applications with predictable, continuous usage (e.g., production databases, always-on web servers).
+- **Long-running projects**: Any project where you know you'll need compute capacity for an extended period.
+
+**Key Considerations**:
+- **Flexibility**: Reservations offer some flexibility (e.g., instance size flexibility within the same family).
+- **Utilization**: To maximize savings, you need to ensure high utilization of your reserved capacity. Unused reservation hours are wasted.
+- **Payment options**: You can pay upfront or monthly.
+
+**Spot VMs vs. Reserved Instances**:
+- **Spot VMs**: Best for flexible, interruptible workloads where cost is paramount and availability can fluctuate.
+- **Reserved Instances**: Best for stable, continuous workloads where predictable costs and guaranteed capacity are essential.
+
+---
+
 ## Did You Know?
 
-1. **Azure VMs have a "host maintenance" event roughly every 4-6 weeks** where Azure needs to update the physical host. For most VM sizes, Azure uses memory-preserving maintenance that pauses the VM for less than 30 seconds. But for some GPU and high-performance VM sizes, a full reboot is required. You can subscribe to Scheduled Events via the Instance Metadata Service to get 15 minutes of advance warning before maintenance begins.
+1.  **Azure VMs have a "host maintenance" event roughly every 4-6 weeks** where Azure needs to update the physical host. For most VM sizes, Azure uses memory-preserving maintenance that pauses the VM for less than 30 seconds. But for some GPU and high-performance VM sizes, a full reboot is required. You can subscribe to Scheduled Events via the Instance Metadata Service to get 15 minutes of advance warning before maintenance begins.
 
-2. **The Standard_B1ls VM (1 vCPU, 0.5 GB RAM) costs approximately $3.80 per month** and is the cheapest VM Azure offers. It is surprisingly useful for lightweight workloads like a bastion host, a DNS forwarder, or a small cron job runner. Many teams overlook it because 0.5 GB seems too small, but for a process that uses 100 MB of RAM, it is more than enough.
+2.  **The Standard_B1ls VM (1 vCPU, 0.5 GB RAM) costs approximately $3.80 per month** and is the cheapest VM Azure offers. It is surprisingly useful for lightweight workloads like a bastion host, a DNS forwarder, or a small cron job runner. Many teams overlook it because 0.5 GB seems too small, but for a process that uses 100 MB of RAM, it is more than enough.
 
-3. **VM Scale Sets in Flexible orchestration mode can mix different VM sizes in the same scale set** since late 2023. This means you can have a baseline of Standard_D4s_v5 instances and burst with Standard_D4as_v5 (AMD) instances if Intel capacity is constrained. This is particularly useful during regional capacity shortages where a single VM size might not be available.
+3.  **VM Scale Sets in Flexible orchestration mode can mix different VM sizes in the same scale set** since late 2023. This means you can have a baseline of Standard_D4s_v5 instances and burst with Standard_D4as_v5 (AMD) instances if Intel capacity is constrained. This is particularly useful during regional capacity shortages where a single VM size might not be available.
 
-4. **When you stop (deallocate) a VM, you stop paying for compute but continue paying for the OS disk and any data disks.** A 128 GB Premium SSD costs about $19/month whether the VM is running or not. Teams that "save money" by stopping 50 VMs every night still pay $950/month for the disks. To truly eliminate disk costs, you need to delete the disks and recreate the VMs from images or snapshots.
+4.  **When you stop (deallocate) a VM, you stop paying for compute but continue paying for the OS disk and any data disks.** A 128 GB Premium SSD costs about $19/month whether the VM is running or not. Teams that "save money" by stopping 50 VMs every night still pay $950/month for the disks. To truly eliminate disk costs, you need to delete the disks and recreate the VMs from images or snapshots.
 
 ---
 
@@ -528,39 +612,45 @@ az network lb rule create \
 ## Quiz
 
 <details>
-<summary>1. What is the difference between an Availability Zone and an Availability Set?</summary>
+<summary>1. A critical, always-on microservice requires high availability and minimal downtime. Your application is deployed in the East US 2 region, which supports Availability Zones. Which high-availability strategy should you prioritize for your VMs, and why?</summary>
 
-An Availability Zone is a physically separate data center within an Azure region, with independent power, cooling, and networking. VMs spread across zones are protected from entire data center failures (99.99% SLA). An Availability Set distributes VMs across Fault Domains (different racks in the same data center) and Update Domains (groups rebooted sequentially during maintenance). Availability Sets protect against rack-level failures and planned maintenance but not data center-level failures (99.95% SLA). Always prefer Availability Zones when the region supports them.
+The primary strategy should be deploying VMs across **Availability Zones**. Availability Zones provide protection against entire data center failures by physically separating compute, networking, and storage. If one zone experiences an outage, VMs in other zones remain operational, offering a 99.99% SLA. While Availability Sets protect against rack-level failures and planned maintenance, they do not offer the same level of isolation against widespread data center issues, providing a lower 99.95% SLA. For a critical, always-on service in a zone-enabled region, Availability Zones offer superior resilience.
 </details>
 
 <details>
-<summary>2. A B2s VM is running at 5% CPU most of the time but occasionally bursts to 100% for 2 minutes. Is this a good use case for B-series? Why?</summary>
+<summary>2. You are evaluating VM sizes for a new web application. The application is expected to have highly variable traffic, with peak loads during business hours and very low usage overnight. Cost optimization is a key concern. Which VM family would you primarily consider, and how does it help optimize costs in this scenario?</summary>
 
-Yes, this is an ideal B-series use case. B-series VMs accumulate CPU credits when running below their baseline (20% for B2s). During the long periods at 5% CPU, the VM is earning credits. When it bursts to 100% for 2 minutes, it spends those accumulated credits. As long as the burst duration and frequency do not exceed the credit balance, the VM performs identically to a non-burstable VM during bursts but costs 50-60% less. If the bursts were sustained for 30+ minutes or happened every few minutes, you would exhaust credits and get throttled.
+For a web application with highly variable traffic and a focus on cost optimization, the **B-series (Burstable)** VM family would be the primary consideration. B-series VMs accumulate CPU credits when they are running below their baseline performance and can spend these credits during bursts of high CPU demand. This model is ideal for workloads that don't require sustained high CPU usage. During off-peak hours, when traffic is low, the VMs earn credits, which they then use during peak business hours. This allows you to pay less than an equivalent D-series VM while still providing satisfactory performance during bursts, as long as the bursts are not continuous enough to deplete all accumulated credits.
 </details>
 
 <details>
-<summary>3. You stop (deallocate) an Azure VM. What do you still pay for?</summary>
+<summary>3. Your development team needs several VMs for daily testing. These VMs are only active during working hours (9 AM - 5 PM, Monday - Friday) and can be turned off outside these times. What compute cost optimization strategy should you implement, and what is a crucial aspect to manage to fully realize the savings?</summary>
 
-You continue paying for all Managed Disks attached to the VM (OS disk and data disks), any public IP addresses associated with the VM (Standard SKU public IPs are charged even when unassigned; Basic SKU IPs are not charged when unassigned), and any reserved IP addresses. You stop paying for the compute (vCPU and memory). For a VM with a 128 GB Premium SSD OS disk and a 256 GB data disk, you would still pay approximately $38/month even while the VM is deallocated.
+You should implement a strategy of **stopping (deallocating) the VMs outside working hours**. While stopping a VM pauses compute charges, a crucial aspect to manage is the **disks attached to the VMs**. When a VM is deallocated, you continue to pay for its OS disk and any data disks. To fully realize cost savings, it's essential to understand that disk costs can be significant. If the VMs are truly temporary or can be recreated from images daily, deleting the disks when the VMs are not in use would provide maximum savings. Otherwise, simply deallocating them reduces compute costs but retains disk costs.
 </details>
 
 <details>
-<summary>4. Why does a Standard Load Balancer require an NSG to allow traffic, while a Basic Load Balancer does not?</summary>
+<summary>4. Your company needs to deploy a critical, proprietary application onto Azure VMs. The application requires specific operating system configurations, pre-installed software, and hardened security settings that are not available in standard marketplace images. How would you ensure all VMs deployed for this application consistently meet these requirements?</summary>
 
-Standard Load Balancer follows the "secure by default" design principle. All inbound traffic is blocked unless explicitly allowed by an NSG rule. This prevents accidental exposure of backend services. Basic Load Balancer was designed earlier with an "open by default" model where all traffic was allowed unless blocked. Microsoft recommends Standard LB for all new deployments because the secure-by-default approach aligns with zero-trust networking principles. Basic LB is being retired.
+To ensure all VMs consistently meet these requirements, you should use a **custom VM image** deployed via a **Shared Image Gallery (SIG)**, now known as Azure Compute Gallery. A custom image allows you to capture a VM's specific OS configuration, pre-installed applications, and security settings as a template. The Shared Image Gallery provides a centralized repository for managing, versioning, and sharing these custom images across subscriptions and regions. This approach guarantees that every VM spun up from this custom image will have the exact, pre-validated configuration, eliminating manual setup and reducing configuration drift.
 </details>
 
 <details>
-<summary>5. What is the advantage of using Flexible orchestration mode for VM Scale Sets compared to Uniform mode?</summary>
+<summary>5. You are setting up a VM Scale Set for a public-facing web application. To adhere to security best practices, all inbound traffic to the backend instances must be explicitly allowed. After deploying the VMSS with a Standard Load Balancer, you find that web requests are not reaching the application. What is the likely cause of the problem, and how would you resolve it?</summary>
 
-Flexible orchestration allows you to mix different VM sizes within the same scale set, add existing standalone VMs to the scale set, use standard networking features (including individual NSGs per NIC), and get better fault domain spreading. Uniform mode requires all VMs to be identical and manages networking at the VMSS level. Flexible mode is the recommended approach for all new VMSS deployments because it provides more control, better integration with other Azure services, and supports the gradual migration of existing VMs into a scale set.
+The likely cause is that the **Network Security Group (NSG) associated with the VM Scale Set's subnet or individual VM NICs is blocking traffic**. The Standard Load Balancer is designed with a "secure by default" model, meaning it explicitly blocks all inbound traffic unless an NSG rule explicitly permits it. Unlike the older Basic Load Balancer, it does not automatically open ports. To resolve this, you must create an inbound security rule in the relevant NSG to allow traffic on the required port (e.g., TCP port 80 or 443) from the internet to your VMSS instances. This ensures that the Load Balancer can forward client requests, and its health probes can reach the backend VMs.
 </details>
 
 <details>
-<summary>6. You need to deploy a VM that runs a PostgreSQL database with high IOPS requirements (20,000+ IOPS). Which disk type should you choose and why?</summary>
+<summary>6. Your data engineering team runs a complex ETL (Extract, Transform, Load) pipeline that requires high disk I/O for temporary data storage. The current setup uses Premium SSDs, but they are frequently hitting I/O bottlenecks during peak processing. The budget allows for a more performant solution. Which advanced disk type should you consider, and what is its primary advantage for this workload?</summary>
 
-Premium SSD v2 is the best choice for this scenario. Standard Premium SSD tops out at 7,500 IOPS for a single disk. Premium SSD v2 allows you to independently configure IOPS (up to 80,000) and throughput (up to 1,200 MB/s), and you only pay for what you provision. This makes it more cost-effective than Ultra Disk for most database workloads. Ultra Disk (up to 160,000 IOPS) would be overkill unless you need more than 80,000 IOPS or 4,000 MB/s throughput. You could also stripe multiple Premium SSDs using LVM/RAID, but Premium SSD v2 is simpler and often cheaper.
+For a complex ETL pipeline experiencing I/O bottlenecks with Premium SSDs and requiring higher performance, **Premium SSD v2** would be the ideal advanced disk type. Its primary advantage for this workload is the ability to **independently configure and scale IOPS and throughput**. Unlike Premium SSDs, where IOPS and throughput are tied to the disk size, Premium SSD v2 allows you to provision exactly the IOPS (up to 80,000) and throughput (up to 1,200 MB/s) needed for your workload, and you only pay for what you provision. This offers significant flexibility and cost-efficiency compared to Ultra Disks for most high-demand scenarios, as you can fine-tune performance without oversizing storage capacity.
+</details>
+
+<details>
+<summary>7. Your company has a consistent, 24/7 workload running on Azure VMs for its core ERP system. The usage patterns are stable, and you anticipate needing this compute capacity for at least the next three years. What cost optimization strategy would provide the most significant, guaranteed savings for this specific workload, and why?</summary>
+
+For a consistent, 24/7 workload with predictable usage over a three-year term, purchasing **Azure Reserved Virtual Machine Instances (RIs)** would provide the most significant and guaranteed savings. Reserved Instances offer substantial discounts (up to 72% compared to pay-as-you-go rates) in exchange for committing to a specific VM size and region for a one-year or three-year period. Since the ERP system is a stable, always-on workload, you can accurately forecast its compute needs, making it an ideal candidate for an RI. This commitment ensures you pay a much lower, predictable rate for the compute capacity, leading to considerable long-term cost reductions without sacrificing availability or performance.
 </details>
 
 ---
