@@ -110,18 +110,20 @@ az network dns record-set a create \
   --target-resource "$LB_PIP_ID"
 ```
 
-```text
-    Traditional A Record vs Alias Record:
+```mermaid
+flowchart TD
+    subgraph Traditional [Traditional A Record]
+        T_DNS[app.example.com] -->|A Record| T_IP[20.50.100.150]
+        T_Note[Static IP: Fails if Load Balancer IP changes] -.-> T_IP
+    end
 
-    Traditional:
-    app.example.com → A → 20.50.100.150 (static IP)
-    Problem: If the LB IP changes, DNS is stale until you update it.
-
-    Alias Record:
-    app.example.com → Alias → /subscriptions/.../publicIPAddresses/web-lb-pip
-    Advantage: Azure DNS automatically resolves to the current IP.
-              Also supports zone apex (example.com, not just www.example.com).
+    subgraph Alias [Alias Record]
+        A_DNS[app.example.com] -->|Alias Record| A_Res[Azure Resource ID\nweb-lb-pip]
+        A_Res -.->|Azure DNS automatically\nresolves current IP| A_IP[Current IP]
+    end
 ```
+
+> **Stop and think**: Why does RFC 1034 prohibit CNAME records at the zone apex (e.g., `example.com`), and how does Azure DNS bypass this limitation with Alias records under the hood? What type of DNS record does the client actually receive when resolving an Alias at the apex?
 
 ---
 
@@ -131,25 +133,19 @@ Private DNS Zones provide name resolution within your Virtual Networks without e
 
 ### How Private DNS Zones Work
 
-```text
-    ┌─────────────────────────────────────────────────────────────┐
-    │                  Private DNS Zone:                           │
-    │              internal.example.com                            │
-    │                                                             │
-    │  Records:                                                   │
-    │    db.internal.example.com     → 10.0.2.10                  │
-    │    cache.internal.example.com  → 10.0.2.20                  │
-    │    api.internal.example.com    → 10.0.1.15                  │
-    │                                                             │
-    │  Linked VNets:                                              │
-    │    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
-    │    │  hub-vnet     │  │  spoke1-vnet  │  │  spoke2-vnet  │    │
-    │    │  (auto-reg)   │  │  (resolve)    │  │  (resolve)    │    │
-    │    └──────────────┘  └──────────────┘  └──────────────┘    │
-    │                                                             │
-    │  auto-reg = VMs auto-register their DNS names               │
-    │  resolve  = VMs can resolve names but do not auto-register  │
-    └─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Zone [Private DNS Zone: internal.example.com]
+        Records[db → 10.0.2.10\ncache → 10.0.2.20\napi → 10.0.1.15]
+    end
+
+    Hub[hub-vnet] -- "Linked (Auto-registration ON)" --> Zone
+    Spoke1[spoke1-vnet] -- "Linked (Resolution ONLY)" --> Zone
+    Spoke2[spoke2-vnet] -- "Linked (Resolution ONLY)" --> Zone
+
+    HubVMs[VMs auto-register\nDNS names] -.-> Hub
+    SpokeVMs1[VMs can resolve\nbut do not register] -.-> Spoke1
+    SpokeVMs2[VMs can resolve\nbut do not register] -.-> Spoke2
 ```
 
 ```bash
@@ -188,6 +184,8 @@ az network private-dns record-set list \
 ```
 
 **Auto-registration** is a powerful feature: when enabled on a VNet link, every VM created in that VNet automatically gets a DNS record in the private zone. When the VM is deleted, the record is automatically removed. This eliminates the need to manually manage internal DNS records.
+
+> **Pause and predict**: You have a Private DNS Zone linked to a VNet with auto-registration enabled. You deploy a VM named `database-primary`. Later, an administrator logs into the VM's guest OS (Windows or Linux) and manually changes its IP address. What happens to the DNS record in the Private DNS Zone, and why?
 
 ### Private DNS and Private Endpoints
 
@@ -237,33 +235,17 @@ Traffic Manager is a DNS-based traffic routing service that distributes traffic 
 
 ### How Traffic Manager Works
 
-```text
-    ┌──────────┐
-    │  Client  │
-    └────┬─────┘
-         │ 1. DNS query: app.trafficmanager.net
-         ▼
-    ┌──────────────────┐
-    │  Traffic Manager │  2. Evaluates:
-    │                  │     - Health probes
-    │                  │     - Routing method
-    │                  │     - Endpoint priority
-    └────────┬─────────┘
-             │ 3. Returns IP of best endpoint
-             │    (DNS CNAME → endpoint IP)
-             ▼
-    ┌────────────────┐  ┌────────────────┐
-    │  East US       │  │  West Europe   │
-    │  20.50.100.1   │  │  20.73.200.1   │
-    │  (healthy)     │  │  (healthy)     │
-    └────────────────┘  └────────────────┘
-         │
-         │ 4. Client connects directly to endpoint
-         │    (Traffic Manager is NOT in data path)
-         ▼
-    Traffic Manager only handles DNS resolution.
-    Actual HTTP/TCP traffic goes directly
-    from client to endpoint.
+```mermaid
+sequenceDiagram
+    actor Client
+    participant TM as Traffic Manager
+    participant EUS as East US (20.50.100.1)
+    
+    Client->>TM: 1. DNS Query (app.trafficmanager.net)
+    Note over TM: 2. Evaluates:<br/>- Health probes<br/>- Routing method<br/>- Priority
+    TM-->>Client: 3. Returns IP of best endpoint (20.50.100.1)
+    Client->>EUS: 4. HTTP/TCP traffic (Direct connection)
+    Note over Client,EUS: Traffic Manager is NOT in the data path
 ```
 
 **Critical insight**: Traffic Manager is **not** a proxy or a load balancer. It only participates in the DNS resolution step. After that, the client connects directly to the endpoint. This means Traffic Manager cannot see HTTP headers, cannot terminate SSL, and cannot cache content. For those features, you need Azure Front Door.
@@ -278,6 +260,8 @@ Traffic Manager is a DNS-based traffic routing service that distributes traffic 
 | **Geographic** | Routes based on the client's geographic location | Data sovereignty, regional compliance |
 | **MultiValue** | Returns multiple healthy IPs (client chooses) | Increase availability with client-side retry |
 | **Subnet** | Routes based on client's source IP range | VIP customers, partner-specific endpoints |
+
+> **Stop and think**: A company uses Traffic Manager with Geographic routing to restrict data access: EU users are routed to Frankfurt, US users to Virginia. If the Virginia region suffers a total outage, what happens to the US traffic? Does it fail over to Frankfurt, or drop entirely?
 
 ```bash
 # Create a Traffic Manager profile with Priority routing
@@ -366,27 +350,20 @@ az network traffic-manager endpoint create \
 
 Azure Front Door is a global, scalable entry point for web applications. Unlike Traffic Manager (DNS only), Front Door operates at Layer 7 (HTTP/HTTPS) and sits in the data path. It acts as a reverse proxy, providing SSL termination, caching, WAF, and intelligent routing.
 
-```text
-    Traffic Manager vs Front Door:
+```mermaid
+flowchart TD
+    subgraph TM [Traffic Manager - DNS Layer]
+        direction LR
+        C1[Client] -- "1. DNS Query" --> T[Traffic Manager]
+        T -- "2. Returns IP" --> C1
+        C1 -- "3. Direct Connect\n(Not in data path)" --> O1[Origin Server]
+    end
 
-    Traffic Manager:
-    Client → DNS query → TM returns endpoint IP → Client connects to endpoint
-    (TM is NOT in the data path)
-
-    Front Door:
-    Client → HTTPS → Front Door PoP → (cache hit? return) → Backend origin
-    (Front Door IS in the data path, can inspect/modify HTTP)
-
-    ┌──────────┐     HTTPS      ┌───────────────┐     HTTPS     ┌──────────┐
-    │  Client  │ ─────────────► │  Front Door   │ ────────────► │  Origin  │
-    │          │ ◄───────────── │  (PoP Edge)   │ ◄──────────── │  Server  │
-    └──────────┘   Response     │               │   Response    └──────────┘
-                                │ - SSL offload │
-                                │ - WAF         │
-                                │ - Caching     │
-                                │ - Compression │
-                                │ - URL rewrite │
-                                └───────────────┘
+    subgraph FD [Azure Front Door - Layer 7]
+        direction LR
+        C2[Client] -- "HTTPS" --> F[Front Door PoP Edge\n- SSL Offload\n- WAF\n- Caching\n- Routing]
+        F -- "HTTPS\n(In data path)" --> O2[Origin Server]
+    end
 ```
 
 | Feature | Traffic Manager | Azure Front Door |
@@ -501,39 +478,39 @@ Use **Azure Front Door** when:
 ## Quiz
 
 <details>
-<summary>1. What is the difference between a standard A record and an Azure DNS alias record?</summary>
+<summary>1. <strong>Scenario</strong>: Your team is hosting an e-commerce platform behind an Azure Public Load Balancer. The security team mandates that the Load Balancer must be recreated monthly using infrastructure-as-code to ensure zero configuration drift. You need to map the apex domain (`shop.com`) to this Load Balancer. Why must you use an Azure DNS alias record instead of a standard A record or CNAME?</summary>
 
-A standard A record maps a hostname to a static IP address. If the IP changes (e.g., you recreate a Load Balancer), you must manually update the record. An alias record maps a hostname to an Azure resource ID (like a public IP, Traffic Manager profile, or CDN endpoint). Azure DNS automatically resolves the alias to the resource's current IP address. If the IP changes, the DNS response updates automatically. Additionally, alias records can be used at the zone apex (e.g., `example.com`), while CNAME records cannot. Alias records also support automatic TTL inheritance from the target resource.
+A standard A record requires a static IP; recreating the Load Balancer would assign a new public IP, causing downtime until the A record is manually updated. A CNAME record cannot be used at the zone apex (`shop.com`) due to RFC constraints. An Azure DNS alias record solves both problems: it maps directly to the Load Balancer's Azure Resource ID, so it automatically tracks IP changes without manual intervention, and it is fully supported at the zone apex. When queried, Azure dynamically returns the current IP as a standard A record.
 </details>
 
 <details>
-<summary>2. You have VMs in three VNets (hub, spoke1, spoke2). VMs in all three VNets need to resolve names in a Private DNS Zone. What must you configure?</summary>
+<summary>2. <strong>Scenario</strong>: You are designing a hub-and-spoke network architecture with one hub VNet (containing shared databases) and two spoke VNets (containing web APIs). You create a Private DNS Zone `internal.corp` to resolve internal hostnames. If you enable auto-registration for the hub VNet, how should you configure the links for the spoke VNets, and why?</summary>
 
-You must create VNet links from the Private DNS Zone to all three VNets. Create one link with auto-registration enabled (typically the hub VNet, where shared services like databases are deployed) so VMs automatically get DNS records. Create two additional links with auto-registration disabled (for spoke1 and spoke2) so VMs in those VNets can resolve names in the zone but do not auto-register. Only one VNet link per zone can have auto-registration enabled, so spoke VMs that need DNS records must have them created manually or through automation.
+You must link the Private DNS Zone to the spoke VNets with auto-registration disabled (resolution-only). Azure only allows one VNet to have auto-registration enabled per Private DNS Zone to prevent naming conflicts. By enabling auto-registration on the hub, the shared databases automatically register their DNS records. The resolution-only links on the spokes ensure the web APIs can successfully look up those database hostnames without attempting to register their own potentially conflicting names into the shared zone.
 </details>
 
 <details>
-<summary>3. Traffic Manager uses Priority routing with two endpoints: East US (priority 1) and West Europe (priority 2). The East US endpoint fails a health probe. What happens?</summary>
+<summary>3. <strong>Scenario</strong>: During a Black Friday sale, your primary East US application crashes. Traffic Manager is configured with Priority routing (East US is Priority 1, West Europe is Priority 2) and a DNS TTL of 5 minutes (300 seconds). The health probe interval is 30 seconds. A customer in New York refreshed their browser exactly 10 seconds before the crash. How long might this customer experience downtime before being routed to West Europe, and why?</summary>
 
-Traffic Manager stops returning the East US endpoint's IP in DNS responses and starts returning the West Europe endpoint's IP instead. The speed of this failover depends on two factors: the probe configuration (how quickly Traffic Manager detects the failure, based on interval, timeout, and tolerated number of failures) and the DNS TTL (how long clients cache the old DNS response). With a TTL of 30 seconds and default probe settings (30-second interval, 10-second timeout, 3 tolerated failures), failover takes approximately 90-120 seconds from the time the endpoint actually fails.
+The customer could experience over 6 minutes of downtime. First, Traffic Manager must detect the failure, which takes up to 90 seconds (3 failed probes at 30-second intervals) before it updates its internal routing to point to West Europe. Second, because the DNS TTL is 300 seconds and the customer just resolved the name, their local machine or ISP DNS cache will hold onto the stale East US IP for another 4 minutes and 50 seconds. To minimize this, you must configure a lower DNS TTL (e.g., 30 seconds) and faster probe intervals.
 </details>
 
 <details>
-<summary>4. When should you choose Azure Front Door over Traffic Manager for global traffic routing?</summary>
+<summary>4. <strong>Scenario</strong>: A financial startup is launching a global trading platform. They need to ensure that European traffic stays in Europe, all connections enforce TLS 1.3, static assets like charts are cached at edge locations, and any malicious SQL injection attempts are blocked before reaching the application servers. Why is Traffic Manager insufficient for this architecture, and what service must they use instead?</summary>
 
-Choose Front Door when you need any of these capabilities that Traffic Manager lacks: SSL/TLS termination at the edge (reducing latency for the TLS handshake), Web Application Firewall for DDoS and injection protection, edge caching for static content, URL path-based routing (sending /api to one backend and /images to another), session affinity via cookies, or near-instant failover (Front Door detects failures and reroutes within seconds, independent of DNS TTL). Choose Traffic Manager when you need non-HTTP protocol support, geographic routing for compliance, or the simplest and cheapest global routing.
+Traffic Manager operates strictly at the DNS layer (Layer 7 of DNS) and is not in the data path, meaning it cannot inspect or modify HTTP traffic. It cannot terminate TLS, cache content, or provide Web Application Firewall (WAF) protections against SQL injections. The startup must use Azure Front Door. Front Door acts as a Layer 7 global reverse proxy in the data path, terminating TLS at the edge, caching static assets at local Points of Presence (PoPs), and inspecting traffic with its built-in WAF before forwarding it to the backend.
 </details>
 
 <details>
-<summary>5. What is the purpose of Private DNS Zone integration with Private Endpoints?</summary>
+<summary>5. <strong>Scenario</strong>: You provisioned an Azure SQL Database and secured it with a Private Endpoint, giving it an IP of `10.0.1.4` in your VNet. However, when your application tries to connect using `myserver.database.windows.net`, the connection times out because it's still trying to route over the public internet. What missing component is causing this, and how does it fix the problem?</summary>
 
-When you create a Private Endpoint for an Azure PaaS service (like Storage or SQL), the service gets a private IP address in your VNet. But the service's public FQDN (e.g., `mystorage.blob.core.windows.net`) still resolves to its public IP by default. The Private DNS Zone integration creates a record in a zone like `privatelink.blob.core.windows.net` that resolves the service's FQDN to its private IP instead. When a VM in a linked VNet queries `mystorage.blob.core.windows.net`, Azure DNS chains the resolution through the privatelink zone and returns the private IP, ensuring all traffic stays within the VNet and never traverses the public internet.
+The missing component is the integration between the Private Endpoint and an Azure Private DNS Zone. By default, the public FQDN of the Azure SQL Database (`myserver.database.windows.net`) continues to resolve to its public IP address on the internet. You must create a Private DNS Zone (e.g., `privatelink.database.windows.net`), link it to your VNet, and configure the Private Endpoint's DNS Zone Group. This overrides the public DNS resolution for that specific FQDN within your VNet, seamlessly returning the private IP `10.0.1.4` so the application connects securely over the internal backbone.
 </details>
 
 <details>
-<summary>6. A team has a Traffic Manager profile with Performance routing and a TTL of 300 seconds. They notice that failover takes over 5 minutes. How can they reduce failover time?</summary>
+<summary>6. <strong>Scenario</strong>: A gaming company uses Traffic Manager with Performance routing to connect players to the lowest-latency game server. After a server in Tokyo goes offline, players in Japan complain they cannot connect for several minutes, even though a backup server in Seoul is available. You investigate and find the profile has a TTL of 300 seconds. What two specific configuration changes must you make to guarantee failover happens in under 60 seconds?</summary>
 
-Reduce the TTL to 10-30 seconds. With a 300-second TTL, clients cache the DNS response for up to 5 minutes. Even after Traffic Manager detects an endpoint failure and starts returning a different IP, clients continue using the cached (stale) IP until the TTL expires. Additionally, reduce the probe interval from the default 30 seconds to 10 seconds, reduce the probe timeout, and lower the tolerated number of failures from 3 to 2. Together, these changes can bring failover time from over 5 minutes down to approximately 30-60 seconds. For even faster failover, consider Azure Front Door, which is not limited by DNS TTL.
+First, you must reduce the DNS TTL from 300 seconds to a much lower value, such as 10 or 30 seconds, so client machines and ISP resolvers expire the stale IP address faster. Second, you must optimize the endpoint monitoring settings by reducing the probe interval (e.g., from 30 seconds to 10 seconds) and potentially lowering the tolerated number of failures (e.g., from 3 to 2). By combining a short TTL with aggressive health probing, Traffic Manager detects the Tokyo server failure faster and clients query for the new Seoul IP address almost immediately.
 </details>
 
 ---
