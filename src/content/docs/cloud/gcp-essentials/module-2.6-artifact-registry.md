@@ -237,6 +237,8 @@ gcloud artifacts vulnerabilities list \
 | **LOW** | 0.1 - 3.9 | Track and fix at convenience |
 | **MINIMAL** | 0.0 | Informational |
 
+> **Stop and think**: If vulnerability scanning is automatic, what prevents a developer from deploying an image that was scanned but found to have CRITICAL vulnerabilities?
+
 ### Binary Authorization Integration
 
 For production environments, you can enforce that only scanned and approved images are deployed to GKE.
@@ -298,17 +300,21 @@ gcloud artifacts repositories get-iam-policy docker-repo \
 
 Remote repositories act as caching proxies for public registries. When you pull an image through a remote repository, it is cached locally in Artifact Registry. Subsequent pulls come from your cache, improving speed and protecting against upstream outages or supply chain attacks.
 
-```text
-  ┌──────────────┐     Cache Miss      ┌──────────────────┐
-  │  Your CI/CD   │ ─────────────────> │  Artifact Registry │
-  │  Pipeline     │                     │  (Remote Repo)     │
-  │               │ <───────────────── │                    │
-  │               │   Pulls from cache  │  ┌──────────┐     │     ┌──────────────┐
-  │               │   (if available)    │  │  Cache    │     │────>│  Docker Hub   │
-  │               │                     │  │  (local)  │     │     │  (upstream)   │
-  └──────────────┘                     │  └──────────┘     │     └──────────────┘
-                                        └──────────────────┘
+```mermaid
+flowchart LR
+    CI["Your CI/CD<br>Pipeline"]
+    subgraph AR ["Artifact Registry (Remote Repo)"]
+        direction TB
+        Cache[("Cache (local)")]
+    end
+    Hub["Docker Hub<br>(upstream)"]
+
+    CI -- "Cache Miss" --> AR
+    AR -. "Pulls from cache<br>(if available)" .-> CI
+    AR --> Hub
 ```
+
+> **Pause and predict**: If a public registry goes down for maintenance, what happens to a CI/CD pipeline that pulls images through an Artifact Registry remote repository?
 
 ```bash
 # Create a remote repository that caches Docker Hub
@@ -444,39 +450,39 @@ gcloud artifacts repositories set-cleanup-policies docker-repo \
 ## Quiz
 
 <details>
-<summary>1. What is the difference between a standard, remote, and virtual repository in Artifact Registry?</summary>
+<summary>1. Your organization has multiple teams publishing internal npm packages, while also relying heavily on public packages from the npm registry. Developers are complaining that they have to configure multiple registry URLs in their `.npmrc` files, and CI builds occasionally fail due to rate limits on the public npm registry. How can you use Artifact Registry's repository types to solve these issues simultaneously?</summary>
 
-A **standard repository** stores artifacts that you push directly (your own images, packages). A **remote repository** acts as a caching proxy for an upstream public registry (Docker Hub, npm, PyPI). When you pull through a remote repo, it caches the artifact locally. Subsequent pulls are served from the cache. A **virtual repository** provides a single endpoint that aggregates multiple repositories (both standard and remote). It checks upstream repositories in priority order and returns the first match. Virtual repos simplify client configuration---developers use one registry URL instead of managing multiple.
+You should create a standard repository for the internal packages and a remote repository configured to cache the public npm registry. Then, you can create a virtual repository that aggregates both the standard and remote repositories behind a single endpoint. This solves the developers' configuration issue because they only need to point their `.npmrc` to the single virtual repository URL. It also solves the CI rate-limiting issue because the remote repository caches the public npm packages locally upon the first pull, serving all subsequent CI requests directly from GCP's internal network without hitting the public registry.
 </details>
 
 <details>
-<summary>2. Why should you enable the --immutable-tags flag on production Docker repositories?</summary>
+<summary>2. A deployment of your `frontend:v2.1` image worked flawlessly in the staging environment yesterday. Today, the exact same deployment YAML (referencing `frontend:v2.1`) was deployed to production, but the application crashed on startup with a missing dependency error. Assuming no environmental differences, what security and reliability risk likely occurred, and how could it have been prevented in Artifact Registry?</summary>
 
-Immutable tags prevent tag mutation, which is a security and reliability risk. Without immutable tags, anyone with push access can overwrite an existing tag (like `v1.0`) with a completely different image. This means a deployment that worked yesterday might pull a different image tomorrow, even though the tag has not changed. From a security perspective, an attacker who compromises push credentials can replace a known-good image with a malicious one while keeping the same tag. With immutable tags, once `v1.0` is pushed, it permanently points to that exact image digest and cannot be overwritten.
+The likely cause is that a developer or a compromised pipeline overwrote the `frontend:v2.1` image tag with a new, defective image digest after the staging deployment. This is a classic tag mutation issue, which poses a severe security and reliability risk because a known-good tag can be silently swapped with malicious or broken code. You could have prevented this by enabling the `--immutable-tags` flag on the production Docker repository. When this flag is enabled, Artifact Registry permanently locks the tag to the original image digest, ensuring that once `v2.1` is pushed, it can never be altered or overwritten.
 </details>
 
 <details>
-<summary>3. A GKE cluster needs to pull images from your Artifact Registry repository. What IAM role should the GKE node service account have?</summary>
+<summary>3. You are configuring a new GKE cluster that will run workloads using container images stored in a private Artifact Registry repository within the same GCP project. You want to follow the principle of least privilege. When configuring IAM for the GKE nodes, which specific role should you grant to the node's service account to ensure it can run the containers without exposing the repository to unnecessary risks?</summary>
 
-The GKE node service account needs `roles/artifactregistry.reader` on the specific repository. This grants permission to pull (download) images but not push or delete them. Grant it at the repository level, not the project level, to follow the principle of least privilege. If you are using Workload Identity on GKE, the Kubernetes service account mapped to the GCP service account also needs this role. The `roles/artifactregistry.writer` role is too permissive for nodes---only CI/CD pipelines that push images should have writer access.
+You should grant the `roles/artifactregistry.reader` role to the GKE node's service account (or the Workload Identity service account), scoped specifically to the target repository rather than the entire project. This role provides the exact permissions needed to pull and download container images, but explicitly denies the ability to push, overwrite, or delete artifacts. Granting a broader role like `artifactregistry.writer` or `artifactregistry.admin` to a compute node violates the principle of least privilege, as a compromised node could then poison the repository by pushing malicious images. By scoping the reader role only to the necessary repository, you limit the blast radius if the node is ever compromised.
 </details>
 
 <details>
-<summary>4. How do remote repositories help protect against supply chain attacks?</summary>
+<summary>4. A critical zero-day vulnerability is discovered in a popular open-source Python library, and malicious actors have managed to upload a compromised version of the package to PyPI. Your CI/CD pipelines automatically build new container images every night using `pip install`. If your organization uses an Artifact Registry remote repository for PyPI, how does this architecture protect your nightly builds from pulling the compromised package?</summary>
 
-Remote repositories cache artifacts from public registries locally. Once an artifact is cached, subsequent pulls are served from your private cache, not the public registry. If a maintainer publishes a malicious version of a package (as happened with ua-parser-js), your cache continues serving the previously cached clean version. New malicious versions are only pulled if explicitly requested by version number. Additionally, you can combine remote repos with vulnerability scanning---cached artifacts are automatically scanned, and you can block images with critical vulnerabilities from being deployed using Binary Authorization.
+Remote repositories act as a caching proxy, meaning they store a local copy of any package the first time it is pulled from the upstream registry. Because your pipelines have likely pulled the clean, older version of the Python library previously, that clean version is already cached in your Artifact Registry. When the nightly build runs, it pulls the package from the local cache rather than reaching out to PyPI, completely bypassing the newly compromised version. The CI/CD pipeline remains secure because it will only fetch a new version from upstream if a developer explicitly updates the dependency version requirement in their code.
 </details>
 
 <details>
-<summary>5. You are getting "denied: Permission denied" when pushing a Docker image. What are the three most common causes?</summary>
+<summary>5. A new developer joins your team and is trying to push their first Docker image to the company's Artifact Registry repository (`us-central1-docker.pkg.dev/my-project/docker-repo/app:v1`). The developer runs `docker push` but receives a "denied: Permission denied" error. They confirm they are logged into `gcloud` with their corporate account. What are the three most likely configuration issues or missing steps causing this failure?</summary>
 
-The three most common causes are: (1) **Docker is not configured to authenticate with Artifact Registry**---run `gcloud auth configure-docker REGION-docker.pkg.dev` to add the credential helper to your Docker config. (2) **The authenticated identity lacks the `roles/artifactregistry.writer` role** on the target repository---check the IAM policy and grant the role. (3) **The image tag is wrong**---the format must be exactly `REGION-docker.pkg.dev/PROJECT_ID/REPOSITORY/IMAGE:TAG`. A common mistake is using the old `gcr.io` format or omitting the repository name from the path.
+The first likely cause is that the developer has not configured Docker to authenticate with Artifact Registry; they must run `gcloud auth configure-docker us-central1-docker.pkg.dev` to inject the credential helper into their Docker configuration. The second common cause is that the developer's identity has not been granted the `roles/artifactregistry.writer` role on that specific repository, leaving them without the necessary permissions to push. The third possible cause is an incorrectly formatted image tag; if they used an old `gcr.io` format or forgot to include the repository name in the path, the registry will reject the push attempt with a permission or not-found error. Ensuring all three of these prerequisites are met is essential before any container image can be successfully uploaded to a secure registry.
 </details>
 
 <details>
-<summary>6. What happens when you pull an image through a virtual repository that has both a standard and a remote upstream?</summary>
+<summary>6. Your company uses a virtual repository to consolidate access. It is configured with an internal standard repository at priority 100, and a remote repository caching Docker Hub at priority 200. A developer accidentally names their internal helper script `ubuntu` and publishes it as a container image to the internal repository. When a CI pipeline runs `docker pull <virtual-repo-url>/ubuntu:latest`, what exactly happens and what security benefit does this priority configuration provide?</summary>
 
-The virtual repository checks its upstream repositories in **priority order** (lower priority number = checked first). If the image exists in the standard repository (which has a higher priority, meaning lower number), it is returned from there. If not found, the virtual repository checks the remote repository, which either serves it from its cache or fetches it from the upstream public registry. This means your internal images always take precedence over public images with the same name, which is an important security property---it prevents dependency confusion attacks where an attacker publishes a package with the same name as your internal package on a public registry.
+When the `docker pull` command is executed, the virtual repository evaluates its upstreams in priority order, starting with the lowest number. It checks the internal standard repository (priority 100) first, finds the internally published `ubuntu:latest` image, and returns it immediately without ever querying the remote repository (priority 200). This priority configuration provides a critical security benefit by preventing dependency confusion attacks. If an attacker publishes a malicious package to a public registry with the exact same name as an internal package, the virtual repository will always prioritize and serve the safe internal version, neutralizing the attack.
 </details>
 
 ---
