@@ -43,17 +43,17 @@ The hosting plan determines the scaling behavior, available resources, and prici
 | **Free grant** | 1M executions + 400K GB-s/month | Similar | None | None |
 | **Best for** | Event-driven, sporadic | Event-driven, predictable | Low latency, always ready | Existing ASP, long jobs |
 
-```text
-    Decision Tree:
+> **Stop and think**: If your company has a strict policy that all database traffic must route through a private VNet, but you want to avoid paying for instances when no traffic is hitting your function at night, which hosting plan is your only viable option?
 
-    Does your function need VNet access?
-    ├── YES → Is cost a primary concern?
-    │         ├── YES → Flex Consumption (scales to zero, VNet support)
-    │         └── NO  → Premium EP1 (no cold start, VNet, unlimited duration)
-    │
-    └── NO  → Is execution time always under 5 minutes?
-              ├── YES → Consumption (cheapest, simplest)
-              └── NO  → Premium or Dedicated
+```mermaid
+flowchart TD
+    VNet{Does your function need VNet access?}
+    VNet -- YES --> Cost{Is cost a primary concern?}
+    VNet -- NO --> Duration{Is execution time always under 5 minutes?}
+    Cost -- YES --> Flex[Flex Consumption<br/>scales to zero, VNet support]
+    Cost -- NO --> Premium[Premium EP1<br/>no cold start, VNet, unlimited duration]
+    Duration -- YES --> Consumption[Consumption<br/>cheapest, simplest]
+    Duration -- NO --> PremiumDedicated[Premium or Dedicated]
 ```
 
 ```bash
@@ -91,25 +91,20 @@ az functionapp create \
 
 Cold start is the latency added when a function executes for the first time (or after an idle period). It happens because Azure needs to allocate a worker, load the runtime, and initialize your code.
 
-```text
-    Cold Start Breakdown (Consumption Plan, Python):
-
-    ┌──────────────────────────────────────────────────────────┐
-    │                      Total: 3-8 seconds                  │
-    │                                                          │
-    │  ┌─────────┐ ┌──────────┐ ┌───────────┐ ┌────────────┐  │
-    │  │ Worker  │ │ Runtime  │ │ Dep Load  │ │ Your Code  │  │
-    │  │ Alloc   │ │ Init     │ │ (pip pkgs)│ │ Init       │  │
-    │  │ ~1-2s   │ │ ~0.5-1s  │ │ ~1-4s     │ │ ~0.2-1s    │  │
-    │  └─────────┘ └──────────┘ └───────────┘ └────────────┘  │
-    │                                                          │
-    │  Mitigation strategies:                                  │
-    │  1. Keep dependencies minimal (fewer pip packages)       │
-    │  2. Use Premium plan (always-warm instances)             │
-    │  3. Use Flex Consumption (pre-provisioned instances)     │
-    │  4. Avoid heavy initialization in function startup       │
-    └──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    A["Worker Alloc<br/>(~1-2s)"] --> B["Runtime Init<br/>(~0.5-1s)"]
+    B --> C["Dep Load (pip)<br/>(~1-4s)"]
+    C --> D["Your Code Init<br/>(~0.2-1s)"]
 ```
+
+**Total: 3-8 seconds**
+
+**Mitigation strategies:**
+1. Keep dependencies minimal (fewer pip packages)
+2. Use Premium plan (always-warm instances)
+3. Use Flex Consumption (pre-provisioned instances)
+4. Avoid heavy initialization in function startup
 
 **War Story**: A payment processing company chose the Consumption plan for their webhook handler. Most requests completed in 200ms. But once every 15-20 minutes, the function would cold start, adding 6 seconds of latency. Their payment provider interpreted these 6-second responses as timeouts and marked them as failed, triggering retry logic that created duplicate transactions. Switching to Premium plan with 1 minimum instance eliminated cold starts entirely, and the duplicate transaction problem vanished overnight.
 
@@ -134,30 +129,36 @@ Triggers and bindings are what make Azure Functions genuinely productive. A **tr
 
 ### Input and Output Bindings
 
-```text
-    ┌──────────────────────────────────────────────────────────┐
-    │                    Azure Function                         │
-    │                                                          │
-    │  Input Bindings          Function Code       Output Bindings
-    │  ┌────────────┐         ┌──────────┐        ┌────────────┐
-    │  │ Blob       │ ──────► │          │ ──────► │ Cosmos DB  │
-    │  │ Storage    │         │  Your    │        │ Document   │
-    │  └────────────┘         │  Code    │        └────────────┘
-    │  ┌────────────┐         │          │        ┌────────────┐
-    │  │ Table      │ ──────► │  (just   │ ──────► │ Queue      │
-    │  │ Storage    │         │   the    │        │ Message    │
-    │  └────────────┘         │  logic)  │        └────────────┘
-    │                         │          │        ┌────────────┐
-    │  Trigger:               │          │ ──────► │ SendGrid   │
-    │  ┌────────────┐         │          │        │ Email      │
-    │  │ Queue      │ ──────► │          │        └────────────┘
-    │  │ Message    │         └──────────┘
-    │  └────────────┘
-    │                                                          │
-    │  Without bindings: 50+ lines of SDK setup code           │
-    │  With bindings: 0 lines of SDK code (declarative)        │
-    └──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Triggers
+        QueueTrig[Queue Message]
+    end
+    subgraph Input Bindings
+        Blob[Blob Storage]
+        Table[Table Storage]
+    end
+    subgraph Azure Function
+        Code((Your Code<br/>just the logic))
+    end
+    subgraph Output Bindings
+        Cosmos[Cosmos DB Document]
+        QueueOut[Queue Message]
+        Email[SendGrid Email]
+    end
+
+    Blob --> Code
+    Table --> Code
+    QueueTrig --> Code
+    Code --> Cosmos
+    Code --> QueueOut
+    Code --> Email
 ```
+
+**Without bindings:** 50+ lines of SDK setup code
+**With bindings:** 0 lines of SDK code (declarative)
+
+> **Pause and predict**: If you use an output binding to write a document to Cosmos DB, but the Cosmos DB service experiences a brief 2-second network blip while the function runs, do you need to write custom retry logic in your Python code?
 
 ### Python Function Examples
 
@@ -265,30 +266,38 @@ Regular Azure Functions are stateless---each execution is independent. Durable F
 
 ### Patterns
 
-```text
-    Pattern 1: Function Chaining
-    ┌─────────┐     ┌─────────┐     ┌─────────┐     ┌─────────┐
-    │  Step 1  │ ──► │  Step 2  │ ──► │  Step 3  │ ──► │  Step 4  │
-    │ Validate │     │ Enrich  │     │ Process │     │ Notify  │
-    └─────────┘     └─────────┘     └─────────┘     └─────────┘
+**Pattern 1: Function Chaining**
+```mermaid
+flowchart LR
+    P1S1[Step 1: Validate] --> P1S2[Step 2: Enrich]
+    P1S2 --> P1S3[Step 3: Process]
+    P1S3 --> P1S4[Step 4: Notify]
+```
 
-    Pattern 2: Fan-Out / Fan-In
-                    ┌─────────┐
-               ┌──► │ Task A  │ ──┐
-    ┌────────┐ │    └─────────┘   │    ┌──────────┐
-    │ Start  │─┤    ┌─────────┐   ├──► │ Aggregate│
-    └────────┘ │    │ Task B  │   │    └──────────┘
-               ├──► └─────────┘ ──┤
-               │    ┌─────────┐   │
-               └──► │ Task C  │ ──┘
-                    └─────────┘
+**Pattern 2: Fan-Out / Fan-In**
+```mermaid
+flowchart LR
+    Start[Start] --> TaskA[Task A]
+    Start --> TaskB[Task B]
+    Start --> TaskC[Task C]
+    TaskA --> Aggregate[Aggregate]
+    TaskB --> Aggregate
+    TaskC --> Aggregate
+```
 
-    Pattern 3: Async HTTP API (Long-Running)
-    Client ──► Start ──► Return Status URL
-                │
-                └──► Poll Status URL until complete
-                         │
-                         └──► Get Result
+**Pattern 3: Async HTTP API (Long-Running)**
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as Durable Function API
+    Client->>API: Start Long-Running Task
+    API-->>Client: Return Status URL (202 Accepted)
+    loop Until Complete
+        Client->>API: Poll Status URL
+        API-->>Client: Status: Running
+    end
+    Client->>API: Poll Status URL
+    API-->>Client: Status: Complete + Result
 ```
 
 ```python
@@ -422,39 +431,39 @@ az webapp auth microsoft update \
 ## Quiz
 
 <details>
-<summary>1. When would you choose Azure Functions Premium plan over Consumption plan?</summary>
+<summary>1. Your team is migrating a legacy e-commerce API to Azure Functions. The API must connect to a secure on-premises inventory database via a VNet, and it consistently receives traffic 24/7 without significant idle periods. Why would you choose the Premium plan over the Consumption plan for this workload?</summary>
 
-Choose Premium when you need any of these: no cold starts (Premium keeps instances pre-warmed), VNet integration (Consumption cannot connect to private VNets), execution times longer than 10 minutes, more memory (up to 14 GB vs 1.5 GB), or consistent performance for latency-sensitive workloads. Premium is also better when your function runs frequently enough that the per-execution cost of Consumption exceeds the per-instance cost of Premium. The break-even point is roughly 3-5 million executions per month depending on duration and memory.
+You would choose the Premium plan because the Consumption plan does not support VNet integration, making it impossible to connect to your secure on-premises database. Additionally, since the API receives constant traffic, the per-execution pricing of the Consumption plan would likely become more expensive than the flat, instance-based pricing of the Premium plan. The Premium plan also keeps instances pre-warmed, eliminating cold starts and ensuring the latency-sensitive e-commerce API remains responsive to customers at all times.
 </details>
 
 <details>
-<summary>2. Explain the difference between a trigger and a binding in Azure Functions.</summary>
+<summary>2. You are writing an Azure Function that processes uploaded CSV files and writes the results to both a Cosmos DB database and an Azure Service Bus queue. How would you divide the responsibilities between triggers and bindings to implement this without writing any connection management code?</summary>
 
-A trigger is the event that causes a function to execute. Every function has exactly one trigger. Examples: an HTTP request, a new blob, a queue message, or a timer schedule. The trigger defines when the function runs. A binding is a declarative connection to another service for reading (input binding) or writing (output binding). Bindings are optional---you can have zero or many. They eliminate the boilerplate of initializing SDKs, authenticating, and managing connections. For example, a Cosmos DB output binding lets you write a document to Cosmos DB by simply setting a return value, without any Cosmos DB SDK code.
+You would configure a single Blob Storage trigger to initiate the function execution whenever a new CSV file is uploaded, as every function requires exactly one trigger to define when it runs. To handle the outputs, you would configure two output bindings: one for Cosmos DB and one for Service Bus. The bindings declaratively handle the connection, authentication, and data formatting for the external services. By using output bindings, your Python code simply returns or sets the data objects, and the Azure Functions runtime automatically manages the complex SDK operations to write the data to the respective destinations.
 </details>
 
 <details>
-<summary>3. A blob trigger function processes uploaded images. You notice a 30-45 second delay between upload and processing. Why, and how would you fix it?</summary>
+<summary>3. Your media processing application uses a Blob trigger function to resize user profile pictures. Users are complaining that it takes up to a minute for their new profile picture to appear after uploading. What is causing this delay, and how can you re-architect the trigger to solve it?</summary>
 
-Blob triggers use a polling mechanism that scans the container for changes periodically. The polling interval can be up to 60 seconds, which explains the delay. To fix this, switch from a Blob trigger to an Event Grid trigger. Configure the storage account to emit BlobCreated events to Event Grid, and configure the Function to trigger on those events. Event Grid delivers events in near-real-time (typically under 1 second), eliminating the polling delay. The function code stays essentially the same---only the trigger configuration changes.
+The delay is caused by the Blob trigger's internal polling mechanism, which periodically scans the storage container for new or modified blobs. Because it operates on a polling schedule (often every 10 to 60 seconds), it cannot provide immediate execution upon upload. To solve this and achieve real-time processing, you should switch from a Blob trigger to an Event Grid trigger. By configuring the storage account to emit an event to Event Grid the moment a blob is created, the function will be triggered instantly, eliminating the polling delay and ensuring profile pictures update immediately.
 </details>
 
 <details>
-<summary>4. What problem do Durable Functions solve that regular Azure Functions cannot?</summary>
+<summary>4. You are tasked with building an onboarding system. When a new user signs up, the system must create an Active Directory account, assign licenses, and then wait for an HR manager to manually approve the access via an email link. This approval could take up to 5 days. Why would you choose Durable Functions over regular Azure Functions for this workflow?</summary>
 
-Regular Azure Functions are stateless and short-lived. They cannot maintain state between executions, coordinate multiple steps, or wait for external events. Durable Functions add stateful orchestration, enabling patterns like function chaining (sequential steps), fan-out/fan-in (parallel processing), async HTTP APIs (long-running operations with status polling), human interaction (wait for approval), and aggregation (collect events over time). The orchestrator function maintains state in Azure Storage, so it can be suspended and resumed without consuming compute. This enables workflows that span minutes, hours, or even weeks.
+Regular Azure Functions are stateless and have a maximum execution time limit (up to 10 minutes on Consumption, or 30 on Flex), meaning they cannot natively wait 5 days for a manual approval without timing out or running continuously. Durable Functions solve this by using stateful orchestration. When the workflow reaches the manual approval step, the orchestrator function goes to sleep, saving its state to Azure Storage and stopping compute consumption entirely. Once the HR manager clicks the approval link, an external event wakes the orchestrator back up, restoring its state, and allowing the workflow to continue assigning licenses.
 </details>
 
 <details>
-<summary>5. How does Azure Functions handle scaling differently on the Consumption plan vs. Premium plan?</summary>
+<summary>5. Your web application experiences massive, unpredictable traffic spikes on Black Friday, jumping from zero requests to thousands of requests per second instantly. You are debating between using the Consumption plan and the Premium plan to handle this API. How would the scaling behavior differ between the two plans during this spike?</summary>
 
-On Consumption, Azure manages all scaling automatically. When events arrive (queue messages, HTTP requests), Azure allocates workers and scales out to handle them. It can scale from 0 to 200 instances. You have no control over the scaling behavior. On Premium, you set a minimum number of always-warm instances (typically 1) and a maximum burst count. Azure pre-warms instances to avoid cold starts and scales within your configured bounds. Premium scaling is faster because instances are already provisioned, while Consumption requires allocating new workers from a shared pool.
+On the Consumption plan, Azure manages scaling automatically by rapidly allocating new workers from a shared pool to handle the incoming requests, allowing it to scale from zero to hundreds of instances. However, this reactive scaling introduces cold starts, meaning the first wave of users will experience significant latency while new instances boot up. On the Premium plan, you configure a minimum number of always-warm instances and a maximum burst count. When the spike hits, the pre-warmed instances handle the initial load instantly without cold starts, while Azure rapidly scales out additional instances up to your defined maximum limit, providing a much smoother and faster scaling response.
 </details>
 
 <details>
 <summary>6. You have a function that processes orders and needs to: validate the order, charge the credit card, update inventory, and send a confirmation email. How would you architect this with Azure Functions?</summary>
 
-Use a Durable Functions orchestrator with four activity functions. The orchestrator function calls each activity sequentially: validate_order, charge_card, update_inventory, send_email. If any step fails, the orchestrator can implement compensation logic (e.g., if update_inventory fails after charge_card succeeds, call a refund_card activity). The orchestrator maintains the workflow state, so if a failure occurs mid-workflow, it can resume from where it left off after the issue is fixed. Each activity function is independently scalable and testable. Using Durable Functions instead of chaining via queues gives you a single, readable workflow definition instead of scattered trigger-based functions.
+You should use a Durable Functions orchestrator with four separate activity functions for validation, charging, inventory, and emailing. The orchestrator function calls each activity sequentially, maintaining the state of the entire workflow. If a step fails, such as the inventory update, the orchestrator can natively implement compensation logic to call a refund activity and reverse the credit card charge. By using Durable Functions instead of chaining multiple independent functions via queue messages, you gain a single, readable source of truth for the workflow and ensure that partial failures do not leave your system in an inconsistent state.
 </details>
 
 ---
