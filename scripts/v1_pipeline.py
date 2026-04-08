@@ -355,21 +355,20 @@ def extract_knowledge_packet(content: str) -> str:
     """
     sections = []
 
-    # 1. Code blocks with context
-    code_blocks = []
-    for i, match in enumerate(re.finditer(r"(^#{2,3} .+\n)?(?:.*\n)*?(```[\w]*\n[\s\S]*?```)", content, re.MULTILINE), 1):
-        heading = match.group(1).strip() if match.group(1) else "unknown section"
-        code = match.group(2)
-        code_blocks.append(f"[CODE-{i}] (from: {heading})\n{code}")
-    if code_blocks:
-        sections.append("### CODE BLOCKS\n" + "\n\n".join(code_blocks))
-
-    # Simpler approach: just extract all fenced code blocks in order
-    if not code_blocks:
-        raw_blocks = re.findall(r"```[\w]*\n[\s\S]*?```", content)
-        if raw_blocks:
-            labeled = [f"[CODE-{i}]\n{b}" for i, b in enumerate(raw_blocks, 1)]
-            sections.append("### CODE BLOCKS\n" + "\n\n".join(labeled))
+    # 1. Code blocks — extract all fenced blocks, find nearest heading for context
+    raw_blocks = list(re.finditer(r"```[\w]*\n[\s\S]*?```", content))
+    if raw_blocks:
+        headings = list(re.finditer(r"^#{2,3} .+$", content, re.MULTILINE))
+        labeled = []
+        for i, match in enumerate(raw_blocks, 1):
+            # Find nearest heading before this code block
+            heading = "unknown section"
+            for h in reversed(headings):
+                if h.start() < match.start():
+                    heading = h.group().lstrip("# ").strip()
+                    break
+            labeled.append(f"[CODE-{i}] (from: {heading})\n{match.group()}")
+        sections.append("### CODE BLOCKS\n" + "\n\n".join(labeled))
 
     # 2. Tables
     table_pattern = re.compile(r"(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)+)", re.MULTILINE)
@@ -395,19 +394,20 @@ def extract_knowledge_packet(content: str) -> str:
         labeled = [f"[ASCII-{i}]\n{b.strip()}" for i, b in enumerate(ascii_blocks, 1)]
         sections.append("### ASCII DIAGRAMS (convert to Mermaid if possible)\n" + "\n\n".join(labeled))
 
-    # 4. Quiz questions (just the scenarios)
-    quiz_qs = re.findall(r"<summary>(.*?)</summary>", content)
-    if quiz_qs:
-        labeled = [f"[QUIZ-{i}] {q}" for i, q in enumerate(quiz_qs, 1)]
-        sections.append("### QUIZ QUESTIONS\n" + "\n".join(labeled))
+    # 4. Quiz questions — full <details> blocks (questions + answers)
+    quiz_blocks = re.findall(r"(<details>[\s\S]*?</details>)", content)
+    if quiz_blocks:
+        labeled = [f"[QUIZ-{i}]\n{q}" for i, q in enumerate(quiz_blocks, 1)]
+        sections.append("### QUIZ BLOCKS (preserve questions AND answers)\n" + "\n\n".join(labeled))
 
-    # 5. Inline prompts
-    prompts = re.findall(
-        r">\s*\*\*(Pause and predict|Stop and think|What would happen|Try it yourself|Before you look)[^*]*\*\*:?[^\n]*",
+    # 5. Inline prompts — capture full blockquote (may be multi-line)
+    prompt_blocks = re.findall(
+        r"(>\s*\*\*(?:Pause and predict|Stop and think|What would happen|Try it yourself|Before you look)[\s\S]*?)(?=\n\n|\n[^>]|\Z)",
         content
     )
-    if prompts:
-        sections.append("### INLINE PROMPTS\n" + "\n".join(f"- {p}" for p in prompts))
+    if prompt_blocks:
+        labeled = [f"[PROMPT-{i}]\n{p.strip()}" for i, p in enumerate(prompt_blocks, 1)]
+        sections.append("### INLINE PROMPTS\n" + "\n\n".join(labeled))
 
     # 6. Links (internal and external)
     links = re.findall(r"\[([^\]]+)\]\(([^)]+)\)", content)
@@ -579,6 +579,20 @@ def step_update_index(section_path: Path, model: str = MODELS["write"]) -> bool:
 
     if not output.startswith("---"):
         print(f"  ❌ INDEX rewrite has no frontmatter")
+        return False
+
+    # Validate frontmatter
+    parts = output.split("---", 2)
+    if len(parts) < 3:
+        print(f"  ❌ INDEX rewrite has malformed frontmatter")
+        return False
+    try:
+        fm = yaml.safe_load(parts[1])
+        if not isinstance(fm, dict) or "title" not in fm:
+            print(f"  ❌ INDEX rewrite missing title in frontmatter")
+            return False
+    except yaml.YAMLError as e:
+        print(f"  ❌ INDEX rewrite has broken YAML: {e}")
         return False
 
     index_path.write_text(output)
@@ -1413,22 +1427,26 @@ def cmd_e2e(args):
         if passed > 0:
             # Find all unique directories containing modules (handles subsections)
             module_dirs = sorted({m.parent for m in modules})
+            index_files = []
             for mdir in module_dirs:
-                if (mdir / "index.md").exists():
+                idx = mdir / "index.md"
+                if idx.exists():
                     step_update_index(mdir, model=models["write"])
+                    index_files.append(str(idx))
 
-            # Commit index updates
-            subprocess.run(
-                ["git", "add", "-A"], cwd=str(REPO_ROOT),
-                capture_output=True, text=True,
-            )
-            idx_commit = subprocess.run(
-                ["git", "commit", "-m",
-                 f"docs: update section indexes for {section}"],
-                cwd=str(REPO_ROOT), capture_output=True, text=True,
-            )
-            if idx_commit.returncode == 0:
-                print(f"  ✓ Index updates committed")
+            # Commit only the index files (not git add -A which could grab stray files)
+            if index_files:
+                subprocess.run(
+                    ["git", "add"] + index_files,
+                    cwd=str(REPO_ROOT), capture_output=True, text=True,
+                )
+                idx_commit = subprocess.run(
+                    ["git", "commit", "-m",
+                     f"docs: update section indexes for {section}"],
+                    cwd=str(REPO_ROOT), capture_output=True, text=True,
+                )
+                if idx_commit.returncode == 0:
+                    print(f"  ✓ Index updates committed")
 
     # Final summary
     state = load_state()
