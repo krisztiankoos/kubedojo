@@ -1382,6 +1382,7 @@ def cmd_e2e(args):
 
     # Track aliases for convenience
     TRACK_ALIASES = {
+        "ztt": ["prerequisites/zero-to-terminal"],
         "prereqs": [
             "prerequisites/zero-to-terminal", "prerequisites/git-deep-dive",
             "prerequisites/cloud-native-101", "prerequisites/kubernetes-basics",
