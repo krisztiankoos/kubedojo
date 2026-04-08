@@ -82,6 +82,22 @@ def check_required_sections(content: str) -> list[CheckResult]:
     results.append(CheckResult("QUIZ_FORMAT", passed,
                                f"Quiz <details> blocks: {details_count} (need >= 4)"))
 
+    # Quiz answer depth: answers should be 3-5 sentences (not one-liners)
+    quiz_blocks = re.findall(r"<details>\s*<summary>.*?</summary>([\s\S]*?)</details>", body)
+    if quiz_blocks:
+        shallow = 0
+        for answer in quiz_blocks:
+            # Strip code blocks from answer before counting
+            text = re.sub(r"```[\s\S]*?```", "", answer).strip()
+            word_count = len(text.split())
+            if word_count < 20:  # ~2 sentences minimum
+                shallow += 1
+        passed = shallow == 0
+        results.append(CheckResult("QUIZ_DEPTH", passed,
+                                   f"Quiz answers too shallow: {shallow}/{len(quiz_blocks)} have < 20 words"
+                                   if shallow else f"All {len(quiz_blocks)} quiz answers have adequate depth",
+                                   severity="WARNING"))
+
     return results
 
 

@@ -439,7 +439,24 @@ def extract_knowledge_packet(content: str) -> str:
     if not sections:
         return "(No technical assets extracted — module may be a stub)"
 
-    return "\n\n".join(sections)
+    packet = "\n\n".join(sections)
+    if len(packet) > 15000:
+        print(f"  ⚠ Knowledge packet is large ({len(packet)} chars) — may cause output truncation")
+
+    return packet
+
+
+def count_assets(content: str) -> dict:
+    """Count technical assets in content for before/after comparison."""
+    return {
+        "code_blocks": len(re.findall(r"```[\w]*\n[\s\S]*?```", content)),
+        "tables": len(re.compile(r"(\|.+\|)\n(\|[-| :]+\|)\n((?:\|.+\|\n?)+)", re.MULTILINE).findall(content)),
+        "quiz_blocks": len(re.findall(r"<details>[\s\S]*?</details>", content)),
+        "mermaid": len(re.findall(r"```mermaid\n[\s\S]*?```", content)),
+        "inline_prompts": len(re.findall(
+            r">\s*\*\*(?:Pause and predict|Stop and think|What would happen|Try it yourself|Before you look|Зупиніться|Подумайте)",
+            content)),
+    }
 
 
 def step_write(module_path: Path, plan: str, model: str = MODELS["write"],
@@ -800,6 +817,17 @@ def step_check(content: str, path: Path) -> tuple[bool, list]:
     except yaml.YAMLError as e:
         print(f"  ✗ CHECK: broken YAML frontmatter — {e}")
         return False, []
+
+    # Asset preservation check: compare original vs improved
+    original_assets = count_assets(original)
+    new_assets = count_assets(content)
+    for asset_type, orig_count in original_assets.items():
+        if orig_count > 0:
+            new_count = new_assets.get(asset_type, 0)
+            loss_pct = (orig_count - new_count) / orig_count * 100
+            if loss_pct >= 20:
+                print(f"  ✗ CHECK: {asset_type} lost {loss_pct:.0f}% ({orig_count} → {new_count})")
+                return False, []
 
     is_uk = "/uk/" in str(path)
     results = structural.run_all(content, path)
