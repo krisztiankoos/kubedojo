@@ -37,29 +37,30 @@ Think of ConfigMaps as a restaurant's public menu: it changes occasionally, anyo
 
 ## ConfigMaps vs Secrets
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│              CONFIGMAPS vs SECRETS                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ConfigMap                     │  Secret                    │
-│  ─────────────────────────────│────────────────────────────│
-│  Non-sensitive data            │  Sensitive data           │
-│  Plain text storage            │  Base64 encoded           │
-│  Environment, config files     │  Passwords, tokens, keys  │
-│                                │                            │
-│  Examples:                     │  Examples:                │
-│  • Log levels                  │  • Database passwords     │
-│  • Feature flags               │  • API keys               │
-│  • Config file content         │  • TLS certificates       │
-│                                                             │
-│  Note: Secrets are NOT encrypted by default!               │
-│  Base64 is encoding, not encryption.                        │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    classDef configMap fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef secret fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef note fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+
+    CM[ConfigMap]:::configMap
+    SEC[Secret]:::secret
+
+    CM --> CM1[Non-sensitive data]:::configMap
+    CM --> CM2[Plain text storage]:::configMap
+    CM --> CM3[Environment, config files]:::configMap
+    CM --> CM4["Examples:<br>• Log levels<br>• Feature flags<br>• Config file content"]:::configMap
+
+    SEC --> SEC1[Sensitive data]:::secret
+    SEC --> SEC2[Base64 encoded]:::secret
+    SEC --> SEC3[Passwords, tokens, keys]:::secret
+    SEC --> SEC4["Examples:<br>• Database passwords<br>• API keys<br>• TLS certificates"]:::secret
+
+    N["Note: Secrets are NOT encrypted by default!<br>Base64 is encoding, not encryption."]:::note
+    SEC -.-> N
 ```
 
-> **Pause and predict**: Your application needs a feature flag (`ENABLE_BETA=true`) and a database password. Which object should store each, and why?
+> **Pause and predict**: You have a TLS certificate (a `.pem` file) and an Nginx configuration file (`nginx.conf`). Both are plain text files. Which Kubernetes objects should you use to store them, and what makes their storage requirements different?
 
 ---
 
@@ -127,7 +128,7 @@ spec:
         name: app-config
 ```
 
-> **Stop and think**: When would you mount configuration as a file versus using an environment variable?
+> **Stop and think**: Your application takes 5 minutes to start up. If you need to change its log level from 'info' to 'debug' temporarily to troubleshoot an issue, would you prefer the log level to be injected as an environment variable or a mounted file? Explain your reasoning.
 
 **As volume (files):**
 
@@ -249,33 +250,25 @@ spec:
 
 ## Visualization
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│              CONFIGMAP/SECRET USAGE                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ConfigMap/Secret                                          │
-│  ┌─────────────────────┐                                   │
-│  │ data:               │                                   │
-│  │   KEY1: value1      │                                   │
-│  │   KEY2: value2      │                                   │
-│  └──────────┬──────────┘                                   │
-│             │                                               │
-│    ┌────────┴────────┐                                     │
-│    ▼                 ▼                                      │
-│                                                             │
-│  As Environment      As Volume                              │
-│  Variables           (Files)                                │
-│  ┌────────────┐     ┌────────────────────┐                │
-│  │ env:       │     │ /etc/config/       │                │
-│  │   KEY1=val1│     │   KEY1  (file)     │                │
-│  │   KEY2=val2│     │   KEY2  (file)     │                │
-│  └────────────┘     └────────────────────┘                │
-│                                                             │
-│  Use envFrom for    Use volumes for                        │
-│  simple key-value   config files                           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    classDef source fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef env fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef vol fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+
+    CS["ConfigMap / Secret<br><br>data:<br>KEY1: value1<br>KEY2: value2"]:::source
+    
+    ENV["As Environment Variables<br><br>env:<br>KEY1=val1<br>KEY2=val2"]:::env
+    VOL["As Volume (Files)<br><br>/etc/config/<br>├── KEY1 (file)<br>└── KEY2 (file)"]:::vol
+    
+    CS -->|envFrom / valueFrom| ENV
+    CS -->|volumeMounts| VOL
+
+    N1["Use envFrom for<br>simple key-value pairs"]:::env
+    N2["Use volumes for<br>config files"]:::vol
+
+    ENV --- N1
+    VOL --- N2
 ```
 
 ---
@@ -354,7 +347,7 @@ In a production environment, you must address three major security gaps in defau
 - **Max size is 1MB.** Both ConfigMaps and Secrets are limited to 1MB of data to prevent bloating the `etcd` database.
 - **Secrets are stored in etcd.** Anyone with etcd access can read them. Use Role-Based Access Control (RBAC) to heavily restrict access to Secrets.
 
-> **Stop and think**: A colleague says Secrets are secure because they are base64 encoded. How would you respond?
+> **Stop and think**: An attacker manages to execute a shell inside your application's container. They want to steal the database password. Will they be stopped by the fact that the password is stored in a Kubernetes Secret rather than a ConfigMap? Why or why not?
 
 ---
 
