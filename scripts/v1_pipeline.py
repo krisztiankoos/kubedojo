@@ -19,10 +19,11 @@ Features:
 
 Usage:
     python scripts/v1_pipeline.py status
-    python scripts/v1_pipeline.py e2e ztt              # single section
+    python scripts/v1_pipeline.py e2e ztt              # single section (EN + UK + index)
     python scripts/v1_pipeline.py e2e prereqs           # track (all sections)
     python scripts/v1_pipeline.py e2e k8s/cka           # auto-discovers parts
     python scripts/v1_pipeline.py e2e certs linux cloud  # multiple tracks
+    python scripts/v1_pipeline.py e2e ztt --no-translate # EN only, skip UK
     python scripts/v1_pipeline.py run <module-path>      # single module
     python scripts/v1_pipeline.py run-section <path>     # section without index
     python scripts/v1_pipeline.py resume                 # retry stuck modules
@@ -1635,6 +1636,29 @@ def cmd_e2e(args):
                 if idx_commit.returncode == 0:
                     print(f"  ✓ Index updates committed")
 
+    # UK translations: sync modules for completed sections
+    if not getattr(args, "no_translate", False):
+        for section in sections_to_run:
+            uk_section = CONTENT_ROOT / "uk" / section
+            # Only translate sections that already have UK translations started
+            if not uk_section.exists():
+                continue
+            print(f"\n{'='*60}")
+            print(f"  UK TRANSLATE: {section}")
+            print(f"{'='*60}")
+            uk_sync_script = REPO_ROOT / "scripts" / "uk_sync.py"
+            result = subprocess.run(
+                [sys.executable, str(uk_sync_script), "e2e", section],
+                cwd=str(REPO_ROOT), capture_output=True, text=True,
+                timeout=1800,  # 30 min max per section
+            )
+            # Print summary lines from uk_sync output
+            for line in result.stdout.split("\n"):
+                if any(k in line for k in ("translated", "fixed", "failed", "skipped", "DONE", "ERROR")):
+                    print(f"  {line.strip()}")
+            if result.returncode != 0 and result.stderr:
+                print(f"  ⚠ uk_sync error: {result.stderr[:200]}")
+
     # Final summary
     state = load_state()
     total = len(state.get("modules", {}))
@@ -1775,6 +1799,7 @@ examples:
 """, formatter_class=argparse.RawDescriptionHelpFormatter)
     e2e_parser.add_argument("sections", nargs="*", help="track aliases or section paths (default: all)")
     e2e_parser.add_argument("--verbose", "-v", action="store_true", help="print full output to stdout (default: quiet, log only)")
+    e2e_parser.add_argument("--no-translate", action="store_true", help="skip UK translation step")
 
     args = parser.parse_args()
 
