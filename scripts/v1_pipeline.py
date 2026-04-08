@@ -595,20 +595,109 @@ def step_update_index(section_path: Path, model: str = MODELS["write"]) -> bool:
         print(f"  ❌ INDEX rewrite has broken YAML: {e}")
         return False
 
+    # Ensure sidebar.order: 0 (index always sorts first)
+    if "order:" in parts[1] and "order: 0" not in parts[1]:
+        output = re.sub(r'(  order: )\d+', r'\g<1>0', output, count=1)
+
     index_path.write_text(output)
     print(f"  ✓ INDEX written: {rel_section}/index.md ({len(output)} chars)")
 
-    # Also update UK translation if it exists
+    files_to_add = [str(index_path)]
+
+    # Translate UK index if one exists
     uk_index = CONTENT_ROOT / "uk" / rel_section / "index.md"
     if uk_index.exists():
-        print(f"  ℹ UK index exists — will need translation: {uk_index}")
+        uk_ok = _translate_index(output, uk_index, rel_section)
+        if uk_ok:
+            files_to_add.append(str(uk_index))
 
     # Git add
     subprocess.run(
-        ["git", "add", str(index_path)],
+        ["git", "add"] + files_to_add,
         cwd=str(REPO_ROOT), capture_output=True, text=True,
     )
 
+    return True
+
+
+INDEX_TRANSLATE_PROMPT = """You are translating a KubeDojo section index page from English to Ukrainian.
+
+RULES:
+- Translate ALL prose content to Ukrainian
+- Keep technical terms in English: kubectl, Kubernetes, Pod, Deployment, Service, etc.
+- Follow glossary: cluster=кластер, container=контейнер, namespace=простір імен, node=вузол
+- Translate section headings: "Modules" → "Модулі", "What You'll Learn" → "Що ви вивчите", "Prerequisites" → "Передумови", "Where This Leads" → "Куди далі", "How to Use This Track" → "Як використовувати цей трек", "Key Concepts" → "Ключові поняття"
+- Keep module link paths UNCHANGED (they use the English slug)
+- Translate module titles in the table but keep the link URL as-is
+- No Russicisms (no ы, ё, ъ, э)
+- Keep code blocks, diagrams, and ASCII art UNCHANGED
+- Output the COMPLETE Ukrainian file starting with --- frontmatter
+- CRITICAL: slug MUST start with "uk/" prefix
+- sidebar.order: 0
+
+Use MCP tools to verify Ukrainian quality:
+- verify_words for VESUM validation
+- query_r2u to check for Russicisms
+
+ENGLISH INDEX:
+{en_content}
+"""
+
+
+def _translate_index(en_content: str, uk_path: Path, rel_section: str) -> bool:
+    """Translate an EN index.md to Ukrainian."""
+    print(f"  INDEX-UK: uk/{rel_section} (translating)")
+
+    prompt = INDEX_TRANSLATE_PROMPT.format(en_content=en_content)
+    ok, output = dispatch_gemini_with_retry(prompt, mcp=True, timeout=300)
+
+    if not ok or not output.strip():
+        print(f"  ❌ UK INDEX translation failed")
+        return False
+
+    # Strip markdown wrapper
+    if output.startswith("```markdown"):
+        output = output[len("```markdown"):].strip()
+    if output.startswith("```md"):
+        output = output[len("```md"):].strip()
+    if output.startswith("```"):
+        output = output[3:].strip()
+    if output.endswith("```"):
+        output = output[:-3].strip()
+
+    if not output.startswith("---"):
+        print(f"  ❌ UK INDEX has no frontmatter")
+        return False
+
+    # Validate frontmatter
+    parts = output.split("---", 2)
+    if len(parts) < 3:
+        print(f"  ❌ UK INDEX malformed frontmatter")
+        return False
+    try:
+        fm = yaml.safe_load(parts[1])
+        if not isinstance(fm, dict) or "title" not in fm:
+            print(f"  ❌ UK INDEX missing title")
+            return False
+    except yaml.YAMLError as e:
+        print(f"  ❌ UK INDEX broken YAML: {e}")
+        return False
+
+    # Ensure slug has uk/ prefix
+    slug = fm.get("slug", "")
+    if slug and not slug.startswith("uk/"):
+        output = re.sub(r'^slug:\s*.+$', f'slug: uk/{slug}', output, count=1, flags=re.MULTILINE)
+    elif not slug:
+        # Add slug with uk/ prefix
+        output = output.replace("\n---\n", f'\nslug: uk/{rel_section}\n---\n', 1)
+
+    # Ensure sidebar.order: 0
+    if "order:" in parts[1] and "order: 0" not in parts[1]:
+        output = re.sub(r'(  order: )\d+', r'\g<1>0', output, count=1)
+
+    uk_path.parent.mkdir(parents=True, exist_ok=True)
+    uk_path.write_text(output)
+    print(f"  ✓ INDEX-UK written: uk/{rel_section}/index.md ({len(output)} chars)")
     return True
 
 
