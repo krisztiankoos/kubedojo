@@ -1647,17 +1647,16 @@ def cmd_e2e(args):
             print(f"  UK TRANSLATE: {section}")
             print(f"{'='*60}")
             uk_sync_script = REPO_ROOT / "scripts" / "uk_sync.py"
-            result = subprocess.run(
+            # Stream output directly to stdout so user sees progress
+            proc = subprocess.Popen(
                 [sys.executable, str(uk_sync_script), "e2e", section],
-                cwd=str(REPO_ROOT), capture_output=True, text=True,
-                timeout=1800,  # 30 min max per section
+                cwd=str(REPO_ROOT),
             )
-            # Print summary lines from uk_sync output
-            for line in result.stdout.split("\n"):
-                if any(k in line for k in ("translated", "fixed", "failed", "skipped", "DONE", "ERROR")):
-                    print(f"  {line.strip()}")
-            if result.returncode != 0 and result.stderr:
-                print(f"  ⚠ uk_sync error: {result.stderr[:200]}")
+            try:
+                proc.wait(timeout=7200)  # 2 hours max per section
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                print(f"  ⚠ uk_sync timed out after 2 hours for {section}")
 
     # Final summary
     state = load_state()
