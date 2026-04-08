@@ -504,6 +504,47 @@ IMPROVED MODULE:
 """
 
 
+def update_index_table(module_path: Path) -> None:
+    """Update the module's row in its section index.md table.
+
+    Reads the module's title from frontmatter and updates the corresponding
+    row in the parent directory's index.md. Preserves all other content.
+    """
+    index_path = module_path.parent / "index.md"
+    if not index_path.exists():
+        return
+
+    # Extract title from module frontmatter
+    content = module_path.read_text()
+    if not content.startswith("---"):
+        return
+    fm_text = content.split("---", 2)[1]
+    title_match = re.search(r'^title:\s*["\']?(.+?)["\']?\s*$', fm_text, re.MULTILINE)
+    if not title_match:
+        return
+    title = title_match.group(1).strip()
+    # Strip "Module X.Y: " prefix from title for the link text
+    link_text = re.sub(r'^Module\s+[\d.]+:\s*', '', title)
+
+    # Build the expected link slug from filename
+    slug = module_path.stem  # e.g., module-1.1-what-are-containers
+
+    index_content = index_path.read_text()
+
+    # Find and update the table row containing this module's link
+    # Match patterns like: [Title](module-1.1-what-are-containers/) or [Title](slug/)
+    pattern = re.compile(
+        r'(\|[^|]*\[)[^\]]*(\]\(' + re.escape(slug) + r'/?\))',
+        re.MULTILINE,
+    )
+    match = pattern.search(index_content)
+    if match:
+        new_content = index_content[:match.start(1)] + match.group(1) + link_text + match.group(2) + index_content[match.end():]
+        if new_content != index_content:
+            index_path.write_text(new_content)
+            print(f"  ✓ Updated index: {index_path.parent.name}/index.md")
+
+
 def step_review(module_path: Path, improved: str, model: str = MODELS["review"]) -> dict | None:
     """Claude reviews the improved module strictly."""
     original = module_path.read_text()
@@ -737,6 +778,10 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
         save_state(state)
 
     # SCORE
+    # UPDATE INDEX — update module table row in section index.md
+    if ms["phase"] in ("score",):
+        update_index_table(module_path)
+
     if ms["phase"] == "score":
         scores = ms.get("scores", [4, 4, 4, 4, 4, 4, 4])
         total = sum(scores)
@@ -751,9 +796,13 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
 
         if passes:
             print(f"\n  ✓ PASS: {total}/35 (min: {minimum})")
-            # Auto-commit
+            # Auto-commit (module + index if updated)
+            files_to_add = [str(module_path)]
+            index_path = module_path.parent / "index.md"
+            if index_path.exists():
+                files_to_add.append(str(index_path))
             add_result = subprocess.run(
-                ["git", "add", str(module_path)],
+                ["git", "add"] + files_to_add,
                 cwd=str(REPO_ROOT), capture_output=True, text=True,
             )
             if add_result.returncode != 0:
