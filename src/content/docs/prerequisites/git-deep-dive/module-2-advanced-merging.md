@@ -73,12 +73,20 @@ Real-world development is rarely linear. While your colleague was extending the 
 
 A **three-way merge** happens when the history has diverged. The current branch and the incoming branch have a common ancestor (the merge base), but both have advanced independently.
 
-```ascii
-      A---B---C (main)
-     /         \
-D---E           H (merge commit)
-     \         /
-      F-------G (feature/rbac)
+```mermaid
+gitGraph
+   commit id: "D"
+   commit id: "E"
+   branch feature/rbac
+   checkout main
+   commit id: "A"
+   commit id: "B"
+   commit id: "C"
+   checkout feature/rbac
+   commit id: "F"
+   commit id: "G"
+   checkout main
+   merge feature/rbac id: "H (merge commit)"
 ```
 
 To resolve this, Git uses three points of reference:
@@ -114,30 +122,40 @@ git merge-base main feature/ingress-update
 This returns the commit hash of the optimal common ancestor.
 
 > **Pause and predict**: Look at the following branch topology:
-> ```ascii
->       A---B---C---D (main)
->            \
->             E---F (feature/db)
->                  \
->                   G---H (feature/cache)
+> ```mermaid
+> gitGraph
+>    commit id: "A"
+>    commit id: "B"
+>    branch feature/db
+>    checkout main
+>    commit id: "C"
+>    commit id: "D"
+>    checkout feature/db
+>    commit id: "E"
+>    commit id: "F"
+>    branch feature/cache
+>    checkout feature/cache
+>    commit id: "G"
+>    commit id: "H"
 > ```
 > If you are on `main` and run `git merge feature/cache`, which commit is the merge base? 
 > 
 > *Answer*: The merge base is commit `B`. To find it, trace backwards from `main` (commit D) and `feature/cache` (commit H) until their paths intersect. They first meet at `B`, making it the common ancestor used for the three-way merge.
 
-### Conflict Resolution in Infrastructure-as-Code
+### Conflict Resolution in Infrastructure-as-Code: Multi-File Complexity
 
 Conflicts are not errors; they are Git asking for human judgment because its mathematical models cannot safely guess your intent.
 
-In Kubernetes infrastructure, conflicts are particularly dangerous because YAML relies on semantic indentation. Resolving a conflict incorrectly can result in valid Git history but invalid YAML architecture.
+In Kubernetes infrastructure, conflicts rarely occur in isolation. Because resources are often linked via tools like Kustomize or Helm, modifying an architecture usually means touching multiple files. Resolving a multi-file conflict incorrectly can result in valid Git history but fundamentally broken infrastructure state.
 
-Let's walk through a complex conflict scenario.
+Let's walk through a complex, multi-file conflict scenario.
 
 #### The Scenario
 Team Alpha is working on branch `feature/ha-redis`. Team Beta is working on branch `feature/redis-auth`.
-Both teams modify `redis-deployment.yaml`.
+Both teams modify `redis-deployment.yaml` and the `kustomization.yaml` file that orchestrates the deployment.
 
-Team Alpha's change (`feature/ha-redis`):
+Team Alpha's changes (`feature/ha-redis`):
+Modified `redis-deployment.yaml` for High Availability:
 ```yaml
 spec:
   replicas: 3
@@ -147,8 +165,16 @@ spec:
       - name: redis
         image: redis:7.0.11-alpine
 ```
+Modified `kustomization.yaml` to add global labeling:
+```yaml
+resources:
+- redis-deployment.yaml
+commonLabels:
+  high-availability: "true"
+```
 
-Team Beta's change (`feature/redis-auth`):
+Team Beta's changes (`feature/redis-auth`):
+Modified `redis-deployment.yaml` for authentication:
 ```yaml
 spec:
   replicas: 1
@@ -164,43 +190,26 @@ spec:
               name: redis-secret
               key: password
 ```
+Modified `kustomization.yaml` to generate the required secret:
+```yaml
+resources:
+- redis-deployment.yaml
+secretGenerator:
+- name: redis-secret
+  literals:
+  - password=supersecret
+```
 
-When you attempt to merge `feature/redis-auth` into `feature/ha-redis`, Git halts.
+When you attempt to merge `feature/redis-auth` into `feature/ha-redis`, Git halts on multiple files simultaneously.
 
 ```bash
 git checkout feature/ha-redis
 git merge feature/redis-auth
 # Auto-merging redis-deployment.yaml
 # CONFLICT (content): Merge conflict in redis-deployment.yaml
+# Auto-merging kustomization.yaml
+# CONFLICT (content): Merge conflict in kustomization.yaml
 # Automatic merge failed; fix conflicts and then commit the result.
-```
-
-If you open `redis-deployment.yaml`, you will see conflict markers:
-
-```yaml
-<<<<<<< HEAD
-spec:
-  replicas: 3
-  template:
-    spec:
-      containers:
-      - name: redis
-        image: redis:7.0.11-alpine
-=======
-spec:
-  replicas: 1
-  template:
-    spec:
-      containers:
-      - name: redis
-        image: redis:7.0.11
-        env:
-        - name: REDIS_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: redis-secret
-              key: password
->>>>>>> feature/redis-auth
 ```
 
 #### The Resolution Process
@@ -210,10 +219,10 @@ spec:
    - `=======`: The separator between the two conflicting changes.
    - `>>>>>>> feature/redis-auth`: The end of the incoming branch's changes.
 
-2. **Determine the desired outcome:**
-   We want High Availability (replicas: 3) AND authentication (env vars), and we should probably stick to the alpine image for security/size.
+2. **Determine the desired outcome across all files:**
+   We want High Availability (replicas: 3) AND authentication (env vars). For the infrastructure to actually work, the Kustomization file must include BOTH the `commonLabels` AND the `secretGenerator` so that the `redis-secret` referenced in the deployment actually exists.
 
-3. **Edit the file:**
+3. **Edit the first file (`redis-deployment.yaml`):**
    Remove the markers and manually weave the YAML back together, paying extreme attention to the 2-space indentation rule.
 
 ```yaml
@@ -232,20 +241,34 @@ spec:
               key: password
 ```
 
-4. **Verify and Commit:**
-   Never assume your manual YAML edit is valid. Always validate before committing. You can use tools like `yq` or `kubectl`'s dry-run feature. Once verified, add and commit to finalize the merge.
+4. **Edit the second file (`kustomization.yaml`):**
+   Combine both configuration blocks to ensure the architecture remains sound.
+
+```yaml
+resources:
+- redis-deployment.yaml
+commonLabels:
+  high-availability: "true"
+secretGenerator:
+- name: redis-secret
+  literals:
+  - password=supersecret
+```
+
+5. **Verify and Commit:**
+   Never assume your manual YAML edit is valid, especially across multiple integrated files. Always validate before committing. You can use tools like `kubectl apply --dry-run=client` or `kustomize build`. Once verified, add both files and commit to finalize the merge.
 
 ```bash
 # We will use 'k' as an alias for kubectl going forward
 alias k=kubectl
-k apply -f redis-deployment.yaml --dry-run=client
+kustomize build . | k apply -f - --dry-run=client
 
 # If successful:
-git add redis-deployment.yaml
-git commit -m "Merge redis-auth, resolving replicas and image conflicts"
+git add redis-deployment.yaml kustomization.yaml
+git commit -m "Merge redis-auth, resolving multi-file replicas, image, and secret generator conflicts"
 ```
 
-**War Story:** A junior DevOps engineer once resolved a similar conflict by keeping the incoming `env` block but accidentally shifting the indentation left by two spaces, placing `env` at the same level as `containers` instead of inside it. Git accepted the merge. CI/CD deployed it. Kubernetes rejected the manifest, but because the deployment pipeline lacked a strict pre-flight validation check, the previous replicaset was scaled down while the new one failed to create, causing a complete loss of cache availability. Always validate YAML after a conflict resolution.
+**War Story:** A junior DevOps engineer once resolved a similar multi-file conflict by perfectly fixing the Deployment YAML but accidentally running `git checkout --ours kustomization.yaml` to blindly bypass the second conflict. Git accepted the merge. The Deployment expected a secret that the Kustomization file was no longer generating. The pods crash-looped instantly in production, causing a complete loss of cache availability. Always resolve and validate multi-file conflicts holistically.
 
 ### The Octopus Merge: Taming Multiple Branches
 
@@ -253,20 +276,19 @@ Occasionally, a platform team needs to integrate several independent feature bra
 
 Git provides a strategy called the **Octopus Merge**, which allows merging more than two branches into a single commit.
 
-```ascii
-      A---B---C (main)
-     /    |    \
-    D     E     F
-   (b1)  (b2)  (b3)
-
-After Octopus Merge:
-
-      A---B-------C---G (main)
-     /    |      /   /
-    D     |     /   /
-     \    E    /   /
-      \    \  /   /
-       \------F--/
+```mermaid
+graph LR
+    A((A)) --> B((B))
+    B --> C((C: main))
+    
+    B --> D((D: b1))
+    B --> E((E: b2))
+    B --> F((F: b3))
+    
+    C --> G((G: Octopus Merge))
+    D --> G
+    E --> G
+    F --> G
 ```
 
 To perform an octopus merge:
@@ -351,32 +373,32 @@ For Kubernetes platform teams building internal platforms, **Trunk-Based Develop
 
 <details>
 <summary>Question 1: Your team is practicing Trunk-Based Development. You have been working on a new Kubernetes network policy for about 4 hours on a local branch. When you attempt to push to main, Git rejects it, stating the remote contains work you do not have. What is the safest sequence of actions to integrate your work?</summary>
-Fetch the remote changes and perform a merge or rebase. Because you are aiming for continuous integration and the work is short-lived, running `git pull --rebase origin main` is optimal. It fetches the new commits from main, temporarily rewinds your 4 hours of work, applies the incoming main commits, and then replays your network policy commits on top. This maintains a clean, linear history, avoiding unnecessary merge commits for short-lived local work.
+To safely integrate your work without creating a messy history, you should fetch the remote changes and perform a rebase by running `git pull --rebase origin main`. This command first fetches the new commits from the remote `main` branch and temporarily rewinds your local network policy commits. It then applies the incoming commits from your team, and finally replays your 4 hours of work on top of the newly updated history. Doing this maintains a strictly linear and clean project history, which is critical in Trunk-Based Development to avoid unnecessary and confusing merge commits for short-lived local changes.
 </details>
 
 <details>
 <summary>Question 2: You trigger an automated pipeline that attempts an octopus merge, integrating four different microservice deployment updates into a staging branch. Git halts and reports a conflict between two of the branches. What happens to the staging branch in this exact moment, and how is the pipeline affected?</summary>
-Nothing happens to the staging branch. Unlike a standard two-branch merge which pauses mid-flight and leaves conflict markers in your working directory, an octopus merge is an all-or-nothing operation. If Git detects a conflict, it aborts the entire octopus merge automatically, leaving your working directory and staging branch exactly as they were before you ran the command. This safety mechanism prevents automated pipelines from being trapped in multi-dimensional conflict resolutions that are nearly impossible to untangle automatically.
+In this exact moment, nothing happens to the staging branch because an octopus merge is an all-or-nothing operation designed for independent branches. Unlike a standard two-branch merge that pauses mid-flight and leaves conflict markers in your working directory, Git will completely abort the octopus merge automatically upon detecting any conflict. It immediately resets your working directory and staging branch back to their exact pre-merge state. This built-in safety mechanism is highly beneficial for automated pipelines, as it prevents CI/CD systems from becoming trapped in complex, multi-dimensional conflict states that require manual human intervention.
 </details>
 
 <details>
-<summary>Question 3: A junior engineer just resolved a massive 500-line conflict in a StatefulSet YAML file, and you need to review their work. Looking at the full file diff is overwhelming. How can you, as a reviewer, isolate and view *only* the specific manual conflict resolutions the engineer made?</summary>
-You need to inspect the merge commit itself, not just the file. By running `git show <merge-commit-hash>`, Git will display a "combined diff" specifically designed for analyzing conflict resolutions. This specialized output only shows the lines that were modified from *both* parents, highlighting exactly how the manual conflict resolution differs from what Git's automatic merge would have attempted. It is the precise surgical view needed to audit a manual conflict resolution without noise.
+<summary>Question 3: A junior engineer just resolved a massive 500-line multi-file conflict involving a StatefulSet and a ConfigMap, and you need to review their work. Looking at the standard full file diff is overwhelming and includes unrelated changes. How can you, as a reviewer, isolate and view *only* the specific manual conflict resolutions the engineer made?</summary>
+You can isolate the manual conflict resolutions by inspecting the merge commit itself using the `git show <merge-commit-hash>` command. When you run this on a merge commit, Git displays a specialized "combined diff" instead of a standard linear diff. This combined diff intelligently filters the output to only show the specific lines that were modified differently from *both* parent branches, highlighting exactly where the engineer's manual resolution deviated from what Git's automatic merge would have attempted. This provides the precise, surgical view required to audit complex manual conflict resolutions without being drowned in the noise of unrelated feature changes.
 </details>
 
 <details>
-<summary>Question 4: An incident occurs in production because a `ConfigMap` update was inexplicably lost. Looking at the Git history, you see a merge commit connecting a feature branch to main. The file changed on both branches, but the feature branch's changes are completely missing in the final merge commit. What likely happened during the conflict resolution?</summary>
-The engineer performing the merge encountered a conflict in the `ConfigMap`, became confused, and likely used a command like `git checkout --ours configmap.yaml` or clicked "Accept Current Changes" in their IDE, completely overwriting the incoming changes from the feature branch. They then committed the resolution without realizing they were discarding valid code. The history shows a merge, but the data from one side was entirely discarded through human error during resolution. This highlights why visual inspection of the final merged file is mandatory before finalizing the commit.
+<summary>Question 4: An incident occurs in production because a `ConfigMap` update was inexplicably lost during a recent deployment. Looking at the Git history, you see a merge commit connecting a feature branch to main. The file changed on both branches, but the feature branch's changes are completely missing in the final merge commit. What likely happened during the conflict resolution?</summary>
+The engineer performing the merge likely encountered a complex conflict within the `ConfigMap`, became overwhelmed, and mistakenly opted to completely overwrite the incoming changes. They probably used a command like `git checkout --ours configmap.yaml` or blindly clicked "Accept Current Changes" in their IDE's conflict resolution interface. By doing so, they entirely discarded the valid configuration updates from the feature branch while keeping their own, and then finalized the merge commit without realizing the loss of data. This scenario underscores exactly why a visual inspection and validation of the final merged files (such as using `kubectl diff`) is absolutely mandatory before committing a resolved conflict.
 </details>
 
 <details>
 <summary>Question 5: Your organization is adopting GitOps with ArgoCD to manage Kubernetes clusters, but the QA team insists on keeping the legacy GitFlow branching model with long-lived `develop` and release branches. Why will this combination inevitably lead to deployment failures and configuration drift?</summary>
-GitFlow isolates code in long-lived `develop` and release branches for extended periods, which fundamentally contradicts the core philosophy of GitOps. In a GitOps model, the Git repository must act as the absolute, real-time source of truth for the cluster state. If infrastructure changes are siloed in unmerged branches for weeks, the cluster state inevitably drifts as other updates are applied. This divergence makes rapid iteration impossible and practically guarantees massive conflicts when the delayed branches finally merge. Therefore, GitOps requires the continuous integration provided by Trunk-Based Development or GitHub Flow.
+This combination will fail because GitFlow isolates infrastructure changes in long-lived branches for extended periods, which fundamentally violates the core philosophy of GitOps. In a proper GitOps architecture, the main branch of the Git repository must serve as the absolute, real-time source of truth for the cluster's state. When changes sit unmerged in a `develop` branch for weeks, the actual cluster state inevitably drifts as other hotfixes or updates are applied directly to the mainline. This severe divergence makes rapid, predictable iteration impossible and practically guarantees massive, unresolvable merge conflicts when the long-lived branches are finally integrated.
 </details>
 
 <details>
 <summary>Question 6: You are tasked with taking over a legacy `feature/database-migration` branch that was abandoned by a former employee. Before attempting to integrate it, you run `git merge-base main feature/database-migration` and it returns a commit hash from 8 months ago. What does this immediately tell you about the risk profile of this impending merge, and how should you proceed?</summary>
-The risk profile is exceptionally high because the mathematical distance between the branches practically guarantees massive, systemic conflicts. A merge base that old means the feature branch has been completely isolated from the mainline for 8 months. During that time, `main` has evolved significantly, meaning the semantic logic of the old branch is highly likely to be incompatible with the current architecture even if it merges cleanly at a text level. You should abandon a direct merge and instead deeply analyze the old branch's intent, likely cherry-picking only the relevant parts or rebuilding the feature against the modern trunk.
+The exceptionally old merge base immediately tells you that the risk profile for this integration is critically high, as the mathematical distance between the two branches almost guarantees massive, systemic conflicts. Because the feature branch has been completely isolated from the mainline for 8 months, the semantic logic and underlying architecture of the project have likely evolved significantly, rendering the old code incompatible even if it merges cleanly at a text level. Instead of attempting a direct three-way merge, you should abandon that approach and deeply analyze the legacy branch's intent. The safest path forward is to either cherry-pick the relevant functional commits or rebuild the migration logic from scratch against the modern trunk.
 </details>
 
 ## Hands-On Exercise
