@@ -57,8 +57,16 @@ def _logged_print(*args, **kwargs):
     # Only print to stdout if not in quiet mode, or if it's a summary/error line
     if not _quiet:
         _original_print(*args, **kwargs)
-    elif any(k in msg for k in ("PASS", "FAIL", "CIRCUIT", "E2E COMPLETE", "SECTION:", "PHASE 1",
-                                  "SKIP:", "Resumed:", "passed,", "BREAKER")):
+    elif any(k in msg for k in (
+        # Progress milestones
+        "PASS", "FAIL", "CIRCUIT", "E2E COMPLETE", "SECTION:", "PHASE 1",
+        "SKIP:", "Resumed:", "passed,", "BREAKER",
+        # Pipeline steps — so user sees what's happening
+        "PIPELINE:", "AUDIT:", "WRITE:", "REWRITE:", "REVIEW:", "CHECK:",
+        # Key decisions and results
+        "Verdict:", "Scores:", "REWRITE mode", "already passes",
+        "Rejected", "produced", "file written", "Committed",
+    )):
         _original_print(f"[{datetime.now(UTC).strftime('%H:%M:%S')}] {msg}")
 
 
