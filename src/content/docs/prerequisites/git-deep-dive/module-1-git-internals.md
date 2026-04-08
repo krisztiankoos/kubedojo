@@ -1,6 +1,6 @@
 ---
 title: "Module 1: The Ghost in the Machine — Git Internals"
-slug: module-1-git-internals
+slug: prerequisites/git-deep-dive/module-1-git-internals
 sidebar:
   order: 1
 ---

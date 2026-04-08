@@ -1,7 +1,7 @@
 ---
 title: "Module 9: Automation and Customization — Hooks and Rerere"
 description: "Master Git hooks for automated quality gates, leverage Rerere for painless conflict resolution, and customize Git for peak productivity."
-slug: module-9-hooks-rerere
+slug: prerequisites/git-deep-dive/module-9-hooks-rerere
 sidebar:
   order: 9
 ---

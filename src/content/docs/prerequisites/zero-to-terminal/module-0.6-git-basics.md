@@ -1,5 +1,6 @@
 ---
 title: "Module 0.6: Git Basics — Track Your Work"
+slug: prerequisites/zero-to-terminal/module-0.6-git-basics
 sidebar:
   order: 7
 ---
