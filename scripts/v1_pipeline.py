@@ -1243,7 +1243,16 @@ def _track_from_key(key: str) -> str:
         return "prereqs"
     if parts[0] == "linux":
         return "linux"
-    if parts[0] in ("cloud", "platform", "on-premises"):
+    if parts[0] == "platform":
+        sub = parts[1] if len(parts) > 1 else ""
+        if sub == "foundations":
+            return "platform/foundations"
+        if sub == "disciplines":
+            return "platform/disciplines"
+        if sub == "toolkits":
+            return "platform/toolkits"
+        return "platform"
+    if parts[0] in ("cloud", "on-premises"):
         return parts[0]
     return parts[0]
 
