@@ -40,6 +40,24 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 from checks import ukrainian
 from dispatch import dispatch_gemini_with_retry
 
+CHUNKED_THRESHOLD = 40_000  # chars — modules above this use section-by-section translation
+CHUNKED_MODEL = "gemini-3.1-pro-preview"  # pro for quality on section-by-section
+BATCH_LIMIT = 15_000  # chars — pack adjacent sections into batches up to this size
+
+
+# ---------------------------------------------------------------------------
+# Content file discovery
+# ---------------------------------------------------------------------------
+
+def _find_content_files(root: Path, *, uk: bool = False) -> list[Path]:
+    """Find module-*.md and index.md files, excluding top-level index and staging files."""
+    files = set(root.glob("**/module-*.md")) | set(root.glob("**/index.md"))
+    top = UK_ROOT / "index.md" if uk else CONTENT_ROOT / "index.md"
+    files.discard(top)
+    # Exclude staging files (e.g. module-1.2-foo.staging.md)
+    files = {f for f in files if not f.name.endswith(".staging.md")}
+    return sorted(files)
+
 
 # ---------------------------------------------------------------------------
 # Section-level hashing
@@ -303,7 +321,7 @@ def fix_module(uk_path: Path, report: SyncReport | None = None) -> bool:
 def find_missing_translations(section: str | None = None) -> list[Path]:
     """Find EN modules that have no UK translation file."""
     root = CONTENT_ROOT / section if section else CONTENT_ROOT
-    en_modules = sorted(root.glob("**/module-*.md"))
+    en_modules = _find_content_files(root)
     en_modules = [m for m in en_modules if "/uk/" not in str(m)]
     missing = []
     for en in en_modules:
@@ -360,7 +378,7 @@ def find_untranslated_paragraphs(section: str | None = None) -> dict[Path, list[
 # Translate new — create UK file from scratch
 # ---------------------------------------------------------------------------
 
-TRANSLATE_NEW_PROMPT = """You are translating a KubeDojo module from English to Ukrainian.
+TRANSLATE_NEW_PROMPT = """You are a native Ukrainian senior DevOps/SRE engineer and technical writer. You write fluent, natural Ukrainian — not translationese. You translate a KubeDojo module from English to Ukrainian.
 
 RULES:
 - Translate ALL content to Ukrainian
@@ -394,6 +412,186 @@ en_file: "{en_file}"
 """
 
 
+TRANSLATE_SECTION_PROMPT = """You are a native Ukrainian senior DevOps/SRE engineer and technical writer. You write fluent, natural Ukrainian — not translationese. You are translating ONE SECTION of a KubeDojo module from English to Ukrainian.
+
+MODULE: {module_title} ({en_path})
+
+RULES:
+- Translate ALL content to Ukrainian
+- Keep all technical terms in English: kubectl, Kubernetes, Pod, Deployment, Service, RBAC, YAML, etc.
+- Follow the glossary: cluster=кластер, container=контейнер, namespace=простір імен, node=вузол
+- Translate learning outcome verbs to bold infinitive: **Налаштувати**, **Створити**, **Діагностувати**
+- Translate inline prompts: "Pause and predict" → "Зупиніться та подумайте"
+- Translate section headings: "Learning Outcomes" → "Що ви зможете зробити", "Why This Module Matters" → "Чому це важливо", "Common Mistakes" → "Типові помилки", "Did You Know?" → "Чи знали ви?", "Quiz" → "Контрольні запитання", "Hands-On Exercise" → "Практична вправа", "Next Module" → "Наступний модуль"
+- No Russicisms (no ы, ё, ъ, э)
+- Keep code blocks, YAML, and bash commands UNCHANGED
+- Output length should be 95-105% of the English original
+
+OUTPUT FORMAT:
+- Output ONLY the translated section heading (## ...) followed by the translated body
+- Do NOT wrap in markdown fences
+- Do NOT add frontmatter or extra sections
+
+Use your MCP tools to verify Ukrainian quality:
+- verify_words for VESUM validation
+- query_r2u to check for Russicisms
+
+SECTION TO TRANSLATE:
+{section_heading}
+{section_body}
+"""
+
+
+def _strip_markdown_fence(output: str) -> str:
+    """Remove markdown code block wrapper if present."""
+    if output.startswith("```"):
+        lines = output.split("\n")
+        if lines[-1].strip() == "```":
+            return "\n".join(lines[1:-1])
+    return output
+
+
+def _build_batches(sections: dict[str, str]) -> list[list[str]]:
+    """Pack H2 sections into batches up to BATCH_LIMIT chars. Skips __preamble__ and first H2."""
+    keys = list(sections.keys())
+    # Start from index 2 (skip preamble + first H2, which are handled separately)
+    start = 2 if keys[0] == "__preamble__" else 1
+    batches: list[list[str]] = []
+    current_batch: list[str] = []
+    current_size = 0
+
+    for key in keys[start:]:
+        section_size = len(key) + len(sections[key]) + 1
+        if current_batch and current_size + section_size > BATCH_LIMIT:
+            batches.append(current_batch)
+            current_batch = [key]
+            current_size = section_size
+        else:
+            current_batch.append(key)
+            current_size += section_size
+
+    if current_batch:
+        batches.append(current_batch)
+
+    return batches
+
+
+def _translate_chunked(en_path: Path, en_content: str, en_commit: str, en_file: str) -> str | None:
+    """Translate a large module in batches. Returns assembled output or None."""
+    rel = en_path.relative_to(CONTENT_ROOT)
+    sections = _split_sections(en_content)
+    keys = list(sections.keys())
+
+    if len(keys) < 2:
+        return None
+
+    # Extract module title from frontmatter for context
+    import yaml
+    fm_parts = en_content.split("---", 2)
+    try:
+        fm = yaml.safe_load(fm_parts[1]) if len(fm_parts) >= 3 else {}
+        module_title = fm.get("title", rel.stem) if isinstance(fm, dict) else rel.stem
+    except Exception:
+        module_title = rel.stem
+
+    # Build batches from remaining sections (after preamble + first H2)
+    batches = _build_batches(sections)
+    total_batches = 1 + len(batches)  # 1 for preamble batch
+    print(f"  Chunked translation: {len(keys)} sections → {total_batches} batches")
+
+    translated_parts: list[str] = []
+
+    # --- Batch 1: Preamble + first H2 (handles frontmatter) ---
+    preamble = sections.get("__preamble__", "")
+    first_h2 = keys[1] if len(keys) > 1 and keys[0] == "__preamble__" else keys[0]
+    merged_content = preamble + "\n\n" + first_h2 + "\n" + sections[first_h2]
+
+    prompt = TRANSLATE_NEW_PROMPT.format(
+        en_path=rel,
+        en_content=merged_content,
+        en_commit=en_commit,
+        en_file=en_file,
+    )
+    print(f"    [1/{total_batches}] Preamble + {first_h2[:40]} ({len(merged_content)} chars)...")
+    ok, output = dispatch_gemini_with_retry(prompt, model=CHUNKED_MODEL, mcp=True, timeout=600)
+
+    if not ok or not output.strip():
+        print("    ✗ Preamble translation failed")
+        return None
+
+    output = _strip_markdown_fence(output)
+
+    # Find frontmatter start
+    if not output.startswith("---"):
+        fm_start = output.find("---\n")
+        if fm_start > 0 and fm_start < 2000:
+            output = output[fm_start:]
+        else:
+            print("    ✗ Preamble output has no frontmatter")
+            return None
+
+    # Validate frontmatter
+    parts = output.split("---", 2)
+    if len(parts) < 3:
+        print("    ✗ Malformed frontmatter — no closing ---")
+        return None
+    try:
+        fm_parsed = yaml.safe_load(parts[1])
+        if not isinstance(fm_parsed, dict) or "title" not in fm_parsed:
+            print("    ✗ Frontmatter missing 'title' field")
+            return None
+    except Exception as e:
+        print(f"    ✗ Broken YAML frontmatter: {e}")
+        return None
+
+    # Fix slug
+    slug = fm_parsed.get("slug", "")
+    if slug and not slug.startswith("uk/"):
+        output = re.sub(r'^slug:\s*.+$', f'slug: uk/{slug}', output, count=1, flags=re.MULTILINE)
+
+    # Ensure en_commit
+    if en_commit and "en_commit:" not in output:
+        output = output.replace("\n---\n", f'\nen_commit: "{en_commit}"\nen_file: "{en_file}"\n---\n', 1)
+
+    # Truncation guard for preamble batch
+    if len(output) < len(merged_content) * 0.70:
+        print(f"    ✗ Preamble truncated: {len(output)} vs {len(merged_content)} EN")
+        return None
+
+    translated_parts.append(output)
+
+    # --- Remaining batches ---
+    for batch_idx, batch_keys in enumerate(batches, 2):
+        # Assemble batch content: heading + body for each section
+        batch_content = "\n\n".join(
+            key + "\n" + sections[key] for key in batch_keys
+        )
+        batch_headings = " + ".join(k[:30] for k in batch_keys)
+        print(f"    [{batch_idx}/{total_batches}] {batch_headings} ({len(batch_content)} chars)...")
+
+        prompt = TRANSLATE_SECTION_PROMPT.format(
+            module_title=module_title,
+            en_path=rel,
+            section_heading=batch_keys[0],  # first heading for context
+            section_body=batch_content,  # full batch content
+        )
+        ok, output = dispatch_gemini_with_retry(prompt, model=CHUNKED_MODEL, mcp=True, timeout=300)
+
+        if not ok or not output.strip():
+            print(f"    ✗ Batch failed: {batch_headings} — aborting module")
+            return None
+
+        output = _strip_markdown_fence(output)
+
+        # Truncation guard per batch
+        if len(output) < len(batch_content) * 0.70:
+            print(f"    ⚠ Batch possibly truncated: {len(output)} vs {len(batch_content)} EN ({len(output)/max(len(batch_content),1):.0%})")
+
+        translated_parts.append(output)
+
+    return "\n\n".join(translated_parts)
+
+
 def translate_new_module(en_path: Path) -> bool:
     """Create a new UK translation from an EN module."""
     rel = en_path.relative_to(CONTENT_ROOT)
@@ -410,69 +608,75 @@ def translate_new_module(en_path: Path) -> bool:
 
     print(f"  Translating: {rel}")
 
-    prompt = TRANSLATE_NEW_PROMPT.format(
-        en_path=rel,
-        en_content=en_content,
-        en_commit=en_commit,
-        en_file=en_file,
-    )
+    # Large modules: translate section-by-section
+    if len(en_content) > CHUNKED_THRESHOLD:
+        output = _translate_chunked(en_path, en_content, en_commit, en_file)
+        if output is None:
+            print("  ✗ Chunked translation failed")
+            return False
+    else:
+        # Standard single-call translation
+        prompt = TRANSLATE_NEW_PROMPT.format(
+            en_path=rel,
+            en_content=en_content,
+            en_commit=en_commit,
+            en_file=en_file,
+        )
 
-    ok, output = dispatch_gemini_with_retry(prompt, mcp=True, timeout=600)
+        ok, output = dispatch_gemini_with_retry(prompt, mcp=True, timeout=600)
 
-    if not ok or not output.strip():
-        print(f"  ✗ Translation failed")
-        return False
+        if not ok or not output.strip():
+            print(f"  ✗ Translation failed")
+            return False
 
-    # Strip markdown wrapper
-    if output.startswith("```"):
-        lines = output.split("\n")
-        output = "\n".join(lines[1:-1]) if lines[-1].strip() == "```" else output
+        # Strip markdown wrapper
+        output = _strip_markdown_fence(output)
 
-    # Check if output is actual markdown or just a summary
-    if not output.startswith("---"):
-        fm_start = output.find("---\n")
-        if fm_start > 0 and fm_start < 2000:
-            output = output[fm_start:]
-        else:
-            # Gemini may have written to the file directly via tool use
-            if uk_path.exists():
-                uk_now = uk_path.read_text()
-                if uk_now.startswith("---"):
-                    print(f"  ✓ Gemini wrote directly to {uk_path.name}")
-                    output = uk_now
+        # Check if output is actual markdown or just a summary
+        if not output.startswith("---"):
+            fm_start = output.find("---\n")
+            if fm_start > 0 and fm_start < 2000:
+                output = output[fm_start:]
+            else:
+                # Gemini may have written to the file directly via tool use
+                if uk_path.exists():
+                    uk_now = uk_path.read_text()
+                    if uk_now.startswith("---"):
+                        print(f"  ✓ Gemini wrote directly to {uk_path.name}")
+                        output = uk_now
+                    else:
+                        print(f"  ✗ Output has no frontmatter")
+                        return False
                 else:
                     print(f"  ✗ Output has no frontmatter")
                     return False
-            else:
-                print(f"  ✗ Output has no frontmatter")
-                return False
 
-    # Validate YAML frontmatter
-    parts = output.split("---", 2)
-    if len(parts) < 3:
-        print(f"  ✗ Malformed frontmatter — no closing ---")
-        return False
-    try:
-        import yaml
-        fm = yaml.safe_load(parts[1])
-        if not isinstance(fm, dict) or "title" not in fm:
-            print(f"  ✗ Frontmatter missing 'title' field")
+        # Validate YAML frontmatter
+        parts = output.split("---", 2)
+        if len(parts) < 3:
+            print(f"  ✗ Malformed frontmatter — no closing ---")
             return False
-    except Exception as e:
-        print(f"  ✗ Broken YAML frontmatter: {e}")
-        return False
+        try:
+            import yaml
+            fm = yaml.safe_load(parts[1])
+            if not isinstance(fm, dict) or "title" not in fm:
+                print(f"  ✗ Frontmatter missing 'title' field")
+                return False
+        except Exception as e:
+            print(f"  ✗ Broken YAML frontmatter: {e}")
+            return False
 
-    # Fix slug: must have uk/ prefix
-    slug = fm.get("slug", "")
-    if slug and not slug.startswith("uk/"):
-        output = re.sub(r'^slug:\s*.+$', f'slug: uk/{slug}', output, count=1, flags=re.MULTILINE)
-        print(f"  Fixed slug: {slug} → uk/{slug}")
+        # Fix slug: must have uk/ prefix
+        slug = fm.get("slug", "")
+        if slug and not slug.startswith("uk/"):
+            output = re.sub(r'^slug:\s*.+$', f'slug: uk/{slug}', output, count=1, flags=re.MULTILINE)
+            print(f"  Fixed slug: {slug} → uk/{slug}")
 
-    # Ensure en_commit is present
-    if en_commit and "en_commit:" not in output:
-        output = output.replace("\n---\n", f'\nen_commit: "{en_commit}"\nen_file: "{en_file}"\n---\n', 1)
+        # Ensure en_commit is present
+        if en_commit and "en_commit:" not in output:
+            output = output.replace("\n---\n", f'\nen_commit: "{en_commit}"\nen_file: "{en_file}"\n---\n', 1)
 
-    # Truncation guard
+    # Truncation guard (applies to both paths)
     if len(output) < len(en_content) * 0.70:
         print(f"  ✗ Output truncated: {len(output)} chars vs {len(en_content)} EN ({len(output)/len(en_content):.0%})")
         return False
@@ -502,7 +706,7 @@ def cmd_status(args):
 
     # 1. Stale (existing UK files out of sync with EN)
     uk_dir = UK_ROOT / section if section and (UK_ROOT / section).exists() else UK_ROOT
-    uk_files = sorted(uk_dir.glob("**/module-*.md"))
+    uk_files = _find_content_files(uk_dir, uk=True)
     stale_count = 0
     for uk_path in uk_files:
         report = detect_sync(uk_path)
@@ -562,8 +766,8 @@ def cmd_detect(args):
         print(f"Directory not found: {uk_dir}")
         sys.exit(1)
 
-    uk_files = sorted(uk_dir.glob("**/module-*.md"))
-    print(f"Checking {len(uk_files)} Ukrainian modules...")
+    uk_files = _find_content_files(uk_dir, uk=True)
+    print(f"Checking {len(uk_files)} Ukrainian files...")
 
     reports = []
     synced = 0
@@ -656,8 +860,8 @@ def cmd_fix_section(args):
         print(f"Section not found: {args.section}")
         sys.exit(1)
 
-    uk_files = sorted(uk_dir.glob("**/module-*.md"))
-    print(f"Checking {len(uk_files)} modules in {args.section}...")
+    uk_files = _find_content_files(uk_dir, uk=True)
+    print(f"Checking {len(uk_files)} files in {args.section}...")
 
     fixed = 0
     skipped = 0
@@ -788,7 +992,7 @@ def _run_e2e_section(section: str) -> tuple[int, int, int]:
     # Phase 1: Fix stale (re-translate out-of-sync UK files)
     uk_dir = UK_ROOT / section if (UK_ROOT / section).exists() else None
     if uk_dir:
-        uk_files = sorted(uk_dir.glob("**/module-*.md"))
+        uk_files = _find_content_files(uk_dir, uk=True)
         for uk_path in uk_files:
             report = detect_sync(uk_path)
             if report and report.status != "synced":

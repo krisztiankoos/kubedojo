@@ -43,7 +43,7 @@ GH_CHAR_LIMIT = 64000
 # ---------------------------------------------------------------------------
 
 GEMINI_DEFAULT_MODEL = "gemini-3-flash-preview"
-GEMINI_FALLBACK_MODEL = "gemini-2.5-flash"
+GEMINI_FALLBACK_MODEL = "auto"
 CLAUDE_DEFAULT_MODEL = "claude-sonnet-4-6"
 
 # ---------------------------------------------------------------------------

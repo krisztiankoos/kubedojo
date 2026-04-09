@@ -76,13 +76,31 @@ def check_russicisms(content: str) -> list[CheckResult]:
     results = []
     content_lower = content.lower()
 
+    # Context patterns that make a word NOT a Russicism.
+    # "самий" after той/та/те/ті etc. means "the same" — correct Ukrainian.
+    FALSE_POSITIVE_PATTERNS: dict[str, re.Pattern[str]] = {
+        "самий": re.compile(
+            r"(?:той|та|те|ті|тій|того|тому|тих|тими|тією|тої)\s+сам(?:ий|а|е|і|ого|ому|их|ими|ій|ою|ої)",
+            re.IGNORECASE,
+        ),
+    }
+
     found = []
     for russian, fix in RUSSICISMS.items():
         # Word boundary: surrounded by non-Cyrillic characters
         pattern = rf"(?<![а-яґєіїА-ЯҐЄІЇ']){re.escape(russian.lower())}(?![а-яґєіїА-ЯҐЄІЇ'])"
         matches = re.findall(pattern, content_lower)
         if matches:
-            found.append((russian, fix, len(matches)))
+            # Subtract false positives from context-aware patterns
+            fp_pattern = FALSE_POSITIVE_PATTERNS.get(russian)
+            if fp_pattern:
+                false_positives = len(fp_pattern.findall(content_lower))
+                real_count = len(matches) - false_positives
+                if real_count <= 0:
+                    continue
+                found.append((russian, fix, real_count))
+            else:
+                found.append((russian, fix, len(matches)))
 
     if found:
         for russian, fix, count in found:
