@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """KubeDojo Module Quality Pipeline — v1.
 
-Processes each module through 7 quality dimensions to reach 29/35.
+Processes each module through 8 quality dimensions to reach 33/40.
 Uses Gemini for writing/translating, deterministic Python checks as gates.
 
 Pipeline per module: AUDIT → WRITE/REWRITE → REVIEW → CHECK → SCORE → COMMIT
@@ -200,7 +200,7 @@ def find_module_path(key: str) -> Path | None:
 # AUDIT step — deterministic checks + LLM scoring
 # ---------------------------------------------------------------------------
 
-RUBRIC_PROMPT = """You are scoring a KubeDojo module against 7 quality dimensions.
+RUBRIC_PROMPT = """You are scoring a KubeDojo module against 8 quality dimensions.
 
 Score each dimension 1-5 using the rubric below. Be STRICT — a 4 means genuinely good, not just "present."
 
@@ -212,6 +212,7 @@ D4 Real-World: 4 = war stories with specific impact, common mistakes table. 5 = 
 D5 Assessment: 4 = tests analysis not recall, explains WHY. 5 = aligned with every outcome, progressive difficulty.
 D6 Cognitive Load: 4 = good chunking, diagrams with text, worked examples. 5 = split-attention eliminated, dual coding.
 D7 Engagement: 4 = conversational, strong hook, good analogies. 5 = memorable, reader would recommend.
+D8 Practitioner Depth: 4 = has patterns/anti-patterns sections, decision frameworks, theory explains WHY before showing HOW, tradeoffs discussed, architectural reasoning present. 5 = practitioner-grade throughout — every technique has tradeoffs, failure modes documented, scaling considerations addressed. An experienced engineer would learn something new.
 
 ## Instructions
 1. Read the module carefully.
@@ -219,7 +220,7 @@ D7 Engagement: 4 = conversational, strong hook, good analogies. 5 = memorable, r
 3. For any dimension below 4, explain SPECIFICALLY what's missing.
 4. Output ONLY this JSON (no markdown, no explanation outside JSON):
 
-{"scores": [D1, D2, D3, D4, D5, D6, D7], "notes": {"D1": "...", "D2": "...", ...}, "plan": "If any dimension < 4, write a specific improvement plan. If all >= 4, write 'PASS'."}
+{"scores": [D1, D2, D3, D4, D5, D6, D7, D8], "notes": {"D1": "...", "D2": "...", ...}, "plan": "If any dimension < 4, write a specific improvement plan. If all >= 4, write 'PASS'."}
 """
 
 
@@ -287,10 +288,10 @@ def step_audit(module_path: Path, model: str = MODELS["audit"]) -> dict | None:
 
     total = sum(scores)
     minimum = min(scores)
-    passes = minimum >= 4 and total >= 29
+    passes = minimum >= 4 and total >= 33
 
     print(f"\n  Scores: {scores}")
-    print(f"  Sum: {total}/35 | Min: {minimum} | {'PASS' if passes else 'FAIL'}")
+    print(f"  Sum: {total}/40 | Min: {minimum} | {'PASS' if passes else 'FAIL'}")
 
     if result.get("plan") and result["plan"] != "PASS":
         print(f"\n  Plan: {result['plan'][:200]}...")
@@ -529,7 +530,7 @@ REVIEW_PROMPT_TEMPLATE = """You are the STRICT quality reviewer for KubeDojo. A 
 Your job: compare the improved version against the quality rubric. Be EXTREMELY strict.
 
 RULES:
-1. Score all 7 dimensions 1-5
+1. Score all 8 dimensions 1-5
 2. If ANY dimension is below 4: REJECT and explain what's wrong
 3. If the improved version removed content, diagrams, or code blocks: REJECT
 4. If quiz questions are recall-based instead of scenario-based: REJECT
@@ -829,7 +830,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
         ms["last_run"] = datetime.now(UTC).isoformat()
 
         if audit["passes"] and audit["check_errors"] == 0:
-            print(f"\n  ✓ Module already passes! ({audit['sum']}/35)")
+            print(f"\n  ✓ Module already passes! ({audit['sum']}/40)")
             ms["phase"] = "done"
             save_state(state)
             return True
@@ -850,10 +851,10 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
         plan = f"Resume improvement. Last scores: {ms.get('scores', 'unknown')}."
 
     # WRITE → REVIEW loop (max retries)
-    # Auto-detect rewrite mode: score < 25 means "improve" won't cut it
-    needs_rewrite = (ms.get("sum") or 0) < 25
+    # Auto-detect rewrite mode: score < 28 means "improve" won't cut it
+    needs_rewrite = (ms.get("sum") or 0) < 28
     if needs_rewrite:
-        print(f"  Score {ms.get('sum')}/35 < 25 — using REWRITE mode")
+        print(f"  Score {ms.get('sum')}/40 < 28 — using REWRITE mode")
 
     improved = None
     for attempt in range(max_retries + 1):
@@ -938,7 +939,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
         scores = ms.get("scores", [4, 4, 4, 4, 4, 4, 4])
         total = sum(scores)
         minimum = min(scores)
-        passes = minimum >= 4 and total >= 29
+        passes = minimum >= 4 and total >= 33
 
         ms["passes"] = passes
         ms["sum"] = total
@@ -947,7 +948,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
         save_state(state)
 
         if passes:
-            print(f"\n  ✓ PASS: {total}/35 (min: {minimum})")
+            print(f"\n  ✓ PASS: {total}/40 (min: {minimum})")
             # Auto-commit
             add_result = subprocess.run(
                 ["git", "add", str(module_path)],
@@ -958,7 +959,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
 
             commit_result = subprocess.run(
                 ["git", "commit", "-m",
-                 f"chore(quality): v1 pipeline pass [{key}] ({total}/35)"],
+                 f"chore(quality): v1 pipeline pass [{key}] ({total}/40)"],
                 cwd=str(REPO_ROOT), capture_output=True, text=True,
             )
             if commit_result.returncode != 0:
@@ -967,7 +968,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
                 print(f"  ✓ Committed")
             return True
         else:
-            print(f"\n  ✗ FAIL: {total}/35 (min: {minimum}) — needs manual intervention")
+            print(f"\n  ✗ FAIL: {total}/40 (min: {minimum}) — needs manual intervention")
             return False
 
     return False
@@ -1311,7 +1312,7 @@ def cmd_status(args):
     g_uk = sum(t["uk"] for t in tracks.values())
     all_scores = [s for t in tracks.values() for s in t["scores"]]
 
-    print(f"\n  Modules: {g_total} total | {g_pass} pass (29+) | {g_fail} fail | {g_wip} in progress | {g_todo} not started")
+    print(f"\n  Modules: {g_total} total | {g_pass} pass (33+) | {g_fail} fail | {g_wip} in progress | {g_todo} not started")
     print(f"  Translations: {g_uk}/{g_total} UK")
     if all_scores:
         print(f"  Scores: avg {sum(all_scores)/len(all_scores):.1f} | lo {min(all_scores)} | hi {max(all_scores)} ({len(all_scores)} scored)")

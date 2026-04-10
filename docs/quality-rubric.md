@@ -76,6 +76,16 @@
 | **4** | Conversational, authoritative tone. Strong opening hook. Good analogies. "Did You Know?" facts are genuinely interesting. Reader feels mentored by a senior engineer. |
 | **5** | Memorable. Reader would recommend this module to a colleague. Stories stick. Analogies are vivid and accurate. Humor used sparingly but effectively. Reader feels they understand the topic at a level they couldn't get from official docs. |
 
+### Dimension 8: Practitioner Depth
+
+| Score | Description |
+|-------|-------------|
+| **1** | Command reference only. "Run X, then Y." No explanation of why, when, or what could go wrong. |
+| **2** | Some context around commands but no decision frameworks. Reader knows HOW but not WHEN or WHY NOT. |
+| **3** | Includes tradeoff mentions and comparison tables. Some "when to use X vs Y" guidance. Patterns mentioned but not explained in depth. |
+| **4** | Dedicated sections for: patterns (proven approaches with rationale), anti-patterns (what fails and why), decision frameworks (flowcharts or matrices for choosing approaches), and architectural reasoning (how components interact, what breaks at scale). Theory explains the WHY before showing the HOW. Prose explains concepts between code blocks — not just "here's the YAML." |
+| **5** | Practitioner-grade throughout: every technique comes with tradeoffs discussed honestly, failure modes documented, scaling considerations addressed. Reader could defend their architecture choices in a design review. Content balances theory and practice — neither a textbook nor a cookbook. Anti-patterns include real consequences. Decision frameworks are actionable, not theoretical. An experienced engineer would learn something new. |
+
 ---
 
 ## Lab Rubric (5 Dimensions, 1-5 Scale)

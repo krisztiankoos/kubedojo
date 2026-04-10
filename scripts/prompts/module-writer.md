@@ -37,21 +37,24 @@ TASK: Write a complete KubeDojo educational module.
 2. **Learning Outcomes** — 3-5 measurable outcomes using Bloom's Taxonomy Level 3+ action verbs: "debug", "design", "evaluate", "compare", "diagnose", "implement". NOT "understand" or "know". Each outcome must be testable by the quiz or exercise.
 3. **Why This Module Matters** — Open with a dramatic, real-world scenario written in third person. A real incident, a real company (anonymized if needed), real financial impact. Make the reader feel why this topic matters viscerally. Then transition to what they will learn. 2-3 paragraphs minimum.
 4. **Core content sections** (3-6 sections) — Each section should include:
+   - **Theory before practice** — explain WHY this approach exists, what problem it solves, and what tradeoffs it makes BEFORE showing the commands. Prose must explain concepts between code blocks — never stack 3 code blocks without explanation.
    - Clear explanations with analogies (treat the reader as a smart beginner)
    - Runnable code blocks (bash, YAML, Go, Python — whatever fits)
    - ASCII diagrams where architecture or flow needs visualization
    - Tables for comparisons, decision matrices, or reference data
    - "War Story" or practical example within the section
    - **At least 2 inline active learning prompts** across all sections: "Pause and predict: what do you think happens if...?", "Before running this, what output do you expect?", or "Which approach would you choose here and why?"
-5. **Did You Know?** — Exactly 4 interesting facts. Include real numbers, dates, or surprising details. Each fact should teach something the reader won't forget.
-6. **Common Mistakes** — Table with 6-8 rows. Columns: Mistake | Why It Happens | How to Fix It. Be specific — not generic advice.
-7. **Quiz** — 6-8 questions using `<details><summary>Question</summary>Answer</details>` format. **At least 4 must be scenario-based** ("Your team just deployed X and Y happens — what do you check?"). Do NOT write recall questions ("What is the command for X?"). Answers should be thorough (3-5 sentences explaining WHY).
-8. **Hands-On Exercise** — Multi-step practical exercise with:
-   - Setup instructions (if needed)
-   - 4-6 progressive tasks (easy → challenging)
-   - Solutions in `<details>` tags
-   - Clear success criteria checklist using `- [ ]` format
-8. **Next Module** — Link to the next module with a one-line teaser
+5. **Patterns & Anti-Patterns** — Document proven approaches (patterns) and what fails in production (anti-patterns). Each pattern should include: when to use it, why it works, and scaling considerations. Each anti-pattern should include: what goes wrong, why teams fall into it, and the better alternative. Use a table or structured format. Minimum 3 patterns + 3 anti-patterns.
+6. **Decision Framework** — A flowchart, decision matrix, or structured guide that helps the reader choose between approaches covered in the module. "When should I use X vs Y?" — this is what separates a reference doc from educational content. Include tradeoffs for each option.
+7. **Did You Know?** — Exactly 4 interesting facts. Include real numbers, dates, or surprising details. Each fact should teach something the reader won't forget.
+8. **Common Mistakes** — Table with 6-8 rows. Columns: Mistake | Why It Happens | How to Fix It. Be specific — not generic advice.
+9. **Quiz** — 6-8 questions using `<details><summary>Question</summary>Answer</details>` format. **At least 4 must be scenario-based** ("Your team just deployed X and Y happens — what do you check?"). Do NOT write recall questions ("What is the command for X?"). Answers should be thorough (3-5 sentences explaining WHY).
+10. **Hands-On Exercise** — Multi-step practical exercise with:
+    - Setup instructions (if needed)
+    - 4-6 progressive tasks (easy → challenging)
+    - Solutions in `<details>` tags
+    - Clear success criteria checklist using `- [ ]` format
+11. **Next Module** — Link to the next module with a one-line teaser
 
 **TONE**:
 - Conversational but authoritative — like a senior engineer mentoring you
