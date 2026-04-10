@@ -68,7 +68,7 @@ When you ask GPT-3 to add "37|89" + "45|67", it's not seeing the actual numbers 
 - Anthropic and Google redesigned their tokenizers to handle numbers better
 
 **The Fix in Modern Models**:
-- GPT-4 and Claude use improved tokenizers that keep numbers intact
+- gpt-5 and Claude use improved tokenizers that keep numbers intact
 - Some models tokenize each digit separately (consistent but expensive)
 - Others use special handling for numeric strings
 
@@ -170,7 +170,7 @@ Before diving deeper into tokenization algorithms, get hands-on experience with 
 
 ### 1. Byte-Pair Encoding (BPE)
 
-**Used by**: GPT-2, GPT-3, GPT-4, many others
+**Used by**: GPT-2, GPT-3, gpt-5, many others
 
 **How it works**:
 
@@ -230,7 +230,7 @@ They dusted off Gage's 1994 algorithm and applied it to text:
 - Stop when vocabulary reaches desired size
 
 **The result**: A simple algorithm from data compression became the foundation of modern NLP, powering:
-- GPT-2, GPT-3, GPT-4 (OpenAI)
+- GPT-2, GPT-3, gpt-5 (OpenAI)
 - RoBERTa (Facebook)
 - Most modern language models
 
@@ -326,7 +326,7 @@ This was the username of a Reddit user who was extremely active in the r/countin
 
 **The Lesson**: Tokenization isn't just about efficiency - it's about ensuring every token your model sees has meaningful training context. The gap between tokenizer training and model training can create "blind spots" with unpredictable consequences.
 
-**Modern Fix**: GPT-4 and newer models use more careful tokenizer curation, removing tokens that don't have sufficient context in training data.
+**Modern Fix**: gpt-5 and newer models use more careful tokenizer curation, removing tokens that don't have sufficient context in training data.
 
 ---
 
@@ -505,12 +505,12 @@ Unicode assigned a unique number to EVERY character in EVERY language:
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) |
 |-------|----------------------|------------------------|
-| GPT-4o | $2.50 | $10.00 |
-| GPT-4-turbo | $10.00 | $30.00 |
+| gpt-5 | $2.50 | $10.00 |
+| gpt-5 | $10.00 | $30.00 |
 | Claude 3.5 Sonnet | $3.00 | $15.00 |
 | Claude 3 Opus | $15.00 | $75.00 |
 
-**Example Conversation** (using GPT-4o):
+**Example Conversation** (using gpt-5):
 ```
 System: "You are a helpful assistant" → 6 tokens
 User: "Write a Python function to reverse a string" → 9 tokens
@@ -522,7 +522,7 @@ Cost = (6 + 9) * $2.50/1M + 200 * $10/1M
 ```
 
 **At scale**:
-- 1M requests/month = $2,000/month (GPT-4o)
+- 1M requests/month = $2,000/month (gpt-5)
 - Optimizing prompt from 100 → 50 tokens = 50% cost savings!
 
 ** Ready to optimize? [02_optimization.py](../../examples/module_07/02_optimization.py) shows 6 strategies to cut costs by 30-50%!**
@@ -653,8 +653,8 @@ System: "You are a helpful assistant."
 ```python
 import tiktoken
 
-# For GPT-4
-encoding = tiktoken.encoding_for_model("gpt-4")
+# For gpt-5
+encoding = tiktoken.encoding_for_model("gpt-5")
 
 text = "Hello, world!"
 tokens = encoding.encode(text)
@@ -898,7 +898,7 @@ response = call_llm(prompt)
 8. **Special tokens exist**: Don't forget about system prompts and message boundaries
 
 **Did You Know?** 
-OpenAI's GPT-4 tokenizer has a vocabulary of ~100,000 tokens, but only uses ~50,000 of them frequently. The rest are for rare words, special characters, and multilingual support. This is why the tokenizer file is so large (several MB) - it's essentially a massive lookup table mapping text patterns to token IDs. Fun fact: The most common token in the GPT-4 tokenizer is " " (space + common word endings like "the", "and", "is"), which appears in almost every sentence!
+OpenAI's gpt-5 tokenizer has a vocabulary of ~100,000 tokens, but only uses ~50,000 of them frequently. The rest are for rare words, special characters, and multilingual support. This is why the tokenizer file is so large (several MB) - it's essentially a massive lookup table mapping text patterns to token IDs. Fun fact: The most common token in the gpt-5 tokenizer is " " (space + common word endings like "the", "and", "is"), which appears in almost every sentence!
 
 ---
 
@@ -909,9 +909,9 @@ In **2023-2024**, AI companies engaged in a fierce "context window arms race":
 | Model | Context Window | Year | Tokens in Human Terms |
 |-------|----------------|------|----------------------|
 | GPT-3 | 4,096 tokens | 2020 | ~5 pages |
-| GPT-4 | 8,192 → 32K tokens | 2023 | ~40 pages |
+| gpt-5 | 8,192 → 32K tokens | 2023 | ~40 pages |
 | Claude 2 | 100K tokens | 2023 | ~75,000 words |
-| GPT-4 Turbo | 128K tokens | 2023 | ~300 pages |
+| gpt-5 Turbo | 128K tokens | 2023 | ~300 pages |
 | **Claude 3** | **200K tokens** | 2024 | **~500 pages** |
 | Gemini 1.5 | 1M → 2M tokens | 2024 | **~3,000 pages!** |
 
@@ -925,9 +925,9 @@ In **2023-2024**, AI companies engaged in a fierce "context window arms race":
 **How Companies Optimize**:
 
 1. **Vocabulary Size Tuning**: Larger vocab = fewer tokens per text = more context
-   - GPT-4: ~100K vocabulary
-   - Llama 2: 32K vocabulary
-   - GPT-4 can fit more text in same token budget!
+   - gpt-5: ~100K vocabulary
+   - Llama 4: 32K vocabulary
+   - gpt-5 can fit more text in same token budget!
 
 2. **Training Data Selection**: Tokenizers trained on clean, diverse data tokenize better
    - Models trained on web scrapes have Reddit usernames as tokens (wasteful!)

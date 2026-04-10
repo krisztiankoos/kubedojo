@@ -511,11 +511,11 @@ Yes! Many people have ChatGPT Plus for daily use AND an API account for coding. 
 
 **Full Neural Dojo curriculum estimate**:
 - **Claude API**: $3-5 total (most modules)
-- **OpenAI API**: $5-10 total (if using GPT-4)
+- **OpenAI API**: $5-10 total (if using gpt-5)
 - **Optional local models**: $0 (free, but needs GPU)
 
 **Why so cheap?**
-Most requests are small (100-500 tokens). Even expensive models like GPT-4 cost ~$0.01 per request for typical curriculum use.
+Most requests are small (100-500 tokens). Even expensive models like gpt-5 cost ~$0.01 per request for typical curriculum use.
 
 **Example calculation**:
 ```
@@ -568,14 +568,14 @@ Cost = (50 * 200 / 1M * $3) + (50 * 300 / 1M * $15)
 3. Create new secret key
 4. Copy the key (starts with `sk-`)
 
-**Pricing** (GPT-4o-mini recommended for learning):
+**Pricing** (gpt-5-mini recommended for learning):
 - Input: $0.15 per 1M tokens
 - Output: $0.60 per 1M tokens
 - For curriculum: ~$2-3 total
 
 **Note**: New accounts may have rate limits. If you get rate limit errors, wait 24 hours or upgrade to paid tier.
 
-> **Did You Know?** OpenAI's API pricing has dropped dramatically over time. When GPT-3 launched in 2020, it cost $0.06 per 1,000 tokens—making a single conversation cost several dollars. By 2023, GPT-3.5-turbo had dropped to $0.002 per 1,000 tokens—a **30x reduction**. Today's GPT-4o-mini is even cheaper at $0.00015 per 1,000 input tokens. This exponential cost reduction follows a pattern similar to Moore's Law for computing. Researchers at Stanford estimated that the cost of AI inference is dropping approximately **70% per year**. What costs $10 today will cost $3 next year and less than $1 the year after. This is why now is the perfect time to learn AI development—the economics are becoming accessible to everyone.
+> **Did You Know?** OpenAI's API pricing has dropped dramatically over time. When GPT-3 launched in 2020, it cost $0.06 per 1,000 tokens—making a single conversation cost several dollars. By 2023, GPT-3.5-turbo had dropped to $0.002 per 1,000 tokens—a **30x reduction**. Today's gpt-5-mini is even cheaper at $0.00015 per 1,000 input tokens. This exponential cost reduction follows a pattern similar to Moore's Law for computing. Researchers at Stanford estimated that the cost of AI inference is dropping approximately **70% per year**. What costs $10 today will cost $3 next year and less than $1 the year after. This is why now is the perfect time to learn AI development—the economics are becoming accessible to everyone.
 
 ---
 
@@ -587,7 +587,7 @@ If you want to try before committing to paid API:
    - https://console.groq.com/
    - Ultra-fast inference
    - Free: 30 requests/minute
-   - Models: Llama 3, Mixtral
+   - Models: Llama 4, Mixtral
    - **Perfect for**: Initial testing, learning prompting
 
 2. **Together AI** ($25 free credits)
@@ -987,7 +987,7 @@ Think of it like a restaurant: non-streaming is getting your entire meal deliver
 
 > ** Did You Know?**
 >
-> The concept of tokens in NLP dates back to the 1960s, but modern "subword tokenization" (like BPE, the method Claude uses) was popularized by a 2015 paper by Rico Sennrich and colleagues. They discovered that breaking words into smaller pieces solved the "rare word problem"—models no longer needed to memorize every possible word, just common pieces they could combine. This single innovation made modern language models possible. GPT-2, GPT-3, GPT-4, and Claude all use variations of this approach, handling vocabulary of 50,000-100,000 tokens instead of millions of individual words.
+> The concept of tokens in NLP dates back to the 1960s, but modern "subword tokenization" (like BPE, the method Claude uses) was popularized by a 2015 paper by Rico Sennrich and colleagues. They discovered that breaking words into smaller pieces solved the "rare word problem"—models no longer needed to memorize every possible word, just common pieces they could combine. This single innovation made modern language models possible. GPT-2, GPT-3, gpt-5, and Claude all use variations of this approach, handling vocabulary of 50,000-100,000 tokens instead of millions of individual words.
 
 ---
 
@@ -1296,7 +1296,7 @@ client = OpenAI(api_key=api_key)
 
 # Bug 3: Wrong model name
 response = client.messages.create(
-    model="gpt-4",
+    model="gpt-5",
     messages=[{"role": "user", "content": "Hello"}]
 )
 
@@ -1344,7 +1344,7 @@ def estimate_cost(
 
     Pricing (as of 2025):
     Claude Sonnet: $3/1M input, $15/1M output
-    GPT-4o-mini: $0.15/1M input, $0.60/1M output
+    gpt-5-mini: $0.15/1M input, $0.60/1M output
     """
     # Your code here!
     pass
@@ -1365,7 +1365,7 @@ def estimate_cost(
 ) -> float:
     pricing = {
         "claude-sonnet-4-5": {"input": 3.0, "output": 15.0},
-        "gpt-4o-mini": {"input": 0.15, "output": 0.60}
+        "gpt-5-mini": {"input": 0.15, "output": 0.60}
     }
 
     if model not in pricing:

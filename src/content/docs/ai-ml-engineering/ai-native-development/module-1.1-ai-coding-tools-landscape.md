@@ -247,7 +247,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - Agentic (takes multi-step actions without asking)
 - Composer mode for complex refactoring
 - Import all VS Code extensions
-- Supports Claude, GPT-4, or bring your own API key (BYOK)
+- Supports Claude, gpt-5, or bring your own API key (BYOK)
 
 **The Not-So-Good**:
 - ️ Requires switching from your current IDE
@@ -398,7 +398,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - Works with ANY editor (terminal-based, editor-agnostic)
 - Git integration (auto-commits AI changes)
 - Can edit multiple files
-- Uses GPT-4, Claude, or local models
+- Uses gpt-5, Claude, or local models
 - Perfect for SSH/remote workflows
 - Scriptable for automation
 - Open source
@@ -429,7 +429,7 @@ The landscape has exploded with options. Here's your decision matrix:
 **The Good**:
 - Autonomous coding agent (can work for minutes unsupervised)
 - Can create files, run commands, read output
-- Works with Claude, GPT-4, local models
+- Works with Claude, gpt-5, local models
 - Browser automation capabilities
 - Integrated with VS Code but CLI-like power
 
@@ -637,7 +637,7 @@ Aider focuses on **Git integration** rather than MCP. However, you can add MCP-l
 # Aider doesn't have native MCP, but you can:
 # 1. Use Aider for Git-focused workflows
 # 2. Combine with MCP servers via shell commands
-aider --model anthropic/claude-3-5-sonnet
+aider --model anthropic/claude-4.6-sonnet
 ```
 
 **Why 3-star Kaizen fit**: Excellent Git integration, but limited extensibility compared to Cline/Continue.
@@ -764,7 +764,7 @@ Primary: Open Interpreter
 
 **The Good**:
 - Fully open source (MIT license)
-- Works with ANY LLM (Claude, GPT-4, Llama, Mistral, local models)
+- Works with ANY LLM (Claude, gpt-5, Llama, Mistral, local models)
 - Autocomplete + chat modes
 - Fully customizable (edit prompts, add tools)
 - Privacy-friendly (can use local models)
@@ -785,7 +785,7 @@ Primary: Open Interpreter
 
 **Website**: https://continue.dev/
 
-**Real-world example**: Startup runs Continue.dev with self-hosted Llama 3 70B model - zero API costs, all code stays internal, customized prompts for their domain-specific patterns.
+**Real-world example**: Startup runs Continue.dev with self-hosted Llama 4 70B model - zero API costs, all code stays internal, customized prompts for their domain-specific patterns.
 
 ---
 
@@ -923,8 +923,8 @@ What you CAN do:
 
 What you CANNOT do:
 - Use Aider.ai (needs separate OpenAI API account)
-- Use Continue.dev with GPT-4 (needs separate API key)
-- Use Cursor BYOK with GPT-4 (needs API key)
+- Use Continue.dev with gpt-5 (needs separate API key)
+- Use Cursor BYOK with gpt-5 (needs API key)
 
 **To use those tools**: Sign up for OpenAI API separately at platform.openai.com (different from chat.openai.com!)
 
@@ -2116,7 +2116,7 @@ Your prompt → Tokenizer → Transformer Model → Token Predictions → Detoke
 Example:
 "Create fibonacci function"
   → [1234, 5678, 9012] (tokens)
-  → GPT-4/Claude processes
+  → gpt-5/Claude processes
   → [4567, 8901, 2345...] (output tokens)
   → "def fibonacci(n: int)..." (code)
 ```

@@ -1,8 +1,8 @@
 ---
-title: "Generative AI Fundamentals"
+title: "Phase 2: Generative AI"
 sidebar:
   order: 0
-  label: "Generative AI Fundamentals"
+  label: "Phase 2: Generative AI"
 ---
 
 > **AI/ML Engineering Track** | Phase 2

@@ -19,17 +19,16 @@ This track is for engineers who need to understand AI/ML deeply enough to build,
 |---|-------|-------|
 | 0 | [Prerequisites](prerequisites/) | Environment setup, Python, dev tools |
 | 1 | [AI-Native Development](ai-native-development/) | Claude Code, Cursor, prompt engineering, AI coding agents |
-| 2 | [Generative AI](generative-ai/) | LLMs, tokenization, embeddings, text generation |
-| 3 | [Vector Search & RAG](vector-rag/) | Vector spaces, vector databases, RAG patterns |
-| 4 | [Frameworks & Agents](frameworks-agents/) | LangChain, LangGraph, LlamaIndex, agentic AI |
-| 5 | [Multimodal AI](multimodal-ai/) | Speech, vision, video |
-| 6 | [Deep Learning](deep-learning/) | PyTorch, neural networks, CNNs, transformers, backprop |
-| 7 | [Advanced GenAI](advanced-genai/) | Fine-tuning, RLHF, diffusion models, constitutional AI |
-| 8 | [Classical ML](classical-ml/) | Tabular ML, time-series, AutoML, feature stores |
-| 9 | [AI Safety](ai-safety/) | Alignment, red teaming, evaluation |
-| 10 | [MLOps](mlops/) | Kubernetes for ML, experiment tracking, pipelines, deployment |
-| 11 | [AI Infrastructure](ai-infrastructure/) | Cloud management, AIOps, log analysis |
-| 12 | [History](history/) | History of AI/ML |
+| 2 | [Generative AI](generative-ai/) | LLMs, tokenization, embeddings, text generation, reasoning models |
+| 3 | [Vector Search & RAG](vector-rag/) | Vector spaces, vector databases, RAG patterns, long-context |
+| 4 | [Frameworks & Agents](frameworks-agents/) | LangChain, LangGraph, LlamaIndex, agentic AI, MCP |
+| 5 | [MLOps & LLMOps](mlops/) | Kubernetes for ML, experiment tracking, pipelines, deployment |
+| 6 | [AI Infrastructure](ai-infrastructure/) | Cloud management, AIOps, vLLM, GPU scheduling |
+| 7 | [Advanced GenAI & Safety](advanced-genai/) | Fine-tuning, RLHF, diffusion, alignment, red teaming, evaluation |
+| 8 | [Multimodal AI](multimodal-ai/) | Speech, vision, video, native multimodal models |
+| 9 | [Deep Learning Foundations](deep-learning/) | PyTorch, neural networks, CNNs, transformers, backprop |
+| 10 | [Classical ML](classical-ml/) | Tabular ML, time-series, AutoML, feature stores |
+| A | [History of AI/ML](history/) | Historical context (appendix) |
 
 ## Who This Is For
 

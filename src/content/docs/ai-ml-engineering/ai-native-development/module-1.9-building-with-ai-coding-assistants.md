@@ -1175,7 +1175,7 @@ Cursor is VS Code, but rebuilt around a single premise: **What if AI was there f
 - Cmd+K for quick edits (fastest way to modify code)
 - Great for greenfield projects (AI helps with architecture)
 - Privacy mode (can run locally)
-- Multi-model support (GPT-4, Claude, Gemini)
+- Multi-model support (gpt-5, Claude, Gemini)
 
 **Limitations**:
 - VS Code fork (updates lag behind VS Code by weeks/months)
@@ -1848,7 +1848,7 @@ Aider is for developers who live in the terminal. It's git-aware, editor-agnosti
 - Terminal-native (works with any editor: Vim, Emacs, VS Code, anything)
 - Git-aware (auto-commits with descriptive messages)
 - Multi-file editing (can modify multiple files atomically)
-- Works with Claude, GPT-4, or local models (flexible backend)
+- Works with Claude, gpt-5, or local models (flexible backend)
 - Great for automated workflows and scripting
 - Excellent for CI/CD integration
 - No GUI overhead (fast!)
@@ -1885,7 +1885,7 @@ aider
 
 # Aider starts, shows you a prompt:
 # Aider v0.20.0
-# Model: claude-3-5-sonnet-20241022
+# Model: claude-4.6-sonnet-20241022
 # Git repo: /path/to/your-project
 #
 # Use /help to see available commands
@@ -2067,9 +2067,9 @@ You: Complete the `process_data` function. It should:
 
 ```bash
 # Use different models
-aider --model gpt-4
-aider --model claude-3-opus-20240229
-aider --model claude-3-5-sonnet-20241022
+aider --model gpt-5
+aider --model claude-4.6-opus-20240229
+aider --model claude-4.6-sonnet-20241022
 
 # Use local models (via Ollama)
 aider --model ollama/codellama
@@ -2131,7 +2131,7 @@ aider --auto-test pytest
 | Model | Input | Output | Use Case |
 |-------|-------|--------|----------|
 | Claude Sonnet 4.5 | $3.00 | $15.00 | Complex reasoning (Claude Code CLI default) |
-| GPT-4 Turbo | $10.00 | $30.00 | Avoid unless necessary |
+| gpt-5 Turbo | $10.00 | $30.00 | Avoid unless necessary |
 | GPT-3.5 Turbo | $0.50 | $1.50 | Simple tasks (83% cheaper than Sonnet!) |
 | Claude Haiku | $0.25 | $1.25 | Ultra-cheap (92% cheaper than Sonnet!) |
 
@@ -2241,7 +2241,7 @@ aider --version
 **The Game Changer**: **Model flexibility** = massive cost savings.
 
 **Strengths**:
-- **Any model**: GPT-4, GPT-3.5, Claude Sonnet, Claude Haiku, local models
+- **Any model**: gpt-5, GPT-3.5, Claude Sonnet, Claude Haiku, local models
 - **Git-aware**: Auto-commits with descriptive messages
 - **Multi-file editing**: Edit multiple files atomically
 - **Cost control**: Use cheap models for simple tasks
@@ -2257,16 +2257,16 @@ aider --version
 **Model Configuration**:
 ```bash
 # Use Claude Sonnet (default, expensive)
-aider --model claude-3-5-sonnet-20241022
+aider --model claude-4.6-sonnet-20241022
 
 # Use Claude Haiku (92% cheaper!)
-aider --model claude-3-haiku-20240307
+aider --model claude-4.5-haiku-20240307
 
 # Use GPT-3.5 (83% cheaper than Sonnet)
 aider --model gpt-3.5-turbo
 
-# Use GPT-4 (if you need it)
-aider --model gpt-4-turbo
+# Use gpt-5 (if you need it)
+aider --model gpt-5
 
 # Use local model (FREE!)
 aider --model ollama/codellama:13b
@@ -2275,11 +2275,11 @@ aider --model ollama/codellama:13b
 **Budget Optimization Strategy**:
 ```bash
 # Set default to cheap model
-echo 'export AIDER_MODEL=claude-3-haiku-20240307' >> ~/.bashrc
+echo 'export AIDER_MODEL=claude-4.5-haiku-20240307' >> ~/.bashrc
 
 # Create aliases for different use cases
-alias aider-cheap='aider --model claude-3-haiku-20240307'
-alias aider-smart='aider --model claude-3-5-sonnet-20241022'
+alias aider-cheap='aider --model claude-4.5-haiku-20240307'
+alias aider-smart='aider --model claude-4.6-sonnet-20241022'
 alias aider-free='aider --model ollama/codellama:13b'
 
 # Use cheap for routine tasks
@@ -2304,12 +2304,12 @@ You: Add input validation to the create_user endpoint
 # Cost: $0.002 (vs $0.039 with Sonnet = 95% savings!)
 
 # Complex task? Switch models mid-session
-You: /model claude-3-5-sonnet-20241022
+You: /model claude-4.6-sonnet-20241022
 You: Refactor the authentication flow to use OAuth2
 
 # Sonnet handles complex logic
 # Then switch back
-You: /model claude-3-haiku-20240307
+You: /model claude-4.5-haiku-20240307
 ```
 
 **Advanced Features**:
@@ -2317,13 +2317,13 @@ You: /model claude-3-haiku-20240307
 **1. Architect Mode** (big picture thinking):
 ```bash
 # Use --architect flag for design decisions
-aider --architect --model claude-3-5-sonnet-20241022
+aider --architect --model claude-4.6-sonnet-20241022
 
 You: Design a caching layer for this API
 # Sonnet analyzes, suggests architecture
 # Then switch to cheap model for implementation
 
-You: /model claude-3-haiku-20240307
+You: /model claude-4.5-haiku-20240307
 You: /architect  # Exit architect mode
 You: Implement the caching layer you just designed
 ```
@@ -2400,7 +2400,7 @@ code --install-extension saoudrizwan.claude-dev
 
 **Strengths**:
 - **VS Code integration**: Works within your editor
-- **Model choice**: Use Claude, GPT-4, or custom
+- **Model choice**: Use Claude, gpt-5, or custom
 - **File tree aware**: Sees your project structure
 - **Diff preview**: Visual diffs before applying
 - **Terminal access**: Can run commands
@@ -2419,7 +2419,7 @@ code --install-extension saoudrizwan.claude-dev
   "cline.apiKey": "your-anthropic-key",
 
   // Model selection (this is the key!)
-  "cline.model": "claude-3-haiku-20240307",  // Start cheap
+  "cline.model": "claude-4.5-haiku-20240307",  // Start cheap
 
   // Or use GPT-3.5
   // "cline.apiProvider": "openai",
@@ -2458,12 +2458,12 @@ code --install-extension saoudrizwan.claude-dev
   {
     "key": "cmd+shift+h",  // H for Haiku (cheap)
     "command": "cline.setModel",
-    "args": "claude-3-haiku-20240307"
+    "args": "claude-4.5-haiku-20240307"
   },
   {
     "key": "cmd+shift+s",  // S for Sonnet (smart)
     "command": "cline.setModel",
-    "args": "claude-3-5-sonnet-20241022"
+    "args": "claude-4.6-sonnet-20241022"
   }
 ]
 
@@ -2545,7 +2545,7 @@ Savings: $31.45/month (81%)
 **Morning Setup**:
 ```bash
 # Terminal 1: Aider with cheap model (routine work)
-aider --model claude-3-haiku-20240307
+aider --model claude-4.5-haiku-20240307
 
 # Terminal 2: Keep Claude Code CLI ready (complex tasks)
 # (Don't start it yet - no cost until you use it)
@@ -2620,7 +2620,7 @@ task=$1
 
 # Simple tasks → Haiku (92% cheaper)
 if [[ $task =~ (test|format|lint|doc|comment|typo) ]]; then
-    aider --model claude-3-haiku-20240307
+    aider --model claude-4.5-haiku-20240307
 
 # Medium tasks → GPT-3.5 (83% cheaper)
 elif [[ $task =~ (refactor|validate|parse) ]]; then
@@ -2688,7 +2688,7 @@ ollama pull codellama:13b
 aider --model ollama/codellama:13b
 
 # When you need accuracy, switch
-aider --model claude-3-haiku-20240307
+aider --model claude-4.5-haiku-20240307
 ```
 
 **5. Cost Tracking**:
@@ -2696,7 +2696,7 @@ aider --model claude-3-haiku-20240307
 ```bash
 # Track costs per project
 # .env in each project
-AIDER_MODEL=claude-3-haiku-20240307
+AIDER_MODEL=claude-4.5-haiku-20240307
 
 # Weekly review
 aider --show-costs
@@ -2744,10 +2744,10 @@ aider --show-costs
 2. **Configure for budget**:
    ```bash
    # Default to cheap model
-   echo 'export AIDER_MODEL=claude-3-haiku-20240307' >> ~/.zshrc
+   echo 'export AIDER_MODEL=claude-4.5-haiku-20240307' >> ~/.zshrc
 
    # Aliases
-   echo 'alias ai="aider --model claude-3-haiku-20240307"' >> ~/.zshrc
+   echo 'alias ai="aider --model claude-4.5-haiku-20240307"' >> ~/.zshrc
    echo 'alias ai-smart="claude"' >> ~/.zshrc
    ```
 
@@ -3012,7 +3012,7 @@ Claude Code uses Anthropic's own models (no third-party API costs):
 **Costs**:
 
 Depends entirely on your usage and model choice:
-- GPT-4: ~$10-30/month for moderate use
+- gpt-5: ~$10-30/month for moderate use
 - Claude 3.5 Sonnet: ~$8-25/month for moderate use
 - Local models (Ollama): **Free** (just compute costs)
 
@@ -3149,7 +3149,7 @@ Getting AI coding tools set up optimally can 3x your productivity. Here's how to
 // Cursor Settings
 {
   // Model selection
-  "cursor.aiModel": "claude-3.5-sonnet",  // or gpt-4, gpt-4-turbo
+  "cursor.aiModel": "claude-4.6-sonnet",  // or gpt-5, gpt-5
 
   // Privacy
   "cursor.privacy": {
@@ -3255,7 +3255,7 @@ Getting AI coding tools set up optimally can 3x your productivity. Here's how to
 
 ```yaml
 # Model to use
-model: claude-3-5-sonnet-20241022
+model: claude-4.6-sonnet-20241022
 
 # Git settings
 auto-commit: true
@@ -3288,7 +3288,7 @@ export ANTHROPIC_API_KEY=your_key_here
 export OPENAI_API_KEY=your_key_here
 
 # Default model
-export AIDER_MODEL=claude-3-5-sonnet-20241022
+export AIDER_MODEL=claude-4.6-sonnet-20241022
 
 # Auto-commit by default
 export AIDER_AUTO_COMMIT=true
@@ -3299,8 +3299,8 @@ export AIDER_AUTO_COMMIT=true
 1. **Project-specific config**:
    Create `.aider.conf.yml` in your project root:
    ```yaml
-   # This project uses GPT-4
-   model: gpt-4-turbo
+   # This project uses gpt-5
+   model: gpt-5
 
    # Auto-run tests
    auto-test: npm test
@@ -3318,8 +3318,8 @@ export AIDER_AUTO_COMMIT=true
 3. **Shell aliases**:
    ```bash
    # .bashrc
-   alias aid='aider --model claude-3-5-sonnet-20241022'
-   alias aidgpt='aider --model gpt-4-turbo'
+   alias aid='aider --model claude-4.6-sonnet-20241022'
+   alias aidgpt='aider --model gpt-5'
    ```
 
 ** Optimize your setup! Check out the [VS Code Configuration Guide](../../examples/module_05/config_vscode.md) for detailed setup instructions, keyboard shortcuts, and productivity tips!**
@@ -3525,7 +3525,7 @@ Example commit message:
 ```
 Add user authentication
 
-Generated with: Cursor AI (GPT-4)
+Generated with: Cursor AI (gpt-5)
 Reviewed by: @alice
 Security review: @bob
 Tested: Full test suite passing

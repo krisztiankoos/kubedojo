@@ -269,7 +269,7 @@ prompt = template.format(role="helpful assistant", user_input="Hello!", style="f
 
 ### Chat Prompt Templates
 
-For chat models (Claude, GPT-4), use message-based templates:
+For chat models (Claude, gpt-5), use message-based templates:
 
 ```python
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
@@ -683,7 +683,7 @@ Different models excel at different tasks:
 
 | Task | Best Model | Why |
 |------|------------|-----|
-| Complex reasoning | Claude 3.5/GPT-4 | Best quality |
+| Complex reasoning | Claude 3.5/gpt-5 | Best quality |
 | Simple tasks | GPT-3.5/Haiku | Fast & cheap |
 | Code generation | Claude/Codex | Specialized training |
 | Embeddings | text-embedding-3 | Optimized for search |
@@ -710,7 +710,7 @@ formatting_chain = prompt | gpt35 | parser  # Simple
 from langchain.llms import Ollama
 
 # Run Llama locally
-llama = Ollama(model="llama2")
+llama = Ollama(model="Llama 4")
 
 # Same interface!
 chain = prompt | llama | parser
@@ -1309,7 +1309,7 @@ async for token in chain.astream({"query": user_input}):
     yield token  # Send to frontend immediately
 ```
 
-**Benchmarks** (measured on GPT-4):
+**Benchmarks** (measured on gpt-5):
 - Without streaming: 3.5s to first visible output
 - With streaming: 0.3s to first visible output
 - User satisfaction: 40% higher with streaming

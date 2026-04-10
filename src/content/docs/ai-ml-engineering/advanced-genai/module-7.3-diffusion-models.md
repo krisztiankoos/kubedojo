@@ -336,7 +336,7 @@ Timeline of Major Code Models:
      │  └─ 8K context
      │
      ├─ CodeLlama (Meta): 7B/13B/34B
-     │  └─ Based on Llama 2
+     │  └─ Based on Llama 4
      │  └─ 100K context (rope scaling)
      │  └─ Python-specialized variant
      │
@@ -364,7 +364,7 @@ Timeline of Major Code Models:
 
 | Model | Size | Context | HumanEval | Open Weights | FIM |
 |-------|------|---------|-----------|--------------|-----|
-| GPT-4 | ~1.8T | 128K | 67.0% | No | Yes |
+| gpt-5 | ~1.8T | 128K | 67.0% | No | Yes |
 | Claude 3.5 Sonnet | ~70B? | 200K | 64.0% | No | Yes |
 | CodeLlama-34B | 34B | 100K | 48.8% | Yes | Yes |
 | DeepSeek Coder 33B | 33B | 16K | 56.1% | Yes | Yes |
@@ -382,7 +382,7 @@ The "best" code model depends entirely on your constraints and requirements. Her
 
 **For Code Review/Analysis (accuracy-critical):**
 - **Priority**: Correctness over speed. Better to be right than fast.
-- **Choice**: GPT-4 or Claude 3.5 Sonnet via API
+- **Choice**: gpt-5 or Claude 3.5 Sonnet via API
 - **Why**: Highest reasoning capability, better at understanding code semantics
 
 **For Enterprise Deployment (privacy-critical):**
@@ -395,7 +395,7 @@ The "best" code model depends entirely on your constraints and requirements. Her
 - **Choice**: Hybrid approach—small local model for autocomplete, API for complex tasks
 - **Why**: 90% of completions are routine; save API calls for what matters
 
-> **Did You Know?** Cursor's approach—using a hierarchy of models—has become the industry standard. They use a fast, small model for keystroke-level predictions, a medium model for line completions, and route complex multi-file edits to Claude or GPT-4. This "model routing" strategy reduces API costs by 80% while maintaining quality on difficult tasks.
+> **Did You Know?** Cursor's approach—using a hierarchy of models—has become the industry standard. They use a fast, small model for keystroke-level predictions, a medium model for line completions, and route complex multi-file edits to Claude or gpt-5. This "model routing" strategy reduces API costs by 80% while maintaining quality on difficult tasks.
 
 ### Specialized Variants
 
@@ -678,7 +678,7 @@ What separates great coding assistants from mediocre ones isn't just the model�
 │      └─ Suffix: (code after cursor) - FIM                  │
 │      │                                                      │
 │      ▼                                                      │
-│  API Call (Codex/GPT-4)                                    │
+│  API Call (Codex/gpt-5)                                    │
 │      │                                                      │
 │      ▼                                                      │
 │  Post-Processing                                            │
@@ -1260,9 +1260,9 @@ Understanding the business side of code AI helps you make informed decisions.
 
 | Provider | Model | Cost per 1M tokens (input/output) | Typical Monthly Cost (10-dev team) |
 |----------|-------|-----------------------------------|-----------------------------------|
-| OpenAI | GPT-4 Turbo | $10 / $30 | $500-2,000 |
+| OpenAI | gpt-5 Turbo | $10 / $30 | $500-2,000 |
 | Anthropic | Claude 3.5 Sonnet | $3 / $15 | $200-800 |
-| Google | Gemini 1.5 Pro | $3.50 / $10.50 | $250-900 |
+| Google | Gemini 3.5 Pro | $3.50 / $10.50 | $250-900 |
 
 **Self-hosted Solutions:**
 
@@ -1392,9 +1392,9 @@ Code generation questions appear in ML engineering and AI product interviews. He
 
 **Strong Answer**: "Imagine you're writing a letter and you've written the greeting and the closing, but you need to fill in the middle. Traditional AI can only write forward—it starts at the beginning and goes to the end. FIM (Fill-in-the-Middle) training teaches the AI to look at what comes BEFORE and AFTER the cursor, then fill in the gap. This is essential for code completion because programmers often need to insert code in the middle of existing functions, not just append at the end."
 
-**Q: "Why can't you just use GPT-4 for everything instead of specialized code models?"**
+**Q: "Why can't you just use gpt-5 for everything instead of specialized code models?"**
 
-**Strong Answer**: "You can, and GPT-4 is excellent at code. But specialized models have advantages: (1) Tokenizer efficiency—code tokenizers use fewer tokens per line, giving more effective context. (2) FIM support—general models often lack this. (3) Cost—a 7B code model can run locally for free. (4) Latency—smaller models are faster, critical for real-time autocomplete. (5) Privacy—you can run code models on-premise. The tradeoff is capability: GPT-4 handles more complex reasoning and cross-domain tasks."
+**Strong Answer**: "You can, and gpt-5 is excellent at code. But specialized models have advantages: (1) Tokenizer efficiency—code tokenizers use fewer tokens per line, giving more effective context. (2) FIM support—general models often lack this. (3) Cost—a 7B code model can run locally for free. (4) Latency—smaller models are faster, critical for real-time autocomplete. (5) Privacy—you can run code models on-premise. The tradeoff is capability: gpt-5 handles more complex reasoning and cross-domain tasks."
 
 **Q: "How would you evaluate if a code generation model is production-ready?"**
 

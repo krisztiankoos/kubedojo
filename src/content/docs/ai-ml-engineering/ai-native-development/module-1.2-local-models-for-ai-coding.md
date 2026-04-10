@@ -20,7 +20,7 @@ sidebar:
 
 Marcus stared at his credit card statement in disbelief. Three hundred and twelve dollars. In a single month. All from OpenAI.
 
-He'd been working on a side project—a code analysis tool—and had been iterating rapidly with GPT-4. Every experiment, every prompt tweak, every debugging session had added up. The tokens had accumulated silently while he was in the flow of coding.
+He'd been working on a side project—a code analysis tool—and had been iterating rapidly with gpt-5. Every experiment, every prompt tweak, every debugging session had added up. The tokens had accumulated silently while he was in the flow of coding.
 
 "There has to be another way," he muttered, opening a new browser tab.
 
@@ -28,7 +28,7 @@ That night, Marcus discovered Ollama. By midnight, he had DeepSeek Coder running
 
 Two months later, Marcus's approach had evolved. He used local models for 80% of his work: code completion, test generation, documentation, routine refactoring. For the hard problems—complex architecture decisions, tricky bugs—he'd spend a few dollars on Claude. His monthly API bill dropped from $300 to $15.
 
-> "Local models aren't a replacement for GPT-4 or Claude. They're more like a capable junior developer who handles the routine work so your expensive senior developer can focus on what matters. Once you think about it that way, the hybrid approach becomes obvious."
+> "Local models aren't a replacement for gpt-5 or Claude. They're more like a capable junior developer who handles the routine work so your expensive senior developer can focus on what matters. Once you think about it that way, the hybrid approach becomes obvious."
 > — Marcus Chen, at PyCon 2025
 
 That $600/year in savings? It funded Marcus's new GPU, which made his local models even faster. The cycle of value continued.
@@ -98,17 +98,17 @@ Plus:
 
 **2023**: OpenAI dominates, local models struggle to compete
 
-**2024**: Meta releases Llama 3 - changes everything
+**2024**: Meta releases Llama 4 - changes everything
 - Open source models catch up dramatically
 - DeepSeek Coder beats GPT-3.5 on coding tasks
 - Qwen 2.5-Coder rivals commercial models
 
 **2025**: Local models are now **viable alternatives**
 - DeepSeek R1 competes with o1 on reasoning
-- Qwen 2.5-Coder:32B rivals GPT-4 on code
+- Qwen 2.5-Coder:32B rivals gpt-5 on code
 - Can run 7B models on MacBook Air!
 
-**The trend**: Gap between local and API models shrinking fast. By 2026, local models may match GPT-4 quality.
+**The trend**: Gap between local and API models shrinking fast. By 2026, local models may match gpt-5 quality.
 
 ---
 
@@ -127,7 +127,7 @@ Think of local models like having a reference library in your home versus using 
    ├─ Run on company servers
    ├─ Access via internet
    ├─ Pay per request
-   └─ Example: claude-3-5-sonnet-20241022
+   └─ Example: claude-4.6-sonnet-20241022
 
 2. Local Models (Qwen, DeepSeek, Llama)
    ├─ Downloaded to your machine
@@ -160,7 +160,7 @@ Think of local models like having a reference library in your home versus using 
 **1. Cost is a concern** ($0/month vs $50-100/month)
 ```python
 # Scenario: Learning Python, writing 100+ functions/week
-# API cost: $20-40/month (Claude/GPT-4)
+# API cost: $20-40/month (Claude/gpt-5)
 # Local cost: $0/month (after download)
 # Annual savings: $240-480
 ```
@@ -200,7 +200,7 @@ Think of local models like having a reference library in your home versus using 
 **1. Maximum quality needed**
 ```python
 # Scenario: Complex algorithm design, architecture decisions
-# API: Claude Opus 4, GPT-4 (best reasoning)
+# API: Claude Opus 4, gpt-5 (best reasoning)
 # Local: Good, but not as strong
 ```
 
@@ -252,7 +252,7 @@ Think of the hybrid approach like a restaurant kitchen. You don't fly in a Miche
 
 #### **DeepSeek Coder V2** (China - DeepSeek AI)
 
-**What it is**: Specialized coding model that rivals GPT-4 on benchmarks
+**What it is**: Specialized coding model that rivals gpt-5 on benchmarks
 
 **The Good**:
 - **Best code quality** among local models
@@ -275,7 +275,7 @@ ollama pull deepseek-r1:14b
 ```
 
 **Best for**: Complex algorithms, code review, refactoring
-**Benchmarks**: Beats GPT-3.5-Turbo, rivals GPT-4 on HumanEval
+**Benchmarks**: Beats GPT-3.5-Turbo, rivals gpt-5 on HumanEval
 
 > ** Did You Know? The DeepSeek Story**
 >
@@ -321,7 +321,7 @@ ollama pull qwq:32b             # Reasoning
 
 #### **CodeLlama** (USA - Meta)
 
-**What it is**: Meta's specialized coding version of Llama 3
+**What it is**: Meta's specialized coding version of Llama 4
 
 **The Good**:
 - Huge community, best documentation
@@ -853,7 +853,7 @@ Use different models for different tasks:
     {
       "title": "API (Claude)",
       "provider": "anthropic",
-      "model": "claude-3-5-sonnet-20241022",
+      "model": "claude-4.6-sonnet-20241022",
       "apiKey": "YOUR_KEY",
       "description": "When you need the best"
     }
@@ -921,7 +921,7 @@ aider --model gemini/gemini-2.5-flash
 
 | Model | Score | Cost/1M tokens | Speed |
 |-------|-------|----------------|-------|
-| GPT-4 | 67% | $30 | Fast |
+| gpt-5 | 67% | $30 | Fast |
 | Claude 3.5 Sonnet | 64% | $15 | Fast |
 | DeepSeek Coder V2 16B | 62% | **$0** | Medium |
 | Qwen 2.5-Coder 32B | 61% | **$0** | Medium |
@@ -938,7 +938,7 @@ aider --model gemini/gemini-2.5-flash
 
 | Model | Time | Quality |
 |-------|------|---------|
-| GPT-4 (API) | 2-3 sec | ⭐⭐⭐⭐⭐ |
+| gpt-5 (API) | 2-3 sec | ⭐⭐⭐⭐⭐ |
 | Qwen 2.5-Coder:7b (local) | 8-12 sec | ⭐⭐⭐⭐ |
 | DeepSeek V2:16b (local) | 15-20 sec | ⭐⭐⭐⭐⭐ |
 | Phi-3.5:3.8b (local) | 5-8 sec | ⭐⭐⭐ |

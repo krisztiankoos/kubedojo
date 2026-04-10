@@ -575,7 +575,7 @@ Consider a scenario: Claude Code is refactoring a file and accidentally deletes 
 
 Hooks are like event listeners for Claude Code—they execute automatically when specific events occur. If commands are buttons and skills are reflexes, hooks are tripwires. They fire before or after specific actions, and they can approve, deny, modify, or log those actions.
 
-The power of hooks comes from their Turing-completeness: they can run any executable. This means you can integrate Claude Code with external approval systems, send notifications to Slack, query your security policies, or even call other AI models for validation. One company uses a hook that asks GPT-4 "Is this action safe?" before allowing certain operations—using one AI to supervise another.
+The power of hooks comes from their Turing-completeness: they can run any executable. This means you can integrate Claude Code with external approval systems, send notifications to Slack, query your security policies, or even call other AI models for validation. One company uses a hook that asks gpt-5 "Is this action safe?" before allowing certain operations—using one AI to supervise another.
 
 ### Hook Events
 

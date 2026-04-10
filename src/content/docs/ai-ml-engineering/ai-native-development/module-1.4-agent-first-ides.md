@@ -245,7 +245,7 @@ Windsurf (by Codeium) pioneered the "Cascade" agentic system that Google later l
 | Aspect | Details |
 |--------|---------|
 | **Base** | VS Code fork |
-| **Primary Model** | Proprietary + Claude, GPT-4 |
+| **Primary Model** | Proprietary + Claude, gpt-5 |
 | **Unique Feature** | "Flows" - persistent agent memory |
 | **Cost** | Free tier + Pro ($15/month) |
 
@@ -450,7 +450,7 @@ Cursor pioneered many concepts now common in agent-first IDEs. It remains popula
 | Aspect | Details |
 |--------|---------|
 | **Base** | VS Code fork |
-| **Models** | GPT-4, Claude |
+| **Models** | gpt-5, Claude |
 | **Unique Feature** | Composer for multi-file edits |
 | **Cost** | Free tier + Pro ($20/month) |
 

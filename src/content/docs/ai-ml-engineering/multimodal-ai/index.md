@@ -1,16 +1,16 @@
 ---
-title: "Multimodal AI"
+title: "Phase 8: Multimodal AI"
 sidebar:
   order: 0
-  label: "Multimodal AI"
+  label: "Phase 8: Multimodal AI"
 ---
 
-> **AI/ML Engineering Track** | Phase 5
+> **AI/ML Engineering Track** | Phase 8
 
 ## Modules
 
 | # | Module |
 |---|--------|
-| 5.1 | [Voice & Audio AI](module-5.1-voice-audio-ai/) |
-| 5.2 | [Vision AI](module-5.2-vision-ai/) |
-| 5.3 | [Video AI](module-5.3-video-ai/) |
+| 8.1 | [Voice & Audio AI](module-8.1-voice-audio-ai/) |
+| 8.2 | [Vision AI](module-8.2-vision-ai/) |
+| 8.3 | [Video AI](module-8.3-video-ai/) |

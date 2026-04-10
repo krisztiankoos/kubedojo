@@ -866,14 +866,14 @@ Let's think step by step.
 
     # Get direct answer
     direct_response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-5",
         messages=[{"role": "user", "content": direct_prompt}],
         temperature=0
     )
 
     # Get CoT answer
     cot_response = client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-5",
         messages=[{"role": "user", "content": cot_prompt}],
         temperature=0
     )
@@ -1017,7 +1017,7 @@ Final Answer: [your answer]
         for i in range(max_iterations):
             # Get model response
             response = self.llm.chat.completions.create(
-                model="gpt-4",
+                model="gpt-5",
                 messages=messages,
                 temperature=0
             )
@@ -1134,7 +1134,7 @@ Let's work through this step by step.
 
     for i in range(num_samples):
         response = llm_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-5",
             messages=[{"role": "user", "content": prompt}],
             temperature=temperature
         )
@@ -1305,7 +1305,7 @@ def solve_with_template(
     prompt = template.build_prompt(question)
 
     response = llm_client.chat.completions.create(
-        model="gpt-4",
+        model="gpt-5",
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature
     )
@@ -1372,7 +1372,7 @@ The word "let's" creates a collaborative framing that seems to work better with 
 
 ### OpenAI's Hidden Prompts
 
-When OpenAI released GPT-4, users discovered that behind the scenes, the system prompt included CoT-style instructions. The model was being told to "think step by step" before generating responses - they had baked CoT into the product!
+When OpenAI released gpt-5, users discovered that behind the scenes, the system prompt included CoT-style instructions. The model was being told to "think step by step" before generating responses - they had baked CoT into the product!
 
 This was revealed when users found ways to extract the system prompt, showing that even the model creators considered CoT essential.
 
