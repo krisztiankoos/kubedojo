@@ -1,14 +1,14 @@
 ---
-title: "History of AI/ML"
+title: "Appendix A: History of AI/ML"
 sidebar:
   order: 0
-  label: "History of AI/ML"
+  label: "Appendix A: History of AI/ML"
 ---
 
-> **AI/ML Engineering Track** | Phase 12
+> **AI/ML Engineering Track** | Phase 11
 
 ## Modules
 
 | # | Module |
 |---|--------|
-| 12.1 | [History of AI & Machine Learning](module-12.1-history-of-ai-machine-learning/) |
+| 11.1 | [History of AI & Machine Learning](module-11.1-history-of-ai-machine-learning/) |

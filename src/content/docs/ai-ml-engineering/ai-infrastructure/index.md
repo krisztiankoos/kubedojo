@@ -1,15 +1,15 @@
 ---
-title: "AI for Infrastructure"
+title: "Phase 6: AI Infrastructure"
 sidebar:
   order: 0
-  label: "AI for Infrastructure"
+  label: "Phase 6: AI Infrastructure"
 ---
 
-> **AI/ML Engineering Track** | Phase 11
+> **AI/ML Engineering Track** | Phase 6
 
 ## Modules
 
 | # | Module |
 |---|--------|
-| 11.1 | [Cloud AI Services](module-11.1-cloud-ai-services/) |
-| 11.2 | [AIOps](module-11.2-aiops/) |
+| 6.1 | [Cloud AI Services](module-6.1-cloud-ai-services/) |
+| 6.2 | [AIOps](module-6.2-aiops/) |

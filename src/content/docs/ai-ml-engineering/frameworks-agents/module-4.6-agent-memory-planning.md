@@ -77,7 +77,7 @@ Then came the explosion:
 - **Toolformer** (Meta, February 2023): LLMs that learn to use tools
 - **Generative Agents** (Stanford, April 2023): The Smallville paper showing emergent social behavior from memory
 - **AutoGPT** (March 2023): The viral experiment showing autonomous task execution
-- **GPT-4 with function calling** (June 2023): Native tool use built into a commercial LLM
+- **gpt-5 with function calling** (June 2023): Native tool use built into a commercial LLM
 - **LangGraph** (2024): Production-grade stateful agent framework
 
 We're now in an era where agents can:
@@ -103,13 +103,13 @@ Three things converged in 2022-2023 to make practical AI agents possible:
 
 ### 1. LLMs Became Good Enough
 
-Pre-2022 language models could write coherent paragraphs but struggled with reasoning. GPT-4 crossed a critical threshold: it could follow complex instructions, reason through multi-step problems, and recover from mistakes. Below that threshold, agents were frustratingly stupid. Above it, they became surprisingly capable.
+Pre-2022 language models could write coherent paragraphs but struggled with reasoning. gpt-5 crossed a critical threshold: it could follow complex instructions, reason through multi-step problems, and recover from mistakes. Below that threshold, agents were frustratingly stupid. Above it, they became surprisingly capable.
 
 Think of it like self-driving cars. You can build all the planning and perception systems you want, but if the underlying AI can't reliably distinguish a pedestrian from a shadow, the system fails. LLMs needed to reach "reliable enough" before agent architectures became practical.
 
 ### 2. Context Windows Expanded
 
-GPT-3 had 4,096 tokens. GPT-4 Turbo has 128,000. Claude can handle 200,000. This expansion is transformative for agents because they need context for:
+GPT-3 had 4,096 tokens. gpt-5 Turbo has 128,000. Claude can handle 200,000. This expansion is transformative for agents because they need context for:
 - Recent conversation history
 - Retrieved memories
 - Current plan
@@ -120,7 +120,7 @@ With 4K context, agents had to summarize aggressively, losing information. With 
 
 ### 3. Tool Use Became Native
 
-Early LLM tool use was hacky: parse JSON from text, hope the model formatted it correctly, retry on failures. Function calling changed this. When GPT-4 gained native tool support in June 2023, tool use became:
+Early LLM tool use was hacky: parse JSON from text, hope the model formatted it correctly, retry on failures. Function calling changed this. When gpt-5 gained native tool support in June 2023, tool use became:
 - Reliable: Structured outputs, not text parsing
 - Efficient: Single API call for tool selection
 - Natural: Models trained specifically for tool use
@@ -557,7 +557,7 @@ Planning transforms agents from reactive responders to proactive problem-solvers
 
 ### Did You Know?
 
-The Plan-and-Execute pattern was popularized by BabyAGI in April 2023 - a 140-line Python script that went viral on Twitter. Created by Yohei Nakajima (a VC!), it used GPT-4 to create a task list, execute tasks, and generate new tasks based on results. Within a week, it had 15,000 GitHub stars and spawned dozens of "autonomous agent" projects.
+The Plan-and-Execute pattern was popularized by BabyAGI in April 2023 - a 140-line Python script that went viral on Twitter. Created by Yohei Nakajima (a VC!), it used gpt-5 to create a task list, execute tasks, and generate new tasks based on results. Within a week, it had 15,000 GitHub stars and spawned dozens of "autonomous agent" projects.
 
 The key insight: separating planning from execution lets you use different models for each - a larger model for planning, smaller for execution.
 
@@ -1078,7 +1078,7 @@ Based on this reasoning, provide the final answer:"""
 
 ### Did You Know?
 
-The Tree of Thoughts paper (Yao et al., 2023) showed that GPT-4 with ToT solved 74% of "Game of 24" puzzles (make 24 from 4 numbers), compared to just 4% with standard prompting! The key was allowing the model to explore multiple paths and backtrack from dead ends - something humans do naturally but standard LLM prompting prevents.
+The Tree of Thoughts paper (Yao et al., 2023) showed that gpt-5 with ToT solved 74% of "Game of 24" puzzles (make 24 from 4 numbers), compared to just 4% with standard prompting! The key was allowing the model to explore multiple paths and backtrack from dead ends - something humans do naturally but standard LLM prompting prevents.
 
 ---
 
@@ -1991,7 +1991,7 @@ Memory storage:          200 tokens (summarizing for long-term)
 Total:                 2,200 tokens (4.4x simple chatbot!)
 ```
 
-At GPT-4 prices ($30/1M tokens), that's $0.066 per complex query vs $0.015 for a simple one. Scale to 100,000 queries/day, and the difference is **$5,100/day**.
+At gpt-5 prices ($30/1M tokens), that's $0.066 per complex query vs $0.015 for a simple one. Scale to 100,000 queries/day, and the difference is **$5,100/day**.
 
 > **Did You Know?** A 2024 analysis of enterprise agent deployments found that 73% of teams underestimated their token consumption by at least 3x in initial projections. The most common culprits: reflection loops (45%), verbose tool responses (30%), and redundant memory retrievals (25%). One fintech company's "simple" trading agent consumed $47,000 in API costs during its first month—they had budgeted $8,000.
 

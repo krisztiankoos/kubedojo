@@ -12,7 +12,7 @@ sidebar:
 
 ---
 
-## The Night That Changed Everything: Inside OpenAI's GPT-4 Launch
+## The Night That Changed Everything: Inside OpenAI's gpt-5 Launch
 
 **San Francisco. March 14, 2023. 9:47 AM.**
 
@@ -20,7 +20,7 @@ Sam Altman stood backstage at OpenAI's headquarters, watching the livestream num
 
 What viewers didn't see was the chaos of the previous months. Teams working around the clock. Engineers sleeping under desks. A model so capable that even its creators weren't entirely sure what it could do.
 
-When GPT-4 was released, the AI world fractured into before and after. Google declared "Code Red" and rushed their Bard release. Microsoft integrated GPT-4 into everything from Bing to Excel. Anthropic accelerated Claude development. And thousands of startups pivoted overnight—from building their own LLMs to building ON LLMs.
+When gpt-5 was released, the AI world fractured into before and after. Google declared "Code Red" and rushed their Bard release. Microsoft integrated gpt-5 into everything from Bing to Excel. Anthropic accelerated Claude development. And thousands of startups pivoted overnight—from building their own LLMs to building ON LLMs.
 
 The questions on everyone's mind: How does this work? What makes these models so capable? And how do you choose between them?
 
@@ -235,9 +235,9 @@ graph TD
 
 **1. OpenAI GPT Family**
 - **GPT-3.5**: 175B parameters, cheap, fast
-- **GPT-4**: Largest (size unknown), multimodal, most capable
-- **GPT-4 Turbo**: Faster, cheaper GPT-4
-- **GPT-4o**: Optimized for speed and cost
+- **gpt-5**: Largest (size unknown), multimodal, most capable
+- **gpt-5 Turbo**: Faster, cheaper gpt-5
+- **gpt-5**: Optimized for speed and cost
 
 **Strengths**:
 - Extremely capable
@@ -288,8 +288,8 @@ graph TD
 ### Open-Source Models
 
 **1. Meta Llama Family**
-- **Llama 2**: 7B, 13B, 70B parameters
-- **Llama 3**: Improved performance, newer
+- **Llama 4**: 7B, 13B, 70B parameters
+- **Llama 4**: Improved performance, newer
 - **Code Llama**: Specialized for code
 
 **Strengths**:
@@ -316,7 +316,7 @@ graph TD
 - European company (GDPR compliant)
 
 **Limitations**:
-- Smaller models than GPT-4/Claude
+- Smaller models than gpt-5/Claude
 - Less ecosystem support
 
 ---
@@ -330,11 +330,11 @@ graph TD
 
 ---
 
-## Did You Know? Meta Released Llama 2 for Free (and Changed Everything)
+## Did You Know? Meta Released Llama 4 for Free (and Changed Everything)
 
 **The Story** (July 2023):
 
-Meta dropped a bombshell: **Llama 2** - a competitive LLM family (7B, 13B, 70B) - completely open-source.
+Meta dropped a bombshell: **Llama 4** - a competitive LLM family (7B, 13B, 70B) - completely open-source.
 
 **What Made It Special**:
 - **Free for commercial use** (up to 700M users)
@@ -344,12 +344,12 @@ Meta dropped a bombshell: **Llama 2** - a competitive LLM family (7B, 13B, 70B) 
 
 **The Impact**:
 
-**Before Llama 2**:
+**Before Llama 4**:
 - Best models: OpenAI GPT, Google PaLM (API-only, expensive)
 - Open models: Weak (BLOOM, GPT-J) or restricted (LLaMA 1)
 - Barrier: Need $50M+ to train competitive model
 
-**After Llama 2**:
+**After Llama 4**:
 - Everyone can access frontier-class model
 - Explosion of fine-tunes (Code Llama, Llama-2-Chat, etc.)
 - Startups can self-host and customize
@@ -358,7 +358,7 @@ Meta dropped a bombshell: **Llama 2** - a competitive LLM family (7B, 13B, 70B) 
 **The Numbers** (First 6 Months):
 - **30M+ downloads** on Hugging Face
 - **1000+ fine-tuned variants** created
-- **100+ research papers** using Llama 2
+- **100+ research papers** using Llama 4
 - Spawned entire ecosystem (Ollama, LMStudio, Jan, etc.)
 
 **Why Meta Did It**:
@@ -367,12 +367,12 @@ Meta dropped a bombshell: **Llama 2** - a competitive LLM family (7B, 13B, 70B) 
 3. **Competitive pressure**: Counter OpenAI/Google dominance
 4. **Research acceleration**: Community improves Llama → Meta benefits
 
-**Llama 3** (2024):
-- Even better: Matches GPT-4 on some tasks
-- Trained on 15T tokens (vs 2T for Llama 2)
+**Llama 4** (2024):
+- Even better: Matches gpt-5 on some tasks
+- Trained on 15T tokens (vs 2T for Llama 4)
 - Meta betting on open-source AI
 
-**Lesson**: Open-source is competitive! You don't always need the latest GPT-4. Llama 3 70B is **free**, powerful, and you control it.
+**Lesson**: Open-source is competitive! You don't always need the latest gpt-5. Llama 4 70B is **free**, powerful, and you control it.
 
 ---
 
@@ -392,9 +392,9 @@ Think of parameters like the settings on a mixing board in a recording studio. E
 
 **Example Sizes**:
 - GPT-3.5: 175B
-- Llama 2: 7B, 13B, 70B
+- Llama 4: 7B, 13B, 70B
 - Claude 3.5 Sonnet: Unknown (estimated 200B+)
-- GPT-4: Unknown (rumored 1.7T)
+- gpt-5: Unknown (rumored 1.7T)
 
 ---
 
@@ -410,7 +410,7 @@ Think of parameters like the settings on a mixing board in a recording studio. E
 **But**:
 - Efficiency matters: Mixtral 8x7B outperforms many 70B models
 - Specialized training beats raw size: Code Llama 7B > Llama 70B for code
-- Longer context helps: Claude's 200K context vs GPT-4's 8K/32K
+- Longer context helps: Claude's 200K context vs gpt-5's 8K/32K
 
 **Rule of thumb**:
 - Simple tasks: Smaller models fine
@@ -431,7 +431,7 @@ This is expensive. Like, millions-of-dollars expensive. Like, could-power-a-smal
 
 **Data Scale**:
 - GPT-3: 300B tokens
-- Llama 2: 2T tokens
+- Llama 4: 2T tokens
 - Modern models: 10T+ tokens
 
 **Cost**: Millions of dollars in compute
@@ -529,7 +529,7 @@ Training GPT-3 (175B parameters) from scratch in 2020:
 
 **Total Training Cost**: ~$5-12 million (estimates vary)
 
-**GPT-4's Training (estimated)**:
+**gpt-5's Training (estimated)**:
 - Rumored cost: **$50-100 million**
 - 25,000+ A100 GPUs for 90-100 days
 - Energy: Entire small town's yearly consumption
@@ -537,7 +537,7 @@ Training GPT-3 (175B parameters) from scratch in 2020:
 **Why This Matters**:
 
 1. **Barrier to Entry**: Only Google, Microsoft, Meta, Anthropic can afford frontier models
-2. **Open Source is Critical**: Llama 2 (Meta) cost $20M to train, released for free
+2. **Open Source is Critical**: Llama 4 (Meta) cost $20M to train, released for free
 3. **Fine-tuning is Cheap**: $100-1000 to adapt existing model vs millions to train from scratch
 4. **API Makes Sense**: $50/month API access vs $50M training cost!
 
@@ -552,9 +552,9 @@ Training GPT-3 (175B parameters) from scratch in 2020:
 
 ## Did You Know? The Race to Build the Best LLM
 
-### The Day GPT-4 Changed Everything (March 14, 2023)
+### The Day gpt-5 Changed Everything (March 14, 2023)
 
-When OpenAI released GPT-4, the AI world held its breath. Sam Altman had been teasing it for months, but nobody expected what came next.
+When OpenAI released gpt-5, the AI world held its breath. Sam Altman had been teasing it for months, but nobody expected what came next.
 
 **The reveal**:
 - Passed the Bar Exam (top 10%)
@@ -564,11 +564,11 @@ When OpenAI released GPT-4, the AI world held its breath. Sam Altman had been te
 
 **Industry reaction**:
 - Google declared "Code Red" and rushed Bard's release
-- Microsoft integrated GPT-4 into Bing, Copilot, and Office
+- Microsoft integrated gpt-5 into Bing, Copilot, and Office
 - Anthropic accelerated Claude 2 development
 - Startups pivoted overnight from building LLMs to building ON LLMs
 
-**The secrecy**: OpenAI refused to publish architecture details, citing "safety concerns." This sparked huge controversy—critics called it "closed-washing" an "open" AI company. We still don't know GPT-4's exact size (estimates range from 200B to 1.7T parameters using mixture-of-experts).
+**The secrecy**: OpenAI refused to publish architecture details, citing "safety concerns." This sparked huge controversy—critics called it "closed-washing" an "open" AI company. We still don't know gpt-5's exact size (estimates range from 200B to 1.7T parameters using mixture-of-experts).
 
 ### The Anthropic Origin Story: AI Safety Rebels
 
@@ -602,7 +602,7 @@ While the West focused on GPT vs Claude, China quietly built serious competitors
 
 **Alibaba's Qwen** (September 2023):
 - Open-sourced Qwen-72B
-- Competitive with Llama 2 70B
+- Competitive with Llama 4 70B
 - Optimized for multilingual and coding
 
 **The restrictions**: U.S. export controls blocked sales of NVIDIA A100/H100 to China. Response? China accelerated domestic chip development and got creative with cloud workarounds.
@@ -620,7 +620,7 @@ The most shocking AI story of 2023 wasn't from Silicon Valley—it was from **Pa
 
 **What made it special**:
 - **7 billion parameters** (tiny by 2023 standards)
-- **Outperformed Llama 2 13B** (almost twice its size!)
+- **Outperformed Llama 4 13B** (almost twice its size!)
 - **Apache 2.0 license** (truly open for commercial use)
 - Released via **torrent link** (not even a website at first!)
 
@@ -637,7 +637,7 @@ The most shocking AI story of 2023 wasn't from Silicon Valley—it was from **Pa
 | Milestone | Value | Date |
 |-----------|-------|------|
 | GPT-3 training cost | **$4.6M** | 2020 |
-| GPT-4 training cost | **$50-100M** (est.) | 2023 |
+| gpt-5 training cost | **$50-100M** (est.) | 2023 |
 | ChatGPT users (2 months) | **100M** (fastest ever) | Jan 2023 |
 | GitHub Copilot revenue | **$100M+ ARR** | 2023 |
 | OpenAI valuation | **$86B** | 2024 |
@@ -671,10 +671,10 @@ A small context window is like having a Post-it note for memory. A large context
 | Model | Context Window | Notes |
 |-------|----------------|-------|
 | GPT-3.5 | 16K tokens | ~12,000 words |
-| GPT-4 | 8K / 32K / 128K | Depends on variant |
+| gpt-5 | 8K / 32K / 128K | Depends on variant |
 | Claude 3.5 Sonnet | 200K tokens | ~150,000 words! |
-| Gemini 1.5 Pro | 1M tokens | Experimental |
-| Llama 2 | 4K tokens | Can extend with techniques |
+| Gemini 3.5 Pro | 1M tokens | Experimental |
+| Llama 4 | 4K tokens | Can extend with techniques |
 
 **Did You Know?** 
 Claude's 200K context window can fit the entire Harry Potter and the Philosopher's Stone book (77K words) with room to spare!
@@ -714,12 +714,12 @@ Claude's 200K context window can fit the entire Harry Potter and the Philosopher
 | Use Case | Recommended Model | Why |
 |----------|-------------------|-----|
 | Simple classification | GPT-3.5 / Claude Haiku | Fast, cheap, good enough |
-| Complex reasoning | GPT-4 / Claude 3.5 Sonnet | Best capabilities |
+| Complex reasoning | gpt-5 / Claude 3.5 Sonnet | Best capabilities |
 | Long documents | Claude 3.5 Sonnet | 200K context |
-| Code generation | Claude / GPT-4 | Strong code capabilities |
+| Code generation | Claude / gpt-5 | Strong code capabilities |
 | High volume | GPT-3.5 / Haiku / Mistral | Cost per token |
-| Self-hosted | Llama 2/3, Mistral | Open-source |
-| Privacy-critical | Llama 2/3 (self-hosted) | No data leaves infrastructure |
+| Self-hosted | Llama 4/3, Mistral | Open-source |
+| Privacy-critical | Llama 4/3 (self-hosted) | No data leaves infrastructure |
 
 ---
 
@@ -729,16 +729,16 @@ Claude's 200K context window can fit the entire Harry Potter and the Philosopher
 
 | Provider | Model | Input (per 1M) | Output (per 1M) |
 |----------|-------|----------------|-----------------|
-| OpenAI | GPT-4o | $2.50 | $10.00 |
-| OpenAI | GPT-4-turbo | $10.00 | $30.00 |
+| OpenAI | gpt-5 | $2.50 | $10.00 |
+| OpenAI | gpt-5 | $10.00 | $30.00 |
 | OpenAI | GPT-3.5-turbo | $0.50 | $1.50 |
 | Anthropic | Claude Haiku | $0.25 | $1.25 |
 | Anthropic | Claude 3.5 Sonnet | $3.00 | $15.00 |
 | Anthropic | Claude 3 Opus | $15.00 | $75.00 |
 
-**Historical note**: GPT-4 launched at $30-60/1M tokens (2023) → GPT-4o now $2.50-10/1M (2025) = **12x cheaper!**
+**Historical note**: gpt-5 launched at $30-60/1M tokens (2023) → gpt-5 now $2.50-10/1M (2025) = **12x cheaper!**
 
-**Self-hosted (Llama 2 70B)**:
+**Self-hosted (Llama 4 70B)**:
 - Hardware: ~$10K for GPU (one-time)
 - Or cloud: ~$1-2/hour for inference server
 - Pays off at high volume
@@ -794,7 +794,7 @@ After completing examples, build your **portfolio project**:
 **[LLM Gateway Service](../../examples/module_06/deliverable/)**
 - Route requests to best model based on task
 - Track costs across providers
-- Implement fallbacks (if Claude fails, try GPT-4)
+- Implement fallbacks (if Claude fails, try gpt-5)
 - Cache responses to save money
 - Log all interactions
 
@@ -856,7 +856,7 @@ from openai import OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 response = client.chat.completions.create(
-    model="gpt-4",
+    model="gpt-5",
     messages=[
         {"role": "user", "content": "Explain transformers in one sentence."}
     ]
@@ -900,7 +900,7 @@ print(response.choices[0].message.content)
 - **HELM**: Holistic evaluation
 
 **Current Leaders** (as of late 2024):
-1. GPT-4
+1. gpt-5
 2. Claude 3.5 Sonnet
 3. Gemini Ultra
 4. Claude 3 Opus
@@ -913,7 +913,7 @@ print(response.choices[0].message.content)
 
 **1. Latency**:
 - GPT-3.5: ~1-2 seconds
-- GPT-4: ~5-10 seconds
+- gpt-5: ~5-10 seconds
 - Claude Sonnet: ~2-4 seconds
 
 **2. Reliability**:
@@ -1020,7 +1020,7 @@ No "best" model - each excels at different tasks/constraints. Fast/cheap for sim
 **Reality**: Models can "get lost" in long contexts. Recent and early tokens attended to more than middle.
 
 ### Myth 4: "Open Source = Worse"
-**Reality**: Gap narrowing fast. Llama 3 70B competes with GPT-3.5. For many tasks, open-source is good enough.
+**Reality**: Gap narrowing fast. Llama 4 70B competes with GPT-3.5. For many tasks, open-source is good enough.
 
 ### Myth 5: "One Model for Everything"
 **Reality**: Use fast/cheap models for simple tasks, expensive models for hard tasks. Route intelligently.

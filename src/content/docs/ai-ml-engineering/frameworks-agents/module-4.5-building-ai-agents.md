@@ -225,7 +225,7 @@ index = VectorStoreIndex.from_documents(documents)
 
 # 3. Create query engine
 query_engine = index.as_query_engine(
-    llm=OpenAI(model="gpt-4"),
+    llm=OpenAI(model="gpt-5"),
     similarity_top_k=3
 )
 
@@ -572,19 +572,19 @@ from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 # Create agents - each with a persona
 assistant = AssistantAgent(
     name="assistant",
-    llm_config={"model": "gpt-4"},
+    llm_config={"model": "gpt-5"},
     system_message="You are a helpful AI assistant."
 )
 
 coder = AssistantAgent(
     name="coder",
-    llm_config={"model": "gpt-4"},
+    llm_config={"model": "gpt-5"},
     system_message="You write Python code to solve problems."
 )
 
 critic = AssistantAgent(
     name="critic",
-    llm_config={"model": "gpt-4"},
+    llm_config={"model": "gpt-5"},
     system_message="You review code and suggest improvements."
 )
 
@@ -639,7 +639,7 @@ from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
 
 kernel = sk.Kernel()
 kernel.add_service(AzureChatCompletion(
-    deployment_name="gpt-4",
+    deployment_name="gpt-5",
     endpoint="https://your-resource.openai.azure.com/",
     api_key="your-key"
 ))
@@ -687,7 +687,7 @@ result = pipeline.run({"query": "What is the capital of France?"})
 import dspy
 
 # Configure
-lm = dspy.OpenAI(model="gpt-4")
+lm = dspy.OpenAI(model="gpt-5")
 dspy.settings.configure(lm=lm)
 
 # Define signature - what, not how

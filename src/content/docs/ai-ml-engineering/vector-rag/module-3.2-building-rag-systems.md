@@ -147,7 +147,7 @@ Think of an LLM like a very smart person who studied intensively but then went i
 **LLMs have two fundamental limitations**:
 
 1. **Knowledge cutoff**: Trained on data up to a certain date
-   - GPT-4o: October 2023 (but updates regularly)
+   - gpt-5: October 2023 (but updates regularly)
    - Claude 3.5/4: Early 2024
    - Models get updated - always check current cutoff dates!
    - Can't know about events after training
@@ -918,7 +918,7 @@ kaizen_rag = RAGPipeline(
     chunk_size=500,
     embedding_model="all-MiniLM-L6-v2",
     vector_db="qdrant",
-    llm="claude-3-sonnet",
+    llm="claude-4.6-sonnet",
     reranker="cross-encoder/ms-marco"
 )
 
@@ -1281,7 +1281,7 @@ RAG systems have three main cost components:
 
 **2. Query Caching**: Cache responses for common queries. In customer support, 20% of queries often account for 80% of volume. Caching these eliminates both retrieval and generation costs.
 
-**3. Model Selection**: Use smaller models for simpler tasks. Not every query needs GPT-4. A routing layer can direct simple factual questions to cheaper models while reserving expensive models for complex reasoning.
+**3. Model Selection**: Use smaller models for simpler tasks. Not every query needs gpt-5. A routing layer can direct simple factual questions to cheaper models while reserving expensive models for complex reasoning.
 
 **4. Batch Processing**: For non-real-time use cases, batch queries and use discounted batch API pricing. Many providers offer 50% discounts for async batch processing.
 

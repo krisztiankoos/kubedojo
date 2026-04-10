@@ -714,12 +714,12 @@ class CostTracker:
 
     # Cost per 1K tokens (example rates)
     LLM_COSTS = {
-        "gpt-4": {"input": 0.03, "output": 0.06},
-        "gpt-4-turbo": {"input": 0.01, "output": 0.03},
+        "gpt-5": {"input": 0.03, "output": 0.06},
+        "gpt-5": {"input": 0.01, "output": 0.03},
         "gpt-3.5-turbo": {"input": 0.0005, "output": 0.0015},
-        "claude-3-opus": {"input": 0.015, "output": 0.075},
-        "claude-3-sonnet": {"input": 0.003, "output": 0.015},
-        "claude-3-haiku": {"input": 0.00025, "output": 0.00125},
+        "claude-4.6-opus": {"input": 0.015, "output": 0.075},
+        "claude-4.6-sonnet": {"input": 0.003, "output": 0.015},
+        "claude-4.5-haiku": {"input": 0.00025, "output": 0.00125},
     }
 
     EMBEDDING_COSTS = {
@@ -810,7 +810,7 @@ class BudgetController:
 
 Once you have visibility into costs, optimization becomes possible. The strategies below represent the most effective levers for reducing agent costs without sacrificing quality. Most production systems use a combination of all of them.
 
-The key principle is **right-sizing**: using the most expensive resources only when they add value, and cheaper alternatives everywhere else. A customer asking "what are your hours?" doesn't need GPT-4—a cached response or a simple model works fine. Save the expensive model for complex queries that actually benefit from its capabilities.
+The key principle is **right-sizing**: using the most expensive resources only when they add value, and cheaper alternatives everywhere else. A customer asking "what are your hours?" doesn't need gpt-5—a cached response or a simple model works fine. Save the expensive model for complex queries that actually benefit from its capabilities.
 
 **1. Model Routing**:
 ```python
@@ -819,11 +819,11 @@ class ModelRouter:
 
     def select_model(self, task: str, complexity: str) -> str:
         if complexity == "simple":
-            return "claude-3-haiku"  # Fast and cheap
+            return "claude-4.5-haiku"  # Fast and cheap
         elif complexity == "medium":
-            return "claude-3-sonnet"  # Balanced
+            return "claude-4.6-sonnet"  # Balanced
         else:
-            return "claude-3-opus"  # Best quality
+            return "claude-4.6-opus"  # Best quality
 
     def estimate_complexity(self, message: str) -> str:
         """Estimate task complexity from message."""
@@ -972,8 +972,8 @@ class SmartRetry:
     """Intelligent retry with fallback strategies."""
 
     def __init__(self):
-        self.primary_model = "claude-3-sonnet"
-        self.fallback_model = "claude-3-haiku"
+        self.primary_model = "claude-4.6-sonnet"
+        self.fallback_model = "claude-4.5-haiku"
 
     async def call_with_fallback(self, prompt: str) -> str:
         """Try primary model, fall back to cheaper model if needed."""
@@ -1418,7 +1418,7 @@ This is why production reliability isn't optional—it's directly tied to revenu
 
 ### Production War Stories
 
-1. **The $100K Mistake**: A startup's agent was deployed without cost controls. A bug caused it to enter an infinite loop, making thousands of GPT-4 calls before anyone noticed. Total bill: $100,000+. Lesson: Always implement budget limits!
+1. **The $100K Mistake**: A startup's agent was deployed without cost controls. A bug caused it to enter an infinite loop, making thousands of gpt-5 calls before anyone noticed. Total bill: $100,000+. Lesson: Always implement budget limits!
 
 2. **The Jailbreak Incident**: A company's customer service bot was jailbroken by users who shared prompts on social media. The bot revealed internal pricing strategies, offered unauthorized 90% discounts, and insulted competitors. The company had to honor thousands of dollars in discounts and faced PR backlash.
 

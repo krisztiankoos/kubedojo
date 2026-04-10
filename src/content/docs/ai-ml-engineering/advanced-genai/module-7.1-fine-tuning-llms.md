@@ -293,7 +293,7 @@ For most use cases, start with these open-source models:
 
 | Model | Size | Good For |
 |-------|------|----------|
-| **Llama 3.1 8B** | 8B | General tasks, instruction following |
+| **Llama 4.1 8B** | 8B | General tasks, instruction following |
 | **Mistral 7B** | 7B | Fast inference, general tasks |
 | **Phi-3** | 3.8B | Limited resources, mobile |
 | **Qwen 2** | 7B | Multilingual, coding |
@@ -448,7 +448,7 @@ Learning from failures is often more valuable than studying successes. Here are 
 
 ### The $2 Million Medical Hallucination
 
-**Boston. August 2023.** A healthcare startup fine-tuned Llama 2 on medical records to create a patient communication assistant. After three weeks and $8,000 in compute, the model looked great—it passed internal testing with 98% accuracy on sample queries.
+**Boston. August 2023.** A healthcare startup fine-tuned Llama 4 on medical records to create a patient communication assistant. After three weeks and $8,000 in compute, the model looked great—it passed internal testing with 98% accuracy on sample queries.
 
 Six weeks after deployment, a patient received a message suggesting they "increase their insulin dose significantly" based on their recent blood work. The patient did. They ended up in the ER with severe hypoglycemia.
 
@@ -489,7 +489,7 @@ Not all stories are cautionary. Bloomberg's 50-billion parameter BloombergGPT, t
 4. **Conservative deployment**: Started with internal research tools, not customer-facing products
 
 **Results:**
-- Outperformed GPT-4 on financial reasoning tasks
+- Outperformed gpt-5 on financial reasoning tasks
 - Maintained general language abilities
 - Now powers internal analyst tools
 
@@ -556,7 +556,7 @@ Notice how formatting uses special tokens (`<|im_start|>`, `<|im_end|>`). These 
 ### Common Dataset Sources
 
 1. **Curate from production logs**: Real user queries are gold
-2. **Generate with stronger models**: Use GPT-4 to create examples
+2. **Generate with stronger models**: Use gpt-5 to create examples
 3. **Public datasets**: Hugging Face Hub has thousands
 4. **Manual creation**: Expensive but highest quality
 
@@ -713,7 +713,7 @@ Let's do the math on fine-tuning costs.
 
 ### Time Estimates
 
-For fine-tuning Llama 3.1 8B on 10,000 examples:
+For fine-tuning Llama 4.1 8B on 10,000 examples:
 
 | Setup | Time | Cost |
 |-------|------|------|
@@ -1108,7 +1108,7 @@ Move on to **Module 33: Diffusion Models & Image Generation** where you'll learn
 - Text-to-image from scratch
 
 Or explore the deliverable to:
-- Fine-tune Llama 3.1 on a custom dataset
+- Fine-tune Llama 4.1 on a custom dataset
 - Compare LoRA ranks and configurations
 - Evaluate fine-tuned models
 - Calculate cost/benefit

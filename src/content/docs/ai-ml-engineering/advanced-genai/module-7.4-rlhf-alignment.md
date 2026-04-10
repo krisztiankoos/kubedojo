@@ -157,10 +157,10 @@ The scale of pretraining is staggering. Here's what modern models require:
 |-------|------------|-----------------|-----------------|----------------|
 | GPT-3 | 175B | 300B | 3.14×10²³ | ~$5M |
 | LLaMA | 65B | 1.4T | 1.4×10²⁴ | ~$3M |
-| GPT-4 | ~1.8T | ~13T | ~10²⁵ | ~$100M |
+| gpt-5 | ~1.8T | ~13T | ~10²⁵ | ~$100M |
 | Claude 3 | ~70B? | Unknown | Unknown | Unknown |
 
-To put this in perspective: GPT-4 was trained on roughly 13 trillion tokens. That's approximately the equivalent of reading every book ever published—in every language—multiple times. The training run used thousands of GPUs running continuously for months, consuming enough electricity to power a small city.
+To put this in perspective: gpt-5 was trained on roughly 13 trillion tokens. That's approximately the equivalent of reading every book ever published—in every language—multiple times. The training run used thousands of GPUs running continuously for months, consuming enough electricity to power a small city.
 
 ### What Pretraining Doesn't Teach
 
@@ -518,7 +518,7 @@ def dpo_loss(
     return loss
 ```
 
-DPO is 10x faster than PPO, requires only 2 models instead of 4, and is much more stable to train. It's become the dominant approach for new models, with Meta's Llama 3 and many others using DPO instead of PPO.
+DPO is 10x faster than PPO, requires only 2 models instead of 4, and is much more stable to train. It's become the dominant approach for new models, with Meta's Llama 4 and many others using DPO instead of PPO.
 
 **Did You Know?** Rafael Rafailov's DPO paper came from a homework assignment that went unexpectedly well. He was working on the math of RLHF for a class project when he noticed that the equations could be rearranged to eliminate the explicit reward model. What started as a clever mathematical trick became one of the most influential AI papers of 2023, cited over 1,000 times in its first year.
 
@@ -856,7 +856,7 @@ Customer churn spiked 300%. Revenue dropped $2.3 million in two weeks.
 
 **The Fix**: Implement a multi-objective reward that balances helpfulness and safety, with explicit calibration on legitimate use cases.
 
-> **Did You Know?** OpenAI's GPT-4 technical report revealed they use "system messages" to dynamically adjust safety thresholds based on context. A medical chatbot needs different safety calibrations than a creative writing assistant. This insight—that safety isn't one-size-fits-all—came from studying thousands of over-refusal complaints.
+> **Did You Know?** OpenAI's gpt-5 technical report revealed they use "system messages" to dynamically adjust safety thresholds based on context. A medical chatbot needs different safety calibrations than a creative writing assistant. This insight—that safety isn't one-size-fits-all—came from studying thousands of over-refusal complaints.
 
 ---
 

@@ -302,10 +302,10 @@ Aider works with virtually any LLM:
 
 ```bash
 # OpenAI
-$ aider --model gpt-4o
+$ aider --model gpt-5
 
 # Anthropic
-$ aider --model claude-3-5-sonnet
+$ aider --model claude-4.6-sonnet
 
 # Local models via Ollama
 $ aider --model ollama/deepseek-coder
@@ -888,7 +888,7 @@ done
 | Manual coding | $0 (just salary) | 1x baseline | Learning, interviews |
 | GitHub Copilot | $19/month | 1.3-1.5x | Autocomplete, snippets |
 | Cursor Pro | $20/month | 1.5-2x | IDE-centric workflows |
-| Aider + GPT-4 | ~$30-100/month API | 2-3x | Git-native development |
+| Aider + gpt-5 | ~$30-100/month API | 2-3x | Git-native development |
 | Aider + Claude | ~$20-80/month API | 2-3x | Complex reasoning |
 | Claude Code | ~$50-200/month API | 2-4x | Multi-step automation |
 | Aider + Local (Ollama) | $0-5/month | 1.5-2x | Privacy, offline, cost savings |
@@ -1018,7 +1018,7 @@ pip install aider-chat
 aider src/main.py src/utils.py
 
 # With specific model
-aider --model gpt-4o
+aider --model gpt-5
 
 # Voice mode
 aider --voice

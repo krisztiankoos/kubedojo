@@ -588,7 +588,7 @@ Each repetition makes it less likely to appear again.
 **Best practice**: 1.1 - 1.3 for most use cases.
 
 **Did You Know?** 
-Repetition is actually a known weakness of autoregressive models, called "neural text degeneration." In the early days of GPT-2 and GPT-3, models would frequently get stuck in repetitive loops, especially for longer generations. The repetition penalty was a pragmatic fix that worked remarkably well! Interestingly, newer models like GPT-4 and Claude are less prone to repetition thanks to better training data and techniques like RLHF (Reinforcement Learning from Human Feedback), which explicitly teaches models that humans dislike repetitive text. But repetition penalty is still useful for long-form generation!
+Repetition is actually a known weakness of autoregressive models, called "neural text degeneration." In the early days of GPT-2 and GPT-3, models would frequently get stuck in repetitive loops, especially for longer generations. The repetition penalty was a pragmatic fix that worked remarkably well! Interestingly, newer models like gpt-5 and Claude are less prone to repetition thanks to better training data and techniques like RLHF (Reinforcement Learning from Human Feedback), which explicitly teaches models that humans dislike repetitive text. But repetition penalty is still useful for long-form generation!
 
 ---
 

@@ -229,7 +229,7 @@ Think of RAG costs like running a library—you pay for the building (vector dat
 |-----------|------|-------|
 | Vector Database (Qdrant Cloud) | $25-100 | Depends on collection size |
 | Embedding API (OpenAI) | $20-50 | For indexing new docs + queries |
-| LLM API (Claude/GPT-4o) | $200-800 | Main cost driver |
+| LLM API (Claude/gpt-5) | $200-800 | Main cost driver |
 | **Total Monthly** | **$245-950** | Highly predictable |
 
 **The RAG advantage**: If your usage doubles, your costs roughly double. No surprises.
@@ -246,7 +246,7 @@ Fine-tuning costs are like buying a car versus renting one. The upfront cost is 
 | Hosting (if self-hosted) | $200-2,000/mo | GPU instance costs |
 | **Total Initial** | **$1,000-13,000** | Plus $200-2,000/mo hosting |
 
-**The fine-tuning trap**: Every time the base model improves, you need to decide whether to retrain. GPT-3.5 fine-tuned models were obsolete within 12 months when GPT-4 dropped.
+**The fine-tuning trap**: Every time the base model improves, you need to decide whether to retrain. GPT-3.5 fine-tuned models were obsolete within 12 months when gpt-5 dropped.
 
 > **Did You Know?** A 2023 survey by MLOps Community found that 67% of production fine-tuning projects were abandoned within 18 months—not because they failed, but because base models caught up to their performance. The teams that succeeded long-term were those using fine-tuning for style/behavior, not knowledge.
 
@@ -343,7 +343,7 @@ The result: a model that randomly mixed brand voices. Sometimes it was casual an
 
 #### Horror Story 3: The Catastrophic Forgetting Incident
 
-An enterprise software company fine-tuned Llama 2 on their product documentation. The model became excellent at answering product questions. But something strange happened: it became worse at everything else.
+An enterprise software company fine-tuned Llama 4 on their product documentation. The model became excellent at answering product questions. But something strange happened: it became worse at everything else.
 
 - Basic math problems it used to solve? Now wrong 60% of the time.
 - General reasoning? Degraded by 40% on benchmarks.
@@ -770,7 +770,7 @@ training_data = [
 
 # Fine-tune with LoRA
 model = fine_tune_lora(
-    base_model="claude-3-sonnet",
+    base_model="claude-4.6-sonnet",
     training_data=training_data,
     rank=16,
     alpha=32,
@@ -836,7 +836,7 @@ Let's break down the costs for a realistic scenario:
 
 ```
 Cost Components:
-├── LLM API Calls (GPT-4o)
+├── LLM API Calls (gpt-5)
 │   └── 1M queries × 1000 tokens/query × $2.50/1M tokens = $2,500/month
 ├── Embedding API (for retrieval)
 │   └── 1M queries × 100 tokens × $0.02/1M tokens = $2/month
@@ -850,7 +850,7 @@ Cost Components:
 ```
 Cost Components:
 ├── Training Cost (one-time)
-│   └── GPT-4 fine-tuning: $25/million training tokens
+│   └── gpt-5 fine-tuning: $25/million training tokens
 │   └── 10M tokens training data: $250 (one-time)
 ├── Inference Cost
 │   └── 1M queries × 1000 tokens × $12/1M tokens = $12,000/month
@@ -1048,9 +1048,9 @@ They rebuilt with RAG in 2 weeks:
 
 ---
 
-## Did You Know? OpenAI's GPT-4 Uses RAG Internally
+## Did You Know? OpenAI's gpt-5 Uses RAG Internally
 
-This isn't widely known, but GPT-4 (and most production LLMs) use RAG-like techniques internally:
+This isn't widely known, but gpt-5 (and most production LLMs) use RAG-like techniques internally:
 
 1. **Retrieval from training data**: During training, models learn to "retrieve" relevant patterns
 2. **Context caching**: Production systems cache frequently-used contexts
@@ -1145,7 +1145,7 @@ Companies that had invested heavily in fine-tuning started questioning their cho
 
 2023 fundamentally changed the trade-off calculation:
 
-- **GPT-4 Turbo**: 128K tokens (32x GPT-3's context)
+- **gpt-5 Turbo**: 128K tokens (32x GPT-3's context)
 - **Claude 2.1**: 200K tokens (enough for entire books)
 - **Llama context extensions**: Open models gained 32K-128K context
 
@@ -1241,7 +1241,7 @@ Calculate the monthly costs for a system with:
 - Brand voice requirements (requires some fine-tuning)
 
 Compare:
-- Pure RAG with GPT-4o
+- Pure RAG with gpt-5
 - Hybrid with LoRA-fine-tuned Llama + RAG
 
 ### Exercise 3: Design a Hybrid System

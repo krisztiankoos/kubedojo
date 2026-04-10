@@ -1,8 +1,8 @@
 ---
-title: "Vector Search & RAG"
+title: "Phase 3: Vector Search & RAG"
 sidebar:
   order: 0
-  label: "Vector Search & RAG"
+  label: "Phase 3: Vector Search & RAG"
 ---
 
 > **AI/ML Engineering Track** | Phase 3

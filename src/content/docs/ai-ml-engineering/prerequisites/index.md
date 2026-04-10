@@ -1,8 +1,8 @@
 ---
-title: "Prerequisites & Environment Setup"
+title: "Phase 0: Prerequisites"
 sidebar:
   order: 0
-  label: "Prerequisites & Environment Setup"
+  label: "Phase 0: Prerequisites"
 ---
 
 > **AI/ML Engineering Track** | Phase 0
