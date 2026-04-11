@@ -11,4 +11,4 @@ sidebar:
 
 | # | Module |
 |---|--------|
-| 0.0 | [Prerequisites & Environment Setup](module-0.0-prerequisites-environment-setup/) |
+| 1.1 | [Prerequisites & Environment Setup](/ai-ml-engineering/prerequisites/module-0.0-prerequisites-environment-setup/) |

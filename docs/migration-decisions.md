@@ -5,11 +5,11 @@ Compared against: `k8s, cloud, linux, prerequisites, platform`
 Modules audited: 8
 
 
-## ai-ml-engineering/advanced-genai/module-7.1-fine-tuning-llms.md
+## ai-ml-engineering/advanced-genai/module-1.1-fine-tuning-llms.md
 
 - No recommendations (dispatch_failed)
 
-## ai-ml-engineering/advanced-genai/module-7.2-lora-parameter-efficient-fine-tuning.md
+## ai-ml-engineering/advanced-genai/module-1.2-lora-parameter-efficient-fine-tuning.md
 
 - **cloud/aws-essentials/module-1.6-ecr.md** — overlap: `no` → action: `none`
   - The candidate covers AWS Elastic Container Registry, which is unrelated to Generative AI fine-tuning and denoising models.
@@ -22,7 +22,7 @@ Modules audited: 8
 - **k8s/ica/module-1.1-istio-installation-architecture.md** — overlap: `no` → action: `none`
   - The candidate covers service mesh architecture and installation, unrelated to machine learning or LoRA.
 
-## ai-ml-engineering/advanced-genai/module-7.3-diffusion-models.md
+## ai-ml-engineering/advanced-genai/module-1.3-diffusion-models.md
 
 - **k8s/kcna/part3-cloud-native-architecture/module-3.7-community-collaboration.md** — overlap: `no` → action: `none`
   - Focuses on CNCF governance, working groups, and community contribution, which is completely unrelated to AI code generation or diffusion models.
@@ -35,7 +35,7 @@ Modules audited: 8
 - **k8s/extending/module-1.7-scheduler-plugins.md** — overlap: `no` → action: `none`
   - Focuses on extending the Kubernetes scheduler with custom plugins, completely distinct from AI and machine learning model architectures.
 
-## ai-ml-engineering/advanced-genai/module-7.4-rlhf-alignment.md
+## ai-ml-engineering/advanced-genai/module-1.4-rlhf-alignment.md
 
 - **k8s/cka/part0-environment/module-0.5-exam-strategy.md** — overlap: `no` → action: `none`
   - The source covers AI/ML alignment and RLHF training pipelines, while this candidate focuses on time management and test-taking strategies for the Kubernetes CKA exam.
@@ -48,7 +48,7 @@ Modules audited: 8
 - **k8s/kcna/part0-introduction/module-0.1-kcna-overview.md** — overlap: `no` → action: `none`
   - The source focuses on advanced Generative AI architectures, whereas this candidate outlines the KCNA exam structure and study approach.
 
-## ai-ml-engineering/advanced-genai/module-7.5-advanced-generation-techniques.md
+## ai-ml-engineering/advanced-genai/module-1.5-advanced-generation-techniques.md
 
 - **k8s/cka/part1-cluster-architecture/module-1.3-helm.md** — overlap: `no` → action: `none`
   - The candidate covers Kubernetes package management (Helm), which is completely unrelated to Constitutional AI and advanced generation techniques.
