@@ -556,8 +556,8 @@ RULES:
 4. If quiz questions are recall-based instead of scenario-based: REJECT
 5. If inline prompts are trivial or have obvious answers: REJECT
 
-Output ONLY this JSON:
-{{"verdict": "APPROVE" or "REJECT", "scores": [D1-D7], "feedback": "specific feedback if REJECT"}}
+Output ONLY this JSON. The scores array MUST have EXACTLY 8 integers (one per dimension D1 through D8, inclusive — D8 is Practitioner Depth, do not omit it):
+{{"verdict": "APPROVE" or "REJECT", "scores": [D1, D2, D3, D4, D5, D6, D7, D8], "feedback": "specific feedback if REJECT"}}
 
 ---
 
@@ -909,10 +909,21 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
                 return False
 
             if review.get("verdict") == "APPROVE":
-                # Save review scores (these reflect the IMPROVED content)
-                if review.get("scores") and len(review["scores"]) == 8:
-                    ms["scores"] = review["scores"]
-                    ms["sum"] = sum(review["scores"])
+                # Save review scores (these reflect the IMPROVED content).
+                # If Gemini returns a malformed array (wrong length), trust the
+                # APPROVE verdict and write a passing-floor score vector so the
+                # SCORE step doesn't re-read stale audit scores from the stub.
+                # This covers the historical [D1-D7] prompt bug and any future
+                # output-format drift.
+                r_scores_raw = review.get("scores") or []
+                if isinstance(r_scores_raw, list) and len(r_scores_raw) == 8:
+                    ms["scores"] = r_scores_raw
+                    ms["sum"] = sum(r_scores_raw)
+                else:
+                    print(f"  ⚠ APPROVE with malformed scores (len={len(r_scores_raw) if isinstance(r_scores_raw, list) else 'n/a'}); trusting verdict and using floor scores")
+                    floor = [4] * 8
+                    ms["scores"] = floor
+                    ms["sum"] = sum(floor)
                 ms["phase"] = "check"
                 save_state(state)
                 break
@@ -1002,7 +1013,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
 
     # SCORE
     if ms["phase"] == "score":
-        scores = ms.get("scores", [4, 4, 4, 4, 4, 4, 4])
+        scores = ms.get("scores", [4, 4, 4, 4, 4, 4, 4, 4])
         total = sum(scores)
         minimum = min(scores)
         passes = minimum >= 4 and total >= 33
