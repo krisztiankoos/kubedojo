@@ -923,7 +923,7 @@ def step_check(content: str, path: Path) -> tuple[bool, list]:
 # Full pipeline: run one module through all steps
 # ---------------------------------------------------------------------------
 
-def run_module(module_path: Path, state: dict, max_retries: int = 2,
+def run_module(module_path: Path, state: dict, max_retries: int = 4,
                models: dict | None = None, dry_run: bool = False) -> bool:
     """Run a single module through the full pipeline."""
     m = models or MODELS
@@ -1123,20 +1123,32 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
                 r_sum = sum(r_scores) if r_valid else 0
                 r_has_weak = r_valid and any(s < 4 for s in r_scores)
 
-                if r_valid and r_sum >= 33 and r_has_weak:
-                    # Surgical fix — mostly passing, specific weak dims to target
+                if r_valid and r_sum >= 28 and r_has_weak:
+                    # Surgical fix — enough passing content to preserve; fix only
+                    # the weak dims. Threshold was 33 (passing floor) but lowered
+                    # to 28 (IMPROVE mode boundary) because full rewrites were
+                    # regressing already-passing dims (whack-a-mole): module-1.5
+                    # went 28 → 29 → 30 with D5 dropping 4→3 on one retry. As
+                    # long as the module isn't in full REWRITE mode, we should
+                    # be surgically patching weak dims, not regenerating.
                     needs_rewrite = False
                     weak = [(i + 1, s) for i, s in enumerate(r_scores) if s < 4]
+                    passing = [(i + 1, s) for i, s in enumerate(r_scores) if s >= 4]
                     weak_desc = ", ".join(f"D{i}={s}" for i, s in weak)
+                    passing_desc = ", ".join(f"D{i}={s}" for i, s in passing)
                     plan = (
-                        f"TARGETED FIX. Content already scored {r_sum}/40 — "
-                        f"ONLY weak dimension(s): {weak_desc}. "
-                        f"Edit ONLY what the reviewer feedback points to; "
-                        f"preserve EVERYTHING else verbatim (do not touch other sections, "
-                        f"code blocks, diagrams, tables, or quiz questions that were not flagged). "
-                        f"Reviewer feedback: {r_feedback}"
+                        f"TARGETED FIX. Content currently scores {r_sum}/40.\n\n"
+                        f"WEAK dimensions to fix: {weak_desc}.\n"
+                        f"PASSING dimensions — DO NOT TOUCH, leave content exactly verbatim: {passing_desc}.\n\n"
+                        f"The reviewer has specifically approved the passing dimensions — if your "
+                        f"edit changes sections that support those dims, you WILL regress scores "
+                        f"and the module will be rejected again. Do not regenerate code blocks, "
+                        f"diagrams, tables, quiz questions, or inline prompts that were not flagged "
+                        f"in the reviewer's feedback. Apply only the surgical patches the reviewer "
+                        f"points to, using their exact FIX suggestions verbatim where possible.\n\n"
+                        f"Reviewer feedback (apply the [Dn] → FIX: blocks literally):\n{r_feedback}"
                     )
-                    print(f"  → Targeted fix mode: {weak_desc}, sum={r_sum}/40")
+                    print(f"  → Targeted fix mode: fixing {weak_desc}, preserving {passing_desc}, sum={r_sum}/40")
                 elif r_valid and r_sum >= 36 and not r_has_weak:
                     # All dims ≥ 4 but verdict REJECT — qualitative nitpick.
                     # Numeric ground truth says this passes. Use improve mode
