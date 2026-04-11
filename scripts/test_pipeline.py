@@ -1501,6 +1501,282 @@ class TestApplyReviewEdits(unittest.TestCase):
         self.assertEqual(len(applied), 0)
         self.assertEqual(len(failed), 1)
 
+    def test_adjacent_non_overlapping_edits_both_apply(self):
+        """Edit ending at position X and another starting at position X are
+        adjacent, not overlapping — both must apply cleanly."""
+        import v1_pipeline as p
+        content = "ABCDEFGH"
+        edits = [
+            {"type": "replace", "find": "AB", "new": "11"},  # [0, 2)
+            {"type": "replace", "find": "CD", "new": "22"},  # [2, 4)
+        ]
+        patched, applied, failed = p.apply_review_edits(content, edits)
+        self.assertEqual(patched, "1122EFGH")
+        self.assertEqual(len(applied), 2, "Both adjacent edits must apply")
+        self.assertEqual(len(failed), 0)
+
+
+class TestDeterministicApplyIntegration(unittest.TestCase):
+    """End-to-end integration: reviewer returns structured edits, pipeline
+    applies them deterministically, re-review approves. Verifies zero LLM
+    writer calls happen in the common case."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.state_file = Path(self.tmpdir) / "state.yaml"
+        self.module_path = Path(self.tmpdir) / "module-0.1-test.md"
+        self.module_path.write_text(GOOD_MODULE)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch("v1_pipeline.STATE_FILE")
+    @patch("v1_pipeline.CONTENT_ROOT")
+    @patch("subprocess.run")
+    def test_reject_with_edits_converges_without_llm_writer(
+        self, mock_subprocess, mock_root, mock_state,
+    ):
+        """Reviewer returns structured edits that apply cleanly → pipeline
+        re-reviews the patched content and approves, with exactly ONE
+        step_write call (the initial draft). Exactly the intended hot path
+        for PR #221's deterministic edit application."""
+        import v1_pipeline as p
+
+        mock_state.__class__ = type(self.state_file)
+        mock_root.resolve.return_value = Path(self.tmpdir).resolve()
+
+        step_write_calls = []
+
+        def fake_step_write(module_path, plan, model=None, rewrite=False,
+                            previous_output=None, knowledge_card=None):
+            step_write_calls.append({"model": model, "plan": plan[:100]})
+            # Return GOOD_MODULE verbatim; the reviewer's edit will patch it.
+            return GOOD_MODULE
+
+        # First review: REJECT with one structured edit that matches a unique
+        # substring of GOOD_MODULE. Second review: APPROVE.
+        review_sequence = [
+            {
+                "verdict": "REJECT",
+                "scores": [4, 3, 4, 4, 4, 4, 4, 4],  # sum=31, D2 weak
+                "edits": [
+                    {
+                        "type": "replace",
+                        "find": "## Learning Outcomes",
+                        "new": "## Learning Outcomes (Revised)",
+                        "dim": "D2",
+                        "why": "revision tag",
+                    },
+                ],
+                "feedback": "Minor accuracy fix.",
+            },
+            {
+                "verdict": "APPROVE",
+                "scores": [4, 4, 4, 4, 4, 4, 4, 5],
+                "edits": [],
+                "feedback": "",
+            },
+        ]
+
+        state = {"modules": {}}
+
+        with patch.object(p, "STATE_FILE", self.state_file), \
+             patch.object(p, "CONTENT_ROOT", Path(self.tmpdir)), \
+             patch.object(p, "save_state"), \
+             patch.object(p, "module_key_from_path", return_value="test/module-0.1-test"), \
+             patch.object(p, "step_write", side_effect=fake_step_write), \
+             patch.object(p, "step_review", side_effect=review_sequence), \
+             patch.object(p, "step_check", return_value=(True, [])), \
+             patch.object(p, "ensure_knowledge_card", return_value="cached card"):
+            p.run_module(self.module_path, state)
+
+        # CRITICAL: exactly ONE step_write call (the initial draft). The
+        # REJECT → deterministic apply → re-review path must NOT invoke
+        # the writer again.
+        self.assertEqual(
+            len(step_write_calls), 1,
+            f"Initial write only; deterministic apply must skip the writer "
+            f"(got {len(step_write_calls)} writes)"
+        )
+        ms = state["modules"]["test/module-0.1-test"]
+        self.assertEqual(ms.get("phase"), "done",
+                         "Module must converge to done after deterministic apply + approve")
+        self.assertTrue(ms.get("passes"))
+
+    @patch("v1_pipeline.STATE_FILE")
+    @patch("v1_pipeline.CONTENT_ROOT")
+    @patch("subprocess.run")
+    def test_crash_after_deterministic_apply_recovers_from_staging(
+        self, mock_subprocess, mock_root, mock_state,
+    ):
+        """Proves crash recovery: simulates a process crash AFTER deterministic
+        apply succeeds but BEFORE CHECK runs, then restarts run_module on the
+        same state + staging file and asserts the patched content (not the
+        un-patched on-disk content) is what gets re-reviewed.
+
+        This test enforces Gemini's review finding: the staging write was
+        landing, but without this test we couldn't prove the resume path
+        actually reads it."""
+        import v1_pipeline as p
+
+        mock_state.__class__ = type(self.state_file)
+        mock_root.resolve.return_value = Path(self.tmpdir).resolve()
+
+        # Pre-seed the staging file with "patched" content different from
+        # the on-disk module — simulating a crash after apply but before CHECK
+        staging_path = self.module_path.with_suffix(".staging.md")
+        patched_content = GOOD_MODULE.replace("## Learning Outcomes", "## Learning Outcomes (PATCHED)")
+        staging_path.write_text(patched_content)
+
+        # Pre-seed state as if the pipeline was mid-run and crashed at
+        # phase=review (the state deterministic apply leaves behind)
+        state = {
+            "modules": {
+                "test/module-0.1-test": {
+                    "phase": "review",
+                    "scores": [4, 3, 4, 4, 4, 4, 4, 4],
+                    "sum": 31,
+                    "passes": False,
+                    "errors": [],
+                }
+            }
+        }
+
+        reviews_seen = []
+
+        def fake_step_review(module_path, improved, model=None):
+            reviews_seen.append(improved)
+            return {
+                "verdict": "APPROVE",
+                "scores": [4, 4, 4, 4, 4, 4, 4, 5],
+                "edits": [],
+                "feedback": "",
+            }
+
+        step_write_calls = []
+
+        def fake_step_write(module_path, plan, model=None, rewrite=False,
+                            previous_output=None, knowledge_card=None):
+            step_write_calls.append(plan[:80])
+            return GOOD_MODULE
+
+        with patch.object(p, "STATE_FILE", self.state_file), \
+             patch.object(p, "CONTENT_ROOT", Path(self.tmpdir)), \
+             patch.object(p, "save_state"), \
+             patch.object(p, "module_key_from_path", return_value="test/module-0.1-test"), \
+             patch.object(p, "step_write", side_effect=fake_step_write), \
+             patch.object(p, "step_review", side_effect=fake_step_review), \
+             patch.object(p, "step_check", return_value=(True, [])), \
+             patch.object(p, "ensure_knowledge_card", return_value="cached card"):
+            p.run_module(self.module_path, state)
+
+        # Recovery must read from staging (patched), not from on-disk (original)
+        self.assertEqual(len(reviews_seen), 1, "One review should fire on recovery")
+        self.assertIn("(PATCHED)", reviews_seen[0],
+                      "Resume at phase=review must load patched content from staging, "
+                      "not the un-patched on-disk module")
+        # No writer calls — the patched content was already staged
+        self.assertEqual(len(step_write_calls), 0,
+                         "Crash recovery at phase=review should NOT re-invoke the writer")
+        ms = state["modules"]["test/module-0.1-test"]
+        self.assertEqual(ms.get("phase"), "done")
+
+    @patch("v1_pipeline.STATE_FILE")
+    @patch("v1_pipeline.CONTENT_ROOT")
+    @patch("subprocess.run")
+    def test_crash_after_partial_apply_resumes_with_fallback_plan(
+        self, mock_subprocess, mock_root, mock_state,
+    ):
+        """Proves Issue B crash recovery: partial-success deterministic apply
+        persisted the fallback plan and targeted_fix flag to state, so a
+        crash here and subsequent restart must:
+
+          1. Load the staged partial-apply content as `improved`
+          2. Reconstruct the FALLBACK FIX plan from ms["plan"]
+          3. Route the writer to claude-sonnet-4-6 (targeted_fix=True)
+          4. NOT re-run audit / initial write / initial review
+        """
+        import v1_pipeline as p
+
+        mock_state.__class__ = type(self.state_file)
+        mock_root.resolve.return_value = Path(self.tmpdir).resolve()
+
+        # Pre-seed staging with the partially-patched content
+        staging_path = self.module_path.with_suffix(".staging.md")
+        partial_patched = GOOD_MODULE.replace("## Learning Outcomes", "## Learning Outcomes (PARTIALLY-PATCHED)")
+        staging_path.write_text(partial_patched)
+
+        # Pre-seed state as the partial-apply fallback branch would have saved it
+        fallback_plan = (
+            "FALLBACK FIX. The pipeline applied 3 of 5 structured edits deterministically; "
+            "the remaining 2 could not be applied mechanically. Apply ONLY these remaining "
+            'edits.\n\nFailed edit (reason: anchor not found): ```json\n{"type": "replace", '
+            '"find": "nonexistent", "new": "replacement"}\n```'
+        )
+        state = {
+            "modules": {
+                "test/module-0.1-test": {
+                    "phase": "write",
+                    "plan": fallback_plan,
+                    "targeted_fix": True,
+                    "scores": [4, 3, 4, 3, 4, 4, 3, 4],
+                    "sum": 29,
+                    "passes": False,
+                    "errors": [],
+                }
+            }
+        }
+
+        write_calls_observed = []
+
+        def fake_step_write(module_path, plan, model=None, rewrite=False,
+                            previous_output=None, knowledge_card=None):
+            write_calls_observed.append({
+                "model": model,
+                "plan": plan,
+                "previous_output": previous_output or "",
+            })
+            # Mock: return a fully-patched version that will then approve
+            return GOOD_MODULE.replace("## Learning Outcomes", "## Learning Outcomes (FULLY-FIXED)")
+
+        def fake_step_review(module_path, improved, model=None):
+            return {
+                "verdict": "APPROVE",
+                "scores": [4, 4, 4, 4, 4, 4, 4, 5],
+                "edits": [],
+                "feedback": "",
+            }
+
+        with patch.object(p, "STATE_FILE", self.state_file), \
+             patch.object(p, "CONTENT_ROOT", Path(self.tmpdir)), \
+             patch.object(p, "save_state"), \
+             patch.object(p, "module_key_from_path", return_value="test/module-0.1-test"), \
+             patch.object(p, "step_write", side_effect=fake_step_write), \
+             patch.object(p, "step_review", side_effect=fake_step_review), \
+             patch.object(p, "step_check", return_value=(True, [])), \
+             patch.object(p, "ensure_knowledge_card", return_value="cached card"):
+            p.run_module(self.module_path, state)
+
+        self.assertEqual(len(write_calls_observed), 1,
+                         "Exactly one write should fire: the fallback Sonnet write")
+        call = write_calls_observed[0]
+        # Writer MUST be Sonnet (the targeted-fix model) because ms["targeted_fix"]
+        # was restored from state on resume
+        self.assertEqual(call["model"], p.MODELS["write_targeted"],
+                         f"Fallback write must route to {p.MODELS['write_targeted']} "
+                         f"(Sonnet), not Gemini — targeted_fix flag must survive resume")
+        # Plan MUST be the restored FALLBACK FIX plan, not a generic one
+        self.assertIn("FALLBACK FIX", call["plan"],
+                      "Plan must be restored from ms['plan'], not regenerated as generic")
+        # previous_output MUST be the staged partial-patched content — Sonnet
+        # must operate on the progress we already made, not start over from
+        # the un-patched on-disk module
+        self.assertIn("(PARTIALLY-PATCHED)", call["previous_output"],
+                      "Writer must operate on the staged partial-patched content, "
+                      "not re-read the unpatched on-disk module")
+        ms = state["modules"]["test/module-0.1-test"]
+        self.assertEqual(ms.get("phase"), "done")
+
 
 # ---------------------------------------------------------------------------
 # Main
