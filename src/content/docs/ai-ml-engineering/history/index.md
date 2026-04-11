@@ -11,4 +11,4 @@ sidebar:
 
 | # | Module |
 |---|--------|
-| 11.1 | [History of AI & Machine Learning](module-11.1-history-of-ai-machine-learning/) |
+| 1.1 | [History of AI & Machine Learning](/ai-ml-engineering/history/module-11.1-history-of-ai-machine-learning/) |

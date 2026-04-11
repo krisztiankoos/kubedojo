@@ -11,6 +11,7 @@ sidebar:
 
 | # | Module |
 |---|--------|
-| 8.1 | [Voice & Audio AI](module-8.1-voice-audio-ai/) |
-| 8.2 | [Vision AI](module-8.2-vision-ai/) |
-| 8.3 | [Video AI](module-8.3-video-ai/) |
+| 1.1 | [Voice & Audio AI](/ai-ml-engineering/multimodal-ai/module-8.1-voice-audio-ai/) |
+| 1.2 | [Vision AI](/ai-ml-engineering/multimodal-ai/module-8.2-vision-ai/) |
+| 1.3 | [Video AI](/ai-ml-engineering/multimodal-ai/module-8.3-video-ai/) |
+| 1.4 | [Multimodal-First AI Design](/ai-ml-engineering/multimodal-ai/module-8.4-multimodal-first-design/) |

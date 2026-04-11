@@ -11,10 +11,13 @@ sidebar:
 
 | # | Module |
 |---|--------|
-| 4.1 | [LangChain Fundamentals](module-4.1-langchain-fundamentals/) |
-| 4.2 | [LangChain Advanced](module-4.2-langchain-advanced/) |
-| 4.3 | [LangGraph for Agents](module-4.3-langgraph-for-agents/) |
-| 4.4 | [LlamaIndex](module-4.4-llamaindex/) |
-| 4.5 | [Building AI Agents](module-4.5-building-ai-agents/) |
-| 4.6 | [Agent Memory & Planning](module-4.6-agent-memory-planning/) |
-| 4.7 | [Multi-Agent Systems](module-4.7-multi-agent-systems/) |
+| 1.1 | [LangChain Fundamentals](/ai-ml-engineering/frameworks-agents/module-4.1-langchain-fundamentals/) |
+| 1.2 | [LangChain Advanced](/ai-ml-engineering/frameworks-agents/module-4.2-langchain-advanced/) |
+| 1.3 | [LangGraph for Agents](/ai-ml-engineering/frameworks-agents/module-4.3-langgraph-for-agents/) |
+| 1.4 | [LlamaIndex](/ai-ml-engineering/frameworks-agents/module-4.4-llamaindex/) |
+| 1.5 | [Building AI Agents](/ai-ml-engineering/frameworks-agents/module-4.5-building-ai-agents/) |
+| 1.6 | [Agent Memory & Planning](/ai-ml-engineering/frameworks-agents/module-4.6-agent-memory-planning/) |
+| 1.7 | [Multi-Agent Systems](/ai-ml-engineering/frameworks-agents/module-4.7-multi-agent-systems/) |
+| 1.8 | [Model Context Protocol (MCP) for Agents](/ai-ml-engineering/frameworks-agents/module-4.8-model-context-protocol/) |
+| 1.9 | [Computer Use and Browser Automation Agents](/ai-ml-engineering/frameworks-agents/module-4.9-computer-use-agents/) |
+| 1.10 | [Next-Gen Agentic Frameworks](/ai-ml-engineering/frameworks-agents/module-4.10-next-gen-agentic-frameworks/) |

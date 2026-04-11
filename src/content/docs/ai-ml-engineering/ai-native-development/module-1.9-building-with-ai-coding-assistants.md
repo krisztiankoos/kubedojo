@@ -1834,7 +1834,7 @@ flowchart TD
 
 **The Pattern**: Use the right tool for each task. Don't force one tool for everything.
 
-** Ready to build a complete feature? Try [Workflow 01: Feature Development](../../examples/module_05/workflow_01_feature_development.md) to practice choosing the right tool at each step!**
+** Ready to build a complete feature? Try [Workflow 01: Feature Development](../../examples/module_05/workflow_01_feature_development) to practice choosing the right tool at each step!**
 
 ---
 
@@ -3322,7 +3322,7 @@ export AIDER_AUTO_COMMIT=true
    alias aidgpt='aider --model gpt-5'
    ```
 
-** Optimize your setup! Check out the [VS Code Configuration Guide](../../examples/module_05/config_vscode.md) for detailed setup instructions, keyboard shortcuts, and productivity tips!**
+** Optimize your setup! Check out the [VS Code Configuration Guide](../../examples/module_05/config_vscode) for detailed setup instructions, keyboard shortcuts, and productivity tips!**
 
 ---
 
@@ -3531,7 +3531,7 @@ Security review: @bob
 Tested: Full test suite passing
 ```
 
-** Master code reviews with AI! Try [Workflow 03: Code Review](../../examples/module_05/workflow_03_code_review.md) to learn how to catch security issues, performance problems, and design flaws systematically!**
+** Master code reviews with AI! Try [Workflow 03: Code Review](../../examples/module_05/workflow_03_code_review) to learn how to catch security issues, performance problems, and design flaws systematically!**
 
 ---
 
@@ -4496,7 +4496,7 @@ Performance: 2847ms → 12ms (99.6% improvement)
 
 **Speedup**: **3-4x faster** with AI-assisted debugging.
 
-** Apply these workflows to your own projects! Try [Workflow 02: Production Debugging](../../examples/module_05/workflow_02_debugging_production.md) and [Workflow 04: Refactoring](../../examples/module_05/workflow_04_refactoring.md) to practice systematic approaches!**
+** Apply these workflows to your own projects! Try [Workflow 02: Production Debugging](../../examples/module_05/workflow_02_debugging_production) and [Workflow 04: Refactoring](../../examples/module_05/workflow_04_refactoring) to practice systematic approaches!**
 
 ---
 
@@ -5580,31 +5580,31 @@ This module is unique: instead of code examples, you'll build real-world workflo
 
 ### Practice Path
 
-**1. [Feature Development Workflow](../../examples/module_05/workflow_01_feature_development.md)** - Complete feature from idea to deployment
+**1. [Feature Development Workflow](../../examples/module_05/workflow_01_feature_development)** - Complete feature from idea to deployment
    -  Concept: AI-assisted full-stack development workflow
    - ⏱️ Time: 45-60 minutes
    - Goal: Build a complete feature using AI at every step
    - What you'll learn: When to use Copilot vs Claude Code vs Cursor
 
-**2. [Production Debugging Workflow](../../examples/module_05/workflow_02_debugging_production.md)** - Fix production issues systematically
+**2. [Production Debugging Workflow](../../examples/module_05/workflow_02_debugging_production)** - Fix production issues systematically
    -  Concept: Emergency debugging with AI assistance
    - ⏱️ Time: 40-50 minutes
    - Goal: Debug production issues using AI + traditional tools
    - What you'll learn: How to triage, diagnose, and fix under pressure
 
-**3. [Code Review Workflow](../../examples/module_05/workflow_03_code_review.md)** - Review PRs like a senior engineer
+**3. [Code Review Workflow](../../examples/module_05/workflow_03_code_review)** - Review PRs like a senior engineer
    -  Concept: AI-assisted code review
    - ⏱️ Time: 35-45 minutes
    - Goal: Conduct thorough code reviews with AI help
    - What you'll learn: Catch security issues, performance problems, and design flaws
 
-**4. [Refactoring Workflow](../../examples/module_05/workflow_04_refactoring.md)** - Refactor legacy code safely
+**4. [Refactoring Workflow](../../examples/module_05/workflow_04_refactoring)** - Refactor legacy code safely
    -  Concept: Large-scale refactoring with AI
    - ⏱️ Time: 50-60 minutes
    - Goal: Refactor messy code without breaking functionality
    - What you'll learn: Multi-file refactoring, test generation, risk mitigation
 
-**5. [Learning New Codebase Workflow](../../examples/module_05/workflow_05_learning_codebase.md)** - Onboard to unfamiliar code
+**5. [Learning New Codebase Workflow](../../examples/module_05/workflow_05_learning_codebase)** - Onboard to unfamiliar code
    -  Concept: Understanding codebases with AI
    - ⏱️ Time: 40-50 minutes
    - Goal: Get productive in a new codebase quickly
@@ -5614,12 +5614,12 @@ This module is unique: instead of code examples, you'll build real-world workflo
 
 ### Configuration Guides
 
-**[VS Code Setup Guide](../../examples/module_05/config_vscode.md)** - Configure your IDE optimally
+**[VS Code Setup Guide](../../examples/module_05/config_vscode)** - Configure your IDE optimally
    - ⏱️ Time: 30-40 minutes
    - Goal: Set up Copilot, Claude Code, and other extensions
    - What you'll learn: Keyboard shortcuts, settings, productivity tips
 
-**[Prompt Patterns Library](../../examples/module_05/prompt_patterns.md)** - Reusable prompt templates
+**[Prompt Patterns Library](../../examples/module_05/prompt_patterns)** - Reusable prompt templates
    - ⏱️ Time: 20-30 minutes
    - Goal: Build your library of proven prompts
    - What you'll learn: Templates for common coding tasks
