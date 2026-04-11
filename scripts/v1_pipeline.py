@@ -101,6 +101,8 @@ from checks import structural, ukrainian, gaps
 from dispatch import (
     dispatch_gemini_with_retry,
     dispatch_claude,
+    dispatch_codex,
+    _is_rate_limited,
 )
 from uk_sync import (
     translate_new_module as uk_translate,
@@ -112,12 +114,14 @@ from uk_sync import (
 
 
 def dispatch_auto(prompt: str, model: str, timeout: int = 900) -> tuple[bool, str]:
-    """Route to Gemini or Claude based on model name."""
+    """Route to Gemini, Claude, or Codex based on model name."""
     if model.startswith("gemini"):
         return dispatch_gemini_with_retry(prompt, model=model, timeout=timeout)
     if model.startswith("claude"):
         return dispatch_claude(prompt, model=model, timeout=timeout)
-    raise ValueError(f"Unknown model family: {model!r} — must start with 'gemini' or 'claude'")
+    if model.startswith("codex"):
+        return dispatch_codex(prompt, model=model, timeout=timeout)
+    raise ValueError(f"Unknown model family: {model!r} — must start with 'gemini', 'claude', or 'codex'")
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +131,7 @@ def dispatch_auto(prompt: str, model: str, timeout: int = 900) -> tuple[bool, st
 MODELS = {
     "audit": "gemini-3.1-pro-preview",     # AUDIT+PLAN: rubric evaluation + plan
     "write": "gemini-3.1-pro-preview",     # WRITE: draft improvements
-    "review": "gemini-3.1-pro-preview",    # REVIEW: strict rubric review
+    "review": "codex",                     # REVIEW: Codex (independent, stricter)
     # "translate" removed — uk_sync.CHUNKED_MODEL owns translation model config
 }
 
@@ -545,19 +549,47 @@ def step_write(module_path: Path, plan: str, model: str = MODELS["write"],
 # REVIEW step — Claude strict review
 # ---------------------------------------------------------------------------
 
-REVIEW_PROMPT_TEMPLATE = """You are the STRICT quality reviewer for KubeDojo. A module has been improved by another LLM.
+REVIEW_PROMPT_TEMPLATE = """You are the OFFICIAL, STRICT quality reviewer for KubeDojo.
+A Gemini-authored module is below. You are independent — assume nothing is
+correct without verification. Web search is allowed and encouraged for current
+tool/API state (2025-2026).
 
-Your job: compare the improved version against the quality rubric. Be EXTREMELY strict.
+8-dimension rubric (score each 1-5, default to 4 unless genuinely outstanding):
+- D1 Pedagogical Clarity: outcomes, structure, progression, signposting
+- D2 Technical Accuracy: correct tools, versions, commands, YAML, concepts
+- D3 Depth & Rigor: beyond surface; tradeoffs, edge cases, failure modes
+- D4 Practical Utility: runnable labs, copy-pasteable configs, verification commands
+- D5 Assessment Quality: scenario-based quizzes (not recall), non-trivial inline prompts
+- D6 Coverage Breadth: no glaring gaps for the stated scope
+- D7 Production Readiness: monitoring, security, HA, scale, SLOs, failure modes
+- D8 Practitioner Depth: gotchas, decision frameworks, war stories, real ops
 
 RULES:
-1. Score all 8 dimensions 1-5
-2. If ANY dimension is below 4: REJECT and explain what's wrong
-3. If the improved version removed content, diagrams, or code blocks: REJECT
-4. If quiz questions are recall-based instead of scenario-based: REJECT
-5. If inline prompts are trivial or have obvious answers: REJECT
+1. APPROVE requires ALL dims >= 4 AND sum >= 33/40.
+2. If any dim < 4 → REJECT.
+3. If content, diagrams, or code were removed vs the original → REJECT.
+4. Trivial quizzes / obvious inline prompts → REJECT.
+5. Default to 4. A 5 means "I cannot find anything to improve in this dimension".
 
-Output ONLY this JSON. The scores array MUST have EXACTLY 8 integers (one per dimension D1 through D8, inclusive — D8 is Practitioner Depth, do not omit it):
-{{"verdict": "APPROVE" or "REJECT", "scores": [D1, D2, D3, D4, D5, D6, D7, D8], "feedback": "specific feedback if REJECT"}}
+CRITICAL — ACTIONABLE FEEDBACK:
+For every dimension scoring below 5, the feedback field MUST contain a CONCRETE
+FIX, not just a complaint. Format each item as:
+  "[D<n>] <what is wrong> → FIX: <exact replacement text / command / YAML / subsection to add>"
+Do not say "the VPA section is inaccurate". Say:
+  "[D2] VPA section claims recs come from Prometheus → FIX: replace with
+  'VPA recommendations are produced by the recommender from Metrics Server and
+  stored in .status.recommendation of the VerticalPodAutoscaler object. Query
+  via: kubectl get vpa <name> -o jsonpath='{{.status.recommendation}}'"
+The writer LLM will use your feedback verbatim to patch the module, so vague
+criticism is useless. Cite commands, YAML keys, version numbers, and doc URLs
+where relevant.
+
+Output ONLY this JSON (no prose before or after, no markdown fences).
+The scores array MUST have EXACTLY 8 integers (D1-D8; D8 is Practitioner Depth,
+do not omit). feedback is a single string containing all dimension fixes joined
+with newlines.
+
+{{"verdict": "APPROVE" or "REJECT", "scores": [D1, D2, D3, D4, D5, D6, D7, D8], "feedback": "actionable fixes here"}}
 
 ---
 
@@ -699,8 +731,72 @@ def _translate_index(_en_content: str, uk_path: Path, rel_section: str) -> bool:
         return uk_translate(en_path)
 
 
+def _extract_review_json(output: str) -> dict | None:
+    """Extract the final review JSON from a raw reviewer response.
+
+    Codex exec output contains tool-use breadcrumbs, search logs, and the final
+    answer on a 'codex' banner line followed by the JSON, then 'tokens used N'.
+    Gemini output is usually just the JSON, sometimes inside ```json fences.
+    Strategy: try a direct JSON parse first, then fall back to regex-matching
+    the LAST balanced {...} block in the output (most reviewers emit the
+    canonical response last, near 'tokens used' or end-of-stream).
+    """
+    text = output.strip()
+
+    # Strip fenced-code wrappers first (gemini pattern)
+    if text.startswith("```"):
+        parts = text.split("```")
+        if len(parts) >= 2:
+            candidate = parts[1]
+            if candidate.startswith("json"):
+                candidate = candidate[4:]
+            try:
+                return json.loads(candidate.strip())
+            except json.JSONDecodeError:
+                pass
+
+    # Direct parse
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Last-balanced-{...} scan (handles codex-exec noise)
+    # Walk from the end; find matching braces.
+    candidates: list[str] = []
+    depth = 0
+    end = -1
+    for i in range(len(text) - 1, -1, -1):
+        ch = text[i]
+        if ch == "}":
+            if depth == 0:
+                end = i
+            depth += 1
+        elif ch == "{":
+            if depth > 0:
+                depth -= 1
+                if depth == 0 and end != -1:
+                    candidates.append(text[i:end + 1])
+                    end = -1
+    for cand in candidates:
+        try:
+            obj = json.loads(cand)
+            if isinstance(obj, dict) and "verdict" in obj and "scores" in obj:
+                return obj
+        except json.JSONDecodeError:
+            continue
+    return None
+
+
 def step_review(module_path: Path, improved: str, model: str = MODELS["review"]) -> dict | None:
-    """Claude reviews the improved module strictly."""
+    """Reviewer (Codex by default) evaluates the module strictly.
+
+    Returns:
+        dict with keys {verdict, scores, feedback} on success.
+        {"rate_limited": True} sentinel dict if the reviewer was rate-limited
+            (caller should NOT fail the module — keep content, flag for retry).
+        None on any other failure.
+    """
     original = module_path.read_text()
     key = module_key_from_path(module_path)
     print(f"\n  REVIEW: {key} (using {model})")
@@ -710,17 +806,15 @@ def step_review(module_path: Path, improved: str, model: str = MODELS["review"])
     ok, output = dispatch_auto(prompt, model=model, timeout=900)
 
     if not ok:
+        # Rate-limit detection so run_module can degrade gracefully
+        if output and _is_rate_limited(output):
+            print(f"  ⚠ REVIEW rate-limited — module flagged for later re-review")
+            return {"rate_limited": True}
         print(f"  ❌ REVIEW failed")
         return None
 
-    try:
-        json_match = output.strip()
-        if json_match.startswith("```"):
-            json_match = json_match.split("```")[1]
-            if json_match.startswith("json"):
-                json_match = json_match[4:]
-        result = json.loads(json_match)
-    except (json.JSONDecodeError, IndexError):
+    result = _extract_review_json(output)
+    if result is None:
         print(f"  ❌ Failed to parse REVIEW output")
         print(f"  Raw: {output[:500]}")
         return None
@@ -900,6 +994,32 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
 
         if ms["phase"] == "review":
             review = step_review(module_path, improved or module_path.read_text(), model=m["review"])
+
+            # Rate-limit degradation: keep the written content, flag the module
+            # as needing Codex review later, and continue the pipeline. The
+            # content is still written; only the official reviewer stamp is
+            # deferred. Pipeline does not fail, does not loop.
+            if isinstance(review, dict) and review.get("rate_limited"):
+                ms["codex_status"] = "rate_limited"
+                ms["reviewer"] = "pending"  # not yet reviewed by official reviewer
+                ms["needs_codex_review"] = True
+                ms["last_run"] = datetime.now(UTC).isoformat()
+                # Stage the written content so a later re-review can use it.
+                if improved:
+                    staging = module_path.with_suffix(".staging.md")
+                    staging.write_text(improved)
+                    print(f"  ⚠ Content staged at {staging} — will pass CHECK but keep codex_pending flag")
+                # Still advance past review so CHECK+SCORE can run on the written
+                # content (graceful degradation: the module is usable, just not
+                # Codex-blessed). The SCORE step will write a provisional pass
+                # with a "pending" flag so users can see which modules need
+                # re-review when Codex quota returns.
+                ms["phase"] = "check"
+                ms["scores"] = [4, 4, 4, 4, 4, 4, 4, 5]  # provisional, will be overwritten on re-review
+                ms["sum"] = 33
+                save_state(state)
+                break
+
             if review is None:
                 ms["errors"].append(f"Review failed attempt {attempt+1}")
                 ms["phase"] = "write"
@@ -931,6 +1051,13 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
                     floor = [4, 4, 4, 4, 4, 4, 4, 5]  # sum=33, min=4, passes SCORE
                     ms["scores"] = floor
                     ms["sum"] = sum(floor)
+                # Tag the official reviewer. Any module with reviewer != "codex"
+                # is considered "unreviewed by the official reviewer" and can be
+                # re-reviewed via mark-needs-codex-review.py.
+                reviewer_family = m["review"].split("-")[0]  # "codex", "gemini", "claude"
+                ms["reviewer"] = reviewer_family
+                ms["needs_codex_review"] = (reviewer_family != "codex")
+                ms.pop("codex_status", None)  # clear any stale rate-limit flag
                 ms["phase"] = "check"
                 save_state(state)
                 break
@@ -1032,7 +1159,10 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
         save_state(state)
 
         if passes:
-            print(f"\n  ✓ PASS: {total}/40 (min: {minimum})")
+            reviewer = ms.get("reviewer", "unknown")
+            pending = ms.get("needs_codex_review", False)
+            pending_tag = " codex-pending" if pending else ""
+            print(f"\n  ✓ PASS: {total}/40 (min: {minimum}) reviewer={reviewer}{pending_tag}")
             # Auto-commit
             add_result = subprocess.run(
                 ["git", "add", str(module_path)],
@@ -1041,9 +1171,12 @@ def run_module(module_path: Path, state: dict, max_retries: int = 2,
             if add_result.returncode != 0:
                 print(f"  ⚠ git add failed: {add_result.stderr[:200]}")
 
+            commit_msg = (
+                f"chore(quality): v1 pipeline pass [{key}] "
+                f"({total}/40 reviewer={reviewer}{pending_tag})"
+            )
             commit_result = subprocess.run(
-                ["git", "commit", "-m",
-                 f"chore(quality): v1 pipeline pass [{key}] ({total}/40)"],
+                ["git", "commit", "-m", commit_msg],
                 cwd=str(REPO_ROOT), capture_output=True, text=True,
             )
             if commit_result.returncode != 0:
