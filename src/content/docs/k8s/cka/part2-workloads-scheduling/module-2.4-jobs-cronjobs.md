@@ -219,8 +219,9 @@ spec:
       restartPolicy: Never
 EOF
 
-# Watch progress
-kubectl get jobs parallel-job -w
+# Wait for completion
+kubectl wait --for=condition=complete job/parallel-job --timeout=90s
+kubectl get jobs parallel-job
 ```
 
 ---
@@ -498,6 +499,7 @@ kubectl get events --field-selector involvedObject.name=myjob
 1. **Create a simple Job**:
 ```bash
 kubectl create job hello --image=busybox -- echo "Hello from job"
+kubectl wait --for=condition=complete job/hello --timeout=60s
 kubectl get jobs
 kubectl logs job/hello
 kubectl delete job hello
@@ -522,7 +524,8 @@ spec:
       restartPolicy: Never
 EOF
 
-kubectl get jobs batch-processor -w  # Watch completions
+kubectl wait --for=condition=complete job/batch-processor --timeout=90s
+kubectl get jobs batch-processor
 kubectl get pods -l job-name=batch-processor
 kubectl delete job batch-processor
 ```
@@ -545,7 +548,8 @@ spec:
       restartPolicy: Never
 EOF
 
-kubectl get jobs failing-job -w
+kubectl wait --for=condition=failed job/failing-job --timeout=60s
+kubectl get jobs failing-job
 kubectl get pods -l job-name=failing-job  # Multiple failed pods
 kubectl logs job/failing-job
 kubectl delete job failing-job
@@ -559,7 +563,8 @@ kubectl create cronjob minute-job --image=busybox --schedule="*/1 * * * *" -- da
 sleep 70
 kubectl get cronjobs
 kubectl get jobs
-kubectl logs job/<job-name>  # Use actual job name
+JOB_NAME=$(kubectl get jobs -o name | grep minute-job | head -n 1)
+kubectl logs $JOB_NAME
 
 kubectl delete cronjob minute-job
 ```
@@ -769,7 +774,8 @@ spec:
       restartPolicy: Never
 EOF
 
-kubectl get job challenge-job -w
+kubectl wait --for=condition=complete job/challenge-job --timeout=60s
+kubectl get job challenge-job
 ```
 
 </details>
