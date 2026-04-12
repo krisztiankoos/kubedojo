@@ -13,7 +13,11 @@ sidebar:
 
 ## Why This Module Matters
 
-In November 2023, an e-commerce company migrated from AWS EKS to on-premises Kubernetes. Their cloud setup had been straightforward: CloudWatch for logs, CloudWatch Metrics for monitoring, X-Ray for tracing, and PagerDuty for alerting. One AWS bill covered everything. When they moved to bare metal, the infrastructure team assumed they could replicate this stack in a weekend. They deployed a single Prometheus instance, pointed Grafana at it, and called it done.
+In November 2023, an e-commerce company migrated from AWS EKS to on-premises Kubernetes. Their cloud setup had been straightforward: CloudWatch for logs, CloudWatch Metrics for monitoring, X-Ray for tracing, and PagerDuty for alerting. One AWS bill covered everything.
+
+When they moved to bare metal, they initially considered using Datadog. However, at roughly $23/host/month for the infrastructure plan, the cost for their 400-node fleet would exceed $110,000/year. Furthermore, SaaS monitoring required opening internet egress for telemetry, violating their strict data sovereignty and air-gapped compliance requirements.
+
+Forced to build a self-hosted stack, the infrastructure team assumed they could replicate their cloud observability in a weekend. They deployed a single Prometheus instance, pointed Grafana at it, and called it done.
 
 Three months later, Prometheus crashed. It had been ingesting 800,000 samples per second across 400 nodes, and its local storage had grown to 1.2TB. The 15-day retention consumed all available disk space on the monitoring node. When Prometheus restarted, it took 45 minutes to replay the WAL (Write-Ahead Log), during which there was zero monitoring visibility. The team later discovered that Prometheus had been silently dropping samples for a week due to memory pressure, so their dashboards had gaps nobody noticed. Meanwhile, container logs were being written to local disk and rotated away after 24 hours -- they had no centralized logging at all.
 
@@ -169,6 +173,16 @@ The sidecar uploads completed TSDB blocks to object storage (MinIO) and serves r
 
 ---
 
+## Grafana Deployment at Scale
+
+To operate Grafana reliably for multiple teams on bare metal, avoid manual dashboard creation. Instead, manage Grafana as code.
+
+### Provisioning and Multi-Tenancy
+
+Use Grafana's provisioning feature to load dashboards and datasources automatically from ConfigMaps. For multi-tenancy, configure Grafana Organizations or Teams, mapping corporate OIDC/LDAP groups to specific Grafana roles. To run Grafana as a highly available pair (as recommended in the sizing guidelines), configure it to use a shared external database like PostgreSQL rather than the default local SQLite, ensuring user sessions and dashboard states survive pod restarts.
+
+---
+
 ## Loki for Centralized Logging
 
 Loki replaces CloudWatch Logs and Stackdriver Logging. Unlike Elasticsearch, Loki indexes only metadata (labels), not the full log text, making it dramatically cheaper to operate.
@@ -250,7 +264,16 @@ storage_config:
     cache_location: /loki/cache
 ```
 
-Promtail runs as a DaemonSet, mounting `/var/log` and `/var/log/pods` as read-only host volumes. It tails container logs and ships them to Loki with labels extracted from the Kubernetes metadata (namespace, pod, container name).
+Promtail runs as a DaemonSet, mounting `/var/log` and `/var/log/pods` as read-only host volumes. It tails container logs and ships them to Loki with labels extracted from the Kubernetes metadata (namespace, pod, container name). To improve query performance, you can configure Promtail `pipeline_stages` to extract additional high-value labels like `level` or `component`.
+
+### Troubleshooting Loki Query Performance
+
+If queries for older logs become extremely slow (e.g., 30+ seconds), check these common bottlenecks:
+1. **Missing Chunk Cache**: Loki reads chunks from MinIO for every historical query. Deploying a Memcached cluster (e.g., 3 pods) for chunk caching is a quick win that typically reduces query times by 5-10x.
+2. **Too Few Label Indexes**: If logs only have `namespace` and `pod` labels, Loki must scan massive chunks. Add more labels in Promtail.
+3. **Object Storage Latency**: If MinIO disks are shared with other workloads, I/O contention will stall Loki. Ensure MinIO has dedicated disks.
+4. **Large Chunk Size**: The default `chunk_target_size` (1.5MB) may be too large for your ingestion rate; reducing it can speed up queries.
+5. **Legacy Indexing**: Ensure you are using the `tsdb` index format, not the legacy BoltDB shipper.
 
 ---
 
@@ -266,7 +289,11 @@ Alertmanager routes alerts based on labels. Configure multiple receivers with es
 - **Application critical alerts**: webhook + email, repeat every 30 minutes
 - **Warnings**: email only, repeat every 24 hours
 
-Group alerts by `alertname`, `cluster`, and `namespace` to reduce noise. Use `group_wait: 30s` to batch alerts that fire simultaneously (e.g., multiple nodes in the same rack losing power).
+Group alerts by `alertname`, `cluster`, and `namespace` to reduce noise. Use `group_wait: 30s` to batch alerts that fire simultaneously (e.g., multiple nodes in the same rack losing power). Ensure every alert rule includes a `runbook_url` annotation linking directly to the mitigation steps, so on-call engineers have immediate access to remediation procedures.
+
+### Alerting Across Network Boundaries
+
+When the Kubernetes cluster resides in a datacenter VLAN isolated from the corporate network, alerts sent to an internal SMTP server (e.g., on port 587) may be silently dropped by firewalls. To diagnose this, check the Alertmanager logs (`kubectl logs -n monitoring alertmanager-0`) for connection timeouts, or use a `busybox` pod with `nc -zv` to test SMTP reachability. If you cannot open the firewall, the most robust fix is to deploy a local SMTP relay (like Postfix) in the monitoring namespace that is explicitly allowed to forward mail to the corporate server, or to switch entirely to webhook-based notifications.
 
 ### Self-Hosted On-Call with Grafana OnCall
 
@@ -334,6 +361,13 @@ Deploy the `prometheuscommunity/ipmi-exporter` as a Deployment in the monitoring
 ## Capacity Planning for Monitoring
 
 The monitoring stack itself needs resources. Undersizing it leads to the monitoring system failing when you need it most.
+
+### Data Volume and Retention Math
+
+Prometheus TSDB is highly optimized, compressing raw samples down to an average of 2 bytes per sample. You can calculate your storage needs using this formula: `samples_per_second * 2 bytes * 86,400 seconds`.
+For example, a cluster ingesting 500,000 samples per second generates ~1 MB/s, or ~84 GB per day.
+- **Local Storage (48 hours)**: Requires ~168 GB of fast NVMe storage per Prometheus replica.
+- **Long-Term Storage (1 year)**: Keeping 1 year of data locally would require ~30 TB of disk, which is expensive and slows down queries. Instead, Thanos offloads this to MinIO object storage. With Thanos Compactor downsampling historical data (raw -> 5m -> 1h), 1 year of metrics for this cluster will consume approximately 3 TB of object storage.
 
 ### Sizing Guidelines
 
@@ -590,6 +624,8 @@ helm repo update
 helm install monitoring prometheus-community/kube-prometheus-stack \
   --namespace monitoring \
   --create-namespace \
+  --wait \
+  --timeout 10m \
   --set grafana.adminPassword=admin \
   --set prometheus.prometheusSpec.retention=24h
 ```
@@ -598,10 +634,12 @@ helm install monitoring prometheus-community/kube-prometheus-stack \
 
 1. **Verify all components are running:**
    ```bash
+   kubectl wait --for=condition=Ready pods --all -n monitoring --timeout=300s
    kubectl get pods -n monitoring
    ```
 
 2. **Access Grafana:**
+   Open a second terminal window to run the port-forward without blocking your prompt:
    ```bash
    kubectl port-forward -n monitoring svc/monitoring-grafana 3000:80
    # Open http://localhost:3000 (admin/admin)
@@ -630,10 +668,12 @@ helm install monitoring prometheus-community/kube-prometheus-stack \
                severity: warning
              annotations:
                summary: "Test alert: CPU is being used"
+               runbook_url: "https://internal-wiki.example.com/runbooks/high-cpu"
    EOF
    ```
 
 5. **Verify the alert fires in Alertmanager:**
+   Open a third terminal window for this port-forward to avoid interrupting Grafana:
    ```bash
    kubectl port-forward -n monitoring svc/monitoring-kube-prometheus-alertmanager 9093:9093
    # Open http://localhost:9093
