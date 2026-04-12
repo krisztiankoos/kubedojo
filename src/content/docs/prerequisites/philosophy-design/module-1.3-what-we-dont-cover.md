@@ -34,22 +34,10 @@ KubeDojo is surgical about what we teach. Every module exists because it either 
 
 KubeDojo exists to help you pass certifications efficiently. We apply the 80/20 rule:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              THE 80/20 RULE FOR CERTIFICATIONS              │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ████████████████████████████████████████ 80% of exam      │
-│  █ Core topics we cover deeply          █ questions        │
-│  ████████████████████████████████████████                   │
-│                                                             │
-│  ████████████ 20% of exam questions                        │
-│  █ Edge cases, rarely tested, advanced  █                  │
-│  ████████████                                               │
-│                                                             │
-│  Result: Maximum pass probability with efficient study      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+pie title The 80/20 Rule for Certifications
+    "Core topics we cover deeply (80% of exam)" : 80
+    "Edge cases, rarely tested, advanced (20% of exam)" : 20
 ```
 
 We don't try to cover everything. We cover what matters for passing.
@@ -139,26 +127,39 @@ Kubernetes moves fast. The more topics we cover, the more we must maintain. By f
 
 For topics we do cover, we aim for exam sufficiency, not exhaustive mastery:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              DEPTH LEVELS BY TOPIC                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Topic              Exam    KubeDojo   Expert Level        │
-│                     Needs   Coverage                        │
-│  ──────────────────────────────────────────────────────    │
-│  Pods               ████    ████       ████████████        │
-│  Deployments        ████    ████       ██████████          │
-│  Services           ████    ████       █████████████       │
-│  NetworkPolicy      ███     ███        ████████████        │
-│  RBAC               ███     ███        ██████████████      │
-│  Helm               ██      ██         ████████████        │
-│  etcd backup        █       █          ████████████████    │
-│                                                             │
-│  Key: █ = coverage depth                                   │
-│  We match exam needs, not expert level                      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+gantt
+    title Depth Levels by Topic (Exam Needs vs. Expert Level)
+    dateFormat X
+    axisFormat %s
+
+    section Pods
+    Exam Needs          :a1, 0, 4
+    Expert Level        :a2, 0, 10
+
+    section Deployments
+    Exam Needs          :b1, 0, 4
+    Expert Level        :b2, 0, 8
+
+    section Services
+    Exam Needs          :c1, 0, 4
+    Expert Level        :c2, 0, 9
+
+    section NetworkPolicy
+    Exam Needs          :d1, 0, 3
+    Expert Level        :d2, 0, 8
+
+    section RBAC
+    Exam Needs          :e1, 0, 3
+    Expert Level        :e2, 0, 10
+
+    section Helm
+    Exam Needs          :f1, 0, 4
+    Expert Level        :f2, 0, 9
+
+    section etcd backup
+    Exam Needs          :g1, 0, 1
+    Expert Level        :g2, 0, 10
 ```
 
 > **Pause and predict**: Look at the depth chart above. Why do you think 'etcd backup' requires very little depth for the exam, but maximum depth for an expert? What happens in production if you mess it up?
@@ -197,39 +198,19 @@ After passing certifications, you'll want to go deeper. Here's our recommended p
 
 ## Visualization: KubeDojo Scope
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│            THE KUBERNETES KNOWLEDGE UNIVERSE                │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│    ┌─────────────────────────────────────────────────┐     │
-│    │                                                 │     │
-│    │              CNCF Landscape                     │     │
-│    │           (1000+ projects)                      │     │
-│    │                                                 │     │
-│    │    ┌───────────────────────────────────┐       │     │
-│    │    │                                   │       │     │
-│    │    │     Production Operations         │       │     │
-│    │    │   (Company-specific, tools, etc)  │       │     │
-│    │    │                                   │       │     │
-│    │    │    ┌───────────────────────┐     │       │     │
-│    │    │    │                       │     │       │     │
-│    │    │    │  ╔═══════════════╗   │     │       │     │
-│    │    │    │  ║   KubeDojo    ║   │     │       │     │
-│    │    │    │  ║  (Cert Focus) ║   │     │       │     │
-│    │    │    │  ╚═══════════════╝   │     │       │     │
-│    │    │    │   Certification      │     │       │     │
-│    │    │    │   Curricula          │     │       │     │
-│    │    │    └───────────────────────┘     │       │     │
-│    │    │                                   │       │     │
-│    │    └───────────────────────────────────┘       │     │
-│    │                                                 │     │
-│    └─────────────────────────────────────────────────┘     │
-│                                                             │
-│  We focus on the certification core.                        │
-│  The broader ecosystem is beyond our scope.                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph CNCF [CNCF Landscape 1000+ projects]
+        subgraph Prod [Production Operations - Company-specific, tools, etc.]
+            subgraph Cert [Certification Curricula]
+                KubeDojo((KubeDojo - Cert Focus))
+            end
+        end
+    end
+    style CNCF fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style Prod fill:#ececff,stroke:#333,stroke-width:2px
+    style Cert fill:#d4edda,stroke:#333,stroke-width:2px
+    style KubeDojo fill:#28a745,color:#fff,stroke:#333,stroke-width:2px
 ```
 
 ---
@@ -276,7 +257,7 @@ Our curriculum matches official exam objectives. If something appears on the exa
 | **Memorizing YAML syntax** | Fear of a blank screen during the exam. | Master `kubectl run` and `kubectl create` with the `--dry-run=client -o yaml` flags to generate templates. |
 | **Studying cloud-specific IAM** | Your company uses AWS IRSA or EKS Pod Identity, so you think it's core K8s. | Focus on pure Kubernetes RBAC (Roles, RoleBindings, ServiceAccounts). The exam is vanilla K8s. |
 | **Building a Raspberry Pi cluster** | You want "hands-on" experience building from scratch. | Use kind, minikube, or a managed cloud VM. The exam tests *using* K8s, not overcoming ARM architecture quirks. |
-| **Over-indexing on Helm/Helmfiles** | It's how you deploy apps at work every day. | Helm is heavily tested in CKS and slightly in CKAD, but barely touches CKA. Focus on raw K8s manifests. |
+| **Over-indexing on Helm/Helmfiles** | It's how you deploy apps at work every day. | *Note on Exam Changes:* Historical advice claimed Helm barely touched the CKA and was heavily tested in CKS. The official Linux Foundation curricula completely contradicts this today. As of February 2025, Helm and Kustomize are explicitly tested in the CKA (25% weight domain) and CKAD, but Helm does *not* appear in the official CKS v1.34 curriculum. Focus on standard Helm commands for CKA/CKAD, and skip it for CKS. |
 | **Studying GitOps (ArgoCD/Flux)** | It's the modern standard for K8s deployments. | ArgoCD is not on the exam. Understand the *concept* of declarative state, but don't learn the tool for the test. |
 | **Trying to master etcd operations** | etcd is the brain of the cluster, so it seems critical. | You only need to know how to snapshot and restore etcd using the official `etcdctl` tool. Leave cluster defragmentation to the experts. |
 
@@ -301,43 +282,43 @@ Instead of a cluster exercise, this is a planning exercise. Open your current st
 1. **Scenario**: You are a junior DevOps engineer preparing for the CKA. Your manager suggests you use the next two weeks to deeply learn Terraform and AWS EKS because that's what the team uses in production. How should you respond regarding your CKA study plan?
    <details>
    <summary>Answer</summary>
-   Explain that while Terraform and EKS are critical for the job, they are strictly outside the scope of the CKA exam. The exam tests generic, vanilla Kubernetes components and is completely cloud-agnostic. Spending two weeks on Terraform will improve your work performance but will actively delay your certification progress. You should politely propose splitting your time, or focusing entirely on the certification first before mastering the company's specific toolchain.
+   Explain that while Terraform and EKS are critical for the job, they are strictly outside the scope of the CKA exam. The exam tests generic, vanilla Kubernetes components and is completely cloud-agnostic, meaning cloud-provider tools will not be present. Spending two weeks on Terraform will improve your work performance but will actively delay your certification progress. You should politely propose splitting your time, or focusing entirely on the certification first before mastering the company's specific toolchain. By separating your goals, you can achieve certification faster and then bring focused expertise to the team.
    </details>
 
 2. **Scenario**: While studying NetworkPolicies for the CKAD, you find an incredible 4-hour tutorial on writing custom eBPF programs using Cilium. You find networking fascinating. Should you take this tutorial now?
    <details>
    <summary>Answer</summary>
-   No, you should bookmark it for after the exam. While Cilium and eBPF are powerful and increasingly standard in modern clusters, the CKAD exam only requires you to understand standard Kubernetes NetworkPolicy objects. Diving into eBPF is a classic example of the "100+ hours trap" mentioned in this module. Stick to the 80/20 rule and master the basics first so you can pass the exam efficiently.
+   No, you should bookmark it for after the exam. While Cilium and eBPF are powerful and increasingly standard in modern clusters, the CKAD exam only requires you to understand standard Kubernetes NetworkPolicy objects. Diving into eBPF is a classic example of the "100+ hours trap" mentioned in this module. The certification tests your ability to declare standard access rules, not your ability to write custom kernel-level network filters. Stick to the 80/20 rule and master the basics first so you can pass the exam efficiently.
    </details>
 
 3. **Scenario**: You are building a study plan for the CKA. You allocate 5 hours to learning how to deploy and configure ArgoCD for GitOps, and 5 hours to practicing standard Kubernetes Deployments and Services. Critique this study plan.
    <details>
    <summary>Answer</summary>
-   This study plan is heavily misaligned with the exam objectives. ArgoCD, while an industry standard for GitOps, is a third-party tool and does not appear on the CKA exam at all. Allocating equal time to a non-exam topic and core exam topics violates the exam-focused philosophy. You should reallocate the ArgoCD time entirely toward mastering core Kubernetes primitives, troubleshooting, and cluster architecture.
+   This study plan is heavily misaligned with the exam objectives. ArgoCD, while an industry standard for GitOps, is a third-party tool and does not appear on the CKA exam at all. The CKA tests native Kubernetes primitives and operations, meaning your ability to use `kubectl` natively is what matters. Allocating equal time to a non-exam topic and core exam topics violates the exam-focused philosophy. You should reallocate the ArgoCD time entirely toward mastering core Kubernetes primitives, troubleshooting, and cluster architecture to ensure you pass.
    </details>
 
 4. **Scenario**: A colleague failed the CKA exam and complains, "The exam is so unrealistic! At work, I just use the AWS Console to add nodes, but the exam wanted me to troubleshoot kubelet systemd services." Why did your colleague fail, and what does this say about the exam's scope?
    <details>
    <summary>Answer</summary>
-   Your colleague failed because they conflated cloud-provider abstractions with core Kubernetes administration. The CKA specifically tests your ability to administer vanilla Kubernetes, which means interacting directly with components like the `kubelet` and `systemd` on raw Linux nodes. This highlights exactly why we explicitly skip cloud provider specifics in KubeDojo. Relying on cloud abstractions masks the fundamental cluster operations you are actually tested on during the certification.
+   Your colleague failed because they conflated cloud-provider abstractions with core Kubernetes administration. The CKA specifically tests your ability to administer vanilla Kubernetes, which means interacting directly with components like the `kubelet` and `systemd` on raw Linux nodes. This highlights exactly why we explicitly skip cloud provider specifics in KubeDojo. Relying on cloud abstractions masks the fundamental cluster operations you are actually tested on during the certification. To pass, you must understand the underlying system services that actually run the cluster, rather than relying on a managed service UI.
    </details>
 
 5. **Scenario**: You are reading the Kubernetes documentation on scaling, and you come across Cluster Autoscaler and Horizontal Pod Autoscaler (HPA). Based on KubeDojo's philosophy of "What We Deliberately Skip," which of these should you focus on for the exam, and why?
    <details>
    <summary>Answer</summary>
-   You should focus entirely on the Horizontal Pod Autoscaler (HPA). HPA is a core Kubernetes API object that scales pods based on metrics, and it is explicitly part of the exam curriculum. Cluster Autoscaler, on the other hand, interacts with the underlying cloud provider's infrastructure to add or remove actual nodes. Because the exam is rigorously cloud-agnostic, cloud-specific infrastructure scaling mechanisms are entirely out of scope.
+   You should focus entirely on the Horizontal Pod Autoscaler (HPA). HPA is a core Kubernetes API object that scales pods based on metrics, and it is explicitly part of the exam curriculum. Cluster Autoscaler, on the other hand, interacts with the underlying cloud provider's infrastructure to add or remove actual nodes. Because the exam is rigorously cloud-agnostic, cloud-specific infrastructure scaling mechanisms are entirely out of scope. Mastering HPA will directly contribute to your exam success, whereas Cluster Autoscaler knowledge, while useful in practice, will not be tested.
    </details>
 
 6. **Scenario**: You want to practice for the exam, so you decide to spend the weekend setting up a highly available, multi-master Kubernetes cluster on bare metal using kubeadm, complete with an external etcd cluster and HAProxy load balancers. Is this a good use of your study time?
    <details>
    <summary>Answer</summary>
-   This is an excellent exercise for a senior platform engineer, but a terrible use of time for passing the CKA. The exam does not require you to build complex, highly available architectures from scratch; it requires you to understand how to bootstrap a basic cluster using kubeadm. Building an HA bare-metal cluster introduces immense complexity that is completely outside the exam's "Just Enough" depth boundary. You should use a simple, pre-configured environment for your studies instead.
+   This is an excellent exercise for a senior platform engineer, but a terrible use of time for passing the CKA. The exam does not require you to build complex, highly available architectures from scratch; it requires you to understand how to bootstrap a basic cluster using kubeadm. Building an HA bare-metal cluster introduces immense complexity that is completely outside the exam's "Just Enough" depth boundary. The time spent troubleshooting external load balancers or hardware quirks detracts from learning the core K8s API. You should use a simple, pre-configured environment or a tool like `kind` or `minikube` for your studies instead.
    </details>
 
 7. **Scenario**: Looking at the "Depth Levels by Topic" chart, you see that "etcd backup" is rated at a very low depth for the exam, but maximum depth for an expert. You are taking the exam next week. Should you read the official etcd disaster recovery whitepaper?
    <details>
    <summary>Answer</summary>
-   Absolutely not, as this would be a massive waste of study time. The exam only requires you to know exactly two commands for etcd: how to take a snapshot, and how to restore it using the official `etcdctl` tool. Reading a disaster recovery whitepaper goes far beyond the "Just Enough" principle into advanced operations. You must ruthlessly prioritize the mechanical execution of the snapshot process over a deep theoretical understanding.
+   Absolutely not, as this would be a massive waste of study time. The exam only requires you to know exactly two commands for etcd: how to take a snapshot, and how to restore it using the official `etcdctl` tool. Reading a disaster recovery whitepaper goes far beyond the "Just Enough" principle into advanced operations. The exam tests your ability to execute the mechanical backup process, not your theoretical understanding of etcd consensus or defragmentation. You must ruthlessly prioritize the mechanical execution of the snapshot process over a deep theoretical understanding.
    </details>
 
 ---
