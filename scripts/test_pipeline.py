@@ -2166,7 +2166,7 @@ class TestStepCheckIntegrity(unittest.TestCase):
              patch.object(p, "_probe_url", side_effect=fake_status):
             passed, messages = p.step_check_integrity(content, sample_fact_ledger())
 
-        self.assertFalse(passed)
+        self.assertTrue(passed, "LINK_DEAD is now a warning, not a hard error")
         self.assertTrue(any("LINK_DEAD: https://example.com/dead (404)" in m for m in messages))
 
     def test_yaml_lint_valid_passes(self):
@@ -2244,7 +2244,7 @@ class TestStepCheckIntegrity(unittest.TestCase):
                 self._supported_ledger("C36", "Kubernetes current stable is v1.36."),
             )
 
-        self.assertFalse(passed_134)
+        self.assertTrue(passed_134, "STALE_K8S_VERSION is now a warning — v1.34 should not fail")
         self.assertTrue(any("STALE_K8S_VERSION: v1.34" in m for m in messages_134))
         self.assertTrue(passed_135)
         self.assertTrue(passed_136)
@@ -2327,7 +2327,7 @@ class TestStepCheckIntegrity(unittest.TestCase):
         with patch.object(p, "LINK_CACHE_FILE", self.link_cache):
             passed, messages = p.step_check_integrity(content, ledger)
 
-        self.assertFalse(passed)
+        self.assertTrue(passed, "UNMAPPED_CLAIM is now a warning, not a hard error")
         self.assertTrue(any(m.startswith("UNMAPPED_CLAIM: Helm v3.17.0") for m in messages))
 
     def test_reverse_evidence_mapping_ignores_fenced_yaml_examples(self):
