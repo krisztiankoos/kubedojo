@@ -13,11 +13,11 @@ sidebar:
 
 ## Why This Module Matters
 
-Ceph is the dominant distributed storage system for on-premises Kubernetes. It turns a collection of local disks across multiple servers into a unified, replicated, self-healing storage pool that Kubernetes can consume via CSI. When a disk fails, Ceph automatically redistributes data. When a node goes down, Ceph keeps serving from replicas on surviving nodes. When you add new servers, Ceph rebalances automatically.
+In 2017, GitLab suffered a catastrophic outage when an engineer accidentally executed `rm -rf` on their primary database server. Because their architecture relied heavily on local storage and had silent failures in their snapshot pipelines, they permanently lost nearly 300GB of production data and faced 18 hours of grueling downtime. The incident severely damaged their reputation and caused significant financial impact. If their critical databases had been backed by a robust, software-defined distributed storage system capable of instantaneous block-level snapshots and cross-node replication, recovery would have been a simple command taking mere seconds.
 
-But Ceph is not simple. It has its own daemons (MON, OSD, MDS, MGR), its own consensus protocol (Paxos for monitors), its own networking requirements (separate public and cluster networks), and its own failure modes. Running Ceph poorly is worse than not running it at all — a misconfigured Ceph cluster can amplify failures instead of preventing them.
+Software-defined storage (SDS) is the backbone of resilient infrastructure. Ceph is the undisputed dominant distributed storage system for on-premises Kubernetes environments. It transforms a scattered collection of local disks across multiple servers into a unified, highly replicated, self-healing storage pool that Kubernetes can dynamically consume via the Container Storage Interface (CSI). When a physical disk fails, Ceph automatically redistributes the data. When an entire node goes offline, Ceph continues serving requests from replicas located on surviving nodes. When you add new servers to the rack, Ceph rebalances the cluster automatically, distributing the I/O load transparently.
 
-Rook is the Kubernetes operator that manages Ceph. It turns Ceph deployment from a multi-day manual process into a `kubectl apply`. But understanding what Rook does under the hood is essential for troubleshooting.
+But Ceph is not a simple black box. It operates its own daemons, utilizes its own distributed consensus protocol, demands strict networking topologies, and exhibits unique failure modes. Running Ceph poorly is often worse than not running it at all—a misconfigured Ceph cluster can amplify failures, saturate your network, and bring down your entire environment. Rook is the Kubernetes operator that manages Ceph, turning a complex, multi-day manual deployment into declarative YAML. Understanding what Rook does under the hood, and how Ceph manages data, is essential for engineering resilient, production-grade storage architectures.
 
 ---
 
@@ -25,27 +25,49 @@ Rook is the Kubernetes operator that manages Ceph. It turns Ceph deployment from
 
 After completing this module, you will be able to:
 
-1. **Deploy** a production-grade Ceph cluster via Rook with properly sized MON, OSD, and MDS components
-2. **Configure** Ceph storage classes for block (RBD), filesystem (CephFS), and object (RGW) storage in Kubernetes
-3. **Optimize** Ceph performance by tuning OSD placement, replication factors, CRUSH rules, and network separation
-4. **Troubleshoot** Ceph health warnings, slow OSD recovery, and PG degradation during node failures
+1. **Design** a production-grade Ceph cluster architecture incorporating dedicated public and cluster networks to isolate replication traffic.
+2. **Implement** Rook-Ceph operators and CephCluster Custom Resource Definitions (CRDs), ensuring optimal OSD placement and host-level failure domain configurations.
+3. **Compare** and select appropriate Ceph CSI drivers (RBD, CephFS, NFS) based on application access modes and specific performance requirements.
+4. **Diagnose** Ceph cluster health issues, including Placement Group (PG) degradation and slow OSD recovery, using the Rook toolbox.
+5. **Evaluate** storage node topologies and upgrade paths to prevent quorum loss and maintain compatibility across Kubernetes and Ceph versions.
 
 ---
 
 ## What You'll Learn
 
-- Ceph architecture (MON, OSD, MDS, MGR, RADOS)
-- Rook operator deployment and CephCluster CRD
-- Storage classes for block (RBD), filesystem (CephFS), and object (RGW)
-- Performance tuning for on-premises workloads
-- Monitoring and alerting for Ceph health
-- Failure recovery procedures
+- The evolution of Rook within the CNCF ecosystem and the Ceph release lifecycle.
+- Ceph architecture components (MON, OSD, MDS, MGR, RADOS) and how they interact.
+- Rook operator deployment, prerequisites, and the `CephCluster` CRD structure.
+- Storage classes for block (RBD), filesystem (CephFS), and object (RGW) provisioners.
+- Performance tuning strategies for on-premises workloads, including network separation.
+- Monitoring, alerting, and failure recovery procedures for Ceph health.
+
+---
+
+## The Evolution of Rook and Ceph
+
+Before diving into the architecture, it is important to understand the lifecycle of the tools managing your data. 
+
+Rook is a premier CNCF project that has reached the highest level of maturity. Rook was accepted to the CNCF on 2018-01-29 and moved to incubation on 2018-09-25. It officially moved to Graduated maturity on 2020-10-07, cementing its place as the standard for Kubernetes-native storage orchestration.
+
+Ceph itself follows a strict release lifecycle using marine animal names. Staying on supported versions is a hard requirement for production clusters, as archived Ceph releases are explicitly not maintained and no longer receive bug fixes or backports. As of our current timeline:
+- The **Tentacle** release is part of the active release train, with its latest version being 20.2.1 and an initial release date of 2026-04-06.
+- The **Squid** release is also active, with its latest version at 19.2.3 and an expected end-of-life (EOL) of 2026-09-19.
+- The **Reef** release remains active but is nearing the end of its cycle. Its latest release, 18.2.8, is expected to be the eighth and final backport release in Reef, with an EOL of 2026-03-31.
+
+Rook's upgrade procedures are strictly sequential. Rook 1.19 upgrade documentation defines support for upgrading from 1.18.x to 1.19.x and explicitly states that upgrades are only supported between official releases. Rook marks master/unreleased builds as unsupported—you should never run a master build in production or attempt to skip minor versions during an upgrade.
 
 ---
 
 ## Ceph Architecture
 
-```
+Ceph is a distributed storage system composed of several specialized daemons that work together to provide object, block, and file storage. At its core, Rook/Ceph exposes block, object, and file storage to applications.
+
+### Legacy ASCII Architecture Representation
+
+The original documentation utilized an ASCII diagram to represent this architecture. The technical representation is preserved below:
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                    CEPH ARCHITECTURE                         │
 │                                                               │
@@ -86,9 +108,62 @@ After completing this module, you will be able to:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Modern Mermaid Architecture Representation
+
+Here is the exact same architectural layout translated into a native Mermaid diagram for better maintainability:
+
+```mermaid
+flowchart TD
+    subgraph Monitors [Monitors: Cluster map, Quorum 3 or 5]
+        direction LR
+        M1[MON 1 - Paxos]
+        M2[MON 2 - Paxos]
+        M3[MON 3 - Paxos]
+    end
+    
+    subgraph Manager [Manager: Dashboard, metrics, active/standby]
+        MGR[MGR Daemon]
+    end
+    
+    subgraph Storage_Nodes [Object Storage Daemons: 1 per drive, self-healing, 3x replica]
+        direction LR
+        subgraph Node1 [Node 1]
+            O0[OSD 0 NVMe]
+            O1[OSD 1 NVMe]
+        end
+        subgraph Node2 [Node 2]
+            O2[OSD 2 NVMe]
+            O3[OSD 3 NVMe]
+        end
+        subgraph Node3 [Node 3]
+            O4[OSD 4 NVMe]
+            O5[OSD 5 NVMe]
+        end
+    end
+    
+    subgraph Metadata [Metadata Server: Required only for CephFS]
+        MDS[MDS Optional]
+    end
+    
+    subgraph Storage_Types [Storage Types]
+        RBD[RBD Block -> PersistentVolumes ReadWriteOnce]
+        CEPHFS[CephFS File -> PersistentVolumes ReadWriteMany]
+        RGW[RGW Object -> S3 compatible]
+    end
+
+    Monitors --> MGR
+    MGR --> Storage_Nodes
+    Storage_Nodes --> MDS
+    Storage_Nodes --> Storage_Types
+```
+
 ### Ceph Networking
 
-```
+A proper Ceph deployment relies heavily on network segregation. Because data replication multiplies the amount of traffic flowing across the network, failing to separate client traffic from replication traffic can cause storage operations to saturate your interfaces and impact your application pods.
+
+#### Legacy ASCII Network Design
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │           CEPH NETWORK DESIGN                                │
 │                                                               │
@@ -115,15 +190,50 @@ After completing this module, you will be able to:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+#### Modern Mermaid Network Design
+
+```mermaid
+flowchart LR
+    subgraph Public_Network [PUBLIC NETWORK - VLAN 20]
+        C[Client / K8s Nodes] -->|Read/Write & CSI Traffic| OSD
+        C -->|Cluster Map Queries| MON
+    end
+
+    subgraph Cluster_Network [CLUSTER NETWORK - VLAN 30]
+        OSD -->|Replication: 3x data write amp| OSD2[Other OSDs]
+        OSD -->|Recovery: Backfill after failure| OSD2
+        OSD -.->|Heartbeats| OSD2
+    end
+```
+
+---
+
+## Prerequisites and Integration
+
+Before deploying Rook and Ceph, you must ensure your environment meets strict prerequisites.
+
+### Hardware and OS Requirements
+- **CPU:** Rook currently supports only amd64/x86_64 and arm64 CPU architectures.
+- **Kernel Versions:** Rook requires kernel/RBD support. It recommends kernel minimums of 5.4+ for expanded RBD image features, and 4.17+ for CephFS RWX PVC size enforcement. Running older kernels can lead to degraded features or failed quota enforcement.
+- **Local Storage:** Rook requires at least one local storage source such as raw devices/partitions, LVM logical volumes without filesystem, or block PVCs for Ceph OSD use. You cannot use a formatted filesystem partition for an OSD.
+
+### Kubernetes Compatibility
+Rook's compatibility matrix shifts with each release. For example, Rook v1.18 documentation still references Kubernetes support as v1.29 through v1.34. However, the subsequent Rook v1.19 introduces a minimum supported Kubernetes version of v1.30 and a minimum supported Ceph version of v19.2.0. Looking at the broader picture, Rook latest-release documentation lists Kubernetes support as v1.30 through v1.35. Always verify your control plane version before initiating a Rook upgrade.
+
+### CSI Drivers
+Rook acts as the bridge between Kubernetes and Ceph by integrating Container Storage Interface (CSI) drivers. Specifically, Rook integrates three CSI drivers: RBD (block), CephFS (file), and NFS (experimental). Within Rook, the RBD and CephFS CSI drivers are enabled automatically by the operator, while NFS is disabled by default. When planning upgrades, note that the Rook Ceph CSI support policy in the latest docs is to support only the two most recent ceph-csi versions.
+
 ---
 
 ## Deploying Ceph with Rook
 
 ### Step 1: Install Rook Operator
 
+To begin, install the Rook operator. Note the explicit enablement of the RBD and CephFS CSI drivers.
+
 ```bash
 # Add Rook Helm repo
-helm repo add rook-release https://charts.rook.io/release
+helm repo add rook-release https://rook.github.io/charts
 helm repo update
 
 # Install Rook operator
@@ -141,7 +251,7 @@ kubectl -n rook-ceph wait --for=condition=Ready pod \
 
 ### Step 2: Create CephCluster
 
-The CephCluster CRD below configures a production-grade Ceph deployment. Notice three critical design decisions: (1) `allowMultiplePerNode: false` for MONs ensures that a single node failure cannot lose quorum, (2) `provider: host` for networking bypasses container networking overhead for storage I/O, and (3) resource limits on OSDs prevent them from consuming all CPU and memory during recovery operations:
+The CephCluster CRD below configures a production-grade Ceph deployment. Notice three critical design decisions: (1) `allowMultiplePerNode: false` for MONs ensures that a single node failure cannot lose quorum, (2) `provider: host` for networking bypasses container networking overhead for storage I/O, and (3) resource limits on OSDs prevent them from consuming all CPU and memory during recovery operations.
 
 ```yaml
 apiVersion: ceph.rook.io/v1
@@ -221,6 +331,8 @@ spec:
 
 ### Step 3: Create StorageClasses
 
+To expose the storage to Kubernetes, you must define StorageClasses for Block and Filesystem storage. These have been separated into distinct YAML blocks to ensure clean validation when applying to your cluster.
+
 ```yaml
 # Block storage (RBD) — most common for databases, stateful apps
 apiVersion: ceph.rook.io/v1
@@ -233,7 +345,9 @@ spec:
   replicated:
     size: 3             # 3 copies of every block
     requireSafeReplicaSize: true
----
+```
+
+```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -251,8 +365,9 @@ parameters:
   csi.storage.k8s.io/fstype: ext4
 reclaimPolicy: Delete
 allowVolumeExpansion: true
+```
 
----
+```yaml
 # Filesystem storage (CephFS) — for shared access (ReadWriteMany)
 apiVersion: ceph.rook.io/v1
 kind: CephFilesystem
@@ -270,7 +385,9 @@ spec:
   metadataServer:
     activeCount: 1
     activeStandby: true
----
+```
+
+```yaml
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -291,8 +408,12 @@ allowVolumeExpansion: true
 ### Step 4: Verify Ceph Health
 
 ```bash
+# Deploy the Rook toolbox
+kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.19/deploy/examples/toolbox.yaml
+kubectl -n rook-ceph wait --for=condition=Ready pod -l app=rook-ceph-tools --timeout=300s
+
 # Check Ceph cluster status
-kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph status
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph status
 #   cluster:
 #     id:     a1b2c3d4-...
 #     health: HEALTH_OK
@@ -308,7 +429,7 @@ kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph status
 #     usage:   15 GiB used, 45 TiB / 45 TiB avail
 
 # Check OSD status
-kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph osd tree
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd tree
 # ID  CLASS  WEIGHT   TYPE NAME           STATUS  REWEIGHT
 # -1         45.00000 root default
 # -3         15.00000     host storage-01
@@ -319,7 +440,7 @@ kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph osd tree
 # ...
 
 # Check pool IOPS
-kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph osd pool stats
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph osd pool stats
 ```
 
 ---
@@ -368,6 +489,14 @@ ceph config set osd osd_scrub_end_hour 6     # End at 6 AM
 - **A single Ceph cluster can scale to exabytes.** CERN runs one of the largest Ceph deployments: 30+ PB across thousands of OSDs, storing physics experiment data from the Large Hadron Collider.
 
 - **BlueStore replaced FileStore as the default OSD backend** in Ceph Luminous (2017). BlueStore writes directly to raw block devices, bypassing the Linux filesystem entirely. This eliminates the double-write penalty that FileStore suffered and improves write performance by 2x.
+
+- Rook is a fully matured CNCF project; it was accepted to the CNCF on **2018-01-29**, moved to incubation on **2018-09-25**, and achieved Graduated maturity on **2020-10-07**.
+
+- The Ceph **Tentacle** release train was initially released on **2026-04-06** and represents the leading edge of active Ceph development (latest version **20.2.1**).
+
+- The Ceph **Squid** release train remains highly active with its latest stable release at **19.2.3**, and is expected to reach its end-of-life on **2026-09-19**.
+
+- The Ceph **Reef** release train's latest version is **18.2.8**, which serves as its eighth and expected final backport release, leading up to its EOL on **2026-03-31**.
 
 ---
 
@@ -469,9 +598,138 @@ storageClassName: ceph-filesystem
 
 ## Hands-On Exercise: Deploy Rook-Ceph in Kind
 
+This exercise walks you through creating a local test environment and deploying Rook-Ceph using a PVC-backed storage mechanism.
+
 > **Note**: Rook removed support for directory-backed OSDs in v1.4. This exercise
 > uses PVC-based OSDs with Kind's default `standard` StorageClass (local-path
 > provisioner), which is the recommended approach for test clusters.
+
+### Step-by-Step Progressive Tasks
+
+**Task 1: Bootstrap the Kind Cluster**
+<details>
+<summary>Solution</summary>
+
+```bash
+cat <<EOF | kind create cluster --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
+  - role: worker
+EOF
+```
+</details>
+
+**Task 2: Install the Rook Operator**
+<details>
+<summary>Solution</summary>
+
+```bash
+helm repo add rook-release https://rook.github.io/charts
+helm install rook-ceph rook-release/rook-ceph \
+  --namespace rook-ceph --create-namespace
+kubectl -n rook-ceph wait --for=condition=Ready pod \
+  -l app=rook-ceph-operator --timeout=300s
+```
+</details>
+
+**Task 3: Deploy the CephCluster Custom Resource**
+<details>
+<summary>Solution</summary>
+
+```bash
+kubectl apply -f - <<EOF
+apiVersion: ceph.rook.io/v1
+kind: CephCluster
+metadata:
+  name: rook-ceph
+  namespace: rook-ceph
+spec:
+  cephVersion:
+    image: quay.io/ceph/ceph:v19.2
+    allowUnsupported: true
+  dataDirHostPath: /var/lib/rook
+  mon:
+    count: 1
+    allowMultiplePerNode: true
+  mgr:
+    count: 1
+    allowMultiplePerNode: true
+  dashboard:
+    enabled: false
+  crashCollector:
+    disable: true
+  storage:
+    storageClassDeviceSets:
+      - name: set1
+        count: 3
+        portable: true
+        volumeClaimTemplates:
+          - metadata:
+              name: data
+            spec:
+              resources:
+                requests:
+                  storage: 5Gi
+              storageClassName: standard
+              volumeMode: Block
+              accessModes:
+                - ReadWriteOnce
+  resources:
+    mon:
+      limits:
+        memory: "512Mi"
+      requests:
+        memory: "256Mi"
+    osd:
+      limits:
+        memory: "1Gi"
+      requests:
+        memory: "512Mi"
+EOF
+```
+</details>
+
+**Task 4: Monitor and Validate Cluster Health**
+<details>
+<summary>Solution</summary>
+
+```bash
+kubectl -n rook-ceph wait --for=condition=Ready cephcluster/rook-ceph --timeout=600s
+kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.19/deploy/examples/toolbox.yaml
+kubectl -n rook-ceph wait --for=condition=Ready pod -l app=rook-ceph-tools --timeout=300s
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph status
+```
+</details>
+
+**Task 5: Create a PVC and Verify Binding**
+<details>
+<summary>Solution</summary>
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.19/deploy/examples/csi/rbd/storageclass-test.yaml
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: test-pvc
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: rook-ceph-block
+  resources:
+    requests:
+      storage: 1Gi
+EOF
+kubectl get pvc test-pvc
+```
+</details>
+
+### Complete Script Reference
+
+If you prefer to run the entire sequence non-interactively, here is the complete reference script:
 
 ```bash
 # Create a kind cluster with 3 worker nodes
@@ -486,7 +744,7 @@ nodes:
 EOF
 
 # Install Rook operator
-helm repo add rook-release https://charts.rook.io/release
+helm repo add rook-release https://rook.github.io/charts
 helm install rook-ceph rook-release/rook-ceph \
   --namespace rook-ceph --create-namespace
 
@@ -550,13 +808,14 @@ EOF
 kubectl -n rook-ceph wait --for=condition=Ready cephcluster/rook-ceph --timeout=600s
 
 # Deploy toolbox for ceph commands
-kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.16/deploy/examples/toolbox.yaml
+kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.19/deploy/examples/toolbox.yaml
+kubectl -n rook-ceph wait --for=condition=Ready pod -l app=rook-ceph-tools --timeout=300s
 
 # Check Ceph health
-kubectl -n rook-ceph exec -it deploy/rook-ceph-tools -- ceph status
+kubectl -n rook-ceph exec deploy/rook-ceph-tools -- ceph status
 
 # Create a block pool and storage class
-kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.16/deploy/examples/csi/rbd/storageclass-test.yaml
+kubectl apply -f https://raw.githubusercontent.com/rook/rook/release-1.19/deploy/examples/csi/rbd/storageclass-test.yaml
 
 # Create a test PVC
 kubectl apply -f - <<EOF
@@ -593,4 +852,4 @@ kind delete cluster
 
 ## Next Module
 
-Continue to [Module 4.3: Local Storage & Alternatives](../module-4.3-local-storage/) to learn about lightweight storage options that do not require a distributed storage system.
+Continue to [Module 4.3: Local Storage & Alternatives](../module-4.3-local-storage/) to learn about lightweight storage options that do not require a distributed storage system, perfect for ephemeral edge caches or simple bare-metal database nodes.
