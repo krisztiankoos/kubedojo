@@ -308,16 +308,14 @@ Three factors align:
 </details>
 
 ### Question 3
-What is the most commonly underestimated cost in on-premises Kubernetes?
+A retail company is migrating a 150-node EKS environment to on-premises bare metal. They have budgeted for servers, networking gear, top-of-rack switches, and a 3-year colocation lease with power and cooling included. They plan to use their existing two-person cloud engineering team to manage the new environment. Which hidden cost risk will likely break their TCO model within the first year?
 
 <details>
 <summary>Answer</summary>
 
-**Staffing.** Hardware is a one-time cost amortized over 3-5 years. Power and cooling are predictable. But the people who operate bare metal Kubernetes — handling firmware updates, disk replacements, network troubleshooting, OS patching, K8s upgrades, and 3AM hardware failures — are expensive and hard to hire.
+**Staffing and operational overhead.** While their hardware and facility costs are accounted for, the rule of thumb is 1 infrastructure engineer per 50-100 nodes.
 
-The rule of thumb is 1 infrastructure engineer per 50-100 nodes. At $150K-$200K fully loaded per engineer, a 200-node cluster needs 2-4 engineers costing $300K-$800K per year. This is often more than the cloud compute cost it replaces.
-
-Organizations that succeed with on-prem invest heavily in automation (Cluster API, GitOps, machine health checks) to increase the nodes-per-engineer ratio.
+A 150-node bare metal cluster requires deep expertise in firmware updates, disk replacements, network troubleshooting, OS patching, and K8s upgrades—tasks previously abstracted by AWS. A two-person team will be overwhelmed by the operational burden, leading to burnout, hiring needs (2-3 additional engineers at $150K-$200K each), or a failed migration. The cost of hiring and retaining this specialized talent often erases anticipated infrastructure savings. Organizations that succeed with on-prem mitigate this risk by investing heavily in automation (Cluster API, GitOps, machine health checks) to increase the nodes-per-engineer ratio.
 </details>
 
 ### Question 4
@@ -386,6 +384,28 @@ Your company runs a data analytics platform:
 - [ ] 3-year TCO comparison completed
 - [ ] Breakeven point identified
 - [ ] Document which factors would change the decision
+
+---
+
+## Planning a Phased Migration Strategy
+
+Moving to on-premises Kubernetes is a high-risk operation. A "big bang" cutover rarely succeeds. Instead, design a phased migration strategy:
+
+### Phase 1: Foundation and Tooling (Months 1-3)
+- **Goal**: Establish the bare-metal control plane and automated provisioning (e.g., using Cluster API or Tinkerbell).
+- **Success Criteria**: A completely automated, repeatable cluster build from bare metal to a ready Kubernetes state, verified by conformance tests.
+
+### Phase 2: Stateless Workloads and Hybrid Connectivity (Months 3-6)
+- **Goal**: Establish secure networking (Direct Connect/VPN) between cloud and on-prem, and move stateless worker nodes on-premise while relying on cloud managed services (databases, object storage).
+- **Success Criteria**: 20% of web traffic served from on-premises clusters with latency and error rates matching or beating cloud baselines.
+
+### Phase 3: Stateful Workloads and Storage (Months 6-9)
+- **Goal**: Migrate stateful components (databases, caches, message queues) to on-premises persistent storage (e.g., Ceph or Portworx).
+- **Success Criteria**: Data replication latency within acceptable bounds, and successful failover tests showing zero data loss during simulated node failures.
+
+### Phase 4: Full Cutover and Cloud Decommissioning (Months 9-12)
+- **Goal**: Shift 100% of production traffic to on-premises and spin down cloud environments, retaining a minimal cloud footprint only for disaster recovery if planned.
+- **Success Criteria**: Cloud spend reduced by the target percentage, with all operational SLA metrics (uptime, latency, resolution time) stable or improved for 30 consecutive days.
 
 ---
 
