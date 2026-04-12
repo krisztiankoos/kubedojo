@@ -534,6 +534,7 @@ Create a new directory named `dojo-k8s-project` and navigate into it. Initialize
 mkdir dojo-k8s-project
 cd dojo-k8s-project
 git init
+git status
 ```
 </details>
 
@@ -548,7 +549,9 @@ Create a `README.md` file with the text "# KubeDojo Project". Stage the file and
 
 ```bash
 echo "# KubeDojo Project" > README.md
+git status
 git add README.md
+git status
 git commit -m "docs: add initial readme"
 ```
 </details>
@@ -576,6 +579,7 @@ metadata:
   name: web
 EOF
 
+git status
 git add deployment.yaml
 git commit -m "feat: add web deployment skeleton"
 ```
