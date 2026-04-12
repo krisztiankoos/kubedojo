@@ -379,10 +379,10 @@ You'll use SSH to connect to these servers, troubleshoot problems, check logs, a
    You must say absolutely not. Your private key (e.g., `id_ed25519`) is your personal "house key" and should never be shared with anyone, not even colleagues. If they need access to the server, they should generate their own SSH key pair and give you their *public* key (`id_ed25519.pub`), which you can then add to the server's allowed list. This ensures everyone's access remains secure and allows you to revoke their access later without changing your own key.
    </details>
 
-3. **What is the difference between a private key and a public key?**
+3. **You are configuring a new deployment server and need it to connect to your database server securely without a password. Which key (public or private) do you place on the database server, and why?**
    <details>
    <summary>Answer</summary>
-   The private key stays on your computer and must never be shared -- it's like your house key. The public key can be shared freely and is placed on servers you want to access -- it's like the lock. When you connect, the server checks if your private key matches its stored public key. If it matches, you're in. Knowing the public key doesn't help anyone impersonate you -- you need the private key for that.
+   You place the public key on the database server (acting as the lock). The private key stays on the deployment server (acting as the key). The server checks if the connecting machine's private key matches its stored public key. Knowing the public key doesn't help anyone impersonate the deployment server, keeping the connection secure.
    </details>
 
 4. **When you're connected to a remote server via SSH and you type `touch recipe.txt`, where is the file created?**
@@ -433,6 +433,7 @@ Now you're "connected." Try:
 
 ```bash
 hostname
+whoami
 pwd
 ls
 echo "Hello from SSH!"
@@ -451,7 +452,7 @@ exit
 Most Linux systems have SSH enabled by default. If not:
 
 ```bash
-sudo apt install openssh-server    # Debian/Ubuntu
+sudo apt install -y openssh-server # Debian/Ubuntu
 sudo systemctl start sshd          # Start the SSH service
 ```
 
