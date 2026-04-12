@@ -40,63 +40,63 @@ After completing this module, you will be able to:
 - When to use local storage vs distributed storage
 - Dedicated storage nodes vs hyper-converged (storage on worker nodes)
 - IOPS, throughput, and latency benchmarking
+- PersistentVolume access modes including RWOP (ReadWriteOncePod), CSI migrations, and modern K8s storage APIs like VolumeAttributesClass and OCI image volumes
 
 ---
 
 ## Storage Options for On-Premises K8s
 
+### Modern Kubernetes Storage Architecture (v1.35+)
+As of Kubernetes v1.35, the storage landscape for on-premises clusters relies heavily on the **Container Storage Interface (CSI)** (currently at spec v1.12.0). When architecting storage, keep these native capabilities in mind:
+
+- **CSI is Mandatory**: In-tree plugins for storage systems like CephFS and Ceph RBD were permanently removed from the core in v1.31. The legacy FlexVolume API is fully deprecated. You must use CSI drivers (which have been GA since v1.13).
+- **Access Modes**: In addition to standard access modes (RWO, ROX, RWX), modern CSI drivers support **ReadWriteOncePod (RWOP)** (GA in v1.29), guaranteeing that only a single Pod cluster-wide can read or write to the volume.
+- **Volume Binding**: For bare-metal, always set your `StorageClass` (API `storage.k8s.io/v1`) to use `volumeBindingMode: WaitForFirstConsumer`. This ensures the PV is provisioned in the same availability zone as the scheduled Pod. The default is `Immediate`, which can cause topology mismatches.
+- **Volume Modes and Protection**: Kubernetes supports `Filesystem` (default) and raw `Block` volume modes (GA since v1.18). It also features built-in Storage Object in Use Protection, preventing the deletion of PVCs and PVs actively bound or in use by a Pod.
+- **Reclaim Policies**: The default policy for dynamic provisioning is `Delete`. Use `Retain` if data preservation is required. 
+- **Advanced Features**: Newer stable features include Volume Expansion (GA in v1.24), CSI Storage Capacity Tracking (GA in v1.24), Generic Ephemeral Volumes (GA in v1.23), Volume Snapshots (GA in v1.20), Volume Populators (GA in v1.33), VolumeAttributesClass for modifying attributes without recreation (GA in v1.34), and OCI image volumes (GA in v1.35). *(Note: Volume Group Snapshots remain in beta as of v1.34, and CSI Volume Health Monitoring is still alpha).*
+- **Cloud/Legacy Migration**: The in-tree CSI migration framework reached GA in v1.25, transparently redirecting legacy calls. Note that legacy cloud plugins for AWS EBS were removed entirely (unverified sources point to v1.27, but the specific removal release lacks official changelog confirmation). The `Recycle` reclaim policy is fully deprecated and unsupported by CSI (GitHub issue #59060 confirms deprecation, though the exact version—rumored to be v1.11—remains unverified in authoritative release notes).
+
 ### The Three Storage Models
 
+```mermaid
+flowchart TD
+    subgraph DAS [DAS: Direct-Attached Storage]
+        direction TB
+        Server1[Server] --> NVMe1[(NVMe 1)]
+        Server1 --> NVMe2[(NVMe 2)]
+        Server1 --> NVMe3[(NVMe 3)]
+    end
+
+    subgraph NAS [NAS: Network-Attached Storage]
+        direction TB
+        NFSServer[NFS/SMB Server] --> FS[File System - XFS/ZFS]
+        FS --> Disk1[(Disk 1)]
+        FS --> Disk2[(Disk 2)]
+    end
+
+    subgraph SDS [SDS/SAN: Software-Defined Storage]
+        direction TB
+        StorageClass[Ceph / StorageClass] --> OSD1[(OSD 1)]
+        StorageClass --> OSD2[(OSD 2)]
+        StorageClass --> OSD3[(OSD 3)]
+    end
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              STORAGE MODELS                                  │
-│                                                               │
-│  DAS (Direct-Attached Storage)                              │
-│  ┌──────────────────────────────┐                           │
-│  │  Server                      │                           │
-│  │  ┌──────┐ ┌──────┐ ┌──────┐│                           │
-│  │  │NVMe 1│ │NVMe 2│ │NVMe 3││ ← drives inside server   │
-│  │  └──────┘ └──────┘ └──────┘│                           │
-│  └──────────────────────────────┘                           │
-│  ✓ Lowest latency (no network hop)                         │
-│  ✓ Highest IOPS (direct PCIe)                              │
-│  ✗ Data lost if node fails (no replication)                │
-│  ✗ Cannot move PVs between nodes                           │
-│  Best for: etcd, databases with app-level replication       │
-│                                                               │
-│  NAS (Network-Attached Storage)                             │
-│  ┌──────────────────────────────┐                           │
-│  │  NFS/SMB Server              │                           │
-│  │  ┌──────────────────────────┐│  ← shared over network   │
-│  │  │  File System (XFS/ZFS)   ││                           │
-│  │  │  ┌──────┐ ┌──────┐      ││                           │
-│  │  │  │Disk 1│ │Disk 2│ ...  ││                           │
-│  │  │  └──────┘ └──────┘      ││                           │
-│  │  └──────────────────────────┘│                           │
-│  └──────────────────────────────┘                           │
-│  ✓ Shared access (ReadWriteMany)                           │
-│  ✓ Simple to set up (NFS CSI driver)                       │
-│  ✗ Higher latency (network + file protocol overhead)       │
-│  ✗ Single point of failure (unless HA NFS)                 │
-│  Best for: shared data, ML datasets, media files            │
-│                                                               │
-│  SDS/SAN (Software-Defined / Storage Area Network)         │
-│  ┌──────────────────────────────┐                           │
-│  │  Ceph / StorageClass         │                           │
-│  │  ┌─────┐ ┌─────┐ ┌─────┐   │  ← distributed across    │
-│  │  │OSD 1│ │OSD 2│ │OSD 3│   │    multiple nodes         │
-│  │  └─────┘ └─────┘ └─────┘   │                           │
-│  │  Data replicated 3x         │                           │
-│  └──────────────────────────────┘                           │
-│  ✓ Replicated (survives node failures)                     │
-│  ✓ PVs can be accessed from any node                       │
-│  ✓ Self-healing (auto-rebalances)                          │
-│  ✗ Higher latency than DAS (network + replication)         │
-│  ✗ Requires dedicated storage nodes (or hyper-converged)   │
-│  Best for: general-purpose PVs, databases without replication│
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**DAS (Direct-Attached Storage)**
+- **Pros:** Lowest latency (no network hop), highest IOPS (direct PCIe).
+- **Cons:** Data lost if node fails (no replication), cannot move PVs between nodes.
+- **Best for:** etcd, databases with app-level replication.
+
+**NAS (Network-Attached Storage)**
+- **Pros:** Shared access (ReadWriteMany), simple to set up (NFS CSI driver).
+- **Cons:** Higher latency (network + file protocol overhead), single point of failure (unless HA NFS).
+- **Best for:** Shared data, ML datasets, media files.
+
+**SDS/SAN (Software-Defined / Storage Area Network)** (e.g., Ceph, Longhorn)
+- **Pros:** Replicated (survives node failures), PVs can be accessed from any node, self-healing (auto-rebalances).
+- **Cons:** Higher latency than DAS (network + replication), requires dedicated storage nodes (or hyper-converged).
+- **Best for:** General-purpose PVs, databases without replication.
 
 > **Pause and predict**: You need to provide storage for three workloads: (1) PostgreSQL with streaming replication, (2) a shared ML training dataset read by 8 pods simultaneously, and (3) etcd. Before looking at the decision matrix below, assign each workload to DAS, NAS, or SDS and explain your reasoning.
 
@@ -118,32 +118,24 @@ After completing this module, you will be able to:
 
 ## Storage Tiers
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 STORAGE TIER GUIDE                            │
-│                                                               │
-│  Tier   Tech           IOPS      Latency   $/TB    Use      │
-│  ────   ────           ────      ───────   ────    ───      │
-│  0      NVMe Gen5      1M+       <100μs    $300    etcd,    │
-│         (PCIe 5.0)                                  hot DB   │
-│                                                               │
-│  1      NVMe Gen4      500K+     <200μs    $150    App data │
-│         (PCIe 4.0)                                  Ceph OSD │
-│                                                               │
-│  2      SATA SSD       50-100K   1-5ms     $80     Logs,    │
-│         (enterprise)                                 bulk    │
-│                                                               │
-│  3      HDD SAS        100-200   5-15ms    $20     Backup,  │
-│         (10K/15K RPM)                               cold     │
-│                                                               │
-│  CRITICAL RULES:                                             │
-│  • etcd: Tier 0 or 1 ONLY (SATA SSD will cause elections)  │
-│  • Ceph OSD: Tier 1 minimum (SATA SSD limits throughput)    │
-│  • Ceph WAL/DB: Tier 0 on separate device from OSD data    │
-│  • Backup: Tier 3 is fine (capacity over speed)             │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
+| Tier | Tech | IOPS | Latency | $/TB | Use |
+|---|---|---|---|---|---|
+| **0** | NVMe Gen5 (PCIe 5.0) | 1M+ | <100μs | $300 | etcd, hot databases |
+| **1** | NVMe Gen4 (PCIe 4.0) | 500K+ | <200μs | $150 | App data, Ceph OSD |
+| **2** | SATA SSD (enterprise) | 50-100K | 1-5ms | $80 | Logs, bulk storage |
+| **3** | HDD SAS (10K/15K RPM) | 100-200 | 5-15ms | $20 | Backup, cold storage |
+
+**CRITICAL RULES:**
+- **etcd**: Tier 0 or 1 ONLY (SATA SSD will cause elections).
+- **Ceph OSD**: Tier 1 minimum (SATA SSD limits throughput).
+- **Ceph WAL/DB**: Tier 0 on a separate device from OSD data to prevent write-ahead log I/O from competing with application data I/O.
+- **Backup**: Tier 3 is fine (prioritize capacity over speed).
+
+### RAID and Capacity Projections
+
+When planning storage procurement:
+- **RAID Configurations**: Do NOT use hardware RAID for distributed storage like Ceph or software-defined local storage. These systems expect raw HBAs in IT mode. For standalone databases on DAS, use software RAID 1 or 10 to provide local drive redundancy, since there is no distributed storage layer to protect against a single disk failure.
+- **Capacity Projections**: Account for replication overhead. A 100TB raw Ceph cluster with a replication factor of 3 yields ~33TB usable. Plan for a 70% maximum fill rate; exceeding this severely impacts rebalancing during node failures.
 
 ---
 
@@ -153,56 +145,55 @@ After completing this module, you will be able to:
 
 ### Dedicated Storage Nodes
 
+```mermaid
+flowchart TD
+    subgraph Compute [Worker Nodes - Compute Only]
+        direction TB
+        W1["Worker 1<br>(K8s pods, 2x NVMe OS only)"]
+        W2["Worker 2<br>(K8s pods, 2x NVMe OS only)"]
+    end
+
+    subgraph Storage [Storage Nodes - Ceph Only]
+        direction TB
+        S1["Ceph OSD1<br>(12x NVMe, 256GB RAM, No K8s workloads)"]
+        S2["Ceph OSD2<br>(12x NVMe, 256GB RAM, No K8s workloads)"]
+    end
 ```
-┌─────────────────────────────────────────────────────────────┐
-│          DEDICATED STORAGE NODES                             │
-│                                                               │
-│  Worker Nodes (compute only):    Storage Nodes (Ceph only): │
-│  ┌──────────┐ ┌──────────┐     ┌──────────┐ ┌──────────┐  │
-│  │ Worker 1 │ │ Worker 2 │     │ Ceph OSD1│ │ Ceph OSD2│  │
-│  │ K8s pods │ │ K8s pods │     │ 12x NVMe │ │ 12x NVMe │  │
-│  │ 2x NVMe │ │ 2x NVMe │     │ 256GB RAM│ │ 256GB RAM│  │
-│  │ (OS only)│ │ (OS only)│     │ No K8s   │ │ No K8s   │  │
-│  └──────────┘ └──────────┘     │ workloads│ │ workloads│  │
-│                                 └──────────┘ └──────────┘  │
-│                                                               │
-│  ✓ No resource contention (storage doesn't compete with pods)│
-│  ✓ Storage can have different hardware (more drives, less CPU)│
-│  ✓ Storage failures don't affect compute                    │
-│  ✗ More servers needed (higher cost)                        │
-│  ✗ Network is the bottleneck (all I/O crosses the network)  │
-│                                                               │
-│  Best for: > 100 nodes, high I/O workloads, regulated envs │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**Dedicated Storage Nodes**
+- **Pros:** No resource contention (storage doesn't compete with pods), storage can have different hardware (more drives, less CPU), storage failures don't affect compute.
+- **Cons:** More servers needed (higher cost), network is the bottleneck (all I/O crosses the network).
+- **Best for:** > 100 nodes, high I/O workloads, regulated environments.
 
 ### Hyper-Converged (Storage on Worker Nodes)
 
+```mermaid
+flowchart TD
+    subgraph Node1 [Worker/OSD Node 1]
+        direction TB
+        P1[K8s pods]
+        C1[Ceph OSD]
+        N1_1[(NVMe 1: OS + pods)]
+        N1_2[(NVMe 2-4: Ceph)]
+        P1 --- N1_1
+        C1 --- N1_2
+    end
+
+    subgraph Node2 [Worker/OSD Node 2]
+        direction TB
+        P2[K8s pods]
+        C2[Ceph OSD]
+        N2_1[(NVMe 1: OS + pods)]
+        N2_2[(NVMe 2-4: Ceph)]
+        P2 --- N2_1
+        C2 --- N2_2
+    end
 ```
-┌─────────────────────────────────────────────────────────────┐
-│          HYPER-CONVERGED                                      │
-│                                                               │
-│  Each worker runs BOTH K8s pods AND Ceph OSD:               │
-│  ┌───────────────────┐ ┌───────────────────┐                │
-│  │ Worker/OSD Node 1 │ │ Worker/OSD Node 2 │                │
-│  │                   │ │                   │                │
-│  │ K8s pods          │ │ K8s pods          │                │
-│  │ Ceph OSD          │ │ Ceph OSD          │                │
-│  │ NVMe 1: OS + pods │ │ NVMe 1: OS + pods │                │
-│  │ NVMe 2-4: Ceph    │ │ NVMe 2-4: Ceph    │                │
-│  └───────────────────┘ └───────────────────┘                │
-│                                                               │
-│  ✓ Fewer servers (lower CapEx)                              │
-│  ✓ Data locality (pods can read from local OSD)             │
-│  ✗ Resource contention (OSD competes with pods for CPU/RAM) │
-│  ✗ Node failure loses both compute AND storage              │
-│  ✗ Harder to size (need enough CPU/RAM for both)            │
-│                                                               │
-│  Best for: < 50 nodes, budget-constrained, moderate I/O     │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**Hyper-Converged (Storage on Worker Nodes)**
+- **Pros:** Fewer servers (lower CapEx), data locality (pods can read from local OSD).
+- **Cons:** Resource contention (OSD competes with pods for CPU/RAM), node failure loses both compute AND storage, harder to size (need enough CPU/RAM for both).
+- **Best for:** < 50 nodes, budget-constrained, moderate I/O workloads.
 
 ---
 
@@ -214,7 +205,8 @@ Always benchmark before deploying workloads. The three tests below cover the thr
 
 ```bash
 # Install fio
-apt-get install fio
+apt-get install -y fio
+fio --version  # Verify installation
 
 # Test sequential write throughput (simulates log writes)
 fio --name=seq-write \
@@ -245,11 +237,8 @@ fio --name=etcd-wal \
 ## Did You Know?
 
 - **Ceph was started at UC Santa Cruz** by Sage Weil in 2004 and formalized in his PhD thesis in 2007. It became the storage backbone for most OpenStack deployments and is now the default distributed storage for on-premises Kubernetes via Rook.
-
 - **NVMe drives can fail faster under sustained write loads** than SATA SSDs because they have higher write amplification at full speed. Enterprise NVMe drives (like Samsung PM9A3) have much higher endurance (DWPD — Drive Writes Per Day) than consumer NVMe. Always use enterprise-grade drives for Ceph OSDs.
-
 - **A single NVMe drive provides more IOPS than an entire SAN array from 10 years ago.** A Samsung PM9A3 (3.84TB) delivers 1M random read IOPS. A mid-range EMC VNX from 2014 delivered ~200K IOPS from 120 spinning disks. Modern on-prem storage can outperform legacy enterprise storage at 1/10th the cost.
-
 - **Kubernetes persistent volumes are statically provisioned by default** — you create a PV manually and a PVC claims it. Dynamic provisioning (via StorageClass + CSI driver) is essential for on-prem. Without it, every PV request becomes a manual ticket.
 
 ---
@@ -272,32 +261,25 @@ fio --name=etcd-wal \
 ## Quiz
 
 ### Question 1
-You need persistent storage for a PostgreSQL database that uses streaming replication across 3 pods. Should you use local NVMe or Ceph RBD?
+You are designing the storage backend for a PostgreSQL database cluster deployed on Kubernetes. The database is configured with streaming replication across 3 Pods. The operations team is debating whether to use local NVMe drives directly attached to the worker nodes (DAS) or provision volumes from the central Ceph RBD cluster. Which option should you choose and why?
 
 <details>
 <summary>Answer</summary>
 
 **Local NVMe (DAS).**
 
-PostgreSQL with streaming replication handles data replication at the application level — each replica maintains its own copy of the data. Adding Ceph replication on top would mean triple replication (Ceph 3x) times triple replication (PostgreSQL 3 replicas) = 9 copies of every write. This wastes storage and adds unnecessary latency.
-
-With local NVMe:
-- Write latency: <0.1ms (direct PCIe, no network)
-- No double-replication overhead
-- If a node fails, PostgreSQL promotes a replica (application-level failover)
-
-Use `local-path-provisioner` or `TopoLVM` as the CSI driver for local NVMe volumes with topology awareness.
-
-**Exception**: If PostgreSQL is a single instance without replication (dev/test), use Ceph RBD so the volume can be remounted on another node if the original fails.
+When an application like PostgreSQL handles its own data replication, using a distributed storage backend like Ceph introduces massive inefficiency. Ceph replicates data (typically 3x) at the block level, and PostgreSQL replicates it again at the application level, resulting in 9 copies of every write across the network. This "double replication" wastes storage capacity and significantly degrades write latency. By using local NVMe drives (accessed via `local-path-provisioner` or `TopoLVM`), the database gets direct PCIe access with sub-millisecond latency. High availability is still maintained because if a node fails, PostgreSQL's own clustering logic will promote one of the remaining replicas. Use Ceph RBD only for single-instance, non-replicated databases that truly need to survive node failures transparently.
 </details>
 
 ### Question 2
-Your Ceph cluster shows 80% I/O bandwidth consumed during rebalancing after a node failure. How do you prevent this from affecting application performance?
+A developer accidentally deployed a workload that crashed a physical Kubernetes worker node, which also happened to host several Ceph OSDs in a hyper-converged setup. The Ceph cluster immediately began rebalancing data, consuming 80% of the cluster's network I/O bandwidth and causing severe latency spikes for all other applications. How do you prevent this rebalancing process from impacting application performance in the future?
 
 <details>
 <summary>Answer</summary>
 
-**Limit Ceph recovery/backfill bandwidth:**
+**Implement a dedicated storage network and limit Ceph recovery bandwidth.**
+
+By default, Ceph prioritizes data safety and will attempt to rebuild missing replicas as quickly as possible, which can easily saturate a shared network. The most robust architectural fix is to separate application traffic from storage traffic by assigning Ceph to a dedicated VLAN with jumbo frames. Additionally, you should configure Ceph to throttle its recovery operations:
 
 ```bash
 # Set recovery limits (Ceph CLI)
@@ -310,47 +292,29 @@ ceph config set osd osd_recovery_op_priority 1          # lowest priority (defau
 ceph config set osd osd_client_op_priority 63           # highest priority
 ```
 
-**Architectural solutions:**
-1. **Dedicated storage network**: Recovery traffic on VLAN 30, application I/O on VLAN 20
-2. **More OSDs**: Distribute data across more drives so each OSD rebalances less data
-3. **Faster drives**: NVMe for OSDs so recovery completes faster
-4. **Spare capacity**: Keep cluster below 70% utilization so rebalancing has headroom
+Finally, scaling out with more OSDs to reduce per-drive rebalance load, using faster NVMe drives for OSDs, and maintaining spare cluster capacity ensures that when rebalancing does occur, it completes rapidly without causing a bottleneck.
 </details>
 
 ### Question 3
-What is the minimum number of Ceph OSD nodes for a production deployment, and why?
+You are tasked with purchasing hardware for a new dedicated on-premises Ceph cluster that will provide persistent volumes to your Kubernetes environment. The finance department asks if they can approve only two dedicated storage nodes to save costs while still meeting the requirement for a replication factor of 3. What do you tell them and why?
 
 <details>
 <summary>Answer</summary>
 
-**Minimum 3 OSD nodes** with replication factor 3.
+**You must reject the proposal and require a minimum of 3 OSD nodes.**
 
-Why 3:
-- Ceph replicates each object to N different OSDs (default N=3)
-- Each replica must be on a different failure domain (different node)
-- With 3 nodes, each object has one copy on each node
-- If one node fails, 2 copies remain (no data loss)
-- Ceph can rebuild the third copy using the remaining 2
-
-**Why not 2**: With replication factor 3 and only 2 nodes, Ceph cannot place 3 replicas on 3 different nodes. It will either place 2 replicas on one node (unsafe) or refuse to create the volume.
-
-**Recommended for production**: 5+ OSD nodes. This allows:
-- Node failure with no capacity pressure
-- Rolling maintenance (take one node offline, still have 4)
-- Better data distribution (more OSDs = more even load)
+Ceph requires failure domains to safely distribute data replicas. With a replication factor of 3, Ceph is configured to place one copy of each object on three distinct nodes to ensure data survives a node failure. If you only provide two nodes, the CRUSH algorithm cannot satisfy the rule to place three replicas across three different nodes, meaning it will either degrade safety by placing two copies on a single node or refuse to write data entirely. A 3-node cluster allows one node to fail while preserving two copies of the data, which is sufficient to maintain availability. However, for a production environment, 5 or more nodes are highly recommended so that you can tolerate a failure, perform rolling maintenance, and have enough spare capacity to rebalance the data automatically.
 </details>
 
 ### Question 4
-Your etcd nodes use SATA SSDs and you see frequent leader elections. Explain the root cause and the fix.
+You are troubleshooting an on-premises Kubernetes cluster where the API server becomes periodically unresponsive under heavy load. The logs reveal frequent etcd leader elections. The underlying hardware uses enterprise SATA SSDs. What is the root cause of this instability and how do you permanently resolve it?
 
 <details>
 <summary>Answer</summary>
 
-**Root cause**: etcd uses Raft consensus, which requires the leader to fsync the Write-Ahead Log (WAL) on every write. SATA SSDs have fsync latency of 2-10ms (99th percentile). Under load, this can spike to 20-50ms.
+**The root cause is high fsync latency from the SATA SSDs.**
 
-etcd's heartbeat interval is 100ms, and the election timeout is 1,000ms (10x heartbeat). If the leader's fsync latency consistently exceeds 50ms, it cannot process writes fast enough to send heartbeats within the 100ms interval. Followers assume the leader is dead and trigger an election. During the election, the cluster is read-only.
-
-**Fix**: Replace SATA SSDs with NVMe drives for etcd data directory (`/var/lib/etcd`). NVMe fsync latency is 0.05-0.5ms (99th percentile) — 10-100x faster than SATA.
+etcd relies on the Raft consensus algorithm, which strictly requires the leader to successfully synchronize (fsync) the Write-Ahead Log (WAL) to disk on every single write operation before acknowledging it. SATA SSDs generally exhibit an fsync latency of 2-10ms, but under heavy I/O load, this can spike beyond 50ms. Because etcd's default heartbeat interval is 100ms, a slow disk prevents the leader from sending heartbeats in time, causing followers to declare the leader dead and trigger an election, during which the cluster API becomes read-only and unresponsive. The permanent fix is to replace the SATA SSDs with NVMe drives for the etcd data directory (or move etcd to Tier 0/1 storage), as NVMe drives consistently provide sub-millisecond fsync latencies.
 
 **Verification**:
 ```bash
@@ -362,8 +326,6 @@ etcdctl check perf
 etcdctl check perf
 # ... PASS: Throughput is ... PASS: Slowest request took ...
 ```
-
-This is one of the most common on-premises Kubernetes issues and is entirely preventable by selecting the right storage during hardware procurement.
 </details>
 
 ---
