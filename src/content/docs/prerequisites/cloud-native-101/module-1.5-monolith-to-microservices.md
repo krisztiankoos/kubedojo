@@ -41,32 +41,35 @@ Kubernetes was purpose-built to solve the exact operational nightmares that comp
 
 A monolithic application is a single deployable unit containing all functionality:
 
+```mermaid
+flowchart TD
+    App["MyApp.jar (or .exe)"]
+    
+    subgraph Modules
+        direction LR
+        User[User Module]
+        Product[Product Module]
+        Order[Order Module]
+        Payment[Payment Module]
+    end
+    
+    DB[("(Shared Database)")]
+    
+    App --> User
+    App --> Product
+    App --> Order
+    App --> Payment
+    
+    User --> DB
+    Product --> DB
+    Order --> DB
+    Payment --> DB
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              MONOLITHIC APPLICATION                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                 MyApp.jar (or .exe)                 │   │
-│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐   │   │
-│  │  │  User   │ │ Product │ │  Order  │ │ Payment │   │   │
-│  │  │ Module  │ │ Module  │ │ Module  │ │ Module  │   │   │
-│  │  └────┬────┘ └────┬────┘ └────┬────┘ └────┬────┘   │   │
-│  │       │           │           │           │         │   │
-│  │       └───────────┴───────────┴───────────┘         │   │
-│  │                       │                             │   │
-│  │              ┌────────┴────────┐                    │   │
-│  │              │    Database     │                    │   │
-│  │              │   (shared)      │                    │   │
-│  │              └─────────────────┘                    │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  Deploy: One unit                                          │
-│  Scale: All or nothing                                     │
-│  Database: Shared by all modules                           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**Key Characteristics**:
+- **Deploy**: One unit
+- **Scale**: All or nothing
+- **Database**: Shared by all modules
 
 ### Monolith Advantages
 
@@ -99,33 +102,36 @@ A monolithic application is a single deployable unit containing all functionalit
 
 Microservices decompose an application into small, independent services:
 
+```mermaid
+flowchart TD
+    Clients([Clients])
+    Gateway[API Gateway]
+    
+    subgraph Services
+        direction LR
+        User[User Service]
+        Product[Product Service]
+        Order[Order Service]
+    end
+    
+    UserDB[(DB)]
+    ProductDB[(DB)]
+    OrderDB[(DB)]
+    
+    Clients --> Gateway
+    Gateway --> User
+    Gateway --> Product
+    Gateway --> Order
+    
+    User --> UserDB
+    Product --> ProductDB
+    Order --> OrderDB
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              MICROSERVICES ARCHITECTURE                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌───────────┐   ┌───────────┐   ┌───────────┐            │
-│  │   User    │   │  Product  │   │   Order   │            │
-│  │  Service  │   │  Service  │   │  Service  │            │
-│  │  ┌─────┐  │   │  ┌─────┐  │   │  ┌─────┐  │            │
-│  │  │ DB  │  │   │  │ DB  │  │   │  │ DB  │  │            │
-│  │  └─────┘  │   │  └─────┘  │   │  └─────┘  │            │
-│  └─────┬─────┘   └─────┬─────┘   └─────┬─────┘            │
-│        │               │               │                    │
-│        └───────────────┼───────────────┘                    │
-│                        │                                    │
-│                ┌───────┴───────┐                           │
-│                │  API Gateway  │                           │
-│                └───────────────┘                           │
-│                        │                                    │
-│                    Clients                                  │
-│                                                             │
-│  Deploy: Each service independently                        │
-│  Scale: Per service based on need                          │
-│  Database: Each service owns its data                      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**Key Characteristics**:
+- **Deploy**: Each service independently
+- **Scale**: Per service based on need
+- **Database**: Each service owns its data
 
 ### Microservices Advantages
 
@@ -180,32 +186,19 @@ Microservices decompose an application into small, independent services:
 
 ### The Reality
 
+```mermaid
+flowchart TD
+    S1["**Stage 1: Start with Monolith**<br/>• Fast development<br/>• Simple operations<br/>• Learn the domain"]
+    S2["**Stage 2: Grow (Still Monolith)**<br/>• Team grows<br/>• Features accumulate<br/>• Pain points emerge"]
+    S3["**Stage 3: Strategic Decomposition**<br/>• Extract services where it hurts<br/>• Clear boundaries<br/>• Incremental migration"]
+    
+    S1 --> S2 --> S3
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              THE TYPICAL JOURNEY                            │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Stage 1: Start with Monolith                              │
-│  ├── Fast development                                      │
-│  ├── Simple operations                                     │
-│  └── Learn the domain                                      │
-│                                                             │
-│  Stage 2: Grow (Still Monolith)                            │
-│  ├── Team grows                                            │
-│  ├── Features accumulate                                   │
-│  └── Pain points emerge                                    │
-│                                                             │
-│  Stage 3: Strategic Decomposition                          │
-│  ├── Extract services where it hurts                       │
-│  ├── Clear boundaries                                      │
-│  └── Incremental migration                                 │
-│                                                             │
-│  DON'T: Start with microservices for a new product        │
-│  DON'T: Decompose without clear boundaries                │
-│  DON'T: Microservices for small teams                     │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**The "Don'ts" of Microservices**:
+- **DON'T**: Start with microservices for a new product
+- **DON'T**: Decompose without clear boundaries
+- **DON'T**: Use microservices for small teams
 
 ---
 
@@ -248,91 +241,95 @@ With Kubernetes:
 
 ### API Gateway
 
+```mermaid
+flowchart TD
+    Gateway[API Gateway]
+    SvcA[Service A]
+    SvcB[Service B]
+    SvcC[Service C]
+    
+    Clients([Clients]) --> Gateway
+    Gateway --> SvcA
+    Gateway --> SvcB
+    Gateway --> SvcC
 ```
-                    ┌───────────────┐
-                    │  API Gateway  │
-                    └───────┬───────┘
-            ┌───────────────┼───────────────┐
-            ▼               ▼               ▼
-      ┌─────────┐     ┌─────────┐     ┌─────────┐
-      │ Service │     │ Service │     │ Service │
-      │    A    │     │    B    │     │    C    │
-      └─────────┘     └─────────┘     └─────────┘
 
-Purpose:
+**Purpose**:
 - Single entry point
 - Authentication/Authorization
 - Rate limiting
 - Request routing
 
-In K8s: Ingress Controller or dedicated gateway
-```
+**In K8s**: Ingress Controller or dedicated gateway
 
 ### Service Mesh
 
-```
-      ┌─────────────────────────────────────────┐
-      │             Service Mesh                │
-      │  ┌────────┐        ┌────────┐          │
-      │  │Svc A   │◄──────►│Svc B   │          │
-      │  │┌─────┐ │        │┌─────┐ │          │
-      │  ││Proxy│ │        ││Proxy│ │          │
-      │  │└─────┘ │        │└─────┘ │          │
-      │  └────────┘        └────────┘          │
-      └─────────────────────────────────────────┘
+> **Stop and think**: If your company mandates strict mTLS encryption between 50 different microservices written in three different languages, how would you enforce it without rewriting all 50 codebases?
 
-Purpose:
+```mermaid
+flowchart LR
+    subgraph Pod A
+        SvcA[Service A]
+        ProxyA[Proxy]
+        SvcA <--> ProxyA
+    end
+    subgraph Pod B
+        SvcB[Service B]
+        ProxyB[Proxy]
+        SvcB <--> ProxyB
+    end
+    ProxyA <-->|mTLS / Traffic Management| ProxyB
+```
+
+**Purpose**:
 - Traffic management
 - Security (mTLS)
 - Observability
 
-Examples: Istio, Linkerd
-```
+**Examples**: Istio, Linkerd
 
 ### Sidecar Pattern
 
+```mermaid
+flowchart LR
+    subgraph Pod
+        App[Main Application]
+        Sidecar[Sidecar Proxy]
+        App <--> Sidecar
+    end
 ```
-      ┌─────────────────────────────────────────┐
-      │                 Pod                     │
-      │  ┌─────────────┐  ┌─────────────┐      │
-      │  │   Main      │  │   Sidecar   │      │
-      │  │ Application │◄►│   (Proxy)   │      │
-      │  └─────────────┘  └─────────────┘      │
-      └─────────────────────────────────────────┘
 
-Purpose:
+**Purpose**:
 - Add functionality without changing app
 - Logging, monitoring, security
 
-K8s: Multi-container pods
-```
+**In K8s**: Multi-container pods
 
 ---
 
 ## Visualization: Communication Patterns
 
+### Synchronous (Request/Response)
+
+```mermaid
+flowchart LR
+    SvcA1[Service A] -->|HTTP/gRPC| SvcB1[Service B]
+    SvcB1 -->|Response| SvcA1
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              MICROSERVICES COMMUNICATION                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  SYNCHRONOUS (Request/Response)                            │
-│  ┌─────────┐  HTTP/gRPC   ┌─────────┐                     │
-│  │Service A│─────────────►│Service B│                     │
-│  └─────────┘◄─────────────└─────────┘                     │
-│              Response                                       │
-│  Use: When you need immediate response                     │
-│  Risk: Tight coupling, cascading failures                  │
-│                                                             │
-│  ASYNCHRONOUS (Events/Messages)                            │
-│  ┌─────────┐    Event    ┌─────────┐   ┌─────────┐       │
-│  │Service A│────────────►│  Queue  │──►│Service B│       │
-│  └─────────┘             └─────────┘   └─────────┘       │
-│  Use: Decoupled systems, eventual consistency             │
-│  Benefit: Loose coupling, resilience                      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+
+- **Use**: When you need immediate response
+- **Risk**: Tight coupling, cascading failures
+
+### Asynchronous (Events/Messages)
+
+```mermaid
+flowchart LR
+    SvcA2[Service A] -->|Event| Queue[Message Queue]
+    Queue --> SvcB2[Service B]
 ```
+
+- **Use**: Decoupled systems, eventual consistency
+- **Benefit**: Loose coupling, resilience
 
 ---
 
@@ -342,6 +339,11 @@ K8s: Multi-container pods
 - **Segment's U-Turn**: In 2018, the customer data platform Segment famously migrated *away* from microservices back to a monolith. The operational overhead of maintaining hundreds of repositories and managing cross-service queues destroyed their developer velocity. The migration back saved them hundreds of engineering hours per month.
 - **Netflix's Chaos**: Netflix operates over 1000+ microservices. To ensure reliability in such a complex system, they invented "Chaos Monkey," a tool that randomly kills services in production to ensure the overall architecture degrades gracefully rather than crashing completely.
 - **The "Two Pizza Rule"**: Amazon's organizational rule suggests teams should be small enough to feed with two pizzas (6-10 people). This perfectly aligns with microservice boundaries—a single, small team owns, builds, and runs a single service autonomously.
+- **The Term "Microservices"**: First discussed at a software architects workshop near Venice in May 2011, the architectural style was officially defined by James Lewis and Martin Fowler in their foundational March 25, 2014 article.
+- **Conway's Law**: Formulated by Melvin Conway in his 1968 *Datamation* article, it states: "Any organization that designs a system will produce a design whose structure is a copy of the organization's communication structure."
+- **Twelve-Factor App**: Authored by Adam Wiggins drawing from Heroku's platform experience, this methodology defines twelve exact factors (from codebase to admin processes) for building modern SaaS applications.
+- **Service Mesh Origins**: The term "service mesh" was coined in 2016 by William Morgan of Buoyant with the launch of Linkerd. Linkerd later became the first service mesh to reach CNCF Graduated status. OpenTelemetry, another highly popular project for microservice observability, remains officially Incubating as of April 2026, though secondary sources sometimes informally (and incorrectly) refer to it as graduated.
+- **Strangler Fig Pattern**: A popular strategy for migrating from a monolith is the Strangler Fig pattern, coined by Martin Fowler. While often cited as originating in 2004, the primary source date remains unverified on his canonical site, making its exact age slightly disputed.
 
 ---
 
@@ -371,7 +373,7 @@ K8s: Multi-container pods
 2. **Scenario**: A 4-person startup has just received seed funding to build a revolutionary AI-powered pet toy marketplace. They have 3 months to launch an MVP and validate their product-market fit, but their domain boundaries are still highly unstable. Why should this team explicitly choose a monolith over microservices?
    <details>
    <summary>Answer</summary>
-   In this startup scenario, a monolith is superior because the primary goal is rapid iteration and discovering product-market fit, not massive scale. Microservices introduce a "distributed system tax"—requiring complex CI/CD pipelines, API contracts, and network debugging—which would drain the small team's limited engineering hours. Furthermore, because their domain boundaries are still shifting, trying to define microservice boundaries now would lead to tightly coupled, chatty services that are incredibly painful to refactor later.
+   In this startup scenario, a monolith is superior because the primary goal is rapid iteration and discovering product-market fit, not massive scale. Microservices introduce a "distributed system tax"—requiring complex CI/CD pipelines, API contracts, and network debugging—which would drain the small team's limited engineering hours. Furthermore, because their domain boundaries are still shifting, trying to define microservice boundaries now would lead to tightly coupled, chatty services that are incredibly painful to refactor later. A single deployable application allows the team to pivot quickly without coordinating across multiple repositories.
    </details>
 
 3. **Scenario**: You have successfully split your monolith into 20 microservices. However, you are now struggling with operational nightmares: services constantly change IP addresses when they restart, one failing service causes cascading crashes, and you have to manually update load balancer rules every deployment. How does Kubernetes inherently solve these specific operational challenges?
