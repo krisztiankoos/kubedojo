@@ -55,7 +55,7 @@ By the end of this module, you'll be able to:
 
 - **No built-in networking**: Kubernetes doesn't ship with networking. You must install a CNI plugin for pods to communicate.
 
-- **Flannel = no NetworkPolicy**: The popular Flannel CNI doesn't support Network Policies. If you need policies, use Calico, Cilium, or Weave.
+- **Flannel = no NetworkPolicy**: The popular Flannel CNI doesn't support Network Policies. If you need policies, use Calico or Cilium.
 
 - **Pod CIDR is per-node**: Each node typically gets its own IP range (e.g., 10.244.1.0/24), and pods on that node get IPs from that range.
 
@@ -152,7 +152,6 @@ Kubernetes networking has four fundamental requirements:
 | **Calico** | Yes | High | Enterprise, security-focused |
 | **Cilium** | Yes (advanced) | Very high | eBPF, observability |
 | **Flannel** | No | Medium | Simple clusters |
-| **Weave** | Yes | Medium | Multi-cloud |
 | **Canal** | Yes | Medium | Calico policy + Flannel networking |
 | **AWS VPC CNI** | Via Calico | High | EKS native |
 
@@ -208,7 +207,7 @@ cat /etc/cni/net.d/10-calico.conflist
 ls /etc/cni/net.d/
 
 # Check CNI pods
-k get pods -n kube-system | grep -E "calico|flannel|weave|cilium"
+k get pods -n kube-system | grep -E "calico|flannel|cilium"
 
 # Check CNI daemonset
 k get daemonset -n kube-system
@@ -338,8 +337,9 @@ crictl inspect <container-id> | jq '.info.runtimeSpec.linux.namespaces'
 
 | Mode | Description | Performance | Use Case |
 |------|-------------|-------------|----------|
-| **iptables** | Uses iptables rules | Good | Default, most clusters |
-| **IPVS** | Uses kernel IPVS | Better | High pod count, advanced LB |
+| **nftables** | Uses nftables | Best | Default in modern clusters (k8s v1.33+) |
+| **iptables** | Uses iptables rules | Good | Legacy default, most older clusters |
+| **IPVS** | Uses kernel IPVS | Better | High pod count (has known edge cases) |
 | **userspace** | Legacy, user-space proxy | Poor | Never use (deprecated) |
 
 ### 4.2 How kube-proxy Works
@@ -443,7 +443,7 @@ k exec <pod> -- nc -zv <service> <port>
 k exec <pod> -- wget --spider --timeout=1 http://<service>
 
 # Check CNI pods
-k get pods -n kube-system | grep -E "calico|flannel|weave|cilium"
+k get pods -n kube-system | grep -E "calico|flannel|cilium"
 k logs -n kube-system <cni-pod>
 
 # Check kube-proxy
@@ -464,7 +464,7 @@ k logs -n kube-system -l k8s-app=kube-dns
 | Can't reach pods on other nodes | Overlay misconfigured | Check CNI network config |
 | Services unreachable | kube-proxy not running | Check kube-proxy pods |
 | DNS not working | CoreDNS down | Check CoreDNS pods |
-| NetworkPolicy not working | CNI doesn't support it | Use Calico, Cilium, or Weave |
+| NetworkPolicy not working | CNI doesn't support it | Use Calico or Cilium |
 
 ---
 
@@ -558,7 +558,7 @@ Differences:
 |---------|---------|----------|
 | No CNI installed | Pods can't get IPs | Install CNI before deploying pods |
 | CIDR mismatch | CNI and kubeadm disagree | Ensure pod-network-cidr matches CNI config |
-| Flannel + NetworkPolicy | Policies ignored | Use Calico, Cilium, or Weave |
+| Flannel + NetworkPolicy | Policies ignored | Use Calico or Cilium |
 | hostNetwork without dnsPolicy | DNS breaks | Set `dnsPolicy: ClusterFirstWithHostNet` |
 | Port exhaustion | Can't schedule pods | Check CIDR size, clean up pods |
 
@@ -575,7 +575,7 @@ Differences:
 2. **Your cluster uses Flannel and a security team member creates NetworkPolicies to isolate the production namespace. After deploying the policies, they test and find that pods can still communicate freely across namespaces. The YAML is correct. What went wrong?**
    <details>
    <summary>Answer</summary>
-   Flannel does not support NetworkPolicy enforcement. The API server accepts the NetworkPolicy objects (they are valid Kubernetes resources), but without a CNI that implements the network policy controller, they are never enforced. This is a dangerous situation because it gives a false sense of security. The options are: (1) Replace Flannel with Calico, Cilium, or Weave which natively support NetworkPolicy; (2) Install Canal, which combines Flannel's networking with Calico's policy engine; or (3) add a standalone policy engine alongside Flannel (e.g., Calico policy-only mode).
+   Flannel does not support NetworkPolicy enforcement. The API server accepts the NetworkPolicy objects (they are valid Kubernetes resources), but without a CNI that implements the network policy controller, they are never enforced. This is a dangerous situation because it gives a false sense of security. The options are: (1) Replace Flannel with Calico or Cilium which natively support NetworkPolicy; (2) Install Canal, which combines Flannel's networking with Calico's policy engine; or (3) add a standalone policy engine alongside Flannel (e.g., Calico policy-only mode).
    </details>
 
 3. **Pods on Node A can reach pods on Node A, but cannot reach pods on Node B. All pods have IPs and are in Running state. Both nodes show `Ready`. Where in the networking stack is the problem, and how would you diagnose it?**
@@ -587,7 +587,7 @@ Differences:
 4. **Your cluster runs 8,000 Services. During peak traffic, kube-proxy on each node takes 30 seconds to update rules after a Service change, and CPU spikes on all nodes. The cluster uses iptables mode. What is happening and what is the recommended fix?**
    <details>
    <summary>Answer</summary>
-   In iptables mode, kube-proxy creates iptables rules for every Service and Endpoint combination. With 8,000 Services, this generates tens of thousands of rules. Every change requires rewriting a large portion of the iptables ruleset, causing the CPU spike. Rule evaluation is also O(n), slowing packet processing. The fix is to switch kube-proxy to IPVS mode (edit the kube-proxy ConfigMap: `mode: "ipvs"`) which uses a kernel-level hash table for O(1) lookups and handles rule updates more efficiently. Alternatively, for even better performance, consider using Cilium in eBPF kube-proxy replacement mode, which moves Service routing entirely into eBPF programs.
+   In iptables mode, kube-proxy creates iptables rules for every Service and Endpoint combination. With 8,000 Services, this generates tens of thousands of rules. Every change requires rewriting a large portion of the iptables ruleset, causing the CPU spike. Rule evaluation is also O(n), slowing packet processing. The fix is to switch kube-proxy to nftables mode (kernel 5.13+, k8s v1.33+) which provides significantly better performance, or IPVS mode if nftables is unavailable. Alternatively, for even better performance, consider using Cilium in eBPF kube-proxy replacement mode, which moves Service routing entirely into eBPF programs.
    </details>
 
 5. **A developer created a pod with `hostNetwork: true` but did not set `dnsPolicy`. The pod can reach external websites by IP but cannot resolve any cluster service names. External DNS resolution (like `google.com`) works fine. Explain the root cause and the one-line fix.**
@@ -607,7 +607,7 @@ Differences:
 1. **Check CNI plugin installed**:
 ```bash
 # Check CNI pods
-k get pods -n kube-system | grep -E "calico|flannel|weave|cilium|cni"
+k get pods -n kube-system | grep -E "calico|flannel|cilium|cni"
 
 # Check CNI configuration
 ls /etc/cni/net.d/ 2>/dev/null || echo "Run on node"
@@ -662,6 +662,9 @@ k logs -n kube-system -l k8s-app=kube-proxy --tail=5 | grep -i mode
 k create deployment web --image=nginx
 k expose deployment web --port=80
 
+# Wait for deployment
+k wait --for=condition=available deployment/web --timeout=60s
+
 # Test DNS and connectivity
 k exec pod1 -- wget --spider --timeout=2 http://web
 ```
@@ -688,7 +691,7 @@ k delete svc web
 
 ```bash
 # Check CNI pods in kube-system
-k get pods -n kube-system | grep -E "calico|flannel|weave|cilium|canal"
+k get pods -n kube-system | grep -E "calico|flannel|cilium|canal"
 
 # Check CNI daemonsets
 k get ds -n kube-system
@@ -770,7 +773,7 @@ k wait --for=condition=available deployment/svc-test --timeout=60s
 CLUSTER_IP=$(k get svc svc-test -o jsonpath='{.spec.clusterIP}')
 
 # Test service
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run test --rm -i --image=busybox:1.36 --restart=Never -- \
   wget --spider --timeout=2 http://$CLUSTER_IP
 
 # Cleanup
@@ -854,7 +857,7 @@ k exec client -- nslookup server-svc
 k exec client -- wget --spider --timeout=2 http://server-svc
 
 # 7. Check CNI
-k get pods -n kube-system | grep -E "calico|flannel|weave|cilium"
+k get pods -n kube-system | grep -E "calico|flannel|cilium"
 
 # 8. Cleanup
 k delete pod client server
