@@ -381,6 +381,9 @@ Use a debug pod with more tools:
 # Create a debug pod
 k run dns-debug --image=nicolaka/netshoot --restart=Never -- sleep 3600
 
+# Wait for pod to be running
+k wait --for=condition=ready pod/dns-debug --timeout=60s
+
 # Use it for debugging
 k exec -it dns-debug -- dig web-svc.default.svc.cluster.local
 k exec -it dns-debug -- host web-svc
@@ -577,18 +580,23 @@ k create deployment web --image=nginx
 k expose deployment web --port=80
 ```
 
+Verify the service was created and has a ClusterIP:
+```bash
+k get svc web
+```
+
 4. **Test DNS resolution**:
 ```bash
 # Short name
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run test1 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup web
 
 # With namespace
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run test2 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup web.default
 
 # FQDN
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run test3 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup web.default.svc.cluster.local
 ```
 
@@ -605,14 +613,17 @@ k create namespace other
 k create deployment db -n other --image=nginx
 k expose deployment db -n other --port=80
 
+# Verify the cross-namespace service exists
+k get svc db -n other
+
 # Resolve from default namespace
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run test4 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup db.other
 ```
 
 7. **Test external DNS**:
 ```bash
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run test5 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup google.com
 ```
 
@@ -699,6 +710,9 @@ k delete namespace ns1 ns2
 # Create a pod
 k run dns-check --image=busybox:1.36 --command -- sleep 3600
 
+# Wait for pod to be running
+k wait --for=condition=ready pod/dns-check --timeout=60s
+
 # Check its DNS config
 k exec dns-check -- cat /etc/resolv.conf
 
@@ -742,9 +756,12 @@ spec:
   - port: 80
 EOF
 
+# Wait for endpoints to be ready
+k wait --for=condition=ready pod -l app=headless-test --timeout=60s
+
 # Regular service returns single IP
 # Headless returns all pod IPs
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run test6 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup headless-svc
 # Should return multiple IPs
 
@@ -778,6 +795,9 @@ spec:
     command: ["sleep", "3600"]
 EOF
 
+# Wait for pod to be running
+k wait --for=condition=ready pod/custom-dns-pod --timeout=60s
+
 # Check the custom resolv.conf
 k exec custom-dns-pod -- cat /etc/resolv.conf
 # Should show 8.8.8.8 and custom.local
@@ -799,12 +819,12 @@ k expose deployment web --port=80
 
 # Simulate debugging workflow
 # Step 1: Test from pod
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run debug1 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup web
 # Should work
 
 # Step 2: Test FQDN
-k run test --rm -it --image=busybox:1.36 --restart=Never -- \
+k run debug2 --rm -it --image=busybox:1.36 --restart=Never -- \
   nslookup web.default.svc.cluster.local
 # Should work
 
