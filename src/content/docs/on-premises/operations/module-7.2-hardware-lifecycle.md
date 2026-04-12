@@ -280,7 +280,27 @@ ceph osd unset noout
 ceph -w  # watch rebalancing progress
 ```
 
+### Memory Upgrade Procedure
+
+Unlike disks in a Ceph cluster, memory replacements or upgrades require completely shutting down the node.
+
+1. **Drain the node**: Execute `maintenance-drain.sh <node>`.
+2. **Power down**: `ipmitool -I lanplus -H <bmc-ip> -U <user> -P <pass> power off` or via Redfish API.
+3. **Hardware intervention**: Swap or add DIMMs. Follow vendor population rules (e.g., populating channels symmetrically to maximize memory bandwidth).
+4. **Power on**: `ipmitool -I lanplus -H <bmc-ip> -U <user> -P <pass> power on`.
+5. **Verify**: Use BMC/Redfish to ensure no ECC errors are detected during POST.
+6. **Return to service**: Execute `maintenance-return.sh <node>`.
+
 ---
+
+## The Full Hardware Lifecycle
+
+A complete hardware lifecycle encompasses more than just maintenance windows:
+
+1. **Procurement**: Standardize on fixed SKU configurations (e.g., compute-heavy vs. storage-heavy) to avoid the "snowflake" problem. Ensure hardware vendor compatibility with your Linux kernel and Kubernetes CNI/CSI choices before purchasing.
+2. **Deployment**: Automate bare metal provisioning using PXE boot, Metal3, or Tinkerbell. Servers should go from unboxing to joining the Kubernetes cluster automatically.
+3. **Maintenance**: See the calendar below for routine operations.
+4. **Decommissioning**: Securely wipe disks using `nvme format` or `hdparm` secure erase. Remove the node from the cluster (`kubectl delete node`), revoke its certificates, and clear its BMC IP from the inventory database.
 
 ## Building a Hardware Maintenance Calendar
 
@@ -593,14 +613,70 @@ SMARTEOF
 chmod +x /tmp/smartmon-collector.sh
 ```
 
+> **Note:** For this lab, we will simulate the collector's output manually rather than configuring a cron job or node_exporter textfile directory.
+
 ### Steps
 
-1. **Review the collector script** and understand which SMART attributes it exports
-2. **Create Prometheus alerting rules** for disk prefailure conditions
-3. **Define escalation thresholds:**
+1. **Apply the Prometheus rules** for disk prefailure conditions (using `for: 0m` for immediate lab verification):
+   ```bash
+   cat <<'EOF' | kubectl apply -f -
+   apiVersion: monitoring.coreos.com/v1
+   kind: PrometheusRule
+   metadata:
+     name: hardware-health-alerts
+     namespace: monitoring
+     labels:
+       prometheus: k8s
+   spec:
+     groups:
+       - name: hardware-health
+         rules:
+           - alert: DiskSmartPrefailure
+             expr: smartmon_device_smart_healthy == 0
+             for: 0m
+             labels:
+               severity: critical
+             annotations:
+               summary: "Disk SMART prefailure"
+           - alert: DiskReallocatedSectors
+             expr: smartmon_reallocated_sector_count > 0
+             for: 0m
+             labels:
+               severity: warning
+             annotations:
+               summary: "Disk has reallocated sectors"
+           - alert: DiskPendingSectors
+             expr: smartmon_current_pending_sector > 0
+             for: 0m
+             labels:
+               severity: critical
+             annotations:
+               summary: "Disk has pending sectors"
+   EOF
+   ```
+   **Checkpoint:** Verify the rule was successfully applied:
+   ```bash
+   kubectl get prometheusrule hardware-health-alerts -n monitoring
+   ```
+
+2. **Review the defined escalation thresholds** included in the rule above:
    - Warning: Reallocated sectors > 0
    - Critical: Current pending sectors > 0 or SMART health check failed
-4. **Plan the disk replacement workflow** as a runbook document
+3. **Simulate a failure** to test the alert by injecting a false metric. *(Run this directly on a Kubernetes node running node_exporter with textfile collection enabled)*:
+   ```bash
+   sudo mkdir -p /var/lib/node_exporter/textfile
+   echo 'smartmon_device_smart_healthy{disk="sdb"} 0' | sudo tee -a /var/lib/node_exporter/textfile/smartmon.prom
+   ```
+4. **Verify the alert fires**:
+   ```bash
+   kubectl port-forward -n monitoring svc/prometheus-k8s 9090:9090 &
+   sleep 3
+   # Wait for Prometheus to scrape the metric and evaluate the rule (typically 30s)
+   sleep 30
+   curl -s http://localhost:9090/api/v1/alerts | grep "DiskSmartPrefailure"
+   kill %1
+   ```
+5. **Plan the disk replacement workflow** as a runbook document.
 
 ### Success Criteria
 
