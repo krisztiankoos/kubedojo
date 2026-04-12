@@ -259,6 +259,8 @@ spec:
 | `Prefix` | Prefix match | `/api` matches `/api`, `/api/users` |
 | `ImplementationSpecific` | Controller decides | Varies by controller |
 
+**Path Precedence**: When multiple paths match a request, Kubernetes applies **longest-path precedence**. If a `Prefix` and an `Exact` match are tied for the longest match, `Exact` is preferred. The order of rules in the YAML does not matter.
+
 ### 3.4 Host-Based Routing (Virtual Hosts)
 
 ```yaml
@@ -514,8 +516,8 @@ Ingress Not Working?
     │   kubectl logs -n ingress-nginx <controller-pod>
     │
     └── Test from inside cluster
-        kubectl run test --rm -it --image=curlimages/curl -- \
-          curl <service>
+        kubectl run test --rm -i --image=curlimages/curl -- \
+          curl -s <service>
 ```
 
 ### 6.2 Common Ingress Commands
@@ -615,7 +617,7 @@ Requests that don't match any rule go to the `defaultBackend`.
 3. **You have an Ingress routing `/api` to an API service and `/` to a frontend service. Users report that requests to `/api/users` return the frontend page instead of the API response. The Ingress looks correct. What is going on?**
    <details>
    <summary>Answer</summary>
-   The order of path rules matters, and the `/` Prefix rule matches everything including `/api/users`. Check if the `pathType` is correct: both should be `Prefix`. With Prefix matching, the controller should match the longest prefix first (`/api` before `/`), but verify the Ingress controller's behavior. Also check if the rules are under the same host -- if they are split across different Ingress objects, the controller may not merge them correctly. Describe the Ingress and check the events for any warnings about overlapping paths.
+   The order of path rules in the YAML does not matter; Kubernetes always applies longest-path precedence. First, verify that the `/api` rule's `pathType` is indeed `Prefix` and not `Exact`. If it is `Exact`, it will not match `/api/users`, causing the request to fall back to the `/` Prefix rule. Also check if the rules are under the same host. If they are correctly configured as `Prefix`, the controller should match the longest prefix (`/api`), routing the request to the API service. Describe the Ingress and check the events for any misconfigurations.
    </details>
 
 4. **A security audit requires that your Ingress serves HTTPS only, with HTTP requests redirected to HTTPS. The TLS certificate is stored in a Secret named `prod-tls`. Write the Ingress configuration and explain what happens if the Secret is in a different namespace than the Ingress.**
@@ -647,6 +649,12 @@ k expose deployment api --port=80
 # Web service
 k create deployment web --image=nginx
 k expose deployment web --port=80
+```
+
+**Checkpoint:**
+```bash
+k get deployment api web
+k get svc api web
 ```
 
 2. **Create path-based Ingress**:
@@ -686,12 +694,12 @@ k describe ingress multi-path-ingress
 
 4. **Test routing** (if ingress controller is installed):
 ```bash
-# Get ingress address
+# Get ingress address (fallback to localhost if no LB IP is assigned in local clusters)
 INGRESS_IP=$(k get ingress multi-path-ingress -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+[ -z "$INGRESS_IP" ] && INGRESS_IP="localhost"
 
-# Test paths (from inside cluster if needed)
-k run test --rm -it --image=curlimages/curl --restart=Never -- \
-  curl -H "Host: example.com" http://$INGRESS_IP/api
+# Test paths directly from the host node (since INGRESS_IP might be localhost)
+curl -s -H "Host: example.com" http://$INGRESS_IP/api
 ```
 
 5. **Create host-based Ingress**:
@@ -727,6 +735,11 @@ spec:
 EOF
 ```
 
+**Checkpoint:**
+```bash
+k describe ingress host-ingress
+```
+
 6. **Create TLS secret** (self-signed for testing):
 ```bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -734,6 +747,11 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -subj "/CN=example.com"
 
 k create secret tls example-tls --cert=tls.crt --key=tls.key
+```
+
+**Checkpoint:**
+```bash
+k get secret example-tls
 ```
 
 7. **Create TLS Ingress**:
@@ -761,6 +779,11 @@ spec:
             port:
               number: 80
 EOF
+```
+
+**Checkpoint:**
+```bash
+k describe ingress tls-ingress
 ```
 
 8. **Cleanup**:
