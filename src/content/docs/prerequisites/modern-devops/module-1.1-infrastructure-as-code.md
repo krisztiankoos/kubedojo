@@ -60,29 +60,17 @@ Documentation: "Ask Dave, he set it up"
 
 IaC means **describing infrastructure in files that can be versioned, shared, and executed**.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              INFRASTRUCTURE AS CODE                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Traditional:                                               │
-│  ┌─────────┐      ┌─────────┐      ┌─────────┐            │
-│  │  Human  │ ───► │ Console │ ───► │ Server  │            │
-│  │         │      │  (GUI)  │      │         │            │
-│  └─────────┘      └─────────┘      └─────────┘            │
-│                                                             │
-│  With IaC:                                                  │
-│  ┌─────────┐      ┌─────────┐      ┌─────────┐            │
-│  │  Code   │ ───► │  Tool   │ ───► │ Server  │            │
-│  │ (files) │      │(Terraform)│    │         │            │
-│  └─────────┘      └─────────┘      └─────────┘            │
-│       │                                                     │
-│       ▼                                                     │
-│  ┌─────────┐                                               │
-│  │   Git   │  Version controlled, reviewable, repeatable  │
-│  └─────────┘                                               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Traditional [Traditional]
+        direction LR
+        H1[Human] -->|GUI| C1[Console] --> S1[Server]
+    end
+    subgraph IaC [With IaC]
+        direction LR
+        C2[Code files] --> T1[Tool e.g., Terraform] --> S2[Server]
+        C2 -.-> G1[Git: Version controlled, reviewable]
+    end
 ```
 
 ---
@@ -131,36 +119,37 @@ ghi789 Initial infrastructure setup
 
 ## IaC Tools Landscape
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              IaC TOOL CATEGORIES                            │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  PROVISIONING (Create infrastructure)                       │
-│  ├── Terraform (cloud-agnostic, most popular)              │
-│  ├── Pulumi (real programming languages)                   │
-│  ├── CloudFormation (AWS only)                             │
-│  └── ARM Templates (Azure only)                            │
-│                                                             │
-│  CONFIGURATION (Configure existing machines)                │
-│  ├── Ansible (agentless, SSH-based)                        │
-│  ├── Chef (Ruby DSL, agent-based)                          │
-│  ├── Puppet (agent-based, enterprise)                      │
-│  └── Salt (Python-based)                                   │
-│                                                             │
-│  KUBERNETES-NATIVE (Both provisions and configures K8s)    │
-│  ├── Helm (package manager for K8s)                        │
-│  ├── Kustomize (patch-based customization)                 │
-│  └── kubectl apply (direct YAML application)               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Tools[IaC Tool Categories]
+    
+    Tools --> Prov[Provisioning: Create infrastructure]
+    Prov --> TF["Terraform (cloud-agnostic, BSL)"]
+    Prov --> OT["OpenTofu (open-source fork, MPL 2.0)"]
+    Prov --> Pul["Pulumi (real programming languages)"]
+    Prov --> CF["CloudFormation (AWS only, JSON/YAML)"]
+    Prov --> ARM["ARM Templates (Azure only)"]
+    
+    Tools --> Config[Configuration: Configure machines]
+    Config --> Ans["Ansible (agentless, SSH-based)"]
+    Config --> Chef["Chef (Ruby DSL, agent-based)"]
+    Config --> Pup["Puppet (agent-based, enterprise)"]
+    Config --> Salt["Salt (Python-based)"]
+    
+    Tools --> K8s[Kubernetes-Native: Provisions & configures]
+    K8s --> Helm["Helm (package manager for K8s)"]
+    K8s --> Kust["Kustomize (patch-based customization)"]
+    K8s --> Kubectl["kubectl apply (direct YAML application)"]
+    K8s --> Cross["Crossplane (provisions cloud via K8s)"]
 ```
 
 ---
 
 ## Terraform: The Industry Standard
 
-Terraform by HashiCorp is the most widely used IaC tool:
+Terraform by HashiCorp (now part of IBM) is the most widely used IaC tool. It uses HCL (HashiCorp Configuration Language), a declarative syntax that natively describes infrastructure.
+
+*Note: In 2023, HashiCorp moved Terraform from an open-source license to a Business Source License (BSL 1.1). In response, the community created **OpenTofu**, an open-source (MPL 2.0) CNCF Sandbox fork that maintains compatibility with Terraform configurations.*
 
 ```hcl
 # main.tf - Terraform configuration
@@ -197,19 +186,19 @@ terraform destroy   # Tear it all down
 
 ### Why Terraform Wins
 
-| Feature | Terraform | CloudFormation |
-|---------|-----------|----------------|
+| Feature | Terraform / OpenTofu | CloudFormation |
+|---------|----------------------|----------------|
 | Cloud support | Any cloud | AWS only |
-| State management | Built-in | Managed by AWS |
-| Syntax | HCL (readable) | JSON/YAML (verbose) |
+| State management | Built-in (e.g., HCP Terraform, S3) | Managed by AWS |
+| Syntax | HCL 2 (readable) | JSON/YAML (verbose) |
 | Learning curve | Moderate | AWS-specific |
-| Community | Huge | AWS-limited |
+| Community | Huge ecosystem | AWS-limited |
 
 ---
 
 ## Ansible: Configuration Made Simple
 
-Ansible uses YAML "playbooks" to configure machines:
+Ansible (backed by Red Hat/IBM) uses YAML "playbooks" to configure machines. It is agentless and executes modules remotely over SSH.
 
 ```yaml
 # playbook.yml - Ansible playbook
@@ -286,6 +275,8 @@ kubectl apply -f deployment.yaml
 # This is IaC in action!
 ```
 
+> **Stop and think**: Notice how we don't tell Kubernetes *how* to run the container. We just state *what* we want (3 replicas of nginx:1.25), and Kubernetes figures out the rest.
+
 The connection: **Kubernetes uses the same declarative, idempotent principles as Terraform and Ansible.**
 
 ---
@@ -296,7 +287,7 @@ While IaC is essential for modern engineering, it comes with specific trade-offs
 
 - **Speed vs. Structure**: Clicking through a cloud console (ClickOps) is much faster for a quick, one-off experiment. IaC requires writing code, planning, and applying, which introduces overhead for simple tasks.
 - **Learning Curve**: Teams cannot simply provision servers; they must learn domain-specific languages (like HCL for Terraform) and understand state management principles.
-- **State Management Complexity**: Tools like Terraform store the environment's state in a file. Managing this state file securely (locking it to prevent concurrent runs, encrypting it to hide secrets) becomes a new operational burden.
+- **State Management Complexity**: Tools like Terraform store the environment's state in a file (`terraform.tfstate`). Managing this state file securely (locking it to prevent concurrent runs, encrypting it to hide secrets) becomes a new operational burden.
 
 ---
 
@@ -360,24 +351,20 @@ Manual changes = configuration drift = bugs at 3 AM
 
 ## The IaC Workflow
 
+```mermaid
+flowchart LR
+    W[1. Write Code] --> R[2. Review PR/MR]
+    R --> T[3. Test Plan]
+    T --> A[4. Approve Merge]
+    A --> App[5. Apply Changes]
+    App --> M[6. Monitor State]
+    M -.-> W
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              IaC WORKFLOW                                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. Write    ───►  2. Review   ───►  3. Test              │
-│     Code           (PR/MR)           (Plan)                │
-│       │                                 │                   │
-│       │                                 ▼                   │
-│  6. Monitor  ◄───  5. Apply   ◄───  4. Approve            │
-│     State          Changes           (Merge)               │
-│                                                             │
-│  All changes go through code review                        │
-│  All changes are auditable                                 │
-│  All changes are reversible                                │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**Key Guarantees:**
+- All changes go through code review
+- All changes are auditable
+- All changes are reversible
 
 ---
 
@@ -387,6 +374,8 @@ Manual changes = configuration drift = bugs at 3 AM
 - **Ansible's name** comes from Ursula K. Le Guin's sci-fi novels, where an "ansible" is a device for instantaneous communication across space.
 - **"Cattle, not pets"** is an IaC principle. Treat servers like cattle (replaceable, numbered), not pets (named, irreplaceable). You should be able to destroy and recreate any server without worry.
 - **"Configuration Drift"** was originally a systems administration term describing the phenomenon where servers in a cluster become increasingly different over time due to ad-hoc, undocumented manual updates.
+- **Pulumi** is an Apache 2.0 licensed IaC tool that lets you write infrastructure in general-purpose languages like TypeScript, Python, Go, Java, and .NET, compiling them into an infrastructure resource graph at runtime.
+- **Crossplane** is a CNCF Graduated project that uses Kubernetes itself to provision cloud resources, allowing you to manage AWS/Azure/GCP infrastructure using native Kubernetes YAML.
 
 ---
 
@@ -461,6 +450,9 @@ spec:
 EOF
 
 kubectl apply -f deployment.yaml
+
+# Verify the deployment was created successfully
+kubectl rollout status deployment/iac-demo
 ```
 
 **Step 2. Test idempotency and modification**
@@ -470,7 +462,7 @@ kubectl apply -f deployment.yaml
 # Notice the output says "deployment.apps/iac-demo unchanged"
 
 # 2. Modify the code
-sed -i '' 's/replicas: 2/replicas: 4/' deployment.yaml
+sed -i 's/replicas: 2/replicas: 4/' deployment.yaml
 
 # 3. Apply change
 kubectl apply -f deployment.yaml
@@ -501,6 +493,9 @@ EOF
 2. Apply it using IaC principles:
 ```bash
 kubectl apply -f config.yaml
+
+# Verify the ConfigMap exists
+kubectl get configmap app-settings
 ```
 
 3. Clean up the exercise resources:
@@ -518,43 +513,43 @@ rm deployment.yaml config.yaml
 1. **You are running a deployment script for a critical database. The pipeline crashes halfway through. You trigger the pipeline again. Instead of creating a duplicate database, the tool recognizes the first one and simply finishes the configuration. What principle is at work here?**
    <details>
    <summary>Answer</summary>
-   This demonstrates **idempotency**. Running an idempotent operation multiple times has the same effect as running it once. The tool checks the current state against the desired state and only makes necessary changes, rather than blindly executing commands. This prevents errors like duplicate resources.
+   This demonstrates **idempotency**. Running an idempotent operation multiple times has the same effect as running it once. The tool checks the current state against the desired state and only makes necessary changes, rather than blindly executing commands. This prevents errors like duplicate resources and ensures safe re-execution after failures.
    </details>
 
 2. **Your team needs to spin up 50 AWS EC2 instances, configure a VPC, and set up load balancers. Once the VMs are running, they need complex OS-level user configurations and specific application binaries installed. Which combination of tools is most appropriate?**
    <details>
    <summary>Answer</summary>
-   Using **Terraform** for the infrastructure provisioning and **Ansible** for the configuration is the most appropriate approach. Terraform excels at creating and managing cloud resources (VPCs, EC2 instances) declaratively. Ansible excels at configuring the operating systems and software on those instances after they are created. Combining them leverages the strengths of both tools.
+   Using **Terraform** (or OpenTofu) for the infrastructure provisioning and **Ansible** for the configuration is the most appropriate approach. Terraform excels at creating and managing cloud resources (VPCs, EC2 instances) declaratively but is not designed for deep OS configuration. Ansible is an agentless configuration management tool that excels at configuring the operating systems and software on those instances over SSH after they are created. Combining them leverages the specific strengths of both tools to cover the entire lifecycle seamlessly.
    </details>
 
 3. **A junior engineer writes a bash script with 15 `if/else` statements to check if Nginx is installed, installing it if missing, then starting the service if stopped. You suggest replacing it with a 5-line Kubernetes YAML file. Why is the YAML approach fundamentally different and safer?**
    <details>
    <summary>Answer</summary>
-   The bash script is **imperative**—it dictates the step-by-step instructions (the "how"). The Kubernetes YAML is **declarative**—it describes the desired end state (the "what"). Declarative approaches are safer because they rely on a controller (like Kubernetes) to continuously reconcile the actual state with the desired state. This eliminates the need for brittle `if/else` logic and handles unexpected starting conditions automatically.
+   The bash script is **imperative**—it dictates the exact step-by-step instructions and attempts to handle every possible state manually. The Kubernetes YAML is **declarative**—it simply describes the desired end state without specifying the sequence of actions. Declarative approaches are safer because they rely on a controller (like Kubernetes) to continuously and reliably reconcile the actual state with the desired state. This eliminates the need for brittle `if/else` logic, handles unexpected starting conditions automatically, and drastically reduces the surface area for human error.
    </details>
 
 4. **During an incident, an engineer SSHs into a production server and manually edits a configuration file to increase a timeout value. The issue is resolved. Two weeks later, the team deploys a new version of the app via their IaC pipeline, and the timeout issue immediately returns. What happened?**
    <details>
    <summary>Answer</summary>
-   This is a textbook case of **configuration drift**. The manual change made during the incident was never recorded in the IaC repository. When the IaC pipeline ran two weeks later, it enforced the configuration defined in version control. This effectively overwrote the manual fix and brought back the timeout issue, proving why all changes must go through code.
+   This is a textbook case of **configuration drift**. The manual change made during the incident was never recorded in the declarative IaC repository, creating a mismatch between the real world and the code. When the IaC pipeline ran two weeks later, it faithfully enforced the configuration defined in version control. This effectively overwrote the manual fix and brought back the timeout issue, proving exactly why emergency fixes must always be backported into code.
    </details>
 
 5. **A critical production bug occurs at 3 AM. The on-call engineer discovers the database connection string was changed on the application server. Nobody knows who changed it or when. How does Infrastructure as Code solve this exact problem?**
    <details>
    <summary>Answer</summary>
-   IaC relies on **version control** (like Git) as the single source of truth. If all changes are made through IaC, manual edits on the server are either impossible or automatically reverted. The engineer could simply look at the Git history (e.g., `git log` or `git blame`) to see exactly who changed the connection string. Furthermore, they could see when they did it and review the pull request that approved the change, providing a complete audit trail.
+   IaC relies on **version control** (like Git) as the strict single source of truth for the entire environment. If all changes are exclusively made through IaC, untracked manual edits on the server are either prevented entirely or automatically reverted by the tooling. The engineer could simply look at the Git history using commands like `git log` or `git blame` to see exactly who changed the connection string and when. Furthermore, they could review the pull request that approved the change, providing a complete audit trail and context for the modification.
    </details>
 
 6. **Your organization mandates that all infrastructure changes must be auditable, reversible, and reviewed by a peer before applying. A developer complains that Kubernetes makes this impossible because they have to use `kubectl run` commands all day. How do you correct this misunderstanding?**
    <details>
    <summary>Answer</summary>
-   The developer is using Kubernetes imperatively via the CLI, which circumvents IaC principles. Kubernetes is fundamentally an IaC system when used correctly. By defining resources in YAML files and committing those files to Git, the organization can enforce reviews. Applying them via a CI/CD pipeline ensures Kubernetes fully supports auditable, reversible, and peer-reviewed infrastructure changes.
+   The developer is using Kubernetes imperatively via the CLI, which circumvents IaC principles entirely. Kubernetes is fundamentally an IaC system when its desired state is defined using manifest files. By defining resources in YAML files and committing those files to Git, the organization can easily enforce mandatory peer reviews. Applying them via an automated CI/CD pipeline ensures Kubernetes fully supports auditable, reversible, and collaborative infrastructure changes.
    </details>
 
 7. **You apply a Kubernetes Deployment YAML file to a cluster, creating 3 replicas of a web app. Ten minutes later, you accidentally hit "Up" and "Enter" in your terminal, running the exact same `kubectl apply -f deployment.yaml` command again. What will the cluster do?**
    <details>
    <summary>Answer</summary>
-   The cluster will do **nothing**. Because the `apply` command is idempotent and declarative, Kubernetes compares the desired state in the YAML file with the current state in the cluster. Seeing that 3 replicas of the web app are already running with the exact correct configuration, it makes no changes. It simply reports that the resource is unchanged.
+   The cluster will do absolutely **nothing** to the running workloads. Because the `apply` command is idempotent and declarative, Kubernetes actively compares the desired state in the YAML file with the current state running in the cluster. Seeing that 3 replicas of the web app are already running with the exact correct configuration, it realizes no changes are required. It simply reports that the resource is unchanged, safely avoiding any downtime, errors, or duplicate deployments.
    </details>
 
 ---
@@ -570,7 +565,7 @@ rm deployment.yaml config.yaml
 - Reviewable changes
 
 **Key tools**:
-- Terraform: Provision cloud resources
+- Terraform / OpenTofu: Provision cloud resources
 - Ansible: Configure machines
 - Kubernetes: Container orchestration (IaC built-in)
 
