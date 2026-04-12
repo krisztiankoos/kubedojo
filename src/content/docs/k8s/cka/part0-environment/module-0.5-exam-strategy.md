@@ -23,7 +23,7 @@ lab:
 After this module, you will be able to:
 - **Apply** the Three-Pass Method to maximize your score under time pressure
 - **Triage** exam questions by difficulty and time estimate (quick wins first, hard ones last)
-- **Manage** exam time using the 2-minute rule (if stuck for 2 minutes, flag and move on)
+- **Manage** exam time using time-boxing (if stuck after 5-6 minutes, flag and move on)
 - **Avoid** the #1 exam failure mode: spending 15 minutes on a 4-point question while skipping three 7-point questions
 
 ---
@@ -34,7 +34,7 @@ You can know Kubernetes perfectly and still fail the CKA.
 
 How? Time.
 
-16 questions. 120 minutes. That's 7.5 minutes average per question. But questions aren't equal—some take 2 minutes, others take 15. If you spend 15 minutes on a hard question first and don't finish the easy ones, you've thrown away points.
+15-20 questions. 120 minutes. That's 6-8 minutes average per question. But questions aren't equal—some take 2 minutes, others take 15. If you spend 15 minutes on a hard question first and don't finish the easy ones, you've thrown away points.
 
 The **Three-Pass Method** is a strategy that maximizes your score regardless of question difficulty.
 
@@ -45,7 +45,7 @@ The **Three-Pass Method** is a strategy that maximizes your score regardless of 
 Most people approach exams linearly:
 
 ```
-Question 1 → Question 2 → Question 3 → ... → Question 16
+Question 1 → Question 2 → Question 3 → ... → Question 17
 ```
 
 This fails when:
@@ -61,7 +61,7 @@ The CKA passing score is **66%**. You don't need perfect—you need efficient.
 
 ---
 
-> **Think about it**: The exam has 16 questions worth different points. A 4-point question and a 7-point question both take "about 10 minutes" if you get stuck. But the 7-point question is worth 75% more. If you only have time for one, which do you pick? This is why strategy matters as much as knowledge.
+> **Think about it**: The exam has 15-20 questions worth different points. A 4-point question and a 7-point question both take "about 10 minutes" if you get stuck. But the 7-point question is worth 75% more. If you only have time for one, which do you pick? This is why strategy matters as much as knowledge.
 
 ## The Solution: Three-Pass Method
 
@@ -73,7 +73,7 @@ Instead of linear, work in passes:
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │  PASS 1: QUICK WINS (1-3 minutes each)                          │
-│  ├── Scan ALL 16 questions first                                │
+│  ├── Scan ALL questions first                                   │
 │  ├── Do every task you can complete quickly                     │
 │  ├── Skip anything that looks complex                           │
 │  └── Goal: Secure easy points, bank time                        │
@@ -160,7 +160,7 @@ Before you can use the three-pass method, you need to instantly categorize quest
 
 ### What To Do
 
-1. **Start of exam**: Read through ALL 16 questions quickly (5 minutes)
+1. **Start of exam**: Read through ALL questions quickly (5 minutes)
 2. **Identify quick wins**: Mark them mentally or on scratch paper
 3. **Execute quick wins**: Do all easy questions first
 4. **Don't get distracted**: If anything takes longer than expected, skip
@@ -292,8 +292,8 @@ working correctly. Pods are in CrashLoopBackOff. Troubleshoot and fix.
 ```bash
 # Step 1: Gather information (2 minutes)
 kubectl get pods -n production
-kubectl describe pod critical-app-xxx -n production
-kubectl logs critical-app-xxx -n production
+kubectl describe pod -l app=critical-app -n production
+kubectl logs -l app=critical-app -n production
 kubectl get events -n production --sort-by='.lastTimestamp'
 
 # Step 2: Identify issue (from logs/events)
@@ -590,6 +590,31 @@ Categorize all 10 questions as QUICK / MEDIUM / COMPLEX. Time yourself.
 
 </details>
 
+### Setup for Drill 2
+
+```bash
+kubectl create deploy web --image=nginx
+cat << 'EOF' | kubectl apply -f -
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: database
+spec:
+  selector:
+    matchLabels:
+      app: db
+  serviceName: "db"
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - name: db
+        image: nginx
+EOF
+```
+
 ### Drill 2: Mock Exam - Pass 1 Only (Target: 15 minutes)
 
 Do ONLY the quick wins from Drill 1. Skip all MEDIUM and COMPLEX.
@@ -611,6 +636,12 @@ kubectl annotate deploy web owner=team-a
 
 # Stop timer. Target: <5 minutes for 4 questions
 # You just secured ~25% of points in <5 minutes
+
+# Verify
+kubectl get ns production
+kubectl get cm app-config
+kubectl get sts database
+kubectl get deploy web -o=jsonpath='{.metadata.annotations.owner}'
 ```
 
 ### Drill 3: Context Switching Under Pressure (Target: 3 minutes)
@@ -663,7 +694,7 @@ kubectl create ns secure
 kubectl create sa app-sa -n secure
 kubectl create role secret-reader --verb=get,list --resource=secrets -n secure
 kubectl create rolebinding app-sa-binding --role=secret-reader --serviceaccount=secure:app-sa -n secure
-kubectl run test-pod --image=nginx --serviceaccount=app-sa -n secure
+kubectl run test-pod --image=nginx --overrides='{ "spec": { "serviceAccountName": "app-sa" } }' -n secure
 
 # VERIFY
 kubectl get sa,role,rolebinding,pod -n secure
@@ -678,6 +709,11 @@ kubectl delete ns secure
 ```
 
 ### Drill 5: Partial Credit Practice
+
+**Setup**:
+```bash
+kubectl create deploy web-app --image=nginx:nonexistent
+```
 
 **Scenario**: You're stuck on a complex question with 3 minutes left. Practice getting partial credit.
 
@@ -779,7 +815,7 @@ EOF
 # Q4 (COMPLEX)
 kubectl describe deploy q4-broken
 kubectl get pods | grep q4-broken
-kubectl describe pod q4-broken-xxx | grep -A5 Events
+kubectl describe pod -l app=q4-broken | grep -A5 Events
 # Image doesn't exist - fix:
 kubectl set image deploy q4-broken nginx=nginx:1.25
 
@@ -832,7 +868,7 @@ kubectl delete ns exam-practice
 ║               THREE-PASS EXAM STRATEGY                         ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║                                                                ║
-║  BEFORE SOLVING: Read ALL 16 questions (5 min)                 ║
+║  BEFORE SOLVING: Read ALL questions (5 min)                 ║
 ║                                                                ║
 ║  PASS 1: QUICK WINS                                            ║
 ║  • 1-3 min tasks                                               ║
