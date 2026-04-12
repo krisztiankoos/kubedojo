@@ -87,13 +87,13 @@ from peft import LoraConfig, get_peft_model
 from transformers import AutoModelForCausalLM
 
 model_id = "mistralai/Mistral-7B-v0.1"
-model = AutoModelForCausalLM.from_pretrained(model_id, load_in_4bit=True)
+model = AutoModelForCausalLM.from_pretrained(model_id, load_in_4bit=True) # Quantize base model to fit within consumer GPU VRAM
 
 # Define DoRA Configuration
 dora_config = LoraConfig(
-    r=16,
+    r=16, # Rank 16 ensures sufficient capacity for the directional matrix to shift
     lora_alpha=32,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj"], # Targeting all attention projections maximizes reasoning adaptation
     lora_dropout=0.05,
     bias="none",
     task_type="CAUSAL_LM",
@@ -139,6 +139,21 @@ sequenceDiagram
 ```
 
 By initializing with the principal components, PiSSA models converge dramatically faster than standard LoRA. The optimization landscape is smoother because the model is immediately adjusting its core representations rather than pushing a zero-initialized matrix up a steep gradient. Furthermore, PiSSA often achieves lower final loss values and better generalization, rivaling full fine-tuning on many benchmarks.
+
+### Designing the PiSSA Initialization Pipeline
+
+Designing a PiSSA pipeline requires managing the upfront SVD computation. In the Hugging Face PEFT library, PiSSA is natively supported via the `init_lora_weights` argument in `LoraConfig`. For large models where exact SVD is computationally prohibitive, PEFT supports a fast-SVD approximation using Subspace Iteration.
+
+```python
+pissa_config = LoraConfig(
+    r=16,
+    target_modules=["q_proj", "v_proj"],
+    task_type="CAUSAL_LM",
+    init_lora_weights="pissa_niter_16" # Triggers fast-SVD initialization with 16 subspace iterations
+)
+```
+
+Setting `init_lora_weights="pissa_niter_16"` drastically reduces the initialization time for a 7B model while maintaining near-SVD initialization quality. A production pipeline should pre-compute these fast-SVD adapters and the resulting residual base model ($W_{res}$) once, caching them for all subsequent fine-tuning runs across the organization.
 
 > **Pause and predict**: Because PiSSA modifies the base weights by extracting the principal components into the trainable matrices, what must happen during inference deployment compared to a standard LoRA adapter that simply adds to the base model?
 
@@ -215,6 +230,12 @@ Yes, the team should approve the transition because DoRA introduces absolutely z
 ## Hands-On Exercise: Implementing and Analyzing DoRA
 
 In this exercise, you will implement DoRA using the Hugging Face `peft` library, analyze the parameter count differences compared to standard LoRA, and simulate the forward pass decomposition.
+
+**Prerequisites**
+Before starting, install the required packages:
+```bash
+pip install -q torch transformers "peft>=0.18.0"
+```
 
 **Task 1: Setup and Standard LoRA Baseline**
 1. Load a causal language model (e.g., `sshleifer/tiny-gpt2`) to run this quickly on CPU or a small GPU.
