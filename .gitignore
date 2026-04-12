@@ -59,3 +59,4 @@ test_script.sh
 *.staging.md
 .pipeline/fact-ledgers/
 .pipeline/link-cache.json
+.pipeline/knowledge-cards/
