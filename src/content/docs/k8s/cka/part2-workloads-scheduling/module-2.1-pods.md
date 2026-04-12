@@ -125,11 +125,8 @@ kubectl run nginx --image=nginx --labels="app=web,env=prod"
 # Create pod with environment variables
 kubectl run nginx --image=nginx --env="ENV=production"
 
-# Create pod with resource requests
-kubectl run nginx --image=nginx --requests="cpu=100m,memory=128Mi"
-
-# Create pod with resource limits
-kubectl run nginx --image=nginx --limits="cpu=200m,memory=256Mi"
+# Set resource requests and limits on an existing pod
+kubectl set resources pod nginx --requests="cpu=100m,memory=128Mi" --limits="cpu=200m,memory=256Mi"
 
 # Generate YAML without creating (essential for exam!)
 kubectl run nginx --image=nginx --dry-run=client -o yaml > pod.yaml
@@ -188,6 +185,28 @@ kubectl delete pod nginx --grace-period=0 --force
 
 # Watch pods
 kubectl get pods -w
+```
+
+### 2.4 Security Contexts
+
+Security contexts define privilege and access control settings for a Pod or Container. This is essential for preventing workloads from running as root.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sec-ctx-demo
+spec:
+  securityContext:
+    runAsUser: 1000
+    fsGroup: 2000
+  containers:
+  - name: myapp
+    image: busybox
+    command: [ "sh", "-c", "sleep 1h" ]
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
 ```
 
 > **Did You Know?**
@@ -262,6 +281,16 @@ kubectl get pod nginx -o jsonpath='{.status.containerStatuses[0].state}'
 # Check why a pod is pending
 kubectl describe pod nginx | grep -A5 "Events:"
 ```
+
+### 3.5 Pod Termination & Grace Periods
+
+When you delete a pod, Kubernetes doesn't kill it immediately. It follows a graceful termination process:
+1. The pod state is set to `Terminating` and it is removed from Service endpoints.
+2. A `SIGTERM` signal is sent to the main process in each container.
+3. Kubernetes waits for the **termination grace period** (default 30 seconds).
+4. If the container is still running after the grace period, a `SIGKILL` is sent to forcefully stop it.
+
+You can override the default grace period during deletion: `kubectl delete pod nginx --grace-period=5`
 
 ---
 
@@ -732,10 +761,10 @@ EOF
 kubectl apply -f multi-container-pod.yaml
 ```
 
-2. **Watch pod startup**:
+2. **Wait for pod startup**:
 ```bash
-kubectl get pod webapp -w
-# Watch init container complete, then main containers start
+# Wait for the pod to be fully ready
+kubectl wait --for=condition=ready pod/webapp --timeout=90s
 ```
 
 3. **Check init container completed**:
@@ -749,11 +778,10 @@ kubectl describe pod webapp | grep -A10 "Init Containers"
 kubectl exec webapp -c web -- cat /usr/share/nginx/html/init-status.txt
 ```
 
-5. **Access the sidecar container**:
+5. **Verify the sidecar container can read logs**:
 ```bash
-kubectl exec -it webapp -c log-reader -- /bin/sh
-# Inside: ls /logs
-exit
+# Execute command non-interactively
+kubectl exec webapp -c log-reader -- ls /logs
 ```
 
 6. **Generate traffic and see logs**:
@@ -762,7 +790,7 @@ exit
 POD_IP=$(kubectl get pod webapp -o jsonpath='{.status.podIP}')
 
 # Generate traffic from another pod
-kubectl run curl --image=curlimages/curl --rm -it --restart=Never -- curl $POD_IP
+kubectl run curl --image=curlimages/curl --rm -i --restart=Never -- curl -s $POD_IP
 
 # Check sidecar saw the log
 kubectl logs webapp -c log-reader
@@ -774,8 +802,8 @@ kubectl logs webapp -c log-reader
 kubectl logs webapp -c web
 kubectl logs webapp -c log-reader
 
-# Follow logs
-kubectl logs webapp -c web -f
+# View recent logs
+kubectl logs webapp -c web --tail=10
 ```
 
 8. **Cleanup**:
@@ -813,7 +841,8 @@ kubectl run webserver --image=nginx --port=80
 kubectl run envpod --image=nginx --env="ENV=production" --env="DEBUG=false"
 
 # 5. Pod with resource requests
-kubectl run limited --image=nginx --requests="cpu=100m,memory=128Mi" --limits="cpu=200m,memory=256Mi"
+kubectl run limited --image=nginx
+kubectl set resources pod limited --requests="cpu=100m,memory=128Mi" --limits="cpu=200m,memory=256Mi"
 
 # Verify all pods
 kubectl get pods
@@ -942,8 +971,8 @@ spec:
     emptyDir: {}
 EOF
 
-# Watch init container complete
-kubectl get pod init-demo -w
+# Wait for init container and main container to be ready
+kubectl wait --for=condition=ready pod/init-demo --timeout=60s
 
 # Verify init worked
 kubectl logs init-demo
