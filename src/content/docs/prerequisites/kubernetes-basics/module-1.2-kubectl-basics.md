@@ -87,7 +87,8 @@ kubectl describe deployment myapp
 ```bash
 # From YAML file
 kubectl apply -f pod.yaml
-kubectl apply -f .                  # All YAML files in directory
+kubectl apply -f pod.yaml --server-side             # Use Server-Side Apply
+kubectl apply -f .                                  # All YAML files in directory
 kubectl apply -f https://example.com/resource.yaml  # From URL
 
 # Imperatively (quick creation)
@@ -224,6 +225,8 @@ kubectl cp nginx:/etc/nginx/nginx.conf ./nginx.conf
 kubectl cp ./local-file.txt nginx:/tmp/
 ```
 
+> **Stop and think**: If a pod is failing to start, which command should you run first: `kubectl logs` or `kubectl describe`? (Use `describe` first to check the Events for scheduling or image pull errors, then `logs` if the container actually started but crashed).
+
 ---
 
 ## Useful Flags
@@ -276,35 +279,11 @@ kubectl config set-context --current --namespace=default
 
 ## Visualization: kubectl Flow
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              HOW kubectl WORKS                              │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────┐                                       │
-│  │   Your Terminal │                                       │
-│  │   $ kubectl ... │                                       │
-│  └────────┬────────┘                                       │
-│           │                                                 │
-│           ▼                                                 │
-│  ┌─────────────────┐                                       │
-│  │   ~/.kube/config│  ← Credentials, cluster info         │
-│  │   (kubeconfig)  │                                       │
-│  └────────┬────────┘                                       │
-│           │                                                 │
-│           ▼  HTTPS                                         │
-│  ┌─────────────────┐                                       │
-│  │   API Server    │  ← Validates, processes              │
-│  │   (K8s cluster) │                                       │
-│  └────────┬────────┘                                       │
-│           │                                                 │
-│           ▼                                                 │
-│  ┌─────────────────┐                                       │
-│  │     Response    │  ← YAML/JSON/Table                   │
-│  │                 │                                       │
-│  └─────────────────┘                                       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Terminal["Your Terminal<br>$ kubectl ..."] -->|Reads Credentials<br>& Cluster Info| Config["~/.kube/config<br>(kubeconfig)"]
+    Terminal -->|HTTPS Request| API["API Server<br>(K8s cluster)"]
+    API -->|Validates & Processes| Response["Response<br>(YAML/JSON/Table)"]
 ```
 
 ---
@@ -366,6 +345,10 @@ compdef k=kubectl              # Zsh
 
 - **`--dry-run=client -o yaml` generates templates.** Never memorize YAML structure—generate it.
 
+- **`apply` uses patch semantics.** Unlike `replace`, declarative object configuration via `apply` uses patch operations, which preserves fields set by other controllers or writers.
+
+- **Use Server-Side Apply (`--server-side`)** to shift the merge logic from the `kubectl` client to the API server, which improves conflict resolution and avoids issues when multiple actors manage the same resource.
+
 - **kubectl has built-in help.** `kubectl explain pod.spec.containers` shows field documentation.
 
 ---
@@ -379,6 +362,7 @@ compdef k=kubectl              # Zsh
 | Typos in resource names | Use tab completion to auto-fill names |
 | Not using `-o yaml` for templates | Always generate templates via dry-run, do not memorize them |
 | Using `create` instead of `apply` | `apply` is idempotent and handles updates gracefully, prefer it |
+| Mixing management techniques | Do not mix imperative (`scale`) and declarative (`apply`) techniques on the same object. This results in undefined behavior. |
 | Deleting a pod directly instead of its parent | The ReplicaSet will recreate the pod immediately. Delete the Deployment instead. |
 | Overwhelming output from `kubectl get events` | Use `--sort-by='.metadata.creationTimestamp'` to read chronologically |
 | Trying to edit immutable fields | Generate YAML, delete the resource, and apply the new YAML instead of `kubectl edit` |
@@ -400,7 +384,7 @@ compdef k=kubectl              # Zsh
    <summary>Answer</summary>
    `kubectl get pods -o jsonpath='{.items[*].status.podIP}'`
 
-   *Why?* While `-o wide` shows the IP address, it includes headers and other columns that are hard to parse in a script. `jsonpath` allows you to navigate the JSON structure of the Kubernetes API response and extract exactly the data you need. This is a crucial skill not only for automation and bash scripting but also for passing the CKA/CKAD certification exams where extracting specific data is heavily tested.
+   *Why?* While `-o wide` shows the IP address, it includes headers and other columns that are hard to parse in a script. `jsonpath` allows you to navigate the JSON structure of the Kubernetes API response and extract exactly the data you need. This is a crucial skill not only for automation and bash scripting but also for passing the CKA/CKAD certification exams where extracting specific data is heavily tested. The JSONPath syntax uses a dialect custom to kubectl, so practicing its specific format is highly recommended.
    </details>
 
 3. **A developer asks you to update a deployment to use a new image tag (`v2.1.0`). They do not have the original YAML file, and you need to do this quickly without risking typos in a manual `kubectl edit` session. What is the safest imperative command?**
@@ -408,7 +392,7 @@ compdef k=kubectl              # Zsh
    <summary>Answer</summary>
    `kubectl set image deployment/myapp myapp=nginx:v2.1.0`
 
-   *Why?* Using `kubectl set image` is safer and faster than `kubectl edit` because it performs a targeted, atomic update to the specific field without opening a text editor. Opening a live resource in vi/nano introduces the risk of accidentally deleting or modifying other lines, which can break the deployment. This imperative command triggers a standard rolling update immediately, ensuring you do not accidentally introduce syntax errors.
+   *Why?* Using `kubectl set image` is safer and faster than `kubectl edit` because it performs a targeted, atomic update to the specific field without opening a text editor. Opening a live resource in vi/nano introduces the risk of accidentally deleting or modifying other lines, which can break the deployment. This imperative command triggers a standard rolling update immediately, ensuring you do not accidentally introduce syntax errors. It is the industry standard approach when you need to quickly roll out a known image tag without going through a full GitOps pipeline.
    </details>
 
 4. **You have created a YAML file `app.yaml` and applied it, but the pod is not behaving correctly and is stuck in a Pending state. You want to see the detailed events associated with this specific pod to understand why. What do you do?**
@@ -416,7 +400,7 @@ compdef k=kubectl              # Zsh
    <summary>Answer</summary>
    `kubectl describe pod <pod-name>`
 
-   *Why?* The `kubectl describe` command aggregates data from multiple API endpoints, most importantly the cluster Events associated with that specific resource. When a pod is stuck in `Pending` or `ImagePullBackOff`, the `get` command will not tell you why. The `describe` command will show you exactly what the scheduler or kubelet is complaining about at the bottom of its output, making it your first stop for troubleshooting.
+   *Why?* The `kubectl describe` command aggregates data from multiple API endpoints, most importantly the cluster Events associated with that specific resource. When a pod is stuck in `Pending` or `ImagePullBackOff`, the `get` command will not tell you why. The `describe` command will show you exactly what the scheduler or kubelet is complaining about at the bottom of its output, making it your first stop for troubleshooting. These events include everything from node scheduling decisions to container runtime image pull failures, painting a complete picture of the resource's lifecycle.
    </details>
 
 5. **Your team is moving to a declarative GitOps workflow. You need to create a complex Deployment but want to avoid writing the YAML from scratch to prevent indentation errors. How can you trick `kubectl` into writing the skeleton for you?**
@@ -424,7 +408,7 @@ compdef k=kubectl              # Zsh
    <summary>Answer</summary>
    `kubectl create deployment myapp --image=nginx --dry-run=client -o yaml > myapp.yaml`
 
-   *Why?* The combination of `--dry-run=client` and `-o yaml` is the ultimate cheat code in Kubernetes. It tells the kubectl client to process the command and format the intended API request as YAML, but stops before actually sending the POST request to the API server. By redirecting this output to a file, you get a syntactically perfect, valid template that you can commit to version control and modify later.
+   *Why?* The combination of `--dry-run=client` and `-o yaml` is the ultimate cheat code in Kubernetes. It tells the kubectl client to process the command and format the intended API request as YAML, but stops before actually sending the POST request to the API server. By redirecting this output to a file, you get a syntactically perfect, valid template that you can commit to version control and modify later. This technique guarantees that the resulting configuration relies on the exact API group and version your cluster expects.
    </details>
 
 6. **You are investigating a performance issue and need to execute a network diagnostic tool (`curl`) from inside an existing, running pod named `api-backend`. How do you drop into an interactive shell inside that pod?**
@@ -432,7 +416,7 @@ compdef k=kubectl              # Zsh
    <summary>Answer</summary>
    `kubectl exec -it api-backend -- sh`
 
-   *Why?* The `kubectl exec` command works very similarly to `docker exec`, allowing you to spawn a new process inside the namespace of a running container. The `-i` (interactive) and `-t` (tty) flags allocate a terminal session so you can type commands and see the output in real-time. We use `sh` (or `bash`) as the command to run, giving us a fully interactive shell environment to run our diagnostics from the pod's perspective.
+   *Why?* The `kubectl exec` command works very similarly to `docker exec`, allowing you to spawn a new process inside the namespace of a running container. The `-i` (interactive) and `-t` (tty) flags allocate a terminal session so you can type commands and see the output in real-time. We use `sh` (or `bash`) as the command to run, giving us a fully interactive shell environment to run our diagnostics from the pod's perspective. Remember that the required binaries, like `curl` or `sh`, must actually exist within the container's file system for this command to succeed.
    </details>
 
 7. **You are working on two different clusters: `dev-cluster` and `prod-cluster`. You want to verify which cluster your `kubectl` commands are currently pointing to before you accidentally delete a critical resource. How do you check this?**
@@ -440,7 +424,7 @@ compdef k=kubectl              # Zsh
    <summary>Answer</summary>
    `kubectl config current-context`
 
-   *Why?* Your `~/.kube/config` file can contain connection details for dozens of clusters. The "context" determines which cluster, user, and default namespace `kubectl` will communicate with. Running `current-context` is a crucial safety check that should become muscle memory before running destructive commands, ensuring you do not repeat the classic mistake of applying dev changes to the production environment.
+   *Why?* Your `~/.kube/config` file can contain connection details for dozens of clusters. The "context" determines which cluster, user, and default namespace `kubectl` will communicate with. Running `current-context` is a crucial safety check that should become muscle memory before running destructive commands, ensuring you do not repeat the classic mistake of applying dev changes to the production environment. A context is essentially a named grouping of a specific cluster, user credential, and default namespace.
    </details>
 
 8. **You notice a pod named `cache-worker` is completely unresponsive and stuck in a `Terminating` state for over 30 minutes. Normal deletion commands just hang. How do you forcefully remove it from the API server?**
@@ -448,7 +432,7 @@ compdef k=kubectl              # Zsh
    <summary>Answer</summary>
    `kubectl delete pod cache-worker --force --grace-period=0`
 
-   *Why?* Sometimes the kubelet on a node loses communication with the API server, or a container runtime gets deadlocked, leaving a pod permanently stuck in `Terminating`. Setting `--grace-period=0` tells Kubernetes not to wait for the container to shut down gracefully. Adding `--force` tells the API server to immediately remove the pod object from its datastore, even if the node has not confirmed the deletion.
+   *Why?* Sometimes the kubelet on a node loses communication with the API server, or a container runtime gets deadlocked, leaving a pod permanently stuck in `Terminating`. Setting `--grace-period=0` tells Kubernetes not to wait for the container to shut down gracefully. Adding `--force` tells the API server to immediately remove the pod object from its datastore, even if the node has not confirmed the deletion. Use this command with caution, as it can leave orphaned containers running on the node if the kubelet is completely unresponsive.
    </details>
 
 ---
@@ -464,8 +448,9 @@ kubectl create namespace practice
 # 2. Run a pod in that namespace
 kubectl run nginx --image=nginx -n practice
 
-# 3. List pods in the namespace
+# 3. List pods in the namespace (wait for it to be ready)
 kubectl get pods -n practice
+kubectl wait --for=condition=ready pod/nginx -n practice --timeout=60s
 
 # 4. Get detailed info
 kubectl describe pod nginx -n practice
