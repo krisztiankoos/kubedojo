@@ -10,6 +10,7 @@ lab:
   difficulty: intermediate
   environment: kubernetes
 ---
+
 > **Complexity**: `[MEDIUM]` - Core networking concept
 >
 > **Time to Complete**: 45-55 minutes
@@ -18,21 +19,15 @@ lab:
 
 ---
 
-## What You'll Be Able to Do
-
-After this module, you will be able to:
-- **Create** ClusterIP, NodePort, and LoadBalancer services and explain the traffic flow for each
-- **Debug** service connectivity by checking endpoints, selectors, and kube-proxy rules
-- **Trace** a request from client through Service to Pod using iptables/IPVS rules
-- **Explain** how kube-proxy implements service load balancing in iptables and IPVS modes
-
----
-
 ## Why This Module Matters
 
-Pods are ephemeral—they come and go, and their IP addresses change. Services provide **stable networking** for your applications. Without services, you'd have to track every pod IP manually, which is impossible at scale.
+In 2014, a major global retail corporation suffered a catastrophic, hours-long outage during an unprecedented Black Friday traffic surge. While their failure predated widespread Kubernetes adoption, the root cause—a static, brittle load balancing tier unable to dynamically route traffic to healthy backend instances—cost them millions of dollars in lost revenue. This is the exact architectural crisis that Kubernetes Services are designed to prevent.
 
-The CKA exam heavily tests services. You'll need to create services quickly, expose deployments, debug service connectivity, and understand when to use each service type.
+Pods are inherently ephemeral. They are constantly created, destroyed, and replaced, meaning their IP addresses are in a state of perpetual churn. If you attempt to hardcode Pod IPs into your application configurations, your architecture will shatter the moment a node fails or a deployment scales. Services provide an unbreakable, stable networking abstraction over these shifting Pod IPs. They give your applications a permanent, reliable endpoint to communicate with, regardless of the underlying volatility. 
+
+For the Certified Kubernetes Administrator (CKA) exam, mastering Services is non-negotiable. You will be rigorously tested on your ability to rapidly expose deployments, correctly map target ports, debug complex connectivity failures, and differentiate the exact traffic routing mechanisms of ClusterIP, NodePort, and LoadBalancer configurations.
+
+---
 
 > **The Restaurant Analogy**
 >
@@ -40,24 +35,25 @@ The CKA exam heavily tests services. You'll need to create services quickly, exp
 
 ---
 
-## What You'll Learn
+## What You'll Be Able to Do
 
-By the end of this module, you'll be able to:
-- Understand the four service types and when to use each
-- Create services imperatively and declaratively
-- Expose deployments and pods
-- Debug service connectivity issues
-- Use selectors to target the right pods
+After completing this extensive module, you will be able to:
+- **Design** highly available architectures by selecting the appropriate Kubernetes Service type (ClusterIP, NodePort, LoadBalancer) based on strict internal and external access requirements.
+- **Implement** declarative multi-port Service definitions, correctly mapping internal container target ports to exposed service network ports.
+- **Diagnose** complex traffic routing failures by meticulously inspecting Endpoints, EndpointSlices, and selector label configurations to resolve network partitions.
+- **Evaluate** advanced traffic distribution policies, directly contrasting `PreferSameNode` and `PreferSameZone` behaviors introduced in Kubernetes v1.35.
+- **Debug** kube-proxy implementations natively, differentiating between iptables, IPVS, and nftables proxy modes when resolving cluster-wide networking anomalies.
 
 ---
 
 ## Did You Know?
 
-- **Services predate Pods**: The concept of stable service IPs was designed before pods existed in Kubernetes. The founders knew ephemeral pods needed stable endpoints.
-
-- **Virtual IPs are magic**: ClusterIP addresses don't exist on any network interface. They're "virtual" IPs that kube-proxy intercepts and routes using iptables or nftables rules. (Note: IPVS mode was deprecated in K8s 1.35 — nftables is the recommended replacement.)
-
-- **NodePort range is configurable**: The default 30000-32767 range can be changed with the `--service-node-port-range` flag on the API server, though most clusters stick with defaults.
+1. **Services predate Pods**: The concept of stable service IPs was designed before pods existed in Kubernetes. The founders knew ephemeral pods needed stable endpoints.
+2. **Port Allocation Ranges**: The default NodePort allocation range is safely partitioned into two distinct segments: a static band (`30000-30085`) reserved for manually requested ports, and a dynamic band (`30086-32767`) used for automatic assignments, structurally preventing port collision issues.
+3. **The Shift to Nftables**: The legacy `ipvs` kube-proxy mode was officially deprecated in Kubernetes v1.35, firmly establishing `nftables` as the modern, high-performance Linux kernel replacement for cluster traffic routing.
+4. **Mathematical IP Banding**: The Kubernetes Service ClusterIP allocator does not randomly assign IPs; it automatically divides the virtual IP range into structured bands using the exact mathematical formula `min(max(16, cidrSize/16), 256)` to ensure highly efficient address management.
+5. **The Endpoints Bottleneck**: The monolithic `Endpoints` API became a severe performance bottleneck in massive clusters, leading to its official deprecation in Kubernetes v1.33. It has been fully replaced by the highly scalable `EndpointSlices` architecture, which stabilized in v1.21.
+6. **Virtual IPs are magic**: ClusterIP addresses don't exist on any network interface. They're "virtual" IPs that kube-proxy intercepts and routes at the kernel level.
 
 ---
 
@@ -65,7 +61,25 @@ By the end of this module, you'll be able to:
 
 ### 1.1 Why Services?
 
+Before diving into the code, let's conceptualize the fundamental problem Kubernetes Services solve. When a client needs to reach a web application running in a cluster, it faces an immediate identity crisis. Pods are mortal. If a node crashes, the Pod is terminated, and a replacement Pod is spun up on a different node with a completely new IP address. 
+
+```mermaid
+flowchart TD
+    Client[Client] -->|Which IP?| Q{?}
+    Q -.-> P1[Pod: web-abc123\nIP: 10.244.1.5\nDELETED]
+    Q -.-> P2[Pod: web-def456\nIP: 10.244.2.8\nRUNNING]
+    Q -.-> P3[Pod: web-xyz999\nIP: 10.244.3.2\nNEW]
+    
+    Client2[Client] -->|Always uses 10.96.45.123| Svc[Service: web-service\nClusterIP: 10.96.45.123]
+    Svc -->|Load Balances| P4[Pod: web-def456\n10.244.2.8]
+    Svc -->|Load Balances| P5[Pod: web-ghi789\n10.244.1.12]
+    Svc -->|Load Balances| P6[Pod: web-xyz999\n10.244.3.2]
 ```
+
+<details>
+<summary>View Legacy ASCII Diagram</summary>
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                     The Problem                                │
 │                                                                │
@@ -103,7 +117,13 @@ By the end of this module, you'll be able to:
 └────────────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
+The solution is the Service resource. A Service acts as a static, immovable anchor in your cluster's network. It is assigned a permanent `ClusterIP` that will absolutely never change for the entire lifecycle of the Service. The client simply directs its request to this static IP, and Kubernetes dynamically handles the complexity of discovering which Pods are currently alive and routing the traffic to them.
+
 ### 1.2 Service Components
+
+To effectively design network routes, you must understand the atomic components of a Service definition.
 
 | Component | Description |
 |-----------|-------------|
@@ -113,9 +133,28 @@ By the end of this module, you'll be able to:
 | **TargetPort** | The port on the pods to forward traffic to |
 | **Endpoints** | Actual pod IPs backing the service |
 
+**Critical Fact**: For a Service port, if `targetPort` is omitted from the specification, Kubernetes intelligently defaults it to the exact same value as `port`. While convenient, explicitly defining both is considered a robust engineering best practice.
+
 ### 1.3 How Services Work
 
+Behind the scenes, the magic of Services is orchestrated by an agent called `kube-proxy`, which runs continuously as a DaemonSet on every single node in your cluster. 
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant KP as kube-proxy (Node)
+    participant P as Pod
+    C->>KP: 1. Request to Service IP (10.96.45.123:80)
+    Note over KP: 2. Intercepts traffic on Node
+    Note over KP: 3. Applies iptables/nftables rules
+    KP->>P: 4. Forward to Pod IP (load balanced)
+    Note over P: 5. Receives request on targetPort
 ```
+
+<details>
+<summary>View Legacy ASCII Diagram</summary>
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                   Service Request Flow                         │
 │                                                                │
@@ -137,22 +176,28 @@ By the end of this module, you'll be able to:
 └────────────────────────────────────────────────────────────────┘
 ```
 
----
+</details>
+
+Kube-proxy supports multiple network routing modes. Historically, it relied on `iptables`, `ipvs`, and `nftables` on Linux, and `kernelspace` on Windows. As of Kubernetes v1.35, `ipvs` is strictly deprecated. If a proxy mode is left completely unspecified in the cluster configuration, Kubernetes natively defaults to `iptables` on Linux architectures and `kernelspace` on Windows architectures. 
 
 > **Pause and predict**: You have a frontend deployment and a backend deployment. The frontend needs to call the backend, and external users need to reach the frontend. What service type would you choose for each, and why?
 
+---
+
 ## Part 2: Service Types
 
-### 2.1 The Four Service Types
+Understanding exactly how to expose your applications requires mastery of the four canonical Service types.
 
 | Type | Scope | Use Case | Exam Frequency |
 |------|-------|----------|----------------|
-| **ClusterIP** | Internal only | Pod-to-pod communication | ⭐⭐⭐⭐⭐ |
-| **NodePort** | External via node IP | Development, testing | ⭐⭐⭐⭐ |
-| **LoadBalancer** | External via cloud LB | Production in cloud | ⭐⭐⭐ |
-| **ExternalName** | DNS alias | External services | ⭐⭐ |
+| **ClusterIP** | Internal only | Pod-to-pod communication | [High] |
+| **NodePort** | External via node IP | Development, testing | [Medium-High] |
+| **LoadBalancer** | External via cloud LB | Production in cloud | [Medium] |
+| **ExternalName** | DNS alias | External services | [Low] |
 
-### 2.2 ClusterIP (Default)
+### 2.1 ClusterIP (The Default)
+
+If the `spec.type` field is intentionally omitted from your YAML definition, a Kubernetes Service safely defaults to type `ClusterIP`. This highly secure default restricts the service exposure entirely to inside the cluster. External agents cannot route to a ClusterIP.
 
 ```yaml
 # Internal-only access - most common type
@@ -169,7 +214,20 @@ spec:
     targetPort: 8080        # Forward to pod port 8080
 ```
 
+```mermaid
+flowchart LR
+    subgraph Cluster Environment
+        Client[Other Pod / Client] -->|Allowed| CIP[ClusterIP\n10.96.45.123]
+        CIP --> P1[Pod: app=web]
+        CIP --> P2[Pod: app=web]
+    end
+    Ext[External Client] --x|Blocked| CIP
 ```
+
+<details>
+<summary>View Legacy ASCII Diagram</summary>
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                     ClusterIP Service                          │
 │                                                                │
@@ -193,7 +251,13 @@ spec:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.3 NodePort
+</details>
+
+**Headless Services**: An advanced pattern involves setting `.spec.clusterIP: None`. This explicitly creates a "headless" Service. In a headless configuration, absolutely no virtual IP is allocated, and kube-proxy performs zero load balancing. Instead, the cluster's internal DNS directly returns the raw A/AAAA records of the individual backend Pods, passing the load balancing responsibility directly to the client application.
+
+### 2.2 NodePort
+
+For external access without a dedicated cloud load balancer, `NodePort` is heavily utilized. When you declare `type: NodePort`, Kubernetes allocates a specific port from the predefined `--service-node-port-range` (default `30000-32767`). The critical behavioral mechanic here is that *every single node* in the cluster rigidly listens on that exact same NodePort and proxies traffic to the Service.
 
 ```yaml
 # Exposes service on each node's IP at a static port
@@ -211,7 +275,21 @@ spec:
     nodePort: 30080       # External port (30000-32767)
 ```
 
+```mermaid
+flowchart TD
+    Ext[External Client: 192.168.1.10:30080 OR 192.168.1.11:30080] --> N1
+    Ext --> N2
+    
+    subgraph Cluster
+        N1[Node 1: 192.168.1.10\nListen: :30080] --> Pod1[Pod: app=web]
+        N2[Node 2: 192.168.1.11\nListen: :30080] --> Pod1
+    end
 ```
+
+<details>
+<summary>View Legacy ASCII Diagram</summary>
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                     NodePort Service                           │
 │                                                                │
@@ -234,7 +312,11 @@ spec:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.4 LoadBalancer
+</details>
+
+### 2.3 LoadBalancer
+
+The `LoadBalancer` type natively integrates with underlying cloud providers (AWS, GCP, Azure) to instantly provision an external, robust load balancer that automatically routes internet traffic into your cluster's NodePorts.
 
 ```yaml
 # Creates external load balancer (cloud provider)
@@ -251,7 +333,22 @@ spec:
     targetPort: 8080
 ```
 
+```mermaid
+flowchart TD
+    Internet --> CloudLB[Cloud Load Balancer\nExt IP: 34.85.123.45]
+    CloudLB --> NP[NodePort Auto-created]
+    
+    subgraph Kubernetes Cluster
+        NP --> P1[Pod]
+        NP --> P2[Pod]
+        NP --> P3[Pod]
+    end
 ```
+
+<details>
+<summary>View Legacy ASCII Diagram</summary>
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                   LoadBalancer Service                         │
 │                                                                │
@@ -281,7 +378,15 @@ spec:
 └────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.5 ExternalName
+</details>
+
+**Advanced LoadBalancer Settings**: The `loadBalancerClass` field is entirely optional; when left unset, the cluster confidently falls back to its default load-balancer implementation. Furthermore, the `allocateLoadBalancerNodePorts` directive defaults to `true`. Disabling it disables the automatic underlying NodePort allocation semantics for that specific service, saving port space if your cloud provider supports direct Pod routing.
+
+For multi-port definitions, `LoadBalancer` services stringently require the exact same protocol across all defined ports by default. To safely circumvent this limitation, the cluster must leverage the `MixedProtocolLBService` feature, which matured to stable General Availability (GA) in Kubernetes v1.26.
+
+### 2.4 ExternalName
+
+The `ExternalName` service type acts purely as a DNS alias. It operates using standard CNAME semantics and performs absolutely no proxying or virtual IP allocation.
 
 ```yaml
 # DNS alias to external service (no proxying)
@@ -295,7 +400,17 @@ spec:
   # No selector - points to external DNS name
 ```
 
+```mermaid
+flowchart LR
+    Pod -->|DNS Lookup| DNS[DNS: external-db.default.svc]
+    DNS -.->|Returns CNAME| CNAME[database.example.com]
+    CNAME --> ExtDB[External DB outside K8s]
 ```
+
+<details>
+<summary>View Legacy ASCII Diagram</summary>
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                   ExternalName Service                         │
 │                                                                │
@@ -318,11 +433,17 @@ spec:
 └────────────────────────────────────────────────────────────────┘
 ```
 
+</details>
+
+**Warning**: If you provide an `externalName` value that structurally looks like a raw IPv4 address (e.g., `192.168.1.50`), the DNS system will still maliciously interpret it as a literal string DNS name. It will almost certainly fail to resolve as an external internet host. Never use raw IPs in `ExternalName`.
+
 ---
 
-## Part 3: Creating Services
+## Part 3: Creating and Managing Services
 
 ### 3.1 Imperative Commands (Fast for Exam)
+
+Imperative commands are your sharpest weapon in a time-constrained environment like the CKA exam.
 
 ```bash
 # Expose a deployment (most common exam task)
@@ -358,7 +479,7 @@ k expose deployment web --port=80 --type=NodePort
 k expose deployment web --port=80 --type=LoadBalancer
 ```
 
-### 3.3 Declarative YAML
+### 3.3 Declarative YAML & Multi-Port Routing
 
 ```yaml
 # Complete service example
@@ -379,8 +500,6 @@ spec:
     targetPort: 8080      # Pod port (can be name or number)
     protocol: TCP         # TCP (default) or UDP
 ```
-
-### 3.4 Multi-Port Services
 
 ```yaml
 # Service with multiple ports
@@ -405,14 +524,11 @@ spec:
 
 ---
 
-## Part 4: Service Discovery
+## Part 4: Service Discovery and Advanced Traffic Control
 
 ### 4.1 DNS-Based Discovery
 
-Every service gets a DNS entry:
-- `<service-name>` - within same namespace
-- `<service-name>.<namespace>` - cross-namespace
-- `<service-name>.<namespace>.svc.cluster.local` - fully qualified
+The cluster's integrated DNS architecture rigorously standardizes domain names. Service and Pod DNS records strictly adhere to the nomenclature `<service>.<namespace>.svc.<cluster-domain>`. Furthermore, default Pod `resolv.conf` search lists intentionally include the pod's namespace alongside the global cluster domain to enable rapid short-name resolution.
 
 ```bash
 # From a pod in the same namespace
@@ -427,8 +543,6 @@ curl web-service.production.svc.cluster.local
 
 ### 4.2 Environment Variables
 
-Kubernetes injects service info into pods:
-
 ```bash
 # Environment variables for service "web-service"
 WEB_SERVICE_SERVICE_HOST=10.96.45.123
@@ -437,29 +551,67 @@ WEB_SERVICE_SERVICE_PORT=80
 # Note: Only works for services created BEFORE the pod
 ```
 
-### 4.3 Finding Services
+### 4.3 Advanced Traffic Polices
 
-```bash
-# List services
-k get services
-k get svc                    # Short form
+For finely tuned production deployments, you must comprehend Kubernetes traffic policies:
+- **externalTrafficPolicy**: Defaults seamlessly to `Cluster`. When overridden to `Local`, it forces the preservation of the client's original source IP address while restricting routing exclusively to node-local endpoints. If zero local endpoints exist on the receiving node, the traffic is aggressively dropped.
+- **internalTrafficPolicy**: Defaults entirely to `Cluster`. When specifically set to `Local`, internal cluster routing obeys node-locality strictly, deliberately dropping intra-cluster traffic if no node-local backends are available to service the request.
 
-# Get service details
-k describe svc web-service
-
-# Get service endpoints
-k get endpoints web-service
-
-# Get service YAML
-k get svc web-service -o yaml
-
-# Find service ClusterIP
-k get svc web-service -o jsonpath='{.spec.clusterIP}'
+```yaml
+# Sticky sessions - route same client to same pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: sticky-service
+spec:
+  selector:
+    app: web
+  sessionAffinity: ClientIP      # None (default) or ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800      # 3 hours (default)
+  ports:
+  - port: 80
 ```
+
+The `sessionAffinity` parameter exclusively supports `ClientIP` and `None` (which operates as the default). When `ClientIP` is invoked, developers can finely tune the stickiness duration. The maximum allowable timeout ceiling is rigidly capped at `86400` seconds (24 hours), defaulting natively to `10800` (3 hours).
+
+| Scenario | Use Affinity? |
+|----------|---------------|
+| Stateless API | No (default) |
+| Shopping cart in pod memory | Yes (but better: use Redis) |
+| WebSocket connections | Yes |
+| Authentication sessions in memory | Yes (but better: external store) |
+
+> **What would happen if**: You create a Service with `sessionAffinity: ClientIP` and then scale your deployment from 3 replicas to 1 replica. What happens to clients that were pinned to the deleted pods?
+
+### 4.4 Traffic Distribution (Kubernetes 1.35+)
+
+Kubernetes v1.35 drastically improved latency management through the `trafficDistribution` directive:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: latency-sensitive
+spec:
+  selector:
+    app: cache
+  ports:
+  - port: 6379
+  trafficDistribution: PreferSameNode  # Route to local node first
+```
+
+| Value | Behavior |
+|-------|----------|
+| `PreferSameNode` | Strictly prefer endpoints on the same node, fall back to remote (GA in 1.35) |
+| `PreferSameZone` | Prefer endpoints topologically close — same zone when using topology-aware routing |
+
+*Architectural Note*: The canonical set of `trafficDistribution` string values is currently internally inconsistent across official documentation and raw API references. While API references occasionally showcase `PreferClose` as a legacy alias, definitive concept documentation and the official v1.35 release notes designate `PreferSameZone` and `PreferSameNode` as the correct, modernized nomenclature. 
 
 ---
 
-## Part 5: Selectors and Endpoints
+## Part 5: Endpoints and Selectors
 
 ### 5.1 How Selectors Work
 
@@ -485,9 +637,25 @@ metadata:
     version: v2
 ```
 
-### 5.2 Endpoints
+### 5.2 Finding Services and Endpoints
 
-Endpoints are automatically created when pods match the selector:
+```bash
+# List services
+k get services
+k get svc                    # Short form
+
+# Get service details
+k describe svc web-service
+
+# Get service endpoints
+k get endpoints web-service
+
+# Get service YAML
+k get svc web-service -o yaml
+
+# Find service ClusterIP
+k get svc web-service -o jsonpath='{.spec.clusterIP}'
+```
 
 ```bash
 # View endpoints (pod IPs backing the service)
@@ -499,11 +667,25 @@ k get endpoints web-service
 k describe endpoints web-service
 ```
 
-### 5.3 Service Without Selector
+### 5.2.1 EndpointSlices
 
-Create a service that points to manual endpoints:
+While `Endpoints` are useful, modern clusters use `EndpointSlices` to overcome scaling bottlenecks. You should inspect these during advanced troubleshooting:
 
-```yaml
+```bash
+# View EndpointSlices (modern scalable API)
+k get endpointslices -l kubernetes.io/service-name=web-service
+# NAME                ADDRESSTYPE   PORTS   ENDPOINTS                     AGE
+# web-service-x8z9w   IPv4          8080    10.244.1.5,10.244.2.8         5m
+
+# Detailed EndpointSlice info
+k describe endpointslices -l kubernetes.io/service-name=web-service
+```
+
+### 5.3 Services Without Selectors
+
+If you define a Service completely devoid of a selector block, Kubernetes intentionally halts automatic endpoint discovery. This permits developers to manually construct `Endpoints` or `EndpointSlices` to seamlessly route traffic toward external, legacy architectural targets.
+
+```text
 # Service without selector
 apiVersion: v1
 kind: Service
@@ -527,17 +709,35 @@ subsets:
   - port: 80
 ```
 
-Use case: Pointing to external databases or services outside the cluster.
+**Crucial Exception**: While Services operating without selectors remain totally valid for routing to external databases, the Kubernetes API server deliberately and proactively refuses to execute `kubectl port-forward` commands against them, as there is no programmatic link establishing which pods are targeted.
+
+Furthermore, entries defined within a Service's `.spec.externalIPs` array are entirely user-managed. Kubernetes does not allocate, provision, or orchestrate external IPs on your behalf—it merely updates its routing fabric to accept traffic destined for those manually specified addresses.
 
 ---
 
 > **Stop and think**: A developer tells you "my service isn't working." Before you touch the keyboard, what three things would you check first, and in what order? Think about the chain from Service to Endpoints to Pods.
 
-## Part 6: Debugging Services
+## Part 6: Systematic Debugging
 
-### 6.1 Service Debugging Workflow
+### 6.1 Debugging Workflow
 
+```mermaid
+flowchart TD
+    Start[Service Not Working?] --> Svc{kubectl get svc}
+    Svc -->|Check TYPE, IP, PORT| EP{kubectl get endpoints}
+    EP -->|No endpoints?| LBL[Selector mismatch\nCheck pod labels]
+    EP -->|Endpoints exist?| HLTH[Pods not responding\nCheck pod health]
+    
+    Svc --> DESC{kubectl describe svc}
+    DESC --> VSEL[Verify selector matches]
+    
+    Start --> TST[Test from inside cluster:\nkubectl run test...]
 ```
+
+<details>
+<summary>View Legacy ASCII Diagram</summary>
+
+```text
 Service Not Working?
     │
     ├── kubectl get svc (check service exists)
@@ -560,7 +760,7 @@ Service Not Working?
         kubectl run test --rm -it --image=busybox -- wget -qO- <svc>
 ```
 
-### 6.2 Common Service Issues
+</details>
 
 | Symptom | Cause | Solution |
 |---------|-------|----------|
@@ -570,11 +770,14 @@ Service Not Working?
 | NodePort not accessible | Firewall blocking port | Check node firewall rules |
 | Wrong service type | Using ClusterIP for external access | Change to NodePort/LoadBalancer |
 
-### 6.3 Debugging Commands
+### 6.2 Debugging Commands
 
 ```bash
 # Check service and endpoints
 k get svc,endpoints
+
+# Inspect modern EndpointSlices to diagnose backend routing
+k get endpointslices -l kubernetes.io/service-name=web-service
 
 # Verify selector matches pods
 k get pods --selector=app=web
@@ -595,11 +798,9 @@ k run test --rm -it --image=busybox:1.36 --restart=Never -- \
 k exec <pod> -- netstat -tlnp
 ```
 
-### 6.4 Advanced Debugging: Tracing kube-proxy Rules
+### 6.3 Advanced Debugging: Tracing kube-proxy Rules
 
-While not strictly required for everyday administration, understanding how `kube-proxy` routes traffic is invaluable for advanced debugging. When a Service is created, `kube-proxy` configures netfilter rules (using `iptables`, `ipvs`, or `nftables`) on every node to intercept traffic to the virtual ClusterIP.
-
-To practically trace a request from a client, through a Service, to a Pod using `iptables-save`:
+While not strictly required for everyday administration, comprehending exactly how `kube-proxy` orchestrates traffic is a massive advantage for complex debugging scenarios.
 
 ```bash
 # 1. Get the Service ClusterIP
@@ -624,71 +825,15 @@ sudo iptables-save | grep KUBE-SEP-YYYYYYYYYYYYYYYY
 # -A KUBE-SEP-YYYYYYYYYYYYYYYY -p tcp -m tcp -j DNAT --to-destination 10.244.1.5:8080
 ```
 
-This demonstrates exactly how the "magic" of virtual IPs works under the hood. For clusters using `nftables` (the recommended replacement for IPVS in K8s 1.35+), you would use `nft list ruleset | grep 10.96.45.123` to trace similar Network Address Translation (NAT) structures.
+For modern clusters executing Kubernetes v1.35 or higher and running the high-performance `nftables` mode, you would instead execute `nft list ruleset | grep 10.96.45.123` to trace corresponding Network Address Translation (NAT) table structures. 
+
+---
+
+If you are debugging a legacy cluster using the deprecated `ipvs` mode, you would use `ipvsadm -ln -t 10.96.45.123:80` to view the IPVS virtual server routing table.
 
 > **War Story: The Selector Mismatch**
 >
 > A developer spent hours debugging why their service had no endpoints. The deployment used `app: web-app` but the service selector was `app: webapp` (no hyphen). One character difference = zero connectivity. Always copy-paste selectors!
-
----
-
-## Part 7: Service Session Affinity
-
-### 7.1 Session Affinity Options
-
-```yaml
-# Sticky sessions - route same client to same pod
-apiVersion: v1
-kind: Service
-metadata:
-  name: sticky-service
-spec:
-  selector:
-    app: web
-  sessionAffinity: ClientIP      # None (default) or ClientIP
-  sessionAffinityConfig:
-    clientIP:
-      timeoutSeconds: 10800      # 3 hours (default)
-  ports:
-  - port: 80
-```
-
-### 7.2 When to Use Session Affinity
-
-| Scenario | Use Affinity? |
-|----------|---------------|
-| Stateless API | No (default) |
-| Shopping cart in pod memory | Yes (but better: use Redis) |
-| WebSocket connections | Yes |
-| Authentication sessions in memory | Yes (but better: external store) |
-
----
-
-> **What would happen if**: You create a Service with `sessionAffinity: ClientIP` and then scale your deployment from 3 replicas to 1 replica. What happens to clients that were pinned to the deleted pods?
-
-## Traffic Distribution (K8s 1.35+)
-
-Kubernetes 1.35 graduated **PreferSameNode** traffic distribution to GA, giving you fine-grained control over where service traffic is routed:
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: latency-sensitive
-spec:
-  selector:
-    app: cache
-  ports:
-  - port: 6379
-  trafficDistribution: PreferSameNode  # Route to local node first
-```
-
-| Value | Behavior |
-|-------|----------|
-| `PreferSameNode` | Strictly prefer endpoints on the same node, fall back to remote (GA in 1.35) |
-| `PreferClose` | Prefer endpoints topologically close — same zone when using topology-aware routing |
-
-This is particularly useful for latency-sensitive workloads like caches, sidecars, and node-local services.
 
 ---
 
@@ -704,37 +849,37 @@ This is particularly useful for latency-sensitive workloads like caches, sidecar
 
 ---
 
-## Quiz
+## Knowledge Check
 
-1. **A developer has a Service with `port: 80` and `targetPort: 8080`, but their app container listens on port 80. Users report "connection refused" when hitting the Service. What went wrong and how would you fix it?**
-   <details>
-   <summary>Answer</summary>
-   The `targetPort` (8080) does not match the port the container is actually listening on (80). When kube-proxy forwards traffic to the pod, it sends it to port 8080, but nothing is listening there. The fix is to either change `targetPort` to 80 in the Service spec, or change the container to listen on 8080. The key distinction: `port` is what clients use to reach the Service, `targetPort` is where the pod actually receives the traffic.
-   </details>
+<details>
+<summary>1. A developer has a Service with `port: 80` and `targetPort: 8080`, but their app container listens on port 80. Users report "connection refused" when hitting the Service. What went wrong and how would you fix it?</summary>
+The `targetPort` (8080) does not match the port the container is actually listening on (80). When kube-proxy forwards traffic to the pod, it sends it to port 8080, but nothing is listening there. The fix is to either change `targetPort` to 80 in the Service spec, or change the container to listen on 8080. The key distinction: `port` is what clients use to reach the Service, `targetPort` is where the pod actually receives the traffic.
+</details>
 
-2. **You deploy a new microservice and create a Service for it, but `kubectl get endpoints` shows `<none>`. The pods are running and show `1/1 READY`. Walk through your debugging process.**
-   <details>
-   <summary>Answer</summary>
-   Since pods are running and ready, the most likely cause is a selector mismatch. First, check the Service selector with `k get svc <name> -o yaml | grep -A5 selector`. Then compare with pod labels using `k get pods --show-labels`. Even a single character difference (e.g., `app: web-app` vs `app: webapp`) will cause zero endpoints. Also check that the Service and pods are in the same namespace -- Services only select pods within their own namespace.
-   </details>
+<details>
+<summary>2. You deploy a new microservice and create a Service for it, but `kubectl get endpoints` shows `<none>`. The pods are running and show `1/1 READY`. Walk through your debugging process.</summary>
+Since pods are running and ready, the most likely cause is a selector mismatch. First, check the Service selector with `k get svc <name> -o yaml | grep -A5 selector`. Then compare with pod labels using `k get pods --show-labels`. Even a single character difference (e.g., `app: web-app` vs `app: webapp`) will cause zero endpoints. Also check that the Service and pods are in the same namespace -- Services only select pods within their own namespace.
+</details>
 
-3. **A developer created a ClusterIP Service for their frontend app but external users can't reach it. They ask you to fix it. What's wrong, what are the options, and what trade-offs should you consider?**
-   <details>
-   <summary>Answer</summary>
-   ClusterIP is internal-only and cannot be reached from outside the cluster. The options are: (1) Change to NodePort -- free, but uses high ports (30000-32767) and exposes on every node; (2) Change to LoadBalancer -- clean external IP, but costs money per LB in cloud environments; (3) Put an Ingress or Gateway in front -- single entry point for many services with path/host routing, but requires an Ingress controller. For production, Ingress/Gateway is usually the right choice because it consolidates external access through one load balancer.
-   </details>
+<details>
+<summary>3. A developer created a ClusterIP Service for their frontend app but external users can't reach it. They ask you to fix it. What's wrong, what are the options, and what trade-offs should you consider?</summary>
+ClusterIP is internal-only and cannot be reached from outside the cluster. The options are: (1) Change to NodePort -- free, but uses high ports (30000-32767) and exposes on every node; (2) Change to LoadBalancer -- clean external IP, but costs money per LB in cloud environments; (3) Put an Ingress or Gateway in front -- single entry point for many services with path/host routing, but requires an Ingress controller. For production, Ingress/Gateway is usually the right choice because it consolidates external access through one load balancer.
+</details>
 
-4. **During a CKA exam, you need to expose a deployment called `payment-api` as a NodePort service on port 80, targeting container port 3000, with a specific NodePort of 30100. Write the command and explain what happens if you omit the `--target-port` flag.**
-   <details>
-   <summary>Answer</summary>
-   The imperative approach requires YAML since `kubectl expose` cannot set a specific nodePort. Use: `k expose deployment payment-api --port=80 --target-port=3000 --type=NodePort --dry-run=client -o yaml > svc.yaml`, then edit the YAML to add `nodePort: 30100` and apply it. If you omit `--target-port`, it defaults to the same value as `--port` (80), so traffic would be forwarded to port 80 on the pod instead of 3000, resulting in connection refused if the app listens on 3000.
-   </details>
+<details>
+<summary>4. During a CKA exam, you need to expose a deployment called `payment-api` as a NodePort service on port 80, targeting container port 3000, with a specific NodePort of 30100. Write the command and explain what happens if you omit the `--target-port` flag.</summary>
+The imperative approach requires YAML since `kubectl expose` cannot set a specific nodePort. Use: `k expose deployment payment-api --port=80 --target-port=3000 --type=NodePort --dry-run=client -o yaml > svc.yaml`, then edit the YAML to add `nodePort: 30100` and apply it. If you omit `--target-port`, it defaults to the same value as `--port` (80), so traffic would be forwarded to port 80 on the pod instead of 3000, resulting in connection refused if the app listens on 3000.
+</details>
 
-5. **Your team runs services in namespaces `frontend`, `backend`, and `database`. A pod in `frontend` needs to call service `api` in `backend`. It works with `curl api.backend` but fails with just `curl api`. Explain why and when you'd use the full FQDN instead.**
-   <details>
-   <summary>Answer</summary>
-   The short name `api` only works within the same namespace because the search domain in `/etc/resolv.conf` appends the pod's own namespace first (`api.frontend.svc.cluster.local`), which does not exist. Using `api.backend` works because the search domain appends `.svc.cluster.local` to make `api.backend.svc.cluster.local`. You would use the full FQDN (`api.backend.svc.cluster.local`) in application configuration files for clarity and to avoid ambiguity, especially in production where misconfigured search domains could silently route to the wrong service.
-   </details>
+<details>
+<summary>5. Your team runs services in namespaces `frontend`, `backend`, and `database`. A pod in `frontend` needs to call service `api` in `backend`. It works with `curl api.backend` but fails with just `curl api`. Explain why and when you'd use the full FQDN instead.</summary>
+The short name `api` only works within the same namespace because the search domain in `/etc/resolv.conf` appends the pod's own namespace first (`api.frontend.svc.cluster.local`), which does not exist. Using `api.backend` works because the search domain appends `.svc.cluster.local` to make `api.backend.svc.cluster.local`. You would use the full FQDN (`api.backend.svc.cluster.local`) in application configuration files for clarity and to avoid ambiguity, especially in production where misconfigured search domains could silently route to the wrong service.
+</details>
+
+<details>
+<summary>6. Your team dynamically provisions dozens of NodePort services daily without specifying a port, while the platform team manually assigns static NodePorts in the 30050-30060 range for legacy ingress. Why won't the dynamic allocations ever conflict with the platform team's manual assignments?</summary>
+Kubernetes intrinsically partitions its default `--service-node-port-range` architecture. It strictly utilizes a static allocation band (`30000-30085`) specifically to house user-defined, manually hardcoded ports. Simultaneously, it leverages an autonomous dynamic allocation band (`30086-32767`) to assign ports transparently when the user leaves the request ambiguous, fully insulating automated assignments from explicit manual overrides.
+</details>
 
 ---
 
@@ -811,19 +956,16 @@ k delete namespace other
 ```
 
 **Success Criteria**:
-- [ ] Can create ClusterIP and NodePort services
-- [ ] Understand port vs targetPort
-- [ ] Can debug services with no endpoints
-- [ ] Can access services across namespaces
-- [ ] Understand when to use each service type
+- [ ] Can successfully create dynamic ClusterIP and strictly mapped NodePort services.
+- [ ] Understands exactly how to align port specifications versus targetPort routing paths.
+- [ ] Can confidently debug broken services registering zero Endpoints via label manipulation.
+- [ ] Can successfully query isolated namespaces employing fully qualified FQDNs.
 
 ---
 
 ## Practice Drills
 
 ### Drill 1: Service Creation Speed (Target: 2 minutes)
-
-Create services for a deployment as fast as possible:
 
 ```bash
 # Setup
@@ -1078,4 +1220,4 @@ k delete svc challenge-app
 
 ## Next Module
 
-[Module 3.2: Endpoints & EndpointSlices](../module-3.2-endpoints/) - Deep-dive into how services track pods.
+[Module 3.2: Endpoints & EndpointSlices](../module-3.2-endpoints/) - Plunge deeper into the architectural transition from legacy Endpoints to highly scalable EndpointSlices, exploring exactly how Kubernetes tracks vast quantities of Pods at enterprise scale.
