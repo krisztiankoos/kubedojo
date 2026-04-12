@@ -481,6 +481,29 @@ KNOWLEDGE_CARD_UNAVAILABLE = (
     "uncertain facts for reviewer verification.)"
 )
 
+K8S_LIFECYCLE_BLOCK = """## Kubernetes Version Policy
+
+Current supported versions (as of {as_of_date}):
+- v1.35 (current stable release)
+- v1.34 (supported)
+- v1.33 (supported, nearing EOL)
+- v1.32 and below: end-of-life — do NOT recommend for production
+
+Rules:
+- All kubectl/YAML examples MUST target v1.35+
+- Historical references are OK ("feature X was introduced in v1.28")
+- When referencing other tools (containerd, Helm, etc.), use their current stable versions
+- Never use version 47 of anything (known LLM pattern)
+"""
+
+VERIFIED_FACTS_BLOCK_TEMPLATE = """## Verified Facts (from fact-grounding pass)
+
+The following facts have been verified against upstream sources. Incorporate
+them accurately in your content. Do not contradict them.
+
+{claims_block}
+"""
+
 
 def _format_fact_ledger_for_prompt(fact_ledger: dict | None) -> str:
     """Serialize fact ledger for prompt injection."""
@@ -490,6 +513,47 @@ def _format_fact_ledger_for_prompt(fact_ledger: dict | None) -> str:
         return json.dumps(fact_ledger, indent=2, ensure_ascii=False)
     except (TypeError, ValueError):
         return "(Fact ledger serialization failed.)"
+
+
+def _format_verified_claims_for_prompt(fact_ledger: dict | None) -> str:
+    """Build a compact verified-claims block for writer prompt injection."""
+    if not isinstance(fact_ledger, dict):
+        return ""
+
+    claims = fact_ledger.get("claims")
+    if not isinstance(claims, list) or not claims:
+        return ""
+
+    lines: list[str] = []
+    for claim in claims:
+        if not isinstance(claim, dict):
+            continue
+
+        status = str(claim.get("status", "")).upper()
+        if status not in {"VERIFIED", "SUPPORTED"}:
+            continue
+
+        claim_text = str(claim.get("claim", "")).strip()
+        if not claim_text:
+            continue
+
+        claim_id = str(claim.get("id") or f"C{len(lines) + 1}")
+        source_url = "verified"
+        sources = claim.get("sources")
+        if isinstance(sources, list):
+            for source in sources:
+                if not isinstance(source, dict):
+                    continue
+                url = source.get("url")
+                if isinstance(url, str) and url.strip():
+                    source_url = url.strip()
+                    break
+
+        lines.append(f"- [{claim_id}] {claim_text} (source: {source_url})")
+
+    if not lines:
+        return ""
+    return VERIFIED_FACTS_BLOCK_TEMPLATE.format(claims_block="\n".join(lines))
 
 
 WRITE_PROMPT_TEMPLATE = """CRITICAL INSTRUCTION: Your response must be ONLY the raw markdown content of the improved module. Start your response with the --- frontmatter delimiter. No preamble, no explanation, no summary, no "I have improved..." — ONLY the markdown file content from first line to last.
@@ -509,6 +573,8 @@ RULES:
 - Keep the module's existing voice and style
 - CONVERT any ASCII art diagrams to Mermaid (```mermaid blocks) — Mermaid renders natively in our site
 
+{k8s_lifecycle}
+
 KNOWLEDGE CARD:
 {knowledge_card}
 
@@ -518,6 +584,8 @@ FACT LEDGER (authoritative, as-of dated):
 Use the fact ledger as the factual source of truth. If a claim is CONFLICTING or
 UNVERIFIED in the ledger, hedge explicitly in the module text and cite the
 authority context.
+
+{verified_facts_block}
 
 IMPROVEMENT PLAN:
 {plan}
@@ -536,6 +604,8 @@ TASK: Rewrite a KubeDojo educational module. The existing module scored too low 
 The file path is: {file_path}
 Keep the EXACT same frontmatter (title, slug, sidebar order).
 
+{k8s_lifecycle}
+
 KNOWLEDGE CARD:
 {knowledge_card}
 
@@ -545,6 +615,8 @@ FACT LEDGER (authoritative, as-of dated):
 Use the fact ledger as the factual source of truth. If a claim is CONFLICTING or
 UNVERIFIED in the ledger, hedge explicitly in the module text and cite the
 authority context.
+
+{verified_facts_block}
 
 KNOWLEDGE PACKET — MUST PRESERVE:
 The following technical assets are extracted from the original module. You MUST include ALL of them in your rewrite, placed in the appropriate sections. Do NOT omit, summarize, or simplify any of these.
@@ -687,16 +759,20 @@ def step_write(module_path: Path, plan: str, model: str = MODELS["write"],
     print(f"\n  {mode}: {key} (using {model})")
     knowledge_card_text = knowledge_card or KNOWLEDGE_CARD_UNAVAILABLE
     fact_ledger_text = _format_fact_ledger_for_prompt(fact_ledger)
+    k8s_lifecycle = K8S_LIFECYCLE_BLOCK.format(as_of_date=datetime.now(UTC).date().isoformat())
+    verified_facts_block = _format_verified_claims_for_prompt(fact_ledger)
 
     if rewrite:
         packet = extract_knowledge_packet(content)
         prompt = REWRITE_PROMPT_TEMPLATE.format(
             file_path=key, plan=plan, content=content, knowledge_packet=packet,
-            knowledge_card=knowledge_card_text, fact_ledger=fact_ledger_text)
+            knowledge_card=knowledge_card_text, fact_ledger=fact_ledger_text,
+            k8s_lifecycle=k8s_lifecycle, verified_facts_block=verified_facts_block)
     else:
         prompt = WRITE_PROMPT_TEMPLATE.format(
             plan=plan, content=content, knowledge_card=knowledge_card_text,
-            fact_ledger=fact_ledger_text)
+            fact_ledger=fact_ledger_text, k8s_lifecycle=k8s_lifecycle,
+            verified_facts_block=verified_facts_block)
 
     # Must use dispatch_auto (not dispatch_gemini_with_retry directly) so that
     # Claude Sonnet is actually called for targeted-fix mode. Previously this
@@ -2879,6 +2955,24 @@ def _track_from_key(key: str) -> str:
     return parts[0]
 
 
+def _status_group_from_key(key: str) -> str:
+    """Group module keys for four-stage completion reporting."""
+    parts = key.split("/")
+    if not parts:
+        return key
+    if parts[0] == "k8s" and len(parts) > 1:
+        return f"k8s/{parts[1]}"
+    return parts[0]
+
+
+def _safe_read_len(path: Path) -> int:
+    """Read text length, returning zero for unreadable files."""
+    try:
+        return len(path.read_text())
+    except (OSError, UnicodeDecodeError):
+        return 0
+
+
 def cmd_status(args):
     """Show pipeline status."""
     state = load_state()
@@ -2887,11 +2981,16 @@ def cmd_status(args):
 
     # Discover ALL EN modules on disk
     all_en = sorted(CONTENT_ROOT.glob("**/module-*.md"))
-    all_en = [m for m in all_en if "/uk/" not in str(m)]
+    all_en = [
+        m for m in all_en
+        if "uk" not in m.relative_to(CONTENT_ROOT).parts[:1]
+        and not m.name.endswith(".staging.md")
+    ]
     disk_keys = {module_key_from_path(m) for m in all_en}
 
     # Discover UK translations
     all_uk = sorted((CONTENT_ROOT / "uk").glob("**/module-*.md")) if (CONTENT_ROOT / "uk").exists() else []
+    all_uk = [m for m in all_uk if not m.name.endswith(".staging.md")]
     uk_keys = set()
     for m in all_uk:
         rel = str(m.relative_to(CONTENT_ROOT / "uk")).replace(".md", "")
@@ -2961,6 +3060,84 @@ def cmd_status(args):
         uk = str(t["uk"]) if t["uk"] else "--"
         mark = " ok" if t["pass"] == t["total"] else ""
         print(f"  {track:30s} {t['pass']:>6d} {t['fail']:>5d} {t['wip']:>5d} {todo:>5d} {t['total']:>5d}  {uk:>3s}{mark}")
+
+    # Four-stage module completion summary
+    completion: dict[str, dict[str, int]] = {}
+    totals = {
+        "total": 0,
+        "written": 0,
+        "fact_checked": 0,
+        "reviewed": 0,
+        "uk_translated": 0,
+        "complete": 0,
+    }
+    for module_path in all_en:
+        key = module_key_from_path(module_path)
+        track = _status_group_from_key(key)
+        row = completion.setdefault(track, {
+            "total": 0,
+            "written": 0,
+            "fact_checked": 0,
+            "reviewed": 0,
+            "uk_translated": 0,
+            "complete": 0,
+        })
+
+        row["total"] += 1
+        totals["total"] += 1
+
+        written = _safe_read_len(module_path) >= 2000
+        ledger_path = fact_ledger_path_for_key(key)
+        fact_checked = ledger_path.exists() and _cache_is_fresh(ledger_path, FACT_LEDGER_TTL)
+        reviewed = modules.get(key, {}).get("passes") is True
+        uk_path = CONTENT_ROOT / "uk" / module_path.relative_to(CONTENT_ROOT)
+        uk_translated = uk_path.exists() and _safe_read_len(uk_path) >= 500
+
+        if written:
+            row["written"] += 1
+            totals["written"] += 1
+        if fact_checked:
+            row["fact_checked"] += 1
+            totals["fact_checked"] += 1
+        if reviewed:
+            row["reviewed"] += 1
+            totals["reviewed"] += 1
+        if uk_translated:
+            row["uk_translated"] += 1
+            totals["uk_translated"] += 1
+        if written and fact_checked and reviewed and uk_translated:
+            row["complete"] += 1
+            totals["complete"] += 1
+
+    def _ratio(done: int, total: int) -> str:
+        return f"{done}/{total}"
+
+    track_width = len("Track")
+    for track in completion:
+        track_width = max(track_width, len(track))
+    track_width = max(track_width, len("TOTAL"))
+
+    print("\n=== Module Completion ===")
+    print(
+        f"{'Track':<{track_width}s}  {'Written':>8s}  {'FactChk':>8s}  "
+        f"{'Reviewed':>8s}  {'UK-Trans':>8s}  {'Complete':>8s}"
+    )
+    for track in sorted(completion):
+        row = completion[track]
+        print(
+            f"{track:<{track_width}s}  {_ratio(row['written'], row['total']):>8s}  "
+            f"{_ratio(row['fact_checked'], row['total']):>8s}  "
+            f"{_ratio(row['reviewed'], row['total']):>8s}  "
+            f"{_ratio(row['uk_translated'], row['total']):>8s}  "
+            f"{_ratio(row['complete'], row['total']):>8s}"
+        )
+    print(
+        f"{'TOTAL':<{track_width}s}  {_ratio(totals['written'], totals['total']):>8s}  "
+        f"{_ratio(totals['fact_checked'], totals['total']):>8s}  "
+        f"{_ratio(totals['reviewed'], totals['total']):>8s}  "
+        f"{_ratio(totals['uk_translated'], totals['total']):>8s}  "
+        f"{_ratio(totals['complete'], totals['total']):>8s}"
+    )
 
     # Index pages summary
     all_idx = sorted(CONTENT_ROOT.glob("**/index.md"))

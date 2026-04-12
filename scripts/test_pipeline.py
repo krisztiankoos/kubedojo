@@ -1702,6 +1702,79 @@ class TestKnowledgeCards(unittest.TestCase):
         self.assertIn(card, seen["prompt"])
         self.assertIn("KNOWLEDGE CARD:", seen["prompt"])
 
+    def test_write_prompt_includes_k8s_lifecycle_block(self):
+        """Writer prompt should include the current Kubernetes version policy block."""
+        import v1_pipeline as p
+
+        seen = {}
+
+        def fake_dispatch(prompt, model=None, timeout=None):
+            seen["prompt"] = prompt
+            return True, GOOD_MODULE
+
+        with patch.object(p, "dispatch_auto", side_effect=fake_dispatch), \
+             patch.object(p, "module_key_from_path", return_value=self.module_key):
+            result = p.step_write(self.module_path, "Improve version guidance")
+
+        self.assertIsNotNone(result)
+        today = datetime.now(UTC).date().isoformat()
+        self.assertIn("## Kubernetes Version Policy", seen["prompt"])
+        self.assertIn(f"Current supported versions (as of {today}):", seen["prompt"])
+        self.assertIn("- v1.35 (current stable release)", seen["prompt"])
+        self.assertIn("- v1.32 and below: end-of-life", seen["prompt"])
+
+    def test_write_prompt_includes_verified_claims_from_fact_ledger(self):
+        """Supported/verified claims should be surfaced in a dedicated prompt block."""
+        import v1_pipeline as p
+
+        fact_ledger = {
+            "as_of_date": "2026-04-12",
+            "topic": "Versioning",
+            "claims": [
+                {
+                    "id": "C1",
+                    "claim": "Kubernetes current stable is v1.35",
+                    "status": "SUPPORTED",
+                    "sources": [{"url": "https://kubernetes.io/releases/"}],
+                },
+                {
+                    "id": "C2",
+                    "claim": "Helm current stable is v4.0.1",
+                    "status": "VERIFIED",
+                    "sources": [],
+                },
+                {
+                    "id": "C3",
+                    "claim": "This unverified claim should not be surfaced",
+                    "status": "UNVERIFIED",
+                    "sources": [],
+                },
+            ],
+        }
+        seen = {}
+
+        def fake_dispatch(prompt, model=None, timeout=None):
+            seen["prompt"] = prompt
+            return True, GOOD_MODULE
+
+        with patch.object(p, "dispatch_auto", side_effect=fake_dispatch), \
+             patch.object(p, "module_key_from_path", return_value=self.module_key):
+            result = p.step_write(self.module_path, "Improve factual accuracy", fact_ledger=fact_ledger)
+
+        self.assertIsNotNone(result)
+        self.assertIn("## Verified Facts (from fact-grounding pass)", seen["prompt"])
+        self.assertIn(
+            "- [C1] Kubernetes current stable is v1.35 (source: https://kubernetes.io/releases/)",
+            seen["prompt"],
+        )
+        self.assertIn(
+            "- [C2] Helm current stable is v4.0.1 (source: verified)",
+            seen["prompt"],
+        )
+        verified_block = seen["prompt"].split("## Verified Facts (from fact-grounding pass)", 1)[1]
+        verified_block = verified_block.split("IMPROVEMENT PLAN:", 1)[0]
+        self.assertNotIn("This unverified claim should not be surfaced", verified_block)
+
 
 # ---------------------------------------------------------------------------
 # Test: Fact ledger + integrity gate + split-reviewer run flow
