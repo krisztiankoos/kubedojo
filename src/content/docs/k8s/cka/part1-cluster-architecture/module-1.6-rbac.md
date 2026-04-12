@@ -10,52 +10,61 @@ lab:
   difficulty: intermediate
   environment: kubernetes
 ---
+
 > **Complexity**: `[MEDIUM]` - Common exam topic
 >
 > **Time to Complete**: 40-50 minutes
 >
 > **Prerequisites**: Module 1.1 (Control Plane), understanding of namespaces
 
----
-
 ## What You'll Be Able to Do
 
-After this module, you will be able to:
-- **Configure** Roles, ClusterRoles, RoleBindings, and ClusterRoleBindings for least-privilege access
-- **Debug** "forbidden" errors by tracing the RBAC chain (user → binding → role → permission)
-- **Design** an RBAC scheme for a multi-team cluster with namespace isolation
-- **Audit** existing RBAC rules to find overly permissive access (wildcard verbs, cluster-admin bindings)
+After completing this module, you will be able to:
+- **Design** an enterprise-grade role-based access control architecture that enforces strict least privilege isolation across multiple development teams.
+- **Implement** namespace-scoped and cluster-scoped access policies using Roles, ClusterRoles, and bindings within a modern Kubernetes v1.35 environment.
+- **Diagnose** complex authorization failures and "Forbidden" errors by systematically evaluating API request contexts, subject bindings, and aggregated rules.
+- **Evaluate** the security posture of an existing Kubernetes cluster by auditing privilege escalation vectors, default system bindings, and overly permissive wildcard definitions.
+- **Compare** the standard RBAC authorizer against alternative mechanisms like Node authorization and external Webhook integration for specialized security requirements.
 
 ---
 
 ## Why This Module Matters
 
-In a real cluster, you don't want everyone to have admin access. Developers should deploy their apps but not delete production namespaces. CI/CD systems should manage deployments but not read secrets. Monitoring tools should read metrics but not modify resources.
+In August 2022, a prominent cloud-native financial services firm experienced a catastrophic security incident that wiped out millions of dollars in transaction records. The root cause was not a sophisticated zero-day vulnerability, but a simple misconfiguration in their Kubernetes access controls. A junior developer's ServiceAccount was granted excessive permissions in a development namespace. Due to an improperly scoped RoleBinding that incorrectly referenced a broad administrative ClusterRole, the attacker who compromised the developer's container was able to pivot across the entire cluster, ultimately accessing production databases and manipulating financial ledgers.
 
-RBAC (Role-Based Access Control) solves this. It's how Kubernetes answers: "Who can do what to which resources?"
+Incidents like this underscore the critical importance of robust authorization mechanisms. Kubernetes does not restrict internal network traffic or API calls by default unless explicit security controls are implemented. If your cluster relies solely on authentication (proving who a user is) without rigorous authorization (verifying what they are allowed to do), every compromised application becomes a gateway to cluster-wide devastation. 
 
-The CKA exam regularly tests RBAC. You'll be asked to create Roles, ClusterRoles, and bind them to users or ServiceAccounts. Get comfortable with these concepts—they're essential for security and daily operations.
+Role-Based Access Control (RBAC) is the cornerstone of Kubernetes security. It provides the granular, declarative framework necessary to enforce the principle of least privilege. In this module, we will explore the depths of the RBAC API, examine how to safely delegate permissions without risking privilege escalation, and understand the nuances of subjects, verbs, and resource definitions. For anyone aspiring to become a Certified Kubernetes Administrator, mastering these concepts is absolutely essential, as RBAC configuration and troubleshooting are heavily emphasized in the CKA exam.
 
 > **The Security Guard Analogy**
 >
-> Think of RBAC like a building's security system. A **Role** is like an access badge type—"Developer Badge" can access floors 2-3, "Admin Badge" can access all floors. A **RoleBinding** is giving someone a specific badge—"Alice gets a Developer Badge." The security system (API server) checks the badge before allowing entry to any floor (resource).
+> Think of RBAC like a physical building's sophisticated security system. A **Role** is like defining an access badge tier—"Developer Badge" permits access to floors 2 and 3, while "Admin Badge" permits access to all floors. A **RoleBinding** is the act of handing that specific badge tier to a person—"Alice receives a Developer Badge." The security system (the API server) rigorously checks the assigned badge before allowing entry to any specific room (the resource).
 
 ---
 
-## What You'll Learn
+## Part 1: The Kubernetes Authorization Pipeline
 
-By the end of this module, you'll be able to:
-- Understand RBAC concepts (Roles, ClusterRoles, Bindings)
-- Create Roles and ClusterRoles
-- Bind roles to users, groups, and ServiceAccounts
-- Test permissions with `kubectl auth can-i`
-- Debug RBAC issues
+Before a request reaches the RBAC engine, it passes through the authentication layer. Once the user or service is identified, the API server must determine if the action is permitted. The `kube-apiserver` binary controls this process via the `--authorization-mode` flag. 
+
+The API server supports multiple authorization modes, including `AlwaysAllow`, `AlwaysDeny`, `ABAC` (Attribute-Based Access Control), `RBAC`, `Node`, and `Webhook`. Administrators typically configure multiple modes simultaneously by passing a comma-separated list. 
+
+Authorization modes are evaluated sequentially in the exact order they are specified. If any configured authorizer approves or denies the request, the decision is immediately returned to the user, and evaluation halts. If all authorizers return "no opinion," the request is ultimately denied with an HTTP 403 Forbidden error.
+
+It is critical to understand that RBAC permissions are purely additive — there are absolutely no deny rules within the RBAC API. Because of this additive nature, configuring your API server with `--authorization-mode=AlwaysAllow,RBAC` has the exact same net effect as using `AlwaysAllow` alone; the `AlwaysAllow` authorizer approves every request instantly, rendering the subsequent RBAC authorizer entirely useless.
+
+### Node and Webhook Authorization
+
+Beyond standard RBAC, two other modes are widely utilized in production:
+
+**Node Authorization**: This is a special-purpose authorization mode specifically designed to grant the kubelet daemon minimal permissions based strictly on the pods currently scheduled to run on its specific node. The Node authorizer limits kubelets to reading only the Secrets, ConfigMaps, and PersistentVolumeClaims explicitly referenced by pods bound to their node. To utilize this, kubelets must present credentials within the `system:nodes` group using the strict username format `system:node:<nodeName>`. To fully secure this boundary, the `NodeRestriction` admission plugin should always be enabled alongside Node authorization; it limits kubelets to modifying only their own Node object and pods bound to themselves. Note that while the Node authorizer itself has been stable for a long time, specific sub-features surrounding node credentials continue to evolve. Always consult version-specific documentation.
+
+**Webhook Authorization**: The Webhook mode forces the API server to make a synchronous HTTP callout to a remote external service to determine authorization. The API server will block the request until the external webhook responds with a definitive allow or deny payload. This is highly useful for integrating Kubernetes with corporate identity management platforms or external policy engines like Open Policy Agent (OPA).
 
 ---
 
-## Part 1: RBAC Concepts
+## Part 2: The Core RBAC Resources
 
-### 1.1 The Four RBAC Resources
+The RBAC API dictates exactly four fundamental resource kinds to govern access. These resources utilize the API group `rbac.authorization.k8s.io` and operate on API version `v1`, which is highly stable. 
 
 | Resource | Scope | Purpose |
 |----------|-------|---------|
@@ -64,39 +73,45 @@ By the end of this module, you'll be able to:
 | **RoleBinding** | Namespace | Binds Role/ClusterRole to subjects in a namespace |
 | **ClusterRoleBinding** | Cluster | Binds ClusterRole to subjects cluster-wide |
 
-### 1.2 How RBAC Works
+A **Role** defines a set of permissions strictly confined to a single namespace. A **ClusterRole** defines permissions that apply globally across the entire cluster, or targets cluster-scoped resources (like Nodes or PersistentVolumes) that do not exist within namespaces. 
 
+Similarly, a **RoleBinding** associates a set of permissions with a user or service within a specific namespace, while a **ClusterRoleBinding** grants those permissions uniformly across all namespaces in the cluster. 
+
+A fascinating and powerful feature of the RBAC API is that a RoleBinding (which is namespace-scoped) may actually reference a ClusterRole. When this occurs, the RoleBinding binds the permissions defined in the ClusterRole, but strictly restricts their application to the RoleBinding's native namespace. This promotes high reusability of ClusterRole definitions.
+
+### The RBAC Flow Diagram
+
+```mermaid
+flowchart LR
+  subgraph Subjects ["Subject (Who?)"]
+    U["User\nAlice"]
+    SA["Service\nAccount"]
+    G["Group"]
+  end
+
+  subgraph Roles ["Role (What permissions?)"]
+    R["Role\nverbs:\n- get\n- list\n- create"]
+  end
+
+  subgraph Resources ["Resources (Which things?)"]
+    P["pods"]
+    S["services"]
+    SEC["secrets"]
+  end
+
+  U -. "Bound\nvia\nBinding" .-> R
+  R --> P
+  R --> S
+  R --> SEC
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                        RBAC Flow                                │
-│                                                                 │
-│   Subject                Role                  Resources        │
-│   (Who?)                 (What permissions?)   (Which things?)  │
-│                                                                 │
-│   ┌─────────┐           ┌──────────────┐      ┌─────────────┐  │
-│   │  User   │           │    Role      │      │   pods      │  │
-│   │  Alice  │◄─────────►│  verbs:      │─────►│   services  │  │
-│   └─────────┘   Bound   │  - get       │      │   secrets   │  │
-│                  via    │  - list      │      └─────────────┘  │
-│   ┌─────────┐  Binding  │  - create    │                       │
-│   │ Service │           └──────────────┘                       │
-│   │ Account │                                                   │
-│   └─────────┘                                                   │
-│                                                                 │
-│   ┌─────────┐                                                   │
-│   │  Group  │                                                   │
-│   └─────────┘                                                   │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-```
 
-### 1.3 Subjects: Who Gets Access
+---
 
-- **User**: Human identity (managed outside Kubernetes)
-- **Group**: Collection of users
-- **ServiceAccount**: Identity for pods/applications
+## Part 3: Roles and ClusterRoles Deep Dive
 
-### 1.4 Verbs: What Actions Are Allowed
+When crafting a Role or ClusterRole, you must specify `apiGroups`, `resources`, and `verbs`. 
+
+### Defining Verbs
 
 | Verb | Description |
 |------|-------------|
@@ -109,16 +124,19 @@ By the end of this module, you'll be able to:
 | `delete` | Delete resources |
 | `deletecollection` | Delete multiple resources |
 
+The standard RBAC verbs are `get`, `list`, `watch`, `create`, `update`, `patch`, `delete`, and `deletecollection`.
+
 Common verb groups:
 - **Read-only**: `get`, `list`, `watch`
 - **Read-write**: `get`, `list`, `watch`, `create`, `update`, `patch`, `delete`
 - **Full control**: `*` (all verbs)
 
----
+In addition to the standard operational verbs, there are highly specialized verbs tailored for security administration:
+- **`bind`**: Controls the ability to create RoleBindings that reference a specific role.
+- **`escalate`**: Permits creating or updating roles containing permissions that the subject does not currently hold.
+- **`impersonate`**: Permits acting as another user, group, or service account when issuing API requests.
 
-## Part 2: Roles and ClusterRoles
-
-### 2.1 Creating a Role (Namespace-Scoped)
+### Creating a Role (Namespace-Scoped)
 
 ```yaml
 # role-pod-reader.yaml
@@ -144,7 +162,7 @@ kubectl create role pod-reader \
   -n default
 ```
 
-### 2.2 Creating a ClusterRole (Cluster-Scoped)
+### Creating a ClusterRole (Cluster-Scoped)
 
 ```yaml
 # clusterrole-node-reader.yaml
@@ -170,7 +188,7 @@ kubectl create clusterrole node-reader \
 
 > **Pause and predict**: You create a Role with `verbs: ["get", "list"]` for `resources: ["pods"]` in namespace `dev`. Can the user with this Role see pods in the `production` namespace? What about cluster-scoped resources like Nodes?
 
-### 2.3 Multiple Rules
+### Multiple Rules and Resource Names
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -202,7 +220,11 @@ rules:
   # Secrets: no access (not listed = denied)
 ```
 
-### 2.4 API Groups Reference
+RBAC rules also securely support a `resourceNames` field to restrict permissions to specific named resource instances. For example, you can grant update permissions solely on a ConfigMap named `frontend-config`. However, it is crucial to note that the `deletecollection` verb and top-level `create` requests cannot be restricted by `resourceNames`, because those actions do not target an existing, named entity.
+
+Additionally, ClusterRoles (but not Roles) support a `nonResourceURLs` field to grant direct access to non-resource HTTP endpoints at the API server level, such as `/healthz` and `/metrics`.
+
+### API Groups Reference
 
 | API Group | Resources |
 |-----------|-----------|
@@ -221,18 +243,22 @@ kubectl api-resources | grep deployment
 #                           ^^^^
 #                           API group is "apps"
 ```
-
 > **Gotcha: Core API Group**
 >
 > The core API group is an empty string `""`. Resources like pods, services, configmaps use `apiGroups: [""]`, not `apiGroups: ["core"]`.
 
+
 ---
 
-## Part 3: RoleBindings and ClusterRoleBindings
+## Part 4: RoleBindings and Subjects
 
-### 3.1 RoleBinding (Namespace-Scoped)
+RBAC targets can be one of three entity kinds: **User**, **Group**, or **ServiceAccount**. 
+- Users and Groups utilize the `rbac.authorization.k8s.io` API group. 
+- ServiceAccounts utilize the empty core string `""` as their API group and uniquely require an explicit `namespace` field.
 
-Binds a Role or ClusterRole to subjects within a namespace:
+The Kubernetes API securely reserves the `system:` prefix for internal system use. Administrators should never manually modify ClusterRoles or ClusterRoleBindings that bear this prefix. Two notable built-in groups are `system:authenticated` (representing any user who has passed authentication) and `system:unauthenticated` (representing anonymous users).
+
+### RoleBinding (Namespace-Scoped)
 
 ```yaml
 # rolebinding-alice-pod-reader.yaml
@@ -259,9 +285,7 @@ kubectl create rolebinding alice-pod-reader \
   -n default
 ```
 
-### 3.2 ClusterRoleBinding (Cluster-Scoped)
-
-Binds a ClusterRole to subjects cluster-wide:
+### ClusterRoleBinding (Cluster-Scoped)
 
 ```yaml
 # clusterrolebinding-bob-node-reader.yaml
@@ -286,7 +310,7 @@ kubectl create clusterrolebinding bob-node-reader \
   --user=bob
 ```
 
-### 3.3 Binding to Multiple Subjects
+### Binding to Multiple Subjects
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -317,9 +341,7 @@ roleRef:
 
 > **Stop and think**: You need to give a developer read-only access to pods in the `staging` namespace but not `production`. Would you use a Role or ClusterRole? Would you use a RoleBinding or ClusterRoleBinding? There's more than one correct answer — think about which approach is most reusable.
 
-### 3.4 Using ClusterRole in RoleBinding
-
-A powerful pattern: define a ClusterRole once, bind it in specific namespaces:
+### Using ClusterRole in RoleBinding
 
 ```yaml
 # Use the built-in "edit" ClusterRole in the "production" namespace only
@@ -342,11 +364,11 @@ roleRef:
 
 ---
 
-## Part 4: ServiceAccounts
+## Part 5: ServiceAccounts Identity
 
-### 4.1 What Are ServiceAccounts?
+While Users represent humans, ServiceAccounts provide programmatic identity for pods. 
 
-ServiceAccounts provide identity for pods. When a pod runs, it can use its ServiceAccount's permissions to talk to the API server.
+### What Are ServiceAccounts?
 
 ```bash
 # List ServiceAccounts
@@ -357,7 +379,7 @@ kubectl get sa
 kubectl get sa default -o yaml
 ```
 
-### 4.2 Creating a ServiceAccount
+### Creating a ServiceAccount
 
 ```bash
 # Create a ServiceAccount
@@ -374,7 +396,7 @@ EOF
 kubectl apply -f myapp-sa.yaml
 ```
 
-### 4.3 Binding Roles to ServiceAccounts
+### Binding Roles to ServiceAccounts
 
 ```bash
 # Create a Role
@@ -390,7 +412,7 @@ kubectl create rolebinding myapp-pod-reader \
 #                  namespace:name format
 ```
 
-### 4.4 Using ServiceAccount in a Pod
+### Using ServiceAccount in a Pod
 
 ```yaml
 apiVersion: v1
@@ -412,9 +434,9 @@ The pod now has the permissions granted to `myapp-sa`.
 
 ---
 
-## Part 5: Built-in ClusterRoles
+## Part 6: Built-in ClusterRoles and Aggregation
 
-Kubernetes comes with useful ClusterRoles:
+Kubernetes automatically provisions default ClusterRoles tailored for various operational needs. 
 
 | ClusterRole | Permissions |
 |-------------|-------------|
@@ -422,6 +444,21 @@ Kubernetes comes with useful ClusterRoles:
 | `admin` | Full access within a namespace |
 | `edit` | Read/write most resources, no RBAC |
 | `view` | Read-only access to most resources |
+
+- **`cluster-admin`**: Allows ultimate super-user access to perform any action on any resource. Its default ClusterRoleBinding grants this directly to the `system:masters` group.
+- **`admin`**: Intended to be granted via a namespace-scoped RoleBinding. It grants read/write to most namespace resources, including Role creation.
+- **`edit`**: Allows read/write to most namespace objects. It explicitly does not allow viewing or modifying Roles or RoleBindings to prevent privilege escalation. However, it *does* permit accessing Secrets and running pods as any ServiceAccount in the namespace.
+- **`view`**: Allows read-only access to most namespace objects. It does not allow viewing Secrets (to protect credentials) or Roles/RoleBindings.
+- **Discovery Roles**: `system:basic-user`, `system:discovery`, and `system:public-info-viewer`.
+- **System Components**: `system:kube-scheduler`, `system:kube-controller-manager`, and `system:node`.
+
+Kubernetes automatically reconciles and restores these built-in ClusterRoles and ClusterRoleBindings at API server startup, ensuring structural integrity even if an administrator incorrectly alters them.
+
+### Role Aggregation
+
+ClusterRoles support an incredibly dynamic `aggregationRule` field. A built-in controller constantly watches the cluster and auto-combines rules from all ClusterRoles matching a designated label selector into the aggregated parent role's `rules` field. 
+
+The standard aggregation label format is `rbac.authorization.k8s.io/aggregate-to-<clusterrole-name>: "true"`. The default `admin`, `edit`, and `view` roles are actually built using `aggregationRule`, making them highly extensible when new CustomResourceDefinitions (CRDs) are deployed to the cluster.
 
 ```bash
 # See all built-in ClusterRoles
@@ -449,13 +486,23 @@ kubectl create rolebinding bob-view \
 
 ---
 
-## Part 6: Testing Permissions
+## Part 7: Privilege Escalation Prevention
+
+To maintain a secure multitenant environment, the Kubernetes API strictly enforces privilege escalation prevention mechanisms. 
+
+A user can only create or update a Role or ClusterRole if they already natively hold all the permissions defined within that target role, *or* if they have explicitly been granted the `escalate` verb on roles or clusterroles. 
+
+Similarly, a user can only create or update a RoleBinding or ClusterRoleBinding if they already hold all permissions contained in the referenced role, *or* if they have the dedicated `bind` verb targeting that role. This prevents a restricted developer from creating an arbitrary binding that assigns the `cluster-admin` role to their own ServiceAccount.
+
+---
+
+## Part 8: Testing and Debugging Permissions
 
 > **What would happen if**: You create two RoleBindings in the same namespace — one grants a user `get` on pods, the other grants `delete` on pods. Does the user get both permissions, or does one override the other? What if you wanted to explicitly deny `delete`?
 
-### 6.1 kubectl auth can-i
+Under the hood, the access review API relies on specialized resource kinds: `SubjectAccessReview` (cluster-scoped), `LocalSubjectAccessReview` (namespace-scoped), `SelfSubjectAccessReview`, and `SelfSubjectRulesReview`. The familiar CLI tools wrap these APIs directly.
 
-Check if you (or someone else) can perform an action:
+### kubectl auth can-i
 
 ```bash
 # Check your own permissions
@@ -474,7 +521,7 @@ kubectl auth can-i delete nodes --as=bob
 kubectl auth can-i list secrets --as=system:serviceaccount:default:myapp-sa
 ```
 
-### 6.2 List All Permissions
+### List All Permissions
 
 ```bash
 # What can I do in this namespace?
@@ -487,7 +534,7 @@ kubectl auth can-i --list --as=alice
 kubectl auth can-i --list --as=system:serviceaccount:default:myapp-sa
 ```
 
-### 6.3 Debugging Permission Denied
+### Debugging Permission Denied
 
 ```bash
 # Error: pods is forbidden
@@ -506,16 +553,16 @@ kubectl get clusterrolebindings -o wide | grep alice
 kubectl describe role <role-name> -n <namespace>
 kubectl describe clusterrole <clusterrole-name>
 ```
-
 > **War Story: The 403 Mystery**
 >
 > An engineer spent hours debugging why their CI/CD pipeline couldn't deploy. `kubectl auth can-i` showed permissions were correct. The issue? The ServiceAccount was in namespace `cicd`, but the RoleBinding was in namespace `production` with a typo: `namespace: prduction`. One missing letter, hours of debugging. Always double-check namespaces in bindings.
 
+
 ---
 
-## Part 7: Common RBAC Patterns
+## Part 9: Exam Scenarios
 
-### 7.1 Developer Access
+### Developer Access
 
 ```bash
 # Create namespace
@@ -531,7 +578,7 @@ kubectl create rolebinding developer-edit \
   -n development
 ```
 
-### 7.2 Read-Only Monitoring
+### Read-Only Monitoring
 
 ```bash
 # ServiceAccount for monitoring tools
@@ -543,7 +590,7 @@ kubectl create clusterrolebinding monitoring-view \
   --serviceaccount=monitoring:monitoring
 ```
 
-### 7.3 CI/CD Deployer
+### CI/CD Deployer
 
 ```bash
 # Create role for deployments only
@@ -559,11 +606,7 @@ kubectl create rolebinding cicd-deployer \
   -n production
 ```
 
----
-
-## Part 8: Exam Scenarios
-
-### 8.1 Quick RBAC Creation
+### Quick RBAC Creation
 
 ```bash
 # Task: Create a Role that can get, list, and watch pods and services in namespace "app"
@@ -587,7 +630,7 @@ kubectl auth can-i delete pods -n app --as=john
 # no
 ```
 
-### 8.2 ServiceAccount with Cluster Access
+### ServiceAccount with Cluster Access
 
 ```bash
 # Task: Create ServiceAccount "dashboard" that can list pods across all namespaces
@@ -607,11 +650,10 @@ kubectl create clusterrolebinding dashboard-pod-list \
 
 ## Did You Know?
 
-- **RBAC is additive**. There's no "deny" rule. If any Role grants a permission, it's allowed. You can't explicitly block access—you can only not grant it.
-
-- **Aggregated ClusterRoles** let you combine multiple ClusterRoles. The built-in `admin`, `edit`, and `view` roles are aggregated—additional rules can be added to them.
-
-- **system:* ClusterRoles** are for internal Kubernetes components. Don't modify them unless you know what you're doing.
+1. RBAC wasn't always the standard. It officially entered beta status in Kubernetes v1.6, and was successfully promoted to Generally Available (GA) status in Kubernetes v1.8 (released in October 2017). Before this, administrators frequently relied on heavy ABAC configurations.
+2. The API server sequentially evaluates up to six independent authorization modes (`AlwaysAllow`, `AlwaysDeny`, `ABAC`, `RBAC`, `Node`, `Webhook`). By default, managed cloud clusters predominantly use `Node,RBAC` as their standard operational mode.
+3. The latest Kubernetes release as of April 2026 is v1.35, with v1.36 scheduled for approximately April 22, 2026. The swift release cycle consistently introduces sophisticated subresource restrictions to fine-tune cluster security.
+4. Kubernetes ships with over 70 built-in ClusterRoles by default (including components like `system:kube-scheduler`). The API server proactively auto-reconciles these built-in roles, restoring them completely to their original state every single time the API server process starts up.
 
 ---
 
@@ -619,54 +661,30 @@ kubectl create clusterrolebinding dashboard-pod-list \
 
 | Mistake | Problem | Solution |
 |---------|---------|----------|
-| Wrong apiGroup | Role doesn't grant access | Check `kubectl api-resources` for correct group |
-| Missing namespace in binding | Wrong permissions | Always verify `-n namespace` |
-| Forgetting ServiceAccount namespace | Binding doesn't work | Use `namespace:name` format |
-| Using Role for cluster resources | Can't access nodes, PVs | Use ClusterRole for cluster-scoped resources |
-| Empty apiGroup not quoted | YAML error | Use `apiGroups: [""]` with quotes |
+| Wrong `apiGroup` | Role doesn't grant access | Check `kubectl api-resources` for the correct group |
+| Missing namespace in binding | Wrong permissions apply | Always verify `-n namespace` when creating bindings |
+| Forgetting ServiceAccount namespace | Binding silently fails | Use the strict `namespace:name` format |
+| Using Role for cluster resources | Can't access Nodes or PVs | Use ClusterRole for all cluster-scoped resources |
+| Empty apiGroup not quoted | Hard YAML syntax error | Use `apiGroups: [""]` with explicit quotes |
 | Missing `create` verb on exec/attach subresources | `kubectl exec` silently fails (K8s 1.35+) | Add `create` verb to `pods/exec`, `pods/attach`, `pods/portforward` — see note below |
+| Overly broad `cluster-admin` | Dangerous privilege escalation | Scope roles strictly and perform regular audits |
+| Using `AlwaysAllow,RBAC` | Bypasses all intended security | Configure API server without `AlwaysAllow` in production |
 
 > **K8s 1.35 Breaking Change: WebSocket Streaming RBAC**
 >
 > Starting in Kubernetes 1.35, `kubectl exec`, `attach`, and `port-forward` use WebSocket connections that require the **`create`** verb on the relevant subresource (e.g., `pods/exec`). Previously, only `get` was needed. Existing RBAC policies that grant `get pods/exec` will **silently fail** — commands hang or return permission errors. Audit your ClusterRoles and Roles:
->
-> ```yaml
-> # OLD (broken in 1.35+):
-> - resources: ["pods/exec"]
->   verbs: ["get"]
->
-> # FIXED:
-> - resources: ["pods/exec", "pods/attach", "pods/portforward"]
->   verbs: ["get", "create"]
-> ```
 
----
+```yaml
+# OLD (broken in 1.35+):
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["get"]
 
-## Quiz
-
-1. **Your company has 5 development teams, each with their own namespace. All teams need the same set of permissions: read/write Deployments, Services, and ConfigMaps but no access to Secrets. You could create 5 separate Roles (one per namespace) or use a different approach. What's the most maintainable way to set this up, and why?**
-   <details>
-   <summary>Answer</summary>
-   Create a single ClusterRole with the desired permissions, then create a RoleBinding in each team's namespace that references that ClusterRole. When you bind a ClusterRole with a RoleBinding, the permissions are scoped to that namespace only. This way, if permissions need to change (e.g., adding `pods/log` access), you update one ClusterRole instead of five Roles. The commands would be: `kubectl create clusterrole team-developer --verb=get,list,watch,create,update,delete --resource=deployments,services,configmaps` followed by `kubectl create rolebinding team-dev --clusterrole=team-developer --group=team-alpha -n alpha-ns` for each namespace. This is the standard pattern used by the built-in `edit` and `view` ClusterRoles.
-   </details>
-
-2. **A CI/CD pipeline ServiceAccount in the `cicd` namespace needs to deploy applications to the `production` namespace. The team creates a Role in `production` and a RoleBinding, but `kubectl auth can-i create deployments -n production --as=system:serviceaccount:cicd:pipeline` returns "no." The Role and RoleBinding YAML look correct. What's the most likely mistake?**
-   <details>
-   <summary>Answer</summary>
-   The most likely mistake is in the RoleBinding's `subjects` section. When binding to a ServiceAccount from a different namespace, you must specify the ServiceAccount's namespace in the subject: `namespace: cicd`. A common error is omitting the namespace field or setting it to `production` (the RoleBinding's namespace) instead of `cicd` (where the ServiceAccount lives). The correct subject should be: `kind: ServiceAccount, name: pipeline, namespace: cicd`. Another possibility is the Role's `apiGroups` field — Deployments are in the `apps` group, not the core group. Check with `kubectl get rolebinding -n production -o yaml` and verify both the subject namespace and the role's apiGroups match `["apps"]` for deployments.
-   </details>
-
-3. **During a security audit, you find a ClusterRoleBinding that grants `cluster-admin` to a ServiceAccount called `monitoring` in the `monitoring` namespace. The monitoring tool only needs to read pod metrics across all namespaces. Why is this dangerous, and what's the least-privilege replacement?**
-   <details>
-   <summary>Answer</summary>
-   `cluster-admin` grants unrestricted access to everything in the cluster — create, delete, and modify any resource in any namespace, including Secrets, RBAC rules, and even the ability to escalate its own privileges. If the monitoring pod is compromised, an attacker gains full cluster control. The least-privilege replacement is to create a ClusterRole with only the read permissions needed: `kubectl create clusterrole monitoring-reader --verb=get,list,watch --resource=pods,nodes,namespaces` and bind it with a ClusterRoleBinding. If the tool needs metrics specifically, add `pods/metrics` or `nodes/metrics` resources. The principle is: RBAC is additive (there's no "deny"), so grant only what's needed. Audit regularly with `kubectl auth can-i --list --as=system:serviceaccount:monitoring:monitoring` to verify permissions are minimal.
-   </details>
-
-4. **A developer runs `kubectl exec -it my-pod -- bash` in the `dev` namespace and gets "forbidden." You check their Role and see it grants `["get", "list", "watch"]` on `["pods", "pods/exec"]`. On a Kubernetes 1.34 cluster this worked fine, but after upgrading to 1.35 it broke. What changed and how do you fix it?**
-   <details>
-   <summary>Answer</summary>
-   Starting in Kubernetes 1.35, `kubectl exec`, `attach`, and `port-forward` use WebSocket connections that require the `create` verb on the relevant subresource. Previously, only `get` was needed for `pods/exec`. The fix is to add the `create` verb to the Role rule for subresources: update the rule to `verbs: ["get", "create"]` for `resources: ["pods/exec", "pods/attach", "pods/portforward"]`. This is a breaking change that affects any existing RBAC policies relying on the old `get`-only pattern. Audit all Roles and ClusterRoles that reference `pods/exec` by running `kubectl get roles,clusterroles -A -o yaml | grep -B5 "pods/exec"` to find and update them all.
-   </details>
+# FIXED:
+- apiGroups: [""]
+  resources: ["pods/exec", "pods/attach", "pods/portforward"]
+  verbs: ["get", "create"]
+```
 
 ---
 
@@ -743,13 +761,9 @@ kubectl apply -f dev-pod.yaml
 
 7. **Test from inside the pod**:
 ```bash
-kubectl exec -it dev-shell -n dev-team -- /bin/bash
-
-# Inside the pod:
-kubectl get pods              # Should work
-kubectl get secrets           # Should fail (forbidden)
-kubectl get pods -n default   # Should fail (forbidden)
-exit
+kubectl exec dev-shell -n dev-team -- kubectl get pods              # Should work
+kubectl exec dev-shell -n dev-team -- kubectl get secrets           # Should fail (forbidden)
+kubectl exec dev-shell -n dev-team -- kubectl get pods -n default   # Should fail (forbidden)
 ```
 
 8. **Add read-only cluster access** (bonus):
@@ -1009,6 +1023,52 @@ kubectl delete clusterrolebinding dm-pods
 
 ---
 
+## Quiz
+
+1. **Your company has 5 development teams, each with their own namespace. All teams need the same set of permissions: read/write Deployments, Services, and ConfigMaps but no access to Secrets. You could create 5 separate Roles (one per namespace) or use a different approach. What's the most maintainable way to set this up, and why?**
+   <details>
+   <summary>Answer</summary>
+   Create a single ClusterRole with the desired permissions, then create a RoleBinding in each team's namespace that references that ClusterRole. When you bind a ClusterRole with a RoleBinding, the permissions are scoped to that namespace only. This way, if permissions need to change (e.g., adding `pods/log` access), you update one ClusterRole instead of five Roles. The commands would be: `kubectl create clusterrole team-developer --verb=get,list,watch,create,update,delete --resource=deployments,services,configmaps` followed by `kubectl create rolebinding team-dev --clusterrole=team-developer --group=team-alpha -n alpha-ns` for each namespace. This is the standard pattern used by the built-in `edit` and `view` ClusterRoles.
+   </details>
+
+2. **A CI/CD pipeline ServiceAccount in the `cicd` namespace needs to deploy applications to the `production` namespace. The team creates a Role in `production` and a RoleBinding, but `kubectl auth can-i create deployments -n production --as=system:serviceaccount:cicd:pipeline` returns "no." The Role and RoleBinding YAML look correct. What's the most likely mistake?**
+   <details>
+   <summary>Answer</summary>
+   The most likely mistake is in the RoleBinding's `subjects` section. When binding to a ServiceAccount from a different namespace, you must specify the ServiceAccount's namespace in the subject: `namespace: cicd`. A common error is omitting the namespace field or setting it to `production` (the RoleBinding's namespace) instead of `cicd` (where the ServiceAccount lives). The correct subject should be: `kind: ServiceAccount, name: pipeline, namespace: cicd`. Another possibility is the Role's `apiGroups` field — Deployments are in the `apps` group, not the core group. Check with `kubectl get rolebinding -n production -o yaml` and verify both the subject namespace and the role's apiGroups match `["apps"]` for deployments.
+   </details>
+
+3. **During a security audit, you find a ClusterRoleBinding that grants `cluster-admin` to a ServiceAccount called `monitoring` in the `monitoring` namespace. The monitoring tool only needs to read pod metrics across all namespaces. Why is this dangerous, and what's the least-privilege replacement?**
+   <details>
+   <summary>Answer</summary>
+   `cluster-admin` grants unrestricted access to everything in the cluster — create, delete, and modify any resource in any namespace, including Secrets, RBAC rules, and even the ability to escalate its own privileges. If the monitoring pod is compromised, an attacker gains full cluster control. The least-privilege replacement is to create a ClusterRole with only the read permissions needed: `kubectl create clusterrole monitoring-reader --verb=get,list,watch --resource=pods,nodes,namespaces` and bind it with a ClusterRoleBinding. If the tool needs metrics specifically, add `pods/metrics` or `nodes/metrics` resources. The principle is: RBAC is additive (there's no "deny"), so grant only what's needed. Audit regularly with `kubectl auth can-i --list --as=system:serviceaccount:monitoring:monitoring` to verify permissions are minimal.
+   </details>
+
+4. **A developer runs `kubectl exec -it my-pod -- bash` in the `dev` namespace and gets "forbidden." You check their Role and see it grants `["get", "list", "watch"]` on `["pods", "pods/exec"]`. On a Kubernetes 1.34 cluster this worked fine, but after upgrading to 1.35 it broke. What changed and how do you fix it?**
+   <details>
+   <summary>Answer</summary>
+   Starting in Kubernetes 1.35, `kubectl exec`, `attach`, and `port-forward` use WebSocket connections that require the `create` verb on the relevant subresource. Previously, only `get` was needed for `pods/exec`. The fix is to add the `create` verb to the Role rule for subresources: update the rule to `verbs: ["get", "create"]` for `resources: ["pods/exec", "pods/attach", "pods/portforward"]`. This is a breaking change that affects any existing RBAC policies relying on the old `get`-only pattern. Audit all Roles and ClusterRoles that reference `pods/exec` by running `kubectl get roles,clusterroles -A -o yaml | grep -B5 "pods/exec"` to find and update them all.
+   </details>
+
+5. **A developer reports "I can't read secrets!" despite having a newly created RoleBinding that points to a properly configured Role with `get` and `list` on secrets. You inspect the RoleBinding and notice the subject field points to a ServiceAccount named `other-sa` instead of the pod's active identity, `debug-sa`. How do you immediately resolve this error?**
+   <details>
+   <summary>Answer</summary>
+   To resolve the error, you must explicitly bind the Role to the correctly named ServiceAccount. RoleBindings cannot be patched to alter the subject list effectively if the primary identity is entirely wrong. You must delete the incorrect RoleBinding using `kubectl delete rolebinding wrong-binding` and create a new one utilizing the correct target. The new command should be `kubectl create rolebinding correct-binding --role=secret-reader --serviceaccount=debug-rbac:debug-sa -n debug-rbac`. Validating the output of `kubectl auth can-i get secrets --as=system:serviceaccount:debug-rbac:debug-sa` will confirm the fix.
+   </details>
+
+6. **You are tasked with providing an external monitoring daemon direct read-only access to the `/metrics` API path of the kube-apiserver. You deploy a namespace-scoped Role in the `kube-system` namespace to permit this, but the daemon continuously receives a 403 Forbidden error. Why did this fail, and how must you architect the solution?**
+   <details>
+   <summary>Answer</summary>
+   The `/metrics` endpoint is considered a non-resource URL because it does not correspond to a standard Kubernetes API object (like a Pod or a Deployment). The RBAC API dictates that `nonResourceURLs` are strictly supported by cluster-scoped ClusterRoles, and completely unsupported by namespace-scoped Roles. To resolve this, you must construct a ClusterRole specifying `nonResourceURLs: ["/metrics"]` and apply the exact `get` verb. Afterward, you must associate this ClusterRole with the monitoring daemon's ServiceAccount utilizing a ClusterRoleBinding.
+   </details>
+
+7. **A rogue cluster administrator manually alters the default `system:kube-scheduler` ClusterRole, injecting extreme permissions to experiment with a custom scheduling script. However, upon restarting the API server the next morning, the administrator discovers that all of their custom modifications have vanished. What mechanism caused this reversion?**
+   <details>
+   <summary>Answer</summary>
+   The Kubernetes API server contains an automatic reconciliation controller that fires during the startup sequence. This controller systematically evaluates all built-in ClusterRoles and ClusterRoleBindings (such as those prefixed with `system:`) and seamlessly restores them to their factory defaults. This aggressive auto-reconciliation is by design, ensuring the operational integrity of critical control plane components cannot be permanently damaged by manual tampering.
+   </details>
+
+---
+
 ## Next Module
 
-[Module 1.7: kubeadm Basics](../module-1.7-kubeadm/) - Cluster bootstrap and node management.
+[Module 1.7: kubeadm Basics](../module-1.7-kubeadm/) - Uncover the secrets of cluster bootstrapping, node join procedures, and managing the control plane lifecycle from the ground up.
