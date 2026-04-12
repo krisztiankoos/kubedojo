@@ -61,29 +61,24 @@ By the end of this module, you'll be able to:
 
 ### 1.1 The Deployment Hierarchy
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    Deployment Hierarchy                         │
-│                                                                 │
-│   ┌─────────────────────────────────────────────────────────┐  │
-│   │                     Deployment                           │  │
-│   │  - Desired state (replicas, image, strategy)            │  │
-│   │  - Manages ReplicaSets                                  │  │
-│   └────────────────────────┬────────────────────────────────┘  │
-│                            │ creates & manages                  │
-│                            ▼                                    │
-│   ┌─────────────────────────────────────────────────────────┐  │
-│   │                    ReplicaSet                            │  │
-│   │  - Ensures N replicas running                           │  │
-│   │  - Creates/deletes pods to match desired count          │  │
-│   └────────────────────────┬────────────────────────────────┘  │
-│                            │ creates & manages                  │
-│                            ▼                                    │
-│   ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐          │
-│   │  Pod 1  │  │  Pod 2  │  │  Pod 3  │  │  Pod N  │          │
-│   └─────────┘  └─────────┘  └─────────┘  └─────────┘          │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Hierarchy [Deployment Hierarchy]
+        direction TB
+        D["Deployment<br/>- Desired state (replicas, image, strategy)<br/>- Manages ReplicaSets"]
+        RS["ReplicaSet<br/>- Ensures N replicas running<br/>- Creates/deletes pods to match desired count"]
+        
+        P1["Pod 1"]
+        P2["Pod 2"]
+        P3["Pod 3"]
+        PN["Pod N"]
+        
+        D -- "creates & manages" --> RS
+        RS -- "creates & manages" --> P1
+        RS -- "creates & manages" --> P2
+        RS -- "creates & manages" --> P3
+        RS -- "creates & manages" --> PN
+    end
 ```
 
 ### 1.2 Why Not Just ReplicaSets?
@@ -275,19 +270,19 @@ kubectl scale deployment nginx webapp --replicas=3
 ### 4.2 Editing Deployment
 
 ```bash
-# Edit deployment directly
-kubectl edit deployment nginx
+# Edit deployment directly (interactive, commonly used in exam)
+# kubectl edit deployment nginx
 # Change spec.replicas and save
 
-# Or patch
+# Or patch (non-interactive, used for this lab)
 kubectl patch deployment nginx -p '{"spec":{"replicas":5}}'
 ```
 
 ### 4.3 Verifying Scale
 
 ```bash
-# Watch pods scale
-kubectl get pods -w
+# View pods scale (use -w in exam to watch continuously)
+kubectl get pods
 
 # Check deployment status
 kubectl get deployment nginx
@@ -333,32 +328,19 @@ spec:
 
 ### 5.2 Rolling Update Visualization
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                     Rolling Update                              │
-│                     (maxSurge=1, maxUnavailable=1)             │
-│                                                                 │
-│   Desired: 4 replicas                                          │
-│                                                                 │
-│   Step 1: Start with old version                               │
-│   [v1] [v1] [v1] [v1]                                          │
-│                                                                 │
-│   Step 2: Create 1 new pod (maxSurge=1)                        │
-│   [v1] [v1] [v1] [v1] [v2-creating]                            │
-│                                                                 │
-│   Step 3: v2 ready, terminate 1 old (maxUnavailable=1)         │
-│   [v1] [v1] [v1] [v2] [v1-terminating]                         │
-│                                                                 │
-│   Step 4: Continue rolling                                     │
-│   [v1] [v1] [v2] [v2] [v1-terminating]                         │
-│                                                                 │
-│   Step 5: Continue rolling                                     │
-│   [v1] [v2] [v2] [v2] [v1-terminating]                         │
-│                                                                 │
-│   Step 6: Complete                                             │
-│   [v2] [v2] [v2] [v2]                                          │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph RU [Rolling Update: maxSurge=1, maxUnavailable=1, Desired=4]
+        direction TB
+        S1["Step 1: Start with old version<br/>[v1] [v1] [v1] [v1]"]
+        S2["Step 2: Create 1 new pod (maxSurge=1)<br/>[v1] [v1] [v1] [v1] [v2-creating]"]
+        S3["Step 3: v2 ready, terminate 1 old (maxUnavailable=1)<br/>[v1] [v1] [v1] [v2] [v1-terminating]"]
+        S4["Step 4: Continue rolling<br/>[v1] [v1] [v2] [v2] [v1-terminating]"]
+        S5["Step 5: Continue rolling<br/>[v1] [v2] [v2] [v2] [v1-terminating]"]
+        S6["Step 6: Complete<br/>[v2] [v2] [v2] [v2]"]
+        
+        S1 --> S2 --> S3 --> S4 --> S5 --> S6
+    end
 ```
 
 ### 5.3 Triggering Updates
@@ -377,7 +359,9 @@ kubectl set env deployment/nginx ENV=production
 kubectl set resources deployment/nginx -c nginx --limits=cpu=200m,memory=512Mi
 
 # Edit deployment (any change to pod template triggers update)
-kubectl edit deployment nginx
+# kubectl edit deployment nginx
+# For automation, we patch an annotation:
+kubectl patch deployment nginx -p '{"spec":{"template":{"metadata":{"annotations":{"update":"now"}}}}}'
 ```
 
 ### 5.4 Watching Updates
@@ -386,11 +370,11 @@ kubectl edit deployment nginx
 # Watch rollout progress
 kubectl rollout status deployment/nginx
 
-# Watch pods during update
-kubectl get pods -w
+# View pods during update (in exam, use -w to watch continuously)
+kubectl get pods
 
-# Watch ReplicaSets
-kubectl get rs -w
+# View ReplicaSets (in exam, use -w to watch continuously)
+kubectl get rs
 ```
 
 > **Exam Tip**
@@ -427,27 +411,26 @@ kubectl get deployment nginx -o wide
 
 ### 6.3 How Rollback Works
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                     Rollback Process                            │
-│                                                                 │
-│   Before Rollback:                                             │
-│   ┌─────────────────────────────────────────────────┐          │
-│   │ ReplicaSet v1  (replicas: 0)  ← old version    │          │
-│   │ ReplicaSet v2  (replicas: 4)  ← current        │          │
-│   └─────────────────────────────────────────────────┘          │
-│                                                                 │
-│   kubectl rollout undo deployment/nginx                        │
-│                                                                 │
-│   After Rollback:                                              │
-│   ┌─────────────────────────────────────────────────┐          │
-│   │ ReplicaSet v1  (replicas: 4)  ← restored       │          │
-│   │ ReplicaSet v2  (replicas: 0)  ← scaled down    │          │
-│   └─────────────────────────────────────────────────┘          │
-│                                                                 │
-│   Deployment keeps old ReplicaSets for rollback capability     │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph RB [Rollback Process]
+        direction TB
+        subgraph Before [Before Rollback]
+            direction TB
+            RS1_B["ReplicaSet v1 (replicas: 0) <- old version"]
+            RS2_B["ReplicaSet v2 (replicas: 4) <- current"]
+        end
+        
+        Action["kubectl rollout undo deployment/nginx"]
+        
+        subgraph After [After Rollback]
+            direction TB
+            RS1_A["ReplicaSet v1 (replicas: 4) <- restored"]
+            RS2_A["ReplicaSet v2 (replicas: 0) <- scaled down"]
+        end
+        
+        Before --> Action --> After
+    end
 ```
 
 ### 6.4 Controlling History
@@ -572,11 +555,10 @@ When a rollout gets stuck, it's usually because the new pods are failing to star
 # Update to an image tag that doesn't exist
 kubectl set image deployment/nginx nginx=nginx:broken-tag
 
-# The rollout will hang
-kubectl rollout status deployment/nginx
-# Output: Waiting for deployment "nginx" rollout to finish: 1 out of 3 new replicas have been updated...
+# The rollout will hang without a timeout
+kubectl rollout status deployment/nginx --timeout=10s || true
+# Output: error: timed out waiting for the condition
 ```
-*(Press Ctrl+C to exit the hanging rollout status)*
 
 **Step 2: Inspect the Deployment**
 Start at the top level to see the status and conditions.
@@ -601,8 +583,8 @@ kubectl get pods -l app=nginx
 
 Describe the failing pod or check cluster events to identify the exact error.
 ```bash
-# Describe the specific failing pod
-kubectl describe pod <failing-pod-name>
+# Describe the failing pods using label selector
+kubectl describe pod -l app=nginx
 
 # Or check recent events in the namespace
 kubectl get events --sort-by='.metadata.creationTimestamp' | tail -n 10
@@ -665,7 +647,8 @@ kubectl rollout status deployment/nginx
 4. **During an on-call shift, you need to update a production Deployment's image, resource limits, and environment variables. You're worried about triggering three separate rollouts, which would churn pods unnecessarily. How do you batch all changes into a single rollout? Write the exact commands.**
    <details>
    <summary>Answer</summary>
-   Use the pause/resume pattern to batch all changes into one atomic rollout:
+   Use the pause/resume pattern to batch all changes into one atomic rollout. By pausing the rollout first, you instruct the Deployment controller to stop acting on template changes. While paused, the Deployment records all subsequent modifications to its pod template but does not create or terminate any pods. When you finally execute the resume command, a single rolling update applies all your accumulated changes at once. This approach is highly recommended in production to minimize unnecessary pod churn and keep your revision history clean.
+
    ```bash
    kubectl rollout pause deployment/nginx
    kubectl set image deployment/nginx nginx=nginx:1.26
@@ -673,7 +656,6 @@ kubectl rollout status deployment/nginx
    kubectl set env deployment/nginx ENV=production
    kubectl rollout resume deployment/nginx
    ```
-   While paused, the Deployment records all changes but does not create new pods. When you resume, a single rolling update applies all three changes at once. This is especially important in production to minimize pod churn and keep the rollout history clean (one revision instead of three).
    </details>
 
 ---
@@ -700,7 +682,7 @@ kubectl get pods -l app=webapp
 3. **Scale the deployment**:
 ```bash
 kubectl scale deployment webapp --replicas=5
-kubectl get pods -w  # Watch pods scale up
+kubectl get pods  # View pods scale up (use -w in exam)
 ```
 
 4. **Update image (rolling update)**:
@@ -718,7 +700,7 @@ kubectl get replicaset  # Notice two ReplicaSets now
 6. **Deploy a "bad" version**:
 ```bash
 kubectl set image deployment/webapp nginx=nginx:broken --record
-kubectl rollout status deployment/webapp  # Will hang or fail
+kubectl rollout status deployment/webapp --timeout=10s || true  # Timeout prevents hanging
 kubectl get pods  # Some in ImagePullBackOff
 ```
 
@@ -906,8 +888,8 @@ kubectl rollout status deployment/recreate-demo
 # Update - watch all pods terminate then new ones create
 kubectl set image deployment/recreate-demo nginx=nginx:1.25
 
-# Watch pods (all old terminate, then all new create)
-kubectl get pods -w -l app=recreate-demo
+# View pods (all old terminate, then all new create). In exam, add -w to watch.
+kubectl get pods -l app=recreate-demo
 
 # Cleanup
 kubectl delete deployment recreate-demo
@@ -922,18 +904,14 @@ kubectl create deployment myapp --image=nginx:1.25 --replicas=3 --dry-run=client
 # View generated YAML
 cat myapp.yaml
 
-# Add resource limits using sed or edit
-cat << 'EOF' >> myapp.yaml
----
-# Note: Need to edit the file properly, this is just for demonstration
-EOF
+# Modify the YAML file (e.g., change replicas to 4 before applying)
+sed 's/replicas: 3/replicas: 4/' myapp.yaml > tmp.yaml && mv tmp.yaml myapp.yaml
 
 # Apply the deployment
 kubectl apply -f myapp.yaml
 
-# Update via edit
-kubectl edit deployment myapp
-# Change replicas to 5, save
+# Update via patch (replacing interactive edit `kubectl edit deployment myapp`)
+kubectl patch deployment myapp -p '{"spec":{"replicas":5}}'
 
 # Verify
 kubectl get deployment myapp
