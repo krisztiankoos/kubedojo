@@ -105,6 +105,28 @@ Before examining virtual control planes, understand what a traditional HA setup 
 
 To use external etcd with kubeadm, configure `etcd.external.endpoints` in the `ClusterConfiguration`, pointing to your 3 etcd nodes with TLS certificates. Then `kubeadm init --config` and `kubeadm join --control-plane` as usual.
 
+### etcd Backup and Recovery Procedures
+
+For production high-availability control planes, proper backup and recovery of the external etcd cluster is critical.
+
+**Backup**: Take snapshots of the etcd database using `etcdctl`:
+```bash
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  snapshot save /opt/backup/etcd-snapshot-$(date +%Y-%m-%d).db
+```
+
+**Recovery**: To restore an etcd node from a snapshot, stop the etcd service, remove the corrupted data directory, and restore from the snapshot file before restarting:
+```bash
+systemctl stop etcd
+rm -rf /var/lib/etcd/*
+ETCDCTL_API=3 etcdctl snapshot restore /opt/backup/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd
+systemctl start etcd
+```
+
 ---
 
 > **Pause and predict**: A traditional HA control plane with stacked etcd requires 12 CPU and 24 GB RAM per cluster. If you need 10 clusters on 12 bare-metal servers, how much of your total hardware would be consumed by control planes alone? What approach could recover most of that capacity?
@@ -293,9 +315,11 @@ spec:
     serviceCidr: "10.96.0.0/12"
     podCidr: "10.244.0.0/16"
 EOF
+```
 
 After the TenantControlPlane resource is created, Kamaji generates a kubeconfig. Worker nodes then join the tenant cluster using standard `kubeadm join`, connecting to the API server endpoint specified in `networkProfile`.
 
+```bash
 # Get the tenant kubeconfig
 kubectl -n kamaji-system get secret tenant-alpha-admin-kubeconfig \
   -o jsonpath='{.data.admin\.conf}' | base64 -d > tenant-alpha.kubeconfig
@@ -381,7 +405,7 @@ Kamaji (shared etcd):
 
 ## Did You Know?
 
-- **vCluster was created by Loft Labs** and is one of the fastest-growing CNCF sandbox projects. It can create a fully functional Kubernetes cluster in under 5 seconds because it does not need to provision any infrastructure -- it just starts a pod with an API server and a syncer.
+- **vCluster was created by Loft Labs** and provides hyperscaler-grade isolation for multi-tenant scenarios. It can create a fully functional Kubernetes cluster in under 5 seconds because it does not need to provision any infrastructure -- it just starts a pod with an API server and a syncer.
 
 - **Kamaji uses a single etcd cluster for multiple tenants by default**, with key-prefix isolation. Each tenant's data is stored under a unique prefix (e.g., `/tenant-alpha/`). This contrasts with managed Kubernetes services (EKS, GKE, AKS), which provision dedicated etcd instances per tenant cluster to guarantee strict isolation and prevent noisy-neighbor failures.
 
@@ -437,31 +461,20 @@ done
 </details>
 
 ### Question 2
-What is the fundamental architectural difference between vCluster and Kamaji?
+A team wants to run pods from multiple tenants on the exact same physical bare-metal servers to maximize CPU density, but they want each tenant to feel like they have their own cluster with custom CRDs. They are considering Kamaji. Why will Kamaji fail to meet these requirements, and what is the alternative?
 
 <details>
 <summary>Answer</summary>
 
-**vCluster virtualizes the entire cluster (control plane + worker view), while Kamaji virtualizes only the control plane.**
+**Kamaji requires dedicated worker nodes per tenant and cannot share them.**
 
-**vCluster**:
-- Runs API server + syncer inside a host cluster namespace
-- Worker nodes are **shared** with the host cluster
-- Pods created in a vCluster actually run on host worker nodes
-- The syncer translates between vCluster resources and host namespace resources
-- Tenant sees virtual nodes (mapped from host nodes)
-- Use case: multi-tenancy on shared infrastructure
+**Kamaji**: Virtualizes only the control plane. It requires dedicated worker nodes for each tenant cluster to join via kubeadm. You cannot share the same physical server for workloads across multiple tenants.
 
-**Kamaji**:
-- Runs API server + controller manager + scheduler as pods in a management cluster
-- Worker nodes are **dedicated** per tenant -- real nodes that join via kubeadm
-- Pods run on the tenant's own worker nodes, not shared
-- No syncer needed -- it is a real cluster with real workers
-- Use case: managed Kubernetes service where tenants get their own machines
+**Alternative (vCluster)**: vCluster virtualizes the entire cluster (control plane + worker view), mapping virtual pods to the host cluster's shared worker nodes via a syncer component. This allows maximum CPU density on the same physical bare-metal servers while providing logical API isolation for CRDs.
 
 **Analogy**:
-- vCluster is like shared office space (WeWork) -- same building, partitioned
-- Kamaji is like a property management company -- they manage the leasing office (control plane) but each tenant has their own building (workers)
+- vCluster is like shared office space (WeWork) -- same building, partitioned.
+- Kamaji is like a property management company -- they manage the leasing office (control plane) but each tenant has their own building (workers).
 </details>
 
 ### Question 3
