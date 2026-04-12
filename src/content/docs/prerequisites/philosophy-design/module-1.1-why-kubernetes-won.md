@@ -28,7 +28,7 @@ It was 3 AM on Black Friday 2014. A developer at a fast-growing e-commerce start
 
 That developer's nightmare is exactly why Kubernetes exists. Not as an academic exercise, not as a Google vanity project — but because **manually managing containers at scale is a problem that will eat you alive.**
 
-Kubernetes didn't win by accident. Understanding the orchestration wars helps you appreciate why certain patterns exist and why alternatives failed.
+As of 2025, 82% of organizations run Kubernetes in production (up from 66% in 2023). Kubernetes didn't win by accident. Understanding the orchestration wars helps you appreciate why certain patterns exist and why alternatives failed.
 
 ---
 
@@ -73,7 +73,7 @@ Cons:
 - Scaling limitations
 ```
 
-**What Happened**: Docker Inc. bet everything on Swarm. When Kubernetes won, Docker Inc. eventually pivoted (acquired by Mirantis in 2019). Swarm is now effectively deprecated.
+**What Happened**: Docker Inc. bet everything on Swarm. When Kubernetes won, Docker Inc. eventually pivoted (acquired by Mirantis in 2019). Swarm Mode is now in a maintenance-only status—while Mirantis has committed to supporting it until at least 2030, there is no active development of new features.
 
 ### Apache Mesos + Marathon
 
@@ -95,7 +95,27 @@ Cons:
 - Required separate components (Marathon, Chronos)
 ```
 
-**What Happened**: Twitter deprecated Mesos in 2020, moving to Kubernetes. Mesosphere (the company) pivoted to become D2iQ and now sells... Kubernetes. Marathon is abandoned.
+**What Happened**: Twitter deprecated Mesos in 2020, moving to Kubernetes. Mesosphere (the company) pivoted to become D2iQ and now sells Kubernetes. Apache Mesos was formally retired and moved to the Apache Attic in August 2025 due to inactivity. Marathon is abandoned.
+
+### HashiCorp Nomad
+
+**The Pragmatic Choice**
+
+HashiCorp's orchestrator, released in 2015. Designed as a single binary that handles both containers and non-containerized workloads.
+
+```text
+Pros:
+- Incredibly simple to deploy (single binary)
+- Runs non-containerized workloads (like Java or binaries) easily
+- Integrates tightly with the HashiCorp ecosystem (Consul, Vault)
+- Lower operational overhead than Kubernetes
+
+Cons:
+- Smaller ecosystem compared to Kubernetes
+- Less momentum for pure container-first architectures
+```
+
+**What Happened**: Nomad didn't "lose" in the same way Swarm or Mesos did. It survived by carving out a strong, profitable niche for organizations that prioritize simplicity or need to orchestrate mixed workloads without the immense complexity of Kubernetes.
 
 ### Kubernetes
 
@@ -150,7 +170,7 @@ Google had run containers at scale for over a decade with Borg. Kubernetes embod
 - Failures at every possible level
 - What actually works at scale
 
-This wasn't a startup's first attempt—it was Google's third-generation system, open-sourced.
+This wasn't a startup's first attempt—it was Google's third-generation system. Google chose to open-source it to commoditize the container orchestration layer, preventing competitors like AWS from locking developers into proprietary infrastructure and ensuring workloads could more easily migrate to Google Cloud.
 
 ### 3. The Ecosystem Effect & The Spotify Case Study
 
@@ -160,7 +180,7 @@ Kubernetes made smart architectural decisions:
 - **API-first**: Everything is an API, enabling tooling
 
 **The Spotify Case Study:**
-Consider Spotify's migration in 2018. They had built their own open-source orchestrator called Helios. Why did they abandon it for Kubernetes? Because while Helios deployed containers, Kubernetes offered an entire ecosystem. Spotify wanted to use industry-standard tools for logging, monitoring (Prometheus), and service mesh, all of which natively integrated with Kubernetes. By 2019, Kubernetes held over 75% of the container orchestration market share, making homegrown solutions impossible to justify.
+Consider Spotify's migration in 2018. They had built their own open-source orchestrator called Helios. Why did they abandon it for Kubernetes? Because while Helios deployed containers, Kubernetes offered an entire ecosystem. Spotify wanted to use industry-standard tools for logging, monitoring (Prometheus), and service mesh, all of which natively integrated with Kubernetes. By 2019, Kubernetes held over 75% of the container orchestration market share, making homegrown solutions impossible to justify. *(Note: While some secondary sources today claim Kubernetes holds roughly 92% market share, this specific figure is unverified by primary analysts. However, the 2025 CNCF Annual Survey definitively confirms that 93% of organizations are now using or evaluating Kubernetes.)*
 
 ### 4. Cloud Provider Adoption
 
@@ -169,7 +189,7 @@ By 2017, all major cloud providers offered managed Kubernetes:
 - Amazon Elastic Kubernetes Service (EKS)
 - Azure Kubernetes Service (AKS)
 
-> **Think About It**: Why would AWS want to offer a managed service based on a tool originally created by Google? 
+> **Stop and think**: Why would AWS want to offer a managed service based on a tool originally created by Google? 
 
 This was unprecedented. Competitors usually don't adopt each other's technology. But Kubernetes was:
 - Open source (no single vendor owns it)
@@ -210,7 +230,6 @@ When evaluating any new foundational infrastructure technology today (like WebAs
 
 2015: Kubernetes 1.0 released (July)
       CNCF formed, Kubernetes donated
-      "Orchestration wars" begin
 
 2016: Pokemon Go runs on Kubernetes (massive validation)
       All major clouds announce K8s support
@@ -218,54 +237,52 @@ When evaluating any new foundational infrastructure technology today (like WebAs
 2017: Docker Inc. adds Kubernetes support (surrender)
       Kubernetes becomes de facto standard
 
-2018-2019: Swarm deprecated, Mesos abandoned
-           Kubernetes dominance complete
+2018: Kubernetes first CNCF project to graduate (March)
+      EKS and AKS become generally available (June)
+      Twitter begins deprecating Mesos
+
+2019: Docker Swarm enters maintenance mode under Mirantis
 
 2020+: Focus shifts from "should we use K8s?" to
        "how do we use K8s better?"
+
+2025: Apache Mesos formally retired
 ```
 
 ---
 
 ## Visualization
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│              THE ORCHESTRATION WARS (2014-2018)             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  2014        2015        2016        2017        2018       │
-│    │           │           │           │           │        │
-│    ▼           ▼           ▼           ▼           ▼        │
-│                                                             │
-│  ████████████████████████████████████████████████████████   │
-│  █ Docker Swarm                        ░░░░ deprecated      │
-│  ████████████████████████████████████████████████████████   │
-│                                                             │
-│  ██████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░   │
-│  █ Mesos/Marathon              ░░░░ abandoned               │
-│  ██████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░   │
-│                                                             │
-│  ████████████████████████████████████████████████████████   │
-│  █ Kubernetes ════════════════════════════════► WINNER     │
-│  ████████████████████████████████████████████████████████   │
-│                                                             │
-│  Key Events:                                                │
-│  • 2015: K8s 1.0, CNCF formed                              │
-│  • 2016: Pokemon Go validates K8s at scale                 │
-│  • 2017: Docker adds K8s support (white flag)              │
-│  • 2018: Mesos deprecated by Twitter                       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+gantt
+    title The Orchestration Wars
+    dateFormat YYYY
+    axisFormat %Y
+    
+    section Docker Swarm
+    Active Development :2014, 2019
+    Maintenance Only   :done, 2019, 2026
+    
+    section Mesos/Marathon
+    Active Adoption    :2014, 2018
+    Abandoned/Retired  :done, 2018, 2025
+    
+    section Kubernetes
+    Rapid Growth       :active, 2014, 2018
+    De Facto Standard  :active, 2018, 2026
 ```
 
 ---
 
 ## Did You Know?
 
-- **Kubernetes means "helmsman" in Greek.** The logo is a ship's wheel (helm). The seven spokes represent the original seven developers.
+- **Kubernetes means "helmsman" or "pilot" in Ancient Greek.** It is also the etymological root of "cybernetics". The abbreviation **K8s** results from counting the 8 letters between the "K" and the "s".
 
-- **Borg was named after Star Trek.** Google's internal predecessor to Kubernetes. Other Google projects followed: Omega (another Star Trek reference).
+- **The logo is a ship's wheel, but the 7 spokes are a sci-fi reference.** They are a homage to the Star Trek character "Seven of Nine", reflecting the project's original internal codename at Google: *Project Seven of Nine* (a nod to Borg).
+
+- **Kubernetes was created by Craig McLuckie, Joe Beda, and Brendan Burns at Google.** It was publicly announced at the first DockerCon on June 10, 2014, with the first GitHub commit containing just 250 files.
+
+- **Borg was named after Star Trek.** Google's internal predecessor to Kubernetes. Another Google project followed: Omega. The *Borg, Omega, and Kubernetes* paper (2016) details how these systems inspired K8s.
 
 - **Pokemon Go's launch was a K8s milestone.** When it launched in 2016, traffic was 50x expected. Kubernetes scaled the backend automatically. This was the "proof point" that convinced many enterprises.
 
@@ -294,7 +311,7 @@ When learning about container orchestration history and applying its lessons, be
 | Believing vendor-locked orchestrators are safer | History shows tools owned by a single company (like Docker Swarm) struggle to gain broad ecosystem support. | Prioritize CNCF-backed or open-governance tools for long-term infrastructure. |
 | Ignoring the CNCF ecosystem | Trying to build custom logging or monitoring instead of using standard K8s integrations wastes the platform's main advantage. | Leverage ecosystem tools like Prometheus and Fluentd that integrate natively. |
 | Focusing only on Google's role | While Google started it, the neutral CNCF governance was the actual catalyst for AWS and Azure adoption. | Recognize the importance of open foundations in enterprise tech adoption. |
-| Assuming Kubernetes replaces Docker | K8s orchestrates containers, but it still needs a container runtime (like containerd, originally part of Docker) to run them. | Differentiate between the container image/runtime and the orchestrator. |
+| Assuming Kubernetes replaces Docker | K8s orchestrates containers, but it still needs a container runtime (like containerd) to run them. | Differentiate between the container image/runtime and the orchestrator. |
 | Trying to learn K8s without understanding the "Why" | Jumping straight into YAML without understanding the problems K8s solves leads to rote memorization. | Learn the history and the declarative philosophy first. |
 
 ---
@@ -321,37 +338,37 @@ Understanding why Kubernetes won helps you:
 2. **Scenario**: A major tech company releases a new, proprietary container orchestrator that boasts faster scheduling than Kubernetes. They offer it for free, but it only runs on their specific cloud platform. Based on why Kubernetes won, why is this new tool likely to fail in the broader market?
    <details>
    <summary>Answer</summary>
-   The new tool lacks neutral governance and broad cloud provider adoption, which were critical to Kubernetes' success under the CNCF. Enterprises avoid vendor lock-in for foundational infrastructure. Without an open, extensible ecosystem where competitors can also contribute, the proprietary tool will struggle to build the massive community and tooling ecosystem that made Kubernetes the industry standard.
+   The new tool lacks neutral governance and broad cloud provider adoption, which were critical to Kubernetes' success under the CNCF. Enterprises avoid vendor lock-in for foundational infrastructure. Without an open, extensible ecosystem where competitors can also contribute, the proprietary tool will struggle to build the massive community and tooling ecosystem that made Kubernetes the industry standard. Furthermore, relying on a single cloud provider restricts hybrid and multi-cloud strategies, which many organizations require.
    </details>
 
 3. **Scenario**: Your team is debating between Docker Swarm and Kubernetes for a new enterprise application that will eventually span across AWS and on-premises servers. An engineer argues for Swarm because "it's simpler to set up." What historical context should you provide to counter this?
    <details>
    <summary>Answer</summary>
-   While Swarm is indeed simpler initially, it is effectively deprecated and lost the orchestration wars specifically because it struggled with complex, multi-cloud enterprise use cases. Kubernetes won because its extensible, declarative architecture handles complex networking and hybrid deployments far better. Choosing an abandoned technology for a new enterprise project introduces severe long-term support and ecosystem integration risks.
+   While Swarm is indeed simpler initially, it is in a maintenance-only status with no new features being actively developed. It struggled in the orchestration wars specifically because it could not handle complex, multi-cloud enterprise use cases as well as its competitors. Kubernetes won because its extensible, declarative architecture handles complex networking and hybrid deployments far better. Choosing a technology that lacks an active, growing ecosystem for a new enterprise project introduces severe long-term support and integration risks.
    </details>
 
 4. **Scenario**: During an interview, you are asked: "If you have a container crashing repeatedly, how does a declarative orchestrator handle it differently than a sysadmin writing an imperative script?" How do you respond?
    <details>
    <summary>Answer</summary>
-   An imperative script executes a series of steps (e.g., "start container, check status, restart if down") and can easily fail if an unexpected state occurs, like the server running out of disk space. A declarative orchestrator, like Kubernetes, constantly compares the current state of the cluster to the desired state (e.g., "always have 3 replicas running"). It continuously works to reconcile the two, utilizing built-in intelligence to reschedule the container on a healthier node without manual intervention.
+   An imperative script executes a series of steps (e.g., "start container, check status, restart if down") and can easily fail if an unexpected state occurs, like the server running out of disk space. A declarative orchestrator, like Kubernetes, constantly compares the current state of the cluster to the desired state (e.g., "always have 3 replicas running"). It continuously works to reconcile the two, utilizing built-in intelligence to reschedule the container on a healthier node without manual intervention. This continuous reconciliation loop is far more resilient than one-off imperative commands.
    </details>
 
 5. **Scenario**: Your company uses Kubernetes, but a developer complains that writing YAML files is tedious and wants to go back to manually starting containers using `docker run`. What fundamental feature of Kubernetes' design are they failing to leverage?
    <details>
    <summary>Answer</summary>
-   The developer is missing the power of the declarative model. While writing YAML can be tedious, it serves as version-controlled documentation of the desired state. By using `docker run`, they are reverting to an imperative approach that cannot be easily scaled, audited, or self-healed by the orchestrator. The YAML files allow Kubernetes to automatically maintain the system's health and scalability dynamically.
+   The developer is missing the power of the declarative model. While writing YAML can be tedious, it serves as version-controlled documentation of the desired state that the system can read. By using `docker run`, they are reverting to an imperative approach that cannot be easily scaled, audited, or self-healed by the orchestrator. The YAML files allow Kubernetes to automatically maintain the system's health and scalability dynamically, effectively acting as the source of truth for the environment.
    </details>
 
 6. **Scenario**: You are evaluating a new observability tool for your cluster. Tool A is a standalone product built by a small startup. Tool B is a CNCF-incubating project built specifically using Kubernetes Custom Resource Definitions (CRDs). Why might Tool B be the safer long-term choice based on orchestration history?
    <details>
    <summary>Answer</summary>
-   Tool B leverages Kubernetes' extensible architecture (CRDs) and is part of the CNCF ecosystem, similar to how Kubernetes itself succeeded. The CNCF backing ensures neutral governance and community-driven development, reducing the risk of the project being abandoned or locked behind a paywall. Its native integration with the K8s API means it will likely work seamlessly with other standard ecosystem tools, avoiding friction.
+   Tool B leverages Kubernetes' extensible architecture (CRDs) and is part of the CNCF ecosystem, similar to how Kubernetes itself succeeded. The CNCF backing ensures neutral governance and community-driven development, reducing the risk of the project being abandoned or locked behind a paywall. Its native integration with the K8s API means it will likely work seamlessly with other standard ecosystem tools, avoiding friction. Adopting ecosystem-aligned tools ensures you benefit from the collective troubleshooting and operational experience of the broader community.
    </details>
 
 7. **Scenario**: A CTO looks at a diagram of Apache Mesos and Kubernetes. They note that Mesos was successfully used by Twitter at massive scale, yet it lost to Kubernetes. They ask you why the "best technology" doesn't always win. How do you explain the outcome?
    <details>
    <summary>Answer</summary>
-   Technology doesn't exist in a vacuum; ecosystem and usability are just as critical. Mesos was incredibly powerful but possessed a steep learning curve and was difficult to operate out of the box. Kubernetes struck the right balance by offering Google-grade orchestration concepts while cultivating an unmatched, open ecosystem. The neutral CNCF governance encouraged every major cloud provider to adopt it, creating a snowball effect that Mesos couldn't match.
+   Technology doesn't exist in a vacuum; ecosystem and usability are just as critical. Mesos was incredibly powerful but possessed a steep learning curve and was difficult to operate out of the box, requiring separate components like Marathon. Kubernetes struck the right balance by offering Google-grade orchestration concepts while cultivating an unmatched, open ecosystem. The neutral CNCF governance encouraged every major cloud provider to adopt it, creating a snowball effect that Mesos couldn't match. Ultimately, an accessible platform with standard API abstractions will outcompete a technically superior but fragmented alternative.
    </details>
 
 ---
