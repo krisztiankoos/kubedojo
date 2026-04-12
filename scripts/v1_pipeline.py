@@ -2125,8 +2125,13 @@ def step_check(content: str, path: Path) -> tuple[bool, list]:
 
 def run_module(module_path: Path, state: dict, max_retries: int = 4,
                models: dict | None = None, dry_run: bool = False,
-               refresh_fact_ledger: bool = False) -> bool:
-    """Run a single module through the full pipeline."""
+               refresh_fact_ledger: bool = False,
+               write_only: bool = False) -> bool:
+    """Run a single module through the full pipeline.
+
+    If write_only=True, skip fact-ledger, review, and checks — just draft
+    the content and save. Used for bulk content creation before review pass.
+    """
     m = models or MODELS
     key = module_key_from_path(module_path)
     ms = get_module_state(state, key)
@@ -2180,7 +2185,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
     # Phase 0: split-reviewer fact ledger (issue #225).
     # Model selection rationale is pinned by calibration data in:
     # docs/research/fact-grounding-calibration-2026-04-12.md
-    if not dry_run:
+    if not dry_run and not write_only:
         fact_model = m.get("fact_grounding", MODELS["fact_grounding"])
         fact_family = _model_family(fact_model)
         if fact_family not in INDEPENDENT_REVIEWER_FAMILIES:
@@ -2362,6 +2367,30 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
 
             ms["phase"] = "review"
             save_state(state)
+
+            # Write-only mode: save the draft and stop. No fact-ledger,
+            # no review, no checks. Used for bulk content creation.
+            if write_only:
+                _atomic_write_text(module_path, improved)
+                ms["phase"] = "write"  # keep at write so review pass picks it up
+                ms["last_run"] = datetime.now(UTC).isoformat()
+                save_state(state)
+                print(f"  ✓ WRITE-ONLY: {len(improved)} chars written to {module_path.name}")
+                # git commit the draft
+                try:
+                    subprocess.run(
+                        ["git", "add", str(module_path)],
+                        cwd=REPO_ROOT, capture_output=True, timeout=30,
+                    )
+                    subprocess.run(
+                        ["git", "commit", "-m",
+                         f"chore(content): write-only draft [{module_key_from_path(module_path)}]"],
+                        cwd=REPO_ROOT, capture_output=True, timeout=30,
+                    )
+                    print(f"  Committed draft")
+                except Exception:
+                    pass  # non-critical
+                return True
 
             # Content-aware fact ledger: verify claims actually made in the
             # written content. Merges with the pre-write topic-based ledger
@@ -2904,6 +2933,7 @@ def cmd_run(args):
         models=models,
         dry_run=getattr(args, "dry_run", False),
         refresh_fact_ledger=getattr(args, "refresh_fact_ledger", False),
+        write_only=getattr(args, "write_only", False),
     )
     sys.exit(0 if ok else 1)
 
@@ -2973,6 +3003,7 @@ def cmd_run_section(args):
     passed = 0
     failed = 0
     dry_run = getattr(args, "dry_run", False)
+    write_only = getattr(args, "write_only", False)
 
     workers = args.workers or 1
 
@@ -2986,6 +3017,7 @@ def cmd_run_section(args):
                 models=models,
                 dry_run=dry_run,
                 refresh_fact_ledger=getattr(args, "refresh_fact_ledger", False),
+                write_only=write_only,
             )
             if ok:
                 passed += 1
@@ -3002,6 +3034,7 @@ def cmd_run_section(args):
                     models,
                     dry_run,
                     getattr(args, "refresh_fact_ledger", False),
+                    write_only,
                 ): path
                 for path in modules
             }
@@ -3649,6 +3682,7 @@ def cmd_e2e(args):
                     state,
                     models=models,
                     refresh_fact_ledger=getattr(args, "refresh_fact_ledger", False),
+                    write_only=getattr(args, "write_only", False),
                 )
                 if ok:
                     resumed += 1
@@ -3703,6 +3737,7 @@ def cmd_e2e(args):
                 state,
                 models=models,
                 refresh_fact_ledger=getattr(args, "refresh_fact_ledger", False),
+                write_only=getattr(args, "write_only", False),
             )
             if ok:
                 passed += 1
@@ -3881,6 +3916,7 @@ models:
     rp.add_argument("module", help="Module path or key")
     rp.add_argument("--verbose", "-v", action="store_true", help="Print full output to stdout (default: quiet, log only)")
     rp.add_argument("--dry-run", action="store_true", help="Plan only — show the initial write plan without making changes")
+    rp.add_argument("--write-only", action="store_true", help="Draft content only — skip fact-ledger, review, and checks")
     rp.add_argument("--refresh-fact-ledger", action="store_true",
                     help="Bypass fact-ledger cache and regenerate from upstream sources")
 
@@ -3893,6 +3929,7 @@ models:
                      choices=["prerequisites", "linux", "cloud", "k8s"])
     rsp.add_argument("--skip-gaps", action="store_true", help="Skip gap check even if errors found")
     rsp.add_argument("--dry-run", action="store_true", help="Plan only — show the initial write plan without making changes")
+    rsp.add_argument("--write-only", action="store_true", help="Draft content only — skip fact-ledger, review, and checks")
     rsp.add_argument("--refresh-fact-ledger", action="store_true",
                      help="Bypass fact-ledger cache and regenerate from upstream sources")
 
@@ -3937,6 +3974,7 @@ examples:
     e2e_parser.add_argument("sections", nargs="*", help="track aliases or section paths (default: all)")
     e2e_parser.add_argument("--verbose", "-v", action="store_true", help="print full output to stdout (default: quiet, log only)")
     e2e_parser.add_argument("--no-translate", action="store_true", help="skip UK translation step")
+    e2e_parser.add_argument("--write-only", action="store_true", help="Draft content only — skip fact-ledger, review, and checks")
     e2e_parser.add_argument("--refresh-fact-ledger", action="store_true",
                             help="Bypass fact-ledger cache and regenerate from upstream sources")
 

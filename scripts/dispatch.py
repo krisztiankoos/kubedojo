@@ -64,7 +64,7 @@ _RATE_LIMIT_PATTERNS = (
     "Too Many Requests",
 )
 
-_GEMINI_INTER_CALL_DELAY = 3.0
+_GEMINI_INTER_CALL_DELAY = 0.5  # Reduced from 3.0s per Gemini capacity consultation (2026-04-12)
 _last_gemini_call_time: float = 0.0
 
 
