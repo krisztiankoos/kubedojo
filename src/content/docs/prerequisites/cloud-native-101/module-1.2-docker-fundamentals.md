@@ -55,7 +55,7 @@ sudo usermod -aG docker $USER
 ### Verify Installation
 ```bash
 docker --version
-# Docker version 24.x.x, build xxxxx
+# Docker version 29.x.x, build xxxxx
 
 docker run hello-world
 # Should show "Hello from Docker!" message
@@ -69,12 +69,13 @@ docker run hello-world
 
 ```bash
 # Run nginx (a web server)
-docker run -d -p 8080:80 nginx
+docker run -d --name my-nginx -p 8080:80 nginx
 
 # What happened:
 # - Pulled nginx image from Docker Hub
 # - Created a container from the image
 # - Started the container in detached mode (-d)
+# - Named the container "my-nginx" (--name)
 # - Mapped port 8080 (host) to port 80 (container)
 ```
 
@@ -86,13 +87,13 @@ curl http://localhost:8080
 # View running containers
 docker ps
 # CONTAINER ID  IMAGE  COMMAND                 STATUS         PORTS                  NAMES
-# a1b2c3d4e5f6  nginx  "/docker-entrypoint.…"  Up 10 seconds  0.0.0.0:8080->80/tcp   tender_tesla
+# a1b2c3d4e5f6  nginx  "/docker-entrypoint.…"  Up 10 seconds  0.0.0.0:8080->80/tcp   my-nginx
 
 # Stop the container
-docker stop a1b2c3d4e5f6
+docker stop my-nginx
 
 # Remove the container
-docker rm a1b2c3d4e5f6
+docker rm my-nginx
 ```
 
 ---
@@ -182,7 +183,7 @@ WORKDIR /app
 # Copy dependency file
 COPY requirements.txt .
 
-# Install dependencies
+# Install dependencies (use --no-cache-dir to save space by omitting downloaded wheels)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
@@ -257,6 +258,7 @@ WORKDIR /app
 
 # Install dependencies first (better caching)
 COPY requirements.txt .
+# Use --no-cache-dir to prevent pip from storing downloaded packages, keeping the image small
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
@@ -316,9 +318,9 @@ CMD ["python", "app.py"]
 
 For local development with multiple services:
 
-**docker-compose.yml**
+**compose.yaml**
 ```yaml
-version: '3.8'
+# version: '3.8' # Obsolete in modern Compose, left for backward compatibility
 
 services:
   web:
@@ -362,35 +364,14 @@ docker compose down -v
 
 ## Visualization: Docker Workflow
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              DOCKER WORKFLOW                                │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. WRITE                                                   │
-│     ┌─────────────┐                                        │
-│     │ Dockerfile  │                                        │
-│     └──────┬──────┘                                        │
-│            │                                                │
-│            ▼                                                │
-│  2. BUILD                                                   │
-│     ┌─────────────┐                                        │
-│     │docker build │──────► Image (myapp:v1)                │
-│     └──────┬──────┘                                        │
-│            │                                                │
-│            ▼                                                │
-│  3. PUSH (optional)                                        │
-│     ┌─────────────┐                                        │
-│     │docker push  │──────► Registry (Docker Hub, ECR...)   │
-│     └──────┬──────┘                                        │
-│            │                                                │
-│            ▼                                                │
-│  4. RUN                                                     │
-│     ┌─────────────┐                                        │
-│     │docker run   │──────► Container (running instance)    │
-│     └─────────────┘                                        │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A[Dockerfile] -->|1. WRITE| B[docker build]
+    B -->|2. BUILD| C[(Image: myapp:v1)]
+    C -->|3. PUSH optional| D[docker push]
+    D --> E[(Registry: Docker Hub, ECR)]
+    C -->|4. RUN| F[docker run]
+    F --> G{{Container: running instance}}
 ```
 
 ---
@@ -466,6 +447,7 @@ Container 3: redis
 - **The `latest` tag is not special.** Docker doesn't automatically update it. It's just a convention that means "whatever was last pushed."
 - **Docker Desktop is not Docker.** Docker (the tool) is free. Docker Desktop (the GUI/VM for Mac/Windows) has licensing requirements for businesses.
 - **BuildKit is the default builder.** Since Docker 23.0, the BuildKit engine is the default, offering parallel execution, better caching, and improved performance over the legacy builder.
+- **Docker uses containerd under the hood.** Docker Engine acts as a client that delegates container execution to `containerd` and `runc` (the industry-standard OCI runtimes).
 
 ---
 
@@ -568,6 +550,26 @@ CMD npm start
 5. Run the container in detached mode, mapping port 8080 on your host to port 80 in the container.
 6. Verify by running `curl http://localhost:8080`.
 
+<details>
+<summary>View Solution</summary>
+
+```bash
+mkdir dojo-web && cd dojo-web
+echo "Hello KubeDojo!" > index.html
+
+cat <<EOF > Dockerfile
+FROM nginx:alpine
+COPY index.html /usr/share/nginx/html/index.html
+EOF
+
+docker build -t dojo-web:v1 .
+docker run -d --name dojo-web-container -p 8080:80 dojo-web:v1
+
+# Checkpoint verification
+curl http://localhost:8080
+```
+</details>
+
 ### Level 2: Intermediate (Environment and Logs)
 **Task**: Debug a failing container using logs and environment variables.
 1. Run `docker run -d --name db postgres:15`.
@@ -577,6 +579,29 @@ CMD npm start
 5. Run it again, this time passing the required environment variable `POSTGRES_PASSWORD=secret`.
 6. Verify it stays running.
 
+<details>
+<summary>View Solution</summary>
+
+```bash
+docker run -d --name db postgres:15
+
+# Checkpoint: verify it exited
+docker ps -a
+
+# View logs to find the error
+docker logs db
+
+# Cleanup
+docker rm db
+
+# Run with correct environment variable
+docker run -d --name db -e POSTGRES_PASSWORD=secret postgres:15
+
+# Checkpoint: verify it stays running
+docker ps
+```
+</details>
+
 ### Level 3: Advanced (Optimization and Exec)
 **Task**: Optimize a build and explore the running container.
 1. Write a Dockerfile that installs `curl` in an `ubuntu` base image.
@@ -584,6 +609,33 @@ CMD npm start
 3. Build and run the container interactively (`-it`) with the `bash` command.
 4. Inside the container, prove you are running as root by typing `whoami`.
 5. Type `exit` to leave. Notice the container stops. How would you keep it running in the background and execute into it later?
+
+<details>
+<summary>View Solution</summary>
+
+```bash
+cat <<EOF > Dockerfile
+FROM ubuntu:22.04
+RUN apt-get update && apt-get install -y curl
+EOF
+
+docker build -t my-ubuntu-curl .
+
+# Run interactively
+docker run -it --name test-curl my-ubuntu-curl bash
+
+# Inside container:
+# whoami
+# exit
+
+# To run in background and exec later:
+docker run -d --name bg-curl my-ubuntu-curl sleep infinity
+docker exec -it bg-curl bash
+```
+
+**Explanation for Layer Caching:**
+Combining `apt-get update` and `apt-get install` ensures that the package index is never cached independently of the packages being installed. If they were separate layers, adding a new package to the install list later would use a stale, cached update layer, potentially leading to "package not found" errors.
+</details>
 
 ---
 
