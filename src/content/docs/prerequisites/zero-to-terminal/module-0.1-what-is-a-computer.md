@@ -71,7 +71,7 @@ Think of it this way:
 
 A faster CPU is like a faster chef -- they can handle more orders per second.
 
-**What you'll see on your computer**: Something like "Intel Core i7" or "Apple M2" or "AMD Ryzen 5". These are brand names for CPUs, like saying "Chef Gordon" or "Chef Julia". The number of **cores** is like having multiple chefs -- a 4-core CPU has 4 chefs working at the same time.
+**What you'll see on your computer**: Something like "Intel Core Ultra" or "Apple M5" or "AMD Ryzen 5". These are brand names for CPUs, like saying "Chef Gordon" or "Chef Julia". The number of **cores** is like having multiple chefs -- a 4-core CPU has 4 chefs working at the same time.
 
 ---
 
@@ -123,6 +123,8 @@ Two types of pantry:
 
 **What you'll see on your computer**: Storage is measured in gigabytes (GB) or terabytes (TB). 1 TB = 1,000 GB. A typical laptop has 256 GB to 1 TB of storage.
 
+**When your disk fills up**, your computer can no longer save files, download updates, or install programs. More importantly, if your RAM is full and the OS tries to "swap" data to a completely full disk, your system can freeze or crash because it has no space left to operate.
+
 ---
 
 ## The Operating System: Your Restaurant Manager
@@ -138,7 +140,7 @@ The OS:
 ```
 The three main operating systems:
 
-  Windows  → The most common (used by ~74% of desktop computers)
+  Windows  → The most common (used by ~67% of desktop computers)
   macOS    → Apple's system (what runs on Macs)
   Linux    → The open-source one (runs most of the world's servers)
 ```
