@@ -42,25 +42,21 @@ The total cost: $12K in lost transactions and a very stressed team. A Deployment
 
 Pods alone have problems:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              PODS ALONE vs DEPLOYMENTS                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  NAKED POD:                                                │
-│  - Pod dies → stays dead                                   │
-│  - Node fails → Pod is lost                                │
-│  - Can't scale easily                                       │
-│  - Updates require manual delete/create                    │
-│                                                             │
-│  WITH DEPLOYMENT:                                           │
-│  - Pod dies → automatically recreated                      │
-│  - Node fails → rescheduled elsewhere                      │
-│  - Scale with one command                                  │
-│  - Rolling updates with zero downtime                      │
-│  - Rollback to previous versions                           │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Naked Pods
+        NP1[Pod dies] -->|Result| NP2[Stays dead]
+        NP3[Node fails] -->|Result| NP4[Pod is lost]
+        NP5[Updates] -->|Result| NP6[Manual delete/create]
+        NP7[Scaling] -->|Result| NP8[Can't scale easily]
+    end
+    subgraph With Deployment
+        D1[Pod dies] -->|Result| D2[Automatically recreated]
+        D3[Node fails] -->|Result| D4[Rescheduled elsewhere]
+        D5[Updates] -->|Result| D6[Rolling updates with zero downtime]
+        D7[Scaling] -->|Result| D8[Scale with one command]
+        D9[Rollback] -->|Result| D10[Rollback to previous versions]
+    end
 ```
 
 ---
@@ -115,36 +111,12 @@ kubectl apply -f deployment.yaml
 
 ## Deployment Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              DEPLOYMENT HIERARCHY                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                   DEPLOYMENT                         │   │
-│  │  - Defines desired state                            │   │
-│  │  - Manages ReplicaSets                              │   │
-│  │  - Handles updates/rollbacks                        │   │
-│  └────────────────────┬────────────────────────────────┘   │
-│                       │                                     │
-│                       ▼                                     │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                   REPLICASET                        │   │
-│  │  - Ensures N pods are running                       │   │
-│  │  - Created/managed by Deployment                    │   │
-│  │  - Usually don't interact directly                  │   │
-│  └────────────────────┬────────────────────────────────┘   │
-│                       │                                     │
-│         ┌─────────────┼─────────────┐                      │
-│         ▼             ▼             ▼                      │
-│  ┌───────────┐ ┌───────────┐ ┌───────────┐               │
-│  │    POD    │ │    POD    │ │    POD    │               │
-│  │   nginx   │ │   nginx   │ │   nginx   │               │
-│  └───────────┘ └───────────┘ └───────────┘               │
-│                                                             │
-│  replicas: 3 → 3 pods maintained automatically             │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    D["<b>DEPLOYMENT</b><br/>Defines desired state<br/>Manages ReplicaSets<br/>Handles updates/rollbacks"] -->|Manages| RS["<b>REPLICASET</b><br/>Ensures N pods are running<br/>Created/managed by Deployment<br/>Usually don't interact directly"]
+    RS -->|replicas: 3| P1["<b>POD</b><br/>nginx"]
+    RS --> P2["<b>POD</b><br/>nginx"]
+    RS --> P3["<b>POD</b><br/>nginx"]
 ```
 
 ---
@@ -219,7 +191,7 @@ kubectl rollout undo deployment nginx --to-revision=2
 
 ## Rolling Update Strategy
 
-Deployments update Pods gradually:
+Deployments update Pods gradually. By default, both `maxSurge` and `maxUnavailable` are set to `25%`.
 
 ```yaml
 spec:
@@ -230,30 +202,16 @@ spec:
       maxUnavailable: 25%  # Max pods that can be unavailable
 ```
 
+```mermaid
+graph TD
+    S1["<b>Initial state</b> (3 replicas, v1)<br/>[v1] [v1] [v1]"] --> S2["<b>Update begins</b><br/>[v1] [v1] [v1] <b>[v2]</b><br/><i>New pod created</i>"]
+    S2 --> S3["<b>New pod ready</b><br/>[v1] [v1] <b>[v2] [v2]</b><br/><i>Old pod terminated</i>"]
+    S3 --> S4["<b>Continue</b><br/>[v1] <b>[v2] [v2] [v2]</b>"]
+    S4 --> S5["<b>Complete</b><br/><b>[v2] [v2] [v2]</b><br/><i>All pods updated</i>"]
+    style S5 stroke:#333,stroke-width:2px,fill:#d4edda,color:#155724
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              ROLLING UPDATE PROCESS                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Initial state (3 replicas, v1):                           │
-│  [v1] [v1] [v1]                                            │
-│                                                             │
-│  Update to v2 begins:                                      │
-│  [v1] [v1] [v1] [v2]    ← New pod created                  │
-│                                                             │
-│  New pod ready:                                            │
-│  [v1] [v1] [v2] [v2]    ← Old pod terminated               │
-│                                                             │
-│  Continue:                                                  │
-│  [v1] [v2] [v2] [v2]                                       │
-│                                                             │
-│  Complete:                                                  │
-│  [v2] [v2] [v2]         ← All pods updated                 │
-│                                                             │
-│  Zero downtime! Traffic served throughout.                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+> **Note**: This process ensures zero downtime! Traffic is served throughout the entire update.
 
 ---
 
@@ -274,8 +232,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 1                # Defaults to 25% if not specified
+      maxUnavailable: 0          # Defaults to 25% if not specified
   template:                      # Pod template (same as Pod spec)
     metadata:
       labels:
@@ -322,13 +280,12 @@ kubectl get deployment nginx
 
 ## Did You Know?
 
-- **Deployments don't directly manage Pods.** They manage ReplicaSets, which manage Pods. This enables rollback.
-
-- **Each update creates a new ReplicaSet.** Old ReplicaSets are kept (with 0 replicas) for rollback history.
-
-- **`maxSurge: 0, maxUnavailable: 0` is impossible.** You can't update without either creating new pods or terminating old ones.
-
+- **Deployments don't directly manage Pods.** They manage ReplicaSets, which manage Pods. This enables rollback. ReplicaSet names are appended with a hash (e.g., `nginx-7b5c8f9`), and Pods carry a matching `pod-template-hash` label.
+- **Each update creates a new ReplicaSet.** Old ReplicaSets are kept (with 0 replicas) for rollback history. The `.spec.revisionHistoryLimit` dictates how many old ReplicaSets to keep (defaults to 10); setting it to 0 prevents rollback entirely.
+- **`maxSurge: 0, maxUnavailable: 0` is impossible.** You can't update without either creating new pods or terminating old ones. By default, both are set to 25%.
 - **`kubectl rollout restart`** triggers a new rollout without changing the spec. Useful for pulling new images with the same tag.
+- **Rollouts have a time limit.** The `.spec.progressDeadlineSeconds` defaults to 600 seconds (10 minutes). If exceeded, the Deployment condition `Progressing` becomes `False` (Reason: `ProgressDeadlineExceeded`), and `kubectl rollout status` will exit with a status code of 1.
+- **Let the HPA scale.** If you use a HorizontalPodAutoscaler (HPA) to manage a Deployment's replicas, you should omit `.spec.replicas` from the Deployment manifest to avoid fighting the autoscaler during apply.
 
 ---
 
@@ -337,8 +294,9 @@ kubectl get deployment nginx
 | Mistake | Why It Hurts | Solution |
 |---------|--------------|----------|
 | Selector doesn't match template labels | Deployment creates orphaned pods or API rejects the YAML entirely. | Ensure `matchLabels` exactly matches the Pod template labels. |
+| Updating the selector later | The `.spec.selector` field is immutable after creation in `apps/v1`. | You must delete and recreate the Deployment if you need to change its label selector. |
 | Using `:latest` image tag | Rollbacks are unpredictable; nodes won't pull the new image if the tag name hasn't changed. | Use immutable, specific version tags (like git commit hashes). |
-| Editing ReplicaSet directly | Changes are overwritten by the Deployment during the next reconciliation loop. | Always modify the Deployment directly, never the underlying ReplicaSet. |
+| Editing ReplicaSet directly | Changes are overwritten by the Deployment during the next reconciliation loop. | Always modify the Deployment directly, never the underlying ReplicaSet. Any direct modifications to objects managed by a higher-level controller will be reverted. |
 | Recreate strategy on highly available apps | Causes hard downtime as all old pods are killed before new ones start. | Use `RollingUpdate` unless the application strictly forbids concurrent versions. |
 | Missing resource limits | New pods during a rollout might starve existing pods or crash the node. | Always set resource requests and limits in the pod template. |
 | Ignoring rollout status | A broken rollout can hang indefinitely in the background without operators realizing it. | Always run `kubectl rollout status` after applying changes. |
@@ -352,37 +310,37 @@ kubectl get deployment nginx
 1. **Scenario**: You are running a legacy stateful application that cannot have two instances running simultaneously because they will corrupt the database. You need to deploy a new version. Which deployment strategy should you choose and why?
    <details>
    <summary>Answer</summary>
-   You must use the `Recreate` deployment strategy instead of the default `RollingUpdate`. The `RollingUpdate` strategy starts new Pods before terminating the old ones, which would result in two instances running concurrently and corrupting your database. By choosing `Recreate`, the Deployment will first terminate all existing Pods and wait for them to fully shut down. Only after the old Pods are completely gone will it start the new Pods, guaranteeing absolute isolation between versions at the cost of some downtime.
+   You must use the `Recreate` deployment strategy instead of the default `RollingUpdate`. The `RollingUpdate` strategy starts new Pods before terminating the old ones, which would result in two instances running concurrently and corrupting your database. By choosing `Recreate`, the Deployment will first terminate all existing Pods and wait for them to fully shut down. Only after the old Pods are completely gone will it start the new Pods, guaranteeing absolute isolation between versions at the cost of some downtime. This strategy is essential for legacy systems that cannot handle concurrent database locks or shared state during upgrades.
    </details>
 
 2. **Scenario**: An on-call engineer notices a Deployment's Pods are consuming too much memory. In a panic, they edit the ReplicaSet directly using `kubectl edit rs` to change the resource limits. What happens next and why?
    <details>
    <summary>Answer</summary>
-   The changes made directly to the ReplicaSet will be completely ignored or quickly overwritten, and the Pods will not be updated. Deployments are designed to act as the declarative source of truth for their underlying ReplicaSets. If the ReplicaSet drifts from the Deployment's template, or if you try to trigger an update at the ReplicaSet layer, the Deployment controller will reconcile the state back to match its own specifications. To fix the memory issue, the engineer must edit the Deployment directly, which will automatically generate a brand new ReplicaSet with the correct limits.
+   The changes made directly to the ReplicaSet will be completely ignored or quickly overwritten, and the Pods will not be updated. Deployments are designed to act as the declarative source of truth for their underlying ReplicaSets. If the ReplicaSet drifts from the Deployment's template, or if you try to trigger an update at the ReplicaSet layer, the Deployment controller will reconcile the state back to match its own specifications. To fix the memory issue, the engineer must edit the Deployment directly, which will automatically generate a brand new ReplicaSet with the correct limits. Any direct modifications to objects managed by a higher-level controller will be reverted.
    </details>
 
 3. **Scenario**: You trigger a Deployment update with a new image tag, but 10 minutes later, users complain the app is still on the old version. You run `kubectl get pods` and see `ImagePullBackOff` for the new pods, while old pods are still `Running`. Why did the Deployment behave this way?
    <details>
    <summary>Answer</summary>
-   The Deployment behaved perfectly by halting the rollout, thanks to the default `maxUnavailable` setting in the `RollingUpdate` strategy. When the new Pods failed to pull their image and crashed, they never reached the `Ready` state. Because the Deployment guarantees a certain number of available Pods, it refused to terminate the old, functioning Pods until the new ones were healthy. This self-preservation mechanism prevented the bad configuration from causing a total cluster outage, leaving your users unaffected while you investigate the broken image.
+   The Deployment behaved perfectly by halting the rollout, thanks to the default `maxUnavailable` setting in the `RollingUpdate` strategy. When the new Pods failed to pull their image and crashed, they never reached the `Ready` state. Because the Deployment guarantees a certain number of available Pods, it refused to terminate the old, functioning Pods until the new ones were healthy. This self-preservation mechanism prevented the bad configuration from causing a total cluster outage, leaving your users unaffected while you investigate the broken image. The rollout will remain paused until the image issue is resolved or the Deployment is rolled back.
    </details>
 
 4. **Scenario**: During a major traffic spike, your team triggers a rolling update to fix a critical bug. Midway through the rollout, traffic doubles again and you run `kubectl scale deployment web --replicas=10`. How does the Deployment handle this scaling event during an active rollout?
    <details>
    <summary>Answer</summary>
-   The Deployment is smart enough to handle simultaneous scaling and updating without dropping traffic, using a mechanism called proportional scaling. It temporarily pauses the rolling update and distributes the new replica count across both the old and new ReplicaSets based on their current sizes. Once the scaling is achieved, it resumes the rolling update, gradually shifting the newly scaled pods from the old version to the new version. This ensures you immediately get the capacity you need to handle the traffic spike while still progressing toward the bug fix.
+   The Deployment is smart enough to handle simultaneous scaling and updating without dropping traffic, using a mechanism called proportional scaling. It temporarily pauses the rolling update and distributes the new replica count across both the old and new ReplicaSets based on their current sizes. Once the scaling is achieved, it resumes the rolling update, gradually shifting the newly scaled pods from the old version to the new version. This ensures you immediately get the capacity you need to handle the traffic spike while still progressing toward the bug fix. Note that scaling operations do not trigger a new rollout, they merely adjust the replica counts of the existing active ReplicaSets.
    </details>
 
 5. **Scenario**: Your team uses `maxSurge: 100%` and `maxUnavailable: 0%` for a 10-replica Deployment to ensure ultra-fast rollouts. What are the cluster capacity implications of this configuration during an update?
    <details>
    <summary>Answer</summary>
-   Setting `maxSurge` to 100% means the Deployment will attempt to create a full duplicate set of 10 new Pods immediately, while keeping all 10 old Pods running since `maxUnavailable` is 0%. This requires your Kubernetes cluster to have enough spare CPU and memory capacity to run 20 Pods simultaneously during the rollout phase. If your cluster autoscaler isn't fast enough or you lack the physical nodes, the new Pods will be stuck in a `Pending` state. While this configuration guarantees zero downtime and fast updates, it is highly resource-intensive and can cause scheduling bottlenecks in tight clusters.
+   Setting `maxSurge` to 100% means the Deployment will attempt to create a full duplicate set of 10 new Pods immediately, while keeping all 10 old Pods running since `maxUnavailable` is 0%. This requires your Kubernetes cluster to have enough spare CPU and memory capacity to run 20 Pods simultaneously during the rollout phase. If your cluster autoscaler isn't fast enough or you lack the physical nodes, the new Pods will be stuck in a `Pending` state. While this configuration guarantees zero downtime and fast updates, it is highly resource-intensive and can cause scheduling bottlenecks in tight clusters. You must ensure you have adequate buffer capacity before using aggressive update strategies.
    </details>
 
 6. **Scenario**: A developer complains that their newly created Deployment is failing. You inspect the YAML and notice the Deployment's `spec.selector.matchLabels` has `app: web-frontend`, but the Pod template's `metadata.labels` has `app: web-backend`. Why is this a fatal error for the Deployment?
    <details>
    <summary>Answer</summary>
-   The Deployment controller relies entirely on label selectors to identify which Pods it is supposed to manage. If the selector doesn't match the labels applied to the Pods generated by its template, the Deployment will create Pods but immediately lose track of them because they don't match its search criteria. It will then create more Pods endlessly trying to satisfy its replica count, while the original "orphaned" Pods pile up. To prevent this chaotic runaway condition, the Kubernetes API explicitly validates this relationship and will reject the YAML during creation, throwing a fatal validation error.
+   The Deployment controller relies entirely on label selectors to identify which Pods it is supposed to manage. If the selector doesn't match the labels applied to the Pods generated by its template, the API will reject the Deployment. In API version `apps/v1`, the selector is strictly validated against the template labels and becomes immutable after creation to prevent chaotic runaway conditions where a Deployment creates orphaned Pods endlessly. To fix this, the developer must ensure that `spec.selector.matchLabels` matches `spec.template.metadata.labels` exactly before submitting the manifest. This strict validation protects the cluster from runaway controller loops.
    </details>
 
 ---
