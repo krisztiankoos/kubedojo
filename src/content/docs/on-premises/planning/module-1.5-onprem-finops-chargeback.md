@@ -64,15 +64,15 @@ To account for the control plane nodes (which run the API server, etcd, and cont
 
 ## Section 2: Implementing OpenCost and Kubecost on Bare Metal
 
-To translate the fully burdened, amortized node costs into actionable pod-level or namespace-level financial metrics, platform teams rely on sophisticated cost allocation engines. OpenCost, an open-source Cloud Native Computing Foundation sandbox project, and its commercial enterprise counterpart, Kubecost, are the prevailing industry standards for this complex task. 
+To translate the fully burdened, amortized node costs into actionable pod-level or namespace-level financial metrics, platform teams rely on sophisticated cost allocation engines. OpenCost, a Cloud Native Computing Foundation Incubating project (promoted in October 2024), is the prevailing vendor-neutral open-source standard for this complex task. Its commercial enterprise counterpart, IBM Kubecost 3.x (General Availability as of September 2025), offers additional product-specific workflows and enterprise features.
 
-In a public cloud environment, these tools integrate seamlessly and directly with the AWS Cost Explorer, GCP Billing, or Azure Rate Card APIs to fetch real-time instance pricing. On-premises, these APIs simply do not exist. You are the cloud provider. Therefore, you must configure OpenCost to use a custom pricing model that meticulously reflects your internal TCO calculations.
+You must not blur these two into a single product. In a public cloud environment, these tools integrate seamlessly with billing APIs. On-premises, "Cloud Costs" are explicitly not supported natively because you are the cloud provider. Therefore, you must define a custom pricing model that meticulously reflects your internal TCO calculations—OpenCost cannot magically discover your hardware economics or natively calculate physical depreciation.
 
 ### The Metrics Pipeline Architecture
 
-OpenCost does not interact with the Kubernetes API directly to determine usage; it relies on a robust Prometheus metrics pipeline. It requires `kube-state-metrics` to continuously monitor and understand the state of Kubernetes objects (namespaces, deployments, replica sets, pods) and `cAdvisor` (which runs embedded within the kubelet on every node) to measure the actual, real-time CPU and memory consumption of the running containers. 
+OpenCost’s on-premises path fundamentally depends on a robust Prometheus metrics pipeline. At minimum, Prometheus must scrape the `node-exporter` and `kube-state-metrics` metrics that OpenCost documents as required external sources. Container usage metrics commonly come from the kubelet/cAdvisor path, but you should not describe cAdvisor alone as the complete prerequisite. OpenCost then queries Prometheus and exports cost data as hourly metrics such as `node_total_hourly_cost`, `node_cpu_hourly_cost`, `node_ram_hourly_cost`, and `pv_hourly_cost`.
 
-These high-cardinality metrics are scraped at regular intervals by a central Prometheus instance. OpenCost then queries Prometheus, executing complex PromQL aggregations to correlate raw resource consumption and namespace metadata with your defined custom pricing data.
+*Note: IBM Kubecost 3.x changed the architecture substantially. IBM's 3.x upgrade guidance says the new agent removes the dependency on Prometheus, while other product docs still describe Prometheus-backed retention and diagnostics. Do not present Prometheus as a universal 3.x requirement; verify the exact deployment path and version-specific docs for the environment you are teaching. Kubecost also documents on-premises and air-gapped deployment support separately.*
 
 ```mermaid
 sequenceDiagram
@@ -85,15 +85,15 @@ sequenceDiagram
     Kubelet->>Prom: Scrape actual container usage (CPU/RAM/Network)
     KSM->>Prom: Scrape cluster state (Namespaces, Pod Labels, Annotations)
     Prom->>OC: Provide aggregated usage and metadata state metrics
-    OC->>OC: Apply Custom Pricing CSV/JSON rules to metrics
+    OC->>OC: Apply Custom Pricing rules to metrics
     OC->>Dash: Serve highly granular cost allocation data per workload
 ```
 
-### Configuring Custom Pricing in OpenCost
+### Configuring Custom Pricing 
 
-To implement custom pricing in OpenCost, you must construct a configuration file, typically mounted as a Kubernetes ConfigMap or defined via Helm values, that explicitly states the granular hourly cost of various resources. You must break down your monthly, fully-burdened node cost into precise hourly rates for CPU cores, RAM gigabytes, and storage terabytes.
+To implement custom pricing, you construct a configuration file that explicitly states the granular hourly cost of various resources. Pricing units must be handled with extreme care to avoid silently corrupting your chargeback data. OpenCost uses an hourly model (e.g., core-hour, GB-hour). Older Kubecost 2.x environments used simple monthly values, which is a major trap if following stale documentation. Meanwhile, IBM Kubecost 3.x Enterprise Custom Pricing (an enterprise-only feature) utilizes a CSV-based configuration with hourly units (`hour`, `cpucorehour`, `ramgbhour`, `gbhour`) and fully supports retroactive repricing.
 
-Consider the following example of a custom pricing configuration JSON designed for an on-premises, bare-metal deployment. Notice how granular the pricing must be to accurately reflect the infrastructure:
+Consider the following example of an OpenCost custom pricing configuration JSON designed for bare-metal. Notice how granular the pricing must be:
 
 ```json
 {
@@ -107,35 +107,66 @@ Consider the following example of a custom pricing configuration JSON designed f
   "zone": "dc-alpha-rack-12"
 }
 ```
-
 In this specific configuration, an application requesting four CPU cores and sixteen gigabytes of RAM will be billed at six cents per hour for compute capacity, plus eight cents per hour for memory capacity, totaling fourteen cents per hour. Over a standard month, this single, seemingly innocuous pod costs the organization roughly one hundred dollars. When developers can view these concrete financial numbers directly associated with their specific deployments in a dashboard, the abstract and detached concept of "cluster resources" rapidly transforms into concrete financial accountability.
 
-To deploy OpenCost with this custom configuration via Helm, you would utilize a comprehensive values file that explicitly overrides the default cloud provider integrations and points the engine to your internal Prometheus instance:
+
+When deploying OpenCost, prefer the official Helm chart for production or customized installs. Current upstream guidance describes Helm as the preferred installation method, but the on-prem documentation still supports the legacy manifest for basic Kubernetes cost allocations without Cloud Costs or customization.
 
 ```yaml
 # opencost-bare-metal-values.yaml
 opencost:
+  prometheus:
+    internal:
+      namespaceName: monitoring
+      serviceName: prometheus-operated
+      port: 9090
   exporter:
     defaultClusterId: "on-prem-prod-baremetal-01"
   customPricing:
     enabled: true
-    configmapName: "custom-pricing-model-alpha"
+    provider: default
     costModel:
-      cpuHourlyCost: "0.015"
-      ramHourlyCost: "0.005"
-      storageHourlyCost: "0.0002"
-      gpuHourlyCost: "0.950"
-prometheus:
-  external:
-    # OpenCost must query your existing, highly-available Prometheus setup
-    url: "http://prometheus-operated.monitoring.svc.cluster.local:9090"
-  internal:
-    enabled: false
+      description: "On-Premises Bare Metal Datacenter Alpha - High Density Pool"
+      CPU: "0.015"
+      RAM: "0.005"
+      GPU: "0.950"
+      storage: "0.0002"
 ```
+
+### Implementing Kubecost 3.x on Bare Metal
+
+Kubecost 3.x must be installed separately from OpenCost. A first-time install uses Helm and should set a descriptive cluster ID so cost data remains unambiguous in single-cluster and multi-cluster views:
+
+```bash
+helm upgrade --install kubecost \
+  --repo https://kubecost.github.io/kubecost/ kubecost \
+  --namespace kubecost --create-namespace \
+  --set global.clusterId=on-prem-prod-baremetal-01
+```
+
+For on-premises custom pricing in Kubecost 3.x, distinguish between the two supported models:
+- Simple custom pricing adjusts per-cluster defaults.
+- Enterprise Custom Pricing uses a CSV specification loaded through a ConfigMap and enabled in Helm, which is the documented path for detailed on-prem asset pricing across nodes, volumes, GPUs, and load balancers.
+
+```bash
+kubectl create configmap -n kubecost kubecost-enterprise-pricing --from-file spec.csv
+```
+
+```yaml
+enterpriseCustomPricing:
+  enabled: true
+  configMapName: kubecost-enterprise-pricing
+  location:
+    URI: /var/configs/enterprise-pricing/spec.csv
+```
+
+This separation matters operationally: OpenCost gives you the vendor-neutral allocation engine, while Kubecost adds product-specific workflows and, in 3.x, an enterprise CSV pipeline for more granular on-prem pricing.
 
 ## Section 3: Showback vs. Chargeback in Internal Platforms
 
-Implementing the FinOps tooling and the metrics pipeline is only the first technical step; the true, monumental challenge of on-premises FinOps lies in organizational behavior and cultural transformation. Platform teams must strategically choose how to expose, communicate, and enforce the cost data, carefully navigating the complex spectrum between informational showback and strict, punitive chargeback.
+Implementing the FinOps tooling and the metrics pipeline is only the first technical step. Platform teams must strategically choose how to expose and enforce the cost data. OpenCost’s specification supports allocation by namespace, label, and annotation. However, presenting namespace-only ownership is rarely sufficient for chargeback. You must require explicit labels such as `cost-center`, `owner`, or `team` if true financial attribution matters.
+
+Furthermore, a mature showback or chargeback narrative cannot omit idle-cost policy. In OpenCost, handling idle capacity (`includeIdle` and `shareIdle`) is an explicit configuration choice. If you do not allocate the cost of unallocated cluster capacity to shared overhead or distribute it among active tenants, the platform team silently absorbs the financial loss of the empty space.
 
 ### The Educational Showback Model
 
@@ -162,7 +193,7 @@ A successful implementation from zero visibility to strict financial governance 
 
 ## Section 4: Capacity Rightsizing Lifecycle and Depreciation Modeling
 
-Visibility and dashboards alone do not save a single dollar; concrete engineering action-does. The capacity rightsizing lifecycle is the operational, continuous process of identifying waste, analyzing risk, and reclaiming stranded resources. On-premises, this lifecycle is particularly critical because unused capacity cannot simply be returned to a vendor via an API call; it sits idle in a rack, consuming massive amounts of power and rapidly depreciating in value every single day.
+Visibility and dashboards alone do not save a single dollar; concrete engineering action does. The capacity rightsizing lifecycle is the operational, continuous process of identifying waste, analyzing risk, and reclaiming stranded resources. On-premises, this lifecycle is particularly critical because unused capacity cannot simply be returned to a vendor via an API call; it sits idle in a rack, consuming massive amounts of power and rapidly depreciating in value every single day.
 
 ### The Continuous Rightsizing Lifecycle
 
@@ -199,9 +230,9 @@ To prevent surprise budget overruns that infuriate finance departments, proactiv
 
 ### Advanced PromQL Budget Alerting
 
-Because OpenCost brilliantly exposes its calculated cost data as standard Prometheus metrics, you can write highly sophisticated Alertmanager rules to trigger instant notifications when spending thresholds are breached. The core metric `node_total_hourly_cost` and the derived, aggregated namespace-level metrics allow for complex financial alerting algorithms.
+Because OpenCost brilliantly exports its calculated cost data as standard Prometheus hourly metrics (like `node_total_hourly_cost`, `node_cpu_hourly_cost`, and `node_ram_hourly_cost`), you can write highly sophisticated Alertmanager rules to trigger instant notifications. The core metrics and their derived, aggregated namespace-level equivalents allow for complex financial governance algorithms.
 
-Consider this advanced Prometheus alerting rule. It is designed to trigger a high-priority Slack notification if a specific namespace's projected monthly spend, based on the velocity of the last twenty-four hours, exceeds a strict limit of five hundred dollars:
+Consider this advanced Prometheus alerting rule. It is designed to trigger a high-priority Slack notification if a specific namespace's projected monthly spend, based on its current hourly allocation rate, exceeds a strict limit of five hundred dollars:
 
 ```yaml
 groups:
@@ -209,8 +240,19 @@ groups:
   rules:
   - alert: NamespaceMonthlyBudgetExceededProjection
     expr: |
-      sum by (namespace) (
-        avg_over_time(kubecost_namespace_cost_rate[24h]) 
+      (
+        sum by (namespace) (
+          avg by (namespace, node) (container_cpu_allocation)
+            * on (node) group_left () avg by (node) (node_cpu_hourly_cost)
+          +
+          avg by (namespace, node) (container_memory_allocation_bytes)
+            * on (node) group_left () avg by (node) (node_ram_hourly_cost) / (1024 * 1024 * 1024)
+        )
+        +
+        sum by (namespace) (
+          avg by (namespace, persistentvolume) (pod_pvc_allocation)
+            * on (persistentvolume) group_left () avg by (persistentvolume) (pv_hourly_cost) / (1024 * 1024 * 1024)
+        )
       ) * 730 > 500
     for: 12h
     labels:
@@ -219,11 +261,11 @@ groups:
       team: platform-governance
     annotations:
       summary: "CRITICAL: Namespace {{ $labels.namespace }} is exceeding its financial budget."
-      description: "The projected monthly cost for the {{ $labels.namespace }} namespace, based on the aggressive usage patterns of the last 24 hours, has exceeded the strict $500 limit. Please immediately review your pod resource requests, scale down idle deployments, or contact the FinOps team for a budget increase."
+      description: "The projected monthly cost for the {{ $labels.namespace }} namespace, based on its current hourly allocation rate, has exceeded the strict $500 limit. Please immediately review your pod resource requests, scale down idle deployments, or contact the FinOps team for a budget increase."
       dashboard_url: "https://grafana.internal.company.com/d/finops-namespace/cost-breakdown?var-namespace={{ $labels.namespace }}"
 ```
 
-This complex alert calculates the average hourly cost rate over the past twenty-four hours to smooth out brief spikes, multiplies that rate by the average number of hours in a standard month (seven hundred and thirty), and triggers a warning if the mathematical projection exceeds the established threshold. The inclusion of a direct dashboard link dramatically reduces the Mean Time To Resolution for financial anomalies.
+This alert calculates the namespace's current hourly CPU, memory, and PVC cost from documented OpenCost metrics, projects that hourly rate across seven hundred and thirty hours, and triggers a warning when the projected monthly spend exceeds the established threshold. The inclusion of a direct dashboard link dramatically reduces the Mean Time To Resolution for financial anomalies.
 
 ### Comparing On-Premises and Cloud Disciplines
 
@@ -241,13 +283,13 @@ To solve this, modern platform teams deploy policy engines like Kyverno or Open 
 
 ### Mandating Financial Accountability Labels
 
-You must write a Kyverno ClusterPolicy that intercepts every incoming Pod creation request. The policy inspects the metadata labels. If the mandatory FinOps labels—such as `cost-center` and `owner-team`—are missing, Kyverno immediately rejects the deployment, returning an error message directly to the developer's terminal or the CI/CD pipeline.
+You should define a Kyverno `ValidatingPolicy` that denies Pod create or update requests when the mandatory FinOps labels are missing. This uses Kyverno's current, non-deprecated policy API and still blocks Pods created by higher-level controllers because admission is enforced when the Pod object is created.
 
 Consider this robust Kyverno policy designed to enforce financial accountability:
 
 ```yaml
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: require-finops-labels
   annotations:
@@ -255,25 +297,27 @@ metadata:
     policies.kyverno.io/category: Financial Governance
     policies.kyverno.io/subject: Pod
     policies.kyverno.io/description: >-
-      To ensure accurate showback and chargeback, all pods must be explicitly tagged 
-      with a valid cost-center and owner-team label. Unlabeled resources will be rejected.
+      To ensure accurate showback and chargeback, all pods must be explicitly tagged
+      with valid cost-center and owner-team labels. Unlabeled resources will be denied.
 spec:
-  validationFailureAction: Enforce
-  background: true
-  rules:
-  - name: check-for-cost-center
-    match:
-      any:
-      - resources:
-          kinds:
-          - Pod
-    validate:
-      message: "FinOps Violation: All Pods must contain the 'cost-center' and 'owner-team' labels. Example: 'cost-center: marketing'."
-      pattern:
-        metadata:
-          labels:
-            cost-center: "?*"
-            owner-team: "?*"
+  validationActions:
+    - Deny
+  evaluation:
+    mode: Kubernetes
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - message: "FinOps Violation: All Pods must contain non-empty 'cost-center' and 'owner-team' labels."
+      expression: >-
+        has(object.metadata.labels) &&
+        'cost-center' in object.metadata.labels &&
+        string(object.metadata.labels['cost-center']) != '' &&
+        'owner-team' in object.metadata.labels &&
+        string(object.metadata.labels['owner-team']) != ''
 ```
 
 When this policy is enforced, the chargeback model is guaranteed to have one hundred percent attribution accuracy. There are no mysterious, untagged workloads draining the platform budget.
@@ -282,13 +326,17 @@ When this policy is enforced, the chargeback model is guaranteed to have one hun
 
 While manual rightsizing is effective, it does not scale across an enterprise with thousands of microservices. To automate the "Act" phase of the FinOps lifecycle, platform teams leverage the Kubernetes Vertical Pod Autoscaler (VPA).
 
-Unlike the Horizontal Pod Autoscaler (HPA) which adds more pod replicas, the VPA analyzes historical Prometheus metrics and automatically adjusts the CPU and memory `requests` and `limits` of existing pods. For on-premises FinOps, the VPA is a critical weapon against resource hoarding.
+Unlike the Horizontal Pod Autoscaler (HPA) which is a built-in core API that adds more pod replicas, the VPA is a separately installed CRD (`autoscaling.k8s.io/v1`) and the autoscaler project still describes it as a beta component. It analyzes resource usage through the Kubernetes resource-metrics pipeline and automatically recommends or adjusts container CPU and memory `requests` and `limits` for targeted workloads. However, the VPA currently does not support pod-level `resources` configuration directly; it natively manages individual containers.
 
-### VPA Recommendation Mode vs. Auto Mode
+### VPA Recommendation Mode vs. Enforced Updates
 
-Deploying the VPA in `Auto` mode can be dangerous for stateful applications, as it forcefully evicts and restarts pods to apply the new resource sizing. Therefore, in a FinOps context, the VPA is most often deployed in `Off` or `Initial` mode.
+Deploying the VPA with `updateMode: Auto` is deprecated since VPA 1.4.0 and can be highly dangerous for stateful applications, as it forcefully evicts and restarts pods to apply the new resource sizing. Instead, modern implementations rely on `Recreate` or the newer `InPlaceOrRecreate` mode. However, in-place updates are highly sensitive to your Kubernetes version and active feature gates, and pod recreation is still a normal outcome. You must never promise in-place VPA updates as universally safe or available.
 
-In `Off` mode, the VPA acts purely as an advisory engine. It continuously calculates the optimal resource requests based on actual historical usage and outputs these recommendations to a custom resource metric. FinOps dashboards can then scrape these VPA recommendations, compare them to the current bloated requests, and calculate the exact dollar amount of waste.
+Furthermore, you must never configure the VPA and HPA to scale on the exact same CPU or memory metric. The autoscaler project documents this as a critical limitation that causes the two controllers to violently conflict and make contradictory scaling decisions. 
+
+In a FinOps context, the VPA is most often deployed safely in `Off` mode.
+
+In `Off` mode, the VPA acts purely as an advisory engine. It continuously calculates recommended resources based on observed usage and stores those recommendations in the VerticalPodAutoscaler object's `.status.recommendation` field. FinOps dashboards or automation can read that status through the Kubernetes API, compare it to the current requests, and calculate the exact dollar amount of waste without restarting workloads.
 
 Here is an example of a VPA configuration designed purely for generating FinOps recommendations:
 
@@ -322,7 +370,7 @@ By querying the status of this VPA object, the FinOps team can confidently appro
 
 - In 2021, the FinOps Foundation reported that over thirty percent of cloud and on-premises Kubernetes spending is entirely wasted due to over-provisioned, idle resources.
 - A standard straight-line depreciation model for enterprise server hardware typically spans exactly 36 to 60 months, after which the hardware cost is considered fully amortized on the corporate ledger.
-- The Cloud Native Computing Foundation formally accepted OpenCost as a sandbox project in June 2022, standardizing the methodology for allocating complex Kubernetes resource costs.
+- The Cloud Native Computing Foundation formally promoted OpenCost to an Incubating project in October 2024, standardizing the methodology for allocating complex Kubernetes resource costs.
 - Cooling infrastructure and raw electrical power can account for up to forty percent of the total operational cost of a bare-metal server over a standard three-year data center lifecycle.
 
 ## Common Mistakes
@@ -341,12 +389,21 @@ By querying the status of this VPA object, the FinOps team can confidently appro
 
 In this comprehensive scenario, you are the lead FinOps engineer for an on-premises Kubernetes cluster that is rapidly hemorrhaging money. You have been tasked with establishing a baseline pricing model, identifying a massive source of untagged waste, rightsizing the offending workload, and deploying a strict governance policy to ensure the incident never happens again.
 
+Before starting, verify the exercise prerequisites because the remaining tasks assume them:
+```bash
+helm version --short
+jq --version
+kubectl get svc prometheus-operated -n monitoring
+kubectl api-resources | grep -E 'validatingpolicies|clusterpolicies'
+```
+If your Prometheus Service does not live at `monitoring/prometheus-operated:9090`, adjust the Helm values in Task 1 before installing OpenCost. If the Kyverno policy API is unavailable, install Kyverno first or switch to a cluster where it is already running.
+
 <details>
 <summary>Task 1: Establish the Baseline Pricing Model</summary>
 
 **The Challenge:**
 The cluster currently has no concept of what hardware costs. The finance department has determined that, after factoring in the Platform Tax and PUE, the amortized hourly rates are `$0.020` for CPU, `$0.008` for RAM, `$1.500` for GPU, and `$0.0005` for storage in the `on-prem-zone-alpha` zone.
-You must construct the custom pricing JSON configuration and deploy it as a ConfigMap named `opencost-custom-pricing` in the `opencost` namespace to feed these rates into the FinOps engine.
+You must construct the custom pricing JSON configuration and store it as a ConfigMap named `opencost-custom-pricing` in the `opencost` namespace for auditability, then apply the same values through the OpenCost Helm release because the runtime pricing model in this exercise is configured from Helm values.
 
 **Solution:**
 Create a file named `custom-pricing.json` reflecting the CFO's rates:
@@ -362,10 +419,24 @@ Create a file named `custom-pricing.json` reflecting the CFO's rates:
   "zone": "on-prem-zone-alpha"
 }
 ```
-Create the required namespace and ConfigMap from this file so OpenCost can mount it:
+Create the required namespace and ConfigMap for the pricing artifact, then apply equivalent values through the OpenCost Helm release so the running cost model actually consumes them:
 ```bash
 kubectl create namespace opencost
 kubectl create configmap opencost-custom-pricing --from-file=default.json=custom-pricing.json -n opencost
+helm upgrade --install opencost --repo https://opencost.github.io/opencost-helm-chart opencost \
+  --namespace opencost \
+  --set opencost.prometheus.internal.namespaceName=monitoring \
+  --set opencost.prometheus.internal.serviceName=prometheus-operated \
+  --set opencost.prometheus.internal.port=9090 \
+  --set opencost.customPricing.enabled=true \
+  --set opencost.customPricing.provider=default \
+  --set-string opencost.customPricing.costModel.description="Simulated On-Prem Datacenter Pricing Model" \
+  --set-string opencost.customPricing.costModel.CPU="0.020" \
+  --set-string opencost.customPricing.costModel.RAM="0.008" \
+  --set-string opencost.customPricing.costModel.GPU="1.500" \
+  --set-string opencost.customPricing.costModel.storage="0.0005"
+kubectl wait --for=condition=available deployment/opencost -n opencost --timeout=180s
+kubectl get configmap opencost-custom-pricing -n opencost
 ```
 </details>
 
@@ -397,11 +468,26 @@ spec:
 ```
 ```bash
 kubectl apply -f wasteful-pod.yaml
+kubectl wait --for=condition=Ready pod/legacy-processor -n default --timeout=120s
+kubectl get pod legacy-processor -n default --show-labels
 ```
 Next, establish a port-forward and query the OpenCost allocation API to reveal the financial damage:
 ```bash
-kubectl port-forward svc/opencost 9003:9003 -n opencost &
-curl -s "http://localhost:9003/allocation/compute?window=1h&aggregate=label:cost-center" | jq '.data[]'
+kubectl port-forward --namespace opencost service/opencost 9003:9003 >/tmp/opencost-port-forward.log 2>&1 &
+success=0
+for _ in $(seq 1 18); do
+  if curl -sfG "http://localhost:9003/allocation" \
+    --data-urlencode "window=1h" \
+    --data-urlencode "aggregate=label:cost-center" \
+    -o /tmp/opencost-allocation.json &&
+    grep -q 'global-marketing' /tmp/opencost-allocation.json; then
+    jq '.data' /tmp/opencost-allocation.json
+    success=1
+    break
+  fi
+  sleep 10
+done
+test "$success" -eq 1
 ```
 </details>
 
@@ -409,12 +495,12 @@ curl -s "http://localhost:9003/allocation/compute?window=1h&aggregate=label:cost
 <summary>Task 3: Execute the Rightsizing Lifecycle</summary>
 
 **The Challenge:**
-The OpenCost API reveals that the `legacy-processor` pod is utilizing almost zero CPU despite its massive requests. You must actively rightsize this workload. Modify the deployment so that it requests a far more reasonable `100m` of CPU and `128Mi` of memory, completely replacing the running instance.
+The OpenCost API reveals that the `legacy-processor` pod is utilizing almost zero CPU despite its massive requests. You must actively rightsize this workload. Modify the pod manifest so that it requests a far more reasonable `100m` of CPU and `128Mi` of memory, completely replacing the running instance.
 
 **Solution:**
 Because you cannot dynamically patch resource requests on an existing, unmanaged Pod, you must delete the original and recreate it with the optimized specs:
 ```bash
-kubectl delete pod legacy-processor
+kubectl delete pod legacy-processor --wait=true
 ```
 Update the `wasteful-pod.yaml` file to drastically reduce the requests:
 ```yaml
@@ -437,6 +523,8 @@ spec:
 ```
 ```bash
 kubectl apply -f optimized-pod.yaml
+kubectl wait --for=condition=Ready pod/legacy-processor -n default --timeout=120s
+kubectl get pod legacy-processor -n default -o jsonpath='{.spec.containers[0].resources.requests.cpu} {.spec.containers[0].resources.requests.memory}{"\n"}'
 ```
 By performing this action, you have instantly halted the massive budget drain caused by stranded capacity on the node.
 </details>
@@ -445,43 +533,52 @@ By performing this action, you have instantly halted the massive budget drain ca
 <summary>Task 4: Enforce Financial Governance</summary>
 
 **The Challenge:**
-Rightsizing one pod is merely a tactical fix; you need a strategic solution. To guarantee 100% accurate chargeback attribution moving forward, you must deploy a Kyverno `ClusterPolicy` named `enforce-cost-center`. This policy must strictly reject the creation of any new Pod that lacks the `cost-center` label entirely or has an empty value for it.
+Rightsizing one pod is merely a tactical fix; you need a strategic solution. To guarantee 100% accurate chargeback attribution moving forward, you must deploy a Kyverno `ValidatingPolicy` named `enforce-cost-center`. This policy must strictly reject the creation or update of any Pod that lacks the `cost-center` label entirely or has an empty value for it.
 
 **Solution:**
 Draft and apply the following Kyverno policy to act as a strict admission controller for financial accountability:
 ```yaml
 # finops-policy.yaml
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: enforce-cost-center
 spec:
-  validationFailureAction: Enforce
-  rules:
-  - name: require-cost-center-label
-    match:
-      any:
-      - resources:
-          kinds:
-          - Pod
-    validate:
-      message: "FinOps Violation: All Pods must contain the 'cost-center' label for strict chargeback attribution."
-      pattern:
-        metadata:
-          labels:
-            cost-center: "?*"
+  validationActions:
+    - Deny
+  evaluation:
+    mode: Kubernetes
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - message: "FinOps Violation: All Pods must contain a non-empty 'cost-center' label for chargeback attribution."
+      expression: >-
+        has(object.metadata.labels) &&
+        'cost-center' in object.metadata.labels &&
+        string(object.metadata.labels['cost-center']) != ''
 ```
 ```bash
 kubectl apply -f finops-policy.yaml
 ```
+Verify the policy before moving on:
+```bash
+kubectl run unlabeled-test --image=nginx --restart=Never -n default
+kubectl get pod unlabeled-test -n default --ignore-not-found
+```
+The `kubectl run` command should fail with a Kyverno admission error, and `kubectl get pod unlabeled-test -n default --ignore-not-found` should return no Pod.
+
 Once applied, the Kubernetes API will categorically deny any untagged deployments, forcing developers to declare their financial ownership before consuming cluster resources.
 </details>
 
 ### Success Checklist
-- [ ] Custom pricing ConfigMap successfully created, formatted properly, and mounted to the deployment.
-- [ ] The wasteful `legacy-processor` pod was deployed and successfully aggregated by the OpenCost API.
-- [ ] Pod resource requests were successfully reduced via the rightsizing lifecycle.
-- [ ] Kyverno policy actively blocks deployments lacking mandatory financial accountability labels.
+- [ ] OpenCost is running in the `opencost` namespace with the intended custom pricing values applied.
+- [ ] The wasteful `legacy-processor` pod is running and appears in the OpenCost allocation query aggregated by `cost-center`.
+- [ ] The replacement `legacy-processor` pod is running with `100m` CPU and `128Mi` memory requests.
+- [ ] Kyverno rejects an unlabeled test Pod during admission.
 
 ## Quiz
 
@@ -494,7 +591,7 @@ Billing strictly on usage rather than requests aggressively encourages teams to 
 <details>
 <summary>Question 2: Your FinOps dashboard reveals that a massive data science workload is running on a brand-new NVMe-backed node pool, while a fleet of five-year-old worker nodes sits completely idle. How can you strategically use the custom pricing model to influence the deployment behavior of the data science team without forcefully moving their workloads?</summary>
 
-You can heavily and artificially discount the custom pricing configuration for the five-year-old nodes, perhaps making compute completely free on that specific hardware generation, while setting a steep premium price for the new NVMe node pool. By enforcing a chargeback model based on these prices, the data science team will be financially incentivized by their own budget constraints to use node selectors and tolerations to schedule their lower-priority batch jobs onto the older, cheaper hardware, maximizing the lifecycle of the depreciated assets.
+You can heavily and artificially discount the custom pricing configuration for the five-year-old nodes, perhaps making compute completely free on that specific hardware generation, while setting a steep premium price for the new NVMe node pool. By enforcing a chargeback model based on these prices, the data science team will be financially incentivized by their own budget constraints to use node selectors and tolerations to schedule their lower-priority batch jobs onto the older, cheaper hardware, maximizing the lifecycle of the depreciated assets. This aligns their departmental goals with the platform team's capacity management strategy. It proves that FinOps is not just about billing, but about driving efficient engineering behavior through economic incentives.
 </details>
 
 <details>
@@ -506,7 +603,7 @@ The team failed to account for indirect facility costs, specifically the Power U
 <details>
 <summary>Question 4: An application team aggressively complains that their namespace budget alert triggered, showing a projected monthly spend of two thousand dollars. They point out that their pods only consume two CPU cores. Upon deeper investigation of their manifests, you discover their deployment mounts a three-terabyte PersistentVolume. What OpenCost configuration must be immediately verified?</summary>
 
-You must verify that the custom pricing configuration accurately defines the `storageHourlyCost`. High-performance enterprise storage arrays (SAN/NAS) are extremely expensive to procure and maintain on-premises. The team is likely being correctly charged for the massive block storage reservation, demonstrating exactly why storage must be priced per gigabyte in FinOps calculations, not just compute and memory.
+You must verify that the custom pricing configuration accurately defines the `storage` price input for persistent volumes. High-performance enterprise storage arrays (SAN/NAS) are extremely expensive to procure and maintain on-premises, and this cost must be accurately reflected. The team is likely being correctly charged for the massive block storage reservation, demonstrating exactly why storage must be priced per gigabyte-hour in FinOps calculations, not just compute and memory. This ensures stateful workloads bear their true infrastructure burden.
 </details>
 
 <details>
@@ -518,13 +615,13 @@ This strategy fails because on-premises Kubernetes operates on a Capital Expendi
 <details>
 <summary>Question 6: You are defining the OpenCost custom pricing configuration for a new bare-metal cluster. You perfectly divide the cost of the worker node hardware by its 36-month lifespan, yet the Chief Financial Officer rejects your pricing model, stating that the platform engineering department will still operate at a massive net loss for the year. What critical markup must you add to the raw compute costs to satisfy the CFO?</summary>
 
-You must implement a "Platform Tax" to account for the massive indirect and operational overhead of running the Kubernetes environment. While you accurately priced the raw worker node hardware, you failed to distribute the cost of the control plane nodes, the top-of-rack network switches, enterprise software licensing, and the salaries of the platform engineering team managing the cluster. By applying a percentage markup—the Platform Tax—on top of the raw compute and memory costs, you ensure that application teams are bearing the fully burdened cost of the entire platform ecosystem, not just the isolated metal their pods consume.
+You must implement a "Platform Tax" to account for the massive indirect and operational overhead of running the Kubernetes environment. While you accurately priced the raw worker node hardware, you failed to distribute the cost of the control plane nodes, the top-of-rack network switches, enterprise software licensing, and the salaries of the platform engineering team managing the cluster. By applying a percentage markup—the Platform Tax—on top of the raw compute and memory costs, you ensure that application teams are bearing the fully burdened cost of the entire platform ecosystem, not just the isolated metal their pods consume. Without this tax, the platform team will always operate at a catastrophic deficit.
 </details>
 
 <details>
 <summary>Question 7: During the "Analyze" phase of the capacity rightsizing lifecycle, you discover a specific node where CPU requests are at ninety-five percent, but memory requests are only at twenty percent. What severe architectural inefficiency does this indicate, and how does it directly impact the FinOps budget?</summary>
 
-This indicates a severe case of stranded capacity caused by an imbalance between the hardware profile and the workload requirements. The remaining eighty percent of the memory on that node is stranded and effectively wasted, as the Kubernetes scheduler cannot place new pods there due to CPU exhaustion. This inefficiency forces premature and unnecessary hardware purchases, severely driving up the total TCO.
+This indicates a severe case of stranded capacity caused by an imbalance between the hardware profile and the workload requirements. The remaining eighty percent of the memory on that node is stranded and effectively wasted, as the Kubernetes scheduler cannot place new pods there due to CPU exhaustion. This inefficiency forces premature and unnecessary hardware purchases, severely driving up the total TCO. To fix this, future node procurements must shift to CPU-heavy, lower-RAM configurations to match the actual workload profile.
 </details>
 
 <details>
