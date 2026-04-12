@@ -1581,6 +1581,83 @@ class TestStatusFourStage(unittest.TestCase):
         self.assertRegex(out, r"(?m)^TOTAL\s+2/3\s+2/3\s+2/3\s+2/3\s+1/3$")
 
 
+class TestStatusHtmlDashboard(unittest.TestCase):
+    """cmd_status --html should generate a grouped heatmap dashboard."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.content_root = Path(self.tmpdir) / "src" / "content" / "docs"
+        self.content_root.mkdir(parents=True, exist_ok=True)
+        self.ledger_dir = Path(self.tmpdir) / ".pipeline" / "fact-ledgers"
+        self.ledger_dir.mkdir(parents=True, exist_ok=True)
+        self.dashboard_path = Path(self.tmpdir) / ".pipeline" / "dashboard.html"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write(self, rel: str, chars: int) -> Path:
+        path = self.content_root / rel
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("x" * chars)
+        return path
+
+    def _write_ledger(self, key: str, days_old: int = 0) -> None:
+        path = self.ledger_dir / f"{key.replace('/', '__')}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(sample_fact_ledger()))
+        if days_old:
+            ts = (datetime.now(UTC) - timedelta(days=days_old)).timestamp()
+            os.utime(path, (ts, ts))
+
+    def test_status_html_dashboard_generated(self):
+        import v1_pipeline as p
+
+        self._write("prerequisites/intro/module-1.1-alpha.md", 2400)   # written, fact, review, uk
+        self._write("prerequisites/intro/module-1.2-beta.md", 2200)    # written only
+        self._write("k8s/cka/part1/module-1.1-gamma.md", 1200)         # not written, fact+review+uk
+
+        self._write("uk/prerequisites/intro/module-1.1-alpha.md", 700)
+        self._write("uk/prerequisites/intro/module-1.2-beta.md", 300)
+        self._write("uk/k8s/cka/part1/module-1.1-gamma.md", 700)
+
+        self._write_ledger("prerequisites/intro/module-1.1-alpha")
+        self._write_ledger("prerequisites/intro/module-1.2-beta", days_old=8)
+        self._write_ledger("k8s/cka/part1/module-1.1-gamma")
+
+        state = {
+            "modules": {
+                "prerequisites/intro/module-1.1-alpha": {"passes": True, "phase": "done"},
+                "prerequisites/intro/module-1.2-beta": {"passes": False, "phase": "write"},
+                "k8s/cka/part1/module-1.1-gamma": {"passes": True, "phase": "done"},
+            }
+        }
+
+        with patch.object(p, "CONTENT_ROOT", self.content_root), \
+             patch.object(p, "FACT_LEDGER_DIR", self.ledger_dir), \
+             patch.object(p, "DASHBOARD_FILE", self.dashboard_path), \
+             patch.object(p, "load_state", return_value=state), \
+             patch("subprocess.run") as mock_run:
+            p.cmd_status(Namespace(verbose=False, html=True))
+
+        self.assertTrue(self.dashboard_path.exists())
+        html = self.dashboard_path.read_text()
+
+        self.assertIn('<table id="status-heatmap">', html)
+        self.assertIn("<th>Written</th>", html)
+        self.assertIn("<th>Fact-Checked</th>", html)
+        self.assertIn("<th>Reviewed</th>", html)
+        self.assertIn("<th>UK-Translated</th>", html)
+        self.assertIn('class="cell-done"', html)
+        self.assertIn('class="cell-not-done"', html)
+        self.assertIn('class="cell-na"', html)
+        self.assertIn("Track Summary: prerequisites", html)
+        self.assertIn("Track Summary: k8s", html)
+        self.assertIn('<tr class="total-summary">', html)
+        self.assertIn(">TOTAL</td>", html)
+
+        mock_run.assert_called_once_with(["open", str(self.dashboard_path)], check=False)
+
+
 # ---------------------------------------------------------------------------
 # Test: Knowledge cards
 # ---------------------------------------------------------------------------

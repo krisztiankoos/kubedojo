@@ -41,6 +41,7 @@ from __future__ import annotations
 import argparse
 import builtins
 import fcntl
+import html as html_lib
 import json
 import os
 import re
@@ -66,6 +67,7 @@ FACT_LEDGER_DIR = REPO_ROOT / ".pipeline" / "fact-ledgers"
 FACT_LEDGER_TTL = timedelta(days=7)
 LINK_CACHE_FILE = REPO_ROOT / ".pipeline" / "link-cache.json"
 LINK_CACHE_TTL = timedelta(hours=24)
+DASHBOARD_FILE = REPO_ROOT / ".pipeline" / "dashboard.html"
 LINK_HEALTH_TIMEOUT_SEC = 5
 K8S_MIN_SUPPORTED_MINOR = 35
 K8S_VERSION_RE = re.compile(r"\bv?1\.(\d{1,2})\b")
@@ -2973,6 +2975,109 @@ def _safe_read_len(path: Path) -> int:
         return 0
 
 
+def _render_status_dashboard_html(
+    module_rows: list[dict[str, object]],
+    track_summaries: dict[str, dict[str, int]],
+    totals: dict[str, int],
+    generated_at: datetime,
+) -> str:
+    """Render a self-contained HTML dashboard for status heatmap data."""
+    grouped: dict[str, dict[str, list[dict[str, object]]]] = {}
+    for row in module_rows:
+        track = str(row["track"])
+        section = str(row["section"])
+        track_rows = grouped.setdefault(track, {})
+        section_rows = track_rows.setdefault(section, [])
+        section_rows.append(row)
+
+    def _bool_cell(done: bool) -> str:
+        klass = "cell-done" if done else "cell-not-done"
+        text = "Done" if done else "Not done"
+        return f'<td class="{klass}">{text}</td>'
+
+    def _count_cell(done: int, total: int) -> str:
+        return f'<td class="cell-na">{done}/{total}</td>'
+
+    stage_headers = ["Written", "Fact-Checked", "Reviewed", "UK-Translated"]
+    lines = [
+        "<!doctype html>",
+        '<html lang="en">',
+        "<head>",
+        '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        "<title>Pipeline Status Dashboard</title>",
+        "<style>",
+        ":root { color-scheme: light; }",
+        "body { margin: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f7f9fc; color: #1f2937; }",
+        "h1 { margin: 0 0 8px 0; font-size: 24px; }",
+        ".meta { margin: 0 0 20px 0; color: #4b5563; font-size: 14px; }",
+        ".table-wrap { overflow-x: auto; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; }",
+        "table { width: 100%; border-collapse: collapse; }",
+        "th, td { border: 1px solid #e5e7eb; padding: 8px 10px; font-size: 13px; text-align: center; }",
+        "th { background: #f3f4f6; font-weight: 600; }",
+        "td.label { text-align: left; font-weight: 600; background: #f9fafb; }",
+        "td.module { text-align: left; white-space: nowrap; }",
+        "tr.section-row td.label { background: #edf2ff; }",
+        "tr.track-summary td.label { background: #eefbf3; font-weight: 700; }",
+        "tr.total-summary td.label { background: #e5e7eb; font-weight: 700; }",
+        ".cell-done { background: #c8e6c9; color: #1b5e20; }",
+        ".cell-not-done { background: #ffcdd2; color: #b71c1c; }",
+        ".cell-na { background: #e0e0e0; color: #374151; }",
+        "</style>",
+        "</head>",
+        "<body>",
+        "<h1>Pipeline Status Dashboard</h1>",
+        f'<p class="meta">Generated at: {html_lib.escape(generated_at.isoformat())}</p>',
+        '<div class="table-wrap">',
+        '<table id="status-heatmap">',
+        "<thead>",
+        "<tr>",
+        "<th>Group</th>",
+        "<th>Module</th>",
+    ]
+    for header in stage_headers:
+        lines.append(f"<th>{header}</th>")
+    lines.extend(["</tr>", "</thead>", "<tbody>"])
+
+    for track in sorted(grouped):
+        sections = grouped[track]
+        for section in sorted(sections):
+            section_esc = html_lib.escape(section)
+            lines.append('<tr class="section-row">')
+            lines.append(f'<td class="label" colspan="2">{section_esc}</td>')
+            lines.append('<td class="cell-na">N/A</td>' * 4)
+            lines.append("</tr>")
+            for row in sorted(sections[section], key=lambda item: str(item["key"])):
+                key = html_lib.escape(str(row["key"]))
+                module_name = html_lib.escape(str(row["module"]))
+                lines.append('<tr class="module-row">')
+                lines.append(f'<td class="label">{html_lib.escape(track)}</td>')
+                lines.append(f'<td class="module" title="{key}">{module_name}</td>')
+                lines.append(_bool_cell(bool(row["written"])))
+                lines.append(_bool_cell(bool(row["fact_checked"])))
+                lines.append(_bool_cell(bool(row["reviewed"])))
+                lines.append(_bool_cell(bool(row["uk_translated"])))
+                lines.append("</tr>")
+        summary = track_summaries.get(track, {"total": 0, "written": 0, "fact_checked": 0, "reviewed": 0, "uk_translated": 0})
+        lines.append('<tr class="track-summary">')
+        lines.append(f'<td class="label" colspan="2">Track Summary: {html_lib.escape(track)}</td>')
+        lines.append(_count_cell(summary["written"], summary["total"]))
+        lines.append(_count_cell(summary["fact_checked"], summary["total"]))
+        lines.append(_count_cell(summary["reviewed"], summary["total"]))
+        lines.append(_count_cell(summary["uk_translated"], summary["total"]))
+        lines.append("</tr>")
+
+    lines.append('<tr class="total-summary">')
+    lines.append('<td class="label" colspan="2">TOTAL</td>')
+    lines.append(_count_cell(totals["written"], totals["total"]))
+    lines.append(_count_cell(totals["fact_checked"], totals["total"]))
+    lines.append(_count_cell(totals["reviewed"], totals["total"]))
+    lines.append(_count_cell(totals["uk_translated"], totals["total"]))
+    lines.append("</tr>")
+    lines.extend(["</tbody>", "</table>", "</div>", "</body>", "</html>"])
+    return "\n".join(lines)
+
+
 def cmd_status(args):
     """Show pipeline status."""
     state = load_state()
@@ -3063,6 +3168,8 @@ def cmd_status(args):
 
     # Four-stage module completion summary
     completion: dict[str, dict[str, int]] = {}
+    module_rows: list[dict[str, object]] = []
+    track_summaries: dict[str, dict[str, int]] = {}
     totals = {
         "total": 0,
         "written": 0,
@@ -3092,19 +3199,45 @@ def cmd_status(args):
         reviewed = modules.get(key, {}).get("passes") is True
         uk_path = CONTENT_ROOT / "uk" / module_path.relative_to(CONTENT_ROOT)
         uk_translated = uk_path.exists() and _safe_read_len(uk_path) >= 500
+        key_parts = key.split("/")
+        track = key_parts[0] if key_parts else key
+        section = "/".join(key_parts[:-1]) if len(key_parts) > 1 else track
+
+        module_rows.append({
+            "key": key,
+            "track": track,
+            "section": section,
+            "module": key_parts[-1] if key_parts else key,
+            "written": written,
+            "fact_checked": fact_checked,
+            "reviewed": reviewed,
+            "uk_translated": uk_translated,
+        })
+        track_summary = track_summaries.setdefault(track, {
+            "total": 0,
+            "written": 0,
+            "fact_checked": 0,
+            "reviewed": 0,
+            "uk_translated": 0,
+        })
+        track_summary["total"] += 1
 
         if written:
             row["written"] += 1
             totals["written"] += 1
+            track_summary["written"] += 1
         if fact_checked:
             row["fact_checked"] += 1
             totals["fact_checked"] += 1
+            track_summary["fact_checked"] += 1
         if reviewed:
             row["reviewed"] += 1
             totals["reviewed"] += 1
+            track_summary["reviewed"] += 1
         if uk_translated:
             row["uk_translated"] += 1
             totals["uk_translated"] += 1
+            track_summary["uk_translated"] += 1
         if written and fact_checked and reviewed and uk_translated:
             row["complete"] += 1
             totals["complete"] += 1
@@ -3138,6 +3271,20 @@ def cmd_status(args):
         f"{_ratio(totals['uk_translated'], totals['total']):>8s}  "
         f"{_ratio(totals['complete'], totals['total']):>8s}"
     )
+    if getattr(args, "html", False):
+        dashboard_html = _render_status_dashboard_html(
+            module_rows=module_rows,
+            track_summaries=track_summaries,
+            totals=totals,
+            generated_at=datetime.now(UTC),
+        )
+        DASHBOARD_FILE.parent.mkdir(parents=True, exist_ok=True)
+        DASHBOARD_FILE.write_text(dashboard_html, encoding="utf-8")
+        print(f"\n  HTML dashboard: {DASHBOARD_FILE}")
+        try:
+            subprocess.run(["open", str(DASHBOARD_FILE)], check=False)
+        except OSError as exc:
+            print(f"  WARN: unable to open dashboard automatically: {exc}")
 
     # Index pages summary
     all_idx = sorted(CONTENT_ROOT.glob("**/index.md"))
@@ -3588,6 +3735,7 @@ models:
     # status
     sp = subparsers.add_parser("status", help="Show pipeline status")
     sp.add_argument("--verbose", "-v", action="store_true", help="Show error details")
+    sp.add_argument("--html", action="store_true", help="Generate and open HTML dashboard")
 
     # resume
     resume_parser = subparsers.add_parser("resume", help="Resume incomplete modules")
