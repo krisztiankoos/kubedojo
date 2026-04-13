@@ -14,12 +14,12 @@ Running AI and ML workloads on bare metal is a different sport from running them
 
 | Module | Focus | Time |
 |--------|-------|------|
-| [9.1 GPU Nodes & Accelerated Computing](module-9.1-gpu-nodes-accelerated/) | NVIDIA GPU Operator, MIG, time slicing, DCGM monitoring, AMD ROCm, Intel Gaudi | 60 min |
-| [9.2 Private AI Training Infrastructure](module-9.2-private-ai-training/) | Distributed training, NCCL over InfiniBand/RoCE, Volcano/Kueue, fault-tolerant jobs | 75 min |
-| [9.3 Private LLM Serving](module-9.3-private-llm-serving/) | vLLM, TGI, Ollama at scale, quantization, KServe, continuous batching | 75 min |
-| [9.4 Private MLOps Platform](module-9.4-private-mlops-platform/) | Kubeflow, MLflow, Feast, model registry, experiment tracking on bare metal | 60 min |
-| [9.5 Private AIOps](module-9.5-private-aiops/) | Anomaly detection, predictive scaling, AI-augmented incident response with guardrails | 60 min |
-| [9.6 High-Performance Storage for AI](module-9.6-high-performance-storage-ai/) | NFS-over-RDMA, Lustre/BeeGFS/WekaFS, avoiding GPU idle from storage bottlenecks | 60 min |
+| [GPU Nodes & Accelerated Computing](module-9.1-gpu-nodes-accelerated/) | NVIDIA GPU Operator, MIG, time slicing, DCGM monitoring, AMD ROCm, Intel Gaudi | 60 min |
+| [Private AI Training Infrastructure](module-9.2-private-ai-training/) | Distributed training, NCCL over InfiniBand/RoCE, Volcano/Kueue, fault-tolerant jobs | 75 min |
+| [Private LLM Serving](module-9.3-private-llm-serving/) | vLLM, TGI, Ollama at scale, quantization, KServe, continuous batching | 75 min |
+| [Private MLOps Platform](module-9.4-private-mlops-platform/) | Kubeflow, MLflow, Feast, model registry, experiment tracking on bare metal | 60 min |
+| [Private AIOps](module-9.5-private-aiops/) | Anomaly detection, predictive scaling, AI-augmented incident response with guardrails | 60 min |
+| [High-Performance Storage for AI](module-9.6-high-performance-storage-ai/) | NFS-over-RDMA, Lustre/BeeGFS/WekaFS, avoiding GPU idle from storage bottlenecks | 60 min |
 
 ---
 
