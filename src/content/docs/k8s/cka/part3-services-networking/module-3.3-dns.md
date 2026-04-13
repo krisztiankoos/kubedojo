@@ -308,6 +308,8 @@ data:
 k rollout restart deployment coredns -n kube-system
 ```
 
+> **Why `fallthrough`?** By default, if the `hosts` plugin doesn't find a match, it stops processing and returns an `NXDOMAIN` error. Adding `fallthrough` tells it to pass unresolved queries to the next plugin in the chain (like `kubernetes`). Without it, standard cluster DNS resolution would break.
+
 ---
 
 > **Stop and think**: A pod reports "connection timed out" when calling another service by name. Is this necessarily a DNS problem? What steps would you take to determine whether DNS or the network is at fault?
@@ -469,6 +471,8 @@ spec:
   - name: app
     image: nginx
 ```
+
+> **Why `ClusterFirstWithHostNet`?** When a pod uses `hostNetwork: true`, it inherits the node's `/etc/resolv.conf`, which points to the node's external DNS instead of CoreDNS. This means the pod loses the ability to resolve cluster service names. Setting `ClusterFirstWithHostNet` forces the kubelet to inject the CoreDNS configuration, allowing the pod to resolve Kubernetes services while still using the host's network namespace.
 
 ---
 
