@@ -13,11 +13,11 @@ AKS is the fastest-growing managed Kubernetes service, tightly integrated with t
 
 | # | Module | Time | What You'll Learn |
 |---|--------|------|-------------------|
-| 1 | [AKS Architecture & Node Management](module-7.1-aks-architecture/) | 2h | System/user node pools, VMSS, availability zones, Entra ID RBAC |
-| 2 | [AKS Advanced Networking](module-7.2-aks-networking/) | 3.5h | Kubenet vs Azure CNI vs Overlay vs Cilium, network policies, Private Link |
-| 3 | [AKS Workload Identity & Security](module-7.3-aks-identity/) | 1.5h | Entra Workload Identity, Secrets Store CSI, Azure Policy, Defender |
-| 4 | [AKS Storage, Observability & Scaling](module-7.4-aks-production/) | 2.5h | Azure Disks/Files, Container Insights, Managed Prometheus, KEDA |
-| 5 | [AKS Fleet Manager & Multi-Cluster Operations](module-7.5-aks-fleet-manager/) | 2.5h | Azure Kubernetes Fleet Manager, Azure Arc, cross-region, GitOps with Flux |
+| 1 | [Module 7.1: AKS Architecture & Node Management](module-7.1-aks-architecture/) | 2h | System/user node pools, VMSS, availability zones, Entra ID RBAC |
+| 2 | [Module 7.2: AKS Advanced Networking](module-7.2-aks-networking/) | 3.5h | Kubenet vs Azure CNI vs Overlay vs Cilium, network policies, Private Link |
+| 3 | [Module 7.3: AKS Workload Identity & Security](module-7.3-aks-identity/) | 1.5h | Entra Workload Identity, Secrets Store CSI, Azure Policy, Defender |
+| 4 | [Module 7.4: AKS Storage, Observability & Scaling](module-7.4-aks-production/) | 2.5h | Azure Disks/Files, Container Insights, Managed Prometheus, KEDA |
+| 5 | [Module 7.5: Azure Kubernetes Fleet Manager & Multi-Cluster Operations](module-7.5-aks-fleet-manager/) | 2.5h | Azure Kubernetes Fleet Manager, Azure Arc, cross-region, GitOps with Flux |
 
 **Total time**: ~12 hours
 
