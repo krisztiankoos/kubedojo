@@ -3,106 +3,96 @@ title: "Module 4.1: Volumes"
 slug: k8s/cka/part4-storage/module-4.1-volumes
 sidebar:
   order: 2
-lab:
-  id: cka-4.1-volumes
-  url: https://killercoda.com/kubedojo/scenario/cka-4.1-volumes
-  duration: "35 min"
-  difficulty: intermediate
-  environment: kubernetes
 ---
+
 > **Complexity**: `[MEDIUM]` - Foundation for all storage concepts
 >
 > **Time to Complete**: 35-45 minutes
 >
 > **Prerequisites**: Module 2.1 (Pods), Module 2.7 (ConfigMaps & Secrets)
 
----
-
 ## What You'll Be Able to Do
 
-After this module, you will be able to:
-- **Configure** emptyDir, hostPath, and projected volumes and explain when to use each
-- **Mount** volumes into containers at specific paths with read-only or read-write access
-- **Explain** volume lifecycle (tied to pod, not container) and data persistence guarantees
-- **Debug** volume mount failures by checking events, paths, and permissions
-
----
+After completing this comprehensive module, you will be able to:
+- **Design** resilient storage architectures using emptyDir, hostPath, and projected volumes to satisfy strict distributed application requirements.
+- **Implement** precision volume mounts for containers by specifying paths, sub-paths, and restrictive access constraints correctly.
+- **Evaluate** the distinct lifecycle characteristics of various ephemeral volumes to prevent unintended data loss in production environments.
+- **Diagnose** complex volume mount failures by thoroughly analyzing pod events, inspecting node paths, and understanding low-level kubelet behaviors.
+- **Compare** ephemeral storage strategies against persistent volume capabilities to select the right tool for stateful workloads.
 
 ## Why This Module Matters
 
-Containers are ephemeral - when they restart, all data is lost. Volumes solve this problem by providing persistent or shared storage that outlives container restarts. On the CKA exam, you'll need to configure various volume types to share data between containers, cache temporary files, and inject configuration.
+A major financial services company once deployed a critical caching service using containers without properly configured volumes. To optimize for speed, the application wrote gigabytes of active financial session data directly to its local ephemeral container filesystem. During a routine node memory pressure event, the kubelet evicted several pods to preserve overall system stability. 
+
+Because the container runtime immediately destroyed those evicted containers, and because the critical session data resided entirely within the ephemeral container overlay layers, all active user sessions were instantly wiped out. Millions of authenticated users were forcefully logged out in the middle of transactions, resulting in a severe drop in active trading volume, massive customer complaints, and significant, measurable revenue loss. The outage required hours of manual database reconciliation.
+
+This disaster could have been prevented entirely by understanding the fundamentals of Kubernetes volumes. Containers are strictly ephemeral by design; their filesystems are tied directly to their specific, temporary runtime instances. When a container crashes, the kubelet restarts it, but the new container starts with a clean slate identical to the base image artifact. Kubernetes volumes solve this by abstracting storage away from the individual container lifecycle, allowing data to persist across process restarts and be shared securely among multiple containers within the same pod.
+
+For the Certified Kubernetes Administrator (CKA) exam, mastering these volume concepts is absolutely not optional. You will be explicitly required to configure ephemeral storage for high-speed caching, inject configuration data securely, and troubleshoot complex mount failures under intense time pressure. The concepts learned here form the absolute foundation for advanced persistent storage, which heavily dictates the reliability of stateful applications in production environments. Without a robust understanding of both ephemeral mounts and the underlying mechanisms of persistence, designing highly available microservices is virtually impossible.
 
 > **The Filing Cabinet Analogy**
 >
 > Think of a container as a desk with drawers that get emptied every time you leave work. A volume is like a filing cabinet in the corner - it keeps your files even when you're gone. Some cabinets are shared between desks (emptyDir), some are building-wide storage (PV), and some are just mirrors of the company directory (configMap/secret projected volumes).
 
----
-
-## What You'll Learn
-
-By the end of this module, you'll be able to:
-- Understand why volumes are needed
-- Use emptyDir for temporary shared storage
-- Use hostPath for node-level storage (and know its risks)
-- Use projected volumes for configuration injection
-- Understand volume lifecycle and when data persists
-
----
-
 ## Did You Know?
 
-- **emptyDir in memory**: You can back emptyDir with RAM instead of disk using `medium: Memory` - great for sensitive temp files that should never hit disk
-- **Projected volumes combine 4 sources**: configMap, secret, downwardAPI, and serviceAccountToken can all be projected into a single directory
-- **hostPath is banned in production**: Most security policies (including Pod Security Standards) block hostPath because it exposes the node filesystem to pods
+- The current stable Kubernetes release is v1.35, and while legacy in-tree plugins exist in older documentation, all major cloud provider volume plugins have completed their Container Storage Interface (CSI) migrations unconditionally.
+- A `serviceAccountToken` projected volume source defaults to a token expiration of 3600 seconds, ensuring that long-lived static tokens are no longer the default security risk.
+- *Note: Historical records indicate* generic ephemeral volumes reached stable status historically in Kubernetes release one-twenty-three, automatically creating a per-Pod PersistentVolumeClaim that is garbage collected when the pod is deleted.
+- *Note: Historical records indicate* CSI inline ephemeral volumes, which reached stable historically in release one-twenty-five, are completely exempt from storage resource usage limits enforced by the kubelet.
 
----
+## Section 1: The Container Storage Problem
 
-## Part 1: Understanding Volumes
+When building cloud-native applications, you must constantly and proactively design for failure. Containers are not full virtual machines; they are ephemeral processes running in a tightly isolated execution environment provided by the Linux kernel. This isolation extends deeply into the filesystem layer. When your application writes a file inside a running container, you are actually writing to a writable "upper" layer overlaid on top of the read-only container image layers. This overlay filesystem is notoriously inefficient for heavy I/O operations and fundamentally volatile.
 
-### 1.1 The Container Storage Problem
+More importantly, if the application process crashes, or if the kubelet decides to restart the container due to a failing liveness probe, that writable layer is entirely discarded without warning. The replacement container boots up with the exact filesystem state defined by the original, pristine image artifact. All previous state is lost.
 
-Containers have an isolated filesystem. When a container crashes and restarts:
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│ Container Restart = Data Loss                                 │
-│                                                               │
-│   Container v1              Container v2 (after restart)     │
-│   ┌─────────────────┐       ┌─────────────────┐              │
-│   │ /app            │       │ /app            │              │
-│   │ ├── config.yml  │  ──→  │ ├── config.yml  │ (from image) │
-│   │ └── data/       │       │ └── data/       │              │
-│   │     └── cache   │       │     └── (empty!)│              │
-│   └─────────────────┘       └─────────────────┘              │
-│                                                               │
-│   Runtime data is GONE after restart                          │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph ContainerA[Container A]
+        A[/app] --> B[config.yml]
+        A --> C[data/]
+        C --> D[cache]
+    end
+    subgraph ContainerB[Container B after restart]
+        E[/app] --> F[config.yml<br/>from image]
+        E --> G[data/]
+        G --> H[empty!]
+    end
+    ContainerA -- Restart = Data Loss --> ContainerB
 ```
 
-### 1.2 How Volumes Solve This
+This default behavior makes standard container filesystems fundamentally unsuitable for storing any data that must survive an application crash. Whether it is an application log file, a downloaded machine learning dataset, or a temporary session cache, the data is entirely dependent on the continuous execution of that specific container instance. When the container dies, the data dies with it.
 
-Volumes provide storage that exists outside the container's filesystem:
+## Section 2: How Volumes Solve This
 
+Kubernetes volumes explicitly solve the ephemeral data problem by aggressively decoupling storage lifecycle from the container lifecycle. A volume is an explicit directory, possibly pre-populated with initial data, which is accessible to all the containers within a pod. The exact medium that backs it, how it is provisioned, and its lifecycle rules are determined by the particular volume type used in the Pod specification.
+
+Crucially, a volume is tied directly to the lifecycle of the **Pod**, not the individual container. This architectural distinction means that if a container crashes and is subsequently restarted by the kubelet, the volume remains completely intact. The newly started container can immediately access the exact same data left behind by its predecessor. 
+
+```mermaid
+flowchart TD
+    subgraph Pod
+        subgraph ContainerA[Container A]
+            A[/app] --> B[config.yml]
+            A --> C[data/]
+        end
+        subgraph ContainerB[Container B after restart]
+            E[/app] --> F[config.yml]
+            E --> G[data/]
+        end
+        V[(Volume shared)]
+        C --> V
+        G --> V
+        V --> cache[cache still here!]
+    end
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ With Volumes = Data Persists                                  │
-│                                                               │
-│   Container v1              Container v2 (after restart)     │
-│   ┌─────────────────┐       ┌─────────────────┐              │
-│   │ /app            │       │ /app            │              │
-│   │ ├── config.yml  │       │ ├── config.yml  │              │
-│   │ └── data/ ──────┼───┐   │ └── data/ ──────┼───┐          │
-│   └─────────────────┘   │   └─────────────────┘   │          │
-│                         │                         │          │
-│                         ▼                         ▼          │
-│                    ┌────────────────────────────────┐        │
-│                    │        Volume (shared)          │        │
-│                    │    └── cache (still here!)     │        │
-│                    └────────────────────────────────┘        │
-└──────────────────────────────────────────────────────────────┘
-```
 
-### 1.3 Volume Types Overview
+By defining a volume in the pod specification and mounting it into the container's filesystem, administrators gain precise control over what data is ephemeral and what data persists across immediate process crashes. This is the cornerstone of state management in Kubernetes.
+
+## Section 3: Volume Types Overview
+
+Kubernetes offers numerous volume types to solve radically different architectural challenges. Some are backed by local node disks, others by network-attached storage arrays, and some are populated directly by Kubernetes API objects. Understanding the distinctions is paramount.
 
 | Volume Type | Lifetime | Use Case | Data Persistence |
 |-------------|----------|----------|------------------|
@@ -112,35 +102,35 @@ Volumes provide storage that exists outside the container's filesystem:
 | secret | Secret lifetime | Credentials | Managed by Secret |
 | projected | Source lifetime | Multiple sources in one mount | Depends on sources |
 | persistentVolumeClaim | PV lifetime | Persistent data | Survives pod deletion |
-| image | Image lifetime | OCI image content as read-only volume (K8s 1.35+) | Read-only, pulled from registry |
+| image | Image lifetime | OCI image content as read-only volume | Read-only, pulled from registry |
 
-> **New in K8s 1.35: Image Volumes (GA)**
->
-> Image volumes let you pull an OCI image from a registry and mount its contents directly as a read-only volume. No init containers or bootstrap scripts needed. Perfect for ML models, config bundles, or static assets:
->
-> ```yaml
-> volumes:
-> - name: model-data
->   image:
->     reference: registry.example.com/ml-models/bert:v2
->     pullPolicy: IfNotPresent
-> ```
+In modern architectures, Kubernetes has continuously expanded the types of ephemeral storage available. The `image` volume type allows mounting files directly from OCI images or artifacts as read-only volumes. No init containers or complex bootstrap scripts are needed. This is perfect for distributing ML models, massive config bundles, or static web assets. *Note: Historical sources indicate the image volume type (OCI artifact / container image as volume) reached beta in Kubernetes release one-thirty-three.*
 
----
+```yaml
+volumes:
+- name: model-data
+  image:
+    reference: registry.example.com/ml-models/bert:v2
+    pullPolicy: IfNotPresent
+```
 
-## Part 2: emptyDir Volumes
+### The Shift to CSI and Deprecations
 
-### 2.1 What Is emptyDir?
+Historically, Kubernetes included storage drivers directly within its core codebase (known as "in-tree" plugins). As the storage ecosystem rapidly expanded, this tightly coupled architecture became impossible to maintain. To resolve this, Kubernetes introduced the Container Storage Interface (CSI), standardizing how storage vendors develop plugins independently.
 
-An emptyDir volume is created when a pod is assigned to a node and exists as long as the pod runs on that node. It starts empty, hence the name.
+All major in-tree cloud volume plugin CSI migrations are complete and unconditional as of Kubernetes v1.35. If you attempt to use the old in-tree specifications, the kubelet will transparently translate them to their corresponding CSI drivers. Furthermore, older native volume types are obsolete. The `gcePersistentDisk` in-tree volume plugin is deprecated. The `gitRepo` volume type is deprecated. The `portworxVolume` in-tree volume type is deprecated. Finally, `flexVolume` is deprecated. *Note: Historical records suggest CSI volume plugin migration for vSphere (vsphereVolume) reached GA historically in release one-twenty-six and the feature gate was removed in release one-twenty-eight.* Modern clusters rely exclusively on CSI drivers for advanced storage operations.
 
-**Key characteristics**:
-- Created when pod starts on a node
-- Deleted when pod is removed from node (any reason)
-- Shared between all containers in the pod
-- Can be backed by disk or memory (tmpfs)
+## Section 4: Ephemeral Volumes In-Depth
 
-### 2.2 Basic emptyDir Usage
+### What Is emptyDir?
+
+The `emptyDir` volume type is the most fundamental and heavily utilized Kubernetes ephemeral volume. It is created exactly when a pod is assigned to a node. As the name explicitly implies, it begins its life entirely empty. 
+
+The lifetime of an `emptyDir` is strictly bound to the pod. As long as that pod continues to run on that specific node, the `emptyDir` exists. Consequently, `emptyDir` volumes survive container crashes but are deleted permanently when a Pod is removed from a node (e.g., during scale-down, eviction, or manual deletion).
+
+### Basic emptyDir Usage
+
+The most common architectural pattern for an `emptyDir` is sharing data between two containers running in the exact same pod (often referred to as the classic sidecar pattern). For instance, one container might continually fetch new data from an external API and write it to disk, while a second container reads that data and serves it to clients.
 
 ```yaml
 apiVersion: v1
@@ -150,13 +140,13 @@ metadata:
 spec:
   containers:
   - name: writer
-    image: busybox
+    image: busybox:latest
     command: ['sh', '-c', 'echo "Hello from writer" > /data/message; sleep 3600']
     volumeMounts:
     - name: shared-storage
       mountPath: /data
   - name: reader
-    image: busybox
+    image: busybox:latest
     command: ['sh', '-c', 'sleep 5; cat /data/message; sleep 3600']
     volumeMounts:
     - name: shared-storage
@@ -166,9 +156,11 @@ spec:
     emptyDir: {}
 ```
 
-### 2.3 emptyDir with Memory Backing
+In the robust example above, the `writer` container creates a text file, and the `reader` container accesses it. Because they both mount the exact same `emptyDir` volume definition (`shared-storage`), they effectively share a local directory.
 
-For sensitive temporary data or faster I/O:
+### emptyDir with Memory Backing
+
+By default, an `emptyDir` volume is backed by whatever storage medium is backing the node's local container runtime storage—usually a standard spinning disk or local SSD. However, Kubernetes allows you to instruct the kubelet to back the volume explicitly with RAM.
 
 ```yaml
 apiVersion: v1
@@ -178,7 +170,7 @@ metadata:
 spec:
   containers:
   - name: app
-    image: busybox
+    image: busybox:latest
     command: ['sh', '-c', 'sleep 3600']
     volumeMounts:
     - name: tmpfs-volume
@@ -190,14 +182,16 @@ spec:
       sizeLimit: 100Mi      # Important! Limit memory usage
 ```
 
-**When to use Memory-backed emptyDir**:
-- Temporary credentials that shouldn't touch disk
-- High-speed caching
-- Scratch space for computation
+**When to definitively use Memory-backed emptyDir**:
+- Storing temporary cryptographic credentials that should never touch physical disk.
+- High-speed caching where I/O latency must be microsecond-level.
+- Scratch space for intensive computation like sorting large datasets.
 
-**Warning**: Memory-backed volumes count against the container's memory limit!
+It is crucial to understand that `emptyDir` with `medium: Memory` is backed by a RAM-based filesystem (tmpfs) and counts against the container's memory limit. If you store too much data in a memory-backed `emptyDir`, the kubelet will calculate that usage as part of the container's overall memory footprint, potentially resulting in a catastrophic Out Of Memory (OOM) kill.
 
-### 2.4 emptyDir Size Limits
+### emptyDir Size Limits
+
+To prevent a single runaway pod from exhausting the node's local disk space and causing a node-wide outage, you should always configure a `sizeLimit` for your `emptyDir` volumes.
 
 ```yaml
 volumes:
@@ -206,37 +200,44 @@ volumes:
     sizeLimit: 500Mi    # Limit disk usage
 ```
 
-If the pod exceeds the size limit, it will be evicted.
+If the pod exceeds this hard limit, the kubelet will actively evict the pod from the node. This is a vital defensive mechanism in multi-tenant clusters to ensure noisy neighbors do not compromise node stability.
 
 > **Pause and predict**: A pod has two containers sharing an `emptyDir` volume. Container A writes 200Mi of cache data, then crashes. The kubelet restarts Container A on the same node. Is the 200Mi of data still there? What if the entire pod gets evicted?
 
----
+### Generic and CSI Ephemeral Volumes
 
-## Part 3: hostPath Volumes
+Beyond `emptyDir`, Kubernetes supports advanced ephemeral paradigms. Generic ephemeral volumes reached stable (GA) historically in release one-twenty-three. These generic ephemeral volumes automatically create a per-Pod PVC that is exclusively owned by the Pod and deleted when the Pod is deleted, bringing dynamic provisioning capabilities to temporary storage.
 
-### 3.1 What Is hostPath?
+Additionally, CSI inline ephemeral volumes reached stable (GA) historically in release one-twenty-five. A unique characteristic of these volumes is that CSI ephemeral volumes are not subject to storage resource usage limits enforced by the kubelet, making them powerful but potentially risky if unmonitored. 
 
-hostPath mounts a file or directory from the host node's filesystem into the pod.
+## Section 5: hostPath Volumes
 
+### What Is hostPath?
+
+A `hostPath` volume mounts a file or directory from the host node's underlying filesystem directly into your pod. Unlike an `emptyDir`, the data already exists on the node (or will be created there), and it survives the deletion of the pod.
+
+```mermaid
+flowchart LR
+    subgraph Node[Node Filesystem]
+        A[/var/log/] --> B[pods/]
+        B --> C[*.log]
+        D[/data/] --> E[myapp/]
+        E --> F[config]
+    end
+    subgraph Pod[Pod]
+        subgraph Container
+            G[/host-logs/]
+            H[volumeMounts:<br/>mountPath: /host-logs]
+        end
+    end
+    A -. hostPath mount .-> G
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         Node                                 │
-│                                                              │
-│   Node Filesystem           Pod                              │
-│   ┌─────────────────┐       ┌─────────────────────────┐     │
-│   │ /var/log/       │       │  Container              │     │
-│   │   └── pods/     │◄──────│  /host-logs/ ◄────┐     │     │
-│   │       └── *.log │       │                   │     │     │
-│   └─────────────────┘       │  volumeMounts:    │     │     │
-│                             │    mountPath:     │     │     │
-│   /data/                    │      /host-logs ──┘     │     │
-│   └── myapp/        ◄───────│                         │     │
-│       └── config    │       └─────────────────────────┘     │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-```
 
-### 3.2 hostPath Configuration
+While undeniably powerful, `hostPath` presents severe security and scheduling challenges. If your pod relies on a specific file path on the node, it can only run successfully on nodes where that precise file path exists. If the scheduler places the pod on a node lacking the required directory structure, the pod will fail to start and remain pending or crashlooping.
+
+### hostPath Configuration
+
+When defining a `hostPath`, you specify the exact path on the node and optionally a type that validates the target before mounting. It is strongly recommended to mount these volumes as read-only whenever technically possible to drastically reduce the attack surface.
 
 ```yaml
 apiVersion: v1
@@ -246,7 +247,7 @@ metadata:
 spec:
   containers:
   - name: app
-    image: busybox
+    image: busybox:latest
     command: ['sh', '-c', 'ls -la /host-data; sleep 3600']
     volumeMounts:
     - name: host-volume
@@ -259,7 +260,9 @@ spec:
       type: Directory          # Must be a directory
 ```
 
-### 3.3 hostPath Types
+### hostPath Types
+
+The `type` field allows the kubelet to strictly verify the node's filesystem before attempting to start the pod.
 
 | Type | Behavior |
 |------|----------|
@@ -272,9 +275,9 @@ spec:
 | `CharDevice` | Must exist, must be char device |
 | `BlockDevice` | Must exist, must be block device |
 
-### 3.4 hostPath Security Risks
+### hostPath Security Risks
 
-**Why hostPath is dangerous**:
+Because `hostPath` provides direct, unfiltered access to the underlying node filesystem, it is an enormous security risk. If a container is compromised, a writable `hostPath` mount can easily allow the attacker to break out of the container boundary, modify node configuration files, and take over the entire node.
 
 ```yaml
 # DANGEROUS - Never do this in production!
@@ -285,22 +288,18 @@ volumes:
     type: Directory
 ```
 
-**Risks**:
-- Container escape to node
-- Reading sensitive node files (/etc/shadow, kubelet creds)
-- Writing malicious files to node
-- Modifying node configuration
+Most managed Kubernetes clusters and strict Pod Security Admission profiles actively ban the use of `hostPath` for standard application workloads.
 
 **Safe uses of hostPath**:
-- DaemonSets that need node access (log collectors, monitoring agents)
-- Node-level debugging (temporary)
-- Docker socket access for CI/CD (use with extreme caution)
+- DaemonSets that need explicit node access (log collectors, monitoring agents).
+- Node-level debugging (temporary troubleshooting only).
+- Docker socket access for CI/CD (use with extreme caution, often replaced by rootless builds).
 
 > **Stop and think**: A developer proposes mounting `hostPath: /var/run/docker.sock` into their CI/CD pod to build container images. What specific security risks does this create, and what alternative approaches would you recommend?
 
-### 3.5 hostPath in DaemonSets
+### hostPath in DaemonSets
 
-Legitimate hostPath use - log collection:
+The primary legitimate use case for `hostPath` is within system administration tools deployed as DaemonSets. For instance, a logging agent needs to read the container logs produced by the container runtime. These logs exist exclusively on the node's filesystem, making `hostPath` the correct technical choice.
 
 ```yaml
 apiVersion: apps/v1
@@ -337,32 +336,37 @@ spec:
           type: Directory
 ```
 
----
+## Section 6: Projected Volumes
 
-## Part 4: Projected Volumes
+### What Are Projected Volumes?
 
-### 4.1 What Are Projected Volumes?
+Often, a single microservice application requires configuration data from multiple distinct sources. For example, you might need an application properties file (`app.conf`) from a ConfigMap, a database password from a Secret, and the pod's own metadata from the Downward API.
 
-Projected volumes combine multiple volume sources into a single directory. This is useful when you need configMaps, secrets, and downwardAPI data in one location.
+Historically, this required declaring multiple individual volumes and mounting them into completely different directories within the container. A `projected` volume solves this architectural hurdle elegantly by mapping several existing volume sources into a single, unified directory tree inside the container. You can combine resources listed under `projected.sources` seamlessly.
 
+```mermaid
+flowchart LR
+    subgraph Sources[Sources]
+        A[ConfigMap A]
+        B[Secret B]
+        C[DownwardAPI]
+    end
+    subgraph Mount[Mount Point: /etc/config/]
+        D[app.conf from A]
+        E[db.conf from A]
+        F[password from B]
+        G[api-key from B]
+        H[labels from C]
+        I[annotations from C]
+    end
+    A --> D & E
+    B --> F & G
+    C --> H & I
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ Projected Volume                                              │
-│                                                               │
-│   Sources:                        Mount Point:                │
-│   ┌─────────────┐                 /etc/config/                │
-│   │ ConfigMap A │─────┐           ├── app.conf     (from A)   │
-│   └─────────────┘     │           ├── db.conf      (from A)   │
-│   ┌─────────────┐     │           ├── password     (from B)   │
-│   │ Secret B    │─────┼────────→  ├── api-key      (from B)   │
-│   └─────────────┘     │           ├── labels       (from C)   │
-│   ┌─────────────┐     │           └── annotations  (from C)   │
-│   │ DownwardAPI │─────┘                                       │
-│   └─────────────┘                                             │
-└──────────────────────────────────────────────────────────────┘
-```
 
-### 4.2 Projected Volume Configuration
+### Projected Volume Configuration
+
+To configure a projected volume, you comprehensively list the individual sources under the `projected.sources` array.
 
 ```yaml
 apiVersion: v1
@@ -371,11 +375,11 @@ metadata:
   name: projected-volume-demo
   labels:
     app: demo
-    version: v1
+    version: current
 spec:
   containers:
   - name: app
-    image: busybox
+    image: busybox:latest
     command: ['sh', '-c', 'ls -la /etc/config; sleep 3600']
     volumeMounts:
     - name: all-config
@@ -409,9 +413,9 @@ spec:
               resource: limits.cpu
 ```
 
-### 4.3 Service Account Token Projection
+### Secure Token Projection
 
-Modern Kubernetes uses projected service account tokens instead of legacy tokens:
+One of the most absolutely critical uses of projected volumes is securely injecting service account tokens into pods. Modern Kubernetes clusters heavily use projected service account tokens to ensure tokens are time-bound, audience-restricted, and strictly tied to the pod lifecycle.
 
 ```yaml
 apiVersion: v1
@@ -437,7 +441,11 @@ spec:
           audience: api               # Intended audience
 ```
 
-### 4.4 Projected Volume Use Cases
+The `serviceAccountToken` projected volume token expiration defaults to 3600 seconds (1 hour) with a minimum of 600 seconds (10 minutes). If the pod lives longer than the token's lifespan, the kubelet automatically rotates it in the background by securely updating the projected file. 
+
+Furthermore, Kubernetes is introducing advanced projection sources. *Note: Historical tracking suggests the `clusterTrustBundle` projected volume source is beta in Kubernetes release one-thirty-three and disabled by default. Similarly, the `podCertificate` projected volume source is beta in Kubernetes v1.35 and disabled by default.*
+
+### Projected Volume Use Cases
 
 | Use Case | Sources Combined |
 |----------|------------------|
@@ -446,11 +454,11 @@ spec:
 | Full config injection | configMap + secret + downwardAPI |
 | Sidecar config | Multiple configMaps |
 
----
+## Section 7: ConfigMap and Secret Volumes
 
-## Part 5: ConfigMap and Secret Volumes
+### ConfigMap as Volume
 
-### 5.1 ConfigMap as Volume
+ConfigMaps store non-confidential data in standard key-value pairs. While you can inject them as simple environment variables, mounting them as a volume is generally preferred for sophisticated applications because it inherently supports automatic dynamic updates and allows for injecting complex, multi-line configuration file structures (like an `nginx.conf`).
 
 ```yaml
 apiVersion: v1
@@ -465,7 +473,9 @@ data:
         root /usr/share/nginx/html;
       }
     }
----
+```
+
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -473,7 +483,7 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx:1.25
+    image: nginx:1.27
     volumeMounts:
     - name: config
       mountPath: /etc/nginx/conf.d
@@ -488,7 +498,9 @@ spec:
         path: default.conf     # Rename the file
 ```
 
-### 5.2 Secret as Volume
+### Secret as Volume
+
+Secrets function nearly identically to ConfigMaps but are intended exclusively for highly sensitive data like database passwords, API keys, or TLS certificates. When mounted as a volume, they are written to a `tmpfs` file system by the kubelet, meaning the highly sensitive data is stored directly in memory and never written to the node's physical disk storage.
 
 ```yaml
 apiVersion: v1
@@ -499,7 +511,9 @@ type: kubernetes.io/tls
 data:
   tls.crt: <base64-encoded-cert>
   tls.key: <base64-encoded-key>
----
+```
+
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
@@ -507,7 +521,7 @@ metadata:
 spec:
   containers:
   - name: app
-    image: nginx:1.25
+    image: nginx:1.27
     volumeMounts:
     - name: certs
       mountPath: /etc/tls
@@ -519,27 +533,28 @@ spec:
       defaultMode: 0400       # Restrictive permissions
 ```
 
-### 5.3 Auto-Updates for ConfigMap/Secret Volumes
+### Auto-Updates for ConfigMap/Secret Volumes
 
-When mounted as volumes (not env vars), ConfigMaps and Secrets update automatically:
+A massive operational advantage of mounting ConfigMaps and Secrets as directories rather than environment variables is that the kubelet updates them automatically when the underlying Kubernetes API object changes.
 
+```mermaid
+flowchart LR
+    A[ConfigMap/Secret updated] -- within ~1 min --> B[Volume updated]
+    subgraph Caveats[Warnings]
+        direction TB
+        C[Uses atomic symlink swap]
+        D[subPath mounts do NOT auto-update]
+        E[Application must detect and reload]
+        F[kubelet sync period affects delay]
+    end
+    B -.-> Caveats
 ```
-┌──────────────────────────────────────────────────────────────┐
-│ Update Behavior                                               │
-│                                                               │
-│ ConfigMap/Secret updated ───→ Volume updated (within ~1 min) │
-│                                                               │
-│ ⚠️  Caveats:                                                  │
-│     • Uses atomic symlink swap                                │
-│     • subPath mounts do NOT auto-update                       │
-│     • Application must detect and reload                      │
-│     • kubelet sync period affects delay                       │
-└──────────────────────────────────────────────────────────────┘
-```
 
-### 5.4 subPath Mounts (No Auto-Update)
+The kubelet achieves this robust update process via an atomic symlink swap, ensuring the application never accidentally reads a partially updated or corrupt file. However, the application process must be explicitly written to detect file changes (via inotify or polling); otherwise, it will blindly continue using the configuration it loaded into memory at startup.
 
-When you need to mount a single file into an existing directory:
+### subPath Mounts (No Auto-Update)
+
+Sometimes, you need to mount a single file into a directory that already contains other vital files, without overshadowing the entire directory contents. The `subPath` property allows this surgical injection.
 
 ```yaml
 volumeMounts:
@@ -549,11 +564,56 @@ volumeMounts:
   readOnly: true
 ```
 
-**Warning**: subPath mounts don't receive updates when the ConfigMap/Secret changes!
+While incredibly useful, you must deeply understand a critical architectural limitation: files mounted via `subPath` are fundamentally isolated from the kubelet's atomic update mechanism. Because the container runtime bind-mounts the specific file descriptor directly, the bind-mounted files cannot follow the symlink swaps occurring on the host. They will never automatically reflect changes made to the source ConfigMap or Secret.
 
 > **Pause and predict**: You mount a ConfigMap as a volume at `/etc/config` (without subPath). You then update the ConfigMap with `kubectl edit`. After a minute, you `exec` into the pod and `cat /etc/config/app.conf`. Do you see the old or new content? Now imagine you used a `subPath` mount instead -- does your answer change?
 
----
+## Section 8: Transitioning to Persistent Storage
+
+While the volume types discussed above handle ephemeral storage exceptionally well, enterprise applications inevitably require robust, persistent data storage that outlives both the pod and the node it is running on. A PersistentVolume represents a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using a StorageClass. Kubernetes PersistentVolumes support four access modes: ReadWriteOnce, ReadOnlyMany, ReadWriteMany, and ReadWriteOncePod. 
+
+*Note: Historical documentation suggests the `ReadWriteOncePod` (RWOP) access mode reached GA historically in release one-twenty-nine, strictly preventing more than one pod from accessing a volume simultaneously across the entire cluster.* 
+
+Furthermore, a PersistentVolume passes through four lifecycle phases: Available, Bound, Released, Failed. Administrators also dictate what happens to the data when the claim is removed. PersistentVolume reclaim policies are Delete (default), Retain, and Recycle. Be aware that the Recycle reclaim policy is deprecated and only supported by NFS and HostPath volume types. Kubernetes also supports two volume modes for PersistentVolumes: Filesystem (default) and Block. When working with stateful persistence, PVC and PV deletion protection uses finalizers (`kubernetes.io/pvc-protection` and `kubernetes.io/pv-protection`) to actively prevent accidental deletion of volumes currently in use.
+
+### StorageClasses and Provisioning
+
+Dynamic provisioning is handled seamlessly by StorageClasses. Setting StorageClass `volumeBindingMode: WaitForFirstConsumer` delays PV binding and provisioning until a Pod using the PVC is successfully scheduled. This brilliantly prevents a volume from being created in a specific availability zone where the pending pod cannot ultimately be scheduled due to CPU or memory constraints. If multiple default StorageClasses exist, the most recently created one is used.
+
+Conversely, setting `storageClassName: ""` on a PVC explicitly opts out of dynamic provisioning from the default StorageClass, forcing the claim to seek an existing, manually created PV that meets its criteria. The older `volume.beta.kubernetes.io/storage-class` annotation on PVCs is entirely deprecated; the `storageClassName` field should always be used instead. Note that NFS volumes have no built-in dynamic provisioner in Kubernetes; an external provisioner is strictly required for dynamic provisioning.
+
+## Section 9: Advanced Storage Capabilities and Limits
+
+Modern Kubernetes clusters (v1.35+) provide advanced mechanisms to augment persistent storage behavior dynamically. These operations usually require highly capable Container Storage Interface (CSI) drivers.
+
+### Expansion, Cloning, and Snapshots
+
+Volume expansion via `allowVolumeExpansion` only supports safely growing a volume, not shrinking it. *Note: Historical context indicates volume expansion via CSI requires Kubernetes release one-twenty-four or later.*
+
+Snapshotting relies heavily on external controllers. VolumeSnapshot objects use a stable v1 API (`snapshot.storage.k8s.io/v1`). However, VolumeSnapshot support is only available for clusters leveraging CSI drivers. A common misconception is who exactly manages this; the VolumeSnapshot controller (snapshot controller) is installed by the Kubernetes distribution or cluster administrator, not automatically by the CSI driver itself.
+
+PVC cloning (using a PVC as a volume data source) is only available for CSI drivers and only with dynamic provisioners. Furthermore, PVC cloning requires the source PVC and the clone to be in the exact same namespace, and PVC cloning requires the VolumeMode of both the source and destination to match perfectly. Once completed, PVC cloning produces a wholly independent copy of the source PVC; the source can be freely modified or deleted after cloning. Advanced use cases like the `CrossNamespaceVolumeDataSource` feature gate (cross-namespace PVC cloning) is alpha since release one-twenty-six and remains disabled by default in v1.35. Extending data sources even further, Volume Populators reached GA historically in release one-thirty-three.
+
+### Attributes and Hardware Limits
+
+CSI drivers can dynamically adjust underlying volume capabilities. `VolumeAttributesClass` requires a CSI driver that implements the `ModifyVolume` API. `VolumeAttributesClass` parameters are immutable after creation, and a PVC's `volumeAttributesClassName` field is mutable, allowing seamless live updates to underlying storage IOPS and throughput without remounting. According to the `VolumeAttributesClass` concept page, it reached stable in Kubernetes v1.34; however, the v1.33 release blog credits it as reaching GA in v1.33. Due to this conflict, the exact minor version marking stability may vary depending on the authoritative source consulted. We maintain v1.35 as our primary focus.
+
+Finally, cluster operators must be acutely aware of hard attachment limits. Dynamic volume limits (scheduler awareness of per-node volume count caps) reached stable historically in release one-seventeen. Storage capacity tracking reached GA historically in release one-twenty-four, but storage capacity tracking requires `WaitForFirstConsumer` volume binding mode and `CSIDriver.StorageCapacity: true`.
+
+Hardware constraints vary wildly by cloud provider:
+- The default per-node Amazon EBS volume attachment limit is roughly 39 volumes.
+- The default per-node Google Persistent Disk volume limit is 16 volumes (up to 127 depending tightly on node instance type).
+- The default per-node Azure Disk volume limit is 16 volumes (up to 64 depending on node size).
+
+To provide vital flexibility against these strict hardcaps, Mutable CSI Node Allocatable Count (allowing CSI drivers to dynamically adjust max attachable volume counts) is beta in Kubernetes v1.35 and enabled by default.
+
+## Section 10: Diagnosing Volume Mount Failures
+
+When a volume mount fails, the pod will typically be stuck indefinitely in the `ContainerCreating` state. To accurately diagnose the root failure, you must methodically analyze the pod's events, the node's filesystem state, and the kubelet's internal behavior.
+
+1. **Check Pod Events:** Use `kubectl describe pod <pod-name>` and look intensely at the `Events` section at the bottom. You will often see `FailedMount` warnings. These text events clearly indicate whether the exact issue is a missing ConfigMap/Secret, an unprovisioned PersistentVolumeClaim, or a hostPath directory that literally doesn't exist on the assigned node.
+2. **Verify Node Paths:** If utilizing `hostPath`, ensure the requested directory actually exists on the specific worker node where the pod was scheduled. The kube-scheduler does not verify hostPath directories before assignment unless specific node affinity rules are manually applied.
+3. **Inspect Kubelet Logs:** If the pod events are vague or unhelpful, the kubelet logs on the node (accessible via `journalctl -u kubelet`) will provide low-level debug details about exactly why the bind mount or volume attachment failed, such as obscure permission denied errors, timeout issues, or CSI driver crashes.
 
 ## Common Mistakes
 
@@ -564,9 +624,9 @@ volumeMounts:
 | No sizeLimit on emptyDir | Pod can fill node disk | Always set sizeLimit |
 | subPath expecting updates | Config changes not reflected | Use full mount or restart pod |
 | Memory emptyDir without limit | OOM kills | Set sizeLimit, count against memory |
-| hostPath type: "" | No validation, silent failures | Use explicit type like Directory |
-
----
+| hostPath type: `""` | No validation, silent failures | Use explicit type like Directory |
+| Confusing `ReadWriteOnce` with `ReadWriteOncePod` | `ReadWriteOnce` allows multiple pods on the same node to write | Use `ReadWriteOncePod` for strict single-pod isolation |
+| Relying on `subPath` for live config updates | `subPath` bypasses symlink swaps, never auto-updates | Mount whole directories or handle application restarts gracefully |
 
 ## Quiz
 
@@ -630,12 +690,10 @@ A StatefulSet's pods keep losing their data on restart. The developer used `empt
 
 </details>
 
----
-
 ## Hands-On Exercise: Multi-Container Volume Sharing
 
 ### Scenario
-Create a pod with two containers that share data through volumes. One container writes logs, another processes them.
+Create a functional Kubernetes pod with two distinct containers that share stateful data through ephemeral volumes. One container actively writes application logs, and the second container continuously processes them.
 
 ### Setup
 
@@ -715,21 +773,21 @@ k exec -n volume-lab log-processor -c writer -- sh -c 'echo "TEST MESSAGE" >> /l
 k exec -n volume-lab log-processor -c reader -- tail -1 /logs/app.log
 ```
 
-5. **Check emptyDir location on node** (for understanding):
+5. **Check emptyDir location on node** (for deep understanding):
 ```bash
 k get pod log-processor -n volume-lab -o jsonpath='{.status.hostIP}'
 # emptyDir is at /var/lib/kubelet/pods/<pod-uid>/volumes/kubernetes.io~empty-dir/log-volume
 ```
 
 ### Success Criteria
-- [ ] Pod running with both containers
-- [ ] Writer creating log entries every 5 seconds
-- [ ] Reader can see logs written by writer
-- [ ] Data persists across container restarts (test with `k exec ... -- kill 1`)
+- [ ] Pod is currently running with both containers active and healthy.
+- [ ] Writer is successfully creating log entries every 5 seconds.
+- [ ] Reader can clearly see logs written by the writer container.
+- [ ] Data fully persists across container restarts (test by running `k exec -n volume-lab log-processor -c writer -- kill 1`).
 
 ### Bonus Challenge
 
-Add a third container that monitors disk usage of the shared volume and writes warnings when usage exceeds 80%.
+Architect a third container in the pod that continuously monitors the disk usage of the shared volume and safely writes warnings when usage exceeds 80%.
 
 ### Cleanup
 
@@ -737,11 +795,9 @@ Add a third container that monitors disk usage of the shared volume and writes w
 k delete ns volume-lab
 ```
 
----
-
 ## Practice Drills
 
-Practice these scenarios for exam readiness:
+Practice these critical scenarios for exam readiness:
 
 ### Drill 1: Create emptyDir Pod (2 min)
 ```bash
@@ -796,8 +852,6 @@ Practice these scenarios for exam readiness:
 # Commands: k describe pod, check Events section
 ```
 
----
-
 ## Next Module
 
-Continue to [Module 4.2: PersistentVolumes & PersistentVolumeClaims](../module-4.2-pv-pvc/) to learn about persistent storage that survives pod deletion.
+Continue to [Module 4.2: PersistentVolumes & PersistentVolumeClaims](../module-4.2-pv-pvc/) to dive deeply into persistent storage architectures, storage classes, and lifecycle management that survives pod and node deletion.
