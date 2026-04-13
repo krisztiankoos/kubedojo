@@ -43,50 +43,26 @@ This module teaches you how to integrate cost awareness into your IaC workflow�
 
 ## The Cost Visibility Problem
 
-Cloud costs are often invisible until the bill arrives.
+Cloud costs are often invisible until the bill arrives. 
 
+```mermaid
+flowchart TD
+    subgraph Traditional["Traditional Approach: 45-60 Days of Blind Spending"]
+        direction LR
+        T1["Day 1:<br>Deploy expensive resources"] --> T2["Day 30:<br>Month closes"]
+        T2 --> T3["Day 45:<br>Bill arrives"]
+        T3 --> T4["Day 60:<br>Finance notices"]
+    end
+
+    subgraph Modern["IaC Cost Management: Cost Visible Before Deploy"]
+        direction LR
+        M1["PR Created:<br>Cost estimate generated"] --> M2["PR Review:<br>Cost approval required"]
+        M2 --> M3["Merge:<br>Budget check passes"]
+        M3 --> M4["Deploy:<br>Real-time tracking begins"]
+    end
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                   COST VISIBILITY TIMELINE                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Traditional Approach:                                          │
-│                                                                 │
-│  Day 1        Day 15       Day 30      Day 45       Day 60     │
-│    │            │            │           │            │         │
-│    ▼            │            │           │            │         │
-│  Deploy        │            │           │            │         │
-│  expensive     │            │           │            │         │
-│  resources     │            │           │            │         │
-│    │            │            ▼           │            │         │
-│    │            │         Month         │            │         │
-│    │            │         closes        │            │         │
-│    │            │            │           ▼            │         │
-│    │            │            │        Bill           │         │
-│    │            │            │        arrives        │         │
-│    │            │            │           │            ▼         │
-│    │            │            │           │         Finance      │
-│    │            │            │           │         notices      │
-│    │            │            │           │            │         │
-│    └────────────┴────────────┴───────────┴────────────┘         │
-│                      45-60 DAYS OF BLIND SPENDING               │
-│                                                                 │
-│  ─────────────────────────────────────────────────────────────  │
-│                                                                 │
-│  IaC Cost Management:                                           │
-│                                                                 │
-│  PR Created    PR Review     Merge        Deploy                │
-│    │            │             │            │                    │
-│    ▼            ▼             ▼            ▼                    │
-│  Cost         Cost          Budget       Real-time             │
-│  estimate     approval      check        tracking              │
-│  generated    required      passes       begins                │
-│    │            │             │            │                    │
-│    └────────────┴─────────────┴────────────┘                    │
-│                   COST VISIBLE BEFORE DEPLOY                    │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+> **Stop and think**: Look at the traditional timeline. If a misconfigured auto-scaling group spins up 50 instances on Day 2, how much money will the company have wasted by the time Finance notices on Day 60? How does the IaC Cost Management approach structurally prevent this?
 
 ---
 
@@ -150,7 +126,7 @@ infracost diff --path . --compare-to infracost-base.json
 #   ~ Instance usage (Linux/UNIX, on-demand, t3.medium → t3.large)
 #                                              730  hours  $30.37 → $60.74
 #
-# Monthly cost will increase by $731.17 📈
+# Monthly cost will increase by $731.17
 #
 # ──────────────────────────────────
 # Project total:     $952.24 (was $221.07)
@@ -219,7 +195,7 @@ jobs:
 
           # Fail if monthly cost increase exceeds $500
           if (( $(echo "$COST_CHANGE > 500" | bc -l) )); then
-            echo "❌ Cost increase exceeds $500/month threshold"
+            echo "Cost increase exceeds $500/month threshold"
             echo "Please get approval from @finance-team"
             exit 1
           fi
@@ -228,7 +204,7 @@ jobs:
 ### PR Comment Example
 
 ```markdown
-## 💰 Infracost Report
+## Infracost Report
 
 **Monthly cost will increase by $731.17**
 
@@ -249,7 +225,7 @@ jobs:
 </details>
 
 ---
-⚠️ **Approval required**: Changes exceed $500/month threshold
+**Approval required**: Changes exceed $500/month threshold
 cc: @finance-team @platform-team
 ```
 
@@ -343,6 +319,8 @@ warn[msg] {
     )
 }
 ```
+
+> **Pause and predict**: If a developer creates a new `aws_eks_cluster` resource but forgets to add the `CostCenter` tag, which of the Rego rules above will trigger, and what will the output message be?
 
 ### Terraform Validation Rules
 
@@ -909,7 +887,7 @@ resource "aws_instance" "data_processor" {
 ```yaml
 # 1. Infracost in CI would have shown:
 # "Monthly cost will increase by $34,560" (10 × $4.80 × 720 hours)
-# ⚠️ Exceeds $500 threshold - requires approval
+# Exceeds $500 threshold - requires approval
 
 # 2. Policy as code would have blocked:
 deny[msg] {
@@ -951,138 +929,51 @@ deny[msg] {
 ## Quiz
 
 <details markdown="1">
-<summary>1. What is Infracost and how does it help with IaC cost management?</summary>
+<summary>1. Your team is tired of discovering expensive infrastructure changes only after the monthly cloud bill arrives. You propose implementing Infracost in your CI/CD pipeline. How exactly does this tool solve the delayed visibility problem, and at what stage does it intervene?</summary>
 
-**Answer**: Infracost is a tool that provides cost estimates for Terraform configurations before deployment. It:
-- Estimates monthly costs based on resource configurations
-- Compares cost changes between branches (diff)
-- Posts cost estimates as PR comments
-- Integrates with CI/CD to block changes exceeding thresholds
-- Supports multiple cloud providers
-- Enables "shift-left" cost awareness
+**Answer**: Infracost solves the delayed visibility problem by shifting cost estimation to the left, specifically during the pull request phase. It parses your Terraform code and generates a breakdown of expected monthly costs before any infrastructure is actually provisioned. By posting these estimates directly as comments on the PR, developers and reviewers can immediately see the financial impact of their code changes. This allows teams to set automated budget guardrails and require finance approval for expensive modifications, effectively eliminating end-of-month billing surprises.
 </details>
 
 <details markdown="1">
-<summary>2. Calculate the monthly cost savings if you switch 10 t3.medium instances from on-demand to Reserved Instances (3-year, no upfront), given that on-demand is $0.0416/hour and RI is $0.0243/hour.</summary>
+<summary>2. You are auditing your team's AWS environments and notice that 10 `t3.medium` instances are running on-demand 24/7 for a stable, long-term backend service. You decide to switch them to 3-year, no-upfront Reserved Instances. Given that on-demand is $0.0416/hour and RI is $0.0243/hour, what are the percentage savings, and why is this purchasing model appropriate for this specific workload?</summary>
 
-**Answer**:
-- On-demand monthly: 10 × $0.0416 × 730 hours = **$303.68**
-- RI monthly: 10 × $0.0243 × 730 hours = **$177.39**
-- Monthly savings: $303.68 - $177.39 = **$126.29**
-- Annual savings: $126.29 × 12 = **$1,515.48**
-- 3-year savings: $1,515.48 × 3 = **$4,546.44**
-- Percentage savings: 41.6%
+**Answer**: The switch to Reserved Instances will yield approximately 41.6% in savings compared to the on-demand pricing. This purchasing model is highly appropriate because the workload is described as a stable, long-term backend service running 24/7. Reserved Instances require a commitment to a specific capacity over a 1-year or 3-year term, which offers significant discounts in exchange for that guaranteed usage. Since the baseline capacity for this service is predictable and unlikely to decrease, committing to an RI eliminates the premium paid for the flexibility of on-demand instances that the team does not actually need.
 </details>
 
 <details markdown="1">
-<summary>3. What are the essential cost allocation tags every resource should have?</summary>
+<summary>3. Your company has three different engineering teams deploying resources to a shared AWS account using Terraform. Finance is struggling to figure out which team is responsible for the recent spike in database costs. Which core cost allocation tags should you enforce in your IaC templates to solve this attribution problem, and how do they function together?</summary>
 
-**Answer**: Essential tags for cost allocation:
-- **Environment**: dev, staging, production (enables env-level reporting)
-- **Team**: Owning team (enables team chargebacks)
-- **CostCenter**: Finance code (enables department budgeting)
-- **Project**: Business project (enables project-level ROI)
-- **ManagedBy**: terraform/manual (identifies IaC vs manual)
-
-Optional but useful:
-- Application, Service, Owner (individual), Compliance, DataClass
+**Answer**: To properly attribute costs, you should enforce tags for Environment, Team, CostCenter, and Project on every resource. The Environment tag separates production spend from development and staging, helping to identify environments that might be over-provisioned. The Team and CostCenter tags are crucial for finance, as they allow cloud providers to group billing line items by specific departments or operational budgets. Together, these tags create a multi-dimensional matrix in the cloud provider's billing dashboard, enabling granular reporting and automated chargebacks for the exact resources each engineering group provisions.
 </details>
 
 <details markdown="1">
-<summary>4. Why is it important to have different resource sizes for dev/staging vs production?</summary>
+<summary>4. A junior engineer submits a PR that provisions a staging environment using the exact same `db.r5.2xlarge` database instances as production, arguing that staging must perfectly mirror production to catch bugs. Why should you reject this configuration from a cost management perspective, and how should you address the engineer's concerns?</summary>
 
-**Answer**:
-- **Cost reduction**: Dev/staging typically need 10-20% of production capacity
-- **Example savings**: If production uses db.r5.2xlarge ($700/month), dev can use db.t3.medium ($30/month) = 96% savings
-- **Total impact**: If you have 3 environments, right-sizing non-production can reduce overall costs by 50-60%
-- **Trade-off**: Dev/staging performance issues don't reflect production, but cost savings usually outweigh this
-- **Best practice**: Document performance differences, test performance-critical changes in staging with production-like resources
+**Answer**: You should reject this configuration because provisioning production-sized resources for non-production environments often leads to massive, unnecessary cloud waste, sometimes paying up to three times more than required. Staging environments typically serve a fraction of the traffic volume that production handles, making high-capacity instances severely underutilized. While it is true that environments should mirror production functionally and architecturally, they do not need to mirror it in raw compute scale unless conducting a specific load test. You can address the engineer's concerns by using Terraform variables to dynamically size down the instance class (e.g., `db.t3.medium`) based on the environment name, while temporarily scaling up only when dedicated performance testing is scheduled.
 </details>
 
 <details markdown="1">
-<summary>5. How can Terraform validation rules help prevent cost overruns?</summary>
+<summary>5. A developer accidentally copies a Terraform configuration intended for a massive data processing job and tries to deploy a fleet of `p4d.24xlarge` GPU instances for a simple web application. How can Terraform validation rules automatically intercept and block this costly mistake before it reaches the apply phase?</summary>
 
-**Answer**: Validation rules can:
-- Block expensive instance types unless explicitly approved
-- Limit storage sizes (e.g., max 1TB without review)
-- Restrict Multi-AZ to production only
-- Enforce cost center tags before deployment
-- Limit replica counts
-- Prevent expensive features in non-production
-
-Example:
-```hcl
-validation {
-  condition = !contains(["r5.24xlarge"], var.instance_type)
-  error_message = "Large instances require finance approval"
-}
-```
+**Answer**: Terraform validation rules can intercept this mistake by enforcing strict constraints on input variables directly within the module code. You can define a validation block on the `instance_type` variable that checks whether the provided string falls within an approved list of cost-effective instance families. If the developer attempts to pass an unapproved, expensive type like `p4d.24xlarge`, Terraform will instantly fail the `plan` phase and output a custom error message. This mechanism acts as a hard guardrail, ensuring that prohibitively expensive resources cannot even be evaluated for deployment without an explicit override or an update to the approved variable list.
 </details>
 
 <details markdown="1">
-<summary>6. What's the difference between budget alerts on "actual" vs "forecasted" spend?</summary>
+<summary>6. It is the 25th of the month, and your team receives an alert that the AWS budget has reached its 100% threshold. You scramble to shut down resources, but the final bill still comes in 20% over budget. When configuring budget alerts in Terraform, how does leveraging forecasted spend differ from actual spend, and how would it have prevented this scenario?</summary>
 
-**Answer**:
-- **Actual alerts**: Fire when actual spend crosses threshold (reactive)
-  - Example: Alert at 80% of $10K budget = fires when you've spent $8K
-  - Problem: By then, month is mostly over, limited remediation time
-
-- **Forecasted alerts**: Fire when projected spend will cross threshold (proactive)
-  - Example: Alert when forecast shows 120% of budget
-  - Fires early when spending rate is too high
-  - Gives time to investigate and remediate
-
-Best practice: Use both - forecasted at 100% (early warning) and actual at 80%, 90%, 100% (confirmation).
+**Answer**: Actual spend alerts are reactive triggers that only fire after the money has already been spent, leaving you very little time to remediate if the threshold is crossed late in the billing cycle. Forecasted spend alerts, conversely, use historical usage trends and current run rates to predict what your total bill will be at the end of the month. If a forecasted alert was configured to trigger when the projection exceeded 100% of the budget, it would have fired days or even weeks earlier as soon as the spending rate spiked. This proactive early warning provides the necessary lead time to investigate anomalous infrastructure changes and terminate expensive resources before the actual budget is exhausted.
 </details>
 
 <details markdown="1">
-<summary>7. A PR introduces 5 new c5.xlarge instances in production. Infracost shows a $547/month increase. Should the PR be auto-approved?</summary>
+<summary>7. A developer submits a pull request adding five new `c5.xlarge` instances to the production cluster. The automated Infracost CI/CD comment shows an estimated increase of $547 per month. Assuming the organization's automated threshold for financial review is $500, what specific questions should the manual review process address before approving this infrastructure change?</summary>
 
-**Answer**: Depends on the organization's policy, but generally:
-- $547/month might exceed a threshold (e.g., $500)
-- Should trigger manual approval from:
-  - Team lead (technical justification)
-  - Finance/FinOps (budget impact)
-
-Questions to ask:
-- Is this the right instance type for the workload?
-- Can spot instances be used?
-- Is this temporary or permanent?
-- Is there reserved capacity available?
-- What's the business justification?
-
-Even if under threshold, large changes warrant review.
+**Answer**: Because the estimated cost exceeds the automated approval threshold, the PR must undergo a manual review involving both technical leadership and FinOps or finance representatives. The review must first address the technical justification, asking whether five `c5.xlarge` instances are truly the right size and type for the anticipated workload, or if a more cost-effective instance family could suffice. It should also evaluate if these instances need to be on-demand, or if spot instances or existing reserved capacity could be leveraged instead. Finally, the review must validate the business case, ensuring that the permanent $547 monthly increase aligns with current departmental budgets and project priorities before merging.
 </details>
 
 <details markdown="1">
-<summary>8. How can you implement chargebacks to teams based on their infrastructure usage?</summary>
+<summary>8. Your organization is transitioning from a centralized IT budget to a decentralized model where each of the five product teams must pay for their own cloud infrastructure. Using Infrastructure as Code, outline the technical implementation required to successfully track and enforce these team-specific chargebacks.</summary>
 
-**Answer**: Chargeback implementation:
-1. **Tagging**: Require Team/CostCenter tags on all resources
-2. **Cost allocation tags**: Activate in AWS Cost Explorer
-3. **Budgets per team**: Set team-specific budgets
-4. **Reports**: Generate monthly reports by team
-5. **Visibility**: Dashboard showing team costs
-6. **Process**: Regular reviews with team leads
-
-```hcl
-# Enforce tagging
-resource "aws_instance" "app" {
-  tags = {
-    Team       = var.team          # Required
-    CostCenter = var.cost_center   # Required
-  }
-}
-
-# Budget per team
-resource "aws_budgets_budget" "team" {
-  name = "team-${var.team}"
-  cost_filter {
-    name   = "TagKeyValue"
-    values = ["user:Team$${var.team}"]
-  }
-}
-```
+**Answer**: To implement accurate chargebacks using IaC, you must first enforce a mandatory tagging policy across all Terraform modules, ensuring every resource is tagged with a specific `Team` or `CostCenter` identifier. Next, these specific tags must be activated as cost allocation tags within the cloud provider's billing console so they appear in financial reporting. You then use IaC to provision individual budget resources for each team, utilizing tag-based cost filters to monitor their specific subset of the overall spend. Finally, you can deploy automated reporting mechanisms, such as a scheduled Lambda function, that aggregates the costs by the `Team` tag and emails customized weekly usage dashboards to the respective team leads for full financial accountability.
 </details>
 
 ---
