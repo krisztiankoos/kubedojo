@@ -659,7 +659,8 @@ kubectl describe replicaset $RS_NAME -n webhook-test | grep -i webhook
 
 # Step 6: Fix the cluster by removing the broken webhook
 kubectl delete validatingwebhookconfiguration broken-bouncer
-kubectl get pods -n webhook-test -w
+kubectl wait --for=condition=Available deployment/test-deploy -n webhook-test --timeout=60s
+kubectl get pods -n webhook-test
 # The deployment will now successfully create the pod!
 
 # Cleanup
@@ -704,4 +705,4 @@ You've finished **Supply Chain Security** (20% of CKS). You now understand:
 - Static analysis with kubesec and OPA
 - Admission controllers and webhooks
 
-**Next Part**: [Part 6: Monitoring, Logging & Runtime Security](../part6-runtime-security/module-6.1-audit-logging/) - Detecting and responding to security incidents.
+**Next Part**: [Part 6: Monitoring, Logging & Runtime Security](/k8s/cks/part6-runtime-security/module-6.1-audit-logging/) - Detecting and responding to security incidents.
