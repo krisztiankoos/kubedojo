@@ -19,9 +19,9 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-In early 2024, a fintech company with 28 Kubernetes clusters across AWS, Azure, and on-premises hit a crisis. Their Kubernetes version matrix looked like a horror movie: 6 clusters on 1.28, 9 on 1.29, 8 on 1.30, 3 on 1.31, and 2 still on 1.27 (which had lost upstream security support three months earlier). Each cluster had been provisioned using a different method: some with eksctl, some with Terraform, some with Azure CLI scripts, and the on-premises clusters with kubeadm. Upgrading a single cluster was a bespoke operation that took 2-4 days of an engineer's time, because each provisioning method had its own upgrade procedure, its own state management, and its own failure modes.
+In early 2026, a fintech company with 28 Kubernetes clusters across AWS, Azure, and on-premises hit a crisis. Their Kubernetes version matrix looked like a horror movie: 6 clusters on 1.31, 9 on 1.32, 8 on 1.33, 3 on 1.34, and 2 still on 1.30 (which had lost upstream security support three months earlier). Each cluster had been provisioned using a different method: some with eksctl, some with Terraform, some with Azure CLI scripts, and the on-premises clusters with kubeadm. Upgrading a single cluster was a bespoke operation that took 2-4 days of an engineer's time, because each provisioning method had its own upgrade procedure, its own state management, and its own failure modes.
 
-When the Linux Foundation announced that CKA exams would move to Kubernetes 1.32, the platform team calculated that bringing all clusters to 1.32 would take 56-112 engineer-days. Their team had 6 engineers. The math did not work. Two clusters on 1.27 were accumulating unpatched CVEs daily.
+When the Linux Foundation announced that CKA exams would move to Kubernetes 1.35, the platform team calculated that bringing all clusters to 1.35 would take 56-112 engineer-days. Their team had 6 engineers. The math did not work. Two clusters on 1.30 were accumulating unpatched CVEs daily.
 
 Cluster API (CAPI) was designed to solve exactly this problem. Instead of using different tools to manage clusters on different infrastructure, CAPI provides a single, Kubernetes-native API for creating, upgrading, and deleting clusters across any provider. You describe your desired cluster state in a Kubernetes manifest, and CAPI controllers reconcile the real world to match. Upgrading 28 clusters becomes changing 28 YAML files and watching the controllers roll out the changes. In this module, you will learn how Cluster API works, how its provider ecosystem (CAPA for AWS, CAPZ for Azure, CAPG for GCP) maps to each cloud, how to manage the full cluster lifecycle declaratively, and how to scale CAPI for enterprise use.
 
@@ -35,60 +35,73 @@ Cluster API treats Kubernetes clusters the same way Kubernetes treats pods: as d
 
 > **Stop and think**: If the management cluster goes down, what happens to the applications running on Workload Cluster 1? How does CAPI's architecture separate lifecycle management from the workload data plane?
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  MANAGEMENT CLUSTER                                            │
-│                                                                │
-│  ┌────────────────────────────────────────────────┐           │
-│  │  CAPI Core Controllers                          │           │
-│  │  ├── Cluster Controller                         │           │
-│  │  ├── Machine Controller                         │           │
-│  │  ├── MachineDeployment Controller               │           │
-│  │  └── MachineHealthCheck Controller              │           │
-│  └────────────────────────────────────────────────┘           │
-│                                                                │
-│  ┌────────────────────────────────────────────────┐           │
-│  │  Infrastructure Provider (e.g., CAPA for AWS)   │           │
-│  │  ├── AWSCluster Controller                      │           │
-│  │  ├── AWSMachine Controller                      │           │
-│  │  └── AWSMachineTemplate Controller              │           │
-│  └────────────────────────────────────────────────┘           │
-│                                                                │
-│  ┌────────────────────────────────────────────────┐           │
-│  │  Bootstrap Provider (e.g., kubeadm)             │           │
-│  │  ├── KubeadmConfig Controller                   │           │
-│  │  └── KubeadmControlPlane Controller             │           │
-│  └────────────────────────────────────────────────┘           │
-│                                                                │
-│  Custom Resources:                                             │
-│  Cluster ──► AWSCluster (infra) + KubeadmControlPlane (CP)   │
-│  MachineDeployment ──► AWSMachineTemplate + KubeadmConfig     │
-└──────────┬───────────────┬───────────────┬───────────────────┘
-           │               │               │
-    ┌──────▼──────┐ ┌──────▼──────┐ ┌──────▼──────┐
-    │  Workload   │ │  Workload   │ │  Workload   │
-    │  Cluster 1  │ │  Cluster 2  │ │  Cluster 3  │
-    │  (AWS)      │ │  (Azure)    │ │  (On-Prem)  │
-    └─────────────┘ └─────────────┘ └─────────────┘
+```mermaid
+flowchart TD
+    subgraph Management_Cluster [MANAGEMENT CLUSTER]
+        subgraph Core [CAPI Core Controllers]
+            C1[Cluster Controller]
+            C2[Machine Controller]
+            C3[MachineDeployment Controller]
+            C4[MachineHealthCheck Controller]
+        end
+        subgraph Infra [Infrastructure Provider e.g., CAPA for AWS]
+            I1[AWSCluster Controller]
+            I2[AWSMachine Controller]
+            I3[AWSMachineTemplate Controller]
+        end
+        subgraph Boot [Bootstrap Provider e.g., kubeadm]
+            B1[KubeadmConfig Controller]
+            B2[KubeadmControlPlane Controller]
+        end
+        CR["Custom Resources:<br/>Cluster ──► AWSCluster (infra) + KubeadmControlPlane (CP)<br/>MachineDeployment ──► AWSMachineTemplate + KubeadmConfig"]
+        
+        Core ~~~ Infra
+        Infra ~~~ Boot
+        Boot ~~~ CR
+    end
+
+    WC1[Workload Cluster 1<br/>AWS]
+    WC2[Workload Cluster 2<br/>Azure]
+    WC3[Workload Cluster 3<br/>On-Prem]
+
+    Management_Cluster --> WC1
+    Management_Cluster --> WC2
+    Management_Cluster --> WC3
 ```
 
 ### The CAPI Resource Hierarchy
 
-```text
-Cluster (core)
-├── InfrastructureCluster (provider-specific: AWSCluster, AzureCluster, etc.)
-├── ControlPlane (KubeadmControlPlane or managed: AWSManagedControlPlane)
-│   ├── Machine (per control plane node)
-│   │   ├── InfrastructureMachine (AWSMachine, AzureMachine, etc.)
-│   │   └── BootstrapConfig (KubeadmConfig)
-│   └── ...
-└── MachineDeployment (worker node groups)
-    ├── MachineSet
-    │   ├── Machine
-    │   │   ├── InfrastructureMachine
-    │   │   └── BootstrapConfig
-    │   └── ...
-    └── InfrastructureMachineTemplate (AWSMachineTemplate, etc.)
+```mermaid
+flowchart TD
+    C["Cluster (core)"]
+    IC["InfrastructureCluster<br/>(provider-specific: AWSCluster, etc.)"]
+    CP["ControlPlane<br/>(KubeadmControlPlane or managed)"]
+    MD["MachineDeployment<br/>(worker node groups)"]
+
+    C --> IC
+    C --> CP
+    C --> MD
+
+    CPM["Machine<br/>(per control plane node)"]
+    CP --> CPM
+
+    CPIM["InfrastructureMachine<br/>(AWSMachine, etc.)"]
+    CPBC["BootstrapConfig<br/>(KubeadmConfig)"]
+    CPM --> CPIM
+    CPM --> CPBC
+
+    MS["MachineSet"]
+    IMT["InfrastructureMachineTemplate<br/>(AWSMachineTemplate, etc.)"]
+    MD --> MS
+    MD --> IMT
+
+    WM["Machine"]
+    MS --> WM
+
+    WIM["InfrastructureMachine"]
+    WBC["BootstrapConfig"]
+    WM --> WIM
+    WM --> WBC
 ```
 
 ---
@@ -165,7 +178,7 @@ metadata:
   namespace: fleet
 spec:
   region: us-east-1
-  version: v1.32.0
+  version: v1.35.0
   sshKeyName: eks-key
   eksClusterName: eks-prod-east
   endpointAccess:
@@ -196,7 +209,7 @@ spec:
     - name: coredns
       version: v1.11.4-eksbuild.2
     - name: kube-proxy
-      version: v1.32.0-eksbuild.1
+      version: v1.35.0-eksbuild.1
 
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
@@ -279,7 +292,7 @@ spec:
   subscriptionID: "00000000-0000-0000-0000-000000000000"
   resourceGroupName: rg-fleet-westeu
   location: westeurope
-  version: v1.32.0
+  version: v1.35.0
   networkPlugin: azure
   networkPolicy: calico
   dnsServiceIP: 10.130.0.10
@@ -391,10 +404,10 @@ spec:
 The primary advantage of CAPI is declarative upgrades. Change the version in the manifest, and the controller handles the rolling upgrade.
 
 ```bash
-# Upgrade EKS cluster from 1.31 to 1.32
+# Upgrade EKS cluster from 1.34 to 1.35
 kubectl patch awsmanagedcontrolplane eks-prod-east-cp -n fleet \
   --type merge \
-  -p '{"spec":{"version":"v1.32.0"}}'
+  -p '{"spec":{"version":"v1.35.0"}}'
 
 # Watch the upgrade progress
 kubectl get cluster eks-prod-east -n fleet -w
@@ -413,7 +426,7 @@ kubectl get machines -n fleet -l cluster.x-k8s.io/cluster-name=eks-prod-east
 ```bash
 #!/bin/bash
 # upgrade-fleet.sh - Upgrade all clusters to a target version
-TARGET_VERSION="v1.32.0"
+TARGET_VERSION="v1.35.0"
 NAMESPACE="fleet"
 
 echo "=== Fleet Upgrade Plan ==="
@@ -520,7 +533,7 @@ source "amazon-ebs" "eks-node" {
 
   source_ami_filter {
     filters = {
-      name                = "amazon-eks-node-1.32-*"
+      name                = "amazon-eks-node-1.35-*"
       virtualization-type = "hvm"
       root-device-type    = "ebs"
     }
@@ -588,28 +601,26 @@ spec:
 
 ### Management Cluster High Availability
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  MANAGEMENT CLUSTER HA ARCHITECTURE                            │
-│                                                                │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                    │
-│  │ CP Node  │  │ CP Node  │  │ CP Node  │  ← 3 CP nodes     │
-│  │ (AZ-1a)  │  │ (AZ-1b)  │  │ (AZ-1c)  │    across 3 AZs  │
-│  └──────────┘  └──────────┘  └──────────┘                    │
-│                                                                │
-│  ┌──────────┐  ┌──────────┐                                   │
-│  │ Worker   │  │ Worker   │  ← Dedicated workers for         │
-│  │ Node     │  │ Node     │    CAPI controllers               │
-│  └──────────┘  └──────────┘                                   │
-│                                                                │
-│  etcd: Encrypted at rest + regular backups to S3              │
-│  CAPI controllers: 2+ replicas with leader election           │
-│  Monitoring: Dedicated Prometheus for management cluster      │
-│                                                                │
-│  Manages: Up to 200 workload clusters                         │
-│  If this goes down: No new clusters, no upgrades, no healing  │
-│  Existing workload clusters continue running independently    │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Management_Cluster_HA_Architecture [MANAGEMENT CLUSTER HA ARCHITECTURE]
+        subgraph CP [3 CP nodes across 3 AZs]
+            direction LR
+            CP1["CP Node (AZ-1a)"]
+            CP2["CP Node (AZ-1b)"]
+            CP3["CP Node (AZ-1c)"]
+        end
+        subgraph Workers [Dedicated workers for CAPI controllers]
+            direction LR
+            W1["Worker Node"]
+            W2["Worker Node"]
+        end
+        
+        Notes["etcd: Encrypted at rest + regular backups to S3<br/>CAPI controllers: 2+ replicas with leader election<br/>Monitoring: Dedicated Prometheus for management cluster<br/><br/>Manages: Up to 200 workload clusters<br/>If this goes down: No new clusters, no upgrades, no healing<br/>Existing workload clusters continue running independently"]
+        
+        CP ~~~ Workers
+        Workers ~~~ Notes
+    end
 ```
 
 ### Management Cluster Lifecycle: Clusterctl Move
@@ -721,9 +732,9 @@ A MachineDeployment creates individual Machine objects that CAPI manages one by 
 </details>
 
 <details>
-<summary>Question 3: Your organization manages 28 Kubernetes clusters across multiple clouds. A critical CVE in Kubernetes 1.31 is announced, requiring an immediate upgrade to 1.32. Before adopting CAPI, this process took your team over 100 engineer-hours. Walk through how your team will execute this upgrade using CAPI, and explain why the effort is drastically reduced.</summary>
+<summary>Question 3: Your organization manages 28 Kubernetes clusters across multiple clouds. A critical CVE in Kubernetes 1.34 is announced, requiring an immediate upgrade to 1.35. Before adopting CAPI, this process took your team over 100 engineer-hours. Walk through how your team will execute this upgrade using CAPI, and explain why the effort is drastically reduced.</summary>
 
-**You will update the `spec.version` field to `v1.32.0` in the control plane object for each cluster, typically by modifying the declarative YAML manifests in your Git repository.**
+**You will update the `spec.version` field to `v1.35.0` in the control plane object for each cluster, typically by modifying the declarative YAML manifests in your Git repository.**
 Once the manifests are updated and applied to the management cluster, the CAPI controllers automatically orchestrate the upgrade process. The controllers handle the complex choreography of replacing control plane nodes one by one (ensuring quorum is maintained) and then rolling out new worker nodes via MachineDeployments or MachinePools. The human effort is reduced to simply changing the version strings in the infrastructure-as-code repository and monitoring the rollout dashboards. This declarative approach eliminates the need to run bespoke, imperative upgrade scripts for different environments, reducing the required effort from hundreds of hours to just a few hours of monitoring.
 </details>
 
@@ -756,18 +767,22 @@ In this exercise, you will simulate CAPI operations using kind clusters represen
 
 **What you will build:**
 
-```text
-┌────────────────────────────┐
-│  Management Cluster (kind) │
-│  ├── CAPI Resources        │
-│  ├── Cluster definitions   │
-│  └── Health monitoring     │
-│           │                │
-│     ┌─────┴─────┐         │
-│     ▼           ▼         │
-│  Workload-1  Workload-2   │
-│  (kind)      (kind)       │
-└────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Mgmt ["Management Cluster (kind)"]
+        direction TB
+        CR["CAPI Resources"]
+        CD["Cluster definitions"]
+        HM["Health monitoring"]
+        CR ~~~ CD
+        CD ~~~ HM
+    end
+
+    W1["Workload-1<br/>(kind)"]
+    W2["Workload-2<br/>(kind)"]
+
+    Mgmt --> W1
+    Mgmt --> W2
 ```
 
 ### Task 1: Create the Management and Workload Clusters
@@ -814,7 +829,7 @@ metadata:
 data:
   cluster-name: "${WL_CLUSTER}"
   kubernetes-version: "${VERSION}"
-  desired-version: "v1.32.0"
+  desired-version: "v1.35.0"
   provider: "kind"
   region: "local"
   status: "provisioned"
@@ -911,7 +926,7 @@ bash /tmp/capi-health-check.sh
 echo "=== Simulating Upgrade Request ==="
 kubectl --context kind-capi-mgmt patch configmap cluster-capi-workload-1 \
   --type merge \
-  -p '{"data":{"desired-version":"v1.33.0","status":"upgrading"}}'
+  -p '{"data":{"desired-version":"v1.35.0","status":"upgrading"}}'
 
 echo "Upgrade request registered:"
 kubectl --context kind-capi-mgmt get configmap cluster-capi-workload-1 \
@@ -923,7 +938,7 @@ echo ""
 echo "=== Simulating Upgrade Completion ==="
 kubectl --context kind-capi-mgmt patch configmap cluster-capi-workload-1 \
   --type merge \
-  -p '{"data":{"kubernetes-version":"v1.33.0","status":"healthy"}}'
+  -p '{"data":{"kubernetes-version":"v1.35.0","status":"healthy"}}'
 
 echo "Upgrade complete:"
 kubectl --context kind-capi-mgmt get configmaps -l cluster-type=workload \
