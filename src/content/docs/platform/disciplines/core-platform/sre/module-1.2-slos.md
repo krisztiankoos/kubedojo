@@ -82,25 +82,16 @@ An SLA is a **contract** with customers, often less aggressive than internal SLO
 
 ### The Relationship
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         SLA                                  │
-│        External promise (with consequences)                  │
-│        "We guarantee 99.9% uptime"                          │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │                        SLO                            │  │
-│  │        Internal target (what you aim for)             │  │
-│  │        "We target 99.95% uptime"                      │  │
-│  │  ┌─────────────────────────────────────────────────┐  │  │
-│  │  │                     SLI                         │  │  │
-│  │  │        Raw measurement                          │  │  │
-│  │  │        "Current uptime: 99.97%"                 │  │  │
-│  │  └─────────────────────────────────────────────────┘  │  │
-│  └───────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+> **Stop and think**: What happens to your on-call engineers if your SLA is stricter than your SLO?
 
-          SLO > SLA (buffer for safety)
-          SLI measures progress toward SLO
+```mermaid
+flowchart BT
+    SLI["SLI (Service Level Indicator)<br/>Raw measurement of reality<br/>Current uptime: 99.97%"]
+    SLO["SLO (Service Level Objective)<br/>Internal target with safety buffer<br/>We target 99.95% uptime"]
+    SLA["SLA (Service Level Agreement)<br/>External contract with consequences<br/>We guarantee 99.9% uptime"]
+
+    SLI -->|Measures progress against| SLO
+    SLO -->|Provides safety buffer for| SLA
 ```
 
 **Key insight**: Your SLO should be **stricter than your SLA**. This gives you a safety buffer — you'll know you're in trouble before customers do.
@@ -201,6 +192,8 @@ Quality SLI (if applicable):
 
 ## Setting Realistic SLOs
 
+> **Pause and predict**: If your service relies on a third-party API that guarantees 99.9% uptime, what is the maximum SLO you can realistically promise to your users without building complex fallbacks?
+
 An SLO is useless if it's not realistic. Too aggressive, and you'll never meet it. Too lax, and it doesn't drive improvement.
 
 ### Start With User Expectations
@@ -277,6 +270,8 @@ Why multiple windows?
 ---
 
 ## SLO Math
+
+> **Stop and think**: If a team regularly ends the month with 90% of their error budget remaining, what does this suggest about their deployment frequency or risk tolerance?
 
 ### Converting Between Formats
 
@@ -415,6 +410,8 @@ alerts:
 
 ## DORA Metrics: Measuring Delivery Performance
 
+> **Pause and predict**: Which DORA metric is most directly impacted when an organization adopts an aggressively strict SLO without improving their automated testing?
+
 While SLOs measure **service reliability**, DORA metrics measure **delivery performance** — how effectively your team ships software. Developed by the DevOps Research and Assessment (DORA) team (now part of Google Cloud), these four key metrics distinguish elite performers from the rest.
 
 ### The Four Key Metrics
@@ -506,24 +503,28 @@ DORA metrics are a leading indicator of platform engineering maturity. Teams usi
 
 Essential panels for an SLO dashboard:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Service XYZ SLO Dashboard                 │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────┐  ┌─────────────────┐  ┌──────────────┐ │
-│  │   Availability  │  │     Latency     │  │ Error Budget │ │
-│  │     99.94%      │  │    p95: 145ms   │  │   67.2%      │ │
-│  │   Target: 99.9% │  │  Target: 200ms  │  │  Remaining   │ │
-│  └─────────────────┘  └─────────────────┘  └──────────────┘ │
-│  ┌──────────────────────────────────────────────────────────┐│
-│  │   Error Budget Burn Over Time (30 days)                  ││
-│  │   [graph showing budget consumption]                     ││
-│  └──────────────────────────────────────────────────────────┘│
-│  ┌────────────────────┐  ┌────────────────────────────────┐ │
-│  │ Burn Rate (1h)     │  │ SLO Status History              │ │
-│  │      1.2x          │  │ [timeline of SLO met/missed]    │ │
-│  └────────────────────┘  └────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Dashboard ["Service XYZ SLO Dashboard"]
+        direction TB
+        subgraph Metrics ["Key Metrics"]
+            direction LR
+            Avail["Availability: 99.94%<br/>(Target: 99.9%)"]
+            Lat["Latency p95: 145ms<br/>(Target: 200ms)"]
+            Budget["Error Budget<br/>67.2% Remaining"]
+        end
+        
+        Graph["Error Budget Burn Over Time (30 days)<br/>[Budget consumption line graph]"]
+        
+        subgraph Status ["Alerts & History"]
+            direction LR
+            Burn["Burn Rate (1h): 1.2x"]
+            Hist["SLO Status History<br/>[Timeline of SLO met/missed]"]
+        end
+        
+        Metrics --> Graph
+        Graph --> Status
+    end
 ```
 
 ---
@@ -545,73 +546,42 @@ Essential panels for an SLO dashboard:
 ## Quiz: Check Your Understanding
 
 ### Question 1
-What's the difference between SLI, SLO, and SLA?
+You are launching a new payment processing service. The sales team wants to guarantee 99.99% uptime in customer contracts. Your engineering team measures current uptime at 99.95%, and has set an internal goal of 99.9%. Identify which of these numbers represents the SLI, SLO, and SLA, and evaluate if this is a healthy setup.
 
 <details>
 <summary>Show Answer</summary>
 
-- **SLI (Service Level Indicator)**: The raw metric you measure (e.g., error rate, latency)
-- **SLO (Service Level Objective)**: Your internal target for that metric (e.g., 99.9% availability)
-- **SLA (Service Level Agreement)**: External contract with consequences (e.g., 99.9% or refund)
-
-The relationship: SLI measures reality, SLO sets internal goals, SLA promises externally. SLO should be stricter than SLA to provide a safety buffer.
+The SLI is 99.95% (the measured reality). The SLO is 99.9% (the internal goal). The SLA is 99.99% (the external contract). This is an extremely unhealthy setup. WHY? The SLA (99.99%) is stricter than both the SLO (99.9%) and the actual SLI (99.95%). This means you will consistently violate your customer contracts and incur penalties before your internal alarms even trigger. A healthy setup requires the SLI to be higher than the SLO, and the SLO to be higher than the SLA, providing a safety buffer to fix issues before customers are impacted.
 
 </details>
 
 ### Question 2
-Why is CPU utilization a poor SLI?
+Your team has configured an alert that triggers whenever the checkout service's CPU utilization exceeds 85% for more than 5 minutes. Last night, the alert woke up the on-call engineer three times, but customer support reported zero complaints about checkout failures or slowness. Explain why this happened and what kind of metric should be used instead.
 
 <details>
 <summary>Show Answer</summary>
 
-CPU utilization fails the "user perspective test" — users don't care about CPU usage, they care about whether the service works and how fast it is.
-
-High CPU could mean:
-- Efficient use of resources (good!)
-- About to fall over (bad!)
-
-Low CPU could mean:
-- Well-optimized service (good!)
-- No traffic (potentially bad?)
-
-Better SLIs: request latency, error rate, availability — things users actually experience.
+This happened because CPU utilization is a system metric, not a user-centric Service Level Indicator (SLI). WHY? High CPU utilization often indicates that a system is efficiently processing a high volume of requests, which is exactly what it is designed to do. As long as the system is still responding quickly and successfully, the user experience is unaffected. Relying on system metrics leads to alert fatigue and wakes engineers up for non-issues. Instead, the team should use an SLI based on the user's perspective, such as request latency or error rate, which directly measure if the service is actually failing or slowing down.
 
 </details>
 
 ### Question 3
-You have a 99.9% availability SLO over 30 days. Your current error rate is 0.3%. What's your burn rate?
+Your team manages an API with a 30-day SLO of 99.9% availability. After a recent deployment, you notice the error rate has stabilized at 0.5%. Calculate the current burn rate and determine how long your error budget will last if this error rate continues.
 
 <details>
 <summary>Show Answer</summary>
 
-```
-Allowed error rate = 1 - 99.9% = 0.1%
-Current error rate = 0.3%
-
-Burn rate = Current / Allowed
-         = 0.3% / 0.1%
-         = 3
-
-At burn rate of 3, you'll exhaust your monthly
-error budget in 10 days instead of 30.
-```
+The burn rate is 5x, meaning your entire 30-day error budget will be exhausted in just 6 days. WHY? To calculate the burn rate, you first determine the allowed error rate, which is 100% - 99.9% = 0.1%. Then, you divide the actual error rate by the allowed error rate: 0.5% / 0.1% = 5. A burn rate of 5 means you are consuming your error budget five times faster than permitted. Since the budget is designed to last 30 days, dividing 30 by 5 reveals that the budget will run out in 6 days, necessitating immediate intervention to fix the errors before the SLO is permanently breached for the month.
 
 </details>
 
 ### Question 4
-Why should SLOs be stricter than SLAs?
+A cloud provider offers a database service with a guaranteed SLA of 99.9% uptime. The internal engineering team sets their SLO to exactly 99.9% as well. During a partial network outage, the service drops to 99.85% uptime. Explain the consequences of this decision and how the team should have configured their targets.
 
 <details>
 <summary>Show Answer</summary>
 
-The SLO provides a **safety buffer**:
-
-1. **Early warning**: You'll know you're in trouble before customers do
-2. **Time to react**: You have time to fix issues before violating SLA
-3. **Avoid penalties**: SLA violations often have financial consequences
-4. **Customer trust**: Consistently exceeding SLA builds confidence
-
-Example: If SLA is 99.9%, set SLO at 99.95%. When you drop to 99.92%, you're still meeting SLA but know you need to act.
+By setting the SLO equal to the SLA, the engineering team eliminated any safety margin, resulting in an immediate SLA violation and likely financial penalties. WHY? When the SLO matches the SLA, an internal breach simultaneously becomes a customer-facing breach. The team has no early warning system and zero time to react, debug, or mitigate the issue before it impacts users and violates contractual obligations. To prevent this, the team should have configured a stricter SLO—such as 99.95% or 99.99%. This stricter internal target would trigger alerts sooner, giving engineers a crucial buffer window to identify and resolve the network outage before the uptime drops below the 99.9% SLA threshold.
 
 </details>
 
