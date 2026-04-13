@@ -64,34 +64,19 @@ When a container gets "operation not permitted" for something root should be abl
 
 ### System Call Filtering
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    SECCOMP FILTERING                             │
-│                                                                  │
-│  Application                                                     │
-│       │                                                          │
-│       │ write(fd, buf, size)                                    │
-│       │                                                          │
-│       ▼                                                          │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │                    glibc wrapper                         │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│       │                                                          │
-│       │ syscall(1, ...)  // SYS_write = 1                       │
-│       │                                                          │
-│       ▼                                                          │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │                SECCOMP BPF FILTER                        │    │
-│  │                                                          │    │
-│  │   if (syscall_nr == SYS_write) → ALLOW                  │    │
-│  │   if (syscall_nr == SYS_ptrace) → KILL                  │    │
-│  │   if (syscall_nr == SYS_reboot) → ERRNO(EPERM)          │    │
-│  │                                                          │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│       │                                                          │
-│       ▼                                                          │
-│  Kernel executes syscall (if allowed)                           │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    App[Application]
+    Glibc[glibc wrapper]
+    BPF{SECCOMP BPF FILTER}
+    Exec[Kernel executes syscall<br/>if allowed]
+    
+    App -- "write(fd, buf, size)" --> Glibc
+    Glibc -- "syscall(1, ...) // SYS_write = 1" --> BPF
+    BPF -- "if (syscall_nr == SYS_write)" --> ALLOW
+    BPF -- "if (syscall_nr == SYS_ptrace)" --> KILL
+    BPF -- "if (syscall_nr == SYS_reboot)" --> ERRNO(EPERM)
+    ALLOW --> Exec
 ```
 
 > **Pause and predict**: If a seccomp filter evaluates a syscall and encounters multiple matching rules with different actions (e.g., one rule says `SCMP_ACT_ALLOW` and another says `SCMP_ACT_KILL`), how should the kernel resolve the conflict to prioritize security?
