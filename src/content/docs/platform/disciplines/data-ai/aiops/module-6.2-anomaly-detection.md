@@ -40,82 +40,54 @@ Anomaly detection learns what "normal" looks like and alerts on deviations. It h
 
 ### Types of Anomalies
 
+```mermaid
+xychart-beta
+    title "Point Anomaly"
+    x-axis "Time" 1 --> 10
+    y-axis "Value" 0 --> 100
+    line [10, 12, 11, 15, 90, 12, 14, 11, 13, 10]
 ```
-POINT ANOMALY
-─────────────────────────────────────────────────────────────────
+*A point anomaly represents a single, extreme outlier that deviates massively from the rest of the dataset.*
 
-Value
-      │                    X ← Single outlier
-      │                   /│
-      │  ──────────────────────────────
-      │                    │
-      │                    │
-      └────────────────────┴────────────────────────────────
-                          Time
-
-
-CONTEXTUAL ANOMALY
-─────────────────────────────────────────────────────────────────
-
-Value
-      │  Normal                     X ← Same value, wrong context
-      │  peak  ╱╲                  /
-      │ ╱    ╲╱  ╲    ╱╲    ╱╲   ╱
-      │╱          ╲  ╱  ╲  ╱  ╲ ╱
-      │            ╲╱    ╲╱    ╲
-      └────────────────────────────────────────────────────────
-         Mon    Tue    Wed    Thu    Fri    Sat    Sun
-
-
-COLLECTIVE ANOMALY
-─────────────────────────────────────────────────────────────────
-
-Value                  Unusual pattern
-      │                ╭─────────╮
-      │  ────────────╮│╭────────╯╭──────────────────
-      │              ╰╯│         │
-      │                │   ← Individual points normal,
-      │                │     sequence is abnormal
-      └────────────────┴───────────────────────────────────────
-                          Time
+```mermaid
+xychart-beta
+    title "Contextual Anomaly"
+    x-axis "Day" [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+    y-axis "Value" 0 --> 100
+    line [20, 80, 20, 80, 20, 80, 20]
 ```
+*A contextual anomaly occurs when a value might be normal in one context (e.g., peak hours) but is abnormal in another (e.g., occurring during a quiet weekend).*
+
+```mermaid
+xychart-beta
+    title "Collective Anomaly"
+    x-axis "Time" 1 --> 15
+    y-axis "Value" 0 --> 100
+    line [10, 12, 11, 15, 12, 14, 60, 62, 59, 61, 60, 11, 14, 10, 12]
+```
+*A collective anomaly is a sequence of values that are unusual together, even if the individual points might not be considered extreme outliers on their own.*
 
 ### When Static Thresholds Fail
 
+```mermaid
+xychart-beta
+    title "Scenario: API Latency (False Positives)"
+    x-axis "Time" 1 --> 15
+    y-axis "Latency (ms)" 200 --> 700
+    line [300, 350, 400, 450, 550, 600, 580, 520, 480, 420, 380, 320, 300, 280, 250]
 ```
-SCENARIO: API LATENCY
-─────────────────────────────────────────────────────────────────
+*Problem 1: False Positives. If a static threshold is set at 500ms, natural traffic peaks will constantly trigger the alarm, even though this latency is completely normal for the service during peak hours.*
 
-Static threshold: Alert if latency > 500ms
-
-PROBLEM 1: False Positives
-────────────────────────────────────────────────────────
-ms
-600 ─┼─ - - - - - - - - THRESHOLD - - - - - - - - - - -
-     │           X     X           X       X
-500 ─┼─        X   X     X       X   X   X   X
-     │      X       X       X X       X
-400 ─┼─  X                       X
-     │ X
-     └────────────────────────────────────────────────
-     Normal for this service during peak hours!
-
-
-PROBLEM 2: Missed Degradation
-────────────────────────────────────────────────────────
-ms
-600 ─┼─ - - - - - - - - THRESHOLD - - - - - - - - - - -
-     │
-500 ─┼─
-     │                         ╭───── Slow creep
-400 ─┼─                   ╭────╯      never alerts
-     │              ╭─────╯           until too late
-300 ─┼─       ╭─────╯
-     │   ─────╯
-200 ─┼─ Normal baseline
-     └────────────────────────────────────────────────
-       Week 1   Week 2   Week 3   Week 4
+```mermaid
+xychart-beta
+    title "Scenario: API Latency (Missed Degradation)"
+    x-axis "Week" [1, 2, 3, 4, 5, 6, 7]
+    y-axis "Latency (ms)" 200 --> 700
+    line [220, 250, 290, 340, 390, 450, 490]
 ```
+*Problem 2: Missed Degradation. With a static threshold of 500ms, a slow, steady degradation in performance creeps up over several weeks but never triggers the alert until it is too late.*
+
+> **Stop and think**: Look at the "Missed Degradation" scenario. If you lowered the threshold to 300ms to catch the degradation earlier, what would happen to your alert volume during the normal daily peaks shown in the first scenario?
 
 ## Statistical Approaches
 
@@ -157,6 +129,8 @@ anomalies = zscore_anomaly(latencies, threshold=3)
 ```
 
 **Limitations**: Assumes normal distribution, sensitive to outliers affecting mean/std.
+
+> **Pause and predict**: A Z-score relies heavily on the mean. If a massive, prolonged outage drops your traffic to zero for three hours, how will this affect the mean, and what will happen to normal traffic alerts when the system suddenly recovers?
 
 ### Moving Average & Standard Deviation
 
@@ -244,28 +218,16 @@ def iqr_anomaly(values, k=1.5):
 
 Real systems have patterns: daily cycles, weekly cycles, monthly variations.
 
+```mermaid
+xychart-beta
+    title "Daily Seasonality"
+    x-axis "Hour" [00:00, 06:00, 12:00, 18:00, 23:59]
+    y-axis "Requests/sec" 0 --> 1000
+    line [100, 200, 900, 600, 150]
 ```
-DAILY SEASONALITY
-─────────────────────────────────────────────────────────────────
+*Without seasonality awareness: 3AM traffic is considered normal, and peak hour traffic is considered normal. But if 3AM traffic suddenly spikes to peak levels, a static system won't catch it, whereas a seasonality-aware system will flag it as an anomaly!*
 
-Requests/sec
-      │     Peak hours
-      │      ╱────╲
-      │     ╱      ╲
-      │    ╱        ╲
-      │   ╱          ╲
-      │  ╱            ╲
-      │ ╱              ╲
-      │╱    Night       ╲    Evening
-      │                  ╲────╱
-      └──────────────────────────────────────────────────
-        00:00   06:00   12:00   18:00   00:00
-
-Without seasonality awareness:
-- 3AM traffic = normal
-- Peak hour traffic = normal
-- 3AM traffic at peak levels = ANOMALY!
-```
+> **Stop and think**: Human operators naturally understand that a production system acts differently on a Tuesday afternoon than on a Sunday morning. How can a mathematical model learn this distinction without being explicitly programmed with complex calendar rules?
 
 ### Seasonal Decomposition
 
@@ -471,25 +433,14 @@ anomalies, scores = detect_anomalies(model, sequences_test)
 
 "Normal" changes over time. Traffic grows, code changes, user behavior evolves.
 
+```mermaid
+xychart-beta
+    title "Concept Drift"
+    x-axis "Month" [Jan, Feb, Mar, Apr, May, Jun]
+    y-axis "Latency" 0 --> 100
+    line [20, 22, 25, 45, 80, 85]
 ```
-CONCEPT DRIFT
-─────────────────────────────────────────────────────────────────
-
-Latency
-      │                            New normal
-      │  ─────────────────────────────────────────────────
-      │                         ╱│
-      │                       ╱  │
-      │  Original normal    ╱    │← Gradual drift
-      │  ───────────────────     │
-      │                          │
-      │                          │
-      └──────────────────────────┴────────────────────────
-        Jan    Feb    Mar    Apr    May    Jun
-
-WITHOUT drift handling: May traffic flagged as anomalous
-WITH drift handling: Model adapts, only sudden changes alert
-```
+*WITHOUT drift handling: May traffic is flagged as anomalous because it deviates from the January baseline. WITH drift handling: The model adapts to the gradual drift, establishing a new normal, and only sudden changes will trigger alerts.*
 
 ### Adaptive Detection
 
@@ -561,47 +512,40 @@ class AdaptiveAnomalyDetector:
 
 ## Real-Time Detection Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│              REAL-TIME ANOMALY DETECTION                        │
-│                                                                  │
-│  DATA INGESTION                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Kafka / Kinesis / Pulsar                                │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐     │   │
-│  │  │ Metrics │  │  Logs   │  │ Traces  │  │ Events  │     │   │
-│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘     │   │
-│  └───────┼───────────┼───────────┼───────────┼─────────────┘   │
-│          └───────────┴───────────┴───────────┘                   │
-│                           │                                       │
-│  STREAM PROCESSING        ▼                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Flink / Kafka Streams / Apache Beam                     │   │
-│  │                                                          │   │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐         │   │
-│  │  │ Windowing  │  │   Feature  │  │  Detection │         │   │
-│  │  │ (tumbling, │──│ Extraction │──│   Models   │         │   │
-│  │  │  sliding)  │  │            │  │            │         │   │
-│  │  └────────────┘  └────────────┘  └────────────┘         │   │
-│  └─────────────────────────┬────────────────────────────────┘   │
-│                            │                                     │
-│  MODEL SERVING             ▼                                     │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Model Registry                                          │   │
-│  │  ┌─────────────────┐  ┌─────────────────┐               │   │
-│  │  │ Statistical     │  │   ML Models     │               │   │
-│  │  │ (Z-score, IQR)  │  │ (Isolation     │               │   │
-│  │  │                 │  │  Forest, LSTM)  │               │   │
-│  │  └─────────────────┘  └─────────────────┘               │   │
-│  └─────────────────────────┬────────────────────────────────┘   │
-│                            │                                     │
-│  OUTPUT                    ▼                                     │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐                 │
-│  │   Alerts   │  │ Dashboard  │  │  Storage   │                 │
-│  │(PagerDuty) │  │  (Grafana) │  │ (Archive)  │                 │
-│  └────────────┘  └────────────┘  └────────────┘                 │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Ingestion [Data Ingestion]
+        K[Kafka / Kinesis / Pulsar]
+        M[Metrics] --> K
+        L[Logs] --> K
+        T[Traces] --> K
+        E[Events] --> K
+    end
+
+    subgraph Streaming [Stream Processing]
+        F[Flink / Kafka Streams / Apache Beam]
+        W[Windowing] --> FE[Feature Extraction]
+        FE --> DM[Detection Models]
+    end
+
+    subgraph Serving [Model Serving]
+        MR[Model Registry]
+        Stat[Statistical: Z-score, IQR] -.-> MR
+        ML[ML Models: Isolation Forest, LSTM] -.-> MR
+    end
+
+    subgraph Output [Output]
+        A[Alerts - PagerDuty]
+        D[Dashboard - Grafana]
+        S[Storage - Archive]
+    end
+
+    K --> F
+    F --> W
+    MR --> DM
+    DM --> A
+    DM --> D
+    DM --> S
 ```
 
 ## Common Mistakes
@@ -618,60 +562,27 @@ class AdaptiveAnomalyDetector:
 ## Quiz
 
 <details>
-<summary>1. Why do static thresholds fail for modern systems?</summary>
+<summary>1. You've configured a static alert that triggers whenever database CPU utilization exceeds 85%. During your company's highly publicized Black Friday sale, CPU utilization hovers around 90% for six hours, triggering hundreds of paging alerts. The database performance remains completely stable and responsive throughout. Why did this static threshold fail your team?</summary>
 
-**Answer**: Static thresholds fail because:
-1. **No seasonality awareness**: 3AM traffic differs from noon traffic
-2. **Miss gradual degradation**: Slow creep never crosses threshold until it's too late
-3. **Can't adapt**: Traffic grows, systems change, thresholds become stale
-4. **One size doesn't fit**: Different services have different profiles
-
-ML-based detection learns "normal" dynamically and alerts on deviations.
+**Answer**: This scenario perfectly illustrates the rigidity of static thresholds, which fail to account for context and seasonality. The static threshold was completely unaware that this was a planned, high-traffic event where elevated CPU is not just expected, but represents normal, healthy operation. Because the threshold cannot dynamically adapt to this "new normal" of Black Friday traffic, it generated severe alert fatigue (hundreds of false positives) while the system was actually functioning perfectly. An ML-based anomaly detection system would have analyzed historical trends or seasonal expectations, identified the 90% CPU as proportional to the corresponding massive increase in checkout requests, and suppressed the alert.
 </details>
 
 <details>
-<summary>2. When would you use Isolation Forest vs. LSTM Autoencoder?</summary>
+<summary>2. Your team needs to implement anomaly detection across 50 different microservices, analyzing a combined total of 1,200 independent metrics (CPU, memory, request rates, error rates) per minute. The primary goal is to identify points in time where a combination of these metrics behaves unusually, without needing to learn complex long-term sequential patterns. Which machine learning approach is most appropriate?</summary>
 
-**Answer**:
-
-**Isolation Forest**:
-- High-dimensional data (many metrics)
-- Point anomalies
-- Faster training and inference
-- No temporal dependencies
-
-**LSTM Autoencoder**:
-- Sequential patterns matter (time series)
-- Detecting unusual sequences, not just points
-- Complex temporal dependencies
-- More data and compute needed
-
-Rule of thumb: Start with Isolation Forest; upgrade to LSTM if sequence patterns matter.
+**Answer**: Isolation Forest is the ideal algorithm for this specific scenario. It excels at processing high-dimensional data, meaning it can easily evaluate the 1,200 independent metrics simultaneously to find multivariate point anomalies without excessive computational overhead. Because your goal is to identify points in time with unusual combinations of metrics rather than analyzing complex, sequential time-series patterns, the lightweight isolation mechanism will be much faster and easier to train than a deep learning approach. In contrast, an LSTM Autoencoder would be overkill here, requiring significantly more compute resources and training time to learn temporal sequences that you explicitly do not need.
 </details>
 
 <details>
-<summary>3. What is concept drift and why does it matter?</summary>
+<summary>3. Six months ago, your anomaly detection model perfectly identified unusual latency spikes in your checkout service. Recently, after a series of successful feature launches and organic user growth, the model has started sending false alerts every afternoon during normal peak hours. What phenomenon is occurring, and how should your system adapt?</summary>
 
-**Answer**: Concept drift is when "normal" changes over time:
-- Traffic patterns evolve
-- Code deployments change behavior
-- User behavior shifts seasonally
-
-**Why it matters**: Models trained on old data become stale. What was anomalous becomes normal; what was normal becomes anomalous.
-
-**Solutions**: Sliding windows, periodic retraining, adaptive algorithms that update continuously.
+**Answer**: Your anomaly detection system is experiencing "concept drift", which occurs when the fundamental definition of "normal" behavior changes over time due to system evolution or user growth. The model is still strictly evaluating traffic against the historical baseline from six months ago, failing to recognize that the recent feature launches have legitimately and permanently shifted the baseline latency and traffic volume upward. To resolve this, you must implement adaptive baseline techniques, such as sliding windows or periodic retraining (e.g., exponential decay), so the model continuously learns and accepts the new, heavier traffic patterns as the current normal state.
 </details>
 
 <details>
-<summary>4. How do you handle seasonality in anomaly detection?</summary>
+<summary>4. Your e-commerce platform sees a massive spike in traffic every morning at 9:00 AM when a daily flash sale begins. A basic Z-score anomaly detector constantly flags this 9:00 AM spike as a critical anomaly because it deviates significantly from the daily mean. What specific techniques should you implement to teach the detector that this spike is expected?</summary>
 
-**Answer**: Three approaches:
-
-1. **Seasonal decomposition**: Separate trend + seasonal + residual; detect anomalies in residuals only
-2. **Prophet**: Automatically handles multiple seasonalities (daily, weekly, yearly)
-3. **Comparison windows**: Compare to same hour last week, same day last month
-
-Without seasonality handling, you'll alert on every Monday morning traffic spike.
+**Answer**: A basic Z-score detector fails here because it calculates a global mean and standard deviation, completely ignoring the temporal context of the data. To fix this, you need to implement seasonality awareness by utilizing algorithms like Facebook's Prophet or performing seasonal decomposition on the time series. These techniques separate the repeating daily patterns (the 9:00 AM spike) from the underlying trend and residual noise. By doing so, the anomaly detector will evaluate the 9:00 AM traffic against historical 9:00 AM traffic rather than the daily average, correctly identifying the flash sale spike as normal behavior and only alerting if the spike is missing or disproportionately large.
 </details>
 
 ## Hands-On Exercise: Build an Anomaly Detector
