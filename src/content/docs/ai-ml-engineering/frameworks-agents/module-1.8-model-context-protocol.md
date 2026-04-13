@@ -22,7 +22,7 @@ The Model Context Protocol (MCP) fundamentally solves this problem by introducin
 Upon completing this module, you will be able to:
 - **Design** a scalable Model Context Protocol architecture separating client reasoning from server-side tool execution.
 - **Implement** a secure MCP server in Python to expose internal databases and APIs to authorized AI agents using strict schema validation.
-- **Evaluate** the security implications of exposing tools via standard transport layers (stdio vs. SSE) and implement appropriate isolation boundaries.
+- **Evaluate** the security implications of exposing tools via standard transport layers (stdio vs. Streamable HTTP) and implement appropriate isolation boundaries.
 - **Diagnose and debug** JSON-RPC message flow between an MCP client and server to resolve tool execution failures and latency issues.
 - **Compare** and contrast MCP with legacy bespoke JSON schema tool-calling approaches in terms of maintainability, ecosystem interoperability, and system resilience.
 
@@ -90,7 +90,7 @@ flowchart LR
 MCP defines two standard transport layers:
 
 1.  **Standard Input/Output (stdio):** The most common transport for local integrations. The client spawns the server as a child process and communicates by reading from and writing to the standard input and output streams. This has zero network overhead and is highly secure as it remains within the host operating system's process boundaries.
-2.  **Server-Sent Events (SSE) over HTTP:** Used for remote servers. The client connects to an HTTP endpoint, and the server streams responses back using SSE. Requests from the client are typically sent via standard HTTP POST requests to a complementary endpoint. This allows for distributed architectures but requires robust authentication.
+2.  **Streamable HTTP:** Used for remote servers. The server provides a single HTTP endpoint path that supports both POST and GET methods, optionally using Server-Sent Events (SSE) to stream multiple server messages. This allows for distributed architectures but requires robust authentication.
 
 ## Implementing an MCP Server from Scratch
 
@@ -307,14 +307,15 @@ When utilizing the `stdio` transport, the MCP server runs as a child process of 
 -   **Strict Path Jailing:** Any tool interacting with the filesystem MUST resolve absolute paths and verify they reside within a predefined, restricted directory tree.
 -   **Containerization:** When running headless agents, the `stdio` transport should spawn the server within a restricted Docker container or via an unprivileged user account.
 
-### Server-Sent Events (SSE) and Network Security
+### Streamable HTTP and Network Security
 
-When transitioning to a distributed architecture using the SSE transport over HTTP, the trust boundary changes. The server is now exposed to the network and must verify the identity of the client making the requests.
+When transitioning to a distributed architecture using the Streamable HTTP transport, the trust boundary changes. The server is now exposed to the network and must verify the identity of the client making the requests.
 
-MCP itself does not dictate a specific authentication standard; it relies on the underlying transport layer. For SSE/HTTP, this means implementing standard web security practices:
+While authorization is OPTIONAL, the protocol provides a comprehensive authorization framework based on OAuth 2.1 for HTTP transports. For Streamable HTTP, servers SHOULD follow the MCP OAuth specification alongside standard transport security:
 
-1.  **Bearer Tokens:** The client must inject an Authorization header (e.g., `Authorization: Bearer <token>`) into the initial HTTP request establishing the SSE connection, and subsequent POST requests for tool execution.
-2.  **Mutual TLS (mTLS):** For highly sensitive enterprise environments, establishing identity at the network layer via mTLS ensures that only authorized agent infrastructure can even connect to the MCP server endpoint.
+1.  **OAuth 2.1 Authorization:** Clients must implement PKCE and servers must implement OAuth 2.0 Protected Resource Metadata (RFC 9728) for discovery and token exchange.
+2.  **DNS Rebinding Protection:** Streamable HTTP servers MUST validate the `Origin` header on all incoming connections and respond with HTTP 403 Forbidden if invalid.
+3.  **Mutual TLS (mTLS):** For highly sensitive enterprise environments, establishing identity at the network layer via mTLS ensures that only authorized agent infrastructure can even connect to the MCP server endpoint.
 
 > **Stop and think**: When using the standard input/output (stdio) transport for an MCP server, what happens if the server application inadvertently prints debugging statements using standard `print()` or `console.log()` functions? How does this impact the JSON-RPC protocol?
 
@@ -330,7 +331,7 @@ sequenceDiagram
 
     Note over Client,Server: Capability Negotiation
     Client->>Server: {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {...}}
-    Server-->>Client: {"jsonrpc": "2.0", "id": 1, "result": {"protocolVersion": "2024-11-05", "capabilities": {...}}}
+    Server-->>Client: {"jsonrpc": "2.0", "id": 1, "result": {"protocolVersion": "2025-11-25", "capabilities": {...}}}
     Client->>Server: {"jsonrpc": "2.0", "method": "notifications/initialized"}
 
     Note over Client,Server: Tool Discovery
@@ -364,8 +365,8 @@ Understanding this sequence is vital when dealing with hanging executions or par
 | **Exposing raw filesystem tools without canonicalization.** | An LLM might generate a path like `../../../etc/passwd` if tricked by an external prompt, leading to arbitrary file read vulnerabilities. | Implement strict directory jailing, resolve all paths to their absolute canonical form, and verify they remain within the permitted boundaries. |
 | **Returning massive datasets directly as tool results.** | Returning a 50MB database dump as a tool result will overwhelm the LLM's context window, leading to immediate token limit exhaustion and session failure. | Implement pagination within the tool arguments, or use MCP Resources to provide a URI for the client to read the data asynchronously. |
 | **Ignoring the capability negotiation phase.** | Not all servers support all MCP features (e.g., some may not support Prompts). Assuming a feature exists without checking capabilities leads to `MethodNotFound` errors. | Always inspect the `capabilities` object in the `InitializeResult` to dynamically enable or disable features in the client application. |
-| **Using HTTP/SSE transport for local, single-machine agents.** | Running a full HTTP/SSE stack for an agent and server communicating on the same machine introduces unnecessary network overhead, latency, and port management. | Utilize the `stdio` transport layer for local integrations to ensure zero-network-overhead communication directly via process pipes. |
-| **Storing authentication tokens in tool configurations.** | Passing sensitive tokens as tool arguments means the LLM has access to the raw credentials, increasing the risk of credential leakage via prompt injection. | Handle authentication at the transport layer (e.g., via HTTP headers in SSE connections) so the LLM only deals with logical execution. |
+| **Using Streamable HTTP transport for local, single-machine agents.** | Running a full HTTP stack for an agent and server communicating on the same machine introduces unnecessary network overhead, latency, and port management. | Utilize the `stdio` transport layer for local integrations to ensure zero-network-overhead communication directly via process pipes. |
+| **Storing authentication tokens in tool configurations.** | Passing sensitive tokens as tool arguments means the LLM has access to the raw credentials, increasing the risk of credential leakage via prompt injection. | Handle authentication at the transport layer (e.g., via HTTP headers in Streamable HTTP connections) so the LLM only deals with logical execution. |
 
 ## Quiz
 
@@ -381,7 +382,7 @@ The most likely cause is that the Python server application has printed standard
 
 <details>
 <summary>3. Scenario: You need to deploy an MCP server that will be accessed by multiple different agents hosted on different cloud providers. The agents need to stream status updates back to the user interface in real-time. Which transport mechanism should you design your server to support, and why?</summary>
-You must design the server to utilize the Server-Sent Events (SSE) transport mechanism over HTTP. The standard input/output (`stdio`) transport is strictly limited to local, inter-process communication on a single physical host or container. Because the agents are distributed across various cloud providers, they must communicate with your server over a wide area network. SSE is specifically designed to handle unidirectional, real-time event streaming over standard HTTP connections. This allows the remote agents to maintain a persistent connection and receive asynchronous JSON-RPC notifications and tool execution results seamlessly across network boundaries.
+You must design the server to utilize the Streamable HTTP transport mechanism. The standard input/output (`stdio`) transport is strictly limited to local, inter-process communication on a single physical host or container. Because the agents are distributed across various cloud providers, they must communicate with your server over a wide area network. Streamable HTTP is specifically designed to handle network communication via a single endpoint, optionally using SSE for real-time event streaming. This allows the remote agents to maintain a persistent connection and receive asynchronous JSON-RPC notifications and tool execution results seamlessly across network boundaries.
 </details>
 
 <details>
@@ -396,7 +397,7 @@ The system requires an upgrade or downgrade on either the client or the server t
 
 <details>
 <summary>6. Scenario: You are analyzing the traffic between an MCP client and server and notice that the server is returning asynchronous event notifications, but the client is randomly dropping them or attributing them to the wrong agent action. Diagnose the potential impact of this behavior on a high-throughput system.</summary>
-The client is likely failing to correctly track and map the JSON-RPC `id` fields during concurrent execution flows. In a high-throughput environment, especially over SSE, a client might dispatch multiple tool execution requests simultaneously. The JSON-RPC `id` is the singular mechanism the client possesses to correlate an asynchronous server response back to the specific request that triggered it. If the client ignores or mismanages these identifiers, it will inevitably append the wrong tool output to the wrong LLM reasoning chain. This completely breaks the agent's logic, causing it to hallucinate based on data meant for a completely different user or session.
+The client is likely failing to correctly track and map the JSON-RPC `id` fields during concurrent execution flows. In a high-throughput environment, especially over Streamable HTTP, a client might dispatch multiple tool execution requests simultaneously. The JSON-RPC `id` is the singular mechanism the client possesses to correlate an asynchronous server response back to the specific request that triggered it. If the client ignores or mismanages these identifiers, it will inevitably append the wrong tool output to the wrong LLM reasoning chain. This completely breaks the agent's logic, causing it to hallucinate based on data meant for a completely different user or session.
 </details>
 
 <details>
@@ -420,6 +421,11 @@ mkdir mcp-lab && cd mcp-lab
 python3 -m venv .venv
 source .venv/bin/activate
 pip install mcp pydantic
+```
+
+**Checkpoint Verification:** Verify the installation was successful.
+```bash
+python3 -c "import mcp; print('MCP installed successfully')"
 ```
 </details>
 
@@ -455,6 +461,11 @@ async def read_resource(uri: str) -> str:
 async def list_tools() -> list[types.Tool]:
     return [types.Tool(name="calculate_metrics", description="Calculates sum and max", inputSchema=MathArgs.model_json_schema())]
 ```
+
+**Checkpoint Verification:** Verify the schema definitions contain no syntax errors.
+```bash
+python3 -m py_compile server.py
+```
 </details>
 
 <details>
@@ -484,6 +495,11 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+```
+
+**Checkpoint Verification:** Verify the complete server code compiles successfully before building the client.
+```bash
+python3 -m py_compile server.py
 ```
 </details>
 
@@ -515,6 +531,12 @@ async function run() {
 }
 run();
 ```
+
+**Checkpoint Verification:** Run the client script to verify end-to-end communication.
+```bash
+node client.mjs
+# Expected Output: Sum: 60, Max: 30
+```
 </details>
 
 <details>
@@ -522,7 +544,11 @@ run();
 Modify your `client.mjs` script to send invalid data (e.g., strings instead of integers in the array: `["a", "b"]`). Run the script and observe how the server's validation layer catches the error and returns a safe textual error message rather than crashing the Python process.
 
 **Solution:**
-Change `arguments: { values: ["a", "b"] }` in `client.mjs`. When executed, the output will safely read: `Error: 1 validation error for MathArgs... Input should be a valid integer, unable to parse string as an integer`. The process exits cleanly, demonstrating robust error handling required for autonomous agents.
+Change `arguments: { values: ["a", "b"] }` in `client.mjs`. Execute the script to verify validation handling:
+```bash
+node client.mjs
+```
+The output will safely read: `Error: 1 validation error for MathArgs... Input should be a valid integer, unable to parse string as an integer`. The process exits cleanly, demonstrating robust error handling required for autonomous agents.
 </details>
 
 ## Next Module
