@@ -35,23 +35,14 @@ AKS integrates with two primary Azure storage services for persistent volumes: A
 
 Azure Disks provide block-level storage that attaches to a single node at a time. This maps to `ReadWriteOnce` (RWO) access mode in Kubernetes---only one pod on one node can mount the disk for read-write access.
 
-```text
-    Azure Disk Types for AKS:
-    ┌─────────────────────────────────────────────────────────────────┐
-    │                                                                 │
-    │  Standard HDD     Standard SSD     Premium SSD     Ultra Disk   │
-    │  ────────────     ────────────     ───────────     ──────────   │
-    │  Max IOPS: 2000   Max IOPS: 6000   Max IOPS: 20k  Max IOPS:   │
-    │  Max BW: 500MB/s  Max BW: 750MB/s  Max BW: 900MB  160,000     │
-    │  Latency: ~10ms   Latency: ~4ms    Latency: ~1ms  Max BW: 4GB │
-    │                                                    Latency:     │
-    │  Use: backups,    Use: dev/test,   Use: most      sub-ms       │
-    │  cold data        light workloads  production     Use: high-   │
-    │                                    databases      perf DBs,    │
-    │                                                   real-time    │
-    │                                                   analytics    │
-    │  Cost: $          Cost: $$         Cost: $$$      Cost: $$$$   │
-    └─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Azure Disk Types for AKS
+        HDD["<b>Standard HDD</b><br/>Max IOPS: 2000<br/>Max BW: 500MB/s<br/>Latency: ~10ms<br/><br/>Use: backups, cold data<br/>Cost: $"]
+        SSD["<b>Standard SSD</b><br/>Max IOPS: 6000<br/>Max BW: 750MB/s<br/>Latency: ~4ms<br/><br/>Use: dev/test, light workloads<br/>Cost: $$"]
+        Premium["<b>Premium SSD</b><br/>Max IOPS: 20k<br/>Max BW: 900MB/s<br/>Latency: ~1ms<br/><br/>Use: most production databases<br/>Cost: $$$"]
+        Ultra["<b>Ultra Disk</b><br/>Max IOPS: 160,000<br/>Max BW: 4GB/s<br/>Latency: sub-ms<br/><br/>Use: high-perf DBs, real-time analytics<br/>Cost: $$$$"]
+    end
 ```
 
 AKS uses CSI (Container Storage Interface) drivers for storage. The `disk.csi.azure.com` driver handles Azure Disks. You create a StorageClass that specifies the disk type, then reference it in PersistentVolumeClaims.
@@ -132,21 +123,12 @@ allowVolumeExpansion: true
 
 Azure Files provides SMB and NFS file shares that multiple pods across multiple nodes can mount simultaneously (`ReadWriteMany` / RWX). This is essential for workloads that need shared storage: CMS platforms, shared configuration files, machine learning training data, and legacy applications that expect a shared filesystem.
 
-```text
-    Azure Files Access Patterns:
-    ┌───────────────────────────────────────────────────────────────┐
-    │                                                               │
-    │  SMB Protocol (default)          NFS Protocol (Premium only)  │
-    │  ─────────────────────          ──────────────────────────── │
-    │  Windows + Linux                Linux only                    │
-    │  Broad compatibility            POSIX-compliant               │
-    │  AD-based authentication        No authentication overhead    │
-    │  Lower throughput               Higher throughput              │
-    │                                                               │
-    │  Use: general shared            Use: high-performance         │
-    │  storage, Windows               shared storage, ML training   │
-    │  workloads                      data, media processing        │
-    └───────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Azure Files Access Patterns
+        SMB["<b>SMB Protocol (default)</b><br/>Windows + Linux<br/>Broad compatibility<br/>AD-based authentication<br/>Lower throughput<br/><br/>Use: general shared storage, Windows workloads"]
+        NFS["<b>NFS Protocol (Premium only)</b><br/>Linux only<br/>POSIX-compliant<br/>No authentication overhead<br/>Higher throughput<br/><br/>Use: high-performance shared storage, ML training data, media processing"]
+    end
 ```
 
 ```yaml
@@ -441,19 +423,17 @@ The standard Kubernetes Horizontal Pod Autoscaler (HPA) scales based on CPU and 
 
 KEDA (Kubernetes Event-Driven Autoscaler) extends the HPA with over 60 scalers that can trigger scaling from external event sources: Azure Service Bus queue depth, Azure Event Hubs partition lag, PostgreSQL query results, Prometheus metrics, and many more.
 
-```text
-    Traditional HPA:                    KEDA:
-    ┌──────────────────┐               ┌──────────────────┐
-    │ Metrics Server   │               │ KEDA Operator    │
-    │ (CPU/memory only)│               │ (60+ scalers)    │
-    │                  │               │                  │
-    │ "Pod at 80% CPU" │               │ "Queue has 500   │
-    │ → scale up       │               │  messages"       │
-    │                  │               │ → scale up       │
-    │ Cannot scale     │               │                  │
-    │ to zero          │               │ Can scale to     │
-    └──────────────────┘               │ zero (!)         │
-                                       └──────────────────┘
+```mermaid
+graph LR
+    subgraph Traditional HPA
+        direction TB
+        MS["<b>Metrics Server</b><br/>(CPU/memory only)<br/><br/>Pod at 80% CPU<br/>→ scale up<br/><br/><i>Cannot scale to zero</i>"]
+    end
+
+    subgraph KEDA
+        direction TB
+        KO["<b>KEDA Operator</b><br/>(60+ scalers)<br/><br/>Queue has 500 messages<br/>→ scale up<br/><br/><i>Can scale to zero (!)</i>"]
+    end
 ```
 
 ### Enabling the KEDA Add-on
@@ -569,17 +549,28 @@ KEDA scales pods. The cluster autoscaler scales nodes. They work together beauti
 7. KEDA scales pods down to 0
 8. Cluster autoscaler detects underutilized nodes and removes them after the cool-down period
 
-```text
-    Queue depth: 500 messages
-    ┌─────────────────────────────────────────────────────────────────┐
-    │ t=0s   KEDA: 0 pods → 50 pods (target)                         │
-    │ t=10s  Scheduler: 30 pods running, 20 pending                   │
-    │ t=20s  Cluster Autoscaler: adding 4 nodes to VMSS               │
-    │ t=80s  New nodes ready: 50/50 pods running                      │
-    │ t=300s Queue drained to 0 messages                              │
-    │ t=420s KEDA: 50 pods → 0 pods                                   │
-    │ t=1020s Cluster Autoscaler: removing 4 underutilized nodes      │
-    └─────────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant Queue as Queue (500 msgs)
+    participant KEDA
+    participant Scheduler
+    participant CA as Cluster Autoscaler
+    
+    Note over Queue,CA: t=0s
+    KEDA->>Scheduler: Target 50 pods (from 0)
+    Note over Queue,CA: t=10s
+    Scheduler-->>KEDA: 30 pods running, 20 pending
+    Note over Queue,CA: t=20s
+    CA->>CA: Adding 4 nodes to VMSS
+    Note over Queue,CA: t=80s
+    CA-->>Scheduler: New nodes ready
+    Scheduler-->>KEDA: 50/50 pods running
+    Note over Queue,CA: t=300s
+    Queue->>Queue: Drained to 0 messages
+    Note over Queue,CA: t=420s
+    KEDA->>Scheduler: Target 0 pods (from 50)
+    Note over Queue,CA: t=1020s
+    CA->>CA: Removing 4 underutilized nodes
 ```
 
 ---
