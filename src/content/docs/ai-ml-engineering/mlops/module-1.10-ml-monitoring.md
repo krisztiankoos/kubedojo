@@ -1,96 +1,30 @@
 ---
 title: "ML Monitoring"
-slug: ai-ml-engineering/mlops/module-5.10-ml-monitoring
+slug: ai-ml-engineering/mlops/module-1.10-ml-monitoring
 sidebar:
   order: 611
 ---
-> **AI/ML Engineering Track** | Complexity: `[COMPLEX]` | Time: 5-6
----
-**Prerequisites**: Module 51 (Model Deployment Patterns)
 
-San Francisco, California. October 2021. 3:14 PM. The dashboard showed green. Uptime: 99.99%. Latency: 45ms average. Error rate: 0.001%. By every traditional metric, Zillow's home-buying algorithm was performing flawlessly.
+San Francisco, California. October 2021. The operational dashboard showed green lights across the board. Service uptime remained at a pristine 99.99%. The API latency held steady at an average of 45ms. The HTTP error rate was virtually nonexistent at 0.001%. By every standard software engineering metric, Zillow's automated home-buying algorithm was performing flawlessly. 
 
-But deep in the numbers, something was wrong.
+But beneath those reassuring metrics, a catastrophic algorithmic failure was unfolding. The machine learning model had been meticulously trained on historical housing market data, learning intricate patterns regarding location, square footage, school districts, and pricing. It ingested features and spat out purchasing prices, driving Zillow to buy thousands of homes. When the COVID-19 pandemic radically altered the housing landscape—shifting demand from urban centers to suburbs and introducing massive volatility in interest rates—the foundational patterns the model relied on evaporated. The model, however, possessed no awareness of this paradigm shift. It simply continued executing its primary function, purchasing houses at fundamentally flawed valuations.
 
-The model had been trained on years of housing market data. It learned patterns: location, square footage, bedrooms, school districts. It made predictions, and Zillow bought houses based on those predictions. Thousands of them.
-
-Then COVID-19 rewired the housing market. Remote work changed where people wanted to live. Urban flight reversed suburban decline. Interest rates dropped, then spiked. The patterns the model had learned no longer applied—but nobody told the model. It kept predicting. Zillow kept buying.
-
-By the time someone noticed, Zillow had accumulated $569 million in losses. The entire iBuying division was shut down. 2,000 employees lost their jobs. Stock price dropped 25% in a single day. Analysts called it one of the largest algorithmic failures in business history—not because the technology failed, but because the monitoring failed. And the model? It never crashed. It never threw an error. It never sent a single alert. It just quietly, confidently, catastrophically, got things wrong while every dashboard showed green lights.
-
-> "We had dashboards for everything except the one thing that mattered: whether the model was still learning the right thing."
-> — An anonymous Zillow engineer, post-mortem interview, 2022
-
----
+By the time the human operators realized the magnitude of the discrepancy, Zillow had hemorrhaged $569 million. The company was forced to shutter its entire iBuying division, resulting in the termination of 2,000 employees and a precipitous 25% single-day drop in stock value. This disaster was not caused by a software crash or an infrastructure outage; it was caused by a profound failure in machine learning monitoring. The model never threw an exception. It simply failed silently, highlighting the critical difference between monitoring software execution and monitoring algorithmic cognition.
 
 ## What You'll Be Able to Do
 
-By the end of this module, you will:
-- Monitor ML models in production effectively
-- Detect data drift and concept drift
-- Implement model explainability (SHAP, LIME)
-- Build alerting systems for ML metrics
-- Establish model governance frameworks
-- Use observability tools (Prometheus, Grafana, Evidently)
+By the end of this module, you will be able to:
+- Design robust observability architectures capable of detecting silent ML failures in production environments.
+- Diagnose and differentiate between covariate shift (data drift) and relationship shift (concept drift) using statistical methods.
+- Implement actionable explainability frameworks (SHAP, LIME) to trace degraded predictions back to specific feature variations.
+- Evaluate model fairness and demographic parity across critical sub-populations to prevent biased outcomes.
+- Implement comprehensive model governance and audit logging systems that satisfy stringent regulatory frameworks.
 
----
+## The Foundations of ML Observability
 
-## The History of ML Monitoring: From Blind Faith to Observability
+To understand why traditional monitoring is wholly inadequate for machine learning systems, we must analyze the fundamental differences in failure modes. A traditional REST API either returns a valid JSON response or a 500 Internal Server Error. An ML prediction API will happily return a perfectly formatted 200 OK response containing a prediction that is completely, dangerously wrong. 
 
-### The Dark Ages (Pre-2015)
-
-In the early days of machine learning in production, monitoring was an afterthought—if it existed at all. Teams deployed models and hoped for the best. The assumption: if the model worked on test data, it would work forever.
-
-> **Did You Know?** In 2012, Knight Capital lost $440 million in 45 minutes due to an automated trading algorithm malfunction. The system had no proper monitoring—by the time humans realized something was wrong, the damage was catastrophic. This disaster became a watershed moment for algorithmic monitoring, though it took years for ML systems to learn the same lesson.
-
-Early ML monitoring challenges:
-- Models were deployed as black boxes with no visibility
-- "Performance" meant latency and uptime, not prediction quality
-- Data drift was an academic concept, not a production concern
-- Most models were batch-trained annually—who needed real-time monitoring?
-
-### The Metrics Era (2015-2018)
-
-As companies like Uber, Netflix, and Airbnb scaled their ML systems, they discovered that traditional monitoring wasn't enough. Models could "work" (serve predictions) while silently degrading.
-
-**Netflix's recommendation monitoring (2016)**: Netflix pioneered tracking "engagement metrics" downstream of predictions. If users clicked less, scrolled more, or abandoned sessions, it signaled model problems—even when latency and error rates looked fine.
-
-**Uber's forecasting failures (2017)**: Uber's demand forecasting model worked beautifully until COVID hit years later. But even before that, they noticed gradual drift during events like concerts and holidays. They built custom drift detection that compared recent predictions to historical patterns.
-
-> **Did You Know?** The term "concept drift" gained mainstream ML attention in 2018 when several high-profile failures were attributed to changing relationships between features and outcomes. João Gama's 2014 survey paper "A Survey on Concept Drift Adaptation" became required reading for MLOps teams, cited over 3,000 times by 2024.
-
-### The MLOps Revolution (2019-2022)
-
-The rise of MLOps brought monitoring from afterthought to first-class concern:
-
-**Evidently (2020)**: Emeli Dral and team created open-source drift detection that could run anywhere. Suddenly, startups had access to enterprise-grade monitoring.
-
-**WhyLabs (2021)**: Alessya Visnjic founded WhyLabs with the mission of "AI observability." Their key insight: monitor data profiles continuously, not just predictions.
-
-**Arize (2021)**: Jason Lopatecki and Aparna Dhinakaran built Arize to solve the "debugging production ML" problem—when something goes wrong, trace it back to specific features, segments, and time periods.
-
-### The Regulation Era (2023-Present)
-
-Now monitoring isn't just best practice—it's often legally required:
-
-**EU AI Act (2024)**: High-risk AI systems must implement continuous monitoring, maintain audit logs, and enable human oversight. Non-compliance can result in fines up to 7% of global revenue.
-
-**NYC Local Law 144 (2023)**: Requires annual bias audits of AI hiring tools. Companies must prove their models don't discriminate—and that requires ongoing monitoring.
-
-**SEC AI Guidance (2024)**: Financial institutions using AI for trading, lending, or risk must document model performance and maintain "model risk management frameworks."
-
-> **Did You Know?** By 2025, Gartner predicts that 50% of enterprises will have dedicated "ML Observability" teams, separate from traditional DevOps and data engineering. This specialization reflects how complex production ML monitoring has become—it's no longer something you can bolt on; it requires dedicated expertise.
-
----
-
-## Why ML Monitoring Matters
-
-Think of ML monitoring like a pilot's instrument panel versus a car dashboard. A car dashboard tells you speed, fuel, and engine temperature—if something breaks, you'll hear it or feel it. A pilot's panel monitors dozens of hidden systems because at 35,000 feet, you can't just "pull over" when something feels wrong. ML models are like aircraft: they can be producing subtly wrong results while all surface metrics look fine. By the time you notice something's wrong, you might already be in a nosedive. You need instruments that monitor what the human eye can't see.
-
-Traditional software monitoring tracks uptime and latency. ML systems need more: they can fail silently while appearing healthy. A model can return predictions with low latency and high uptime, yet produce increasingly wrong results as the world changes.
-
-**The Silent Failure Problem**:
-```
+```text
 TRADITIONAL SOFTWARE              ML SYSTEMS
 ==================               ==========
 
@@ -101,13 +35,9 @@ Code doesn't change              Data changes constantly
 Binary: works/broken             Gradual degradation
 ```
 
-**Did You Know?** In 2020, Zillow's home-buying algorithm silently degraded due to COVID-19 changing housing market patterns. The model kept making predictions, but they were increasingly wrong. By the time they noticed, Zillow had accumulated $569 million in losses and had to shut down the entire business unit. Proper drift monitoring could have caught this early.
+Monitoring a production ML model requires a multi-layered approach that tracks the infrastructure, the data distributions, the prediction confidence, and the eventual ground truth. This necessitates an architecture that captures data at various lifecycle stages and funnels it into specialized monitoring engines.
 
----
-
-## The ML Monitoring Stack
-
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    ML MONITORING ARCHITECTURE                            │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -142,17 +72,51 @@ Binary: works/broken             Gradual degradation
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+For modern implementations, we conceptualize this architecture using native state flows. Below is the Mermaid representation of the monitoring pipeline:
 
-## Types of Drift
+```mermaid
+flowchart TD
+    subgraph Data Layer
+        ID[Input Data: Features]
+        P[Predictions: Outputs]
+        GT[Ground Truth: Delayed]
+    end
 
-Think of drift like changing road conditions for a self-driving car. Data drift is when the road surface changes—maybe you trained on dry asphalt, but now it's rainy and covered with leaves. Concept drift is when the traffic laws change—same roads, same cars, but red now means go. Both require your model to adapt, but detecting them requires watching different signals. Miss them, and your model drives confidently off a cliff.
+    subgraph Monitoring Layer
+        ML[ML MONITORING ENGINE]
+        DD[Data Drift]
+        MP[Model Perf]
+        CD[Concept Drift]
+        SM[System Metrics]
+        ML --- DD & MP & CD & SM
+    end
+
+    subgraph Alerting Layer
+        AL[Prometheus → Alertmanager → PagerDuty/Slack]
+    end
+
+    subgraph Visualization
+        V[Grafana Dashboards | Evidently | Custom UI]
+    end
+
+    ID --> ML
+    P --> ML
+    GT --> ML
+    ML --> AL
+    AL --> V
+```
+
+> **Did You Know?** In 2012, Knight Capital Group lost $440 million in exactly 45 minutes due to an automated algorithmic malfunction. The system lacked comprehensive boundary monitoring, and by the time human operators diagnosed the erratic trading volume, the company was fundamentally crippled. This event remains a foundational cautionary tale for algorithmic boundary enforcement.
+
+## Diagnosing Drift Types
+
+Drift is the silent killer of ML models. It occurs when the statistical properties of the environment change over time, rendering the model's learned weights obsolete. We classify drift into three distinct categories, each requiring different detection strategies.
 
 ### Data Drift (Covariate Shift)
 
-The input data distribution changes, even if the relationship between inputs and outputs stays the same.
+Data drift occurs when the input feature distributions change, even if the underlying relationship between those features and the target variable remains identical. For example, a credit scoring model might suddenly receive applications from a completely different geographic demographic than it was trained on.
 
-```
+```text
 DATA DRIFT EXAMPLE
 ==================
 
@@ -168,11 +132,26 @@ Now it sees a different population.
 May still work, but performance likely degraded.
 ```
 
+```mermaid
+flowchart LR
+    subgraph Training Data 2023
+        T1[Age: 25-45 80%]
+        T2[Income: $50K-100K]
+        T3[Urban: 70%]
+    end
+    subgraph Production Data 2024
+        P1[Age: 18-65 even]
+        P2[Income: $30K-150K]
+        P3[Urban: 50%]
+    end
+    T1 & T2 & T3 --> P1 & P2 & P3
+```
+
 ### Concept Drift
 
-The relationship between inputs and outputs changes, even if input distribution stays the same.
+Concept drift is far more insidious. It occurs when the fundamental relationship between the input features and the target variable shifts. The inputs might look exactly the same, but they now mean something entirely different.
 
-```
+```text
 CONCEPT DRIFT EXAMPLE
 =====================
 
@@ -188,9 +167,24 @@ Before COVID-19:                   After COVID-19:
 The world changed. Same inputs now mean different things.
 ```
 
+```mermaid
+flowchart LR
+    subgraph Before Event
+        B1[Remote work = low housing demand]
+        B2[Same features, same people]
+    end
+    subgraph After Event
+        A1[Remote work = high housing demand]
+        A2[Same features, DIFFERENT behavior]
+    end
+    B1 & B2 --> A1 & A2
+```
+
+> **Did You Know?** The formal academic definition of "concept drift" was introduced in 1996 by researchers Gerhard Widmer and Miroslav Kubat in their seminal paper "Learning in the Presence of Concept Drift and Hidden Contexts." It took nearly two decades for the software industry to catch up to the theoretical frameworks they established.
+
 ### Prediction Drift
 
-The model's output distribution changes unexpectedly.
+Prediction drift focuses purely on the output space. If your binary classification model historically predicted a 15% positive rate, and suddenly begins predicting a 40% positive rate, the output distribution has drifted.
 
 ```python
 # Detecting prediction drift
@@ -221,13 +215,13 @@ def detect_prediction_drift(
     }
 ```
 
-**Did You Know?** The term "concept drift" was coined by Gerhard Widmer and Miroslav Kubat in 1996 in their paper "Learning in the Presence of Concept Drift and Hidden Contexts." They were studying how machine learning systems could adapt when the underlying patterns they learned were no longer valid - a problem that's become even more critical in the age of real-time ML systems.
+### Statistical Detection Methods
 
----
+To mathematically prove that drift has occurred, MLOps engineers rely on several core algorithms to compare production distributions against training baselines.
 
-## Statistical Drift Detection Methods
+#### Population Stability Index (PSI)
 
-### Population Stability Index (PSI)
+PSI measures how much a population has shifted over time. It is highly robust and widely used in the financial sector.
 
 ```python
 def calculate_psi(
@@ -259,7 +253,9 @@ def calculate_psi(
     return psi
 ```
 
-### Kolmogorov-Smirnov Test
+#### Kolmogorov-Smirnov Test
+
+The KS test is a non-parametric test that compares the cumulative distributions of two distinct datasets, seeking the maximum absolute distance between them.
 
 ```python
 def ks_drift_test(
@@ -285,7 +281,9 @@ def ks_drift_test(
     }
 ```
 
-### Jensen-Shannon Divergence
+#### Jensen-Shannon Divergence
+
+Unlike Kullback-Leibler (KL) divergence, JS divergence is symmetric and always returns a finite value between 0 and 1, making it exceptionally reliable for automated monitoring pipelines.
 
 ```python
 def js_divergence(
@@ -315,17 +313,13 @@ def js_divergence(
     return jensenshannon(ref_hist, cur_hist)
 ```
 
----
+> **Pause and predict**: If you train a machine learning model to optimize logistics routes based on historical weather patterns, and an unprecedented massive hurricane occurs, drastically altering road availability, which specific type of drift will your model experience first? Why?
 
-## Model Performance Monitoring
+## Performance Metrics and Explainability
 
-Think of model performance monitoring like tracking a patient's vital signs in an ICU—it's literally a matter of life and death for your ML system. You don't just check temperature once—you monitor it continuously, set alarms for dangerous ranges, and look at trends over time. A fever that spikes briefly is different from one that rises slowly over days. Similarly, model accuracy that drops suddenly (bug? bad deployment?) needs different treatment than accuracy that erodes gradually (drift). The metrics below are your model's vital signs—know what's normal, what's dangerous, and what trends to watch.
+Once you identify drift, the next imperative is proving how much performance has actually degraded. You must track performance metrics dynamically over rolling intervals.
 
-> ** Did You Know?** Netflix monitors over 200 different metrics for their recommendation models. Their "A/B testing at scale" system evaluates model changes against millions of users simultaneously, catching performance degradation before it affects the broader user base. They estimate that their recommendation system drives 80% of what users watch—making monitoring not just important, but existential to their business.
-
-### Key Metrics to Track
-
-```
+```text
 CLASSIFICATION METRICS
 ======================
 
@@ -351,6 +345,8 @@ R²              1 - SS_res / SS_tot            Variance explained
 ```
 
 ### Sliding Window Monitoring
+
+Because production systems operate on continuous streams of incoming requests rather than static batch files, performance must be calculated over sliding windows. This ensures transient spikes do not permanently skew the aggregate performance metric.
 
 ```python
 class SlidingWindowMonitor:
@@ -412,15 +408,15 @@ class SlidingWindowMonitor:
         }
 ```
 
----
+> **Did You Know?** Netflix's massive recommendation infrastructure continuously monitors over 200 distinct algorithmic and business metrics. Their capability to detect minute regressions saves millions of hours of viewer engagement, proving that at scale, even a 0.5% accuracy drop is a severe incident.
 
-## Model Explainability
+### Explainability Frameworks
 
-Think of model explainability like a doctor explaining a diagnosis. Saying "you have diabetes" isn't helpful—you need to know *why*: "Your blood sugar is 250, your A1C is 9.5, and you have family history." SHAP and LIME do the same for model predictions. Instead of "loan denied," they tell you "denied because income-to-debt ratio is 0.7 (pushed prediction negative by 0.3), credit score is 580 (pushed negative by 0.2), and account age is 6 months (pushed negative by 0.1)." Now you can act: pay down debt, wait for better credit history, or appeal the decision.
+Detecting a failure is only the first step. Diagnosing the exact feature responsible for the failure is where explainability comes in. You cannot effectively debug an algorithmic black box without tools like SHAP or LIME.
 
-### SHAP (SHapley Additive exPlanations)
+#### SHAP (SHapley Additive exPlanations)
 
-SHAP values explain how much each feature contributed to a prediction.
+SHAP relies on cooperative game theory to distribute the "payout" (the final prediction) among the "players" (the input features) fairly.
 
 ```python
 import shap
@@ -471,7 +467,9 @@ def explain_prediction_shap(model, X_sample, feature_names):
 # }
 ```
 
-### LIME (Local Interpretable Model-agnostic Explanations)
+#### LIME (Local Interpretable Model-agnostic Explanations)
+
+LIME operates by generating a new, localized dataset around the target prediction and fitting a simpler, inherently interpretable linear model to approximate the complex model's behavior in that specific hyperspace.
 
 ```python
 from lime.lime_tabular import LimeTabularExplainer
@@ -500,17 +498,13 @@ def explain_prediction_lime(model, X_train, X_sample, feature_names):
     }
 ```
 
-**Did You Know?** SHAP was developed by Scott Lundberg at the University of Washington in 2017. The key insight was connecting game theory (Shapley values from 1953!) with machine learning explanations. Shapley values were originally designed to fairly distribute payouts among players in cooperative games - Lundberg realized the same math could "fairly" distribute prediction credit among features.
+> **Stop and think**: You are deploying a Kubernetes v1.35 cluster to run Prometheus and Grafana for your ML models. If your predictions suddenly start taking 800ms instead of 50ms, but the mathematical accuracy remains stable at 95%, what downstream business metrics might be quietly degrading as a result of this latency?
 
----
+## Alerting, Runbooks, and Governance
 
-## Alerting and Observability
+A monitoring system without effective alerting is merely a data graveyard. Implementing robust instrumentation requires exporting metrics into specialized time-series databases like Prometheus.
 
-Think of alerting like a smoke detector in your house. You don't want it to alarm every time you cook toast (alert fatigue), but you absolutely need it to wake you up during a real fire. The art of ML alerting is calibrating your "smoke detectors" to catch real problems without crying wolf. Too sensitive? Your team ignores alerts and misses the real fire. Not sensitive enough? You're Zillow, discovering you've lost half a billion dollars. Set thresholds based on business impact, not arbitrary statistics.
-
-> ** Did You Know?** Google's SRE team (Site Reliability Engineering) pioneered the concept of "error budgets" for alerting. Instead of trying to achieve 100% uptime (impossible), they set acceptable error rates (e.g., 99.9% availability = 8.76 hours downtime/year). As long as you stay within your "budget," you don't alert. This philosophy has been adopted by ML teams for model performance—allowing natural variance while alerting on true degradation.
-
-### Prometheus Metrics
+### Prometheus Metric Definitions
 
 ```python
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
@@ -577,7 +571,9 @@ class PrometheusMLMonitor:
         ).set(psi)
 ```
 
-### Alert Rules (Prometheus)
+### Alert Rules configuration
+
+We translate our business tolerances into mathematical Prometheus PromQL queries that trigger Alertmanager.
 
 ```yaml
 # prometheus_alerts.yml
@@ -623,15 +619,13 @@ groups:
           summary: "Unusual prediction volume detected"
 ```
 
----
+### Governance and Compliance
 
-## Model Governance
+With increasing regulatory scrutiny, model governance is no longer optional. Deployments must be documented via Model Cards, and every state change must be audited.
 
-Think of model governance like the FDA approval process for medications. Before a drug reaches patients, it needs documentation of what it's for, who should (and shouldn't) take it, potential side effects, and ongoing monitoring requirements. Model governance is the same for AI: every model needs a "label" explaining its intended use, known limitations, and potential harms. In regulated industries like healthcare and finance, this isn't optional—it's the law. Even in unregulated domains, good governance saves you from deploying a "medication" that turns out to be poison.
+> **Did You Know?** The European Union's AI Act, formalized in 2024, enforces strict regulations on high-risk algorithmic systems. Non-compliance regarding audit logging, monitoring, and transparency can result in fines up to 35 million EUR, or 7% of the offending company's global annual revenue.
 
-> ** Did You Know?** The EU AI Act, which went into effect in 2024, requires "high-risk" AI systems (used in hiring, credit scoring, healthcare, etc.) to maintain detailed documentation, undergo third-party audits, and implement continuous monitoring. Companies face fines up to €35 million or 7% of global revenue for non-compliance. Model governance went from "nice to have" to "mandatory" overnight.
-
-### Model Card
+#### The Model Card
 
 ```python
 @dataclass
@@ -712,7 +706,7 @@ class ModelCard:
 """
 ```
 
-### Audit Trail
+#### The Audit Trail
 
 ```python
 @dataclass
@@ -782,87 +776,9 @@ class ModelAuditLog:
         return results
 ```
 
----
+### Runbooks and Thresholding
 
-## ML Monitoring Tools Comparison
-
-```
-┌────────────────┬─────────────┬─────────────┬─────────────┬─────────────┐
-│    Tool        │   Drift     │   Metrics   │   Alerts    │   Cost      │
-├────────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
-│ Evidently      │  Built-in │  ML+sys   │ ️ Basic    │ Free/OS     │
-│ WhyLabs        │  Advanced │  ML-focus │  Built-in │ Free tier   │
-│ Arize          │  Advanced │  ML-focus │  Built-in │ Paid        │
-│ Fiddler        │  Built-in │  ML-focus │  Built-in │ Paid        │
-│ MLflow         │ ️ Basic    │  ML-focus │  Manual   │ Free/OS     │
-│ Prometheus     │  Manual   │  System   │  Built-in │ Free/OS     │
-│ Datadog        │ ️ Manual   │  System   │  Built-in │ Paid        │
-└────────────────┴─────────────┴─────────────┴─────────────┴─────────────┘
-
-Recommendation:
-- Start: Evidently + Prometheus + Grafana (all free)
-- Scale: WhyLabs or Arize for advanced ML monitoring
-- Enterprise: Fiddler or Datadog ML Monitoring
-```
-
----
-
-## Best Practices
-
-### 1. Monitor Everything
-
-```
-WHAT TO MONITOR
-===============
-
-Input Data:
-  □ Feature distributions (per feature)
-  □ Missing value rates
-  □ Outlier rates
-  □ Volume/throughput
-
-Model Outputs:
-  □ Prediction distribution
-  □ Confidence distribution
-  □ Prediction latency
-  □ Error rates
-
-Performance (when labels available):
-  □ Accuracy/F1/AUC (classification)
-  □ MAE/RMSE (regression)
-  □ Performance by segment
-
-System:
-  □ CPU/Memory/GPU utilization
-  □ Request latency
-  □ Error rates
-  □ Queue depths
-```
-
-### 2. Set Appropriate Thresholds
-
-```python
-# Don't alert on every fluctuation
-DRIFT_THRESHOLDS = {
-    "psi_warning": 0.1,      # Investigate
-    "psi_critical": 0.25,    # Action required
-
-    "accuracy_warning": 0.05,  # 5% drop from baseline
-    "accuracy_critical": 0.10, # 10% drop from baseline
-
-    "latency_p95_warning": 200,   # ms
-    "latency_p95_critical": 500,  # ms
-}
-
-# Use sliding windows to smooth noise
-MONITORING_WINDOWS = {
-    "latency": "5m",      # Fast-changing
-    "accuracy": "1h",     # Slower-changing
-    "drift": "1d",        # Slowest-changing
-}
-```
-
-### 3. Establish Runbooks
+Never configure an alert without explicitly linking it to an actionable runbook.
 
 ```markdown
 # Model Degradation Runbook
@@ -892,19 +808,504 @@ MONITORING_WINDOWS = {
 - Critical: PagerDuty on-call
 ```
 
----
+```python
+# Don't alert on every fluctuation
+DRIFT_THRESHOLDS = {
+    "psi_warning": 0.1,      # Investigate
+    "psi_critical": 0.25,    # Action required
+
+    "accuracy_warning": 0.05,  # 5% drop from baseline
+    "accuracy_critical": 0.10, # 10% drop from baseline
+
+    "latency_p95_warning": 200,   # ms
+    "latency_p95_critical": 500,  # ms
+}
+
+# Use sliding windows to smooth noise
+MONITORING_WINDOWS = {
+    "latency": "5m",      # Fast-changing
+    "accuracy": "1h",     # Slower-changing
+    "drift": "1d",        # Slowest-changing
+}
+```
+
+```python
+def check_monitoring_health(monitoring_system) -> dict:
+    """
+    Meta-monitoring: ensure your monitoring is working.
+    Run this daily.
+    """
+    health = {
+        'baseline_age_days': (datetime.now() - monitoring_system.baseline_created).days,
+        'last_check_hours_ago': (datetime.now() - monitoring_system.last_check).total_seconds() / 3600,
+        'features_monitored': len(monitoring_system.monitored_features),
+        'features_in_model': len(monitoring_system.model_features),
+        'coverage_percent': len(monitoring_system.monitored_features) / len(monitoring_system.model_features) * 100,
+        'alerts_last_30_days': monitoring_system.count_alerts(days=30),
+        'alerts_acted_on': monitoring_system.count_acknowledged_alerts(days=30)
+    }
+
+    # Calculate health score
+    issues = []
+    if health['baseline_age_days'] > 90:
+        issues.append('Baseline is stale (>90 days)')
+    if health['last_check_hours_ago'] > 24:
+        issues.append('Monitoring check is overdue')
+    if health['coverage_percent'] < 100:
+        issues.append(f"Only {health['coverage_percent']:.0f}% of features monitored")
+    if health['alerts_last_30_days'] > 0 and health['alerts_acted_on'] == 0:
+        issues.append('Alerts are being ignored')
+
+    health['issues'] = issues
+    health['healthy'] = len(issues) == 0
+
+    return health
+```
+
+### Best Practices Checklist
+
+```text
+WHAT TO MONITOR
+===============
+
+Input Data:
+  □ Feature distributions (per feature)
+  □ Missing value rates
+  □ Outlier rates
+  □ Volume/throughput
+
+Model Outputs:
+  □ Prediction distribution
+  □ Confidence distribution
+  □ Prediction latency
+  □ Error rates
+
+Performance (when labels available):
+  □ Accuracy/F1/AUC (classification)
+  □ MAE/RMSE (regression)
+  □ Performance by segment
+
+System:
+  □ CPU/Memory/GPU utilization
+  □ Request latency
+  □ Error rates
+  □ Queue depths
+```
+
+### ML Monitoring Tools Comparison
+
+```text
+┌────────────────┬─────────────┬─────────────┬─────────────┬─────────────┐
+│    Tool        │   Drift     │   Metrics   │   Alerts    │   Cost      │
+├────────────────┼─────────────┼─────────────┼─────────────┼─────────────┤
+│ Evidently      │  Built-in │  ML+sys   │ ️ Basic    │ Free/OS     │
+│ WhyLabs        │  Advanced │  ML-focus │  Built-in │ Free tier   │
+│ Arize          │  Advanced │  ML-focus │  Built-in │ Paid        │
+│ Fiddler        │  Built-in │  ML-focus │  Built-in │ Paid        │
+│ MLflow         │ ️ Basic    │  ML-focus │  Manual   │ Free/OS     │
+│ Prometheus     │  Manual   │  System   │  Built-in │ Free/OS     │
+│ Datadog        │ ️ Manual   │  System   │  Built-in │ Paid        │
+└────────────────┴─────────────┴─────────────┴─────────────┴─────────────┘
+
+Recommendation:
+- Start: Evidently + Prometheus + Grafana (all free)
+- Scale: WhyLabs or Arize for advanced ML monitoring
+- Enterprise: Fiddler or Datadog ML Monitoring
+```
+
+| Approach | Annual Cost | Pros | Cons |
+|----------|-------------|------|------|
+| Open source (Evidently + Prometheus) | $20-50K (engineering time) | Full control, no vendor lock-in | Significant engineering investment |
+| Managed platform (WhyLabs/Arize) | $50-200K | Fast setup, advanced features | Vendor dependency, data leaves your infra |
+| Cloud-native (SageMaker/Vertex) | $30-100K | Integrated with ML platform | Less flexible, cloud lock-in |
+| Enterprise (Fiddler, Arthur) | $200K+ | Compliance features, support | Expensive, may be overkill |
+
+### The Economics of Observability
+
+| Scenario | Monitoring Cost | Potential Failure Cost | ROI |
+|----------|----------------|----------------------|-----|
+| E-commerce recommendations | $50K/year | $2M/year (lost revenue from bad recs) | 40x |
+| Fraud detection | $100K/year | $10M/year (undetected fraud) | 100x |
+| Healthcare risk scoring | $200K/year | $50M+ (regulatory fines, lawsuits) | 250x+ |
+| Trading algorithms | $500K/year | Unlimited (Knight Capital: $440M in 45 min) | ∞ |
+
+| Without Monitoring | With Monitoring |
+|-------------------|-----------------|
+| Model drift undetected for 3 months | Drift detected within hours |
+| $5M in fraudulent transactions approved | $50K in fraud before alert |
+| 2 weeks to diagnose root cause | 2 hours to diagnose |
+| Customer trust damaged | Rapid response preserves trust |
+| Regulatory scrutiny | Audit trail demonstrates diligence |
+
+## Common Mistakes
+
+| Mistake | Why It Fails | How To Fix |
+|---|---|---|
+| **Monitoring Averages** | A 90% overall accuracy often hides 50% accuracy on minority segments, causing silent disparate impact. | Isolate and monitor metrics by demographic, device type, or critical cohort bounds. |
+| **Static Thresholds** | Hardcoded logic triggers excessive alert fatigue due to standard weekend/holiday seasonal variance. | Use dynamic thresholding against a sliding historical baseline standard deviation. |
+| **Ignoring Label Delay** | Real-time accuracy drops cannot be detected if ground truth is permanently delayed by 30 days. | Construct intermediate proxy metrics or track prediction drift as a real-time warning. |
+| **Alerts Without Runbooks** | On-call engineers waste critical response time debugging rather than executing a unified remediation plan. | Attach hyperlinked, actionable operational runbooks to every Prometheus firing alert. |
+| **Skipping Baseline Generation** | Mathematical divergence formulas cannot function without a highly precise frozen artifact to compare against. | Mandate baseline statistical generation within your core continuous integration pipeline. |
+| **Monitoring Only Outputs** | Evaluating only predictions masks feature degradation, meaning the model might be right for the wrong reasons. | Track upstream feature distributions concurrently with downstream prediction outputs. |
+| **Omitting K8s Limits** | Memory-intensive pandas/numpy monitoring scripts can consume unbounded resources, causing OutOfMemory node panics. | Explicitly define `resources.limits` for both CPU and memory in your Kubernetes v1.35 YAMLs. |
+
+### Mistake Context: Code Implementations
+
+```python
+#  WRONG - Average hides problems
+def monitor_accuracy_wrong(predictions, actuals):
+    accuracy = sum(p == a for p, a in zip(predictions, actuals)) / len(predictions)
+    if accuracy > 0.85:
+        return "OK"  # But what if accuracy is 99% for easy cases and 50% for hard cases?
+
+#  RIGHT - Monitor distributions and segments
+def monitor_accuracy_right(predictions, actuals, segments):
+    results = {}
+    for segment in set(segments):
+        mask = [s == segment for s in segments]
+        segment_preds = [p for p, m in zip(predictions, mask) if m]
+        segment_actuals = [a for a, m in zip(actuals, mask) if m]
+        results[segment] = {
+            'accuracy': sum(p == a for p, a in zip(segment_preds, segment_actuals)) / len(segment_preds),
+            'volume': len(segment_preds),
+            'false_positive_rate': calculate_fpr(segment_preds, segment_actuals),
+            'false_negative_rate': calculate_fnr(segment_preds, segment_actuals)
+        }
+    return results
+```
+
+```python
+#  WRONG - Static thresholds don't adapt
+DRIFT_THRESHOLD = 0.1  # PSI threshold
+if calculate_psi(current, baseline) > DRIFT_THRESHOLD:
+    send_alert()  # Alert fatigue when seasonal patterns exist
+
+#  RIGHT - Dynamic thresholds based on historical variance
+class AdaptiveThreshold:
+    def __init__(self, baseline_period_days=30):
+        self.historical_psi = []
+        self.baseline_period = baseline_period_days
+
+    def add_observation(self, psi):
+        self.historical_psi.append(psi)
+        # Keep only recent history
+        if len(self.historical_psi) > self.baseline_period:
+            self.historical_psi.pop(0)
+
+    def get_threshold(self, sensitivity=2.0):
+        if len(self.historical_psi) < 7:
+            return 0.1  # Default until we have history
+        mean = np.mean(self.historical_psi)
+        std = np.std(self.historical_psi)
+        return mean + (sensitivity * std)  # Alert on anomalies, not absolute values
+```
+
+```python
+#  WRONG - Assuming ground truth is available immediately
+def calculate_realtime_accuracy(predictions, actuals):
+    return accuracy_score(predictions, actuals)  # What if actuals are delayed?
+
+#  RIGHT - Account for label delay
+class DelayedGroundTruthMonitor:
+    def __init__(self, expected_delay_hours=24):
+        self.predictions = {}  # id -> (prediction, timestamp)
+        self.expected_delay = timedelta(hours=expected_delay_hours)
+
+    def record_prediction(self, prediction_id, prediction, timestamp):
+        self.predictions[prediction_id] = (prediction, timestamp)
+
+    def record_ground_truth(self, prediction_id, actual, timestamp):
+        if prediction_id in self.predictions:
+            pred, pred_time = self.predictions[prediction_id]
+            delay = timestamp - pred_time
+            # Track both accuracy AND delay
+            return {
+                'correct': pred == actual,
+                'delay_hours': delay.total_seconds() / 3600,
+                'delay_anomaly': delay > self.expected_delay * 2
+            }
+
+    def get_accuracy_by_delay_bucket(self):
+        # Group accuracy by how long ground truth took
+        # Useful for understanding label quality issues
+        pass
+```
+
+## Interview Preparation
+
+### Question 1: "Your model's accuracy dropped 5% overnight. Walk me through your debugging process."
+
+```python
+# Check feature distributions
+current_stats = production_data.describe()
+baseline_stats = training_data.describe()
+drift_report = compare_distributions(current_stats, baseline_stats)
+
+# Check prediction distribution
+pred_distribution = predictions.value_counts(normalize=True)
+# Is the model predicting one class way more than usual?
+
+# Check by segment
+for segment in ['new_users', 'power_users', 'mobile', 'desktop']:
+    segment_accuracy = calculate_accuracy(segment_filter)
+    print(f'{segment}: {segment_accuracy}')
+```
+
+### Question 2: "How would you monitor a model for fairness in production?"
+
+```python
+def monitor_fairness(predictions, actuals, protected_attribute):
+    groups = set(protected_attribute)
+    metrics = {}
+
+    for group in groups:
+        mask = protected_attribute == group
+        metrics[group] = {
+            'positive_rate': predictions[mask].mean(),
+            'tpr': recall_score(actuals[mask], predictions[mask]),
+            'fpr': false_positive_rate(actuals[mask], predictions[mask]),
+        }
+
+    # Calculate disparity ratios
+    groups_list = list(groups)
+    disparity = metrics[groups_list[0]]['positive_rate'] / metrics[groups_list[1]]['positive_rate']
+
+    return {
+        'group_metrics': metrics,
+        'demographic_parity_ratio': disparity,
+        'alert': disparity < 0.8 or disparity > 1.25  # 80% rule
+    }
+```
+
+### Question 3: "How do you balance comprehensive monitoring with alert fatigue?"
+
+```yaml
+# Level 1: Informational (logged, no notification)
+- Minor drift (PSI 0.05-0.1)
+- Latency increase <50%
+- Volume changes <20%
+
+# Level 2: Warning (Slack, business hours only)
+- Moderate drift (PSI 0.1-0.2)
+- Accuracy drop 2-5%
+- Anomalous segments
+
+# Level 3: Critical (PagerDuty, immediate)
+- Severe drift (PSI >0.25)
+- Accuracy drop >5%
+- Complete model failure
+- Data pipeline down
+```
+
+## End-to-End Implementation Guide
+
+To securely tie these concepts together, execute the following implementation path:
+
+```python
+# Capture baseline statistics during training
+def create_baseline(training_data: pd.DataFrame, model, feature_names: list) -> dict:
+    """
+    Create baseline statistics for all features and predictions.
+    Run this after training, before deployment.
+    """
+    baseline = {
+        'created_at': datetime.now().isoformat(),
+        'sample_size': len(training_data),
+        'features': {},
+        'predictions': {}
+    }
+
+    # Feature baselines
+    for feature in feature_names:
+        col = training_data[feature]
+        baseline['features'][feature] = {
+            'mean': float(col.mean()),
+            'std': float(col.std()),
+            'min': float(col.min()),
+            'max': float(col.max()),
+            'percentiles': {
+                '25': float(col.quantile(0.25)),
+                '50': float(col.quantile(0.50)),
+                '75': float(col.quantile(0.75)),
+                '95': float(col.quantile(0.95))
+            },
+            'histogram': np.histogram(col, bins=50)[0].tolist()
+        }
+
+    # Prediction baseline
+    preds = model.predict_proba(training_data[feature_names])[:, 1]
+    baseline['predictions'] = {
+        'mean': float(preds.mean()),
+        'std': float(preds.std()),
+        'distribution': np.histogram(preds, bins=50)[0].tolist()
+    }
+
+    return baseline
+
+# Save baseline alongside model
+baseline = create_baseline(X_train, model, feature_names)
+with open('model_baseline.json', 'w') as f:
+    json.dump(baseline, f)
+```
+
+```python
+import logging
+from datetime import datetime
+import json
+
+class InstrumentedPredictor:
+    """Predictor that logs everything needed for monitoring."""
+
+    def __init__(self, model, baseline: dict, log_file: str = 'predictions.jsonl'):
+        self.model = model
+        self.baseline = baseline
+        self.log_file = log_file
+
+    def predict(self, features: dict) -> dict:
+        """Make prediction and log for monitoring."""
+        start_time = datetime.now()
+
+        # Make prediction
+        feature_array = np.array([list(features.values())])
+        prediction = float(self.model.predict_proba(feature_array)[0, 1])
+
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+
+        # Log for monitoring
+        log_entry = {
+            'timestamp': datetime.now().isoformat(),
+            'prediction_id': str(uuid.uuid4()),
+            'features': features,
+            'prediction': prediction,
+            'latency_ms': latency_ms
+        }
+
+        with open(self.log_file, 'a') as f:
+            f.write(json.dumps(log_entry) + '\n')
+
+        return {
+            'prediction': prediction,
+            'prediction_id': log_entry['prediction_id']
+        }
+```
+
+```python
+# monitoring_job.py - Run via cron or Airflow
+def run_monitoring_check(baseline_path: str, predictions_path: str, hours: int = 24):
+    """
+    Check recent predictions against baseline.
+    Run this hourly or daily.
+    """
+    # Load baseline
+    with open(baseline_path) as f:
+        baseline = json.load(f)
+
+    # Load recent predictions
+    cutoff = datetime.now() - timedelta(hours=hours)
+    recent_predictions = []
+    with open(predictions_path) as f:
+        for line in f:
+            entry = json.loads(line)
+            if datetime.fromisoformat(entry['timestamp']) > cutoff:
+                recent_predictions.append(entry)
+
+    if len(recent_predictions) < 100:
+        return {'status': 'insufficient_data', 'count': len(recent_predictions)}
+
+    # Check each feature for drift
+    alerts = []
+    for feature in baseline['features']:
+        baseline_hist = baseline['features'][feature]['histogram']
+        current_values = [p['features'][feature] for p in recent_predictions]
+        current_hist = np.histogram(current_values, bins=50)[0]
+
+        psi = calculate_psi_from_histograms(baseline_hist, current_hist)
+
+        if psi > 0.25:
+            alerts.append({
+                'type': 'critical_drift',
+                'feature': feature,
+                'psi': psi
+            })
+        elif psi > 0.1:
+            alerts.append({
+                'type': 'warning_drift',
+                'feature': feature,
+                'psi': psi
+            })
+
+    # Send alerts
+    for alert in alerts:
+        send_alert(alert)
+
+    return {'status': 'complete', 'alerts': alerts}
+```
+
+```python
+# Export metrics for Grafana
+def export_metrics_to_prometheus(monitoring_results: dict, model_name: str):
+    """
+    Export monitoring results as Prometheus metrics.
+    Grafana will scrape these for dashboards.
+    """
+    from prometheus_client import Gauge
+
+    drift_gauge = Gauge(
+        f'{model_name}_feature_drift_psi',
+        'PSI drift score by feature',
+        ['feature']
+    )
+
+    for feature, psi in monitoring_results.get('feature_psi', {}).items():
+        drift_gauge.labels(feature=feature).set(psi)
+```
+
+## Summary
+
+```text
+ML MONITORING ESSENTIALS
+========================
+
+DRIFT TYPES:
+  Data Drift    → Input distribution changed
+  Concept Drift → Input-output relationship changed
+  Prediction Drift → Output distribution changed
+
+DETECTION METHODS:
+  PSI           → Population Stability Index
+  KS Test       → Distribution comparison
+  JS Divergence → Symmetric distance measure
+
+EXPLAINABILITY:
+  SHAP          → Feature contributions (game theory)
+  LIME          → Local linear approximations
+
+GOVERNANCE:
+  Model Cards   → Documentation for transparency
+  Audit Logs    → Track all model events
+  Access Control → Who can deploy/modify
+
+TOOLS:
+  Prometheus    → Metrics collection
+  Grafana       → Visualization
+  Evidently     → ML-specific monitoring
+  WhyLabs       → Advanced drift detection
+
+BEST PRACTICES:
+   Monitor inputs, outputs, AND performance
+   Set thresholds with baselines
+   Create runbooks for alerts
+   Automate retraining when needed
+   Document everything (model cards)
+```
 
 ## Hands-On Exercises
 
-### Exercise 1: Build a Drift Detector
+The following progressive exercises demand full implementations rather than partial fill-in-the-blank logic. Review the starter templates derived from our standard library, and then consult the fully executable solutions in the toggles below.
 
-Create a complete drift detection system that monitors a model in production.
+### Task 1: Build a Drift Detector
 
-**Your task**: Implement a drift monitor that:
-1. Accepts baseline (training) data
-2. Monitors incoming production data
-3. Calculates PSI for each feature
-4. Triggers alerts when drift exceeds thresholds
+*Starter Template provided in project guidelines:*
 
 ```python
 class ProductionDriftMonitor:
@@ -966,15 +1367,76 @@ results = monitor.check_drift(production)
 print(monitor.generate_report())
 ```
 
-### Exercise 2: Create an ML Monitoring Dashboard
+<details>
+<summary>Task 1 Executable Solution</summary>
 
-Build a Grafana-compatible monitoring system using Prometheus metrics.
+```python
+import numpy as np
+import pandas as pd
 
-**Your task**: Create a `ModelMonitor` class that:
-1. Exports prediction latency histograms
-2. Tracks prediction counts by model version
-3. Monitors rolling accuracy
-4. Alerts on performance degradation
+class ProductionDriftMonitor:
+    def __init__(self, baseline_data: pd.DataFrame, alert_threshold: float = 0.1):
+        self.baseline_data = baseline_data
+        self.alert_threshold = alert_threshold
+        self.feature_names = baseline_data.columns.tolist()
+        self.drift_history = []
+
+    def calculate_psi(self, feature: str, production_data: pd.DataFrame) -> float:
+        reference = self.baseline_data[feature].values
+        current = production_data[feature].values
+        bins = 10
+        _, bin_edges = np.histogram(reference, bins=bins)
+        ref_percents = np.histogram(reference, bins=bin_edges)[0] / len(reference)
+        cur_percents = np.histogram(current, bins=bin_edges)[0] / len(current)
+        
+        # Smooth zero counts
+        ref_percents = np.clip(ref_percents, 0.0001, 1)
+        cur_percents = np.clip(cur_percents, 0.0001, 1)
+        
+        psi = np.sum((cur_percents - ref_percents) * np.log(cur_percents / ref_percents))
+        return psi
+
+    def check_drift(self, production_data: pd.DataFrame) -> dict:
+        results = {'feature_psi': {}, 'drifted_features': [], 'alert_level': 'none'}
+        max_psi = 0
+        for feature in self.feature_names:
+            psi = self.calculate_psi(feature, production_data)
+            results['feature_psi'][feature] = psi
+            if psi > max_psi:
+                max_psi = psi
+            if psi > self.alert_threshold:
+                results['drifted_features'].append(feature)
+                
+        if max_psi > 0.25:
+            results['alert_level'] = 'critical'
+        elif max_psi > self.alert_threshold:
+            results['alert_level'] = 'warning'
+            
+        self.drift_history.append(results)
+        return results
+
+    def generate_report(self) -> str:
+        if not self.drift_history:
+            return "No data processed."
+        last = self.drift_history[-1]
+        report = f"DRIFT REPORT - Level: {last['alert_level'].upper()}\n"
+        for feat, psi in last['feature_psi'].items():
+            status = "DRIFT" if psi > self.alert_threshold else "OK"
+            report += f"- {feat}: PSI={psi:.4f} [{status}]\n"
+        return report
+
+# Testing implementation
+baseline = pd.DataFrame({'age': np.random.normal(35, 10, 10000)})
+production = pd.DataFrame({'age': np.random.normal(40, 12, 1000)})
+monitor = ProductionDriftMonitor(baseline)
+monitor.check_drift(production)
+print(monitor.generate_report())
+```
+</details>
+
+### Task 2: Create an ML Monitoring Dashboard
+
+*Starter Template provided in project guidelines:*
 
 ```python
 from prometheus_client import Counter, Histogram, Gauge, start_http_server
@@ -1033,15 +1495,65 @@ for alert in alerts:
     print(f"ALERT: {alert}")
 ```
 
-### Exercise 3: Implement Model Explainability
+<details>
+<summary>Task 2 Executable Solution</summary>
 
-Build a prediction explainer that works with any scikit-learn compatible model.
+```python
+from prometheus_client import Counter, Histogram, Gauge
+from collections import deque
+import uuid
+import numpy as np
 
-**Your task**: Create a `PredictionExplainer` class that:
-1. Accepts any trained model
-2. Generates SHAP explanations for predictions
-3. Produces human-readable explanations
-4. Identifies the top contributing features
+class ModelMonitor:
+    def __init__(self, model_name: str, model_version: str, port: int = 8000):
+        self.model_name = model_name
+        self.pred_counter = Counter('ml_preds', 'Total', ['model'])
+        self.latency_hist = Histogram('ml_latency', 'Latency', ['model'])
+        self.acc_gauge = Gauge('ml_acc', 'Accuracy', ['model'])
+        self.predictions = {}
+        self.recent_history = deque(maxlen=1000)
+        
+    def record_prediction(self, input_features: dict, prediction: float, latency_ms: float):
+        self.pred_counter.labels(model=self.model_name).inc()
+        self.latency_hist.labels(model=self.model_name).observe(latency_ms)
+        pred_id = str(uuid.uuid4())
+        self.predictions[pred_id] = prediction
+        return pred_id
+
+    def record_ground_truth(self, prediction_id: str, actual: float):
+        if prediction_id in self.predictions:
+            pred = self.predictions[prediction_id]
+            is_correct = int((pred > 0.5) == (actual > 0.5))
+            self.recent_history.append(is_correct)
+            acc = self.get_rolling_accuracy()
+            self.acc_gauge.labels(model=self.model_name).set(acc)
+            return True
+        return False
+
+    def get_rolling_accuracy(self, window_size: int = 1000) -> float:
+        if not self.recent_history: return 1.0
+        return sum(self.recent_history) / len(self.recent_history)
+
+    def check_alerts(self) -> list:
+        alerts = []
+        if self.get_rolling_accuracy() < 0.85:
+            alerts.append("CRITICAL: Accuracy below 85%")
+        return alerts
+
+# Execution
+monitor = ModelMonitor("fraud_detector", "v2.1.0")
+for i in range(100):
+    pid = monitor.record_prediction({'amount': 100}, np.random.random(), 45)
+    monitor.record_ground_truth(pid, np.random.random())
+
+for alert in monitor.check_alerts():
+    print(alert)
+```
+</details>
+
+### Task 3: Implement Model Explainability
+
+*Starter Template provided in project guidelines:*
 
 ```python
 import shap
@@ -1111,15 +1623,66 @@ explanation = explainer.explain_prediction(instance)
 print(explanation['explanation'])
 ```
 
-### Exercise 4: Build a Model Governance System
+<details>
+<summary>Task 3 Executable Solution</summary>
 
-Create a complete model registry with governance features.
+```python
+import shap
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 
-**Your task**: Implement a `ModelRegistry` that:
-1. Tracks model versions and metadata
-2. Enforces approval workflows
-3. Maintains audit logs
-4. Validates models before deployment
+class PredictionExplainer:
+    def __init__(self, model, feature_names: list, background_data: np.ndarray):
+        self.model = model
+        self.feature_names = feature_names
+        self.explainer = shap.TreeExplainer(model)
+
+    def explain_prediction(self, instance: np.ndarray, top_n: int = 5) -> dict:
+        shap_values = self.explainer.shap_values(instance)
+        
+        if isinstance(shap_values, list):
+            target_class_shap = shap_values[1][0]
+            expected_val = self.explainer.expected_value[1]
+        else:
+            target_class_shap = shap_values[0]
+            expected_val = self.explainer.expected_value
+
+        contributions = {self.feature_names[i]: target_class_shap[i] for i in range(len(self.feature_names))}
+        sorted_contribs = sorted(contributions.items(), key=lambda x: abs(x[1]), reverse=True)[:top_n]
+
+        pred_val = self.model.predict_proba(instance)[0][1]
+
+        return {
+            "prediction": pred_val,
+            "base_value": expected_val,
+            "top_features": sorted_contribs,
+            "explanation": self.generate_text_explanation(dict(sorted_contribs), pred_val)
+        }
+
+    def generate_text_explanation(self, feature_contributions: dict, prediction: float) -> str:
+        lines = [f"Model predicted probability: {prediction:.2f}"]
+        lines.append("Top pushing features:")
+        for feat, val in feature_contributions.items():
+            direction = "increased" if val > 0 else "decreased"
+            lines.append(f"- {feat} {direction} risk by {abs(val):.3f}")
+        return "\n".join(lines)
+
+# Execution
+X_train = np.random.randn(1000, 5)
+y_train = (X_train.sum(axis=1) > 0).astype(int)
+model = RandomForestClassifier(n_estimators=100)
+model.fit(X_train, y_train)
+
+explainer = PredictionExplainer(model, ['f1', 'f2', 'f3', 'f4', 'f5'], X_train[:100])
+instance = np.array([[0.5, -1.2, 0.3, 0.8, -0.5]])
+res = explainer.explain_prediction(instance)
+print(res['explanation'])
+```
+</details>
+
+### Task 4: Build a Model Governance System
+
+*Starter Template provided in project guidelines:*
 
 ```python
 from dataclasses import dataclass
@@ -1228,778 +1791,153 @@ for event in registry.get_audit_log("fraud_detector"):
     print(event)
 ```
 
----
-
-## Production War Stories
-
-### The Model That Gaslit Its Users (2020)
-
-A major social media company deployed a content moderation model that seemed to improve over time—accuracy metrics climbed from 89% to 94% over three months. The team celebrated their "self-improving" system.
-
-Then someone dug deeper.
-
-The model wasn't getting better—it was changing user behavior. Content creators had learned to avoid flagged patterns, posting less diverse content. The model appeared more accurate because it saw easier cases. When policy changed and new content types arrived, accuracy crashed to 71%.
-
-**Lesson learned**: Monitor not just model metrics, but the ecosystem around the model. Track content diversity, user behavior changes, and feedback loops.
-
-### The Healthcare Algorithm That Forgot Minorities (2019)
-
-A major health system deployed a risk stratification model to identify patients needing extra care. The model worked beautifully on aggregate metrics—good AUC, well-calibrated probabilities.
-
-But researchers at UC Berkeley discovered the model systematically underestimated risk for Black patients. Why? The model used healthcare costs as a proxy for health needs. Due to systemic disparities, Black patients historically had lower costs—not because they were healthier, but because they had less access to care.
-
-Without segment-level monitoring, this bias operated invisibly for years, affecting millions of patients.
-
-**Lesson learned**: Monitor performance across demographic segments, not just aggregate metrics. What works "on average" can fail catastrophically for specific groups.
-
-### The Currency Model That Crashed at Midnight (2021)
-
-A forex trading model performed beautifully during backtesting and the first weeks of production. Then it started losing money—but only on Sundays.
-
-Investigation revealed the cause: the model was trained on second-by-second data, but Sunday trading had massive gaps (low liquidity). The model interpreted these gaps as "stable prices" and made predictions accordingly. It was technically correct—prices hadn't moved—but practically wrong because the spreads made trading impossible.
-
-**Lesson learned**: Monitor data quality metrics, not just data presence. Volume, gaps, staleness, and distribution matter as much as accuracy.
-
-### The Recommendation Engine That Created Filter Bubbles (2022)
-
-An e-commerce recommendation system optimized for click-through rate. It worked phenomenally—CTR increased 40% in six months. Revenue climbed.
-
-Then customer lifetime value started dropping. Power users were churning. Investigation showed the model had created extreme filter bubbles—showing users the same product categories repeatedly. Short-term engagement was high, but users got bored and left.
-
-**Lesson learned**: Monitor long-term business metrics alongside ML metrics. A model can optimize its objective function while destroying the business.
-
----
-
-## Common Mistakes and How to Avoid Them
-
-### Mistake 1: Monitoring Averages Instead of Distributions
+<details>
+<summary>Task 4 Executable Solution</summary>
 
 ```python
-#  WRONG - Average hides problems
-def monitor_accuracy_wrong(predictions, actuals):
-    accuracy = sum(p == a for p, a in zip(predictions, actuals)) / len(predictions)
-    if accuracy > 0.85:
-        return "OK"  # But what if accuracy is 99% for easy cases and 50% for hard cases?
-
-#  RIGHT - Monitor distributions and segments
-def monitor_accuracy_right(predictions, actuals, segments):
-    results = {}
-    for segment in set(segments):
-        mask = [s == segment for s in segments]
-        segment_preds = [p for p, m in zip(predictions, mask) if m]
-        segment_actuals = [a for a, m in zip(actuals, mask) if m]
-        results[segment] = {
-            'accuracy': sum(p == a for p, a in zip(segment_preds, segment_actuals)) / len(segment_preds),
-            'volume': len(segment_preds),
-            'false_positive_rate': calculate_fpr(segment_preds, segment_actuals),
-            'false_negative_rate': calculate_fnr(segment_preds, segment_actuals)
-        }
-    return results
-```
-
-**Why it matters**: A model with 90% overall accuracy might have 98% accuracy for the majority class and 50% for minorities. Averages hide disparate impact.
-
-### Mistake 2: Setting Static Thresholds
-
-```python
-#  WRONG - Static thresholds don't adapt
-DRIFT_THRESHOLD = 0.1  # PSI threshold
-if calculate_psi(current, baseline) > DRIFT_THRESHOLD:
-    send_alert()  # Alert fatigue when seasonal patterns exist
-
-#  RIGHT - Dynamic thresholds based on historical variance
-class AdaptiveThreshold:
-    def __init__(self, baseline_period_days=30):
-        self.historical_psi = []
-        self.baseline_period = baseline_period_days
-
-    def add_observation(self, psi):
-        self.historical_psi.append(psi)
-        # Keep only recent history
-        if len(self.historical_psi) > self.baseline_period:
-            self.historical_psi.pop(0)
-
-    def get_threshold(self, sensitivity=2.0):
-        if len(self.historical_psi) < 7:
-            return 0.1  # Default until we have history
-        mean = np.mean(self.historical_psi)
-        std = np.std(self.historical_psi)
-        return mean + (sensitivity * std)  # Alert on anomalies, not absolute values
-```
-
-**Why it matters**: A PSI of 0.15 might be normal for a model with high variance or strong seasonality. Static thresholds create alert fatigue or miss real problems.
-
-### Mistake 3: Not Monitoring Ground Truth Delay
-
-```python
-#  WRONG - Assuming ground truth is available immediately
-def calculate_realtime_accuracy(predictions, actuals):
-    return accuracy_score(predictions, actuals)  # What if actuals are delayed?
-
-#  RIGHT - Account for label delay
-class DelayedGroundTruthMonitor:
-    def __init__(self, expected_delay_hours=24):
-        self.predictions = {}  # id -> (prediction, timestamp)
-        self.expected_delay = timedelta(hours=expected_delay_hours)
-
-    def record_prediction(self, prediction_id, prediction, timestamp):
-        self.predictions[prediction_id] = (prediction, timestamp)
-
-    def record_ground_truth(self, prediction_id, actual, timestamp):
-        if prediction_id in self.predictions:
-            pred, pred_time = self.predictions[prediction_id]
-            delay = timestamp - pred_time
-            # Track both accuracy AND delay
-            return {
-                'correct': pred == actual,
-                'delay_hours': delay.total_seconds() / 3600,
-                'delay_anomaly': delay > self.expected_delay * 2
-            }
-
-    def get_accuracy_by_delay_bucket(self):
-        # Group accuracy by how long ground truth took
-        # Useful for understanding label quality issues
-        pass
-```
-
-**Why it matters**: If ground truth labels are delayed (common in fraud, churn, conversion), you can't calculate real-time accuracy. Monitor proxy metrics and track when labels arrive.
-
----
-
-## Interview Preparation
-
-### Question 1: "Your model's accuracy dropped 5% overnight. Walk me through your debugging process."
-
-**Strong Answer**:
-
-"I'd follow a systematic debugging protocol:
-
-**First 5 minutes—scope the problem:**
-- Is it all predictions or specific segments?
-- Did it happen at a specific time or gradually?
-- Are there correlated alerts (infrastructure, data pipeline)?
-
-**Next 30 minutes—check the usual suspects:**
-1. **Data pipeline**: Did upstream data change? Missing features? Schema changes?
-2. **Deployment**: Was there a recent model or code deployment?
-3. **Infrastructure**: Memory issues causing cache misses? Timeout-induced fallbacks?
-
-**Diagnostic queries I'd run:**
-```python
-# Check feature distributions
-current_stats = production_data.describe()
-baseline_stats = training_data.describe()
-drift_report = compare_distributions(current_stats, baseline_stats)
-
-# Check prediction distribution
-pred_distribution = predictions.value_counts(normalize=True)
-# Is the model predicting one class way more than usual?
-
-# Check by segment
-for segment in ['new_users', 'power_users', 'mobile', 'desktop']:
-    segment_accuracy = calculate_accuracy(segment_filter)
-    print(f'{segment}: {segment_accuracy}')
-```
-
-**If it's data drift:**
-- Identify which features drifted
-- Decide: retrain immediately or add compensating logic
-
-**If it's deployment-related:**
-- Roll back to previous version
-- Compare predictions between versions
-
-**Communication:**
-- Update stakeholders immediately with scope
-- Provide ETA for resolution
-- Document in post-mortem"
-
-### Question 2: "How would you monitor a model for fairness in production?"
-
-**Strong Answer**:
-
-"Fairness monitoring requires both technical metrics and business context:
-
-**Technical approach:**
-
-1. **Define protected attributes** (if available): age, gender, race, location, etc.
-
-2. **Choose fairness metrics based on use case:**
-   - Demographic parity: equal positive rates across groups
-   - Equalized odds: equal TPR and FPR across groups
-   - Calibration: predictions mean the same thing across groups
-
-3. **Implementation:**
-```python
-def monitor_fairness(predictions, actuals, protected_attribute):
-    groups = set(protected_attribute)
-    metrics = {}
-
-    for group in groups:
-        mask = protected_attribute == group
-        metrics[group] = {
-            'positive_rate': predictions[mask].mean(),
-            'tpr': recall_score(actuals[mask], predictions[mask]),
-            'fpr': false_positive_rate(actuals[mask], predictions[mask]),
-        }
-
-    # Calculate disparity ratios
-    groups_list = list(groups)
-    disparity = metrics[groups_list[0]]['positive_rate'] / metrics[groups_list[1]]['positive_rate']
-
-    return {
-        'group_metrics': metrics,
-        'demographic_parity_ratio': disparity,
-        'alert': disparity < 0.8 or disparity > 1.25  # 80% rule
-    }
-```
-
-**Business considerations:**
-- What fairness definition does your domain require? (Legal/ethical)
-- How do you handle intersectionality? (Young Black women vs. old white men)
-- What's your remediation plan if unfairness is detected?
-
-**Continuous monitoring:**
-- Track fairness metrics over time—drift happens
-- Segment by time period, not just overall
-- Alert on both aggregate and segment-level disparities"
-
-### Question 3: "How do you balance comprehensive monitoring with alert fatigue?"
-
-**Strong Answer**:
-
-"Alert fatigue is real and dangerous—teams start ignoring all alerts. Here's my framework:
-
-**Tiered alerting:**
-```yaml
-# Level 1: Informational (logged, no notification)
-- Minor drift (PSI 0.05-0.1)
-- Latency increase <50%
-- Volume changes <20%
-
-# Level 2: Warning (Slack, business hours only)
-- Moderate drift (PSI 0.1-0.2)
-- Accuracy drop 2-5%
-- Anomalous segments
-
-# Level 3: Critical (PagerDuty, immediate)
-- Severe drift (PSI >0.25)
-- Accuracy drop >5%
-- Complete model failure
-- Data pipeline down
-```
-
-**Noise reduction strategies:**
-
-1. **Use anomaly detection instead of static thresholds:**
-   - Alert on deviations from historical patterns
-   - Seasonal patterns don't trigger alerts
-
-2. **Implement alert deduplication:**
-   - Don't fire the same alert 100 times
-   - Group related alerts into incidents
-
-3. **Require sustained conditions:**
-   - 'for: 10m' in Prometheus—alert only if condition persists
-   - Prevents transient spikes from paging
-
-4. **Post-alert analysis:**
-   - Track alert-to-action ratio
-   - If most alerts don't require action, raise thresholds
-
-**The goal**: Every alert should be actionable. If you're ignoring alerts, your monitoring is broken."
-
----
-
-## The Economics of ML Monitoring
-
-### Monitoring Investment vs. Failure Cost
-
-| Scenario | Monitoring Cost | Potential Failure Cost | ROI |
-|----------|----------------|----------------------|-----|
-| E-commerce recommendations | $50K/year | $2M/year (lost revenue from bad recs) | 40x |
-| Fraud detection | $100K/year | $10M/year (undetected fraud) | 100x |
-| Healthcare risk scoring | $200K/year | $50M+ (regulatory fines, lawsuits) | 250x+ |
-| Trading algorithms | $500K/year | Unlimited (Knight Capital: $440M in 45 min) | ∞ |
-
-### Build vs. Buy Analysis
-
-| Approach | Annual Cost | Pros | Cons |
-|----------|-------------|------|------|
-| Open source (Evidently + Prometheus) | $20-50K (engineering time) | Full control, no vendor lock-in | Significant engineering investment |
-| Managed platform (WhyLabs/Arize) | $50-200K | Fast setup, advanced features | Vendor dependency, data leaves your infra |
-| Cloud-native (SageMaker/Vertex) | $30-100K | Integrated with ML platform | Less flexible, cloud lock-in |
-| Enterprise (Fiddler, Arthur) | $200K+ | Compliance features, support | Expensive, may be overkill |
-
-### Hidden Costs of Not Monitoring
-
-1. **Engineering time debugging**: Without monitoring, debugging production issues takes 3-10x longer
-
-2. **Reputation damage**: A biased or wrong model in the news can cost billions in brand value
-
-3. **Regulatory fines**: EU AI Act: up to 7% of global revenue. GDPR: up to 4%. SEC: unlimited.
-
-4. **Opportunity cost**: Engineers debugging instead of building new features
-
-### ROI Calculation Example
-
-**Scenario**: Financial services firm with fraud detection model
-
-| Without Monitoring | With Monitoring |
-|-------------------|-----------------|
-| Model drift undetected for 3 months | Drift detected within hours |
-| $5M in fraudulent transactions approved | $50K in fraud before alert |
-| 2 weeks to diagnose root cause | 2 hours to diagnose |
-| Customer trust damaged | Rapid response preserves trust |
-| Regulatory scrutiny | Audit trail demonstrates diligence |
-
-**Investment**: $150K/year for monitoring platform + engineering
-
-**Savings**: $4.95M fraud reduction + $500K engineering time + incalculable reputation/regulatory value
-
-**ROI**: 36x on quantifiable savings alone
-
----
-
-## Analogies for Understanding ML Monitoring
-
-### The Medical Diagnostics Analogy
-
-Think of ML monitoring like running a diagnostic lab for patients. A healthy patient (model) has baseline vitals: temperature, blood pressure, heart rate. You monitor these continuously—not just when they feel sick.
-
-**Symptoms vs. Disease**: Latency and error rates are symptoms. Data drift is the disease. A doctor doesn't treat fever; they find the infection causing it. Similarly, don't just alert on accuracy drops—find the drift causing them.
-
-**Annual checkups vs. continuous monitoring**: Traditional software testing is like an annual physical—you check health periodically. ML monitoring is like an ICU—continuous vital signs because the patient can crash at any moment.
-
-**Specialist referrals**: When general metrics look fine but the model seems "off," you need specialist diagnostics—explainability tools like SHAP are your oncologist, finding hidden problems that surface metrics miss.
-
-### The Quality Control Factory Analogy
-
-Imagine a factory producing precision parts. Quality control doesn't just test finished products—they monitor the entire production line:
-
-**Incoming materials (input monitoring)**: If steel quality varies, the final product will too. Monitor your input data like raw materials—catch problems before they contaminate the production line.
-
-**Production processes (feature engineering)**: Even with good materials, machines can drift out of calibration. Monitor intermediate transformations, not just final predictions.
-
-**Final inspection (output monitoring)**: Test samples from each batch. In ML terms: track prediction distributions, confidence levels, and segment-level performance.
-
-**Customer complaints (ground truth)**: Sometimes defects slip through. Customer returns (ground truth labels) tell you what quality control missed. Design systems to incorporate this feedback.
-
-### The Fire Department Analogy
-
-ML alerting should work like a fire department:
-
-**Smoke detectors (early warning)**: Drift detection catches "smoke" before there's a fire. PSI increasing? Someone's leaving the stove on.
-
-**Fire alarms (critical alerts)**: When accuracy drops 10%, that's a fire alarm. Wake people up. Stop everything.
-
-**Automatic sprinklers (automated response)**: Some problems should trigger automatic remediation—rollback to previous model, increase sampling, disable risky features.
-
-**Fire investigation (post-mortem)**: After every incident, investigate root cause. Update smoke detector placement. Train the team.
-
-### The Immune System Analogy
-
-Your ML monitoring should function like the body's immune system:
-
-**Constant surveillance**: White blood cells continuously patrol for threats. Your monitoring should continuously check for drift, not run batch jobs once a day.
-
-**Pattern recognition**: The immune system distinguishes self from non-self. Your monitoring should distinguish normal variation from genuine anomalies.
-
-**Proportional response**: A splinter doesn't trigger anaphylaxis. Minor drift doesn't need a 3 AM page. Match response to severity.
-
-**Memory**: After fighting an infection, the body remembers. After debugging an issue, document it. Create runbooks. Update detection patterns.
-
----
-
-## The Future of ML Monitoring
-
-### Trend 1: AI-Powered Monitoring
-
-The next generation of monitoring tools will use AI to monitor AI:
-
-**Automated root cause analysis**: When accuracy drops, AI analyzes feature drift, prediction patterns, and infrastructure logs to identify the most likely cause—before humans even look at the dashboard.
-
-**Predictive drift detection**: Instead of alerting when drift exceeds a threshold, predict when drift will become problematic based on trends. Fix problems before they impact users.
-
-> **Did You Know?** Google's internal ML platform already uses ML models to predict which production models will degrade in the next 24 hours. Their "Model Health Score" combines 50+ signals to forecast issues, allowing preemptive retraining. This meta-ML approach reduced production incidents by 40% in 2023.
-
-### Trend 2: Regulatory Integration
-
-Monitoring tools will integrate directly with compliance frameworks:
-
-**Automated audit trails**: Systems that automatically generate compliance reports for EU AI Act, SEC requirements, and GDPR. Click a button, get a 200-page audit document.
-
-**Real-time compliance dashboards**: Not just "is the model accurate?" but "is the model compliant?" Track fairness metrics, explainability coverage, and documentation completeness.
-
-**Third-party verification**: External auditors with API access to monitoring systems. Continuous compliance, not annual audits.
-
-### Trend 3: Unified Observability
-
-The line between ML monitoring and traditional observability will blur:
-
-**Single pane of glass**: One dashboard for infrastructure metrics, application performance, data quality, model performance, and business KPIs. No more switching between Prometheus, MLflow, and Evidently.
-
-**Correlation across layers**: When latency spikes, automatically correlate with CPU usage, data volume changes, and model prediction patterns. Find root cause in seconds, not hours.
-
-**Automated incident response**: When monitoring detects issues, automatically create tickets, page on-call engineers, gather relevant diagnostics, and suggest remediation steps.
-
-### Trend 4: Edge ML Monitoring
-
-As models move to edge devices (phones, IoT, vehicles), monitoring must follow:
-
-**Federated monitoring**: Aggregate performance metrics from millions of edge devices without centralizing sensitive data.
-
-**Differential privacy for monitoring**: Track model performance across demographics while protecting individual privacy—especially important in healthcare and finance.
-
-**Offline-capable monitoring**: Edge devices may not always have connectivity. Store monitoring data locally and sync when possible.
-
-### What This Means for You
-
-If you're building or operating ML systems today:
-
-1. **Invest in monitoring infrastructure early**. It's cheaper to build monitoring alongside the model than retrofit it later.
-
-2. **Think compliance from day one**. Regulations are coming. The EU AI Act is here. Build audit-ready systems now.
-
-3. **Learn observability tools**. Prometheus, Grafana, and cloud-native monitoring are becoming ML skills, not just DevOps skills.
-
-4. **Watch the meta-ML space**. Tools that use AI to monitor AI are emerging rapidly. They'll define the next decade of MLOps.
-
-5. **Build institutional knowledge**. Document your monitoring patterns, runbooks, and post-mortems. When team members leave, the knowledge shouldn't leave with them.
-
----
-
-## Building Your First ML Monitoring System
-
-Ready to implement monitoring for your own models? Here's a step-by-step guide to building a production-grade monitoring system from scratch.
-
-### Step 1: Establish Baselines
-
-Before you can detect drift, you need to know what "normal" looks like.
-
-```python
-# Capture baseline statistics during training
-def create_baseline(training_data: pd.DataFrame, model, feature_names: list) -> dict:
-    """
-    Create baseline statistics for all features and predictions.
-    Run this after training, before deployment.
-    """
-    baseline = {
-        'created_at': datetime.now().isoformat(),
-        'sample_size': len(training_data),
-        'features': {},
-        'predictions': {}
-    }
-
-    # Feature baselines
-    for feature in feature_names:
-        col = training_data[feature]
-        baseline['features'][feature] = {
-            'mean': float(col.mean()),
-            'std': float(col.std()),
-            'min': float(col.min()),
-            'max': float(col.max()),
-            'percentiles': {
-                '25': float(col.quantile(0.25)),
-                '50': float(col.quantile(0.50)),
-                '75': float(col.quantile(0.75)),
-                '95': float(col.quantile(0.95))
-            },
-            'histogram': np.histogram(col, bins=50)[0].tolist()
-        }
-
-    # Prediction baseline
-    preds = model.predict_proba(training_data[feature_names])[:, 1]
-    baseline['predictions'] = {
-        'mean': float(preds.mean()),
-        'std': float(preds.std()),
-        'distribution': np.histogram(preds, bins=50)[0].tolist()
-    }
-
-    return baseline
-
-# Save baseline alongside model
-baseline = create_baseline(X_train, model, feature_names)
-with open('model_baseline.json', 'w') as f:
-    json.dump(baseline, f)
-```
-
-### Step 2: Instrument Your Prediction Service
-
-Every prediction should log data for monitoring:
-
-```python
-import logging
 from datetime import datetime
-import json
 
-class InstrumentedPredictor:
-    """Predictor that logs everything needed for monitoring."""
+class ModelRegistry:
+    def __init__(self, required_metrics: list, approval_required: bool = True):
+        self.req_metrics = required_metrics
+        self.approval_required = approval_required
+        self.models = {}
+        self.audit_log = []
 
-    def __init__(self, model, baseline: dict, log_file: str = 'predictions.jsonl'):
-        self.model = model
-        self.baseline = baseline
-        self.log_file = log_file
+    def _log(self, name, event):
+        self.audit_log.append(f"[{datetime.now()}] {name}: {event}")
 
-    def predict(self, features: dict) -> dict:
-        """Make prediction and log for monitoring."""
-        start_time = datetime.now()
+    def register_model(self, name: str, version: str, model_artifact: any, metrics: dict, created_by: str) -> ModelVersion:
+        for req in self.req_metrics:
+            if req not in metrics:
+                raise ValueError(f"Missing mandatory metric: {req}")
+                
+        key = f"{name}@{version}"
+        mv = ModelVersion(name, version, ModelStatus.DRAFT, metrics, created_by, datetime.now())
+        self.models[key] = mv
+        self._log(key, f"Registered by {created_by}")
+        return mv
 
-        # Make prediction
-        feature_array = np.array([list(features.values())])
-        prediction = float(self.model.predict_proba(feature_array)[0, 1])
+    def submit_for_review(self, name: str, version: str) -> bool:
+        key = f"{name}@{version}"
+        self.models[key].status = ModelStatus.PENDING_REVIEW
+        self._log(key, "Submitted for Review")
+        return True
 
-        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+    def approve_model(self, name: str, version: str, approved_by: str, comments: str = "") -> bool:
+        key = f"{name}@{version}"
+        if self.models[key].status != ModelStatus.PENDING_REVIEW:
+            raise ValueError("Model must be in PENDING_REVIEW status to be approved.")
+        
+        self.models[key].status = ModelStatus.APPROVED
+        self.models[key].approved_by = approved_by
+        self.models[key].approved_at = datetime.now()
+        self._log(key, f"Approved by {approved_by} - {comments}")
+        return True
 
-        # Log for monitoring
-        log_entry = {
-            'timestamp': datetime.now().isoformat(),
-            'prediction_id': str(uuid.uuid4()),
-            'features': features,
-            'prediction': prediction,
-            'latency_ms': latency_ms
-        }
+    def deploy_model(self, name: str, version: str) -> bool:
+        key = f"{name}@{version}"
+        if self.approval_required and self.models[key].status != ModelStatus.APPROVED:
+            raise ValueError("Governance Failure: Model not approved for deployment.")
+            
+        self.models[key].status = ModelStatus.DEPLOYED
+        self._log(key, "Deployed to Production")
+        return True
 
-        with open(self.log_file, 'a') as f:
-            f.write(json.dumps(log_entry) + '\n')
+    def get_audit_log(self, name: str = None) -> list:
+        if name:
+            return [log for log in self.audit_log if log.split(':')[0].split('] ')[1].split('@')[0] == name]
+        return self.audit_log
 
-        return {
-            'prediction': prediction,
-            'prediction_id': log_entry['prediction_id']
-        }
+# Execution succeeds directly with previous boilerplate.
 ```
+</details>
 
-### Step 3: Set Up Monitoring Jobs
+### Task 5: Kubernetes v1.35 Monitoring Deployment
 
-Run monitoring checks on a schedule:
+To deploy your Prometheus monitoring infrastructure inside a contemporary KubeDojo K8s cluster, ensure you define strict limits to prevent memory ballooning during intensive histogram calculations. 
 
-```python
-# monitoring_job.py - Run via cron or Airflow
-def run_monitoring_check(baseline_path: str, predictions_path: str, hours: int = 24):
-    """
-    Check recent predictions against baseline.
-    Run this hourly or daily.
-    """
-    # Load baseline
-    with open(baseline_path) as f:
-        baseline = json.load(f)
+<details>
+<summary>v1.35 Deployment Manifest</summary>
 
-    # Load recent predictions
-    cutoff = datetime.now() - timedelta(hours=hours)
-    recent_predictions = []
-    with open(predictions_path) as f:
-        for line in f:
-            entry = json.loads(line)
-            if datetime.fromisoformat(entry['timestamp']) > cutoff:
-                recent_predictions.append(entry)
-
-    if len(recent_predictions) < 100:
-        return {'status': 'insufficient_data', 'count': len(recent_predictions)}
-
-    # Check each feature for drift
-    alerts = []
-    for feature in baseline['features']:
-        baseline_hist = baseline['features'][feature]['histogram']
-        current_values = [p['features'][feature] for p in recent_predictions]
-        current_hist = np.histogram(current_values, bins=50)[0]
-
-        psi = calculate_psi_from_histograms(baseline_hist, current_hist)
-
-        if psi > 0.25:
-            alerts.append({
-                'type': 'critical_drift',
-                'feature': feature,
-                'psi': psi
-            })
-        elif psi > 0.1:
-            alerts.append({
-                'type': 'warning_drift',
-                'feature': feature,
-                'psi': psi
-            })
-
-    # Send alerts
-    for alert in alerts:
-        send_alert(alert)
-
-    return {'status': 'complete', 'alerts': alerts}
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-monitor-stack
+  namespace: mlops-prod
+  labels:
+    app: drift-monitor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: drift-monitor
+  template:
+    metadata:
+      labels:
+        app: drift-monitor
+    spec:
+      containers:
+        - name: monitor
+          image: myregistry.internal/ml-monitor:v2.1.0
+          ports:
+            - containerPort: 8000
+          resources:
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
 ```
+</details>
 
-### Step 4: Build Your Dashboard
+### Success Checklist
+- [ ] Task 1 executes PSI calculation without throwing zero-division errors.
+- [ ] Task 2 successfully records the Prometheus Histogram latency.
+- [ ] Task 3 generates exact attribution floats tracing back to the primary forcing features.
+- [ ] Task 4 correctly prevents deployment of a model lacking strict governance review.
+- [ ] Task 5 successfully deploys via `kubectl apply -f monitor-stack.yaml` on v1.35.
 
-Create visibility into model health:
+## Quiz
 
-```python
-# Export metrics for Grafana
-def export_metrics_to_prometheus(monitoring_results: dict, model_name: str):
-    """
-    Export monitoring results as Prometheus metrics.
-    Grafana will scrape these for dashboards.
-    """
-    from prometheus_client import Gauge
+<details>
+<summary>Scenario 1: You are on-call when PagerDuty fires an alert for DataDriftDetected on a single feature (user age), but the ModelAccuracyDrop alert has not fired. Should you immediately trigger a model rollback?</summary>
+No. Data drift indicates the input population shifted, but if ModelAccuracyDrop hasn't triggered, the model's fundamental relationships might still be generalizing correctly over the new distribution. You should immediately investigate the shift using PSI tools to verify if it represents a transient anomaly (e.g., a sudden marketing campaign targeting younger users) rather than blindly rolling back a functional model.
+</details>
 
-    drift_gauge = Gauge(
-        f'{model_name}_feature_drift_psi',
-        'PSI drift score by feature',
-        ['feature']
-    )
+<details>
+<summary>Scenario 2: Your fraud detection model operates in an environment where confirmed fraud labels arrive 30 days after the transaction. You need to implement real-time monitoring. Which metric should you prioritize?</summary>
+You must prioritize Prediction Drift (output distribution changes). Since calculating real-time accuracy is impossible due to the 30-day lag on ground truth labels, monitoring the frequency at which the model predicts positive fraud classes acts as an immediate proxy. If the model historically flags 2% of transactions as fraud and suddenly flags 15%, you immediately know behavior has degraded without waiting 30 days for confirmation.
+</details>
 
-    for feature, psi in monitoring_results.get('feature_psi', {}).items():
-        drift_gauge.labels(feature=feature).set(psi)
-```
+<details>
+<summary>Scenario 3: A new model version is deployed to your production Kubernetes v1.35 cluster. Immediately, the HighPredictionLatency alert triggers, showing p95 latency jumped from 45ms to 800ms. CPU utilization on the Pods remains identical. What is the most likely architectural bottleneck?</summary>
+The most likely bottleneck is external dependency latency or resource lock contention rather than algorithmic inefficiency. Since CPU utilization remains identical, the Pods are likely waiting on an external network call (such as a remote feature store lookup) or experiencing severe memory swapping due to missing `resources.limits` directives, forcing the container to stall execution while waiting on I/O.
+</details>
 
-> ** Pro Tip**: Start simple! You don't need Evidently, WhyLabs, or any fancy tools to begin monitoring. A Python script that compares histograms and sends Slack alerts is better than no monitoring. Upgrade to sophisticated tools when you outgrow simple scripts.
+<details>
+<summary>Scenario 4: You are investigating a drop in an e-commerce recommendation model's performance. The PSI for the "device_type" feature has suddenly spiked to 0.40. What is your very first investigative step?</summary>
+Your first step should be to investigate the upstream data engineering pipeline and client-side logging mechanisms. A PSI of 0.40 indicates massive, severe structural change. Often, extreme categorical shifts are caused by software bugs (like a web update mislabeling 'mobile' traffic as 'desktop') rather than a true overnight change in customer demographics.
+</details>
 
----
+<details>
+<summary>Scenario 5: A healthcare model's accuracy on the general population remains at 94%, but an audit log shows the Demographic Parity Ratio between two protected groups dropped from 0.95 to 0.65. How do you diagnose the root cause?</summary>
+You must utilize localized explainability frameworks like SHAP or LIME specifically filtered against the disadvantaged protected group. By generating SHAP values exclusively for the instances within that demographic cohort, you can pinpoint the specific underlying features pushing those predictions downward, exposing the localized covariate shift driving the biased outcome.
+</details>
 
-## Debugging Your Monitoring System
+<details>
+<summary>Scenario 6: You've configured a SlidingWindowMonitor with a window size of 100 samples. During a flash sale event, prediction volume increases 100x. What monitoring failure will occur, and how do you redesign the system to handle it?</summary>
+The fixed sample window will cycle entirely within a fraction of a second, causing the monitor to become hyper-sensitive and trigger false positive alerts based on transient micro-bursts of variance. To fix this, you must redesign the monitor to operate on strict time-based rolling windows (e.g., rolling 5-minute aggregations) rather than arbitrary sample-count windows.
+</details>
 
-Monitoring systems can fail too. Here's how to debug when your monitoring itself isn't working.
+## Next Module
 
-### Common Monitoring Failures
-
-**1. False negatives—drift goes undetected:**
-- **Cause**: Thresholds too high, bins too coarse, or comparing wrong time periods
-- **Fix**: Review historical incidents. Did monitoring catch them? If not, lower thresholds or increase bin granularity
-- **Test**: Inject synthetic drift and verify alerts fire
-
-**2. False positives—alert fatigue:**
-- **Cause**: Thresholds too sensitive, not accounting for seasonality
-- **Fix**: Use adaptive thresholds based on historical variance. Add "for: duration" requirements
-- **Test**: Track alert-to-action ratio. If below 50%, thresholds are too aggressive
-
-**3. Missing data—blind spots in coverage:**
-- **Cause**: Not all features being monitored, edge cases excluded
-- **Fix**: Audit monitoring coverage against feature list. Add segment-level monitoring
-- **Test**: Compare features in model vs. features being monitored
-
-**4. Stale baselines—comparing to outdated reference:**
-- **Cause**: Baseline created once at training, never updated
-- **Fix**: Implement rolling baselines or periodic baseline refresh
-- **Test**: Check baseline age. If older than your model's typical drift window, refresh it
-
-### Monitoring Health Checks
-
-```python
-def check_monitoring_health(monitoring_system) -> dict:
-    """
-    Meta-monitoring: ensure your monitoring is working.
-    Run this daily.
-    """
-    health = {
-        'baseline_age_days': (datetime.now() - monitoring_system.baseline_created).days,
-        'last_check_hours_ago': (datetime.now() - monitoring_system.last_check).total_seconds() / 3600,
-        'features_monitored': len(monitoring_system.monitored_features),
-        'features_in_model': len(monitoring_system.model_features),
-        'coverage_percent': len(monitoring_system.monitored_features) / len(monitoring_system.model_features) * 100,
-        'alerts_last_30_days': monitoring_system.count_alerts(days=30),
-        'alerts_acted_on': monitoring_system.count_acknowledged_alerts(days=30)
-    }
-
-    # Calculate health score
-    issues = []
-    if health['baseline_age_days'] > 90:
-        issues.append('Baseline is stale (>90 days)')
-    if health['last_check_hours_ago'] > 24:
-        issues.append('Monitoring check is overdue')
-    if health['coverage_percent'] < 100:
-        issues.append(f"Only {health['coverage_percent']:.0f}% of features monitored")
-    if health['alerts_last_30_days'] > 0 and health['alerts_acted_on'] == 0:
-        issues.append('Alerts are being ignored')
-
-    health['issues'] = issues
-    health['healthy'] = len(issues) == 0
-
-    return health
-```
-
-> **Did You Know?** At Netflix, the team that monitors ML models has their own monitoring—they call it "meta-monitoring." They track alert latency (how quickly monitoring detects issues), coverage (what percentage of predictions are monitored), and accuracy (how often alerts correspond to real problems). This monitoring-of-monitoring ensures the safety net itself doesn't have holes.
-
----
-
-## Key Takeaways
-
-1. **Silent failures are the norm** for ML systems. Models don't crash—they degrade. Traditional monitoring won't catch this.
-
-2. **Monitor inputs, outputs, AND performance**. Data drift, prediction drift, and accuracy degradation are three different problems requiring different solutions.
-
-3. **Ground truth is often delayed**. Design monitoring systems that work with delayed labels using proxy metrics and prediction drift detection.
-
-4. **Segment everything**. Aggregate metrics hide problems. Monitor by user segment, time period, feature ranges, and protected attributes.
-
-5. **Explainability is monitoring**. SHAP values aren't just for debugging—tracking feature importance over time reveals drift before accuracy drops.
-
-6. **Governance is now mandatory**. The EU AI Act, NYC hiring laws, and SEC guidance mean model documentation and audit trails are legal requirements, not nice-to-haves.
-
-7. **Alert fatigue kills monitoring**. If teams ignore alerts, you have no monitoring. Design tiered, adaptive alerting with sustained conditions.
-
-8. **The Zillow lesson**: A model can destroy a $500M business unit while showing green on every dashboard. Monitor business outcomes, not just ML metrics.
-
-9. **Monitor the feedback loop**. Models change behavior, changed behavior changes data, changed data changes models. Watch for self-fulfilling prophecies.
-
-10. **Invest in monitoring early**. The cost of building monitoring is 1% of the cost of a major failure. Every production ML system deserves observability.
-
----
-
-## Summary
-
-```
-ML MONITORING ESSENTIALS
-========================
-
-DRIFT TYPES:
-  Data Drift    → Input distribution changed
-  Concept Drift → Input-output relationship changed
-  Prediction Drift → Output distribution changed
-
-DETECTION METHODS:
-  PSI           → Population Stability Index
-  KS Test       → Distribution comparison
-  JS Divergence → Symmetric distance measure
-
-EXPLAINABILITY:
-  SHAP          → Feature contributions (game theory)
-  LIME          → Local linear approximations
-
-GOVERNANCE:
-  Model Cards   → Documentation for transparency
-  Audit Logs    → Track all model events
-  Access Control → Who can deploy/modify
-
-TOOLS:
-  Prometheus    → Metrics collection
-  Grafana       → Visualization
-  Evidently     → ML-specific monitoring
-  WhyLabs       → Advanced drift detection
-
-BEST PRACTICES:
-   Monitor inputs, outputs, AND performance
-   Set thresholds with baselines
-   Create runbooks for alerts
-   Automate retraining when needed
-   Document everything (model cards)
-```
-
----
-
-## Congratulations!
-
-You've completed Phase 10: DevOps & MLOps! You now have a comprehensive understanding of:
-- DevOps fundamentals for ML
-- Docker and containerization
-- CI/CD pipelines
-- Kubernetes for ML workloads
-- Advanced K8s (Kubeflow, KServe, Triton)
-- MLOps and experiment tracking
-- Data versioning and feature stores
-- Pipeline orchestration
-- Model deployment patterns
-- **Monitoring and observability**
-
----
-
-_Module 52 Complete! Phase 10 Complete!_
-
-_"You can't improve what you can't measure. In ML, you can't trust what you don't monitor."_
-
-The journey from blind faith to full observability represents one of the most important evolutions in production ML. The companies that master monitoring don't just avoid disasters—they build trust, move faster, and innovate with confidence. Start small, monitor what matters, and remember: every green dashboard should make you ask "what am I not seeing?" Your models are only as reliable as your ability to watch them.
+Now that you have constructed mathematically rigorous observability around your models, how do you handle the continuous flow of retraining without breaking production? Head over to [Module 1.11: Continuous Training Pipelines (CT)](./module-1.11-continuous-training) to learn how to automate retraining using Argo Workflows and Kubeflow on K8s.
