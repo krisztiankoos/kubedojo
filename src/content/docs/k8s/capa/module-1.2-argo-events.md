@@ -12,55 +12,51 @@ sidebar:
 >
 > **CAPA Domain**: 4 — Argo Events (12% of exam)
 
----
-
 ## What You'll Be Able to Do
 
 After completing this module, you will be able to:
 
-1. **Design** event-driven architectures using Argo Events' fundamental components: EventSource, Sensor, and EventBus, orchestrating complex distributed workflows.
-2. **Implement** Sensor triggers that dynamically submit Argo Workflows, create Kubernetes objects, or execute HTTP requests based on real-time event filtering.
-3. **Compare** and evaluate EventBus backend implementations (NATS JetStream vs Kafka) based on persistence, delivery guarantees, and scalability requirements.
-4. **Diagnose** event pipeline failures by analyzing EventSource configurations, Sensor dependency logic, and EventBus message routing, resolving common misconfigurations.
-5. **Evaluate** security postures by properly integrating Kubernetes Secrets for webhooks, cloud provider authentication, and Kafka cluster connectivity.
-
----
+1. **Design** event-driven architectures using Argo Events' three core CRDs: EventSource, Sensor, and EventBus.
+2. **Implement** Sensor triggers that evaluate CloudEvents payloads to conditionally execute Argo Workflows or mutate Kubernetes objects.
+3. **Compare** and select appropriate EventBus messaging backends based on persistence and delivery guarantees.
+4. **Diagnose** event delivery failures by tracing CloudEvents from ingress webhook, through JetStream brokers, to trigger execution.
+5. **Evaluate** multi-dependency workflows using boolean AND/OR logic within Sensor definitions.
 
 ## Why This Module Matters
 
-Imagine a global e-commerce platform processing thousands of orders per minute during a holiday sale. Every order placed, every payment processed, and every inventory update represents a distinct state change. For years, the platform engineering team at "GlobalRetail Inc." relied on traditional cron-based scripts to process these changes. They had dozens of scheduled jobs polling cloud storage buckets, querying external APIs, and searching message queues. 
+Imagine the Black Friday deployment freeze at a massive e-commerce company like ShopGlobal. Their entire CI/CD pipeline relied on an intricate web of Jenkins cron jobs polling GitHub every 30 seconds to detect new release tags. As the number of microservices grew to over 2,000, these polling jobs generated tens of thousands of API requests per hour. On the morning of Black Friday, GitHub severely rate-limited their entire organizational IP block.
 
-This polling architecture was inherently fragile. During peak traffic, the polling scripts hit aggressive API rate limits, causing massive delays. Worse, the delay between an event occurring and the polling script detecting it meant that fulfillment pipelines were consistently lagging behind real-time customer expectations. When one script failed at 3:00 AM, the entire fulfillment chain halted, leading to significant financial impact and exhausted engineers diagnosing undocumented shell scripts.
+Because the rate limit blocked all incoming and outgoing API checks, the polling scripts panicked and began retrying with exponential backoff. This completely saturated their internal Kubernetes networking layer, delaying critical hotfixes for a payment gateway outage. ShopGlobal lost an estimated $3 million in revenue over four hours simply because their infrastructure was asking "Are we there yet?" instead of waiting to be told "We are here."
 
-By migrating to an Event-Driven Architecture (EDA) with Argo Events, the team eliminated polling entirely. Instead of asking "did anything change?", the infrastructure natively reacted to events the millisecond they occurred. Argo Events provided a declarative, Kubernetes-native nervous system. Events flowed in through standardized ingress points, decisions were made dynamically via dependency logic, and actions were triggered instantly. No glue code, no rate limits, and no 3:00 AM pages. Mastering this framework allows you to build highly scalable, reactive automation that operates cleanly within the Kubernetes ecosystem.
+Argo Events provides the antidote to the polling antipattern. It is an event-driven workflow automation framework for Kubernetes that gives your cluster a native nervous system. When you push code, upload an S3 object, or drop a message in a Kafka topic, Argo Events reacts instantly, processing millions of events daily without breaking a sweat. No polling. No glue code. Everything is declared in YAML, version-controlled, and observable.
 
----
+> **War Story: The Polling Team**
+>
+> A platform team at a fintech company had 14 CronJobs that polled GitHub every 60 seconds looking for new commits across their monorepo. Each poller ran `curl` against the GitHub API, parsed JSON with `jq`, compared SHAs stored in a ConfigMap, and triggered builds via `kubectl create`. The GitHub API rate-limited them twice a week. The ConfigMap had race conditions. One Friday, a poller overwrote another poller's SHA and triggered 200+ duplicate builds that saturated their cluster. The migration to Argo Events took three days. They replaced 14 CronJobs and ~400 lines of bash with 3 EventSources, 1 EventBus, and 5 Sensors. The polling stopped. The rate-limiting stopped. The 3 AM pages stopped.
 
 ## Did You Know?
 
-- **Argo was accepted to CNCF on March 26, 2020** and officially moved to graduated maturity on December 6, 2022, cementing its status as an enterprise-grade solution.
-- **Argo Events supports 20+ event sources and 10+ triggers**, allowing deep integration with almost any cloud-native system or external provider.
-- **The EventBus uses NATS JetStream by default**, providing robust at-least-once delivery and event persistence natively, without requiring you to manage a separate standalone message broker.
-- **Argo Events standardizes on CloudEvents version 1.0**, which is a CNCF graduated specification ensuring your event payloads are universally portable across different cloud providers.
-
----
+- **Argo was accepted to the CNCF on March 26, 2020** and officially moved to graduated maturity status on December 6, 2022, proving its enterprise readiness.
+- **Argo Events supports over 20 event sources and 10 distinct triggers**, allowing you to connect almost any external system to your Kubernetes clusters.
+- **The Argo Helm chart currently sets version 2.4.21 and appVersion 1.9.10** for the `argo-events` deployment as its stable baseline.
+- **Argo Events release policy maintains only the two most recent minor branches**, meaning you must upgrade aggressively to stay within the supported lifecycle window.
 
 ## Part 1: Event-Driven Architecture (EDA) Fundamentals
 
 ### 1.1 Why Events?
 
-There are two fundamental ways for a system to detect that a state change has occurred: polling and reactive events.
+There are two ways to detect that something happened:
 
 | Approach | How It Works | Downside |
 |----------|-------------|----------|
 | **Polling** | Ask "did anything change?" on a timer | Wastes resources, delayed detection, API rate limits |
 | **Reactive (events)** | Get notified the instant something changes | Requires event infrastructure |
 
-Polling architectures consume compute cycles even when no work needs to be done. They suffer from the "polling paradox": poll too infrequently, and your system's latency increases; poll too frequently, and you overwhelm external APIs or databases. Event-driven architectures resolve this by inverting the communication flow. Events are immediate, highly efficient, and fully decoupled. The producer of an event does not know who consumes it, and the consumer does not care how the event was originally generated.
+Events win because they are **immediate**, **efficient**, and **decoupled**. The producer does not know or care who consumes the event. The consumer does not know or care how the event was produced.
 
 ### 1.2 The CloudEvents Specification
 
-To ensure interoperability, the industry needed a standardized way to describe events. The CloudEvents specification is the CNCF standard envelope for event data, and Argo Events uses it internally to normalize all incoming stimuli.
+CloudEvents is the CNCF standard envelope for event data. Argo Events uses it internally to standardize all incoming events, regardless of origin.
 
 ```json
 {
@@ -77,122 +73,80 @@ To ensure interoperability, the industry needed a standardized way to describe e
 }
 ```
 
-Every standardized event contains key routing fields: `specversion`, `type`, `source`, and `id`. The `data` field carries the actual payload specific to the event type.
+Key fields: `specversion`, `type`, `source`, `id`. Every event has these. The `data` field carries the actual payload.
 
----
+> **Pause and predict**: If an event source produces raw XML instead of JSON, how will it be represented in the CloudEvent? The `datacontenttype` will reflect `application/xml`, but the CloudEvent wrapper itself remains standard JSON, ensuring the event routing logic never breaks.
 
 ## Part 2: Argo Events Architecture
 
 ### 2.1 The Four Components
 
-Argo Events is an event-driven workflow automation framework for Kubernetes. It operates using four main logical concepts mapped to Custom Resource Definitions (CRDs).
-
-**Legacy ASCII Architectural Representation:**
-```text
-┌──────────────────────────────────────────────────────────────────────┐
-│                        ARGO EVENTS ARCHITECTURE                      │
-│                                                                      │
-│  ┌────────────────┐    ┌────────────────┐    ┌────────────────────┐  │
-│  │  EventSource   │    │   EventBus     │    │     Sensor         │  │
-│  │                │    │  (NATS         │    │                    │  │
-│  │  - Webhook     │───▶│   JetStream)   │───▶│  - Dependencies   │  │
-│  │  - GitHub      │    │                │    │  - Filters         │  │
-│  │  - S3          │    │  Namespace-    │    │  - Trigger         │  │
-│  │  - Cron        │    │  scoped msg    │    │    templates       │  │
-│  │  - Kafka       │    │  broker        │    │                    │  │
-│  │  - SNS/SQS     │    │                │    │                    │  │
-│  └────────────────┘    └────────────────┘    └───────┬────────────┘  │
-│                                                      │               │
-│                                                      ▼               │
-│                                            ┌────────────────────┐    │
-│                                            │    Triggers        │    │
-│                                            │                    │    │
-│                                            │  - Argo Workflow   │    │
-│                                            │  - K8s Resource    │    │
-│                                            │  - HTTP Request    │    │
-│                                            │  - Notification    │    │
-│                                            └────────────────────┘    │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-**Modern Architectural Representation:**
 ```mermaid
-flowchart TD
-    subgraph Sources [EventSources]
-        W[Webhook]
-        G[GitHub]
-        S[S3]
-        C[Cron]
-        K[Kafka]
-        SQ[SNS/SQS]
+flowchart LR
+    subgraph ES [EventSource]
+        direction TB
+        WH[Webhook]
+        GH[GitHub]
+        S3[S3]
+        CR[Cron]
+        KF[Kafka]
+        SQS[SNS/SQS]
     end
-
-    subgraph Bus [EventBus]
-        EB[NATS JetStream <br/> Namespace-scoped msg broker]
+    subgraph EB [EventBus]
+        NJ[NATS JetStream]
+        NS[Namespace-scoped message broker]
     end
-
-    subgraph Sens [Sensor]
-        D[Dependencies]
-        F[Filters]
+    subgraph SN [Sensor]
+        DP[Dependencies]
+        FL[Filters]
         TT[Trigger templates]
     end
-
-    subgraph Actions [Triggers]
+    subgraph TR [Triggers]
         AW[Argo Workflow]
         KR[K8s Resource]
         HR[HTTP Request]
-        N[Notification]
+        NT[Notification]
     end
 
-    Sources -->|CloudEvents| EB
-    EB --> Sens
-    Sens --> Actions
+    ES --> EB
+    EB --> SN
+    SN --> TR
 ```
 
-The data flow is always unidirectional from left to right:
-1. **EventSource** — Connects to external systems, ingests the proprietary data, and normalizes it.
-2. **EventBus** — The internal transport layer that reliably routes messages to interested consumers.
-3. **Sensor** — The brain of the operation. It listens for events, applies filtering, and evaluates dependency logic.
-4. **Trigger** — The action taken when a Sensor's conditions are perfectly met.
+The data flow is always left-to-right:
+
+1. **EventSource** — An EventSource definition converts external inputs into CloudEvents and dispatches them through EventBus.
+2. **EventBus** — The default EventBus is a namespaced Kubernetes custom resource requiring one per namespace for EventSources and Sensors.
+3. **Sensor** — Sensors define event dependencies, subscribe to EventBus, and execute triggers when dependencies resolve.
+4. **Trigger** — The action taken when a Sensor's conditions are met (start a workflow, create a resource, etc.).
 
 ### 2.2 How the Pieces Connect
 
-**Legacy ASCII Data Flow:**
-```text
-GitHub push ──▶ EventSource "github" ──▶ EventBus "default"
-                                              │
-S3 upload ────▶ EventSource "s3" ─────▶ EventBus "default"
-                                              │
-                                              ▼
-                                     Sensor "build-on-push"
-                                     (depends on: github push)
-                                              │
-                                              ▼
-                                     Trigger: submit Argo Workflow
-```
-
-**Modern Flow Representation:**
 ```mermaid
 flowchart LR
-    GH[GitHub push] --> ES1[EventSource <br/> github]
-    S3[S3 upload] --> ES2[EventSource <br/> s3]
-    ES1 --> EB[EventBus <br/> default]
-    ES2 --> EB
-    EB --> S[Sensor <br/> build-on-push]
-    S --> AW[Trigger: submit <br/> Argo Workflow]
+    GH[GitHub push] -->|Webhook| ES1[EventSource: github]
+    S3[S3 upload] -->|Notification| ES2[EventSource: s3]
+    ES1 -->|CloudEvent| EB[EventBus: default]
+    ES2 -->|CloudEvent| EB
+    EB -->|Match Dependency| SN[Sensor: build-on-push\nDepends on: github push]
+    SN -->|Execute| TR[Trigger: submit Argo Workflow]
 ```
 
-Each component is a completely separate Kubernetes Custom Resource. This separation of concerns allows platform engineers to manage event ingress independently from the logic executing the downstream workflows.
+Each component is a **separate Kubernetes Custom Resource**. You deploy them independently, ensuring loose coupling and high availability across the cluster.
 
----
+### 2.3 Installation and Release Policies
 
-## Part 3: Deep Dive into EventSource
+Argo Events installation docs require Kubernetes version 1.11 and kubectl greater than version 1.11.0, though for modern deployments you should target Kubernetes v1.35+. The documented installation flow is to create `argo-events` namespace, apply install manifests, and then create the EventBus via the native example manifest.
 
-An EventSource definition converts external inputs into CloudEvents and dispatches them through EventBus. The EventSource catalog currently includes AMQP, AWS SNS, AWS SQS, Azure Events Hub, Azure Queue Storage, Calendar, File, GCP PubSub, GitHub, GitLab, Kafka, NATS, Slack, Stripe, Webhooks, and other named connectors.
+For v1.7+, namespace-scoped installs must use `--namespaced`, with optional `--managed-namespace`; pre-v1.7 setups used three controller deployments with per-controller `--namespaced` flags. Additionally, release policy requires matching image versions across eventsource, sensor, eventbus-controller, eventsource-controller, sensor-controller, and events-webhook. Argo Helm chart documentation states that only the latest upstream versions are officially supported; older versions are not guaranteed for bug/security patching.
+
+## Part 3: EventSource
+
+The EventSource is where events enter the system. The EventSource catalog currently includes AMQP, AWS SNS, AWS SQS, Azure Events Hub, Azure Queue Storage, Calendar, File, GCP PubSub, GitHub, GitLab, Kafka, NATS, Slack, Stripe, Webhooks, and other named connectors.
 
 ### 3.1 Webhook EventSource
 
-The most universal entry point is a simple HTTP webhook. It exposes an endpoint that listens for incoming POST requests.
+The simplest starting point — expose an HTTP endpoint that receives POST requests:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -211,11 +165,11 @@ spec:
       method: POST
 ```
 
-This manifests as a pod actively listening on port 12000. It supports multiple endpoints simultaneously.
+This creates a pod that listens on port 12000 with two endpoints. Any POST to `/build` or `/deploy` publishes an event to the EventBus.
 
 ### 3.2 GitHub EventSource
 
-For CI/CD scenarios, the GitHub EventSource is heavily utilized. It manages webhook validation directly.
+Listens for GitHub webhook events (push, PR, issues, etc.):
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -233,7 +187,7 @@ spec:
         endpoint: /push
         port: "13000"
         method: POST
-        url: https://events.example.com
+        url: https://events.example.internal
       events:
         - push
         - pull_request
@@ -247,7 +201,7 @@ spec:
 
 ### 3.3 S3 EventSource
 
-Monitoring object storage allows data engineering teams to trigger automated ETL pipelines the moment a file lands in a bucket.
+Watches an S3-compatible bucket for object changes:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -276,7 +230,7 @@ spec:
 
 ### 3.4 Calendar (Cron) EventSource
 
-Time itself is an event. This replaces traditional Kubernetes CronJobs and brings scheduled tasks into the centralized event framework.
+Time-based events — replaces CronJobs for event-driven pipelines:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -306,17 +260,15 @@ spec:
 | **Slack** | Slash commands and interactive messages |
 | **Generic** | Any custom event source via a sidecar container |
 
-> **Stop and think**: If an external system uses a proprietary TCP protocol that isn't listed in the catalog, how would you integrate it? You would build a small microservice to receive the proprietary protocol and then forward it to an Argo Events Generic or Webhook EventSource.
+The exam may test whether you know which EventSource type to use for a given scenario. Know the table above.
 
----
+## Part 4: EventBus
 
-## Part 4: The EventBus and Message Brokers
-
-The EventBus acts as the central nervous system. The default EventBus is a namespaced Kubernetes custom resource requiring one per namespace for EventSources and Sensors. This means isolation is built-in; events do not cross namespace boundaries natively, which significantly improves security and reduces noisy-neighbor problems.
+The EventBus is the internal message broker. It decouples EventSources from Sensors. Argo Events supports three EventBus implementations (NATS/JetStream/Kafka), with STAN noted as deprecated.
 
 ### 4.1 Creating the Default EventBus
 
-If you do not specify an explicit `eventBusName` in your configurations, the system attempts to connect to an EventBus named `default`.
+By convention, you create one EventBus named `default` per namespace. If no `eventBusName` is specified in EventSource/Sensor specs, they use `default`:
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -334,21 +286,23 @@ spec:
 
 ### 4.2 EventBus Backends
 
-Argo Events supports three EventBus implementations (NATS/JetStream/Kafka), with STAN noted as deprecated. NATS-backed EventBus is documented as supported via NATS Streaming and JetStream.
-
 | Backend | Status | Notes |
 |---------|--------|-------|
 | **JetStream** (NATS) | Recommended | At-least-once delivery, persistence, built-in |
 | **Kafka** | Supported | Use when you already run Kafka and want a single broker |
 | **STAN** | Deprecated | Legacy NATS Streaming; migrate to JetStream |
 
-JetStream is the modern standard because it embeds persistence directly without the overhead of ZooKeeper or KRaft needed by traditional Kafka deployments. It guarantees that if a Sensor pod crashes, the event is retained and will be re-delivered once the Sensor recovers.
+NATS-backed EventBus is documented as supported via NATS Streaming and JetStream, but as noted, STAN is strictly deprecated in modern installations.
 
----
+### 4.3 Key Properties
 
-## Part 5: Sensors, Dependencies, and AND/OR Logic
+- **Namespace-scoped**: Each namespace gets its own EventBus. Events do not cross namespace boundaries by default.
+- **Managed lifecycle**: Argo Events deploys and manages the JetStream/Kafka pods for you.
+- **Multiple EventBuses**: You can create more than one EventBus in a namespace and reference them by name in your EventSource/Sensor specs using `eventBusName`.
 
-Sensors define event dependencies, subscribe to EventBus, and execute triggers when dependencies resolve. They hold the "business logic" of your event pipeline.
+## Part 5: Sensor
+
+The Sensor is where logic lives. It declares which events it cares about (dependencies), how to filter them, and what action to take (triggers).
 
 ### 5.1 Basic Sensor Structure
 
@@ -378,13 +332,13 @@ spec:
                 templates:
                   - name: build
                     container:
-                      image: golang:1.22
+                      image: golang:1.35
                       command: [make, build]
 ```
 
 ### 5.2 Event Dependencies — AND/OR Logic
 
-When integrating multiple sources, a Sensor can apply advanced boolean logic.
+By default, when a Sensor lists multiple dependencies, **all must be satisfied** (AND logic). You can customize this:
 
 ```yaml
 spec:
@@ -398,7 +352,7 @@ spec:
   # AND logic (default): trigger fires when BOTH events arrive
 ```
 
-You can define explicit OR logic by separating conditions at the trigger level:
+For OR logic, define separate triggers that each reference a single dependency:
 
 ```yaml
 spec:
@@ -414,23 +368,49 @@ spec:
         name: build-on-push
         conditions: "github-push"     # fires on github-push alone
         argoWorkflow:
-          # ...workflow spec...
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: build-push-
+              spec:
+                entrypoint: main
+                templates:
+                  - name: main
+                    container:
+                      image: alpine:latest
+                      command: [echo, "push"]
     - template:
         name: build-on-manual
         conditions: "manual-trigger"  # fires on manual-trigger alone
         argoWorkflow:
-          # ...workflow spec...
+          operation: submit
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: build-manual-
+              spec:
+                entrypoint: main
+                templates:
+                  - name: main
+                    container:
+                      image: alpine:latest
+                      command: [echo, "manual"]
 ```
 
----
+The `conditions` field supports boolean expressions: `"github-push && security-scan"`, `"github-push || manual-trigger"`.
 
-## Part 6: Filters - Controlling the Flow
+> **Stop and think**: What happens if you define three dependencies but only list two in a trigger's `conditions` expression? The trigger will wait until the conditions evaluate to true, completely ignoring the state of the unreferenced third dependency for that specific trigger.
 
-Filters prevent unwanted events from initiating triggers. They perform pre-execution validation based on the payload.
+### 5.3 Dependency Filters
 
-### 6.1 Data Filters
+Filter events before they reach the trigger. Only matching events proceed.
 
-Evaluate the internal JSON payload of the event:
+**Data filter** — filter on the event payload:
 
 ```yaml
 dependencies:
@@ -445,9 +425,9 @@ dependencies:
             - "refs/heads/main"
 ```
 
-### 6.2 Expression Filters
+This fires only for pushes to the `main` branch.
 
-Apply boolean logic directly to payload fields:
+**Expression filter** — complex boolean expressions over event data:
 
 ```yaml
 filters:
@@ -458,9 +438,7 @@ filters:
           path: body.action
 ```
 
-### 6.3 Context Filters
-
-Filter on the CloudEvents envelope metadata rather than the raw data payload:
+**Context filter** — filter on CloudEvents metadata (type, source, subject):
 
 ```yaml
 filters:
@@ -469,15 +447,15 @@ filters:
     source: myorg/myrepo
 ```
 
-> **Pause and predict**: If an event matches the data filter but fails the context filter, what happens? The dependency is marked as unmet, and the trigger will not fire. All filters must pass simultaneously (AND logic).
+You can combine all three filter types. They are evaluated with AND logic — all filters must pass.
 
----
+## Part 6: Triggers
 
-## Part 7: Triggers - Acting on Events
+The trigger is the action. Trigger resources executed by a Sensor include Argo Workflows, Kubernetes object creation, HTTP/serverless, NATS/Kafka messages, Slack, Azure Event Hubs, Custom triggers, and OpenWhisk.
 
-Trigger resources executed by a Sensor include Argo Workflows, Kubernetes object creation, HTTP/serverless, NATS/Kafka messages, Slack, Azure Event Hubs, Custom triggers, and OpenWhisk.
+### 6.1 Argo Workflow Trigger
 
-### 7.1 Argo Workflow Trigger
+The most common trigger — submit an Argo Workflow:
 
 ```yaml
 triggers:
@@ -508,7 +486,11 @@ triggers:
             dest: spec.arguments.parameters.0.value
 ```
 
-### 7.2 Kubernetes Resource Trigger
+The `parameters` section is critical — it maps event data into the Workflow's arguments. `src.dataKey` uses dot notation to traverse the event JSON. `dest` is the JSON path in the Workflow resource where the value is injected.
+
+### 6.2 Kubernetes Resource Trigger
+
+Create or update any Kubernetes resource:
 
 ```yaml
 triggers:
@@ -529,14 +511,16 @@ triggers:
             dest: metadata.labels.pr-number
 ```
 
-### 7.3 HTTP Trigger
+### 6.3 HTTP Trigger
+
+Call an external HTTP endpoint:
 
 ```yaml
 triggers:
   - template:
       name: notify-slack
       http:
-        url: https://hooks.slack.com/services/T00/B00/XXXX
+        url: https://hooks.slack.com/services/YOUR/WEBHOOK/HERE
         method: POST
         headers:
           Content-Type: application/json
@@ -547,6 +531,8 @@ triggers:
             dest: text
 ```
 
+### 6.4 Trigger Conditions Summary
+
 | Trigger Type | Use Case |
 |-------------|----------|
 | `argoWorkflow` | Start CI/CD pipelines, data processing, ML training |
@@ -554,13 +540,13 @@ triggers:
 | `http` | Call external APIs, send notifications |
 | `log` | Debug — print event to sensor logs |
 
----
+## Part 7: Authentication and Secrets
 
-## Part 8: Authentication, Secrets, and Security
+Never put tokens or passwords in your EventSource YAML. Always reference Kubernetes Secrets.
 
-Platform security mandates that sensitive credentials are never stored directly inside EventSource definitions. Always utilize native Kubernetes Secrets.
+### 7.1 Webhook Secrets
 
-### 8.1 Webhook Secrets
+GitHub webhook secrets validate that incoming requests truly come from GitHub:
 
 ```yaml
 # Create the secret
@@ -580,7 +566,7 @@ spec:
         key: webhook-secret
 ```
 
-### 8.2 S3 / Cloud Provider Credentials
+### 7.2 S3 / Cloud Provider Credentials
 
 ```yaml
 kubectl create secret generic s3-credentials \
@@ -588,7 +574,9 @@ kubectl create secret generic s3-credentials \
   --from-literal=secretkey=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 ```
 
-### 8.3 Kafka Authentication
+### 7.3 Kafka Authentication
+
+For SASL/TLS-authenticated Kafka clusters:
 
 ```yaml
 spec:
@@ -610,27 +598,22 @@ spec:
           key: password
 ```
 
----
+**Exam tip**: If a question asks how to securely pass credentials to an EventSource, the answer is always Kubernetes Secrets referenced by `name` and `key`.
 
-## Part 9: Integration with Argo Workflows
+## Part 8: Integration with Argo Workflows
 
-The most powerful feature of Argo Events is dynamic parameter injection. Data from the triggering event is injected deeply into the Workflow parameters.
+### 8.1 Passing Event Data as Workflow Parameters
 
-**Legacy ASCII Parameter Injection Flow:**
-```text
-└─▶ Sensor extracts body.after (commit SHA)
-       └─▶ Injects into Workflow spec.arguments.parameters.0.value
-            └─▶ Workflow template uses {{workflow.parameters.git-sha}}
-```
+This is the most testable pattern on the CAPA exam. The flow:
 
-**Modern Parameter Injection Flow:**
 ```mermaid
 flowchart TD
-    E[GitHub push event] -->|Sensor extracts body.after| P[Injects into Workflow spec.arguments.parameters.0.value]
-    P -->|Workflow template uses| W[{{workflow.parameters.git-sha}}]
+    A[GitHub push event] --> B[Sensor extracts body.after]
+    B --> C[Injects into Workflow spec.arguments.parameters.0.value]
+    C --> D[Workflow template uses {{workflow.parameters.git-sha}}]
 ```
 
-### 9.1 Parameter Mapping Syntax
+The parameter mapping in the Sensor trigger:
 
 ```yaml
 parameters:
@@ -640,7 +623,7 @@ parameters:
     dest: spec.arguments.parameters.0.value  # JSON path in Workflow resource
 ```
 
-### 9.2 Passing Event Data to Multiple Parameters
+### 8.2 Passing Event Data to Multiple Parameters
 
 ```yaml
 parameters:
@@ -658,7 +641,9 @@ parameters:
     dest: spec.arguments.parameters.2.value
 ```
 
-### 9.3 Using a WorkflowTemplate Reference
+### 8.3 Using a WorkflowTemplate Reference
+
+Instead of embedding the full Workflow spec in the Sensor, reference a WorkflowTemplate:
 
 ```yaml
 triggers:
@@ -686,54 +671,23 @@ triggers:
             dest: spec.arguments.parameters.0.value
 ```
 
----
+This is the recommended pattern — keep your Workflow logic in WorkflowTemplates and your event wiring in Sensors.
 
-## Part 10: Installation, Versioning, and Helm
-
-Understanding the lifecycle and installation model is critical for production deployment.
-
-Argo Events installation docs require Kubernetes version 1.11 or higher and kubectl version 1.11.0 or higher. The documented installation flow is to create `argo-events` namespace, apply install manifests, and then create the EventBus via the native example manifest. 
-
-For version 1.7 and newer, namespace-scoped installs must use `--namespaced`, with optional `--managed-namespace`; pre-1.7 setups used three controller deployments with per-controller `--namespaced` flags. This architectural shift greatly simplified managing scoped environments.
-
-**Versioning Policy:**
-Release policy is semver x.y.z with only the two most recent minor branches maintained. Release policy requires matching image versions across eventsource, sensor, eventbus-controller, eventsource-controller, sensor-controller, and events-webhook to prevent serialization mismatches over the message bus.
-
-When deploying via Helm, Argo Helm chart documentation states that only the latest upstream versions are officially supported; older versions are not guaranteed for bug/security patching. The Argo Helm chart metadata in argo-helm main currently sets `version: 2.4.21` and `appVersion: 1.9.10` for argo-events.
-
----
-
-## Part 11: Practical Patterns
+## Part 9: Practical Patterns
 
 ### Pattern 1: GitHub Push Triggers a Build
 
-**Legacy ASCII Diagram:**
-```text
-┌──────────┐     ┌──────────────┐     ┌─────────┐     ┌──────────────┐
-│  GitHub   │────▶│ EventSource  │────▶│ EventBus│────▶│    Sensor    │
-│  webhook  │     │ (github)     │     │(default)│     │ (build-on-   │
-└──────────┘     └──────────────┘     └─────────┘     │   push)      │
-                                                       └──────┬───────┘
-                                                              │
-```
-```text
-┌──────────────┐
-                                                       │ Argo Workflow│
-                                                       │ (build +     │
-                                                       │  test + push)│
-                                                       └──────────────┘
-```
-
-**Modern Flow Diagram:**
 ```mermaid
 flowchart LR
-    GH[GitHub webhook] -->|POST| ES[EventSource github]
-    ES -->|CloudEvents| EB[EventBus default]
-    EB -->|Consume| S[Sensor build-on-push]
-    S -->|Submit| AW[Argo Workflow build + test + push]
+    GH[GitHub webhook] -->|Push Event| ES[EventSource: github]
+    ES -->|CloudEvent| EB[EventBus: default]
+    EB -->|Dependency Match| SN[Sensor: build-on-push]
+    SN -->|Trigger| AW[Argo Workflow: build + test + push]
 ```
 
 ### Pattern 2: S3 Upload Triggers a Data Processing Pipeline
+
+EventSource watches for `.csv` files in `uploads/`. Sensor triggers a multi-step Workflow that validates, transforms, and loads the data.
 
 ```yaml
 # EventSource
@@ -757,6 +711,8 @@ parameters:
 ```
 
 ### Pattern 3: Cron Schedule Triggers a Cleanup Workflow
+
+No external events — just a timer. The calendar EventSource fires nightly, and the Sensor submits a cleanup Workflow.
 
 ```yaml
 # EventSource
@@ -783,8 +739,6 @@ triggers:
                 name: cleanup-old-resources
 ```
 
----
-
 ## Common Mistakes
 
 | Mistake | Why It Happens | Solution |
@@ -797,37 +751,39 @@ triggers:
 | STAN backend used in new install | Old tutorials still reference STAN | Always use JetStream — STAN is deprecated |
 | Filters too broad | Sensor fires on every push, not just `main` | Add a data filter on `body.ref` to match `refs/heads/main` |
 
----
-
 ## Quiz
 
-Test your understanding before the hands-on exercise. Ensure you have synthesized the architectural concepts fully.
+Test your understanding before the hands-on exercise.
 
-**Scenario 1:** You are designing a CI pipeline that processes data from external systems. To do this, you need to string together the primary Custom Resources. What are the four Argo Events CRDs in order of data flow?
+**Question 1**: What are the four Argo Events CRDs in order of data flow?
+
 <details>
 <summary>Answer</summary>
 
-EventSource, EventBus, Sensor, Trigger (the trigger is defined within the Sensor CR, not a separate CRD — but the conceptual flow is EventSource → EventBus → Sensor → Trigger action).
+EventSource, EventBus, Sensor, Trigger (the trigger is defined within the Sensor CR, not a separate CRD — but the conceptual flow is EventSource → EventBus → Sensor → Trigger action). This linear progression is mandatory for decoupling event producers from consumers.
 
 </details>
 
-**Scenario 2:** You must choose a highly available, fault-tolerant message broker for your EventBus. You want native Kubernetes integration without external ZooKeeper nodes. What is the recommended EventBus backend, and what technology does it use?
+**Question 2**: What is the recommended EventBus backend, and what technology does it use?
+
 <details>
 <summary>Answer</summary>
 
-JetStream, which is built on NATS. It provides at-least-once delivery with persistence. STAN (NATS Streaming) is deprecated.
+JetStream, which is built on NATS. It provides at-least-once delivery with persistence. STAN (NATS Streaming) is deprecated, so new installations must strictly configure JetStream for reliable message brokering.
 
 </details>
 
-**Scenario 3:** Your compliance team states that a deployment can only begin if a GitHub push event occurs AND a security vulnerability scan passes from a separate webhook source. How do you make a Sensor trigger only when events from two different EventSources BOTH arrive?
+**Question 3**: How do you make a Sensor trigger only when events from two different EventSources BOTH arrive?
+
 <details>
 <summary>Answer</summary>
 
-List both as dependencies in the Sensor spec. By default, all dependencies use AND logic — the trigger fires only when all dependencies are satisfied. You can also be explicit with the `conditions` field: `"dep-one && dep-two"`.
+List both as dependencies in the Sensor spec. By default, all dependencies use AND logic — the trigger fires only when all dependencies are satisfied. You can also be explicit with the `conditions` field: `"dep-one && dep-two"` to clarify your intent.
 
 </details>
 
-**Scenario 4:** Your team deployed a GitHub EventSource. The manifest applies correctly, but events never reach the Sensor. The EventBus pods are running healthily. What is the most likely network or configuration issue?
+**Question 4**: A GitHub EventSource is deployed but events never reach the Sensor. The EventBus pods are running. What is the most likely issue?
+
 <details>
 <summary>Answer</summary>
 
@@ -835,15 +791,17 @@ The EventSource pod's webhook port is not exposed to the internet. GitHub cannot
 
 </details>
 
-**Scenario 5:** A build workflow requires knowing exactly which Git commit to clone. How do you pass the Git commit SHA from a GitHub push event directly into an Argo Workflow parameter before it executes?
+**Question 5**: How do you pass the Git commit SHA from a GitHub push event into an Argo Workflow parameter?
+
 <details>
 <summary>Answer</summary>
 
-In the Sensor trigger's `parameters` section, set `src.dependencyName` to the dependency name, `src.dataKey` to `body.after` (the field in the GitHub push payload that contains the new SHA), and `dest` to the JSON path in the Workflow resource, e.g., `spec.arguments.parameters.0.value`.
+In the Sensor trigger's `parameters` section, set `src.dependencyName` to the dependency name, `src.dataKey` to `body.after` (the field in the GitHub push payload that contains the new SHA), and `dest` to the JSON path in the Workflow resource, e.g., `spec.arguments.parameters.0.value`. This mapping safely injects the payload data directly into the workflow arguments.
 
 </details>
 
-**Scenario 6:** A large organization has a centralized `argo-events` namespace handling global webhooks, but developers want to run Sensors in their own application namespaces (`team-alpha`, `team-beta`). What is the scope of an EventBus, and can events published in namespace A be consumed natively by a Sensor in namespace B?
+**Question 6**: What is the scope of an EventBus? Can events published in namespace A be consumed by a Sensor in namespace B?
+
 <details>
 <summary>Answer</summary>
 
@@ -851,7 +809,8 @@ The EventBus is namespace-scoped. Events published to the EventBus in namespace 
 
 </details>
 
-**Scenario 7:** A webhook is noisy, firing on every single branch modification. You want a Sensor to fire on GitHub push events, but ONLY for pushes to the `main` branch. Which filter type do you use and what does it look like?
+**Question 7**: You want a Sensor to fire on GitHub push events, but ONLY for pushes to the `main` branch. Which filter type do you use and what does it look like?
+
 <details>
 <summary>Answer</summary>
 
@@ -866,35 +825,26 @@ filters:
         - "refs/heads/main"
 ```
 
-This inspects the event payload and only allows events where `body.ref` equals `refs/heads/main`.
+This inspects the event payload and only allows events where `body.ref` equals `refs/heads/main`. Any other branch push will be silently discarded by the Sensor.
 
 </details>
-
----
 
 ## Hands-On Exercise: Event-Driven Build Pipeline
 
 ### Goal
+
 Deploy a complete Argo Events pipeline: a webhook EventSource receives a POST, publishes to the EventBus, a Sensor picks it up, and triggers an Argo Workflow that prints the event data.
 
 ### Prerequisites
-- A running Kubernetes cluster.
-- Argo Events installed via official manifests.
-- Argo Workflows installed.
 
-### Success Checklist
-- [ ] EventBus is fully healthy and accepting connections.
-- [ ] EventSource pod is actively listening for webhooks.
-- [ ] Sensor is actively monitoring dependencies.
-- [ ] Webhook triggers the correct Argo Workflow without errors.
+- A running Kubernetes cluster (kind or minikube)
+- Argo Events installed (`kubectl create namespace argo-events && kubectl apply -f https://github.com/argoproj/argo-events/releases/download/v1.9.1/install.yaml`)
+- Argo Workflows installed (from Module 1)
 
-### Task 1: Establish the EventBus Infrastructure
-Create a namespace-scoped EventBus named `default` utilizing JetStream.
-<details>
-<summary>Solution</summary>
+### Step 1: Create the EventBus
 
 ```bash
-cat <<'EOF' | k apply -n argo-events -f -
+cat <<'EOF' | kubectl apply -n argo-events -f -
 apiVersion: argoproj.io/v1alpha1
 kind: EventBus
 metadata:
@@ -906,19 +856,18 @@ spec:
 EOF
 ```
 
-Verify it is running:
+Wait for the EventBus pods:
+
 ```bash
-k get pods -n argo-events -l eventbus-name=default --watch
+kubectl get pods -n argo-events -l eventbus-name=default --watch
 ```
-</details>
 
-### Task 2: Configure the Webhook EventSource
-Deploy a Webhook EventSource that listens on port `12000` at the `/build` endpoint.
-<details>
-<summary>Solution</summary>
+**Success criteria**: 3 JetStream pods in `Running` state.
+
+### Step 2: Create the Webhook EventSource
 
 ```bash
-cat <<'EOF' | k apply -n argo-events -f -
+cat <<'EOF' | kubectl apply -n argo-events -f -
 apiVersion: argoproj.io/v1alpha1
 kind: EventSource
 metadata:
@@ -932,19 +881,18 @@ spec:
 EOF
 ```
 
-Check the pod status:
+Verify the EventSource pod starts:
+
 ```bash
-k get pods -n argo-events -l eventsource-name=webhook
+kubectl get pods -n argo-events -l eventsource-name=webhook
 ```
-</details>
 
-### Task 3: Deploy the Dependent Sensor
-Create a Sensor that listens to the `webhook-build` dependency and triggers a Workflow.
-<details>
-<summary>Solution</summary>
+**Success criteria**: EventSource pod is `Running`.
+
+### Step 3: Create the Sensor with Workflow Trigger
 
 ```bash
-cat <<'EOF' | k apply -n argo-events -f -
+cat <<'EOF' | kubectl apply -n argo-events -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Sensor
 metadata:
@@ -987,46 +935,35 @@ spec:
               dest: spec.arguments.parameters.0.value
 EOF
 ```
-</details>
 
-### Task 4: Execute the Event Trigger
-Simulate a webhook payload manually to initiate the workflow.
-<details>
-<summary>Solution</summary>
+### Step 4: Fire an Event
+
+Port-forward to the EventSource pod and send a webhook:
 
 ```bash
-k port-forward -n argo-events svc/webhook-eventsource-svc 12000:12000 &
+kubectl port-forward -n argo-events svc/webhook-eventsource-svc 12000:12000 &
 
-curl -X POST http://localhost:12000/build \
+curl -X POST http://127.0.0.1:12000/build \
   -H "Content-Type: application/json" \
   -d '{"project": "kubedojo", "branch": "main", "commit": "abc123"}'
 ```
-</details>
 
-### Task 5: Validate the Argo Workflow Output
-Verify that the event successfully traversed the pipeline and executed the Workflow action.
-<details>
-<summary>Solution</summary>
+### Step 5: Verify the Workflow Was Triggered
 
 ```bash
-k get workflows -n argo-events
-k logs -n argo-events -l workflows.argoproj.io/workflow  # check the output
+kubectl get workflows -n argo-events
+kubectl logs -n argo-events -l workflows.argoproj.io/workflow  # check the output
 ```
-</details>
 
-### Task 6: Clean Up the Environment
-Remove the created resources to prevent lingering state.
-<details>
-<summary>Solution</summary>
+**Success criteria**: A Workflow named `event-build-xxxxx` appears and completes with output `Received event data: kubedojo`.
+
+### Cleanup
 
 ```bash
-k delete sensor build-sensor -n argo-events
-k delete eventsource webhook -n argo-events
-k delete eventbus default -n argo-events
+kubectl delete sensor build-sensor -n argo-events
+kubectl delete eventsource webhook -n argo-events
+kubectl delete eventbus default -n argo-events
 ```
-</details>
-
----
 
 ## Summary
 
@@ -1041,8 +978,6 @@ k delete eventbus default -n argo-events
 | Secrets | Always use K8s Secrets; never inline credentials |
 | Parameter mapping | `src.dataKey` extracts from event, `dest` injects into trigger resource |
 
----
-
 ## Next Module
 
-[Module 3: Argo CD — GitOps Delivery](/platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd/) — Expand your knowledge by mastering declarative, Git-driven continuous delivery strategies that bring your deployed workloads fully into sync with your source control repositories.
+[Module 3: Argo CD — GitOps Delivery](/platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd/) — Take your event-driven automation to the next level by implementing declarative, Git-driven continuous delivery for Kubernetes.
