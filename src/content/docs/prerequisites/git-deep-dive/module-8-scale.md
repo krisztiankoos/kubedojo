@@ -377,31 +377,37 @@ This sets up background cron jobs (or systemd timers, depending on your OS) that
 
 <details>
 <summary>Question 1: Your CI pipeline runs a bash script that lints all Kubernetes YAML files in the `manifests/` directory. It does not need to analyze history, and it does not need to build any binaries. The monorepo is 10GB. What is the most efficient clone strategy to implement in the CI configuration?</summary>
+
 You should use a treeless partial clone by executing `git clone --filter=tree:0 <url>`. Because the CI pipeline only needs to read the files at the current commit to lint them, it does not need historical file contents (blobs) or historical directory structures (trees). This approach drastically reduces the amount of data transferred over the network compared to a full clone, speeding up the pipeline execution. Furthermore, it is generally more robust and less computationally expensive for the Git server to process than a traditional shallow clone (`--depth 1`), which requires the server to calculate exactly what to omit.
 </details>
 
 <details>
 <summary>Question 2: You joined a new team and cloned their microservice repository. When you try to run `k apply -f vendor/shared-crds/base.yaml`, kubectl reports that the file does not exist. You look in the `vendor/shared-crds` directory and it is completely empty. What happened, and how do you fix it?</summary>
+
 The team is using Git Submodules to include the shared CRDs, and a standard `git clone` does not automatically fetch submodule contents. You need to initialize and update the submodules by running `git submodule update --init --recursive` in the root of the repository. Alternatively, you could have cloned the repository initially using `git clone --recurse-submodules`. This happens because Git only records a pointer to the submodule's commit in the parent repository, leaving the actual fetching of the nested repository's data as an explicit, secondary step for the developer.
 </details>
 
 <details>
 <summary>Question 3: Your team lead asks you to configure sparse checkout so you only download the `services/billing` directory. You run `git sparse-checkout init --cone` and then `git sparse-checkout set services/billing`. Later, you run `git merge main` to get the latest updates. Will this merge process updates to the `services/auth` directory even though you cannot see it?</summary>
+
 Yes, the merge operation will successfully process and record the updates to the `services/auth` directory. Sparse checkout is purely a working tree optimization; it only hides files from your local disk view to save space and index time. The underlying `.git` database still downloads and tracks the full history and state of the entire repository during fetch and merge operations. Therefore, your local repository remains perfectly in sync with the remote, and you will not inadvertently revert or ignore changes made by other teams in directories outside your sparse cone.
 </details>
 
 <details>
 <summary>Question 4: You need to include an open-source Helm chart repository into your internal platform repository. You want other engineers to get the files automatically when they clone, without having to run any extra commands. Which tool should you use, Submodules or Subtrees, and why?</summary>
+
 You should use Git Subtrees for this scenario because it physically merges the external files into your repository's tree and history. When other engineers execute a standard `git clone`, they will receive all the Helm chart files immediately alongside your internal code. If you had chosen Submodules instead, they would pull down an empty directory and would be forced to run the `git submodule update` command to actually retrieve the chart data. Subtrees provide a much smoother developer experience when the goal is seamless, out-of-the-box consumption of shared dependencies.
 </details>
 
 <details>
 <summary>Question 5: A developer complains that their local repository is extremely sluggish. `git status` takes several seconds, and their IDE is freezing. They have never configured any advanced Git features. What two commands should you instruct them to run to optimize their local database?</summary>
+
 You should instruct them to run `git gc` and `git commit-graph write --reachable`. The `git gc` command will garbage collect loose objects and compress them efficiently into packfiles, which reduces the number of file handles the OS needs to open and saves disk space. The `git commit-graph write --reachable` command generates an optimized binary cache of the commit history structure, drastically accelerating history traversal commands. Alternatively, they could enable background optimization by running `git maintenance start`, which schedules these critical maintenance tasks to run automatically without manual intervention.
 </details>
 
 <details>
 <summary>Question 6: You correctly configured Git LFS to track `*.iso` files, committed the `.gitattributes` file, and committed a 5GB Ubuntu image. When you push to your corporate Git server, it rejects the push with an HTTP 413 "Payload Too Large" error. What is the most likely architectural cause of this failure?</summary>
+
 The most likely cause is that a reverse proxy or load balancer (like Nginx or HAProxy) sitting in front of the Git LFS server is restricting the maximum client body size. Even though Git LFS is specifically designed to handle massive binary objects, the actual data transfer still occurs via standard HTTP API calls. These API requests must pass through the corporate network infrastructure, which often has default upload limits configured for standard web traffic. You will need to work with the infrastructure team to increase the `client_max_body_size` or equivalent setting on the proxy handling the LFS route.
 </details>
 
@@ -451,6 +457,7 @@ git commit -m "Initial massive monorepo commit"
 ```bash
 ls services/
 ```
+
 You should see `service-1` through `service-20`.
 </details>
 
@@ -460,6 +467,7 @@ You should see `service-1` through `service-20`.
 ```bash
 git sparse-checkout init --cone
 ```
+
 Immediately after running this, if you type `ls`, you will likely only see files at the root of the repository. The `services` directory will disappear from your working tree. This happens because initializing sparse checkout in cone mode defaults to only including the root directory files, hiding everything else until explicitly requested.
 </details>
 
@@ -469,6 +477,7 @@ Immediately after running this, if you type `ls`, you will likely only see files
 ```bash
 git sparse-checkout set services/service-4 services/service-12
 ```
+
 This tells Git to construct a cone that explicitly includes those two directories, signaling that you want them populated in your working tree.
 </details>
 
@@ -478,6 +487,7 @@ This tells Git to construct a cone that explicitly includes those two directorie
 ```bash
 ls services/
 ```
+
 You should now ONLY see `service-4` and `service-12`. The other 18 service directories remain hidden from your local disk, fulfilling the prediction that sparse checkout isolates your view to exactly the cones you defined, saving space and index time.
 </details>
 
@@ -491,6 +501,7 @@ git lfs install
 # Track tarballs
 git lfs track "*.tgz"
 ```
+
 This command creates or updates a `.gitattributes` file in the root of your repository with the LFS tracking definition.
 </details>
 
@@ -502,6 +513,7 @@ This command creates or updates a `.gitattributes` file in the root of your repo
 git add .gitattributes
 git commit -m "build: configure LFS tracking for helm chart tarballs"
 ```
+
 </details>
 
 **Success Criteria:**
