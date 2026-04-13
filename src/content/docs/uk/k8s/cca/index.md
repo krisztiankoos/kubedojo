@@ -1,164 +1,247 @@
 ---
-title: "CCA — Сертифікований спеціаліст із хмарних технологій (Cilium)"
+title: "CCA — Cilium Certified Associate"
 sidebar:
-  order: 1
+  order: 0
   label: "CCA"
+slug: uk/k8s/cca
+en_commit: "47bf257c3ec7632099185c630faf64d73e48caea"
+en_file: "src/content/docs/k8s/cca/index.md"
 ---
-> **Іспит із множинним вибором** | 90 хвилин | Прохідний бал: 75% | $250 USD | **Сертифікація CNCF**
+> **Іспит з вибором варіантів відповіді** | 90 хвилин | Прохідний бал: 66% | $250 USD | **Запущено у 2024 році**
 
 ## Огляд
 
-CCA (Cilium Certified Associate) підтверджує знання мереж, безпеки та спостережуваності на базі Cilium. Це **теоретичний іспит** — питання з множинним вибором, які перевіряють ваше розуміння того, як eBPF змінює ландшафт хмарних технологій через Cilium.
+CCA (Cilium Certified Associate) підтверджує фундаментальні знання про Cilium, мережеві можливості на базі eBPF, мережеві політики, спостережуваність (observability) та підключення між кластерами. Це **теоретичний іспит** із питаннями з вибором варіантів відповіді — без практичних завдань, проте глибоке розуміння концепцій Cilium є критично важливим.
 
-**KubeDojo охоплює ~90% тем CCA** через модулі мереж, безпеки та eBPF, плюс один спеціалізований модуль CCA, що охоплює специфічні особливості архітектури Cilium та Hubble.
+**KubeDojo покриває ~90%+ тем CCA** через наші існуючі модулі інструментарію Platform Engineering, а також спеціалізований просунутий модуль Cilium. На цій сторінці наведено відповідність доменів CCA існуючим модулям.
 
-> **Cilium є стандартом де-факто для мереж на базі eBPF.** Це один із найбільш динамічних проєктів CNCF, який використовується Google (GKE), Amazon (EKS) та Azure (AKS) як мережевий рівень наступного покоління. CCA підтверджує ваше володіння найсучаснішим стеком мереж Kubernetes.
-
----
-
-## Модулі, специфічні для CCA
-
-Цей модуль фокусується на глибині архітектури Cilium, необхідній для іспиту:
-
-| # | Модуль | Тема | Охоплені домени |
-|---|--------|-------|-----------------|
-| 1 | [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Архітектура eBPF, режими інкапсуляції vs. Direct Routing, Hubble Relay, ClusterMesh, політики L7 | Домени 1-5 |
+> **Зараз Cilium є стандартним CNI** для GKE, EKS та AKS. Розуміння Cilium — це не лише підготовка до іспиту, а й базова навичка для будь-якого інженера Kubernetes.
 
 ---
 
 ## Домени іспиту
 
-| Домен | Вага | Охоплення в KubeDojo |
-|--------|--------|-------------------|
-| Архітектура та eBPF | 20% | Відмінне ([Networking Toolkit 1.1](/uk/cloud/aws-essentials/module-1.1-iam/)) |
-| Мережеві концепції | 25% | Відмінне ([Networking 1.1](../../platform/disciplines/reliability-security/networking/module-1.1-cni-architecture/)) |
-| Безпека та політики | 25% | Відмінне ([Networking 1.2](../../platform/disciplines/reliability-security/networking/module-1.2-network-policies/)) |
-| Спостережуваність (Hubble) | 15% | Відмінне ([Observability Toolkit 1.7](../../platform/toolkits/observability-intelligence/observability/module-1.7-hubble/)) |
-| Мультикластер та Service Mesh | 15% | Відмінне ([Networking 1.5](../../platform/disciplines/reliability-security/networking/module-1.5-multi-cluster-networking/)) |
+| Домен | Вага | Покриття у KubeDojo | Статус |
+|-------|------|---------------------|--------|
+| Architecture | 20% | Часткове — поглиблено у Модулі 1.1 | Покрито |
+| Network Policy | 18% | Часткове — поглиблено у Модулі 1.1 | Покрито |
+| Service Mesh | 16% | Добре (Gateway API розглянуто у Модулі 1.1) | Покрито |
+| Observability | 10% | Добре (модуль Hubble) | Покрито |
+| Installation & Configuration | 10% | Часткове — поглиблено у Модулі 1.1 | Покрито |
+| Cluster Mesh | 10% | ПРОГАЛИНА — покрито у Модулі 1.1 | Покрито |
+| eBPF | 10% | Добре (кілька існуючих модулів) | Покрито |
+| BGP & External Networking | 6% | ПРОГАЛИНА — покрито у Модулі 1.1 | Покрито |
 
 ---
 
-## Домен 1: Архітектура та eBPF (20%)
+## Домен 1: Architecture (20%)
 
 ### Компетенції
-- Розуміння основ eBPF (програми, мапи, гачки)
-- Переваги Cilium над традиційними рішеннями на базі iptables
-- Компоненти Cilium (Agent, Operator, CNI plugin)
-- Життєвий цикл пакету в Cilium
+- **Розуміти** архітектуру компонентів Cilium (agent, operator, Hubble, relay)
+- **Знати**, як Cilium інтегрується з ядром Linux через eBPF
+- **Розуміти** безпеку на основі ідентифікаторів та її відмінність від безпеки на основі IP
+- **Вивчити** режими IPAM та варіанти шляху даних (data path)
 
-### Шлях навчання в KubeDojo
+### Навчальний шлях KubeDojo
 
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Networking Toolkit 1.1](/uk/cloud/aws-essentials/module-1.1-iam/) | Що таке eBPF та Cilium? Архітектура | Пряма |
-| [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Технічні деталі мап eBPF та обробки пакетів | Пряма |
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/) | Огляд Cilium, основи eBPF, схема архітектури, безпека на основі ідентифікаторів | Пряма |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Глибоке занурення в Agent, Operator, Hubble, режими IPAM (cluster-pool, kubernetes, multi-pool) | Пряма |
+| [eBPF Foundations](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-2-enter-ebpf-programming-the-unprogrammable) | eBPF verifier, типи програм, карти (maps) | Пряма |
 
 ---
 
-## Домен 2: Мережеві концепції (25%)
+## Домен 2: Network Policy (18%)
 
 ### Компетенції
-- Режими мережі: VXLAN (Overlay) vs. Native Routing (BGP)
-- IP Address Management (IPAM) у Cilium
-- Балансування навантаження на рівні вузла (XDP)
-- Інтеграція з Ingress та Gateway API
+- **Написати** CiliumNetworkPolicy та CiliumClusterwideNetworkPolicy
+- **Розуміти** застосування політики на рівнях L3/L4 та L7 (з підтримкою HTTP)
+- **Порівняти** моделі політик на основі ідентифікаторів та на основі IP
+- **Розуміти** режими застосування політик (default, always, never)
+- **Створити** політики вихідного трафіку (egress) на основі DNS (FQDN)
 
-### Шлях навчання в KubeDojo
+### Навчальний шлях KubeDojo
 
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Мережі 1.1](../../platform/disciplines/reliability-security/networking/module-1.1-cni-architecture/) | Основи CNI та маршрутизації | Пряма |
-| [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Конфігурація VXLAN та Direct Routing | Пряма |
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-5-network-policies-from-basic-to-wow) | Стандартна NetworkPolicy, CiliumNetworkPolicy, правила L7, egress на основі DNS, загальнокластерні політики | Пряма |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Порівняння CiliumNetworkPolicy та K8s NetworkPolicy, режими застосування політик, правила L7 з підтримкою HTTP, політики на основі сутностей (entities) | Пряма |
+| [CKS Network Policies](../cks/) | Стандартна K8s NetworkPolicy (базові знання) | Допоміжна |
 
 ---
 
-## Домен 3: Безпека та політики (25%)
+## Домен 3: Service Mesh (16%)
 
 ### Компетенції
-- CiliumNetworkPolicy (CNP) та ClusterwideCNP (CCNP)
-- Політики на рівнях L3/L4 (IP/Port) та L7 (HTTP/DNS/Kafka)
-- Використання міток (Labels) та ідентичності (Identity-based security)
-- Шифрування трафіку: IPsec та WireGuard
+- **Розуміти** модель Service Mesh від Cilium без використання sidecar-контейнерів
+- **Знати** принципи інтеграції з Gateway API
+- **Налаштувати** mTLS у Cilium (ідентифікатори SPIFFE)
+- **Розуміти** балансування навантаження та управління трафіком
 
-### Шлях навчання в KubeDojo
+### Навчальний шлях KubeDojo
 
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Мережі 1.2](../../platform/disciplines/reliability-security/networking/module-1.2-network-policies/) | Політики Cilium та безпека L7 | Пряма |
-| [Security Tools 4.5](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | Tetragon — безпека виконання від творців Cilium | Контекст |
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Service Mesh Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.2-service-mesh/) | Паттерни Service Mesh, sidecar проти sidecar-free, Gateway API | Пряма |
+| [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-8-transparent-encryption-with-wireguard) | Шифрування WireGuard, заміна kube-proxy | Часткова |
+| [SPIFFE/SPIRE](../../platform/toolkits/security-quality/security-tools/module-4.8-spiffe-spire/) | Ідентифікація робочих навантажень, концепції mTLS | Допоміжна |
+
+> Конфігурація Gateway API для Cilium (HTTPRoute, GRPCRoute з Cilium як контролером Gateway) тепер розглядається у [Модулі 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/). Для глибшого вивчення дивіться [документацію Cilium Gateway API](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/).
 
 ---
 
-## Домен 4: Спостережуваність (15%)
+## Домен 4: Observability (10%)
 
 ### Компетенції
-- Архітектура Hubble (Relay, UI, CLI)
-- Метрики Hubble (метки, типи потоків)
-- Візуалізація топології мережі та виявлення проблем
-- Налагодження через `cilium-dbg` та `hubble observe`
+- **Використовувати** Hubble CLI для спостереження за потоками та фільтрації
+- **Розуміти** архітектуру Hubble Relay та UI
+- **Налаштувати** метрики Hubble для Prometheus
+- **Інтерпретувати** дані мережевих потоків для діагностики несправностей
 
-### Шлях навчання в KubeDojo
+### Навчальний шлях KubeDojo
 
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Observability 1.7](../../platform/toolkits/observability-intelligence/observability/module-1.7-hubble/) | Практична робота з Hubble | Пряма |
-| [Мережі 1.6](../../platform/disciplines/reliability-security/networking/module-1.6-troubleshooting/) | Налагодження мережі в K8s | Контекст |
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Hubble Toolkit](../../platform/toolkits/observability-intelligence/observability/module-1.7-hubble/) | Архітектура Hubble, використання CLI, фільтрація потоків, інтерфейс користувача (UI), метрики Prometheus, сценарії діагностики | Пряма |
+| [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-6-hubble-seeing-the-invisible) | Команди Hubble CLI, структура виводу, сценарії налагодження, конфігурація метрик | Пряма |
 
 ---
 
-## Домен 5: Мультикластер та Service Mesh (15%)
+## Домен 5: Installation & Configuration (10%)
 
 ### Компетенції
-- ClusterMesh: з'єднання незалежних кластерів
-- Cilium Service Mesh (режим Ambient, Ingress)
-- Глобальні сервіси та Load Balancing між кластерами
-- Інтеграція з Istio (Sidecar acceleration)
+- **Встановити** Cilium за допомогою Cilium CLI та Helm
+- **Налаштувати** заміну kube-proxy
+- **Перевірити** коректність встановлення за допомогою `cilium status` та `cilium connectivity test`
+- **Оновити** Cilium
 
-### Шлях навчання в KubeDojo
+### Навчальний шлях KubeDojo
 
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Мережі 1.5](../../platform/disciplines/reliability-security/networking/module-1.5-multi-cluster-networking/) | Мультикластерні мережі та ClusterMesh | Пряма |
-| [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Cilium як заміна Service Mesh | Пряма |
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#installation-your-first-cilium-cluster) | Встановлення через Cilium CLI, встановлення з Helm values, тест підключення | Пряма |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Глибоке занурення в Cilium CLI (install, status, connectivity test, config), встановлення через Helm | Пряма |
 
 ---
 
-## Стратегія підготовки
+## Домен 6: Cluster Mesh (10%)
+
+### Компетенції
+- **Розуміти** підключення між кластерами за допомогою Cluster Mesh
+- **Налаштувати** глобальні сервіси та афінність сервісів (service affinity)
+- **Розуміти** виявлення сервісів між кластерами
+- **Знати** вимоги та обмеження Cluster Mesh
+
+### Навчальний шлях KubeDojo
+
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Архітектура Cluster Mesh, глобальні сервіси, анотації афінності, виявлення сервісів у кількох кластерах, практичне налаштування | Пряма |
+
+> **Це була ПРОГАЛИНА** в нашому існуючому контенті. Модуль 1.1 забезпечує повне покриття цієї теми.
+
+---
+
+## Домен 7: eBPF (10%)
+
+### Компетенції
+- **Розуміти** основи eBPF (програми, карти, верифікатор)
+- **Знати**, як Cilium використовує eBPF для мережевої взаємодії, політик та спостережуваності
+- **Порівняти** eBPF та iptables для обробки пакетів
+- **Вивчити** основи XDP (eXpress Data Path)
+
+### Навчальний шлях KubeDojo
+
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-2-enter-ebpf-programming-the-unprogrammable) | Ментальна модель eBPF, верифікатор, порівняння потоків пакетів, програмування ядра | Пряма |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | eBPF у контексті архітектури Cilium, dataplane | Допоміжна |
+
+---
+
+## Домен 8: BGP & External Networking (6%)
+
+### Компетенції
+- **Розуміти** налаштування BGP-пірингу за допомогою CiliumBGPPeeringPolicy
+- **Анонсувати** CIDR Pod'ів та VIP-адреси Service зовнішнім маршрутизаторам
+- **Анонсувати** IP-адреси LoadBalancer
+- **Знати** базові концепції BGP (ASN, піринг, анонсування маршрутів)
+
+### Навчальний шлях KubeDojo
+
+| Модуль | Тема | Актуальність |
+|--------|------|--------------|
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | CiliumBGPPeeringPolicy, конфігурація ASN, анонсування маршрутів, інтеграція з LoadBalancer | Пряма |
+
+> **Це була ПРОГАЛИНА** в нашому існуючому контенті. Модуль 1.1 забезпечує повне покриття цієї теми.
+
+---
+
+## Стратегія навчання
 
 ```
 ШЛЯХ ПІДГОТОВКИ ДО CCA (рекомендований порядок)
 ══════════════════════════════════════════════════════════════
 
-Тиждень 1: eBPF та Основи (20%)
-├── Модуль Networking Toolkit 1.1 (Cilium Intro)
-├── Модуль "Глибоке занурення в Cilium" (eBPF & Maps)
-└── Практика: Встановіть Cilium, вивчіть статус через `cilium status`
+Тиждень 1: Основи (eBPF + Архітектура = 30%)
+├── Модуль Cilium Toolkit (повне прочитання)
+├── Модуль 1.1: Глибоке занурення в архітектуру
+├── Зосередитись на: ролях agent та operator, моделі ідентифікаторів, IPAM
+└── Лабораторна робота: Встановити Cilium у кластері kind, запустити тест підключення
 
-Тиждень 2: Мережа та Маршрутизація (25%)
-├── Практика: Перемикання між VXLAN та Direct Routing
-├── Вивчіть: Як Cilium замінює kube-proxy (Maglev, XDP)
-└── Огляд: IPAM режими у хмарних провайдерах
+Тиждень 2: Мережеві політики (18%)
+├── Cilium Toolkit: розділи про Network Policy
+├── Модуль 1.1: Режими застосування політик
+├── Практика написання YAML для CiliumNetworkPolicy
+└── Лабораторна робота: Правила "заборонити все за замовчуванням" + дозволяючі правила, політики L7 HTTP
 
-Тиждень 3: Безпека та Політики (25%)
-├── Практика: Напишіть CiliumNetworkPolicy для фільтрації DNS
-├── Реалізуйте L7 політику для обмеження HTTP методів
-└── Вивчіть: WireGuard шифрування між вузлами
+Тиждень 3: Service Mesh + Спостережуваність (26%)
+├── Модуль Service Mesh toolkit
+├── Модуль Hubble toolkit (повністю)
+├── Cilium Toolkit: розділи про Hubble
+└── Лабораторна робота: Hubble observe з --verdict DROPPED, метрики Prometheus
 
-Тиждень 4: Hubble та ClusterMesh (15% + 15%)
-├── Модуль Observability 1.7 (Hubble)
-├── Практика: Налаштуйте ClusterMesh між двома кластерами
-└── Огляд: `hubble observe` для дебагу пакетів
+Тиждень 4: Cluster Mesh + BGP + Повторення (16%)
+├── Модуль 1.1: розділ Cluster Mesh
+├── Модуль 1.1: розділ BGP
+├── Повторення всіх контрольних запитань
+└── Практика: Наскрізні сценарії діагностики несправностей
 ```
 
 ---
 
-## Поради для іспиту
+## Поради до іспиту
 
-- **Identity-based Security** — Розумійте, чому Cilium використовує числові ідентифікатори замість IP-адрес для політик (масштабованість!).
-- **eBPF Maps** — Знайте, що мапи є основним механізмом передачі даних між ядром та Cilium agent.
-- **CLI Команди** — Запам'ятайте різницю між `cilium status`, `cilium connectivity test` та `hubble observe`.
-- **L7 Visibility** — Hubble бачить HTTP шляхи та DNS запити тільки якщо застосована відповідна політика L7.
-- **ClusterMesh** — Знайте вимоги для ClusterMesh (непересічні CIDR, доступ до etcd або kvstore).
+- **Це теоретичний іспит** — без роботи в терміналі, але концептуальна глибина є ключовою.
+- **Досконало знайте архітектуру** — який компонент за що відповідає, де він запускається, скільки екземплярів.
+- **CiliumNetworkPolicy проти K8s NetworkPolicy** — чітко розумійте, що саме додає Cilium (L7, FQDN, сутності, загальнокластерні політики).
+- **Модель ідентифікаторів** — на іспиті часто зустрічаються питання про те, чому безпека на основі ідентифікаторів краща за безпека на основі IP.
+- **Прапорці Hubble CLI** — знайте загальні фільтри (`--verdict`, `--from-pod`, `--to-pod`, `--protocol`).
+- **Cluster Mesh** — розумійте вимоги (спільний CA, унікальні CIDR Pod'ів, зв'язність між кластерами).
+- **BGP** — знайте, що робить CiliumBGPPeeringPolicy і коли її використовувати (анонсування IP-адрес LoadBalancer).
+- **Режими застосування політик** — `default`, `always`, `never` та умови застосування кожного з них.
+
+---
+
+## Аналіз прогалин
+
+| Тема | Статус | Примітки |
+|------|--------|----------|
+| Cilium Gateway API (HTTPRoute, GRPCRoute) | Покрито | Розглянуто у [Модулі 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) разом із модулем Service Mesh |
+| Cilium Bandwidth Manager | Покрито | Розглянуто у [Модулі 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/); специфічна тема, низька вага на іспиті |
+| Cilium Egress Gateway | Покрито | Розглянуто у [Модулі 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/); просунута функція, навряд чи буде активно тестуватися |
+| CiliumL2AnnouncementPolicy | Покрито | Розглянуто у [Модулі 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/); анонсування на рівні L2, рідко зустрічається на іспиті |
+
+Існуючі модулі інструментарію разом із Модулем 1.1 забезпечують всебічну підготовку до CCA.
+
+---
+
+## Індекс модулів
+
+| # | Модуль | Теми | Складність |
+|---|--------|------|------------|
+| 1 | [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Глибина архітектури, CiliumNetworkPolicy, Cluster Mesh, BGP, Cilium CLI | `[COMPLEX]` |
 
 ---
 
@@ -168,15 +251,19 @@ CCA (Cilium Certified Associate) підтверджує знання мереж,
 ШЛЯХ СЕРТИФІКАЦІЇ
 ══════════════════════════════════════════════════════════════
 
-Рівень Associate:
-├── KCNA (Cloud Native Associate) — Основи K8s
-├── KCSA (Security Associate) — Основи безпеки
-└── CCA (Cilium Associate) ← ВИ ТУТ
+Початковий рівень:
+├── KCNA (Cloud Native Associate) — основи K8s
+├── KCSA (Security Associate) — основи безпеки
+└── CCA (Cilium Certified Associate) <-- ВИ ТУТ
 
-Рівень Professional:
-├── CKA (K8s Administrator) — Мережі є великою частиною
-├── CKS (K8s Security Specialist) — Політики Cilium допомагають у CKS
-└── CNPE (Platform Engineer) — eBPF є ядром сучасних платформ
+Професійний рівень:
+├── CKA (K8s Administrator) — операції з кластером
+├── CKAD (K8s Developer) — розгортання застосунків
+├── CKS (K8s Security Specialist) — зміцнення безпеки
+└── CNPE (Platform Engineer) — інженерія платформ
+
+Спеціаліст:
+└── CKNE (K8s Network Engineer) — просунуті мережі (поглиблено охоплює Cilium)
 ```
 
-CCA — це ідеальний вибір для тих, хто хоче бути на передовій **Cloud-Native Networking**.
+CCA добре поєднується з KCNA (загальні знання K8s) та KCSA (основи безпеки). Якщо ви плануєте отримати CKNE пізніше, CCA дасть вам потужний старт у частині, що стосується Cilium.

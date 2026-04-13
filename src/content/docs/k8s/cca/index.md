@@ -20,14 +20,14 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 
 | Domain | Weight | KubeDojo Coverage | Status |
 |--------|--------|-------------------|--------|
-| Architecture | 20% | Partial -- deepened in Module 1 | Covered |
-| Network Policy | 18% | Partial -- deepened in Module 1 | Covered |
-| Service Mesh | 16% | Good (Gateway API covered in Module 1) | Covered |
+| Architecture | 20% | Partial -- deepened in Module 1.1 | Covered |
+| Network Policy | 18% | Partial -- deepened in Module 1.1 | Covered |
+| Service Mesh | 16% | Good (Gateway API covered in Module 1.1) | Covered |
 | Observability | 10% | Good (Hubble module) | Covered |
-| Installation & Configuration | 10% | Partial -- deepened in Module 1 | Covered |
-| Cluster Mesh | 10% | GAP -- covered in Module 1 | Covered |
+| Installation & Configuration | 10% | Partial -- deepened in Module 1.1 | Covered |
+| Cluster Mesh | 10% | GAP -- covered in Module 1.1 | Covered |
 | eBPF | 10% | Good (multiple existing modules) | Covered |
-| BGP & External Networking | 6% | GAP -- covered in Module 1 | Covered |
+| BGP & External Networking | 6% | GAP -- covered in Module 1.1 | Covered |
 
 ---
 
@@ -44,7 +44,7 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/) | Cilium overview, eBPF foundations, architecture diagram, identity-based security | Direct |
-| [CCA Module 1](module-1.1-advanced-cilium/) | Agent, Operator, Hubble deep dive, IPAM modes (cluster-pool, kubernetes, multi-pool) | Direct |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Agent, Operator, Hubble deep dive, IPAM modes (cluster-pool, kubernetes, multi-pool) | Direct |
 | [eBPF Foundations](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-2-enter-ebpf-programming-the-unprogrammable) | eBPF verifier, program types, maps | Direct |
 
 ---
@@ -63,7 +63,7 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-5-network-policies-from-basic-to-wow) | Standard NetworkPolicy, CiliumNetworkPolicy, L7 rules, DNS-based egress, cluster-wide policies | Direct |
-| [CCA Module 1](module-1.1-advanced-cilium/) | CiliumNetworkPolicy vs K8s NetworkPolicy comparison, policy enforcement modes, L7 HTTP-aware rules, entity-based policies | Direct |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | CiliumNetworkPolicy vs K8s NetworkPolicy comparison, policy enforcement modes, L7 HTTP-aware rules, entity-based policies | Direct |
 | [CKS Network Policies](../cks/) | Standard K8s NetworkPolicy (baseline knowledge) | Supporting |
 
 ---
@@ -84,7 +84,7 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 | [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-8-transparent-encryption-with-wireguard) | WireGuard encryption, kube-proxy replacement | Partial |
 | [SPIFFE/SPIRE](../../platform/toolkits/security-quality/security-tools/module-4.8-spiffe-spire/) | Workload identity, mTLS concepts | Supporting |
 
-> Cilium-specific Gateway API configuration (HTTPRoute, GRPCRoute with Cilium as the Gateway controller) is now covered in [CCA Module 1](module-1.1-advanced-cilium/). For additional depth, see the [Cilium Gateway API docs](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/).
+> Cilium-specific Gateway API configuration (HTTPRoute, GRPCRoute with Cilium as the Gateway controller) is now covered in [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/). For additional depth, see the [Cilium Gateway API docs](https://docs.cilium.io/en/stable/network/servicemesh/gateway-api/).
 
 ---
 
@@ -118,7 +118,7 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#installation-your-first-cilium-cluster) | Cilium CLI installation, install with Helm values, connectivity test | Direct |
-| [CCA Module 1](module-1.1-advanced-cilium/) | Cilium CLI deep dive (install, status, connectivity test, config), Helm-based install | Direct |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Cilium CLI deep dive (install, status, connectivity test, config), Helm-based install | Direct |
 
 ---
 
@@ -134,9 +134,9 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [CCA Module 1](module-1.1-advanced-cilium/) | Cluster Mesh architecture, global services, affinity annotations, multi-cluster service discovery, hands-on setup | Direct |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Cluster Mesh architecture, global services, affinity annotations, multi-cluster service discovery, hands-on setup | Direct |
 
-> **This was a GAP** in our existing content. Module 1 provides full coverage.
+> **This was a GAP** in our existing content. Module 1.1 provides full coverage.
 
 ---
 
@@ -153,7 +153,7 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 | Module | Topic | Relevance |
 |--------|-------|-----------|
 | [Cilium Toolkit](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/#part-2-enter-ebpf-programming-the-unprogrammable) | eBPF mental model, verifier, packet flow comparison, kernel programming | Direct |
-| [CCA Module 1](module-1.1-advanced-cilium/) | eBPF in the context of Cilium architecture, dataplane | Supporting |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | eBPF in the context of Cilium architecture, dataplane | Supporting |
 
 ---
 
@@ -169,9 +169,9 @@ The CCA (Cilium Certified Associate) validates foundational knowledge of Cilium,
 
 | Module | Topic | Relevance |
 |--------|-------|-----------|
-| [CCA Module 1](module-1.1-advanced-cilium/) | CiliumBGPPeeringPolicy, ASN configuration, route advertisement, LoadBalancer integration | Direct |
+| [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | CiliumBGPPeeringPolicy, ASN configuration, route advertisement, LoadBalancer integration | Direct |
 
-> **This was a GAP** in our existing content. Module 1 provides full coverage.
+> **This was a GAP** in our existing content. Module 1.1 provides full coverage.
 
 ---
 
@@ -183,13 +183,13 @@ CCA PREPARATION PATH (recommended order)
 
 Week 1: Foundations (eBPF + Architecture = 30%)
 ├── Cilium Toolkit module (full read-through)
-├── CCA Module 1: Architecture deep dive
+├── Module 1.1: Architecture deep dive
 ├── Focus on: agent vs operator roles, identity model, IPAM
 └── Lab: Install Cilium on kind cluster, run connectivity test
 
 Week 2: Network Policy (18%)
 ├── Cilium Toolkit: Network Policy sections
-├── CCA Module 1: Policy enforcement modes
+├── Module 1.1: Policy enforcement modes
 ├── Practice writing CiliumNetworkPolicy YAML
 └── Lab: Default deny + allow rules, L7 HTTP policies
 
@@ -200,8 +200,8 @@ Week 3: Service Mesh + Observability (26%)
 └── Lab: Hubble observe with --verdict DROPPED, Prometheus metrics
 
 Week 4: Cluster Mesh + BGP + Review (16%)
-├── CCA Module 1: Cluster Mesh section
-├── CCA Module 1: BGP section
+├── Module 1.1: Cluster Mesh section
+├── Module 1.1: BGP section
 ├── Review all quiz questions
 └── Practice: End-to-end troubleshooting scenarios
 ```
@@ -225,12 +225,12 @@ Week 4: Cluster Mesh + BGP + Review (16%)
 
 | Topic | Status | Notes |
 |-------|--------|-------|
-| Cilium Gateway API (HTTPRoute, GRPCRoute) | Covered | Covered in [CCA Module 1](module-1.1-advanced-cilium/) alongside the Service Mesh module |
-| Cilium Bandwidth Manager | Covered | Covered in [CCA Module 1](module-1.1-advanced-cilium/); niche topic, low exam weight |
-| Cilium Egress Gateway | Covered | Covered in [CCA Module 1](module-1.1-advanced-cilium/); advanced feature, unlikely to be heavily tested |
-| CiliumL2AnnouncementPolicy | Covered | Covered in [CCA Module 1](module-1.1-advanced-cilium/); Layer 2 advertisement, rare in exam |
+| Cilium Gateway API (HTTPRoute, GRPCRoute) | Covered | Covered in [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) alongside the Service Mesh module |
+| Cilium Bandwidth Manager | Covered | Covered in [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/); niche topic, low exam weight |
+| Cilium Egress Gateway | Covered | Covered in [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/); advanced feature, unlikely to be heavily tested |
+| CiliumL2AnnouncementPolicy | Covered | Covered in [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/); Layer 2 advertisement, rare in exam |
 
-The existing toolkit modules plus CCA Module 1 provide comprehensive CCA preparation.
+The existing toolkit modules plus Module 1.1 provide comprehensive CCA preparation.
 
 ---
 
@@ -238,7 +238,7 @@ The existing toolkit modules plus CCA Module 1 provide comprehensive CCA prepara
 
 | # | Module | Topics | Complexity |
 |---|--------|--------|------------|
-| 1 | [Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Architecture depth, CiliumNetworkPolicy, Cluster Mesh, BGP, Cilium CLI | `[COMPLEX]` |
+| 1 | [Module 1.1: Advanced Cilium for CCA](module-1.1-advanced-cilium/) | Architecture depth, CiliumNetworkPolicy, Cluster Mesh, BGP, Cilium CLI | `[COMPLEX]` |
 
 ---
 
