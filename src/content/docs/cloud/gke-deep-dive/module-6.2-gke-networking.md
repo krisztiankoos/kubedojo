@@ -35,26 +35,29 @@ Every modern GKE cluster should be VPC-native. This is the default since GKE 1.2
 
 In a VPC-native cluster, each node receives a **primary IP** from the subnet and a **secondary IP range** (alias range) for its pods. This means pods get IP addresses that are routable within the VPC---no NAT, no overlay network.
 
-```text
-  VPC: 10.0.0.0/16
-  ┌────────────────────────────────────────────────────────┐
-  │                                                        │
-  │  Subnet: 10.0.0.0/24 (Node IPs)                      │
-  │  ┌─────────────────┐  ┌─────────────────┐            │
-  │  │ Node A           │  │ Node B           │            │
-  │  │ IP: 10.0.0.2     │  │ IP: 10.0.0.3     │            │
-  │  │                   │  │                   │            │
-  │  │ Alias: 10.4.0.0  │  │ Alias: 10.4.1.0  │            │
-  │  │   /24 (pods)      │  │   /24 (pods)      │            │
-  │  │ ┌────┐ ┌────┐    │  │ ┌────┐ ┌────┐    │            │
-  │  │ │Pod │ │Pod │    │  │ │Pod │ │Pod │    │            │
-  │  │ │.2  │ │.3  │    │  │ │.5  │ │.8  │    │            │
-  │  │ └────┘ └────┘    │  │ └────┘ └────┘    │            │
-  │  └─────────────────┘  └─────────────────┘            │
-  │                                                        │
-  │  Secondary Range "pods": 10.4.0.0/14                  │
-  │  Secondary Range "services": 10.8.0.0/20              │
-  └────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "VPC: 10.0.0.0/16"
+        subgraph "Subnet: 10.0.0.0/24 (Node IPs)"
+            direction LR
+            subgraph "Node A (IP: 10.0.0.2)"
+                direction TB
+                subgraph "Alias: 10.4.0.0/24 (pods)"
+                    PodA1["Pod .2"]
+                    PodA2["Pod .3"]
+                end
+            end
+            subgraph "Node B (IP: 10.0.0.3)"
+                direction TB
+                subgraph "Alias: 10.4.1.0/24 (pods)"
+                    PodB1["Pod .5"]
+                    PodB2["Pod .8"]
+                end
+            end
+        end
+        SecRangePods["Secondary Range 'pods': 10.4.0.0/14"]
+        SecRangeSvcs["Secondary Range 'services': 10.8.0.0/20"]
+    end
 ```
 
 ### Why This Matters for Networking
@@ -86,19 +89,16 @@ gcloud container clusters describe my-cluster \
 
 Poor IP planning is the number one networking regret for teams that scale. You cannot resize secondary ranges after cluster creation.
 
-```text
-  Planning Guide:
-  ┌──────────────────────────────────────────────────────┐
-  │  Each node gets a /24 from the pod range by default  │
-  │  = 256 IPs per node (110 pods max + overhead)        │
-  │                                                      │
-  │  For 100 nodes: you need 100 x /24 = /17 minimum    │
-  │  For 500 nodes: you need 500 x /24 = /15 minimum    │
-  │                                                      │
-  │  Services range:                                     │
-  │  /20 = 4,096 services (usually sufficient)           │
-  │  /16 = 65,536 services (very large clusters)         │
-  └──────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Planning Guide"
+        direction TB
+        NodeIPs["Each node gets a /24 from the pod range by default<br>= 256 IPs per node (110 pods max + overhead)"]
+        Scale["For 100 nodes: you need 100 x /24 = /17 minimum<br>For 500 nodes: you need 500 x /24 = /15 minimum"]
+        Svcs["Services range:<br>/20 = 4,096 services (usually sufficient)<br>/16 = 65,536 services (very large clusters)"]
+        NodeIPs --> Scale
+        Scale --> Svcs
+    end
 ```
 
 ```bash
@@ -128,34 +128,37 @@ Dataplane V2 is GKE's modern networking stack, built on **Cilium** and **eBPF**.
 
 Traditional Kubernetes networking uses iptables rules for service routing and kube-proxy for load balancing. This works, but it has fundamental limitations:
 
-```text
-  Legacy (iptables/kube-proxy):
-  ┌─────────────────────────────────────────────────────┐
-  │  Packet arrives at node                             │
-  │       │                                             │
-  │       ▼                                             │
-  │  iptables chain (linear scan)                       │
-  │  Rule 1: no match                                   │
-  │  Rule 2: no match                                   │
-  │  Rule 3: no match                                   │
-  │  ...                                                │
-  │  Rule 5,000: MATCH → DNAT to pod IP                │
-  │       │                                             │
-  │  O(n) performance: more services = slower routing   │
-  └─────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Legacy (iptables/kube-proxy)"
+        direction TB
+        L1["Packet arrives at node"]
+        L2["iptables chain (linear scan)"]
+        L3["Rule 1: no match"]
+        L4["Rule 2: no match"]
+        L5["Rule 3: no match"]
+        L6["..."]
+        L7["Rule 5,000: MATCH → DNAT to pod IP"]
+        L8["O(n) performance: more services = slower routing"]
+        
+        L1 --> L2
+        L2 --> L3
+        L3 --> L4
+        L4 --> L5
+        L5 --> L6
+        L6 --> L7
+        L7 -.-> L8
+    end
 
-  Dataplane V2 (eBPF):
-  ┌─────────────────────────────────────────────────────┐
-  │  Packet arrives at node                             │
-  │       │                                             │
-  │       ▼                                             │
-  │  eBPF hash map lookup                               │
-  │  Key: {dest IP, dest port}                          │
-  │  Value: backend pod IP                              │
-  │       │                                             │
-  │  O(1) performance: constant time regardless of      │
-  │  number of services                                 │
-  └─────────────────────────────────────────────────────┘
+    subgraph "Dataplane V2 (eBPF)"
+        direction TB
+        D1["Packet arrives at node"]
+        D2["eBPF hash map lookup<br>Key: {dest IP, dest port}<br>Value: backend pod IP"]
+        D3["O(1) performance: constant time regardless of<br>number of services"]
+        
+        D1 --> D2
+        D2 -.-> D3
+    end
 ```
 
 ### Dataplane V2 Benefits
@@ -381,36 +384,24 @@ The Gateway API is a Kubernetes-native evolution of Ingress that provides richer
 
 > **Pause and predict**: In the Gateway API model, if the infrastructure team modifies the Gateway resource to restrict allowed namespaces, what happens to the existing HTTPRoutes in namespaces that are no longer allowed?
 
-```text
-  Ingress Model (flat):
-  ┌──────────────────────────────────────┐
-  │  Ingress Resource                    │
-  │  (mixes infra config + routing)      │
-  │                                      │
-  │  - TLS config (infra team concern)   │
-  │  - Host rules (app team concern)     │
-  │  - Path rules (app team concern)     │
-  │  - Backend refs (app team concern)   │
-  │                                      │
-  │  ONE resource, ONE owner = conflict  │
-  └──────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Ingress Model (flat)"
+        direction TB
+        I1["Ingress Resource<br>(mixes infra config + routing)<br><br>- TLS config (infra team concern)<br>- Host rules (app team concern)<br>- Path rules (app team concern)<br>- Backend refs (app team concern)"]
+        I2["ONE resource, ONE owner = conflict"]
+        I1 -.-> I2
+    end
 
-  Gateway API Model (layered):
-  ┌──────────────────────────────────────┐
-  │  GatewayClass (cluster admin)        │
-  │  "Which load balancer implementation"│
-  └──────────────┬───────────────────────┘
-                 │
-  ┌──────────────▼───────────────────────┐
-  │  Gateway (infra/platform team)       │
-  │  "Listener config, TLS, IP address"  │
-  └──────────────┬───────────────────────┘
-                 │
-  ┌──────────────▼───────────────────────┐
-  │  HTTPRoute (app team)                │
-  │  "Host matching, path routing,       │
-  │   headers, canary weights"           │
-  └──────────────────────────────────────┘
+    subgraph "Gateway API Model (layered)"
+        direction TB
+        G1["GatewayClass (cluster admin)<br>'Which load balancer implementation'"]
+        G2["Gateway (infra/platform team)<br>'Listener config, TLS, IP address'"]
+        G3["HTTPRoute (app team)<br>'Host matching, path routing,<br>headers, canary weights'"]
+        
+        G1 --> G2
+        G2 --> G3
+    end
 ```
 
 ### GKE Gateway Classes
@@ -630,29 +621,18 @@ gcloud container clusters create psc-cluster \
   --enable-ip-alias
 ```
 
-```text
-  Private Cluster with PSC:
-  ┌─────────────────────────────────────────────────────┐
-  │  Google-Managed VPC                                 │
-  │  ┌─────────────────────────────────────┐           │
-  │  │  GKE Control Plane                  │           │
-  │  │  (API Server, etcd, etc.)           │           │
-  │  └──────────────┬──────────────────────┘           │
-  │                 │ Private Service Connect           │
-  └─────────────────┼───────────────────────────────────┘
-                    │
-  ┌─────────────────▼───────────────────────────────────┐
-  │  Customer VPC                                       │
-  │  ┌──────────────────┐                              │
-  │  │  PSC Endpoint     │  ← Private IP in your VPC   │
-  │  │  10.0.5.2         │     for control plane access │
-  │  └──────────────────┘                              │
-  │                                                     │
-  │  ┌──────────────────┐                              │
-  │  │  GKE Nodes        │  ← No public IPs            │
-  │  │  10.0.0.0/24      │                              │
-  │  └──────────────────┘                              │
-  └─────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Google-Managed VPC"
+        CP["GKE Control Plane<br>(API Server, etcd, etc.)"]
+    end
+    
+    subgraph "Customer VPC"
+        PSC["PSC Endpoint<br>10.0.5.2<br>(Private IP for control plane access)"]
+        Nodes["GKE Nodes<br>10.0.0.0/24<br>(No public IPs)"]
+    end
+    
+    CP <-->|Private Service Connect| PSC
 ```
 
 ### Private Cluster Considerations
