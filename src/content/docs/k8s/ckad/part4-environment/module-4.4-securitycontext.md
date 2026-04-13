@@ -365,6 +365,7 @@ spec:
     command: ['sh', '-c', 'id && sleep 3600']
 EOF
 
+k wait --for=condition=ready pod/nonroot-pod --timeout=30s
 k logs nonroot-pod
 # Should show: uid=1000 gid=3000 groups=3000
 ```
@@ -392,6 +393,7 @@ spec:
     emptyDir: {}
 EOF
 
+k wait --for=condition=ready pod/fsgroup-pod --timeout=30s
 k logs fsgroup-pod
 # Files in /data owned by group 2000
 ```
@@ -412,13 +414,14 @@ spec:
       readOnlyRootFilesystem: true
 EOF
 
+k wait --for=condition=ready pod/readonly-pod --timeout=30s
 k logs readonly-pod
 # Should show: Cannot write!
 ```
 
 **Cleanup:**
 ```bash
-k delete pod nonroot-pod fsgroup-pod readonly-pod
+k delete pod nonroot-pod fsgroup-pod readonly-pod --force --grace-period=0
 ```
 
 ---
@@ -442,8 +445,9 @@ spec:
     command: ['sh', '-c', 'id && sleep 3600']
 EOF
 
+k wait --for=condition=ready pod/drill1 --timeout=30s
 k logs drill1
-k delete pod drill1
+k delete pod drill1 --force --grace-period=0
 ```
 
 ### Drill 2: Non-Root Enforcement (Target: 2 minutes)
@@ -464,8 +468,9 @@ spec:
     command: ['sleep', '3600']
 EOF
 
+k wait --for=condition=ready pod/drill2 --timeout=30s
 k get pod drill2
-k delete pod drill2
+k delete pod drill2 --force --grace-period=0
 ```
 
 ### Drill 3: Capabilities (Target: 3 minutes)
@@ -489,8 +494,9 @@ spec:
         - NET_BIND_SERVICE
 EOF
 
+k wait --for=condition=ready pod/drill3 --timeout=30s
 k exec drill3 -- cat /proc/1/status | grep Cap
-k delete pod drill3
+k delete pod drill3 --force --grace-period=0
 ```
 
 ### Drill 4: Read-Only with Temp (Target: 3 minutes)
@@ -516,8 +522,9 @@ spec:
     emptyDir: {}
 EOF
 
+k wait --for=condition=ready pod/drill4 --timeout=30s
 k logs drill4
-k delete pod drill4
+k delete pod drill4 --force --grace-period=0
 ```
 
 ### Drill 5: fsGroup Verification (Target: 3 minutes)
@@ -543,9 +550,10 @@ spec:
     emptyDir: {}
 EOF
 
+k wait --for=condition=ready pod/drill5 --timeout=30s
 k logs drill5
 # File should be owned by group 2000
-k delete pod drill5
+k delete pod drill5 --force --grace-period=0
 ```
 
 ### Drill 6: Complete Secure Pod (Target: 5 minutes)
@@ -580,9 +588,10 @@ spec:
     emptyDir: {}
 EOF
 
+k wait --for=condition=ready pod/drill6 --timeout=30s
 k logs drill6
 k get pod drill6 -o yaml | grep -A20 securityContext
-k delete pod drill6
+k delete pod drill6 --force --grace-period=0
 ```
 
 ---
