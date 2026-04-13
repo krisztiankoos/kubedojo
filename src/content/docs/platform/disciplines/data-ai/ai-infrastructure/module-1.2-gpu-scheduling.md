@@ -72,19 +72,14 @@ The cluster is **oversubscribed** (36 requests for 32 GPUs) while simultaneously
 
 Each sharing strategy trades off isolation for efficiency:
 
-```
-More Isolation ◄────────────────────────────────────────► More Efficiency
+```mermaid
+flowchart LR
+    A["<b>Whole GPU</b><br>1:1 mapping<br><br><i>Safest<br>Most waste</i>"]
+    B["<b>MIG</b><br>Hardware partition<br>isolated memory<br><br><i>Good<br>Medium waste</i>"]
+    C["<b>Time-Slicing</b><br>Software rotation<br>fair share<br><br><i>OK<br>Less waste</i>"]
+    D["<b>MPS</b><br>CUDA sharing<br>spatial overlap<br><br><i>Risky<br>Least waste</i>"]
 
-┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-│  Whole   │  │   MIG    │  │  Time-   │  │   MPS    │
-│  GPU     │  │          │  │  Slicing │  │          │
-│          │  │ Hardware  │  │ Software │  │  CUDA    │
-│ 1:1      │  │ partition │  │ rotation │  │ sharing  │
-│ mapping  │  │ isolated  │  │ fair     │  │ spatial  │
-│          │  │ memory    │  │ share    │  │ overlap  │
-└──────────┘  └──────────┘  └──────────┘  └──────────┘
-  Safest        Good           OK            Risky
-  Most waste    Medium waste   Less waste    Least waste
+    A --> B --> C --> D
 ```
 
 ---
@@ -246,14 +241,25 @@ spec:
 
 ## Strategy 2: GPU Time-Slicing
 
+> **Stop and think**: If time-slicing provides no memory isolation, what happens if one Jupyter notebook allocates 95% of the VRAM on a shared GPU?
+
 ### What Time-Slicing Is
 
 Time-slicing configures the NVIDIA device plugin to advertise **more GPU resources than physically exist**. Each container gets the full GPU for a time slice, then is preempted for the next container. It is essentially round-robin scheduling at the GPU driver level.
 
-```
-Time ───────────────────────────────────────────►
-GPU0: [Pod A][Pod B][Pod C][Pod A][Pod B][Pod C]...
-       10ms   10ms   10ms   10ms   10ms   10ms
+```mermaid
+gantt
+    title GPU Time-Slicing
+    dateFormat  X
+    axisFormat %s
+    
+    section GPU0
+    Pod A (10ms) :a1, 0, 1
+    Pod B (10ms) :b1, after a1, 1
+    Pod C (10ms) :c1, after b1, 1
+    Pod A (10ms) :a2, after c1, 1
+    Pod B (10ms) :b2, after a2, 1
+    Pod C (10ms) :c2, after b2, 1
 ```
 
 ### Key Characteristics
@@ -391,14 +397,26 @@ kubectl label node gpu-dev-01 nvidia.com/device-plugin.config=development
 
 ## Strategy 3: Multi-Process Service (MPS)
 
+> **Pause and predict**: Which workload type would benefit most from MPS over time-slicing?
+
 ### What MPS Is
 
 NVIDIA Multi-Process Service (MPS) allows multiple CUDA processes to **simultaneously** execute kernels on the same GPU. Unlike time-slicing (which round-robins entire contexts), MPS merges CUDA contexts into a single shared context, enabling true spatial sharing of the GPU's streaming multiprocessors.
 
-```
-Time-Slicing:          [A entire GPU][B entire GPU][A entire GPU]...
-MPS:                   [AAABBB][AABBBB][AAABBB][AABBBB]...
-                        ↑ Both A and B run simultaneously on different SMs
+```mermaid
+gantt
+    title Time-Slicing vs MPS
+    dateFormat X
+    axisFormat %s
+    
+    section Time-Slicing
+    Pod A (Entire GPU) :a1, 0, 10
+    Pod B (Entire GPU) :b1, after a1, 10
+    Pod A (Entire GPU) :a2, after b1, 10
+    
+    section MPS
+    Pod A (Shared SMs) :a3, 0, 30
+    Pod B (Shared SMs) :b2, 0, 30
 ```
 
 ### MPS vs Time-Slicing
@@ -456,24 +474,17 @@ Dynamic Resource Allocation (DRA) is a Kubernetes API (beta in 1.32) that reimag
 
 ### DRA Architecture
 
-```
-┌─────────────┐    ┌──────────────┐    ┌─────────────────┐
-│ ResourceClaim│    │ DeviceClass  │    │ ResourceSlice   │
-│             │    │              │    │ (advertised by   │
-│ "Give me a  │    │ "What GPU    │    │  DRA driver)     │
-│  GPU with   │──→ │  profiles    │──→ │                  │
-│  ≥40GB VRAM"│    │  are allowed"│    │ "Node X has 4    │
-│             │    │              │    │  A100-80GB GPUs"  │
-└─────────────┘    └──────────────┘    └─────────────────┘
-       │                                       │
-       └──────────────┐  ┌────────────────────┘
-                      ▼  ▼
-              ┌──────────────────┐
-              │    Scheduler     │
-              │ (matches claims  │
-              │  to available    │
-              │  resources)      │
-              └──────────────────┘
+```mermaid
+flowchart TD
+    RC["<b>ResourceClaim</b><br/>'Give me a GPU with ≥40GB VRAM'"]
+    DC["<b>DeviceClass</b><br/>'What GPU profiles are allowed'"]
+    RS["<b>ResourceSlice</b><br/>(advertised by DRA driver)<br/>'Node X has 4 A100-80GB GPUs'"]
+    Sched["<b>Scheduler</b><br/>(matches claims to available resources)"]
+
+    RC --> DC
+    DC --> RS
+    RC --> Sched
+    RS --> Sched
 ```
 
 ### DRA Example
@@ -541,17 +552,44 @@ DRA is the future of GPU scheduling in Kubernetes. As it matures, expect it to r
 
 Not all GPU-to-GPU connections are equal. In a multi-GPU node, the bandwidth between GPUs depends on the physical interconnect:
 
-```
-DGX A100 Topology:
-                    NVSwitch Fabric (600 GB/s per GPU)
-     ┌──────┬──────┬──────┬──────┬──────┬──────┬──────┐
-     │      │      │      │      │      │      │      │
-   GPU0   GPU1   GPU2   GPU3   GPU4   GPU5   GPU6   GPU7
-     │      │      │      │      │      │      │      │
-     └──┬───┘      └──┬───┘      └──┬───┘      └──┬───┘
-      PCIe           PCIe           PCIe           PCIe
-    Switch 0       Switch 1       Switch 2       Switch 3
-     16 GB/s        16 GB/s        16 GB/s        16 GB/s
+```mermaid
+flowchart TD
+    NVS["NVSwitch Fabric (600 GB/s per GPU)"]
+    
+    subgraph GPUs
+        direction LR
+        G0[GPU0]
+        G1[GPU1]
+        G2[GPU2]
+        G3[GPU3]
+        G4[GPU4]
+        G5[GPU5]
+        G6[GPU6]
+        G7[GPU7]
+    end
+
+    NVS --- G0
+    NVS --- G1
+    NVS --- G2
+    NVS --- G3
+    NVS --- G4
+    NVS --- G5
+    NVS --- G6
+    NVS --- G7
+
+    SW0["PCIe Switch 0 (16 GB/s)"]
+    SW1["PCIe Switch 1 (16 GB/s)"]
+    SW2["PCIe Switch 2 (16 GB/s)"]
+    SW3["PCIe Switch 3 (16 GB/s)"]
+
+    G0 --- SW0
+    G1 --- SW0
+    G2 --- SW1
+    G3 --- SW1
+    G4 --- SW2
+    G5 --- SW2
+    G6 --- SW3
+    G7 --- SW3
 ```
 
 For multi-GPU training, if two GPUs communicate over NVLink (600 GB/s), training runs ~30x faster than if they communicate over PCIe (16 GB/s). **Wrong GPU placement can slow training by an order of magnitude.**
@@ -696,85 +734,58 @@ Result: the same 4-GPU training job ran in 7.5 hours — slightly faster than ba
 ## Quiz: Check Your Understanding
 
 ### Question 1
-You have 10 A100-80GB GPUs and need to serve: 4 large training jobs (each needs 1 full GPU), 20 inference models (each needs ~10GB VRAM), and 30 Jupyter notebooks (each needs minimal GPU). How would you partition the fleet?
+Your company has 10 A100-80GB GPUs. The data science director demands support for: 4 critical, long-running training jobs that maximize GPU compute; 20 lightweight inference models that require strict latency guarantees and ~10GB VRAM each; and 30 interactive Jupyter notebooks used sporadically by interns. How would you partition this fleet to satisfy all constraints efficiently?
 
 <details>
 <summary>Show Answer</summary>
 
-One effective partitioning:
+You must tailor the partitioning strategy to the specific isolation and compute needs of each workload. First, dedicate 4 full GPUs to the 4 training jobs (no sharing), as training requires maximum compute and memory bandwidth without context-switching overhead.
 
-- **4 GPUs**: Full (no sharing) for training jobs — `nvidia.com/gpu: 1` each
-- **3 GPUs**: MIG 7x `1g.10gb` each = 21 MIG instances for inference models (20 needed, 1 spare)
-- **3 GPUs**: Time-slicing with `replicas: 10` each = 30 virtual GPUs for Jupyter notebooks
-
-This gives every workload appropriate resources:
-- Training gets full 80GB GPUs with no sharing overhead
-- Inference gets hardware-isolated 10GB MIG instances with guaranteed compute
-- Notebooks get time-sliced access (acceptable for interactive/bursty work)
-
-Total: 4 + 20 + 30 = 54 logical GPUs from 10 physical GPUs.
+Next, configure 3 GPUs with the MIG `1g.10gb` profile. This yields 21 hardware-isolated instances (7 per GPU), providing the 20 inference models with the strict latency guarantees and dedicated VRAM they require, with 1 spare instance. Finally, configure the remaining 3 GPUs with time-slicing set to `replicas: 10`. This creates 30 virtual GPUs for the interns' notebooks, which is acceptable since interactive work is bursty and tolerates the lack of memory isolation and occasional latency spikes.
 </details>
 
 ### Question 2
-What is the fundamental difference between MIG and time-slicing in terms of memory isolation?
+You are tasked with providing GPU access to two different groups: a data science team running exploratory Jupyter notebooks, and a production engineering team deploying latency-sensitive inference services. The data science team frequently writes unoptimized code that leaks memory. How would you provision GPUs for these two teams, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-**MIG** provides **hardware-level memory isolation**. Each MIG instance has its own dedicated memory controllers and VRAM partition. A process in one MIG instance physically cannot access memory belonging to another instance. An OOM in one instance does not affect others.
+For the production engineering team, you should use **MIG (Multi-Instance GPU)**. MIG provides hardware-level isolation for both compute and memory. This ensures their latency-sensitive inference services have guaranteed resources and are completely protected from other workloads on the same physical GPU.
 
-**Time-slicing** provides **no memory isolation**. All containers share the entire VRAM pool. If one container allocates too much VRAM, it causes an OOM that crashes all containers sharing that GPU. The driver rotates compute access, but memory is shared and unprotected.
-
-This is why MIG is preferred for production inference (isolation matters) while time-slicing is acceptable for development (convenience over safety).
+For the data science team, you should use **Time-Slicing** (or isolated full GPUs if budget allows). Time-slicing allows many notebooks to share a single GPU by rotating compute access. However, it provides zero memory isolation. Since the data science team frequently leaks memory, placing them on time-sliced GPUs means they will likely cause Out-Of-Memory (OOM) crashes that affect other notebooks sharing that specific GPU. By keeping them isolated from the production team, their memory leaks only impact their own exploratory environments, not the critical inference services.
 </details>
 
 ### Question 3
-Why does DRA represent a significant improvement over the Device Plugin API for GPUs?
+Your platform team currently relies on a fragile web of node selectors, taints, and labels to ensure specific Pods land on nodes with exactly 40GB of VRAM and NVLink support. How will transitioning to the Dynamic Resource Allocation (DRA) API change how your engineers request these GPUs?
 
 <details>
 <summary>Show Answer</summary>
 
-Three key improvements:
+Transitioning to DRA eliminates the need for node-level labeling hacks by moving device selection to the API level. Instead of requesting a generic `nvidia.com/gpu: 1` and hoping node selectors match the right hardware, engineers will create a `ResourceClaim` that specifies exactly what they need using structured attributes. 
 
-1. **Attribute-based selection**: Instead of requesting `nvidia.com/gpu: 1` (any GPU), DRA lets Pods express requirements like "a GPU with at least 40GB VRAM and MIG enabled." This eliminates the need for complex nodeSelector/nodeAffinity rules.
-
-2. **Native fractional allocation**: DRA can allocate portions of a device without relying on device-plugin-level hacks like time-slicing. The scheduler understands device capacity and can pack workloads optimally.
-
-3. **Topology awareness**: DRA integrates with the scheduler to understand device-to-device and device-to-CPU topology, enabling optimal placement for multi-device workloads without the separate Topology Manager.
+The claim can explicitly state requirements like "I need a GPU with >= 40GB VRAM and NVLink enabled." The Kubernetes scheduler, working with the DRA driver, natively understands these attributes and handles the complex topology and placement logic automatically. This abstracts the hardware details away from the Pod specification and allows the platform team to define robust `DeviceClass` policies, resulting in a cleaner and more reliable scheduling workflow.
 </details>
 
 ### Question 4
-On a DGX A100 with NVSwitch, you see `NV12` in `nvidia-smi topo -m` between all GPU pairs. On a cheaper 4-GPU server, you see `PIX` between some pairs and `SYS` between others. Why does this matter for a 4-GPU training job?
+Your team purchased a cheaper 4-GPU server to run distributed training. When running a 4-GPU data-parallel PyTorch job on this server, the training takes twice as long as it does on a cloud instance with identical GPUs. You run `nvidia-smi topo -m` and see `PIX` between some pairs and `SYS` between others. Why is the job running so slowly, and how can Kubernetes help fix this?
 
 <details>
 <summary>Show Answer</summary>
 
-The topology codes indicate interconnect performance:
+The job is running slowly because the GPUs are communicating across inefficient pathways. In data-parallel training, GPUs must constantly synchronize gradients using all-reduce operations. The `SYS` topology indicates that some GPUs are on completely different NUMA nodes, meaning their communication must cross the CPU socket at roughly 16 GB/s, which introduces massive latency. The `PIX` links are better (same PCIe switch) but still bottlenecked compared to NVLink.
 
-- **NV12** (NVSwitch): 600 GB/s bidirectional — the fastest possible connection
-- **PIX** (same PCIe switch): ~32 GB/s — adequate for small all-reduce
-- **SYS** (across NUMA nodes): ~16 GB/s and adds CPU socket crossing latency
-
-For a 4-GPU training job using data-parallel training, GPUs perform all-reduce operations after each mini-batch to synchronize gradients. If GPUs are connected via NVSwitch, this takes milliseconds. If connected via SYS, it can take 30-50x longer, becoming the bottleneck.
-
-On the cheaper server, the Topology Manager with `restricted` policy ensures all 4 GPUs are at least on the same NUMA node (PIX connections), avoiding the worst-case SYS links.
+Because the synchronization is only as fast as its slowest link, the `SYS` connections are crippling the entire training job. To fix this, you should enable the Kubernetes Topology Manager with a `restricted` or `single-numa-node` policy. This forces the scheduler to allocate GPUs that share the same NUMA node and PCIe complex (avoiding `SYS` links), drastically reducing the communication overhead and speeding up the training.
 </details>
 
 ### Question 5
-You configured time-slicing with `replicas: 8` on a T4 GPU (16GB VRAM). A user reports that their inference service runs fine alone but crashes with OOM when 6 other workloads are co-scheduled. What happened and how do you fix it?
+You configured time-slicing with `replicas: 8` on a T4 GPU (16GB VRAM) to save money. An engineer reports that their inference service runs perfectly when it is the only Pod on the node, but it crashes with an OOM (Out Of Memory) error during peak hours when 6 other team members are running workloads on the same GPU. Why did this happen, and what are two ways to fix it?
 
 <details>
 <summary>Show Answer</summary>
 
-**What happened**: Time-slicing shares VRAM without isolation. Each of the 7 workloads (user's service + 6 others) allocates VRAM independently. The total VRAM demand exceeds the physical 16GB, causing an OOM that crashes the user's process (and potentially others).
+This happened because time-slicing provides no memory isolation. Even though the GPU compute is time-sliced into 8 virtual pieces, all 8 workloads share the exact same 16GB VRAM pool. When the engineer's service ran alone, it had access to the full 16GB. However, during peak hours, the combined memory allocations of all 7 active workloads exceeded the 16GB physical limit, triggering an OOM crash that likely killed multiple processes.
 
-With 8 replicas, each workload can only safely use ~2GB VRAM (16GB / 8). If any workload exceeds this, the total overflows.
-
-**Fixes**:
-1. **Reduce replicas** to 4 (4GB per workload) — fewer but more useful slices
-2. **Set `CUDA_MEM_FRACTION`** environment variable in each Pod to limit per-process VRAM allocation (e.g., `0.12` for 12% of 16GB = ~1.9GB)
-3. **Switch to MPS** with explicit per-client memory limits
-4. **If available, use MIG** (not on T4 — MIG requires A100+), or upgrade to A100 and use MIG `1g.10gb` instances
+To fix this, you must limit how much memory each workload can allocate. One approach is to reduce the time-slicing `replicas` to 4, guaranteeing that if each workload uses up to 4GB, the VRAM won't overflow. Alternatively, you can have the engineers set framework-specific limits in their code (like `CUDA_MEM_FRACTION` in PyTorch or TensorFlow) to restrict each Pod to a safe percentage of the GPU's memory. Switching to MPS (Multi-Process Service) with explicit memory limits would also solve the problem.
 </details>
 
 ---
@@ -1018,3 +1029,4 @@ Continue to [Module 1.3: Distributed Training Infrastructure](../module-1.3-dist
 ---
 
 *"The fastest way to double your GPU fleet is to actually use the GPUs you already have."* — Overheard at a GPU cloud startup
+---
