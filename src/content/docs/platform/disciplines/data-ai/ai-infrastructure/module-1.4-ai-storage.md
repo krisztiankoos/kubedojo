@@ -53,20 +53,13 @@ There is a **1,000x gap** between GPU memory speed and network storage speed. Br
 
 Every training step involves IO at multiple stages:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Training Loop                           │
-│                                                               │
-│  1. Load batch          2. Transfer to GPU    3. Compute     │
-│  ┌──────────────┐      ┌──────────────┐     ┌────────────┐ │
-│  │ Read from    │      │ CPU RAM →    │     │ Forward +  │ │
-│  │ storage      │ ──→  │ GPU VRAM     │ ──→ │ Backward   │ │
-│  │ (IO bound)   │      │ (PCIe bound) │     │ (compute)  │ │
-│  └──────────────┘      └──────────────┘     └────────────┘ │
-│  100ms - 5s              1-10ms               10-100ms       │
-│                                                               │
-│  ← This dominates when storage is slow                       │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Training_Loop ["Training Loop (This dominates when storage is slow)"]
+        direction LR
+        A["1. Load batch\nRead from storage\n(IO bound)\n100ms - 5s"] --> B["2. Transfer to GPU\nCPU RAM → GPU VRAM\n(PCIe bound)\n1-10ms"]
+        B --> C["3. Compute\nForward + Backward\n(compute)\n10-100ms"]
+    end
 ```
 
 ### Workload IO Profiles
@@ -83,6 +76,8 @@ Different ML workloads have radically different IO characteristics:
 | Checkpoint save | 1-50 GB per save | Sequential write | Full model | 5-20 GB/s burst |
 
 The key insight: **image training** does millions of small random reads (hard for network storage), while **LLM training** does large sequential reads (easier to cache).
+
+> **Pause and predict**: If you are training a large language model vs an image classification model, how will the I/O read patterns differ?
 
 ### Profiling IO Bottlenecks
 
@@ -105,6 +100,8 @@ kubectl exec -it training-pod -- watch -n 1 'nvidia-smi --query-gpu=utilization.
 #     load_start = time.time()
 ```
 
+> **Stop and think**: If your GPU utilization is at 40%, what metrics would you check to confirm it's an I/O bottleneck rather than a CPU compute bottleneck?
+
 ---
 
 ## Storage Tiers for AI
@@ -113,28 +110,18 @@ kubectl exec -it training-pod -- watch -n 1 'nvidia-smi --query-gpu=utilization.
 
 AI workloads need a multi-tier storage architecture:
 
-```
-                    ┌─────────────┐
-                    │   GPU VRAM   │  2 TB/s, μs latency
-                    │  (training)  │  Managed by framework
-                    ├─────────────┤
-                 ┌──┤  Local NVMe  │  3-14 GB/s, 10-100 μs
-                 │  │  (hot cache) │  TopoLVM, OpenEBS LVM
-                 │  ├─────────────┤
-              ┌──┤  │ Distributed  │  1-10 GB/s, 0.5-5 ms
-              │  │  │  FS (warm)   │  CephFS, GlusterFS, JuiceFS
-              │  │  ├─────────────┤
-           ┌──┤  │  │   Object     │  100 MB-5 GB/s, 10-100 ms
-           │  │  │  │  Storage     │  S3, GCS, MinIO
-           │  │  │  │  (cold)      │
-           │  │  │  ├─────────────┤
-           │  │  │  │   Tape/      │  Archival
-           │  │  │  │  Archive     │  Glacier, Coldline
-           │  │  │  └─────────────┘
-           │  │  │
-      Cost │  │  │ Speed
-       ▼   │  │  │   ▲
-       $   $$  $$$  $$$$
+```mermaid
+flowchart TD
+    A["GPU VRAM (training)\n2 TB/s, μs latency\nManaged by framework"]
+    B["Local NVMe (hot cache)\n3-14 GB/s, 10-100 μs\nTopoLVM, OpenEBS LVM"]
+    C["Distributed FS (warm)\n1-10 GB/s, 0.5-5 ms\nCephFS, GlusterFS, JuiceFS"]
+    D["Object Storage (cold)\n100 MB-5 GB/s, 10-100 ms\nS3, GCS, MinIO"]
+    E["Tape/Archive\nArchival\nGlacier, Coldline"]
+
+    A -->|"Cost $, Speed $$$$"| B
+    B -->|"Cost $$, Speed $$$"| C
+    C -->|"Cost $$$, Speed $$"| D
+    D -->|"Cost $$$$, Speed $"| E
 ```
 
 The platform team's job is to build infrastructure that automatically moves data between tiers based on access patterns.
@@ -344,24 +331,16 @@ mountOptions:
 
 JuiceFS is a cloud-native distributed filesystem purpose-built for the gap between object storage and high-performance compute. It separates metadata (stored in Redis, PostgreSQL, or TiKV) from data (stored in any object storage).
 
-```
-┌─────────────────────────────────────────────────────┐
-│                    JuiceFS Architecture               │
-│                                                       │
-│  ┌────────────┐    ┌──────────────┐    ┌──────────┐ │
-│  │  POSIX     │    │   Metadata   │    │  Object  │ │
-│  │  Client    │──→ │   Engine     │    │  Storage │ │
-│  │ (FUSE/CSI) │    │ (Redis/PG)   │    │  (S3)    │ │
-│  │            │    └──────────────┘    │          │ │
-│  │            │──────────────────────→ │          │ │
-│  └────────────┘     Data path          └──────────┘ │
-│       │                                              │
-│       ▼                                              │
-│  ┌────────────┐                                     │
-│  │ Local Cache │  ← NVMe or RAM                    │
-│  │ (read/write)│                                    │
-│  └────────────┘                                     │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    Client["POSIX Client\n(FUSE/CSI)"]
+    Meta["Metadata Engine\n(Redis/PG)"]
+    Obj["Object Storage\n(S3)"]
+    Cache["Local Cache\n(NVMe or RAM)"]
+
+    Client -->|"Metadata"| Meta
+    Client -->|"Data path"| Obj
+    Client <-->|"Local caching"| Cache
 ```
 
 **Why JuiceFS excels for AI**:
@@ -441,6 +420,8 @@ Engineer 50 training job: Reads from cache → 2 min (warm)
 
 Total: 500GB downloaded, 2 hours total wait, $1 in S3 egress
 ```
+
+> **Stop and think**: How much money could you save in cloud egress costs if 50 engineers are constantly downloading a 500GB dataset from S3 every day, and you switch to local caching?
 
 ### Fluid: Kubernetes-Native Dataset Orchestration
 
@@ -630,6 +611,8 @@ from torch.distributed.checkpoint import save
 save(model.state_dict(), checkpoint_id=f"/checkpoints/step_{step}")
 ```
 
+> **Pause and predict**: What is the risk of using asynchronous checkpointing if the node crashes exactly while the background thread is writing the checkpoint?
+
 ### Recommended Checkpoint Storage
 
 | Storage Type | Write Speed | Best For |
@@ -743,86 +726,39 @@ A medical imaging startup trained models on a 2TB dataset of CT scans stored in 
 ## Quiz: Check Your Understanding
 
 ### Question 1
-Why is storing a dataset of 14 million small images on S3 problematic for GPU training?
+*Scenario*: Your ML team wants to train a new ResNet model directly against a 150GB S3 bucket containing 14 million individual JPEG files. They've mounted the bucket using an S3 FUSE driver. They report that the training is exceptionally slow, even though the total dataset is relatively small. What underlying characteristics of object storage make this architecture problematic for this specific workload?
 
 <details>
 <summary>Show Answer</summary>
 
-Three compounding issues:
-
-1. **Latency**: Each S3 GET request has 10-100ms latency. With 14M random reads, the cumulative latency is enormous even with parallelism.
-
-2. **Request overhead**: S3 is optimized for throughput on large objects, not IOPS on small objects. Each 10KB image requires a full HTTP GET with TLS handshake, authentication, etc. The protocol overhead exceeds the data size.
-
-3. **No prefetching**: S3 has no concept of "read the next file" — each read is independent. Local filesystems and caching layers can prefetch adjacent files, but S3 cannot.
-
-Solutions: (a) Convert to sequential formats like WebDataset or TFRecord, (b) cache on local NVMe with JuiceFS/Alluxio, or (c) download the entire dataset to local storage before training.
+Three compounding issues explain why this approach fails. First, object storage systems like S3 exhibit high per-request latency (10-100ms); when multiplied across 14 million independent image reads, this cumulative latency becomes the primary bottleneck. Second, S3 is optimized for high throughput on large files, not high IOPS for tiny 10KB files, meaning the HTTP/TLS protocol overhead for each GET request often exceeds the time taken to transfer the actual image data. Finally, object stores lack sequential prefetching logic, so they cannot anticipate and stream the next files the way a local filesystem or advanced caching layer would. To solve this, the team should either pack the files into sequential archives (like WebDataset) or introduce a caching layer like JuiceFS with a local NVMe tier.
 </details>
 
 ### Question 2
-Explain the difference between JuiceFS and Alluxio as caching solutions for AI workloads.
+*Scenario*: Your infrastructure team needs to improve data loading times for a 5TB training dataset. Engineer A proposes installing JuiceFS, while Engineer B argues for deploying Alluxio with Fluid. In what architectural scenarios would you choose JuiceFS over Alluxio, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-**JuiceFS** is a full POSIX filesystem with caching:
-- Separates metadata (Redis/PostgreSQL) from data (any object store)
-- Provides a complete filesystem (create, write, read, delete, rename)
-- Client-side caching on local NVMe
-- Can be used as primary storage, not just a cache layer
-- Simpler architecture (no separate master/worker topology)
-
-**Alluxio** is a caching middleware layer:
-- Sits between compute and existing storage systems
-- Master/worker architecture with distributed cache
-- Does not store data itself — always backed by an "under filesystem" (S3, HDFS)
-- Richer data management: pinning, TTL, replication policies
-- More complex to operate but more features for large-scale deployments
-
-**When to choose which**:
-- JuiceFS: when you need a filesystem that also caches, or when simplicity matters
-- Alluxio (via Fluid): when you need dataset-aware scheduling, multi-tier caching, or already have complex data infrastructure
+JuiceFS and Alluxio take fundamentally different architectural approaches to solving the data caching problem. JuiceFS is designed as a complete POSIX-compliant distributed filesystem that happens to use object storage as its data backend and Redis/SQL for metadata, making it an excellent drop-in replacement when you need simple, robust filesystem semantics with transparent local NVMe caching. Alluxio, on the other hand, acts as a pure caching middleware layer that sits between your compute and existing storage systems (like HDFS or S3), without storing the canonical data itself. You would choose JuiceFS for its operational simplicity and seamless POSIX integration. Conversely, you would choose Alluxio (especially paired with Fluid) when you require advanced dataset-aware scheduling, multi-tier caching (RAM+SSD), or need to unify multiple disparate storage backends under a single namespace.
 </details>
 
 ### Question 3
-A training job saves a 700GB checkpoint every 1000 steps. Steps take 2 seconds each. Checkpoint save takes 350 seconds on the current storage. What percentage of GPU time is wasted on checkpointing, and how would you reduce it?
+*Scenario*: You are observing a massive 70B parameter LLM training job. Every 1000 steps (which take about 2 seconds each), the job halts for 350 seconds to save a 700GB checkpoint to a standard NFS share. The ML team is complaining about lost compute time. Quantify the GPU time wasted by this synchronous operation and propose a multi-faceted solution to minimize it.
 
 <details>
 <summary>Show Answer</summary>
 
-**Waste calculation**:
-- Steps between checkpoints: 1000 × 2s = 2000s of training
-- Checkpoint time: 350s
-- Waste: 350 / (2000 + 350) = **14.9%** of total time
-
-**Reduction strategies**:
-
-1. **Sharded checkpoints**: 8 GPUs each save 87.5GB in parallel → 44s instead of 350s → waste drops to 2.1%
-
-2. **Async checkpointing**: Clone state dict to CPU RAM (takes ~10s), save in background thread while training continues → waste drops to ~0.5%
-
-3. **Faster storage**: Local NVMe at 7 GB/s → 100s → waste drops to 4.8%. Combined with sharding: 12.5s → 0.6%
-
-4. **Less frequent checkpoints**: Every 2000 steps instead of 1000 → halves the waste, but doubles max lost work on failure
-
-The best approach combines sharded + async: each GPU clones its shard to CPU, then background threads write to fast storage while training continues. This achieves <1% waste.
+Currently, the training job spends 2000 seconds on compute and 350 seconds blocked on I/O, meaning nearly 15% of your expensive GPU time is entirely wasted waiting for storage. This synchronous checkpointing creates a severe bottleneck because all compute must halt while the single node writes out the monolithic 700GB state to a slow NFS target. To drastically reduce this waste, you should first implement sharded distributed checkpoints, allowing each GPU to write only its own portion of the model state in parallel. Second, transition to asynchronous checkpointing, where the state is quickly copied to host CPU RAM (taking only seconds) and then written to disk in a background thread. Finally, upgrading the storage target from slow NFS to a high-throughput local NVMe cache or parallel filesystem (like CephFS) ensures those background writes complete rapidly without saturating the network.
 </details>
 
 ### Question 4
-What does Fluid's data-aware scheduling do that a regular PVC does not?
+*Scenario*: Your cluster runs multiple ML training pods that access a shared 10TB dataset. When you use standard PersistentVolumeClaims (PVCs) backed by a network filesystem, the pods are scheduled randomly across your 50 nodes, and each node constantly fetches data from the remote storage. If you implement Fluid, how does its data-aware scheduling fundamentally change this behavior?
 
 <details>
 <summary>Show Answer</summary>
 
-A regular PVC binds to a volume and any node that can access that volume can run the Pod. It has **no awareness of data locality** — a Pod might run on a node that has no cached data, causing a cold-cache start.
-
-Fluid's data-aware scheduling:
-
-1. **Tracks cache location**: Knows which nodes' Alluxio workers have cached which datasets
-2. **Prefers warm nodes**: Injects scheduling hints (nodeAffinity) so Pods prefer nodes where their dataset is already cached
-3. **Enables pre-warming**: `DataLoad` CRD can prefill cache before Pods start
-4. **Manages cache lifecycle**: Evicts stale data, rebalances across workers, manages multi-tier (RAM + SSD) caching
-5. **Abstracts the cache engine**: User sees a PVC; Fluid manages Alluxio/JuiceFS/JindoFS underneath
+Standard Kubernetes scheduling with regular PVCs has no awareness of data locality, meaning a pod will be scheduled on any node that meets its CPU/GPU requirements, completely ignoring whether that node has the required data cached locally. This leads to severe "cold cache" penalties as each new node must pull data from remote storage. Fluid fundamentally changes this by orchestrating the datasets as first-class citizens and actively tracking which nodes have cached portions of the data via engines like Alluxio. Fluid then automatically injects scheduling hints (like node affinities) into your training pods, ensuring the Kubernetes scheduler preferentially places them on nodes where the data is already warm. This data-aware placement drastically reduces network I/O, lowers object storage egress costs, and accelerates training startup times.
 </details>
 
 ---
