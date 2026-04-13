@@ -66,19 +66,15 @@ A **process** is a running instance of a program. It includes:
 - **Resources** — Open files, network connections
 - **Metadata** — PID, owner, state, priority
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                       PROCESS                            │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐       │
-│  │  Code   │ │  Stack  │ │  Heap   │ │  Data   │       │
-│  │ (text)  │ │         │ │         │ │ Segment │       │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘       │
-├─────────────────────────────────────────────────────────┤
-│  PID: 1234  │  PPID: 1  │  UID: 1000  │  State: R      │
-├─────────────────────────────────────────────────────────┤
-│  Open Files: stdin(0), stdout(1), stderr(2), /var/log  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph PROCESS
+        direction TB
+        M["Memory (Code, Stack, Heap, Data)"]
+        MD["Metadata (PID: 1234 | PPID: 1 | UID: 1000 | State: R)"]
+        FD["Open Files (stdin(0), stdout(1), stderr(2), /var/log)"]
+        M --- MD --- FD
+    end
 ```
 
 ### Process vs Program
@@ -146,19 +142,12 @@ systemd(1)─┬─sshd(800)───sshd(1200)───bash(1234)───pstre
 
 New processes are created in two steps:
 
-```
-┌──────────┐    fork()     ┌──────────┐
-│  Parent  │──────────────▶│  Child   │  (copy of parent)
-│  (bash)  │               │  (bash)  │
-└──────────┘               └────┬─────┘
-                                │
-                           exec("/bin/ls")
-                                │
-                                ▼
-                           ┌──────────┐
-                           │  Child   │  (now running ls)
-                           │   (ls)   │
-                           └──────────┘
+```mermaid
+flowchart LR
+    P[Parent<br/>bash] -- "fork()" --> C1[Child<br/>bash]
+    C1 -- "exec('/bin/ls')" --> C2[Child<br/>ls]
+    note1[Copy of parent] -.-> C1
+    note2[Now running ls] -.-> C2
 ```
 
 1. **fork()** — Creates a copy of the parent process
@@ -173,36 +162,18 @@ strace -f -e fork,execve bash -c 'ls' 2>&1 | grep -E 'fork|exec'
 
 Processes cycle through states:
 
-```
-                        ┌─────────────┐
-                        │   Created   │
-                        └──────┬──────┘
-                               │
-                               ▼
-        ┌───────────────────────────────────────────┐
-        │                                           │
-        ▼                                           │
-  ┌───────────┐     schedule     ┌───────────┐     │
-  │  Ready    │◄────────────────▶│  Running  │     │
-  │ (Waiting  │                  │  (R)      │     │
-  │  for CPU) │                  │           │     │
-  └─────┬─────┘                  └─────┬─────┘     │
-        │                              │           │
-        │         I/O wait             │ exit()    │
-        │    ┌─────────────────────────┤           │
-        │    │                         │           │
-        │    ▼                         ▼           │
-        │ ┌───────────┐          ┌───────────┐    │
-        │ │ Sleeping  │          │  Zombie   │    │
-        │ │ (S or D)  │          │   (Z)     │    │
-        │ └─────┬─────┘          └─────┬─────┘    │
-        │       │                      │          │
-        └───────┘     parent wait()    │          │
-                      ┌────────────────┘          │
-                      ▼                           │
-                ┌───────────┐                     │
-                │Terminated │─────────────────────┘
-                └───────────┘
+```mermaid
+stateDiagram-v2
+    [*] --> Created
+    Created --> Ready
+    Ready --> Running : schedule
+    Running --> Ready : preempt / deschedule
+    Running --> Sleeping : I/O wait
+    Sleeping --> Ready : I/O complete / wake up
+    Running --> Zombie : exit()
+    Zombie --> Terminated : parent wait()
+    Running --> Terminated : killed
+    Terminated --> [*]
 ```
 
 ### State Codes in ps/top
@@ -223,18 +194,10 @@ ps aux | awk '{print $8}' | sort | uniq -c | sort -rn
 
 ### Death: exit() and wait()
 
-```
-┌──────────┐                    ┌──────────┐
-│  Child   │ ──── exit(0) ────▶│  Zombie  │
-│ (running)│                    │  (Z)     │
-└──────────┘                    └────┬─────┘
-                                     │
-       ┌─────────────────────────────┘
-       │  parent calls wait()
-       ▼
-┌──────────────┐
-│  Terminated  │  (entry removed from process table)
-└──────────────┘
+```mermaid
+flowchart LR
+    C[Child<br/>running] -- "exit(0)" --> Z[Zombie<br/>Z]
+    Z -- "parent calls wait()" --> T[Terminated<br/>entry removed]
 ```
 
 ---
@@ -279,20 +242,25 @@ killall nginx
 
 ### The SIGTERM vs SIGKILL Debate
 
-```
-SIGTERM (15)                    SIGKILL (9)
-    │                               │
-    ▼                               ▼
-┌──────────────┐             ┌──────────────┐
-│   Process    │             │    Kernel    │
-│ can handle   │             │ terminates   │
-│ gracefully   │             │ immediately  │
-└──────────────┘             └──────────────┘
-    │                               │
-    ├── Flush buffers               ├── No cleanup
-    ├── Close connections           ├── No flushing
-    ├── Remove temp files           ├── Resources leaked
-    └── Exit cleanly                └── Potentially corrupt
+```mermaid
+flowchart TD
+    subgraph SIGTERM [SIGTERM 15]
+        direction TB
+        P1[Process can handle gracefully]
+        P1 --> A1[Flush buffers]
+        P1 --> A2[Close connections]
+        P1 --> A3[Remove temp files]
+        P1 --> A4[Exit cleanly]
+    end
+
+    subgraph SIGKILL [SIGKILL 9]
+        direction TB
+        P2[Kernel terminates immediately]
+        P2 --> B1[No cleanup]
+        P2 --> B2[No flushing]
+        P2 --> B3[Resources leaked]
+        P2 --> B4[Potentially corrupt]
+    end
 ```
 
 **Best practice**: Always try SIGTERM first, wait a few seconds, then SIGKILL only if necessary.
@@ -335,24 +303,31 @@ systemd is the init system and service manager for most Linux distributions.
 
 ### systemd Concepts
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                     systemd (PID 1)                      │
-├─────────────────────────────────────────────────────────┤
-│  Units                                                   │
-│  ├── Services (.service)  — Daemons and applications    │
-│  ├── Sockets (.socket)    — Socket activation           │
-│  ├── Targets (.target)    — Groups of units             │
-│  ├── Mounts (.mount)      — Filesystem mounts           │
-│  ├── Timers (.timer)      — Scheduled tasks             │
-│  └── Paths (.path)        — Path monitoring             │
-├─────────────────────────────────────────────────────────┤
-│  Cgroups                                                 │
-│  └── Resource control and process tracking              │
-├─────────────────────────────────────────────────────────┤
-│  Journal                                                 │
-│  └── Centralized logging (journald)                     │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    S[systemd PID 1]
+    
+    subgraph Units [Units]
+        direction TB
+        U1[.service - Daemons and apps]
+        U2[.socket - Socket activation]
+        U3[.target - Groups of units]
+        U4[.mount - Filesystem mounts]
+        U5[.timer - Scheduled tasks]
+        U6[.path - Path monitoring]
+    end
+    
+    subgraph Cgroups [Cgroups]
+        C1[Resource control and process tracking]
+    end
+    
+    subgraph Journal [Journal]
+        J1[Centralized logging journald]
+    end
+    
+    S --> Units
+    S --> Cgroups
+    S --> Journal
 ```
 
 ### Essential systemctl Commands
@@ -469,8 +444,11 @@ GRUB2 (GRand Unified Bootloader) is the first software that runs when a Linux sy
 
 ### How the Boot Process Works
 
-```
-BIOS/UEFI → GRUB2 → Kernel + initrd → systemd (PID 1)
+```mermaid
+flowchart LR
+    A[BIOS / UEFI] --> B[GRUB2]
+    B --> C[Kernel + initrd]
+    C --> D[systemd PID 1]
 ```
 
 ### GRUB2 Configuration
@@ -634,7 +612,7 @@ Scenario: A developer reports their application is crashing on startup. You use 
 <details>
 <summary>Show Answer</summary>
 
-The application is successfully creating a child process using `fork()`, which is why the first step succeeds. However, the child process is failing to replace its memory space with the new program using `exec()` because the target executable file does not exist, or the path is incorrect. Since `exec()` failed, the child process cannot run the intended application and will likely exit with an error. To fix this, you need to verify the path to the executable and ensure it has the correct permissions.
+The application is successfully creating a child process using `fork()`, which is why the first step succeeds. However, the child process is failing to replace its memory space with the new program using `exec()` because the target executable file does not exist, or the path is incorrect. Since `exec()` failed, the child process cannot run the intended application and will likely exit with an error. To fix this, you need to verify the path to the executable and ensure it has the correct permissions. This commonly happens in containers if the entrypoint path is slightly off or missing a necessary interpreter.
 
 </details>
 
@@ -664,7 +642,7 @@ Scenario: You create a new `web-app.service` and run `systemctl start web-app`. 
 <details>
 <summary>Show Answer</summary>
 
-You missed running `systemctl enable web-app` before rebooting the server. While `start` runs the service immediately, it does not configure the system to launch it automatically on boot. The `enable` command creates a symbolic link in the appropriate target's `.wants` directory (e.g., `/etc/systemd/system/multi-user.target.wants/web-app.service`). This symlink tells systemd that the service is a dependency for the boot target, ensuring it starts up automatically.
+You missed running `systemctl enable web-app` before rebooting the server. While `start` runs the service immediately, it does not configure the system to launch it automatically on boot. The `enable` command creates a symbolic link in the appropriate target's `.wants` directory (e.g., `/etc/systemd/system/multi-user.target.wants/web-app.service`). This symlink tells systemd that the service is a dependency for the boot target, ensuring it starts up automatically when the target is reached.
 
 </details>
 
