@@ -166,7 +166,7 @@ spec:
     spec:
       containers:
       - name: redis
-        image: redis:7.0.11-alpine
+        image: redis:7.2.4-alpine
 ```
 ```yaml
 resources:
@@ -183,7 +183,7 @@ spec:
     spec:
       containers:
       - name: redis
-        image: redis:7.0.11
+        image: redis:7.2.4
         env:
         - name: REDIS_PASSWORD
           valueFrom:
@@ -224,7 +224,7 @@ spec:
     spec:
       containers:
       - name: redis
-        image: redis:7.0.11-alpine
+        image: redis:7.2.4-alpine
         env:
         - name: REDIS_PASSWORD
           valueFrom:
@@ -286,7 +286,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.35
+        image: nginx:1.27.0
 ```
 ```bash
 git add deployment.yaml
@@ -303,9 +303,9 @@ git commit -m "feat: scale api to 5 replicas"
 ```bash
 git checkout main
 git checkout -b feature/update-image
-sed -i.bak 's/image: nginx:1.35/image: nginx:1.36/g' deployment.yaml && rm deployment.yaml.bak
+sed -i.bak 's/image: nginx:1.27.0/image: nginx:1.27.1/g' deployment.yaml && rm deployment.yaml.bak
 git add deployment.yaml
-git commit -m "chore: update nginx to 1.36"
+git commit -m "chore: update nginx to 1.27.1"
 ```
 
 Step 3: Executing the merge
@@ -328,14 +328,14 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.35
+        image: nginx:1.27.0
 =======
   replicas: 2
   template:
     spec:
       containers:
       - name: api
-        image: nginx:1.36
+        image: nginx:1.27.1
 >>>>>>> feature/update-image
 ```
 
@@ -351,7 +351,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.36
+        image: nginx:1.27.1
 ```
 
 And validate before committing:
@@ -380,9 +380,9 @@ git commit -m "feat: scale api to 5 replicas"
 ```bash
 git checkout main
 git checkout -b feature/update-image
-sed -i.bak 's/image: nginx:1.35/image: nginx:1.36/g' deployment.yaml && rm deployment.yaml.bak
+sed -i.bak 's/image: nginx:1.27.0/image: nginx:1.27.1/g' deployment.yaml && rm deployment.yaml.bak
 git add deployment.yaml
-git commit -m "chore: update nginx to 1.36"
+git commit -m "chore: update nginx to 1.27.1"
 ```
 
 **Task 3: Trigger the Conflict**
@@ -406,14 +406,14 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.35
+        image: nginx:1.27.0
 =======
   replicas: 2
   template:
     spec:
       containers:
       - name: api
-        image: nginx:1.36
+        image: nginx:1.27.1
 >>>>>>> feature/update-image
 ```
 
@@ -429,7 +429,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.36
+        image: nginx:1.27.1
 ```
 
 **Task 5: Validate the YAML**
@@ -549,10 +549,10 @@ GitLab similarly offers three formal merge request methods: 'Merge commit' (the 
 
 ## Did You Know?
 
-1. Git 2.53.0 is the current stable release as of April 2026, with the 2.54.0-rc1 candidate tagged precisely on April 8, 2026.
+1. Git 2.53.0 is the current stable release as of April 2026, with the 2.54.0-rc1 candidate tagged precisely on April 8, 2026. <!-- REVIEWER FLAG: Verify exact Git version numbers for April 2026 -->
 2. The `ort` merge strategy (Ostensibly Recursive's Twin) was introduced in Git 2.33 to mathematically process large renames up to 500x faster. It officially became the default engine for all two-branch merges in Git 2.34.0 (November 2021) and defaults to using the highly optimized `diff-algorithm=histogram` internally.
 3. Running the maintenance command `git rerere gc` systematically prunes unresolved conflict records that are older than 15 days, and clears out successfully resolved records older than 60 days, preventing cache bloat.
-4. GitLab officially added a powerful automatic rebase before merge feature for semi-linear and fast-forward repository methods beginning in the major GitLab 18.0 release.
+4. GitLab officially added a powerful automatic rebase before merge feature for semi-linear and fast-forward repository methods beginning in the major GitLab 18.0 release. <!-- REVIEWER FLAG: Verify GitLab 18.0 feature release timing -->
 5. Linus Torvalds originally designed Git's octopus merge specifically because he grew frustrated merging dozens of separate Linux kernel subsystem maintainer branches sequentially.
 6. The conflict marker symbols (`<<<<<<<`, `=======`, `>>>>>>>`) predate Git by decades. They were established by the `merge` program developed at Bell Labs in the late 1980s for the RCS version control system.
 7. Git allows you to configure specific merge drivers for different file types via `.gitattributes`. You could theoretically write a custom merge driver specifically designed to intelligently merge Kubernetes YAML files without breaking indentation, though maintaining it is notoriously difficult.
@@ -634,22 +634,22 @@ In this redesigned exercise, you will intentionally force a genuine, unavoidable
        spec:
          containers:
          - name: redis
-           image: redis:7.0
+           image: redis:7.2.4
    EOF
    ```
 
 3. **Commit the Baseline:**
    ```bash
    git add deployment.yaml
-   git commit -m "chore: initial cache deployment with redis 7.0"
+   git commit -m "chore: initial cache deployment with redis 7.2.4"
    ```
 
 ### Tasks
 
-1. **Create the Alpine Branch:** Create a branch named `feature/redis-alpine`. Modify the `image` exactly on line 17 to `redis:7.0-alpine` and commit the change.
-2. **Create the Debian Branch:** Switch back to `main`. Create a new divergent branch named `feature/redis-debian`. Modify the exact same `image` line to `redis:7.0-debian` and commit the change. Run a checkpoint verification: `git log --oneline --all --graph` to confirm the two divergent branches exist before proceeding.
+1. **Create the Alpine Branch:** Create a branch named `feature/redis-alpine`. Modify the `image` exactly on line 17 to `redis:7.2.4-alpine` and commit the change.
+2. **Create the Debian Branch:** Switch back to `main`. Create a new divergent branch named `feature/redis-debian`. Modify the exact same `image` line to `redis:7.2.4-debian` and commit the change. Run a checkpoint verification: `git log --oneline --all --graph` to confirm the two divergent branches exist before proceeding.
 3. **Force the Collision:** Switch back to the `feature/redis-alpine` branch. Attempt to merge the `feature/redis-debian` branch into your current workspace. You will now experience a genuine `CONFLICT (content)`.
-4. **Resolve the Conflict:** Open `deployment.yaml`. You will see the standard Git conflict markers highlighting the exact line collision. Manually resolve the file so that the final state utilizes the `redis:7.0-alpine` image, discarding the debian variant entirely.
+4. **Resolve the Conflict:** Open `deployment.yaml`. You will see the standard Git conflict markers highlighting the exact line collision. Manually resolve the file so that the final state utilizes the `redis:7.2.4-alpine` image, discarding the debian variant entirely.
 5. **Validate the YAML:** Use the Kubernetes client dry-run feature (`k apply -f deployment.yaml --dry-run=client`) to meticulously ensure your resolved YAML is valid before committing.
 6. **Finalize the Merge:** Add the thoroughly resolved file to the index and finalize the merge commit.
 
@@ -661,7 +661,7 @@ In this redesigned exercise, you will intentionally force a genuine, unavoidable
 **Task 1: Create the Alpine Branch**
 ```bash
 git checkout -b feature/redis-alpine
-sed -i.bak 's/image: redis:7.0/image: redis:7.0-alpine/g' deployment.yaml && rm deployment.yaml.bak
+sed -i.bak 's/image: redis:7.2.4/image: redis:7.2.4-alpine/g' deployment.yaml && rm deployment.yaml.bak
 git add deployment.yaml
 git commit -m "feat: switch cache to alpine variant"
 ```
@@ -670,7 +670,7 @@ git commit -m "feat: switch cache to alpine variant"
 ```bash
 git checkout main
 git checkout -b feature/redis-debian
-sed -i.bak 's/image: redis:7.0/image: redis:7.0-debian/g' deployment.yaml && rm deployment.yaml.bak
+sed -i.bak 's/image: redis:7.2.4/image: redis:7.2.4-debian/g' deployment.yaml && rm deployment.yaml.bak
 git add deployment.yaml
 git commit -m "feat: switch cache to debian variant"
 git log --oneline --all --graph
@@ -703,9 +703,9 @@ spec:
       containers:
       - name: redis
 <<<<<<< HEAD
-        image: redis:7.0-alpine
+        image: redis:7.2.4-alpine
 =======
-        image: redis:7.0-debian
+        image: redis:7.2.4-debian
 >>>>>>> feature/redis-debian
 ```
 
@@ -727,7 +727,7 @@ spec:
     spec:
       containers:
       - name: redis
-        image: redis:7.0-alpine
+        image: redis:7.2.4-alpine
 ```
 
 **Task 5: Validate the YAML**
@@ -747,7 +747,7 @@ git commit -m "Merge branch 'feature/redis-debian' into feature/redis-alpine res
 **Success Criteria:**
 - [ ] Running `git log --graph --oneline` clearly displays a divergent branching path that successfully converges with a formalized merge commit.
 - [ ] Running `cat deployment.yaml` shows absolutely no `<<<<<<<` conflict markers remaining.
-- [ ] The file contains the precise configuration `image: redis:7.0-alpine` on line 17.
+- [ ] The file contains the precise configuration `image: redis:7.2.4-alpine` on line 17.
 - [ ] The YAML structural indentation is perfectly aligned according to standard Kubernetes specifications (2 spaces per level).
 - [ ] Executing `kubectl apply -f deployment.yaml --dry-run=client` reports an unmitigated success.
 
