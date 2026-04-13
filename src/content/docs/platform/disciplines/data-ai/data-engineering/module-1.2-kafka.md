@@ -53,26 +53,32 @@ This module teaches you to deploy, configure, secure, and operate a production-g
 
 Kafka is a **distributed commit log**. Producers append messages to the end of the log. Consumers read from the log at their own pace. The log is durable, ordered, and replayable.
 
+```mermaid
+flowchart TD
+    Producers -->|Network| Cluster
+    Cluster -->|Network| Consumers
+    
+    subgraph Cluster[Kafka Cluster]
+        direction LR
+        subgraph B0[Broker 0]
+            T0_P0["Topic A<br>Part 0 ★"]
+            T0_P1["Topic A<br>Part 1"]
+        end
+        subgraph B1[Broker 1]
+            T1_P1["Topic A<br>Part 1 ★"]
+            T1_P2["Topic A<br>Part 2"]
+        end
+        subgraph B2[Broker 2]
+            T2_P2["Topic A<br>Part 2 ★"]
+            T2_P0["Topic A<br>Part 0"]
+        end
+    end
+    
+    classDef leader fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#155724;
+    class T0_P0,T1_P1,T2_P2 leader;
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    KAFKA CLUSTER                             │
-│                                                              │
-│  ┌─────────┐     ┌─────────┐     ┌─────────┐               │
-│  │ Broker 0 │     │ Broker 1 │     │ Broker 2 │              │
-│  │          │     │          │     │          │               │
-│  │ Topic A  │     │ Topic A  │     │ Topic A  │              │
-│  │ Part 0 ★ │     │ Part 1 ★ │     │ Part 2 ★ │              │
-│  │ Part 1   │     │ Part 2   │     │ Part 0   │              │
-│  │          │     │          │     │          │               │
-│  └─────────┘     └─────────┘     └─────────┘               │
-│                                                              │
-│  ★ = Partition Leader    (unmarked) = Follower replica       │
-└──────────────────────────────────────────────────────────────┘
-         ▲                                    │
-         │           ┌────────────┐           │
-    Producers ──────→│  Network   │──────→ Consumers
-                     └────────────┘
-```
+
+*(★ indicates the Partition Leader; unmarked boxes are follower replicas)*
 
 **Key terms:**
 
@@ -90,18 +96,28 @@ Kafka is a **distributed commit log**. Producers append messages to the end of t
 
 Partitions are Kafka's unit of parallelism. A topic with 12 partitions can be consumed by up to 12 consumers in a group simultaneously. More partitions = more throughput, but also more overhead.
 
-```
-Topic: user-events (3 partitions, replication factor 2)
+```mermaid
+flowchart LR
+    subgraph Topic[Topic: user-events]
+        direction TB
+        P0["Partition 0: [msg1] [msg2] [msg3] [msg4] [msg5]"]
+        P1["Partition 1: [msg6] [msg7] [msg8] [msg9]"]
+        P2["Partition 2: [msg10] [msg11] [msg12]"]
+    end
 
-Partition 0: [msg1] [msg2] [msg3] [msg4] [msg5] ───→
-Partition 1: [msg6] [msg7] [msg8] [msg9]         ───→
-Partition 2: [msg10] [msg11] [msg12]              ───→
+    subgraph CG[Consumer Group 'analytics']
+        direction TB
+        CA["Consumer A reads ← Partition 0"]
+        CB["Consumer B reads ← Partition 1"]
+        CC["Consumer C reads ← Partition 2"]
+    end
 
-Consumer Group "analytics":
-  Consumer A reads ← Partition 0
-  Consumer B reads ← Partition 1
-  Consumer C reads ← Partition 2
+    P0 --> CA
+    P1 --> CB
+    P2 --> CC
 ```
+
+> **Stop and think**: If a topic has 12 partitions, and your application scales up to 15 pods sharing the same consumer group, what happens to the remaining 3 pods?
 
 Messages within a partition are strictly ordered. Messages across partitions have no ordering guarantee. If you need ordering for a specific entity (e.g., all events for user-123), use a partition key — Kafka hashes the key to determine the partition.
 
@@ -111,23 +127,33 @@ Until Kafka 3.3, every Kafka cluster required a separate ZooKeeper ensemble to m
 
 KRaft (Kafka Raft) moves metadata management inside the Kafka brokers themselves:
 
-```
-BEFORE (ZooKeeper mode):                 AFTER (KRaft mode):
-┌───────────────────────┐               ┌───────────────────────┐
-│    ZooKeeper Cluster  │               │    Kafka Cluster      │
-│  ┌────┐┌────┐┌────┐  │               │                       │
-│  │ ZK ││ ZK ││ ZK │  │               │  ┌────────────────┐   │
-│  └────┘└────┘└────┘  │               │  │ Controller     │   │
-└───────┬───────────────┘               │  │ Quorum (KRaft) │   │
-        │                               │  │ Built into     │   │
-┌───────▼───────────────┐               │  │ brokers        │   │
-│    Kafka Cluster      │               │  └────────────────┘   │
-│  ┌────┐┌────┐┌────┐  │               │  ┌────┐┌────┐┌────┐  │
-│  │ B0 ││ B1 ││ B2 │  │               │  │ B0 ││ B1 ││ B2 │  │
-│  └────┘└────┘└────┘  │               │  └────┘└────┘└────┘  │
-└───────────────────────┘               └───────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Before[BEFORE: ZooKeeper mode]
+        direction TB
+        subgraph ZK[ZooKeeper Cluster]
+            direction LR
+            Z1[ZK] --- Z2[ZK] --- Z3[ZK]
+        end
+        subgraph K1[Kafka Cluster]
+            direction LR
+            B0_1[B0] --- B1_1[B1] --- B2_1[B2]
+        end
+        ZK --> K1
+    end
 
-5+ processes to manage                  3 processes to manage
+    subgraph After[AFTER: KRaft mode]
+        direction TB
+        subgraph K2[Kafka Cluster]
+            direction TB
+            CQ["Controller Quorum (KRaft)<br>Built into brokers"]
+            subgraph Brokers[Brokers]
+                direction LR
+                B0_2[B0] --- B1_2[B1] --- B2_2[B2]
+            end
+            CQ --- Brokers
+        end
+    end
 ```
 
 **KRaft advantages:**
@@ -135,6 +161,8 @@ BEFORE (ZooKeeper mode):                 AFTER (KRaft mode):
 - Faster controller failover (seconds vs. minutes)
 - Better scalability (millions of partitions)
 - Unified security model
+
+> **Pause and predict**: If a controller node fails in KRaft mode versus ZooKeeper mode, which one recovers faster and why?
 
 Strimzi supports KRaft as the default deployment mode. All examples in this module use KRaft.
 
@@ -372,16 +400,21 @@ config:
 
 ### The Tradeoff Spectrum
 
+```mermaid
+flowchart LR
+    HT([HIGH THROUGHPUT]) <--> LL([LOW LATENCY])
 ```
-HIGH THROUGHPUT ◄──────────────────────────────► LOW LATENCY
 
-Large batches                            Small/no batches
-linger.ms = 50-200                       linger.ms = 0
-Compression: lz4/zstd                    No compression
-acks = 1                                 acks = all
-Bigger buffers                           Smaller buffers
-Fewer, larger requests                   Many, smaller requests
-```
+| Setting | High Throughput | Low Latency |
+|---------|-----------------|-------------|
+| **Batching** | Large batches | Small/no batches |
+| **linger.ms** | 50-200 | 0 |
+| **Compression** | lz4 / zstd | No compression |
+| **acks** | 1 | all |
+| **Buffers** | Bigger buffers | Smaller buffers |
+| **Requests** | Fewer, larger requests | Many, smaller requests |
+
+> **Stop and think**: If your trading application requires sub-millisecond response times, why might enabling `lz4` compression actually hurt your performance?
 
 ---
 
@@ -393,12 +426,12 @@ Without schemas, producers and consumers are in a trust-based relationship. Prod
 
 Schemas enforce a contract between producers and consumers:
 
-```
-Producer ──→ Schema Registry ──→ Consumer
-   │              │                  │
-   │  "Does my    │  "Is this       │  "What format
-   │   message    │   compatible    │   should I
-   │   match?"    │   with v1?"     │   expect?"
+```mermaid
+flowchart TD
+    P[Producer] -->|"Does my message match?"| SR[Schema Registry]
+    C[Consumer] -->|"What format should I expect?"| SR
+    SR -.->|"Is this compatible with v1?"| SR
+    P -->|"Message Payload"| C
 ```
 
 ### Apicurio Registry on Kubernetes
@@ -466,6 +499,8 @@ spec:
 | **FORWARD** | Old schema can read new data | Producers upgrade first |
 | **FULL** | Both backward and forward compatible | Most restrictive, safest |
 | **NONE** | No compatibility check | Never in production |
+
+> **Pause and predict**: If you choose `FORWARD` compatibility, which side of the stream (producers or consumers) must be upgraded with the new schema first?
 
 ---
 
@@ -567,34 +602,33 @@ This creates topics `cdc.public.orders` and `cdc.public.customers` with every IN
 
 ### Security Layers
 
-```
-┌─────────────────────────────────────────────────┐
-│              KAFKA SECURITY STACK               │
-├─────────────────────────────────────────────────┤
-│  Authorization   │  ACLs: who can do what       │
-├──────────────────┼──────────────────────────────┤
-│  Authentication  │  TLS, SCRAM, OAuth           │
-├──────────────────┼──────────────────────────────┤
-│  Encryption      │  TLS for data in transit     │
-├──────────────────┼──────────────────────────────┤
-│  Network         │  NetworkPolicies             │
-└─────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Stack[KAFKA SECURITY STACK]
+        direction TB
+        A["Authorization (ACLs: who can do what)"]
+        B["Authentication (TLS, SCRAM, OAuth)"]
+        C["Encryption (TLS for data in transit)"]
+        D["Network (NetworkPolicies)"]
+        
+        D --- C --- B --- A
+    end
 ```
 
 ### Strimzi TLS: Automatic Certificate Management
 
 Strimzi automatically generates a CA and issues certificates:
 
-```
-┌──────────────────────────────────────────┐
-│         Strimzi Certificate Chain        │
-│                                          │
-│  Cluster CA ──→ Broker Certificates      │
-│             ──→ Controller Certificates  │
-│             ──→ Entity Operator Cert     │
-│                                          │
-│  Client CA  ──→ KafkaUser Certificates   │
-└──────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Strimzi[Strimzi Certificate Chain]
+        direction TB
+        CCA[Cluster CA] --> BC[Broker Certificates]
+        CCA --> CC[Controller Certificates]
+        CCA --> EOC[Entity Operator Cert]
+        
+        ClientCA[Client CA] --> KUC[KafkaUser Certificates]
+    end
 ```
 
 Certificates are stored as Kubernetes Secrets and automatically rotated by the operator.
@@ -812,63 +846,39 @@ spec:
 
 ## Quiz
 
-**Question 1:** What is the relationship between partitions, consumer groups, and parallelism?
+**Question 1:** You have a new topic `orders` with 4 partitions. Your `order-processor` application is deployed as a Kubernetes Deployment with 6 replicas, all sharing the same consumer group. During a high-traffic event, you notice that 2 of your pods are sitting completely idle while the other 4 are processing heavily. Why is this happening, and how can you fix it?
 
 <details>
 <summary>Show Answer</summary>
-
-A partition can only be consumed by **one consumer within a consumer group** at a time. This means the maximum parallelism equals the number of partitions. If you have a topic with 12 partitions and a consumer group with 15 consumers, 3 consumers will be idle. If you have 12 partitions and 4 consumers, each consumer reads from 3 partitions.
-
-Different consumer groups are independent — each group reads the full topic independently.
-
+This happens because Kafka's unit of parallelism is the partition, and a single partition can only be consumed by **one consumer within a given consumer group** at a time. Since there are only 4 partitions, Kafka can only assign work to 4 consumers; the remaining 2 consumers will sit idle. To fix this and utilize all 6 pods, you must increase the number of partitions on the `orders` topic to at least 6. Keep in mind that while you can always increase partition counts, you cannot decrease them later.
 </details>
 
-**Question 2:** Explain the difference between `cleanup.policy: delete` and `cleanup.policy: compact`.
+**Question 2:** Your team is building a caching layer that needs to replay the current state of every user's profile on startup. Initially, they set the `user-profiles` topic to a 30-day retention policy. However, after a month, the service takes hours to start up, reading millions of outdated profile updates. What configuration change should you make to this topic to solve this issue?
 
 <details>
 <summary>Show Answer</summary>
-
-- **delete**: Messages are removed after the retention period expires (e.g., after 7 days). This is suitable for event streams where you want a time-bounded window.
-- **compact**: Kafka keeps only the **latest value for each key**. Older values for the same key are removed during log compaction. This is ideal for state/lookup data (user profiles, configuration) where you always want the latest version. Messages with a `null` value (tombstones) delete the key entirely after a configurable retention period.
-
+You should change the topic's cleanup policy from `delete` to `compact`. A `delete` policy retains all historical events until the retention window expires, meaning your application is forced to process every single update a user ever made. With a `compact` policy, Kafka actively scans the log and retains only the **latest value for each unique key** (e.g., the user ID). This dramatically reduces the log size and startup time, as your application will only read the final, current state of each profile rather than its entire history.
 </details>
 
-**Question 3:** What happens when `min.insync.replicas: 2` and one of three brokers hosting a partition goes down?
+**Question 3:** Your production Kafka cluster has 3 brokers. A critical topic is configured with `replication.factor: 3` and `min.insync.replicas: 2`. During a scheduled node maintenance, Kubernetes gracefully evicts and terminates Broker 1. Your producers are configured with `acks=all`. Will the producers experience downtime or dropped messages during this maintenance?
 
 <details>
 <summary>Show Answer</summary>
-
-With `replication.factor: 3` and `min.insync.replicas: 2`, losing one broker leaves 2 in-sync replicas. Since 2 >= `min.insync.replicas`, **producers with `acks=all` can still write successfully**. The partition remains fully functional for both reads and writes. If a second broker goes down, writes would be rejected with `NotEnoughReplicasException` because only 1 replica remains, which is less than the required 2.
-
+The producers will not experience downtime and writes will continue successfully. With `replication.factor: 3` and `min.insync.replicas: 2`, losing one broker leaves exactly 2 in-sync replicas available. Because 2 is greater than or equal to the `min.insync.replicas` requirement, the leader can still acknowledge writes to producers using `acks=all`. However, the cluster is now in a degraded state; if a second broker were to go down before Broker 1 recovers, writes would be rejected with a `NotEnoughReplicasException` to prevent data loss.
 </details>
 
-**Question 4:** Why does Strimzi generate its own TLS certificates instead of relying on cert-manager?
+**Question 4:** Your security team mandates that all TLS certificates must be managed centrally. They notice Strimzi automatically generates its own CA and certificates for broker communication and client authentication. They ask you to disable this and explain why Strimzi does this by default. What is the operational reason for Strimzi's default behavior?
 
 <details>
 <summary>Show Answer</summary>
-
-Strimzi manages its own CA and certificate lifecycle for several reasons:
-1. **Tight integration** — Broker certificates, inter-broker communication, and client certificates are all coordinated together.
-2. **Automatic rotation** — Strimzi handles certificate renewal and rolling restarts automatically.
-3. **No external dependencies** — The operator works out of the box without requiring cert-manager to be installed.
-
-However, Strimzi **can** be configured to use externally provided certificates (including cert-manager-issued ones) if organizational policy requires a centralized CA.
-
+Strimzi manages its own CA by default to provide a zero-friction, out-of-the-box secure setup. It tightly integrates certificate generation with broker configuration, enabling automatic rotation and rolling restarts without requiring external dependencies like cert-manager. By handling this internally, Strimzi ensures that inter-broker communication and client authentication are secured from day one. However, if organizational policy strictly requires a centralized CA, Strimzi can be configured to use externally provided certificates or integrate directly with tools like cert-manager.
 </details>
 
-**Question 5:** Why should `auto.create.topics.enable` be set to `false` in production?
+**Question 5:** An application developer mistakenly configures their new microservice to write to `payment-processed` instead of the approved `payments-processed` topic. In your production environment, you have `auto.create.topics.enable` set to `true`. What are the immediate consequences of this typo, and what is the best practice to prevent it?
 
 <details>
 <summary>Show Answer</summary>
-
-When `auto.create.topics.enable` is `true`, any producer that writes to a non-existent topic automatically creates it with default settings. This is dangerous because:
-1. **Typos create garbage topics** — Writing to `user-evnets` instead of `user-events` silently creates a new topic.
-2. **Default settings are wrong** — Auto-created topics use default partition count and replication factor, which may not match requirements.
-3. **No governance** — Teams lose visibility into what topics exist and why.
-4. **Resource waste** — Phantom topics consume broker memory and disk.
-
-Use KafkaTopic CRs for declarative topic management instead.
-
+The immediate consequence is that Kafka will silently create the new `payment-processed` topic using the cluster's default settings, and the producer will start writing data there successfully. The intended downstream consumers will never see these messages, leading to silent data loss in your pipeline. Furthermore, the auto-created topic might have incorrect partition counts or retention policies for its workload. To prevent this, `auto.create.topics.enable` should always be set to `false` in production, forcing teams to explicitly declare their topics using Strimzi `KafkaTopic` Custom Resources.
 </details>
 
 ---
@@ -1131,3 +1141,4 @@ Continue to [Module 1.3: Stream Processing with Apache Flink](../module-1.3-flin
 ---
 
 *"Kafka is like a central nervous system for data. Every event that happens in your business flows through it."* — Jay Kreps, creator of Apache Kafka
+---
