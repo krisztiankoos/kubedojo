@@ -60,25 +60,28 @@ When you wonder how a pod has its own IP or why two containers can't see each ot
 
 A **network namespace** provides an isolated network stack:
 
+```mermaid
+flowchart TD
+    subgraph Host ["Host Network Namespace"]
+        direction TB
+        H1[eth0: 192.168.1.100]
+        H2[lo: 127.0.0.1]
+        H3[docker0: 172.17.0.1]
+        H4[Own routing table]
+        H5[Own iptables rules]
+        H6[Own ports]
+    end
+
+    subgraph Container ["Container Network Namespace"]
+        direction TB
+        C1[eth0: 10.0.0.5]
+        C2[lo: 127.0.0.1]
+        C3[Own routing table]
+        C4[Own iptables rules]
+        C5["Own ports (80, 443)"]
+    end
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    NETWORK NAMESPACE ISOLATION                   │
-│                                                                  │
-│  Host Network Namespace          Container Network Namespace    │
-│  ┌───────────────────────┐       ┌────────────────────────┐    │
-│  │ eth0: 192.168.1.100   │       │ eth0: 10.0.0.5         │    │
-│  │ lo: 127.0.0.1         │       │ lo: 127.0.0.1          │    │
-│  │ docker0: 172.17.0.1   │       │                         │    │
-│  │                       │       │ Own routing table       │    │
-│  │ Own routing table     │       │ Own iptables rules     │    │
-│  │ Own iptables rules    │       │ Own ports (80, 443)    │    │
-│  │ Own ports             │       │                         │    │
-│  └───────────────────────┘       └────────────────────────┘    │
-│                                                                  │
-│  Completely separate network stacks                              │
-│  Same port can be used in each namespace                        │
-└─────────────────────────────────────────────────────────────────┘
-```
+*Note: Completely separate network stacks. Same port can be used in each namespace.*
 
 ### Creating Network Namespaces
 
@@ -106,19 +109,11 @@ sudo ip netns delete red
 
 ### How veth Works
 
+```mermaid
+flowchart LR
+    VethHost["veth-host (in host ns)"] <==>|pipe| VethContainer["veth-container (in container ns)"]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                       VETH PAIR                                  │
-│                                                                  │
-│  ┌────────────────────┐         ┌────────────────────┐         │
-│  │  veth-host         │ ═══════ │  veth-container    │         │
-│  │  (in host ns)      │  pipe   │  (in container ns) │         │
-│  └────────────────────┘         └────────────────────┘         │
-│                                                                  │
-│  Packets in one end → come out the other end                    │
-│  Like a virtual Ethernet cable                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+*Note: Packets in one end come out the other end. Like a virtual Ethernet cable.*
 
 ### Creating veth Pairs
 
@@ -136,22 +131,19 @@ ip link show type veth
 
 ### Simple Two-Namespace Setup
 
+```mermaid
+flowchart LR
+    subgraph Red ["Namespace: red"]
+        R_veth["veth-red (10.0.0.1/24)"]
+    end
+    
+    subgraph Blue ["Namespace: blue"]
+        B_veth["veth-blue (10.0.0.2/24)"]
+    end
+    
+    R_veth <==>|veth pair| B_veth
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                  CONNECTING TWO NAMESPACES                       │
-│                                                                  │
-│  ┌──────────────────┐                ┌──────────────────┐       │
-│  │  Namespace: red  │                │ Namespace: blue  │       │
-│  │                  │                │                  │       │
-│  │  veth-red        │════════════════│  veth-blue       │       │
-│  │  10.0.0.1/24     │    veth pair   │  10.0.0.2/24     │       │
-│  │                  │                │                  │       │
-│  └──────────────────┘                └──────────────────┘       │
-│                                                                  │
-│  red$ ping 10.0.0.2  →  works!                                 │
-│  blue$ ping 10.0.0.1 →  works!                                 │
-└─────────────────────────────────────────────────────────────────┘
-```
+*Note: `ping 10.0.0.2` from red works, and `ping 10.0.0.1` from blue works.*
 
 ### Try This: Connect Two Namespaces
 
@@ -195,31 +187,25 @@ A **bridge** connects multiple network interfaces at Layer 2 (like a virtual swi
 
 ### Bridge Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     LINUX BRIDGE                                 │
-│                                                                  │
-│  Container 1          Container 2          Container 3          │
-│  ┌──────────┐        ┌──────────┐        ┌──────────┐          │
-│  │ eth0     │        │ eth0     │        │ eth0     │          │
-│  │10.0.0.2  │        │10.0.0.3  │        │10.0.0.4  │          │
-│  └────┬─────┘        └────┬─────┘        └────┬─────┘          │
-│       │                   │                   │                 │
-│       │ veth              │ veth              │ veth            │
-│       │                   │                   │                 │
-│  ┌────▼───────────────────▼───────────────────▼────┐            │
-│  │                    br0 (bridge)                  │            │
-│  │                    10.0.0.1/24                   │            │
-│  └─────────────────────────┬───────────────────────┘            │
-│                            │                                     │
-│                     NAT / Routing                                │
-│                            │                                     │
-│                     ┌──────▼──────┐                             │
-│                     │    eth0     │                             │
-│                     │192.168.1.100│                             │
-│                     └─────────────┘                             │
-│                        Host NIC                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph C1 ["Container 1"]
+        eth0_1["eth0 (10.0.0.2)"]
+    end
+    subgraph C2 ["Container 2"]
+        eth0_2["eth0 (10.0.0.3)"]
+    end
+    subgraph C3 ["Container 3"]
+        eth0_3["eth0 (10.0.0.4)"]
+    end
+
+    br0["br0 bridge (10.0.0.1/24)"]
+    
+    eth0_1 <-->|veth| br0
+    eth0_2 <-->|veth| br0
+    eth0_3 <-->|veth| br0
+    
+    br0 -->|NAT / Routing| HostNIC["eth0 Host NIC (192.168.1.100)"]
 ```
 
 ### Creating a Bridge
@@ -246,33 +232,16 @@ sudo ip link set veth-host master br0
 
 ### How Docker Creates Container Networks
 
+```mermaid
+flowchart TD
+    A["1. docker run nginx"] --> B["2. Create network namespace for container"]
+    B --> C["3. Create veth pair"]
+    C --> D["4. Move one end (eth0) into container namespace"]
+    D --> E["5. Connect other end to docker0 bridge"]
+    E --> F["6. Assign IP from bridge subnet (172.17.0.x)"]
+    F --> G["7. Set up iptables rules for NAT"]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DOCKER NETWORKING                             │
-│                                                                  │
-│  1. docker run nginx                                            │
-│       │                                                          │
-│       ▼                                                          │
-│  2. Create network namespace for container                      │
-│       │                                                          │
-│       ▼                                                          │
-│  3. Create veth pair                                            │
-│       │                                                          │
-│       ▼                                                          │
-│  4. Move one end (eth0) into container namespace               │
-│       │                                                          │
-│       ▼                                                          │
-│  5. Connect other end to docker0 bridge                        │
-│       │                                                          │
-│       ▼                                                          │
-│  6. Assign IP from bridge subnet (172.17.0.x)                  │
-│       │                                                          │
-│       ▼                                                          │
-│  7. Set up iptables rules for NAT                              │
-│                                                                  │
-│  Result: Container has network access via docker0 bridge       │
-└─────────────────────────────────────────────────────────────────┘
-```
+*Note: Result: Container has network access via docker0 bridge.*
 
 ### Viewing Docker Networks
 
@@ -299,57 +268,43 @@ docker exec container-id ip route
 
 Kubernetes uses CNI plugins for pod networking.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    CNI WORKFLOW                                  │
-│                                                                  │
-│  kubelet: "Create network for pod xyz"                          │
-│       │                                                          │
-│       ▼                                                          │
-│  CNI Plugin (Calico/Flannel/Cilium):                           │
-│       │                                                          │
-│       ├── 1. Create network namespace                           │
-│       │                                                          │
-│       ├── 2. Create veth pair                                   │
-│       │                                                          │
-│       ├── 3. Attach to pod namespace                            │
-│       │                                                          │
-│       ├── 4. Assign IP from IPAM                                │
-│       │                                                          │
-│       ├── 5. Set up routes                                      │
-│       │                                                          │
-│       └── 6. Return IP to kubelet                               │
-│                                                                  │
-│  kubelet: "Pod IP is 10.244.1.5"                               │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Kubelet["kubelet: 'Create network for pod xyz'"] --> Plugin["CNI Plugin (Calico/Flannel/Cilium)"]
+    
+    subgraph PluginSteps ["Plugin Execution"]
+        direction TB
+        S1["1. Create network namespace"]
+        S2["2. Create veth pair"]
+        S3["3. Attach to pod namespace"]
+        S4["4. Assign IP from IPAM"]
+        S5["5. Set up routes"]
+        
+        S1 --> S2 --> S3 --> S4 --> S5
+    end
+    
+    Plugin --> PluginSteps
+    PluginSteps --> Result["kubelet: 'Pod IP is 10.244.1.5'"]
 ```
 
 ### Pod Network Namespace
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    POD NETWORKING                                │
-│                                                                  │
-│  Pod with two containers:                                       │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │           Shared Network Namespace                       │   │
-│  │                                                          │   │
-│  │  ┌──────────────┐        ┌──────────────┐              │   │
-│  │  │ Container A  │        │ Container B  │              │   │
-│  │  │ (nginx)      │        │ (sidecar)    │              │   │
-│  │  │ port 80      │        │ port 9090    │              │   │
-│  │  └──────────────┘        └──────────────┘              │   │
-│  │                                                          │   │
-│  │  eth0: 10.244.1.5                                       │   │
-│  │  localhost works between containers                      │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                            │                                    │
-│                          veth                                   │
-│                            │                                    │
-│  ┌─────────────────────────▼───────────────────────────────┐   │
-│  │                      cni0 bridge                         │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Pod ["Shared Network Namespace (Pod)"]
+        direction LR
+        subgraph C_A ["Container A (nginx)"]
+            P_A["port 80"]
+        end
+        subgraph C_B ["Container B (sidecar)"]
+            P_B["port 9090"]
+        end
+        eth0["eth0: 10.244.1.5\n(localhost works between containers)"]
+    end
+    
+    Bridge["cni0 bridge"]
+    
+    eth0 <-->|veth| Bridge
 ```
 
 ### Inspecting Pod Networking
