@@ -32,9 +32,9 @@ By the end of this module, you will be able to:
 To ensure all code snippets and exercises in this module are fully reproducible, you must configure your local development environment. We will use a Python virtual environment and install all necessary dependencies.
 
 ### Step 1: Install System Dependencies
-For audio processing, you need `ffmpeg` installed on your operating system.
-- **macOS**: `brew install ffmpeg`
-- **Ubuntu/Debian**: `sudo apt-get update && sudo apt-get install ffmpeg`
+For audio processing, you need `ffmpeg` and `portaudio` (required for PyAudio) installed on your operating system.
+- **macOS**: `brew install ffmpeg portaudio`
+- **Ubuntu/Debian**: `sudo apt-get update && sudo apt-get install -y ffmpeg portaudio19-dev`
 
 ### Step 2: Create Python Environment
 ```bash
@@ -52,9 +52,10 @@ export YOUR_HF_TOKEN="your_huggingface_token_here"
 ```
 
 ### Step 4: Fetch Sample Audio Assets
-Run the following Python script (`fetch_assets.py`) to download dummy audio assets. This guarantees that all subsequent file-based code blocks execute successfully without `FileNotFoundError`.
+Create a file named `fetch_assets.py` and run it to download dummy audio assets. This guarantees that all subsequent file-based code blocks execute successfully without `FileNotFoundError`.
 
-```python
+```bash
+cat << 'EOF' > fetch_assets.py
 import urllib.request
 import os
 
@@ -74,6 +75,8 @@ for filename, url in assets.items():
     if not os.path.exists(filename):
         urllib.request.urlretrieve(url, filename)
         print(f"Downloaded {filename}")
+EOF
+python3 fetch_assets.py
 ```
 
 *(Note: We are utilizing a classic JFK speech audio file as a placeholder for various languages and noise profiles to keep the lab reproducible and dependency-free. In a true production environment, you would use diverse, representative data.)*
@@ -344,6 +347,13 @@ audio = generate(
     voice=voice
 )
 ```
+
+### Ethical Guidelines for Voice Cloning
+
+When implementing voice cloning, strict ethical guardrails must be enforced to prevent abuse (such as deepfakes or social engineering). Production systems must ensure:
+1. **Explicit Consent**: Never clone a voice without the speaker's verifiable, opt-in consent.
+2. **Watermarking**: Embed inaudible cryptographic watermarks in the synthesized audio to cryptographically identify it as AI-generated.
+3. **Usage Restrictions**: Limit cloned voices to the specific context approved by the original speaker and actively monitor for policy violations.
 
 ### Streaming TTS for Real-Time
 
