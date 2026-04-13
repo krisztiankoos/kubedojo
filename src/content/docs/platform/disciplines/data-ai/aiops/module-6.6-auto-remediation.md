@@ -38,57 +38,49 @@ Auto-remediation executes predefined fixes automatically, reducing MTTR from min
 
 ## The Auto-Remediation Spectrum
 
+```mermaid
+flowchart LR
+    subgraph Manual [Fully Manual]
+        A[Runbook Lookup<br/>MTTR: 30+ min]
+    end
+    subgraph Assisted [Assisted]
+        B[Suggested Actions<br/>MTTR: 20 min]
+        C[One-Click Execution<br/>MTTR: 10 min]
+    end
+    subgraph Guarded [Guarded Automation]
+        D[Human Approval<br/>MTTR: 5 min]
+        E[Auto Execute<br/>MTTR: 1 min]
+    end
+    subgraph Autonomous [Fully Autonomous]
+        F[Closed Loop<br/>MTTR: seconds]
+    end
+    A --> B --> C --> D --> E --> F
 ```
-REMEDIATION AUTOMATION SPECTRUM
-─────────────────────────────────────────────────────────────────
 
-FULLY MANUAL                                     FULLY AUTONOMOUS
-     │                                                    │
-     ▼                                                    ▼
-┌─────────┬─────────┬─────────┬─────────┬─────────┬─────────┐
-│ RUNBOOK │SUGGESTED│ONE-CLICK│ HUMAN   │ AUTO    │ CLOSED  │
-│ LOOKUP  │ ACTIONS │EXECUTION│APPROVAL │ EXECUTE │  LOOP   │
-├─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤
-│ Human   │ System  │ Human   │ System  │ System  │ System  │
-│ finds   │ suggests│ clicks  │ proposes│ executes│ detects,│
-│ runbook │ fix     │ to run  │ human   │ notifies│ fixes,  │
-│         │         │         │ approves│ human   │ verifies│
-├─────────┼─────────┼─────────┼─────────┼─────────┼─────────┤
-│ MTTR:   │ MTTR:   │ MTTR:   │ MTTR:   │ MTTR:   │ MTTR:   │
-│ 30+ min │ 20 min  │ 10 min  │ 5 min   │ 1 min   │ seconds │
-└─────────┴─────────┴─────────┴─────────┴─────────┴─────────┘
+Start left, move right as trust builds.
 
-Start left, move right as trust builds
-```
+> **Pause and predict**: At which stage of the spectrum do you think most organizations experience the most cultural resistance from operations teams, and why?
 
 ## Safe Auto-Remediation Principles
 
 ### The Safety Triangle
 
+```mermaid
+flowchart TD
+    A[GUARDRAILS<br/>Limit Blast Radius]
+    B[ROLLBACK<br/>Reversible]
+    C[VERIFY<br/>Confirm Success]
+    A --- B
+    B --- C
+    C --- A
 ```
-                    ┌─────────────┐
-                   ╱│             │╲
-                  ╱ │   VERIFY    │ ╲
-                 ╱  │  (Success?) │  ╲
-                ╱   └─────────────┘   ╲
-               ╱                       ╲
-              ╱    ┌─────────────┐      ╲
-             ╱     │  GUARDRAILS │       ╲
-            ╱      │ (Blast      │        ╲
-           ╱       │  Radius)    │         ╲
-          ╱        └─────────────┘          ╲
-         ╱                                   ╲
-        ╱         ┌─────────────┐             ╲
-       ╱          │  ROLLBACK   │              ╲
-      ╱           │ (Reversible)│               ╲
-     ╱            └─────────────┘                ╲
-    ╱─────────────────────────────────────────────╲
 
 Every auto-remediation MUST have:
-1. GUARDRAILS: Limit blast radius
-2. ROLLBACK: Ability to undo
-3. VERIFY: Confirm success/failure
-```
+1. **GUARDRAILS**: Limit blast radius
+2. **ROLLBACK**: Ability to undo
+3. **VERIFY**: Confirm success/failure
+
+> **Stop and think**: If an automated action cannot be rolled back (e.g., dropping a corrupted database table), how should its execution be handled according to the safety triangle?
 
 ### Key Safety Rules
 
@@ -101,53 +93,35 @@ Every auto-remediation MUST have:
 
 ## Remediation Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                AUTO-REMEDIATION SYSTEM                          │
-│                                                                  │
-│  DETECTION                                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  AIOps Pipeline (Anomaly → Correlation → RCA)            │   │
-│  │                                                          │   │
-│  │  Output: Incident with probable_cause, confidence        │   │
-│  └───────────────────────┬──────────────────────────────────┘   │
-│                          │                                       │
-│  DECISION ENGINE         ▼                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐         │   │
-│  │  │ Runbook    │  │ Confidence │  │ Guardrail  │         │   │
-│  │  │ Matcher    │  │ Check      │  │ Check      │         │   │
-│  │  │            │  │            │  │            │         │   │
-│  │  │ "Which fix │  │ "Is cause  │  │ "Is action │         │   │
-│  │  │  applies?" │  │  certain?" │  │  safe?"    │         │   │
-│  │  └────────────┘  └────────────┘  └────────────┘         │   │
-│  │                                                          │   │
-│  │  Decision: AUTO | APPROVAL | MANUAL                     │   │
-│  └───────────────────────┬──────────────────────────────────┘   │
-│                          │                                       │
-│  EXECUTION               ▼                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐         │   │
-│  │  │ Pre-check  │  │  Execute   │  │  Verify    │         │   │
-│  │  │            │──│  Runbook   │──│  Success   │         │   │
-│  │  │            │  │            │  │            │         │   │
-│  │  └────────────┘  └────────────┘  └────────────┘         │   │
-│  │         │                                │               │   │
-│  │         ▼                                ▼               │   │
-│  │  ┌────────────┐                  ┌────────────┐         │   │
-│  │  │  Abort if  │                  │  Rollback  │         │   │
-│  │  │  unsafe    │                  │  if failed │         │   │
-│  │  └────────────┘                  └────────────┘         │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  AUDIT                                                           │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Log every decision, action, and outcome                 │   │
-│  │  Track success rates, false positives                    │   │
-│  │  Feed back to improve confidence thresholds              │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph DETECTION [1. DETECTION]
+        A[AIOps Pipeline: Anomaly -> Correlation -> RCA]
+        B[Incident: probable_cause & confidence]
+        A --> B
+    end
+
+    subgraph DECISION [2. DECISION ENGINE]
+        C[Runbook Matcher: Which fix?]
+        D[Confidence Check: Is cause certain?]
+        E[Guardrail Check: Is action safe?]
+        B --> C & D & E
+        C & D & E --> F{Decision Mode}
+        F -->|AUTO / APPROVAL| EXECUTION
+    end
+
+    subgraph EXECUTION [3. EXECUTION]
+        G[Pre-check] -->|Pass| H[Execute Runbook]
+        G -->|Fail| M[Abort]
+        H --> I[Verify Success]
+        I -->|Fail| K[Rollback]
+    end
+
+    subgraph AUDIT [4. AUDIT]
+        L[Log all decisions, actions, tracking success/failure rates]
+    end
+
+    EXECUTION --> AUDIT
 ```
 
 ## Building Runbooks
@@ -446,6 +420,8 @@ class RemediationCircuitBreaker:
         return False
 ```
 
+> **Stop and think**: How would a circuit breaker differentiate between a transient failure (which might succeed on retry) and a persistent failure (which should trip the breaker)?
+
 ## Execution Engine
 
 ```python
@@ -632,7 +608,7 @@ spec:
           serviceAccountName: remediation-sa
           containers:
           - name: remediation
-            image: bitnami/kubectl:latest
+            image: bitnami/kubectl:1.35
             command:
             - /bin/sh
             - -c
@@ -737,72 +713,27 @@ class PredictiveScaler:
 ## Quiz
 
 <details>
-<summary>1. Why should you start with low-risk remediations before high-risk?</summary>
+<summary>1. Scenario: Your team wants to implement auto-remediation. They propose starting with a script that automatically fails over the primary database when latency spikes, arguing it will save the most MTTR. Why is this a dangerous starting point, and what should they automate first?</summary>
 
-**Answer**: Building trust incrementally:
-
-1. **Low risk** (pod restart): Failure impact minimal, easy to verify
-2. **Build confidence**: Track success rates, tune thresholds
-3. **Expand scope**: Add medium-risk as trust grows
-4. **High risk last**: Only automate when system proven reliable
-
-Starting with high-risk actions means automated mistakes have maximum impact before you've proven the system works.
+**Answer**: This is a dangerous starting point because database failover is a high-risk, potentially irreversible action that can cause data loss or split-brain scenarios if the automation misfires. When implementing auto-remediation, you must start with low-risk, easily reversible actions (like restarting stateless pods) to build trust in the detection and execution engines. Automating high-risk actions before the system has proven its reliability means that any false positive will execute a catastrophic change at machine speed. By starting small, you can safely tune confidence thresholds and test guardrails without risking critical infrastructure.
 </details>
 
 <details>
-<summary>2. What are the three mandatory safety components for auto-remediation?</summary>
+<summary>2. Scenario: An auto-remediation script detects a `CrashLoopBackOff` pod, successfully deletes it, and logs the action. However, the replacement pod immediately enters `CrashLoopBackOff` as well. The script runs again 5 minutes later, creating an endless loop. Which mandatory safety component is missing from this automation, and how would it prevent the loop?</summary>
 
-**Answer**: The Safety Triangle:
-
-1. **Guardrails**: Limit blast radius (max concurrent actions, max affected services)
-2. **Rollback**: Ability to undo the action if it fails
-3. **Verification**: Post-checks to confirm the fix worked
-
-Missing any one creates dangerous automation:
-- No guardrails: Runaway automation
-- No rollback: Can't recover from mistakes
-- No verification: Don't know if fix worked
+**Answer**: This automation is missing a Circuit Breaker (or Rate Limiter) and proper Verification. A circuit breaker tracks consecutive failures of a remediation action; after a set threshold (e.g., 3 failures), it trips to an "OPEN" state and blocks further executions, alerting a human instead. Additionally, the lack of proper verification meant the script assumed success simply because the delete command succeeded, rather than verifying the new pod actually reached a `Ready` state. Implementing these guardrails ensures the system stops digging when it's in a hole, preventing runaway automation from masking persistent underlying issues.
 </details>
 
 <details>
-<summary>3. When should remediation require human approval vs auto-execute?</summary>
+<summary>3. Scenario: A new deployment introduces a memory leak, causing the OOMKilled auto-remediation runbook to trigger across 50 different microservices simultaneously. What specific guardrail failed or was missing in this scenario, and how does it protect the system?</summary>
 
-**Answer**: Risk-based decision:
-
-**Auto-execute** (low risk):
-- Action is reversible (pod restart)
-- Blast radius is contained (single service)
-- Historical success rate > 90%
-- Clear root cause identification
-
-**Require approval** (high risk):
-- Irreversible actions (data deletion)
-- Wide blast radius (affects many services)
-- Novel situation (no historical data)
-- Low RCA confidence
-- Business-critical systems
-
-When in doubt, require approval.
+**Answer**: A Blast Radius Limiter was either missing or configured incorrectly. A blast radius limiter caps the maximum number of concurrent remediation actions or the percentage of services that can be affected at the same time. In this scenario, a global issue triggered widespread automation, which could potentially take down the entire cluster if the remediation involves restarting all services at once. By enforcing a strict limit (e.g., "max 3 concurrent actions"), the system contains the impact of widespread anomalies and forces a human to evaluate macro-level incidents, rather than blindly executing dozens of simultaneous fixes.
 </details>
 
 <details>
-<summary>4. How does a circuit breaker protect auto-remediation?</summary>
+<summary>4. Scenario: You are designing an auto-remediation runbook for scaling down deployments when CPU usage drops during off-peak hours. Should this action be fully autonomous or require human approval, and what factors determine this?</summary>
 
-**Answer**: Circuit breaker stops repeated failures:
-
-1. **CLOSED**: Normal operation, actions allowed
-2. **After N failures**: Trip to OPEN state
-3. **OPEN**: Block all executions (prevent runaway failures)
-4. **After timeout**: Try HALF_OPEN
-5. **Success**: Return to CLOSED
-6. **Failure**: Stay OPEN
-
-Without circuit breaker:
-- Broken remediation runs forever
-- Makes situation worse
-- Floods logs with failures
-
-Circuit breaker gives time to investigate and fix.
+**Answer**: This action can be fully autonomous because it is a low-risk, reversible operation with a limited blast radius. The decision between auto-execution and human approval depends on the reversibility of the action, the historical success rate of the runbook, and the potential business impact if the automation misfires. Scaling down a deployment can easily be rolled back by scaling it back up if traffic suddenly spikes. Because the cost of a false positive is merely a temporary reduction in capacity (which can be quickly reversed or caught by an HPA), it is safe to execute without waking up an engineer for manual approval.
 </details>
 
 ## Hands-On Exercise: Build Auto-Remediation
