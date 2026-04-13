@@ -264,7 +264,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.28
+        image: nginx:1.27
 ```
 
 ```bash
@@ -275,7 +275,7 @@ kubectl apply -f deployment.yaml
 # This is IaC in action!
 ```
 
-> **Stop and think**: Notice how we don't tell Kubernetes *how* to run the container. We just state *what* we want (3 replicas of nginx:1.28), and Kubernetes figures out the rest.
+> **Stop and think**: Notice how we don't tell Kubernetes *how* to run the container. We just state *what* we want (3 replicas of nginx:1.27), and Kubernetes figures out the rest.
 
 The connection: **Kubernetes uses the same declarative, idempotent principles as Terraform and Ansible.**
 
@@ -450,7 +450,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.28
+        image: nginx:1.27
 EOF
 
 kubectl apply -f deployment.yaml
