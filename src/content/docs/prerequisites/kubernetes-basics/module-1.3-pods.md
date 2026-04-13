@@ -443,7 +443,7 @@ Based on how you configure these two values, Kubernetes categorizes your Pod int
 There are two distinct, philosophically opposed ways to instruct Kubernetes to manage a Pod.
 
 **Imperative Management** involves typing commands directly into your terminal, explicitly telling the Kubernetes API *what specific action to perform right now*.
-`kubectl run my-nginx-test --image=nginx:alpine --port=80 --labels=env=dev`
+`kubectl run my-nginx-test --image=nginx:1.27-alpine --port=80 --labels=env=dev`
 This approach is fast and excellent for rapidly generating YAML templates via dry-runs. However, it is an anti-pattern for production environments. If a junior engineer accidentally deletes the Pod, there is zero historical record of how it was created. It is not version-controlled, auditable, or repeatable in a disaster recovery scenario.
 
 **Declarative Management** involves writing a detailed YAML file defining *the exact state you desire*, and asking Kubernetes to autonomously make physical reality match your file.
@@ -578,8 +578,8 @@ In this hands-on exercise, you will create a multi-container Pod, physically ins
 
 Write a declarative YAML manifest named `multi-pod.yaml` that creates a single Pod containing two communicating containers. 
 - The Pod name should be `web-logger`.
-- Container 1: Name it `nginx-server`, use the `nginx:alpine` public image, and mount a shared volume named `html-dir` at the path `/usr/share/nginx/html`.
-- Container 2: Name it `content-writer`, use the `busybox` public image. It must mount the same `html-dir` volume at the path `/data`. Its primary command should be a continuous shell loop that writes the current date and time to `/data/index.html` every 5 seconds. *(Hint for the command array: `["/bin/sh", "-c", "while true; do date > /data/index.html; sleep 5; done"]`)*
+- Container 1: Name it `nginx-server`, use the `nginx:1.27-alpine` public image, and mount a shared volume named `html-dir` at the path `/usr/share/nginx/html`.
+- Container 2: Name it `content-writer`, use the `busybox:1.36.1` public image. It must mount the same `html-dir` volume at the path `/data`. Its primary command should be a continuous shell loop that writes the current date and time to `/data/index.html` every 5 seconds. *(Hint for the command array: `["/bin/sh", "-c", "while true; do date > /data/index.html; sleep 5; done"]`)*
 - The shared volume must be of type `emptyDir: {}`.
 
 **Solution:**
@@ -594,12 +594,12 @@ spec:
       emptyDir: {}
   containers:
     - name: nginx-server
-      image: nginx:alpine
+      image: nginx:1.27-alpine
       volumeMounts:
         - name: html-dir
           mountPath: /usr/share/nginx/html
     - name: content-writer
-      image: busybox
+      image: busybox:1.36.1
       command: ["/bin/sh", "-c", "while true; do date > /data/index.html; sleep 5; done"]
       volumeMounts:
         - name: html-dir
@@ -666,7 +666,7 @@ metadata:
 spec:
   containers:
     - name: stress-test
-      image: polinux/stress
+      image: polinux/stress:1.0.4
       command: ["stress", "--vm", "1", "--vm-bytes", "150M", "--vm-hang", "1"]
       resources:
         limits:
