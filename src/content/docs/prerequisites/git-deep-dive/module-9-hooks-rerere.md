@@ -50,56 +50,23 @@ In this module, our focus will be primarily on **Client-Side Hooks**, as they re
 
 ### The Client-Side Hook Architecture
 
-```text
-+-----------------------------------------------------------------------+
-|                       DEVELOPER WORKSTATION                           |
-|                                                                       |
-|  [ Working Directory ]             [ Staging Area (Index) ]           |
-|            |                                  |                       |
-|            | (git add)                        |                       |
-|            v                                  v                       |
-|  +-------------------+              +-------------------+             |
-|  |                   |              |                   |             |
-|  |  Modified Files   |              |  Staged Snapshot  |             |
-|  |                   |              |                   |             |
-|  +-------------------+              +-------------------+             |
-|                                               |                       |
-|                                               | (git commit)          |
-|                                               v                       |
-|                                     +-------------------+             |
-|                                     |                   |             |
-|                                     |   pre-commit      | <--- Hook 1 |
-|                                     |   (Validation)    |             |
-|                                     |                   |             |
-|                                     +--------+----------+             |
-|                                              |                        |
-|                                         [Pass/Fail]                   |
-|                                              |                        |
-|                                              v                        |
-|                                     +-------------------+             |
-|                                     |                   |             |
-|                                     |   commit-msg      | <--- Hook 2 |
-|                                     |   (Formatting)    |             |
-|                                     |                   |             |
-|                                     +--------+----------+             |
-|                                              |                        |
-|                                         [Pass/Fail]                   |
-|                                              |                        |
-|                                              v                        |
-|                                     [ Commit Object Created ]         |
-|                                              |                        |
-|                                              | (git push)             |
-|                                              v                        |
-|                                     +-------------------+             |
-|                                     |                   |             |
-|                                     |    pre-push       | <--- Hook 3 |
-|                                     | (Final checks)    |             |
-|                                     |                   |             |
-|                                     +--------+----------+             |
-|                                              |                        |
-|                                              v                        |
-|                                     [ Network Transfer ]              |
-+-----------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph Developer Workstation
+        WD[Working Directory] -->|git add| SA[Staging Area / Index]
+        SA -->|git commit| PC[pre-commit hook: Validation]
+        
+        PC -- Pass --> CM[commit-msg hook: Formatting]
+        PC -. Fail .-> AC1((Abort Commit))
+        
+        CM -- Pass --> CO[Commit Object Created]
+        CM -. Fail .-> AC2((Abort Commit))
+        
+        CO -->|git push| PP[pre-push hook: Final checks]
+        
+        PP -- Pass --> NT[Network Transfer]
+        PP -. Fail .-> AP((Abort Push))
+    end
 ```
 
 ### The Big Three Local Hooks
@@ -108,7 +75,7 @@ In this module, our focus will be primarily on **Client-Side Hooks**, as they re
 2. **The `commit-msg` Hook**: This hook takes a single parameter: the path to a temporary file that contains the commit message drafted by the developer. If this script exits with a non-zero status, Git halts the commit process. This is the undisputed industry standard location to programmatically enforce commit message formats, such as the Conventional Commits specification.
 3. **The `pre-push` Hook**: This hook executes during a `git push` operation, occurring after the remote references have been updated but strictly before any objects have been transferred over the network. It is ideal for executing heavier, longer-running integration tests or verifying that you aren't accidentally pushing experimental code to a highly protected branch.
 
-> **Pause and predict: What do you think happens if a `pre-commit` hook is explicitly bypassed by a developer using the `--no-verify` flag?** 
+> **Pause and predict**: What do you think happens if a `pre-commit` hook is explicitly bypassed by a developer using the `--no-verify` flag?
 > If a developer runs `git commit --no-verify` (or `-n`), Git completely bypasses the execution of the `pre-commit` and `commit-msg` hooks. This highlights a critical, unshakeable rule: **Client-side hooks are entirely for developer convenience and fast, localized feedback; they are NOT a hard security boundary.** A malicious or lazy developer can easily circumvent them. True, unbreakable security enforcement must always occur via server-side hooks or centralized CI/CD pipelines.
 
 ---
@@ -127,7 +94,7 @@ cd .git/hooks
 ls -l
 ```
 
-> **Stop and think: If you were to write pseudocode for a `pre-commit` hook that checks for trailing spaces, what steps would it need to take to ensure it only checks the code about to be committed?**
+> **Stop and think**: If you were to write pseudocode for a `pre-commit` hook that checks for trailing spaces, what steps would it need to take to ensure it only checks the code about to be committed?
 > It would need to first identify only the files currently sitting in the staging area. Then, instead of reading those files directly from the hard drive's working directory, it would need to extract the exact snapshot of the file from Git's index to scan for trailing spaces, ensuring unstaged changes aren't accidentally validated.
 
 To create an actively executing hook, we simply create a new file named exactly after the specific hook phase (with no file extension whatsoever) and ensure it has executable permissions.
@@ -152,7 +119,7 @@ Now, let's open the `pre-commit` file and architect our validation logic. We nee
 # Redirect all output to standard error to ensure it's visible in all Git GUIs
 exec 1>&2
 
-echo "🛡️ Running KubeDojo pre-commit validation suite..."
+echo "Running KubeDojo pre-commit validation suite..."
 
 # Extract a list of all files that have been Added, Copied, or Modified (staged)
 # --name-only: Ensure we only receive the raw file names
@@ -181,11 +148,11 @@ for FILE in $STAGED_FILES; do
             
             # $? captures the exit code of the previous command (yamllint)
             if [ $? -ne 0 ]; then
-                echo "❌ CRITICAL: YAML validation failed for manifest -> $FILE"
+                echo "CRITICAL: YAML validation failed for manifest -> $FILE"
                 ERROR_FOUND=1
             fi
         else
-            echo "⚠️ WARNING: 'yamllint' binary not detected, skipping validation for $FILE"
+            echo "WARNING: 'yamllint' binary not detected, skipping validation for $FILE"
         fi
     fi
 done
@@ -199,7 +166,7 @@ for FILE in $STAGED_FILES; do
     # Note: This is a simplistic regex for educational illustration. Real-world
     # production setups should utilize dedicated engines like TruffleHog or Gitleaks.
     if git show ":$FILE" | grep -iE 'password\s*[:=]|secret\s*[:=]|api_key|aws_access_key_id'; then
-        echo "❌ FATAL: Potential hardcoded secret identified within -> $FILE"
+        echo "FATAL: Potential hardcoded secret identified within -> $FILE"
         ERROR_FOUND=1
     fi
 done
@@ -209,13 +176,13 @@ done
 # ---------------------------------------------------------
 if [ $ERROR_FOUND -ne 0 ]; then
     echo ""
-    echo "🛑 COMMIT ABORTED: Security or syntax violations detected."
+    echo "COMMIT ABORTED: Security or syntax violations detected."
     echo "Please remediate the errors highlighted above, stage your fixes, and try again."
     # Exiting with a non-zero status explicitly instructs Git to terminate the commit process
     exit 1 
 fi
 
-echo "✅ All pre-commit quality gates passed successfully."
+echo "All pre-commit quality gates passed successfully."
 exit 0
 ```
 
@@ -264,18 +231,18 @@ git commit -m "feat: introduce new production deployment manifest"
 
 **Console Output:**
 ```text
-🛡️ Running KubeDojo pre-commit validation suite...
+Running KubeDojo pre-commit validation suite...
 --> Initiating YAML syntax verification...
 stdin
   7:5       error    wrong indentation: expected 2 but found 4  (indentation)
 
-❌ CRITICAL: YAML validation failed for manifest -> broken-deploy.yaml
+CRITICAL: YAML validation failed for manifest -> broken-deploy.yaml
 --> Scanning staged blobs for hardcoded credentials...
         - name: DATABASE_PASSWORD
           value: "super_secret_production_123!" # FATAL ERROR: Hardcoded secret exposed
-❌ FATAL: Potential hardcoded secret identified within -> broken-deploy.yaml
+FATAL: Potential hardcoded secret identified within -> broken-deploy.yaml
 
-🛑 COMMIT ABORTED: Security or syntax violations detected.
+COMMIT ABORTED: Security or syntax violations detected.
 Please remediate the errors highlighted above, stage your fixes, and try again.
 ```
 
@@ -317,7 +284,7 @@ REGEX="^($TYPES)(\([a-z0-9\-]+\))?!?: .+"
 
 # Check if the user's message matches our rigorous regex
 if ! echo "$MESSAGE" | grep -qE "$REGEX"; then
-    echo "🛑 COMMIT REJECTED: Invalid commit message format."
+    echo "COMMIT REJECTED: Invalid commit message format."
     echo "Your submitted message was: '$MESSAGE'"
     echo ""
     echo "This repository strictly enforces the Conventional Commits specification."
@@ -332,7 +299,7 @@ fi
 exit 0
 ```
 
-> **Before blindly running this, what output do you expect if you impulsively type `git commit -m "WIP: fixing stuff"`?**
+> **Pause and predict**: Before blindly running this, what output do you expect if you impulsively type `git commit -m "WIP: fixing stuff"`?
 > The `commit-msg` hook will instantly intercept your message, compare it against the rigidly defined `$REGEX` string, fail the `grep` evaluation, print the highly detailed rejection error explaining *why* it failed, and exit with status `1`. Your lazy commit will not be recorded in the repository's history, forcing you to think about your change.
 
 ---
@@ -357,7 +324,7 @@ while read LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA
 do
     # Check if the remote reference being targeted is our protected branch
     if [[ "$REMOTE_REF" == *"refs/heads/$PROTECTED_BRANCH" ]]; then
-        echo "🛑 FATAL PUSH REJECTED: Direct, unmediated pushes to '$PROTECTED_BRANCH' are forbidden."
+        echo "FATAL PUSH REJECTED: Direct, unmediated pushes to '$PROTECTED_BRANCH' are forbidden."
         echo "Please push your changes to an isolated feature branch and open a formal Pull Request."
         exit 1
     fi
@@ -389,19 +356,27 @@ git config --global rerere.enabled true
 
 ### How it Works: A Visual Mental Model
 
-```text
-1. The Initial Conflict          2. Rerere Records State        3. The Future Rebase Conflict
-   (Main vs Feature Branch)         (Preimage vs Postimage)        (Rebasing Feature onto Main)
-
-<<<<<<< HEAD                       [Git memorizes:              <<<<<<< HEAD
-spec.replicas: 3                   Conflict signature           spec.replicas: 3
-=======                            +                            =======
-spec.replicas: 5                   Final resolved state]        spec.replicas: 5
->>>>>>> feature                                                 >>>>>>> feature
-
-You manually resolve this to:                                   Git recognizes the signature!
-spec.replicas: 5                                                Silently auto-resolves to:
-                                                                spec.replicas: 5
+```mermaid
+flowchart TD
+    subgraph Step 1: The Initial Conflict
+        direction TB
+        C1["Conflict (Main vs Feature)\n\n<<<<<<< HEAD\nspec.replicas: 3\n=======\nspec.replicas: 5\n>>>>>>> feature"]
+        R1["You manually resolve this to:\n\nspec.replicas: 5"]
+        C1 --> R1
+    end
+    
+    subgraph Step 2: Rerere Records State
+        Mem["Git memorizes the state:\n\n1. Preimage (The conflict signature)\n2. Postimage (Your final resolved state)"]
+    end
+    
+    subgraph Step 3: The Future Rebase Conflict
+        direction TB
+        C2["Rebasing Feature onto Main\n\n<<<<<<< HEAD\nspec.replicas: 3\n=======\nspec.replicas: 5\n>>>>>>> feature"]
+        R2["Git recognizes the signature!\nSilently auto-resolves to:\n\nspec.replicas: 5"]
+        C2 --> R2
+    end
+    
+    Step 1 --> Step 2 --> Step 3
 ```
 
 ### Seeing Rerere in Action
@@ -467,7 +442,7 @@ Now, imagine we realize that merge was a tactical mistake. We abort it by execut
 git reset --hard HEAD~1
 ```
 
-> **Pause and predict: If you ran `git rerere forget app-config.yaml` right now, before executing the checkout and rebase, what would Git do when it encounters the conflict again?**
+> **Pause and predict**: If you ran `git rerere forget app-config.yaml` right now, before executing the checkout and rebase, what would Git do when it encounters the conflict again?
 > Git would completely erase the previously saved resolution from its internal memory cache. When the rebase operation subsequently replays the commits and hits the exact same file collision, Git would immediately halt the process. It would insert the standard conflict markers into the file and force you to manually resolve the issue all over again, exactly as if it were the first time.
 
 ```bash
@@ -486,7 +461,7 @@ Resolved 'app-config.yaml' using previous resolution.
 
 Git automatically fixed the file for you! You still must run `git add app-config.yaml` and `git rebase --continue` to manually confirm the automated resolution, but the painful cognitive labor of deciphering the markers is completely eliminated.
 
-> **Which approach would you choose here and why?** If a senior colleague suggests turning `rerere.autoupdate = true` so Git automatically stages the resolution without asking you, should you do it? 
+> **Stop and think**: If a senior colleague suggests turning `rerere.autoupdate = true` so Git automatically stages the resolution without asking you, should you do it? Which approach would you choose here and why?
 > While highly tempting for speed, it is generally much safer to leave `autoupdate` off. You desperately want a brief moment to inspect `git diff` to ensure Git's automated resolution is actually semantically correct in the context of the new codebase before blindly continuing the rebase. A textually identical conflict might require a slightly different resolution depending on surrounding code changes.
 
 ---
@@ -676,23 +651,23 @@ for FILE in $STAGED_FILES; do
     # 1. Check strict file size limitations. Using wc -c to count raw bytes of the STAGED blob.
     SIZE=$(git show ":$FILE" | wc -c)
     if [ "$SIZE" -gt 1048576 ]; then
-        echo "❌ FATAL: File $FILE violates size constraints. It is larger than 1MB ($SIZE bytes)."
+        echo "FATAL: File $FILE violates size constraints. It is larger than 1MB ($SIZE bytes)."
         ERROR=1
     fi
 
     # 2. Check for exposed secrets
     if git show ":$FILE" | grep -q "AWS_SECRET_ACCESS_KEY"; then
-        echo "❌ FATAL: Hardcoded AWS secret string identified in $FILE"
+        echo "FATAL: Hardcoded AWS secret string identified in $FILE"
         ERROR=1
     fi
 done
 
 if [ $ERROR -ne 0 ]; then
-    echo "🛑 COMMIT ABORTED: Quality gates failed."
+    echo "COMMIT ABORTED: Quality gates failed."
     exit 1
 fi
 
-echo "✅ Pre-commit validation passed."
+echo "Pre-commit validation passed."
 exit 0
 ```
 </details>
@@ -722,8 +697,8 @@ cat .git/hooks/pre-commit # You should clearly see your injected script logic!
 echo 'export AWS_SECRET_ACCESS_KEY="xyz123"' > aws-credentials.sh
 git add aws-credentials.sh
 git commit -m "chore: add local aws credentials script"
-# Expected Output: ❌ FATAL: Hardcoded AWS secret string identified...
-# Followed by: 🛑 COMMIT ABORTED: Quality gates failed.
+# Expected Output: FATAL: Hardcoded AWS secret string identified...
+# Followed by: COMMIT ABORTED: Quality gates failed.
 ```
 
 **Step 4: Test Strict File Size Limitation**
@@ -731,7 +706,7 @@ git commit -m "chore: add local aws credentials script"
 dd if=/dev/urandom of=massive_binary.bin bs=1M count=2
 git add massive_binary.bin
 git commit -m "chore: add massive database dump binary"
-# Expected Output: ❌ FATAL: File massive_binary.bin violates size constraints...
+# Expected Output: FATAL: File massive_binary.bin violates size constraints...
 ```
 
 **Step 5: Test Clean, Valid Commit Execution**
@@ -739,7 +714,7 @@ git commit -m "chore: add massive database dump binary"
 echo "apiVersion: v1" > clean-deployment.yaml
 git add clean-deployment.yaml
 git commit -m "feat: add initial clean deployment manifest"
-# Expected Output: ✅ Pre-commit validation passed.
+# Expected Output: Pre-commit validation passed.
 ```
 </details>
 
@@ -762,7 +737,7 @@ MESSAGE=$(cat "$MESSAGE_FILE")
 
 # Check if the message starts with an uppercase project code and number
 if ! echo "$MESSAGE" | grep -qE "^\[?[A-Z]+-[0-9]+\]?:? "; then
-    echo "🛑 COMMIT REJECTED: Missing Jira Ticket ID."
+    echo "COMMIT REJECTED: Missing Jira Ticket ID."
     echo "Your message must start with a ticket ID (e.g., 'PROJ-123: Your message')."
     exit 1
 fi
@@ -771,7 +746,7 @@ exit 0
 Test the implementation in your repository:
 ```bash
 git commit -m "update readme" --allow-empty
-# Expected Output: 🛑 COMMIT REJECTED: Missing Jira Ticket ID.
+# Expected Output: COMMIT REJECTED: Missing Jira Ticket ID.
 
 git commit -m "KUBE-42: update readme" --allow-empty
 # Commit succeeds.
