@@ -315,7 +315,8 @@ kubectl rollout restart daemonset/falco -n falco
 ```bash
 # Trigger shell detection
 kubectl run test --image=nginx --restart=Never
-kubectl exec -it test -- /bin/bash
+kubectl wait --for=condition=Ready pod/test --timeout=60s
+kubectl exec test -- /bin/bash -c "exit"
 
 # Check Falco logs for alert
 kubectl logs -n falco -l app.kubernetes.io/name=falco | grep "shell"
@@ -333,6 +334,7 @@ kubectl delete pod test
 ```bash
 # Run as Kubernetes Job
 kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml
+kubectl wait --for=condition=complete job/kube-bench --timeout=120s
 kubectl logs job/kube-bench
 
 # Run specific checks
@@ -512,6 +514,7 @@ trivy image --severity HIGH,CRITICAL nginx:1.25
 # 2. Check Falco is detecting events
 echo "=== Falco Test ==="
 kubectl run falco-test --image=nginx --restart=Never
+kubectl wait --for=condition=Ready pod/falco-test --timeout=60s
 kubectl exec falco-test -- cat /etc/passwd
 kubectl logs -n falco -l app.kubernetes.io/name=falco --tail=5
 kubectl delete pod falco-test
