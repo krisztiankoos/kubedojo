@@ -80,24 +80,26 @@ If these were separate containers managed directly by Kubernetes, they would hav
 
 A Pod solves this architectural problem by creating a shared environment. A Pod is a logical enclosure that wraps one or more physical containers. Containers within the same Pod share specific namespaces while keeping others isolated.
 
-```text
-+----------------------------------------------------+
-| Pod Sandbox                                        |
-|                                                    |
-|  Shared Namespaces: Network, IPC, UTS              |
-|  Shared Resources:  IP Address, Volumes            |
-|                                                    |
-|  +----------------+        +----------------+      |
-|  | pause container|        | App Container  |      |
-|  | (Holds Net/IPC)|<------>| (Mount/PID NS) |      |
-|  +----------------+        +----------------+      |
-|          ^                         ^               |
-|          |                         |               |
-|  +----------------+        +----------------+      |
-|  | Sidecar Cont.  |        | Shared Volume  |      |
-|  | (Mount/PID NS) |<------>| (emptyDir/PVC) |      |
-|  +----------------+        +----------------+      |
-+----------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph PodSandbox["Pod Sandbox"]
+        direction TB
+        Meta["Shared Namespaces: Network, IPC, UTS<br/>Shared Resources: IP Address, Volumes"]
+        style Meta fill:transparent,stroke:none,color:inherit
+        
+        subgraph Containers[" "]
+            direction LR
+            Pause["pause container<br/>(Holds Net/IPC)"]
+            App["App Container<br/>(Mount/PID NS)"]
+            Sidecar["Sidecar Cont.<br/>(Mount/PID NS)"]
+            Vol[("Shared Volume<br/>(emptyDir/PVC)")]
+            
+            Pause <--> App
+            Sidecar <--> Pause
+            App <--> Vol
+            Sidecar <--> Vol
+        end
+    end
 ```
 
 Specifically, containers within the same Pod share:
@@ -176,23 +178,12 @@ Unlike Docker running on your laptop, where networking is relatively straightfor
 
 This magic is facilitated by the **Container Network Interface (CNI)**. Kubernetes itself does not handle IP address allocation or physical routing. Instead, Kubernetes strictly defines a programmatic interface (the CNI specification) and relies on third-party plugin providers (like Calico, Cilium, Flannel, or AWS VPC CNI) to execute network manipulation.
 
-```text
-+-----------+        +------------+        +---------------+
-| Scheduler | -----> | Kubelet    | -----> | CRI Runtime   |
-| (Assigns) |        | (On Node)  |        | (pause cont.) |
-+-----------+        +------------+        +---------------+
-                           |
-                           v
-                     +------------+
-                     | CNI Plugin | (e.g., Calico, VPC CNI)
-                     +------------+
-                           | 1. Allocates IP from IPAM
-                           | 2. Creates veth pair
-                           | 3. Configures iptables/routes
-                           v
-                  +-------------------+
-                  | Pod Net Namespace | (IP Assigned to eth0)
-                  +-------------------+
+```mermaid
+flowchart TD
+    Scheduler["Scheduler<br/>(Assigns)"] --> Kubelet["Kubelet<br/>(On Node)"]
+    Kubelet --> CRI["CRI Runtime<br/>(pause cont.)"]
+    Kubelet --> CNI["CNI Plugin<br/>(e.g., Calico, VPC CNI)"]
+    CNI -->|1. Allocates IP from IPAM<br/>2. Creates veth pair<br/>3. Configures iptables/routes| NetNS["Pod Net Namespace<br/>(IP Assigned to eth0)"]
 ```
 
 When the Kubernetes Scheduler assigns your Pod to a worker node, the following sequence occurs:
@@ -286,22 +277,15 @@ It is entirely possible for a Pod to be in the `Running` phase, but have a `Read
 
 To manage this orchestration, Kubernetes utilizes **Probes**—active health checks executed systematically by the Kubelet against your containers:
 
-```text
-Pod Starts
-    |
-    v
-+-------------------+
-| Startup Probe     | ---> (Fails) ---> Restart Container
-+-------------------+
-    | (Succeeds)
-    v
-+-------------------+      +-------------------+
-| Liveness Probe    | ---> | Readiness Probe   | ---> (Fails) ---> Remove from Load Balancer
-| (Runs continuous) |      | (Runs continuous) |
-+-------------------+      +-------------------+
-    | (Fails)                      | (Succeeds)
-    v                              v
-Restart Container             Add to Load Balancer
+```mermaid
+flowchart TD
+    Start((Pod Starts)) --> Startup["Startup Probe"]
+    Startup -- Fails --> Restart1["Restart Container"]
+    Startup -- Succeeds --> Liveness["Liveness Probe<br/>(Runs continuous)"]
+    Startup -- Succeeds --> Readiness["Readiness Probe<br/>(Runs continuous)"]
+    Liveness -- Fails --> Restart2["Restart Container"]
+    Readiness -- Fails --> Remove["Remove from Load Balancer"]
+    Readiness -- Succeeds --> Add["Add to Load Balancer"]
 ```
 
 1. **Liveness Probes**: "Is the application deadlocked or frozen?" The Kubelet checks if the application is healthy. If the Liveness Probe fails repeatedly, the Kubelet restarts the container process to attempt to clear the deadlock and restore service.
@@ -427,20 +411,24 @@ When you ask Kubernetes to schedule a Pod, the Scheduler's bin-packing algorithm
     - **CPU Limits:** If a container attempts to consume more CPU than its limit, the kernel's Completely Fair Scheduler (CFS) actively throttles (slows down) the application. The container will not crash, but it will suffer severe latency. 
     - **Memory Limits:** If a container attempts to allocate more physical memory than its limit, the host Linux kernel immediately terminates the main application process via the OOM (Out Of Memory) Killer, resulting in a container crash and an exit code of `137`.
 
-```text
-Does Pod have limits/requests for BOTH CPU & Memory?
-  |
-  +-- YES --> Are Requests exactly equal to Limits?
-  |             |
-  |             +-- YES --> [ Guaranteed ]
-  |             |
-  |             +-- NO  --> [ Burstable ]
-  |
-  +-- NO ---> Does it have ANY requests or limits?
-                |
-                +-- YES --> [ Burstable ]
-                |
-                +-- NO  --> [ BestEffort ]
+```mermaid
+flowchart TD
+    Q1{"Does Pod have limits/requests<br/>for BOTH CPU & Memory?"}
+    Q2{"Are Requests exactly<br/>equal to Limits?"}
+    Q3{"Does it have ANY<br/>requests or limits?"}
+    
+    Guaranteed["[ Guaranteed ]"]
+    Burstable1["[ Burstable ]"]
+    Burstable2["[ Burstable ]"]
+    BestEffort["[ BestEffort ]"]
+
+    Q1 -- YES --> Q2
+    Q2 -- YES --> Guaranteed
+    Q2 -- NO --> Burstable1
+    
+    Q1 -- NO --> Q3
+    Q3 -- YES --> Burstable2
+    Q3 -- NO --> BestEffort
 ```
 
 Based on how you configure these two values, Kubernetes categorizes your Pod into one of three **Quality of Service (QoS)** classes:
