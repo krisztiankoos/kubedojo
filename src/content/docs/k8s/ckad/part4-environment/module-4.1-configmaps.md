@@ -50,34 +50,35 @@ The CKAD exam frequently tests ConfigMaps because they're fundamental to the twe
 
 ```bash
 # Single key-value
-k create configmap app-config --from-literal=APP_ENV=production
+k create configmap app-config-single --from-literal=APP_ENV=production
 
 # Multiple key-values
-k create configmap app-config \
+k create configmap app-config-multi \
   --from-literal=APP_ENV=production \
   --from-literal=LOG_LEVEL=info \
   --from-literal=MAX_CONNECTIONS=100
 
 # View the result
-k get configmap app-config -o yaml
+k get configmap app-config-multi -o yaml
 ```
 
 ### From Files
 
 ```bash
-# Create a config file
+# Create config files
 echo "database.host=db.example.com
 database.port=5432
 database.name=myapp" > app.properties
+echo "log.level=debug" > logging.properties
 
 # Create ConfigMap from file
-k create configmap app-config --from-file=app.properties
+k create configmap app-config-file --from-file=app.properties
 
 # Custom key name
-k create configmap app-config --from-file=config.properties=app.properties
+k create configmap app-config-custom --from-file=config.properties=app.properties
 
 # Multiple files
-k create configmap app-config \
+k create configmap app-config-multifile \
   --from-file=app.properties \
   --from-file=logging.properties
 ```
@@ -85,8 +86,12 @@ k create configmap app-config \
 ### From Directories
 
 ```bash
+# Create directory and files
+mkdir ./config-dir
+cp app.properties logging.properties ./config-dir/
+
 # All files in directory become keys
-k create configmap app-config --from-file=./config-dir/
+k create configmap app-config-dir --from-file=./config-dir/
 ```
 
 ### From YAML
@@ -206,6 +211,10 @@ volumeMounts:
 ### Environment-Specific Config
 
 ```bash
+# Create namespaces
+k create ns development
+k create ns production
+
 # Development
 k create configmap app-config \
   --from-literal=APP_ENV=development \
@@ -424,6 +433,7 @@ spec:
 EOF
 
 # Verify environment
+k wait --for=condition=Ready pod/env-pod --timeout=30s
 k logs env-pod
 ```
 
@@ -451,6 +461,7 @@ spec:
 EOF
 
 # Test
+k wait --for=condition=Ready pod/vol-pod --timeout=30s
 k exec vol-pod -- cat /usr/share/nginx/html/index.html
 ```
 
@@ -503,6 +514,7 @@ spec:
         name: drill3
 EOF
 
+k wait --for=condition=Ready pod/drill3 --timeout=30s
 k logs drill3
 k delete pod drill3 cm drill3
 ```
@@ -531,6 +543,7 @@ spec:
       name: drill4
 EOF
 
+k wait --for=condition=Ready pod/drill4 --timeout=30s
 k logs drill4
 k delete pod drill4 cm drill4
 ```
@@ -564,6 +577,7 @@ spec:
         path: application.conf
 EOF
 
+k wait --for=condition=Ready pod/drill5 --timeout=30s
 k logs drill5
 k delete pod drill5 cm drill5
 ```
