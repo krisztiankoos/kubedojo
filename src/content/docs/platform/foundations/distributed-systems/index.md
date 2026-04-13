@@ -29,9 +29,9 @@ Understanding these challenges helps you design systems that work despite them.
 
 | # | Module | Time | Description |
 |---|--------|------|-------------|
-| 5.1 | [What Makes Systems Distributed](module-5.1-what-makes-systems-distributed/) | 25-30 min | Fundamental challenges, CAP theorem, Kubernetes as distributed system |
-| 5.2 | [Consensus and Coordination](module-5.2-consensus-and-coordination/) | 35-40 min | Paxos, Raft, leader election, distributed locks, etcd |
-| 5.3 | [Eventual Consistency](module-5.3-eventual-consistency/) | 30-35 min | Consistency models, replication, conflict resolution, CRDTs |
+| 5.1 | [Module 5.1: What Makes Systems Distributed](module-5.1-what-makes-systems-distributed/) | 25-30 min | Fundamental challenges, CAP theorem, Kubernetes as distributed system |
+| 5.2 | [Module 5.2: Consensus and Coordination](module-5.2-consensus-and-coordination/) | 35-40 min | Paxos, Raft, leader election, distributed locks, etcd |
+| 5.3 | [Module 5.3: Eventual Consistency](module-5.3-eventual-consistency/) | 30-35 min | Consistency models, replication, conflict resolution, CRDTs |
 
 ---
 

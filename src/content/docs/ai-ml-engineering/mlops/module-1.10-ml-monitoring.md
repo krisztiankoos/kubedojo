@@ -1301,6 +1301,12 @@ BEST PRACTICES:
 
 ## Hands-On Exercises
 
+Before beginning, ensure your local Python environment is prepared with the required data science and ML observability dependencies:
+
+```bash
+pip install pandas numpy scipy prometheus-client shap lime scikit-learn
+```
+
 The following progressive exercises demand full implementations rather than partial fill-in-the-blank logic. Review the starter templates derived from our standard library, and then consult the fully executable solutions in the toggles below.
 
 ### Task 1: Build a Drift Detector
@@ -1855,7 +1861,12 @@ class ModelRegistry:
 
 ### Task 5: Kubernetes v1.35 Monitoring Deployment
 
-To deploy your Prometheus monitoring infrastructure inside a contemporary KubeDojo K8s cluster, ensure you define strict limits to prevent memory ballooning during intensive histogram calculations. 
+To deploy your Prometheus monitoring infrastructure inside a contemporary KubeDojo K8s cluster, ensure you define strict limits to prevent memory ballooning during intensive histogram calculations. First, create the target namespace safely, then save the following manifest to `monitor-stack.yaml` and deploy it:
+
+```bash
+kubectl create namespace mlops-prod --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f monitor-stack.yaml
+```
 
 <details>
 <summary>v1.35 Deployment Manifest</summary>
@@ -1898,6 +1909,13 @@ spec:
             periodSeconds: 20
 ```
 </details>
+
+Verify the deployment reached a ready state:
+
+```bash
+kubectl wait --for=condition=available deployment/ml-monitor-stack -n mlops-prod --timeout=60s
+kubectl get pods -n mlops-prod -l app=drift-monitor
+```
 
 ### Success Checklist
 - [ ] Task 1 executes PSI calculation without throwing zero-division errors.
