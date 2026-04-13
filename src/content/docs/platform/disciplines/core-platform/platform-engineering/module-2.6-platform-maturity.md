@@ -52,67 +52,25 @@ Maturity models provide a map. They show where you are, where you could be, and 
 
 ### Why Maturity Models?
 
+```mermaid
+flowchart LR
+    A["ASSESS<br/>Where are we today?<br/>---<br/>• Honest assessment<br/>• Gap identification<br/>• Benchmark against peers"] --> B["PLAN<br/>What's the next step?<br/>---<br/>• Prioritized roadmap<br/>• Resource allocation<br/>• Success criteria"]
+    B --> C["COMMUNICATE<br/>Why are we doing this?<br/>---<br/>• Shared language<br/>• Executive alignment<br/>• Team motivation"]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                  PURPOSE OF MATURITY MODELS                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ASSESS                    PLAN                    COMMUNICATE   │
-│  ┌──────────────┐         ┌──────────────┐        ┌──────────┐ │
-│  │              │         │              │        │          │ │
-│  │ Where are    │         │ What's the   │        │ Why are  │ │
-│  │ we today?    │────────►│ next step?   │───────►│ we doing │ │
-│  │              │         │              │        │ this?    │ │
-│  └──────────────┘         └──────────────┘        └──────────┘ │
-│                                                                  │
-│  • Honest                  • Prioritized           • Shared     │
-│    assessment               roadmap                  language   │
-│  • Gap                     • Resource              • Executive  │
-│    identification           allocation               alignment  │
-│  • Benchmark               • Success               • Team       │
-│    against peers            criteria                 motivation │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+> **Pause and predict**: Which level do you think the vast majority of enterprise organizations currently occupy?
 
 ### The Five Levels
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    PLATFORM MATURITY LEVELS                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Level 5: OPTIMIZING                                            │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ Continuous improvement, innovation leader, predictive       ││
-│  │ Few organizations reach this level                          ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              ▲                                   │
-│  Level 4: MANAGED                                                │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ Quantitatively managed, measured outcomes, proactive        ││
-│  │ Platform is a strategic asset                               ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              ▲                                   │
-│  Level 3: SCALABLE                                               │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ Standard processes, self-service works, team grows          ││
-│  │ This is where most mature organizations stabilize           ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              ▲                                   │
-│  Level 2: OPERATIONAL                                            │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ Some automation, basic self-service, reactive support       ││
-│  │ Most organizations are here                                 ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              ▲                                   │
-│  Level 1: PROVISIONAL                                            │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ Ad-hoc processes, tribal knowledge, hero culture            ││
-│  │ Getting started                                             ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart BT
+    L1["Level 1: PROVISIONAL<br/>Ad-hoc processes, tribal knowledge, hero culture<br/>(Getting started)"]
+    L2["Level 2: OPERATIONAL<br/>Some automation, basic self-service, reactive support<br/>(Most organizations are here)"]
+    L3["Level 3: SCALABLE<br/>Standard processes, self-service works, team grows<br/>(This is where most mature organizations stabilize)"]
+    L4["Level 4: MANAGED<br/>Quantitatively managed, measured outcomes, proactive<br/>(Platform is a strategic asset)"]
+    L5["Level 5: OPTIMIZING<br/>Continuous improvement, innovation leader, predictive<br/>(Few organizations reach this level)"]
+    
+    L1 --> L2 --> L3 --> L4 --> L5
 ```
 
 ---
@@ -272,39 +230,22 @@ Typical Metrics:
 
 ### The Eight Dimensions
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   MATURITY ASSESSMENT DIMENSIONS                 │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐    │
-│     │  1. INVEST  │     │ 2. ADOPTION │     │ 3. INTER-   │    │
-│     │    MENT     │     │             │     │    FACES    │    │
-│     │             │     │ How much    │     │             │    │
-│     │ Resources   │     │ are devs    │     │ Portal,     │    │
-│     │ dedicated   │     │ using the   │     │ CLI, API    │    │
-│     │ to platform │     │ platform?   │     │ quality     │    │
-│     └─────────────┘     └─────────────┘     └─────────────┘    │
-│                                                                  │
-│     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐    │
-│     │ 4. OPERA-   │     │ 5. MEASURE- │     │ 6. ORGANI-  │    │
-│     │    TIONS    │     │    MENT     │     │    ZATION   │    │
-│     │             │     │             │     │             │    │
-│     │ How is the  │     │ What do     │     │ Team        │    │
-│     │ platform    │     │ you track   │     │ structure,  │    │
-│     │ run?        │     │ and report? │     │ skills      │    │
-│     └─────────────┘     └─────────────┘     └─────────────┘    │
-│                                                                  │
-│     ┌─────────────┐     ┌─────────────┐                        │
-│     │ 7. PROVI-   │     │ 8. CAPABI-  │                        │
-│     │   SIONING   │     │   LITIES    │                        │
-│     │             │     │             │                        │
-│     │ Self-       │     │ What does   │                        │
-│     │ service     │     │ platform    │                        │
-│     │ maturity    │     │ enable?     │                        │
-│     └─────────────┘     └─────────────┘                        │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Dimensions [Maturity Assessment Dimensions]
+        direction LR
+        D1["1. INVESTMENT<br/>Resources dedicated to platform"]
+        D2["2. ADOPTION<br/>How much are devs using the platform?"]
+        D3["3. INTERFACES<br/>Portal, CLI, API quality"]
+        D4["4. OPERATIONS<br/>How is the platform run?"]
+        D5["5. MEASUREMENT<br/>What do you track and report?"]
+        D6["6. ORGANIZATION<br/>Team structure, skills"]
+        D7["7. PROVISIONING<br/>Self-service maturity"]
+        D8["8. CAPABILITIES<br/>What does platform enable?"]
+        
+        D1 ~~~ D2 ~~~ D3 ~~~ D4
+        D5 ~~~ D6 ~~~ D7 ~~~ D8
+    end
 ```
 
 ### Dimension 1: Investment
@@ -482,31 +423,16 @@ Example:
 
 ### Interpreting Results
 
+```mermaid
+xychart-beta
+    title "Maturity Profile Example (Overall: 2.5 - Operational, approaching Scalable)"
+    x-axis ["Invest", "Adopt", "Interface", "Operate", "Measure", "Org", "Provision", "Capable"]
+    y-axis "Maturity Level" 0 --> 5
+    bar [3, 2, 3, 2, 2, 3, 2, 3]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    MATURITY PROFILE EXAMPLE                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Investment     ████████░░░░░░░░  3                             │
-│  Adoption       ████░░░░░░░░░░░░  2                             │
-│  Interfaces     ████████░░░░░░░░  3                             │
-│  Operations     ████░░░░░░░░░░░░  2                             │
-│  Measurement    ████░░░░░░░░░░░░  2                             │
-│  Organization   ████████░░░░░░░░  3                             │
-│  Provisioning   ████░░░░░░░░░░░░  2                             │
-│  Capabilities   ████████░░░░░░░░  3                             │
-│                                                                  │
-│  Overall: Level 2.5 (Operational, approaching Scalable)         │
-│                                                                  │
-│  Strengths: Investment, Interfaces, Organization, Capabilities  │
-│  Gaps: Adoption, Operations, Measurement, Provisioning          │
-│                                                                  │
-│  Interpretation:                                                 │
-│  You've built good foundations but haven't achieved adoption.   │
-│  Focus on making self-service work and measuring outcomes.      │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+**Interpretation:**
+You've built good foundations but haven't achieved widespread adoption. Focus heavily on making self-service intuitive and measuring your true outcomes to justify your engineering investments.
 
 ---
 
@@ -583,88 +509,63 @@ Success Criteria:
 
 Not all dimensions are equal. Prioritize based on:
 
+```mermaid
+quadrantChart
+    title Prioritization Matrix
+    x-axis Low Effort --> High Effort
+    y-axis Low Impact --> High Impact
+    quadrant-1 Big Bets
+    quadrant-2 Quick Wins
+    quadrant-3 Fill-Ins
+    quadrant-4 Reconsider
+    "Plan carefully": [0.75, 0.75]
+    "Do these first": [0.25, 0.75]
+    "Do when convenient": [0.25, 0.25]
+    "Only if required": [0.75, 0.25]
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                   PRIORITIZATION MATRIX                          │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│                        HIGH IMPACT                               │
-│                            │                                     │
-│     ┌─────────────────────┼─────────────────────┐              │
-│     │                     │                      │              │
-│     │   QUICK WINS        │    BIG BETS         │              │
-│     │                     │                      │              │
-│     │   Do these first    │    Plan these       │              │
-│     │                     │    carefully        │              │
-│  LOW├─────────────────────┼─────────────────────┤HIGH          │
-│EFFORT│                    │                      │EFFORT        │
-│     │   FILL-INS          │    RECONSIDER       │              │
-│     │                     │                      │              │
-│     │   Do when           │    Only if          │              │
-│     │   convenient        │    required         │              │
-│     │                     │                      │              │
-│     └─────────────────────┼─────────────────────┘              │
-│                           │                                     │
-│                        LOW IMPACT                                │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+> **Stop and think**: If your platform has an excellent interface but zero adoption, should your next quarter focus on building more capabilities or driving developer engagement?
 
 ### Example Roadmap
 
-```
-                        PLATFORM MATURITY ROADMAP
-═══════════════════════════════════════════════════════════════════
+**CURRENT STATE:** Level 2.3 (Operational)
+**TARGET STATE:** Level 3.5 (Strong Scalable)
+**TIMELINE:** 12 months
 
-CURRENT STATE: Level 2.3 (Operational)
-TARGET STATE: Level 3.5 (Strong Scalable)
-TIMELINE: 12 months
+#### Q1: Foundation Improvements
+* **Launch developer portal with service catalog**
+  * *Impact:* Interfaces 2→3, Adoption +10%
+* **Implement self-service database provisioning**
+  * *Impact:* Provisioning 2→3
+* **Establish platform SLOs**
+  * *Impact:* Operations 2→3
 
-Q1: Foundation Improvements
-─────────────────────────────────────────────────────────────────
-├── Launch developer portal with service catalog
-│   └── Impact: Interfaces 2→3, Adoption +10%
-├── Implement self-service database provisioning
-│   └── Impact: Provisioning 2→3
-└── Establish platform SLOs
-    └── Impact: Operations 2→3
+#### Q2: Golden Path Expansion
+* **Add 2 new golden paths (Go service, frontend app)**
+  * *Impact:* Capabilities 3→4, Adoption +15%
+* **Implement cost visibility per team**
+  * *Impact:* Measurement 2→3
+* **Policy-as-code for security baseline**
+  * *Impact:* Operations 3→4
 
-Q2: Golden Path Expansion
-─────────────────────────────────────────────────────────────────
-├── Add 2 new golden paths (Go service, frontend app)
-│   └── Impact: Capabilities 3→4, Adoption +15%
-├── Implement cost visibility per team
-│   └── Impact: Measurement 2→3
-└── Policy-as-code for security baseline
-    └── Impact: Operations 3→4
+#### Q3: Adoption Push
+* **Migration support for legacy services**
+  * *Impact:* Adoption +20%
+* **Advanced observability integration**
+  * *Impact:* Capabilities 3→4
+* **Developer NPS survey and action plan**
+  * *Impact:* Measurement 3→4
 
-Q3: Adoption Push
-─────────────────────────────────────────────────────────────────
-├── Migration support for legacy services
-│   └── Impact: Adoption +20%
-├── Advanced observability integration
-│   └── Impact: Capabilities 3→4
-└── Developer NPS survey and action plan
-    └── Impact: Measurement 3→4
+#### Q4: Optimization
+* **Platform ROI reporting**
+  * *Impact:* Measurement 3→4
+* **Self-healing infrastructure**
+  * *Impact:* Operations 3→4
+* **Intelligent provisioning defaults**
+  * *Impact:* Provisioning 3→4
 
-Q4: Optimization
-─────────────────────────────────────────────────────────────────
-├── Platform ROI reporting
-│   └── Impact: Measurement 3→4
-├── Self-healing infrastructure
-│   └── Impact: Operations 3→4
-└── Intelligent provisioning defaults
-    └── Impact: Provisioning 3→4
-
-PROJECTED END STATE:
-─────────────────────────────────────────────────────────────────
-Investment:    3 → 3.5    Adoption:      2 → 4
-Interfaces:    3 → 4      Operations:    2 → 4
-Measurement:   2 → 4      Organization:  3 → 3.5
-Provisioning:  2 → 4      Capabilities:  3 → 4
-
+**PROJECTED END STATE:**
 Overall: 2.3 → 3.75 (Strong Level 3, approaching Level 4)
-```
 
 ---
 
@@ -752,26 +653,11 @@ Key metrics indicating readiness:
 
 ### Transition Timeline Summary
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                 REALISTIC TRANSITION TIMELINES                    │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Provisional ──(3-6 mo)──▶ Operational ──(6-12 mo)──▶ Scalable │
-│     Level 1                   Level 2                  Level 3   │
-│                                                          │       │
-│                                              (9-18 mo)   │       │
-│                                                          ▼       │
-│                                                      Optimized   │
-│                                                       Level 4    │
-│                                                                  │
-│  Total journey from Level 1 to Level 4: 18-36 months            │
-│  (Most organizations stabilize at Level 3, and that's fine)     │
-│                                                                  │
-│  WARNING: These timelines assume dedicated resources.            │
-│  Part-time platform work doubles or triples each estimate.      │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    L1["Level 1<br/>Provisional"] -- 3-6 mo --> L2["Level 2<br/>Operational"]
+    L2 -- 6-12 mo --> L3["Level 3<br/>Scalable"]
+    L3 -- 9-18 mo --> L4["Level 4<br/>Optimized"]
 ```
 
 > **Tip**: Don't treat these transitions as gates you pass through once. It's normal to slide back a level during periods of rapid growth or team turnover. Re-assess quarterly, and treat regression as a signal to reinvest — not as failure.
@@ -841,14 +727,12 @@ But:
 ```
 ❌ DIMENSION IMBALANCE
 
-                    YOUR PLATFORM PROFILE
-              ┌─────────────────────────────┐
-              │ ████████████████░░  4       │ Investment
-              │ ████████████████░░  4       │ Interfaces
-              │ ████████████████░░  4       │ Capabilities
-              │ ████░░░░░░░░░░░░░░  1       │ Adoption
-              │ ████░░░░░░░░░░░░░░  1       │ Measurement
-              └─────────────────────────────┘
+Your Platform Profile
+- Investment:   Level 4
+- Interfaces:   Level 4
+- Capabilities: Level 4
+- Adoption:     Level 1
+- Measurement:  Level 1
 
 Problem: Beautiful platform nobody uses or measures
 
@@ -941,45 +825,33 @@ Risk Signals:
   - Support ticket sentiment
 ```
 
-### Maturity Dashboard
+### Maturity Dashboard Example
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    PLATFORM MATURITY DASHBOARD                  │
-├────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Overall Maturity: 3.2 (Scalable)      Target: 4.0 by Q4      │
-│  ═══════════════════════════════════════════════════════════   │
-│                                                                 │
-│  DIMENSION SCORES              TREND (6mo)                     │
-│  ┌──────────────────────────────────────────────────────────┐ │
-│  │ Investment    ████████████░░░░  3.0        →  stable     │ │
-│  │ Adoption      ██████████████░░  3.5        ↑  improving  │ │
-│  │ Interfaces    ██████████████░░  3.5        ↑  improving  │ │
-│  │ Operations    ████████████░░░░  3.0        →  stable     │ │
-│  │ Measurement   ████████░░░░░░░░  2.5        ↑  improving  │ │
-│  │ Organization  ████████████░░░░  3.0        →  stable     │ │
-│  │ Provisioning  ████████████████  4.0        ↑  improved   │ │
-│  │ Capabilities  ████████████░░░░  3.0        →  stable     │ │
-│  └──────────────────────────────────────────────────────────┘ │
-│                                                                 │
-│  KEY METRICS                                                    │
-│  ────────────────────────────────────────────────────────────  │
-│  Golden Path Adoption       78%  (target: 85%)    ◐           │
-│  Time to First Deploy       4h   (target: <2h)    ◔           │
-│  Developer NPS              +32  (target: +40)    ◐           │
-│  Support Tickets/Week       23   (target: <15)    ◔           │
-│                                                                 │
-│  ROADMAP PROGRESS                                               │
-│  ────────────────────────────────────────────────────────────  │
-│  Q3 Initiatives: ████████████████░░░░  80% complete           │
-│  ✓ Self-service secrets management                             │
-│  ✓ Cost allocation dashboard                                   │
-│  ◐ Developer portal v2.0 (in progress)                        │
-│  ○ Policy-as-code expansion                                    │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-```
+**Overall Maturity:** 3.2 (Scalable) | **Target:** 4.0 by Q4
+
+#### Dimension Scores
+| Dimension | Score | Trend (6mo) |
+|---|---|---|
+| **Investment** | 3.0 | `->` Stable |
+| **Adoption** | 3.5 | `^` Improving |
+| **Interfaces** | 3.5 | `^` Improving |
+| **Operations** | 3.0 | `->` Stable |
+| **Measurement** | 2.5 | `^` Improving |
+| **Organization** | 3.0 | `->` Stable |
+| **Provisioning** | 4.0 | `^` Improved |
+| **Capabilities** | 3.0 | `->` Stable |
+
+#### Key Metrics
+- **Golden Path Adoption:** 78% (Target: 85%) `[NEEDS WORK]`
+- **Time to First Deploy:** 4h (Target: <2h) `[NEEDS WORK]`
+- **Developer NPS:** +32 (Target: +40) `[NEEDS WORK]`
+- **Support Tickets/Week:** 23 (Target: <15) `[NEEDS WORK]`
+
+#### Roadmap Progress (Q3 Initiatives: 80% complete)
+- `[x]` Self-service secrets management
+- `[x]` Cost allocation dashboard
+- `[-]` Developer portal v2.0 (in progress)
+- `[ ]` Policy-as-code expansion
 
 ---
 
@@ -1001,88 +873,44 @@ Risk Signals:
 
 Test your understanding of platform maturity:
 
-**Question 1**: An organization has a sophisticated developer portal and excellent tooling, but only 20% of teams use the platform. What's the likely maturity level and why?
+**Question 1**: You are the newly hired Platform Product Manager at FinBank. You review the current internal developer platform (IDP) and find it has a highly sophisticated portal with automated ArgoCD deployments. However, your metrics show only 20% of the engineering teams are using it, with the rest relying on custom Jenkins pipelines. Based on the platform maturity dimensions, what is the likely overall maturity level of this platform and why?
 
 <details>
 <summary>Show Answer</summary>
 
-Likely **Level 2** (Operational) despite high scores in Interfaces and Capabilities.
-
-The low adoption (20%) indicates that the overall platform maturity is constrained by its weakest critical dimension. A platform that nobody uses isn't mature regardless of technical sophistication.
-
-This is the "Beautiful Platform Nobody Used" anti-pattern. The organization should focus on adoption drivers: understanding blockers, providing migration paths, and celebrating early adopters.
+Likely **Level 2** (Operational) despite high scores in Interfaces and Capabilities. The low adoption rate (20%) indicates that the overall platform maturity is severely constrained by its weakest critical dimension, which is developer usage. A platform that nobody uses cannot be considered mature, regardless of how technically sophisticated its tooling might be. This scenario is a classic example of the "Beautiful Platform Nobody Used" anti-pattern, meaning the organization should pause new feature development and focus heavily on adoption drivers like understanding blockers, providing clear migration paths, and actively celebrating early adopters.
 </details>
 
-**Question 2**: What's the danger of "skipping levels" in platform maturity?
+**Question 2**: StartupX just secured Series B funding and wants to aggressively mature their platform. The CTO suggests skipping basic self-service provisioning (Level 3) and going straight to building an AI-assisted predictive infrastructure engine (Level 5) to save time. What is the danger of this approach?
 
 <details>
 <summary>Show Answer</summary>
 
-Skipping levels creates fragile foundations:
-
-1. **Technical debt accumulates** - Advanced features built on shaky base
-2. **Adoption suffers** - Teams can't use sophisticated capabilities they aren't ready for
-3. **Support burden increases** - Problems are harder to diagnose
-4. **Regression risk** - One failure can drop you multiple levels
-
-Example: Building ML-driven optimization (Level 5) before you have reliable self-service (Level 3) means the ML system has no stable foundation to optimize.
+Skipping levels creates highly fragile foundations that cannot sustain advanced capabilities. By attempting to build an AI-assisted predictive infrastructure engine (Level 5) before establishing reliable self-service provisioning (Level 3), the startup risks creating a complex system that lacks stable underlying data and processes. This approach inevitably leads to accumulating technical debt, high support burdens, and severe developer frustration when basic needs remain unmet while the team works on speculative advanced features. To ensure long-term success, organizations must build sequentially, proving value and stabilizing at each maturity stage before moving to the next.
 </details>
 
-**Question 3**: Why are both leading and lagging indicators important for measuring platform maturity?
+**Question 3**: During a quarterly review, the VP of Engineering points out that the platform's 'Deployment Frequency' (a lagging indicator) has increased, and suggests stopping tracking 'Portal Daily Active Users' (a leading indicator) to save on telemetry costs. Why should you push back on this suggestion?
 
 <details>
 <summary>Show Answer</summary>
 
-**Lagging indicators** (outcomes) tell you what happened:
-- Deployment frequency, developer NPS, cost per deployment
-- Important for proving value, but too late to act on
-
-**Leading indicators** (predictors) tell you what's coming:
-- Adoption rate trends, feedback submission rate, template currency
-- Allow early intervention before problems manifest
-
-Together they provide:
-- Proof of past impact (lagging)
-- Early warning of future issues (leading)
-- Basis for roadmap prioritization
+You should push back because tracking only lagging indicators like Deployment Frequency tells you what has already happened, but offers no insight into future trends. Leading indicators, such as Portal Daily Active Users, provide critical early warnings about developer engagement and platform adoption before a drop-off impacts the overall deployment frequency. If developers stop using the portal today, deployment frequency won't drop until weeks or months later, at which point the damage to productivity has already been done. Maintaining visibility into both types of metrics ensures you can proactively manage platform health and validate that your leading behaviors are effectively driving the desired lagging outcomes.
 </details>
 
-**Question 4**: A platform team scores Level 4 in Investment and Organization but Level 2 in Adoption and Measurement. What should they do?
+**Question 4**: Your platform team at RetailCorp has a dedicated budget, an experienced Product Manager, and 8 engineers (Level 4 Investment/Org). However, your recent assessment shows only 15% adoption (Level 2) and you have no clear ROI metrics (Level 2). Your manager wants to spend the next quarter building a new multi-cloud deployment capability. What should you recommend the team do instead?
 
 <details>
 <summary>Show Answer</summary>
 
-This is the **Dimension Imbalance** anti-pattern. High investment without adoption means resources aren't creating value.
-
-Immediate actions:
-1. **Pause new capability development** - What you have isn't being used
-2. **Investigate adoption blockers** - Embed with non-adopting teams
-3. **Establish measurement** - You can't improve what you don't measure
-4. **Create migration paths** - Make it easy to adopt from current state
-5. **Focus on quick wins** - Build adoption momentum with easy victories
-
-The goal is rebalancing: better to be Level 3 across all dimensions than Level 4 in some and Level 2 in others.
+You should strongly recommend pausing the multi-cloud deployment initiative and instead refocus the team's efforts entirely on driving adoption and establishing solid metrics. This situation represents the "Dimension Imbalance" anti-pattern, where high investment in organization and capabilities is completely wasted if the platform isn't being utilized or measured. The team's next quarter should be spent embedding with engineering teams to uncover why the adoption is only 15%, creating smooth migration paths for existing workloads, and implementing a baseline ROI tracking model. Once you have balanced your dimensions and proven that the existing capabilities bring measurable value, you can then justify expanding into new areas like multi-cloud.
 </details>
 
-**Question 5**: What's the minimum maturity level where platform ROI becomes clearly demonstrable?
+**Question 5**: You are defending your platform team's budget for the next fiscal year. The CFO is frustrated that after 6 months of work (currently at Level 2 maturity), you cannot provide a clear dollar-value return on investment (ROI) for the platform. At what maturity level should the CFO expect to see clearly demonstrable ROI, and why is it difficult to provide at Level 2?
 
 <details>
 <summary>Show Answer</summary>
 
-**Level 3 (Scalable)** is where ROI becomes measurable, but **Level 4 (Managed)** is where it's clearly demonstrable.
-
-At Level 3:
-- Adoption is high enough to see aggregate impact
-- Metrics exist but may be mostly operational
-- Time savings can be estimated
-
-At Level 4:
-- Business impact metrics are tracked
-- ROI model is established and maintained
-- Platform improvements are prioritized by measured impact
-- Executive sponsorship is based on demonstrated value
-
-Earlier levels (1-2) are investments with unclear returns—that's normal, but funding becomes harder to justify.
+The CFO should expect to see clearly demonstrable ROI when the platform reaches **Level 4 (Managed)**, although early measurable value starts appearing at Level 3. At Level 2, platform capabilities are still basic, self-service is limited, and most importantly, adoption across the organization is likely inconsistent or fragmented. Because not enough teams are using the platform as their default path, the aggregate time saved or velocity gained cannot yet offset the heavy initial investment required to build the platform. It is critical to set expectations with leadership early on that the platform journey follows a "J-curve," where significant ROI requires reaching a critical mass of adoption and operational stability before the financial benefits become undeniable.
 </details>
 
 ---
@@ -1207,30 +1035,20 @@ Your assessment should:
 
 Platform maturity is a journey:
 
-```
-KEY TAKEAWAYS:
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                  │
-│  1. ASSESS HONESTLY                                             │
-│     Use all 8 dimensions, not just comfortable ones             │
-│                                                                  │
-│  2. BUILD FOUNDATIONS FIRST                                     │
-│     Don't skip levels—Level 3 fundamentals enable Level 4+      │
-│                                                                  │
-│  3. BALANCE DIMENSIONS                                          │
-│     Investment without adoption is waste                        │
-│     Capabilities without measurement is hope                    │
-│                                                                  │
-│  4. MEASURE WHAT MATTERS                                        │
-│     Leading indicators for early warning                        │
-│     Lagging indicators for proving value                        │
-│                                                                  │
-│  5. ROADMAP INCREMENTALLY                                       │
-│     Quarterly milestones, not yearly moonshots                  │
-│     Quick wins build momentum and prove value                   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+> **1. ASSESS HONESTLY**
+> Use all 8 dimensions, not just comfortable ones.
+>
+> **2. BUILD FOUNDATIONS FIRST**
+> Don't skip levels—Level 3 fundamentals enable Level 4+.
+>
+> **3. BALANCE DIMENSIONS**
+> Investment without adoption is waste. Capabilities without measurement is hope.
+>
+> **4. MEASURE WHAT MATTERS**
+> Leading indicators for early warning. Lagging indicators for proving value.
+>
+> **5. ROADMAP INCREMENTALLY**
+> Quarterly milestones, not yearly moonshots. Quick wins build momentum and prove value.
 
 The goal isn't reaching Level 5—it's continuous improvement that delivers measurable value. Most organizations thrive at Level 3-4 without needing to optimize further.
 
