@@ -282,7 +282,13 @@ metadata:
   name: api-server
 spec:
   replicas: 2
+  selector:
+    matchLabels:
+      app: api
   template:
+    metadata:
+      labels:
+        app: api
     spec:
       containers:
       - name: api
@@ -324,14 +330,26 @@ metadata:
 spec:
 <<<<<<< HEAD
   replicas: 5
+  selector:
+    matchLabels:
+      app: api
   template:
+    metadata:
+      labels:
+        app: api
     spec:
       containers:
       - name: api
         image: nginx:1.27.0
 =======
   replicas: 2
+  selector:
+    matchLabels:
+      app: api
   template:
+    metadata:
+      labels:
+        app: api
     spec:
       containers:
       - name: api
@@ -347,7 +365,13 @@ metadata:
   name: api-server
 spec:
   replicas: 5
+  selector:
+    matchLabels:
+      app: api
   template:
+    metadata:
+      labels:
+        app: api
     spec:
       containers:
       - name: api
@@ -402,14 +426,26 @@ metadata:
 spec:
 <<<<<<< HEAD
   replicas: 5
+  selector:
+    matchLabels:
+      app: api
   template:
+    metadata:
+      labels:
+        app: api
     spec:
       containers:
       - name: api
         image: nginx:1.27.0
 =======
   replicas: 2
+  selector:
+    matchLabels:
+      app: api
   template:
+    metadata:
+      labels:
+        app: api
     spec:
       containers:
       - name: api
@@ -425,7 +461,13 @@ metadata:
   name: api-server
 spec:
   replicas: 5
+  selector:
+    matchLabels:
+      app: api
   template:
+    metadata:
+      labels:
+        app: api
     spec:
       containers:
       - name: api
@@ -446,7 +488,7 @@ git commit -m "Merge branch 'feature/update-image' into feature/scale-up resolvi
 
 </details>
 
-However, if you attempt to run this legacy exercise today using a modern Git version equipped with the highly optimized `ort` strategy, it seamlessly auto-merges without generating any conflict whatsoever. This fascinating phenomenon occurs because the modifications to `replicas` (line 6) and `image` (line 12) are separated by exactly five unchanged lines. This gap provides Git's internal algorithms with just enough unambiguous textual context to safely apply both discrete hunks independently. The "overlapping context illusion" in older tutorials often fails to account for the increasing sophistication of modern Git diff engines.
+However, if you attempt to run this legacy exercise today using a modern Git version equipped with the highly optimized `ort` strategy, it seamlessly auto-merges without generating any conflict whatsoever. This fascinating phenomenon occurs because the modifications to `replicas` (line 6) and `image` (line 17) are separated by exactly ten unchanged lines. This gap provides Git's internal algorithms with just enough unambiguous textual context to safely apply both discrete hunks independently. The "overlapping context illusion" in older tutorials often fails to account for the increasing sophistication of modern Git diff engines.
 
 ### The Octopus Merge: Taming Multiple Branches
 
