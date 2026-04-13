@@ -1,83 +1,46 @@
 ---
 title: "RAG Evaluation & Optimization"
-slug: ai-ml-engineering/vector-rag/module-3.4-rag-evaluation-optimization
+slug: ai-ml-engineering/vector-rag/module-1.4-rag-evaluation-optimization
 sidebar:
   order: 405
 ---
-> **AI/ML Engineering Track** | Complexity: `[COMPLEX]` | Time: 5-6
-**Reading Time**: 6-7 hours
-**Prerequisites**: Modules 12-13
 
----
+## The Bereavement Fare Disaster: When Hallucination Carries a Price Tag
 
-## The $10 Million RAG Failure: When "Good Enough" Wasn't
+In November 2022, a grieving passenger visited Air Canada's website to book a last-minute flight for a funeral. The airline's newly deployed AI customer service chatbot confidently hallucinated a non-existent bereavement fare policy, explicitly instructing the passenger that they could purchase a full-price ticket immediately and claim a retroactive refund within 90 days. When the customer subsequently applied for the refund, Air Canada refused, stating the chatbot's advice directly violated their actual corporate policy.
 
-**New York City. September 15, 2023. 2:47 PM.**
+The passenger sued the airline for negligent misrepresentation. In February 2024, a civil tribunal ruled against Air Canada, ordering them to pay direct damages and tribunal fees. Beyond the immediate financial penalty, the global public relations disaster severely damaged their brand reputation and forced a costly, emergency manual review of their entire AI infrastructure. Air Canada attempted to argue that the chatbot was a "separate legal entity" responsible for its own actions—an argument the judge swiftly dismantled.
 
-Maria Santos, lead AI engineer at a major law firm, was watching her career implode in real-time. Their AI-powered legal research system—nine months in development, $2.3 million in investment—had just given a partner completely wrong information about a precedent case. The partner had cited it in court. The judge wasn't amused.
+The technical root cause of this failure was a fundamental limitation of basic Retrieval-Augmented Generation (RAG). The system retrieved generic ticketing documents but failed to cross-reference the strict constraints of the bereavement policy. Worse, the system lacked any self-reflective capability to recognize that its generated response contradicted the retrieved facts. If the engineering team had implemented Self-RAG to critique the generation, or GraphRAG to map the strict dependencies between fare policies, this catastrophic incident would have been entirely prevented. 
 
-"How is this possible?" the managing partner demanded. "You told us the AI could find any relevant case."
-
-Maria pulled up the logs. The system had retrieved five seemingly relevant cases, all discussing similar legal concepts. But it missed the one case that actually mattered—a recent appellate decision that used different terminology but established the exact precedent they needed.
-
-The problem was painfully simple in hindsight: their RAG system did basic semantic search. When the user searched for "breach of fiduciary duty in corporate mergers," the system found documents containing those exact concepts. But the critical case used the phrase "violation of loyalty obligations in acquisition contexts." Same meaning. Different words. Missed entirely.
-
-Over the next six months, Maria rebuilt the system from scratch. She added query expansion to catch synonymous terms. She implemented knowledge graphs to understand relationships between legal concepts. She added reranking to ensure the truly relevant cases floated to the top. She built in self-critique mechanisms so the system would flag when it wasn't confident.
-
-The new system caught what the old one missed—every time.
-
-> "Basic RAG is like searching a library by only looking at book covers. Advanced RAG actually reads the table of contents, checks the index, and asks the librarian for help."
-> — Maria Santos, speaking at LegalTech Conference 2024
-
-This module teaches you the techniques Maria learned the hard way. Basic RAG gets you 70% of the way there. These advanced patterns get you the rest.
-
----
+```mermaid
+flowchart LR
+    subgraph Basic RAG
+        Q1[Query] --> E1[Embed] --> S1[Search] --> T1[Top-K] --> G1[Generate]
+    end
+    subgraph Advanced RAG
+        Q2[Query] --> E2[Expand] --> H2[Hybrid Search] --> R2[Rerank] --> RE2[Reflect] --> G2[Generate]
+    end
+```
 
 ## What You'll Be Able to Do
 
-By the end of this module, you will:
-- Master GraphRAG for knowledge graph-enhanced retrieval
-- Implement HyDE (Hypothetical Document Embeddings) for query expansion
-- Build Self-RAG systems with retrieval reflection
-- Create hybrid search combining BM25 and semantic search
-- Apply reranking with cross-encoders for precision
-- Understand when to use each pattern and their trade-offs
+By the end of this intensive module, you will be able to:
+- **Design** a GraphRAG architecture to extract and traverse entity relationships across disconnected documents.
+- **Evaluate** the linguistic mismatch between user queries and technical documents using Hypothetical Document Embeddings (HyDE).
+- **Implement** a two-stage hybrid retrieval system combining BM25 lexical search and cross-encoder reranking.
+- **Diagnose** hallucination vulnerabilities by applying Self-RAG reflective tokens to critique retrieval quality.
+- **Deploy** a production-grade RAG evaluation pipeline to a Kubernetes v1.35 cluster.
 
 ---
 
 ## The Evolution of RAG: From Simple to Sophisticated
 
-Before diving into the patterns, it helps to understand why they exist. Basic RAG emerged in 2020 when researchers at Facebook AI (now Meta) published the foundational paper "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks." The idea was elegant: instead of cramming all knowledge into model weights, retrieve relevant information at query time.
+Before diving into the optimization patterns, it helps to understand why they exist. Basic RAG emerged in 2020 as an elegant solution to the limitations of model training: instead of cramming all knowledge into static model weights, retrieve relevant information dynamically at query time. 
 
-But as teams deployed RAG to production, they discovered a pattern that would repeat across the industry: **70% of queries worked great, 30% failed mysteriously**. A medical company found their system missing drug interactions because medical literature uses different terminology than patient questions. A legal tech startup discovered their contract analysis tool couldn't handle clauses written in legalese versus plain English. A customer support system failed because users described problems differently than documentation described solutions.
+But as engineering teams deployed RAG to production, they discovered a harsh reality that would repeat across the industry: 70 percent of queries worked flawlessly, but 30 percent failed mysteriously. A medical company found their system missing critical drug interactions because academic literature uses different terminology than a patient's natural language question. A legal tech startup discovered their contract analysis tool could not handle clauses written in dense legalese versus plain English inquiries. 
 
-Each failure spawned a solution. The query-document mismatch problem led to HyDE. The need for precision over recall led to reranking. The challenge of connected knowledge led to GraphRAG. The danger of confident wrong answers led to Self-RAG.
-
-> "Every advanced RAG pattern exists because someone, somewhere, got burned by basic RAG."
-> — Jerry Liu, LlamaIndex founder, at AI Engineer Summit 2024
-
-What you're learning in this module isn't academic theory—it's battle-tested solutions to real production failures. The patterns compose together, and the best systems use multiple techniques. By the end, you'll know not just HOW to implement each pattern, but WHEN to use it.
-
----
-
-## Why This Module Matters
-
-In Module 12, you built your first RAG system. It works, but you've probably noticed some limitations:
-
-1. **Semantic gaps**: User queries don't always match document language
-2. **Missing context**: Retrieved chunks lack surrounding information
-3. **Relevance issues**: Top-k retrieval returns "close" but not "best" results
-4. **No reasoning**: The system can't evaluate its own retrieval quality
-
-Think of basic RAG like fishing with a single hook. You cast it out, hope something bites, and take whatever comes up. Advanced RAG is like deploying a fishing fleet: multiple boats, different nets, sonar to find the fish, and quality control to keep only the best catch.
-
-**Advanced RAG patterns solve these problems!**
-
-```
-Basic RAG: Query → Embed → Search → Top-K → Generate
-                    ↓
-Advanced RAG: Query → Expand → Hybrid Search → Rerank → Reflect → Generate
-```
+Each specific failure spawned a targeted solution. The query-document mismatch problem led to HyDE. The need for absolute precision over broad recall led to reranking. The challenge of traversing connected knowledge led to GraphRAG. The extreme danger of confident, wrong answers led to Self-RAG. What you are learning in this module is not academic theory; it is a collection of battle-tested solutions to real production failures. By the end, you will know exactly when and how to deploy each pattern.
 
 ---
 
@@ -85,42 +48,29 @@ Advanced RAG: Query → Expand → Hybrid Search → Rerank → Reflect → Gene
 
 ### The Problem with Flat Retrieval
 
-Traditional RAG treats documents as isolated chunks. But real knowledge is **connected**.
+Traditional RAG treats documents as isolated, flat chunks of text. But real knowledge is deeply connected. Imagine you are researching corporate history and ask: "What technologies did companies founded by Stanford graduates use?" 
 
-Imagine you're researching "What companies did Stanford AI graduates found?" With flat retrieval, you'd need documents that explicitly mention both "Stanford AI" and "company founders." But the actual knowledge is spread across many documents: one mentions "Andrew Ng studied at Stanford," another says "Andrew Ng co-founded Coursera," a third discusses "Coursera's educational platform." No single document answers the question—you need to connect the dots.
+With flat retrieval, you would need documents that explicitly mention both "Stanford graduates" and specific "technologies" in the exact same paragraph. But the actual knowledge is spread across a vast corpus: one document mentions "Andrew Ng studied at Stanford," another states "Andrew Ng co-founded Coursera," and a third discusses "Coursera's reliance on Python and React." No single document answers the question. You must connect the dots.
 
-GraphRAG does exactly this. Think of it like building a social network for your documents. Instead of isolated posts, you have entities (people, companies, concepts) connected by relationships (founded, studied at, works with). When you search, you don't just find documents—you traverse relationships to discover connected knowledge.
+GraphRAG operates exactly like building a social network for your documents. Instead of isolated posts, you define entities (people, companies, concepts) connected by semantic relationships (founded, studied at, uses). When you search, you do not just find static documents; you traverse relationships to discover connected context.
 
-This is how humans naturally think. We don't store facts in isolation; we store them in networks of associations. GraphRAG gives AI systems the same capability.
-
-```
-Traditional RAG:
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ Chunk about     │  │ Chunk about     │  │ Chunk about     │
-│ "Python lists"  │  │ "Python dicts"  │  │ "data structures"│
-└─────────────────┘  └─────────────────┘  └─────────────────┘
-        ↓                   ↓                    ↓
-    All isolated - no connections between concepts!
-
-GraphRAG:
-┌─────────────────┐
-│ "Python lists"  │──────┐
-└─────────────────┘      │    ┌──────────────────┐
-        │                ├───▶│ "data structures" │
-        ▼                │    └──────────────────┘
-┌─────────────────┐      │            │
-│ "Python dicts"  │──────┘            ▼
-└─────────────────┘           ┌──────────────────┐
-                              │ "algorithms"     │
-                              └──────────────────┘
+```mermaid
+graph TD
+    subgraph Traditional RAG
+        A["Chunk about 'Python lists'"]
+        B["Chunk about 'Python dicts'"]
+        C["Chunk about 'data structures'"]
+    end
+    subgraph GraphRAG
+        D["Python lists"] --> F["data structures"]
+        E["Python dicts"] --> F
+        F --> G["algorithms"]
+    end
 ```
 
 ### How GraphRAG Works
 
-GraphRAG combines:
-1. **Knowledge Graph**: Entities and relationships extracted from documents
-2. **Vector Store**: Embeddings for semantic search
-3. **Graph Traversal**: Following connections to find related context
+GraphRAG combines a standard Vector Store with a Knowledge Graph to enable multi-hop reasoning. 
 
 ```python
 # GraphRAG Architecture
@@ -138,7 +88,7 @@ class GraphRAG:
 
 ### Entity Extraction
 
-The first step is extracting entities and relationships:
+The most critical and challenging step is extracting entities and relationships accurately from unstructured text. This requires heavily structured prompting.
 
 ```python
 # Using LLM for entity extraction
@@ -176,6 +126,8 @@ Text: {text}
 
 ### Graph-Enhanced Retrieval
 
+Once the graph is built, retrieval becomes a multi-step traversal process. We find the starting nodes via vector search, and then "hop" across edges to gather full context.
+
 ```python
 def graph_enhanced_retrieval(query: str, k: int = 5) -> List[Document]:
     """
@@ -205,52 +157,9 @@ def graph_enhanced_retrieval(query: str, k: int = 5) -> List[Document]:
     return ranked_chunks[:k]
 ```
 
-### Did You Know? Microsoft's GraphRAG Discovery
-
-In April 2024, Microsoft Research released GraphRAG after an internal experiment that surprised even them. They tested it on the Enron email corpus—500,000+ emails from the infamous energy company's collapse.
-
-Traditional RAG could answer questions like "What did Jeff Skilling say about the California energy crisis?" But GraphRAG found something more: **hidden patterns of communication**.
-
-By building a knowledge graph of who communicated with whom, about what topics, and when, GraphRAG revealed clusters of employees discussing specific accounting practices months before the scandal broke. Questions like "Who knew about the off-balance-sheet partnerships and when?" suddenly became answerable—not by finding a single email that said it explicitly, but by tracing relationships across thousands of communications.
-
-**The insight**: Sometimes the answer isn't in any single document. It's in the connections between documents.
-
-### The Art of Entity Extraction: Harder Than It Looks
-
-Here's something most GraphRAG tutorials gloss over: entity extraction is messy. Really messy. Real-world documents don't contain clean "Person X founded Company Y" statements. They contain:
-
-- **Coreferences**: "Altman" in one paragraph, "Sam" in another, "the OpenAI CEO" in a third—all the same person
-- **Implicit relationships**: "After leaving Google, he launched his own AI startup" (who? what startup?)
-- **Ambiguity**: "Apple" the company or "apple" the fruit? Context matters.
-- **Domain jargon**: "Plaintiff's 11 U.S.C. § 523(a)(2)(A) claim" means something very specific in bankruptcy law
-
-Production GraphRAG systems spend enormous effort on entity resolution—determining that "Sam Altman," "Altman," "the Y Combinator president," and "OpenAI's chief executive" are all the same entity. Without this, your graph becomes fragmented: multiple nodes for the same entity, relationships that should connect but don't.
-
-The solution? A multi-pass approach:
-
-1. **Extract entities** with an LLM, accepting some messiness
-2. **Embed all entity mentions** to find similar strings
-3. **Cluster embeddings** to group mentions of the same entity
-4. **Verify clusters** with a second LLM pass
-5. **Merge duplicates** into canonical entities
-
-Is this expensive? Yes—processing a million documents might take days and hundreds of dollars in API calls. But the alternative is a graph that hallucinates connections or misses real ones. For high-stakes domains, the investment pays off.
-
-### When to Use GraphRAG
-
-**Good for:**
-- Complex domains with interconnected concepts (legal, medical, technical)
-- Questions requiring multi-hop reasoning ("What technologies did companies founded by Stanford graduates use?")
-- Documents with clear entity relationships
-- Corpus that will be queried many times (amortize the indexing cost)
-
-**Not ideal for:**
-- Simple Q&A over flat documents
-- When entity extraction is unreliable
-- Small document collections (overhead not worth it)
-- Rapidly changing corpus (re-indexing is expensive)
-
 ### GraphRAG with Neo4j
+
+For production workloads, in-memory graphs fail to scale. You must rely on robust graph databases like Neo4j. The Cypher query language allows for expressive, rapid relationship traversal.
 
 ```python
 from neo4j import GraphDatabase
@@ -283,21 +192,19 @@ class Neo4jGraphRAG:
             return [record["entity_id"] for record in result]
 ```
 
+> **Pause and predict**: If your entity extraction model captures "Apple" as a fruit in one document and "Apple" as a technology company in another, what will happen to your Neo4j graph queries? How would you architect a solution to prevent this contamination?
+
 ---
 
 ## 2. HyDE: Hypothetical Document Embeddings
 
 ### The Query-Document Mismatch Problem
 
-Users ask questions. Documents contain answers. But they use different language.
+Users ask questions. Documents contain answers. They rarely share the same linguistic structure.
 
-This is one of the most frustrating problems in RAG. Imagine you're at a library, but instead of asking the librarian "Where are the cooking books?", you have to describe a cooking book perfectly for them to find it. "I need something that discusses recipes, ingredients, kitchen techniques..." That's what semantic search is doing—trying to match your question-language to document-language.
+Imagine walking into a massive library. Instead of asking the librarian, "Where are the books on advanced Python?", you are forced to describe the exact sentences you expect to find inside the book. That is precisely what semantic search does—it attempts to match the syntax and latent meaning of your question directly to the syntax of a statement.
 
-The fundamental issue: embeddings capture meaning, but they capture it in the context of how it's expressed. A question about "making code faster" and a document about "performance optimization techniques" might be semantically similar, but their embeddings can be surprisingly different because questions and statements have different linguistic patterns.
-
-HyDE (Hypothetical Document Embeddings) solves this with a clever insight: instead of searching with your question, generate what the answer would look like, then search for documents similar to that hypothetical answer. It's like telling the librarian: "I'm looking for a book that would say something like 'To improve performance, consider caching, parallelization, and algorithmic optimization...'"
-
-```
+```text
 User query: "How do I make my code run faster?"
 Document:   "Performance optimization techniques include caching,
              algorithmic improvements, and parallel processing..."
@@ -305,15 +212,20 @@ Document:   "Performance optimization techniques include caching,
 The QUESTION doesn't match the ANSWER linguistically!
 ```
 
-### HyDE Solution
+### The HyDE Solution
 
-**Idea**: Generate a hypothetical answer, then search for documents similar to that answer!
+HyDE (Hypothetical Document Embeddings) solves this mismatch with a stroke of genius: instead of searching with the user's raw question, you use an LLM to generate a hypothetical, perfectly written answer. You then embed this hypothetical answer and search your vector database. 
 
-```
-Traditional: Query → Embed Query → Search
-HyDE:        Query → Generate Hypothetical Answer → Embed Answer → Search
+Because the hypothetical answer uses the authoritative tone, vocabulary, and structure of a true document, it maps flawlessly into the same vector space as your real documents.
 
-The hypothetical answer uses document-like language!
+```mermaid
+flowchart LR
+    subgraph Traditional
+        A1[Query] --> B1[Embed Query] --> C1[Search]
+    end
+    subgraph HyDE
+        A2[Query] --> B2[Generate Hypothetical Answer] --> C2[Embed Answer] --> D2[Search]
+    end
 ```
 
 ### How HyDE Works
@@ -346,7 +258,7 @@ def hyde_search(query: str, k: int = 5) -> List[Document]:
     return results
 ```
 
-### HyDE Example
+### A Practical HyDE Example
 
 ```python
 # Query
@@ -373,7 +285,9 @@ tools like cProfile to identify hotspots.
 # Searching with its embedding finds much better matches.
 ```
 
-### Multi-HyDE: Generate Multiple Hypotheticals
+### Multi-HyDE: Generating Multiple Angles
+
+A single hypothetical document might guess the wrong angle. Multi-HyDE generates several distinct hypotheticals, embeds all of them, aggregates the results, and deduplicates.
 
 ```python
 def multi_hyde_search(query: str, k: int = 5, n_hypotheticals: int = 3) -> List[Document]:
@@ -399,66 +313,31 @@ def multi_hyde_search(query: str, k: int = 5, n_hypotheticals: int = 3) -> List[
     return rerank(query, unique_results)[:k]
 ```
 
-### When to Use HyDE
-
-**Good for:**
-- Question-answering where queries are questions, docs are statements
-- Technical documentation (query language differs from doc language)
-- When semantic search returns "close but not relevant" results
-
-**Not ideal for:**
-- Keyword-heavy searches (product names, codes)
-- When queries already match document language
-- Real-time applications (adds LLM latency)
-
-**Cost consideration**: HyDE adds one LLM call per query!
-
-### Did You Know? The Accidental Birth of HyDE
-
-The story of HyDE's discovery reads like a comedy of errors. In late 2022, a research team at Carnegie Mellon University was working on improving embedding models for retrieval. During one experiment, a graduate student accidentally fed the LLM's *output* into the search system instead of the original query.
-
-The results were strange. Better. Noticeably better.
-
-"We thought there was a bug," recalls one team member in a later interview. "Why would a made-up answer help find real documents? But when we looked closer, it made perfect sense. The LLM wrote in the same style as the documents we were searching."
-
-The key insight was linguistic: humans write questions differently than they write answers. Technical documentation doesn't say "How do I fix a segfault?" It says "Segmentation faults occur when a program attempts to access memory it doesn't own. To debug, first enable core dumps..."
-
-By generating a hypothetical answer first, you translate question-language into document-language. The embedding model doesn't need to bridge that gap—you've done it for them.
-
-The paper was published in December 2022, and within months, HyDE was integrated into every major RAG framework. Sometimes the best innovations come from mistakes.
-
 ---
 
 ## 3. Self-RAG: Self-Reflective Retrieval
 
 ### The "Garbage In, Garbage Out" Problem
 
-Basic RAG blindly uses whatever is retrieved. But what if:
-- Retrieved documents are irrelevant?
-- The answer isn't in the retrieved docs?
-- Multiple docs contradict each other?
+Basic RAG blindly trusts the vector database. It assumes that whatever the retriever returns is gospel truth. But what if the retrieved documents are completely irrelevant? What if they contradict one another? 
 
-This is where most RAG systems fail silently. They retrieve five documents, feed them to the LLM, and generate an answer. But what if those five documents are about tangentially related topics? The LLM will still generate something—often a confident-sounding answer that's completely wrong.
+When basic RAG retrieves irrelevant context, the LLM treats it as an absolute constraint. It bends logic, invents facts, and confidently hallucinates an answer just to satisfy the prompt's demand to "use the provided context."
 
-Think of it like a student writing an essay. Basic RAG is a student who grabs the first five books from the library, skims them, and writes whatever. Self-RAG is a student who reads critically: "Is this source relevant? Does my answer match what the sources say? Am I making claims I can't support?" The second student writes better essays.
+### The Self-RAG Architecture
 
-### Self-RAG Solution
+Self-RAG forces the LLM to behave like a critical thinker. It inserts evaluation checkpoints where the model asks itself: "Is this passage genuinely relevant to the query?" and "Does my generated answer actually rely on the retrieved facts?"
 
-**Idea**: Have the LLM critique its own retrieval and generation!
-
-This sounds computationally expensive, and it is. But for high-stakes applications—legal, medical, financial—the cost of a wrong answer far exceeds the cost of verification. A drug interaction checker that confidently gives wrong information isn't just useless; it's dangerous.
-
-```
-Basic RAG:     Retrieve → Generate
-Self-RAG:      Retrieve → Critique Retrieval → Generate → Critique Generation → Refine
-
-The model asks itself:
-- "Is this retrieved passage relevant?"
-- "Does my answer actually use the evidence?"
-- "Is my answer supported by the passages?"
+```mermaid
+flowchart LR
+    subgraph Basic RAG
+        A1[Retrieve] --> B1[Generate]
+    end
+    subgraph Self-RAG
+        A2[Retrieve] --> B2[Critique Retrieval] --> C2[Generate] --> D2[Critique Generation] --> E2[Refine]
+    end
 ```
 
-### Self-RAG Architecture
+By adding these critique layers, Self-RAG sacrifices latency for extreme accuracy, making it strictly mandatory for high-stakes medical, legal, and financial pipelines.
 
 ```python
 class SelfRAG:
@@ -526,78 +405,38 @@ class SelfRAG:
         return is_supported, critique
 ```
 
-### Retrieval Tokens (Advanced Self-RAG)
+Advanced implementations of Self-RAG fine-tune models to output specific control tokens directly, entirely avoiding the need for multi-shot prompting:
 
-The original Self-RAG paper introduces special tokens:
-
-```
+```text
 [Retrieve]: Should I retrieve? (Yes/No/Continue)
 [IsRel]:    Is passage relevant? (Relevant/Irrelevant)
 [IsSup]:    Is response supported? (Fully/Partially/No)
 [IsUse]:    Is response useful? (5/4/3/2/1)
 ```
 
-These are trained into the model, making self-critique faster than prompting.
-
-### The Cost of Getting It Wrong
-
-Let's be concrete about why Self-RAG matters for high-stakes applications.
-
-In 2023, a healthcare AI company faced a near-catastrophic failure. Their drug interaction checker—a RAG system over pharmaceutical databases—was asked about combining a common blood thinner with a new migraine medication. The system retrieved three relevant documents, but missed a fourth: an FDA warning issued just weeks earlier about a serious interaction.
-
-The system generated a confident response: "No significant interactions found." A pharmacist caught the error before anyone was harmed, but the company faced months of legal scrutiny and lost major contracts.
-
-The root cause? Classic RAG blindness. The system retrieved documents, generated an answer, and served it. No reflection on whether the retrieved documents were complete. No consideration of whether they might be missing something crucial. No epistemic humility.
-
-Self-RAG would have helped. A properly implemented self-critique system would have asked: "Are these three documents sufficient to answer a drug interaction question? Is this answer well-supported by the evidence?" The system might have flagged uncertainty, prompting human review.
-
-For consumer chatbots, a wrong answer is annoying. For medical, legal, and financial applications, a wrong answer can destroy lives. Self-RAG adds latency and cost, but for these domains, it's not optional—it's table stakes.
-
-### When to Use Self-RAG
-
-**Good for:**
-- High-stakes applications (medical, legal, financial)
-- When retrieval quality varies
-- When you need explainable, verifiable answers
-- Domains where hallucination has severe consequences
-
-**Not ideal for:**
-- Simple, low-stakes Q&A
-- Real-time applications (multiple LLM calls)
-- When retrieval is already high-quality
-- Consumer applications where speed trumps accuracy
-
 ---
 
-## 4. Hybrid Search: BM25 + Semantic
+## 4. Hybrid Search: Combining Lexical and Semantic Power
 
 ### Why Hybrid?
 
-Semantic search and keyword search are like two different superpowers. Semantic search understands meaning—it knows "car" and "automobile" are related. Keyword search finds exact matches—it can locate "error code 0x80070005" in a sea of documents. Each excels where the other fails.
+Semantic search and keyword search act like two distinct detectives. Semantic search understands meaning and intent—it knows that "automobile" and "car" are identical concepts. Lexical keyword search (BM25) lacks understanding but possesses a photographic memory for exact matches.
 
-The realization that rocked the search industry: **you don't have to choose**. The best production systems use both, combining their strengths while covering each other's weaknesses.
-
-Think of it like having two detectives working a case. One is great at understanding context and relationships ("The suspect probably went to a place where he felt safe..."). The other is great at finding specific evidence ("We need the receipt with transaction ID 47291"). Together, they solve cases neither could alone.
-
-**Semantic search** (embeddings) is great for meaning but misses exact matches:
-```
+```text
 Query: "error code 0x80070005"
 Semantic search might return docs about "error handling" instead of
 docs containing that exact error code!
 ```
 
-**Lexical search** (BM25/TF-IDF) finds exact matches but misses meaning:
-```
+```text
 Query: "how to fix slow code"
 BM25 won't find docs about "performance optimization" unless they
 contain "slow" and "code"!
 ```
 
-**Hybrid search combines both!**
+### Understanding BM25
 
-### BM25 Explained
-
-BM25 (Best Match 25) is a ranking function based on term frequency:
+BM25 (Best Match 25) relies on term frequency and inverse document frequency, heavily penalizing long documents that merely repeat a keyword to game the system.
 
 ```python
 # Simplified BM25 scoring
@@ -619,6 +458,8 @@ def bm25_score(query_terms, document, corpus):
 ```
 
 ### Implementing Hybrid Search
+
+To implement Hybrid Search, we run both algorithms concurrently, normalize their scores to a 0-1 scale, and apply a configurable `alpha` weight. 
 
 ```python
 from rank_bm25 import BM25Okapi
@@ -666,9 +507,7 @@ class HybridSearch:
         return (scores - min_score) / (max_score - min_score)
 ```
 
-### Reciprocal Rank Fusion (RRF)
-
-An alternative to weighted combination:
+Instead of manually tuning `alpha`, many production systems use Reciprocal Rank Fusion (RRF). RRF calculates a final score based purely on the combined ordinal ranks provided by each system, mitigating the risk of heavily skewed normalization values.
 
 ```python
 def reciprocal_rank_fusion(rankings: List[List[int]], k: int = 60) -> List[int]:
@@ -692,35 +531,7 @@ def reciprocal_rank_fusion(rankings: List[List[int]], k: int = 60) -> List[int]:
     return sorted_docs
 ```
 
-### When to Use Hybrid Search
-
-**Good for:**
-- Mixed query types (some keyword, some natural language)
-- Technical domains with codes, IDs, acronyms
-- General-purpose search systems
-
-**Tuning alpha:**
-- alpha=1.0: Pure semantic search
-- alpha=0.5: Balanced (good default)
-- alpha=0.0: Pure BM25
-- Tune based on your query distribution!
-
-### The Art of Tuning Hybrid Search
-
-Here's a truth that most tutorials skip: there's no universally optimal alpha value. The right balance depends entirely on your query distribution and document corpus.
-
-Consider three real scenarios:
-
-**Scenario 1: Customer Support for a Software Product**
-Users ask questions like "error code 0x8007000D" alongside "my application keeps crashing when I try to export." The first query needs BM25 (exact match on error code). The second needs semantic search (understand the intent). Best alpha: 0.4-0.5 (slightly favor BM25 for code-heavy queries).
-
-**Scenario 2: Legal Research Platform**
-Lawyers search for concepts like "breach of fiduciary duty in merger contexts" but also need to find specific case citations like "Smith v. Jones, 542 U.S. 296." Legal language is precise; semantics matter but exact phrases matter more. Best alpha: 0.3-0.4 (favor BM25 for legal precision).
-
-**Scenario 3: Consumer E-commerce Search**
-Users search for "comfortable running shoes for flat feet" or "birthday gift for teenage girl." These are almost entirely semantic—exact words matter less than understanding intent and matching product descriptions. Best alpha: 0.6-0.8 (favor semantic search).
-
-The lesson? **Always analyze your query logs before choosing alpha.** Sample 100 queries, categorize them (keyword-heavy vs. natural language), and tune accordingly. Better yet, use a learned ranker that dynamically adjusts alpha per query based on query characteristics.
+> **Stop and think**: If your legal platform users primarily search for specific court case citations like "Smith v. Jones, 542 U.S. 296", should your hybrid search alpha lean closer to 1.0 (semantic) or 0.0 (lexical BM25)? Why?
 
 ---
 
@@ -728,42 +539,31 @@ The lesson? **Always analyze your query logs before choosing alpha.** Sample 100
 
 ### The Bi-Encoder vs Cross-Encoder Trade-off
 
-Here's a secret that changed how production search systems work: the embeddings you use for fast retrieval are fundamentally limited. They can't fully capture the nuanced relationship between a query and a document because they're computed separately.
+The embeddings used for fast retrieval (Bi-encoders) are fundamentally limited. They compress a massive document into a single coordinate point independently of the query. They are extremely fast but lack deep contextual reasoning.
 
-Think of bi-encoders like judging a dating match by looking at two profiles separately. You can see if both people like hiking and live in the same city, but you can't see how they'd actually interact. Cross-encoders are like watching them on an actual date—you see the chemistry (or lack thereof) directly.
+Cross-encoders evaluate the query and the document simultaneously through the transformer network. They can see the deep structural relationship between the words in the query and the words in the document.
 
-The trade-off is brutal: cross-encoders are **10x more accurate** but **1000x slower**. You can't use them for initial retrieval (you'd have to score every document individually). But you CAN use them to re-score a shortlist.
-
-This led to the two-stage retrieval pattern that now powers almost every serious search system.
-
-**Bi-encoder** (what we've been using):
-```
-Query → Encoder → Query Embedding
-Doc   → Encoder → Doc Embedding
-Score = cosine_similarity(query_emb, doc_emb)
-
-Fast! Can pre-compute doc embeddings.
-But query and doc don't "see" each other.
-```
-
-**Cross-encoder**:
-```
-[Query, Doc] → Encoder → Relevance Score
-
-Query and doc are encoded TOGETHER!
-Much more accurate, but slow (can't pre-compute).
+```mermaid
+flowchart LR
+    subgraph Bi-Encoder
+        Q1[Query] --> E1[Encoder] --> QE[Query Embedding]
+        D1[Doc] --> E2[Encoder] --> DE[Doc Embedding]
+        QE --> S1[Score = cosine_similarity]
+        DE --> S1
+    end
+    subgraph Cross-Encoder
+        P2[Query, Doc] --> E3[Encoder] --> RS2[Relevance Score]
+    end
 ```
 
-### Two-Stage Retrieval
+Because Cross-encoders must process the query and document together, you cannot pre-compute their embeddings. Running a Cross-encoder across a million documents at query time is computationally impossible. This enforces the **Two-Stage Retrieval** pattern.
 
-```
-Stage 1 (Fast, Recall-focused):
-  1000 docs → Bi-encoder → Top 100 candidates
-
-Stage 2 (Slow, Precision-focused):
-  100 candidates → Cross-encoder → Top 10 final results
-
-Best of both worlds!
+```mermaid
+flowchart TD
+    A[1000 docs] -->|Stage 1: Fast, Recall-focused| B[Bi-encoder]
+    B --> C[Top 100 candidates]
+    C -->|Stage 2: Slow, Precision-focused| D[Cross-encoder]
+    D --> E[Top 10 final results]
 ```
 
 ### Implementing Reranking
@@ -802,9 +602,7 @@ class RerankedSearch:
 | `BAAI/bge-reranker-base` | Medium | Best | High quality |
 | `BAAI/bge-reranker-large` | Slow | Best | Maximum quality |
 
-### Cohere Rerank API
-
-For production without hosting your own model:
+For enterprise systems without deep infrastructure, managed endpoints offer instant relief:
 
 ```python
 import cohere
@@ -822,49 +620,13 @@ def cohere_rerank(query: str, documents: List[str], top_n: int = 5) -> List[str]
     return [documents[result.index] for result in response.results]
 ```
 
-### When to Use Reranking
-
-**Always use reranking when:**
-- Precision matters more than latency
-- You have the compute budget
-- Initial retrieval returns "close but not best" results
-
-**Skip reranking when:**
-- Ultra-low latency required (<50ms)
-- Initial retrieval is already high quality
-- Cost is a major constraint
-
-### The Business Case for Reranking
-
-Let's talk numbers, because this is where engineering meets economics.
-
-Imagine you're building a customer support chatbot for an e-commerce company. Your baseline RAG system achieves 72% accuracy—meaning 72% of answers are correct and helpful. Not bad, but 28% of customers get wrong or useless answers. With 100,000 queries per month, that's 28,000 frustrated customers.
-
-You add cross-encoder reranking. Accuracy jumps to 89%—now only 11,000 customers get poor answers. The improvement seems incremental: 17 percentage points. But look at the error reduction: you went from 28,000 failures to 11,000. That's **60% fewer bad experiences**.
-
-The cost? Cross-encoders add ~50-100ms latency and negligible compute (you're only rescoring 20-50 documents, not millions). For a support chatbot, users won't notice 100ms. They WILL notice wrong answers.
-
-This is why virtually every production RAG system uses reranking. The quality improvement is disproportionate to the cost. It's one of the highest-ROI improvements you can make.
-
 ---
 
 ## 6. Parent Document Retrieval
 
-### The Chunk Size Dilemma
+A classic dilemma plauges static chunking: small chunks provide excellent, precise search vectors but starve the generation LLM of surrounding context. Large chunks provide rich context for generation, but their embeddings are noisy and dilute search accuracy.
 
-Here's a tension that plagues every RAG system: chunk size.
-
-Small chunks (100-200 tokens) create precise embeddings. When you embed "Python's list comprehension allows concise iteration," the embedding captures exactly that concept. Search is accurate.
-
-But when you retrieve that tiny chunk and feed it to the LLM, there's no context. What was the document about? What came before and after? The LLM has to generate an answer from a snippet—like writing a book report after reading one paragraph.
-
-Large chunks (1000+ tokens) provide context. The LLM understands where information fits in the broader document. But embeddings become diluted. A thousand-token chunk about Python might mention lists, dictionaries, loops, and functions—the embedding becomes a vague "Python stuff" representation rather than capturing any specific concept.
-
-**Solution**: Index small, retrieve large!
-
-This is like how libraries work. The card catalog (small chunks) helps you find the right bookshelf. But when you sit down to read, you don't read index cards—you read the whole book (large chunks). Parent Document Retrieval formalizes this intuition.
-
-### Parent Document Retrieval Pattern
+The elegant solution is Parent Document Retrieval. You chunk the document into tiny fragments for the vector search index, but when a match is found, you return the entire parent section to the LLM. 
 
 ```python
 class ParentDocumentRetriever:
@@ -910,36 +672,19 @@ class ParentDocumentRetriever:
         return [self.parent_docs[pid] for pid in parent_ids[:k]]
 ```
 
-### Multi-Level Hierarchy
-
-For very long documents, use multiple levels:
-
+```mermaid
+graph TD
+    L0["Level 0: Full document (10,000 tokens)"] --> L1["Level 1: Sections (1,000 tokens)"]
+    L1 --> L2["Level 2: Paragraphs (200 tokens)"]
+    L2 --> L3["Level 3: Sentences (20-50 tokens)"]
+    style L3 stroke:#f66,stroke-width:2px,stroke-dasharray: 5 5
 ```
-Level 0: Full document (10,000 tokens)
-Level 1: Sections (1,000 tokens)
-Level 2: Paragraphs (200 tokens)
-Level 3: Sentences (20-50 tokens)
-
-Search at Level 3, return Level 1 or 2!
-```
-
-### Did You Know? The Origin of Parent Document Retrieval
-
-Parent Document Retrieval seems obvious in hindsight, but it took years to become standard practice. The technique emerged from a frustrating pattern noticed by the LlamaIndex team in 2023.
-
-Users would report: "I found the exact sentence I needed, but the LLM couldn't use it properly." Upon investigation, the chunks being retrieved were technically correct—they contained the answer—but were so isolated from context that the LLM couldn't understand them.
-
-One memorable case involved legal documents. A user searched for information about termination clauses in a contract. The system correctly retrieved: "Either party may terminate upon 30 days written notice." Perfect—except the retrieved chunk didn't include the preceding paragraph that listed three exceptions to this rule, or the following paragraph that specified the notice had to be sent via certified mail.
-
-The LLM generated a technically correct but practically useless answer. The user followed the advice, sent a termination notice via email, and the contract wasn't actually terminated because they violated the certified mail requirement that was in the next paragraph.
-
-The solution? Store chunks at two granularities. Use tiny chunks for precise retrieval (finding the exact relevant sentence), then expand to parent chunks for generation (giving the LLM the full context). The technique is now so standard that it's built into LangChain, LlamaIndex, and most RAG frameworks as a first-class feature.
 
 ---
 
-## 7. Combining Patterns: Production RAG
+## 7. The Full Production RAG Pipeline
 
-### The Full Pipeline
+Integrating these patterns yields a robust, fault-tolerant RAG engine capable of serving enterprise demands securely.
 
 ```python
 class ProductionRAG:
@@ -983,7 +728,7 @@ class ProductionRAG:
         return answer
 ```
 
-### Pattern Selection Guide
+### Pattern Selection and Economics
 
 | Pattern | When to Use | Latency Impact | Quality Impact |
 |---------|-------------|----------------|----------------|
@@ -994,85 +739,6 @@ class ProductionRAG:
 | **Self-RAG** | High-stakes applications | +500-1000ms | Very High |
 | **Parent Docs** | Long documents | Minimal | Medium |
 
-### Debugging Your RAG Pipeline
-
-Here's practical advice that will save you hours of frustration: **always instrument your RAG pipeline**.
-
-When a RAG system gives wrong answers, the failure could be anywhere: bad chunking, poor embeddings, irrelevant retrieval, or bad generation. Without instrumentation, you're debugging blindly.
-
-Build logging into every stage:
-
-1. **Query Analysis**: Log the original query, any preprocessing, and the final query sent to retrieval
-2. **Retrieval Candidates**: Log the top 20-50 documents returned, with their scores
-3. **Reranking Results**: Log how scores changed after reranking
-4. **Context Used**: Log exactly what context was passed to the LLM
-5. **Generation**: Log the full prompt and the raw response
-
-When something goes wrong, trace through these logs. Common failure patterns:
-
-- **Good retrieval, bad generation**: The right documents were retrieved, but the LLM misused them. Consider prompt engineering or self-critique.
-- **Bad retrieval, any generation**: Wrong documents mean wrong answers. Debug your embedding model, chunking strategy, or search parameters.
-- **Retrieval vs. Reranking mismatch**: If reranking dramatically reorders results, your bi-encoder might be poorly calibrated for your domain. Consider fine-tuning.
-
-Teams that skip instrumentation spend 10x longer debugging RAG failures. Don't be that team.
-
----
-
-## Did You Know?
-
-### The Accidental Discovery of HyDE
-
-In 2022, researchers at Carnegie Mellon were trying to improve retrieval by fine-tuning embeddings. One day, they accidentally ran their search using a **generated summary** instead of the original query. To their surprise, it worked *better*! This "mistake" led to the HyDE paper - proving that sometimes the best discoveries come from errors.
-
-**The insight**: LLMs write in "document language," while humans write in "question language." By translating questions to document-style text, you speak the same language as your corpus!
-
-### BM25: The 30-Year-Old Algorithm That Won't Die
-
-BM25 (Best Match 25) was published by Stephen Robertson in **1994** - before Google existed, before most developers were born. Yet it *still* powers Elasticsearch, Solr, and is used by most search engines as a baseline.
-
-Why? Because for exact matches, nothing beats term frequency. When someone searches "error 0x80070005", semantic search might return docs about "error handling" - but BM25 finds the exact code every time.
-
-**Fun fact**: The "25" in BM25 refers to it being the 25th iteration of Robertson's Best Match formula. BM1 through BM24 didn't make the cut!
-
-### Microsoft's Enron Revelation
-
-When Microsoft released GraphRAG in 2024, they demonstrated it on the **Enron email corpus** - 500,000+ emails from the infamous energy company's collapse. Traditional RAG could answer simple questions, but GraphRAG found hidden connections:
-
-- Who was secretly communicating with whom?
-- What topics were discussed in clusters?
-- How did information flow through the organization?
-
-GraphRAG constructed a knowledge graph of entities and relationships, revealing patterns that investigators had missed for 20 years!
-
-### The Cross-Encoder Paradox
-
-Here's a strange fact: Cross-encoders are **10x more accurate** than bi-encoders for relevance scoring. So why doesn't everyone use them?
-
-Because they're also **1000x slower**. A bi-encoder can search 1 million documents in milliseconds (pre-computed embeddings). A cross-encoder would need to score each document individually - taking hours.
-
-The two-stage solution (bi-encoder → cross-encoder) was first popularized by **Facebook AI** in 2019 for their Dense Passage Retrieval (DPR) system. Now it's the industry standard.
-
-### The Self-RAG Breakthrough
-
-Self-RAG came from a simple observation: **LLMs are bad at knowing what they don't know**. They hallucinate confidently about topics not in their training data.
-
-The researchers at University of Washington trained a model to predict special "reflection tokens":
-- `[Retrieve]` - Should I look something up?
-- `[IsRel]` - Is this passage relevant?
-- `[IsSup]` - Is my answer supported by evidence?
-
-The result? **10-15% accuracy improvement** on knowledge-intensive tasks, with the model effectively "thinking twice" before answering.
-
-### Industry Adoption (2024-2025)
-
-- **Perplexity AI**: Uses hybrid search + reranking for their answer engine
-- **ChatGPT (with browsing)**: Implements a form of Self-RAG for web search
-- **Google Gemini**: Uses GraphRAG-style knowledge graph integration
-- **Anthropic Claude**: Employs multi-stage retrieval for their knowledge features
-- **Notion AI**: Hybrid BM25 + semantic for workspace search
-
-### The Numbers That Matter
-
 | Technique | Quality Improvement | Latency Cost |
 |-----------|-------------------|--------------|
 | HyDE | +20-40% recall | +200-500ms |
@@ -1081,66 +747,268 @@ The result? **10-15% accuracy improvement** on knowledge-intensive tasks, with t
 | Self-RAG | +10-15% accuracy | +500-1000ms |
 | GraphRAG | +25-40% for complex queries | +100-300ms |
 
-**The takeaway**: You can get 2x better RAG by stacking these techniques. The best production systems use 3-4 of them together!
+---
+
+## Did You Know?
+
+1. In December 2022, researchers at Carnegie Mellon University accidentally discovered HyDE when a graduate student mistakenly fed the LLM's generated summaries into their search index instead of the raw queries, radically improving recall by 20 to 40 percent.
+2. Stephen Robertson published the BM25 lexical ranking algorithm in 1994. More than 32 years later, it remains the foundational baseline algorithm for Elasticsearch and Apache Solr.
+3. In April 2024, Microsoft explicitly demonstrated the power of GraphRAG by processing over 500,000 Enron emails, successfully mapping out hidden corporate communication clusters that financial investigators had entirely missed for two decades.
+4. Because cross-encoder models evaluate pairs simultaneously, they operate up to 1000 times slower than bi-encoders during large-scale retrieval scoring, cementing the two-stage retrieval pipeline introduced by Facebook AI in 2019 as a permanent industry requirement.
 
 ---
 
-## Key Takeaways
+## Common Mistakes in Production RAG
 
-After working through this module, here's what you should remember:
-
-1. **Basic RAG is a starting point, not a destination.** The 70/30 rule applies: 70% of queries work fine, 30% fail in ways that matter. Advanced patterns exist to close that gap.
-
-2. **Match your pattern to your problem.** HyDE solves query-document language mismatch. GraphRAG solves connected knowledge problems. Self-RAG solves reliability problems. Reranking solves precision problems. Know what you're solving before reaching for a tool.
-
-3. **The two-stage retrieval pattern is industry standard.** Fast, approximate retrieval (bi-encoders, BM25) for recall, followed by slow, precise scoring (cross-encoders) for precision. Don't fight this pattern—embrace it.
-
-4. **Hybrid search beats either approach alone.** Semantic search understands meaning but misses exact matches. Keyword search finds exact matches but misses meaning. Use both.
-
-5. **Self-critique is expensive but necessary for high-stakes applications.** If a wrong answer costs more than the compute to verify, use Self-RAG. Medical, legal, financial—these domains demand verification.
-
-6. **Index small, retrieve large.** Parent Document Retrieval separates search granularity from context granularity. This solves the chunk size dilemma elegantly.
-
-7. **Every production system composes multiple patterns.** The best RAG systems aren't using one technique—they're using HyDE + hybrid search + reranking + self-critique together. Your competitive advantage comes from knowing which combinations work for your use case.
-
-8. **Measure, don't assume.** Advanced patterns add latency and cost. Before implementing, establish baseline metrics. After implementing, measure the improvement. Not all patterns help all use cases.
+| Mistake | Why it Fails | The Fix |
+|---------|-------------|---------|
+| **Relying solely on semantic search** | Embeddings perfectly capture general meaning but often completely miss precise keyword matches or specific system IDs. | Implement a robust hybrid search pipeline combining BM25 scoring and vector similarity. |
+| **Using cross-encoders for initial retrieval** | Cross-encoders evaluate pairs of query and document simultaneously, rendering an O(N) complexity that guarantees system timeouts. | Adopt two-stage retrieval: use fast bi-encoders for the top 100 results, then apply cross-encoders only to that shortlist. |
+| **Chunking documents too small** | Tiny chunks provide excellent search precision but entirely deprive the generation LLM of necessary surrounding narrative context. | Implement Parent Document Retrieval to search small chunks but return the full parent section to the LLM. |
+| **Failing to handle entity coreferences** | Mentions of "Apple" and "the iPhone maker" will create disconnected graph nodes, violently fracturing the knowledge base. | Build a dedicated entity resolution and clustering step immediately after the initial LLM extraction phase. |
+| **Applying HyDE to exact-match queries** | Generating a hypothetical document for a query like "Error 0x80070005" will introduce noise and dilute the specific keyword payload. | Route queries dynamically; strictly reserve HyDE for natural language exploration queries. |
+| **Ignoring retrieval critique layers** | Assuming all retrieved documents are flawlessly relevant leads to confident hallucinations when the vector database returns noisy matches. | Implement Self-RAG reflection tokens to violently filter irrelevant context prior to generation. |
+| **Setting a static 50/50 hybrid weight** | A perfectly split alpha parameter between BM25 and vector search rarely reflects the nuanced reality of your actual user query distribution. | Continuously analyze query logs to tune the alpha parameter, typically favoring BM25 for technical and legal domains. |
 
 ---
 
-## Deliverable: Advanced RAG Toolkit
+## Knowledge Check
 
-Build a comprehensive toolkit that implements:
-1. HyDE query expansion
-2. Hybrid search (BM25 + semantic)
-3. Cross-encoder reranking
-4. Self-RAG critique
-5. Comparison benchmarks
+<details>
+<summary>1. Scenario: You are engineering a medical RAG pipeline to flag severe drug interactions. Due to regulatory constraints, your system cannot afford to provide advice based on partially irrelevant clinical trials. Which pattern must you implement immediately?</summary>
+You must implement Self-RAG. By injecting a reflection and critique checkpoint prior to the generation step, the LLM will aggressively filter out retrieved documents that do not directly pertain to the specific interaction query, preventing confident hallucinations that could cause medical harm.
+</details>
 
-See `examples/module_14/` for implementation.
+<details>
+<summary>2. Scenario: Your customer support bot handles inquiries for hardware tools. Users search using exact manufacturer part numbers, but your vector database keeps returning documentation for physically similar tools rather than the specific requested part. How do you resolve this?</summary>
+You need to introduce Hybrid Search combining BM25 and your semantic vectors. Vector databases struggle with isolated alphanumeric strings like part numbers, mapping them poorly in the latent space. BM25 excels at pinpointing exact lexical matches, ensuring the exact part number surfaces instantly.
+</details>
+
+<details>
+<summary>3. Scenario: A law firm tasks you with analyzing a massive corporate email leak. They need to understand the chain of custody regarding financial fraud. Why will a traditional semantic RAG approach completely fail here?</summary>
+Traditional RAG relies on flat retrieval, meaning it can only return documents where the query's concepts co-occur in the same paragraph. Uncovering a chain of custody requires multi-hop reasoning across disconnected emails, making GraphRAG the only viable architectural choice to traverse relationships.
+</details>
+
+<details>
+<summary>4. Scenario: Your internal wiki RAG returns excellent semantic matches, but the LLM constantly complains that the retrieved text snippets are too fragmented to form a cohesive summary. How do you optimize the pipeline without ruining search accuracy?</summary>
+Implement Parent Document Retrieval. You keep the small chunking strategy active for the vector search phase to ensure high precision matching, but map those tiny chunks back to larger logical sections (like a full chapter) to provide the LLM with dense, cohesive context for generation.
+</details>
+
+<details>
+<summary>5. What is the critical architectural distinction between a bi-encoder and a cross-encoder that prevents you from using a cross-encoder against a raw database of one million documents?</summary>
+A bi-encoder embeds the query and the document independently, allowing you to pre-compute document embeddings offline. A cross-encoder feeds both the query and the document into the transformer simultaneously to calculate attention across both texts. This deep interaction makes it drastically slower and computationally impossible to execute across millions of documents at runtime.
+</details>
+
+<details>
+<summary>6. How does Hypothetical Document Embeddings (HyDE) directly circumvent the linguistic mismatch problem inherent to Q&A systems?</summary>
+It forces the system to translate the user's raw question into the authoritative format of a hypothetical document. Because vector spaces group text by syntax and latent meaning, matching a "document-style" hypothetical answer against real "document-style" data yields significantly higher recall than attempting to map a question directly to a statement.
+</details>
 
 ---
 
-## Further Reading
+## Hands-On Lab: Deploying a RAG Evaluation Pipeline on Kubernetes
 
-Each of these resources dives deeper into specific patterns covered in this module:
+In this comprehensive lab, you will build and deploy a Two-Stage Retrieval pipeline API to a local Kubernetes v1.35 cluster. You will configure Hybrid Search, implement Cross-Encoder reranking, and verify state through cluster logs.
 
-- [HyDE Paper](https://arxiv.org/abs/2212.10496) - The original Hypothetical Document Embeddings paper from CMU. Essential reading for understanding why query expansion works.
-- [Self-RAG Paper](https://arxiv.org/abs/2310.11511) - Self-Reflective Retrieval-Augmented Generation. Shows how to train models with reflection tokens.
-- [GraphRAG by Microsoft](https://microsoft.github.io/graphrag/) - Microsoft's official GraphRAG documentation. Includes the Enron case study and production deployment guidance.
-- [MTEB Leaderboard](https://huggingface.co/spaces/mteb/leaderboard) - The Massive Text Embedding Benchmark. Use this to choose embedding models for your retrieval stage.
-- [Cohere Rerank](https://docs.cohere.com/docs/reranking) - Production-ready reranking API. Great for teams without GPU infrastructure for self-hosted cross-encoders.
-- [LangChain RAG Guide](https://python.langchain.com/docs/tutorials/rag/) - Practical implementation patterns with code examples for all techniques covered here.
-- [LlamaIndex Advanced RAG](https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/advanced_retrieval/) - In-depth coverage of parent document retrieval, sentence window retrieval, and metadata filtering.
+### Step 1: Environment and Cluster Preparation
+
+We require a strictly modern environment. We will provision a local Kubernetes cluster explicitly targeting v1.35 using Kind.
+
+```bash
+# Provision the local cluster
+kind create cluster --name rag-eval-cluster --image kindest/node:v1.35.0
+
+# Create the dedicated namespace
+kubectl create namespace rag-system
+
+# Prepare your local Python environment for building the API
+python3 -m venv rag-env
+source rag-env/bin/activate
+pip install fastapi uvicorn sentence-transformers rank_bm25 numpy
+```
+
+### Step 2: Implement the Retrieval API
+
+Create a new file named `app.py`. This FastAPI application implements our mock two-stage retrieval combining BM25 and semantic embedding, followed by a cross-encoder.
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer, CrossEncoder
+from rank_bm25 import BM25Okapi
+import numpy as np
+
+app = FastAPI(title="RAG Pipeline API")
+
+# Load our Bi-encoder and Cross-encoder into memory
+bi_encoder = SentenceTransformer('all-MiniLM-L6-v2')
+cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+
+# Mock Knowledge Base
+DOCUMENTS = [
+    "Error code 0x80070005 indicates an access denied permissions issue.",
+    "To optimize Python execution, implement multiprocessing.",
+    "System crash logs are stored in /var/log/syslog.",
+    "Performance optimization requires deep algorithmic analysis.",
+    "Ensure the network daemon is running before accessing 0x80070005."
+]
+
+# Pre-compute BM25 and Embeddings for rapid Stage 1 retrieval
+tokenized_docs = [doc.lower().split() for doc in DOCUMENTS]
+bm25 = BM25Okapi(tokenized_docs)
+doc_embeddings = bi_encoder.encode(DOCUMENTS)
+
+class QueryRequest(BaseModel):
+    query: str
+
+@app.post("/search")
+def search(request: QueryRequest):
+    query = request.query
+    
+    # STAGE 1: Hybrid Search (Bi-encoder + BM25)
+    query_emb = bi_encoder.encode(query)
+    semantic_scores = np.dot(doc_embeddings, query_emb)
+    
+    bm25_scores = bm25.get_scores(query.lower().split())
+    
+    # Simple normalization and alpha weighting (0.5)
+    semantic_norm = semantic_scores / (np.max(semantic_scores) + 1e-9)
+    bm25_norm = bm25_scores / (np.max(bm25_scores) + 1e-9)
+    hybrid_scores = 0.5 * semantic_norm + 0.5 * bm25_norm
+    
+    # Grab Top 3 candidates from Stage 1
+    top_indices = np.argsort(hybrid_scores)[::-1][:3]
+    candidates = [DOCUMENTS[i] for i in top_indices]
+    print(f"Stage 1 Candidates: {candidates}")
+    
+    # STAGE 2: Reranking (Cross-encoder)
+    pairs = [[query, doc] for doc in candidates]
+    rerank_scores = cross_encoder.predict(pairs)
+    
+    # Sort the final candidates by the strict Cross-encoder score
+    ranked_results = sorted(zip(candidates, rerank_scores), key=lambda x: x[1], reverse=True)
+    
+    return {"query": query, "results": [{"doc": doc, "score": float(score)} for doc, score in ranked_results]}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+```
+
+### Step 3: Containerization and Loading
+
+Create the exact `Dockerfile` in the same directory:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN pip install fastapi uvicorn sentence-transformers rank_bm25 numpy
+COPY app.py /app/app.py
+
+# Pre-download models during build phase to prevent runtime latency
+RUN python -c "from sentence_transformers import SentenceTransformer, CrossEncoder; SentenceTransformer('all-MiniLM-L6-v2'); CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')"
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+Build the image locally and inject it directly into the Kind cluster runtime to avoid needing an external registry.
+
+```bash
+docker build -t rag-api:latest .
+kind load docker-image rag-api:latest --name rag-eval-cluster
+```
+
+### Step 4: Deploying to Kubernetes (v1.35)
+
+Create the declarative manifest `rag-deployment.yaml`. This utilizes current `apps/v1` standards.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rag-pipeline
+  namespace: rag-system
+  labels:
+    app: rag-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rag-api
+  template:
+    metadata:
+      labels:
+        app: rag-api
+    spec:
+      containers:
+      - name: api
+        image: rag-api:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rag-service
+  namespace: rag-system
+spec:
+  selector:
+    app: rag-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+```
+
+Apply the deployment and firmly block execution until the pods report availability.
+
+```bash
+kubectl apply -f rag-deployment.yaml
+kubectl wait --for=condition=available deployment/rag-pipeline -n rag-system --timeout=120s
+```
+
+### Step 5: Execution and Verification
+
+Forward the cluster service port to your local machine and execute a test query targeting an exact lexical match mixed with semantic intent.
+
+```bash
+# Run in background
+kubectl port-forward svc/rag-service 8080:80 -n rag-system &
+
+# Execute the test payload
+curl -X POST http://localhost:8080/search \
+     -H "Content-Type: application/json" \
+     -d '{"query": "How do I troubleshoot 0x80070005?"}'
+```
+
+Verify that the Cross-encoder successfully reordered the initial hybrid candidates by auditing the pod logs:
+
+```bash
+kubectl logs -l app=rag-api -n rag-system
+```
+
+### Success Checklist
+- [ ] Local Kind cluster running Kubernetes v1.35.0.
+- [ ] FastAPI container successfully built and loaded into the node cache.
+- [ ] Deployment transitioned to `Available` status without OOM kills.
+- [ ] The `curl` response correctly elevates the exact error code document to index 0.
 
 ---
 
-## ️ Next Steps
+## Next Module
 
-After this module, you'll move to **Phase 4: Frameworks & Agents** where you'll learn LangChain, LangGraph, and build sophisticated AI agents!
-
-But first, complete the deliverable to cement your understanding of these advanced patterns.
+[Module 1.5: Autonomous Agent Architectures](/ai-ml-engineering/agents/module-1.5-autonomous-agents) - Discover how to upgrade a static RAG pipeline into an autonomous LangGraph agent that can independently plan, use tools, and execute multi-step research loops.
 
 ---
 
-_Last updated: 2025-11-25_
+_Last updated: 2026-04-13_
 _Module 14 of Neural Dojo v4.0_
