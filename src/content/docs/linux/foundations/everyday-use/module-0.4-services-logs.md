@@ -93,27 +93,20 @@ A **daemon** is just a process that runs in the background without a terminal at
 
 Think of systemd as the **shift manager** at a restaurant. It does not cook or serve food, but it makes sure the cooks and servers show up on time, in the right order, and gets replacements if someone calls in sick.
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    systemd (PID 1)                        │
-│                  "The Shift Manager"                      │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│   │  sshd    │  │  nginx   │  │containerd│              │
-│   │ (remote  │  │  (web    │  │(container│              │
-│   │  access) │  │  server) │  │ runtime) │              │
-│   └──────────┘  └──────────┘  └──────────┘              │
-│                                                          │
-│   ┌──────────┐  ┌──────────┐  ┌──────────┐              │
-│   │ kubelet  │  │ chronyd  │  │  rsyslog │              │
-│   │ (k8s     │  │  (time   │  │  (log    │              │
-│   │  agent)  │  │   sync)  │  │  forwarder│             │
-│   └──────────┘  └──────────┘  └──────────┘              │
-│                                                          │
-│   If any of these crash → systemd restarts them          │
-│   On boot → systemd starts them in the right order       │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    systemd["systemd (PID 1)<br/>The Shift Manager"]
+    
+    systemd --> sshd["sshd<br/>(remote access)"]
+    systemd --> nginx["nginx<br/>(web server)"]
+    systemd --> containerd["containerd<br/>(container runtime)"]
+    systemd --> kubelet["kubelet<br/>(k8s agent)"]
+    systemd --> chronyd["chronyd<br/>(time sync)"]
+    systemd --> rsyslog["rsyslog<br/>(log forwarder)"]
+
+    classDef note fill:#f9f9f9,stroke:#333,stroke-dasharray: 5 5;
+    Note["If any of these crash → systemd restarts them<br/>On boot → systemd starts them in the right order"]:::note
+    systemd -.-> Note
 ```
 
 ---
