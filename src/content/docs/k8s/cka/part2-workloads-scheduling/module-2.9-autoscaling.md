@@ -44,7 +44,7 @@ The CKA exam tests your ability to create and configure HorizontalPodAutoscalers
 
 - **HPA checks metrics every 15 seconds** by default (configurable via `--horizontal-pod-autoscaler-sync-period`). Scaling decisions are based on the average metric value across all pods.
 
-- **HPA has a cooldown period**: After scaling up, HPA waits 3 minutes before considering scale-down (configurable). This prevents "flapping" — rapidly scaling up and down.
+- **HPA has a cooldown period**: After scaling up, HPA waits 5 minutes (300 seconds) before considering scale-down (configurable). This prevents "flapping" — rapidly scaling up and down.
 
 - **metrics-server is required**: HPA can't function without metrics-server installed in the cluster. It provides the CPU/memory metrics that HPA needs. This is a common gotcha in practice environments.
 
@@ -70,6 +70,10 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 kubectl patch deployment metrics-server -n kube-system --type=json \
   -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
 
+# Wait for metrics-server to be ready
+kubectl rollout status deployment metrics-server -n kube-system
+sleep 15 # wait for first metric scrape
+
 # Verify it works
 k top nodes
 k top pods
@@ -80,13 +84,16 @@ k top pods
 **Imperative (exam-fast):**
 
 ```bash
+# Create a dummy deployment first
+k create deployment web --image=nginx --replicas=2
+
 # Create HPA: scale between 2-10 replicas, target 80% CPU
 k autoscale deployment web --min=2 --max=10 --cpu-percent=80
 
 # Verify
 k get hpa
-# NAME   REFERENCE        TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-# web    Deployment/web   12%/80%   2         10        2          30s
+# NAME   REFERENCE        TARGETS         MINPODS   MAXPODS   REPLICAS   AGE
+# web    Deployment/web   <unknown>/80%   2         10        2          30s
 ```
 
 **Declarative:**
@@ -116,6 +123,13 @@ spec:
       target:
         type: Utilization
         averageUtilization: 85
+  - type: Pods
+    pods:
+      metric:
+        name: packets-per-second
+      target:
+        type: AverageValue
+        averageValue: 1k
 ```
 
 > **Pause and predict**: You create an HPA with `targetCPUUtilization: 50%` and `min: 2, max: 10`. Your 3 pods are currently at 90% CPU utilization. How many replicas will the HPA calculate as needed? (Hint: the formula is `ceil(currentReplicas * (currentMetric / targetMetric))`)
@@ -144,12 +158,16 @@ spec:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+**Scaling Velocity:** By default, HPA limits how quickly it scales to prevent instability (e.g., adding a maximum of 4 pods or 100% of current replicas per 15s). You can customize this velocity using the `behavior` field in the `autoscaling/v2` API.
+
+**Custom Metrics:** To scale on custom metrics (like `packets-per-second`), your cluster must have a custom metrics adapter (such as `prometheus-adapter`) installed and configured to serve the `custom.metrics.k8s.io` API. HPA queries this API instead of metrics-server.
+
 ### 1.4 Monitoring HPA
 
 ```bash
 # Check HPA status
-k get hpa web-hpa
-k describe hpa web-hpa
+k get hpa web
+k describe hpa web
 
 # Watch scaling events
 k get hpa -w
@@ -164,8 +182,17 @@ k get events --field-selector reason=SuccessfulRescale
 
 ```bash
 # Deploy a test app with resource requests
+# Clean up previous dummy resources
+k delete hpa web --ignore-not-found
+k delete deployment web --ignore-not-found
+
 k create deployment web --image=nginx --replicas=1
 k set resources deployment web --requests=cpu=100m,memory=128Mi --limits=cpu=200m,memory=256Mi
+# Expose it so the load generator can reach it
+k expose deployment web --port=80
+
+# Verify deployment is ready (checkpoint)
+k rollout status deployment web
 
 # Create HPA
 k autoscale deployment web --min=1 --max=5 --cpu-percent=50
@@ -176,7 +203,7 @@ k run load-generator --image=busybox --restart=Never -- \
 
 # Watch HPA respond
 k get hpa web -w
-# You should see CPU% increase and replicas scale up
+# You should see CPU% increase and replicas scale up (Press Ctrl+C to stop watching)
 
 # Stop load
 k delete pod load-generator
@@ -193,7 +220,7 @@ VPA automatically adjusts CPU and memory requests/limits based on observed usage
 
 > **Stop and think**: Your team runs a PostgreSQL database as a StatefulSet with a single replica. During peak hours, the database needs more CPU and memory, but you can't just add more replicas (that's not how databases work). What autoscaling approach would you use here -- HPA or VPA? What mode would you start with if you're cautious?
 
-### 3.1 When to Use VPA vs HPA
+### 3.1 When to Use HPA, VPA, and Cluster Autoscaler
 
 | Scenario | Use |
 |----------|-----|
@@ -201,6 +228,7 @@ VPA automatically adjusts CPU and memory requests/limits based on observed usage
 | Databases, caches | VPA (bigger pods — can't easily add replicas) |
 | Unknown resource needs | VPA in recommend mode first |
 | Batch jobs | VPA (right-size the job pods) |
+| Nodes out of capacity | Cluster Autoscaler (adds more nodes) |
 | Combine both | HPA on custom metrics + VPA on resources |
 
 ### 3.2 VPA Modes
@@ -256,7 +284,7 @@ spec:
 2. **Your e-commerce API has an HPA with `min: 2, max: 20, targetCPU: 50%`. During Black Friday, traffic spikes and all 20 replicas are running at 95% CPU. The HPA can't scale beyond 20, and users are getting timeouts. What are three approaches to handle this situation, both for the immediate crisis and for next year?**
    <details>
    <summary>Answer</summary>
-   For the immediate crisis: (1) Increase the HPA's `maxReplicas` with `kubectl patch hpa web --patch '{"spec":{"maxReplicas":40}}'` to allow more pods. (2) If nodes are full, the cluster autoscaler needs to add more nodes -- verify it's enabled and has headroom in the node group's max size. For next year: (3) Pre-scale before the event by manually setting a higher `minReplicas` before traffic hits (e.g., `kubectl patch hpa web --patch '{"spec":{"minReplicas":15}}'`). This avoids the latency of reactive scaling. Also consider using HPA with custom metrics (requests-per-second) instead of CPU, which responds faster to traffic changes than CPU utilization does.
+   For the immediate crisis: (1) Increase the HPA's `maxReplicas` with `kubectl patch hpa web --patch '{"spec":{"maxReplicas":40}}'` to allow more pods. (2) If nodes are full, the cluster autoscaler needs to add more nodes to handle the scheduling demand -- verify it's enabled and has headroom in the node group's max size. For next year: (3) Pre-scale before the event by manually setting a higher `minReplicas` before traffic hits (e.g., `kubectl patch hpa web --patch '{"spec":{"minReplicas":15}}'`). This avoids the latency of reactive scaling. Also consider using HPA with custom metrics (like the `packets-per-second` metric shown earlier) instead of CPU, which responds faster to traffic changes than CPU utilization does.
    </details>
 
 3. **Your team runs a single-replica Redis cache as a StatefulSet. During peak hours, it needs more CPU and memory but adding replicas isn't an option since the app uses a single Redis instance. A colleague suggests HPA. Why won't HPA work here, what should you use instead, and what mode would you start with?**
@@ -288,6 +316,9 @@ k set resources deployment challenge-web \
 # 2. Expose it
 k expose deployment challenge-web --port=80
 
+# Verify deployment is ready (checkpoint)
+k rollout status deployment challenge-web
+
 # 3. Create HPA: 2-8 replicas, 50% CPU target
 k autoscale deployment challenge-web --min=2 --max=8 --cpu-percent=50
 
@@ -301,7 +332,7 @@ k run load --image=busybox --restart=Never -- \
 
 # 6. Watch scaling happen
 k get hpa challenge-web -w
-# Wait until you see replicas increase
+# Wait until you see replicas increase (Press Ctrl+C to stop watching)
 
 # 7. Stop load and watch scale-down
 k delete pod load
@@ -324,4 +355,4 @@ k delete hpa challenge-web
 
 ## Next Module
 
-Return to [Part 2 Overview](../part2-workloads-scheduling/).
+Return to [Part 2 Overview](/k8s/cka/part2-workloads-scheduling/).
