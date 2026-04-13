@@ -229,6 +229,8 @@ wget -q https://example.com/file.tar.gz        # Quiet mode
 
 > **Note**: You might see older references to `netstat`. The `ss` command replaced it — it's faster and provides more information. Use `ss`.
 
+> **Pause and predict**: You are about to run `sudo ss -tulpn` on a completely fresh, default Ubuntu server that you just provisioned in the cloud. Before looking at the output, which critical service and port must already be in the `LISTEN` state for you to even be running this command?
+
 ### The Key Command
 
 ```bash
@@ -483,19 +485,19 @@ In DevOps, you constantly download binaries — kubectl, helm, terraform, contai
 
 ```bash
 # Step 1: Download the file
-curl -LO https://example.com/tool-v1.2.3-linux-amd64.tar.gz
+curl -LO https://example.com/tool-v1.35.0-linux-amd64.tar.gz
 
 # Step 2: Download the checksum file
-curl -LO https://example.com/tool-v1.2.3-linux-amd64.tar.gz.sha256
+curl -LO https://example.com/tool-v1.35.0-linux-amd64.tar.gz.sha256
 
 # Step 3: Verify
-sha256sum -c tool-v1.2.3-linux-amd64.tar.gz.sha256
+sha256sum -c tool-v1.35.0-linux-amd64.tar.gz.sha256
 ```
 
 If the checksums match, you'll see:
 
 ```
-tool-v1.2.3-linux-amd64.tar.gz: OK
+tool-v1.35.0-linux-amd64.tar.gz: OK
 ```
 
 If they don't match — **do not use the file.** It may be corrupted or tampered with.
@@ -506,9 +508,9 @@ Sometimes you need to compare checksums manually:
 
 ```bash
 # Generate the checksum for a downloaded file
-sha256sum tool-v1.2.3-linux-amd64.tar.gz
+sha256sum tool-v1.35.0-linux-amd64.tar.gz
 
-# Output: a1b2c3d4e5f6...  tool-v1.2.3-linux-amd64.tar.gz
+# Output: a1b2c3d4e5f6...  tool-v1.35.0-linux-amd64.tar.gz
 
 # Compare visually (or in a script) with the published checksum
 ```
@@ -518,11 +520,11 @@ sha256sum tool-v1.2.3-linux-amd64.tar.gz
 This is exactly how you install kubectl safely:
 
 ```bash
-# Download kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+# Download kubectl (targeting current stable v1.35.0)
+curl -LO "https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl"
 
 # Download the checksum
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+curl -LO "https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl.sha256"
 
 # Verify
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
@@ -593,52 +595,52 @@ The output shows distinct chains: `INPUT` (incoming traffic), `FORWARD` (routed 
 Test your understanding:
 
 ### Question 1
-You ping a server and get `ttl=52` in the response. What can you infer about the remote server's operating system and how many hops away it is?
+You ping a remote API server and get `ttl=52` in the response. What can you infer about the remote server's operating system, and roughly how many hops away is it?
 
 <details>
 <summary>Show Answer</summary>
 
-The TTL of 52 most likely indicates a **Linux server**, which typically starts with a TTL of 64. As the packet traverses the internet, each router it passes through decrements the TTL by 1. Therefore, the packet crossed **12 router hops** to reach you (64 - 52 = 12). If the starting TTL were 128 (the Windows default), it would mean the packet took 76 hops, which is far too many for a typical internet path, making Linux the most reasonable conclusion.
+The TTL of 52 most likely indicates a **Linux server**, which typically starts with a default TTL of 64. As the packet traverses the internet, each router it passes through decrements the TTL by 1. Therefore, the packet crossed **12 router hops** to reach you (64 - 52 = 12). If the starting TTL were 128 (the Windows default), it would mean the packet took 76 hops, which is far too many for a typical internet routing path, making Linux the most reasonable conclusion.
 
 </details>
 
 ### Question 2
-You run `curl -v https://api.example.com/health` and see `< HTTP/2 503` in the output. What does this tell you, and which lines show your request versus the server's response?
+You are troubleshooting an application that suddenly stopped working. You run `curl -v https://api.example.com/health` and see `< HTTP/2 503` in the output. What does this tell you about the state of the system, and which lines show your request versus the server's response?
 
 <details>
 <summary>Show Answer</summary>
 
-The `503` status code means **Service Unavailable** — the server is up and responding, but the application behind it (or the load balancer) can't handle the request right now. Lines starting with `>` show **your request** (what curl sent). Lines starting with `<` show the **server's response**. This is critical for debugging — you can see exactly what headers you sent and what the server replied with.
+The `503` status code means **Service Unavailable** — the server itself is up and actively responding to network traffic, but the application behind it (or the load balancer) cannot handle the request right now. Lines starting with `>` show **your outgoing request** (the headers and protocol curl sent over the wire). Lines starting with `<` show the **server's incoming response**. This verbose output is critical for debugging because it proves the network path is open, isolating the issue to the application layer.
 
 </details>
 
 ### Question 3
-You run `sudo ss -tulpn` and see a service listening on `127.0.0.1:5432`. Can a remote machine connect to this service? Why or why not?
+You are investigating why a microservice running on another host cannot reach your database. You run `sudo ss -tulpn` on the database server and see it is listening on `127.0.0.1:5432`. Can the remote microservice connect to this service? Why or why not?
 
 <details>
 <summary>Show Answer</summary>
 
-**No, a remote machine cannot connect.** The address `127.0.0.1` (localhost/loopback) means the service only accepts connections originating from the same machine. For remote access, the service would need to listen on `0.0.0.0:5432` (all interfaces) or a specific external IP address. This is a common security practice for databases like PostgreSQL — they listen on localhost by default to prevent unauthorized remote access.
+**No, a remote machine cannot connect.** The address `127.0.0.1` (localhost or loopback) strictly means the service only accepts connections originating from the exact same machine. For remote access to be possible, the service would need to be reconfigured to listen on `0.0.0.0:5432` (all available interfaces) or a specific external IP address. This is a deliberate, common security practice for databases like PostgreSQL, which bind to localhost by default to prevent accidental unauthorized remote access.
 
 </details>
 
 ### Question 4
-You run `dig +short example.com` and get no output, but `dig +short example.com @8.8.8.8` returns `93.184.216.34`. What's the most likely issue?
+A customer reports they cannot access your website, but it loads fine for you. You run `dig +short example.com` on your workstation and get no output, but when you run `dig +short example.com @8.8.8.8`, it immediately returns `93.184.216.34`. What is the underlying issue?
 
 <details>
 <summary>Show Answer</summary>
 
-Your **local DNS resolver is failing or misconfigured**. The first command uses your system's default DNS server (configured in `/etc/resolv.conf`), which returned no answer. The second command bypasses it entirely by querying Google's public DNS directly, which works fine. Fix your local DNS configuration — check `/etc/resolv.conf` and your network settings, or restart `systemd-resolved` if applicable.
+Your **local DNS resolver is failing or misconfigured**. The first command relies on your system's default DNS server (typically configured in `/etc/resolv.conf`), which is returning no answer. The second command explicitly bypasses your local resolver entirely by querying Google's public DNS directly, which proves the domain's external DNS configuration is actually healthy. To fix this, you must investigate your local DNS configuration, check your immediate network settings, or restart local caching services like `systemd-resolved`.
 
 </details>
 
 ### Question 5
-Why is it dangerous to skip checksum verification when downloading a binary like kubectl?
+You are setting up a new CI/CD pipeline and need to install `kubectl`. You write a step that curls the binary and immediately executes it. Your colleague reviews the pull request and blocks it, stating this is a major security risk. Why did they block it, and what should you add to the pipeline script to fix it?
 
 <details>
 <summary>Show Answer</summary>
 
-Without checksum verification, you have no way to confirm the file is **authentic and intact**, leaving your system vulnerable. An attacker could compromise the download server or perform a man-in-the-middle attack, serving you a modified binary with a backdoor. Furthermore, network issues could produce a partially downloaded or corrupted file that behaves unpredictably and causes obscure errors. If you install a tampered tool like `kubectl` without checking, the attacker immediately gains access to every Kubernetes cluster you manage with it. The `sha256sum` verification takes seconds and mathematically guarantees the file matches exactly what the maintainers published.
+Your colleague blocked the PR because downloading and executing a binary without verification leaves your pipeline highly vulnerable to supply chain attacks or corrupted downloads. If the remote server is compromised, hijacked via DNS, or the download is simply interrupted, your pipeline would execute malicious or broken code directly inside your infrastructure. To fix this, you must download the official `.sha256` checksum file along with the binary. Then, you should add a verification command like `sha256sum -c kubectl.sha256` to mathematically prove the binary exactly matches what the developers published before making it executable.
 
 </details>
 
@@ -738,8 +740,8 @@ tracepath 8.8.8.8
 ```bash
 # Download the kubectl checksum file and verify the pattern
 # (You don't need to install kubectl — just practice the verification flow)
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+curl -LO "https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/v1.35.0/bin/linux/amd64/kubectl.sha256"
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 
 # Clean up
