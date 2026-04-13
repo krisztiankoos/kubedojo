@@ -40,45 +40,36 @@ Event correlation transforms chaos into clarity. It groups related alerts into i
 
 ### Why Correlation Matters
 
+```mermaid
+flowchart TD
+    subgraph The Reality
+        direction TB
+        A[1 Database failover] --> B[47 Microservices affected]
+        B --> C[2,000+ Alerts generated]
+        C --> D[On-call engineer pages at 3AM]
+        D --> E[45 minutes to correlate manually]
+    end
 ```
-SINGLE FAILURE, CASCADING ALERTS
-─────────────────────────────────────────────────────────────────
 
-                     ┌─────────────────────────────────────────┐
-                     │            THE REALITY                   │
-                     │                                          │
-                     │  1 Database failover                     │
-                     │           │                              │
-                     │           ▼                              │
-                     │  47 Microservices affected               │
-                     │           │                              │
-                     │           ▼                              │
-                     │  2,000+ Alerts generated                 │
-                     │           │                              │
-                     │           ▼                              │
-                     │  On-call engineer pages at 3AM           │
-                     │           │                              │
-                     │           ▼                              │
-                     │  45 minutes to correlate manually        │
-                     │                                          │
-                     └─────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Without Correlation
+        direction TB
+        WC1("[ALERT] db-primary: failover")
+        WC2("[ALERT] api-users: db timeout")
+        WC3("[ALERT] api-orders: db timeout")
+        WC4("... 1,991 more alerts ...")
+        WC_MTTR("MTTR: 45+ minutes")
+        WC1 ~~~ WC2 ~~~ WC3 ~~~ WC4 ~~~ WC_MTTR
+    end
 
-
-WITHOUT CORRELATION                  WITH CORRELATION
-─────────────────────────────────────────────────────────────────
-
-[ALERT] db-primary: failover        ┌─────────────────────────┐
-[ALERT] api-users: db timeout       │ INCIDENT: Database      │
-[ALERT] api-users: db timeout       │          Failover       │
-[ALERT] api-orders: db timeout      │                         │
-[ALERT] api-orders: db timeout      │ Root: db-primary        │
-[ALERT] health: /users failing      │ Impact: 47 services     │
-[ALERT] health: /orders failing     │ Alerts: 2,000 grouped   │
-[ALERT] queue: messages backing up  │ Priority: P1            │
-[ALERT] api-payments: timeout       │                         │
-... 1,991 more alerts ...           └─────────────────────────┘
-
-MTTR: 45+ minutes                   MTTR: 5 minutes
+    subgraph With Correlation
+        direction TB
+        C1("INCIDENT: Database Failover")
+        C2("Root: db-primary<br>Impact: 47 services<br>Alerts: 2,000 grouped<br>Priority: P1")
+        C_MTTR("MTTR: 5 minutes")
+        C1 --- C2 ~~~ C_MTTR
+    end
 ```
 
 ## Correlation Strategies
@@ -87,29 +78,14 @@ MTTR: 45+ minutes                   MTTR: 5 minutes
 
 Simplest approach: group alerts within time windows.
 
-```
-TIME-BASED GROUPING
-─────────────────────────────────────────────────────────────────
+> **Pause and predict**: If we group alerts purely by a 5-minute time window, what happens when a database fails at the exact same time a separate, unrelated caching layer fails?
 
-Timeline
-      │
-      │  ┌─────────────────────────────────────────────────────┐
-      │  │            Window: 5 minutes                        │
-      │  │                                                     │
-   t0 ├──│── Alert 1: DB timeout ─────────┐                   │
-      │  │                                 │                   │
- t+30s├──│── Alert 2: API error ──────────┤── Group 1         │
-      │  │                                 │   (3 alerts)      │
-  t+2m├──│── Alert 3: Health check ───────┘                   │
-      │  │                                                     │
-      │  └─────────────────────────────────────────────────────┘
-      │  ┌─────────────────────────────────────────────────────┐
-      │  │                                                     │
-  t+6m├──│── Alert 4: Different issue ────── Group 2         │
-      │  │                                   (1 alert)         │
-      │  └─────────────────────────────────────────────────────┘
-      │
-      ▼
+```mermaid
+flowchart LR
+    A1["t0: Alert 1 (DB timeout)"] --> G1["Group 1"]
+    A2["t+30s: Alert 2 (API error)"] --> G1
+    A3["t+2m: Alert 3 (Health check)"] --> G1
+    A4["t+6m: Alert 4 (Different issue)"] --> G2["Group 2"]
 ```
 
 ```python
@@ -162,32 +138,20 @@ class TimeBasedCorrelator:
 
 Use service dependencies to group related alerts.
 
-```
-TOPOLOGY-AWARE CORRELATION
-─────────────────────────────────────────────────────────────────
+> **Stop and think**: How would you represent a third-party API dependency in your topology graph if you cannot monitor it directly?
 
-                    ┌─────────┐
-                    │ Frontend│ ← Alert: Slow responses
-                    └────┬────┘
-                         │
-                    ┌────▼────┐
-                    │   API   │ ← Alert: High latency
-                    └────┬────┘
-                         │
-              ┌──────────┼──────────┐
-              │          │          │
-         ┌────▼────┐┌────▼────┐┌────▼────┐
-         │ UserSvc ││OrderSvc ││ PaySvc  │ ← Alert: Timeouts
-         └────┬────┘└────┬────┘└────┬────┘
-              │          │          │
-              └──────────┼──────────┘
-                         │
-                    ┌────▼────┐
-                    │Database │ ← Alert: Connection refused
-                    └─────────┘    ^^^^^^^^^^^^^^^^^^^^^^^^
-                                   ROOT CAUSE (deepest in graph)
-
-All 5 alerts grouped: same dependency chain
+```mermaid
+flowchart TD
+    Frontend["Frontend (Alert: Slow responses)"] --> API["API (Alert: High latency)"]
+    API --> UserSvc["UserSvc"]
+    API --> OrderSvc["OrderSvc (Alert: Timeouts)"]
+    API --> PaySvc["PaySvc"]
+    UserSvc --> Database["Database (Alert: Connection refused)"]
+    OrderSvc --> Database
+    PaySvc --> Database
+    
+    classDef root fill:#f9f,stroke:#333,stroke-width:4px;
+    class Database root;
 ```
 
 ```python
@@ -495,58 +459,46 @@ class AlertSuppressor:
 
 ## Correlation Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                 EVENT CORRELATION PIPELINE                      │
-│                                                                  │
-│  INGESTION                                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Alert Sources                                           │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐     │   │
-│  │  │Prometheus│  │ Datadog │  │PagerDuty│  │ Custom  │     │   │
-│  │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘     │   │
-│  └───────┼───────────┼───────────┼───────────┼─────────────┘   │
-│          └───────────┴───────────┴───────────┘                   │
-│                           │                                       │
-│  NORMALIZATION            ▼                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Alert Normalizer                                        │   │
-│  │  - Standardize schema                                    │   │
-│  │  - Extract entities (service, host, etc.)                │   │
-│  │  - Enrich with metadata                                  │   │
-│  └───────────────────────┬──────────────────────────────────┘   │
-│                          │                                       │
-│  DEDUPLICATION           ▼                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Deduplicator                                            │   │
-│  │  - Remove exact duplicates                               │   │
-│  │  - Count occurrences                                     │   │
-│  └───────────────────────┬──────────────────────────────────┘   │
-│                          │                                       │
-│  CORRELATION             ▼                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Multi-Strategy Correlator                               │   │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐               │   │
-│  │  │  Time    │  │ Topology │  │   Text   │               │   │
-│  │  │  Window  │  │  Graph   │  │   NLP    │               │   │
-│  │  └──────────┘  └──────────┘  └──────────┘               │   │
-│  └───────────────────────┬──────────────────────────────────┘   │
-│                          │                                       │
-│  ANALYSIS                ▼                                       │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Incident Analyzer                                       │   │
-│  │  - Probable root cause                                   │   │
-│  │  - Impact assessment                                     │   │
-│  │  - Priority scoring                                      │   │
-│  └───────────────────────┬──────────────────────────────────┘   │
-│                          │                                       │
-│  OUTPUT                  ▼                                       │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐                 │
-│  │ Incident   │  │Suppression │  │  Runbook   │                 │
-│  │ Management │  │   Engine   │  │ Suggestion │                 │
-│  └────────────┘  └────────────┘  └────────────┘                 │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Ingestion
+        direction LR
+        P[Prometheus]
+        D[Datadog]
+        PD[PagerDuty]
+        C[Custom]
+    end
+
+    Norm[Alert Normalizer<br>- Standardize schema<br>- Extract entities<br>- Enrich with metadata]
+    Dedup[Deduplicator<br>- Remove exact duplicates<br>- Count occurrences]
+    
+    subgraph Correlation [Multi-Strategy Correlator]
+        direction LR
+        Time[Time Window]
+        Topo[Topology Graph]
+        Text[Text NLP]
+    end
+
+    Analyze[Incident Analyzer<br>- Probable root cause<br>- Impact assessment<br>- Priority scoring]
+
+    subgraph Output
+        direction LR
+        IM[Incident Management]
+        SE[Suppression Engine]
+        RS[Runbook Suggestion]
+    end
+
+    P --> Norm
+    D --> Norm
+    PD --> Norm
+    C --> Norm
+
+    Norm --> Dedup
+    Dedup --> Correlation
+    Correlation --> Analyze
+    Analyze --> IM
+    Analyze --> SE
+    Analyze --> RS
 ```
 
 ## Measuring Correlation Quality
@@ -608,60 +560,27 @@ class CorrelationMetrics:
 ## Quiz
 
 <details>
-<summary>1. Why is time-based correlation insufficient for production systems?</summary>
+<summary>1. Scenario: You are on-call and receive 15 alerts within 3 minutes. Seven are database timeouts from the payment service, four are Kafka queue backlogs from the notification service, and the rest are frontend latency warnings. The system groups them all into one incident using a 5-minute time window strategy. What is the most significant risk of relying purely on this time-based correlation?</summary>
 
-**Answer**: Time-based correlation has two failure modes:
-
-1. **Under-grouping**: Related alerts outside the window create multiple incidents
-2. **Over-grouping**: Unrelated alerts within the window get merged
-
-Production systems need topology awareness (service dependencies) and/or text similarity to group alerts that are actually related, not just temporally close.
+**Answer**: It will over-group unrelated issues. Since time-based correlation does not understand the relationships between services, it assumes any alerts firing simultaneously are part of the same incident. In this scenario, the payment database timeout and the notification Kafka backlog might be two completely distinct failures that coincidentally happened at the same time. The on-call engineer might only investigate the first issue they see in the group, leaving the other unresolved and continuing to impact users.
 </details>
 
 <details>
-<summary>2. How does topology-based correlation identify root cause?</summary>
+<summary>2. Scenario: Your topology graph maps the API Gateway connecting to the Order Service, which then connects to the Inventory Database. The API Gateway starts throwing 500 errors, the Order Service throws "Connection Refused", and the Inventory Database reports 100% CPU utilization. Using a topology-based correlation approach, which component will the system identify as the most likely root cause and why?</summary>
 
-**Answer**: By traversing the service dependency graph:
-
-1. Group alerts from services on the same dependency path
-2. Root cause is typically the **deepest** service in the graph
-3. Upstream services show symptoms (timeouts, errors) caused by downstream failures
-
-Example: API → Database path. If both alert, database is likely root cause since API depends on it.
+**Answer**: The Inventory Database. Topology-based correlation traverses the dependency graph to find the deepest node experiencing symptoms. Because the API Gateway depends on the Order Service, and the Order Service depends on the Inventory Database, the system recognizes that the database failure propagates upward through the stack. By pinpointing the deepest failing component, it correctly identifies the root cause rather than the cascading downstream symptoms.
 </details>
 
 <details>
-<summary>3. What's the difference between deduplication and correlation?</summary>
+<summary>3. Scenario: During a high-traffic event, a known issue causes the search service to restart every 20 minutes, generating a brief spike of "Search Unavailable" alerts each time. You implement alert deduplication. Will deduplication solve the issue of the on-call engineer being paged every 20 minutes?</summary>
 
-**Answer**:
-
-**Deduplication**: Remove identical alerts (same source, message, time window)
-- Input: 100 identical "Connection refused" alerts
-- Output: 1 alert (with count: 100)
-
-**Correlation**: Group related but different alerts into incidents
-- Input: 47 different alerts across 10 services
-- Output: 1 incident (database failover affecting dependencies)
-
-Deduplication happens first, then correlation.
+**Answer**: No, deduplication will not prevent these pages. Deduplication only removes identical alerts that occur within the same immediate time window (e.g., merging 50 alerts fired in the same minute into a single alert). Because the search service restarts every 20 minutes, each new batch of alerts falls outside the previous deduplication window and is treated as an entirely new event. To stop the pages for this recurring known issue, you would need to implement an alert suppression rule or correlation strategy based on the flapping state.
 </details>
 
 <details>
-<summary>4. When should you suppress alerts vs. correlate them?</summary>
+<summary>4. Scenario: A critical deployment is scheduled for the payment processing module. You have an active suppression rule silencing all alerts from the payment module for the duration of the 1-hour deployment. During this time, the deployment causes a massive memory leak in a shared database used by multiple other modules, which start failing. How will the suppression rule affect the visibility of this new problem?</summary>
 
-**Answer**:
-
-**Suppress when**:
-- Maintenance window scheduled
-- Known incident already open (don't alert on symptoms)
-- Flapping detected (oscillating state)
-
-**Correlate when**:
-- New incident (need visibility)
-- Different manifestation of known issue (add context)
-- Impact spreading (understand blast radius)
-
-Key principle: Correlation adds context; suppression removes noise from known issues.
+**Answer**: The shared database issue will still be visible, provided alerts are correctly tagged by service. The suppression rule is scoped strictly to the payment processing module. When the shared database begins failing and causing timeouts in other services, those downstream services will generate alerts that fall outside the payment module's suppression window. However, this scenario highlights the danger of over-suppression; if the rule was broadly applied to the entire environment rather than just the payment service, the critical database failure could have been hidden from the on-call team.
 </details>
 
 ## Hands-On Exercise: Build a Correlation Engine
