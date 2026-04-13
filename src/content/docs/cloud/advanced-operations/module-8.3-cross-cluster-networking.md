@@ -771,8 +771,11 @@ networking:
   serviceSubnet: "10.96.0.0/16"
 nodes:
   - role: control-plane
+    image: kindest/node:v1.35.0
   - role: worker
+    image: kindest/node:v1.35.0
   - role: worker
+    image: kindest/node:v1.35.0
 EOF
 
 # Cluster B configuration
@@ -785,8 +788,11 @@ networking:
   serviceSubnet: "10.97.0.0/16"
 nodes:
   - role: control-plane
+    image: kindest/node:v1.35.0
   - role: worker
+    image: kindest/node:v1.35.0
   - role: worker
+    image: kindest/node:v1.35.0
 EOF
 
 # Create clusters
