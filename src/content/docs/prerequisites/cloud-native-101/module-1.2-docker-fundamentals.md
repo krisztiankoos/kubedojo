@@ -126,7 +126,7 @@ docker rm -f CONTAINER                 # Force remove (stop + rm)
 
 ### Inspecting Containers
 
-> **Debugging mindset**: When a container isn't behaving right, these three commands are your debugging toolkit — in this order: `docker logs` (what happened?), `docker exec -it ... bash` (let me look inside), `docker inspect` (show me the full configuration). This same pattern applies in Kubernetes later: `kubectl logs`, `kubectl exec`, `kubectl describe`.
+> **Stop and think**: When a container isn't behaving right, these three commands are your debugging toolkit — in this order: `docker logs` (what happened?), `docker exec -it ... bash` (let me look inside), `docker inspect` (show me the full configuration). This same pattern applies in Kubernetes later: `kubectl logs`, `kubectl exec`, `kubectl describe`.
 
 ```bash
 # View logs
@@ -149,7 +149,7 @@ docker top CONTAINER                   # Running processes
 ```bash
 # Pull images
 docker pull nginx
-docker pull nginx:1.25
+docker pull nginx:1.26
 docker pull gcr.io/project/image:tag
 
 # Note: Docker images are content-addressable. The SHA256 hash of an image is its true identifier. Tags are just human-readable aliases.
@@ -175,7 +175,7 @@ A Dockerfile is a text file with instructions to build an image:
 
 ```dockerfile
 # Base image
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Set working directory
 WORKDIR /app
@@ -247,12 +247,11 @@ if __name__ == '__main__':
 flask==3.0.0
 ```
 
-> **War Story: The 5GB Docker Context**
-> A developer once typed `docker build .` in their home directory instead of the project directory. Because they lacked a `.dockerignore` file, Docker dutifully attempted to copy their entire `Documents`, `Downloads`, and `Pictures` folders into the Docker build context. The build hung for 20 minutes before crashing the machine's memory. Always use a `.dockerignore` file to exclude `.git`, `node_modules`, and local environment files to keep your build context small and fast.
+> **Stop and think**: A developer once typed `docker build .` in their home directory instead of the project directory. Because they lacked a `.dockerignore` file, Docker dutifully attempted to copy their entire `Documents`, `Downloads`, and `Pictures` folders into the Docker build context. The build hung for 20 minutes before crashing the machine's memory. Always use a `.dockerignore` file to exclude `.git`, `node_modules`, and local environment files to keep your build context small and fast.
 
 **Dockerfile**
 ```dockerfile
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
@@ -295,14 +294,14 @@ Docker caches layers for faster builds. Order matters:
 
 ```dockerfile
 # BAD: Code changes invalidate dependency cache
-FROM python:3.11-slim
+FROM python:3.12-slim
 WORKDIR /app
 COPY . .                              # Any change busts cache
 RUN pip install -r requirements.txt   # Reinstalls every time!
 CMD ["python", "app.py"]
 
 # GOOD: Dependencies cached separately
-FROM python:3.11-slim
+FROM python:3.12-slim
 WORKDIR /app
 COPY requirements.txt .               # Only changes when deps change
 RUN pip install -r requirements.txt   # Cached unless deps change
@@ -333,7 +332,7 @@ services:
       - db
 
   db:
-    image: postgres:15
+    image: postgres:16
     environment:
       - POSTGRES_DB=mydb
       - POSTGRES_PASSWORD=secret
@@ -384,28 +383,28 @@ Choosing the right base image is critical for security and size:
 
 | Base Image Type | Example | Size | Security Surface | Best For |
 |-----------------|---------|------|------------------|----------|
-| Full OS | `ubuntu:22.04` | ~70MB | Large (contains full utilities) | Complex legacy apps needing many system dependencies |
-| Slim | `python:3.11-slim` | ~40MB | Medium (stripped down Debian) | Most standard applications, good balance of size and compatibility |
-| Alpine | `python:3.11-alpine`| ~15MB | Small (uses musl instead of glibc) | Ultra-small images, but can cause compilation issues with C-extensions |
+| Full OS | `ubuntu:24.04` | ~70MB | Large (contains full utilities) | Complex legacy apps needing many system dependencies |
+| Slim | `python:3.12-slim` | ~40MB | Medium (stripped down Debian) | Most standard applications, good balance of size and compatibility |
+| Alpine | `python:3.12-alpine`| ~15MB | Small (uses musl instead of glibc) | Ultra-small images, but can cause compilation issues with C-extensions |
 | Distroless | `gcr.io/distroless/static`| ~2MB | Minimal (no shell or package manager) | Production deployments of compiled languages (Go, Rust) |
 
 ### Image Size
 
 ```dockerfile
 # BAD: Full OS, huge image
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y python3 python3-pip
 COPY . .
 RUN pip3 install -r requirements.txt
 
 # GOOD: Slim base, smaller image
-FROM python:3.11-slim
+FROM python:3.12-slim
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # BETTER: Alpine (tiny base)
-FROM python:3.11-alpine
+FROM python:3.12-alpine
 # Note: Alpine uses apk, not apt, and musl instead of glibc
 ```
 
@@ -413,12 +412,12 @@ FROM python:3.11-alpine
 
 ```dockerfile
 # BAD: Running as root
-FROM python:3.11-slim
+FROM python:3.12-slim
 COPY . .
 CMD ["python", "app.py"]  # Runs as root!
 
 # GOOD: Non-root user
-FROM python:3.11-slim
+FROM python:3.12-slim
 RUN useradd -m appuser
 WORKDIR /app
 COPY --chown=appuser:appuser . .
@@ -458,7 +457,7 @@ flowchart TD
 
 | Mistake | Why It Hurts | Solution |
 |---------|--------------|----------|
-| Using `latest` tag | Unpredictable versions | Use specific tags (`:1.25.3`) |
+| Using `latest` tag | Unpredictable versions | Use specific tags (`:1.26.3`) |
 | Running as root | Security risk | Add `USER` instruction |
 | Ignoring layer order | Slow rebuilds | Put changing things last |
 | Copying everything | Large images, secrets leaked | Use `.dockerignore` |
@@ -472,7 +471,7 @@ flowchart TD
 > **Stop and think**: Look at the following Dockerfile. There are at least three major anti-patterns or bugs. Can you identify them before reading the answers?
 
 ```dockerfile
-FROM node:18
+FROM node:22
 COPY . .
 RUN npm install
 CMD npm start
@@ -483,7 +482,7 @@ CMD npm start
 
 1. **Missing .dockerignore or selective COPY**: Copying `.` to `.` before running `npm install` means the local `node_modules` folder might be copied over, which is bloated and platform-specific. Also, any code change invalidates the `npm install` cache.
 2. **Ignoring layer caching**: It should `COPY package*.json ./` first, then `RUN npm install`, and *then* `COPY . .`. This ensures dependencies are only reinstalled when the package.json changes.
-3. **Using a full OS base image**: `node:18` is nearly 1GB. It should use `node:18-slim` or `node:18-alpine` to reduce the attack surface and image pull time.
+3. **Using a full OS base image**: `node:22` is nearly 1GB. It should use `node:22-slim` or `node:22-alpine` to reduce the attack surface and image pull time.
 4. **Running as root**: There is no `USER` specified, meaning the Node process runs as the root user inside the container, which is a security risk.
 
 </details>
@@ -575,7 +574,7 @@ curl http://localhost:8080
 
 ### Level 2: Intermediate (Environment and Logs)
 **Task**: Debug a failing container using logs and environment variables.
-1. Run `docker run -d --name db postgres:15`.
+1. Run `docker run -d --name db postgres:16`.
 2. Check its status with `docker ps -a`. Notice it exited immediately.
 3. Check why it failed using `docker logs db`. (Hint: it complains about a missing password).
 4. Remove the failed container.
@@ -586,7 +585,7 @@ curl http://localhost:8080
 <summary>View Solution</summary>
 
 ```bash
-docker run -d --name db postgres:15
+docker run -d --name db postgres:16
 
 # Checkpoint: verify it exited
 docker ps -a
@@ -598,7 +597,7 @@ docker logs db
 docker rm db
 
 # Run with correct environment variable
-docker run -d --name db -e POSTGRES_PASSWORD=secret postgres:15
+docker run -d --name db -e POSTGRES_PASSWORD=secret postgres:16
 
 # Checkpoint: verify it stays running
 docker ps
@@ -618,7 +617,7 @@ docker ps
 
 ```bash
 cat <<EOF > Dockerfile
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 RUN apt-get update && apt-get install -y curl
 EOF
 
