@@ -64,47 +64,43 @@ Key characteristics:
 
 ### What Golden Paths Are NOT
 
-```
-                    GOLDEN PATHS
-                         │
-    ┌────────────────────┼────────────────────┐
-    │                    │                    │
-    ▼                    ▼                    ▼
-❌ Mandates         ✅ Paved Roads       ❌ Anarchy
-"You MUST use       "Here's the easy     "Figure it
- this framework"     way, or roll        out yourself"
-                     your own"
+```mermaid
+graph TD
+    GP[Golden Paths]
+    GP --> M[Mandates:<br>You MUST use this framework]
+    GP --> PR[Paved Roads:<br>Here's the easy way, or roll your own]
+    GP --> A[Anarchy:<br>Figure it out yourself]
 
-Mandates breed      Golden paths         Anarchy leads
-resentment and      balance guidance     to chaos and
-shadow IT           with autonomy        inconsistency
+    M --> M2[Mandates breed resentment and shadow IT]
+    PR --> PR2[Golden paths balance guidance with autonomy]
+    A --> A2[Anarchy leads to chaos and inconsistency]
+    
+    classDef bad fill:none,stroke-dasharray: 5 5;
+    classDef good stroke-width:2px;
+    class M,A,M2,A2 bad;
+    class PR,PR2 good;
 ```
 
 ### The Spectrum of Developer Freedom
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DEVELOPER AUTONOMY SPECTRUM                   │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  RESTRICTIVE ◄─────────────────────────────────► PERMISSIVE     │
-│                                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ Mandates │  │ Default  │  │ Golden   │  │ Advisory │        │
-│  │          │  │ + Waiver │  │ Paths    │  │ Only     │        │
-│  │ No       │  │ Requires │  │ Easy     │  │ Do       │        │
-│  │ choice   │  │ approval │  │ default, │  │ whatever │        │
-│  │          │  │ to       │  │ possible │  │ you want │        │
-│  │          │  │ deviate  │  │ to opt   │  │          │        │
-│  │          │  │          │  │ out      │  │          │        │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘        │
-│                                                                  │
-│  High consistency          Balance           High flexibility   │
-│  Low innovation                              Risk of chaos      │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Spectrum[Developer Autonomy Spectrum]
+    direction LR
+    M[Mandates<br/>No choice] --> D[Default + Waiver<br/>Requires approval to deviate]
+    D --> G[Golden Paths<br/>Easy default, possible to opt out]
+    G --> A[Advisory Only<br/>Do whatever you want]
+    end
+    
+    C1[High consistency<br/>Low innovation] --> M
+    C2[High flexibility<br/>Risk of chaos] --> A
+    
+    style G stroke-width:3px
 ```
 
 Golden paths sit in the sweet spot: **making the right thing easy without making the wrong thing impossible**.
+
+> **Stop and think**: Look at the tools your team uses daily. How many of them were mandated from the top down, and how many grew organically because they were simply the easiest path to production?
 
 ---
 
@@ -112,25 +108,13 @@ Golden paths sit in the sweet spot: **making the right thing easy without making
 
 ### Why Mandates Fail
 
-```
-                 THE MANDATE DEATH SPIRAL
-
-     IT Org mandates      Developers find
-     technology X    ───► mandates don't
-           │              fit their needs
-           │                    │
-           ▼                    ▼
-     Compliance         Shadow IT emerges
-     theater spreads    (workarounds,
-     (checkbox          unapproved tools)
-     exercises)              │
-           │                 │
-           └────────┬────────┘
-                    │
-                    ▼
-            Security and
-            consistency
-            get WORSE
+```mermaid
+graph TD
+    A[IT Org mandates technology X] --> B[Developers find mandates don't fit their needs]
+    A --> C[Compliance theater spreads<br>checkbox exercises]
+    B --> D[Shadow IT emerges<br>workarounds, unapproved tools]
+    C --> E[Security and consistency get WORSE]
+    D --> E
 ```
 
 Real-world mandate failures:
@@ -172,7 +156,7 @@ Golden paths aren't universal. Some things require mandates:
 
 The key: **Mandate the outcomes, golden-path the implementation**.
 
-```
+```text
 Example:
   Mandate:      "All services must have authentication"
   Golden Path:  "Here's our auth sidecar that adds OAuth2 in 5 minutes"
@@ -184,25 +168,14 @@ Example:
 
 ### The Golden Path Journey
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    GOLDEN PATH JOURNEY                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Discovery     Setup         Development      Production        │
-│      │           │               │                │             │
-│      ▼           ▼               ▼                ▼             │
-│  ┌───────┐   ┌───────┐       ┌───────┐       ┌───────┐        │
-│  │ Find  │   │ One   │       │ Inner │       │ Ship  │        │
-│  │ the   │──►│ click │──────►│ loop  │──────►│ with  │        │
-│  │ path  │   │ start │       │ dev   │       │ conf- │        │
-│  │       │   │       │       │       │       │ idence│        │
-│  └───────┘   └───────┘       └───────┘       └───────┘        │
-│                                                                  │
-│  Docs, portal  Template,     Local run,      CI/CD, deploy,    │
-│  searchable    scaffold      test, debug     observe           │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Journey[Golden Path Journey]
+    direction LR
+    D[Discovery<br/>Find the path<br/>Docs, portal searchable] --> S[Setup<br/>One click start<br/>Template, scaffold]
+    S --> Dev[Development<br/>Inner loop dev<br/>Local run, test, debug]
+    Dev --> P[Production<br/>Ship with confidence<br/>CI/CD, deploy, observe]
+    end
 ```
 
 ### Essential Elements
@@ -262,32 +235,27 @@ If any stage takes longer, you'll lose developers to "I'll just do it myself."
 
 ## Designing Golden Paths
 
+> **Pause and predict**: Before you design a new golden path, what metric would most clearly indicate that developers are struggling with the current process?
+
 ### Step 1: Identify the Journey
 
 Start by mapping what developers actually do today:
 
-```
-User Research: "How do teams currently deploy a new service?"
+**User Research: "How do teams currently deploy a new service?"**
 
-Team A: 2 weeks
-─────────────────────────────────────────────────────────────────
-Week 1: Request infrastructure ticket → Wait → Get rejected →
-        Re-request with different details → Wait → Approved
-Week 2: Copy another service's config → Modify → Debug for days →
-        Ask around for help → Finally deploy
+**Team A: 2 weeks**
+- **Week 1**: Request infrastructure ticket -> Wait -> Get rejected -> Re-request with different details -> Wait -> Approved
+- **Week 2**: Copy another service's config -> Modify -> Debug for days -> Ask around for help -> Finally deploy
 
-Team B: 3 days
-─────────────────────────────────────────────────────────────────
-Day 1: Know the right people → Get access faster
-Day 2: Copy from a known-good template
-Day 3: Debug environment differences → Deploy
+**Team B: 3 days**
+- **Day 1**: Know the right people -> Get access faster
+- **Day 2**: Copy from a known-good template
+- **Day 3**: Debug environment differences -> Deploy
 
-Team C: 4 hours
-─────────────────────────────────────────────────────────────────
-Use internal template → One command → Deployed
+**Team C: 4 hours**
+- Use internal template -> One command -> Deployed
 
-⬇ The goal: Make Team C's experience the default ⬇
-```
+*The goal: Make Team C's experience the default.*
 
 ### Step 2: Define Opinions
 
@@ -322,7 +290,7 @@ Observability:
   override: Additional tools allowed, base required
 
 Deployment:
-  decision: Kubernetes via ArgoCD
+  decision: Kubernetes v1.35 via ArgoCD
   why: GitOps, consistent with org standard
   override: Not negotiable for production workloads
 ```
@@ -339,15 +307,15 @@ $ platform create service \
     --team team-orders
 
 Creating new Node.js API service: order-service
-✓ Created GitHub repository: org/order-service
-✓ Applied Node.js template
-✓ Configured CI/CD pipelines
-✓ Set up dev/staging/prod environments
-✓ Registered in service catalog
-✓ Created initial monitoring dashboards
-✓ Added to team-orders ownership
+[OK] Created GitHub repository: org/order-service
+[OK] Applied Node.js template
+[OK] Configured CI/CD pipelines
+[OK] Set up dev/staging/prod environments
+[OK] Registered in service catalog
+[OK] Created initial monitoring dashboards
+[OK] Added to team-orders ownership
 
-🎉 Service ready! Next steps:
+Service ready! Next steps:
    cd order-service
    npm install
    npm run dev          # Local development
@@ -356,7 +324,7 @@ Creating new Node.js API service: order-service
 
 ### What Gets Generated
 
-```
+```text
 order-service/
 ├── src/
 │   ├── index.ts              # Entry point with health checks
@@ -388,35 +356,11 @@ order-service/
 
 ### Pattern 1: Layered Templates
 
-```
-┌────────────────────────────────────────────────────────────┐
-│                     LAYERED TEMPLATES                       │
-├────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │              Service-Specific Layer                  │  │
-│  │         (business logic, API contracts)              │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                          │                                  │
-│                          ▼                                  │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │              Language/Framework Layer                │  │
-│  │         (Node.js, Go, Python templates)              │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                          │                                  │
-│                          ▼                                  │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │                 Platform Layer                       │  │
-│  │    (CI/CD, observability, security baseline)        │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                          │                                  │
-│                          ▼                                  │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │               Organization Layer                     │  │
-│  │      (compliance, naming, tagging standards)        │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                             │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    S[Service-Specific Layer<br/>business logic, API contracts] --> L[Language/Framework Layer<br/>Node.js, Go, Python templates]
+    L --> P[Platform Layer<br/>CI/CD, observability, security baseline]
+    P --> O[Organization Layer<br/>compliance, naming, tagging standards]
 ```
 
 This layering allows:
@@ -540,21 +484,22 @@ service:
 
 Start simple, reveal complexity only when needed:
 
-```
-Level 0: Zero Config
-────────────────────
+**Level 0: Zero Config**
+```bash
 $ platform deploy ./
 # Uses conventions: Dockerfile, main branch, auto-scaling
+```
 
-Level 1: Basic Config
-────────────────────
+**Level 1: Basic Config**
+```yaml
 # platform.yaml
 service:
   name: my-service
   replicas: 3
+```
 
-Level 2: Custom Behavior
-────────────────────
+**Level 2: Custom Behavior**
+```yaml
 # platform.yaml
 service:
   name: my-service
@@ -565,9 +510,10 @@ service:
     metrics:
       - type: cpu
         target: 70
+```
 
-Level 3: Full Control
-────────────────────
+**Level 3: Full Control**
+```yaml
 # platform.yaml
 service:
   name: my-service
@@ -588,32 +534,12 @@ service:
 
 ### The Maintenance Challenge
 
-```
-         GOLDEN PATH LIFECYCLE
-
-    Launch          Growth          Decay
-       │               │               │
-       ▼               ▼               ▼
-   ┌───────┐       ┌───────┐       ┌───────┐
-   │ Shiny │       │ Edge  │       │ Tech  │
-   │ and   │──────►│ cases │──────►│ debt  │
-   │ new   │       │ pile  │       │ grows │
-   │       │       │ up    │       │       │
-   └───────┘       └───────┘       └───────┘
-       │               │               │
-       │               │               ▼
-       │               │           ┌───────┐
-       │               │           │ Teams │
-       │               └──────────►│ fork  │
-       │                           │ & DIY │
-       │                           └───────┘
-       │                               │
-       └───────────────────────────────┘
-                     │
-                     ▼
-              WITHOUT MAINTENANCE,
-              GOLDEN PATHS BECOME
-              GOLDEN HANDCUFFS
+```mermaid
+graph TD
+    L[Launch:<br/>Shiny and new] --> G[Growth:<br/>Edge cases pile up]
+    G --> D[Decay:<br/>Tech debt grows]
+    D --> T[Teams fork & DIY]
+    T --> W[WITHOUT MAINTENANCE, GOLDEN PATHS BECOME GOLDEN HANDCUFFS]
 ```
 
 ### Maintenance Practices
@@ -686,13 +612,13 @@ jobs:
   check-updates:
     runs-on: ubuntu-latest
     steps:
-      - uses: platform/template-checker@v1
+      - uses: platform/template-checker @scripts/v1_pipeline.py
         with:
           current-template: nodejs-api-v2
 
       - name: Create upgrade PR
         if: steps.checker.outputs.update-available
-        uses: platform/template-upgrader@v1
+        uses: platform/template-upgrader @scripts/v1_pipeline.py
         with:
           target-version: ${{ steps.checker.outputs.latest }}
           auto-merge: false  # Human review required
@@ -798,35 +724,27 @@ Maintenance Metrics:
 
 ### Example Dashboard
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    GOLDEN PATH HEALTH                           │
-├────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Adoption Rate          Time to First Deploy    Developer NPS  │
-│  ┌──────────────┐      ┌──────────────┐       ┌────────────┐  │
-│  │     73%      │      │   18 min     │       │    +42     │  │
-│  │   ████████░░ │      │   ▼ from 2hr │       │   ▲ from   │  │
-│  │              │      │              │       │     +28    │  │
-│  └──────────────┘      └──────────────┘       └────────────┘  │
-│                                                                 │
-│  Template Versions                   Services by Path          │
-│  ┌────────────────────────┐         ┌────────────────────┐    │
-│  │ v3 (current)    156    │         │ nodejs-api    180  │    │
-│  │ v2 (supported)   82    │         │ go-service     95  │    │
-│  │ v1 (deprecated)  23    │         │ python-ml      45  │    │
-│  │ custom           45    │         │ static-site    35  │    │
-│  └────────────────────────┘         │ custom         45  │    │
-│                                     └────────────────────┘    │
-│                                                                 │
-│  Recent Feedback                                                │
-│  ─────────────────────────────────────────────────────────────│
-│  "Database setup was confusing" - team-payments (3 days ago)   │
-│  "Love the new debugging tools!" - team-search (5 days ago)    │
-│  "Need ARM64 support" - team-ml (1 week ago)                   │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-```
+**Adoption Rate**: 73%
+**Time to First Deploy**: 18 min (Down from 2hr)
+**Developer NPS**: +42 (Up from +28)
+
+**Template Versions**
+- v3 (current): 156
+- v2 (supported): 82
+- v1 (deprecated): 23
+- custom: 45
+
+**Services by Path**
+- nodejs-api: 180
+- go-service: 95
+- python-ml: 45
+- static-site: 35
+- custom: 45
+
+**Recent Feedback**
+- "Database setup was confusing" - team-payments (3 days ago)
+- "Love the new debugging tools!" - team-search (5 days ago)
+- "Need ARM64 support" - team-ml (1 week ago)
 
 ---
 
@@ -834,78 +752,44 @@ Maintenance Metrics:
 
 Test your understanding of golden paths:
 
-**Question 1**: What distinguishes a golden path from a mandate?
+**Question 1**: Your platform team is rolling out a new standardized CI/CD pipeline. The CIO wants to require all teams to use it by Q3, but your team advocates for a golden path approach instead. How would the rollout and enforcement differ under a golden path strategy?
 
 <details>
 <summary>Show Answer</summary>
 
-A **mandate** requires compliance and prohibits alternatives. A **golden path** provides a supported, easy route while allowing developers to deviate with good reason. Golden paths are opt-in by design—they succeed by being so good that developers choose them, not because they're forced to.
-
-The key insight: mandates say "NO" by default, golden paths say "YES, here's the easy way."
+Under a golden path strategy, the platform team would provide the CI/CD pipeline as a supported, easy route while allowing developers to opt out and manage their own pipelines if they have a valid business reason. Mandates require compliance and prohibit alternatives, essentially saying "NO" by default. The golden path says "YES, here's the easy way," but relies on the pipeline being so valuable and seamless that developers actively choose to use it rather than being forced to. This builds developer trust and focuses the platform team on delivering a product that solves real friction, rather than acting as compliance enforcers.
 </details>
 
-**Question 2**: A team creates a golden path template that takes 45 minutes to scaffold with many configuration options. Adoption is low. What's likely wrong?
+**Question 2**: A platform engineering team releases a new microservice golden path. It includes twenty configuration prompts covering networking, storage, security, and alerting, and it takes around 45 minutes to scaffold. Adoption is extremely low. What core principle was violated, and how should it be addressed?
 
 <details>
 <summary>Show Answer</summary>
 
-The template violates the **5-minute rule**. Developers should be able to go from discovery to "hello world" quickly. Problems include:
-- Too many configuration prompts (decision fatigue)
-- Trying to support every use case (complexity)
-- Missing sensible defaults
-
-The fix: Create a minimal default path with good defaults, make options discoverable later (progressive disclosure), and test with real developers.
+This golden path clearly violates the 5-minute rule, which states that developers must be able to go from discovery to a deployed "hello world" quickly. Because the template attempts to capture too many configuration prompts upfront, developers suffer from decision fatigue and abandon the process. Additionally, the lack of sensible defaults means every user pays the cognitive cost of configuring edge cases they might not even need. To fix this, the team should implement progressive disclosure by offering a minimal default path and making advanced options discoverable only when required.
 </details>
 
-**Question 3**: When ARE mandates appropriate instead of golden paths?
+**Question 3**: Your organization handles sensitive financial transactions. The security team wants to implement a new encryption standard for all data at rest. Should this be implemented as a golden path or a mandate, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-Mandates are appropriate for:
-- **Security requirements**: Legal/compliance obligations (encryption, authentication)
-- **Legal obligations**: GDPR, SOX, industry regulations
-- **Financial controls**: Cost allocation, spending limits
-- **Safety-critical systems**: Two-person approval for production changes
-
-The pattern: **Mandate the outcome, golden-path the implementation**. For example, mandate "all services must be authenticated" but provide a golden path (auth sidecar) for how to achieve it.
+This requirement must be implemented as a mandate because it addresses a fundamental security and compliance obligation. Golden paths are designed to be optional, giving developers the autonomy to diverge if they maintain their own solutions, which is unacceptable for non-negotiable legal or regulatory requirements like financial data encryption. However, the best approach is to mandate the outcome while golden-pathing the implementation. You enforce the rule that all data must be encrypted, but you provide a frictionless golden path—such as a pre-configured storage module or a sidecar—that automatically handles the encryption, making compliance the easiest choice.
 </details>
 
-**Question 4**: A golden path has been running for 18 months. Teams are forking and modifying it rather than using updates. What's happening?
+**Question 4**: Your platform team deployed a highly successful golden path for Python microservices 18 months ago. Recently, you notice that new teams are forking the template repository and manually modifying it rather than using the centralized updates. What is the most likely cause of this behavior, and how should you respond?
 
 <details>
 <summary>Show Answer</summary>
 
-This is **golden path decay**. Common causes:
-- Edge cases accumulated that the template doesn't handle
-- Template hasn't kept pace with evolving needs
-- Upgrades are too disruptive (no migration path)
-- Feedback loop is broken (teams gave up reporting issues)
-
-Solutions:
-- Track drift metrics to catch this early
-- Version templates with clear migration paths
-- Make upgrades automated and low-risk
-- Actively solicit and act on feedback
-- Consider whether forks reveal legitimate unmet needs
+This pattern is a classic symptom of golden path decay, which occurs when a template fails to keep pace with evolving developer needs or accumulates unhandled edge cases. Over time, as new integrations or dependencies are required, teams find it easier to fork the repository than to work within a constrained or outdated path. To address this, the platform team must establish a feedback loop to understand why developers are diverging and identify the unmet needs. They should then version the templates, automate the upgrade process, and ensure that the golden path is treated as an actively maintained product rather than a set-and-forget project.
 </details>
 
-**Question 5**: What's the purpose of "escape hatches" in golden path design?
+**Question 5**: You are designing a golden path for provisioning cloud databases. A senior engineer argues that if you allow teams to bring their own custom database configurations, it defeats the entire purpose of standardization. Why should you insist on including "escape hatches" in your design?
 
 <details>
 <summary>Show Answer</summary>
 
-Escape hatches provide ways to customize or bypass golden path defaults for legitimate reasons. They:
-- Acknowledge that no template fits 100% of cases
-- Prevent developers from abandoning the path entirely for edge cases
-- Enable innovation and experimentation
-- Build trust (developers aren't trapped)
-
-Good escape hatches:
-- Are documented and discoverable
-- Still provide platform benefits (CI/CD, monitoring)
-- May require justification but aren't blocked
-- Are tracked so patterns can inform future template evolution
+You must include escape hatches because no single template can ever accommodate one hundred percent of a large organization's use cases. If you lock developers into a rigid structure without a way out, teams with legitimate edge cases will abandon the platform entirely, leading to shadow IT and fragmented tooling. Escape hatches build developer trust by acknowledging their expertise and providing a documented, supported way to bypass defaults while still benefiting from baseline platform services like monitoring and deployment. Tracking how often these escape hatches are used also provides critical data for evolving the standard golden path in the future.
 </details>
 
 ---
@@ -1029,26 +913,22 @@ After completing the exercise:
 
 Golden paths succeed by making the right thing the easy thing:
 
-```
+```text
 KEY PRINCIPLES:
-┌─────────────────────────────────────────────────────────────┐
-│                                                              │
-│  1. OPINIONATED but not MANDATORY                           │
-│     Make decisions so developers don't have to              │
-│                                                              │
-│  2. COMPLETE journey, not just SETUP                        │
-│     Discovery → Development → Production → Day 2+           │
-│                                                              │
-│  3. ESCAPE HATCHES for legitimate needs                     │
-│     Trust developers to know when they need to deviate      │
-│                                                              │
-│  4. MAINTAINED actively, not launched and forgotten         │
-│     Version, measure, gather feedback, iterate              │
-│                                                              │
-│  5. CO-CREATED with developers, not imposed on them         │
-│     The best paths pave existing cowpaths                   │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+  1. OPINIONATED but not MANDATORY
+     Make decisions so developers don't have to
+
+  2. COMPLETE journey, not just SETUP
+     Discovery -> Development -> Production -> Day 2+
+
+  3. ESCAPE HATCHES for legitimate needs
+     Trust developers to know when they need to deviate
+
+  4. MAINTAINED actively, not launched and forgotten
+     Version, measure, gather feedback, iterate
+
+  5. CO-CREATED with developers, not imposed on them
+     The best paths pave existing cowpaths
 ```
 
 The test of a great golden path: **developers choose it because it's better, not because they have to**.
@@ -1075,5 +955,3 @@ The test of a great golden path: **developers choose it because it's better, not
 ## Next Module
 
 Continue to [Module 2.5: Self-Service Infrastructure](../module-2.5-self-service-infrastructure/) to learn how to empower developers with on-demand infrastructure while maintaining control and governance.
-
----
