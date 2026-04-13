@@ -329,4 +329,51 @@ The incident was eventually resolved by a senior engineer who used `git reflog` 
 2.  **The SHA-1 collision vulnerability** was famously demonstrated by CWI and Google in 2017 with a "shattered" PDF (the SHAttered attack). In response, Git didn't abandon SHA-1 immediately; instead, version 2.13 made a collision-detecting implementation (SHA-1DC) the default. While experimental support for full SHA-256 repositories (`git init --object-format=sha256`) was introduced in Git 2.29 and declared no longer a mere curiosity in Git 2.42, SHA-1 remains the default object hash even in the latest Git 2.53.0 releases. You might see third-party blogs claiming that Git 3.0 will default to SHA-256 and the new `reftable` reference format, but be aware that this is currently unverified—no official Git maintainer announcement or release plan document confirms Git 3.0 feature defaults or timelines. In fact, official documentation still strongly discourages using SHA-256 on public-facing servers until the Git protocol gains wider support.
 3.  **Git's `.git/objects` directory uses a "packfile" format** for efficiency. While individual objects are initially stored as loose objects (one file per object), Git periodically "packs" them into single files (with a `.pack` extension) to save disk space and improve performance. This compression technique means that often, only differences between versions are stored inside these packfiles.
 4.  **The original design goal for Git** was to support distributed non-linear development, handle large projects (like the Linux kernel), and be extremely fast. Its content-addressable storage model allows operations like branching and committing to be nearly instantaneous, as they primarily involve writing small files (trees, commits) and moving pointers, rather than copying entire project directories.
-5.  **Git objects have a specific header.** Before Git compresses an object and stores it, it prepends a header in the format `[type] [size-in-bytes]\0`. The SHA-1 hash is
+5.  **Git objects have a specific header.** Before Git compresses an object and stores it, it prepends a header in the format `[type] [size-in-bytes]\0`. The SHA-1 hash is then calculated over this header and the original content. This ensures the hash uniquely identifies both the data and its Git object type.
+
+## Module Quiz
+
+**Question 1**
+Scenario: You are investigating a colleague's local repository because they accidentally ran a script that corrupted their working directory. You navigate into `.git/objects` and use `git cat-file -p` on a few recent hashes. You find an object that outputs `100644 blob 9d8c... app.js` and `040000 tree 1a2b... src`.
+What type of Git object are you currently inspecting, and what does its presence tell you about the state of the repository at the time this object was created?
+A) A commit object, indicating the repository was in a detached HEAD state.
+B) A blob object, showing the exact source code of the corrupted `app.js` file.
+C) A tree object, representing a directory structure containing a file named `app.js` and a subdirectory named `src`.
+D) An index file, showing the files currently staged for the next commit.
+
+<details>
+<summary>View Answer</summary>
+**Correct Answer: C**
+
+**Explanation:** The object you are inspecting contains references to a blob (with a file mode `100644` and filename `app.js`) and another tree (with mode `040000` and name `src`). This structure is the defining characteristic of a tree object, which acts like a directory listing in Git's content-addressable storage. It tells you that at some point, a snapshot was taken (likely staged or committed) that included this specific directory hierarchy. It does not contain the file content itself (that's the blob) nor the commit metadata (that's the commit object).
+</details>
+
+**Question 2**
+Scenario: You've made several critical fixes to `deployment.yaml` (a Kubernetes v1.35 Deployment manifest) and ran `git add deployment.yaml`. Before committing, you realize you need to test one more change, so you modify the file again in your editor. You then run `git status`.
+Given Git's internal architecture, what is the relationship between the `deployment.yaml` file in your working directory and the objects in the `.git` folder right now?
+A) The `.git/objects` directory contains a single blob for `deployment.yaml` matching your working directory, because `git add` synchronizes the two.
+B) The index points to a blob object representing the first set of fixes, while your working directory contains unhashed, unstaged changes that Git has not yet stored as a blob.
+C) Git automatically updated the blob object in `.git/objects` to reflect your latest editor changes, but the index still points to the old version.
+D) The staging area contains two separate tree objects for `deployment.yaml`, one for each set of changes you made.
+
+<details>
+<summary>View Answer</summary>
+**Correct Answer: B**
+
+**Explanation:** When you ran `git add`, Git immediately hashed the file's contents, created a blob object in `.git/objects`, and updated the index to point to that blob. When you subsequently modified the file in your working directory, you altered the local file on disk, but you did not invoke `git add` again. Therefore, the index still references the blob of the first change, and Git has not yet created a new blob for your latest unsaved/unstaged edits. The working directory and the index are now out of sync, which is why `git status` will show the file as both staged for commit and modified but not updated.
+</details>
+
+**Question 3**
+Scenario: Your CI/CD pipeline fails because it checked out a specific commit hash instead of a branch name to run a build. A junior developer looks at the server and says, "We've lost our branch! `cat .git/HEAD` just shows a raw SHA-1 hash instead of `ref: refs/heads/main`."
+What is the technical term for this state, and how does it impact the creation of new commits?
+A) Corrupted HEAD state; any new commits will be rejected by Git until the HEAD file is manually edited to point to a valid branch ref.
+B) Detached HEAD state; new commits can be created, but they will not update any branch pointer and may become unreachable if you check out another branch.
+C) Unborn branch state; the repository has been initialized but no commits exist yet, so HEAD points to an empty hash.
+D) Orphaned tree state; Git has lost the parent commit linking, so new commits will start an entirely new, disconnected history.
+
+<details>
+<summary>View Answer</summary>
+**Correct Answer: B**
+
+**Explanation:** When `HEAD` points directly to a commit hash rather than a branch reference (like `refs/heads/main`), the repository is in a "detached HEAD" state. This perfectly normal state often occurs during CI/CD checkouts, debugging, or when checking out a tag. You can still make new commits in this state; Git will simply create new commit objects and move the `HEAD` pointer to them. However, because no branch reference is being updated, if you later switch to another branch, those new commits will not be referenced by any name and will eventually be garbage collected unless you explicitly create a branch or tag pointing to them.
+</details>
