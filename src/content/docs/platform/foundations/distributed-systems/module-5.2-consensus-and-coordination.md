@@ -78,29 +78,17 @@ REQUIREMENTS
 
 SOUNDS SIMPLE, BUT...
 ─────────────────────────────────────────────────────────────
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│  Node A proposes "X"      Node B proposes "Y"              │
-│         │                         │                        │
-│         └─────────┬───────────────┘                        │
-│                   │                                        │
-│                   ▼                                        │
-│           ┌──────────────┐                                │
-│           │   Network    │                                │
-│           │  (unreliable)│                                │
-│           └──────────────┘                                │
-│                   │                                        │
-│         ┌─────────┴───────────┐                           │
-│         │                     │                           │
-│         ▼                     ▼                           │
-│     Node A                Node B                          │
-│     decides ?             decides ?                       │
-│                                                            │
-│  What if A doesn't hear from B?                           │
-│  What if B crashes mid-decision?                          │
-│  What if the network partitions?                          │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+```
+
+```mermaid
+flowchart TD
+    A[Node A proposes X] --> N((Network<br>unreliable))
+    B[Node B proposes Y] --> N
+    N --> DA{Node A<br>decides ?}
+    N --> DB{Node B<br>decides ?}
+    
+    classDef note fill:#f9f9f9,stroke:#333,stroke-width:1px;
+    Note[What if A doesn't hear from B?<br>What if B crashes mid-decision?<br>What if the network partitions?]:::note
 ```
 
 ### 1.2 Why Consensus is Hard
@@ -143,6 +131,8 @@ Algorithms like Paxos and Raft work in practice because:
 - Random backoff prevents live-lock
 - Timing assumptions usually hold
 ```
+
+> **Stop and think**: If it's mathematically impossible to guarantee consensus in all situations, how do systems like Kubernetes run reliably in production every day? What assumptions do they make that the FLP theorem doesn't?
 
 ### 1.3 Consensus Use Cases
 
@@ -244,26 +234,32 @@ Phase 2: ACCEPT
     Acceptors → Learners: "Accepted V"
 
     If majority accept: Consensus reached!
+```
 
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│   Proposer              Acceptors              Learner     │
-│      │                  │  │  │                   │        │
-│      │──Prepare(1)─────▶│  │  │                   │        │
-│      │                  │  │  │                   │        │
-│      │◀──Promise(1)─────│  │  │                   │        │
-│      │◀──Promise(1)────────│  │                   │        │
-│      │◀──Promise(1)───────────│                   │        │
-│      │                  │  │  │                   │        │
-│      │──Accept(1,"X")──▶│  │  │                   │        │
-│      │                  │──────Accepted(1,"X")───▶│        │
-│      │                     │───Accepted(1,"X")───▶│        │
-│      │                        │─Accepted(1,"X")──▶│        │
-│      │                  │  │  │                   │        │
-│                         │  │  │          Consensus: "X"    │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant P as Proposer
+    participant A1 as Acceptor
+    participant A2 as Acceptor
+    participant A3 as Acceptor
+    participant L as Learner
 
+    P->>A1: Prepare(1)
+    P->>A2: Prepare(1)
+    P->>A3: Prepare(1)
+    A1-->>P: Promise(1)
+    A2-->>P: Promise(1)
+    A3-->>P: Promise(1)
+    P->>A1: Accept(1, X)
+    P->>A2: Accept(1, X)
+    P->>A3: Accept(1, X)
+    A1->>L: Accepted(1, X)
+    A2->>L: Accepted(1, X)
+    A3->>L: Accepted(1, X)
+    Note over L: Consensus: X
+```
+
+```
 WHY IT'S COMPLEX
 ─────────────────────────────────────────────────────────────
 - Multiple proposers can conflict
@@ -296,29 +292,23 @@ THREE SUB-PROBLEMS
 
 NODE STATES
 ─────────────────────────────────────────────────────────────
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│                      ┌──────────┐                         │
-│              timeout │          │ receives votes           │
-│            ┌─────────│ Candidate│──────────┐              │
-│            │         │          │          │              │
-│            │         └────▲─────┘          │              │
-│            │              │                │              │
-│            │    timeout   │                │              │
-│            ▼              │                ▼              │
-│      ┌──────────┐        │         ┌──────────┐          │
-│      │ Follower │────────┘         │  Leader  │          │
-│      │          │◀─────────────────│          │          │
-│      └──────────┘  discovers       └──────────┘          │
-│                    higher term                            │
-│                                                            │
-│  Start: All nodes are Followers                           │
-│  Timeout: Follower becomes Candidate, requests votes      │
-│  Majority: Candidate becomes Leader                       │
-│  Failure: Leader times out, new election                  │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
 ```
+
+```mermaid
+stateDiagram-v2
+    [*] --> Follower: Start
+    Follower --> Candidate: timeout
+    Candidate --> Candidate: timeout (new election)
+    Candidate --> Leader: receives majority votes
+    Leader --> Follower: discovers higher term
+    Candidate --> Follower: discovers higher term
+```
+
+**State Transitions:**
+- **Start**: All nodes are Followers
+- **Timeout**: Follower becomes Candidate, requests votes
+- **Majority**: Candidate becomes Leader
+- **Failure**: Leader times out, new election
 
 ### 2.3 Raft Deep Dive
 
@@ -335,7 +325,11 @@ Term number increases monotonically.
     Term 1: Node A is leader
     Term 2: Node A fails, Node B elected
     Term 3: Node B fails, Node C elected
+```
 
+> **Pause and predict**: If a network partition splits a 5-node cluster into a group of 3 and a group of 2, what will happen to the leader if it was in the group of 2?
+
+```
 ELECTION PROCESS
 ─────────────────────────────────────────────────────────────
 1. Follower doesn't hear from leader (timeout)
@@ -361,21 +355,27 @@ Appends to local log.
 Replicates to followers.
 Once majority acknowledge, entry is "committed."
 Leader notifies followers of commit.
+```
 
-    Client                Leader              Followers
-       │                    │                    │ │ │
-       │──Write "X"────────▶│                    │ │ │
-       │                    │──Append "X"───────▶│ │ │
-       │                    │                    │ │ │
-       │                    │◀──ACK──────────────│ │ │
-       │                    │◀──ACK────────────────│ │
-       │                    │      (majority)      │ │
-       │                    │                    │ │ │
-       │                    │   COMMITTED!       │ │ │
-       │                    │                    │ │ │
-       │◀──Success──────────│──Commit notify────▶│ │ │
-       │                    │                    │ │ │
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant L as Leader
+    participant F1 as Follower 1
+    participant F2 as Follower 2
 
+    C->>L: Write X
+    L->>F1: Append X
+    L->>F2: Append X
+    F1-->>L: ACK
+    F2-->>L: ACK
+    Note over L: COMMITTED! (majority)
+    L-->>C: Success
+    L->>F1: Commit notify X
+    L->>F2: Commit notify X
+```
+
+```
 LOG CONSISTENCY
 ─────────────────────────────────────────────────────────────
 Leader's log is authoritative.
@@ -582,24 +582,27 @@ DISTRIBUTED LOCK (multiple machines)
 
 THE PROBLEM WITH DISTRIBUTED LOCKS
 ─────────────────────────────────────────────────────────────
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│  Client A acquires lock                                    │
-│       │                                                    │
-│       ├──── Long GC pause ────┐                           │
-│       │                       │                           │
-│       │     Lock expires      │                           │
-│       │                       │                           │
-│       │     Client B acquires │                           │
-│       │     lock              │                           │
-│       │                       │                           │
-│       │◀── GC pause ends ─────┘                           │
-│       │                                                    │
-│       │     Client A thinks it still has lock!            │
-│       │     Both A and B in critical section!             │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+```
 
+```mermaid
+sequenceDiagram
+    participant A as Client A
+    participant S as Lock Server
+    participant B as Client B
+
+    A->>S: Acquire lock
+    S-->>A: Lock granted
+    Note over A: Long GC pause begins
+    Note over S: Lock expires
+    B->>S: Acquire lock
+    S-->>B: Lock granted
+    Note over A: GC pause ends
+    Note over A, B: Client A thinks it still has lock!<br>Both A and B in critical section!
+```
+
+> **Stop and think**: Why does a distributed lock need a TTL (time-to-live) in the first place? What would happen if a client acquired a lock without a TTL and then crashed permanently before releasing it?
+
+```
 SOLUTION: FENCING TOKENS
 ─────────────────────────────────────────────────────────────
 Lock server issues incrementing token with each acquisition.
@@ -792,7 +795,7 @@ YOU NEED CONSENSUS WHEN
     All nodes process operations in same order.
     Alternative: Partial ordering or eventual consistency
 
-YOU PROBABLY DON'T NEED CONSENSUS WHEN
+YOU PROBABLY DONT NEED CONSENSUS WHEN
 ═══════════════════════════════════════════════════════════════
 
 ✗ CACHING
@@ -889,209 +892,60 @@ Simple but single point of failure.
 
 ## Quiz
 
-1. **What is consensus and why is it hard?**
+1. **Scenario**: You are tasked with building a highly reliable distributed database where three nodes must agree on the order of transactions. During testing, you notice that if the network becomes heavily congested, the system completely halts and refuses to commit new transactions. Why is this behavior actually expected rather than a bug?
    <details>
    <summary>Answer</summary>
 
-   **Consensus** is getting multiple nodes to agree on a single value with three properties:
-   - Agreement: All non-faulty nodes decide the same value
-   - Validity: The value was proposed by some node
-   - Termination: All non-faulty nodes eventually decide
-
-   It's hard because:
-   1. **FLP impossibility**: In asynchronous systems with even one possible failure, consensus can't be guaranteed
-   2. **Network unreliability**: Messages can be lost, delayed, or reordered
-   3. **Partial failure**: Can't distinguish slow node from dead node
-   4. **No global clock**: Can't use time to order events
-
-   Practical algorithms (Paxos, Raft) work because true asynchrony is rare and random backoff prevents live-lock.
+   This behavior is expected due to the constraints of the FLP impossibility theorem, which states that in an asynchronous system where even one node might fail, no algorithm can guarantee consensus. Because the system cannot distinguish between a node that has crashed and one that is simply slow to respond due to network congestion, it must make a trade-off. In this scenario, the database has prioritized safety (agreement and validity) over liveness (termination). Practical consensus algorithms like Raft and Paxos accept that they cannot guarantee termination in all possible faulty states, choosing instead to pause operations rather than risk data corruption or split-brain scenarios.
    </details>
 
-2. **How does Raft achieve consensus?**
+2. **Scenario**: In a 5-node etcd cluster powering a production Kubernetes environment, the current leader node suffers a hardware failure and abruptly dies. Walk through the exact mechanism the remaining four nodes use to recover and agree on the cluster's next state.
    <details>
    <summary>Answer</summary>
 
-   Raft achieves consensus through:
-
-   1. **Leader election**: One node becomes leader via majority vote
-      - Nodes start as followers
-      - Timeout triggers candidate state
-      - Candidate requests votes
-      - Majority votes → becomes leader
-
-   2. **Log replication**: Leader orders all decisions
-      - Client sends request to leader
-      - Leader appends to log
-      - Leader replicates to followers
-      - Majority acknowledgment → committed
-      - Leader notifies client and followers
-
-   3. **Terms**: Time divided into terms, each with at most one leader
-      - Higher term wins conflicts
-      - Prevents split-brain
-
-   4. **Safety**: Log consistency rules ensure followers match leader
+   When the leader dies, the remaining follower nodes will eventually stop receiving heartbeat messages, triggering an election timeout on one or more of them. The first node to time out increments its current term number and transitions to a candidate state, voting for itself and sending request-vote messages to the other nodes. The remaining nodes will grant their vote if they haven't voted in this term and if the candidate's log is at least as up-to-date as their own. Once the candidate receives a majority of votes, it assumes the role of leader and immediately begins sending heartbeats to establish its authority. This process ensures the cluster safely transitions to a new leader without any single point of failure disrupting the overall consensus.
    </details>
 
-3. **What's the problem with distributed locks and how do fencing tokens solve it?**
+3. **Scenario**: You are implementing a distributed lock using a simple Redis key with a TTL. A developer asks why you can't just delete the key when the process finishes instead of worrying about fencing tokens. Explain the fundamental flaw in relying solely on TTLs and deletion for distributed locks.
    <details>
    <summary>Answer</summary>
 
-   **The problem**: A client can acquire a lock, pause (GC, network), and resume after the lock expired. Another client acquires the lock, but the first client thinks it still holds it. Both are in the critical section.
-
-   **Fencing tokens solve this**:
-   1. Lock server issues monotonically increasing token with each acquisition
-   2. Token 33 → Client A, Token 34 → Client B (after A's lock expired)
-   3. Resource (database, file) checks token before accepting writes
-   4. Client A wakes up with token 33, tries to write
-   5. Resource rejects: 33 < 34 (last seen token)
-   6. Only Client B (token 34) can write
-
-   The resource acts as the final gatekeeper, rejecting stale clients.
+   Relying solely on a TTL and deletion is fundamentally flawed because it assumes a perfectly synchronous environment where processes never freeze and networks never delay. If a process acquires a lock but experiences a massive garbage collection pause, the TTL will expire on the server while the process is completely unaware. When a second process inevitably acquires the now-free lock, both processes will eventually attempt to execute their critical sections concurrently, leading to silent data corruption. Fencing tokens are required because they shift the ultimate validation from the unreliable client processes to the storage layer itself. By ensuring the resource rejects any writes from a client holding a stale, older token, the system remains safe even when distributed lock guarantees temporarily break down.
    </details>
 
-4. **When should you NOT use consensus?**
+4. **Scenario**: A junior engineer proposes using etcd (which relies on Raft consensus) to store the high-volume clickstream events and real-time user metrics for a popular e-commerce website, arguing that "we need to ensure we never lose a click." Explain why this architectural choice will fail in production and what pattern should be used instead.
    <details>
    <summary>Answer</summary>
 
-   Avoid consensus when:
-
-   1. **Stale data is acceptable**: Caching, metrics, logging. Use eventual consistency.
-
-   2. **Availability matters more**: Shopping carts, social feeds. Use AP systems.
-
-   3. **High write throughput needed**: Consensus limits writes to leader's capacity.
-
-   4. **Geographic distribution**: Cross-datacenter consensus has high latency.
-
-   5. **Operations are commutative**: Use CRDTs (counters, sets) that merge without coordination.
-
-   6. **Conflicts are rare**: Use optimistic concurrency with retry.
-
-   Consensus is expensive (latency, throughput, complexity). Use it for leader election, strong locks, and transaction commits—where correctness is critical.
+   Using a consensus-based system like etcd for high-volume clickstream data will quickly bottleneck the system and lead to severe performance degradation. Every write in a Raft cluster must go through the single leader node and be replicated to a majority of followers before it can be acknowledged, which introduces significant latency and caps the maximum throughput. Consensus algorithms prioritize strict linearizability and correctness over high availability and write throughput, making them entirely unsuited for transient, high-volume data like metrics. Instead, the team should use an eventually consistent system or a distributed message queue designed for high throughput. In these alternative systems, occasional data loss or reordering in clickstream analytics is an acceptable trade-off for the massive performance gains required at e-commerce scale.
    </details>
 
-5. **A Raft cluster has 5 nodes with election timeout of 150-300ms. Node A (the leader) crashes. What's the minimum and maximum time until a new leader is elected? What factors affect this?**
+5. **Scenario**: You are configuring a new Raft-based service and set the election timeout to a fixed 200ms across all 5 nodes. During a network blip that drops the leader, the cluster completely fails to elect a new leader for several minutes, continuously timing out. What configuration error caused this cascading failure, and how does the protocol natively solve this?
    <details>
    <summary>Answer</summary>
 
-   **Minimum time**: ~150ms
-   - One follower times out at 150ms (earliest timeout)
-   - Becomes candidate, requests votes
-   - Receives 2 votes (majority of remaining 4)
-   - Becomes leader
-   - Best case: ~150ms + network RTT
-
-   **Maximum time**: Several seconds (worst case)
-   - All followers timeout near 300ms (late)
-   - Split vote (two candidates, each gets 2 votes)
-   - Both wait random backoff (150-300ms)
-   - Another split vote possible
-   - Multiple rounds until one wins
-
-   **Factors affecting election time:**
-   1. **Election timeout range**: Wider range reduces split votes but increases minimum time
-   2. **Network latency**: Higher latency = slower vote collection
-   3. **Number of nodes**: More nodes = more coordination
-   4. **Network partitions**: Can prevent majority formation
-   5. **Random backoff**: Designed to break ties
-
-   **Typical production**: 1-3 seconds for new leader after failure detection.
+   Setting a fixed, identical election timeout across all nodes virtually guarantees a persistent split-vote scenario during recovery. When the leader fails, all followers will time out at exactly the same moment, transition to candidates, and vote for themselves, preventing anyone from achieving a majority. This cycle will repeat indefinitely because they will all restart their candidate timers simultaneously, completely halting cluster operations. The Raft protocol natively solves this by requiring randomized election timeouts (for example, a random value between 150ms and 300ms) for each individual node. This randomness ensures that one node will reliably time out before the others, allowing it to request and win the necessary votes before competing candidates can even emerge.
    </details>
 
-6. **You're designing a system with 7 etcd nodes across 3 datacenters (3 in DC1, 2 in DC2, 2 in DC3). DC1 loses network connectivity. Can the cluster still function? What if DC2 also fails?**
+6. **Scenario**: Your global infrastructure team deploys a 7-node etcd cluster spread evenly across three datacenters: 3 nodes in US-East, 2 in EU-West, and 2 in AP-South. The transatlantic fiber cable is cut, completely isolating the US-East datacenter from the other two. Will the Kubernetes control planes in any of these regions continue to function, and why?
    <details>
    <summary>Answer</summary>
 
-   **Quorum calculation for 7 nodes:**
-   - Quorum = floor(7/2) + 1 = 4 nodes
-
-   **Scenario 1: DC1 loses connectivity (3 nodes lost)**
-   - Remaining: DC2 (2) + DC3 (2) = 4 nodes
-   - 4 ≥ quorum of 4: **YES, cluster functions**
-   - New leader elected from DC2 or DC3
-   - DC1 nodes become followers with stale data
-
-   **Scenario 2: DC1 and DC2 fail (5 nodes lost)**
-   - Remaining: DC3 only = 2 nodes
-   - 2 < quorum of 4: **NO, cluster is read-only**
-   - Cannot elect leader
-   - Cannot accept writes
-   - Existing pods keep running (kubelet cached state)
-
-   **Design lesson**: For 3 DC setup, distribute nodes as 3-2-2 not 5-1-1. This ensures any single DC failure leaves quorum intact. For true multi-DC resilience, use 5+ DCs or accept that losing 2 DCs breaks consensus.
+   Yes, the cluster will continue to function, but only the partition containing EU-West and AP-South will be able to accept writes and make progress. A 7-node cluster requires a quorum of 4 nodes to achieve consensus and confirm any state changes. The US-East datacenter only has 3 nodes, so it cannot form a quorum and will degrade to a read-only state, safely rejecting all new configuration changes to prevent a split-brain. However, the connected partition of EU-West and AP-South contains 4 nodes in total, giving them the exact majority needed to elect a new leader and continue processing writes. This demonstrates why careful distribution of nodes across fault domains is critical; if US-East had contained 4 nodes instead, the loss of a single datacenter would have taken down the entire global cluster.
    </details>
 
-7. **A distributed lock has 15-second TTL with 5-second renewal. Client A acquires the lock, then experiences a 20-second GC pause. Explain the timeline. How would fencing tokens prevent data corruption?**
+7. **Scenario**: A distributed lock has a 15-second TTL and a 5-second renewal heartbeat. Client A acquires the lock, but exactly 2 seconds later experiences a severe 20-second garbage collection pause. Walk through the exact timeline of events that leads to a split-brain state, and explain how a fencing token neutralizes this specific timeline.
    <details>
    <summary>Answer</summary>
 
-   **Timeline:**
-   ```
-   T=0:   Client A acquires lock (token 100), TTL=15s
-   T=5:   Client A should renew (but GC pause starts)
-   T=10:  Client A should renew (still in GC pause)
-   T=15:  Lock TTL expires, lock released
-   T=16:  Client B acquires lock (token 101), TTL=15s
-   T=20:  Client A wakes from GC pause
-   T=20:  Client A thinks it still holds lock!
-   T=20:  Both clients believe they hold the lock
-   ```
-
-   **Without fencing tokens:**
-   - Client A writes to shared resource
-   - Client B writes to shared resource
-   - Data corruption from interleaved writes
-
-   **With fencing tokens:**
-   ```
-   T=20: Client A attempts write with token 100
-   T=20: Resource checks: last_seen_token = 101
-   T=20: 100 < 101 → REJECTED (stale token)
-   T=20: Client B writes with token 101 → ACCEPTED
-   ```
-
-   **Key insight**: The lock service can't prevent Client A from trying to use an expired lock. But the resource (database, file system) can reject stale requests if it tracks fencing tokens. The token makes the lock's expiration visible to the protected resource.
+   At T=0, Client A acquires the lock and begins processing, but at T=2 it enters a severe 20-second garbage collection pause. Because Client A is frozen, it cannot send the required 5-second renewal heartbeats, causing the lock server to expire the lock at T=15. At T=16, Client B acquires the newly available lock and begins legitimately writing to the shared resource. When Client A wakes up at T=22, it has no knowledge of the pause and still believes it holds the exclusive lock, resulting in both clients actively mutating the resource. A fencing token neutralizes this exact timeline because the shared resource would reject Client A's writes at T=22, recognizing that its associated token is older than the token currently being used by Client B.
    </details>
 
-8. **Your team is debating: use ZooKeeper vs etcd for a new coordination service. What questions should drive this decision? When would you choose each?**
+8. **Scenario**: Your organization is migrating a legacy Java-based Hadoop data lake and a modern Go-based Kubernetes microservices platform into a unified architecture. The architecture board wants to standardize on a single coordination service—either ZooKeeper or etcd—for both platforms to reduce operational overhead. Defend why standardizing on a single tool might be a mistake in this specific context.
    <details>
    <summary>Answer</summary>
 
-   **Key decision questions:**
-
-   1. **What's your existing stack?**
-      - Kubernetes/Go shop → etcd (native integration)
-      - Hadoop/Kafka/Java shop → ZooKeeper (proven integration)
-
-   2. **What's your data model?**
-      - Flat key-value → etcd (simpler API)
-      - Hierarchical (paths, children) → ZooKeeper (tree structure)
-
-   3. **What's your watch pattern?**
-      - Continuous streaming watches → etcd (efficient gRPC streams)
-      - One-time triggers → ZooKeeper (must re-register)
-
-   4. **What's your ops capability?**
-      - etcd: Simpler, single binary, smaller footprint
-      - ZooKeeper: More complex, requires JVM tuning
-
-   **Choose etcd when:**
-   - Building on Kubernetes (already running etcd)
-   - Need efficient watch streams
-   - Prefer simpler operations
-   - Go ecosystem
-
-   **Choose ZooKeeper when:**
-   - Running Kafka, Hadoop, HBase (proven integration)
-   - Need hierarchical data model
-   - Team has ZooKeeper expertise
-   - Java ecosystem
-
-   **Neither when:**
-   - High write throughput needed (both limited by leader)
-   - Cross-datacenter with low latency requirements
-   - Simple caching (use Redis instead)
+   Standardizing on a single coordination service in this mixed environment ignores the native integrations and architectural assumptions of the respective ecosystems. The legacy Hadoop and Java stack relies heavily on ZooKeeper's hierarchical znode data model and has deep, battle-tested client libraries specifically built around those semantics. Conversely, the modern Kubernetes ecosystem is fundamentally designed around etcd's flat key-value store and highly efficient gRPC watch streams. Forcing Hadoop to use etcd, or Kubernetes to use ZooKeeper, would require building complex translation layers that introduce latency and significantly increase the risk of consensus-related outages. The operational overhead of running both services is far lower than the engineering cost and operational risk of fighting the native design patterns of these two major platforms.
    </details>
 
 ---
