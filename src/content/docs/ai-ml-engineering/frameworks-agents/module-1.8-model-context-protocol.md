@@ -1,6 +1,6 @@
 ---
 title: "Model Context Protocol (MCP) for Agents"
-slug: ai-ml-engineering/frameworks-agents/module-4.8-model-context-protocol
+slug: ai-ml-engineering/frameworks-agents/module-1.8-model-context-protocol
 sidebar:
   order: 509
 ---
@@ -371,37 +371,37 @@ Understanding this sequence is vital when dealing with hanging executions or par
 
 <details>
 <summary>1. Scenario: You are designing an MCP server to expose your company's internal wiki to a customer support agent. The wiki contains tens of thousands of articles. The agent needs to be able to search the wiki and read specific articles. How should you model this in MCP?</summary>
-You should model the search functionality as a Tool (e.g., `search_wiki(query: str)`) that returns a list of article titles and URIs. The reading functionality should be modeled as a Resource, where the URI corresponds to the specific article. This separates the action of searching from the context-gathering action of reading, optimizing context window usage by only loading articles the LLM explicitly requests via the Resource URI.
+You should model the search functionality as a Tool and the reading functionality as a Resource. The `search_wiki` tool takes a query and returns a list of relevant article URIs, representing a computational action taken by the server. Conversely, the wiki articles themselves are static or semi-static reference data, which perfectly aligns with the design intent of MCP Resources. By separating these concerns, you optimize the LLM's context window. Instead of dumping entire articles into the search results, the agent only reads the specific URIs it determines are relevant to the user's inquiry, preventing token exhaustion and improving response latency.
 </details>
 
 <details>
 <summary>2. Scenario: Your Python-based MCP server using the stdio transport suddenly stops responding to the client. The client logs indicate a parsing error: `SyntaxError: Unexpected token I in JSON at position 0`. What is the most likely architectural cause of this failure?</summary>
-The most likely cause is that the server application has printed standard text (e.g., an `INFO` level log message starting with the letter 'I') directly to `stdout`. Because the stdio transport requires `stdout` to contain exclusively valid JSON-RPC messages, the client attempts to parse the log statement as JSON and fails immediately. All logging must be redirected to `stderr`.
+The most likely cause is that the Python server application has printed standard text directly to `stdout`. When using the `stdio` transport layer, the client and server communicate by passing strictly formatted JSON-RPC messages over standard input and output streams. If an engineer inadvertently adds an `INFO` level log message (e.g., "Initializing server...") that writes to standard output, the client immediately attempts to parse that string as a JSON-RPC payload. Because the string does not start with a valid JSON character, the client's parser crashes, severing the connection. To resolve this, all debug, info, and error logging must be explicitly redirected to `stderr` or a separate log file.
 </details>
 
 <details>
 <summary>3. Scenario: You need to deploy an MCP server that will be accessed by multiple different agents hosted on different cloud providers. The agents need to stream status updates back to the user interface in real-time. Which transport mechanism should you design your server to support, and why?</summary>
-You must use the Server-Sent Events (SSE) transport over HTTP. The `stdio` transport is strictly limited to local, inter-process communication on a single host. Because the agents are distributed across different cloud providers, they must communicate over a network. SSE is specifically designed to handle unidirectional real-time event streaming over HTTP, making it the correct choice for this architecture.
+You must design the server to utilize the Server-Sent Events (SSE) transport mechanism over HTTP. The standard input/output (`stdio`) transport is strictly limited to local, inter-process communication on a single physical host or container. Because the agents are distributed across various cloud providers, they must communicate with your server over a wide area network. SSE is specifically designed to handle unidirectional, real-time event streaming over standard HTTP connections. This allows the remote agents to maintain a persistent connection and receive asynchronous JSON-RPC notifications and tool execution results seamlessly across network boundaries.
 </details>
 
 <details>
 <summary>4. Scenario: An engineer proposes using MCP 'Resources' to allow the agent to execute a script that restarts a crashed Kubernetes pod. Evaluate this design choice. Is it appropriate?</summary>
-This design choice is completely inappropriate and violates the fundamental semantics of the protocol. Resources are strictly intended for read-only data acquisition to provide context to the model. Modifying system state, such as restarting a Kubernetes pod, is an action and must be modeled as a Tool. Using a Resource for an action creates unpredictable side effects, especially if a client pre-fetches or caches Resources.
+This design choice is fundamentally flawed and violates the core architectural semantics of the Model Context Protocol. In the MCP specification, Resources are strictly intended for read-only data acquisition to provide context to the model, much like reading a local file. Modifying system state, such as executing a script to restart a Kubernetes pod, represents an action with tangible side effects. This type of operation must be modeled as a Tool, which explicitly requires an invocation request and arguments. Using a Resource for a state-mutating action creates massive security and operational risks, especially if an autonomous client decides to aggressively pre-fetch or index available resources.
 </details>
 
 <details>
 <summary>5. Scenario: During the initialization phase, an MCP client sends an `initialize` request, but the server responds with an error indicating that the protocol version is unsupported. The client only supports MCP version 2024-11-05. How should the system be re-architected to handle this?</summary>
-The system requires an upgrade or downgrade on either the client or the server to ensure protocol version compatibility. The capability negotiation phase exists precisely to catch these mismatches before execution begins. You must either update the legacy server to support the newer protocol standard or configure the client to fall back to an older protocol version if supported by its SDK.
+The system requires an upgrade or downgrade on either the client or the server to ensure protocol version compatibility. The Model Context Protocol specifically requires a capability negotiation phase before any tool or resource can be accessed to prevent malformed execution requests. Because the client and server cannot agree on a fundamental communication standard, the connection must be aborted. To resolve this, you must either update the legacy server framework to support the newer protocol standard specified by the client, or configure the client SDK to fall back to a legacy protocol version if it supports backwards compatibility.
 </details>
 
 <details>
-<summary>6. Scenario: You are analyzing the traffic between an MCP client and server and notice that the server is returning `x-mcp-transaction-id` headers in its SSE responses, but the client is ignoring them. Diagnose the potential impact of this behavior on a high-throughput system.</summary>
-Ignoring transaction IDs in a high-throughput SSE environment can lead to race conditions and misattributed tool results. Because SSE connections multiplex multiple requests, the transaction ID (or JSON-RPC `id` field) is the only mechanism the client has to correlate a specific asynchronous response back to the original request. Ignoring this will cause the client to append the wrong tool output to the wrong LLM reasoning chain, completely breaking the agent's logic.
+<summary>6. Scenario: You are analyzing the traffic between an MCP client and server and notice that the server is returning asynchronous event notifications, but the client is randomly dropping them or attributing them to the wrong agent action. Diagnose the potential impact of this behavior on a high-throughput system.</summary>
+The client is likely failing to correctly track and map the JSON-RPC `id` fields during concurrent execution flows. In a high-throughput environment, especially over SSE, a client might dispatch multiple tool execution requests simultaneously. The JSON-RPC `id` is the singular mechanism the client possesses to correlate an asynchronous server response back to the specific request that triggered it. If the client ignores or mismanages these identifiers, it will inevitably append the wrong tool output to the wrong LLM reasoning chain. This completely breaks the agent's logic, causing it to hallucinate based on data meant for a completely different user or session.
 </details>
 
 <details>
 <summary>7. Scenario: A developer implements an MCP tool that calculates complex financial projections. The tool requires an array of historical data points, a discount rate, and a boolean flag for aggressive modeling. When the LLM calls the tool, the server crashes with a `TypeError`. Compare the traditional function calling approach to the MCP approach for mitigating this issue.</summary>
-In a traditional bespoke approach, the error might crash the API wrapper or return a generic 500 error, leaving the LLM blind to the cause. With a properly implemented MCP server utilizing robust schema validation (like Pydantic), the validation layer catches the type mismatch before the execution logic runs. The server then constructs a graceful JSON-RPC error response detailing the exact schema violation (e.g., "discount_rate must be a float"). The client passes this text back to the LLM, allowing it to self-correct and re-issue the call with the correct types.
+In a traditional, custom-built function calling integration, a type mismatch from the LLM often crashes the API wrapper directly or returns an opaque HTTP 500 error, leaving the LLM completely blind to what went wrong. The Model Context Protocol dictates a more resilient approach by requiring structured JSON schemas for every tool. When combined with a robust validation library like Pydantic on the server side, the type mismatch (e.g., providing a string instead of a boolean) is caught before the fragile execution logic is ever reached. The server gracefully intercepts the validation exception and returns a structured JSON-RPC error containing the exact schema violation, allowing the LLM to understand its mistake and autonomously retry the tool call with corrected arguments.
 </details>
 
 ## Hands-On Exercise: Building and Debugging an MCP Integration
@@ -529,4 +529,5 @@ Change `arguments: { values: ["a", "b"] }` in `client.mjs`. When executed, the o
 
 Now that you understand how to securely connect an agent to external tools and data using the Model Context Protocol, the next step is managing the complex state and decision trees required when multiple tools are invoked sequentially. In the next module, we will explore advanced state management frameworks.
 
-[Continue to Module 4.9: State Machines and LangGraph Architecture &rarr;](../module-4.9-langgraph-architecture)
+[Continue to Module 1.3: LangGraph for Agents &rarr;](/ai-ml-engineering/frameworks-agents/module-1.3-langgraph-for-agents/)
+---
