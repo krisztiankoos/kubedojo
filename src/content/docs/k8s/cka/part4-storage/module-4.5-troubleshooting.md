@@ -23,7 +23,7 @@ lab:
 After this module, you will be able to:
 - **Diagnose** storage failures systematically (PVC Pending, mount errors, capacity issues, permission denied)
 - **Trace** the storage provisioning chain from PVC → StorageClass → provisioner → PV → mount
-- **Fix** common storage issues: stuck finalizers, orphaned PVs, filesystem corruption recovery
+- **Fix** common storage issues: volume mount errors, capacity limits, and permissions mismatches
 - **Design** a troubleshooting checklist for storage problems in CKA exam scenarios
 
 ---
@@ -875,4 +875,4 @@ Congratulations! You've completed Part 4: Storage. You should now be able to:
 - Create and restore from volume snapshots
 - Troubleshoot common storage issues
 
-Continue to the [Part 4 Cumulative Quiz](../part4-cumulative-quiz/) to test your knowledge, then proceed to [Part 5: Troubleshooting](../part5-troubleshooting/).
+Continue to the [Part 4 Cumulative Quiz](../part4-cumulative-quiz/) to test your knowledge, then proceed to [Part 5: Troubleshooting](/k8s/cka/part5-troubleshooting/).
