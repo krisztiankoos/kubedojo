@@ -285,7 +285,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -772,7 +771,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -785,6 +783,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
@@ -870,8 +869,6 @@ func buildConfig() (*rest.Config, error) {
 	return clientcmd.BuildConfigFromFlags("", kubeconfig)
 }
 ```
-
-> **Note**: The `main.go` file references `corev1` -- you will need to add `corev1 "k8s.io/api/core/v1"` to the imports. Your IDE or `goimports` will handle this.
 
 ---
 
@@ -1135,7 +1132,7 @@ kind create cluster --name controller-lab
 
 # Apply the WebApp CRD from Module 1.2
 # (use the simplified version below)
-cat << 'EOF' | k apply -f -
+cat << 'EOF' | kubectl apply -f -
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -1220,7 +1217,7 @@ go build -o webapp-controller .
 
 4. **In another terminal, create a WebApp**:
 ```bash
-cat << 'EOF' | k apply -f -
+cat << 'EOF' | kubectl apply -f -
 apiVersion: apps.kubedojo.io/v1beta1
 kind: WebApp
 metadata:
@@ -1235,38 +1232,38 @@ EOF
 5. **Verify the controller creates resources**:
 ```bash
 # Check WebApp status
-k get webapp demo-app
+kubectl get webapp demo-app
 
 # Check created Deployment
-k get deployment demo-app
-k describe deployment demo-app | grep "Controlled By"
+kubectl get deployment demo-app
+kubectl describe deployment demo-app | grep "Controlled By"
 
 # Check created Service
-k get svc demo-app
+kubectl get svc demo-app
 
 # Check events
-k get events --sort-by=.lastTimestamp | grep webapp
+kubectl get events --sort-by=.lastTimestamp | grep webapp
 ```
 
 6. **Test self-healing**:
 ```bash
 # Delete the Deployment — controller should recreate it
-k delete deployment demo-app
+kubectl delete deployment demo-app
 sleep 5
-k get deployment demo-app
+kubectl get deployment demo-app
 
 # Scale the WebApp
-k patch webapp demo-app --type=merge -p '{"spec":{"replicas":5}}'
+kubectl patch webapp demo-app --type=merge -p '{"spec":{"replicas":5}}'
 sleep 5
-k get deployment demo-app
+kubectl get deployment demo-app
 ```
 
 7. **Test deletion cascade**:
 ```bash
-k delete webapp demo-app
+kubectl delete webapp demo-app
 sleep 5
-k get deployment demo-app     # Should be gone (GC'd via OwnerRef)
-k get svc demo-app             # Should be gone
+kubectl get deployment demo-app     # Should be gone (GC'd via OwnerRef)
+kubectl get svc demo-app             # Should be gone
 ```
 
 8. **Cleanup**:
