@@ -70,6 +70,8 @@ Experimental        → Best-effort cluster
 
 ### The N×M Problem
 
+> **Stop and think**: If you manage 20 clusters and deploy 10 microservices per cluster, you suddenly have 200 configurations. How would you roll out a critical security update across all 20 clusters simultaneously without automation?
+
 With multiple clusters, configuration complexity explodes:
 
 ```
@@ -286,36 +288,24 @@ kubectl apply -f applications.yaml
 
 ### Bootstrap Architecture
 
-```
-                    ┌──────────────────────────────────────┐
-                    │           Git Repository             │
-                    │                                      │
-                    │  bootstrap/                          │
-                    │  ├── base/                           │
-                    │  │   ├── flux-system/                │
-                    │  │   ├── cert-manager/               │
-                    │  │   └── monitoring/                 │
-                    │  └── overlays/                       │
-                    │      ├── production/                 │
-                    │      └── staging/                    │
-                    └────────────────┬─────────────────────┘
-                                     │
-                                     │ 1. Bootstrap script
-                                     │    installs GitOps agent
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                         New Cluster                                  │
-│                                                                      │
-│  2. GitOps agent       3. Agent pulls      4. Cluster reaches       │
-│     starts                 config              desired state        │
-│                                                                      │
-│  ┌─────────────┐      ┌─────────────┐      ┌─────────────────────┐ │
-│  │ Flux/Argo   │ ───▶ │ Sync base + │ ───▶ │ cert-manager        │ │
-│  │ Controller  │      │ overlays    │      │ monitoring          │ │
-│  └─────────────┘      └─────────────┘      │ policies            │ │
-│                                             │ apps                │ │
-│                                             └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Repo ["Git Repository"]
+        direction TB
+        Base["bootstrap/<br>├── base/<br>│   ├── flux-system/<br>│   ├── cert-manager/<br>│   └── monitoring/<br>└── overlays/<br>    ├── production/<br>    └── staging/"]
+    end
+
+    subgraph Cluster ["New Cluster"]
+        direction LR
+        Agent["Flux/Argo<br>Controller"]
+        Sync["Sync base +<br>overlays"]
+        State["cert-manager<br>monitoring<br>policies<br>apps"]
+        
+        Agent -->|"3. Agent pulls<br>config"| Sync
+        Sync -->|"4. Cluster reaches<br>desired state"| State
+    end
+
+    Repo -->|"1. Bootstrap script<br>installs GitOps agent<br>2. GitOps agent starts"| Agent
 ```
 
 ### Flux Bootstrap
@@ -412,6 +402,8 @@ resources:
 
 ### Zero-Touch Provisioning
 
+> **Pause and predict**: If a GitOps controller is configured to automatically provision new clusters, what happens if the targeting rules are too broad (e.g., matching `env: *`)? Could a test configuration accidentally overwrite production?
+
 The ultimate goal: clusters that configure themselves on creation.
 
 ```yaml
@@ -480,23 +472,25 @@ clusters/eu-west-prod/
 ### Inheritance Hierarchy
 
 **Design a clear hierarchy**:
-```
-                    ┌─────────────────┐
-                    │     Global      │
-                    │  (all clusters) │
-                    └────────┬────────┘
-                             │
-            ┌────────────────┼────────────────┐
-            ▼                ▼                ▼
-     ┌──────────┐     ┌──────────┐     ┌──────────┐
-     │Production│     │ Staging  │     │   Dev    │
-     └────┬─────┘     └────┬─────┘     └────┬─────┘
-          │                │                │
-    ┌─────┴─────┐     ┌────┴────┐     ┌────┴────┐
-    ▼           ▼     ▼         ▼     ▼         ▼
-┌───────┐ ┌───────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐
-│US-East│ │EU-West│ │US-1 │ │EU-1 │ │Dev-1│ │Dev-2│
-└───────┘ └───────┘ └─────┘ └─────┘ └─────┘ └─────┘
+```mermaid
+graph TD
+    Global["Global<br>(all clusters)"]
+    Prod["Production"]
+    Staging["Staging"]
+    Dev["Dev"]
+    
+    Global --> Prod
+    Global --> Staging
+    Global --> Dev
+    
+    Prod --> US_East["US-East"]
+    Prod --> EU_West["EU-West"]
+    
+    Staging --> US_1["US-1"]
+    Staging --> EU_1["EU-1"]
+    
+    Dev --> Dev_1["Dev-1"]
+    Dev --> Dev_2["Dev-2"]
 ```
 
 **What each level provides**:
@@ -662,26 +656,27 @@ spec:
 
 In hub-spoke, a central management cluster controls all workload clusters:
 
-```
-                         ┌─────────────────┐
-                         │   Hub Cluster   │
-                         │   (Management)  │
-                         │                 │
-                         │ ┌─────────────┐ │
-                         │ │   ArgoCD    │ │
-                         │ │   Server    │ │
-                         │ └──────┬──────┘ │
-                         └────────┼────────┘
-                                  │
-           ┌──────────────────────┼──────────────────────┐
-           │                      │                      │
-           ▼                      ▼                      ▼
-    ┌─────────────┐        ┌─────────────┐        ┌─────────────┐
-    │   Spoke 1   │        │   Spoke 2   │        │   Spoke 3   │
-    │  (US-East)  │        │  (EU-West)  │        │  (AP-South) │
-    │             │        │             │        │             │
-    │ Workloads   │        │ Workloads   │        │ Workloads   │
-    └─────────────┘        └─────────────┘        └─────────────┘
+```mermaid
+graph TD
+    subgraph Hub ["Hub Cluster (Management)"]
+        ArgoCD["ArgoCD<br>Server"]
+    end
+    
+    subgraph Spoke1 ["Spoke 1 (US-East)"]
+        W1["Workloads"]
+    end
+    
+    subgraph Spoke2 ["Spoke 2 (EU-West)"]
+        W2["Workloads"]
+    end
+    
+    subgraph Spoke3 ["Spoke 3 (AP-South)"]
+        W3["Workloads"]
+    end
+    
+    ArgoCD --> Spoke1
+    ArgoCD --> Spoke2
+    ArgoCD --> Spoke3
 ```
 
 **ArgoCD Hub-Spoke Configuration**:
@@ -740,28 +735,29 @@ spec:
 
 ### Mesh Pattern
 
+> **Pause and predict**: In a Mesh topology, if the central Git repository goes offline for an hour, do the existing workload clusters crash, or do they continue to operate normally? Why?
+
 In mesh, each cluster manages itself but syncs from a shared Git repository:
 
-```
-                    ┌───────────────────┐
-                    │   Git Repository  │
-                    │                   │
-                    │  fleet-configs/   │
-                    └─────────┬─────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
- ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
- │  Cluster 1  │       │  Cluster 2  │       │  Cluster 3  │
- │  (US-East)  │       │  (EU-West)  │       │  (AP-South) │
- │             │       │             │       │             │
- │ ┌─────────┐ │       │ ┌─────────┐ │       │ ┌─────────┐ │
- │ │  Flux   │ │       │ │  Flux   │ │       │ │  Flux   │ │
- │ └────┬────┘ │       │ └────┬────┘ │       │ └────┬────┘ │
- │      │      │       │      │      │       │      │      │
- │ Workloads   │       │ Workloads   │       │ Workloads   │
- └─────────────┘       └─────────────┘       └─────────────┘
+```mermaid
+graph TD
+    Git["Git Repository<br>fleet-configs/"]
+    
+    subgraph C1 ["Cluster 1 (US-East)"]
+        F1["Flux"] --> W1["Workloads"]
+    end
+    
+    subgraph C2 ["Cluster 2 (EU-West)"]
+        F2["Flux"] --> W2["Workloads"]
+    end
+    
+    subgraph C3 ["Cluster 3 (AP-South)"]
+        F3["Flux"] --> W3["Workloads"]
+    end
+    
+    Git --> F1
+    Git --> F2
+    Git --> F3
 ```
 
 **Flux Mesh Configuration**:
@@ -801,22 +797,28 @@ flux bootstrap github \
 
 Many organizations use hybrid: hub for visibility, mesh for resilience.
 
-```
-                    ┌───────────────────┐
-                    │   Git Repository  │
-                    └─────────┬─────────┘
-                              │
-                              │ (All clusters pull)
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
- ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
- │   Hub       │       │  Cluster 2  │       │  Cluster 3  │
- │ (Observes)  │◀──────│  (Self-     │       │  (Self-     │
- │             │       │   managed)  │       │   managed)  │
- │ ArgoCD UI   │◀──────│             │       │             │
- │ (read-only) │       │ Flux        │       │ Flux        │
- └─────────────┘       └─────────────┘       └─────────────┘
+```mermaid
+graph TD
+    Git["Git Repository"]
+    
+    subgraph Hub ["Hub (Observes)"]
+        UI["ArgoCD UI<br>(read-only)"]
+    end
+    
+    subgraph C2 ["Cluster 2 (Self-managed)"]
+        F2["Flux"]
+    end
+    
+    subgraph C3 ["Cluster 3 (Self-managed)"]
+        F3["Flux"]
+    end
+    
+    Git --> UI
+    Git --> F2
+    Git --> F3
+    
+    UI -.->|"Observes"| C2
+    UI -.->|"Observes"| C3
 ```
 
 **Implementation**:
@@ -907,8 +909,16 @@ metadata:
   name: cluster-identity-validator
 webhooks:
   - name: validate.cluster.identity
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    clientConfig:
+      service:
+        name: identity-validator
+        namespace: kube-system
     rules:
       - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["apps", ""]
+        apiVersions: ["v1"]
         resources: ["deployments", "configmaps"]
 ```
 
@@ -952,132 +962,46 @@ webhooks:
 Test your understanding of multi-cluster GitOps:
 
 ### Question 1
-Your organization has 50 production clusters. You need to apply a security patch to all of them. What's the GitOps approach?
+Your organization's platform team manages 50 production clusters across three regions. A critical CVE in a widely used ingress controller is announced, requiring an immediate update to version 1.35.2. Instead of manually applying the patch or running a script loop across 50 contexts, what is the correct GitOps strategy to roll out this patch everywhere at once?
 
 <details>
 <summary>Show Answer</summary>
 
-**Answer**: Commit the security patch to the base configuration that all production clusters inherit from. The GitOps controllers in each cluster will automatically detect the change and apply it.
-
-```yaml
-# Patch in config/base/security/
-# All clusters inheriting from base receive the update
-
-# For production-only patches:
-# config/environments/production/patches/security-patch.yaml
-```
-
-Key points:
-- Single commit updates entire fleet
-- Inheritance ensures consistency
-- Audit trail shows who, when, what
-- Rollback is another commit
+**Answer**: 
+To patch all 50 clusters efficiently, you should commit the updated ingress controller version to the base or global configuration directory in your Git repository. Because all production clusters inherit from this common base, the GitOps controllers (like Argo CD or Flux) running in or managing each cluster will automatically detect the new commit. They will then independently pull the updated manifests and reconcile their local cluster state. This approach ensures absolute consistency across the entire fleet and leaves an unambiguous audit trail showing exactly when the patch was rolled out globally. If any issues arise, a simple revert of that single commit will downgrade all 50 clusters back to the previous known-good state.
 
 </details>
 
 ### Question 2
-What's the main difference between hub-spoke and mesh topologies for multi-cluster GitOps?
+You are tasked with designing the GitOps architecture for a defense contractor operating heavily air-gapped data centers with unreliable network links between sites. You are debating whether to use a Hub-Spoke or a Mesh topology for fleet management. Which topology is the better choice for this environment, and how do the core differences between the two dictate your decision?
 
 <details>
 <summary>Show Answer</summary>
 
-**Answer**:
-
-**Hub-Spoke**:
-- Central management cluster (hub) pushes/manages configuration to all workload clusters (spokes)
-- Single pane of glass for visibility
-- Hub is potential single point of failure
-- Requires network connectivity from hub to all spokes
-
-**Mesh**:
-- Each cluster runs its own GitOps controller
-- All controllers pull from the same Git repository
-- No single point of failure
-- Works in air-gapped or disconnected scenarios
-- No centralized visibility without additional tooling
-
-Choose hub-spoke for: centralized management, easier auditing, simpler RBAC
-Choose mesh for: resilience, air-gapped environments, autonomous clusters
+**Answer**: 
+In this scenario, a Mesh topology is the superior choice due to the unreliable network links and air-gapped nature of the data centers. In a Hub-Spoke topology, a central management cluster pushes configurations to all workload clusters, which creates a single point of failure and heavily relies on continuous network connectivity from the hub to every spoke. A Mesh topology, by contrast, deploys an independent GitOps controller in every single cluster, allowing each one to pull configurations directly from a local or mirrored Git repository. Because each cluster is self-managed, intermittent network drops between data centers will not disrupt a cluster's ability to maintain its desired state or reconcile local changes. This decentralized approach maximizes resilience and autonomy at the cost of centralized visibility.
 
 </details>
 
 ### Question 3
-A new cluster needs to be created. Describe the zero-touch provisioning flow with GitOps.
+The development team just requested a new dedicated test cluster in the `eu-west-1` region. You want to ensure that the moment the infrastructure is provisioned, the cluster automatically installs all required security policies, monitoring agents, and the ingress controller without any human intervention. How does the concept of zero-touch provisioning achieve this seamless handoff between infrastructure and GitOps?
 
 <details>
 <summary>Show Answer</summary>
 
-**Answer**: Zero-touch provisioning flow:
-
-1. **Infrastructure Provisioning**
-   ```yaml
-   # Cluster API or Terraform creates the cluster
-   # Cluster is labeled with identity metadata
-   labels:
-     env: production
-     region: us-east
-     team: payments
-   ```
-
-2. **GitOps Bootstrap (automatic)**
-   ```bash
-   # Bootstrap script runs as part of cluster creation
-   # Installs GitOps controller pointing to fleet repo
-   flux bootstrap github --path=clusters/${CLUSTER_NAME}
-   ```
-
-3. **Controller Syncs Configuration**
-   - Controller detects cluster path in Git
-   - Pulls and applies base + environment + cluster configs
-   - Installs all platform services
-
-4. **Fleet Controller Detects Cluster** (if using hub)
-   - Hub's ApplicationSet generator sees new cluster
-   - Generates Applications based on cluster labels
-   - Syncs appropriate workloads
-
-The entire process requires no manual intervention after the initial cluster creation request.
+**Answer**: 
+Zero-touch provisioning bridges the gap between infrastructure creation and software configuration by treating cluster bootstrapping as an automated, declarative process. First, an Infrastructure-as-Code tool like Cluster API or Terraform creates the raw Kubernetes cluster, attaching specific identity labels (e.g., region or environment). As part of the infrastructure provisioning script or user-data, a GitOps controller is installed and configured to point at the central fleet repository. Once the controller starts, it matches the cluster's identity against the repository's targeting rules and immediately pulls down the base configurations, platform tools, and environment-specific overlays. This automated handoff guarantees that the cluster is fully compliant and operational before any workload developers are even granted access, completely eliminating configuration drift on day one.
 
 </details>
 
 ### Question 4
-How would you handle a situation where one cluster needs a different version of a component than all other clusters in its environment?
+All 10 of your staging clusters inherit from a shared `staging` Kustomize overlay that deploys version 2.40.0 of Prometheus. However, the data science team needs to test a new feature in Prometheus 2.45.0 exclusively on their dedicated staging cluster (`data-science-staging-1`) without affecting the other 9 clusters. How do you implement this exception in your configuration hierarchy?
 
 <details>
 <summary>Show Answer</summary>
 
-**Answer**: Use cluster-specific overrides in the inheritance hierarchy:
-
-```yaml
-# config/clusters/special-cluster/kustomization.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-# Inherit from environment
-resources:
-  - ../../environments/production
-
-# Override specific component
-patches:
-  - target:
-      kind: HelmRelease
-      name: prometheus
-    patch: |
-      - op: replace
-        path: /spec/chart/spec/version
-        value: "45.0.0"  # Different version
-
-# Or use image override
-images:
-  - name: prometheus
-    newTag: v2.45.0
-```
-
-Best practices:
-- Document why the override exists (comment or annotation)
-- Set expiration/review date
-- Alert on divergence from standard
-- Plan path back to standard configuration
+**Answer**: 
+To implement this targeted exception, you should apply a cluster-specific override within the configuration repository hierarchy rather than modifying the shared environment base. You navigate to the cluster-specific directory (`clusters/data-science-staging-1`) and add a Kustomize patch or image override that explicitly targets the Prometheus deployment. Because this directory inherits from the `staging` base, Kustomize will process the shared configurations first, and then apply the cluster-specific patch to replace the version tag with 2.45.0. This strategy satisfies the data science team's requirement locally while ensuring the other 9 staging clusters continue to run the standard 2.40.0 version. It also cleanly isolates the experimental change in Git, making it easy to track, review, and eventually revert when the test concludes.
 
 </details>
 
