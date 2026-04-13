@@ -33,6 +33,8 @@ For 19 days, the malware quietly captured credit card data as customers swiped t
 
 Target had security tools—firewalls, network segmentation, intrusion detection. But the layers weren't truly independent. Credentials from one system worked in others. Alerts weren't investigated. Network segments could reach each other. Each slice of Swiss cheese had holes, and the holes aligned perfectly.
 
+> **Stop and think**: What layers of security existed at Target, and why didn't they stop the attack? Consider how credentials and network access were managed across different internal boundaries.
+
 This module teaches defense in depth—how to layer security controls so that when one fails (and it will), others still protect the system.
 
 ---
@@ -65,38 +67,21 @@ This module teaches you how to design layered security—what layers exist, how 
 
 ### 1.1 The Defense Stack
 
-```
-DEFENSE IN DEPTH LAYERS
-═══════════════════════════════════════════════════════════════
-
-                    ┌─────────────────────────┐
-                    │    PHYSICAL SECURITY    │  Datacenter access, locks
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │    NETWORK SECURITY     │  Firewalls, segmentation
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │    HOST SECURITY        │  OS hardening, patching
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │   APPLICATION SECURITY  │  Auth, input validation
-                    └───────────┬─────────────┘
-                                │
-                    ┌───────────▼─────────────┐
-                    │     DATA SECURITY       │  Encryption, access control
-                    └─────────────────────────┘
-
 Each layer assumes the layer above it might be compromised.
+
+```mermaid
+flowchart TD
+    Physical["PHYSICAL SECURITY\n(Datacenter access, locks)"] --> Network["NETWORK SECURITY\n(Firewalls, segmentation)"]
+    Network --> Host["HOST SECURITY\n(OS hardening, patching)"]
+    Host --> App["APPLICATION SECURITY\n(Auth, input validation)"]
+    App --> Data["DATA SECURITY\n(Encryption, access control)"]
 ```
 
 ### 1.2 Layer Independence
 
 For defense in depth to work, layers must be **independent**:
 
-```
+```text
 LAYER INDEPENDENCE
 ═══════════════════════════════════════════════════════════════
 
@@ -117,6 +102,8 @@ Each layer has its own authentication, its own keys,
 its own failure modes.
 ```
 
+> **Pause and predict**: If an attacker steals a database administrator's credentials, how many layers of your current architecture are compromised?
+
 > **Try This (2 minutes)**
 >
 > Think about your system. Do you reuse:
@@ -132,39 +119,34 @@ its own failure modes.
 
 ### 2.1 Network Segmentation
 
-```
-NETWORK SEGMENTATION
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    subgraph FlatNetwork [FLAT NETWORK - DANGEROUS]
+        direction LR
+        F_Web[Web] <--> F_App[App] <--> F_DB[DB] <--> F_Admin[Admin]
+    end
 
-FLAT NETWORK (dangerous)
-┌─────────────────────────────────────────────────────────────┐
-│                       One Network                           │
-│                                                             │
-│  Web ◀──▶ App ◀──▶ DB ◀──▶ Admin ◀──▶ Dev ◀──▶ IoT       │
-│                                                             │
-│  Attacker compromises one device, can reach everything.    │
-└─────────────────────────────────────────────────────────────┘
-
-SEGMENTED NETWORK (defense in depth)
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    │
-│  │    DMZ      │    │   App Tier  │    │   Data Tier │    │
-│  │             │    │             │    │             │    │
-│  │  [Web/LB]   │───▶│  [App Srv]  │───▶│    [DB]     │    │
-│  │             │    │             │    │             │    │
-│  │ Internet OK │    │ DMZ only    │    │ App only    │    │
-│  └─────────────┘    └─────────────┘    └─────────────┘    │
-│        │                                                    │
-│        X (blocked)──────────────────────────────────────▶  │
-│                                                             │
-│  Attacker in DMZ can't reach database directly.            │
-└─────────────────────────────────────────────────────────────┘
+    subgraph SegmentedNetwork [SEGMENTED NETWORK - DEFENSE IN DEPTH]
+        direction LR
+        subgraph DMZ
+            S_Web[Web/LB\nInternet OK]
+        end
+        subgraph AppTier [App Tier]
+            S_App[App Srv\nDMZ only]
+        end
+        subgraph DataTier [Data Tier]
+            S_DB[DB\nApp only]
+        end
+        
+        S_Web --> S_App
+        S_App --> S_DB
+        S_Web -.->|Blocked| S_DB
+    end
 ```
 
 ### 2.2 Firewall Rules
 
-```
+```text
 FIREWALL STRATEGY
 ═══════════════════════════════════════════════════════════════
 
@@ -189,37 +171,20 @@ COMMON MISTAKES
 
 ### 2.3 Zero Trust Networking
 
-```
-ZERO TRUST NETWORK
-═══════════════════════════════════════════════════════════════
+Traditional perimeter: "Inside the network = trusted"
+Zero trust: "Network location grants no trust"
 
-Traditional perimeter:
-    "Inside the network = trusted"
+```mermaid
+flowchart LR
+    subgraph Node 1
+        SvcA[Service A] <--> ProxyA[Sidecar Proxy]
+    end
+    
+    subgraph Node 2
+        SvcB[Service B] <--> ProxyB[Sidecar Proxy]
+    end
 
-Zero trust:
-    "Network location grants no trust"
-
-Implementation:
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   Service A         Service B         Service C            │
-│      │                  │                  │                │
-│      │                  │                  │                │
-│      └────────┬─────────┴────────┬─────────┘                │
-│               │                  │                          │
-│        [mTLS required]    [mTLS required]                  │
-│               │                  │                          │
-│       ┌───────▼──────┐   ┌───────▼──────┐                  │
-│       │ Service Mesh │   │ Service Mesh │                  │
-│       │   (Istio)    │   │   (Linkerd)  │                  │
-│       └──────────────┘   └──────────────┘                  │
-│                                                             │
-│   Every service-to-service call:                           │
-│   ✓ Mutually authenticated (both sides prove identity)     │
-│   ✓ Encrypted (even on internal network)                   │
-│   ✓ Authorized (policy checked per request)                │
-│   ✓ Logged (audit trail)                                   │
-└─────────────────────────────────────────────────────────────┘
+    ProxyA <-->|mTLS Required\n- Mutually Authenticated\n- Encrypted\n- Authorized\n- Logged| ProxyB
 ```
 
 ---
@@ -228,47 +193,34 @@ Implementation:
 
 ### 3.1 Input Validation
 
-```
-INPUT VALIDATION
-═══════════════════════════════════════════════════════════════
+**ALL INPUT IS UNTRUSTED**
+Even input from "internal" services—an attacker who compromises one service shouldn't automatically compromise others.
 
-ALL INPUT IS UNTRUSTED
-─────────────────────────────────────────────────────────────
-Even input from "internal" services—an attacker who compromises
-one service shouldn't automatically compromise others.
+**VALIDATION CHECKLIST**
 
-VALIDATION CHECKLIST
-─────────────────────────────────────────────────────────────
-┌─────────────────────────────────────────────────────────────┐
-│ 1. TYPE VALIDATION                                          │
-│    - Expected data type (string, int, email, UUID)?         │
-│    - Does it parse correctly?                               │
-│                                                             │
-│ 2. LENGTH VALIDATION                                        │
-│    - Minimum length (empty string attacks)?                 │
-│    - Maximum length (buffer overflow, DoS)?                 │
-│                                                             │
-│ 3. FORMAT VALIDATION                                        │
-│    - Matches expected pattern (regex)?                      │
-│    - Valid characters only?                                 │
-│                                                             │
-│ 4. RANGE VALIDATION                                         │
-│    - Within expected bounds (price > 0)?                    │
-│    - Valid enum value?                                      │
-│                                                             │
-│ 5. BUSINESS VALIDATION                                      │
-│    - Makes sense in context (quantity can't be negative)?   │
-│    - User authorized for this value?                        │
-└─────────────────────────────────────────────────────────────┘
-```
+1. **TYPE VALIDATION**
+   - Expected data type (string, int, email, UUID)?
+   - Does it parse correctly?
+2. **LENGTH VALIDATION**
+   - Minimum length (empty string attacks)?
+   - Maximum length (buffer overflow, DoS)?
+3. **FORMAT VALIDATION**
+   - Matches expected pattern (regex)?
+   - Valid characters only?
+4. **RANGE VALIDATION**
+   - Within expected bounds (price > 0)?
+   - Valid enum value?
+5. **BUSINESS VALIDATION**
+   - Makes sense in context (quantity can't be negative)?
+   - User authorized for this value?
 
 ### 3.2 Output Encoding
 
-```
+Context determines encoding. Wrong encoding equals a vulnerability. Use framework functions.
+
+```text
 OUTPUT ENCODING
 ═══════════════════════════════════════════════════════════════
-
-Context determines encoding:
 
 HTML CONTEXT
     <div>Hello, {{name}}</div>
@@ -293,13 +245,11 @@ URL CONTEXT
 
     If query = "<script>alert(1)</script>"
     Encode: %3Cscript%3Ealert%281%29%3C%2Fscript%3E
-
-Wrong encoding = vulnerability. Use framework functions.
 ```
 
 ### 3.3 Authentication and Session Management
 
-```
+```text
 AUTHENTICATION LAYERS
 ═══════════════════════════════════════════════════════════════
 
@@ -328,6 +278,8 @@ DEFENSE IN DEPTH FOR AUTH
     Session Limits (timeout, single-use tokens)
 ```
 
+> **Stop and think**: Does your password reset flow require the same level of authentication (like MFA) as your primary login flow? If not, you've created a shortcut around your security layers.
+
 > **War Story: The $8.5 Million Password Reset Hole**
 >
 > **August 2019.** A financial services startup had invested heavily in authentication security: complex passwords, hardware MFA tokens, device fingerprinting, IP reputation analysis. Their login flow was nearly impenetrable.
@@ -346,75 +298,50 @@ DEFENSE IN DEPTH FOR AUTH
 
 ### 4.1 Encryption Strategy
 
+**Encryption in Transit:** Protects against network sniffing and man-in-the-middle attacks. Does not protect against compromised endpoints.
+
+```mermaid
+flowchart LR
+    Client((Client)) -->|TLS| LB[Load Balancer]
+    LB -->|mTLS| App[App Server]
+    App -->|TLS| DB[(Database)]
 ```
-ENCRYPTION LAYERS
-═══════════════════════════════════════════════════════════════
 
-ENCRYPTION IN TRANSIT
-─────────────────────────────────────────────────────────────
-    Client ──[TLS]──▶ Load Balancer ──[mTLS]──▶ App ──[TLS]──▶ DB
+**Encryption at Rest:** Protects against physical theft and unauthorized disk access. Does not protect against authorized users or memory access.
 
-    Protects: Network sniffing, man-in-the-middle
-    Doesn't protect: Compromised endpoints
-
-ENCRYPTION AT REST
-─────────────────────────────────────────────────────────────
-    ┌─────────────────────────────────────────────────────────┐
-    │  Disk Volume: Encrypted with volume key                 │
-    │  ┌─────────────────────────────────────────────────────┐│
-    │  │  Database: Transparent Data Encryption              ││
-    │  │  ┌─────────────────────────────────────────────────┐││
-    │  │  │  Column: Sensitive fields encrypted separately  │││
-    │  │  │  (SSN, credit cards)                            │││
-    │  │  └─────────────────────────────────────────────────┘││
-    │  └─────────────────────────────────────────────────────┘│
-    └─────────────────────────────────────────────────────────┘
-
-    Protects: Physical theft, unauthorized disk access
-    Doesn't protect: Authorized users, memory access
-
-APPLICATION-LEVEL ENCRYPTION
-─────────────────────────────────────────────────────────────
-    App encrypts data before storing, decrypts after reading.
-    Key never reaches database.
-
-    Protects: Database compromise, DBAs
-    Doesn't protect: Compromised application
+```mermaid
+flowchart TD
+    subgraph Disk [Disk Volume: Encrypted with volume key]
+        subgraph DB [Database: Transparent Data Encryption]
+            subgraph Column [Column: Sensitive fields encrypted separately]
+                Data[SSN, credit cards]
+            end
+        end
+    end
 ```
+
+**Application-Level Encryption:** The application encrypts data before storing it and decrypts it after reading. The raw key never reaches the database. Protects against database compromise and rogue DBAs. Does not protect against a compromised application.
 
 ### 4.2 Key Management
 
-```
-KEY MANAGEMENT
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    subgraph AntiPattern [ANTI-PATTERN: Keys with Data]
+        direction LR
+        Server1[Server] --> DB1[(data.db\nEncrypted Data)]
+        Server1 --> Key1[keys.txt\nEncryption Keys]
+        Attacker1[Attacker\nCompromises Server] --> Server1
+    end
 
-ANTI-PATTERN: Keys with data
-┌─────────────────────────────────────────────────────────────┐
-│                     Server                                  │
-│                                                             │
-│   data.db ←──── encrypted data                             │
-│   keys.txt ←─── encryption keys                            │
-│                                                             │
-│   Attacker gets server = Attacker gets everything          │
-└─────────────────────────────────────────────────────────────┘
-
-PATTERN: Separate key management
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   ┌──────────────────┐         ┌──────────────────┐       │
-│   │    App Server    │         │   Key Vault      │       │
-│   │                  │         │   (HashiCorp,    │       │
-│   │   [encrypted     │◀──────▶ │    AWS KMS)      │       │
-│   │    data]         │  fetch  │                  │       │
-│   │                  │   key   │   [keys]         │       │
-│   └──────────────────┘         └──────────────────┘       │
-│                                        │                   │
-│                                   Separate access          │
-│                                   controls, audit          │
-│                                                             │
-│   Attacker gets app server ≠ Attacker gets keys           │
-└─────────────────────────────────────────────────────────────┘
+    subgraph Pattern [PATTERN: Separate Key Management]
+        direction LR
+        AppServer[App Server\nEncrypted Data] <-->|Fetch Key\nTemporary in Memory| Vault[Key Vault\ne.g., KMS, HashiCorp]
+        Attacker2[Attacker\nCompromises Server] --> AppServer
+        Attacker2 -.->|Blocked: No Vault Access| Vault
+    end
 ```
+
+> **Pause and predict**: If an attacker gains full read access to your application server's filesystem, will they be able to decrypt your database?
 
 ### 4.3 Data Classification
 
@@ -442,50 +369,13 @@ PATTERN: Separate key management
 
 ### 5.1 Kubernetes Security Layers
 
-```
-KUBERNETES DEFENSE IN DEPTH
-═══════════════════════════════════════════════════════════════
-
-CLUSTER LAYER
-┌─────────────────────────────────────────────────────────────┐
-│  - API Server authentication (certificates, OIDC)          │
-│  - RBAC for cluster operations                              │
-│  - Network policies                                         │
-│  - Pod Security Standards                                   │
-│  - Secrets encryption at rest                               │
-└─────────────────────────────────────────────────────────────┘
-                              │
-NAMESPACE LAYER               │
-┌─────────────────────────────▼───────────────────────────────┐
-│  - Namespace isolation                                      │
-│  - Resource quotas                                          │
-│  - Network policies (namespace-scoped)                      │
-│  - ServiceAccount per namespace                             │
-└─────────────────────────────────────────────────────────────┘
-                              │
-POD LAYER                     │
-┌─────────────────────────────▼───────────────────────────────┐
-│  - SecurityContext (non-root, read-only FS)                │
-│  - Resource limits                                          │
-│  - ServiceAccount with minimal permissions                  │
-│  - No privileged containers                                 │
-└─────────────────────────────────────────────────────────────┘
-                              │
-CONTAINER LAYER               │
-┌─────────────────────────────▼───────────────────────────────┐
-│  - Minimal base images (distroless, scratch)               │
-│  - No unnecessary packages                                  │
-│  - Image scanning                                           │
-│  - Read-only root filesystem                                │
-└─────────────────────────────────────────────────────────────┘
-                              │
-APPLICATION LAYER             │
-┌─────────────────────────────▼───────────────────────────────┐
-│  - Input validation                                         │
-│  - Authentication/authorization                             │
-│  - Secrets from vault (not env vars)                       │
-│  - Least privilege database access                         │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Cluster["CLUSTER LAYER\n- API Server Auth\n- RBAC\n- Pod Security Standards\n- Secrets encryption at rest"] --> Namespace
+    Namespace["NAMESPACE LAYER\n- Namespace isolation\n- Resource quotas\n- Network policies\n- ServiceAccount scope"] --> Pod
+    Pod["POD LAYER\n- SecurityContext (non-root)\n- Resource limits\n- Minimal ServiceAccount\n- No privileged containers"] --> Container
+    Container["CONTAINER LAYER\n- Minimal base images\n- No unnecessary packages\n- Image scanning\n- Read-only root FS"] --> App
+    App["APPLICATION LAYER\n- Input validation\n- Auth/Authz\n- Secrets from vault\n- Least privilege DB access"]
 ```
 
 ### 5.2 Kubernetes Security Controls
@@ -588,168 +478,60 @@ spec:
 
 ## Quiz
 
-1. **Why must security layers be independent?**
+1. **Scenario**: A company's firewall requires an administrator login. To make things easier for the DevOps team, they configure the firewall to use the same LDAP directory and Active Directory groups as the main application's administrative backend. An attacker successfully phishes a DevOps engineer's Active Directory credentials. Why is this a failure of defense in depth?
    <details>
    <summary>Answer</summary>
 
-   If layers share dependencies (credentials, keys, infrastructure), compromising one dependency compromises all layers simultaneously.
-
-   Example of bad independence:
-   - Firewall admin password: "Summer2024!"
-   - App admin password: "Summer2024!"
-   - Attacker gets one password → owns both layers
-
-   Good independence:
-   - Firewall: Hardware token + unique password
-   - App: Different identity provider, MFA
-   - Database: Automated credential rotation
-
-   Each layer should have its own authentication, own encryption keys, and own failure modes.
+   This setup completely violates the principle of layer independence because the network layer (firewall) and application layer (backend) share the same dependency: the Active Directory credentials. When security layers share dependencies, a single compromise affects multiple layers simultaneously, defeating the purpose of having multiple defenses. In this scenario, the attacker can now modify network perimeter rules and access the application backend using the exact same set of stolen credentials. True defense in depth would require distinct authentication mechanisms, such as a hardware token for the firewall that is separate from the application login.
    </details>
 
-2. **What's the difference between encryption in transit and at rest?**
+2. **Scenario**: Your team has encrypted the application's PostgreSQL database at rest using AWS EBS volume encryption. A developer argues that because the disk is encrypted, they don't need to configure TLS for the connections between the application pods and the database pods. Is the developer correct, and why?
    <details>
    <summary>Answer</summary>
 
-   **Encryption in transit** protects data as it moves between systems:
-   - Implemented via TLS/SSL, mTLS
-   - Protects against network sniffing, man-in-the-middle attacks
-   - Data is encrypted only while moving; decrypted at endpoints
-
-   **Encryption at rest** protects stored data:
-   - Implemented via disk encryption, database encryption, application-level encryption
-   - Protects against physical theft, unauthorized disk access
-   - Data is encrypted on storage; decrypted when accessed
-
-   Defense in depth uses both: Data is encrypted on disk AND encrypted when transmitted.
+   The developer is incorrect because encryption at rest and encryption in transit protect against entirely different threat vectors. Encryption at rest (EBS volume encryption) only protects the data if the physical disk is stolen or accessed without authorization at the infrastructure level. It does absolutely nothing to protect data actively moving across the network. If an attacker has compromised another pod in the cluster and is sniffing network traffic, they will see the database queries and responses in plaintext unless encryption in transit (TLS) is implemented. Defense in depth requires both layers to cover both stored data and moving data.
    </details>
 
-3. **How do network policies implement defense in depth in Kubernetes?**
+3. **Scenario**: You are deploying a new microservice in a Kubernetes cluster (v1.35). The cluster administrator has mandated that all namespaces must have a default-deny NetworkPolicy. Your application pod needs to connect to an external payment API, but the connection keeps timing out. What is the most likely cause, and how does this demonstrate defense in depth?
    <details>
    <summary>Answer</summary>
 
-   Network policies create micro-segmentation within the cluster:
-
-   1. **Default deny**: Block all traffic by default
-   2. **Explicit allow**: Only permit required communication paths
-   3. **Namespace isolation**: Pods can't talk across namespaces without explicit policy
-   4. **Pod-level rules**: Only specific pods can reach specific services
-
-   If an attacker compromises one pod, network policies limit lateral movement. They can't reach the database directly—they'd have to compromise the application pod that's allowed to connect.
-
-   This is defense in depth because even if container security fails, network security provides another layer.
+   The most likely cause is that the default-deny NetworkPolicy is blocking outbound (egress) traffic from your pod to the internet. A default-deny policy requires explicit allow rules for any communication to occur. This demonstrates defense in depth because it assumes the application pod is untrusted; even if an attacker compromises the pod, they cannot automatically establish outbound connections to exfiltrate data or download malware. The network layer provides an independent security control that restricts lateral movement and outbound access, containing the blast radius of an application-layer compromise.
    </details>
 
-4. **Why is key management often the weakest link in encryption?**
+4. **Scenario**: An application encrypts highly sensitive user SSNs before storing them in the database. The development team stores the encryption key as an environment variable in the application's Kubernetes Deployment manifest. During a security audit, this is flagged as a critical vulnerability. Why is this approach fundamentally flawed?
    <details>
    <summary>Answer</summary>
 
-   Encryption is only as strong as key protection. Common failures:
-
-   1. **Keys stored with data**: Attacker who gets data also gets keys
-   2. **Keys in code/config**: Leaked through version control, logs
-   3. **Keys never rotated**: Old keys accumulate, larger exposure window
-   4. **Shared keys**: Too many systems know the key
-   5. **No access control**: Anyone can read the key
-   6. **No audit**: Don't know who accessed keys
-
-   Proper key management:
-   - Dedicated key management system (HashiCorp Vault, AWS KMS)
-   - Automatic rotation
-   - Access control and audit logging
-   - Separation from application servers
+   This approach is flawed because storing the encryption key in the manifest (and thus as an environment variable) couples the key directly with the application environment, defeating the separation of concerns. If an attacker gains read access to the cluster's API server, the pod's specification, or executes a directory traversal attack to read `/proc/1/environ`, they instantly obtain the key. Proper key management requires storing keys in a dedicated, external system (like a Key Vault or AWS KMS) with its own access controls and audit logs. The application should fetch the key into memory only when needed, ensuring that compromising the application host doesn't automatically hand over the cryptographic keys.
    </details>
 
-5. **A system has 5 independent security layers, each 90% effective. What's the probability an attack succeeds through all layers? What if the layers share a common credential that's 95% secure?**
+5. **Scenario**: Your organization has deployed a Web Application Firewall (WAF) that successfully blocks 99% of common SQL injection attacks. Because the WAF is highly effective, the lead engineer suggests skipping parameterized queries in the application code to speed up development time. What mathematical and architectural principles explain why this is a terrible idea?
    <details>
    <summary>Answer</summary>
 
-   **Independent layers:**
-
-   Probability attack succeeds = (1 - 0.90)^5 = 0.10^5 = 0.00001 = **0.001%**
-
-   **Shared credential (dependent layers):**
-
-   If the shared credential is compromised (5% chance), ALL layers fail:
-   - Probability = 0.05 = **5%**
-
-   The difference is dramatic:
-   - Independent: 1 in 100,000 attacks succeeds
-   - Dependent: 1 in 20 attacks succeeds
-
-   This is why layer independence is critical. Shared credentials, shared keys, or shared infrastructure create hidden dependencies that undermine the entire defense strategy.
+   This violates the core mathematical principle of layer independence in defense in depth. If you rely solely on the WAF (which is 99% effective), an attacker has a 1% chance of success per attempt. If you layer parameterized queries (e.g., 99% effective against remaining novel bypasses), the probability of an attack bypassing both independent layers drops to 0.01% (0.01 * 0.01). Furthermore, architecturally, a WAF operates at the network/HTTP layer and lacks business logic context, making it susceptible to novel encoding tricks. Parameterized queries operate at the data layer and structurally prevent SQL injection regardless of how the payload is encoded, providing a critical fallback when the WAF fails.
    </details>
 
-6. **In the Target breach, attackers entered through an HVAC vendor and reached point-of-sale systems. What defense-in-depth principle failed, and how should it have been implemented?**
+6. **Scenario**: Target's HVAC vendor had credentials that allowed remote access into Target's network. Once inside, attackers successfully pinged and connected to the point-of-sale (POS) systems located in physical retail stores. Based on defense in depth, what specific network security control was missing or misconfigured here?
    <details>
    <summary>Answer</summary>
 
-   **Failed principle: Network segmentation**
-
-   The HVAC vendor's network access should have been isolated to only HVAC-related systems. Point-of-sale systems processing credit cards should have been in a completely separate network segment with no path from vendor networks.
-
-   Proper implementation:
-
-   1. **Segment by sensitivity**: Payment systems in PCI-compliant segment, vendor access in separate segment
-
-   2. **Default deny between segments**: No traffic allowed between segments unless explicitly required
-
-   3. **Jump hosts for cross-segment access**: If vendor needs limited access to other systems, require separate authentication through a monitored jump host
-
-   4. **Alert on anomalous traffic**: HVAC systems don't need to talk to POS systems—any such traffic should generate alerts
-
-   5. **Credential isolation**: Vendor credentials should work only in vendor segment, not anywhere else
-
-   Target had some segmentation, but the segments could reach each other. True segmentation means the attack path simply doesn't exist.
+   The missing control was proper network segmentation with strict access policies between segments. In a well-architected defense in depth strategy, the HVAC vendor's access should have been heavily segmented into an isolated vendor network zone. There should have been no routing path or firewall rule allowing traffic to cross from the vendor segment into the highly sensitive PCI-compliant segment housing the POS systems. By operating a flat or loosely segmented network, Target allowed an attacker who breached a low-security dependency (HVAC monitoring) to pivot laterally into a high-security zone without encountering an independent network barrier.
    </details>
 
-7. **Why does defense in depth recommend both a WAF (Web Application Firewall) at the network edge AND input validation in the application code?**
+7. **Scenario**: You are reviewing a Kubernetes Pod manifest for a legacy application. The container runs as root, mounts the host's `/var/run/docker.sock`, and has no CPU or memory limits defined. If the application has a remote code execution (RCE) vulnerability, how does this Pod configuration fail to provide defense in depth at the host and container layers?
    <details>
    <summary>Answer</summary>
 
-   Each provides different protection with different failure modes:
-
-   **WAF (Network layer)**:
-   - Blocks known attack patterns before reaching application
-   - Can be updated quickly for new threats
-   - Provides protection for all applications behind it
-   - Weakness: Can be bypassed with encoding tricks, doesn't understand application context
-
-   **Application input validation (Application layer)**:
-   - Understands business logic (is this a valid order quantity?)
-   - Can't be bypassed by network tricks
-   - Specific to application requirements
-   - Weakness: Developers might forget to validate some inputs
-
-   Together:
-   - WAF catches 90% of SQL injection attempts
-   - The 10% that get through are caught by parameterized queries
-   - Novel attacks might bypass WAF but hit application validation
-   - Known attacks caught by WAF even if app has a bug
-
-   This is Swiss cheese in action—different holes in different places.
+   This configuration completely strips away host and container isolation, violating defense in depth. First, running as root within the container and mounting the Docker socket means an attacker exploiting the RCE can easily escape the container, compromise the underlying node, and potentially take over the entire cluster. Second, the lack of resource limits means the attacker can launch a denial-of-service attack (like cryptomining) that consumes all node resources, starving other applications. A defense in depth approach would use a non-root `SecurityContext`, a read-only root filesystem, and strict resource quotas to contain the blast radius of the RCE to just that single, isolated container.
    </details>
 
-8. **A Kubernetes cluster has NetworkPolicies blocking pod-to-pod traffic, but an attacker compromised one pod and accessed another pod's data. What likely went wrong?**
+8. **Scenario**: During a penetration test, the tester successfully bypasses the corporate VPN (Network Layer) and accesses an internal employee portal. However, they are unable to view any sensitive HR documents because the application requires a biometric prompt (WebAuthn) for high-privilege actions. Which security concept does this demonstrate, and why is it effective?
    <details>
    <summary>Answer</summary>
 
-   Several possibilities (defense in depth means checking all layers):
-
-   1. **NetworkPolicy not enforced**: NetworkPolicies require a CNI plugin that supports them (Calico, Cilium, etc.). Default kubenet doesn't enforce policies—they exist but do nothing.
-
-   2. **Policy gaps**: Default deny wasn't applied. Policies only block what's explicitly denied or allow what's explicitly allowed. Missing a default deny means unlisted traffic flows freely.
-
-   3. **Bypassed via shared resources**: Pods might share:
-      - A volume mount containing sensitive data
-      - A service account token with excessive permissions
-      - Access to the same external service (database, cache)
-
-   4. **DNS/metadata access**: NetworkPolicy might block pod IPs but allow access to kube-dns or cloud metadata services, which can be used for data exfiltration.
-
-   5. **Host network mode**: If the compromised pod ran with `hostNetwork: true`, NetworkPolicies don't apply—it's on the node's network, not the pod network.
-
-   Defense in depth means: NetworkPolicy + pod security context + service account restrictions + secrets management + runtime security monitoring.
+   This scenario perfectly demonstrates Zero Trust Architecture and the principle of layer independence. The system does not implicitly trust the user just because they bypassed the perimeter network (the VPN). Instead, the application layer independently enforces its own strong authentication and authorization controls before granting access to sensitive data. This is highly effective because the failure of the network security layer did not result in a total system compromise; the independent, data-centric access control (Layer 3: "Something you are") stopped the attack path and protected the underlying assets.
    </details>
 
 ---
@@ -760,17 +542,12 @@ spec:
 
 **Scenario**: Review the following architecture and identify missing layers:
 
-```
-Architecture:
-                    Internet
-                        │
-                   [Firewall]
-                        │
-                   [Web Server] ─── serves static files
-                        │
-                   [App Server] ─── business logic
-                        │
-                   [Database] ─── PostgreSQL
+```mermaid
+flowchart TD
+    Internet((Internet)) --> Firewall[Firewall]
+    Firewall --> WebServer[Web Server\n(serves static files)]
+    WebServer --> AppServer[App Server\n(business logic)]
+    AppServer --> Database[(Database\nPostgreSQL)]
 ```
 
 **Part 1: Layer Inventory (10 minutes)**
