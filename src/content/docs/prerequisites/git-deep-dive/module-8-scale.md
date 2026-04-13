@@ -422,8 +422,8 @@ git init
 mkdir -p services
 for i in {1..20}; do
   mkdir -p "services/service-$i"
-  echo "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: service-$i" > "services/service-$i/deployment.yaml"
-  echo "apiVersion: v1\nkind: Service\nmetadata:\n  name: service-$i" > "services/service-$i/service.yaml"
+  printf "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: service-$i\n" > "services/service-$i/deployment.yaml"
+  printf "apiVersion: v1\nkind: Service\nmetadata:\n  name: service-$i\n" > "services/service-$i/service.yaml"
 done
 
 # Generate some platform-level folders
