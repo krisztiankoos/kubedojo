@@ -36,7 +36,7 @@ Before Infrastructure as Code (IaC), setting up servers was manual, error-prone,
 
 Picture this: It's 2005. You need to set up a web server.
 
-```
+```text
 Manual Process:
 1. Order physical server (2-4 weeks)
 2. Wait for data center to rack it (1 week)
@@ -79,7 +79,7 @@ flowchart LR
 
 ### 1. Declarative vs Imperative
 
-```
+```text
 Imperative (How):
 "Install nginx, then edit /etc/nginx/nginx.conf,
 then restart nginx"
@@ -264,7 +264,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.25
+        image: nginx:1.26
 ```
 
 ```bash
@@ -275,7 +275,7 @@ kubectl apply -f deployment.yaml
 # This is IaC in action!
 ```
 
-> **Stop and think**: Notice how we don't tell Kubernetes *how* to run the container. We just state *what* we want (3 replicas of nginx:1.25), and Kubernetes figures out the rest.
+> **Stop and think**: Notice how we don't tell Kubernetes *how* to run the container. We just state *what* we want (3 replicas of nginx:1.26), and Kubernetes figures out the rest.
 
 The connection: **Kubernetes uses the same declarative, idempotent principles as Terraform and Ansible.**
 
@@ -341,7 +341,7 @@ environments/
 
 ### 4. Never Edit Manually
 
-```
+```text
 Golden Rule: If it's not in code, it doesn't exist.
 
 Manual changes = configuration drift = bugs at 3 AM
@@ -446,7 +446,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.25
+        image: nginx:1.26
 EOF
 
 kubectl apply -f deployment.yaml
