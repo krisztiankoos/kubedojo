@@ -143,7 +143,36 @@ k logs <pod> -c <container> --previous
 # Essential for understanding why it crashed
 ```
 
-### 1.5 Logs from Labels/Selectors
+### 1.5 Sidecar-Based Logging
+
+When a legacy application writes to a file (e.g., `/var/log/app.log`) instead of `stdout`/`stderr`, Kubernetes won't capture its logs automatically. You can implement a streaming sidecar container to read the file and write it to its own `stdout`. An `emptyDir` volume acts as the bridge here, providing shared ephemeral storage that both containers can mount.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: legacy-app
+spec:
+  containers:
+  - name: main-app
+    image: legacy-app:1.0
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log
+  - name: log-tailer
+    image: busybox:1.36
+    command: ["/bin/sh", "-c", "tail -f /var/log/app.log"]
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log
+  volumes:
+  - name: shared-logs
+    emptyDir: {}
+```
+
+You can then view the logs by querying the sidecar: `k logs legacy-app -c log-tailer`.
+
+### 1.6 Logs from Labels/Selectors
 
 ```bash
 # Logs from all pods with a label
@@ -253,10 +282,10 @@ k describe pvc <pvc>
 │                   METRICS SERVER                              │
 │                                                               │
 │   Nodes                    Metrics Server                     │
-│   ┌──────────┐            ┌──────────────┐                   │
-│   │ kubelet  │────────────│ Collects     │                   │
-│   │ /metrics │            │ aggregates   │                   │
-│   └──────────┘            │ exposes      │                   │
+│   ┌───────────────────┐   ┌──────────────┐                   │
+│   │ kubelet           │───│ Collects     │                   │
+│   │ /metrics/resource │   │ aggregates   │                   │
+│   └───────────────────┘   │ exposes      │                   │
 │                           └──────┬───────┘                   │
 │                                  │                           │
 │                           metrics.k8s.io API                  │
@@ -355,10 +384,10 @@ k top pod <pod>
 ┌──────────────────────────────────────────────────────────────┐
 │                NODE LOG LOCATIONS                             │
 │                                                               │
-│   Container logs:                                             │
+│   Container logs (symlinks):                                  │
 │   /var/log/containers/<pod>_<ns>_<container>-<id>.log        │
 │                                                               │
-│   Pod logs (symlinks):                                        │
+│   Pod logs (actual files):                                    │
 │   /var/log/pods/<ns>_<pod>_<uid>/                            │
 │                                                               │
 │   kubelet logs:                                               │
@@ -539,6 +568,8 @@ k get pods -A --field-selector=status.phase=Pending
 
 ### 6.3 Debugging with Temporary Pods
 
+Always use `--rm` to automatically delete the pod when you exit, and `--restart=Never` to create a bare Pod instead of a Deployment.
+
 ```bash
 # Create debug pod with networking tools
 k run debug --image=nicolaka/netshoot --rm -it --restart=Never -- bash
@@ -690,6 +721,9 @@ spec:
       echo "About to crash!"
       exit 1
 EOF
+
+# Wait for log-generator to be ready before proceeding
+k wait --for=condition=Ready pod/log-generator -n logging-lab --timeout=60s
 ```
 
 ### Task 1: Basic Log Operations
@@ -727,6 +761,7 @@ k logs -n logging-lab log-generator | grep -v INFO
 ```bash
 # Wait for crashy-pod to crash and restart
 k get pod -n logging-lab crashy-pod -w
+# (Press Ctrl+C to stop once you see CrashLoopBackOff)
 
 # When it shows CrashLoopBackOff or restarts, check previous logs
 k logs -n logging-lab crashy-pod --previous
@@ -845,4 +880,4 @@ With 30% of the CKA exam weight, troubleshooting is critical. Practice the drill
 
 ## Next Steps
 
-Continue to [Part 6: Mock Exams](../part6-mock-exams/) to test your knowledge with realistic exam scenarios.
+Continue to [Part 6: Mock Exams](/k8s/cka/part6-mock-exams/) to test your knowledge with realistic exam scenarios.
