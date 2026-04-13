@@ -41,26 +41,21 @@ Terraform state is the mapping between your configuration files and real infrast
 
 > **Pause and predict**: If two engineers simultaneously run `terraform apply` on a local monolithic state file without any remote backend or locking configured, what exactly happens to the JSON file?
 
-```
-STATE FILE GROWTH AND ITS CONSEQUENCES
-════════════════════════════════════════════════════════════════
+| Resources | State Size | Plan Time | Apply Time | Risk |
+|---|---|---|---|---|
+| 10 | ~100KB | 5 sec | 30 sec | Low |
+| 50 | ~500KB | 30 sec | 2 min | Low |
+| 100 | ~2MB | 2 min | 5 min | Medium |
+| 250 | ~10MB | 8 min | 15 min | High |
+| 500 | ~30MB | 15 min | 25 min | Very High |
+| 1000+ | ~100MB+ | 30+ min | 45+ min | Extreme |
 
-Resources   State Size   Plan Time    Apply Time   Risk
-────────────────────────────────────────────────────────────
-10          ~100KB       5 sec        30 sec       Low
-50          ~500KB       30 sec       2 min        Low
-100         ~2MB         2 min        5 min        Medium
-250         ~10MB        8 min        15 min       High
-500         ~30MB        15 min       25 min       Very High
-1000+       ~100MB+      30+ min      45+ min      Extreme
-
-At 250+ resources, you WILL experience:
+**At 250+ resources, you WILL experience:**
 - Slow plans blocking CI/CD pipelines
 - State lock timeouts
 - Team members waiting to apply changes
 - Temptation to make manual changes (drift)
 - State corruption from concurrent operations
-```
 
 ### State Splitting Strategy
 
@@ -68,54 +63,28 @@ The solution is to split your Terraform configuration into multiple independent 
 
 > **Stop and think**: In the split-state architecture shown below, if a syntax error breaks the `databases/` configuration, can the platform team still deploy updates to the EKS cluster or IAM roles? How does this impact deployment velocity during an incident?
 
-```
-STATE SPLITTING ARCHITECTURE
-════════════════════════════════════════════════════════════════
+```mermaid
+graph TD
+    subgraph "BEFORE: Monolithic State"
+        M[main.tf<br>280 resources, 1 state file]
+        M --> V1[VPC]
+        M --> S1[Subnets]
+        M --> E1[EKS cluster]
+        M --> N1[Node groups]
+        M --> R1[RDS]
+        M --> I1[IAM roles]
+    end
 
-BEFORE (monolith):
-  terraform/
-  └── main.tf          # 280 resources, one state file
-      ├── VPC
-      ├── Subnets
-      ├── EKS cluster
-      ├── Node groups
-      ├── RDS
-      ├── ElastiCache
-      ├── S3 buckets
-      ├── IAM roles
-      ├── Route53
-      └── CloudWatch
-
-AFTER (split by concern):
-  terraform/
-  ├── networking/       # 30 resources, own state
-  │   ├── vpc.tf
-  │   ├── subnets.tf
-  │   ├── transit-gw.tf
-  │   └── outputs.tf    # VPC ID, subnet IDs exported
-  │
-  ├── eks-cluster/      # 25 resources, own state
-  │   ├── cluster.tf
-  │   ├── node-groups.tf
-  │   ├── addons.tf
-  │   └── data.tf       # Reads networking outputs
-  │
-  ├── databases/        # 20 resources, own state
-  │   ├── rds.tf
-  │   ├── elasticache.tf
-  │   └── data.tf       # Reads networking outputs
-  │
-  ├── iam/              # 40 resources, own state
-  │   ├── roles.tf
-  │   ├── policies.tf
-  │   └── irsa.tf
-  │
-  └── dns/              # 15 resources, own state
-      ├── zones.tf
-      └── records.tf
-
-  Each directory: independent terraform init, plan, apply
-  Each has ~20-40 resources: plans take seconds, not minutes
+    subgraph "AFTER: Split by Concern"
+        NW[networking/<br>30 resources, own state]
+        EKS[eks-cluster/<br>25 resources, own state]
+        DB[databases/<br>20 resources, own state]
+        IAM[iam/<br>40 resources, own state]
+        DNS[dns/<br>15 resources, own state]
+        
+        EKS -.->|Reads outputs| NW
+        DB -.->|Reads outputs| NW
+    end
 ```
 
 ### Remote State Data Sources
@@ -197,32 +166,23 @@ resource "aws_eks_cluster" "main" {
 
 > **Stop and think**: What happens if an engineer gets impatient during a long `terraform apply`, force-quits their terminal, and then manually deletes the DynamoDB lock record so they can try again?
 
-```
-REMOTE BACKEND WITH LOCKING
-════════════════════════════════════════════════════════════════
+```mermaid
+sequenceDiagram
+    participant A as Engineer A
+    participant DB as DynamoDB (Lock)
+    participant S3 as S3 (State)
+    participant B as Engineer B
 
-  Engineer A                    Engineer B
-  terraform apply               terraform apply
-       │                              │
-       ▼                              ▼
-  ┌────────────────┐           ┌────────────────┐
-  │ Lock state     │           │ Lock state     │
-  │ (DynamoDB)     │           │ (DynamoDB)     │
-  │ SUCCESS        │           │ FAILED: locked │
-  └────────┬───────┘           │ "State locked  │
-           │                   │  by Engineer A" │
-           ▼                   └────────────────┘
-  ┌────────────────┐
-  │ Read state     │
-  │ (S3 bucket)    │
-  │                │
-  │ Apply changes  │
-  │                │
-  │ Write state    │
-  │ (S3 bucket)    │
-  │                │
-  │ Release lock   │
-  └────────────────┘
+    A->>DB: terraform apply (Acquire Lock)
+    activate DB
+    DB-->>A: Lock state: SUCCESS
+    B->>DB: terraform apply (Acquire Lock)
+    DB--xB: FAILED: "State locked by Engineer A"
+    A->>S3: Read state
+    Note over A: Apply changes
+    A->>S3: Write state
+    A->>DB: Release lock
+    deactivate DB
 ```
 
 ```hcl
@@ -248,10 +208,7 @@ terraform {
 
 ### State File Organization Pattern
 
-```
-S3 BUCKET STRUCTURE FOR TERRAFORM STATE
-════════════════════════════════════════════════════════════════
-
+```text
 s3://company-terraform-state/
 ├── global/
 │   ├── iam/terraform.tfstate
@@ -277,10 +234,9 @@ s3://company-terraform-state/
 │
 └── sandbox/
     └── terraform.tfstate
-
-Key/path structure: {env}/{region}/{component}/terraform.tfstate
-This matches your OU structure from Module 8.1.
 ```
+
+This Key/path structure: `{env}/{region}/{component}/terraform.tfstate` perfectly matches the Organizational Unit (OU) structure introduced in Module 8.1.
 
 ---
 
@@ -523,30 +479,37 @@ module "eks" {
 
 The traditional model is: Terraform manages cloud infrastructure, GitOps (ArgoCD/Flux) manages Kubernetes workloads. But there is a growing movement to manage cloud infrastructure through Kubernetes itself, using Crossplane or the Terraform Operator.
 
+```mermaid
+graph TD
+    subgraph "MODEL 1: Traditional (Terraform + GitOps)"
+        G1[Git Repo] -->|CI Pipeline| T1[terraform apply]
+        T1 --> C1[Cloud Resources]
+        G1 -->|ArgoCD| K1[kubectl apply]
+        K1 --> KR1[K8s Resources]
+    end
+
+    subgraph "MODEL 2: Crossplane (Everything is K8s)"
+        G2[Git Repo] -->|ArgoCD| C2[Crossplane CRDs]
+        C2 --> C2R[Cloud + K8s Resources]
+    end
+
+    subgraph "MODEL 3: Terraform Operator (TF inside K8s)"
+        G3[Git Repo] -->|ArgoCD| T3[TF Operator CRD]
+        T3 -->|terraform apply| C3[Cloud Resources]
+    end
 ```
-IAC + GITOPS MODELS
-════════════════════════════════════════════════════════════════
 
-MODEL 1: Traditional (Terraform + GitOps)
-  Git Repo ──▶ CI Pipeline ──▶ terraform apply ──▶ Cloud Resources
-  Git Repo ──▶ ArgoCD ──────▶ kubectl apply ──▶ K8s Resources
+**Model 1: Traditional**
+- **Pros**: Mature, well-understood, `terraform plan` inside PR.
+- **Cons**: Two independent tools, workflows, and state systems.
 
-  Pros: Mature, well-understood, terraform plan in PR
-  Cons: Two tools, two workflows, two state systems
+**Model 2: Crossplane**
+- **Pros**: Single GitOps workflow, Kubernetes-native, automatic reconciliation loop.
+- **Cons**: Newer ecosystem, fewer providers available, debugging is heavily abstracted.
 
-MODEL 2: Crossplane (Everything is K8s)
-  Git Repo ──▶ ArgoCD ──▶ Crossplane CRDs ──▶ Cloud + K8s Resources
-
-  Pros: Single GitOps workflow, K8s-native, reconciliation loop
-  Cons: Newer, fewer providers, debugging is harder
-
-MODEL 3: Terraform Operator (Terraform inside K8s)
-  Git Repo ──▶ ArgoCD ──▶ TF Operator CRD ──▶ terraform apply
-                                                ──▶ Cloud Resources
-
-  Pros: Uses existing TF modules, K8s-native workflow
-  Cons: State management complexity, TF inside K8s adds a layer
-```
+**Model 3: Terraform Operator**
+- **Pros**: Leverages existing Terraform modules, Kubernetes-native deployment workflow.
+- **Cons**: High state management complexity; putting Terraform inside Kubernetes adds a fragile orchestration layer.
 
 ### Crossplane Example
 
@@ -865,7 +828,7 @@ You have a monolithic Terraform file that creates a VPC, EKS cluster, RDS databa
 <details>
 <summary>Solution</summary>
 
-```
+```text
 terraform/
 ├── modules/
 │   ├── networking/
