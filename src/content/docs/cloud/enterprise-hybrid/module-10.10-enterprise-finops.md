@@ -35,26 +35,15 @@ FinOps at enterprise scale is not about nickel-and-diming individual pod request
 
 Cloud providers price compute, storage, and networking differently, but they share a common pattern: the more you commit, the less you pay per unit.
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  CLOUD PRICING SPECTRUM (Compute)                              │
-│                                                                │
-│  Most Expensive                              Least Expensive   │
-│  ◄──────────────────────────────────────────────────────────► │
-│                                                                │
-│  On-Demand    Savings Plans    Reserved       Spot/Preemptible │
-│  (1.00x)      (0.60-0.72x)    (0.40-0.60x)   (0.10-0.30x)   │
-│                                                                │
-│  No commit    1-3 year commit  1-3 year commit No guarantee   │
-│  Full flex    Moderate flex    Rigid (type/    Can be revoked  │
-│               (any instance)   region locked)  at any time     │
-│                                                                │
-│  Example: m6i.xlarge in us-east-1                              │
-│  On-Demand:  $0.192/hr  ($1,682/yr)                           │
-│  Savings:    $0.121/hr  ($1,060/yr)  = 37% savings            │
-│  Reserved:   $0.077/hr  ($675/yr)    = 60% savings            │
-│  Spot:       $0.058/hr  ($508/yr)    = 70% savings            │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    OD["On-Demand<br/>(1.00x)<br/>No commit<br/>Full flex"]
+    SP["Savings Plans<br/>(0.60-0.72x)<br/>1-3 yr commit<br/>Moderate flex"]
+    RI["Reserved<br/>(0.40-0.60x)<br/>1-3 yr commit<br/>Rigid"]
+    SPOT["Spot/Preemptible<br/>(0.10-0.30x)<br/>No guarantee<br/>Can be revoked"]
+    OD -->|Most Expensive| SP
+    SP --> RI
+    RI -->|Least Expensive| SPOT
 ```
 
 > **Pause and predict**: If you commit to a 3-year Savings Plan, what happens if your application architecture changes and requires half as much compute before the term expires?
@@ -69,25 +58,13 @@ At enterprise scale ($1M+/year), cloud providers offer negotiated discounts thro
 | **Azure** | Enterprise Agreement (EA) | 5-20% on consumption | 1-3 year, minimum annual commit |
 | **GCP** | Committed Use Discounts (CUD) + Negotiated | 5-30% on specific services | 1-3 year per service |
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  LAYERED DISCOUNT MODEL                                        │
-│                                                                │
-│  Total Cloud Spend: $10M/year                                  │
-│                                                                │
-│  Layer 1: EDP/EA Base Discount         -10%    = -$1.0M       │
-│  Layer 2: Reserved Instances (65%)     -25%*   = -$2.25M      │
-│  Layer 3: Spot Instances (15%)         -65%*   = -$0.97M      │
-│  Layer 4: Right-sizing optimization    -20%*   = -$1.15M      │
-│                                                                │
-│  * Applied to remaining spend after previous discounts         │
-│                                                                │
-│  Effective spend: $4.63M (54% savings)                        │
-│  Without optimization: $10M                                    │
-│  Annual savings: $5.37M                                        │
-│                                                                │
-│  That $5.37M funds ~30 senior engineers for a year            │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Total Cloud Spend: $10M/year] --> B[Layer 1: EDP/EA Base Discount<br/>-10% = -$1.0M]
+    B --> C[Layer 2: Reserved Instances 65%<br/>-25% = -$2.25M]
+    C --> D[Layer 3: Spot Instances 15%<br/>-65% = -$0.97M]
+    D --> E[Layer 4: Right-sizing optimization<br/>-20% = -$1.15M]
+    E --> F[Effective spend: $4.63M<br/>Annual savings: $5.37M]
 ```
 
 ### Kubernetes-Specific Cost Drivers
@@ -128,32 +105,13 @@ aws ce get-cost-forecast \
 
 ### Anomaly Detection Pipeline
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  COST ANOMALY DETECTION PIPELINE                               │
-│                                                                │
-│  ┌────────────┐   ┌──────────────┐   ┌───────────────────┐   │
-│  │ Cloud Bill  │──►│ Normalize &  │──►│ Statistical       │   │
-│  │ (hourly)    │   │ Categorize   │   │ Analysis          │   │
-│  └────────────┘   └──────────────┘   │ - Moving average  │   │
-│                                       │ - Std deviation   │   │
-│                                       │ - Seasonality     │   │
-│                                       └─────────┬─────────┘   │
-│                                                 │              │
-│                                       ┌─────────▼─────────┐   │
-│                                       │ Anomaly?           │   │
-│                                       │ > 2 std dev from   │   │
-│                                       │   moving average   │   │
-│                                       └─────────┬─────────┘   │
-│                                                 │              │
-│                                    ┌────────────┤             │
-│                                    ▼            ▼             │
-│                              ┌──────────┐ ┌──────────┐       │
-│                              │ Alert    │ │ Ignore   │       │
-│                              │ (Slack,  │ │ (within  │       │
-│                              │  PagerDuty)│  normal) │       │
-│                              └──────────┘ └──────────┘       │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    A[Cloud Bill<br/>hourly] --> B[Normalize &<br/>Categorize]
+    B --> C[Statistical Analysis<br/>- Moving average<br/>- Std deviation<br/>- Seasonality]
+    C --> D{Anomaly?<br/>> 2 std dev from<br/>moving average}
+    D -->|Yes| E[Alert<br/>Slack, PagerDuty]
+    D -->|No| F[Ignore<br/>within normal]
 ```
 
 ```bash
@@ -193,30 +151,14 @@ The hardest FinOps problem in Kubernetes is attributing costs to teams when mult
 
 ### Chargeback Models
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  KUBERNETES COST ALLOCATION MODELS                             │
-│                                                                │
-│  Model 1: REQUEST-BASED (Most Common)                         │
-│  Team pays for what they REQUEST, not what they USE            │
-│  Pro: Simple, encourages right-sizing                          │
-│  Con: Teams that request 4 CPU but use 0.5 still pay for 4   │
-│                                                                │
-│  Model 2: USAGE-BASED (Fairest)                               │
-│  Team pays for actual CPU/memory consumption                   │
-│  Pro: Fair, incentivizes efficiency                            │
-│  Con: Complex to calculate, requires metering                  │
-│                                                                │
-│  Model 3: HYBRID (Recommended)                                │
-│  Base charge = max(request, usage) + shared cost overhead     │
-│  Pro: Balances fairness with incentivizing right-sizing        │
-│  Con: Requires good tooling                                    │
-│                                                                │
-│  Model 4: FIXED ALLOCATION                                     │
-│  Team gets N nodes, pays fixed monthly fee                    │
-│  Pro: Predictable, easy to budget                              │
-│  Con: Inefficient, leads to over-provisioning                  │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Kubernetes Cost Allocation Models
+        M1["Model 1: REQUEST-BASED (Most Common)<br/>Team pays for what they REQUEST, not what they USE.<br/>Pro: Simple, encourages right-sizing<br/>Con: Teams that request 4 CPU but use 0.5 still pay for 4"]
+        M2["Model 2: USAGE-BASED (Fairest)<br/>Team pays for actual CPU/memory consumption.<br/>Pro: Fair, incentivizes efficiency<br/>Con: Complex to calculate, requires metering"]
+        M3["Model 3: HYBRID (Recommended)<br/>Base charge = max(request, usage) + shared cost overhead.<br/>Pro: Balances fairness with right-sizing<br/>Con: Requires good tooling"]
+        M4["Model 4: FIXED ALLOCATION<br/>Team gets N nodes, pays fixed monthly fee.<br/>Pro: Predictable, easy to budget<br/>Con: Inefficient, leads to over-provisioning"]
+    end
 ```
 
 > **Pause and predict**: If you use a strict usage-based chargeback model, who ultimately pays for the idle capacity that was requested by a pod but never consumed?
@@ -333,33 +275,25 @@ Most enterprises underestimate the true cost of multi-cloud because they only co
 
 ### Multi-Cloud Cost Model
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  TRUE COST OF MULTI-CLOUD                                      │
-│                                                                │
-│  VISIBLE COSTS (what the bill shows):                          │
-│  ├── Compute (EC2, VMs, GCE)                    $5.0M/yr     │
-│  ├── Storage (S3, Blob, GCS)                    $1.2M/yr     │
-│  ├── Networking (VPN, DX, peering)              $0.8M/yr     │
-│  └── Managed services (RDS, Cosmos, BigQuery)   $1.5M/yr     │
-│                                              ─────────────    │
-│                                    Visible:   $8.5M/yr       │
-│                                                                │
-│  HIDDEN COSTS (what does NOT appear on the bill):             │
-│  ├── Platform team (12 extra engineers)         $2.4M/yr     │
-│  ├── Training (3 clouds x certifications)       $0.06M/yr    │
-│  ├── Tooling (multi-cloud monitoring, IAM)      $0.3M/yr     │
-│  ├── Lost discounts (split spend = weaker EDPs) $0.5M/yr     │
-│  ├── Data transfer between clouds               $0.4M/yr     │
-│  ├── Compliance (audit 3 environments)          $0.15M/yr    │
-│  └── Cognitive load (context switching)          Hard to      │
-│                                                  quantify     │
-│                                              ─────────────    │
-│                                    Hidden:    $3.85M/yr      │
-│                                                                │
-│                                    TOTAL:     $12.35M/yr     │
-│                                    Hidden costs = 45% of total│
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph True Cost of Multi-Cloud: $12.35M/yr
+        direction TB
+        subgraph Visible Costs: $8.5M/yr
+            V1[Compute: $5.0M/yr]
+            V2[Storage: $1.2M/yr]
+            V3[Networking: $0.8M/yr]
+            V4[Managed Services: $1.5M/yr]
+        end
+        subgraph Hidden Costs: $3.85M/yr
+            H1[Platform Team: $2.4M/yr]
+            H2[Lost Discounts: $0.5M/yr]
+            H3[Data Transfer: $0.4M/yr]
+            H4[Tooling: $0.3M/yr]
+            H5[Compliance/Training: $0.21M/yr]
+            H6[Cognitive Load: Hard to quantify]
+        end
+    end
 ```
 
 > **Stop and think**: Why do multi-cloud strategies often dilute Enterprise Discount Program (EDP) negotiation leverage with primary cloud vendors?
@@ -446,32 +380,12 @@ kubectl label namespace payments goldilocks.fairwinds.com/enabled=true
 
 ### Automated Right-Sizing Pipeline
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  RIGHT-SIZING PIPELINE                                         │
-│                                                                │
-│  Week 1: Deploy VPA in "Off" mode for all namespaces          │
-│  ─────── Collect usage data                                    │
-│                                                                │
-│  Week 2-4: Analyze recommendations                             │
-│  ─────────                                                     │
-│  ┌────────────────────────────────────────────────┐           │
-│  │  For each workload:                             │           │
-│  │  Current: cpu=2, mem=4Gi                        │           │
-│  │  VPA target: cpu=250m, mem=384Mi                │           │
-│  │  Savings: $127/month per replica                │           │
-│  │  Risk: Low (P95 usage well below target)        │           │
-│  └────────────────────────────────────────────────┘           │
-│                                                                │
-│  Week 4: Apply right-sized requests in staging                │
-│  ─────── Verify no OOM kills, no CPU throttling               │
-│                                                                │
-│  Week 5: Apply to production                                   │
-│  ─────── Monitor for 1 week                                    │
-│                                                                │
-│  Ongoing: VPA in "Auto" mode for non-critical workloads       │
-│           VPA in "Off" mode for critical (manual approval)    │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    W1[Week 1: Deploy VPA in 'Off' mode<br/>Collect usage data for all namespaces] --> W2[Week 2-4: Analyze recommendations<br/>Compare Current vs VPA target<br/>Calculate savings & assess risk]
+    W2 --> W4[Week 4: Apply right-sized requests in staging<br/>Verify no OOM kills or CPU throttling]
+    W4 --> W5[Week 5: Apply to production<br/>Monitor for 1 week]
+    W5 --> OG[Ongoing:<br/>VPA in 'Auto' mode for non-critical<br/>VPA in 'Off' mode for critical with manual approval]
 ```
 
 ---
@@ -488,34 +402,26 @@ kubectl label namespace payments goldilocks.fairwinds.com/enabled=true
 
 ### FinOps Team Structure
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  FINOPS ORGANIZATIONAL MODEL                                   │
-│                                                                │
-│  ┌────────────────────────────────────────────┐              │
-│  │  FinOps Team (Central, 2-4 people)         │              │
-│  │  - FinOps practitioner / analyst            │              │
-│  │  - Cloud cost engineer                      │              │
-│  │  - Finance partner                          │              │
-│  │                                              │              │
-│  │  Owns: Tooling, reports, EDP negotiations   │              │
-│  │  Does NOT own: Individual team optimization  │              │
-│  └──────────┬─────────────────────────────────┘              │
-│             │                                                 │
-│    ┌────────┴───────────────────────────────────┐            │
-│    │                                             │            │
-│    │  FinOps Champions (1 per engineering team)  │            │
-│    │  - Part-time role (10% of time)             │            │
-│    │  - Attends monthly FinOps review            │            │
-│    │  - Drives optimization within their team    │            │
-│    │  - Presents cost trends at team standups    │            │
-│    │                                             │            │
-│    │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐      │            │
-│    │  │Pay-  │ │Ident-│ │Search│ │Plat- │      │            │
-│    │  │ments │ │ity   │ │      │ │form  │      │            │
-│    │  └──────┘ └──────┘ └──────┘ └──────┘      │            │
-│    └─────────────────────────────────────────────┘            │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Central
+        FT["FinOps Team (2-4 people)<br/>- FinOps practitioner/analyst<br/>- Cloud cost engineer<br/>- Finance partner<br/><br/>Owns: Tooling, reports, EDPs<br/>Does NOT own: Individual team optimization"]
+    end
+    
+    subgraph Engineering Teams
+        FC["FinOps Champions (1 per team)<br/>- Part-time role (10%)<br/>- Attends monthly review<br/>- Drives optimization within team<br/>- Presents cost trends at standups"]
+        
+        T1[Payments]
+        T2[Identity]
+        T3[Search]
+        T4[Platform]
+    end
+    
+    FT -->|Guides & Enables| FC
+    FC --> T1
+    FC --> T2
+    FC --> T3
+    FC --> T4
 ```
 
 ---
@@ -557,7 +463,7 @@ Each m6i.xlarge costs $0.192/hr ($140/month). 20 nodes = $2,800/month. At 14% ut
 
 First, right-size pods using Vertical Pod Autoscaler (VPA) recommendations, which safely identifies the actual baseline and spike needs. This increases packing efficiency from 14% to ~40%, allowing you to reduce from 20 to 8 nodes. Then, apply Savings Plans to the remaining baseline nodes.
 
-**Why:** You must use VPA rather than blind cuts because it analyzes historical usage metrics to ensure pods still have enough resources to handle their actual traffic spikes without facing OOM kills or CPU throttling. Furthermore, applying Savings Plans after right-sizing ensures you do not commit to paying for capacity you are about to eliminate.
+**Why:** You must use VPA rather than blind cuts because it continuously analyzes historical usage metrics to establish true baselines and peak demands. This ensures pods still have enough resources to handle their actual traffic spikes without facing OOM kills or CPU throttling, which maintains application stability. Once the workloads are operating at their optimally right-sized levels, you will have a much smaller, highly utilized node footprint. Furthermore, applying Savings Plans only after right-sizing ensures you do not financially commit to paying for capacity you are about to eliminate. By following this ordered approach, you maximize savings while entirely avoiding the risk of locking into a bloated baseline.
 </details>
 
 <details>
@@ -568,7 +474,7 @@ You should implement a hybrid chargeback model.
 
 If you use request-based, the team pays for 40 CPUs, which encourages them to reduce requests, but does not reflect actual consumption. If you use usage-based, they pay for 5 CPUs, which is fair to their actual load, but leaves the business paying for the 35 CPUs of reserved capacity that no other team could use. The hybrid model charges for the maximum of (request, usage) plus shared cluster overhead.
 
-**Why:** The hybrid model is the most effective because it holds teams accountable for the capacity they lock up (requests) while still capturing their actual consumption if it exceeds their baseline requests. This naturally incentivizes developers to align their requests closely with their actual usage patterns, directly reducing cluster waste.
+**Why:** The hybrid model is the most effective because it fundamentally aligns financial accountability with cluster mechanics. It holds teams responsible for the capacity they lock up through resource requests, preventing them from blindly over-provisioning "just in case." Simultaneously, it captures their actual consumption if it unexpectedly exceeds their baseline requests. This dual mechanism naturally incentivizes developers to tune their requests closely to their actual usage patterns, directly reducing overall cluster waste. Over time, this leads to higher packing density on nodes and fewer idle resources that central IT has to subsidize.
 </details>
 
 <details>
@@ -579,7 +485,7 @@ This would be a poor decision if the strategic value or the migration cost of th
 
 Consolidating to $7M on AWS might improve your EDP discount from 8% to 10% (saving roughly $140K/year). However, migrating applications between clouds typically costs hundreds of thousands of dollars in engineering time. If the Azure workloads rely heavily on proprietary Azure services (like Cosmos DB or Active Directory), the refactoring effort could far exceed the $140K/year savings.
 
-**Why:** The true cost of multi-cloud includes hidden costs like platform team cognitive load and tooling duplication, but the true cost of migration includes massive engineering capital and risk. Negotiation leverage alone is rarely enough to justify a migration unless the workloads are entirely cloud-agnostic and the secondary cloud's footprint is purely accidental.
+**Why:** The true cost of multi-cloud goes far beyond the monthly compute bill; it includes massive hidden operational costs like platform team cognitive load, security compliance overhead, and tooling duplication. Conversely, the true cost of migration involves significant engineering capital, extended project timelines, and considerable operational risk. Negotiation leverage alone is rarely enough to justify such a migration unless the workloads are entirely cloud-agnostic and the secondary cloud's footprint is purely accidental. When refactoring proprietary managed services is required, the engineering labor costs will almost always dwarf the marginal gains from a slightly improved EDP discount tier.
 </details>
 
 <details>
@@ -590,7 +496,7 @@ You should purchase Standard Reserved Instances (RIs) for the database cluster a
 
 The database cluster's infrastructure is static, so it can benefit from the highest possible discount (up to 60-72%) offered by standard RIs, which lock you into a specific instance type and region. The Kubernetes cluster requires flexibility because instance types and sizes change frequently; Compute Savings Plans provide a smaller discount (up to 66%) but apply automatically across instance families, sizes, and regions.
 
-**Why:** RIs offer deeper discounts in exchange for rigid commitments, making them perfect for immutable, long-lived infrastructure. Savings Plans offer slightly lower discounts but incredible flexibility, making them essential for modern, autoscaling container orchestration environments where node profiles shift dynamically.
+**Why:** Standard Reserved Instances offer the deepest possible financial discounts in exchange for rigid, long-term commitments to specific instance families and regions. This makes them the perfect financial instrument for immutable, long-lived infrastructure like stateful database clusters where the capacity needs are highly predictable. On the other hand, Compute Savings Plans offer slightly lower discounts but provide incredible operational flexibility across instance families, sizes, and even regions. This flexibility is absolutely essential for modern, autoscaling Kubernetes node groups where instance types dynamically shift based on spot availability, cluster autoscaler decisions, and evolving application demands.
 </details>
 
 <details>
@@ -601,7 +507,7 @@ You must implement topology-aware routing in your Kubernetes cluster.
 
 By default, Kubernetes Services use round-robin load balancing, meaning roughly 67% of traffic in a 3-AZ cluster will cross an AZ boundary, incurring a $0.01/GB charge. By configuring `topologySpreadConstraints` and enabling Service topology hints, you instruct the kube-proxy or service mesh to route traffic preferentially to pod endpoints located in the same Availability Zone as the sender.
 
-**Why:** Topology-aware routing resolves the issue at the networking layer by keeping traffic localized. This eliminates the cross-AZ data transfer premium for internal communication without requiring any code changes from developers, drastically reducing the cloud bill while often simultaneously improving service latency.
+**Why:** Topology-aware routing resolves the costly data transfer issue directly at the cluster's networking layer by keeping traffic localized within the same availability zone. When configured correctly, the kube-proxy or service mesh will intelligently route requests to a local pod endpoint before falling back to endpoints in other zones. This effectively eliminates the cross-AZ data transfer premium for the vast majority of internal microservice communication. Importantly, this optimization does not require any code changes from developers or architecture redesigns. Furthermore, keeping network requests within the same physical datacenter drastically reduces the cloud bill while simultaneously improving overall service latency and reliability.
 </details>
 
 <details>
@@ -612,7 +518,7 @@ You need to introduce accountability, incentives, and education, moving beyond j
 
 Implement showback or chargeback models so each team receives a specific monthly bill for their namespace. Include cost-efficiency metrics alongside their standard reliability SLIs (like latency and error rates). Create a "FinOps Champion" program to embed cost awareness directly within the engineering teams, and offer incentives such as allowing teams to reinvest a percentage of their saved cloud spend into new tooling or offsites.
 
-**Why:** Visibility alone does not change behavior if engineers are not measured or rewarded on efficiency. By integrating cost metrics into the existing engineering health dashboards and incentivizing savings, you transform cost optimization from a central IT mandate into a localized, gamified engineering goal.
+**Why:** Providing raw visibility into cloud costs rarely changes developer behavior if the engineers are not actively measured or rewarded on their efficiency. Without clear accountability, teams will continue to prioritize speed and reliability over cost, leading to persistent over-provisioning. By explicitly integrating cost metrics into the existing engineering health dashboards alongside latency and error rates, you make efficiency a core operational requirement. Furthermore, incentivizing these savings through budget reinvestment or recognition transforms cost optimization from an annoying central IT mandate into a localized, gamified goal. This cultural shift ensures that financial responsibility becomes an organic part of the daily engineering lifecycle.
 </details>
 
 ---
