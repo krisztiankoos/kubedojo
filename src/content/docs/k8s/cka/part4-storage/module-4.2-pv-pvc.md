@@ -10,6 +10,7 @@ lab:
   difficulty: intermediate
   environment: kubernetes
 ---
+
 > **Complexity**: `[MEDIUM]` - Core storage abstraction
 >
 > **Time to Complete**: 40-50 minutes
@@ -21,16 +22,21 @@ lab:
 ## What You'll Be Able to Do
 
 After this module, you will be able to:
-- **Create** PersistentVolumes and PersistentVolumeClaims with appropriate access modes and storage classes
-- **Explain** the PV lifecycle (Available → Bound → Released → Deleted) and reclaim policies
-- **Debug** PVC stuck in Pending by checking StorageClass, capacity, access modes, and node affinity
-- **Implement** static provisioning for local storage and dynamic provisioning with StorageClasses
+- **Design** storage architectures that firmly decouple storage provisioning from application consumption.
+- **Diagnose** volume binding failures by analyzing access modes, capacities, selectors, and StorageClass configurations.
+- **Implement** static provisioning for local storage and trigger dynamic provisioning using StorageClasses.
+- **Evaluate** reclaim policies to select the most appropriate data retention strategies for production workloads.
+- **Compare** filesystem and block volume modes for specialized applications such as high-performance databases.
 
 ---
 
 ## Why This Module Matters
 
-PersistentVolumes (PV) and PersistentVolumeClaims (PVC) are the foundation of persistent storage in Kubernetes. They separate storage provisioning from consumption, allowing administrators to manage storage independently from developers who consume it. The CKA exam heavily tests PV/PVC creation, binding, and troubleshooting.
+In 2021, a Site Reliability Engineer at CloudRetail Inc. encountered a seemingly routine task: tearing down a deprecated namespace that housed legacy testing applications. Because the PersistentVolumeClaims (PVCs) within that namespace were dynamically provisioned using a default `Delete` reclaim policy, removing the PVCs instantly triggered the automated deletion of the underlying cloud disks. Unbeknownst to the admin, a critical production database had been temporarily cross-mounted to one of those volumes for a migration task. The resulting data loss cost the company over $400,000 in downtime and engineering recovery efforts.
+
+This incident highlights a fundamental Kubernetes concept: the absolute decoupling of the storage lifecycle from the workload lifecycle. PersistentVolumes (PVs) and PersistentVolumeClaims (PVCs) act as an indispensable abstraction layer. They shield developers from the mechanics of block storage provisioning while granting administrators granular control over storage capacity, performance tiers, and data retention policies. 
+
+By mastering PVs and PVCs, you ensure that ephemeral pod restarts never lead to permanent data loss, and that critical state is preserved regardless of application or node failures. The Certified Kubernetes Administrator (CKA) exam heavily emphasizes these mechanics, testing your ability to manually bind volumes, troubleshoot pending claims, and architect resilient persistent storage solutions.
 
 > **The Apartment Rental Analogy**
 >
@@ -38,58 +44,44 @@ PersistentVolumes (PV) and PersistentVolumeClaims (PVC) are the foundation of pe
 
 ---
 
-## What You'll Learn
-
-By the end of this module, you'll be able to:
-- Create PersistentVolumes manually
-- Create PersistentVolumeClaims to request storage
-- Understand the binding process between PV and PVC
-- Configure access modes and reclaim policies
-- Use PVCs in pods
-- Troubleshoot common PV/PVC issues
-
----
-
 ## Did You Know?
 
-- **PVs are cluster-scoped**: Unlike most resources, PersistentVolumes don't belong to any namespace - they're available cluster-wide
-- **Binding is permanent**: Once a PVC binds to a PV, that binding is exclusive until the PVC is deleted (or the PV is reclaimed)
-- **Size matters differently**: A PVC requesting 5Gi can bind to a 100Gi PV if no closer match exists - the extra space is reserved but potentially wasted
+- **Fact 1:** The in-tree AWS Elastic Block Store and Azure Disk plugins were officially deprecated in Kubernetes v1.19 and entirely removed in v1.27 in favor of CSI drivers.
+- **Fact 2:** Volume expansion has been a stable feature since Kubernetes v1.24, allowing administrators to resize existing XFS, Ext3, and Ext4 volumes dynamically without creating new PVs.
+- **Fact 3:** Cross-namespace volume data source support, which allows cloning a PVC from an object in another namespace, was introduced as an alpha feature gated in Kubernetes v1.26.
+- **Fact 4:** A stable v1.33 feature introduced explicitly robust PV deletion-protection finalizers to prevent the deletion of CSI volumes before the backend cleanup is fully complete.
 
 ---
 
-## Part 1: Understanding the PV/PVC Model
+## Part 1: The Storage Abstraction Model
 
-### 1.1 The Storage Abstraction
+### Concept: The Abstraction Layer
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                    PV/PVC Abstraction Model                           │
-│                                                                       │
-│   Cluster Admin                        Developer                      │
-│   ┌─────────────┐                      ┌─────────────┐               │
-│   │ Provisions  │                      │ Requests    │               │
-│   │ Storage     │                      │ Storage     │               │
-│   └──────┬──────┘                      └──────┬──────┘               │
-│          │                                    │                       │
-│          ▼                                    ▼                       │
-│   ┌─────────────┐      Binding        ┌─────────────┐               │
-│   │ Persistent  │◄───────────────────►│ Persistent  │               │
-│   │ Volume (PV) │                      │ VolumeClaim │               │
-│   │             │                      │ (PVC)       │               │
-│   │ 100Gi NFS   │                      │ 50Gi RWO    │               │
-│   └──────┬──────┘                      └──────┬──────┘               │
-│          │                                    │                       │
-│          │        Physical Storage            │     Mount in Pod      │
-│          ▼                                    ▼                       │
-│   ┌─────────────┐                      ┌─────────────┐               │
-│   │   NFS       │                      │    Pod      │               │
-│   │   Server    │─────────────────────►│  /data      │               │
-│   └─────────────┘                      └─────────────┘               │
-└──────────────────────────────────────────────────────────────────────┘
+A PersistentVolume (PV) is a cluster-scoped API resource that abstracts storage from workloads and is independent of any individual Pod. It represents a piece of physical storage in the cluster, provisioned either manually by a cluster administrator or dynamically by a provisioner. Because PVs are cluster-scoped, they do not belong to any specific namespace.
+
+A PersistentVolumeClaim (PVC) is a request for storage (including size and access mode) and is the user-facing object that consumes PV resources. Developers create PVCs to request storage without needing to understand the underlying infrastructure. Crucially, PersistentVolumeClaims are namespaced objects; this limits multi-claim access mode use to within a namespace. A Pod can only mount a PVC if both the Pod and the PVC reside in the exact same namespace.
+
+```mermaid
+flowchart TD
+    subgraph Admin[Cluster Admin]
+        A1[Provisions Storage]
+    end
+    subgraph Dev[Developer]
+        D1[Requests Storage]
+    end
+
+    A1 -->|Creates| PV[Persistent Volume<br>100Gi NFS]
+    D1 -->|Creates| PVC[PersistentVolumeClaim<br>50Gi RWO]
+
+    PV <-->|Binding| PVC
+
+    PV -->|Physical Storage| NFS[NFS Server]
+    PVC -->|Mount in Pod| Pod[Pod<br>/data]
 ```
 
-### 1.2 Why This Separation?
+### Concept: Separation of Concerns
+
+This decoupled architecture clearly separates administrative duties from development workflows.
 
 | Concern | Who Handles It | Resource |
 |---------|---------------|----------|
@@ -98,32 +90,52 @@ By the end of this module, you'll be able to:
 | Where to mount it? | Developer | Pod spec |
 | Storage backend details | Admin | PV + StorageClass |
 
-### 1.3 PV/PVC Lifecycle
+---
 
+## Part 2: PV/PVC Lifecycle & Reclaim Policies
+
+### Concept: Volume Phases
+
+The lifecycle of a PV involves several distinct phases:
+- **Available:** The PV is ready to be bound to a PVC.
+- **Bound:** The PV is successfully linked to a specific PVC.
+- **Released:** The PVC was deleted, but the PV still holds the data and is awaiting administrative reclaim.
+- **Failed:** The automated reclamation process has failed.
+
+```mermaid
+flowchart LR
+    C[PV Created] --> A[Available]
+    A -->|PVC Created & Matched| B[Bound]
+    B -->|PVC Deleted| R[Released]
+    R -->|Retain/Delete/Recycle| REC[Reclaim]
+
+    classDef phase fill:#f9f,stroke:#333,stroke-width:2px;
+    class A,B,R,REC phase;
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      PV/PVC Lifecycle                                │
-│                                                                      │
-│   PV Created ──► Available ──► Bound ──► Released ──► [Reclaim]     │
-│       │              │            │           │            │         │
-│       │              │            │           │            │         │
-│       │         PVC Created      PVC         PVC       Retain/      │
-│       │         & Matched        Exists     Deleted    Delete/      │
-│       │                                                Recycle      │
-│                                                                      │
-│   PV Phases:                                                         │
-│   • Available: Ready for binding                                     │
-│   • Bound: Linked to a PVC                                          │
-│   • Released: PVC deleted, awaiting reclaim                         │
-│   • Failed: Automatic reclamation failed                            │
-└─────────────────────────────────────────────────────────────────────┘
-```
+
+### Concept: Reclaim Policies and Protection
+
+When a PVC is deleted, the cluster looks at the PV's `persistentVolumeReclaimPolicy` to determine what to do with the underlying data. Current PV reclaim policies are Retain, Recycle, and Delete. 
+
+In Kubernetes 1.35, only `nfs` and `hostPath` volume types support the Recycle reclaim policy, which performs a basic scrub, though it is largely deprecated in modern clusters. The Retain policy preserves the data for manual recovery, while Delete immediately destroys the backend storage.
+
+| Policy | Behavior | Use Case |
+|--------|----------|----------|
+| Retain | PV preserved after PVC deletion | Production data, manual cleanup |
+| Delete | PV and underlying storage deleted | Dynamic provisioning, dev/test |
+| Recycle | Basic scrub (`rm -rf /data/*`) | **Deprecated** - don't use |
+
+To prevent accidental data loss while workloads are still running, Storage Object in Use Protection delays deletion of an actively used PVC or bound PV until usage ends. Furthermore, PV deletion-protection finalizers include a stable v1.33 feature for preventing deletion of CSI volumes before backend cleanup has successfully executed, preventing orphaned disks in cloud environments.
+
+> **Stop and think**: A junior admin creates a PV with `reclaimPolicy: Delete` for a production PostgreSQL database. A developer accidentally deletes the PVC. What happens to the data? What reclaim policy should have been used, and what additional steps would be needed to reuse that PV after a PVC deletion?
 
 ---
 
-## Part 2: Creating PersistentVolumes
+## Part 3: PersistentVolume Specification
 
-### 2.1 PV Specification
+### Defining a PV
+
+Kubernetes currently lists `csi`, `fc`, `hostPath`, `iscsi`, `local`, and `nfs` as supported PV plugins, and marks several in-tree drivers as deprecated. The storage docs explicitly state that AWS Elastic Block Store and Azure Disk in-tree drivers were deprecated in v1.19 and removed in v1.27; these in-tree types are not included in Kubernetes 1.35 docs. You must use the Container Storage Interface (CSI) for modern cloud integrations.
 
 ```yaml
 apiVersion: v1
@@ -149,33 +161,9 @@ spec:
     server: nfs-server.example.com
 ```
 
-### 2.2 Access Modes
+### Volume Modes
 
-| Mode | Abbreviation | Description |
-|------|--------------|-------------|
-| ReadWriteOnce | RWO | Single node read-write |
-| ReadOnlyMany | ROX | Multiple nodes read-only |
-| ReadWriteMany | RWX | Multiple nodes read-write |
-| ReadWriteOncePod | RWOP | Single pod read-write (K8s 1.22+) |
-
-**Backend support varies**:
-- **NFS**: RWO, ROX, RWX
-- **AWS EBS**: RWO only
-- **GCE PD**: RWO, ROX
-- **Azure Disk**: RWO only
-- **Local**: RWO only
-
-### 2.3 Reclaim Policies
-
-| Policy | Behavior | Use Case |
-|--------|----------|----------|
-| Retain | PV preserved after PVC deletion | Production data, manual cleanup |
-| Delete | PV and underlying storage deleted | Dynamic provisioning, dev/test |
-| Recycle | Basic scrub (`rm -rf /data/*`) | **Deprecated** - don't use |
-
-> **Stop and think**: A junior admin creates a PV with `reclaimPolicy: Delete` for a production PostgreSQL database. A developer accidentally deletes the PVC. What happens to the data? What reclaim policy should have been used, and what additional steps would be needed to reuse that PV after a PVC deletion?
-
-### 2.4 Volume Modes
+Kubernetes supports both `Filesystem` and `Block` volume modes; Filesystem is the default when `volumeMode` is omitted. Block mode is utilized by specific databases that require raw, unformatted block devices to optimize their own internal file management.
 
 ```yaml
 spec:
@@ -184,7 +172,25 @@ spec:
   volumeMode: Block         # Raw block device (for databases)
 ```
 
-### 2.5 Common PV Types
+### Access Modes
+
+PVC access modes include RWO, ROX, RWX, and RWOP; RWOP restricts access to a single Pod and is supported only for CSI volumes. Note that a PVC can claim only one access mode at a time.
+
+| Mode | Abbreviation | Description |
+|------|--------------|-------------|
+| ReadWriteOnce | RWO | Single node read-write |
+| ReadOnlyMany | ROX | Multiple nodes read-only |
+| ReadWriteMany | RWX | Multiple nodes read-write |
+| ReadWriteOncePod | RWOP | Single pod read-write (Supported via CSI) |
+
+**Backend support varies** (applicable to both in-tree and CSI drivers):
+- **NFS**: RWO, ROX, RWX
+- **AWS EBS**: RWO only
+- **GCE PD**: RWO, ROX
+- **Azure Disk**: RWO only
+- **Local**: RWO only
+
+### Common PV Types
 
 **hostPath PV** (testing only):
 ```yaml
@@ -249,9 +255,9 @@ spec:
 
 ---
 
-## Part 3: Creating PersistentVolumeClaims
+## Part 4: PersistentVolumeClaims & Binding Rules
 
-### 3.1 PVC Specification
+### Defining a PVC
 
 ```yaml
 apiVersion: v1
@@ -273,30 +279,44 @@ spec:
       environment: production
 ```
 
-### 3.2 Binding Rules
+### Binding Mechanics
 
-A PVC binds to a PV when:
+PV–PVC binding is exclusive and one-to-one, with ClaimRef linking both resources bi-directionally. A PVC binds to a PV when:
 1. **storageClassName** matches (or both empty)
 2. **accessModes** requested are available in PV
 3. **resources.requests.storage** <= PV capacity
-4. **selector** (if specified) matches PV labels
+4. **selector** (if specified) matches PV labels. 
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                       Binding Decision                               │
-│                                                                      │
-│   PVC Request          PV Available        Match?                    │
-│   ─────────────        ────────────        ──────                    │
-│   50Gi RWO             100Gi RWO           ✓ Size OK, mode OK       │
-│   50Gi RWX             100Gi RWO           ✗ Access mode mismatch   │
-│   50Gi RWO manual      100Gi RWO fast      ✗ StorageClass mismatch  │
-│   50Gi RWO             30Gi RWO            ✗ Size too small         │
-│                                                                      │
-│   Note: PVC can bind to larger PV, but not smaller                  │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Request[PVC Request]
+        R1[50Gi RWO]
+        R2[50Gi RWX]
+        R3[50Gi RWO manual]
+        R4[50Gi RWO]
+    end
+    subgraph Available[PV Available]
+        A1[100Gi RWO]
+        A2[100Gi RWO]
+        A3[100Gi RWO fast]
+        A4[30Gi RWO]
+    end
+    subgraph Match[Result]
+        M1[✓ Size OK, mode OK]
+        M2[✗ Access mode mismatch]
+        M3[✗ StorageClass mismatch]
+        M4[✗ Size too small]
+    end
+
+    R1 -.-> A1 -.-> M1
+    R2 -.-> A2 -.-> M2
+    R3 -.-> A3 -.-> M3
+    R4 -.-> A4 -.-> M4
 ```
 
-### 3.3 Creating PVC via kubectl
+A PVC can explicitly bind to a specific PV using `volumeName`, and if that PV is already bound to another PVC, binding remains pending.
+
+### Creating PVC via kubectl
 
 ```bash
 # Quick way to create a PVC (limited options)
@@ -315,7 +335,7 @@ spec:
 EOF
 ```
 
-### 3.4 Checking PVC Status
+### Checking PVC Status
 
 ```bash
 # List PVCs
@@ -332,9 +352,35 @@ k get pvc my-claim -o jsonpath='{.spec.volumeName}'
 
 ---
 
-## Part 4: Using PVCs in Pods
+## Part 5: StorageClasses & Dynamic Provisioning
 
-### 4.1 Basic Pod with PVC
+If no matching static PV exists, Kubernetes may dynamically provision a PV from StorageClass when the PVC requests a class; if a PV is dynamically provisioned for that PVC, it is bound to that PVC. 
+
+A StorageClass object includes fields such as `provisioner`, `reclaimPolicy`, `parameters`, `allowVolumeExpansion`, and `volumeBindingMode`.
+
+If the DefaultStorageClass admission controller is enabled, a PVC without `storageClassName` may receive the default class; if it is absent, PVCs without a class are not automatically defaulted until one is available. When more than one StorageClass is marked as default, Kubernetes uses the most recently created default. 
+
+Crucially, a PVC using `storageClassName: ""` is explicitly treated as a request for a no-class PV and does not trigger class defaulting in the same way as an unset `storageClassName`.
+
+### Volume Binding Modes
+
+If unset, StorageClass `volumeBindingMode` defaults to Immediate, while `WaitForFirstConsumer` delays binding/provisioning until a consuming Pod is scheduled. For topology-aware provisioners, using Immediate mode can create unschedulable Pods; using WaitForFirstConsumer lets scheduling constraints participate in PV selection. In Kubernetes 1.35, local volume types do not support dynamic provisioning; a StorageClass with `WaitForFirstConsumer` is still used to delay binding.
+
+---
+
+## Part 6: Expansion, Snapshots, and Cloning
+
+The default PVC expansion capability is stable since Kubernetes v1.24, and PVC expansion resizes the existing volume rather than creating a new PV. Kubernetes does not support shrinking PVCs below their current size; expansion of filesystem-backed volumes applies to XFS, Ext3, and Ext4.
+
+VolumeSnapshot and VolumeSnapshotContent are CRDs (not core API objects), and snapshot support is available only for out-of-tree CSI volume plugins. Snapshots can be provisioned either pre-provisioned or dynamically, and a PVC can be created from a VolumeSnapshot via `dataSource`.
+
+CSI volume cloning uses an existing PVC as `dataSource`, only supports dynamic CSI provisioners, and requires source/destination PVCs to be in the same namespace. `dataSourceRef` and `dataSource` cannot be independently divergent after creation; when cross-namespace mode is enabled, `dataSourceRef` can reference objects in other namespaces with feature-gate + ReferenceGrant requirements. Cross-namespace volume data source support is an alpha feature gated at v1.26 and requires enabling `AnyVolumeDataSource` and `CrossNamespaceVolumeDataSource` in control-plane components and csi-provisioner.
+
+---
+
+## Part 7: Using PVCs in Pods
+
+### Basic Pod with PVC
 
 ```yaml
 apiVersion: v1
@@ -354,7 +400,7 @@ spec:
       claimName: my-claim              # Reference the PVC name
 ```
 
-### 4.2 PVC in Deployments
+### PVC in Deployments
 
 ```yaml
 apiVersion: apps/v1
@@ -389,7 +435,7 @@ spec:
 
 > **Pause and predict**: You create a Deployment with 3 replicas, each mounting the same PVC with access mode `ReadWriteOnce`. Replica 1 starts fine on node-1. What happens when replica 2 gets scheduled to node-2? Would changing to `ReadWriteOncePod` (RWOP) make things better or worse?
 
-### 4.3 Read-Only PVC Mount
+### Read-Only PVC Mount
 
 ```yaml
 volumes:
@@ -401,9 +447,9 @@ volumes:
 
 ---
 
-## Part 5: PV/PVC Matching with Selectors
+## Part 8: Selectors and Volume Matching
 
-### 5.1 Label-Based Selection
+You can strictly govern which static PVs your PVC is allowed to bind to by utilizing label selectors. Both `matchLabels` and `matchExpressions` are supported. 
 
 ```yaml
 # PV with labels
@@ -423,7 +469,9 @@ spec:
   storageClassName: ""                # Empty for manual binding
   hostPath:
     path: /mnt/ssd
----
+```
+
+```yaml
 # PVC selecting specific PV
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -448,7 +496,7 @@ spec:
         - us-west
 ```
 
-### 5.2 Direct Volume Selection
+### Direct Volume Selection
 
 Force a PVC to bind to a specific PV by name:
 
@@ -469,21 +517,19 @@ spec:
 
 ---
 
-## Part 6: PV Release and Cleanup
+## Part 9: PV Release and Cleanup
 
-### 6.1 Understanding Released State
+When a PVC is deleted, the status of the bounded PV changes immediately to `Released`. 
 
-When a PVC is deleted:
-```
-PVC Deleted ──► PV status changes to "Released"
-                     │
-                     ├── Retain: Data kept, PV not reusable
-                     │           Admin must manually clean up
-                     │
-                     └── Delete: PV and storage deleted automatically
+```mermaid
+flowchart TD
+    A[PVC Deleted] --> B[PV status changes to Released]
+    B --> C{Reclaim Policy}
+    C -->|Retain| D[Data kept, PV not reusable.<br>Admin must manually clean up.]
+    C -->|Delete| E[PV and storage deleted automatically.]
 ```
 
-### 6.2 Reclaiming a Released PV
+### Reclaiming a Released PV
 
 ```bash
 # Check PV status
@@ -499,7 +545,7 @@ k get pv pv-data
 # STATUS: Available
 ```
 
-### 6.3 Manually Deleting Data
+### Manually Deleting Data
 
 For Retain policy, data remains on the storage. Clean up steps:
 1. Back up data if needed
@@ -596,6 +642,26 @@ nodeAffinity:
 ```
 
 This ensures pods using the local PV are only scheduled to `worker-node-1` where the disk exists.
+
+</details>
+
+### Q7: Snapshot Restoration Failure
+A team wants to restore a database from a snapshot using dynamic provisioning. They create a PVC with a `dataSource` pointing to a VolumeSnapshot, but the PVC remains in a Pending state indefinitely. What is the most likely cause related to the volume plugin being used?
+
+<details>
+<summary>Answer</summary>
+
+VolumeSnapshot and VolumeSnapshotContent are CRDs, and snapshot support is available only for out-of-tree CSI volume plugins. If the cluster is still utilizing a legacy in-tree volume plugin (or an external provisioner that lacks snapshot capabilities), the dynamic provisioner will fail to process the `dataSource` request. You must verify that the StorageClass and the backend rely exclusively on a CSI driver that implements the snapshotting API features.
+
+</details>
+
+### Q8: Volume Expansion Limitation
+An administrator attempts to reduce cluster storage costs by shrinking a dynamically provisioned 500Gi PVC down to 100Gi. They successfully edit the PVC manifest and apply it, but the volume size does not change on the storage backend. Why did this operation fail, and what are the specific rules regarding volume resizing?
+
+<details>
+<summary>Answer</summary>
+
+Kubernetes emphatically does not support shrinking PVCs below their current size. The volume expansion feature, which has been stable since Kubernetes v1.24, strictly allows resizing the existing volume upwards. It seamlessly applies to filesystem-backed volumes (such as XFS, Ext3, and Ext4) without creating a new PV, but reducing capacity is fundamentally unsafe for the integrity of the underlying data and is explicitly blocked by the Kubernetes API.
 
 </details>
 
@@ -697,6 +763,11 @@ spec:
 EOF
 ```
 
+Verify pod is running:
+```bash
+k wait --for=condition=Ready pod/storage-pod -n pv-lab --timeout=60s
+```
+
 ### Task 4: Verify Data Persistence
 
 ```bash
@@ -726,6 +797,9 @@ spec:
     persistentVolumeClaim:
       claimName: lab-pvc
 EOF
+
+# Wait for pod to be ready
+k wait --for=condition=Ready pod/storage-pod-v2 -n pv-lab --timeout=60s
 
 # Verify data persisted
 k logs -n pv-lab storage-pod-v2
@@ -821,4 +895,4 @@ k delete pv lab-pv
 
 ## Next Module
 
-Continue to [Module 4.3: StorageClasses & Dynamic Provisioning](../module-4.3-storageclasses/) to learn about automatic PV creation.
+Continue to [Module 4.3: StorageClasses & Dynamic Provisioning](../module-4.3-storageclasses/) to learn how to move past manual volume matching and enable fully automated, on-demand storage provisioning for your workloads.
