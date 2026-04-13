@@ -33,16 +33,26 @@ Karpenter is an open-source, high-performance Kubernetes node provisioner built 
 
 ### Karpenter vs Cluster Autoscaler
 
-```text
-Cluster Autoscaler Workflow:
-  Pod Pending → CA checks ASG configs → Selects ASG → Increments desired capacity
-  → ASG launches instance → Node joins cluster → Pod scheduled
-  Time: 3-10 minutes
+```mermaid
+graph TD
+    subgraph CA [Cluster Autoscaler 3-10 minutes]
+        direction TB
+        A1[Pod Pending] --> A2[CA checks ASG configs]
+        A2 --> A3[Selects ASG]
+        A3 --> A4[Increments desired capacity]
+        A4 --> A5[ASG launches instance]
+        A5 --> A6[Node joins cluster]
+        A6 --> A7[Pod scheduled]
+    end
 
-Karpenter Workflow:
-  Pod Pending → Karpenter evaluates pod requirements → Calls EC2 Fleet API directly
-  → Instance launches → Node joins cluster → Pod scheduled
-  Time: 30-90 seconds
+    subgraph KA [Karpenter 30-90 seconds]
+        direction TB
+        K1[Pod Pending] --> K2[Karpenter evaluates pod requirements]
+        K2 --> K3[Calls EC2 Fleet API directly]
+        K3 --> K4[Instance launches]
+        K4 --> K5[Node joins cluster]
+        K5 --> K6[Pod scheduled]
+    end
 ```
 
 | Feature | Cluster Autoscaler | Karpenter |
@@ -184,19 +194,23 @@ Karpenter continuously evaluates whether the current node fleet is optimal. It c
 2. **Underutilization**: If pods on a node could fit on other existing nodes, drain and terminate it
 3. **Expiration**: Force node rotation after `expireAfter` (ensures AMI freshness)
 
-```text
-Before Consolidation:                After Consolidation:
-┌───────────────┐                    ┌───────────────┐
-│ Node A (25%)  │                    │ Node A (75%)  │
-│ ▓░░░░░░░░░░░  │ ──────────────►   │ ▓▓▓▓▓▓▓▓░░░░  │
-├───────────────┤                    └───────────────┘
-│ Node B (50%)  │
-│ ▓▓▓▓▓▓░░░░░░  │  (Node B drained,  Node C terminated)
-├───────────────┤
-│ Node C (empty)│
-│ ░░░░░░░░░░░░  │
-└───────────────┘
-3 nodes → 1 node, same pods served
+```mermaid
+graph LR
+    subgraph Before[Before Consolidation: 3 nodes]
+        direction TB
+        N1["Node A (25%)"]
+        N2["Node B (50%)"]
+        N3["Node C (empty)"]
+    end
+    
+    subgraph After[After Consolidation: 1 node]
+        direction TB
+        N4["Node A (75%)"]
+    end
+    
+    N1 -->|Consolidate| N4
+    N2 -->|Drain and Terminate| N4
+    N3 -->|Terminate| N4
 ```
 
 ---
@@ -389,7 +403,7 @@ fields @timestamp, verb, requestURI, user.username, sourceIPs.0
 | limit 20
 ```
 
-> **Cost warning**: Control plane logs can be expensive at scale. An active cluster generating 50 GB/day of audit logs costs ~$25/day in CloudWatch ingestion alone. Consider enabling only `audit` and `authenticator` by default, adding the others temporarily for debugging.
+> **Stop and think**: Control plane logs can be expensive at scale. An active cluster generating 50 GB/day of audit logs costs ~$25/day in CloudWatch ingestion alone. Consider enabling only `audit` and `authenticator` by default, adding the others temporarily for debugging.
 
 ---
 
@@ -594,22 +608,18 @@ spec:
 
 ### Reading a Cost Report
 
-```text
 Monthly Cost Breakdown (Example):
-┌──────────────────────────────────────────────────────────────┐
-│ Team          │ Namespace    │ CPU Cost │ Mem Cost │ Total   │
-├──────────────────────────────────────────────────────────────┤
-│ payments      │ payments     │ $1,240   │ $890     │ $2,130  │
-│ search        │ search       │ $3,100   │ $2,450   │ $5,550  │
-│ data-pipeline │ batch        │ $890     │ $1,200   │ $2,090  │
-│ platform      │ monitoring   │ $420     │ $680     │ $1,100  │
-│ (idle)        │ (unallocated)│ $1,800   │ $2,300   │ $4,100  │
-├──────────────────────────────────────────────────────────────┤
-│ TOTAL CLUSTER                                      │ $14,970 │
-└──────────────────────────────────────────────────────────────┘
 
-Key insight: $4,100 (27%) is idle/unallocated — this is your optimization target.
-```
+| Team | Namespace | CPU Cost | Mem Cost | Total |
+| :--- | :--- | :--- | :--- | :--- |
+| payments | payments | $1,240 | $890 | $2,130 |
+| search | search | $3,100 | $2,450 | $5,550 |
+| data-pipeline | batch | $890 | $1,200 | $2,090 |
+| platform | monitoring | $420 | $680 | $1,100 |
+| (idle) | (unallocated) | $1,800 | $2,300 | $4,100 |
+| **TOTAL CLUSTER** | | | | **$14,970** |
+
+Key insight: $4,100 (27%) is idle/unallocated -- this is your optimization target.
 
 The "idle" cost represents resources (CPU, memory) that are provisioned but not requested by any pod. Reducing idle cost through better bin packing (Karpenter consolidation), right-sizing pod requests, and Spot adoption is the highest-leverage cost optimization.
 
@@ -688,7 +698,7 @@ Keep **audit** and **authenticator** logs enabled permanently. Audit logs are es
 <details>
 <summary>Question 5: A Spot instance running 8 pods receives a two-minute interruption notice. What happens to the pods, and how should your application handle this?</summary>
 
-When a Spot interruption notice arrives, Karpenter (or the AWS Node Termination Handler if using Cluster Autoscaler) marks the node as unschedulable (cordons it) and begins draining pods. Kubernetes respects **PodDisruptionBudgets** during the drain, evicting pods gracefully. Each pod receives a SIGTERM signal and has until its `terminationGracePeriodSeconds` (default 30 seconds) to shut down cleanly. Applications should: (1) handle SIGTERM by finishing in-flight requests, (2) use a `preStop` lifecycle hook for cleanup, (3) have `terminationGracePeriodSeconds` set appropriately (no more than 90 seconds for Spot), and (4) be designed for redundancy so that losing one pod does not cause user-visible errors.
+When a Spot interruption notice arrives, Karpenter (or the AWS Node Termination Handler if using Cluster Autoscaler) marks the node as unschedulable (cordons it) and begins draining pods. Kubernetes respects **PodDisruptionBudgets** during the drain, evicting pods gracefully. Each pod receives a SIGTERM signal and has until its `terminationGracePeriodSeconds` (default 30 seconds) to shut down cleanly. Applications should: (1) handle SIGTERM by finishing in-flight requests, (2) use a `preStop` lifecycle hook for cleanup, (3) have `terminationGracePeriodSeconds` set appropriately (no more than 90 seconds for Spot), and (4) be designed for redundancy so that losing one pod does not cause user-visible errors. This ensures the application layer manages its own state transition before the underlying infrastructure disappears. Spot instances will terminate exactly two minutes after the notice, regardless of whether your pods have finished shutting down.
 </details>
 
 <details>
@@ -700,7 +710,7 @@ When a Spot interruption notice arrives, Karpenter (or the AWS Node Termination 
 <details>
 <summary>Question 7: A developer deploys a new memory-intensive application to your Karpenter-managed EKS cluster but forgets to define CPU and memory requests in the pod spec. What will happen when Karpenter attempts to provision capacity for these pods?</summary>
 
-Karpenter uses pod **resource requests** (not limits) to determine what instance type to provision. If a pod has no CPU or memory request, Karpenter assumes it needs zero resources and may pack it onto an already-full node, leading to severe resource contention and OOM (Out of Memory) kills. Without accurate requests, Karpenter cannot effectively bin-pack pods—it might provision the wrong instance sizes, wasting money. Furthermore, the Kubernetes scheduler treats pods without requests as "BestEffort", making them the first to be evicted under node pressure. Always set resource requests that reflect actual usage.
+Karpenter uses pod **resource requests** (not limits) to determine what instance type to provision. If a pod has no CPU or memory request, Karpenter assumes it needs zero resources and may pack it onto an already-full node, leading to severe resource contention and OOM (Out of Memory) kills. Without accurate requests, Karpenter cannot effectively bin-pack pods—it might provision the wrong instance sizes, wasting money. Furthermore, the Kubernetes scheduler treats pods without requests as "BestEffort", making them the first to be evicted under node pressure. Always set resource requests that reflect actual usage. By enforcing these requests through admission controllers, you ensure the cluster scaler has accurate constraints to work with.
 </details>
 
 ---
@@ -711,25 +721,17 @@ In this exercise, you will deploy Karpenter, create NodePools for general and Sp
 
 **What you will build:**
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│  EKS Cluster with Karpenter                                    │
-│                                                                │
-│  NodePool: general-purpose                                     │
-│  ┌──────────────────────────────────────┐                     │
-│  │ On-Demand m6i/c6i instances         │                     │
-│  │ Web frontends, APIs                  │                     │
-│  └──────────────────────────────────────┘                     │
-│                                                                │
-│  NodePool: spot-batch                                          │
-│  ┌──────────────────────────────────────┐                     │
-│  │ Spot instances (diverse types)       │                     │
-│  │ Batch processing jobs                │                     │
-│  │ Tainted: spot=true:NoSchedule        │                     │
-│  └──────────────────────────────────────┘                     │
-│                                                                │
-│  OpenCost: Cost allocation dashboard                           │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Cluster[EKS Cluster with Karpenter]
+        subgraph GP[NodePool: general-purpose]
+            GP_Desc["On-Demand m6i/c6i instances<br>Web frontends, APIs"]
+        end
+        subgraph SB[NodePool: spot-batch]
+            SB_Desc["Spot instances diverse types<br>Batch processing jobs<br>Tainted: spot=true:NoSchedule"]
+        end
+        OC[OpenCost: Cost allocation dashboard]
+    end
 ```
 
 ### Task 1: Remove Cluster Autoscaler (If Present)
