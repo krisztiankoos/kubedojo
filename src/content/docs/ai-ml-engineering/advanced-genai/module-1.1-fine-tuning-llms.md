@@ -547,6 +547,8 @@ spec:
       restartPolicy: Never
 ```
 
+The `backoffLimit: 0` and `restartPolicy: Never` settings are deliberate production choices, not copy-paste defaults. GPU training jobs fail for environmental reasons — node preemption, a single outlier batch that causes OOM, a transient NFS mount error. Setting `backoffLimit: 0` means Kubernetes will not automatically re-queue the job after a failure. Combined with `restartPolicy: Never`, the pod remains in `Error` state rather than restarting in place. This forces the human operator to inspect logs, diagnose the root cause, and re-submit intentionally. On a job that costs $4–$13 per run, a blind automatic retry that hits the same root-cause failure doubles the cloud bill with zero diagnostic value. Reserve `backoffLimit > 0` only for jobs that implement idempotent checkpointing — where a retry is guaranteed to resume from the last saved checkpoint rather than restarting the full training loop from epoch zero.
+
 > **Did You Know?** Training the original GPT-3 model in 2020 required an estimated 3.14E23 FLOPS of compute, taking weeks on thousands of GPUs and costing over $4.6 million. Today, applying LoRA to a similarly sized open-source model requires less than 0.1% of the trainable parameters, taking just hours on a $5-per-hour cloud instance.
 
 ## Deployment Options
@@ -592,7 +594,7 @@ EOF
 
 # Create and run
 ollama create my-model -f Modelfile
-ollama run my-model
+ollama run my-model "Translate Hello to French"
 ```
 
 ## Interview Prep: What You'll Be Asked
@@ -623,15 +625,17 @@ Flawlessly bridge localized scripting with cloud-native orchestration by creatin
 Start by carefully creating your primary training script file locally. Name this file exactly `train.py`. This strictly sets the foundation, actively quantizes the base architecture, and establishes the critical initial LoRA hyperparameters.
 
 ```python
-# Step 1: Install dependencies
-!pip install transformers peft datasets accelerate bitsandbytes trl
+# Step 1: Install dependencies (Run this in your terminal, not in the script!)
+# pip install transformers peft datasets accelerate bitsandbytes trl
 
 # Step 2: Load a small model (TinyLlama 1.1B)
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import LoraConfig, get_peft_model
 
 model_name = "TinyLlama/TinyLlama-1.1B-Chat"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
     torch_dtype=torch.float16,
@@ -685,6 +689,7 @@ training_args = TrainingArguments(
 trainer = SFTTrainer(
     model=model,
     train_dataset=dataset,
+    tokenizer=tokenizer,
     dataset_text_field="instruction",
     max_seq_length=128,
     args=training_args,
@@ -709,8 +714,11 @@ RUN pip install peft datasets bitsandbytes trl
 
 Execute the build and seamlessly push it to your private registry:
 ```bash
-docker build -t your-registry.local/sft-trainer:v1 .
-docker push your-registry.local/sft-trainer:v1
+# We use ttl.sh for an ephemeral, anonymous container registry
+export REGISTRY="ttl.sh/sft-trainer-${RANDOM}:1h"
+docker build -t $REGISTRY .
+docker push $REGISTRY
+echo "Update your job.yaml image field to: $REGISTRY"
 ```
 
 ### Task 4: Execute Training via Kubernetes (v1.35+)
@@ -720,11 +728,33 @@ docker push your-registry.local/sft-trainer:v1
 
 Draft a `job.yaml` manifest. Notice how the specification below structurally matches the template we analyzed earlier, but you must replace the default `image` field with your newly packaged `your-registry.local/sft-trainer:v1` container URL.
 
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: qlora-finetune-job
+  namespace: ml-workloads
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      containers:
+      - name: sft-trainer
+        image: your-registry.local/sft-trainer:v1 # Replace with the ttl.sh image URL echoed above
+        command: ["/bin/sh", "-c", "python /app/train.py && ls -lh ./final-adapters/"]
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+      restartPolicy: Never
+```
+
 Deploy the workload using the standard Kubernetes Job manifest. Monitor the logs interactively using `kubectl`:
 
 ```bash
+kubectl create namespace ml-workloads --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f job.yaml
-kubectl get pods -n ml-workloads -w
+kubectl get pods -n ml-workloads
+sleep 5
 kubectl logs -f job/qlora-finetune-job -n ml-workloads
 ```
 </details>
@@ -734,10 +764,10 @@ kubectl logs -f job/qlora-finetune-job -n ml-workloads
 <details>
 <summary>View Solution</summary>
 
-Once the job completes successfully, access the output volume mounted in your cluster to verify that the PEFT library successfully generated adapter-only artifacts instead of wildly dumping the full, massive model weights.
+Once the job completes successfully, inspect the bottom of the pod logs to verify that the PEFT library successfully generated adapter-only artifacts instead of wildly dumping the full, massive model weights. Our updated job command automatically lists this directory for you.
 
 ```bash
-ls -lh ./final-adapters/
+kubectl logs job/qlora-finetune-job -n ml-workloads | tail -n 10
 ```
 
 **Success Checklist**:
@@ -855,18 +885,32 @@ LoRA naturally prevents most forgetting since only the small adapter weights are
 You must reduce your dataset to a maximum of 50,000 image examples, and compress or resize the images so that no single image exceeds the strict 10 MB limit. Additionally, you must ensure the images are in JPEG, PNG, or WEBP format (RGB or RGBA mode) and are accessible via public URLs, while ensuring no assistant-role outputs contain image messages.
 </details>
 
-**Question 7**: Scenario: Your enterprise architecture team is setting up a centralized OpenAI project for fine-tuning across 10 different business units. They ask you to calculate the absolute maximum file storage capacity for training data. Why might you struggle to give them a single definitive answer based on the official API documentation?
+**Question 7**: Scenario: Your enterprise architecture team wants to train a model to output highly structured internal YAML configurations. They plan to use Direct Preference Optimization (DPO) because it's newer, but they only have a database of "correct" YAML files generated by senior engineers. Why will DPO fail for this specific dataset, and what method should they use instead?
+
+<details>
+<summary>Answer</summary>
+DPO fundamentally requires contrastive pairs (a chosen/preferred response and a rejected response) for every prompt to teach the model what *not* to do. Since the team only has a database of "correct" examples, they lack the rejected examples needed for DPO. They should use Supervised Fine-Tuning (SFT) instead, which only requires the positive input-output pairs.
+</details>
+
+**Question 8**: Scenario: You are tasked with implementing AdaLoRA for a highly specialized domain adaptation task. After a successful training run, your CI/CD pipeline fails because the artifact upload step times out attempting to push a 15GB file to the model registry. Based on how PEFT functions, what structural configuration error likely occurred during your pipeline setup?
+
+<details>
+<summary>Answer</summary>
+The base model was likely unfrozen during training. When configured correctly, PEFT keeps the base model weights frozen and only trains the low-rank adapters, resulting in checkpoints that are typically under 100MB (containing only `adapter_model.safetensors` and `adapter_config.json`). Producing a 15GB artifact implies the script performed a full fine-tuning or saved the entire merged model instead of just the adapter artifacts.
+</details>
+
+**Question 9**: Scenario: Your enterprise architecture team is setting up a centralized OpenAI project for fine-tuning across 10 different business units. They ask you to calculate the absolute maximum file storage capacity for training data to provision internal chargebacks. Based on the current API documentation, why must you hedge your capacity planning instead of providing a single definitive terabyte limit?
 
 <details>
 <summary>Answer</summary>
 OpenAI's official documentation currently contains conflicting information regarding file storage limits. One part of the API reference states there is an organization-wide limit of 1 TB, while another variant explicitly claims there is a 2.5 TB limit per project with absolutely no organization-wide cap. You should explicitly hedge your capacity planning and monitor usage closely until this discrepancy is definitively resolved.
 </details>
 
-**Question 8**: Scenario: You are tasked with implementing AdaLoRA for a highly specialized domain adaptation task using Hugging Face Transformers. During the initialization of the `SFTTrainer`, your pipeline immediately throws an `ImportError`. What is the most likely versioning dependency issue, and what artifacts should you expect the trainer to produce upon successful completion?
+**Question 10**: Scenario: You are tasked with implementing AdaLoRA for a highly specialized domain adaptation task using Hugging Face Transformers. During the initialization of the `SFTTrainer`, your pipeline immediately throws an `ImportError`. A junior developer suggests the base model is incompatible. Why is the error actually a framework versioning issue, and what artifacts confirm the correct library integration upon success?
 
 <details>
 <summary>Answer</summary>
-The integration of non-prompt-learning methods like LoRA, IA3, and AdaLoRA in Hugging Face rigidly requires `peft >= 0.18.0`. You must upgrade your PEFT library dependency. Once training succeeds, the trainer will only update the adapter weights (since the base model is frozen) and the checkpoint directory will contain adapter-only artifacts, specifically `adapter_model.safetensors` and `adapter_config.json`.
+The integration of non-prompt-learning methods like LoRA, IA3, and AdaLoRA in Hugging Face rigidly requires `peft >= 0.18.0`. You must upgrade your PEFT library dependency rather than change the model. Once training succeeds, the trainer will only update the adapter weights (since the base model is frozen) and the checkpoint directory will contain adapter-only artifacts, specifically `adapter_model.safetensors` and `adapter_config.json`.
 </details>
 
 ## Summary
