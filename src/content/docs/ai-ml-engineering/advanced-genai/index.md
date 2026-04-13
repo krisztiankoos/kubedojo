@@ -1,8 +1,8 @@
 ---
-title: "Phase 7: Advanced GenAI & Safety"
+title: "Advanced GenAI & Safety"
 sidebar:
   order: 0
-  label: "Phase 7: Advanced GenAI & Safety"
+  label: "Advanced GenAI & Safety"
 ---
 
 > **AI/ML Engineering Track** | Phase 7

@@ -243,14 +243,14 @@ export default defineConfig({
           items: [
             { label: 'Platform Hub', link: '/platform/' },
 
-            // ── Part 1: Foundations (timeless theory) ──
+            // ── Foundations (timeless theory) ──
             {
               label: 'Foundations',
               collapsed: true,
               autogenerate: { directory: 'platform/foundations' },
             },
 
-            // ── Part 2: Disciplines (applied practices) ──
+            // ── Disciplines (applied practices) ──
             {
               label: 'Disciplines',
               collapsed: true,
@@ -296,7 +296,7 @@ export default defineConfig({
               ],
             },
 
-            // ── Part 3: Toolkits (current tools) ──
+            // ── Toolkits (current tools) ──
             {
               label: 'Toolkits',
               collapsed: true,

@@ -1,8 +1,8 @@
 ---
-title: "Phase 9: Deep Learning Foundations"
+title: "Deep Learning Foundations"
 sidebar:
   order: 0
-  label: "Phase 9: Deep Learning Foundations"
+  label: "Deep Learning Foundations"
 ---
 
 > **AI/ML Engineering Track** | Phase 9

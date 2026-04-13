@@ -1,8 +1,8 @@
 ---
-title: "Part 1: Cluster Setup"
+title: "Cluster Setup"
 sidebar:
   order: 0
-  label: "Part 1: Cluster Setup"
+  label: "Cluster Setup"
 ---
 
 Secure cluster setup including network policies, CIS benchmarks, ingress hardening, and node metadata protection.

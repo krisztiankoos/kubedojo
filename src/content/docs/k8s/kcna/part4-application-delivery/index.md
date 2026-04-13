@@ -1,8 +1,8 @@
 ---
-title: "Part 4: Application Delivery (16%)"
+title: "Application Delivery (16%)"
 sidebar:
   order: 0
-  label: "Part 4: Application Delivery"
+  label: "Application Delivery"
 ---
 CI/CD fundamentals, application packaging with Helm and Kustomize, and release strategies.
 

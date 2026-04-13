@@ -1,8 +1,8 @@
 ---
-title: "Part 1: Cloud Native Security (20%)"
+title: "Cloud Native Security (20%)"
 sidebar:
   order: 0
-  label: "Part 1: Cloud Native Security"
+  label: "Cloud Native Security"
 ---
 This part introduces cloud native security principles, the 4C model, and mindset before diving into cluster components.
 

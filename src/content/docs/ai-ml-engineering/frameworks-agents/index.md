@@ -1,8 +1,8 @@
 ---
-title: "Phase 4: Frameworks & Agents"
+title: "Frameworks & Agents"
 sidebar:
   order: 0
-  label: "Phase 4: Frameworks & Agents"
+  label: "Frameworks & Agents"
 ---
 
 > **AI/ML Engineering Track** | Phase 4

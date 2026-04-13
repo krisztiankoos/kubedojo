@@ -1,8 +1,8 @@
 ---
-title: "Part 2: Cluster Component Security (24%)"
+title: "Cluster Component Security (24%)"
 sidebar:
   order: 0
-  label: "Part 2: Cluster Component Security"
+  label: "Cluster Component Security"
 ---
 This part focuses on securing the control plane, nodes, cluster networking, and PKI—the foundation before workload controls.
 

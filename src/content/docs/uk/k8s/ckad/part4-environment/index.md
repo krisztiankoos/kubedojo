@@ -2,7 +2,7 @@
 title: "Частина 4: Конфігурація середовища та безпека"
 sidebar:
   order: 0
-  label: "Part 4: Environment & Security"
+  label: "Конфігурація середовища та безпека"
 ---
 
 Налаштовуйте середовище та безпеку застосунків за допомогою ConfigMaps, Secrets, керування ресурсами, SecurityContexts, ServiceAccounts та CRDs.

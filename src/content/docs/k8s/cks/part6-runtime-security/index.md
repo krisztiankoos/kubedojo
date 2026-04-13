@@ -1,8 +1,8 @@
 ---
-title: "Part 6: Runtime Security"
+title: "Runtime Security"
 sidebar:
   order: 0
-  label: "Part 6: Runtime Security"
+  label: "Runtime Security"
 ---
 
 Monitor and respond to runtime threats using audit logging, Falco, container forensics, and immutable infrastructure patterns.

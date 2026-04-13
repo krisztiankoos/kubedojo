@@ -1,8 +1,8 @@
 ---
-title: "Part 1: Kubernetes Fundamentals (46%)"
+title: "Kubernetes Fundamentals (46%)"
 sidebar:
   order: 0
-  label: "Part 1: K8s Fundamentals"
+  label: "K8s Fundamentals"
 ---
 The largest exam domain. Covers what Kubernetes is, its architecture, core resources, and basic debugging.
 

@@ -1,8 +1,8 @@
 ---
-title: "Part 4: Environment Config & Security"
+title: "Environment Config & Security"
 sidebar:
   order: 0
-  label: "Part 4: Environment & Security"
+  label: "Environment & Security"
 ---
 
 Configure application environments and security using ConfigMaps, Secrets, resource management, SecurityContexts, ServiceAccounts, and CRDs.

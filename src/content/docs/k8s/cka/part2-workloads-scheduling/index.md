@@ -1,8 +1,8 @@
 ---
-title: "Part 2: Workloads & Scheduling"
+title: "Workloads & Scheduling"
 sidebar:
   order: 0
-  label: "Part 2: Workloads & Scheduling"
+  label: "Workloads & Scheduling"
 ---
 ## Modules
 

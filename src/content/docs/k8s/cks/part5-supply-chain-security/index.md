@@ -1,8 +1,8 @@
 ---
-title: "Part 5: Supply Chain Security"
+title: "Supply Chain Security"
 sidebar:
   order: 0
-  label: "Part 5: Supply Chain Security"
+  label: "Supply Chain Security"
 ---
 
 Secure the software supply chain with image security, vulnerability scanning, static analysis, and admission controllers.

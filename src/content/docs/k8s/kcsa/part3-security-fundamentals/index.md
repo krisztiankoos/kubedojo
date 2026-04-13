@@ -1,8 +1,8 @@
 ---
-title: "Part 3: Security Fundamentals (18%)"
+title: "Security Fundamentals (18%)"
 sidebar:
   order: 0
-  label: "Part 3: Security Fundamentals"
+  label: "Security Fundamentals"
 ---
 This part covers core workload and network security primitives before threat modeling and platform controls.
 

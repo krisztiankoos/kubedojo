@@ -1,8 +1,8 @@
 ---
-title: "Phase 5: MLOps & LLMOps"
+title: "MLOps & LLMOps"
 sidebar:
   order: 0
-  label: "Phase 5: MLOps & LLMOps"
+  label: "MLOps & LLMOps"
 ---
 
 > **AI/ML Engineering Track** | Phase 5

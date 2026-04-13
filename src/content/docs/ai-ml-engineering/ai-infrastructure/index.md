@@ -1,8 +1,8 @@
 ---
-title: "Phase 6: AI Infrastructure"
+title: "AI Infrastructure"
 sidebar:
   order: 0
-  label: "Phase 6: AI Infrastructure"
+  label: "AI Infrastructure"
 ---
 
 > **AI/ML Engineering Track** | Phase 6

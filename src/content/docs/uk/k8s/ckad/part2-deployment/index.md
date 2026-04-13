@@ -2,7 +2,7 @@
 title: "Частина 2: Розгортання"
 sidebar:
   order: 0
-  label: "Part 2: Deployment"
+  label: "Розгортання"
 ---
 
 Опануйте техніки розгортання застосунків, включаючи Deployments, Helm, Kustomize та стратегії поступового оновлення.

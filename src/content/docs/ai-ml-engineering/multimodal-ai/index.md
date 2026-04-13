@@ -1,8 +1,8 @@
 ---
-title: "Phase 8: Multimodal AI"
+title: "Multimodal AI"
 sidebar:
   order: 0
-  label: "Phase 8: Multimodal AI"
+  label: "Multimodal AI"
 ---
 
 > **AI/ML Engineering Track** | Phase 8

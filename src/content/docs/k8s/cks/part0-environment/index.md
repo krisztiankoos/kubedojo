@@ -1,8 +1,8 @@
 ---
-title: "Part 0: Environment"
+title: "Environment"
 sidebar:
   order: 0
-  label: "Part 0: Environment"
+  label: "Environment"
 ---
 
 Set up your CKS security lab, master essential security tools, and plan your exam strategy.

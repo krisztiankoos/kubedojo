@@ -1,8 +1,8 @@
 ---
-title: "Phase 2: Generative AI"
+title: "Generative AI"
 sidebar:
   order: 0
-  label: "Phase 2: Generative AI"
+  label: "Generative AI"
 ---
 
 > **AI/ML Engineering Track** | Phase 2

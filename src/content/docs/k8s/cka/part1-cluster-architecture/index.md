@@ -1,8 +1,8 @@
 ---
-title: "Part 1: Cluster Architecture, Installation & Configuration"
+title: "Cluster Architecture, Installation & Configuration"
 sidebar:
   order: 0
-  label: "Part 1: Cluster Architecture"
+  label: "Cluster Architecture"
 ---
 ## Modules
 

@@ -2,7 +2,7 @@
 title: "Частина 2: Зміцнення кластера"
 sidebar:
   order: 0
-  label: "Part 2: Cluster Hardening"
+  label: "Зміцнення кластера"
 ---
 
 Зміцнення кластерів Kubernetes за допомогою RBAC, безпеки ServiceAccount, конфігурації API-сервера, оновлень та обмежень доступу до API.

@@ -1,8 +1,8 @@
 ---
-title: "Phase 1: AI-Native Development"
+title: "AI-Native Development"
 sidebar:
   order: 0
-  label: "Phase 1: AI-Native Development"
+  label: "AI-Native Development"
 ---
 
 > **AI/ML Engineering Track** | Phase 1

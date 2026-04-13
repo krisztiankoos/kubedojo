@@ -1,8 +1,8 @@
 ---
-title: "Part 5: Troubleshooting"
+title: "Troubleshooting"
 sidebar:
   order: 0
-  label: "Part 5: Troubleshooting"
+  label: "Troubleshooting"
 ---
 ## Modules
 

@@ -1,8 +1,8 @@
 ---
-title: "Part 3: System Hardening"
+title: "System Hardening"
 sidebar:
   order: 0
-  label: "Part 3: System Hardening"
+  label: "System Hardening"
 ---
 
 Harden the host operating system using AppArmor, Seccomp, kernel security modules, and network-level protections.

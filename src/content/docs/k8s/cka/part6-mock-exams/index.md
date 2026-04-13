@@ -1,7 +1,7 @@
 ---
-title: "Part 6: Mock Exams"
+title: "Mock Exams"
 sidebar:
   order: 1
-  label: "Part 6: Mock Exams"
+  label: "Mock Exams"
 ---
 Coming soon.

@@ -1,8 +1,8 @@
 ---
-title: "Phase 0: Prerequisites"
+title: "Prerequisites"
 sidebar:
   order: 0
-  label: "Phase 0: Prerequisites"
+  label: "Prerequisites"
 ---
 
 > **AI/ML Engineering Track** | Phase 0

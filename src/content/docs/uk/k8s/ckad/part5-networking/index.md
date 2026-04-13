@@ -2,7 +2,7 @@
 title: "Частина 5: Сервіси та мережа"
 sidebar:
   order: 0
-  label: "Part 5: Services & Networking"
+  label: "Сервіси та мережа"
 ---
 
 Публікуйте застосунки та контролюйте мережевий трафік за допомогою Сервісів, ресурсів Ingress та NetworkPolicies.
