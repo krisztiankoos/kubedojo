@@ -59,20 +59,31 @@ You cannot launch an EC2 instance directly into a VPC. You must launch it into a
 
 Crucially, **a subnet must reside entirely within one Availability Zone (AZ)**. It cannot span across AZs. To achieve high availability, you must deploy resources across multiple subnets located in different AZs.
 
-```text
-VPC: 10.0.0.0/16 (65,536 IPs)
-├── Availability Zone: us-east-1a
-│   ├── Subnet A (Public):  10.0.1.0/24  (251 usable IPs)
-│   ├── Subnet B (Private): 10.0.2.0/24  (251 usable IPs)
-│   └── Subnet C (Data):    10.0.3.0/24  (251 usable IPs)
-├── Availability Zone: us-east-1b
-│   ├── Subnet D (Public):  10.0.11.0/24 (251 usable IPs)
-│   ├── Subnet E (Private): 10.0.12.0/24 (251 usable IPs)
-│   └── Subnet F (Data):    10.0.13.0/24 (251 usable IPs)
-└── Availability Zone: us-east-1c
-    ├── Subnet G (Public):  10.0.21.0/24 (251 usable IPs)
-    ├── Subnet H (Private): 10.0.22.0/24 (251 usable IPs)
-    └── Subnet I (Data):    10.0.23.0/24 (251 usable IPs)
+```mermaid
+graph TD
+    VPC["VPC: 10.0.0.0/16 (65,536 IPs)"]
+    
+    subgraph AZ1 ["Availability Zone: us-east-1a"]
+        SubA["Subnet A (Public): 10.0.1.0/24 (251 usable IPs)"]
+        SubB["Subnet B (Private): 10.0.2.0/24 (251 usable IPs)"]
+        SubC["Subnet C (Data): 10.0.3.0/24 (251 usable IPs)"]
+    end
+    
+    subgraph AZ2 ["Availability Zone: us-east-1b"]
+        SubD["Subnet D (Public): 10.0.11.0/24 (251 usable IPs)"]
+        SubE["Subnet E (Private): 10.0.12.0/24 (251 usable IPs)"]
+        SubF["Subnet F (Data): 10.0.13.0/24 (251 usable IPs)"]
+    end
+    
+    subgraph AZ3 ["Availability Zone: us-east-1c"]
+        SubG["Subnet G (Public): 10.0.21.0/24 (251 usable IPs)"]
+        SubH["Subnet H (Private): 10.0.22.0/24 (251 usable IPs)"]
+        SubI["Subnet I (Data): 10.0.23.0/24 (251 usable IPs)"]
+    end
+
+    VPC --> AZ1
+    VPC --> AZ2
+    VPC --> AZ3
 ```
 
 **Why three tiers?** Production architectures typically separate workloads into layers:
@@ -144,34 +155,12 @@ Notice: the data tier has no route to the internet at all. Not through an IGW, n
 
 Here is how a request from the internet reaches an EC2 instance in a public subnet:
 
-```text
-Internet User
-      │
-      ▼
-┌──────────────┐
-│ Internet     │
-│ Gateway (IGW)│
-└──────┬───────┘
-       │  Route table says: 10.0.0.0/16 → local
-       ▼
-┌──────────────────────────────────────────┐
-│         NACL (Subnet Boundary)           │
-│  Evaluates inbound rules sequentially    │
-└──────────────────┬───────────────────────┘
-                   │
-                   ▼
-┌──────────────────────────────────────────┐
-│      Security Group (Instance Level)     │
-│  Checks: Is port 443 allowed inbound?   │
-└──────────────────┬───────────────────────┘
-                   │
-                   ▼
-            ┌─────────────┐
-            │ EC2 Instance│
-            │ 10.0.1.10   │
-            │ (Public IP: │
-            │  54.x.x.x)  │
-            └─────────────┘
+```mermaid
+flowchart TD
+    User["Internet User"] --> IGW["Internet Gateway (IGW)"]
+    IGW -- "Route table says: 10.0.0.0/16 → local" --> NACL["NACL (Subnet Boundary)<br>Evaluates inbound rules sequentially"]
+    NACL --> SG["Security Group (Instance Level)<br>Checks: Is port 443 allowed inbound?"]
+    SG --> EC2["EC2 Instance<br>10.0.1.10<br>(Public IP: 54.x.x.x)"]
 ```
 
 The return traffic follows the reverse path. Because Security Groups are **stateful**, the response is automatically allowed out. But if a NACL is in the path, you must have explicit outbound rules (NACLs are **stateless**).
@@ -205,40 +194,13 @@ This allows private instances to **initiate outbound connections** while remaini
 
 ### NAT Gateway Traffic Flow
 
-```text
-Private Instance (10.0.2.50)
-      │
-      │ Outbound request to https://api.example.com
-      ▼
-┌──────────────────────────────────────────┐
-│  Private Subnet Route Table              │
-│  0.0.0.0/0 → nat-xyz789                 │
-└──────────────────┬───────────────────────┘
-                   │
-                   ▼
-┌──────────────────────────────────────────┐
-│          NAT Gateway                     │
-│  (Lives in PUBLIC subnet)                │
-│  Translates: 10.0.2.50 → 52.x.x.x (EIP)│
-└──────────────────┬───────────────────────┘
-                   │
-                   ▼
-┌──────────────────────────────────────────┐
-│  Public Subnet Route Table               │
-│  0.0.0.0/0 → igw-abc123                 │
-└──────────────────┬───────────────────────┘
-                   │
-                   ▼
-┌──────────────────────────────────────────┐
-│          Internet Gateway                │
-└──────────────────┬───────────────────────┘
-                   │
-                   ▼
-            ┌─────────────┐
-            │  Internet   │
-            │ api.example │
-            │   .com      │
-            └─────────────┘
+```mermaid
+flowchart TD
+    EC2["Private Instance (10.0.2.50)"] -- "Outbound request to https://api.example.com" --> PrivRT["Private Subnet Route Table<br>0.0.0.0/0 → nat-xyz789"]
+    PrivRT --> NAT["NAT Gateway<br>(Lives in PUBLIC subnet)<br>Translates: 10.0.2.50 → 52.x.x.x (EIP)"]
+    NAT --> PubRT["Public Subnet Route Table<br>0.0.0.0/0 → igw-abc123"]
+    PubRT --> IGW["Internet Gateway"]
+    IGW --> Internet["Internet<br>api.example.com"]
 ```
 
 The response follows the exact reverse path. The IGW sends it to the NAT Gateway's Elastic IP, the NAT Gateway translates the destination back to `10.0.2.50`, and delivers it to the private instance.
@@ -247,10 +209,21 @@ The response follows the exact reverse path. The IGW sends it to the NAT Gateway
 
 A single NAT Gateway resides in a single AZ. If that AZ fails, all private subnets routing through it lose internet access. For production workloads, deploy one NAT Gateway per AZ:
 
-```text
-AZ-1a:  NAT-GW-1 (in Public-Subnet-1a)  ← Private-Subnet-1a routes here
-AZ-1b:  NAT-GW-2 (in Public-Subnet-1b)  ← Private-Subnet-1b routes here
-AZ-1c:  NAT-GW-3 (in Public-Subnet-1c)  ← Private-Subnet-1c routes here
+```mermaid
+flowchart LR
+    Priv1a["Private-Subnet-1a"] -- "routes here" --> NAT1["NAT-GW-1<br>(in Public-Subnet-1a)"]
+    Priv1b["Private-Subnet-1b"] -- "routes here" --> NAT2["NAT-GW-2<br>(in Public-Subnet-1b)"]
+    Priv1c["Private-Subnet-1c"] -- "routes here" --> NAT3["NAT-GW-3<br>(in Public-Subnet-1c)"]
+    
+    subgraph AZ-1a
+        NAT1
+    end
+    subgraph AZ-1b
+        NAT2
+    end
+    subgraph AZ-1c
+        NAT3
+    end
 ```
 
 Each private subnet's route table points to the NAT Gateway in its own AZ. This means each AZ is self-contained for outbound internet access.
@@ -304,26 +277,11 @@ Security Groups act as **stateful**, instance-level firewalls.
 
 **Example: Chained Security Group Architecture**
 
-```text
-Internet
-    │
-    ▼
-┌───────────────────────────┐
-│  ALB Security Group       │
-│  Inbound: 443 from 0.0.0.0/0 │
-└─────────┬─────────────────┘
-          │
-          ▼
-┌───────────────────────────┐
-│  App Security Group       │
-│  Inbound: 8080 from sg-alb│
-└─────────┬─────────────────┘
-          │
-          ▼
-┌───────────────────────────┐
-│  DB Security Group        │
-│  Inbound: 5432 from sg-app│
-└───────────────────────────┘
+```mermaid
+flowchart TD
+    Internet["Internet"] --> ALB["ALB Security Group<br>Inbound: 443 from 0.0.0.0/0"]
+    ALB --> App["App Security Group<br>Inbound: 8080 from sg-alb"]
+    App --> DB["DB Security Group<br>Inbound: 5432 from sg-app"]
 ```
 
 Each layer only trusts the layer directly above it. If an attacker compromises the ALB, they still cannot reach the database directly because the DB security group only allows connections from `sg-app`, not `sg-alb`.
@@ -362,31 +320,14 @@ NACLs act as **stateless**, subnet-level firewalls.
 
 ### Defense in Depth: Both Layers Working Together
 
-```text
-                      Internet
-                          │
-                          ▼
-              ┌───────────────────┐
-              │  Internet Gateway │
-              └─────────┬─────────┘
-                        │
-           ┌────────────▼────────────┐
-           │    NACL (Subnet level)  │ ← Layer 1: Block bad IPs,
-           │    Rule 10: DENY        │   enforce subnet-wide policy
-           │      198.51.100.0/24    │
-           │    Rule 100: ALLOW ALL  │
-           └────────────┬────────────┘
-                        │
-           ┌────────────▼────────────┐
-           │  Security Group (ENI)   │ ← Layer 2: Fine-grained
-           │  Allow: 443 from 0.0.0.0/0 │   per-resource control
-           │  Allow: 22 from 10.0.0.0/16│
-           └────────────┬────────────┘
-                        │
-                        ▼
-                  ┌───────────┐
-                  │    EC2    │
-                  └───────────┘
+```mermaid
+flowchart TD
+    Internet["Internet"] --> IGW["Internet Gateway"]
+    IGW --> NACL["NACL (Subnet level)<br>Rule 10: DENY 198.51.100.0/24<br>Rule 100: ALLOW ALL"]
+    NACL -. "Layer 1: Block bad IPs, enforce subnet-wide policy" .-> NACL
+    NACL --> SG["Security Group (ENI)<br>Allow: 443 from 0.0.0.0/0<br>Allow: 22 from 10.0.0.0/16"]
+    SG -. "Layer 2: Fine-grained per-resource control" .-> SG
+    SG --> EC2["EC2 Instance"]
 ```
 
 *War Story: A junior engineer modified a NACL attached to a database private subnet, forgetting that NACLs are stateless. They added an outbound rule allowing traffic to the web subnet, but forgot to add the inbound rule allowing the ephemeral port response. Suddenly, the web servers reported massive database timeout errors, despite the Security Groups being perfectly configured. The Security Groups were happily allowing traffic (stateful!), but the NACL was silently dropping the return packets at the subnet boundary. It took two hours of debugging before someone thought to check the NACLs. Stateful SGs are forgiving; stateless NACLs require exact precision.*
@@ -465,18 +406,24 @@ VPC Peering is a one-to-one networking connection between two VPCs that enables 
 
 When you have dozens or hundreds of VPCs, managing a full-mesh peering network becomes an operational nightmare. Transit Gateway acts as a highly scalable central hub (a virtual router). You connect all your VPCs, VPNs, and Direct Connects to the central TGW. Routing domains and route tables managed centrally on the TGW control traffic flow, dramatically simplifying network topology.
 
-```text
-VPC Peering (Full Mesh):          Transit Gateway (Hub-and-Spoke):
+```mermaid
+flowchart TD
+    subgraph Peering ["VPC Peering (Full Mesh)<br>6 peering connections<br>6 route table updates per VPC"]
+        A1[VPC-A] <--> B1[VPC-B]
+        A1 <--> C1[VPC-C]
+        A1 <--> D1[VPC-D]
+        B1 <--> C1
+        B1 <--> D1
+        C1 <--> D1
+    end
 
-  VPC-A ──── VPC-B                  VPC-A ──┐
-    │ \      / │                    VPC-B ──┤
-    │  \    /  │                    VPC-C ──┼── Transit Gateway
-    │   \  /   │                    VPC-D ──┤
-    │    \/    │                    VPN   ──┘
-  VPC-C ──── VPC-D
-                                    4 attachments vs. 6 peerings
-  6 peering connections             Central route management
-  6 route table updates per VPC     One route table update per VPC
+    subgraph TGW ["Transit Gateway (Hub-and-Spoke)<br>4 attachments vs. 6 peerings<br>Central route management<br>One route table update per VPC"]
+        A2[VPC-A] <--> TG[Transit Gateway]
+        B2[VPC-B] <--> TG
+        C2[VPC-C] <--> TG
+        D2[VPC-D] <--> TG
+        VPN[VPN] <--> TG
+    end
 ```
 
 Transit Gateway supports:
@@ -537,13 +484,13 @@ For hybrid environments (connecting your VPC to an on-premises data center), **R
 <details>
 <summary>Question 1: You launch an EC2 instance into a subnet, attach an Elastic IP (public IP), and ensure the Security Group allows inbound SSH (port 22). However, your SSH connection times out. What is the most likely architectural cause?</summary>
 
-The subnet the EC2 instance resides in is a **Private Subnet**. Even though the instance has a public IP address, the Subnet's Route Table does not have a route to an Internet Gateway (IGW). Without a route to the IGW, internet traffic cannot enter or leave the subnet. The fix is to add a route `0.0.0.0/0 → igw-xxx` to the subnet's route table, or move the instance to a subnet that already has this route.
+The subnet the EC2 instance resides in is a **Private Subnet**. Even though the instance has a public IP address, the Subnet's Route Table does not have a route to an Internet Gateway (IGW). Without a route to the IGW, internet traffic cannot enter or leave the subnet. The fix is to add a route `0.0.0.0/0 → igw-xxx` to the subnet's route table, or move the instance to a subnet that already has this route. This demonstrates that public IPs are useless without the underlying routing infrastructure to support them.
 </details>
 
 <details>
 <summary>Question 2: An application in a private subnet needs to upload logs to Amazon S3. You want to accomplish this securely without the traffic traversing the public internet and without incurring NAT Gateway data processing charges. What should you configure?</summary>
 
-You should configure a **VPC Gateway Endpoint** for Amazon S3. This creates a private connection from your VPC to the S3 service, keeping all traffic on the internal AWS network. Gateway endpoints are free and require a route table update, unlike Interface endpoints (PrivateLink) which use an ENI and incur hourly charges. The route table entry will look like: `pl-xxxxx (S3 prefix list) → vpce-xxx`.
+You should configure a **VPC Gateway Endpoint** for Amazon S3. This creates a private connection from your VPC to the S3 service, keeping all traffic on the internal AWS network. Gateway endpoints are free and require a route table update, unlike Interface endpoints (PrivateLink) which use an ENI and incur hourly charges. By adding a specific route for the S3 prefix list to point to the Gateway Endpoint, traffic destined for S3 bypasses the NAT Gateway entirely. This eliminates the data processing charges associated with NAT Gateways while ensuring the data never leaves the AWS backbone.
 </details>
 
 <details>
@@ -555,7 +502,7 @@ To prevent a total outage, you should design a **multi-AZ architecture** by span
 <details>
 <summary>Question 4: You have a private subnet with a NAT Gateway providing internet access. You check VPC Flow Logs and see traffic from your instance to an external API being ACCEPTED, but the application reports connection timeouts. What should you investigate?</summary>
 
-The Flow Log `ACCEPT` means the **Security Group and NACL** allowed the traffic — but it does not mean the traffic actually reached the destination. First, verify the route tables to ensure the private subnet routes `0.0.0.0/0` to the NAT Gateway, and the public subnet routes it to the IGW. Second, check if the NAT Gateway is in the `available` state with an attached Elastic IP. Third, ensure the NACL on the private subnet explicitly allows inbound return traffic on ephemeral ports (1024-65535). Finally, verify if the external API is reachable and not blocking your NAT Gateway's Elastic IP.
+The Flow Log `ACCEPT` means the **Security Group and NACL** allowed the traffic — but it does not mean the traffic actually reached the destination. First, verify the route tables to ensure the private subnet routes `0.0.0.0/0` to the NAT Gateway, and the public subnet routes it to the IGW. Second, check if the NAT Gateway is in the `available` state with an attached Elastic IP. Third, ensure the NACL on the private subnet explicitly allows inbound return traffic on ephemeral ports (1024-65535). Because NACLs are stateless, they will allow outbound requests but silently drop the returning responses if ephemeral ports aren't opened, leading directly to application timeouts despite the outbound ACCEPT log.
 </details>
 
 <details>
@@ -572,24 +519,26 @@ In this exercise, you will use the AWS CLI to build a complete production-ready 
 
 **What you will build:**
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│  VPC: 10.0.0.0/16 (Dojo-Prod-VPC)                              │
-│                                                                 │
-│  ┌─────────── AZ: us-east-1a ───────────┐                      │
-│  │ Public:  10.0.1.0/24  [ALB, NAT-GW]  │                      │
-│  │ Private: 10.0.10.0/24 [App Servers]   │                      │
-│  └───────────────────────────────────────┘                      │
-│                                                                 │
-│  ┌─────────── AZ: us-east-1b ───────────┐                      │
-│  │ Public:  10.0.2.0/24  [ALB, NAT-GW]  │                      │
-│  │ Private: 10.0.20.0/24 [App Servers]   │                      │
-│  └───────────────────────────────────────┘                      │
-│                                                                 │
-│  Security: ALB-SG → App-SG → DB-SG (chained)                   │
-│  NACL: Block known-bad CIDR on private subnets                  │
-│  Internet: IGW → Public Subnets → NAT-GW → Private Subnets     │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph VPC ["VPC: 10.0.0.0/16 (Dojo-Prod-VPC)<br>Security: ALB-SG → App-SG → DB-SG (chained)<br>NACL: Block known-bad CIDR on private subnets<br>Internet: IGW → Public Subnets → NAT-GW → Private Subnets"]
+        direction TB
+        
+        subgraph AZ1 ["AZ: us-east-1a"]
+            Pub1["Public: 10.0.1.0/24 [ALB, NAT-GW]"]
+            Priv1["Private: 10.0.10.0/24 [App Servers]"]
+            Pub1 --> Priv1
+        end
+        
+        subgraph AZ2 ["AZ: us-east-1b"]
+            Pub2["Public: 10.0.2.0/24 [ALB, NAT-GW]"]
+            Priv2["Private: 10.0.20.0/24 [App Servers]"]
+            Pub2 --> Priv2
+        end
+
+        IGW["Internet Gateway"] --> Pub1
+        IGW --> Pub2
+    end
 ```
 
 ### Task 1: Create the VPC and Enable DNS
