@@ -60,13 +60,10 @@ def get_recommendations(user):
 
 The key insight: the flag's value is not hardcoded. It comes from a configuration service that can be changed at runtime without redeploying:
 
-```
-┌──────────────┐     ┌──────────────────┐     ┌──────────────┐
-│ Application  │────►│  Flag Service    │     │  Admin UI    │
-│              │     │                  │◄────│              │
-│ if enabled?  │     │ new-reco: true   │     │ Toggle on/off│
-│              │     │ dark-mode: false │     │              │
-└──────────────┘     └──────────────────┘     └──────────────┘
+```mermaid
+flowchart LR
+    App[Application<br/>if enabled?] -->|Query| FS[Flag Service<br/>new-reco: true<br/>dark-mode: false]
+    UI[Admin UI<br/>Toggle on/off] -->|Update| FS
 ```
 
 ### The Four Types of Feature Flags
@@ -86,17 +83,18 @@ The critical difference is **lifespan**. Release toggles should be removed withi
 
 Every release toggle should follow this lifecycle:
 
+```mermaid
+flowchart LR
+    A[Create Flag<br/>Day 1] --> B[Test off<br/>Day 1-7]
+    B --> C[Rollout % ramp<br/>Day 7-14]
+    C --> D[GA 100%<br/>Day 14-21]
+    D --> E[Remove Flag<br/>Day 21-28]
+    
+    style E stroke:#ff0000,stroke-width:2px,stroke-dasharray: 5 5
+    noteE[THIS IS MANDATORY<br/>or the flag becomes debt] -.-> E
 ```
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│  Create  │───►│  Test    │───►│  Rollout │───►│  GA      │───►│  Remove  │
-│  Flag    │    │  (off)   │    │  (% ramp)│    │  (100%)  │    │  Flag    │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
-    Day 1         Day 1-7        Day 7-14        Day 14-21       Day 21-28
 
-                                                              ↑
-                                                     THIS IS MANDATORY
-                                               (or the flag becomes debt)
-```
+> **Stop and think**: What happens if an organization adopts feature flags but fails to enforce the "Remove Flag" phase of the lifecycle for its release toggles?
 
 ---
 
@@ -114,6 +112,8 @@ Feature flags can be evaluated in several ways:
   }
 }
 ```
+
+> **Pause and predict**: If you roll a feature out to 25% of your users using random probability instead of a sticky attribute, what will the user experience be as they navigate the site?
 
 **2. Percentage Rollout:**
 ```json
@@ -188,21 +188,18 @@ This configuration means: all company employees see the feature, 10% of US/Canad
 
 A poorly implemented flag system adds latency to every request. The solution: local caching with background refresh.
 
-```
-┌──────────────┐          ┌──────────────────┐
-│ Application  │          │  Flag Service    │
-│              │          │                  │
-│ ┌──────────┐ │  refresh │                  │
-│ │ Local    │◄├──────────┤  Source of       │
-│ │ Cache    │ │ every 10s│  Truth           │
-│ └────┬─────┘ │          │                  │
-│      │       │          └──────────────────┘
-│  evaluate    │
-│  (< 1ms)    │
-│      │       │
-│      ▼       │
-│  if enabled? │
-└──────────────┘
+```mermaid
+flowchart TD
+    subgraph App[Application]
+        Cache[Local Cache]
+        Eval[evaluate < 1ms]
+        Dec[if enabled?]
+        
+        Cache --> Eval
+        Eval --> Dec
+    end
+    
+    FS[Flag Service<br/>Source of Truth] -->|refresh every 10s| Cache
 ```
 
 The application caches all flag configurations locally. Evaluations are sub-millisecond (just reading from memory). The cache refreshes from the flag service every 10-30 seconds in the background. If the flag service goes down, the application continues using its cached values — graceful degradation.
@@ -217,26 +214,18 @@ Unleash is the most popular open-source feature flag platform. It runs on Kubern
 
 **Architecture:**
 
-```
-┌────────────────────────────────────────────────────┐
-│                  Kubernetes Cluster                  │
-│                                                    │
-│  ┌──────────────┐    ┌──────────────┐              │
-│  │  Unleash API  │    │  PostgreSQL  │              │
-│  │  (Server)     │───►│  (State)     │              │
-│  └──────┬───────┘    └──────────────┘              │
-│         │                                          │
-│    ┌────┴────┐                                     │
-│    │ Unleash │ ← Developers toggle flags           │
-│    │ Admin UI│                                     │
-│    └─────────┘                                     │
-│                                                    │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐   │
-│  │  App Pod   │  │  App Pod   │  │  App Pod   │   │
-│  │  + SDK     │  │  + SDK     │  │  + SDK     │   │
-│  │  (cached)  │  │  (cached)  │  │  (cached)  │   │
-│  └────────────┘  └────────────┘  └────────────┘   │
-└────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph K8s[Kubernetes Cluster]
+        API[Unleash API Server] --> DB[(PostgreSQL State)]
+        UI[Unleash Admin UI] --> API
+        
+        App1[App Pod + SDK cached] -->|Polls| API
+        App2[App Pod + SDK cached] -->|Polls| API
+        App3[App Pod + SDK cached] -->|Polls| API
+    end
+    
+    Devs[Developers] -->|Toggle flags| UI
 ```
 
 **Key Unleash concepts:**
@@ -292,12 +281,23 @@ show_new_ui = client.get_boolean_value(
 
 Traditional branching strategies create long-lived feature branches:
 
-```
-main    ─────────────────────────────────────────────────►
-              \                                    /
-feature-x     └──────────(3 weeks)────────────────┘
-                                                  ↑
-                                         Merge conflict hell
+```mermaid
+gitGraph
+    commit
+    branch feature-x
+    commit
+    checkout main
+    commit
+    commit
+    checkout feature-x
+    commit
+    checkout main
+    commit
+    commit
+    checkout feature-x
+    commit
+    checkout main
+    merge feature-x type: REVERSE
 ```
 
 After three weeks, the feature branch has diverged so far from main that merging is painful, risky, and often introduces bugs.
@@ -306,10 +306,16 @@ After three weeks, the feature branch has diverged so far from main that merging
 
 With feature flags, everyone commits to main every day:
 
-```
-main    ─●──●──●──●──●──●──●──●──●──●──●──●──●──●──●──●──►
-          │  │  │  │  │  │  │  │  │
-          All commits to main, all behind flags when incomplete
+```mermaid
+gitGraph
+    commit id: "Initial"
+    commit id: "Add flag (off)"
+    commit id: "WIP feature 1"
+    commit id: "WIP feature 2"
+    commit id: "Enable flag Dev"
+    commit id: "Enable flag 5% Prod"
+    commit id: "Enable flag 100% Prod"
+    commit id: "Remove flag"
 ```
 
 Incomplete features are deployed but hidden behind flags:
@@ -416,6 +422,8 @@ Set a team-level maximum: "No team may have more than 15 active release toggles.
 ---
 
 ## Kill Switches and Circuit Breakers
+
+> **Stop and think**: If a feature flag service goes completely offline, what should the application do when it encounters an `if is_enabled("feature-x")` check?
 
 ### The Kill Switch Pattern
 
@@ -582,122 +590,70 @@ The team fixed the scaling issue the following week and re-enabled the flag grad
 ## Quiz: Check Your Understanding
 
 ### Question 1
-What is the difference between a release toggle and an ops toggle?
+
+**Scenario**: Your team has just merged the final PR for a new payment gateway, guarded by a feature flag `new-payment-gateway`. Simultaneously, the SRE team has added a flag `disable-heavy-reports` to prevent the database from crashing during peak hours. How should the lifecycles of these two flags differ?
 
 <details>
 <summary>Show Answer</summary>
 
-A **release toggle** is short-lived (days to weeks), controlled by engineering, and used to gate incomplete features during trunk-based development. It should be removed after the feature reaches GA.
+A **release toggle** like `new-payment-gateway` is short-lived (days to weeks) and used to gate incomplete features during development. Once the payment gateway is fully rolled out to 100% of users and validated, the flag itself and the legacy code path must be removed from the codebase to prevent technical debt. 
 
-An **ops toggle** is long-lived (potentially permanent), controlled by operations, and used for operational concerns like circuit breakers, kill switches, and load shedding. It stays in the codebase as a safety mechanism.
-
-The key difference is lifespan and intent. Release toggles are temporary scaffolding. Ops toggles are permanent safety features.
+In contrast, an **ops toggle** like `disable-heavy-reports` is a permanent safety mechanism (kill switch/circuit breaker). It is intended to remain in the codebase indefinitely so operations can use it at a moment's notice during incidents.
 
 </details>
 
 ### Question 2
-Why is consistent hashing important for percentage rollouts?
+
+**Scenario**: You configure a feature flag to show a redesigned shopping cart to 25% of your users. During the first day, you notice support tickets complaining that the cart "keeps changing back and forth" while users navigate the site. What went wrong with your rollout configuration?
 
 <details>
 <summary>Show Answer</summary>
 
-Without consistent hashing, a user at 25% rollout might randomly see the feature on some requests and not on others — creating a confusing, inconsistent experience.
-
-Consistent hashing (e.g., `hash(userId) % 100`) ensures:
-- The same user always gets the same variant
-- Increasing the percentage from 25% to 50% adds new users but never removes existing ones
-- The experience is deterministic and reproducible
-
-This is critical for A/B testing (consistent cohorts), user experience (no flickering), and debugging (reproducible behavior per user).
+The rollout was likely configured using random percentage distribution on each request rather than **consistent hashing** tied to a sticky attribute like a `userId` or `sessionId`. Without a sticky attribute, the flag service recalculates the 25% probability on every page load, causing a single user's experience to flicker. Consistent hashing ensures that `hash(userId)` always maps to the same deterministic value, guaranteeing that a user who falls into the 25% bucket remains in that bucket for all subsequent requests, providing a stable user experience.
 
 </details>
 
 ### Question 3
-How does trunk-based development relate to feature flags?
+
+**Scenario**: A senior engineer argues that trunk-based development is too risky for your monolith because incomplete features could accidentally be released to production if everyone commits to `main` daily. How does a feature flag system directly solve this concern?
 
 <details>
 <summary>Show Answer</summary>
 
-Feature flags enable trunk-based development by letting developers merge incomplete features directly to main without exposing them to users. The feature code is deployed but disabled via a flag.
-
-This eliminates:
-- Long-lived feature branches and merge conflicts
-- "Big bang" integration risk at merge time
-- Delayed integration testing
-
-The workflow: create flag (off) → commit code behind flag to main → deploy to production (invisible to users) → enable flag progressively → flag reaches 100% → remove flag code.
-
-Without feature flags, trunk-based development would mean deploying unfinished features to users.
+Feature flags decouple **deployment** (pushing code to production servers) from **release** (exposing that code to users). By wrapping incomplete code in a feature flag that defaults to `false`, developers can merge their unfinished work into `main` and deploy it to production multiple times a day without impacting actual users. This eliminates the need for long-lived feature branches and merge conflict hell, while ensuring that code is continuously integrated and tested alongside the rest of the application.
 
 </details>
 
 ### Question 4
-What is the "flag graveyard" problem and how do you prevent it?
+
+**Scenario**: A new engineer joins the company and asks why there are `if` statements checking flags like `xmas-promo-2022` and `beta-v2-migration` in the core transaction logic. No one on the team knows what these flags do or if it is safe to remove them. What organizational failure led to this situation, and how can you automate its prevention?
 
 <details>
 <summary>Show Answer</summary>
 
-The flag graveyard is when hundreds of stale, unused feature flags accumulate in the codebase. Nobody knows which are still needed. Nobody wants to remove them in case something breaks. The codebase becomes littered with dead code paths.
-
-Prevention strategies:
-1. **Expiry dates**: Every release toggle gets a mandatory expiry (e.g., 30 days)
-2. **Flag ownership**: Every flag has an assigned owner responsible for removal
-3. **CI checks**: Automated detection of stale flag references in code
-4. **Maximum flag count**: Team-level limits (e.g., no more than 15 active release toggles)
-5. **Flag tax**: Teams spend dedicated time on flag cleanup per sprint
-
-The most effective strategy is enforcing expiry dates in CI — builds fail if they reference expired flags.
+This is the **flag graveyard**, which occurs when release toggles are treated as permanent code rather than temporary scaffolding. It happens because there was no defined owner or mandatory expiration for these flags. To prevent this, teams should automate lifecycle management by enforcing strict expiry dates (e.g., 30 days maximum for a release toggle) and integrating checks into the CI/CD pipeline. A CI script can parse the codebase for flag references, query the flag service to check their age or status, and fail the build if any flag exceeds its permitted lifespan, forcing developers to clean up debt.
 
 </details>
 
 ### Question 5
-When should you use a kill switch vs a circuit breaker?
+
+**Scenario**: The product catalog service occasionally experiences huge latency spikes when an external inventory API goes down. In a separate issue, a new ML-based product sorting algorithm is generating bizarre recommendations that are confusing customers. Should you use a kill switch or a circuit breaker for each situation?
 
 <details>
 <summary>Show Answer</summary>
 
-Use a **kill switch** when:
-- You need to manually disable a feature that is causing problems
-- The decision requires human judgment (business logic, data quality)
-- The feature itself is the problem (not a dependency)
-- Recovery means reverting to old behavior
-
-Use a **circuit breaker** when:
-- A downstream dependency is failing (external API, database)
-- Automatic detection and recovery is needed
-- The feature is fine but its dependency is not
-- The system should auto-recover when the dependency comes back
-
-In practice, they are complementary: circuit breakers handle dependency failures automatically, while kill switches let humans disable features that are technically working but producing bad business outcomes.
+You should use a **circuit breaker** for the external inventory API, and a **kill switch** for the ML sorting algorithm. A circuit breaker automatically trips based on error rates or latency thresholds to protect the system from a failing downstream dependency, and automatically resets when the dependency recovers. A kill switch, however, is an ops feature flag manually toggled by human judgment when a feature is technically functioning (no errors or latency) but producing bad business outcomes.
 
 </details>
 
 ### Question 6
-How would you implement a feature flag system that degrades gracefully when the flag service is unavailable?
+
+**Scenario**: Your cloud provider experiences a regional outage, taking your centralized feature flag service offline for 45 minutes. Your application pods continue running, but they can no longer query the flag service. How do you ensure the application continues serving traffic without crashing or changing user experiences randomly?
 
 <details>
 <summary>Show Answer</summary>
 
-Graceful degradation requires three mechanisms:
-
-1. **Local caching**: The application caches all flag configurations in memory. Evaluations read from cache (sub-millisecond), not from the network. The cache refreshes from the flag service every 10-30 seconds in the background.
-
-2. **Safe defaults**: Every flag evaluation provides a default value used when the flag service is unreachable AND no cached value exists:
-```python
-is_enabled("new-feature", default=False)  # Defaults to off
-```
-
-3. **Persistent cache**: On startup, the SDK loads last-known flag values from a local file. This handles the case where the application restarts while the flag service is down.
-
-```
-Normal:    App → Cache (hit, <1ms) → Serve
-Refresh:   Background thread → Flag Service → Update Cache
-Degraded:  App → Cache (stale but available) → Serve
-Cold start + Flag Service down: App → Disk cache → Serve
-No cache at all: App → Default value → Serve
-```
-
-The application should never block on the flag service for request processing.
+The application must rely on a combination of **local caching** and **safe defaults** to degrade gracefully. Instead of calling the flag service on every request, the application SDK should evaluate flags against an in-memory cache that is updated periodically by a background thread. If the flag service goes down, the background thread simply fails to update, and the application continues evaluating against the last known state in the cache. Additionally, the SDK must define safe fallback values (e.g., `is_enabled("new-ui", default=False)`) so that if a pod restarts during the outage and has empty cache, it defaults to a safe, predictable baseline behavior rather than crashing.
 
 </details>
 
@@ -1089,7 +1045,3 @@ Feature flags transform releases from binary, all-or-nothing events into gradual
 ## Next Module
 
 Continue to [Module 1.4: Multi-Region & Global Release Orchestration](../module-1.4-global-releases/) to learn how to coordinate releases across geographies, manage blast radius at planetary scale, and use ring deployments with ArgoCD ApplicationSets.
-
----
-
-*"The best feature flag is one that has already been removed."* — Every team that has cleaned up flag debt
