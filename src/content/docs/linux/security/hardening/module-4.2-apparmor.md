@@ -27,7 +27,7 @@ Before starting this module, ensure you have completed:
 After completing this module, you will be able to:
 - **Design** custom Mandatory Access Control policies that severely restrict a compromised container's blast radius.
 - **Diagnose** silent application failures by tracing kernel-level security denials through audit logs and `dmesg`.
-- **Implement** robust AppArmor profiles across a Kubernetes cluster using DaemonSets and Pod annotations.
+- **Implement** robust AppArmor profiles across a Kubernetes cluster using DaemonSets and Pod SecurityContexts.
 - **Evaluate** the structural differences between path-based confinement (AppArmor) and label-based enforcement (SELinux) to choose the right tool for your infrastructure.
 
 ---
@@ -59,22 +59,27 @@ Mandatory Access Control (MAC) systems like AppArmor operate independently of DA
 
 Here is the traditional representation of this security model:
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    ACCESS CONTROL                                │
-│                                                                  │
-│  DAC (Discretionary)           MAC (Mandatory - AppArmor)       │
-│  ┌───────────────────────┐    ┌───────────────────────────┐    │
-│  │ Owner controls access │    │ Policy controls access    │    │
-│  │ User can change perms │    │ User cannot change policy │    │
-│  │ rwxr-xr-x            │    │ Kernel enforces rules     │    │
-│  └───────────────────────┘    └───────────────────────────┘    │
-│                                                                  │
-│  Root bypasses DAC             Root CANNOT bypass MAC           │
-│                                                                  │
-│  Access = DAC allows           Access = DAC allows              │
-│                                       AND MAC allows            │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph DAC [DAC - Discretionary]
+        direction TB
+        D1[Owner controls access]
+        D2[User can change perms]
+        D3[rwxr-xr-x]
+        D4[Root bypasses DAC]
+        D5[Access = DAC allows]
+        D1 ~~~ D2 ~~~ D3 ~~~ D4 ~~~ D5
+    end
+    
+    subgraph MAC [MAC - Mandatory]
+        direction TB
+        M1[Policy controls access]
+        M2[User cannot change policy]
+        M3[Kernel enforces rules]
+        M4[Root CANNOT bypass MAC]
+        M5[Access = DAC allows AND MAC allows]
+        M1 ~~~ M2 ~~~ M3 ~~~ M4 ~~~ M5
+    end
 ```
 
 Below is the modern architectural flow of how the Linux Kernel processes these requests:
@@ -400,43 +405,45 @@ profile my-container-profile flags=(attach_disconnected,mediate_deleted) {
 
 ### Kubernetes Integration
 
-Kubernetes currently implements AppArmor via Pod annotations (though it is moving toward native SecurityContext fields in modern releases). 
+In Kubernetes v1.30 and above, AppArmor is integrated natively via the `securityContext.appArmorProfile` field (replacing the deprecated beta annotations).
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: my-pod
-  annotations:
-    # Format: container.apparmor.security.beta.kubernetes.io/<container-name>: <profile>
-    container.apparmor.security.beta.kubernetes.io/my-container: localhost/my-profile
 spec:
   containers:
   - name: my-container
     image: nginx
+    securityContext:
+      appArmorProfile:
+        type: Localhost
+        localhostProfile: my-profile
 ```
 
 A common snippet you will see in production YAML manifests looks exactly like this:
 
 ```yaml
-metadata:
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/<container-name>: localhost/<profile-name>
+    securityContext:
+      appArmorProfile:
+        type: Localhost
+        localhostProfile: <profile-name>
 ```
 
 ### K8s Profile Types
 
-The value you supply in the annotation defines the profile source:
+The value you supply in the `type` field defines the profile source:
 
-| Value | Meaning |
+| Type | Meaning |
 |-------|---------|
-| `runtime/default` | Uses the underlying Container Runtime's default (e.g., `docker-default` or containerd's equivalent). |
-| `localhost/<profile>` | Informs the Kubelet to request a specific profile previously loaded into the host node's kernel. |
-| `unconfined` | Strips all MAC protection. Highly dangerous; essentially runs the container with raw DAC limitations. |
+| `RuntimeDefault` | Uses the underlying Container Runtime's default (e.g., `docker-default` or containerd's equivalent). |
+| `Localhost` | Informs the Kubelet to request a specific profile named in `localhostProfile` previously loaded into the host node's kernel. |
+| `Unconfined` | Strips all MAC protection. Highly dangerous; essentially runs the container with raw DAC limitations. |
 
 ### Distribution in a Cluster
 
-Because Kubernetes annotations instruct the Kubelet to apply a profile named `localhost/<profile>`, that exact profile **must already exist and be compiled in the kernel of the worker node where the Pod lands.**
+Because Kubernetes `securityContext` instructs the Kubelet to apply a `Localhost` profile, that exact profile **must already exist and be compiled in the kernel of the worker node where the Pod lands.**
 
 ```bash
 # Profile must exist on the node at /etc/apparmor.d/
@@ -453,14 +460,16 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: restricted-nginx
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/nginx: localhost/k8s-nginx
 spec:
   containers:
   - name: nginx
     image: nginx:alpine
     ports:
     - containerPort: 80
+    securityContext:
+      appArmorProfile:
+        type: Localhost
+        localhostProfile: k8s-nginx
 ```
 
 > **Pause and predict**: If you deploy the `restricted-nginx` Pod above, but the `k8s-nginx` profile has not been loaded via `apparmor_parser` on the scheduled node, what happens to the Pod?
@@ -536,8 +545,8 @@ sudo aa-complain /etc/apparmor.d/my-profile
 | Mistake | Problem / Why it happens | Fix / Solution |
 |---------|--------------------------|----------------|
 | **Profile not loaded on node** | Kubelet throws a `CreateContainerError` because the kernel rejects the unknown profile name. | Use a privileged DaemonSet to sync and `apparmor_parser -r` profiles across all nodes before deploying workloads. |
-| **Typo in K8s annotation** | The Pod starts successfully but has no protection, as the Kubelet silently ignores malformed annotations. | Strictly verify the annotation format: `container.apparmor.security.beta.kubernetes.io/<container-name>`. |
-| **Using `unconfined` blindly** | Container runs with zero MAC protection, leaving it highly vulnerable to container escape techniques. | Always use `runtime/default` at a minimum, or write a custom complain-mode profile to build a baseline. |
+| **Invalid K8s `securityContext`** | The API server rejects the manifest entirely because `appArmorProfile` is strictly typed in Kubernetes v1.30+. | Ensure you are using the correct native fields (`type: Localhost` and `localhostProfile: name`) instead of deprecated annotations. |
+| **Using `Unconfined` blindly** | Container runs with zero MAC protection, leaving it highly vulnerable to container escape techniques. | Always use `RuntimeDefault` at a minimum, or write a custom complain-mode profile to build a baseline. |
 | **Profile too restrictive** | The application crashes on startup because it cannot access required shared libraries or PID files. | Always deploy new profiles in `complain` mode first, run integration tests, and check audit logs for violations. |
 | **Not checking denials** | Application experiences silent failures (e.g., dropping file uploads) while DAC permissions look perfectly fine. | Actively monitor `dmesg` and `/var/log/audit/audit.log` for `apparmor="DENIED"` strings. |
 | **Hardcoding exact paths** | Containers might mount volumes at slightly different paths, causing the profile to break across environments. | Utilize AppArmor abstractions (like `#include <abstractions/base>`) and robust globbing (`**`) for dynamic directories. |
@@ -551,37 +560,37 @@ sudo aa-complain /etc/apparmor.d/my-profile
 <details>
 <summary><b>Question 1: Scenario - The Silent Logger</b><br>You have deployed a custom AppArmor profile for a Node.js microservice. The service starts correctly and processes HTTP traffic, but developers report that no application logs are appearing in `/var/log/nodejs/`. You verify the directory exists and the user has DAC write permissions. What AppArmor rule configuration is likely causing this, and how do you verify?</summary>
 
-The profile likely lacks the `w` (write) flag for the logging directory path (e.g., it might only have `/var/log/nodejs/** r,` or no rule for that path at all). Because AppArmor is default-deny, the kernel blocks the write operation silently from the application's perspective. You can verify this by checking the host node's kernel ring buffer using `sudo dmesg | grep -i apparmor` and looking for a `DENIED` operation for `requested_mask="w"` on `/var/log/nodejs/app.log`.
+The profile likely lacks the `w` (write) flag for the logging directory path (e.g., it might only have `/var/log/nodejs/** r,` or no rule for that path at all). Because AppArmor operates on a default-deny principle, any access not explicitly permitted by a loaded profile is silently blocked by the kernel. From the application's perspective, this results in an immediate permission denied error during the system call, regardless of the underlying DAC permissions on the folder. You can empirically verify this kernel-level intervention by querying the host's ring buffer with `sudo dmesg | grep -i apparmor`. Look for an audit line containing `DENIED` with `requested_mask="w"` on the specific `/var/log/nodejs/app.log` path.
 </details>
 
 <details>
-<summary><b>Question 2: Scenario - The Stuck Pod</b><br>You update a Kubernetes Deployment manifest to include `container.apparmor.security.beta.kubernetes.io/backend: localhost/strict-backend`. After applying the YAML, the Pod fails to initialize and gets stuck in a `Blocked` or `CreateContainerError` state. The container image and all secrets are valid. What is the architectural disconnect causing this failure?</summary>
+<summary><b>Question 2: Scenario - The Stuck Pod</b><br>You update a Kubernetes Deployment manifest to include an `appArmorProfile` of type `Localhost` with `localhostProfile: strict-backend` in the container's `securityContext`. After applying the YAML, the Pod fails to initialize and gets stuck in a `Blocked` or `CreateContainerError` state. The container image and all secrets are valid. What is the architectural disconnect causing this failure?</summary>
 
-The Kubernetes annotation `localhost/strict-backend` instructs the Kubelet to tell the Container Runtime (like containerd) to apply a kernel profile literally named `strict-backend`. If this specific profile has not been physically placed in `/etc/apparmor.d/` and loaded into the kernel using `apparmor_parser -r` on the specific worker node where the Pod was scheduled, the Container Runtime will fail to start the container, causing the Pod lifecycle error.
+The Kubernetes `securityContext` specification instructs the Kubelet to configure the Container Runtime (such as containerd or CRI-O) to apply a kernel-level AppArmor profile literally named `strict-backend`. However, Kubernetes itself does not automatically distribute or load AppArmor profiles onto worker nodes. If this specific profile has not been physically placed in `/etc/apparmor.d/` and explicitly loaded into the kernel using `apparmor_parser -r` on the exact worker node where the Pod was scheduled, the Container Runtime will fail to apply the policy. Consequently, the runtime returns an error to the Kubelet, causing the Pod lifecycle to permanently stall until the profile is correctly staged on the node.
 </details>
 
 <details>
 <summary><b>Question 3: Scenario - The Trapped Attacker</b><br>An attacker exploits a Remote Code Execution (RCE) vulnerability in your web application and attempts to execute `/bin/bash` to gain an interactive shell. The exploit executes successfully, but the attacker receives no output and the connection drops immediately. What execute mode in the application's AppArmor profile caused this defensive win?</summary>
 
-The profile likely omitted any execute transition flags (like `ix` or `px`) for `/bin/bash`, or explicitly denied it. In a default-deny MAC architecture, if a profile does not explicitly define an execution mode for a target binary, the `execve` system call is blocked by the kernel. The attacker's payload executes, but the kernel instantly denies the spawning of the bash shell, terminating the attack chain.
+The profile likely omitted any execute transition flags (such as `ix` for inherit or `px` for a new profile) for the `/bin/bash` binary, or it explicitly denied execution altogether. In a Mandatory Access Control architecture that is default-deny, if a profile does not explicitly define an execution mode for a target binary, the `execve` system call is unconditionally blocked by the kernel. The attacker's initial RCE payload might execute successfully within the bounds of the existing process, but the kernel instantly intercepts and denies the subsequent attempt to spawn the bash shell. This terminates the attack chain immediately, demonstrating the power of execution confinement.
 </details>
 
 <details>
 <summary><b>Question 4: Scenario - The Symlink Bypass Attempt</b><br>Your profile explicitly contains the rule `deny /etc/shadow r,` to protect credentials, but broadly allows `/** r,` for application reading. An attacker gains limited file write access, creates a symlink at `/tmp/shadow_link` pointing to `/etc/shadow`, and tries to read the symlink. Does the kernel allow this read? Why or why not?</summary>
 
-No, the kernel will block this read. AppArmor resolves symlinks to their canonical, absolute paths before evaluating them against the compiled DFA state machine. When the application attempts to read `/tmp/shadow_link`, the kernel resolves the target to `/etc/shadow`. It then processes the rules, hits the explicit `deny /etc/shadow r,` rule, and immediately returns a permission denied error, effectively neutralizing the symlink bypass attack.
+No, the kernel will successfully block this read attempt. AppArmor is designed to resolve all symlinks to their canonical, absolute filesystem paths before evaluating them against the compiled DFA state machine in the kernel. When the application attempts to read `/tmp/shadow_link`, the kernel intervenes, resolves the target to its true location at `/etc/shadow`, and evaluates the ruleset. It then hits the explicit `deny /etc/shadow r,` rule and immediately returns a permission denied error, effectively neutralizing the symlink bypass attack and maintaining the integrity of the confinement.
 </details>
 
 <details>
 <summary><b>Question 5: Scenario - The Empty Profiler</b><br>An application is crashing due to a suspected MAC denial. You log into the server, run `sudo aa-logprof` to automatically generate the missing rules, but the tool outputs "No new events found" and exits. Assuming the application definitely triggered a denial, what is the most likely reason the profiler sees nothing?</summary>
 
-The `aa-logprof` tool parses the system audit logs (usually `/var/log/audit/audit.log` or syslog) to find denials. If it finds nothing, it means the denial events are not being written or have rotated out. The most likely reason is that `auditd` is not running, syslog is configured to drop kernel messages, or the profile contains a `deny` rule explicitly bundled with the `audit` modifier stripped (e.g., a silent deny rule designed to suppress log spam).
+The `aa-logprof` tool relies entirely on parsing historical system audit logs (usually found in `/var/log/audit/audit.log` or syslog) to identify previous denials and suggest new rules. If it outputs 'No new events found', it indicates that the denial events were never written to disk or have already rotated out of the log buffer. The most common architectural reason for this is that the `auditd` daemon is not running on the host, or syslog is configured to drop kernel-level MAC messages. Alternatively, the active AppArmor profile might contain a specific `deny` rule explicitly bundled with the `audit` modifier stripped (e.g., `deny /path w,` without `audit`), which purposefully suppresses log spam for known, harmless denials.
 </details>
 
 <details>
 <summary><b>Question 6: Scenario - Precision Globbing</b><br>You are writing a profile for a backup agent. It needs to recursively read all files and directories inside `/var/www/html/` to back them up. It also needs to write the final archive strictly to the root of `/backup/`, but it should absolutely NOT be allowed to create subdirectories inside `/backup/`. How do you design the glob patterns for these two distinct requirements?</summary>
 
-You must use the double-asterisk (`**`) for the recursive read requirement, and the single-asterisk (`*`) for the non-recursive write requirement. The correct configuration would be `/var/www/html/** r,` which allows traversing infinitely deep into subdirectories, and `/backup/* w,` which allows writing files directly inside `/backup/` but structurally prevents the agent from creating or writing into `/backup/nested/`.
+You must use the double-asterisk (`**`) globbing pattern for the recursive read requirement, and the single-asterisk (`*`) pattern for the non-recursive write requirement. The correct configuration for reading would be `/var/www/html/** r,`, which explicitly instructs the kernel to allow traversal infinitely deep into all nested subdirectories. Conversely, the correct configuration for writing would be `/backup/* w,`, which strictly allows creating and modifying files directly inside the root of `/backup/`. This structural constraint physically prevents the backup agent from attempting to create or write into any nested folders like `/backup/nested/`, strictly enforcing the required access boundaries.
 </details>
 
 ---
