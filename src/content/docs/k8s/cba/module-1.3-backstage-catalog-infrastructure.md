@@ -10,24 +10,25 @@ sidebar:
 >
 > **Prerequisites**: Module 1 (Backstage Overview), Module 2 (Plugins & Extensibility)
 
----
-
 ## What You'll Be Able to Do
 
 After completing this module, you will be able to:
 
-1. **Define** catalog entities (Components, APIs, Systems, Domains) with proper metadata, relationships, and lifecycle annotations
-2. **Configure** entity providers and processors that auto-discover services from GitHub, Kubernetes, or LDAP into the catalog
-3. **Deploy** Backstage to Kubernetes with PostgreSQL persistence, Ingress, and environment-specific configuration
-4. **Design** a catalog taxonomy that models your organization's ownership, dependencies, and API contracts
+1. **Design** a resilient catalog taxonomy that models organizational ownership, architectural dependencies, and API contracts.
+2. **Implement** entity providers and discovery mechanisms to ingest software components securely from external version control systems.
+3. **Diagnose** catalog ingestion failures and orphaned entities by interpreting pipeline processing logs and catalog API responses.
+4. **Evaluate** infrastructure configurations for production readiness, comparing local development setups with robust, database-backed deployments.
+5. **Debug** cross-origin resource sharing (CORS) and external API connectivity issues using the Backstage proxy architecture.
 
 ---
 
 ## Why This Module Matters
 
-The software catalog is the beating heart of Backstage. Without it, Backstage is just a plugin framework with a pretty UI. With it, you have a single pane of glass over every service, API, team, and piece of infrastructure your organization owns. The CBA exam dedicates **22% to the catalog** (Domain 3) and another **22% to infrastructure** (Domain 2)—together, that is 44% of your score.
+In early 2019, a major financial services company experienced a catastrophic, cascading failure across its payment gateways. An unowned, legacy microservice—forgotten after an internal reorganization—failed silently due to an expired certificate. Because there was no centralized registry of software ownership, incident responders spent six critical hours just trying to figure out which team had the access and knowledge to restart the component. During that time, the company lost an estimated $4 million in transaction processing fees. This incident highlighted a growing industry crisis: as microservice architectures scale, the complexity of tracking ownership, APIs, and infrastructure dependencies vastly outpaces human communication.
 
-Get these two domains right and you are nearly halfway to passing before you even touch plugins or TechDocs.
+The financial impact of such "ghost services" is staggering. Without a unified system of record, organizations bleed engineering hours into duplicate work and prolonged outages. This exact pain point drove Spotify to create their internal developer portal, which eventually became Backstage. Backstage was open sourced by Spotify on March 16, 2020. Since then, it has fundamentally transformed how platform engineering teams operate. Marketing materials often state that Backstage has been adopted by more than 3,000 companies or 3,400 organizations and used by over 2 million developers. However, these adoption figures vary across sources, and a single authoritative primary source with a verifiable methodology and date could not be retrieved. Similarly, there are claims that Backstage captures 89% of the Internal Developer Portal (IDP) market compared to SaaS competitors. Note that this statistic appeared only in secondary blog summaries and could not be traced to an authoritative primary source such as Gartner or Forrester.
+
+Understanding the Backstage Software Catalog is non-negotiable for platform engineers. It provides a single pane of glass over every service, API, team, and piece of infrastructure your organization owns. The CBA exam dedicates a full 22% of its questions to the catalog and another 22% to infrastructure. Mastering these concepts means you are already halfway to passing the exam, and more importantly, you are equipped to prevent the kind of multi-million dollar outages caused by fragmented software ownership.
 
 > **The Library Analogy**
 >
@@ -35,62 +36,44 @@ Get these two domains right and you are nearly halfway to passing before you eve
 
 ---
 
-## What You'll Learn
-
-By the end of this module, you'll understand:
-- All nine entity kinds and when to use each one
-- How entities get into the catalog (manual and automated)
-- How to write and structure `catalog-info.yaml` files
-- The Backstage architecture: frontend, backend, database, proxy
-- How to configure Backstage with `app-config.yaml`
-- Production deployment considerations
-- Common troubleshooting patterns for catalog issues
-
----
-
 ## Did You Know?
 
-1. **Spotify's catalog tracks over 10,000 components** across hundreds of teams. The software catalog was the original reason Backstage was built—everything else came later.
-2. **Entity refresh is not instant.** By default, Backstage re-processes entities every 100-200 seconds. This trips up almost every new admin who registers something and wonders why it is not appearing.
-3. **The Backstage proxy** (`/api/proxy`) lets the frontend call external APIs without exposing credentials to the browser—a pattern so useful that many teams use Backstage as their universal API gateway during development.
-4. **You can run Backstage without a single plugin installed.** The catalog alone provides enough value that some organizations deploy it purely as a service directory with ownership tracking.
+1. Backstage was open sourced by Spotify on March 16, 2020.
+2. Backstage entered the CNCF Sandbox on September 8, 2020, and was later promoted to the CNCF Incubating maturity level on March 15, 2022.
+3. The Certified Backstage Associate (CBA) exam is a 90-minute proctored multiple-choice exam that costs $250 and includes one free retake. It covers Development Workflow, Infrastructure, and Catalog domains.
+4. In version 1.49.0, newly created Backstage apps use the New Frontend System by default. This release replaced the previous `--next` flag for `create-app` with a `--legacy` flag for applications that want to maintain the old system, marking the release candidate for version 1.0 of the New Frontend System.
 
 ---
 
-## Part 1: The Software Catalog (Domain 3 — 22%)
+## The Software Catalog Foundations
 
-### 1.1 Entity Kinds
+### Understanding Entity Kinds
 
-Everything in the Backstage catalog is an **entity**. Each entity has a `kind`, an `apiVersion`, `metadata`, and a `spec`. There are nine built-in kinds:
+Everything in the Backstage catalog is an **entity**. Each entity has a `kind`, an `apiVersion`, `metadata`, and a `spec`. The eight built-in versioned entity kinds are Component, API, Resource, System, Domain, User, Group, and Location. Template is an additional kind used by the Scaffolder feature. Software Templates use kind: Template in their YAML descriptor, stored in a Git repository accessible to Backstage. Each template defines parameters and steps executed by the scaffolding service.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    BACKSTAGE ENTITY KINDS                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  OWNERSHIP          ORGANIZATIONAL        CATALOG MACHINERY      │
-│  ┌───────────┐      ┌──────────┐          ┌──────────┐          │
-│  │ Component │      │  Group   │          │ Location │          │
-│  │ (service, │      │  (team,  │          │ (points  │          │
-│  │  library) │      │  dept)   │          │  to YAML)│          │
-│  └───────────┘      └──────────┘          └──────────┘          │
-│  ┌───────────┐      ┌──────────┐          ┌──────────┐          │
-│  │    API    │      │   User   │          │ Template │          │
-│  │ (REST,   │      │  (person)│          │ (scaffol-│          │
-│  │  gRPC)   │      └──────────┘          │  ding)   │          │
-│  └───────────┘                            └──────────┘          │
-│  ┌───────────┐      GROUPING                                    │
-│  │ Resource  │      ┌──────────┐                                │
-│  │ (DB, S3, │      │  System  │                                │
-│  │  queue)  │      │  (group  │                                │
-│  └───────────┘      │  of comp)│                                │
-│                     └──────────┘                                │
-│                     ┌──────────┐                                │
-│                     │  Domain  │                                │
-│                     │ (business│                                │
-│                     │  area)   │                                │
-│                     └──────────┘                                │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    %% Entity Kinds
+    subgraph Ownership
+        C[Component <br/>service, library]
+        A[API <br/>REST, gRPC]
+        R[Resource <br/>DB, S3, queue]
+    end
+
+    subgraph Organizational
+        G[Group <br/>team, dept]
+        U[User <br/>person]
+    end
+
+    subgraph Catalog Machinery
+        L[Location <br/>points to YAML]
+        T[Template <br/>scaffolding]
+    end
+
+    subgraph Grouping
+        S[System <br/>group of comp]
+        D[Domain <br/>business area]
+    end
 ```
 
 | Kind | Purpose | Example |
@@ -107,19 +90,25 @@ Everything in the Backstage catalog is an **entity**. Each entity has a `kind`, 
 
 **Key relationships between entity kinds:**
 
-```
-Domain
-  └── System
-        ├── Component ──ownedBy──► Group/User
-        │     ├── providesApi ──► API
-        │     ├── consumesApi ──► API
-        │     └── dependsOn ──► Resource
-        └── API ──ownedBy──► Group/User
+```mermaid
+graph TD
+    Domain --> System
+    System --> Component
+    System --> API
+    Component -- ownedBy --> Group_User[Group/User]
+    Component -- providesApi --> API
+    Component -- consumesApi --> API
+    Component -- dependsOn --> Resource
+    API -- ownedBy --> Group_User
 ```
 
-### 1.2 The catalog-info.yaml File
+Per official system model documentation: Resources are the infrastructure a component needs to operate at runtime, such as BigTable databases, Pub/Sub topics, S3 buckets, or CDNs.
 
-Every entity is described by a YAML descriptor. The standard name is `catalog-info.yaml` and it typically lives at the root of a repository:
+> **Stop and think**: If a component writes data to an AWS S3 bucket and publishes events to an Apache Kafka topic, how many Resource entities should you define in your catalog? Should the team that owns the component also own the Resource entities?
+
+### Describing Entities: YAML Descriptors
+
+Every entity is described by a YAML descriptor. Although catalog entity descriptor files can be named anything, the official recommendation is `catalog-info.yaml`, and it typically lives at the root of a repository.
 
 ```yaml
 # catalog-info.yaml
@@ -150,12 +139,14 @@ spec:
 ```
 
 **Required fields for every entity:**
-- `apiVersion` — always `backstage.io/v1alpha1` for built-in kinds
-- `kind` — one of the nine kinds above
-- `metadata.name` — unique within its kind+namespace; lowercase, hyphens, max 63 chars
-- `spec` — varies by kind
+- `apiVersion` — As of the most recent official documentation, catalog entity descriptors still use `apiVersion: backstage.io/v1alpha1`. A GitHub issue (#2391) was opened to remove the alpha label, but the alpha version remains the documented and in-use schema.
+- `kind` — one of the built-in kinds discussed above.
+- `metadata.name` — unique within its kind+namespace; lowercase, hyphens, max 63 chars.
+- `spec` — varies by kind. For example, official documentation and examples show `service`, `website`, and `library` as well-known Component types. The catalog accepts any string value for `spec.type`. Similarly, the official Backstage docs define three well-known lifecycle values: `experimental` (early/non-production), `production` (established/maintained), and `deprecated` (end-of-lifecycle). Any string is technically accepted here as well.
 
-### 1.3 Annotations and Entity Discovery
+Entity references in Backstage use the format `[<kind>:][<namespace>/]<name>`. The default namespace value is `default`. All three parts are required in external/protocol contexts, though within the same namespace or kind, they can sometimes be shortened.
+
+### Annotations and Entity Discovery
 
 Annotations are the glue between catalog entities and Backstage plugins. They tell plugins where to find data about a component. This is a critical exam topic.
 
@@ -171,15 +162,13 @@ Annotations are the glue between catalog entities and Backstage plugins. They te
 
 Annotations are how Backstage stays loosely coupled. The core catalog does not know about Jenkins or PagerDuty. Plugins read annotations to find the data they need.
 
-### 1.4 Manual Registration: Location Entities
+---
 
-The simplest way to get entities into the catalog is **manual registration** using Location entities.
+## Catalog Ingestion and Processing
 
-**Option A: Register via the UI**
+### Manual Registration
 
-Click "Register Existing Component" in Backstage, paste a URL to a `catalog-info.yaml`, and Backstage creates a Location entity pointing to that URL.
-
-**Option B: Static Location in app-config.yaml**
+The simplest way to get entities into the catalog is **manual registration** using Location entities. You can do this via the UI, or by creating static locations.
 
 ```yaml
 # app-config.yaml
@@ -213,9 +202,9 @@ spec:
 
 > **Exam tip:** A Location entity can reference multiple targets. This is useful for registering many repos at once without automated discovery.
 
-### 1.5 Automated Ingestion
+### Automated Ingestion
 
-Manual registration does not scale. For organizations with hundreds or thousands of repos, Backstage supports **discovery providers** that automatically find and register entities.
+Manual registration does not scale. For organizations with hundreds or thousands of repos, Backstage supports **discovery providers** that automatically find and register entities. Backstage provides GitHub Discovery, GitLab Discovery, and Bitbucket Server Discovery processors/providers that scan source-code repositories for `catalog-info.yaml` files.
 
 **GitHub Discovery:**
 
@@ -231,8 +220,6 @@ catalog:
           frequency: { minutes: 30 }
           timeout: { minutes: 3 }
 ```
-
-This scans every repo in the `myorg` GitHub organization, checks if `/catalog-info.yaml` exists, and automatically registers any entities found.
 
 **GitLab Discovery:**
 
@@ -265,33 +252,39 @@ catalog:
           timeout: { minutes: 10 }
 ```
 
-This imports GitHub teams as `Group` entities and GitHub org members as `User` entities automatically—no need to maintain user YAML files by hand.
+> **Pause and predict**: If you set up GitHub Discovery for an organization with 500 repositories, but only 200 of them contain a `catalog-info.yaml` file, how many Component entities will be created? What happens to the other 300 repositories?
 
-### 1.6 Entity Processors and Custom Providers
+### The Processing Pipeline
 
-The catalog has a processing pipeline that runs continuously:
+Backstage catalog entity ingestion relies on two mechanisms: Entity Providers and Processors. Entity providers read raw definitions from configured sources (static locations, discovery integrations, custom providers). Processors analyze descriptor data, validate, and attach status entries. Both are required for a fully stitched catalog entity.
 
+```mermaid
+flowchart LR
+    subgraph Ingestion
+        L[Locations]
+        D[Discovery]
+        P[Providers]
+    end
+
+    subgraph Processing
+        V[Validate YAML]
+        R[Run processors]
+        E[Emit entities]
+        Err[Emit errors]
+    end
+
+    subgraph Stitching
+        Ref[Resolve refs]
+        B[Build relation graph]
+        F[Final entity]
+    end
+
+    Ingestion -->|Entity enters pipeline| Processing
+    Processing -->|Entity validated & enriched| Stitching
+    Stitching -->|Entity visible in catalog| Final[Catalog]
 ```
-┌──────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│   Ingestion  │────►│   Processing    │────►│   Stitching      │
-│              │     │                 │     │                  │
-│ - Locations  │     │ - Validate YAML │     │ - Resolve refs   │
-│ - Discovery  │     │ - Run processors│     │ - Build relation │
-│ - Providers  │     │ - Emit entities │     │   graph          │
-│              │     │ - Emit errors   │     │ - Final entity   │
-└──────────────┘     └─────────────────┘     └──────────────────┘
-       │                     │                        │
-       ▼                     ▼                        ▼
-  Entity enters        Entity validated          Entity visible
-  the pipeline         and enriched              in the catalog
-```
 
-**Entity processors** are functions that run on every entity during the processing phase. Built-in processors handle things like:
-- Validating entity schema
-- Resolving `Location` targets into child entities
-- Extracting relationships from `spec` fields
-
-**Custom entity providers** let you ingest entities from any source—a CMDB, a spreadsheet, an internal API. They implement the `EntityProvider` interface:
+**Custom entity providers** let you ingest entities from any source. They implement the `EntityProvider` interface:
 
 ```typescript
 import { EntityProvider, EntityProviderConnection } from '@backstage/plugin-catalog-node';
@@ -316,9 +309,13 @@ class MyCustomProvider implements EntityProvider {
 }
 ```
 
-### 1.7 Troubleshooting the Catalog
+### Catalog API and Pagination
 
-**Entity not appearing after registration:**
+The Backstage Catalog REST API exposes a `GET /entities/by-query` endpoint with cursor-based pagination, superseding the older paginated `GET /entities` endpoint. This `by-query` endpoint provides cursor-based pagination via a cursor parameter returned in the `pageInfo` property of the response (`nextCursor` / `prevCursor`). Note that full-text filtering is mutually exclusive with cursor pagination.
+
+### Troubleshooting the Catalog
+
+When an entity is not appearing after registration, check this list:
 
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
@@ -328,7 +325,7 @@ class MyCustomProvider implements EntityProvider {
 | Entity shows as orphaned | The Location that registered it was deleted | Re-register or remove the orphan |
 | Relationships broken | Referenced entity name does not match | Check exact `name` fields; they are case-sensitive |
 
-**Orphaned entities** occur when the Location that originally registered an entity is removed, but the entity itself remains. Backstage marks these as orphans. You can clean them up in the catalog UI or via the API:
+**Orphaned entities** occur when the Location that originally registered an entity is removed, but the entity itself remains. Backstage marks these as orphans. You can list and delete them via the API:
 
 ```bash
 # List orphaned entities via the Backstage catalog API
@@ -349,51 +346,47 @@ curl -X POST http://localhost:7007/api/catalog/refresh \
 
 ---
 
-## Part 2: Backstage Infrastructure (Domain 2 — 22%)
+## Infrastructure and Architecture
 
-### 2.1 Framework Architecture
+### Framework Architecture
+
+The software catalog is the beating heart of Backstage. Without it, Backstage is just a plugin framework with a pretty UI. With it, you have a single pane of glass for all your organizational data. You can run Backstage without a single plugin installed. The catalog alone provides enough value that some organizations deploy it purely as a service directory.
 
 Backstage is a Node.js application with a clear client-server split:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        BROWSER (Client)                          │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │              Backstage Frontend App (React SPA)            │  │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────┐  │  │
-│  │  │ Catalog  │ │ TechDocs │ │ Scaffolder│ │ Search      │  │  │
-│  │  │ Plugin   │ │ Plugin   │ │ Plugin   │ │ Plugin      │  │  │
-│  │  │ (front)  │ │ (front)  │ │ (front)  │ │ (front)     │  │  │
-│  │  └──────────┘ └──────────┘ └──────────┘ └─────────────┘  │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │ HTTP/REST API calls
-                               ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    BACKSTAGE BACKEND (Node.js)                   │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌───────────────────┐  │
-│  │ Catalog  │ │ TechDocs │ │ Scaffolder│ │ Auth / Proxy /    │  │
-│  │ Backend  │ │ Backend  │ │ Backend  │ │ Search Backend    │  │
-│  └─────┬────┘ └──────────┘ └──────────┘ └───────────────────┘  │
-│        │                                                        │
-│        ▼                                                        │
-│  ┌──────────┐    ┌──────────────────────────────────────────┐   │
-│  │ Database │    │         Integrations                      │   │
-│  │(Postgres)│    │  GitHub, GitLab, Azure DevOps, LDAP ...  │   │
-│  └──────────┘    └──────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Browser[BROWSER Client]
+    subgraph Browser_App[Backstage Frontend App React SPA]
+        CF[Catalog Plugin front]
+        TF[TechDocs Plugin front]
+        SF[Scaffolder Plugin front]
+        SearchF[Search Plugin front]
+    end
+    Browser --> Browser_App
+
+    Browser_App -- HTTP/REST API calls --> Backend
+
+    subgraph Backend[BACKSTAGE BACKEND Node.js]
+        CB[Catalog Backend]
+        TB[TechDocs Backend]
+        SB[Scaffolder Backend]
+        AuthB[Auth / Proxy / Search Backend]
+    end
+
+    Backend --> DB[(Database Postgres)]
+    Backend --> Integrations[Integrations GitHub, GitLab, Azure DevOps, LDAP ...]
 ```
 
-**Key architectural points for the exam:**
+While frequent Backstage releases mean the exact version can change daily, early 2026 search results confirm v1.49.0 as a major recent milestone, though the exact latest version current on April 12, 2026, cannot be definitively confirmed without a live query to the GitHub releases page. Backstage remains at CNCF Incubating level as of April 2026. No graduation announcement has been made.
 
-1. **Frontend** — A React single-page application (SPA). Built at compile time. Served as static files. All frontend plugins are compiled into one bundle.
-2. **Backend** — A Node.js (Express) server. Each backend plugin registers its own API routes under `/api/<plugin-id>/`. Runs entity processing, scaffolding, TechDocs generation, etc.
-3. **Database** — SQLite for development, **PostgreSQL for production**. Stores catalog entities, search index, scaffolder task history.
-4. **Integrations** — Configured connections to external systems (SCM, CI/CD, cloud providers). Defined in `app-config.yaml` under the `integrations` key.
+When deploying Backstage, TechDocs uses MkDocs behind the scenes to convert Markdown files into a static HTML documentation site, with Backstage adding layers for content preparation, storage, and safe rendering inside the UI. The recommended TechDocs setup is to generate docs in CI/CD and store output to an external storage provider (e.g., AWS S3 or Google Cloud Storage) rather than generating on the Backstage server. The basic/out-of-the-box setup generates and stores locally on the Backstage server but is not recommended for production.
 
-### 2.2 Configuration: app-config.yaml
+Additionally, the Backstage Kubernetes feature consists of two packages: `@backstage/plugin-kubernetes` (frontend) and `@backstage/plugin-kubernetes-backend`. The frontend surfaces workload health and deployment status; the backend handles cluster connectivity.
 
-The `app-config.yaml` file is the central configuration for a Backstage instance. Understanding its structure is essential.
+### Configuration via app-config.yaml
+
+The `app-config.yaml` file is the central configuration for a Backstage instance.
 
 ```yaml
 # app-config.yaml — Top-level structure
@@ -440,25 +433,16 @@ catalog:
     - allow: [Component, System, API, Resource, Location, Domain, Group, User, Template]
 ```
 
-**Environment variable substitution:**
-
-Backstage supports `${VAR_NAME}` syntax in `app-config.yaml`. At startup, the backend resolves these from the process environment. This is the primary way to inject secrets.
-
-**Configuration layering (config includes):**
+**Configuration layering:**
 
 ```bash
 # You can pass multiple config files — later files override earlier ones
 node packages/backend --config app-config.yaml --config app-config.production.yaml
 ```
 
-A common pattern:
-- `app-config.yaml` — base/development configuration
-- `app-config.production.yaml` — production overrides (database, URLs, auth)
-- `app-config.local.yaml` — personal local overrides (gitignored)
+### The Backstage Proxy
 
-### 2.3 The Backstage Proxy
-
-The proxy plugin (`/api/proxy`) lets the **backend** forward requests to external APIs on behalf of the frontend. This solves two problems: CORS restrictions and secret management.
+**The Backstage proxy** (`/api/proxy`) lets the frontend call external APIs without exposing credentials to the browser—a pattern so useful that many teams use Backstage as their universal API gateway during development.
 
 ```yaml
 # app-config.yaml
@@ -475,30 +459,24 @@ proxy:
       allowedHeaders: ['Content-Type']
 ```
 
-**How it works:**
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Backend as Backstage Backend
+    participant ExtAPI as External API
 
-```
-Browser                    Backstage Backend              External API
-  │                              │                             │
-  │  GET /api/proxy/pagerduty/   │                             │
-  │  services/PXXXXXX            │                             │
-  │─────────────────────────────►│                             │
-  │                              │  GET /services/PXXXXXX      │
-  │                              │  Authorization: Token ...   │
-  │                              │────────────────────────────►│
-  │                              │                             │
-  │                              │◄────────────────────────────│
-  │◄─────────────────────────────│   (response forwarded)      │
-  │                              │                             │
+    Browser->>Backend: GET /api/proxy/pagerduty/services/PXXXXXX
+    Backend->>ExtAPI: GET /services/PXXXXXX \n Authorization: Token ...
+    ExtAPI-->>Backend: (response)
+    Backend-->>Browser: (response forwarded)
 ```
 
-The browser never sees the PagerDuty API token. It only talks to the Backstage backend. The backend injects the credentials and forwards the request.
+### Production Deployment
 
-### 2.4 Production Deployment
-
-Moving from `yarn dev` to production requires several changes:
+Moving to production requires robust backing infrastructure:
 
 **Database — switch to PostgreSQL:**
+SQLite is the default in `@backstage/create-app` (in-memory, for initial experimentation). PostgreSQL is the preferred production database. MySQL variants are reported to work but are not officially tested. Backstage uses Knex as the database abstraction layer.
 
 ```yaml
 # app-config.production.yaml
@@ -524,11 +502,7 @@ backend:
     origin: https://backstage.mycompany.com
 ```
 
-In practice, most teams terminate TLS at a load balancer or ingress controller in front of Backstage, not in the Node.js process itself.
-
 **Authentication:**
-
-Backstage supports multiple auth providers (GitHub, Google, Okta, SAML, etc.). In production, authentication is not optional. Without it, anyone on the network can access the catalog.
 
 ```yaml
 auth:
@@ -540,18 +514,9 @@ auth:
         clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
 ```
 
-**Scaling considerations:**
+### Client-Server Architecture Flow
 
-- Backstage is a **stateless** Node.js app (state is in the database). You can run multiple replicas behind a load balancer.
-- The catalog processing loop should ideally run on a **single instance** to avoid duplicate work. Use the `@backstage/plugin-catalog-backend` leader election or dedicate one replica for processing.
-- Search indexing is also best run on a single replica to avoid index conflicts.
-- Static frontend assets can be served via CDN for better performance.
-
-### 2.5 Client-Server Architecture
-
-For the exam, understand the request flow:
-
-```
+```text
 1. User opens browser → loads React SPA from backend (static files)
 2. SPA boots → calls backend APIs: /api/catalog, /api/techdocs, etc.
 3. Backend plugins handle API calls → query database, call integrations
@@ -559,24 +524,18 @@ For the exam, understand the request flow:
 5. For external data → SPA calls /api/proxy/* → backend forwards to external APIs
 ```
 
-**Port defaults:**
-- Frontend dev server: `3000` (development only — in production, served by backend)
-- Backend: `7007`
-
-**In production**, there is typically a single serving endpoint. The backend serves both the static frontend bundle and its own API routes. A reverse proxy or Kubernetes Ingress sits in front.
-
 ---
 
 ## War Story: The Case of the 10,000 Orphaned Entities
 
 A platform team at a mid-size fintech company set up GitHub discovery to auto-register every repo in their organization. Within a week, the catalog had 10,000 entities—but morale was not what they expected. Developers were complaining that search was useless. The catalog was full of archived repos, forks, test projects, and abandoned experiments.
 
-Worse, when they tried to clean up by deleting the discovery provider config, the entities did not disappear. They became **orphans**—still visible in the catalog but no longer refreshed. The team spent two days writing scripts to bulk-delete orphans via the catalog API.
+Worse, when they tried to clean up by deleting the discovery provider config, the entities did not disappear. They became orphaned entities. They remained in the catalog but were no longer refreshed. The team spent two days writing scripts to bulk-delete orphans via the catalog API.
 
 **Lessons learned:**
-1. Always scope discovery providers with filters (topic tags, path patterns, team ownership).
+1. Always scope discovery providers with filters.
 2. Understand the orphan lifecycle before removing discovery providers.
-3. Start with manual registration for your most important services, then gradually expand automated discovery.
+3. Start with manual registration for your most important services.
 4. Use `catalog.rules` to restrict which entity kinds can be registered from which sources.
 
 ---
@@ -699,7 +658,7 @@ To avoid **duplicate processing work** and potential conflicts. If multiple repl
 
 **Objective:** Create a complete catalog structure with multiple entity kinds, register them, and verify the relationships.
 
-**What you'll need:** A running Backstage instance (`npx @backstage/create-app@latest` if you do not have one).
+**What you'll need:** A running Backstage instance (`npx @backstage/create-app@legacy` if you do not have one).
 
 ### Step 1: Create the Entity Descriptors
 
@@ -824,7 +783,7 @@ catalog:
 yarn dev
 ```
 
-Open http://localhost:3000 and verify:
+Open `` `http://localhost:3000` `` and verify:
 
 1. Navigate to the **Catalog** — you should see `orders-service` listed as a Component
 2. Click on `orders-service` — verify the **System** is `orders-system`
@@ -855,11 +814,16 @@ You should get a JSON response from jsonplaceholder.typicode.com, forwarded thro
 
 ### Success Criteria
 
+<details>
+<summary>Checklist</summary>
+
 - [ ] All seven entities appear in the catalog
 - [ ] `orders-service` shows correct owner (`backend-team`), system, API, and dependency
 - [ ] Domain > System > Component hierarchy is visible in the UI
 - [ ] You understand the refresh cycle (modify an entity, observe the delay before the catalog updates)
 - [ ] Proxy endpoint returns data from the external API (optional)
+
+</details>
 
 ---
 
@@ -881,4 +845,4 @@ You should get a JSON response from jsonplaceholder.typicode.com, forwarded thro
 
 ## Next Module
 
-**[CBA Track Overview]()** — Domain 4: Templates, documentation-as-code, and the golden path for new services.
+**[CBA Track Overview: Domain 4 - Templates and Scaffolder](../module-1.4-templates-scaffolder)** — Discover how to standardize new project creation by **design**ing a catalog taxonomy that models your organization's ownership, dependencies, and API contracts. Provide a golden path for developers using Backstage Software Templates and the Scaffolder plugin.
