@@ -64,103 +64,49 @@ Understanding IaC fundamentals helps you:
 
 ### 1.1 The Five Levels of IaC Maturity
 
+```mermaid
+flowchart TD
+    L0["<b>Level 0: MANUAL</b><br/>• Infrastructure created via console/UI clicks<br/>• Changes undocumented or in wikis<br/>• 'Works on my machine' syndrome<br/>• Recovery: Days to weeks"]
+    L1["<b>Level 1: SCRIPTED</b><br/>• Bash/PowerShell scripts for common tasks<br/>• Scripts may not be idempotent<br/>• Partial automation, still manual decisions<br/>• Recovery: Hours to days"]
+    L2["<b>Level 2: DECLARATIVE</b><br/>• Infrastructure defined in declarative configs<br/>• Terraform, CloudFormation, or similar tools<br/>• Version controlled but may not be reviewed<br/>• Recovery: Minutes to hours"]
+    L3["<b>Level 3: COLLABORATIVE</b><br/>• Pull request workflow for all changes<br/>• Code review required for infrastructure<br/>• Automated validation (linting, security scanning)<br/>• Recovery: Minutes"]
+    L4["<b>Level 4: CONTINUOUS</b><br/>• GitOps: Git is the source of truth<br/>• Continuous reconciliation<br/>• Self-healing infrastructure<br/>• Recovery: Automatic"]
+    L5["<b>Level 5: SELF-SERVICE</b><br/>• Platform teams provide infrastructure APIs<br/>• Developers request infrastructure declaratively<br/>• Cost and compliance built-in<br/>• Recovery: Automatic with self-service rebuild"]
+
+    L0 --> L1 --> L2 --> L3 --> L4 --> L5
 ```
-IaC MATURITY MODEL
-═══════════════════════════════════════════════════════════════
 
-Level 0: MANUAL
-─────────────────────────────────────────────────────────────
-• Infrastructure created via console/UI clicks
-• Changes undocumented or in wikis
-• "Works on my machine" syndrome
-• Recovery: Days to weeks
-• Example: "Click through AWS console to create EC2"
-
-Level 1: SCRIPTED
-─────────────────────────────────────────────────────────────
-• Bash/PowerShell scripts for common tasks
-• Scripts may not be idempotent
-• Partial automation, still manual decisions
-• Recovery: Hours to days
-• Example: "Run setup.sh to create the server"
-
-Level 2: DECLARATIVE
-─────────────────────────────────────────────────────────────
-• Infrastructure defined in declarative configs
-• Terraform, CloudFormation, or similar tools
-• Version controlled but may not be reviewed
-• Recovery: Minutes to hours
-• Example: "terraform apply creates everything"
-
-Level 3: COLLABORATIVE
-─────────────────────────────────────────────────────────────
-• Pull request workflow for all changes
-• Code review required for infrastructure
-• Automated validation (linting, security scanning)
-• Recovery: Minutes
-• Example: "PR → Review → Merge → Auto-apply"
-
-Level 4: CONTINUOUS
-─────────────────────────────────────────────────────────────
-• GitOps: Git is the source of truth
-• Continuous reconciliation
-• Self-healing infrastructure
-• Full audit trail
-• Recovery: Automatic
-• Example: "Push to Git → ArgoCD/Flux syncs state"
-
-Level 5: SELF-SERVICE
-─────────────────────────────────────────────────────────────
-• Platform teams provide infrastructure APIs
-• Developers request infrastructure declaratively
-• Guardrails prevent misuse automatically
-• Cost and compliance built-in
-• Recovery: Automatic with self-service rebuild
-• Example: "Developer creates CR → Platform provisions"
-```
+> **Stop and think**: If your organization currently relies on manual UI clicks to provision servers, what is the single most critical risk you face during a disaster recovery scenario?
 
 ### 1.2 Assessing Your Organization
 
-```
-MATURITY ASSESSMENT QUESTIONS
-═══════════════════════════════════════════════════════════════
+#### Reproducibility
+**Q: Can you recreate your production environment from scratch?**
+- **Level 0**: "No, we'd have to figure it out as we go"
+- **Level 2**: "Yes, but it takes a day of manual steps"
+- **Level 4**: "Yes, terraform apply and wait 30 minutes"
+- **Level 5**: "Yes, it's automatically recreated if destroyed"
 
-REPRODUCIBILITY
-─────────────────────────────────────────────────────────────
-Q: Can you recreate your production environment from scratch?
+#### Change Management
+**Q: How do infrastructure changes get made?**
+- **Level 0**: "Someone SSHs in and makes changes"
+- **Level 1**: "We have scripts, but anyone can run them"
+- **Level 3**: "All changes go through PR review"
+- **Level 5**: "Developers request via API, platform provisions"
 
-Level 0: "No, we'd have to figure it out as we go"
-Level 2: "Yes, but it takes a day of manual steps"
-Level 4: "Yes, terraform apply and wait 30 minutes"
-Level 5: "Yes, it's automatically recreated if destroyed"
+#### Drift Detection
+**Q: Do you know if actual state matches desired state?**
+- **Level 0**: "What's drift?"
+- **Level 2**: "We run terraform plan occasionally"
+- **Level 4**: "Continuous monitoring, alerts on drift"
+- **Level 5**: "Auto-remediation brings state back"
 
-CHANGE MANAGEMENT
-─────────────────────────────────────────────────────────────
-Q: How do infrastructure changes get made?
-
-Level 0: "Someone SSHs in and makes changes"
-Level 1: "We have scripts, but anyone can run them"
-Level 3: "All changes go through PR review"
-Level 5: "Developers request via API, platform provisions"
-
-DRIFT DETECTION
-─────────────────────────────────────────────────────────────
-Q: Do you know if actual state matches desired state?
-
-Level 0: "What's drift?"
-Level 2: "We run terraform plan occasionally"
-Level 4: "Continuous monitoring, alerts on drift"
-Level 5: "Auto-remediation brings state back"
-
-DISASTER RECOVERY
-─────────────────────────────────────────────────────────────
-Q: How long to recover from total infrastructure loss?
-
-Level 0: "Weeks, if ever"
-Level 2: "Days—we'd need to debug the scripts"
-Level 4: "Hours—apply from Git"
-Level 5: "Minutes—auto-rebuild from state"
-```
+#### Disaster Recovery
+**Q: How long to recover from total infrastructure loss?**
+- **Level 0**: "Weeks, if ever"
+- **Level 2**: "Days—we'd need to debug the scripts"
+- **Level 4**: "Hours—apply from Git"
+- **Level 5**: "Minutes—auto-rebuild from state"
 
 ---
 
@@ -168,127 +114,97 @@ Level 5: "Minutes—auto-rebuild from state"
 
 ### 2.1 Understanding the Paradigms
 
-```
-DECLARATIVE VS IMPERATIVE
-═══════════════════════════════════════════════════════════════
-
-IMPERATIVE: "How to get there"
-─────────────────────────────────────────────────────────────
+#### Imperative: "How to get there"
 You specify the exact steps to achieve the desired state.
 
-    # Bash script (imperative)
-    aws ec2 run-instances --image-id ami-12345 --count 1
-    aws ec2 wait instance-running --instance-ids $INSTANCE_ID
-    aws ec2 create-tags --resources $INSTANCE_ID --tags Key=Name,Value=web
+```bash
+# Bash script (imperative)
+aws ec2 run-instances --image-id ami-12345 --count 1
+aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+aws ec2 create-tags --resources $INSTANCE_ID --tags Key=Name,Value=web
+```
+- **Problem:** What if instance already exists?
+- **Problem:** What if it exists but with wrong tags?
+- **Problem:** Running again creates ANOTHER instance!
 
-    Problem: What if instance already exists?
-    Problem: What if it exists but with wrong tags?
-    Problem: Running again creates ANOTHER instance!
-
-DECLARATIVE: "What should exist"
-─────────────────────────────────────────────────────────────
+#### Declarative: "What should exist"
 You specify the desired end state. The tool figures out how.
 
-    # Terraform (declarative)
-    resource "aws_instance" "web" {
-      ami           = "ami-12345"
-      instance_type = "t3.micro"
-      tags = {
-        Name = "web"
-      }
-    }
-
-    Benefit: Run multiple times, same result (idempotent)
-    Benefit: Tool calculates delta from current state
-    Benefit: Can show plan before applying
-
-COMPARISON
-─────────────────────────────────────────────────────────────
-                    Imperative          Declarative
-                    ─────────────       ─────────────
-Idempotent?         Usually no          Yes
-Learning curve      Lower               Higher
-Flexibility         Maximum             Constrained
-Debugging           Step-by-step        State comparison
-Rollback            Manual              Often automatic
-Example tools       Bash, Ansible*      Terraform, CF
-
-*Ansible can be both depending on how you use it
+```hcl
+# Terraform (declarative)
+resource "aws_instance" "web" {
+  ami           = "ami-12345"
+  instance_type = "t3.micro"
+  tags = {
+    Name = "web"
+  }
+}
 ```
+- **Benefit:** Run multiple times, same result (idempotent)
+- **Benefit:** Tool calculates delta from current state
+- **Benefit:** Can show plan before applying
+
+#### Comparison
+
+| Feature | Imperative | Declarative |
+|---------|------------|-------------|
+| **Idempotent?** | Usually no | Yes |
+| **Learning curve** | Lower | Higher |
+| **Flexibility** | Maximum | Constrained |
+| **Debugging** | Step-by-step | State comparison |
+| **Rollback** | Manual | Often automatic |
+| **Example tools** | Bash, Ansible* | Terraform, CloudFormation |
+
+*\*Ansible can be both depending on how you use it*
+
+> **Pause and predict**: If you run a declarative Terraform configuration twice without changing the code, what will happen? Why?
 
 ### 2.2 When to Use Each
 
-```
-DECISION MATRIX
-═══════════════════════════════════════════════════════════════
+#### Use Declarative When:
+- ✓ Managing cloud infrastructure (VMs, networks, databases)
+- ✓ State needs to be tracked over time
+- ✓ Multiple people manage the same infrastructure
+- ✓ You need drift detection
+- ✓ Rollback capability is important
 
-USE DECLARATIVE WHEN:
-─────────────────────────────────────────────────────────────
-✓ Managing cloud infrastructure (VMs, networks, databases)
-✓ State needs to be tracked over time
-✓ Multiple people manage the same infrastructure
-✓ You need drift detection
-✓ Rollback capability is important
+#### Use Imperative When:
+- ✓ One-time migration scripts
+- ✓ Complex conditional logic
+- ✓ Bootstrapping before declarative tools work
+- ✓ Emergency procedures
+- ✓ Tasks that aren't infrastructure (data migration)
 
-USE IMPERATIVE WHEN:
-─────────────────────────────────────────────────────────────
-✓ One-time migration scripts
-✓ Complex conditional logic
-✓ Bootstrapping before declarative tools work
-✓ Emergency procedures
-✓ Tasks that aren't infrastructure (data migration)
+#### Hybrid Approach (Common in practice)
 
-HYBRID APPROACH (Common in practice)
-─────────────────────────────────────────────────────────────
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  Bootstrap (Imperative)                                │
-│  └── Install Terraform, configure backends             │
-│                                                         │
-│  Infrastructure (Declarative)                          │
-│  └── Terraform/CloudFormation for resources            │
-│                                                         │
-│  Configuration (Declarative or Imperative)             │
-│  └── Ansible for OS config, or cloud-init              │
-│                                                         │
-│  Application (Declarative)                             │
-│  └── Kubernetes manifests, Helm charts                 │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    B["<b>Bootstrap (Imperative)</b><br/>Install Terraform, configure backends"] --> I["<b>Infrastructure (Declarative)</b><br/>Terraform/CloudFormation for resources"]
+    I --> C["<b>Configuration (Declarative or Imperative)</b><br/>Ansible for OS config, or cloud-init"]
+    C --> A["<b>Application (Declarative)</b><br/>Kubernetes manifests, Helm charts"]
 ```
 
 ### 2.3 Configuration as Code (CaC) vs Infrastructure as Code (IaC)
 
 You will sometimes see the term **Configuration as Code (CaC)** alongside IaC. They are related but distinct practices:
 
-```
-CaC vs IaC
-═══════════════════════════════════════════════════════════════
+#### Infrastructure as Code (IaC)
+- **Manages:** Servers, networks, databases, load balancers, DNS
+- **Tools:** Terraform, Pulumi, CloudFormation, Crossplane
+- **Scope:** "The platform your applications run on"
+- **Example:** Provisioning an EKS cluster with 3 node groups
 
-INFRASTRUCTURE AS CODE (IaC)
-─────────────────────────────────────────────────────────────
-Manages: Servers, networks, databases, load balancers, DNS
-Tools:   Terraform, Pulumi, CloudFormation, Crossplane
-Scope:   "The platform your applications run on"
-Example: Provisioning an EKS cluster with 3 node groups
+#### Configuration as Code (CaC)
+- **Manages:** Application settings, feature flags, runtime config
+- **Tools:** Ansible (config), ConfigMaps, Consul, LaunchDarkly
+- **Scope:** "How your applications behave at runtime"
+- **Example:** Setting log levels, enabling a feature flag, tuning connection pool sizes
 
-CONFIGURATION AS CODE (CaC)
-─────────────────────────────────────────────────────────────
-Manages: Application settings, feature flags, runtime config
-Tools:   Ansible (config), ConfigMaps, Consul, LaunchDarkly
-Scope:   "How your applications behave at runtime"
-Example: Setting log levels, enabling a feature flag, tuning
-         connection pool sizes
+#### Key Distinction
+- **IaC answers:** "What infrastructure exists?"
+- **CaC answers:** "How is the software on that infrastructure configured?"
 
-KEY DISTINCTION
-─────────────────────────────────────────────────────────────
-IaC answers:  "What infrastructure exists?"
-CaC answers:  "How is the software on that infrastructure configured?"
-
-In practice, they overlap. A Kubernetes ConfigMap is CaC (app
-settings), but the cluster it lives on is IaC. Both should be
-version-controlled, reviewed, and tested.
-```
+In practice, they overlap. A Kubernetes ConfigMap is CaC (app settings), but the cluster it lives on is IaC. Both should be version-controlled, reviewed, and tested.
 
 ---
 
@@ -296,91 +212,67 @@ version-controlled, reviewed, and tested.
 
 ### 3.1 Why State Matters
 
-```
-THE STATE PROBLEM
-═══════════════════════════════════════════════════════════════
-
 Declarative IaC needs to know:
 1. What SHOULD exist (your code)
 2. What DOES exist (actual infrastructure)
 3. What it CREATED before (state)
 
-WHY STATE IS NECESSARY
-─────────────────────────────────────────────────────────────
-
+#### Why State Is Necessary
 Without state, the tool can't know:
-• Did I create this resource, or did someone else?
-• What's the resource ID for updates/deletes?
-• What was the previous configuration?
+- Did I create this resource, or did someone else?
+- What's the resource ID for updates/deletes?
+- What was the previous configuration?
 
-    Code says: "Create 3 servers"
-    Reality: 3 servers exist
+> **Code says:** "Create 3 servers"
+> **Reality:** 3 servers exist
+>
+> **Without state:** Create 3 more? Or is this the same 3?
+> **With state:** "I created these 3. IDs match. No changes."
 
-    Without state: Create 3 more? Or is this the same 3?
-    With state: "I created these 3. IDs match. No changes."
+#### State Storage Options
 
-STATE STORAGE OPTIONS
-─────────────────────────────────────────────────────────────
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  LOCAL FILE (Development)                              │
-│  ├── terraform.tfstate on disk                         │
-│  ├── Simple but doesn't scale                          │
-│  └── No locking, no sharing                            │
-│                                                         │
-│  REMOTE BACKEND (Production)                           │
-│  ├── S3 + DynamoDB (AWS)                               │
-│  ├── GCS + Cloud Storage (GCP)                         │
-│  ├── Azure Blob + Table Storage                        │
-│  ├── Terraform Cloud                                   │
-│  └── Features: Locking, versioning, encryption         │
-│                                                         │
-│  KUBERNETES (Cloud-native)                             │
-│  ├── Crossplane stores state in etcd                   │
-│  ├── State is Kubernetes resources                     │
-│  └── Reconciliation loop manages drift                 │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    L["<b>LOCAL FILE (Development)</b><br/>• terraform.tfstate on disk<br/>• Simple but doesn't scale<br/>• No locking, no sharing"]
+    R["<b>REMOTE BACKEND (Production)</b><br/>• S3 + DynamoDB (AWS)<br/>• GCS + Cloud Storage (GCP)<br/>• Azure Blob + Table Storage<br/>• Terraform Cloud<br/>• Features: Locking, versioning, encryption"]
+    K["<b>KUBERNETES (Cloud-native)</b><br/>• Crossplane stores state in etcd<br/>• State is Kubernetes resources<br/>• Reconciliation loop manages drift"]
 ```
+
+> **Stop and think**: Why is storing a Terraform state file on a single developer's local laptop a catastrophic risk for a team of five engineers?
 
 ### 3.2 State Locking and Consistency
 
-```
-CONCURRENT ACCESS PROBLEM
-═══════════════════════════════════════════════════════════════
+#### Concurrent Access Problem
 
-    Time    Alice                   Bob
-    ─────   ─────────────────────   ─────────────────────
-    T0      Reads state
-    T1                              Reads state (same)
-    T2      Plans: Add server
-    T3                              Plans: Add server
-    T4      Applies: Creates srv-1
-    T5                              Applies: Creates srv-2
-    T6      Writes state (srv-1)
-    T7                              Writes state (srv-2)
+| Time | Alice | Bob |
+|------|-------|-----|
+| **T0** | Reads state | |
+| **T1** | | Reads state (same) |
+| **T2** | Plans: Add server | |
+| **T3** | | Plans: Add server |
+| **T4** | Applies: Creates srv-1 | |
+| **T5** | | Applies: Creates srv-2 |
+| **T6** | Writes state (srv-1) | |
+| **T7** | | Writes state (srv-2) |
 
-    Result: State says srv-2 exists
-            srv-1 is ORPHANED (no state reference)
+**Result:** State says srv-2 exists. srv-1 is ORPHANED (no state reference).
 
-THIS IS WHY LOCKING EXISTS
-─────────────────────────────────────────────────────────────
+#### This Is Why Locking Exists
 
 With state locking:
 
-    Time    Alice                   Bob
-    ─────   ─────────────────────   ─────────────────────
-    T0      Acquires lock ✓
-    T1      Reads state
-    T2                              Tries lock: BLOCKED
-    T3      Plans, applies
-    T4      Writes state
-    T5      Releases lock
-    T6                              Acquires lock ✓
-    T7                              Reads UPDATED state
+| Time | Alice | Bob |
+|------|-------|-----|
+| **T0** | Acquires lock ✓ | |
+| **T1** | Reads state | |
+| **T2** | | Tries lock: BLOCKED |
+| **T3** | Plans, applies | |
+| **T4** | Writes state | |
+| **T5** | Releases lock | |
+| **T6** | | Acquires lock ✓ |
+| **T7** | | Reads UPDATED state |
 
-    Result: Both changes tracked correctly
-```
+**Result:** Both changes tracked correctly.
 
 ---
 
@@ -388,12 +280,8 @@ With state locking:
 
 ### 4.1 Repository Structure Patterns
 
-```
-REPOSITORY PATTERNS
-═══════════════════════════════════════════════════════════════
-
-MONOREPO (All infrastructure in one repo)
-─────────────────────────────────────────────────────────────
+#### Monorepo (All infrastructure in one repo)
+```text
 infrastructure/
 ├── environments/
 │   ├── dev/
@@ -408,30 +296,30 @@ infrastructure/
 └── global/
     ├── iam/
     └── dns/
+```
+- ✓ Easy to share modules
+- ✓ Single PR can update all environments
+- ✓ Easier to maintain consistency
+- ✗ Large blast radius
+- ✗ Slower CI for unrelated changes
 
-✓ Easy to share modules
-✓ Single PR can update all environments
-✓ Easier to maintain consistency
-✗ Large blast radius
-✗ Slower CI for unrelated changes
-
-POLYREPO (Separate repos per component/team)
-─────────────────────────────────────────────────────────────
+#### Polyrepo (Separate repos per component/team)
+```text
 repo: infra-networking
 repo: infra-eks
 repo: infra-databases
 repo: team-alpha-infra
 repo: team-beta-infra
+```
+- ✓ Clear ownership
+- ✓ Independent release cycles
+- ✓ Smaller blast radius
+- ✗ Module versioning complexity
+- ✗ Harder to maintain consistency
+- ✗ Cross-repo changes are painful
 
-✓ Clear ownership
-✓ Independent release cycles
-✓ Smaller blast radius
-✗ Module versioning complexity
-✗ Harder to maintain consistency
-✗ Cross-repo changes are painful
-
-HYBRID (Monorepo for platform, polyrepo for teams)
-─────────────────────────────────────────────────────────────
+#### Hybrid (Monorepo for platform, polyrepo for teams)
+```text
 repo: platform-infrastructure (platform team)
 ├── modules/       (shared modules)
 ├── networking/
@@ -444,65 +332,61 @@ repo: team-alpha-infra (team alpha)
 
 repo: team-beta-infra (team beta)
 └── same pattern
-
-✓ Balance of control and autonomy
-✓ Platform team governs shared resources
-✓ Teams own their infrastructure
 ```
+- ✓ Balance of control and autonomy
+- ✓ Platform team governs shared resources
+- ✓ Teams own their infrastructure
 
 ### 4.2 Branching and Environment Promotion
 
-```
-ENVIRONMENT PROMOTION PATTERNS
-═══════════════════════════════════════════════════════════════
-
-PATTERN 1: Directory per Environment
-─────────────────────────────────────────────────────────────
+#### Pattern 1: Directory per Environment
 All environments in same repo, same branch.
 
-    main branch:
-    ├── dev/main.tf      ← Changes here first
-    ├── staging/main.tf  ← Promoted after dev testing
-    └── prod/main.tf     ← Promoted after staging
+```text
+main branch:
+├── dev/main.tf      ← Changes here first
+├── staging/main.tf  ← Promoted after dev testing
+└── prod/main.tf     ← Promoted after staging
+```
+**Workflow:**
+1. PR changes to dev/
+2. Test in dev
+3. PR changes to staging/ (copy from dev)
+4. Test in staging
+5. PR changes to prod/ (copy from staging)
 
-    Workflow:
-    1. PR changes to dev/
-    2. Test in dev
-    3. PR changes to staging/ (copy from dev)
-    4. Test in staging
-    5. PR changes to prod/ (copy from staging)
-
-PATTERN 2: Branch per Environment
-─────────────────────────────────────────────────────────────
+#### Pattern 2: Branch per Environment
 Same code, different branches trigger different environments.
 
-    main     → deploys to prod
-    staging  → deploys to staging
-    dev      → deploys to dev
+```text
+main     → deploys to prod
+staging  → deploys to staging
+dev      → deploys to dev
+```
+**Workflow:**
+1. PR to dev branch, merge, auto-deploys
+2. PR from dev to staging, merge, auto-deploys
+3. PR from staging to main, merge, auto-deploys
 
-    Workflow:
-    1. PR to dev branch, merge, auto-deploys
-    2. PR from dev to staging, merge, auto-deploys
-    3. PR from staging to main, merge, auto-deploys
-
-PATTERN 3: GitOps with Environment Overlays
-─────────────────────────────────────────────────────────────
+#### Pattern 3: GitOps with Environment Overlays
 Base configuration with environment-specific patches.
 
-    main branch:
-    ├── base/
-    │   ├── main.tf      ← Shared configuration
-    │   └── variables.tf
-    └── overlays/
-        ├── dev/         ← dev-specific values
-        ├── staging/
-        └── prod/
-
-    Workflow:
-    1. Change base/ for structural changes
-    2. Change overlays/ for environment-specific values
-    3. CI applies base + overlay for each environment
+```text
+main branch:
+├── base/
+│   ├── main.tf      ← Shared configuration
+│   └── variables.tf
+└── overlays/
+    ├── dev/         ← dev-specific values
+    ├── staging/
+    └── prod/
 ```
+**Workflow:**
+1. Change base/ for structural changes
+2. Change overlays/ for environment-specific values
+3. CI applies base + overlay for each environment
+
+> **Pause and predict**: How might adopting a strict 'Directory per Environment' pattern impact the time it takes to promote an infrastructure change from development to production?
 
 ---
 
@@ -510,51 +394,36 @@ Base configuration with environment-specific patches.
 
 ### 5.1 The Parity Principle
 
-```
-ENVIRONMENT PARITY
-═══════════════════════════════════════════════════════════════
-
 "Dev, staging, and prod should be as similar as possible."
 
-WHY PARITY MATTERS
-─────────────────────────────────────────────────────────────
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  Without Parity:                                       │
-│  "It works in dev" → breaks in prod                    │
-│  Different versions, configs, network topologies       │
-│  Production-only bugs discovered by customers          │
-│                                                         │
-│  With Parity:                                          │
-│  Same code deploys everywhere                          │
-│  Only size/scale differs (smaller dev instances)       │
-│  Bugs found in dev/staging, not prod                   │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+#### Why Parity Matters
 
-WHAT SHOULD BE THE SAME
-─────────────────────────────────────────────────────────────
-✓ Infrastructure architecture (same services, same layout)
-✓ Software versions (OS, runtime, dependencies)
-✓ Configuration structure (same keys, different values)
-✓ Security controls (same policies, maybe relaxed in dev)
-✓ Monitoring and logging (same metrics, different thresholds)
-
-WHAT CAN DIFFER
-─────────────────────────────────────────────────────────────
-✓ Scale (fewer nodes in dev)
-✓ Instance sizes (smaller in dev)
-✓ Redundancy (single AZ in dev, multi-AZ in prod)
-✓ Data (synthetic in dev, real in prod)
-✓ Secrets (different credentials per environment)
+```mermaid
+flowchart LR
+    WP["<b>Without Parity</b><br/>• 'It works in dev' → breaks in prod<br/>• Different versions, configs, network topologies<br/>• Production-only bugs discovered by customers"]
+    P["<b>With Parity</b><br/>• Same code deploys everywhere<br/>• Only size/scale differs (smaller dev instances)<br/>• Bugs found in dev/staging, not prod"]
+    WP ~~~ P
 ```
+
+#### What Should Be The Same
+- ✓ Infrastructure architecture (same services, same layout)
+- ✓ Software versions (OS, runtime, dependencies)
+- ✓ Configuration structure (same keys, different values)
+- ✓ Security controls (same policies, maybe relaxed in dev)
+- ✓ Monitoring and logging (same metrics, different thresholds)
+
+#### What Can Differ
+- ✓ Scale (fewer nodes in dev)
+- ✓ Instance sizes (smaller in dev)
+- ✓ Redundancy (single AZ in dev, multi-AZ in prod)
+- ✓ Data (synthetic in dev, real in prod)
+- ✓ Secrets (different credentials per environment)
+
+> **Stop and think**: If you hardcode an AWS instance type as `m5.large` directly in your main infrastructure code, how will this impact your ability to maintain environment parity across dev, staging, and production?
 
 ### 5.2 Implementing Parity with IaC
 
-```
-PARITY IMPLEMENTATION
-═══════════════════════════════════════════════════════════════
-
+```hcl
 # variables.tf - Define what varies
 variable "environment" {
   description = "Environment name"
@@ -582,7 +451,9 @@ resource "aws_instance" "app" {
     ManagedBy   = "terraform"
   }
 }
+```
 
+```hcl
 # environments/dev.tfvars
 environment    = "dev"
 instance_count = 1
@@ -597,12 +468,13 @@ instance_type  = "t3.medium"
 environment    = "prod"
 instance_count = 6
 instance_type  = "t3.large"
+```
 
-SAME CODE, DIFFERENT SCALE
-─────────────────────────────────────────────────────────────
-    terraform apply -var-file=environments/dev.tfvars
-    terraform apply -var-file=environments/staging.tfvars
-    terraform apply -var-file=environments/prod.tfvars
+**SAME CODE, DIFFERENT SCALE**
+```bash
+terraform apply -var-file=environments/dev.tfvars
+terraform apply -var-file=environments/staging.tfvars
+terraform apply -var-file=environments/prod.tfvars
 ```
 
 ---
@@ -611,46 +483,32 @@ SAME CODE, DIFFERENT SCALE
 
 ### 6.1 Antipatterns to Avoid
 
-```
-IaC ANTIPATTERNS
-═══════════════════════════════════════════════════════════════
+- **Antipattern 1: Snowflake Servers**
+  - **Problem:** Each server is manually configured, unique
+  - **Symptom:** "Don't touch production—nobody knows how it works"
+  - **Fix:** Immutable infrastructure. Rebuild, don't repair.
+- **Antipattern 2: Configuration Drift**
+  - **Problem:** Manual changes made outside IaC
+  - **Symptom:** terraform plan shows unexpected changes
+  - **Fix:** Continuous drift detection, block console access
+- **Antipattern 3: Copy-Paste Infrastructure**
+  - **Problem:** Duplicated code across environments
+  - **Symptom:** 3 copies of the same Terraform, all slightly different
+  - **Fix:** Modules with environment-specific variables
+- **Antipattern 4: Monster Modules**
+  - **Problem:** One module that does everything
+  - **Symptom:** 5000-line main.tf, 45-minute terraform apply
+  - **Fix:** Small, composable modules with single responsibility
+- **Antipattern 5: State File Chaos**
+  - **Problem:** State files checked into Git, or lost
+  - **Symptom:** "Where's the state file?" or merge conflicts in .tfstate
+  - **Fix:** Remote backend with locking from day one
+- **Antipattern 6: Secret Sprawl**
+  - **Problem:** Secrets in terraform.tfvars or plain text
+  - **Symptom:** Credentials in Git history
+  - **Fix:** Secret manager (Vault, AWS Secrets Manager) + references
 
-ANTIPATTERN 1: Snowflake Servers
-─────────────────────────────────────────────────────────────
-Problem: Each server is manually configured, unique
-Symptom: "Don't touch production—nobody knows how it works"
-Fix: Immutable infrastructure. Rebuild, don't repair.
-
-ANTIPATTERN 2: Configuration Drift
-─────────────────────────────────────────────────────────────
-Problem: Manual changes made outside IaC
-Symptom: terraform plan shows unexpected changes
-Fix: Continuous drift detection, block console access
-
-ANTIPATTERN 3: Copy-Paste Infrastructure
-─────────────────────────────────────────────────────────────
-Problem: Duplicated code across environments
-Symptom: 3 copies of the same Terraform, all slightly different
-Fix: Modules with environment-specific variables
-
-ANTIPATTERN 4: Monster Modules
-─────────────────────────────────────────────────────────────
-Problem: One module that does everything
-Symptom: 5000-line main.tf, 45-minute terraform apply
-Fix: Small, composable modules with single responsibility
-
-ANTIPATTERN 5: State File Chaos
-─────────────────────────────────────────────────────────────
-Problem: State files checked into Git, or lost
-Symptom: "Where's the state file?" or merge conflicts in .tfstate
-Fix: Remote backend with locking from day one
-
-ANTIPATTERN 6: Secret Sprawl
-─────────────────────────────────────────────────────────────
-Problem: Secrets in terraform.tfvars or plain text
-Symptom: Credentials in Git history
-Fix: Secret manager (Vault, AWS Secrets Manager) + references
-```
+> **Pause and predict**: If a developer manually SSHes into a server to fix a configuration file, what will happen the next time your Continuous (Level 4) IaC pipeline runs?
 
 > **War Story: The $2.3 Million Snowflake Server**
 >
@@ -696,289 +554,83 @@ Fix: Secret manager (Vault, AWS Secrets Manager) + references
 
 ## Quiz
 
-1. **What are the five levels of IaC maturity, and what distinguishes Level 4 (Continuous) from Level 3 (Collaborative)?**
+1. **Your organization has adopted Terraform for all infrastructure provisioning. Every change to infrastructure requires a pull request, and an automated CI pipeline runs `terraform plan` to validate the changes. Once the pull request is approved and merged, a lead engineer manually triggers the `terraform apply` step in the pipeline. After an outage, the CTO mandates that you move from this current state to Level 4 (Continuous) maturity. What specific capabilities must you implement to achieve this goal, and how does it differ from your current setup?**
    <details>
    <summary>Answer</summary>
 
-   **The five levels:**
-   - Level 0: Manual (console clicks)
-   - Level 1: Scripted (bash/PowerShell)
-   - Level 2: Declarative (Terraform/CF)
-   - Level 3: Collaborative (PR workflow)
-   - Level 4: Continuous (GitOps)
-   - Level 5: Self-Service (Platform APIs)
-
-   **Level 3 vs Level 4:**
-   - Level 3: Changes go through PR review, but apply is still triggered manually or semi-automatically
-   - Level 4: Git IS the source of truth. Continuous reconciliation automatically syncs actual state to desired state. Self-healing—if someone makes a manual change, it's automatically reverted.
-
-   Key difference: Level 3 is "GitOps lite" (Git for versioning), Level 4 is true GitOps (Git as single source of truth with continuous reconciliation).
+   To reach Level 4 (Continuous) maturity, you must implement continuous reconciliation and automated drift remediation, moving to a true GitOps model. Your current setup represents Level 3 (Collaborative), where changes are version-controlled and reviewed via pull requests, but applying those changes remains a discrete, semi-manual event. In a Level 4 environment, a software agent continuously monitors both the Git repository (the desired state) and the actual infrastructure environment. If it detects any differences—whether from a new commit or manual tampering—it automatically applies the necessary changes to bring the infrastructure back in line with the repository. This eliminates the need for manual apply triggers and provides self-healing capabilities against configuration drift.
    </details>
 
-2. **Explain why declarative IaC is idempotent but imperative scripts typically are not.**
+2. **A junior engineer on your team wrote a bash script that provisions three new EC2 instances using the AWS CLI. They ran the script twice by accident, resulting in six instances being created. They ask you why the company's Terraform configurations don't have this problem when applied multiple times. How do you explain the difference in behavior between their script and your Terraform code?**
    <details>
    <summary>Answer</summary>
 
-   **Idempotent** = Running multiple times produces the same result as running once.
-
-   **Declarative is idempotent because:**
-   - You declare the desired end state
-   - The tool compares desired vs actual
-   - Only makes changes to reach desired state
-   - If already at desired state, does nothing
-
-   ```
-   Declarative: "3 servers should exist"
-   Run 1: Creates 3 servers
-   Run 2: 3 exist, 3 desired, no changes
-   Run 3: Same—no changes
-   ```
-
-   **Imperative is NOT idempotent because:**
-   - You specify the steps to execute
-   - Script runs those steps regardless of current state
-   - Running again repeats the actions
-
-   ```
-   Imperative: "Create 3 servers"
-   Run 1: Creates 3 servers (total: 3)
-   Run 2: Creates 3 more (total: 6)
-   Run 3: Creates 3 more (total: 9)
-   ```
-
-   Making imperative scripts idempotent requires explicit checks, which adds complexity.
+   You would explain that Terraform uses a declarative model, while their bash script uses an imperative model. In a declarative system like Terraform, you define the desired end state (e.g., "there should be exactly three EC2 instances"). When the tool runs, it first compares the actual state of the infrastructure against this desired state, and only executes the necessary creation, modification, or deletion operations to bridge the gap. Because the bash script is imperative, it defines a series of explicit actions to perform ("create three instances") rather than an end state, causing those actions to execute blindly every time the script is invoked. This makes declarative tools inherently idempotent—meaning they can run multiple times with the same outcome—whereas imperative scripts require complex custom logic to achieve the same safety.
    </details>
 
-3. **An organization has infrastructure in 3 environments (dev, staging, prod) with slight variations in each. They're experiencing "configuration drift" between environments. Design a solution using IaC principles.**
+3. **An organization has infrastructure deployed across three distinct environments (dev, staging, prod) with slight variations in each. Over the past year, these environments have experienced significant "configuration drift" because engineers maintain separate codebases for each environment, leading to unreliable production deployments. Design an IaC solution that solves this issue while preserving the necessary variations.**
    <details>
    <summary>Answer</summary>
 
-   **Problem:** Environments have diverged, making promotion unreliable.
-
-   **Solution: Modules + Environment Variables**
-
-   ```
-   infrastructure/
-   ├── modules/
-   │   └── application/
-   │       ├── main.tf      # Common structure
-   │       ├── variables.tf # Parameterized differences
-   │       └── outputs.tf
-   └── environments/
-       ├── dev/
-       │   └── main.tf      # Calls module with dev values
-       ├── staging/
-       │   └── main.tf      # Calls module with staging values
-       └── prod/
-           └── main.tf      # Calls module with prod values
-   ```
-
-   **environments/dev/main.tf:**
-   ```hcl
-   module "app" {
-     source         = "../../modules/application"
-     environment    = "dev"
-     instance_count = 1
-     instance_type  = "t3.small"
-   }
-   ```
-
-   **Key principles:**
-   1. Single module defines the structure (enforces parity)
-   2. Environment-specific values passed as variables
-   3. Only allowed differences are parameterized
-   4. Drift detected by comparing plans across environments
+   To solve configuration drift while maintaining environment parity, the organization should refactor their infrastructure code into reusable modules. A single module defines the core architectural structure and default configurations, ensuring that all environments share the exact same structural foundation. Individual environments (dev, staging, prod) then consume this common module while passing in environment-specific variables, such as instance sizes or replica counts. This pattern strictly parameterizes the allowed differences between environments, making it impossible for their core architectures to diverge. When engineers propose changes, they modify the shared module, allowing the CI/CD pipeline to detect drift by comparing plans across all environments simultaneously.
    </details>
 
-4. **Why is state locking critical, and what happens if two engineers run `terraform apply` simultaneously without locking?**
+4. **Two platform engineers, Alice and Bob, receive urgent tickets to scale up different components of your application. They both run `terraform apply` from their local laptops at the exact same time against the same remote state backend, but the backend's state locking mechanism has been accidentally disabled. What is the likely outcome of this concurrent execution, and how would state locking have prevented it?**
    <details>
    <summary>Answer</summary>
 
-   **Without locking, race conditions cause:**
-
-   1. **Orphaned resources:** Both read the same state, both create resources, only one update wins. Resources from the "losing" apply become untracked.
-
-   2. **State corruption:** Concurrent writes can create invalid state files with partial or conflicting information.
-
-   3. **Duplicate resources:** Each apply thinks it needs to create resources that don't exist (in their view of state).
-
-   **Example scenario:**
-   ```
-   T0: Alice reads state (0 servers)
-   T1: Bob reads state (0 servers)
-   T2: Alice creates server-a, updates state to [server-a]
-   T3: Bob creates server-b, updates state to [server-b]
-       (Bob's write overwrites Alice's)
-
-   Result: Two servers exist, state only knows about server-b
-           server-a is orphaned—can't be managed
-   ```
-
-   **With locking:**
-   - First apply acquires lock
-   - Second apply waits (or fails with "state locked")
-   - Each apply sees the result of the previous one
+   Running concurrent infrastructure updates without state locking will likely result in orphaned resources and a corrupted state file. When both engineers execute their commands, their local Terraform processes simultaneously read the existing state and calculate their respective plans. As they apply the changes, whoever finishes writing to the remote state file last will overwrite the other's state changes, meaning the resources created by the first engineer will be completely untracked by Terraform. State locking prevents this race condition by ensuring that once Alice's process begins planning or applying, it requests and holds an exclusive lock on the remote backend. Bob's process would be blocked until Alice's operation completes and the lock is released, forcing Bob's run to evaluate its plan against the newly updated state.
    </details>
 
-5. **Compare monorepo vs polyrepo strategies for IaC. A company has 5 teams and wants each team to manage their own infrastructure. Which pattern would you recommend and why?**
+5. **Your company has 5 independent product teams and a central platform team. The CTO wants each product team to manage and deploy their own infrastructure autonomously, but the security team demands strict architectural guardrails. Compare monorepo vs polyrepo strategies for this scenario and explain which pattern you would recommend.**
    <details>
    <summary>Answer</summary>
 
-   **Recommendation: Hybrid approach**
-
-   **Pattern:**
-   - **Monorepo for platform team:** Shared modules, networking, security, Kubernetes clusters
-   - **Polyrepo for each team:** Team-specific infrastructure using platform modules
-
-   **Why hybrid:**
-
-   | Aspect | Pure Monorepo | Pure Polyrepo | Hybrid |
-   |--------|---------------|---------------|--------|
-   | Team autonomy | Low | High | High |
-   | Consistency | High | Low | High (via modules) |
-   | Blast radius | Large | Small | Small |
-   | Module sharing | Easy | Hard | Easy (versioned) |
-   | CI complexity | High | Low | Medium |
-
-   **Implementation:**
-   ```
-   # Platform team monorepo
-   platform-infrastructure/
-   ├── modules/          # Versioned, published modules
-   ├── networking/       # Shared VPCs, DNS
-   └── kubernetes/       # Shared clusters
-
-   # Team polyrepos
-   team-alpha-infra/     # Uses platform modules v2.1.0
-   team-beta-infra/      # Uses platform modules v2.1.0
-   team-gamma-infra/     # Uses platform modules v2.0.0 (upgrading)
-   ```
-
-   Teams get autonomy. Platform team ensures guardrails. Modules are versioned so teams upgrade on their schedule.
+   For this organization, a hybrid repository approach is the most effective choice. A pure monorepo would throttle the agility of the 5 separate teams by coupling their release cycles and creating a massive blast radius, while a pure polyrepo approach would make it extremely difficult for the central platform team to enforce security standards and share common architectural patterns. By implementing a hybrid strategy, the platform team can maintain a core repository for shared, versioned modules and centralized governance. The individual teams can then operate within their own independent polyrepos, consuming the platform team's approved modules to provision their team-specific infrastructure. This provides the development teams with high autonomy and independent deployment pipelines while ensuring that all provisioned resources adhere to the organization's baseline security and consistency requirements.
    </details>
 
-6. **An organization wants to move from IaC Maturity Level 1 (Scripted) to Level 3 (Collaborative). Outline a 6-month roadmap.**
+6. **You have been hired as a Lead Platform Engineer at a company where all infrastructure is currently provisioned using custom Bash and PowerShell scripts (Maturity Level 1). The CTO has tasked you with bringing the organization to a Collaborative IaC model (Maturity Level 3) within six months. What foundational milestones must you prioritize in your roadmap to achieve this specific transition, and why are they necessary?**
    <details>
    <summary>Answer</summary>
 
-   **Month 1-2: Foundation**
-   - [ ] Choose IaC tool (Terraform recommended for multi-cloud)
-   - [ ] Set up remote backend with locking (S3 + DynamoDB)
-   - [ ] Convert 1 non-critical environment to IaC
-   - [ ] Train team on IaC basics
-   - [ ] Establish coding standards (naming, structure)
-
-   **Month 3-4: Migration**
-   - [ ] Import existing infrastructure into state
-   - [ ] Create modules for repeated patterns
-   - [ ] Convert remaining environments
-   - [ ] Set up CI pipeline for `terraform plan`
-   - [ ] Add security scanning (Checkov/tfsec)
-
-   **Month 5-6: Collaboration**
-   - [ ] Require PR for all IaC changes
-   - [ ] Set up PR automation (Atlantis or TFC)
-   - [ ] Add code review requirements
-   - [ ] Implement drift detection
-   - [ ] Document runbooks and patterns
-   - [ ] Run disaster recovery drill
-
-   **Success criteria for Level 3:**
-   - All infrastructure in Git
-   - All changes via PR with review
-   - Automated plan on PR, apply on merge
-   - Drift detected within 24 hours
-   - Any environment rebuildable from code
+   To successfully transition to Level 3, your roadmap must first prioritize the adoption of a declarative IaC tool and the establishment of shared remote state management. Without migrating away from imperative scripts to a declarative framework like Terraform, you cannot reliably track the desired state or manage complex dependencies. Once the baseline infrastructure is declared as code and safely stored in a remote backend with state locking, the next critical milestone is migrating all infrastructure changes into a version control system. Finally, you must implement a strict pull request workflow where all changes are peer-reviewed and automatically validated by a CI pipeline before being applied. This peer-review mechanism is the defining characteristic of Level 3 maturity, shifting infrastructure provisioning from individual isolated actions to a collaborative, auditable engineering process.
    </details>
 
-7. **What is "configuration drift" and how does a Level 4 (Continuous) IaC practice prevent it?**
+7. **A developer with elevated access manually logs into the AWS console at 2:00 AM and changes the instance type of a production database to resolve a performance issue. The change is never documented, causing the next routine infrastructure deployment to fail unexpectedly. How would a Level 4 (Continuous) IaC environment handle this situation differently to prevent deployment failures?**
    <details>
    <summary>Answer</summary>
 
-   **Configuration drift** is when actual infrastructure state diverges from the desired state defined in code. Causes include:
-   - Manual changes via console/CLI
-   - Out-of-band automation
-   - Failed applies leaving partial state
-   - External systems modifying resources
-
-   **Level 4 (Continuous) prevents drift through:**
-
-   1. **Continuous reconciliation:**
-      - System constantly compares actual vs desired
-      - Runs every few minutes (not just on commit)
-      - Detects drift from any source
-
-   2. **Automatic remediation:**
-      - When drift detected, automatically corrects
-      - "Self-healing" infrastructure
-      - Manual changes are reverted
-
-   3. **Git as sole source of truth:**
-      - No other way to make changes
-      - Console/CLI blocked or monitored
-      - Changes only persist if in Git
-
-   **Example (Flux/ArgoCD):**
-   ```
-   1. Engineer manually changes replica count to 5
-   2. Reconciliation loop runs (every 3 min)
-   3. Git says replicas: 3
-   4. Actual is 5, desired is 3
-   5. System automatically reverts to 3
-   6. Alert sent: "Manual change detected and reverted"
-   ```
+   In a Level 4 environment, the manual modification to the database would be treated as configuration drift and automatically remediated before it could cause a deployment failure. Level 4 maturity relies on continuous reconciliation, where an automated software agent constantly compares the actual state of the cloud environment against the desired state defined in the Git repository. When the developer manually changes the instance type in the console, the agent immediately detects that the actual infrastructure diverges from the version-controlled configuration. The agent would automatically revert the instance type back to the defined state without human intervention. This ensures that the infrastructure remains perfectly synchronized with the repository and prevents ad-hoc, out-of-band changes from accumulating into deployment-breaking drift.
    </details>
 
-8. **Design an IaC workflow that supports the following requirements: (a) Multiple environments, (b) Team autonomy, (c) Security guardrails, (d) Audit trail.**
+8. **Design an IaC workflow that supports the following strict requirements: (a) Multiple isolated environments, (b) High team autonomy, (c) Automated security guardrails, and (d) A comprehensive audit trail for compliance.**
    <details>
    <summary>Answer</summary>
 
-   **Architecture:**
-   ```
-   ┌─────────────────────────────────────────────────────────┐
-   │                    Git Repository                       │
-   │  ┌──────────────────────────────────────────────────┐  │
-   │  │ modules/           (Platform team owns)          │  │
-   │  │ ├── vpc/           Versioned, reviewed           │  │
-   │  │ ├── eks/           Security embedded             │  │
-   │  │ └── rds/                                         │  │
-   │  └──────────────────────────────────────────────────┘  │
-   │  ┌──────────────────────────────────────────────────┐  │
-   │  │ teams/             (Teams own their dirs)        │  │
-   │  │ ├── alpha/dev/                                   │  │
-   │  │ ├── alpha/prod/                                  │  │
-   │  │ ├── beta/dev/                                    │  │
-   │  │ └── beta/prod/                                   │  │
-   │  └──────────────────────────────────────────────────┘  │
-   └─────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-   ┌─────────────────────────────────────────────────────────┐
-   │                    CI/CD Pipeline                       │
-   │  1. Lint & Format    (terraform fmt, validate)         │
-   │  2. Security Scan    (Checkov, tfsec)                  │
-   │  3. Cost Estimate    (Infracost)                       │
-   │  4. Plan             (terraform plan)                  │
-   │  5. Policy Check     (OPA/Sentinel)                    │
-   │  6. Approval         (required for prod)               │
-   │  7. Apply            (terraform apply)                 │
-   │  8. Audit Log        (all actions logged)              │
-   └─────────────────────────────────────────────────────────┘
-   ```
+   To satisfy these diverse requirements, you should implement a GitOps-driven workflow that combines modular architecture with automated pipeline checks. The architecture should be split between a central repository for platform-approved modules and individual team directories, granting teams the autonomy to manage their own configurations while enforcing the use of secure, standardized components. Every proposed change must pass through a strict CI/CD pipeline that executes automated formatting, linting, and security scans (such as Checkov) before generating a speculative plan. To satisfy the security guardrails and audit requirements, the pipeline must integrate a policy-as-code evaluation (like OPA) to block non-compliant changes, and require explicit peer approval before execution. This ensures that all modifications are fully auditable in the Git history and consistently evaluated against the organization's security posture before ever touching a production environment.
 
-   **Requirements mapping:**
-   - **(a) Multiple environments:** Directory structure (teams/alpha/dev, teams/alpha/prod)
-   - **(b) Team autonomy:** Teams own their directories, use approved modules
-   - **(c) Security guardrails:** Checkov in CI, OPA policies, approved modules only
-   - **(d) Audit trail:** Git history + CI logs + state file versioning
+   ```mermaid
+   flowchart TD
+       subgraph GitRepository ["Git Repository"]
+           M["<b>modules/</b> (Platform team owns)<br/>• vpc/ (Versioned, reviewed)<br/>• eks/ (Security embedded)<br/>• rds/"]
+           T["<b>teams/</b> (Teams own their dirs)<br/>• alpha/dev/<br/>• alpha/prod/<br/>• beta/dev/<br/>• beta/prod/"]
+       end
+       
+       subgraph Pipeline ["CI/CD Pipeline"]
+           direction TB
+           P1["1. Lint & Format (terraform fmt)"]
+           P2["2. Security Scan (Checkov, tfsec)"]
+           P3["3. Cost Estimate (Infracost)"]
+           P4["4. Plan (terraform plan)"]
+           P5["5. Policy Check (OPA/Sentinel)"]
+           P6["6. Approval (required for prod)"]
+           P7["7. Apply (terraform apply)"]
+           P8["8. Audit Log (actions logged)"]
+           
+           P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
+       end
 
-   **Policy example (OPA):**
-   ```rego
-   deny[msg] {
-     input.resource_type == "aws_instance"
-     not startswith(input.instance_type, "t3.")
-     msg := "Only t3.* instances allowed"
-   }
+       GitRepository --> Pipeline
    ```
    </details>
 
