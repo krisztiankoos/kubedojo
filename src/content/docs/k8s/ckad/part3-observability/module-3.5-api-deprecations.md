@@ -395,6 +395,11 @@ This means `v1beta1` has been completely removed. You need `networking.k8s.io/v1
 
 Update `broken-ingress.yaml` to use the correct API version. Hint: the spec structure ALSO changed — use `k explain ingress.spec.rules.http.paths` to see the current structure.
 
+Verify your fix works before proceeding:
+```bash
+k apply -f broken-ingress.yaml --dry-run=server
+```
+
 <details>
 <summary>Fixed manifest</summary>
 
@@ -535,4 +540,4 @@ You've completed the Application Observability and Maintenance section:
 
 ## Next Steps
 
-Take the [Part 3 Cumulative Quiz](../part3-cumulative-quiz/) to test your understanding, then proceed to [Part 4: Application Environment, Configuration and Security](../part4-environment/module-4.1-configmaps/).
+Take the [Part 3 Cumulative Quiz](../part3-cumulative-quiz/) to test your understanding, then proceed to [Part 4: Application Environment, Configuration and Security](/k8s/ckad/part4-environment/module-4.1-configmaps/).
