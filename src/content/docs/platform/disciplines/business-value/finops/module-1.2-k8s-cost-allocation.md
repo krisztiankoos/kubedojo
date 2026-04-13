@@ -48,7 +48,7 @@ Without solving this, FinOps stops at the infrastructure layer and never reaches
 
 - **Studies from the CNCF and Datadog show that the average Kubernetes cluster runs at 13-18% CPU utilization** — meaning over 80% of requested compute capacity sits idle. In dollar terms, a cluster costing $50,000/month might have $40,000+ in wasted resources. The gap between what teams *request* and what they *use* is the single largest source of Kubernetes cost waste.
 
-- **OpenCost, the CNCF sandbox project for Kubernetes cost monitoring, was originally built by Kubecost** and donated to the CNCF in 2022. It provides a vendor-neutral, open-source specification for measuring Kubernetes costs that works across AWS, GCP, Azure, and on-premises clusters.
+- **OpenCost, the CNCF project for Kubernetes cost monitoring, was originally built by Kubecost** and donated to the CNCF in 2022. It provides a vendor-neutral, open-source specification for measuring Kubernetes costs that works across AWS, GCP, Azure, and on-premises clusters.
 
 - **A 2024 Flexera State of the Cloud survey found that 28% of cloud spend goes to Kubernetes**, yet only 31% of organizations have any Kubernetes-specific cost visibility tooling in place. The gap between spending and visibility is enormous.
 
@@ -65,20 +65,17 @@ When you run Kubernetes on cloud infrastructure, the cloud provider bills you fo
 
 None of these line items mention Pods, Deployments, or namespaces. The cloud provider doesn't know (or care) that node `ip-10-0-1-42` is running 23 Pods from 7 different teams.
 
-```
-Cloud Provider View:           Kubernetes View:
-┌──────────────────┐           ┌──────────────────┐
-│ EC2 Instances    │           │ Namespaces       │
-│ • i-abc123 $142  │           │ • payments       │
-│ • i-def456 $142  │           │ • search         │
-│ • i-ghi789 $285  │           │ • platform       │
-│                  │           │ • ml-pipeline    │
-│ Total: $569/mo   │           │ • staging        │
-│                  │           │                  │
-│ Per-team cost:   │           │ Per-team cost:   │
-│ ???              │           │ We need to       │
-│                  │           │ figure this out  │
-└──────────────────┘           └──────────────────┘
+```mermaid
+flowchart LR
+    subgraph Cloud["Cloud Provider View"]
+        direction TB
+        ec2["EC2 Instances<br/>• i-abc123 $142<br/>• i-def456 $142<br/>• i-ghi789 $285<br/><br/>Total: $569/mo<br/><br/>Per-team cost:<br/>???"]
+    end
+    subgraph K8s["Kubernetes View"]
+        direction TB
+        ns["Namespaces<br/>• payments<br/>• search<br/>• platform<br/>• ml-pipeline<br/>• staging<br/><br/>Per-team cost:<br/>We need to<br/>figure this out"]
+    end
+    Cloud -->|Cost Allocation Tooling| K8s
 ```
 
 ### The Cost Model
@@ -119,6 +116,8 @@ spec:
 
 **For cost allocation**: Requests represent what you've *reserved*. Even if your Pod only uses 50m CPU, you're blocking 500m on the node. It's like reserving a table at a restaurant — you pay whether you eat or not.
 
+> **Stop and think**: If a Pod requests 4 CPU cores but only uses 0.5 cores on average, what happens to the remaining 3.5 cores on that node? From the Kubernetes scheduler's perspective, those 3.5 cores are strictly reserved and unavailable to other workloads, even while they sit completely idle.
+
 ### Resource Limits
 
 The **maximum** resources a Pod can use. If a Pod exceeds its CPU limit, it gets throttled. If it exceeds its memory limit, it gets OOM-killed.
@@ -139,24 +138,22 @@ The **maximum** resources a Pod can use. If a Pod exceeds its CPU limit, it gets
 
 What the Pod *really* uses, as measured by cAdvisor and the metrics server.
 
-```
-Payment API Pod:
-┌────────────────────────────────────────────┐
-│                                            │
-│  CPU:                                      │
-│  Limit:    ████████████████████ 1000m      │
-│  Request:  ██████████           500m       │
-│  Actual:   ███                  120m ← !   │
-│                                            │
-│  Memory:                                   │
-│  Limit:    ████████████████████ 1 Gi       │
-│  Request:  ██████████           512 Mi     │
-│  Actual:   ████████             380 Mi     │
-│                                            │
-│  This Pod is OVER-PROVISIONED              │
-│  76% of requested CPU is idle              │
-│  26% of requested memory is idle           │
-└────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph CPU["CPU (millicores)"]
+        direction TB
+        CL["Limit: 1000m"]
+        CR["Request: 500m"]
+        CA["Actual: 120m"]
+    end
+    subgraph Memory["Memory (MiB)"]
+        direction TB
+        ML["Limit: 1024 Mi"]
+        MR["Request: 512 Mi"]
+        MA["Actual: 380 Mi"]
+    end
+    CA -.->|76% of requested CPU is idle!| CR
+    MA -.->|26% of requested memory is idle!| MR
 ```
 
 ### Which Value Should You Use for Cost Allocation?
@@ -168,6 +165,8 @@ Payment API Pod:
 | Max(request, usage) | Higher of the two | Fair for burst workloads | Complex to explain |
 | Weighted blend | 80% request + 20% usage | Balanced, incentivizes rightsizing | Arbitrary weights |
 
+> **Pause and predict**: If you implemented a purely usage-based cost model, how would developers react? Would they care about their requests anymore? They likely wouldn't, resulting in massively over-provisioned clusters where teams request 10 CPUs "just in case" since they are only billed for the 0.5 CPUs they actually use.
+
 **Industry standard**: Most organizations start with **request-based allocation** because it's simple and incentivizes teams to rightsize their requests. If you request 4 CPU but use 0.3, you pay for 4 — which motivates you to reduce your request.
 
 ---
@@ -178,23 +177,17 @@ Payment API Pod:
 
 The simplest model: one namespace per team (or per service).
 
-```
-Cluster: 3 nodes × m6i.xlarge ($0.192/hr) = $420.48/month
-Total cluster resources: 12 vCPU, 48 GB RAM
+**Cluster**: 3 nodes × m6i.xlarge ($0.192/hr) = $420.48/month
+**Total cluster resources**: 12 vCPU, 48 GB RAM
 
-Namespace Resource Requests:
-┌─────────────┬──────────┬────────────┬──────────────┐
-│ Namespace   │ CPU Req  │ Memory Req │ Allocated $  │
-├─────────────┼──────────┼────────────┼──────────────┤
-│ payments    │ 3.0 CPU  │ 12 GB      │ $105.12/mo   │
-│ search      │ 4.5 CPU  │ 16 GB      │ $152.26/mo   │
-│ platform    │ 1.5 CPU  │  8 GB      │  $68.81/mo   │
-│ monitoring  │ 1.0 CPU  │  4 GB      │  $38.02/mo   │
-│ idle/unused │ 2.0 CPU  │  8 GB      │  $56.27/mo   │
-├─────────────┼──────────┼────────────┼──────────────┤
-│ Total       │ 12.0 CPU │ 48 GB      │ $420.48/mo   │
-└─────────────┴──────────┴────────────┴──────────────┘
-```
+| Namespace | CPU Req | Memory Req | Allocated $ |
+|-----------|---------|------------|-------------|
+| payments | 3.0 CPU | 12 GB | $105.12/mo |
+| search | 4.5 CPU | 16 GB | $152.26/mo |
+| platform | 1.5 CPU | 8 GB | $68.81/mo |
+| monitoring| 1.0 CPU | 4 GB | $38.02/mo |
+| idle/unused| 2.0 CPU | 8 GB | $56.27/mo |
+| **Total** | **12.0 CPU**| **48 GB** | **$420.48/mo** |
 
 ### Label-Based Allocation
 
@@ -233,22 +226,19 @@ Some costs don't belong to any single team:
 | Platform team | CI/CD, service mesh | Even split across consuming teams |
 | Idle resources | Unallocated node capacity | Proportional or "tax" model |
 
-```
-Shared Cost Allocation Example:
-┌────────────────────────────────────────────┐
-│ Cluster cost:         $420.48/mo           │
-│ kube-system overhead: $38.50/mo            │
-│ Monitoring stack:     $52.00/mo            │
-│                                            │
-│ Shared costs total:   $90.50/mo            │
-│                                            │
-│ Distribution (proportional to requests):   │
-│  payments (25%):  +$22.63 → $127.75 total  │
-│  search (37.5%):  +$33.94 → $186.20 total  │
-│  platform (12.5%):+$11.31 → $80.12 total   │
-│  monitoring (8.3%):+$7.51 → $45.53 total   │
-│  idle (16.7%):    +$15.11 → $71.38 total   │
-└────────────────────────────────────────────┘
+**Shared Cost Allocation Example:**
+- Cluster cost: $420.48/mo
+- kube-system overhead: $38.50/mo
+- Monitoring stack: $52.00/mo
+- **Shared costs total: $90.50/mo**
+
+```mermaid
+pie title "Shared Costs Distribution (Proportional to Requests)"
+    "payments (+ $22.63)": 25.0
+    "search (+ $33.94)": 37.5
+    "idle (+ $15.11)": 16.7
+    "platform (+ $11.31)": 12.5
+    "monitoring (+ $7.51)": 8.3
 ```
 
 ---
@@ -261,7 +251,7 @@ Two models for communicating costs to teams:
 
 **"Here's what you cost"** — informational only. No money actually changes hands between departments.
 
-```
+```text
 Monthly Cost Report — Payments Team
 ──────────────────────────────────────
 Namespace: payments
@@ -290,7 +280,7 @@ Estimated savings if optimized: $41/mo
 
 **"Here's your bill"** — costs are deducted from the team's budget or charged to their cost center.
 
-```
+```text
 Internal Invoice — Payments Team (CC-4521)
 ──────────────────────────────────────
 Billing Period: March 2026
@@ -312,6 +302,8 @@ Adjustments:
 **Pros**: Real financial accountability, teams optimize proactively
 **Cons**: High friction, requires accurate data, can create perverse incentives
 
+> **Stop and think**: Why might implementing chargeback on day one of a FinOps initiative cause massive cultural resistance among engineering teams? If teams have never seen their costs before and suddenly face budget cuts based on un-optimized legacy configurations or missing labels, they will likely distrust the data and fight the FinOps program instead of collaborating.
+
 ### Choosing a Model
 
 | Factor | Start with Showback | Move to Chargeback |
@@ -330,29 +322,23 @@ Adjustments:
 
 ### OpenCost
 
-OpenCost is the CNCF sandbox project for Kubernetes cost monitoring. It provides a standard specification for measuring and allocating Kubernetes costs.
+OpenCost is a CNCF project for Kubernetes cost monitoring. It provides a standard specification for measuring and allocating Kubernetes costs.
 
 **Architecture**:
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   OpenCost                           │
-│                                                      │
-│  ┌──────────┐   ┌──────────────┐   ┌──────────┐    │
-│  │ Cloud    │   │ Kubernetes   │   │ Cost     │    │
-│  │ Pricing  │──▶│ Resource     │──▶│ Allocation│   │
-│  │ API      │   │ Metrics      │   │ Engine   │    │
-│  │          │   │ (cAdvisor,   │   │          │    │
-│  │ AWS/GCP/ │   │  kubelet)    │   │          │    │
-│  │ Azure    │   │              │   │          │    │
-│  └──────────┘   └──────────────┘   └─────┬────┘    │
-│                                           │         │
-│                                    ┌──────▼──────┐  │
-│                                    │ Prometheus  │  │
-│                                    │ Metrics +   │  │
-│                                    │ REST API    │  │
-│                                    └─────────────┘  │
-└─────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph OpenCost ["OpenCost Architecture"]
+        direction TB
+        API["Cloud Pricing API<br/>(AWS/GCP/Azure)"]
+        K8s["Kubernetes Resource Metrics<br/>(cAdvisor, kubelet)"]
+        Engine["Cost Allocation Engine"]
+        Prom["Prometheus Metrics + REST API"]
+        
+        API --> Engine
+        K8s --> Engine
+        Engine --> Prom
+    end
 ```
 
 **Key features**:
@@ -360,7 +346,7 @@ OpenCost is the CNCF sandbox project for Kubernetes cost monitoring. It provides
 - Cloud provider pricing integration (on-demand, spot, RI rates)
 - Support for CPU, memory, GPU, storage, and network costs
 - Prometheus metrics export for alerting and dashboards
-- Open-source, vendor-neutral (CNCF sandbox project)
+- Open-source, vendor-neutral (CNCF project)
 
 ### Kubecost
 
@@ -390,7 +376,7 @@ Kubecost is a commercial product (with a free tier) built on top of OpenCost. It
 
 ### The Cost Allocation Pipeline
 
-```
+```text
 Step 1: Collect Infrastructure Costs
   └─ Cloud billing API → node costs per hour
 
@@ -414,7 +400,7 @@ Step 6: Report
 
 For a request-based model:
 
-```
+```text
 Pod CPU cost = (pod_cpu_request / node_total_cpu) × node_cost × cpu_weight
 
 Pod Memory cost = (pod_memory_request / node_total_memory) × node_cost × memory_weight
@@ -437,7 +423,7 @@ Example:
 
 GPU workloads require special handling because GPU costs dominate the node price:
 
-```
+```text
 GPU Node: p3.2xlarge (8 vCPU, 61 GB, 1× V100 GPU) = $3.06/hr
 
 Cost weights for GPU nodes:
@@ -472,67 +458,48 @@ Pod requesting 1 GPU:
 ## Quiz
 
 ### Question 1
-A Pod requests 1 CPU and 4 GB memory but consistently uses only 200m CPU and 1.5 GB memory. In a request-based cost model, how much does this Pod "cost" relative to its actual usage?
+**Scenario**: Your team deployed a new `recommendation-engine` Pod. The deployment manifest requests 1 CPU and 4 GB of memory. However, after running in production for a week, you observe it consistently uses only 200m CPU and 1.5 GB memory. In a request-based cost model, how much does this Pod "cost" relative to its actual usage, and how should your team respond?
 
 <details>
 <summary>Show Answer</summary>
 
-The Pod is charged for its **requests** (1 CPU, 4 GB), not its usage (200m, 1.5 GB). This means:
-- CPU: Paying for 1 CPU, using 200m = **80% waste**
-- Memory: Paying for 4 GB, using 1.5 GB = **62.5% waste**
-
-In a request-based model, this is intentional — it incentivizes the team to reduce their requests to match actual usage. If the Pod truly only needs 200m CPU, the team should update the request to ~300m (with headroom) and save ~70% on compute costs for that workload.
+The Pod is charged for its **requests** (1 CPU, 4 GB), not its actual usage (200m, 1.5 GB). This means you are paying for 1 CPU while using 200m (80% waste), and paying for 4 GB while using 1.5 GB (62.5% waste). In a request-based model, this allocation is completely intentional, as it reflects the resources you have reserved on the node that cannot be used by other workloads. By charging based on requests, the organization incentivizes teams to rightsize their deployments. To optimize costs, your team should update the resource requests closer to the actual usage—perhaps 300m CPU and 2 GB memory to allow for a small safety buffer—which would significantly reduce the financial chargeback for this workload.
 </details>
 
 ### Question 2
-Your cluster has 3 nodes at $150/month each ($450 total). The `payments` namespace requests 40% of total cluster CPU and 30% of total memory. Using a 65/35 CPU/memory weight split, what is the payments team's cost?
+**Scenario**: You are the FinOps liaison for the `payments` team. The shared cluster consists of 3 nodes costing $150/month each ($450 total). Your `payments` namespace currently requests 40% of the total cluster CPU capacity and 30% of the total memory. If the organization's cost allocation model uses a 65/35 weight split between CPU and memory, what will your team's monthly chargeback be?
 
 <details>
 <summary>Show Answer</summary>
 
-**CPU cost**: 40% × $450 × 0.65 = **$117.00**
-**Memory cost**: 30% × $450 × 0.35 = **$47.25**
-**Total**: $117.00 + $47.25 = **$164.25/month**
-
-The payments team would be allocated $164.25 out of $450, or about 36.5% of the cluster cost. Notice this is between the 40% (CPU share) and 30% (memory share) because the weights blend the two dimensions.
+The payments team would be allocated **$164.25/month** out of the total $450 cluster cost, which represents about 36.5% of the overall cluster expense. Here is why: the model splits the node cost into compute and memory components based on the 65/35 weighting. The total CPU cost for the cluster is $450 × 0.65 = $292.50, and the payments team's 40% share of that is $117.00. The total memory cost is $450 × 0.35 = $157.50, and their 30% share equals $47.25. Combining the two ($117.00 + $47.25) gives the final monthly cost. This weighted approach ensures that workloads heavily leaning on either CPU or memory pay a fair proportion of the underlying infrastructure cost.
 </details>
 
 ### Question 3
-What is the difference between showback and chargeback? When would you use each?
+**Scenario**: Your company is migrating to a large multi-tenant Kubernetes cluster. The CFO wants to immediately start billing each engineering team's cost center for their Kubernetes usage (a "chargeback" model) to enforce cost discipline. You advocate for starting with a "showback" model instead. What is the fundamental difference between these two approaches, and why is starting with showback the better strategy?
 
 <details>
 <summary>Show Answer</summary>
 
-**Showback** is informational — "here's what your team costs, for awareness." No money changes hands. Use showback when: (1) you're starting FinOps and building trust in cost data, (2) tagging compliance is below 90%, (3) cost accuracy is rough (within 20%), or (4) the organization is new to cost accountability.
-
-**Chargeback** is transactional — costs are deducted from the team's budget or charged to their cost center. Use chargeback when: (1) cost data is accurate and trusted (within 5%), (2) tagging compliance exceeds 95%, (3) teams have experience with showback and accept the methodology, and (4) the organization wants real financial accountability for cloud spend.
-
-Most organizations should start with showback and transition to chargeback over 6-12 months.
+The fundamental difference is that **showback** is purely informational, whereas **chargeback** involves actual financial transactions where money is deducted from a team's budget. Showback says, "here is what your team's workloads cost," aiming to build awareness without financial penalties. You should start with showback because it builds trust in the new cost data, allows teams time to fix missing namespace tags, and gives them a grace period to rightsize their resource requests. If you implement chargeback on day one with inaccurate tags or vastly over-provisioned legacy requests, teams will feel unfairly penalized and resist the FinOps initiative. Chargeback should only be introduced once data accuracy exceeds 95% and teams understand how to optimize their deployments.
 </details>
 
 ### Question 4
-Why can't you just look at the cloud provider bill to understand Kubernetes costs?
+**Scenario**: An engineering manager looks at the AWS Cost Explorer and sees that EC2 instances tagged with `k8s-cluster: prod` cost $12,000 last month. They ask you to break down how much of that $12,000 was spent by the `frontend` team versus the `data-science` team. Why can't you answer this question using just the cloud provider's billing tools?
 
 <details>
 <summary>Show Answer</summary>
 
-Cloud provider bills show **infrastructure costs** (EC2 instances, EBS volumes, load balancers) but have no visibility into **what runs inside Kubernetes**. A single EC2 instance might run 15 Pods from 6 different teams. The cloud bill sees one $142/month instance — it cannot tell you that team A's workloads use $80 of that and team B's use $62. To allocate Kubernetes costs, you need to combine cloud pricing data with Kubernetes resource metrics (requests, usage, namespace, labels) using tools like OpenCost or Kubecost.
+Cloud provider billing tools lack visibility into the internal orchestration layer of Kubernetes. They track infrastructure resources like EC2 instances, EBS volumes, and load balancers, but they cannot see the Namespaces, Deployments, or Pods running inside those instances. Because a single EC2 worker node might simultaneously host Pods from the `frontend` team, the `data-science` team, and system-level daemonsets, the node's hourly cost cannot be natively divided by the cloud provider. To solve this, you must deploy Kubernetes-native cost tooling, such as OpenCost, which correlates the cloud pricing data for the node with the internal Kubernetes metrics for pod resource requests to accurately attribute costs to specific teams.
 </details>
 
 ### Question 5
-How should you handle shared cluster costs like kube-system, monitoring, and platform tooling?
+**Scenario**: After setting up OpenCost, you notice that 20% of your total cluster spend comes from the `kube-system` namespace, the Prometheus monitoring stack, and unallocated idle node capacity. The finance team wants to completely exclude these costs from the team reports since "they aren't business features." How should you handle these shared costs in your allocation model, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-Shared costs should be **visible and explicitly allocated**, not hidden. Common strategies:
-
-1. **Proportional allocation**: Distribute shared costs based on each team's percentage of total resource requests (most common)
-2. **Even split**: Divide equally across all consuming teams (simple but less fair)
-3. **Tiered platform fee**: Charge a flat "platform tax" per namespace or per team
-4. **Usage-based**: Attribute monitoring costs based on metrics volume, etc.
-
-The key is transparency — teams should see the shared cost as a line item in their report so they understand the full cost of running on the platform. Never hide shared costs; it creates mistrust when teams eventually discover the full picture.
+You should never hide shared costs; instead, they must be explicitly allocated and visible to the individual teams. The most common and fair strategy is proportional allocation, where the shared overhead is distributed based on each team's percentage of total resource requests. Hiding these costs creates a false sense of the true cost of running a service, which can lead to poor business decisions when evaluating the profitability of a product feature. By displaying the shared platform tax on their showback reports, teams gain a realistic understanding of the infrastructure burden. It also incentivizes teams to work collaboratively with the platform engineering group to optimize global tooling like logging and monitoring.
 </details>
 
 ---
@@ -945,7 +912,7 @@ You've completed this exercise when you:
 ## Further Reading
 
 **Projects**:
-- **OpenCost** — opencost.io (CNCF sandbox, open-source Kubernetes cost monitoring)
+- **OpenCost** — opencost.io (CNCF project, open-source Kubernetes cost monitoring)
 - **Kubecost** — kubecost.com (commercial Kubernetes cost management)
 
 **Articles**:
