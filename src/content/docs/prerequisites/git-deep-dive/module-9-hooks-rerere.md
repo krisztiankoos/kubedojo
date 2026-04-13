@@ -97,7 +97,7 @@ ls -l
 
 > **Stop and think**: If you were to write pseudocode for a `pre-commit` hook that checks for trailing spaces, what steps would it need to take to ensure it only checks the code about to be committed?
 > 
-> It would need to first identify only the files currently sitting in the staging area. Then, instead of reading those files directly from the hard drive's working directory, it would need to extract the exact snapshot of the file from Git's index to scan for trailing spaces, ensuring unstaged changes aren't accidentally validated.
+> It would need to first identify only the files currently sitting in the staging area. Then, instead of reading those files directly from the hard drive's working directory, it would need to extract the exact snapshot of the file from Git's index to scan for trailing spaces, ensuring unstaged changes aren't accidentally validated. By operating directly on the staged binary blob, the script guarantees that its validation perfectly matches the code that will actually enter the repository history.
 
 To create an actively executing hook, we simply create a new file named exactly after the specific hook phase (with no file extension whatsoever) and ensure it has executable permissions.
 
@@ -303,7 +303,7 @@ exit 0
 
 > **Pause and predict**: Before blindly running this, what output do you expect if you impulsively type `git commit -m "WIP: fixing stuff"`?
 > 
-> The `commit-msg` hook will instantly intercept your message, compare it against the rigidly defined `$REGEX` string, fail the `grep` evaluation, print the highly detailed rejection error explaining *why* it failed, and exit with status `1`. Your lazy commit will not be recorded in the repository's history, forcing you to think about your change.
+> The `commit-msg` hook will instantly intercept your message, compare it against the rigidly defined `$REGEX` string, fail the `grep` evaluation, print the highly detailed rejection error explaining *why* it failed, and exit with status `1`. Your lazy commit will not be recorded in the repository's history, forcing you to think about your change. This immediate, localized feedback loop enforces organizational standards before any malformed data can pollute the shared remote repository.
 
 ---
 
