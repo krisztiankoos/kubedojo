@@ -1,6 +1,6 @@
 ---
 title: "Modern PEFT: DoRA and PiSSA"
-slug: ai-ml-engineering/advanced-genai/module-7.9-modern-peft-dora-pissa
+slug: ai-ml-engineering/advanced-genai/module-1.9-modern-peft-dora-pissa
 sidebar:
   order: 810
 ---
@@ -346,4 +346,4 @@ print("DoRA forward pass simulation successful. Norms validated.")
 
 ## Next Module
 
-Having mastered the structural decompositions of DoRA and PiSSA, it is time to look at optimizing the data that flows *through* these weights. In [Module 7.10: Unsloth and Flash Attention Integration](/ai-ml-engineering/advanced-genai/module-7.10-unsloth-flash-attention), we will explore how custom CUDA kernels and memory mapping can accelerate PEFT training by up to 300% without sacrificing mathematical precision.
+Having mastered the structural decompositions of DoRA and PiSSA, it is time to look at the infrastructure required to serve and operate these models efficiently. In [Module 1.3: vLLM and SGLang for Inference](/ai-ml-engineering/ai-infrastructure/module-1.3-vllm-sglang-inference/), we will explore how modern inference engines use optimized kernels, memory layouts, and scheduling strategies to deliver high-throughput LLM serving.

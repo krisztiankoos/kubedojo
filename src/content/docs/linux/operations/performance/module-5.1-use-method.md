@@ -15,8 +15,8 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
-- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups/)
+- **Required**: [Module 1.2: Processes & Systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/)
+- **Required**: [Module 2.2: cgroups](/linux/foundations/container-primitives/module-2.2-cgroups/)
 - **Helpful**: Basic understanding of system metrics
 
 ---

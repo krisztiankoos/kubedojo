@@ -10,7 +10,7 @@ The platform team at a fintech company had a problem. Their nightly reconciliati
 
 ## Prerequisites
 
-- [Module 3.3: Argo Workflows](../../platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.3-argo-workflows/) -- Container, Script, Steps, DAG, Artifacts
+- [Module 3.3: Argo Workflows](/platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.3-argo-workflows/) -- Container, Script, Steps, DAG, Artifacts
 - Kubernetes RBAC basics (ServiceAccounts, Roles)
 - CronJob scheduling syntax
 

@@ -88,6 +88,46 @@ th, td { text-align: left; }
 pre code { white-space: pre; word-wrap: normal; overflow-x: auto; }
 pre { border-radius: var(--kube-radius) !important; }
 
+/* ===== MERMAID ===== */
+.js-mermaid pre[data-language='mermaid'] { display: none; }
+.js-mermaid .kd-mermaid-host[data-mermaid-state='error'] pre[data-language='mermaid'] { display: block; }
+.kd-mermaid-host { margin: 1rem 0; }
+.kd-mermaid__mount {
+  display: none;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--g200);
+  border-radius: var(--kube-radius);
+  background: white;
+  overflow-x: auto;
+}
+.kd-mermaid__mount svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+.kd-mermaid-host[data-mermaid-state='loading']::after {
+  content: 'Rendering diagram...';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 14rem;
+  margin-top: 0.75rem;
+  padding: 1rem;
+  border: 1px dashed var(--g300);
+  border-radius: var(--kube-radius);
+  background: linear-gradient(135deg, var(--g50), white);
+  color: var(--g500);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.kd-mermaid-host[data-mermaid-state='ready'] .kd-mermaid__mount { display: block; }
+:root[data-theme='dark'] .kd-mermaid__mount {
+  background: var(--g900);
+  border-color: var(--g700);
+}
+:root[data-theme='dark'] .kd-mermaid-host[data-mermaid-state='loading']::after {
+  border-color: var(--g700);
+  background: linear-gradient(135deg, var(--g800), var(--g900));
+  color: var(--g300);
+}
+
 /* ===== QUIZ / DETAILS-SUMMARY — card style ===== */
 .sl-markdown-content details {
   margin: 1.375rem 0; padding: 0;

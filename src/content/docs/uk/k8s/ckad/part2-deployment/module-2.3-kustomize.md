@@ -995,4 +995,4 @@ cd /tmp && rm -rf drill6
 
 ## Наступний модуль
 
-[Модуль 2.4: Стратегії деплойменту](module-2.4-deployment-strategies/) — патерни blue/green, canary та ковзного розгортання.
+[Модуль 2.4: Стратегії деплойменту](/uk/k8s/ckad/part2-deployment/module-2.4-deployment-strategies/) — патерни blue/green, canary та ковзного розгортання.

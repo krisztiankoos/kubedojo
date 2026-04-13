@@ -15,9 +15,9 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 3.1: Основи TCP/IP](../foundations/networking/module-3.1-tcp-ip-essentials/)
-- **Обов'язково**: [Модуль 3.4: iptables та netfilter](../foundations/networking/module-3.4-iptables-netfilter/)
-- **Бажано**: [Модуль 1.2: Процеси та systemd](../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Обов'язково**: [Модуль 3.1: Основи TCP/IP](/uk/linux/foundations/networking/module-3.1-tcp-ip-essentials/)
+- **Обов'язково**: [Модуль 3.4: iptables та netfilter](/uk/linux/foundations/networking/module-3.4-iptables-netfilter/)
+- **Бажано**: [Модуль 1.2: Процеси та systemd](/uk/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 
 ---
 

@@ -1,6 +1,7 @@
 ---
 title: "Private MLOps Platform"
 description: "Architecting and operating a bare-metal MLOps stack for model tracking, feature stores, and inference."
+slug: on-premises/ai-ml-infrastructure/module-9.4-private-mlops-platform
 sidebar:
   order: 94
 ---
@@ -544,4 +545,4 @@ The MLflow UI should load correctly, demonstrating that the frontend API server 
 
 ## Next Module
 
-Ready to dive deeper into inference optimization? Proceed to [Module 9.5: Advanced GPU Scheduling and Inference Optimization](/module-9.5-gpu-scheduling), where we explore NVIDIA Multi-Process Service (MPS), Multi-Instance GPU (MIG) hardware configurations, and TensorRT engine compilation for massive throughput gains.
+Ready to move from platform assembly into closed-loop operations? Proceed to [Module 9.5: Private AIOps](/on-premises/ai-ml-infrastructure/module-9.5-private-aiops/), where we explore how to monitor, automate, and operate internal AI platforms at scale.

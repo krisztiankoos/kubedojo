@@ -22,11 +22,11 @@ These tracks build foundational knowledge before diving into certifications or a
 | 0.3 | [First Terminal Commands](zero-to-terminal/module-0.3-first-commands/) |
 | 0.4 | [Files and Directories](zero-to-terminal/module-0.4-files-and-directories/) |
 | 0.5 | [Editing Files](zero-to-terminal/module-0.5-editing-files/) |
-| 0.6 | [What is Networking?](zero-to-terminal/module-0.6-what-is-networking/) |
-| 0.7 | [Servers and SSH](zero-to-terminal/module-0.7-servers-and-ssh/) |
-| 0.8 | [Software and Packages](zero-to-terminal/module-0.8-software-and-packages/) |
-| 0.9 | [What is the Cloud?](zero-to-terminal/module-0.9-what-is-the-cloud/) |
-| 0.10 | [Your First Server](zero-to-terminal/module-0.10-your-first-server/) |
+| 0.6 | [What is Networking?](/prerequisites/zero-to-terminal/module-0.7-what-is-networking/) |
+| 0.7 | [Servers and SSH](/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh/) |
+| 0.8 | [Software and Packages](/prerequisites/zero-to-terminal/module-0.9-software-and-packages/) |
+| 0.9 | [What is the Cloud?](/prerequisites/zero-to-terminal/module-0.10-what-is-the-cloud/) |
+| 0.10 | [Your First Server](/prerequisites/zero-to-terminal/module-0.11-your-first-server/) |
 
 ### [Everyday Linux](/linux/foundations/everyday-use/) — 5 modules
 *You learned the terminal. Now learn to USE Linux day-to-day: shell power tricks, permissions, processes, services, and networking tools.*

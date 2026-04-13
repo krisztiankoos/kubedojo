@@ -807,4 +807,4 @@ k get endpoints <service>              # Endpoints
 
 ## Наступний модуль
 
-Переходьте до [Модуль 5.6: Усунення несправностей Сервісів](module-5.6-services/) для глибшого занурення в усунення несправностей Сервісів, Ingress та LoadBalancer.
+Переходьте до [Модуль 5.6: Усунення несправностей Сервісів](/uk/k8s/cka/part5-troubleshooting/module-5.6-services/) для глибшого занурення в усунення несправностей Сервісів, Ingress та LoadBalancer.

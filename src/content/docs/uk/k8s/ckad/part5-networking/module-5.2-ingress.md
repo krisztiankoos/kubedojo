@@ -784,4 +784,4 @@ rm /tmp/tls.key /tmp/tls.crt
 
 ## Наступний модуль
 
-[Модуль 5.3: Мережеві політики](module-5.3-networkpolicies/) — Контроль комунікації між подами.
+[Модуль 5.3: Мережеві політики](/uk/k8s/ckad/part5-networking/module-5.3-networkpolicies/) — Контроль комунікації між подами.

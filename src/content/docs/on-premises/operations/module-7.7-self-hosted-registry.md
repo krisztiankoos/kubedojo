@@ -1,6 +1,7 @@
 ---
 title: "Self-Hosted Container Registry"
 description: Architecture, deployment, and operation of self-hosted container registries like Harbor, Quay, and Zot on bare metal Kubernetes.
+slug: on-premises/operations/module-7.7-self-hosted-registry
 sidebar:
   order: 77
 ---

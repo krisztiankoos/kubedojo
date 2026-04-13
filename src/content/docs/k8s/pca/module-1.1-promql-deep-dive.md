@@ -9,8 +9,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- [Prometheus Module](../../platform/toolkits/observability-intelligence/observability/module-1.1-prometheus/) — architecture, pull model, basic PromQL
-- [Observability Theory](../../platform/foundations/observability-theory/) — metrics concepts
+- [Prometheus Module](/platform/toolkits/observability-intelligence/observability/module-1.1-prometheus/) — architecture, pull model, basic PromQL
+- [Observability Theory](/platform/foundations/observability-theory/) — metrics concepts
 - Basic Kubernetes knowledge
 - A running Prometheus instance (kind/minikube with kube-prometheus-stack)
 

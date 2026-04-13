@@ -1,6 +1,7 @@
 ---
 title: "GPU Nodes & Accelerated Computing"
 description: "Architecture, provisioning, and operational management of GPU resources in on-premises Kubernetes clusters using device plugins and operators."
+slug: on-premises/ai-ml-infrastructure/module-9.1-gpu-nodes-accelerated
 sidebar:
   order: 91
 ---
@@ -493,4 +494,4 @@ D) Deploy the legacy Device Plugin framework on staging and NRI on production.
 
 ## Next Module
 
-Now that you have confidently mastered the foundational mechanics of accelerator provisioning, lifecycle management, and hardware partitioning, you are completely ready to explore multi-node scaling architectures. Proceed immediately to **[Module 9.2: Advanced Topology and RDMA Fabrics](./module-9.2-topology-rdma)**. In the upcoming module, you will learn exactly how to network massive fleets of GPUs across physically disparate nodes using InfiniBand and RoCEv2, unlocking the profound bandwidth required to train frontier models that far exceed the VRAM of any single bare-metal machine!
+Now that you have confidently mastered the foundational mechanics of accelerator provisioning, lifecycle management, and hardware partitioning, you are completely ready to explore multi-node scaling architectures. Proceed immediately to **[Module 9.2: Advanced Topology and RDMA Fabrics](/on-premises/ai-ml-infrastructure/module-9.1-gpu-nodes-accelerated/)**. In the upcoming module, you will learn exactly how to network massive fleets of GPUs across physically disparate nodes using InfiniBand and RoCEv2, unlocking the profound bandwidth required to train frontier models that far exceed the VRAM of any single bare-metal machine!

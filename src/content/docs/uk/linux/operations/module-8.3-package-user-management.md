@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.4: Користувачі та дозволи](../foundations/system-essentials/module-1.4-users-permissions/)
-- **Обов'язково**: [Модуль 1.2: Процеси та systemd](../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Обов'язково**: [Модуль 1.4: Користувачі та дозволи](/uk/linux/foundations/system-essentials/module-1.4-users-permissions/)
+- **Обов'язково**: [Модуль 1.2: Процеси та systemd](/uk/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 
 ---
 

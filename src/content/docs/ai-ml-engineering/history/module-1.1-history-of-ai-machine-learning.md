@@ -1,6 +1,6 @@
 ---
 title: "History of AI & Machine Learning"
-slug: ai-ml-engineering/history/module-11.1-history-of-ai-machine-learning
+slug: ai-ml-engineering/history/module-1.1-history-of-ai-machine-learning
 sidebar:
   order: 1202
 ---

@@ -422,4 +422,4 @@ sidebar:
 
 ## Наступний модуль
 
-[Модуль 3.3: Хмарні нативні патерни](module-3.3-patterns/) - Service mesh, serverless та інші хмарні нативні архітектурні патерни.
+[Модуль 3.3: Хмарні нативні патерни](/uk/k8s/kcna/part3-cloud-native-architecture/module-3.3-patterns/) - Service mesh, serverless та інші хмарні нативні архітектурні патерни.

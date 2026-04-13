@@ -36,8 +36,8 @@ GitOps — це операційний фреймворк, який застос
 |---|--------|------------|------|-------------|
 | 3.1 | [Що таке GitOps?](module-3.1-what-is-gitops/) | MEDIUM | 35-45 хв | Принципи GitOps, pull vs push, reconciliation |
 | 3.2 | [Стратегії репозиторіїв](module-3.2-repository-strategies/) | MEDIUM | 35-45 хв | Monorepo vs polyrepo, додатки vs конфігурація |
-| 3.3 | [Просування по середовищах](module-3.3-environment-promotion/) | MEDIUM | 40-50 хв | Promotion на основі директорій, progressive delivery |
-| 3.4 | [Виявлення дрейфу](module-3.4-drift-detection/) | MEDIUM | 40-50 хв | Типи дрейфу, стратегії auto-heal vs alert |
+| 3.3 | [Просування по середовищах](/uk/linux/foundations/everyday-use/module-0.2-environment-permissions/) | MEDIUM | 40-50 хв | Promotion на основі директорій, progressive delivery |
+| 3.4 | [Виявлення дрейфу](/uk/k8s/ckad/part3-observability/module-3.5-api-deprecations/) | MEDIUM | 40-50 хв | Типи дрейфу, стратегії auto-heal vs alert |
 | 3.5 | [Секрети в GitOps](module-3.5-secrets/) | COMPLEX | 50-60 хв | Sealed Secrets, SOPS, External Secrets Operator |
 | 3.6 | [Мультикластерний GitOps](module-3.6-multi-cluster/) | COMPLEX | 55-65 хв | Управління флотом, bootstrapping, hub-spoke патерни |
 

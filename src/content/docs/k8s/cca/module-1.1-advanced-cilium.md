@@ -8,8 +8,8 @@ sidebar:
 
 ## Prerequisites
 
-- [Cilium Toolkit Module](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/) -- eBPF fundamentals, basic Cilium architecture, identity-based security
-- [Hubble Toolkit Module](../../platform/toolkits/observability-intelligence/observability/module-1.7-hubble/) -- Hubble CLI, flow observation
+- [Cilium Toolkit Module](/platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/) -- eBPF fundamentals, basic Cilium architecture, identity-based security
+- [Hubble Toolkit Module](/platform/toolkits/observability-intelligence/observability/module-1.7-hubble/) -- Hubble CLI, flow observation
 - Kubernetes networking basics (Services, Pods, DNS)
 - Comfort with `kubectl` and YAML
 

@@ -17,7 +17,7 @@ lab:
 Before starting this module:
 - **Required**: [Module 7.1: Bash Fundamentals](../module-7.1-bash-fundamentals/)
 - **Required**: Basic regex understanding
-- **Helpful**: [Module 6.2: Log Analysis](../troubleshooting/module-6.2-log-analysis/)
+- **Helpful**: [Module 6.2: Log Analysis](/linux/operations/troubleshooting/module-6.2-log-analysis/)
 
 ---
 

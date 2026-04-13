@@ -610,4 +610,4 @@ kubectl delete namespace kubernetes-dashboard
 - Захист сервісу метаданих
 - Зміцнення безпеки Dashboard
 
-**Наступна частина**: [Частина 2: Зміцнення кластера](../part2-cluster-hardening/module-2.1-rbac-deep-dive/) — RBAC, ServiceAccounts та безпека API.
+**Наступна частина**: [Частина 2: Зміцнення кластера](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) — RBAC, ServiceAccounts та безпека API.

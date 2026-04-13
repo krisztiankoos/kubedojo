@@ -15,7 +15,7 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: Kernel Architecture](../../foundations/system-essentials/module-1.1-kernel-architecture/) for understanding commands
+- **Required**: [Module 1.1: Kernel Architecture](/linux/foundations/system-essentials/module-1.1-kernel-architecture/) for understanding commands
 - **Required**: Basic command line experience
 - **Helpful**: Any programming experience
 

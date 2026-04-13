@@ -13,7 +13,7 @@ sidebar:
 
 Before starting this module, you should have completed:
 - [Module 1: Installation & Architecture](../module-1.1-istio-installation-architecture/) — Istio installation and sidecar injection
-- [CKA Module 3.5: Gateway API](../cka/part3-services-networking/module-3.5-gateway-api/) — Kubernetes Gateway API basics
+- [CKA Module 3.5: Gateway API](/k8s/cka/part3-services-networking/module-3.5-gateway-api/) — Kubernetes Gateway API basics
 - Understanding of HTTP routing concepts (headers, paths, methods)
 
 ---

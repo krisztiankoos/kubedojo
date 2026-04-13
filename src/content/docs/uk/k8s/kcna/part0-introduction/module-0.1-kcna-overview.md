@@ -315,4 +315,4 @@ A) Cloud Native Computing Foundation. CNCF розміщує Kubernetes та ін
 
 ## Наступний модуль
 
-[Модуль 0.2: Стратегія підготовки](module-0.2-study-strategy/) - Як ефективно підготуватися до іспиту Kubernetes з множинним вибором.
+[Модуль 0.2: Стратегія підготовки](/uk/k8s/kcna/part0-introduction/module-0.2-study-strategy/) - Як ефективно підготуватися до іспиту Kubernetes з множинним вибором.

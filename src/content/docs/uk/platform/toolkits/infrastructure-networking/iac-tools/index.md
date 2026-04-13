@@ -26,12 +26,12 @@ sidebar:
 |---|--------|------------|------|
 | 7.1 | [Глибоке занурення в Terraform](module-7.1-terraform/) | `[COMPLEX]` | 60 хв |
 | 7.2 | [OpenTofu](module-7.2-opentofu/) | `[MEDIUM]` | 45-50 хв |
-| 7.3 | [Pulumi](module-7.3-pulumi/) | `[COMPLEX]` | 55-60 хв |
-| 7.4 | [Ansible](module-7.4-ansible/) | `[COMPLEX]` | 55-60 хв |
-| 7.5 | [CloudFormation](module-7.5-cloudformation/) | `[MEDIUM]` | 45-50 хв |
-| 7.6 | [Bicep](module-7.6-bicep/) | `[MEDIUM]` | 45-50 хв |
+| 7.3 | [Pulumi](/uk/k8s/cka/part1-cluster-architecture/module-1.3-helm/) | `[COMPLEX]` | 55-60 хв |
+| 7.4 | [Ansible](/uk/cloud/azure-essentials/module-3.4-blob/) | `[COMPLEX]` | 55-60 хв |
+| 7.5 | [CloudFormation](/uk/cloud/aws-essentials/module-1.12-cloudformation/) | `[MEDIUM]` | 45-50 хв |
+| 7.6 | [Bicep](/uk/cloud/azure-essentials/module-3.12-bicep/) | `[MEDIUM]` | 45-50 хв |
 | 7.7 | [Wing](module-7.7-winglang/) | `[COMPLEX]` | 50-55 хв |
-| 7.8 | [SST](module-7.8-sst/) | `[MEDIUM]` | 45-50 хв |
+| 7.8 | [SST](/uk/cloud/aws-essentials/module-1.4-s3/) | `[MEDIUM]` | 45-50 хв |
 | 7.9 | [System Initiative](module-7.9-system-initiative/) | `[COMPLEX]` | 50-55 хв |
 | 7.10 | [Nitric](module-7.10-nitric/) | `[MEDIUM]` | 45-50 хв |
 

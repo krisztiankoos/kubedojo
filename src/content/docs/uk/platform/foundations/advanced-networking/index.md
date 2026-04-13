@@ -14,12 +14,12 @@ sidebar:
 
 | # | Модуль | Час | Що ви вивчите |
 |---|--------|------|-------------------|
-| 1.1 | [DNS у масштабі та глобальний трафік](module-1.1-dns-at-scale/) | 3 год | Anycast, GeoDNS, DNSSEC, маршрутизація за затримкою |
-| 1.2 | [CDN та Edge Computing](module-1.2-cdn-edge/) | 2.5 год | Архітектура PoP, інвалідація кешу, edge-функції |
+| 1.1 | [DNS у масштабі та глобальний трафік](/uk/prerequisites/kubernetes-basics/module-1.1-first-cluster/) | 3 год | Anycast, GeoDNS, DNSSEC, маршрутизація за затримкою |
+| 1.2 | [CDN та Edge Computing](/uk/cloud/aws-essentials/module-1.2-vpc/) | 2.5 год | Архітектура PoP, інвалідація кешу, edge-функції |
 | 1.3 | [WAF та захист від DDoS](module-1.3-waf-ddos/) | 2.5 год | Правила OWASP, обмеження частоти запитів, бот-менеджмент |
-| 1.4 | [BGP та основна маршрутизація](module-1.4-bgp-routing/) | 3.5 год | Піринг AS, вибір шляху, Direct Connect |
+| 1.4 | [BGP та основна маршрутизація](/uk/cloud/aks-deep-dive/module-7.4-aks-production/) | 3.5 год | Піринг AS, вибір шляху, Direct Connect |
 | 1.5 | [Глибоке занурення в хмарне балансування](module-1.5-load-balancing/) | 3 год | L4/L7, Proxy Protocol, session affinity |
-| 1.6 | [Zero Trust та альтернативи VPN](module-1.6-zero-trust/) | 2.5 год | BeyondCorp, IAP, Tailscale, mTLS |
+| 1.6 | [Zero Trust та альтернативи VPN](/uk/cloud/enterprise-hybrid/module-10.9-zero-trust/) | 2.5 год | BeyondCorp, IAP, Tailscale, mTLS |
 
 **Загальний час**: ~17 годин
 

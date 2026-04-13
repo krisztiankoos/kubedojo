@@ -1,6 +1,6 @@
 ---
 title: "Docker for ML"
-slug: ai-ml-engineering/mlops/module-5.2-docker-for-ml
+slug: ai-ml-engineering/mlops/module-1.2-docker-for-ml
 sidebar:
   order: 603
 ---

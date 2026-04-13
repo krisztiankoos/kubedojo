@@ -14,7 +14,7 @@ lab:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 0.6: What is Networking?](../module-0.6-what-is-networking/) — You should be comfortable with the terminal, files, and basic networking concepts.
+> **Prerequisites**: [Module 0.6: What is Networking?](/prerequisites/zero-to-terminal/module-0.7-what-is-networking/) — You should be comfortable with the terminal, files, and basic networking concepts.
 
 ---
 
@@ -621,4 +621,4 @@ You now know how software gets from code to a running program, how to install to
 
 From here, you have the foundation to start learning about containers, cloud computing, and eventually Kubernetes. Every tool in the Kubernetes ecosystem — `kubectl`, `helm`, `kind`, `docker` — gets installed exactly the way you just learned.
 
-**Continue to**: [Module 0.9: What is the Cloud?](../module-0.9-what-is-the-cloud/) — Learn what the cloud actually is, how data centers work, and why companies rent servers instead of buying them.
+**Continue to**: [Module 0.9: What is the Cloud?](/prerequisites/zero-to-terminal/module-0.10-what-is-the-cloud/) — Learn what the cloud actually is, how data centers work, and why companies rent servers instead of buying them.

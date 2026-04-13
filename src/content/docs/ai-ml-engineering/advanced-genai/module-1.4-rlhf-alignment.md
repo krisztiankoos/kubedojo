@@ -1,6 +1,6 @@
 ---
 title: "RLHF & Alignment"
-slug: ai-ml-engineering/advanced-genai/module-7.4-rlhf-alignment
+slug: ai-ml-engineering/advanced-genai/module-1.4-rlhf-alignment
 sidebar:
   order: 805
 ---

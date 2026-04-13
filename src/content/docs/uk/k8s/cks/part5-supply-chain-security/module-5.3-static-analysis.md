@@ -800,4 +800,4 @@ rm -f insecure.yaml secure.yaml
 
 ## Наступний модуль
 
-[Модуль 5.4: Контролери допуску](module-5.4-admission-controllers/) — Власний контроль допуску для безпеки.
+[Модуль 5.4: Контролери допуску](/uk/k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers/) — Власний контроль допуску для безпеки.

@@ -1010,4 +1010,4 @@ kubectl delete clusterrolebinding dm-pods
 
 ## Наступний модуль
 
-[Модуль 1.7: Основи kubeadm](module-1.7-kubeadm/) — Початкове налаштування кластера та керування вузлами.
+[Модуль 1.7: Основи kubeadm](/uk/k8s/cka/part1-cluster-architecture/module-1.7-kubeadm/) — Початкове налаштування кластера та керування вузлами.

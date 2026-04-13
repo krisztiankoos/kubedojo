@@ -556,4 +556,4 @@ kubectl delete pod insecure hardened
 
 ## Наступний модуль
 
-[Модуль 4.2: Pod Security Admission](module-4.2-pod-security-admission/) — Застосування стандартів безпеки на рівні простору імен.
+[Модуль 4.2: Pod Security Admission](/uk/k8s/cks/part4-microservice-vulnerabilities/module-4.2-pod-security-admission/) — Застосування стандартів безпеки на рівні простору імен.

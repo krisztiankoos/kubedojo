@@ -495,4 +495,4 @@ Key concepts:
 
 ## Next Module
 
-[Module 2.1: Control Plane Security](../part2-cluster-component-security/module-2.1-control-plane-security/) - Securing the Kubernetes control plane components.
+[Module 2.1: Control Plane Security](/k8s/kcsa/part2-cluster-component-security/module-2.1-control-plane-security/) - Securing the Kubernetes control plane components.

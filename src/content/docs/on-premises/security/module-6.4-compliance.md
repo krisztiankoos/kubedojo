@@ -710,4 +710,4 @@ Your company processes payments (PCI DSS) and healthcare data (HIPAA) on the sam
 
 ## Next Module
 
-Continue to [Module 7.1: Cluster Upgrades & Lifecycle](../operations/module-7.1-upgrades/) to learn how to manage Kubernetes version upgrades, OS patching, and firmware updates in on-premises environments.
+Continue to [Module 7.1: Cluster Upgrades & Lifecycle](/on-premises/operations/module-7.1-upgrades/) to learn how to manage Kubernetes version upgrades, OS patching, and firmware updates in on-premises environments.

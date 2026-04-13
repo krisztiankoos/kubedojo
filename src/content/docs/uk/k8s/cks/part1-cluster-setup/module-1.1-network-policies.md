@@ -641,4 +641,4 @@ kubectl delete namespace exercise
 
 ## Наступний модуль
 
-[Модуль 1.2: CIS Benchmarks](module-1.2-cis-benchmarks/) — Аудит безпеки кластера з kube-bench.
+[Модуль 1.2: CIS Benchmarks](/uk/k8s/cks/part1-cluster-setup/module-1.2-cis-benchmarks/) — Аудит безпеки кластера з kube-bench.

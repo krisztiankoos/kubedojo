@@ -25,8 +25,8 @@ sidebar:
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
 | 9.1 | [Kubeflow](module-9.1-kubeflow/) | `[COMPLEX]` | 50-60 хв |
-| 9.2 | [MLflow](module-9.2-mlflow/) | `[MEDIUM]` | 40-45 хв |
-| 9.3 | [Feature Stores](module-9.3-feature-stores/) | `[MEDIUM]` | 40-45 хв |
+| 9.2 | [MLflow](/uk/k8s/cks/part6-runtime-security/module-6.2-falco/) | `[MEDIUM]` | 40-45 хв |
+| 9.3 | [Feature Stores](/uk/cloud/managed-services/module-9.4-object-storage/) | `[MEDIUM]` | 40-45 хв |
 | 9.4 | [vLLM](module-9.4-vllm/) | `[COMPLEX]` | 50-60 хв |
 | 9.5 | [Ray Serve](module-9.5-ray-serve/) | `[COMPLEX]` | 50-60 хв |
 | 9.6 | [LangChain & LlamaIndex](module-9.6-langchain-llamaindex/) | `[COMPLEX]` | 50-60 хв |

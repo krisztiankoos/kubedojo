@@ -1009,4 +1009,4 @@ kubectl delete namespace challenge
 
 ## Наступний модуль
 
-[Модуль 2.6: Планування](module-2.6-scheduling/) — Вибір вузла, спорідненість, taints та tolerations.
+[Модуль 2.6: Планування](/uk/k8s/cka/part2-workloads-scheduling/module-2.6-scheduling/) — Вибір вузла, спорідненість, taints та tolerations.

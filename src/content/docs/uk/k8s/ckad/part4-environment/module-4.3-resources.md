@@ -595,4 +595,4 @@ k delete ns drill6
 
 ## Наступний модуль
 
-[Модуль 4.4: SecurityContexts](module-4.4-securitycontext/) — Налаштування параметрів безпеки подів та контейнерів.
+[Модуль 4.4: SecurityContexts](/uk/k8s/ckad/part4-environment/module-4.4-securitycontext/) — Налаштування параметрів безпеки подів та контейнерів.

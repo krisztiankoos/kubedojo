@@ -347,4 +347,4 @@ The KCNA exam expects you to recognize these patterns, understand their trade-of
 
 ---
 
-**Next Module**: [Back to KCNA Overview](../../kcna/)
+**Next Module**: [Back to KCNA Overview](/k8s/kcna/)

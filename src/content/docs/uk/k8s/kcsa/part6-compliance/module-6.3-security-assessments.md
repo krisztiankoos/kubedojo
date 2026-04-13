@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 6.2: CIS Benchmarks](module-6.2-cis-benchmarks/)
+> **Передумови**: [Модуль 6.2: CIS Benchmarks](/uk/k8s/kcsa/part6-compliance/module-6.2-cis-benchmarks/)
 
 ---
 

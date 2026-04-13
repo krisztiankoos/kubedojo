@@ -1,6 +1,7 @@
 ---
 title: "Zero Trust Architecture"
 description: Implement zero trust architecture on bare-metal Kubernetes using SPIFFE identity, mTLS service meshes, and eBPF-based microsegmentation.
+slug: on-premises/security/module-6.8-zero-trust-architecture
 sidebar:
   order: 68
 ---

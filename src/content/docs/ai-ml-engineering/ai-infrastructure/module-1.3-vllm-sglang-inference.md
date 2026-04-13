@@ -1,6 +1,6 @@
 ---
 title: "High-Performance LLM Inference: vLLM and sglang"
-slug: ai-ml-engineering/ai-infrastructure/module-6.3-vllm-sglang-inference
+slug: ai-ml-engineering/ai-infrastructure/module-1.3-vllm-sglang-inference
 sidebar:
   order: 704
 ---

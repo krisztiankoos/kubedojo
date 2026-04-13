@@ -508,4 +508,4 @@ kubectl get pods -A -o json | jq -r '.items[] | select(.spec.hostNetwork==true) 
 - Зміцнення ядра Linux та ОС
 - Мережеву безпеку хоста
 
-**Наступна частина**: [Частина 4: Мінімізація вразливостей мікросервісів](../part4-microservice-vulnerabilities/module-4.1-security-contexts/) — Контексти безпеки, Pod Security та управління секретами.
+**Наступна частина**: [Частина 4: Мінімізація вразливостей мікросервісів](/uk/k8s/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts/) — Контексти безпеки, Pod Security та управління секретами.

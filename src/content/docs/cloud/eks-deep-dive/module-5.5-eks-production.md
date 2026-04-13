@@ -1081,4 +1081,4 @@ helm uninstall karpenter -n kube-system
 
 ## Next Module
 
-You have completed the EKS Deep Dive series. You now understand EKS architecture, networking, identity, storage, and production operations. To continue your cloud Kubernetes journey, explore the [AKS Deep Dive](../aks-deep-dive/) or [GKE Deep Dive](../gke-deep-dive/) series, or compare all three providers with the [Hyperscaler Rosetta Stone](../hyperscaler-rosetta-stone/).
+You have completed the EKS Deep Dive series. You now understand EKS architecture, networking, identity, storage, and production operations. To continue your cloud Kubernetes journey, explore the [AKS Deep Dive](/cloud/aks-deep-dive/) or [GKE Deep Dive](/cloud/gke-deep-dive/) series, or compare all three providers with the [Hyperscaler Rosetta Stone](/cloud/hyperscaler-rosetta-stone/).

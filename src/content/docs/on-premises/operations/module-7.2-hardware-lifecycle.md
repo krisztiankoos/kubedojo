@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 7.1: Kubernetes Upgrades on Bare Metal](../module-7.1-upgrades/), [Module 2.1: Datacenter Fundamentals](../provisioning/module-2.1-datacenter-fundamentals/)
+> **Prerequisites**: [Module 7.1: Kubernetes Upgrades on Bare Metal](../module-7.1-upgrades/), [Module 2.1: Datacenter Fundamentals](/on-premises/provisioning/module-2.1-datacenter-fundamentals/)
 
 ---
 
@@ -690,4 +690,4 @@ chmod +x /tmp/smartmon-collector.sh
 
 ## Next Module
 
-Continue to [Module 7.3: Node Failure & Auto-Remediation](../operations/module-7.3-node-remediation/) to learn how to detect and automatically recover from node failures using Machine Health Checks and node problem detector.
+Continue to [Module 7.3: Node Failure & Auto-Remediation](/on-premises/operations/module-7.3-node-remediation/) to learn how to detect and automatically recover from node failures using Machine Health Checks and node problem detector.

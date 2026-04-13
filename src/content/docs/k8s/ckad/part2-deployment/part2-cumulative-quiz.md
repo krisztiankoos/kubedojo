@@ -355,4 +355,4 @@ If you scored less than 80%, review these areas:
 
 ## Next Part
 
-[Part 3: Application Observability and Maintenance](../part3-observability/module-3.1-probes/) - Probes, logging, debugging, and API deprecations.
+[Part 3: Application Observability and Maintenance](/k8s/ckad/part3-observability/module-3.1-probes/) - Probes, logging, debugging, and API deprecations.

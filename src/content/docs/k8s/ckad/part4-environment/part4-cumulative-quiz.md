@@ -407,4 +407,4 @@ If you scored less than 80%, review these areas:
 
 ## Next Part
 
-[Part 5: Services and Networking](../part5-networking/module-5.1-services/) - Services, Ingress, and Network Policies.
+[Part 5: Services and Networking](/k8s/ckad/part5-networking/module-5.1-services/) - Services, Ingress, and Network Policies.

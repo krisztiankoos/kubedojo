@@ -621,4 +621,4 @@ rm -f /tmp/audit-policy.yaml /tmp/sample-audit.json
 
 ## Наступний модуль
 
-[Модуль 6.2: Безпека виконання з Falco](module-6.2-falco/) — Виявлення підозрілої поведінки контейнерів.
+[Модуль 6.2: Безпека виконання з Falco](/uk/k8s/cks/part6-runtime-security/module-6.2-falco/) — Виявлення підозрілої поведінки контейнерів.

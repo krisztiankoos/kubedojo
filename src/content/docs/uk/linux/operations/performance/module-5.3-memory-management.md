@@ -16,8 +16,8 @@ lab:
 
 Перед початком цього модуля:
 - **Обов'язково**: [Модуль 5.1: Метод USE](../module-5.1-use-method/)
-- **Обов'язково**: [Модуль 2.2: Контрольні групи (cgroups)](../../foundations/container-primitives/module-2.2-cgroups/)
-- **Бажано**: [Модуль 1.3: Ієрархія файлової системи](../../foundations/system-essentials/module-1.3-filesystem-hierarchy/)
+- **Обов'язково**: [Модуль 2.2: Контрольні групи (cgroups)](/uk/linux/foundations/container-primitives/module-2.2-cgroups/)
+- **Бажано**: [Модуль 1.3: Ієрархія файлової системи](/uk/linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/)
 
 ---
 

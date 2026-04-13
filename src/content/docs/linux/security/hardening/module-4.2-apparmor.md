@@ -16,8 +16,8 @@ lab:
 ## Prerequisites
 
 Before starting this module, ensure you have completed:
-- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms/)
-- **Required**: [Module 1.4: Users & Permissions](../../foundations/system-essentials/module-1.4-users-permissions/)
+- **Required**: [Module 2.3: Capabilities & LSMs](/linux/foundations/container-primitives/module-2.3-capabilities-lsms/)
+- **Required**: [Module 1.4: Users & Permissions](/linux/foundations/system-essentials/module-1.4-users-permissions/)
 - **Helpful**: Basic understanding of system calls and reverse proxy architecture
 
 ---
@@ -760,4 +760,4 @@ rm /tmp/test-app.sh /tmp/test-output.txt
 
 ## What's Next?
 
-You have mastered path-based mandatory access control. But what happens when you land on a Red Hat or CentOS cluster where AppArmor doesn't exist? In **[Module 4.3: SELinux Contexts](./module-4.3-selinux)**, you will dive into the alternative MAC ecosystem, learning how to manipulate security labels and boolean toggles to achieve the exact same kernel-level containment.
+You have mastered path-based mandatory access control. But what happens when you land on a Red Hat or CentOS cluster where AppArmor doesn't exist? In **[Module 4.3: SELinux Contexts](/linux/security/hardening/module-4.3-selinux/)**, you will dive into the alternative MAC ecosystem, learning how to manipulate security labels and boolean toggles to achieve the exact same kernel-level containment.

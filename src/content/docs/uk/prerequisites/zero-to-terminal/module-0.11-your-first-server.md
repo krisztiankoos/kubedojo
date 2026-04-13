@@ -10,7 +10,7 @@ en_file: "src/content/docs/prerequisites/zero-to-terminal/module-0.11-your-first
 >
 > **Час на виконання**: 40–50 хвилин
 >
-> **Необхідні знання**: [Модуль 0.1](../module-0.1-what-is-a-computer/) до [Модуля 0.9](../module-0.9-what-is-the-cloud/) — усі вони
+> **Необхідні знання**: [Модуль 0.1](../module-0.1-what-is-a-computer/) до [Модуля 0.9](/uk/prerequisites/zero-to-terminal/module-0.10-what-is-the-cloud/) — усі вони
 
 ---
 
@@ -518,7 +518,7 @@ exit
 
 Якщо ви хочете стати системним інженером, SRE або будь-ким, хто керує інфраструктурою — цей шлях зробить вас небезпечно крутим спеціалістом.
 
-> Почніть тут: [Основи Linux](../../linux/)
+> Почніть тут: [Основи Linux](/uk/linux/)
 
 ### Шлях Б: Cloud Native
 
@@ -528,7 +528,7 @@ exit
 
 Якщо ви хочете стати хмарним інженером, DevOps-інженером або platform-інженером — це ваш шлях.
 
-> Почніть тут: [Cloud Native 101](../cloud-native-101/module-1.1-what-are-containers/)
+> Почніть тут: [Cloud Native 101](/uk/prerequisites/cloud-native-101/module-1.1-what-are-containers/)
 
 ### Шлях В: Обидва
 

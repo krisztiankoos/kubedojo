@@ -15,7 +15,7 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 5.1: USE Method](../performance/module-5.1-use-method/)
+- **Required**: [Module 5.1: USE Method](/linux/operations/performance/module-5.1-use-method/)
 - **Helpful**: Experience with production issues
 - **Helpful**: Basic Linux command line familiarity
 

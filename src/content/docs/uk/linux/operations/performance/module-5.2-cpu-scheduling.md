@@ -16,7 +16,7 @@ lab:
 
 Перед початком цього модуля:
 - **Обов'язково**: [Модуль 5.1: Метод USE](../module-5.1-use-method/)
-- **Обов'язково**: [Модуль 2.2: Контрольні групи (cgroups)](../../foundations/container-primitives/module-2.2-cgroups/)
+- **Обов'язково**: [Модуль 2.2: Контрольні групи (cgroups)](/uk/linux/foundations/container-primitives/module-2.2-cgroups/)
 - **Бажано**: Розуміння понять процесів та потоків (threads).
 
 ---

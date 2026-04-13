@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 30-35 хвилин
 >
-> **Передумови**: [Модуль 3.1: Безпека подів](module-3.1-pod-security/)
+> **Передумови**: [Модуль 3.1: Безпека подів](/uk/k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security/)
 
 ---
 
@@ -250,4 +250,4 @@ RBAC - система авторизації Kubernetes:
 
 ## Наступний модуль
 
-[Модуль 3.3: Управління секретами](module-3.3-secrets/) - Як безпечно працювати з чутливими даними в Kubernetes.
+[Модуль 3.3: Управління секретами](/uk/k8s/kcsa/part3-security-fundamentals/module-3.3-secrets/) - Як безпечно працювати з чутливими даними в Kubernetes.

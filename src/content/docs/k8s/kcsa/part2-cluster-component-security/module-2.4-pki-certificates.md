@@ -468,4 +468,4 @@ Key security practices:
 
 ## Next Module
 
-[Module 3.1: Pod Security](../part3-security-fundamentals/module-3.1-pod-security/) - SecurityContext, Pod Security Standards, and container-level security.
+[Module 3.1: Pod Security](/k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security/) - SecurityContext, Pod Security Standards, and container-level security.

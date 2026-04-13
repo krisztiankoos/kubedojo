@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[MEDIUM]` | Time: 45 minutes
 >
-> **Prerequisites**: [Module 1.2: Server Sizing](../module-1.2-server-sizing/), [FinOps Fundamentals](../../k8s/finops/module-1.1-finops-fundamentals/)
+> **Prerequisites**: [Module 1.2: Server Sizing](../module-1.2-server-sizing/), [FinOps Fundamentals](/k8s/finops/module-1.1-finops-fundamentals/)
 
 ---
 
@@ -426,4 +426,4 @@ Rule of thumb: if you need < 50 racks, colocation wins. If you need 200+ racks a
 
 ## Next Module
 
-Continue to [Module 2.1: Datacenter Fundamentals](../provisioning/module-2.1-datacenter-fundamentals/) to learn the physical infrastructure that supports your Kubernetes cluster.
+Continue to [Module 2.1: Datacenter Fundamentals](/on-premises/provisioning/module-2.1-datacenter-fundamentals/) to learn the physical infrastructure that supports your Kubernetes cluster.

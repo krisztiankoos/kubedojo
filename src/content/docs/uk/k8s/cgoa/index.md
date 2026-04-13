@@ -57,7 +57,7 @@ CGOA (Certified GitOps Associate) підтверджує знання принц
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [GitOps 3.1](../../platform/disciplines/delivery-automation/gitops/module-3.1-what-is-gitops/) | Детальний розбір 4-х принципів OpenGitOps | Пряма |
-| [GitOps 3.4](../../platform/disciplines/delivery-automation/gitops/module-3.4-drift-detection/) | Детекція та автоматичне виправлення дрейфу | Пряма |
+| [GitOps 3.4](/uk/k8s/ckad/part3-observability/module-3.5-api-deprecations/) | Детекція та автоматичне виправлення дрейфу | Пряма |
 
 ---
 
@@ -75,7 +75,7 @@ CGOA (Certified GitOps Associate) підтверджує знання принц
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [GitOps 3.2](../../platform/disciplines/delivery-automation/gitops/module-3.2-repository-strategies/) | Структури репозиторіїв та папки середовищ | Пряма |
-| [GitOps 3.3](../../platform/disciplines/delivery-automation/gitops/module-3.3-environment-promotion/) | Патерни просування змін | Пряма |
+| [GitOps 3.3](/uk/linux/foundations/everyday-use/module-0.2-environment-permissions/) | Патерни просування змін | Пряма |
 | [GitOps 3.5](../../platform/disciplines/delivery-automation/gitops/module-3.5-secrets/) | Секрети: SOPS, Sealed Secrets, Vault | Пряма |
 
 ---
@@ -92,9 +92,9 @@ CGOA (Certified GitOps Associate) підтверджує знання принц
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [GitOps Toolkit 2.1](../../platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd/) | Практичний ArgoCD | Пряма |
-| [GitOps Toolkit 2.3](../../platform/toolkits/cicd-delivery/gitops-deployments/module-2.3-flux/) | Практичний Flux | Пряма |
-| [GitOps Toolkit 2.2](../../platform/toolkits/cicd-delivery/gitops-deployments/module-2.2-argo-rollouts/) | Прогресивна доставка у GitOps | Пряма |
+| [GitOps Toolkit 2.1](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | Практичний ArgoCD | Пряма |
+| [GitOps Toolkit 2.3](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | Практичний Flux | Пряма |
+| [GitOps Toolkit 2.2](/uk/linux/foundations/container-primitives/module-2.2-cgroups/) | Прогресивна доставка у GitOps | Пряма |
 
 ---
 

@@ -485,6 +485,6 @@ K8s:         Рівень контейнера → Ідеально підход
 4. Яких технологій слід уникати та чому
 
 **Наступні кроки**:
-- [Cloud Native 101](../cloud-native-101/module-1.1-what-are-containers/) — якщо ви новачок у контейнерах
-- [Основи Kubernetes](../kubernetes-basics/module-1.1-first-cluster/) — якщо ви вже розумієте контейнери
-- [Навчальна програма CKA](../../k8s/cka/part0-environment/module-0.1-cluster-setup/) — якщо ви готові до підготовки до сертифікації
+- [Cloud Native 101](/uk/prerequisites/cloud-native-101/module-1.1-what-are-containers/) — якщо ви новачок у контейнерах
+- [Основи Kubernetes](/uk/prerequisites/kubernetes-basics/module-1.1-first-cluster/) — якщо ви вже розумієте контейнери
+- [Навчальна програма CKA](/uk/k8s/cka/part0-environment/module-0.1-cluster-setup/) — якщо ви готові до підготовки до сертифікації

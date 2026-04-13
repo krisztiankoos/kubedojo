@@ -618,4 +618,4 @@ k delete pod drill6 cm drill6-nginx
 
 ## Наступний модуль
 
-[Модуль 4.2: Secrets](module-4.2-secrets/) — Безпечне керування конфіденційними даними.
+[Модуль 4.2: Secrets](/uk/k8s/ckad/part4-environment/module-4.2-secrets/) — Безпечне керування конфіденційними даними.

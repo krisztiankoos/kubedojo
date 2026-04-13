@@ -471,4 +471,4 @@ You've finished **Kubernetes Fundamentals** (46% of the exam). You now understan
 - Services and discovery
 - Namespaces and labels
 
-**Next Part**: [Part 2: Container Orchestration](../part2-container-orchestration/module-2.1-scheduling/) - How Kubernetes manages workloads at scale.
+**Next Part**: [Part 2: Container Orchestration](/k8s/kcna/part2-container-orchestration/module-2.1-scheduling/) - How Kubernetes manages workloads at scale.

@@ -20,10 +20,10 @@ CAPA (Certified Argo Project Associate) підтверджує знання чо
 
 | Домен | Вага | Охоплення в KubeDojo |
 |--------|--------|-------------------|
-| Argo Workflows | 36% | Відмінне (toolkit модуль + [Advanced Argo Workflows](module-1.1-advanced-argo-workflows/)) |
+| Argo Workflows | 36% | Відмінне (toolkit модуль + [Advanced Argo Workflows](/uk/k8s/cba/module-1.1-backstage-dev-workflow/)) |
 | Argo CD | 34% | Відмінне (1 toolkit + 6 discipline модулів) |
 | Argo Rollouts | 18% | Відмінне (1 dedicated toolkit модуль) |
-| Argo Events | 12% | Відмінне ([Argo Events](module-1.2-argo-events/)) |
+| Argo Events | 12% | Відмінне ([Argo Events](/uk/cloud/enterprise-hybrid/module-10.2-governance/)) |
 
 ---
 
@@ -33,8 +33,8 @@ CAPA (Certified Argo Project Associate) підтверджує знання чо
 
 | # | Модуль | Тема | Релевантність |
 |---|--------|-------|-----------|
-| 1 | [Просунуті Argo Workflows](module-1.1-advanced-argo-workflows/) | Усі 7 типів шаблонів, артефакти, CronWorkflows, мемоїзація, гачки життєвого циклу | Домен 1 (36%) |
-| 2 | [Argo Events](module-1.2-argo-events/) | EventSource, Sensor, Trigger, архітектура EventBus, подієво-орієнтована автоматизація | Домен 4 (12%) |
+| 1 | [Просунуті Argo Workflows](/uk/k8s/cba/module-1.1-backstage-dev-workflow/) | Усі 7 типів шаблонів, артефакти, CronWorkflows, мемоїзація, гачки життєвого циклу | Домен 1 (36%) |
+| 2 | [Argo Events](/uk/cloud/enterprise-hybrid/module-10.2-governance/) | EventSource, Sensor, Trigger, архітектура EventBus, подієво-орієнтована автоматизація | Домен 4 (12%) |
 
 ---
 
@@ -53,7 +53,7 @@ CAPA (Certified Argo Project Associate) підтверджує знання чо
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [Argo Workflows](../../platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.3-argo-workflows/) | Workflow CRD, DAG/steps, шаблони, параметри | Пряма |
-| [Advanced Argo Workflows](module-1.1-advanced-argo-workflows/) | Усі 7 типів шаблонів, артефакти, CronWorkflows, повтори, мемоїзація | Пряма |
+| [Advanced Argo Workflows](/uk/k8s/cba/module-1.1-backstage-dev-workflow/) | Усі 7 типів шаблонів, артефакти, CronWorkflows, повтори, мемоїзація | Пряма |
 
 ---
 
@@ -73,7 +73,7 @@ CAPA (Certified Argo Project Associate) підтверджує знання чо
 |--------|-------|-----------|
 | [GitOps 3.1](../../platform/disciplines/delivery-automation/gitops/module-3.1-what-is-gitops/) | Що таке GitOps? 4 принципи OpenGitOps | Пряма |
 | [GitOps 3.6](../../platform/disciplines/delivery-automation/gitops/module-3.6-multi-cluster/) | Мультикластерний GitOps | Пряма |
-| [GitOps Toolkit 2.1](../../platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd/) | Практичний ArgoCD, ApplicationSet, App-of-Apps | Пряма |
+| [GitOps Toolkit 2.1](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | Практичний ArgoCD, ApplicationSet, App-of-Apps | Пряма |
 
 ---
 
@@ -89,7 +89,7 @@ CAPA (Certified Argo Project Associate) підтверджує знання чо
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Argo Rollouts](../../platform/toolkits/cicd-delivery/gitops-deployments/module-2.2-argo-rollouts/) | Canary, blue-green, шаблони аналізу, управління трафіком | Пряма |
+| [Argo Rollouts](/uk/linux/foundations/container-primitives/module-2.2-cgroups/) | Canary, blue-green, шаблони аналізу, управління трафіком | Пряма |
 
 ---
 
@@ -105,7 +105,7 @@ CAPA (Certified Argo Project Associate) підтверджує знання чо
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Argo Events](module-1.2-argo-events/) | EventSource, Sensor, EventBus, архітектура тригерів | Пряма |
+| [Argo Events](/uk/cloud/enterprise-hybrid/module-10.2-governance/) | EventSource, Sensor, EventBus, архітектура тригерів | Пряма |
 
 ---
 

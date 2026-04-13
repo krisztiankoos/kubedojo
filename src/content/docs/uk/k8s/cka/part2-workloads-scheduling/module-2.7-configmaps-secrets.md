@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перш ніж починати цей модуль, переконайтеся, що ви:
-- Пройшли [Модуль 2.1: Поди — поглиблено](module-2.1-pods/) (структура специфікації Пода)
-- Пройшли [Модуль 2.2: Deployment](module-2.2-deployments/) (оновлення конфігурацій)
+- Пройшли [Модуль 2.1: Поди — поглиблено](/uk/k8s/cka/part2-workloads-scheduling/module-2.1-pods/) (структура специфікації Пода)
+- Пройшли [Модуль 2.2: Deployment](/uk/k8s/cka/part2-workloads-scheduling/module-2.2-deployments/) (оновлення конфігурацій)
 - Маєте працюючий кластер Kubernetes (kind або minikube)
 - Розумієте основи змінних середовища
 
@@ -1037,7 +1037,7 @@ spec:
 
 Вітаємо! Ви завершили всі модулі Частини 2: Робочі навантаження та планування.
 
-**Наступний крок:** [Підсумковий тест Частини 2](part2-cumulative-quiz/) — перевірте свої знання з усіх тем Частини 2, перш ніж рухатися далі.
+**Наступний крок:** [Підсумковий тест Частини 2](/uk/k8s/cka/part2-workloads-scheduling/part2-cumulative-quiz/) — перевірте свої знання з усіх тем Частини 2, перш ніж рухатися далі.
 
 **Попереду в Частині 3:** Сервіси та мережа — як Поди взаємодіють між собою та із зовнішнім світом.
 
@@ -1049,12 +1049,12 @@ spec:
 
 | Модуль | Тема | Ключові навички |
 |--------|------|-----------------|
-| [2.1](module-2.1-pods/) | Поди — поглиблено | Багатоконтейнерні патерни, життєвий цикл, проби |
-| [2.2](module-2.2-deployments/) | Deployment та ReplicaSet | Поступові оновлення, відкати, масштабування |
-| [2.3](module-2.3-daemonsets-statefulsets/) | DaemonSet та StatefulSet | Навантаження на рівні вузла, застосунки зі станом |
-| [2.4](module-2.4-jobs-cronjobs/) | Job та CronJob | Пакетна обробка, заплановані завдання |
-| [2.5](module-2.5-resource-management/) | Управління ресурсами | Запити, ліміти, QoS, квоти |
-| [2.6](module-2.6-scheduling/) | Планування | Спорідненість, taint, топологія |
-| [2.7](module-2.7-configmaps-secrets/) | ConfigMap та Secret | Передача конфігурації |
+| [2.1](/uk/k8s/cka/part2-workloads-scheduling/module-2.1-pods/) | Поди — поглиблено | Багатоконтейнерні патерни, життєвий цикл, проби |
+| [2.2](/uk/k8s/cka/part2-workloads-scheduling/module-2.2-deployments/) | Deployment та ReplicaSet | Поступові оновлення, відкати, масштабування |
+| [2.3](/uk/k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets/) | DaemonSet та StatefulSet | Навантаження на рівні вузла, застосунки зі станом |
+| [2.4](/uk/k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs/) | Job та CronJob | Пакетна обробка, заплановані завдання |
+| [2.5](/uk/k8s/cka/part2-workloads-scheduling/module-2.5-resource-management/) | Управління ресурсами | Запити, ліміти, QoS, квоти |
+| [2.6](/uk/k8s/cka/part2-workloads-scheduling/module-2.6-scheduling/) | Планування | Спорідненість, taint, топологія |
+| [2.7](/uk/k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets/) | ConfigMap та Secret | Передача конфігурації |
 
 **Порада для іспиту:** Частина 2 (Робочі навантаження та планування) — це 15% іспиту CKA. Опануйте `kubectl run`, `kubectl create deployment` та `kubectl create configmap/secret` для швидкого виконання завдань.

@@ -9,8 +9,8 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.1: Kernel & Architecture](../system-essentials/module-1.1-kernel-architecture/)
-- **Required**: [Module 1.2: Processes & systemd](../system-essentials/module-1.2-processes-systemd/)
+- **Required**: [Module 1.1: Kernel & Architecture](/linux/foundations/system-essentials/module-1.1-kernel-architecture/)
+- **Required**: [Module 1.2: Processes & systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 - **Helpful**: Basic understanding of networking concepts
 
 ---

@@ -15,7 +15,7 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.2: Процеси та systemd](../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Обов'язково**: [Модуль 1.2: Процеси та systemd](/uk/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 - **Обов'язково**: [Модуль 8.1: Керування сховищами](../module-8.1-storage-management/)
 - **Бажано**: [Модуль 8.3: Пакети та Користувачі](../module-8.3-package-user-management/)
 

@@ -494,4 +494,4 @@ k delete deploy drill6
 
 ## Наступний модуль
 
-[Модуль 3.5: Застарівання API](module-3.5-api-deprecations/) — Обробка змін версій API та застарівань.
+[Модуль 3.5: Застарівання API](/uk/k8s/ckad/part3-observability/module-3.5-api-deprecations/) — Обробка змін версій API та застарівань.

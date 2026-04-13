@@ -2072,4 +2072,4 @@ The most critical defense here is **Context Monitoring and Conversation-Level Fi
 
 You now understand how to attack and defend AI systems. This completes the offensive and defensive pairing within the pipeline.
 
-**Up Next**: [Module 1.8 - LLM Evaluation & Benchmarking](./module-1.8-llm-evaluation.md) — How do we scientifically quantify these vulnerabilities and improvements across version iterations?
+**Up Next**: [Module 1.8 - AI Safety & Alignment](/ai-ml-engineering/advanced-genai/module-1.8-ai-safety-alignment/) — How do we turn red-team findings into safer model behavior, stronger guardrails, and alignment practices that hold up in production?

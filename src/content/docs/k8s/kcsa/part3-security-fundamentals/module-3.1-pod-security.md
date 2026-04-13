@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Module 2.4: PKI and Certificates](../part2-cluster-component-security/module-2.4-pki-certificates/)
+> **Prerequisites**: [Module 2.4: PKI and Certificates](/k8s/kcsa/part2-cluster-component-security/module-2.4-pki-certificates/)
 
 ---
 

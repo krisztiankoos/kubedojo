@@ -1221,4 +1221,4 @@ k delete svc frontend backend admin
 
 ## Наступний модуль
 
-[Модуль 3.6: Network Policies](module-3.6-network-policies/) — Контроль взаємодії між подами.
+[Модуль 3.6: Network Policies](/uk/k8s/cka/part3-services-networking/module-3.6-network-policies/) — Контроль взаємодії між подами.

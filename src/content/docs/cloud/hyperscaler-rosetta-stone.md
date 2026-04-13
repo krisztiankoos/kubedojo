@@ -958,4 +958,4 @@ Key insight: GCP's Sustained Use Discounts make it the cheapest for steady-state
 
 ## Next Module
 
-Ready to dive deep into Amazon's ecosystem and master the specific tools of the most widely used cloud provider? Continue to the [AWS DevOps Essentials](aws-essentials/).
+Ready to dive deep into Amazon's ecosystem and master the specific tools of the most widely used cloud provider? Continue to the [AWS DevOps Essentials](/cloud/aws-essentials/).

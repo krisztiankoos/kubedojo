@@ -211,4 +211,4 @@ sidebar:
 
 ## Наступний модуль
 
-[Модуль 2.4: Конфігурація](module-2.4-configuration/) - Керування конфігурацією застосунків за допомогою ConfigMaps та Secrets.
+[Модуль 2.4: Конфігурація](/uk/k8s/kcna/part2-container-orchestration/module-2.4-configuration/) - Керування конфігурацією застосунків за допомогою ConfigMaps та Secrets.

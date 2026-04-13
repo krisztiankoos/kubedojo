@@ -586,4 +586,4 @@ rm -f test-pod.yaml scan-report.json
 
 ## Наступний модуль
 
-[Модуль 5.3: Статичний аналіз](module-5.3-static-analysis/) — Аналіз маніфестів Kubernetes на проблеми безпеки.
+[Модуль 5.3: Статичний аналіз](/uk/k8s/cks/part5-supply-chain-security/module-5.3-static-analysis/) — Аналіз маніфестів Kubernetes на проблеми безпеки.

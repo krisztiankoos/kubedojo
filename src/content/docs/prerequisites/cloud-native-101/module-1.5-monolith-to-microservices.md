@@ -448,6 +448,6 @@ You've finished the **Cloud Native 101** prerequisite track. You now understand:
 5. Monolith vs microservices tradeoffs
 
 **Next Steps**:
-- [Kubernetes Basics](../kubernetes-basics/module-1.1-first-cluster/) - Hands-on with your first cluster
-- [CKA Curriculum](../../k8s/cka/part0-environment/module-0.1-cluster-setup/) - Start certification prep
-- [CKAD Curriculum](../../k8s/ckad/part0-environment/module-0.1-ckad-overview/) - Developer certification path
+- [Kubernetes Basics](/prerequisites/kubernetes-basics/module-1.1-first-cluster/) - Hands-on with your first cluster
+- [CKA Curriculum](/k8s/cka/part0-environment/module-0.1-cluster-setup/) - Start certification prep
+- [CKAD Curriculum](/k8s/ckad/part0-environment/module-0.1-ckad-overview/) - Developer certification path

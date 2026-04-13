@@ -544,4 +544,4 @@ echo "6. ✓ Перевірено підтримку NetworkPolicy"
 
 ## Наступний модуль
 
-[Модуль 2.5: Обмеження доступу до API](module-2.5-restricting-api-access/) — Мережеві та автентифікаційні обмеження для API-сервера.
+[Модуль 2.5: Обмеження доступу до API](/uk/k8s/cks/part2-cluster-hardening/module-2.5-restricting-api-access/) — Мережеві та автентифікаційні обмеження для API-сервера.

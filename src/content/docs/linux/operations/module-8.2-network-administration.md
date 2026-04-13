@@ -15,9 +15,9 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: TCP/IP Essentials](../foundations/networking/module-3.1-tcp-ip-essentials/) for IP addressing, subnets, and routing
-- **Required**: [Module 3.4: iptables & netfilter](../foundations/networking/module-3.4-iptables-netfilter/) for packet filtering fundamentals
-- **Helpful**: [Module 1.2: Processes & systemd](../foundations/system-essentials/module-1.2-processes-systemd/) for service management
+- **Required**: [Module 3.1: TCP/IP Essentials](/linux/foundations/networking/module-3.1-tcp-ip-essentials/) for IP addressing, subnets, and routing
+- **Required**: [Module 3.4: iptables & netfilter](/linux/foundations/networking/module-3.4-iptables-netfilter/) for packet filtering fundamentals
+- **Helpful**: [Module 1.2: Processes & systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/) for service management
 
 ---
 
@@ -932,4 +932,4 @@ sudo nmcli connection delete static-eth0
 
 ## Next Module
 
-You've now covered the key LFCS gaps in storage and networking. Return to the [LFCS Learning Path](../../k8s/lfcs/) to review remaining study areas, or continue strengthening your Linux fundamentals with [Module 5.1: The USE Method](performance/module-5.1-use-method/) for performance analysis.
+You've now covered the key LFCS gaps in storage and networking. Return to the [LFCS Learning Path](/k8s/lfcs/) to review remaining study areas, or continue strengthening your Linux fundamentals with [Module 5.1: The USE Method](/linux/operations/performance/module-5.1-use-method/) for performance analysis.

@@ -9,7 +9,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.3: Filesystem Hierarchy](../system-essentials/module-1.3-filesystem-hierarchy/)
+- **Required**: [Module 1.3: Filesystem Hierarchy](/linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/)
 - **Required**: [Module 2.1: Linux Namespaces](../module-2.1-namespaces/) (mount namespace concept)
 - **Helpful**: Understanding of container images
 

@@ -1120,7 +1120,7 @@ kubectl delete namespace istio-system
 
 ## Next Module
 
-Continue to [Scaling & Reliability Toolkit](../../developer-experience/scaling-reliability/) to learn about Karpenter for node autoscaling, KEDA for event-driven scaling, and Velero for backup and disaster recovery.
+Continue to [Scaling & Reliability Toolkit](/platform/toolkits/developer-experience/scaling-reliability/) to learn about Karpenter for node autoscaling, KEDA for event-driven scaling, and Velero for backup and disaster recovery.
 
 ---
 

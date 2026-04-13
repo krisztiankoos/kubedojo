@@ -463,7 +463,7 @@ Idle cost = Total node cost - Sum of all pod costs
 Cluster efficiency = Sum of pod costs / Total node cost × 100%
 ```
 
-> For hands-on OpenCost installation, dashboards, and right-sizing exercises, see our toolkit module: [Module 6.4: FinOps with OpenCost](../../platform/toolkits/developer-experience/scaling-reliability/module-6.4-finops-opencost/)
+> For hands-on OpenCost installation, dashboards, and right-sizing exercises, see our toolkit module: [Module 6.4: FinOps with OpenCost](/platform/toolkits/developer-experience/scaling-reliability/module-6.4-finops-opencost/)
 
 ### Kubernetes Optimization Strategies
 
@@ -787,7 +787,7 @@ FinOps capabilities turn principles into practice. The key skills tested on the 
 
 You have completed the FOCP curriculum modules. To continue your learning:
 
-- **Hands-on practice**: Work through [Module 6.4: FinOps with OpenCost](../../platform/toolkits/developer-experience/scaling-reliability/module-6.4-finops-opencost/) for practical Kubernetes cost monitoring
+- **Hands-on practice**: Work through [Module 6.4: FinOps with OpenCost](/platform/toolkits/developer-experience/scaling-reliability/module-6.4-finops-opencost/) for practical Kubernetes cost monitoring
 - **Review Module 1**: Re-take the [Module 1 quiz](../module-1.1-finops-fundamentals/#quiz) to confirm you know the 6 principles and lifecycle phases cold
 - **Official resources**: Visit [finops.org](https://www.finops.org/) for the FinOps Foundation's free training materials
 - **Take the exam**: Register at [training.linuxfoundation.org](https://training.linuxfoundation.org/)

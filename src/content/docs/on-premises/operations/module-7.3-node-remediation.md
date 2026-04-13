@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 7.2: Hardware Lifecycle & Firmware](../module-7.2-hardware-lifecycle/), [Module 1.3: Cluster Topology](../planning/module-1.3-cluster-topology/)
+> **Prerequisites**: [Module 7.2: Hardware Lifecycle & Firmware](../module-7.2-hardware-lifecycle/), [Module 1.3: Cluster Topology](/on-premises/planning/module-1.3-cluster-topology/)
 
 ---
 
@@ -703,4 +703,4 @@ kind delete cluster --name npd-lab
 
 ## Next Module
 
-Continue to [Module 7.4: Observability Without Cloud Services](../operations/module-7.4-observability/) to learn how to build a self-hosted monitoring stack with Prometheus, Thanos, Grafana, and Loki.
+Continue to [Module 7.4: Observability Without Cloud Services](/on-premises/operations/module-7.4-observability/) to learn how to build a self-hosted monitoring stack with Prometheus, Thanos, Grafana, and Loki.

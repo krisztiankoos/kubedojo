@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 0.2: Security Mindset](../part0-introduction/module-0.2-security-mindset/)
+> **Prerequisites**: [Module 0.2: Security Mindset](/k8s/kcsa/part0-introduction/module-0.2-security-mindset/)
 
 ---
 

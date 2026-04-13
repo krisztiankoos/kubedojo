@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 3.5: Network Policies](../part3-security-fundamentals/module-3.5-network-policies/)
+> **Prerequisites**: [Module 3.5: Network Policies](/k8s/kcsa/part3-security-fundamentals/module-3.5-network-policies/)
 
 ---
 

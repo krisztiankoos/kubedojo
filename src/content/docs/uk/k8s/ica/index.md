@@ -22,7 +22,7 @@ ICA (Istio Certified Associate) підтверджує знання архіте
 
 | # | Модуль | Тема | Охоплені домени |
 |---|--------|-------|-----------------|
-| 1 | [Глибоке занурення в Istio](module-1.1-istio-deep-dive/) | Envoy Proxy, режими Sidecar vs. Ambient, WASM розширення, мультикластерні топології, налагодження istioctl | Домени 1-5 |
+| 1 | [Глибоке занурення в Istio](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Envoy Proxy, режими Sidecar vs. Ambient, WASM розширення, мультикластерні топології, налагодження istioctl | Домени 1-5 |
 
 ---
 
@@ -31,9 +31,9 @@ ICA (Istio Certified Associate) підтверджує знання архіте
 | Домен | Вага | Охоплення в KubeDojo |
 |--------|--------|-------------------|
 | Основи Service Mesh | 15% | Відмінне ([Networking 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/)) |
-| Архітектура Istio | 20% | Відмінне ([Глибоке занурення в Istio](module-1.1-istio-deep-dive/)) |
+| Архітектура Istio | 20% | Відмінне ([Глибоке занурення в Istio](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/)) |
 | Управління трафіком | 25% | Відмінне ([Networking 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/)) |
-| Безпека та ідентичність | 20% | Відмінне ([Security 4.8](../../platform/toolkits/security-quality/security-tools/module-4.8-spiffe-spire/)) |
+| Безпека та ідентичність | 20% | Відмінне ([Security 4.8](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/)) |
 | Спостережуваність | 20% | Відмінне ([Observability Toolkit](../../platform/toolkits/observability-intelligence/observability/)) |
 
 ---
@@ -67,7 +67,7 @@ ICA (Istio Certified Associate) підтверджує знання архіте
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Глибоке занурення в Istio](module-1.1-istio-deep-dive/) | Детальна архітектура Istiod та Ambient Mesh | Пряма |
+| [Глибоке занурення в Istio](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Детальна архітектура Istiod та Ambient Mesh | Пряма |
 | [Networking Toolkit 1.2](../../platform/toolkits/infrastructure-networking/networking/module-1.2-service-mesh/) | Встановлення та базова архітектура | Пряма |
 
 ---
@@ -86,7 +86,7 @@ ICA (Istio Certified Associate) підтверджує знання архіте
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [Мережі 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/) | Практична маршрутизація Istio | Пряма |
-| [Release Engineering 1.1](../../platform/disciplines/delivery-automation/release-engineering/module-1.1-release-strategies/) | Стратегії Canary та Blue-Green | Контекст |
+| [Release Engineering 1.1](/uk/k8s/kcna/part4-application-delivery/module-4.3-release-strategies/) | Стратегії Canary та Blue-Green | Контекст |
 
 ---
 
@@ -104,7 +104,7 @@ ICA (Istio Certified Associate) підтверджує знання архіте
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [Мережі 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/) | mTLS та політики авторизації Istio | Пряма |
-| [Security Tools 4.8](../../platform/toolkits/security-quality/security-tools/module-4.8-spiffe-spire/) | SPIFFE/SPIRE — ідентичність у сервісній мережі | Пряма |
+| [Security Tools 4.8](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | SPIFFE/SPIRE — ідентичність у сервісній мережі | Пряма |
 
 ---
 

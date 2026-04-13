@@ -6,11 +6,42 @@ export default defineConfig({
   site: 'https://kube-dojo.github.io',
   trailingSlash: 'always',
   compressHTML: true,
+  vite: {
+    build: {
+      rollupOptions: {
+        onwarn(warning, defaultWarn) {
+          if (
+            warning.message?.includes('"matchHostname", "matchPathname", "matchPort" and "matchProtocol"') &&
+            warning.message?.includes('@astrojs/internal-helpers/remote') &&
+            warning.message?.includes('node_modules/astro/dist/assets/utils/index.js')
+          ) {
+            return;
+          }
+          defaultWarn(warning);
+        },
+      },
+    },
+  },
 
   integrations: [
     starlight({
       title: 'KubeDojo',
       tagline: 'Free, comprehensive cloud native education',
+      disable404Route: true,
+      expressiveCode: {
+        shiki: {
+          langAlias: {
+            ascii: 'txt',
+            jinja2: 'jinja',
+            kubernetes: 'yaml',
+            logql: 'txt',
+            promql: 'txt',
+            rego: 'txt',
+            traceql: 'txt',
+            wing: 'typescript',
+          },
+        },
+      },
       social: [
         {
           label: 'GitHub',

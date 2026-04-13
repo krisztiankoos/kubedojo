@@ -1,6 +1,7 @@
 ---
 title: "Cross-Cluster Networking"
 description: "East-west traffic routing, service discovery, and encrypted tunnels across bare metal Kubernetes clusters."
+slug: on-premises/networking/module-3.5-cross-cluster-networking
 sidebar:
   order: 35
 ---

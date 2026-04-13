@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 3.5: Мережеві політики](../part3-security-fundamentals/module-3.5-network-policies/)
+> **Передумови**: [Модуль 3.5: Мережеві політики](/uk/k8s/kcsa/part3-security-fundamentals/module-3.5-network-policies/)
 
 ---
 
@@ -438,4 +438,4 @@ spec:
 
 ## Наступний модуль
 
-[Модуль 4.2: Поширені вразливості](module-4.2-vulnerabilities/) — Розуміння CVE та неправильних конфігурацій у Kubernetes.
+[Модуль 4.2: Поширені вразливості](/uk/k8s/kcsa/part4-threat-model/module-4.2-vulnerabilities/) — Розуміння CVE та неправильних конфігурацій у Kubernetes.

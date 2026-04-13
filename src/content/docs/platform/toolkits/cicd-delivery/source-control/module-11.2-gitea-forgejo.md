@@ -12,7 +12,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module, you should have completed:
-- [GitOps Discipline](../../../disciplines/delivery-automation/gitops/) - Git-centric workflows
+- [GitOps Discipline](/platform/disciplines/delivery-automation/gitops/) - Git-centric workflows
 - Basic Git fundamentals (branches, remotes, hooks)
 - Container/Kubernetes basics
 - Understanding of why self-hosting matters
@@ -1216,8 +1216,8 @@ Choose GitLab when:
 ## Next Steps
 
 - **Next Module**: [Module 11.3: GitHub Advanced](../module-11.3-github-advanced/) - GHAS, Copilot, and enterprise features
-- **Related**: [Module 12.1: SonarQube](../../security-quality/code-quality/module-12.1-sonarqube/) - Integrate code quality scanning
-- **Related**: [Module 2.1: ArgoCD](../gitops-deployments/module-2.1-argocd/) - GitOps with Gitea
+- **Related**: [Module 12.1: SonarQube](/platform/toolkits/security-quality/code-quality/module-12.1-sonarqube/) - Integrate code quality scanning
+- **Related**: [Module 2.1: ArgoCD](/platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd/) - GitOps with Gitea
 
 ---
 

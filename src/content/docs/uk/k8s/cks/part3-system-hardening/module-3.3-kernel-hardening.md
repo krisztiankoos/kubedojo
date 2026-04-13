@@ -617,4 +617,4 @@ echo "5. ✓ seccompProfile застосовує фільтрацію syscall"
 
 ## Наступний модуль
 
-[Модуль 3.4: Мережева безпека](module-3.4-network-security/) — Зміцнення мережі на рівні хоста.
+[Модуль 3.4: Мережева безпека](/uk/k8s/cks/part3-system-hardening/module-3.4-network-security/) — Зміцнення мережі на рівні хоста.

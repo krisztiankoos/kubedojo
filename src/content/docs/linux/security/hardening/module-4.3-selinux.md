@@ -15,7 +15,7 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.3: Capabilities & LSMs](../../foundations/container-primitives/module-2.3-capabilities-lsms/)
+- **Required**: [Module 2.3: Capabilities & LSMs](/linux/foundations/container-primitives/module-2.3-capabilities-lsms/)
 - **Helpful**: [Module 4.2: AppArmor Profiles](../module-4.2-apparmor/) for comparison
 - **Helpful**: Access to RHEL/CentOS/Fedora system
 

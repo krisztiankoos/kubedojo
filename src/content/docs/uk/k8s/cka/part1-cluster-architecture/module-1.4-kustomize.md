@@ -1140,4 +1140,4 @@ challenge/
 
 ## Наступний модуль
 
-[Модуль 1.5: CRD та Оператори](module-1.5-crds-operators/) — розширення Kubernetes за допомогою Custom Resource Definitions.
+[Модуль 1.5: CRD та Оператори](/uk/k8s/cka/part1-cluster-architecture/module-1.5-crds-operators/) — розширення Kubernetes за допомогою Custom Resource Definitions.

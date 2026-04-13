@@ -542,4 +542,4 @@ kubectl delete namespace metadata-test
 
 ## Наступний модуль
 
-[Модуль 1.5: Безпека GUI](module-1.5-gui-security/) — Захист Kubernetes Dashboard та веб-інтерфейсів.
+[Модуль 1.5: Безпека GUI](/uk/k8s/cks/part1-cluster-setup/module-1.5-gui-security/) — Захист Kubernetes Dashboard та веб-інтерфейсів.

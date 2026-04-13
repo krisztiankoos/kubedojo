@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 1.1: The Case for On-Premises K8s](../module-1.1-case-for-on-prem/), [Linux: Kernel Architecture](../../linux/foundations/system-essentials/module-1.1-kernel-architecture/)
+> **Prerequisites**: [Module 1.1: The Case for On-Premises K8s](../module-1.1-case-for-on-prem/), [Linux: Kernel Architecture](/linux/foundations/system-essentials/module-1.1-kernel-architecture/)
 
 ---
 

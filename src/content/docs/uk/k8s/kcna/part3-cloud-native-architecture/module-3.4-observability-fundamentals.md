@@ -419,4 +419,4 @@ sidebar:
 
 ## Наступний модуль
 
-[Модуль 3.5: Інструменти спостережуваності](module-3.5-observability-tools/) - Prometheus, Grafana, Jaeger та інші інструменти спостережуваності в Kubernetes.
+[Модуль 3.5: Інструменти спостережуваності](/uk/k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools/) - Prometheus, Grafana, Jaeger та інші інструменти спостережуваності в Kubernetes.

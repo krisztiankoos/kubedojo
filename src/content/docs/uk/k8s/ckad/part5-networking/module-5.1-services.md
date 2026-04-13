@@ -608,4 +608,4 @@ k delete ns drill6
 
 ## Наступний модуль
 
-[Модуль 5.2: Інгрес](module-5.2-ingress/) — HTTP-маршрутизація та завершення TLS.
+[Модуль 5.2: Інгрес](/uk/k8s/ckad/part5-networking/module-5.2-ingress/) — HTTP-маршрутизація та завершення TLS.

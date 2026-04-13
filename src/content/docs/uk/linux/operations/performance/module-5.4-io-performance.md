@@ -16,7 +16,7 @@ lab:
 
 Перед початком цього модуля:
 - **Обов'язково**: [Модуль 5.1: Метод USE](../module-5.1-use-method/)
-- **Обов'язково**: [Модуль 1.3: Ієрархія файлової системи](../../foundations/system-essentials/module-1.3-filesystem-hierarchy/)
+- **Обов'язково**: [Модуль 1.3: Ієрархія файлової системи](/uk/linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/)
 - **Бажано**: [Модуль 5.3: Керування пам'яттю](../module-5.3-memory-management/) для розуміння кешу сторінок (page cache).
 
 ---
@@ -167,4 +167,4 @@ cat /sys/block/sda/queue/scheduler
 
 **Розділ «Продуктивність» завершено!** Тепер ви маєте повну картину того, як аналізувати CPU, пам'ять та диски за методом USE. Ви готові до вирішення найскладніших проблем у продакшні.
 
-**Далі**: [Розділ 6: Вирішення проблем (Troubleshooting)](../../troubleshooting/) — навчіться застосовувати ці знання для порятунку систем.
+**Далі**: [Розділ 6: Вирішення проблем (Troubleshooting)](/uk/linux/operations/troubleshooting/module-6.1-systematic-troubleshooting/) — навчіться застосовувати ці знання для порятунку систем.

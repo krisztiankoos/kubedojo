@@ -614,4 +614,4 @@ k delete pod drill6 secret drill6-db
 
 ## Наступний модуль
 
-[Модуль 4.3: Вимоги до ресурсів](module-4.3-resources/) — Налаштування запитів та лімітів CPU і пам'яті.
+[Модуль 4.3: Вимоги до ресурсів](/uk/k8s/ckad/part4-environment/module-4.3-resources/) — Налаштування запитів та лімітів CPU і пам'яті.

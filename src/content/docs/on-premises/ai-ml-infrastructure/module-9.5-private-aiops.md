@@ -1,6 +1,7 @@
 ---
 title: "Private AIOps"
 description: Implement anomaly detection, predictive scaling, and AI-augmented incident response on bare-metal Kubernetes using Robusta, Prometheus, and local LLMs.
+slug: on-premises/ai-ml-infrastructure/module-9.5-private-aiops
 sidebar:
   order: 95
 ---

@@ -913,20 +913,20 @@ kubectl delete deployment maint-test
 
 | Модуль | Тема | Ключові навички |
 |--------|------|----------------|
-| [1.1](module-1.1-control-plane/) | Глибоке занурення в площину управління | Ролі компонентів, усунення неполадок, статичні Поди |
-| [1.2](module-1.2-extension-interfaces/) | Інтерфейси розширення | CNI/CSI/CRI, crictl, усунення неполадок плагінів |
-| [1.3](module-1.3-helm/) | Helm | Встановлення, оновлення, відкат, values |
-| [1.4](module-1.4-kustomize/) | Kustomize | Base/overlay, патчі, `kubectl -k` |
-| [1.5](module-1.5-crds-operators/) | CRDs та Operators | Створення CRDs, управління користувацькими ресурсами |
-| [1.6](module-1.6-rbac/) | RBAC | Roles, bindings, ServiceAccounts, `can-i` |
-| [1.7](module-1.7-kubeadm/) | Основи kubeadm | Init, join, cordon, drain, токени |
+| [1.1](/uk/k8s/cka/part1-cluster-architecture/module-1.1-control-plane/) | Глибоке занурення в площину управління | Ролі компонентів, усунення неполадок, статичні Поди |
+| [1.2](/uk/k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces/) | Інтерфейси розширення | CNI/CSI/CRI, crictl, усунення неполадок плагінів |
+| [1.3](/uk/k8s/cka/part1-cluster-architecture/module-1.3-helm/) | Helm | Встановлення, оновлення, відкат, values |
+| [1.4](/uk/k8s/cka/part1-cluster-architecture/module-1.4-kustomize/) | Kustomize | Base/overlay, патчі, `kubectl -k` |
+| [1.5](/uk/k8s/cka/part1-cluster-architecture/module-1.5-crds-operators/) | CRDs та Operators | Створення CRDs, управління користувацькими ресурсами |
+| [1.6](/uk/k8s/cka/part1-cluster-architecture/module-1.6-rbac/) | RBAC | Roles, bindings, ServiceAccounts, `can-i` |
+| [1.7](/uk/k8s/cka/part1-cluster-architecture/module-1.7-kubeadm/) | Основи kubeadm | Init, join, cordon, drain, токени |
 
-**Перед тим як рухатися далі**: Пройдіть [Кумулятивний тест Частини 1](part1-cumulative-quiz/), щоб перевірити засвоєння матеріалу.
+**Перед тим як рухатися далі**: Пройдіть [Кумулятивний тест Частини 1](/uk/k8s/cka/part1-cluster-architecture/part1-cumulative-quiz/), щоб перевірити засвоєння матеріалу.
 
 ---
 
 ## Наступні кроки
 
-Переходьте до [Частини 2: Навантаження та планування](../part2-workloads-scheduling/) — Навчіться розгортати та управляти застосунками.
+Переходьте до [Частини 2: Навантаження та планування](/uk/k8s/cka/part2-workloads-scheduling/) — Навчіться розгортати та управляти застосунками.
 
 Ця частина охоплює 15% іспиту і безпосередньо базується на тому, що ви вивчили про архітектуру кластера.

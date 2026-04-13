@@ -680,6 +680,6 @@ rm insecure-deployment.yaml secure-deployment.yaml
 6. Практики безпеки (DevSecOps)
 
 **Наступні кроки**:
-- [Програма CKA](../../k8s/cka/part0-environment/module-0.1-cluster-setup/) — Сертифікація адміністратора
-- [Програма CKAD](../../k8s/ckad/part0-environment/module-0.1-ckad-overview/) — Сертифікація розробника
-- [Філософія та дизайн](../philosophy-design/module-1.1-why-kubernetes-won/) — Чому Kubernetes переміг?
+- [Програма CKA](/uk/k8s/cka/part0-environment/module-0.1-cluster-setup/) — Сертифікація адміністратора
+- [Програма CKAD](/uk/k8s/ckad/part0-environment/module-0.1-ckad-overview/) — Сертифікація розробника
+- [Філософія та дизайн](/uk/prerequisites/philosophy-design/module-1.1-why-kubernetes-won/) — Чому Kubernetes переміг?

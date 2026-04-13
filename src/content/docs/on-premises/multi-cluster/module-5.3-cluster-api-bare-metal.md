@@ -604,4 +604,4 @@ kind delete cluster --name capi-mgmt
 
 ## Next Module
 
-You have completed the Multi-Cluster & Platform section. Please proceed to [Module 6.1: Physical Security & Air-Gapped Environments](../security/module-6.1-air-gapped/) to learn how to lock down on-premises Kubernetes environments and establish robust physical network security boundaries.
+You have completed the Multi-Cluster & Platform section. Please proceed to [Module 6.1: Physical Security & Air-Gapped Environments](/on-premises/security/module-6.1-air-gapped/) to learn how to lock down on-premises Kubernetes environments and establish robust physical network security boundaries.

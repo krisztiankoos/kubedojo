@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.3: Ієрархія файлової системи](../foundations/system-essentials/module-1.3-filesystem-hierarchy/)
-- **Бажано**: [Модуль 5.4: Продуктивність I/O](performance/module-5.4-io-performance/)
+- **Обов'язково**: [Модуль 1.3: Ієрархія файлової системи](/uk/linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/)
+- **Бажано**: [Модуль 5.4: Продуктивність I/O](/uk/linux/operations/performance/module-5.4-io-performance/)
 
 ---
 

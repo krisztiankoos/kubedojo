@@ -16,7 +16,7 @@ Complete visual redesign with K8s-themed design:
 - **Breadcrumbs** on every module page
 - **Meta chips** — colored complexity (Quick/Medium/Advanced) and time badges
 - **Content enhancement** — War Story cards, Did You Know cards, quiz styling (all automatic, no .md changes needed)
-- **Progress tracking** — Mark Complete button, sidebar checkmarks, [progress dashboard](/progress/) with export/import
+- **Progress tracking** — Mark Complete button, sidebar checkmarks, [progress dashboard](/changelog/) with export/import
 - **Dark/light mode** with proper support across all pages
 
 ### Networking Discipline — 5 NEW modules

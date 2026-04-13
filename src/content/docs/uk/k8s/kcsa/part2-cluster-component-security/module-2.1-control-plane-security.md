@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 30-35 хвилин
 >
-> **Передумови**: [Модуль 1.3: Принципи безпеки](../part1-cloud-native-security/module-1.3-security-principles/)
+> **Передумови**: [Модуль 1.3: Принципи безпеки](/uk/k8s/kcsa/part1-cloud-native-security/module-1.3-security-principles/)
 
 ---
 
@@ -488,4 +488,4 @@ kube-apiserver \
 
 ## Наступний модуль
 
-[Модуль 2.2: Безпека вузлів](module-2.2-node-security/) - Захист робочих вузлів, kubelet та середовищ виконання контейнерів.
+[Модуль 2.2: Безпека вузлів](/uk/k8s/kcsa/part2-cluster-component-security/module-2.2-node-security/) - Захист робочих вузлів, kubelet та середовищ виконання контейнерів.

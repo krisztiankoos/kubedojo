@@ -669,4 +669,4 @@ kubectl delete secret pre-encryption post-encryption
 
 ## Наступний модуль
 
-[Модуль 4.4: Ізоляція середовища виконання](module-4.4-runtime-sandboxing/) — gVisor та Kata Containers для ізоляції контейнерів.
+[Модуль 4.4: Ізоляція середовища виконання](/uk/k8s/cks/part4-microservice-vulnerabilities/module-4.4-runtime-sandboxing/) — gVisor та Kata Containers для ізоляції контейнерів.

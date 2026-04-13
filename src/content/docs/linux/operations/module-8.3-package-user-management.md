@@ -15,9 +15,9 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.4: Users & Permissions](../foundations/system-essentials/module-1.4-users-permissions/) for UID/GID fundamentals and file ownership
-- **Required**: [Module 1.2: Processes & systemd](../foundations/system-essentials/module-1.2-processes-systemd/) for understanding services and system state
-- **Helpful**: [Module 4.1: Kernel Hardening](../security/hardening/module-4.1-kernel-hardening/) for security context
+- **Required**: [Module 1.4: Users & Permissions](/linux/foundations/system-essentials/module-1.4-users-permissions/) for UID/GID fundamentals and file ownership
+- **Required**: [Module 1.2: Processes & systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/) for understanding services and system state
+- **Helpful**: [Module 4.1: Kernel Hardening](/linux/security/hardening/module-4.1-kernel-hardening/) for security context
 
 ---
 

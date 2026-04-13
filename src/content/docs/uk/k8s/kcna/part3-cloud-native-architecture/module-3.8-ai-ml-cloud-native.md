@@ -315,4 +315,4 @@ D) Планування GPU між різними часовими зонами
 
 ## Наступний модуль
 
-[Модуль 3.9: WebAssembly та Cloud Native](module-3.9-webassembly/) - Технологія, що може доповнити (або іноді замінити) контейнери.
+[Модуль 3.9: WebAssembly та Cloud Native](/uk/k8s/kcna/part3-cloud-native-architecture/module-3.9-webassembly/) - Технологія, що може доповнити (або іноді замінити) контейнери.

@@ -16,7 +16,7 @@ sidebar:
 
 | # | Модуль | Складність | Час | Що ви вивчите |
 |---|--------|------------|------|-------------------|
-| 7.1 | [Backstage](module-7.1-backstage/) | `[COMPLEX]` | 60 хв | Каталог ПЗ, шаблони, плагіни, архітектура |
+| 7.1 | [Backstage](/uk/k8s/kcna/part2-container-orchestration/module-2.3-storage/) | `[COMPLEX]` | 60 хв | Каталог ПЗ, шаблони, плагіни, архітектура |
 | 7.2 | [Crossplane](module-7.2-crossplane/) | `[COMPLEX]` | 60 хв | Композиції, XRC, управління хмарою через K8s |
 | 7.3 | [cert-manager](module-7.3-cert-manager/) | `[MEDIUM]` | 45-50 хв | Issuers, Certificates, автоматизація Let's Encrypt |
 

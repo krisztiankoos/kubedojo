@@ -15,7 +15,7 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 2.1: Linux Namespaces](../container-primitives/module-2.1-namespaces/)
+- **Required**: [Module 2.1: Linux Namespaces](/linux/foundations/container-primitives/module-2.1-namespaces/)
 - **Required**: [Module 3.1: TCP/IP Essentials](../module-3.1-tcp-ip-essentials/)
 - **Helpful**: Basic understanding of bridges and switches
 

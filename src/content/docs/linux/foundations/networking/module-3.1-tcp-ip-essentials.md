@@ -16,7 +16,7 @@ lab:
 
 Before starting this module:
 - **Required**: Basic understanding of what networks are
-- **Helpful**: [Module 1.1: Kernel & Architecture](../system-essentials/module-1.1-kernel-architecture/)
+- **Helpful**: [Module 1.1: Kernel & Architecture](/linux/foundations/system-essentials/module-1.1-kernel-architecture/)
 
 ---
 

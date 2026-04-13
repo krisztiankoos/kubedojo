@@ -16,7 +16,7 @@ lab:
 
 Перед початком цього модуля:
 - **Обов'язково**: [Модуль 6.1: Системне вирішення проблем](../module-6.1-systematic-troubleshooting/)
-- **Обов'язково**: [Модуль 1.2: Процеси та systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Обов'язково**: [Модуль 1.2: Процеси та systemd](/uk/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 - **Бажано**: Знання основ регулярних виразів.
 
 ---

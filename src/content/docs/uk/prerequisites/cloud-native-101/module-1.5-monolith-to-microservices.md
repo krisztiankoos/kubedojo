@@ -450,6 +450,6 @@ K8s: Pod з декількома контейнерами
 5. Компроміси між монолітом та мікросервісами
 
 **Наступні кроки**:
-- [Основи Kubernetes](../kubernetes-basics/module-1.1-first-cluster/) — Практика з вашим першим кластером
-- [Навчальна програма CKA](../../k8s/cka/part0-environment/module-0.1-cluster-setup/) — Почніть підготовку до сертифікації
-- [Навчальна програма CKAD](../../k8s/ckad/part0-environment/module-0.1-ckad-overview/) — Шлях до сертифікації розробника
+- [Основи Kubernetes](/uk/prerequisites/kubernetes-basics/module-1.1-first-cluster/) — Практика з вашим першим кластером
+- [Навчальна програма CKA](/uk/k8s/cka/part0-environment/module-0.1-cluster-setup/) — Почніть підготовку до сертифікації
+- [Навчальна програма CKAD](/uk/k8s/ckad/part0-environment/module-0.1-ckad-overview/) — Шлях до сертифікації розробника

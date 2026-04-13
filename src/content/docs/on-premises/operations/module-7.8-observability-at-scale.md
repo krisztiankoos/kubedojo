@@ -1,6 +1,7 @@
 ---
 title: "Observability at Scale"
 description: "Architect and operate scalable observability stacks on bare metal using Prometheus, Mimir, OpenTelemetry, and the Grafana LGTM stack."
+slug: on-premises/operations/module-7.8-observability-at-scale
 sidebar:
   order: 78
 ---

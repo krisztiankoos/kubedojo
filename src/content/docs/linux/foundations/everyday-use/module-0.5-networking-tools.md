@@ -777,7 +777,7 @@ rm -f kubectl kubectl.sha256
 
 Congratulations — you've completed the **Everyday Use** series! You can now navigate the CLI, manage permissions, wrangle processes, work with services and logs, and investigate network issues like a pro. These are the tools you'll reach for every single day.
 
-You're ready for the deep dive. In [**Module 1.1: Kernel & Architecture**](../../foundations/system-essentials/module-1.1-kernel-architecture/), you'll learn how Linux *actually* works under the hood — the kernel, system calls, and the architecture that makes everything you've learned so far possible. The everyday tools got you comfortable; now it's time to understand the machine.
+You're ready for the deep dive. In [**Module 1.1: Kernel & Architecture**](/linux/foundations/system-essentials/module-1.1-kernel-architecture/), you'll learn how Linux *actually* works under the hood — the kernel, system calls, and the architecture that makes everything you've learned so far possible. The everyday tools got you comfortable; now it's time to understand the machine.
 
 ---
 

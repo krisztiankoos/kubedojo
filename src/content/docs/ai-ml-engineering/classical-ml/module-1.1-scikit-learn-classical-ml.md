@@ -1,6 +1,6 @@
 ---
 title: "Scikit-learn & Classical ML"
-slug: ai-ml-engineering/classical-ml/module-10.1-scikit-learn-classical-ml
+slug: ai-ml-engineering/classical-ml/module-1.1-scikit-learn-classical-ml
 sidebar:
   order: 1102
 ---

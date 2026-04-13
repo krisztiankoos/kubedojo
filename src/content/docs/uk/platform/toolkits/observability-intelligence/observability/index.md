@@ -26,14 +26,14 @@ sidebar:
 |---|--------|------------|------|
 | 1.1 | [Prometheus](module-1.1-prometheus/) | `[COMPLEX]` | 45-50 хв |
 | 1.2 | [OpenTelemetry](module-1.2-opentelemetry/) | `[COMPLEX]` | 45-50 хв |
-| 1.3 | [Grafana](module-1.3-grafana/) | `[COMPLEX]` | 40-45 хв |
+| 1.3 | [Grafana](/uk/k8s/cka/part1-cluster-architecture/module-1.6-rbac/) | `[COMPLEX]` | 40-45 хв |
 | 1.4 | [Loki](module-1.4-loki/) | `[COMPLEX]` | 40-45 хв |
-| 1.5 | [Розподілене трасування](module-1.5-tracing/) | `[COMPLEX]` | 45-50 хв |
+| 1.5 | [Розподілене трасування](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[COMPLEX]` | 45-50 хв |
 | 1.6 | [Pixie](module-1.6-pixie/) | `[MEDIUM]` | 90 хв |
 | 1.7 | [Hubble](module-1.7-hubble/) | `[MEDIUM]` | 90 хв |
 | 1.8 | [Coroot](module-1.8-coroot/) | `[MEDIUM]` | 90 хв |
 | 1.9 | [Безперервне профілювання](module-1.9-continuous-profiling/) | `[MEDIUM]` | 40 хв |
-| 1.10 | [Інструменти SLO](module-1.10-slo-tooling/) | `[MEDIUM]` | 40 хв |
+| 1.10 | [Інструменти SLO](/uk/k8s/kcsa/part5-platform-security/module-5.4-security-tooling/) | `[MEDIUM]` | 40 хв |
 
 ## Результати навчання
 

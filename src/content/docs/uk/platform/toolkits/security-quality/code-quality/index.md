@@ -24,10 +24,10 @@ sidebar:
 
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
-| 12.1 | [SonarQube](module-12.1-sonarqube/) | `[COMPLEX]` | 50-60 хв |
-| 12.2 | [Semgrep](module-12.2-semgrep/) | `[MEDIUM]` | 45-50 хв |
-| 12.3 | [CodeQL](module-12.3-codeql/) | `[COMPLEX]` | 50-60 хв |
-| 12.4 | [Snyk](module-12.4-snyk/) | `[MEDIUM]` | 40-45 хв |
+| 12.1 | [SonarQube](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[COMPLEX]` | 50-60 хв |
+| 12.2 | [Semgrep](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[MEDIUM]` | 45-50 хв |
+| 12.3 | [CodeQL](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[COMPLEX]` | 50-60 хв |
+| 12.4 | [Snyk](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[MEDIUM]` | 40-45 хв |
 | 12.5 | [Checkov та Trivy](module-12.5-trivy/) | `[MEDIUM]` | 40-45 хв |
 
 ## Результати навчання

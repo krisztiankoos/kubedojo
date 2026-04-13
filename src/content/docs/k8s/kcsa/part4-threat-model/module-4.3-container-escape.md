@@ -27,7 +27,7 @@ After completing this module, you will be able to:
 
 Container escape—breaking out of a container to access the host—is the most severe container security failure. Understanding which configurations make escape possible helps you build secure defaults and recognize dangerous settings before they reach production.
 
-KCSA tests your ability to identify configurations that enable container escape and understand prevention strategies. You don't need to know specific exploitation commands—that's [CKS territory](../../cks/)—but you must recognize the risky settings and know how to prevent them.
+KCSA tests your ability to identify configurations that enable container escape and understand prevention strategies. You don't need to know specific exploitation commands—that's [CKS territory](/k8s/cks/)—but you must recognize the risky settings and know how to prevent them.
 
 ---
 
@@ -471,7 +471,7 @@ spec:
 
 </details>
 
-> **Want to learn hands-on exploitation and security testing techniques?** See the [CKS track](../../cks/) for offensive security labs.
+> **Want to learn hands-on exploitation and security testing techniques?** See the [CKS track](/k8s/cks/) for offensive security labs.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: "RNNs & Sequence Models"
-slug: ai-ml-engineering/deep-learning/module-9.5-rnns-sequence-models
+slug: ai-ml-engineering/deep-learning/module-1.5-rnns-sequence-models
 sidebar:
   order: 1006
 ---

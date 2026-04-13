@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 4.4: Supply Chain Threats](../part4-threat-model/module-4.4-supply-chain/)
+> **Prerequisites**: [Module 4.4: Supply Chain Threats](/k8s/kcsa/part4-threat-model/module-4.4-supply-chain/)
 
 ---
 

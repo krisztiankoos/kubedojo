@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 20 minutes
 >
-> **Prerequisites**: [Module 0.7 - Servers and SSH](../module-0.7-servers-and-ssh/)
+> **Prerequisites**: [Module 0.7 - Servers and SSH](/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh/)
 
 ---
 

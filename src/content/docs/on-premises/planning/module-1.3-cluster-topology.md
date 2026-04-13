@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 1.2: Server Sizing](../module-1.2-server-sizing/), [CKA Part 1: Cluster Architecture](../../k8s/cka/part1-cluster-architecture/)
+> **Prerequisites**: [Module 1.2: Server Sizing](../module-1.2-server-sizing/), [CKA Part 1: Cluster Architecture](/k8s/cka/part1-cluster-architecture/)
 
 ---
 

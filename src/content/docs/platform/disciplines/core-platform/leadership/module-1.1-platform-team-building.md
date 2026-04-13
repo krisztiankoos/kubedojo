@@ -9,9 +9,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Engineering Leadership Track](../../../foundations/engineering-leadership/) — Stakeholder communication, ADRs, mentorship
-- **Required**: [Systems Thinking Track](../../../foundations/systems-thinking/) — Understanding feedback loops and emergent behavior
-- **Recommended**: [SRE: What is SRE?](../sre/module-1.1-what-is-sre/) — Team structures for operational disciplines
+- **Required**: [Engineering Leadership Track](/platform/foundations/engineering-leadership/) — Stakeholder communication, ADRs, mentorship
+- **Required**: [Systems Thinking Track](/platform/foundations/systems-thinking/) — Understanding feedback loops and emergent behavior
+- **Recommended**: [SRE: What is SRE?](/platform/disciplines/core-platform/sre/module-1.1-what-is-sre/) — Team structures for operational disciplines
 - **Recommended**: Experience working on or with infrastructure teams
 
 ---

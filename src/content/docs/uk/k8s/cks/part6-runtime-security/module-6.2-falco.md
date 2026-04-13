@@ -671,4 +671,4 @@ rm -f /tmp/custom-falco-rules.yaml
 
 ## Наступний модуль
 
-[Модуль 6.3: Розслідування контейнерів](module-6.3-container-investigation/) — Аналіз підозрілої поведінки контейнерів.
+[Модуль 6.3: Розслідування контейнерів](/uk/k8s/cks/part6-runtime-security/module-6.3-container-investigation/) — Аналіз підозрілої поведінки контейнерів.

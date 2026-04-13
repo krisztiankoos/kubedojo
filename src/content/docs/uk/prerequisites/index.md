@@ -22,11 +22,11 @@ sidebar:
 | 0.3 | [Перші команди термінала](zero-to-terminal/module-0.3-first-commands/) |
 | 0.4 | [Файли та директорії](zero-to-terminal/module-0.4-files-and-directories/) |
 | 0.5 | [Редагування файлів](zero-to-terminal/module-0.5-editing-files/) |
-| 0.6 | [Що таке мережа?](zero-to-terminal/module-0.6-what-is-networking/) |
-| 0.7 | [Сервери та SSH](zero-to-terminal/module-0.7-servers-and-ssh/) |
-| 0.8 | [Програмне забезпечення та пакети](zero-to-terminal/module-0.8-software-and-packages/) |
-| 0.9 | [Що таке хмара?](zero-to-terminal/module-0.9-what-is-the-cloud/) |
-| 0.10 | [Ваш перший сервер](zero-to-terminal/module-0.10-your-first-server/) |
+| 0.6 | [Що таке мережа?](/uk/prerequisites/zero-to-terminal/module-0.7-what-is-networking/) |
+| 0.7 | [Сервери та SSH](/uk/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh/) |
+| 0.8 | [Програмне забезпечення та пакети](/uk/prerequisites/zero-to-terminal/module-0.9-software-and-packages/) |
+| 0.9 | [Що таке хмара?](/uk/prerequisites/zero-to-terminal/module-0.10-what-is-the-cloud/) |
+| 0.10 | [Ваш перший сервер](/uk/prerequisites/zero-to-terminal/module-0.11-your-first-server/) |
 
 ### [Філософія та Дизайн](philosophy-design/) — 4 модулі
 *Чому Kubernetes існує і як про нього думати.*
@@ -72,7 +72,7 @@ sidebar:
 | 1.2 | [GitOps](modern-devops/module-1.2-gitops/) |
 | 1.3 | [CI/CD пайплайни](modern-devops/module-1.3-cicd-pipelines/) |
 | 1.4 | [Основи спостережуваності](modern-devops/module-1.4-observability/) |
-| 1.5 | [Платформна інженерія](modern-devops/module-1.5-platform-engineering/) |
+| 1.5 | [Платформна інженерія](/uk/platform/disciplines/core-platform/platform-engineering/) |
 | 1.6 | [Практики безпеки (DevSecOps)](modern-devops/module-1.6-devsecops/) |
 
 ---

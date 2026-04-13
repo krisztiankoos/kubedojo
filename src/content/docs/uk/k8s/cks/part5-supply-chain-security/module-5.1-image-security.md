@@ -596,4 +596,4 @@ kubectl delete pod insecure-pod secure-pod
 
 ## Наступний модуль
 
-[Модуль 5.2: Сканування образів з Trivy](module-5.2-image-scanning/) — Пошук вразливостей в образах контейнерів.
+[Модуль 5.2: Сканування образів з Trivy](/uk/k8s/cks/part5-supply-chain-security/module-5.2-image-scanning/) — Пошук вразливостей в образах контейнерів.

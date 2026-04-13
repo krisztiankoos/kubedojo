@@ -9,7 +9,7 @@ sidebar:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.4: Користувачі та дозволи](../system-essentials/module-1.4-users-permissions/)
+- **Обов'язково**: [Модуль 1.4: Користувачі та дозволи](/uk/linux/foundations/system-essentials/module-1.4-users-permissions/)
 - **Обов'язково**: [Модуль 2.1: Простори імен Linux](../module-2.1-namespaces/)
 - **Бажано**: Розуміння основних концепцій безпеки.
 

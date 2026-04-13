@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 1.3: Cluster Topology](../planning/module-1.3-cluster-topology/), [Module 2.4: Declarative Bare Metal](../provisioning/module-2.4-declarative-bare-metal/)
+> **Prerequisites**: [Module 1.3: Cluster Topology](/on-premises/planning/module-1.3-cluster-topology/), [Module 2.4: Declarative Bare Metal](/on-premises/provisioning/module-2.4-declarative-bare-metal/)
 
 ---
 
@@ -668,4 +668,4 @@ kind delete cluster --name upgrade-lab
 
 ## Next Module
 
-Continue to [Module 7.2: Hardware Lifecycle & Firmware](../operations/module-7.2-hardware-lifecycle/) to learn how to manage BIOS updates, disk replacements, and firmware patching without cluster downtime.
+Continue to [Module 7.2: Hardware Lifecycle & Firmware](/on-premises/operations/module-7.2-hardware-lifecycle/) to learn how to manage BIOS updates, disk replacements, and firmware patching without cluster downtime.

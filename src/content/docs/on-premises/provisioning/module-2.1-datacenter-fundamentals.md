@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[MEDIUM]` | Time: 45 minutes
 >
-> **Prerequisites**: [Module 1.2: Server Sizing](../planning/module-1.2-server-sizing/)
+> **Prerequisites**: [Module 1.2: Server Sizing](/on-premises/planning/module-1.2-server-sizing/)
 
 ---
 

@@ -1,6 +1,7 @@
 ---
 title: "High-Performance Storage for AI"
 description: Architect and operate parallel file systems, distributed caches, and tiering strategies to prevent GPU starvation on bare-metal Kubernetes.
+slug: on-premises/ai-ml-infrastructure/module-9.6-high-performance-storage-ai
 sidebar:
   order: 96
 ---
@@ -448,7 +449,7 @@ The `ReadWriteOncePod` access mode, which graduated to stable in Kubernetes 1.29
 </details>
 
 ## Next Module
-Ready to move from storage architectures to advanced scheduling? Check out [Module 9.7: Gang Scheduling and Kueue](../module-9.7-gang-scheduling), where we dive into coordinated pod scheduling to prevent distributed deadlocks in massive AI training runs.
+Ready to move from storage architectures to advanced scheduling? Check out [GPU Scheduling](/platform/toolkits/data-ai-platforms/ml-platforms/module-9.7-gpu-scheduling/), where we dive into coordinated placement, queueing, and accelerator-aware scheduling patterns for large AI workloads.
 
 ## Further Reading
 * [Fluid Official Documentation](https://fluid.io/)

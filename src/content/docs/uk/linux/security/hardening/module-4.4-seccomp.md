@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 2.3: Capabilities та LSM](../../foundations/container-primitives/module-2.3-capabilities-lsms/)
-- **Обов'язково**: [Модуль 1.1: Архітектура ядра](../../foundations/system-essentials/module-1.1-kernel-architecture/) (розуміння системних викликів).
+- **Обов'язково**: [Модуль 2.3: Capabilities та LSM](/uk/linux/foundations/container-primitives/module-2.3-capabilities-lsms/)
+- **Обов'язково**: [Модуль 1.1: Архітектура ядра](/uk/linux/foundations/system-essentials/module-1.1-kernel-architecture/) (розуміння системних викликів).
 - **Бажано**: Розуміння концепції BPF.
 
 ---
@@ -165,4 +165,4 @@ spec:
 
 **Вітаємо!** Ви завершили розділ **«Безпека та зміцнення»**. Тепер ви знаєте, як захистити систему на рівні ядра, файлів та системних викликів.
 
-**Далі**: [Розділ 5: Продуктивність (Performance)](../../performance/) — навчіться аналізувати та оптимізувати ресурси вашого сервера.
+**Далі**: [Розділ 5: Продуктивність (Performance)](/uk/linux/operations/performance/module-5.1-use-method/) — навчіться аналізувати та оптимізувати ресурси вашого сервера.

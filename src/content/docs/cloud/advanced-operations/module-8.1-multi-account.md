@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 2.5 hours
 >
-> **Prerequisites**: [Cloud Architecture Patterns](../architecture-patterns/), familiarity with at least one hyperscaler (AWS, GCP, or Azure)
+> **Prerequisites**: [Cloud Architecture Patterns](/cloud/architecture-patterns/), familiarity with at least one hyperscaler (AWS, GCP, or Azure)
 >
 > **Track**: Advanced Cloud Operations
 

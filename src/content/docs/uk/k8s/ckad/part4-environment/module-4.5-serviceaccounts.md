@@ -603,4 +603,4 @@ k delete deploy drill6 sa drill6-sa
 
 ## Наступний модуль
 
-[Модуль 4.6: Custom Resource Definitions](module-4.6-crds/) — Розширення Kubernetes за допомогою власних ресурсів.
+[Модуль 4.6: Custom Resource Definitions](/uk/k8s/ckad/part4-environment/module-4.6-crds/) — Розширення Kubernetes за допомогою власних ресурсів.

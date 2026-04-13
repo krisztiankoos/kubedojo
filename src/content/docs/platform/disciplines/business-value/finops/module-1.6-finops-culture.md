@@ -1011,7 +1011,7 @@ You've completed the FinOps discipline track. To continue your learning:
 - **Review the FinOps modules** for a summary of all topics and additional resources
 - **Apply what you've learned** — start with Module 1.1's exercise on your own cloud bill
 - **Join the FinOps Foundation** at finops.org for community, certifications, and frameworks
-- **Explore related disciplines**: [SRE](../../core-platform/sre/), [Platform Engineering](../../core-platform/platform-engineering/), [GitOps](../../delivery-automation/gitops/)
+- **Explore related disciplines**: [SRE](/platform/disciplines/core-platform/sre/), [Platform Engineering](/platform/disciplines/core-platform/platform-engineering/), [GitOps](/platform/disciplines/delivery-automation/gitops/)
 
 ---
 

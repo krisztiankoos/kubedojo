@@ -27,9 +27,9 @@ sidebar:
 |---|--------|------------|------|
 | 15.1 | [CockroachDB](module-15.1-cockroachdb/) | `[COMPLEX]` | 55-65 хв |
 | 15.2 | [CloudNativePG](module-15.2-cloudnativepg/) | `[MEDIUM]` | 45-50 хв |
-| 15.3 | [Neon та PlanetScale](module-15.3-serverless-databases/) | `[MEDIUM]` | 40-45 хв |
+| 15.3 | [Neon та PlanetScale](/uk/cloud/managed-services/module-9.3-serverless/) | `[MEDIUM]` | 40-45 хв |
 | 15.4 | [Vitess](module-15.4-vitess/) | `[COMPLEX]` | 50-55 хв |
-| 15.5 | [etcd-operator](module-15.5-etcd-operator/) | `[MEDIUM]` | 40-45 хв |
+| 15.5 | [etcd-operator](/uk/k8s/cka/part1-cluster-architecture/module-1.5-crds-operators/) | `[MEDIUM]` | 40-45 хв |
 
 ## Результати навчання
 

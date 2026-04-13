@@ -266,4 +266,4 @@ Kubernetes рекомендує ці стандартні мітки:
 - Services та виявлення
 - Простори імен та мітки
 
-**Наступна частина**: [Частина 2: Оркестрація контейнерів](../part2-container-orchestration/module-2.1-scheduling/) - Як Kubernetes керує навантаженнями у масштабі.
+**Наступна частина**: [Частина 2: Оркестрація контейнерів](/uk/k8s/kcna/part2-container-orchestration/module-2.1-scheduling/) - Як Kubernetes керує навантаженнями у масштабі.

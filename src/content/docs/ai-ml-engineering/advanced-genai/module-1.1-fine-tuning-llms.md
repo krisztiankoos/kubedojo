@@ -1,6 +1,6 @@
 ---
 title: "Fine-tuning LLMs"
-slug: ai-ml-engineering/advanced-genai/module-7.1-fine-tuning-llms
+slug: ai-ml-engineering/advanced-genai/module-1.1-fine-tuning-llms
 sidebar:
   order: 802
 ---

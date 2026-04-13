@@ -22,7 +22,7 @@ CBA (Certified Backstage Associate) підтверджує знання екос
 
 | # | Модуль | Тема | Охоплені домени |
 |---|--------|-------|-----------------|
-| 1 | [Глибоке занурення в Backstage](module-1.1-backstage-deep-dive/) | Software Catalog (entities), Software Templates (Scaffolder), TechDocs, архітектура плагінів, аутентифікація та дозволи | Домени 1-5 |
+| 1 | [Глибоке занурення в Backstage](/uk/k8s/cba/module-1.1-backstage-dev-workflow/) | Software Catalog (entities), Software Templates (Scaffolder), TechDocs, архітектура плагінів, аутентифікація та дозволи | Домени 1-5 |
 
 ---
 
@@ -31,10 +31,10 @@ CBA (Certified Backstage Associate) підтверджує знання екос
 | Домен | Вага | Охоплення в KubeDojo |
 |--------|--------|-------------------|
 | Концепції IDP та Backstage | 20% | Відмінне ([Platform Engineering 2.1](../../platform/disciplines/core-platform/platform-engineering/module-2.1-what-is-platform-engineering/)) |
-| Software Catalog | 25% | Відмінне ([Глибоке занурення в Backstage](module-1.1-backstage-deep-dive/)) |
-| Software Templates (Scaffolder) | 20% | Відмінне ([Глибоке занурення в Backstage](module-1.1-backstage-deep-dive/)) |
-| TechDocs | 15% | Відмінне ([Глибоке занурення в Backstage](module-1.1-backstage-deep-dive/)) |
-| Екосистема та Плагіни | 20% | Відмінне ([Platforms Toolkit 7.1](../../platform/toolkits/infrastructure-networking/platforms/module-7.1-backstage/)) |
+| Software Catalog | 25% | Відмінне ([Глибоке занурення в Backstage](/uk/k8s/cba/module-1.1-backstage-dev-workflow/)) |
+| Software Templates (Scaffolder) | 20% | Відмінне ([Глибоке занурення в Backstage](/uk/k8s/cba/module-1.1-backstage-dev-workflow/)) |
+| TechDocs | 15% | Відмінне ([Глибоке занурення в Backstage](/uk/k8s/cba/module-1.1-backstage-dev-workflow/)) |
+| Екосистема та Плагіни | 20% | Відмінне ([Platforms Toolkit 7.1](/uk/k8s/kcna/part2-container-orchestration/module-2.3-storage/)) |
 
 ---
 
@@ -51,7 +51,7 @@ CBA (Certified Backstage Associate) підтверджує знання екос
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [Platform Engineering 2.1](../../platform/disciplines/core-platform/platform-engineering/module-2.1-what-is-platform-engineering/) | Що таке IDP? Чому Backstage? | Пряма |
-| [Platform Engineering 2.2](../../platform/disciplines/core-platform/platform-engineering/module-2.2-golden-paths/) | Золоті шляхи та когнітивне навантаження | Пряма |
+| [Platform Engineering 2.2](/uk/linux/foundations/container-primitives/module-2.2-cgroups/) | Золоті шляхи та когнітивне навантаження | Пряма |
 
 ---
 
@@ -67,8 +67,8 @@ CBA (Certified Backstage Associate) підтверджує знання екос
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Глибоке занурення в Backstage](module-1.1-backstage-deep-dive/) | Entity Model та дизайн каталогу | Пряма |
-| [Platforms Toolkit 7.1](../../platform/toolkits/infrastructure-networking/platforms/module-7.1-backstage/) | Практична робота з каталогом | Пряма |
+| [Глибоке занурення в Backstage](/uk/k8s/cba/module-1.1-backstage-dev-workflow/) | Entity Model та дизайн каталогу | Пряма |
+| [Platforms Toolkit 7.1](/uk/k8s/kcna/part2-container-orchestration/module-2.3-storage/) | Практична робота з каталогом | Пряма |
 
 ---
 
@@ -84,7 +84,7 @@ CBA (Certified Backstage Associate) підтверджує знання екос
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Глибоке занурення в Backstage](module-1.1-backstage-deep-dive/) | Написання власних шаблонів (Scaffolder) | Пряма |
+| [Глибоке занурення в Backstage](/uk/k8s/cba/module-1.1-backstage-dev-workflow/) | Написання власних шаблонів (Scaffolder) | Пряма |
 | [Platform Engineering 2.5](../../platform/disciplines/core-platform/platform-engineering/module-2.5-self-service/) | Забезпечення самообслуговування | Пряма |
 
 ---
@@ -101,7 +101,7 @@ CBA (Certified Backstage Associate) підтверджує знання екос
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Глибоке занурення в Backstage](module-1.1-backstage-deep-dive/) | TechDocs конвеєр та візуалізація | Пряма |
+| [Глибоке занурення в Backstage](/uk/k8s/cba/module-1.1-backstage-dev-workflow/) | TechDocs конвеєр та візуалізація | Пряма |
 
 ---
 
@@ -117,7 +117,7 @@ CBA (Certified Backstage Associate) підтверджує знання екос
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Platforms Toolkit 7.1](../../platform/toolkits/infrastructure-networking/platforms/module-7.1-backstage/) | Встановлення та налаштування плагінів | Пряма |
+| [Platforms Toolkit 7.1](/uk/k8s/kcna/part2-container-orchestration/module-2.3-storage/) | Встановлення та налаштування плагінів | Пряма |
 
 ---
 

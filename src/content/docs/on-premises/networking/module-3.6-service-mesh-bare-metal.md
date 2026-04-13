@@ -1,6 +1,7 @@
 ---
 title: "Service Mesh on Bare Metal"
 description: "Design, deploy, and operate a service mesh on bare-metal Kubernetes without cloud-managed load balancers, focusing on performance, data plane architectures, and kernel-level tuning."
+slug: on-premises/networking/module-3.6-service-mesh-bare-metal
 sidebar:
   order: 36
 ---
@@ -514,4 +515,4 @@ D) Remove the MetalLB configuration and use `HostNetwork: true` on the Gateway d
 *   [Linkerd: Strict mTLS and Identity](https://linkerd.io/2.14/features/automatic-mtls/)
 *   [Istio Ambient Mesh Architecture](https://istio.io/latest/docs/ops/ambient/architecture/)
 
-[Next Module: Multicluster Mesh Topologies](/on-premises/networking/module-3.7-multicluster-mesh) -> Discover how to bridge isolated bare-metal environments using multi-primary service mesh federations.
+[Related Module: Cross-Cluster Networking](/on-premises/networking/module-3.5-cross-cluster-networking/) -> Discover how to bridge isolated bare-metal environments and connect services across clusters.

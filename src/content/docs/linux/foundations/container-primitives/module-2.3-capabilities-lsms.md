@@ -9,7 +9,7 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.4: Users & Permissions](../system-essentials/module-1.4-users-permissions/)
+- **Required**: [Module 1.4: Users & Permissions](/linux/foundations/system-essentials/module-1.4-users-permissions/)
 - **Required**: [Module 2.1: Linux Namespaces](../module-2.1-namespaces/)
 - **Helpful**: Understanding of basic security concepts
 

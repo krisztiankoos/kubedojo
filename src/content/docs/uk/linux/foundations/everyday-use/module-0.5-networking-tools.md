@@ -310,4 +310,4 @@ echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 
 Час зануритися глибше. У наступному розділі **«Основи системи»** ми розберемося, як Linux працює "під капотом": ядро, системні виклики та архітектура, що робить усе це можливим.
 
-**Далі**: [Модуль 1.1: Архітектура ядра](../../foundations/system-essentials/module-1.1-kernel-architecture/)
+**Далі**: [Модуль 1.1: Архітектура ядра](/uk/linux/foundations/system-essentials/module-1.1-kernel-architecture/)

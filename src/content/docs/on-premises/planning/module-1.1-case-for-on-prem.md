@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[MEDIUM]` | Time: 45 minutes
 >
-> **Prerequisites**: [Cloud Native 101](../../prerequisites/cloud-native-101/), [Kubernetes Basics](../../prerequisites/kubernetes-basics/)
+> **Prerequisites**: [Cloud Native 101](/prerequisites/cloud-native-101/), [Kubernetes Basics](/prerequisites/kubernetes-basics/)
 
 ---
 

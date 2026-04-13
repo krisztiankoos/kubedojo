@@ -62,6 +62,6 @@ sidebar:
 Оберіть набір інструментів залежно від вашого поточного фокусу:
 
 - **Починаєте зі спостережуваності?** Почніть з [Prometheus](observability-intelligence/observability/module-1.1-prometheus/)
-- **Впроваджуєте GitOps?** Почніть з [ArgoCD](cicd-delivery/gitops-deployments/module-2.1-argocd/)
+- **Впроваджуєте GitOps?** Почніть з [ArgoCD](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/)
 - **Керуєте інфраструктурою?** Ознайомтеся з [Terraform](infrastructure-networking/iac-tools/module-7.1-terraform/)
-- **Будуєте платформу?** Ознайомтеся з [Backstage](infrastructure-networking/platforms/module-7.1-backstage/)
+- **Будуєте платформу?** Ознайомтеся з [Backstage](/uk/k8s/kcna/part2-container-orchestration/module-2.3-storage/)

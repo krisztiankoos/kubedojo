@@ -997,4 +997,4 @@ How do you view KubeArmor security events?
 
 ## Next Module
 
-You've completed the security tools toolkit! Continue to [Platform Engineering Disciplines](../../../disciplines/) to learn how to apply these tools in practice.
+You've completed the security tools toolkit! Continue to [Platform Engineering Disciplines](/platform/disciplines/) to learn how to apply these tools in practice.

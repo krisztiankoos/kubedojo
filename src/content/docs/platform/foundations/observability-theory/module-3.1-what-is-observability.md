@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 30-35 minutes
 >
-> **Prerequisites**: [Reliability Engineering Track](../reliability-engineering/) (recommended)
+> **Prerequisites**: [Reliability Engineering Track](/platform/foundations/reliability-engineering/) (recommended)
 >
 > **Track**: Foundations
 

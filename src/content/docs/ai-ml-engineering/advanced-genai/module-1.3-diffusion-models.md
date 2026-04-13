@@ -1,6 +1,6 @@
 ---
 title: "Diffusion Models"
-slug: ai-ml-engineering/advanced-genai/module-7.3-diffusion-models
+slug: ai-ml-engineering/advanced-genai/module-1.3-diffusion-models
 sidebar:
   order: 804
 ---
@@ -1118,4 +1118,4 @@ BLEU and ROUGE are natural language metrics that exclusively measure superficial
 ## Next Steps
 You have now thoroughly analyzed the architectural extremes of modern generative AI, spanning from predicting continuous visual variables in diffusion models to auto-completing strict syntax boundaries in complex repositories using autoregressive logic and execution-based evaluation techniques.
 
-**Up Next**: [Module 1.4: Agentic Workflows & Tool Use Orchestration](../module-1.4-agentic-workflows) — Discover how to wrap these generative assets in autonomous control loops, allowing models to independently execute terminal commands, surf file systems, and execute complex codebase refactors.
+**Up Next**: [Module 1.5: Building AI Agents](/ai-ml-engineering/frameworks-agents/module-1.5-building-ai-agents/) — Discover how to wrap these generative assets in autonomous control loops, allowing models to independently execute terminal commands, inspect file systems, and orchestrate complex workflows.

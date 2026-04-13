@@ -1,6 +1,6 @@
 ---
 title: "LoRA & Parameter-Efficient Fine-tuning"
-slug: ai-ml-engineering/advanced-genai/module-7.2-lora-parameter-efficient-fine-tuning
+slug: ai-ml-engineering/advanced-genai/module-1.2-lora-parameter-efficient-fine-tuning
 sidebar:
   order: 803
 ---
@@ -1478,7 +1478,7 @@ This path takes you from theory to practice, building intuition at each stage be
 
 ## Next Steps
 
-Now that you have mastered parameter-efficient modifications for generative architectures, it is time to explore models specifically architected for logical reasoning and programming output. Move on to **[Module 34: Code Generation Models](/ai-ml-engineering/advanced-genai/module-34-code-generation)** where you will learn:
+Now that you have mastered parameter-efficient modifications for generative architectures, it is time to explore practical AI-assisted software development workflows. Move on to **[Module 1.7: AI-Powered Code Generation](/ai-ml-engineering/ai-native-development/module-1.7-ai-powered-code-generation/)** where you will learn:
 - How models like Codex, Copilot, and Code Llama execute fill-in-the-middle context parsing.
 - The intricacies of specialized data preparation and tokenizer construction for strict syntax languages.
 - How to evaluate code generation via strict unit-test benchmarking rather than fuzzy semantic grading.

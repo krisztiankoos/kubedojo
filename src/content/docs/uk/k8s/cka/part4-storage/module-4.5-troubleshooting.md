@@ -910,4 +910,4 @@ k get events --field-selector reason=ProvisioningFailed
 - Створювати та відновлювати зі знімків томів
 - Усувати типові проблеми зберігання
 
-Переходьте до [Кумулятивний тест Частини 4](part4-cumulative-quiz/), щоб перевірити свої знання, а потім до [Частина 5: Усунення несправностей](../part5-troubleshooting/).
+Переходьте до [Кумулятивний тест Частини 4](/uk/k8s/cka/part4-storage/part4-cumulative-quiz/), щоб перевірити свої знання, а потім до [Частина 5: Усунення несправностей](/uk/k8s/cka/part5-troubleshooting/).

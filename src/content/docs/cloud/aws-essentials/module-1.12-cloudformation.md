@@ -968,4 +968,4 @@ aws cloudformation list-stacks \
 
 ## Next Module
 
-You have completed the AWS DevOps Essentials infrastructure modules. Return to the [AWS Essentials README]() to review your progress and explore advanced topics. From here, consider diving into the [Platform Engineering Track](../../platform/) to learn how these AWS building blocks fit into a broader platform strategy.
+You have completed the AWS DevOps Essentials infrastructure modules. Return to the [AWS Essentials README]() to review your progress and explore advanced topics. From here, consider diving into the [Platform Engineering Track](/platform/) to learn how these AWS building blocks fit into a broader platform strategy.

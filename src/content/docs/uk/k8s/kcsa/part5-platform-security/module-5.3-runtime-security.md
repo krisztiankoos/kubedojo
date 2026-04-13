@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 5.2: Спостережуваність безпеки](module-5.2-observability/)
+> **Передумови**: [Модуль 5.2: Спостережуваність безпеки](/uk/k8s/kcsa/part5-platform-security/module-5.2-observability/)
 
 ---
 
@@ -368,4 +368,4 @@ spec:
 
 ## Наступний модуль
 
-[Модуль 5.4: Інструменти безпеки](module-5.4-security-tooling/) — Огляд інструментів безпеки в екосистемі Kubernetes.
+[Модуль 5.4: Інструменти безпеки](/uk/k8s/kcsa/part5-platform-security/module-5.4-security-tooling/) — Огляд інструментів безпеки в екосистемі Kubernetes.

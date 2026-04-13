@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.2: Процеси та systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
-- **Обов'язково**: [Модуль 2.2: Контрольні групи (cgroups)](../../foundations/container-primitives/module-2.2-cgroups/)
+- **Обов'язково**: [Модуль 1.2: Процеси та systemd](/uk/linux/foundations/system-essentials/module-1.2-processes-systemd/)
+- **Обов'язково**: [Модуль 2.2: Контрольні групи (cgroups)](/uk/linux/foundations/container-primitives/module-2.2-cgroups/)
 - **Бажано**: Базове розуміння системних метрик.
 
 ---

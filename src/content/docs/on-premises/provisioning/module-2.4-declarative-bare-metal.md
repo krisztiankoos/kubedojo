@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 2.3: Immutable OS](../module-2.3-immutable-os/), [Cluster API](../../platform/toolkits/infrastructure-networking/platforms/module-3.5-cluster-api/)
+> **Prerequisites**: [Module 2.3: Immutable OS](../module-2.3-immutable-os/), [Cluster API](/platform/toolkits/infrastructure-networking/platforms/module-3.5-cluster-api/)
 
 ## What You'll Be Able to Do
 
@@ -679,4 +679,4 @@ An engineer proposes running `clusterctl init` and skipping the core provider in
 
 ## Next Module
 
-Continue to [Module 3.1: Datacenter Network Architecture](../networking/module-3.1-datacenter-networking/) to learn about spine-leaf topology, VLANs, and network design for on-premises Kubernetes.
+Continue to [Module 3.1: Datacenter Network Architecture](/on-premises/networking/module-3.1-datacenter-networking/) to learn about spine-leaf topology, VLANs, and network design for on-premises Kubernetes.

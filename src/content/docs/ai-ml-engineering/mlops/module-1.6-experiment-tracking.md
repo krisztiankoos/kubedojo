@@ -1,6 +1,6 @@
 ---
 title: "Experiment Tracking"
-slug: ai-ml-engineering/mlops/module-5.6-experiment-tracking
+slug: ai-ml-engineering/mlops/module-1.6-experiment-tracking
 sidebar:
   order: 607
 ---

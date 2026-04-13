@@ -15,9 +15,9 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.3: Filesystem Hierarchy](../foundations/system-essentials/module-1.3-filesystem-hierarchy/) for understanding mount points and inodes
-- **Required**: [Module 1.1: Kernel Architecture](../foundations/system-essentials/module-1.1-kernel-architecture/) for understanding kernel/userspace boundary
-- **Helpful**: [Module 5.4: I/O Performance](performance/module-5.4-io-performance/) for storage monitoring context
+- **Required**: [Module 1.3: Filesystem Hierarchy](/linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/) for understanding mount points and inodes
+- **Required**: [Module 1.1: Kernel Architecture](/linux/foundations/system-essentials/module-1.1-kernel-architecture/) for understanding kernel/userspace boundary
+- **Helpful**: [Module 5.4: I/O Performance](/linux/operations/performance/module-5.4-io-performance/) for storage monitoring context
 
 ---
 

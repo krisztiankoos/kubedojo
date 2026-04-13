@@ -16,7 +16,7 @@ Before starting this module, you should have completed:
 - [Module 14.5: OpenShift](../module-14.5-openshift/) - Enterprise distributions
 - Kubernetes fundamentals (control plane, nodes, networking)
 - Cloud provider basics (one of AWS, GCP, or Azure)
-- [Platform Engineering Discipline](../../../disciplines/core-platform/platform-engineering/) - Platform decisions
+- [Platform Engineering Discipline](/platform/disciplines/core-platform/platform-engineering/) - Platform decisions
 
 ---
 
@@ -1038,8 +1038,8 @@ For most teams, managed is the right default.
 ## Next Steps
 
 - **Complete**: [Kubernetes Distributions Toolkit](./) ✓
-- **Next Toolkit**: [CI/CD Pipelines Toolkit](../../cicd-delivery/ci-cd-pipelines/)
-- **Related**: [IaC Tools Toolkit](../iac-tools/) — Terraform for multi-cloud
+- **Next Toolkit**: [CI/CD Pipelines Toolkit](/platform/toolkits/cicd-delivery/ci-cd-pipelines/)
+- **Related**: [IaC Tools Toolkit](/platform/toolkits/infrastructure-networking/iac-tools/) — Terraform for multi-cloud
 
 ---
 

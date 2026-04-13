@@ -571,4 +571,4 @@ kubectl get flowschemas --no-headers | head -5
 - Безпеку оновлень Kubernetes
 - Обмеження доступу до API
 
-**Наступна частина**: [Частина 3: Зміцнення системи](../part3-system-hardening/module-3.1-apparmor/) — AppArmor, seccomp та безпека на рівні ОС.
+**Наступна частина**: [Частина 3: Зміцнення системи](/uk/k8s/cks/part3-system-hardening/module-3.1-apparmor/) — AppArmor, seccomp та безпека на рівні ОС.

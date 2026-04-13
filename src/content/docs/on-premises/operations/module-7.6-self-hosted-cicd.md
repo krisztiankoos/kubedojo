@@ -1,6 +1,7 @@
 ---
 title: "Self-Hosted CI/CD"
 description: "Architecture, trade-offs, and operational patterns for running Tekton, Gitea Actions, Jenkins, Woodpecker, and Drone on bare-metal Kubernetes."
+slug: on-premises/operations/module-7.6-self-hosted-cicd
 sidebar:
   order: 76
 ---
@@ -432,7 +433,7 @@ D) Kubernetes PV reclaim policy was set to `Retain` instead of `Delete`.
 
 ## Next Module
 
-Now that you have established a secure, unprivileged CI pipeline capable of building OCI images natively in Kubernetes, the next step is securely storing and distributing those artifacts. Proceed to [Module 7.7: Private Registry Operations](/docs/operations/module-7.7-private-registries) to learn how to deploy and secure Harbor on bare metal, implement vulnerability scanning, and configure pull-through caches for your worker nodes.
+Now that you have established a secure, unprivileged CI pipeline capable of building OCI images natively in Kubernetes, the next step is securely storing and distributing those artifacts. Proceed to [Module 7.7: Self-Hosted Registry](/on-premises/operations/module-7.7-self-hosted-registry/) to learn how to deploy and secure Harbor on bare metal, implement vulnerability scanning, and configure pull-through caches for your worker nodes.
 
 ## Further Reading
 

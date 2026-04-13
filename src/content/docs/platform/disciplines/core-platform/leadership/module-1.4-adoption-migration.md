@@ -9,9 +9,9 @@ sidebar:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.3: Platform as Product](./module-1.3-platform-as-product/) — Product management, user research, roadmapping
-- **Required**: [Module 1.2: Developer Experience Strategy](./module-1.2-developer-experience/) — DX measurement, golden paths
-- **Recommended**: [SRE: Toil and Automation](../sre/module-1.4-toil-automation/) — Understanding repetitive work and automation ROI
+- **Required**: [Module 1.3: Platform as Product](/platform/disciplines/core-platform/leadership/module-1.3-platform-as-product/) — Product management, user research, roadmapping
+- **Required**: [Module 1.2: Developer Experience Strategy](/platform/disciplines/core-platform/leadership/module-1.2-developer-experience/) — DX measurement, golden paths
+- **Recommended**: [SRE: Toil and Automation](/platform/disciplines/core-platform/sre/module-1.4-toil-automation/) — Understanding repetitive work and automation ROI
 - **Recommended**: Experience with organizational change or system migrations
 
 ---
@@ -724,7 +724,7 @@ Key principles:
 
 ## What's Next
 
-Continue to [Module 1.5: Scaling Platform Organizations](./module-1.5-scaling-platform-org/) to learn how to grow from a single platform team to a platform organization.
+Continue to [Module 1.5: Scaling Platform Organizations](/platform/disciplines/core-platform/leadership/module-1.5-scaling-platform-org/) to learn how to grow from a single platform team to a platform organization.
 
 ---
 

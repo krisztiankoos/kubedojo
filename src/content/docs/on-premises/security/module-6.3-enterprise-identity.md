@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[MEDIUM]` | Time: 60 minutes
 >
-> **Prerequisites**: [Kubernetes Basics](../../prerequisites/kubernetes-basics/), [CKA](../../k8s/cka/), [CKS](../../k8s/cks/)
+> **Prerequisites**: [Kubernetes Basics](/prerequisites/kubernetes-basics/), [CKA](/k8s/cka/), [CKS](/k8s/cks/)
 
 ---
 

@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.1: Архітектура ядра](../../foundations/system-essentials/module-1.1-kernel-architecture/)
-- **Обов'язково**: [Модуль 3.1: Основи TCP/IP](../../foundations/networking/module-3.1-tcp-ip-essentials/)
+- **Обов'язково**: [Модуль 1.1: Архітектура ядра](/uk/linux/foundations/system-essentials/module-1.1-kernel-architecture/)
+- **Обов'язково**: [Модуль 3.1: Основи TCP/IP](/uk/linux/foundations/networking/module-3.1-tcp-ip-essentials/)
 - **Бажано**: Розуміння основних концепцій безпеки.
 
 ---

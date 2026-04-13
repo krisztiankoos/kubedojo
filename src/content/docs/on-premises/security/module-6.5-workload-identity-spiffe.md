@@ -1,6 +1,7 @@
 ---
 title: Workload Identity with SPIFFE/SPIRE
 description: Implement zero-trust workload identity on bare metal using SPIFFE and SPIRE, replacing cloud provider IAM with cryptographic attestation.
+slug: on-premises/security/module-6.5-workload-identity-spiffe
 sidebar:
   order: 65
 ---
@@ -505,4 +506,4 @@ If the Workload API returns `no identity issued`, the attestation failed. Check 
 
 ## Next Module
 
-Ready to dive deeper into identity-aware networking? Head over to [Module 6.6: Advanced Service Mesh Authorization](./module-6.6-advanced-mesh-auth), where we will use our newly minted SPIFFE identities to enforce strict Layer 7 access controls using Envoy and Open Policy Agent.
+Ready to dive deeper into identity-aware networking? Head over to [Module 6.6: Advanced Service Mesh Authorization](/on-premises/security/module-6.5-workload-identity-spiffe/), where we will use our newly minted SPIFFE identities to enforce strict Layer 7 access controls using Envoy and Open Policy Agent.

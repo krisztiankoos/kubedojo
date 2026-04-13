@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[ADVANCED]` | Time: 90 minutes
 >
-> **Prerequisites**: [Module 8.1: Multi-Site & Disaster Recovery](../resilience/module-8.1-multi-site-dr/), [Module 8.2: Hybrid Cloud Connectivity](../resilience/module-8.2-hybrid-connectivity/)
+> **Prerequisites**: [Module 8.1: Multi-Site & Disaster Recovery](/on-premises/resilience/module-8.1-multi-site-dr/), [Module 8.2: Hybrid Cloud Connectivity](/on-premises/resilience/module-8.2-hybrid-connectivity/)
 
 ---
 
@@ -684,4 +684,4 @@ Your large-scale organization has officially decided to aggressively migrate a d
 
 This formally concludes the final, culminating module in the comprehensive Resilience & Migration section. Your extensive technical journey—from establishing core fault tolerance patterns to architecting massive, multi-petabyte full cloud exits—is fundamentally complete. 
 
-Return directly to the [Resilience & Migration overview](../resilience/) to review the full section architecture, or continue your deep technical dive by stepping forward into the extraordinarily complex routing challenges presented in the upcoming bare-metal networking track.
+Return directly to the [Resilience & Migration overview](/on-premises/resilience/) to review the full section architecture, or continue your deep technical dive by stepping forward into the extraordinarily complex routing challenges presented in the upcoming bare-metal networking track.

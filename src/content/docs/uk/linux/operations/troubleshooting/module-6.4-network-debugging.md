@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 3.1: Основи TCP/IP](../../foundations/networking/module-3.1-tcp-ip-essentials/)
-- **Обов'язково**: [Модуль 3.4: iptables та netfilter](../../foundations/networking/module-3.4-iptables-netfilter/)
+- **Обов'язково**: [Модуль 3.1: Основи TCP/IP](/uk/linux/foundations/networking/module-3.1-tcp-ip-essentials/)
+- **Обов'язково**: [Модуль 3.4: iptables та netfilter](/uk/linux/foundations/networking/module-3.4-iptables-netfilter/)
 - **Бажано**: [Модуль 6.1: Системне вирішення проблем](../module-6.1-systematic-troubleshooting/)
 
 ---
@@ -194,4 +194,4 @@ sudo tcpdump -i eth0 host 10.0.0.50
 
 **Розділ «Вирішення проблем» завершено!** Тепер ви маєте повний арсенал для порятунку систем: від аналізу логів та процесів до глибокої діагностики мереж.
 
-**Далі**: [Розділ 7: Скрипти на Bash](../../shell-scripting/) — навчіться автоматизувати всі ці перевірки та операції.
+**Далі**: [Розділ 7: Скрипти на Bash](/uk/linux/operations/shell-scripting/module-7.2-text-processing/) — навчіться автоматизувати всі ці перевірки та операції.

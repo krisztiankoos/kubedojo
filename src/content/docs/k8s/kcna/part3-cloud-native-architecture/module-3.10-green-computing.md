@@ -472,4 +472,4 @@ D) They are optimizing the cluster by keeping the nodes warm; you should label t
 
 ## Next Module
 
-Congratulations! You have completed Part 3: Cloud Native Architecture. Continue to [Part 4](../part4-application-delivery/) to explore Application Delivery.
+Congratulations! You have completed Part 3: Cloud Native Architecture. Continue to [Part 4](/k8s/kcna/part4-application-delivery/) to explore Application Delivery.

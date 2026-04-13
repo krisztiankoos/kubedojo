@@ -659,4 +659,4 @@ kubectl config get-contexts
 
 ## Наступний модуль
 
-[Модуль 0.3: Vim для YAML](module-0.3-vim-yaml/) — Необхідне налаштування Vim для ефективного редагування YAML-файлів.
+[Модуль 0.3: Vim для YAML](/uk/k8s/cka/part0-environment/module-0.3-vim-yaml/) — Необхідне налаштування Vim для ефективного редагування YAML-файлів.

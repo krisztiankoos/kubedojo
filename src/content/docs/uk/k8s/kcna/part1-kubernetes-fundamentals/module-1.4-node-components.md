@@ -367,4 +367,4 @@ sidebar:
 
 ## Наступний модуль
 
-[Модуль 1.5: Поди](module-1.5-pods/) - Фундаментальний будівельний блок навантажень Kubernetes.
+[Модуль 1.5: Поди](/uk/k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods/) - Фундаментальний будівельний блок навантажень Kubernetes.

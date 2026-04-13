@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 35-40 minutes
 >
-> **Prerequisites**: [Systems Thinking Track](../systems-thinking/) (recommended)
+> **Prerequisites**: [Systems Thinking Track](/platform/foundations/systems-thinking/) (recommended)
 >
 > **Track**: Foundations
 

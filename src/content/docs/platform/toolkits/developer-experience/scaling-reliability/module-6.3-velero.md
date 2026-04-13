@@ -18,7 +18,7 @@ Backups are like insurance—you hope you never need them, but you'll be glad yo
 
 **Prerequisites**:
 - Kubernetes resources and persistent volumes
-- [SRE Discipline](../../../disciplines/core-platform/sre/) — Disaster recovery concepts
+- [SRE Discipline](/platform/disciplines/core-platform/sre/) — Disaster recovery concepts
 - Cloud storage basics (S3, GCS, Azure Blob)
 
 ---
@@ -700,7 +700,7 @@ Set up backup hooks to run a command before backing up (simulating database dump
 
 ## Next Module
 
-Continue to [Platforms Toolkit](../../infrastructure-networking/platforms/) to learn about Backstage, Crossplane, and cert-manager for internal developer platforms.
+Continue to [Platforms Toolkit](/platform/toolkits/infrastructure-networking/platforms/) to learn about Backstage, Crossplane, and cert-manager for internal developer platforms.
 
 ---
 

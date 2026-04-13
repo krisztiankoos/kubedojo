@@ -774,4 +774,4 @@ kubectl get job challenge-job -w
 
 ## Наступний модуль
 
-[Модуль 2.5: Управління ресурсами](module-2.5-resource-management/) — Requests, limits та класи QoS.
+[Модуль 2.5: Управління ресурсами](/uk/k8s/cka/part2-workloads-scheduling/module-2.5-resource-management/) — Requests, limits та класи QoS.

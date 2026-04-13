@@ -93,7 +93,7 @@ CKA → CKS → KCSA
 | [CAPA](capa/) | Certified Argo Project Associate | Argo Workflows, Rollouts |
 | [CNPE](cnpe/) | Cloud Native Platform Engineer | Крос-трековий шлях навчання |
 | [CNPA](cnpa/) | Cloud Native Platform Associate | Основи платформної інженерії |
-| [FinOps](finops/) | FinOps Practitioner | Оптимізація хмарних витрат |
+| [FinOps](/uk/platform/disciplines/business-value/finops/) | FinOps Practitioner | Оптимізація хмарних витрат |
 
 ## Розширення Kubernetes
 

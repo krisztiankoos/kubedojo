@@ -544,4 +544,4 @@ kubectl delete job kube-bench
 
 ## Наступний модуль
 
-[Модуль 1.3: Безпека Ingress](module-1.3-ingress-security/) — Захист контролерів ingress та завершення TLS.
+[Модуль 1.3: Безпека Ingress](/uk/k8s/cks/part1-cluster-setup/module-1.3-ingress-security/) — Захист контролерів ingress та завершення TLS.

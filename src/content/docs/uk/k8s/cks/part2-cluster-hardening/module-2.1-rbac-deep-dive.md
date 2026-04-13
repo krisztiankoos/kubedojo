@@ -627,4 +627,4 @@ kubectl delete clusterrole overpermissive
 
 ## Наступний модуль
 
-[Модуль 2.2: Безпека ServiceAccount](module-2.2-serviceaccount-security/) — Зміцнення ServiceAccount та управління токенами.
+[Модуль 2.2: Безпека ServiceAccount](/uk/k8s/cks/part2-cluster-hardening/module-2.2-serviceaccount-security/) — Зміцнення ServiceAccount та управління токенами.

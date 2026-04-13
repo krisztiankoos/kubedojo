@@ -292,4 +292,4 @@ data:
 - Зберігання з PV, PVC та StorageClasses
 - Конфігурацію з ConfigMaps та Secrets
 
-**Наступна частина**: [Частина 3: Хмарна архітектура](../part3-cloud-native-architecture/module-3.1-cloud-native-principles/) - Розуміння патернів проєктування хмарних технологій та екосистеми CNCF.
+**Наступна частина**: [Частина 3: Хмарна архітектура](/uk/k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles/) - Розуміння патернів проєктування хмарних технологій та екосистеми CNCF.

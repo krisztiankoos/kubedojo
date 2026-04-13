@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 2.1: Безпека площини управління](module-2.1-control-plane-security/)
+> **Передумови**: [Модуль 2.1: Безпека площини управління](/uk/k8s/kcsa/part2-cluster-component-security/module-2.1-control-plane-security/)
 
 ---
 
@@ -383,4 +383,4 @@ protectKernelDefaults: false
 
 ## Наступний модуль
 
-[Модуль 2.3: Мережева безпека](module-2.3-network-security/) - Плагіни CNI, безпека service mesh та мережеві контролі.
+[Модуль 2.3: Мережева безпека](/uk/k8s/kcsa/part2-cluster-component-security/module-2.3-network-security/) - Плагіни CNI, безпека service mesh та мережеві контролі.

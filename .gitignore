@@ -56,7 +56,6 @@ test_script.sh
 .pids/
 *.bak
 .pipeline/rewrite-output/
-*.staging.md
 .pipeline/fact-ledgers/
 .pipeline/link-cache.json
 .pipeline/knowledge-cards/

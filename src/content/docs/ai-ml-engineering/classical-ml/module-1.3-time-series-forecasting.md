@@ -1,6 +1,6 @@
 ---
 title: "Time Series Forecasting"
-slug: ai-ml-engineering/classical-ml/module-10.3-time-series-forecasting
+slug: ai-ml-engineering/classical-ml/module-1.3-time-series-forecasting
 sidebar:
   order: 1104
 ---

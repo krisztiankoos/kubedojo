@@ -14,7 +14,7 @@ sidebar:
 
 | # | Модуль | Час | Що ви вивчите |
 |---|--------|------|-------------------|
-| 1.1 | [Стратегії релізів та прогресивна доставка](module-1.1-release-strategies/) | 2 год | Blue/Green, Canary, Shadow, радіус ураження, міграції БД |
+| 1.1 | [Стратегії релізів та прогресивна доставка](/uk/k8s/kcna/part4-application-delivery/module-4.3-release-strategies/) | 2 год | Blue/Green, Canary, Shadow, радіус ураження, міграції БД |
 | 1.2 | [Просунутий Canary з Argo Rollouts](module-1.2-argo-rollouts/) | 3 год | Rollouts CRD, AnalysisRuns, просування на основі метрик |
 | 1.3 | [Управління функціями у масштабі](module-1.3-feature-flags/) | 2.5 год | OpenFeature, Unleash, життєвий цикл прапорців, kill switches |
 | 1.4 | [Оркестрація глобальних та мультирегіональних релізів](module-1.4-global-releases/) | 3 год | Ring deployments, ApplicationSets, перемикання трафіку |

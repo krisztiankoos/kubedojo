@@ -473,4 +473,4 @@ k delete pvc data-pvc 2>/dev/null
 
 ## Наступна частина
 
-[Частина 2: Розгортання застосунків](../part2-deployment/module-2.1-deployments/) — Деплойменти, Helm, Kustomize та стратегії розгортання.
+[Частина 2: Розгортання застосунків](/uk/k8s/ckad/part2-deployment/module-2.1-deployments/) — Деплойменти, Helm, Kustomize та стратегії розгортання.

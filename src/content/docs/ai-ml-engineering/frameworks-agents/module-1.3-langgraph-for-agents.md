@@ -1,6 +1,6 @@
 ---
 title: "LangGraph for Agents"
-slug: ai-ml-engineering/frameworks-agents/module-4.3-langgraph-for-agents
+slug: ai-ml-engineering/frameworks-agents/module-1.3-langgraph-for-agents
 sidebar:
   order: 504
 ---

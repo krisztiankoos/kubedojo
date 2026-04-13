@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 2.1: Datacenter Fundamentals](../module-2.1-datacenter-fundamentals/), [Linux: Kernel Architecture](../../linux/foundations/system-essentials/module-1.1-kernel-architecture/)
+> **Prerequisites**: [Module 2.1: Datacenter Fundamentals](../module-2.1-datacenter-fundamentals/), [Linux: Kernel Architecture](/linux/foundations/system-essentials/module-1.1-kernel-architecture/)
 
 ## Why This Module Matters
 

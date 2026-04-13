@@ -578,4 +578,4 @@ k delete ns web-app
 
 ## Наступний модуль
 
-[Модуль 1.1: Образи контейнерів](../part1-design-build/module-1.1-container-images/) — Збірка, тегування та пуш образів контейнерів для CKAD.
+[Модуль 1.1: Образи контейнерів](/uk/k8s/ckad/part1-design-build/module-1.1-container-images/) — Збірка, тегування та пуш образів контейнерів для CKAD.

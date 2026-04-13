@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 2.3: Мережева безпека](module-2.3-network-security/)
+> **Передумови**: [Модуль 2.3: Мережева безпека](/uk/k8s/kcsa/part2-cluster-component-security/module-2.3-network-security/)
 
 ---
 
@@ -263,4 +263,4 @@ PKI Kubernetes є фундаментом безпеки кластера:
 
 ## Наступний модуль
 
-[Модуль 3.1: Безпека подів](../part3-security-fundamentals/module-3.1-pod-security/) - SecurityContext, Pod Security Standards та безпека на рівні контейнерів.
+[Модуль 3.1: Безпека подів](/uk/k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security/) - SecurityContext, Pod Security Standards та безпека на рівні контейнерів.

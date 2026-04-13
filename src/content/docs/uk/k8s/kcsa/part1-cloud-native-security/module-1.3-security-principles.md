@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 1.2: Безпека хмарного провайдера](module-1.2-cloud-provider-security/)
+> **Передумови**: [Модуль 1.2: Безпека хмарного провайдера](/uk/k8s/kcsa/part1-cloud-native-security/module-1.2-cloud-provider-security/)
 
 ---
 
@@ -489,4 +489,4 @@ spec:
 
 ## Наступний модуль
 
-[Модуль 2.1: Безпека площини управління](../part2-cluster-component-security/module-2.1-control-plane-security/) - Захист компонентів площини управління Kubernetes.
+[Модуль 2.1: Безпека площини управління](/uk/k8s/kcsa/part2-cluster-component-security/module-2.1-control-plane-security/) - Захист компонентів площини управління Kubernetes.

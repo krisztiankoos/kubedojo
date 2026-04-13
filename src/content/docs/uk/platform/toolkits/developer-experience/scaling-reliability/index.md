@@ -24,11 +24,11 @@ sidebar:
 
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
-| 6.1 | [Karpenter](module-6.1-karpenter/) | `[COMPLEX]` | 45-50 хв |
+| 6.1 | [Karpenter](/uk/cloud/gke-deep-dive/module-6.1-gke-architecture/) | `[COMPLEX]` | 45-50 хв |
 | 6.2 | [KEDA](module-6.2-keda/) | `[MEDIUM]` | 40-45 хв |
 | 6.3 | [Velero](module-6.3-velero/) | `[MEDIUM]` | 40-45 хв |
 | 6.4 | [FinOps з OpenCost](module-6.4-finops-opencost/) | `[MEDIUM]` | 40-45 хв |
-| 6.5 | [Chaos Engineering](module-6.5-chaos-engineering/) | `[COMPLEX]` | 50 хв |
+| 6.5 | [Chaos Engineering](/uk/platform/disciplines/reliability-security/chaos-engineering/) | `[COMPLEX]` | 50 хв |
 | 6.6 | [Knative](module-6.6-knative/) | `[MEDIUM]` | 40-45 хв |
 
 ## Результати навчання

@@ -405,4 +405,4 @@ Confirm the API server rejects it.
 
 ## Next Module
 
-Next up: [Module 14.6: Managed Kubernetes](module-14.6-managed-kubernetes/) — exploring EKS, GKE, and AKS.
+Next up: [Module 14.6: Managed Kubernetes](/platform/toolkits/infrastructure-networking/k8s-distributions/module-14.6-managed-kubernetes/) — exploring EKS, GKE, and AKS.

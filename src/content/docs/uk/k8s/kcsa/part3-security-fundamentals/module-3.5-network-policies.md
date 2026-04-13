@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 3.4: Безпека ServiceAccount](module-3.4-serviceaccounts/)
+> **Передумови**: [Модуль 3.4: Безпека ServiceAccount](/uk/k8s/kcsa/part3-security-fundamentals/module-3.4-serviceaccounts/)
 
 ---
 
@@ -348,4 +348,4 @@ spec:
 
 ## Наступний модуль
 
-[Модуль 4.1: Поверхні атак](../part4-threat-model/module-4.1-attack-surfaces/) - Розуміння векторів атак Kubernetes.
+[Модуль 4.1: Поверхні атак](/uk/k8s/kcsa/part4-threat-model/module-4.1-attack-surfaces/) - Розуміння векторів атак Kubernetes.

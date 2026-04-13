@@ -551,4 +551,4 @@ kubectl delete job kube-bench
 
 ## Наступний модуль
 
-[Модуль 0.3: Опанування інструментів безпеки](module-0.3-security-tools/) — Глибоке занурення у використання Trivy, Falco та kube-bench.
+[Модуль 0.3: Опанування інструментів безпеки](/uk/k8s/cks/part0-environment/module-0.3-security-tools/) — Глибоке занурення у використання Trivy, Falco та kube-bench.

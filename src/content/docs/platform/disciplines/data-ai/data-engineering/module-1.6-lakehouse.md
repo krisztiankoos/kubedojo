@@ -1302,9 +1302,9 @@ This is the promise of the lakehouse: warehouse-grade reliability, lake-scale ec
 ## Next Steps
 
 You have completed the Data Engineering on Kubernetes discipline. From here, consider:
-- **[SRE Discipline](../../core-platform/sre/)** — Learn to operate these data systems reliably in production
-- **[Observability Toolkit](../../../toolkits/observability-intelligence/observability/)** — Monitor your data platform with Prometheus, Grafana, and OpenTelemetry
-- **[MLOps Discipline](../mlops/)** — Build ML pipelines on top of your lakehouse
+- **[SRE Discipline](/platform/disciplines/core-platform/sre/)** — Learn to operate these data systems reliably in production
+- **[Observability Toolkit](/platform/toolkits/observability-intelligence/observability/)** — Monitor your data platform with Prometheus, Grafana, and OpenTelemetry
+- **[MLOps Discipline](/platform/disciplines/data-ai/mlops/)** — Build ML pipelines on top of your lakehouse
 
 ---
 

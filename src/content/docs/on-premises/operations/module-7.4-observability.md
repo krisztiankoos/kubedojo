@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 7.3: Node Failure & Auto-Remediation](../module-7.3-node-remediation/), [Module 4.1: Storage Architecture](../storage/module-4.1-storage-architecture/)
+> **Prerequisites**: [Module 7.3: Node Failure & Auto-Remediation](../module-7.3-node-remediation/), [Module 4.1: Storage Architecture](/on-premises/storage/module-4.1-storage-architecture/)
 
 ---
 
@@ -697,4 +697,4 @@ kind delete cluster --name monitoring-lab
 
 ## Next Module
 
-Continue to [Module 7.5: Capacity Expansion & Hardware Refresh](../operations/module-7.5-capacity-expansion/) to learn how to add new racks, handle mixed CPU generations, and plan hardware refresh cycles.
+Continue to [Module 7.5: Capacity Expansion & Hardware Refresh](/on-premises/operations/module-7.5-capacity-expansion/) to learn how to add new racks, handle mixed CPU generations, and plan hardware refresh cycles.

@@ -717,4 +717,4 @@ k delete configmap backup-script
 
 ## Наступний модуль
 
-[Модуль 1.3: Під з кількома контейнерами](module-1.3-multi-container-pods/) — Паттерни sidecar, init та ambassador.
+[Модуль 1.3: Під з кількома контейнерами](/uk/k8s/ckad/part1-design-build/module-1.3-multi-container-pods/) — Паттерни sidecar, init та ambassador.

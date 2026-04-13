@@ -798,4 +798,4 @@ curl -k https://localhost:6443/healthz
 
 ## Наступний модуль
 
-Переходьте до [Модуль 5.4: Збої робочих вузлів](module-5.4-worker-nodes/), щоб навчитися усувати несправності kubelet, container runtime та проблеми на рівні вузлів.
+Переходьте до [Модуль 5.4: Збої робочих вузлів](/uk/k8s/cka/part5-troubleshooting/module-5.4-worker-nodes/), щоб навчитися усувати несправності kubelet, container runtime та проблеми на рівні вузлів.

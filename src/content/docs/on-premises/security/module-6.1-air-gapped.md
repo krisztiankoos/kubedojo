@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[ADVANCED]` | Time: 60 minutes
 >
-> **Prerequisites**: [Planning & Economics](../planning/), [Bare Metal Provisioning](../provisioning/), [CKS](../../k8s/cks/)
+> **Prerequisites**: [Planning & Economics](/on-premises/planning/), [Bare Metal Provisioning](/on-premises/provisioning/), [CKS](/k8s/cks/)
 
 ---
 

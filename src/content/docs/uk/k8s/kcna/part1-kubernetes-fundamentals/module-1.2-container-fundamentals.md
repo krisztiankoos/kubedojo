@@ -393,4 +393,4 @@ Kubernetes не запускає контейнери безпосередньо
 
 ## Наступний модуль
 
-[Модуль 1.3: Архітектура Kubernetes - Площина управління](module-1.3-control-plane/) - Розуміння мозку Kubernetes.
+[Модуль 1.3: Архітектура Kubernetes - Площина управління](/uk/k8s/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane/) - Розуміння мозку Kubernetes.

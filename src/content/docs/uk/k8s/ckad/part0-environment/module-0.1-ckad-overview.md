@@ -510,5 +510,5 @@ k delete pod probed-app
 
 ## Наступний модуль
 
-[Модуль 0.2: Робочий процес розробника](module-0.2-developer-workflow/) — Оптимізуйте свої шаблони kubectl для швидкості на CKAD.
+[Модуль 0.2: Робочий процес розробника](/uk/k8s/ckad/part0-environment/module-0.2-developer-workflow/) — Оптимізуйте свої шаблони kubectl для швидкості на CKAD.
 

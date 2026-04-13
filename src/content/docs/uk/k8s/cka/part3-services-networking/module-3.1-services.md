@@ -1046,4 +1046,4 @@ k delete svc challenge-app
 
 ## Наступний модуль
 
-[Модуль 3.2: Ендпоінти та EndpointSlices](module-3.2-endpoints/) - Глибоке занурення в те, як сервіси відстежують поди.
+[Модуль 3.2: Ендпоінти та EndpointSlices](/uk/k8s/cka/part3-services-networking/module-3.2-endpoints/) - Глибоке занурення в те, як сервіси відстежують поди.

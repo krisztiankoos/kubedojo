@@ -24,8 +24,8 @@ sidebar:
 
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
-| 3.1 | [Dagger](module-3.1-dagger/) | `[COMPLEX]` | 45-50 хв |
-| 3.2 | [Tekton](module-3.2-tekton/) | `[COMPLEX]` | 45-50 хв |
+| 3.1 | [Dagger](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[COMPLEX]` | 45-50 хв |
+| 3.2 | [Tekton](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[COMPLEX]` | 45-50 хв |
 | 3.3 | [Argo Workflows](module-3.3-argo-workflows/) | `[COMPLEX]` | 40-45 хв |
 
 ## Результати навчання

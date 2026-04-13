@@ -1,6 +1,6 @@
 ---
 title: "Advanced Generation Techniques"
-slug: ai-ml-engineering/advanced-genai/module-7.5-advanced-generation-techniques
+slug: ai-ml-engineering/advanced-genai/module-1.5-advanced-generation-techniques
 sidebar:
   order: 806
 ---

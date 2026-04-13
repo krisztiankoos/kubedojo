@@ -1,6 +1,6 @@
 ---
 title: "Transformers from Scratch"
-slug: ai-ml-engineering/deep-learning/module-9.7-transformers-from-scratch
+slug: ai-ml-engineering/deep-learning/module-1.7-transformers-from-scratch
 sidebar:
   order: 1008
 ---

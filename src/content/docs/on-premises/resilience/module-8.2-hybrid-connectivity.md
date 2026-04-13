@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[ADVANCED]` | Time: 60 minutes
 >
-> **Prerequisites**: [Datacenter Networking](../../on-premises/networking/module-3.1-datacenter-networking/), [Module 8.1: Multi-Site & Disaster Recovery](../resilience/module-8.1-multi-site-dr/)
+> **Prerequisites**: [Datacenter Networking](/on-premises/networking/module-3.1-datacenter-networking/), [Module 8.1: Multi-Site & Disaster Recovery](/on-premises/resilience/module-8.1-multi-site-dr/)
 
 ---
 
@@ -602,4 +602,4 @@ kubectl run test --rm -it --image=curlimages/curl --restart=Never -- \
 
 ## Next Module
 
-Continue to [Module 8.3: Cloud Repatriation & Migration](../resilience/module-8.3-cloud-repatriation/) to learn how to move workloads from cloud to on-premises, translating cloud services to their on-prem equivalents.
+Continue to [Module 8.3: Cloud Repatriation & Migration](/on-premises/resilience/module-8.3-cloud-repatriation/) to learn how to move workloads from cloud to on-premises, translating cloud services to their on-prem equivalents.

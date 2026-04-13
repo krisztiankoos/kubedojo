@@ -1,6 +1,6 @@
 ---
 title: "Training Neural Networks"
-slug: ai-ml-engineering/deep-learning/module-9.3-training-neural-networks
+slug: ai-ml-engineering/deep-learning/module-1.3-training-neural-networks
 sidebar:
   order: 1004
 ---

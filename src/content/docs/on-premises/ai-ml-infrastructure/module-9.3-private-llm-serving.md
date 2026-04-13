@@ -1,6 +1,7 @@
 ---
 title: "Private LLM Serving"
 description: "Deploy, scale, and optimize large language models on bare-metal Kubernetes using vLLM, TGI, and KServe."
+slug: on-premises/ai-ml-infrastructure/module-9.3-private-llm-serving
 sidebar:
   order: 93
 ---

@@ -479,4 +479,4 @@ You've finished **Container Orchestration** (22% of the exam). You now understan
 - Storage with PVs, PVCs, and StorageClasses
 - Configuration with ConfigMaps and Secrets
 
-**Next Part**: [Part 3: Cloud Native Architecture](../part3-cloud-native-architecture/module-3.1-cloud-native-principles/) - Understanding cloud native design patterns and the CNCF ecosystem.
+**Next Part**: [Part 3: Cloud Native Architecture](/k8s/kcna/part3-cloud-native-architecture/module-3.1-cloud-native-principles/) - Understanding cloud native design patterns and the CNCF ecosystem.

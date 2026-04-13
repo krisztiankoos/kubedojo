@@ -1208,4 +1208,4 @@ k delete namespace secure
 
 ## Наступний модуль
 
-[Модуль 3.7: CNI та мережа кластера](module-3.7-cni/) — Розуміння Container Network Interface.
+[Модуль 3.7: CNI та мережа кластера](/uk/k8s/cka/part3-services-networking/module-3.7-cni/) — Розуміння Container Network Interface.

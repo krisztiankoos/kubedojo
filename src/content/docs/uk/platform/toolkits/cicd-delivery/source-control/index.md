@@ -25,8 +25,8 @@ sidebar:
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
 | 11.1 | [GitLab](module-11.1-gitlab/) | `[COMPLEX]` | 50-60 хв |
-| 11.2 | [Gitea та Forgejo](module-11.2-gitea-forgejo/) | `[MEDIUM]` | 40-45 хв |
-| 11.3 | [GitHub Advanced](module-11.3-github-advanced/) | `[MEDIUM]` | 40-45 хв |
+| 11.2 | [Gitea та Forgejo](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[MEDIUM]` | 40-45 хв |
+| 11.3 | [GitHub Advanced](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[MEDIUM]` | 40-45 хв |
 
 ## Результати навчання
 

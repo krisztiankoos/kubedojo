@@ -14,8 +14,8 @@ On-premises Kubernetes дає вам фізичний контроль, який
 |--------|------|------------|
 | [Модуль 6.1: Фізична безпека та ізольовані середовища (Air-Gapped)](module-6.1-air-gapped/) | Контроль дата-центру, відключені кластери, реєстр Harbor, дзеркалювання образів, оновлення через фізичні носії, ізольований GitOps | Advanced |
 | [Модуль 6.2: Апаратна безпека (HSM/TPM)](module-6.2-hardware-security/) | HSM для управління ключами, TPM measured boot, Vault + PKCS#11, заміна хмарного KMS, шифрування дисків LUKS + TPM | Advanced |
-| [Модуль 6.3: Корпоративна ідентифікація (AD/LDAP/OIDC)](module-6.3-enterprise-identity/) | Інтеграція Active Directory, LDAP, Keycloak, Dex OIDC, мапінг груп RBAC, SSO для панелей управління | Medium |
-| [Модуль 6.4: Комплаєнс для регульованих галузей](module-6.4-compliance/) | Фізичний контроль HIPAA, SOC 2, ізоляція області PCI DSS, суверенітет даних, політика аудиту K8s, збір доказів | Advanced |
+| [Модуль 6.3: Корпоративна ідентифікація (AD/LDAP/OIDC)](/uk/cloud/advanced-operations/module-8.4-enterprise-identity/) | Інтеграція Active Directory, LDAP, Keycloak, Dex OIDC, мапінг груп RBAC, SSO для панелей управління | Medium |
+| [Модуль 6.4: Комплаєнс для регульованих галузей](/uk/cloud/enterprise-hybrid/module-10.3-compliance/) | Фізичний контроль HIPAA, SOC 2, ізоляція області PCI DSS, суверенітет даних, політика аудиту K8s, збір доказів | Advanced |
 
 ---
 

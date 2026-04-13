@@ -937,4 +937,4 @@ kubectl delete deployment lifecycle-test
 
 ## Наступний модуль
 
-[Модуль 2.3: DaemonSets та StatefulSets](module-2.3-daemonsets-statefulsets/) — Спеціалізовані контролери робочих навантажень.
+[Модуль 2.3: DaemonSets та StatefulSets](/uk/k8s/cka/part2-workloads-scheduling/module-2.3-daemonsets-statefulsets/) — Спеціалізовані контролери робочих навантажень.

@@ -725,4 +725,4 @@ Key principles:
 
 ## Next Module
 
-[Module 6.1: Compliance Frameworks](../part6-compliance/module-6.1-compliance-frameworks/) - Understanding security compliance standards for Kubernetes.
+[Module 6.1: Compliance Frameworks](/k8s/kcsa/part6-compliance/module-6.1-compliance-frameworks/) - Understanding security compliance standards for Kubernetes.

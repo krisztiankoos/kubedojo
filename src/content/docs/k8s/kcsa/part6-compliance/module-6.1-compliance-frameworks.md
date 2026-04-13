@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 5.4: Security Tooling](../part5-platform-security/module-5.4-security-tooling/)
+> **Prerequisites**: [Module 5.4: Security Tooling](/k8s/kcsa/part5-platform-security/module-5.4-security-tooling/)
 
 ---
 

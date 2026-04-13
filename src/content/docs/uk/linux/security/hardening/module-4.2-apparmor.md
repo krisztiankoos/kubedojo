@@ -15,8 +15,8 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 2.3: Capabilities та LSM](../../foundations/container-primitives/module-2.3-capabilities-lsms/)
-- **Обов'язково**: [Модуль 1.4: Користувачі та дозволи](../../foundations/system-essentials/module-1.4-users-permissions/)
+- **Обов'язково**: [Модуль 2.3: Capabilities та LSM](/uk/linux/foundations/container-primitives/module-2.3-capabilities-lsms/)
+- **Обов'язково**: [Модуль 1.4: Користувачі та дозволи](/uk/linux/foundations/system-essentials/module-1.4-users-permissions/)
 - **Бажано**: Розуміння основних концепцій безпеки.
 
 ---

@@ -975,4 +975,4 @@ kubectl taint nodes $NODE frontend-
 
 ## Наступний модуль
 
-[Модуль 2.7: ConfigMaps і Secrets](module-2.7-configmaps-secrets/) — Управління конфігурацією застосунків.
+[Модуль 2.7: ConfigMaps і Secrets](/uk/k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets/) — Управління конфігурацією застосунків.

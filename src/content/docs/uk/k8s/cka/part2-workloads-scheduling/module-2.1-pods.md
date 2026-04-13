@@ -975,5 +975,5 @@ kubectl delete pod challenge
 
 ## Наступний модуль
 
-[Модуль 2.2: Деплойменти та ReplicaSets](module-2.2-deployments/) — Поступові оновлення, відкати та масштабування.
+[Модуль 2.2: Деплойменти та ReplicaSets](/uk/k8s/cka/part2-workloads-scheduling/module-2.2-deployments/) — Поступові оновлення, відкати та масштабування.
 

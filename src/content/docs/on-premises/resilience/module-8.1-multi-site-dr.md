@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[ADVANCED]` | Time: 60 minutes
 >
-> **Prerequisites**: [Cluster Topology Planning](../../on-premises/planning/module-1.3-cluster-topology/), [Storage Architecture](../../on-premises/storage/module-4.1-storage-architecture/)
+> **Prerequisites**: [Cluster Topology Planning](/on-premises/planning/module-1.3-cluster-topology/), [Storage Architecture](/on-premises/storage/module-4.1-storage-architecture/)
 
 ---
 
@@ -491,4 +491,4 @@ kubectl get pods -n demo-app
 
 ## Next Module
 
-Continue to [Module 8.2: Hybrid Cloud Connectivity](../resilience/module-8.2-hybrid-connectivity/) to learn how to connect on-premises clusters to cloud environments using VPNs, direct interconnects, and multi-cluster networking.
+Continue to [Module 8.2: Hybrid Cloud Connectivity](/on-premises/resilience/module-8.2-hybrid-connectivity/) to learn how to connect on-premises clusters to cloud environments using VPNs, direct interconnects, and multi-cluster networking.

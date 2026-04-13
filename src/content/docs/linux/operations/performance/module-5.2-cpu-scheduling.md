@@ -16,7 +16,7 @@ lab:
 
 Before starting this module:
 - **Required**: [Module 5.1: USE Method](../module-5.1-use-method/)
-- **Required**: [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups/)
+- **Required**: [Module 2.2: cgroups](/linux/foundations/container-primitives/module-2.2-cgroups/)
 - **Helpful**: Understanding of processes and threads
 
 ---
@@ -802,7 +802,7 @@ CPU is only one piece of the performance puzzle. In **Module 5.3: Memory Managem
 ## Further Reading
 
 -   [Module 5.1: USE Method](../module-5.1-use-method/)
--   [Module 2.2: cgroups](../../foundations/container-primitives/module-2.2-cgroups/)
+-   [Module 2.2: cgroups](/linux/foundations/container-primitives/module-2.2-cgroups/)
 -   [CFS Scheduler Documentation](https://www.kernel.org/doc/Documentation/scheduler/sched-design-CFS.txt)
 -   [CPU Bandwidth Control](https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt)
 -   [Kubernetes CPU Management](https://kubernetes.io/docs/tasks/administer-cluster/cpu-management-policies/)

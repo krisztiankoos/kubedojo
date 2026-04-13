@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[MEDIUM]` | Time: 45 minutes
 >
-> **Prerequisites**: [Module 3.3: Load Balancing](../module-3.3-load-balancing/), [CKA: DNS](../../k8s/cka/part3-services-networking/module-3.3-dns/)
+> **Prerequisites**: [Module 3.3: Load Balancing](../module-3.3-load-balancing/), [CKA: DNS](/k8s/cka/part3-services-networking/module-3.3-dns/)
 
 ## Why This Module Matters
 
@@ -708,4 +708,4 @@ kind delete cluster --name dns-lab
 
 ## Next Module
 
-Now that your fundamental infrastructure securely routes endpoints over split-horizon DNS and validates identities perfectly via internal PKI, it is definitively time to tackle the most structurally demanding problem in distributed orchestration systems: persistent volume persistence on bare metal. Continue seamlessly to [Module 4.1: Storage Architecture Decisions](../storage/module-4.1-storage-architecture/) to learn exactly how to design, aggressively evaluate, and robustly scale highly available storage arrays meticulously tailored for demanding on-premises stateful workloads.
+Now that your fundamental infrastructure securely routes endpoints over split-horizon DNS and validates identities perfectly via internal PKI, it is definitively time to tackle the most structurally demanding problem in distributed orchestration systems: persistent volume persistence on bare metal. Continue seamlessly to [Module 4.1: Storage Architecture Decisions](/on-premises/storage/module-4.1-storage-architecture/) to learn exactly how to design, aggressively evaluate, and robustly scale highly available storage arrays meticulously tailored for demanding on-premises stateful workloads.

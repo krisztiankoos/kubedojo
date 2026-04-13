@@ -398,4 +398,4 @@ sidebar:
 
 ## Наступний модуль
 
-[Модуль 3.2: Екосистема CNCF](module-3.2-cncf-ecosystem/) - Розуміння Cloud Native Computing Foundation та її ландшафту.
+[Модуль 3.2: Екосистема CNCF](/uk/k8s/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem/) - Розуміння Cloud Native Computing Foundation та її ландшафту.

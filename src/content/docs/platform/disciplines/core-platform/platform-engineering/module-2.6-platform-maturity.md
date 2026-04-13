@@ -1268,16 +1268,16 @@ You now understand:
 ### Where to Go Next
 
 **Apply what you've learned:**
-- [GitOps Tools Toolkit](../../../toolkits/cicd-delivery/gitops-deployments/) - ArgoCD, Flux deep dive
-- [Platforms Toolkit](../../../toolkits/infrastructure-networking/platforms/) - Backstage, Crossplane hands-on
+- [GitOps Tools Toolkit](/platform/toolkits/cicd-delivery/gitops-deployments/) - ArgoCD, Flux deep dive
+- [Platforms Toolkit](/platform/toolkits/infrastructure-networking/platforms/) - Backstage, Crossplane hands-on
 
 **Related disciplines:**
-- [SRE Discipline](../sre/) - Reliability practices for platforms
-- [GitOps Discipline](../../delivery-automation/gitops/) - GitOps patterns for platform delivery
-- [DevSecOps Discipline](../../reliability-security/devsecops/) - Security in platform workflows
+- [SRE Discipline](/platform/disciplines/core-platform/sre/) - Reliability practices for platforms
+- [GitOps Discipline](/platform/disciplines/delivery-automation/gitops/) - GitOps patterns for platform delivery
+- [DevSecOps Discipline](/platform/disciplines/reliability-security/devsecops/) - Security in platform workflows
 
 **Foundations to review:**
-- [Systems Thinking](../../../foundations/systems-thinking/) - Feedback loops in platforms
-- [Reliability Engineering](../../../foundations/reliability-engineering/) - Platform reliability
+- [Systems Thinking](/platform/foundations/systems-thinking/) - Feedback loops in platforms
+- [Reliability Engineering](/platform/foundations/reliability-engineering/) - Platform reliability
 
 ---

@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 3.1: Datacenter Network Architecture](../module-3.1-datacenter-networking/), [Advanced Networking: BGP Routing](../../platform/foundations/advanced-networking/module-1.4-bgp-routing/)
+> **Prerequisites**: [Module 3.1: Datacenter Network Architecture](../module-3.1-datacenter-networking/), [Advanced Networking: BGP Routing](/platform/foundations/advanced-networking/module-1.4-bgp-routing/)
 
 ---
 

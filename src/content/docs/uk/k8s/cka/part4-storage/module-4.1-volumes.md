@@ -797,4 +797,4 @@ k delete ns volume-lab
 
 ## Наступний модуль
 
-Переходьте до [Модуль 4.2: PersistentVolumes та PersistentVolumeClaims](module-4.2-pv-pvc/), щоб дізнатися про постійне сховище, яке переживає видалення Пода.
+Переходьте до [Модуль 4.2: PersistentVolumes та PersistentVolumeClaims](/uk/k8s/cka/part4-storage/module-4.2-pv-pvc/), щоб дізнатися про постійне сховище, яке переживає видалення Пода.

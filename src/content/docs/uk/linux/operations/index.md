@@ -10,9 +10,9 @@ sidebar:
 
 | Розділ | Опис |
 |---------|-------------|
-| [Продуктивність](performance/) | Метод USE, планування CPU, керування пам'яттю та продуктивність I/O |
+| [Продуктивність](/uk/linux/operations/performance/module-5.1-use-method/) | Метод USE, планування CPU, керування пам'яттю та продуктивність I/O |
 | [Вирішення проблем](troubleshooting/) | Системний підхід, аналіз логів, відлагодження процесів та мереж |
-| [Shell Scripting](shell-scripting/) | Основи Bash, обробка тексту, практичні скрипти та автоматизація DevOps |
+| [Shell Scripting](/uk/linux/operations/shell-scripting/module-7.2-text-processing/) | Основи Bash, обробка тексту, практичні скрипти та автоматизація DevOps |
 
 ## Модулі
 

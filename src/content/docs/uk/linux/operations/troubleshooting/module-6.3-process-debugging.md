@@ -15,7 +15,7 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.2: Процеси та systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Обов'язково**: [Модуль 1.2: Процеси та systemd](/uk/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 - **Обов'язково**: [Модуль 6.2: Аналіз логів](../module-6.2-log-analysis/)
 - **Бажано**: Розуміння концепції системних викликів (syscalls).
 

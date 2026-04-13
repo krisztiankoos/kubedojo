@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 6.1: Фреймворки відповідності](module-6.1-compliance-frameworks/)
+> **Передумови**: [Модуль 6.1: Фреймворки відповідності](/uk/k8s/kcsa/part6-compliance/module-6.1-compliance-frameworks/)
 
 ---
 
@@ -322,4 +322,4 @@ CIS Benchmark надає стандарти безпеки Kubernetes:
 
 ## Наступний модуль
 
-[Модуль 6.3: Оцінка безпеки](module-6.3-security-assessments/) — Проведення та реагування на оцінки безпеки.
+[Модуль 6.3: Оцінка безпеки](/uk/k8s/kcsa/part6-compliance/module-6.3-security-assessments/) — Проведення та реагування на оцінки безпеки.

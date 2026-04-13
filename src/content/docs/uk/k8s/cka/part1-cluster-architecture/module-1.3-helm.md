@@ -798,4 +798,4 @@ helm uninstall mydb
 
 ## Наступний модуль
 
-[Модуль 1.4: Kustomize](module-1.4-kustomize/) — керування конфігурацією без шаблонів, нативна кастомізація Kubernetes.
+[Модуль 1.4: Kustomize](/uk/k8s/cka/part1-cluster-architecture/module-1.4-kustomize/) — керування конфігурацією без шаблонів, нативна кастомізація Kubernetes.

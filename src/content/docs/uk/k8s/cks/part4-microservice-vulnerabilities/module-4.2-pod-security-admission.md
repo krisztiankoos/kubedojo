@@ -549,4 +549,4 @@ kubectl delete namespace psa-test
 
 ## Наступний модуль
 
-[Модуль 4.3: Управління секретами](module-4.3-secrets-management/) — Захист секретів Kubernetes.
+[Модуль 4.3: Управління секретами](/uk/k8s/cks/part4-microservice-vulnerabilities/module-4.3-secrets-management/) — Захист секретів Kubernetes.

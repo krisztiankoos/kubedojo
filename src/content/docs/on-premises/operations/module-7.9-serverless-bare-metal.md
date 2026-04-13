@@ -1,6 +1,7 @@
 ---
 title: "Serverless on Bare Metal"
 description: "Design, deploy, and operate serverless event-driven architectures and function-as-a-service platforms on bare-metal Kubernetes."
+slug: on-premises/operations/module-7.9-serverless-bare-metal
 sidebar:
   order: 79
 ---
@@ -519,4 +520,4 @@ D) Java (Spring Boot framework, JIT compiled).
 
 Ready to dive deeper into the operational realities of these platforms? Now that you have constructed a functional serverless environment on your bare-metal nodes, it is time to secure it. In the next module, we will explore advanced traffic management, enforcing zero-trust networking between serverless functions, and implementing mutual TLS utilizing service meshes.
 
-[Proceed to Module 7.10: Zero-Trust Serverless Networking ->](./module-7.10-zero-trust-serverless-networking)
+[Continue with Zero-Trust Architecture ->](/on-premises/security/module-6.8-zero-trust-architecture/)

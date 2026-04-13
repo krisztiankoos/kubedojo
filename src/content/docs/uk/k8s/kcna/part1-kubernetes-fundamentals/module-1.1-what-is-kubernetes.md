@@ -321,4 +321,4 @@ Kubernetes може працювати:
 
 ## Наступний модуль
 
-[Модуль 1.2: Основи контейнерів](module-1.2-container-fundamentals/) - Розуміння контейнерів перед зануренням в архітектуру Kubernetes.
+[Модуль 1.2: Основи контейнерів](/uk/k8s/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals/) - Розуміння контейнерів перед зануренням в архітектуру Kubernetes.

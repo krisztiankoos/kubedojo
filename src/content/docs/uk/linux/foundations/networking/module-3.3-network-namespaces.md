@@ -15,7 +15,7 @@ lab:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 2.1: Простори імен Linux](../../foundations/container-primitives/module-2.1-namespaces/)
+- **Обов'язково**: [Модуль 2.1: Простори імен Linux](/uk/linux/foundations/container-primitives/module-2.1-namespaces/)
 - **Обов'язково**: [Модуль 3.1: Основи TCP/IP](../module-3.1-tcp-ip-essentials/)
 - **Бажано**: Розуміння того, як працюють мережеві мости (bridges) та комутатори (switches).
 

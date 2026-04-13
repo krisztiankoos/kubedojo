@@ -654,4 +654,4 @@ helm uninstall prod-web
 
 ## Наступний модуль
 
-[Модуль 2.3: Kustomize](module-2.3-kustomize/) — кастомізація ресурсів Kubernetes без шаблонів.
+[Модуль 2.3: Kustomize](/uk/k8s/ckad/part2-deployment/module-2.3-kustomize/) — кастомізація ресурсів Kubernetes без шаблонів.

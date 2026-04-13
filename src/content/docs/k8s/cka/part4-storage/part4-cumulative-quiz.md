@@ -422,14 +422,14 @@ Count your correct answers:
 
 If you scored below 80%, review these modules:
 
-- **Volume questions (Q1-Q5)**: [Module 4.1](module-4.1-volumes/)
-- **PV/PVC questions (Q6-Q11)**: [Module 4.2](module-4.2-pv-pvc/)
-- **StorageClass questions (Q12-Q16)**: [Module 4.3](module-4.3-storageclasses/)
-- **Snapshot questions (Q17-Q21)**: [Module 4.4](module-4.4-snapshots/)
-- **Troubleshooting questions (Q22-Q25)**: [Module 4.5](module-4.5-troubleshooting/)
+- **Volume questions (Q1-Q5)**: [Module 4.1](/k8s/cka/part4-storage/module-4.1-volumes/)
+- **PV/PVC questions (Q6-Q11)**: [Module 4.2](/k8s/cka/part4-storage/module-4.2-pv-pvc/)
+- **StorageClass questions (Q12-Q16)**: [Module 4.3](/k8s/cka/part4-storage/module-4.3-storageclasses/)
+- **Snapshot questions (Q17-Q21)**: [Module 4.4](/k8s/cka/part4-storage/module-4.4-snapshots/)
+- **Troubleshooting questions (Q22-Q25)**: [Module 4.5](/k8s/cka/part4-storage/module-4.5-troubleshooting/)
 
 ---
 
 ## Next Part
 
-Proceed to [Part 5: Troubleshooting](../part5-troubleshooting/) to learn systematic approaches to diagnosing and fixing Kubernetes cluster problems.
+Proceed to [Part 5: Troubleshooting](/k8s/cka/part5-troubleshooting/) to learn systematic approaches to diagnosing and fixing Kubernetes cluster problems.

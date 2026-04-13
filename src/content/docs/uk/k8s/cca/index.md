@@ -22,7 +22,7 @@ CCA (Cilium Certified Associate) підтверджує знання мереж,
 
 | # | Модуль | Тема | Охоплені домени |
 |---|--------|-------|-----------------|
-| 1 | [Глибоке занурення в Cilium](module-1.1-cilium-deep-dive/) | Архітектура eBPF, режими інкапсуляції vs. Direct Routing, Hubble Relay, ClusterMesh, політики L7 | Домени 1-5 |
+| 1 | [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Архітектура eBPF, режими інкапсуляції vs. Direct Routing, Hubble Relay, ClusterMesh, політики L7 | Домени 1-5 |
 
 ---
 
@@ -30,7 +30,7 @@ CCA (Cilium Certified Associate) підтверджує знання мереж,
 
 | Домен | Вага | Охоплення в KubeDojo |
 |--------|--------|-------------------|
-| Архітектура та eBPF | 20% | Відмінне ([Networking Toolkit 1.1](../../platform/toolkits/infrastructure-networking/networking/module-1.1-cilium-ebpf/)) |
+| Архітектура та eBPF | 20% | Відмінне ([Networking Toolkit 1.1](/uk/cloud/aws-essentials/module-1.1-iam/)) |
 | Мережеві концепції | 25% | Відмінне ([Networking 1.1](../../platform/disciplines/reliability-security/networking/module-1.1-cni-architecture/)) |
 | Безпека та політики | 25% | Відмінне ([Networking 1.2](../../platform/disciplines/reliability-security/networking/module-1.2-network-policies/)) |
 | Спостережуваність (Hubble) | 15% | Відмінне ([Observability Toolkit 1.7](../../platform/toolkits/observability-intelligence/observability/module-1.7-hubble/)) |
@@ -50,8 +50,8 @@ CCA (Cilium Certified Associate) підтверджує знання мереж,
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Networking Toolkit 1.1](../../platform/toolkits/infrastructure-networking/networking/module-1.1-cilium-ebpf/) | Що таке eBPF та Cilium? Архітектура | Пряма |
-| [Глибоке занурення в Cilium](module-1.1-cilium-deep-dive/) | Технічні деталі мап eBPF та обробки пакетів | Пряма |
+| [Networking Toolkit 1.1](/uk/cloud/aws-essentials/module-1.1-iam/) | Що таке eBPF та Cilium? Архітектура | Пряма |
+| [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Технічні деталі мап eBPF та обробки пакетів | Пряма |
 
 ---
 
@@ -68,7 +68,7 @@ CCA (Cilium Certified Associate) підтверджує знання мереж,
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [Мережі 1.1](../../platform/disciplines/reliability-security/networking/module-1.1-cni-architecture/) | Основи CNI та маршрутизації | Пряма |
-| [Глибоке занурення в Cilium](module-1.1-cilium-deep-dive/) | Конфігурація VXLAN та Direct Routing | Пряма |
+| [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Конфігурація VXLAN та Direct Routing | Пряма |
 
 ---
 
@@ -85,7 +85,7 @@ CCA (Cilium Certified Associate) підтверджує знання мереж,
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [Мережі 1.2](../../platform/disciplines/reliability-security/networking/module-1.2-network-policies/) | Політики Cilium та безпека L7 | Пряма |
-| [Security Tools 4.5](../../platform/toolkits/security-quality/security-tools/module-4.5-tetragon/) | Tetragon — безпека виконання від творців Cilium | Контекст |
+| [Security Tools 4.5](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | Tetragon — безпека виконання від творців Cilium | Контекст |
 
 ---
 
@@ -119,7 +119,7 @@ CCA (Cilium Certified Associate) підтверджує знання мереж,
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
 | [Мережі 1.5](../../platform/disciplines/reliability-security/networking/module-1.5-multi-cluster-networking/) | Мультикластерні мережі та ClusterMesh | Пряма |
-| [Глибоке занурення в Cilium](module-1.1-cilium-deep-dive/) | Cilium як заміна Service Mesh | Пряма |
+| [Глибоке занурення в Cilium](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Cilium як заміна Service Mesh | Пряма |
 
 ---
 

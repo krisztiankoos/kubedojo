@@ -412,4 +412,4 @@ For KCSA questions:
 
 ## Next Module
 
-[Module 1.1: The 4 Cs of Cloud Native Security](../part1-cloud-native-security/module-1.1-four-cs/) - Deep dive into the foundational security model for cloud native systems.
+[Module 1.1: The 4 Cs of Cloud Native Security](/k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs/) - Deep dive into the foundational security model for cloud native systems.

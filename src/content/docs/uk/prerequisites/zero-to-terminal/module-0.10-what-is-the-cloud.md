@@ -11,7 +11,7 @@ en_file: "src/content/docs/prerequisites/zero-to-terminal/module-0.10-what-is-th
 >
 > **Час на проходження**: 20 хвилин
 >
-> **Попередні вимоги**: [Модуль 0.7 — Сервери та SSH](../module-0.7-servers-and-ssh/)
+> **Попередні вимоги**: [Модуль 0.7 — Сервери та SSH](/uk/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh/)
 
 ---
 

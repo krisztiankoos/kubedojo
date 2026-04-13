@@ -318,4 +318,4 @@ k delete hpa challenge-web
 
 ## Наступний модуль
 
-Повернутися до [Огляд частини 2](../part2-workloads-scheduling/).
+Повернутися до [Огляд частини 2](/uk/k8s/cka/part2-workloads-scheduling/).

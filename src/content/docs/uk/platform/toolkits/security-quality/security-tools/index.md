@@ -24,14 +24,14 @@ sidebar:
 
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
-| 4.1 | [Vault та External Secrets](module-4.1-vault-eso/) | `[COMPLEX]` | 45-50 хв |
-| 4.2 | [OPA та Gatekeeper](module-4.2-opa-gatekeeper/) | `[COMPLEX]` | 45-50 хв |
-| 4.3 | [Falco](module-4.3-falco/) | `[COMPLEX]` | 45-50 хв |
-| 4.4 | [Безпека ланцюжка поставок](module-4.4-supply-chain/) | `[COMPLEX]` | 45-50 хв |
-| 4.5 | [Tetragon](module-4.5-tetragon/) | `[MEDIUM]` | 90 хв |
-| 4.6 | [KubeArmor](module-4.6-kubearmor/) | `[MEDIUM]` | 90 хв |
-| 4.7 | [Kyverno](module-4.7-kyverno/) | `[MEDIUM]` | 35-40 хв |
-| 4.8 | [SPIFFE/SPIRE](module-4.8-spiffe-spire/) | `[COMPLEX]` | 50 хв |
+| 4.1 | [Vault та External Secrets](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[COMPLEX]` | 45-50 хв |
+| 4.2 | [OPA та Gatekeeper](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[COMPLEX]` | 45-50 хв |
+| 4.3 | [Falco](/uk/k8s/cks/part6-runtime-security/module-6.2-falco/) | `[COMPLEX]` | 45-50 хв |
+| 4.4 | [Безпека ланцюжка поставок](/uk/k8s/kcsa/part4-threat-model/module-4.4-supply-chain/) | `[COMPLEX]` | 45-50 хв |
+| 4.5 | [Tetragon](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[MEDIUM]` | 90 хв |
+| 4.6 | [KubeArmor](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[MEDIUM]` | 90 хв |
+| 4.7 | [Kyverno](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[MEDIUM]` | 35-40 хв |
+| 4.8 | [SPIFFE/SPIRE](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | `[COMPLEX]` | 50 хв |
 
 ## Результати навчання
 

@@ -540,4 +540,4 @@ echo "=== Investigation Complete ==="
 
 ## Наступний модуль
 
-[Модуль 6.4: Незмінна інфраструктура](module-6.4-immutable-infrastructure/) — Побудова контейнерів, які не можна змінити під час виконання.
+[Модуль 6.4: Незмінна інфраструктура](/uk/k8s/cks/part6-runtime-security/module-6.4-immutable-infrastructure/) — Побудова контейнерів, які не можна змінити під час виконання.

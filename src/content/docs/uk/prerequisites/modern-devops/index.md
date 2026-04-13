@@ -19,5 +19,5 @@ sidebar:
 | 1.2 | [GitOps](module-1.2-gitops/) | Git як єдине джерело істини для стану системи та розгортань. |
 | 1.3 | [CI/CD Pipelines](module-1.3-cicd-pipelines/) | Автоматизація процесів збирання, тестування та розгортання. |
 | 1.4 | [Observability Fundamentals](module-1.4-observability/) | Отримання глибокого розуміння роботи системи через логи, метрики та трасування (traces). |
-| 1.5 | [Platform Engineering Concepts](module-1.5-platform-engineering/) | Створення та підтримка внутрішніх платформ для розробників. |
+| 1.5 | [Platform Engineering Concepts](/uk/platform/disciplines/core-platform/platform-engineering/) | Створення та підтримка внутрішніх платформ для розробників. |
 | 1.6 | [Security Practices (DevSecOps)](module-1.6-devsecops/) | Зміщення безпеки вліво (shifting security left) та її інтеграція протягом усього життєвого циклу. |

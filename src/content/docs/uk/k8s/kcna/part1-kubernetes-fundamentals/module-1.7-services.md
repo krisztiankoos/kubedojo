@@ -216,4 +216,4 @@ Kubernetes ін'єктує змінні середовища у Поди. Обм
 
 ## Наступний модуль
 
-[Модуль 1.8: Простори імен та мітки](module-1.8-namespaces-labels/) - Організація та вибір ресурсів у Kubernetes.
+[Модуль 1.8: Простори імен та мітки](/uk/k8s/kcna/part1-kubernetes-fundamentals/module-1.8-namespaces-labels/) - Організація та вибір ресурсів у Kubernetes.

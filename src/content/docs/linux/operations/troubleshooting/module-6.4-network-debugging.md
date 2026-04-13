@@ -16,8 +16,8 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 3.1: TCP/IP Essentials](../../foundations/networking/module-3.1-tcp-ip-essentials/)
-- **Required**: [Module 3.4: iptables & netfilter](../../foundations/networking/module-3.4-iptables-netfilter/)
+- **Required**: [Module 3.1: TCP/IP Essentials](/linux/foundations/networking/module-3.1-tcp-ip-essentials/)
+- **Required**: [Module 3.4: iptables & netfilter](/linux/foundations/networking/module-3.4-iptables-netfilter/)
 - **Helpful**: [Module 6.1: Systematic Troubleshooting](../module-6.1-systematic-troubleshooting/)
 
 ---
@@ -876,8 +876,8 @@ In **Module 7.1: Bash Fundamentals**, you'll transition from executing isolated 
 
 ## Further Reading
 
-- [Module 3.1: TCP/IP Essentials](../../foundations/networking/module-3.1-tcp-ip-essentials/)
-- [Module 3.4: iptables & netfilter](../../foundations/networking/module-3.4-iptables-netfilter/)
+- [Module 3.1: TCP/IP Essentials](/linux/foundations/networking/module-3.1-tcp-ip-essentials/)
+- [Module 3.4: iptables & netfilter](/linux/foundations/networking/module-3.4-iptables-netfilter/)
 - [Module 6.1: Systematic Troubleshooting](../module-6.1-systematic-troubleshooting/)
 - [tcpdump Man Page](https://www.tcpdump.org/manpages/tcpdump.1.html)
 - [ss Man Page](https://man7.org/linux/man-pages/man8/ss.8.html)

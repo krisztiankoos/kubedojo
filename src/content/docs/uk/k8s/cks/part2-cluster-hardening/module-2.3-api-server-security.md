@@ -563,4 +563,4 @@ rm /tmp/apiserver.yaml
 
 ## Наступний модуль
 
-[Модуль 2.4: Оновлення Kubernetes](module-2.4-kubernetes-upgrades/) — Питання безпеки при оновленні кластерів.
+[Модуль 2.4: Оновлення Kubernetes](/uk/k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades/) — Питання безпеки при оновленні кластерів.

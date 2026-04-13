@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 0.2: Мислення безпеки](../part0-introduction/module-0.2-security-mindset/)
+> **Передумови**: [Модуль 0.2: Мислення безпеки](/uk/k8s/kcsa/part0-introduction/module-0.2-security-mindset/)
 
 ---
 
@@ -471,4 +471,4 @@ Cluster (RBAC, network policies) обмежує бічний рух.
 
 ## Наступний модуль
 
-[Модуль 1.2: Безпека хмарного провайдера](module-1.2-cloud-provider-security/) - Глибоке занурення у рівень Cloud, спільну відповідальність та безпеку інфраструктури.
+[Модуль 1.2: Безпека хмарного провайдера](/uk/k8s/kcsa/part1-cloud-native-security/module-1.2-cloud-provider-security/) - Глибоке занурення у рівень Cloud, спільну відповідальність та безпеку інфраструктури.

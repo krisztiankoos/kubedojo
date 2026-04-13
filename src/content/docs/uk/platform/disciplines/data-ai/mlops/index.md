@@ -26,11 +26,11 @@ MLOps привносить інженерну суворість у машинн
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
 | 5.1 | [Основи MLOps](module-5.1-mlops-fundamentals/) | `[MEDIUM]` | 35-40 хв |
-| 5.2 | [Feature Engineering та Feature Stores](module-5.2-feature-stores/) | `[COMPLEX]` | 40-45 хв |
+| 5.2 | [Feature Engineering та Feature Stores](/uk/cloud/eks-deep-dive/module-5.4-eks-storage/) | `[COMPLEX]` | 40-45 хв |
 | 5.3 | [Навчання моделей та експериментування](module-5.3-model-training/) | `[COMPLEX]` | 40-45 хв |
 | 5.4 | [Обслуговування моделей та ініференс](module-5.4-model-serving/) | `[COMPLEX]` | 40-45 хв |
 | 5.5 | [Моніторинг моделей та спостережуваність](module-5.5-model-monitoring/) | `[COMPLEX]` | 40-45 хв |
-| 5.6 | [ML конвеєри та автоматизація](module-5.6-ml-pipelines/) | `[COMPLEX]` | 40-45 хв |
+| 5.6 | [ML конвеєри та автоматизація](/uk/prerequisites/modern-devops/module-1.3-cicd-pipelines/) | `[COMPLEX]` | 40-45 хв |
 
 ## Результати навчання
 

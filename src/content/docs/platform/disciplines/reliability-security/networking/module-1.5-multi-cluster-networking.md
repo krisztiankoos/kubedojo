@@ -733,6 +733,6 @@ Multi-cluster networking is hard because it touches every layer — DNS, routing
 Congratulations on completing the Kubernetes Networking discipline. You now have a comprehensive understanding of how traffic flows into, within, and between Kubernetes clusters.
 
 **Recommended next tracks:**
-- [SRE Discipline](../../core-platform/sre/) — Apply networking knowledge to reliability engineering
-- [DevSecOps Discipline](../devsecops/) — Secure the networking layer in CI/CD
-- [Networking Toolkit](../../../toolkits/infrastructure-networking/networking/) — Deep dive into specific mesh implementations
+- [SRE Discipline](/platform/disciplines/core-platform/sre/) — Apply networking knowledge to reliability engineering
+- [DevSecOps Discipline](/platform/disciplines/reliability-security/devsecops/) — Secure the networking layer in CI/CD
+- [Networking Toolkit](/platform/toolkits/infrastructure-networking/networking/) — Deep dive into specific mesh implementations

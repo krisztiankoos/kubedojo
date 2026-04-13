@@ -24,7 +24,7 @@ Infrastructure as Code (IaC) — це практика управління та
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
 | 6.1 | [Основи IaC та модель зрілості](module-6.1-iac-fundamentals/) | `[MEDIUM]` | 35-40 хв |
-| 6.2 | [Стратегії тестування IaC](module-6.2-iac-testing/) | `[COMPLEX]` | 40-45 хв |
+| 6.2 | [Стратегії тестування IaC](/uk/k8s/cks/part5-supply-chain-security/module-5.2-image-scanning/) | `[COMPLEX]` | 40-45 хв |
 | 6.3 | [Безпека IaC](module-6.3-iac-security/) | `[COMPLEX]` | 40-45 хв |
 | 6.4 | [IaC у масштабі](module-6.4-iac-at-scale/) | `[COMPLEX]` | 45-50 хв |
 | 6.5 | [Виявлення та усунення дрейфу](module-6.5-drift-remediation/) | `[MEDIUM]` | 35-40 хв |

@@ -24,9 +24,9 @@ sidebar:
 
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
-| 2.1 | [ArgoCD](module-2.1-argocd/) | `[COMPLEX]` | 45-50 хв |
-| 2.2 | [Argo Rollouts](module-2.2-argo-rollouts/) | `[COMPLEX]` | 45-50 хв |
-| 2.3 | [Flux](module-2.3-flux/) | `[COMPLEX]` | 40-45 хв |
+| 2.1 | [ArgoCD](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[COMPLEX]` | 45-50 хв |
+| 2.2 | [Argo Rollouts](/uk/linux/foundations/container-primitives/module-2.2-cgroups/) | `[COMPLEX]` | 45-50 хв |
+| 2.3 | [Flux](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[COMPLEX]` | 40-45 хв |
 | 2.4 | [Helm та Kustomize](module-2.4-helm-kustomize/) | `[MEDIUM]` | 35-40 хв |
 
 ## Результати навчання

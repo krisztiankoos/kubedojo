@@ -1926,4 +1926,4 @@ MMLU has become saturated, meaning frontier models are consistently achieving up
 The model will become miscalibrated. The Fairness Impossibility Theorem proves that if base rates differ, you cannot mathematically satisfy both calibration (predictions match true risk rates) and demographic parity (equal positive prediction rates) simultaneously.
 </details>
 
-**Up Next**: [Module 1.7 - Red Teaming & Adversarial AI](/ai-ml-engineering/advanced-genai/module-1.7-red-teaming) (The attack side of safety)
+**Up Next**: [Module 1.7 - Red Teaming & Adversarial AI](/ai-ml-engineering/advanced-genai/module-1.7-ai-red-teaming/) (The attack side of safety)

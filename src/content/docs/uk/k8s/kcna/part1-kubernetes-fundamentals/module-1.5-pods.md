@@ -389,4 +389,4 @@ spec:
 
 ## Наступний модуль
 
-[Модуль 1.6: Ресурси навантажень](module-1.6-workload-resources/) - Deployments, ReplicaSets та інші контролери, що керують Подами.
+[Модуль 1.6: Ресурси навантажень](/uk/k8s/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources/) - Deployments, ReplicaSets та інші контролери, що керують Подами.

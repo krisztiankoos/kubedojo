@@ -16,7 +16,7 @@ lab:
 
 Перед початком цього модуля:
 - **Обов'язково**: Базове розуміння того, що таке комп'ютерна мережа.
-- **Бажано**: [Модуль 1.1: Архітектура ядра](../../foundations/system-essentials/module-1.1-kernel-architecture/)
+- **Бажано**: [Модуль 1.1: Архітектура ядра](/uk/linux/foundations/system-essentials/module-1.1-kernel-architecture/)
 
 ---
 

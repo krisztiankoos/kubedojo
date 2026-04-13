@@ -872,4 +872,4 @@ k delete namespace test
 
 ## Наступний модуль
 
-[Модуль 3.4: Ingress](module-3.4-ingress/) — HTTP-маршрутизація та зовнішній доступ до Сервісів.
+[Модуль 3.4: Ingress](/uk/k8s/cka/part3-services-networking/module-3.4-ingress/) — HTTP-маршрутизація та зовнішній доступ до Сервісів.

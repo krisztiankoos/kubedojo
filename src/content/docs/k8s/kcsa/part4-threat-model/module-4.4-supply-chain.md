@@ -608,4 +608,4 @@ Key controls:
 
 ## Next Module
 
-[Module 5.1: Image Security](../part5-platform-security/module-5.1-image-security/) - Securing container images through the lifecycle.
+[Module 5.1: Image Security](/k8s/kcsa/part5-platform-security/module-5.1-image-security/) - Securing container images through the lifecycle.

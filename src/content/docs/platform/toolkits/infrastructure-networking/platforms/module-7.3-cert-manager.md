@@ -745,7 +745,7 @@ Create an Ingress with the cert-manager annotation and verify it automatically c
 
 ## Next Module
 
-Continue to [Developer Experience Toolkit](../../developer-experience/) to learn about k9s, Telepresence, and local Kubernetes development.
+Continue to [Developer Experience Toolkit](/platform/toolkits/developer-experience/devex-tools/) to learn about k9s, Telepresence, and local Kubernetes development.
 
 ---
 

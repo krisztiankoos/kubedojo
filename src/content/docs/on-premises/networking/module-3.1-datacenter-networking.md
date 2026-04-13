@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 2.1: Datacenter Fundamentals](../provisioning/module-2.1-datacenter-fundamentals/), [Linux: TCP/IP Essentials](../../linux/foundations/networking/module-3.1-tcp-ip-essentials/)
+> **Prerequisites**: [Module 2.1: Datacenter Fundamentals](/on-premises/provisioning/module-2.1-datacenter-fundamentals/), [Linux: TCP/IP Essentials](/linux/foundations/networking/module-3.1-tcp-ip-essentials/)
 
 ---
 

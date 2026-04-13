@@ -235,4 +235,4 @@ sidebar:
 
 ## Наступний модуль
 
-[Модуль 2.3: Оркестрація зберігання](module-2.3-storage/) - Як Kubernetes керує постійним зберіганням.
+[Модуль 2.3: Оркестрація зберігання](/uk/k8s/kcna/part2-container-orchestration/module-2.3-storage/) - Як Kubernetes керує постійним зберіганням.

@@ -485,4 +485,4 @@ kubectl delete namespace secure
 - Вправність із Trivy, Falco, kube-bench
 - Стратегія іспиту для завдань з безпеки
 
-**Наступна частина**: [Частина 1: Налаштування кластера](../part1-cluster-setup/module-1.1-network-policies/) — Глибоке занурення в мережеву безпеку.
+**Наступна частина**: [Частина 1: Налаштування кластера](/uk/k8s/cks/part1-cluster-setup/module-1.1-network-policies/) — Глибоке занурення в мережеву безпеку.

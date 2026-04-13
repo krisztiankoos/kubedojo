@@ -816,4 +816,4 @@ k delete pv lab-pv
 
 ## Наступний модуль
 
-Переходьте до [Модуль 4.3: StorageClasses та динамічне надання](module-4.3-storageclasses/), щоб дізнатися про автоматичне створення PV.
+Переходьте до [Модуль 4.3: StorageClasses та динамічне надання](/uk/k8s/cka/part4-storage/module-4.3-storageclasses/), щоб дізнатися про автоматичне створення PV.

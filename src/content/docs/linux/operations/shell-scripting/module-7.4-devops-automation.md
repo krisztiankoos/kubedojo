@@ -1161,4 +1161,4 @@ These competencies are the absolute bedrock of advanced Kubernetes administratio
 - [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/) — A critical reference for API interactions.
 - [Bash Automation Best Practices](https://bertvv.github.io/cheat-sheets/Bash.html) — Structural methodologies for safe scripting.
 - [12 Factor App](https://12factor.net/) — The philosophical blueprint for continuous delivery systems.
-- [Kustomize](https://kustomize.io/) — [Explore how declarative management supercharges deployment scaling in the upcoming chapters](../kubernetes-foundations).
+- [Kustomize](https://kustomize.io/) — [Explore how declarative management supercharges deployment scaling in the Kubernetes basics track](/prerequisites/kubernetes-basics/).

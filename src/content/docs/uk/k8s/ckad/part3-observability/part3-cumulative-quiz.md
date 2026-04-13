@@ -357,4 +357,4 @@ k delete deploy api-server 2>/dev/null
 
 ## Наступна частина
 
-[Частина 4: Середовище, конфігурація та безпека застосунків](../part4-environment/module-4.1-configmaps/) — ConfigMaps, Secrets, SecurityContexts та інше.
+[Частина 4: Середовище, конфігурація та безпека застосунків](/uk/k8s/ckad/part4-environment/module-4.1-configmaps/) — ConfigMaps, Secrets, SecurityContexts та інше.

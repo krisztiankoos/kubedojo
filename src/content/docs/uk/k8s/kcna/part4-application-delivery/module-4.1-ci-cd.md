@@ -411,4 +411,4 @@ sidebar:
 
 ## Наступний модуль
 
-[Модуль 4.2: Пакування застосунків](module-4.2-application-packaging/) - Helm, Kustomize та інші інструменти для пакування застосунків Kubernetes.
+[Модуль 4.2: Пакування застосунків](/uk/k8s/kcna/part4-application-delivery/module-4.2-application-packaging/) - Helm, Kustomize та інші інструменти для пакування застосунків Kubernetes.

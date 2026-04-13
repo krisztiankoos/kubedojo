@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 50-60 minutes
 >
-> **Prerequisites**: [KCA README]() (Domain overview), [Kyverno 4.7](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/) (architecture basics)
+> **Prerequisites**: [KCA README]() (Domain overview), [Kyverno 4.7](/platform/toolkits/security-quality/security-tools/module-4.7-kyverno/) (architecture basics)
 >
 > **KCA Domains Covered**: Domain 2 (Installation & Configuration, 18%) + Domain 3 (CLI, 12%) + Domain 6 (Policy Management, 10%) = **40% of the exam**
 
@@ -801,6 +801,6 @@ Add a third test resource: a Pod with limits on one container but not another (m
 ## Next Steps
 
 - **Domain 5 (Writing Policies, 32%)**: The largest exam domain -- practice validate, mutate, generate, verifyImages, and CEL policies
-- **[Kyverno Toolkit Module](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/)**: Deep dive into policy architecture and writing patterns
-- **[Prometheus Module](../../platform/toolkits/observability-intelligence/observability/module-1.1-prometheus/)**: Learn Prometheus fundamentals for monitoring Kyverno metrics
+- **[Kyverno Toolkit Module](/platform/toolkits/security-quality/security-tools/module-4.7-kyverno/)**: Deep dive into policy architecture and writing patterns
+- **[Prometheus Module](/platform/toolkits/observability-intelligence/observability/module-1.1-prometheus/)**: Learn Prometheus fundamentals for monitoring Kyverno metrics
 - **[Kyverno Playground](https://playground.kyverno.io/)**: Test policies in-browser without any installation

@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[ADVANCED]` | Time: 60 minutes
 >
-> **Prerequisites**: [Physical Security & Air-Gapped Environments](../module-6.1-air-gapped/), [CKS](../../k8s/cks/)
+> **Prerequisites**: [Physical Security & Air-Gapped Environments](../module-6.1-air-gapped/), [CKS](/k8s/cks/)
 
 ---
 

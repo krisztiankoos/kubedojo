@@ -14,7 +14,7 @@ sidebar:
 
 | # | Модуль | Час | Що ви вивчите |
 |---|--------|------|-------------------|
-| 1.1 | [Cilium та eBPF](module-1.1-cilium-ebpf/) | 3 год | Встановлення Cilium, Hubble, політики L7, пропускна здатність |
+| 1.1 | [Cilium та eBPF](/uk/cloud/aws-essentials/module-1.1-iam/) | 3 год | Встановлення Cilium, Hubble, політики L7, пропускна здатність |
 | 1.2 | [Service Mesh (Istio / Linkerd)](module-1.2-service-mesh/) | 4 год | Трафік-менеджмент, mTLS, спостережуваність, мультикластер |
 
 **Загальний час**: ~7 годин

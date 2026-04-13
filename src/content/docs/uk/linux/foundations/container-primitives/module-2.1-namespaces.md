@@ -9,8 +9,8 @@ sidebar:
 ## Передумови
 
 Перед початком цього модуля:
-- **Обов'язково**: [Модуль 1.1: Архітектура ядра](../system-essentials/module-1.1-kernel-architecture/)
-- **Обов'язково**: [Модуль 1.2: Процеси та systemd](../system-essentials/module-1.2-processes-systemd/)
+- **Обов'язково**: [Модуль 1.1: Архітектура ядра](/uk/linux/foundations/system-essentials/module-1.1-kernel-architecture/)
+- **Обов'язково**: [Модуль 1.2: Процеси та systemd](/uk/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 - **Бажано**: Базове розуміння мережевих концепцій.
 
 ---

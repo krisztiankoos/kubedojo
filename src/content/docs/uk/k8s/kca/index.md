@@ -22,7 +22,7 @@ KCA (Kyverno Certified Associate) підтверджує знання Kyverno �
 
 | # | Модуль | Тема | Охоплені домени |
 |---|--------|-------|-----------------|
-| 1 | [Просунуті політики Kyverno](module-1.1-advanced-kyverno-policies/) | verifyImages (Cosign), CEL вирази (Kubernetes 1.30+), політики очищення (cleanup), складні мутації | Домени 4-5 |
+| 1 | [Просунуті політики Kyverno](/uk/k8s/cks/part1-cluster-setup/module-1.1-network-policies/) | verifyImages (Cosign), CEL вирази (Kubernetes 1.30+), політики очищення (cleanup), складні мутації | Домени 4-5 |
 | 2 | [Операції Kyverno та CLI](module-1.2-kyverno-operations-cli/) | Команди `kyverno apply/test/jp`, звіти про політики (PolicyReports), виключення (exceptions), висока доступність (HA) | Домени 2-3, 6 |
 
 ---
@@ -32,10 +32,10 @@ KCA (Kyverno Certified Associate) підтверджує знання Kyverno �
 | Домен | Вага | Охоплення в KubeDojo |
 |--------|--------|-------------------|
 | Основи Policy-as-Code | 18% | Відмінне ([DevSecOps 4.5](../../platform/disciplines/reliability-security/devsecops/module-4.5-policy-as-code/)) |
-| Архітектура та Встановлення | 18% | Відмінне ([Security Tools 4.7](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/)) |
+| Архітектура та Встановлення | 18% | Відмінне ([Security Tools 4.7](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/)) |
 | Kyverno CLI | 12% | Відмінне ([Kyverno Operations & CLI](module-1.2-kyverno-operations-cli/)) |
-| Застосування політик | 10% | Відмінне ([Security Tools 4.7](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/)) |
-| Написання політик | 32% | Відмінне ([Просунуті політики Kyverno](module-1.1-advanced-kyverno-policies/)) |
+| Застосування політик | 10% | Відмінне ([Security Tools 4.7](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/)) |
+| Написання політик | 32% | Відмінне ([Просунуті політики Kyverno](/uk/k8s/cks/part1-cluster-setup/module-1.1-network-policies/)) |
 | Управління політиками | 10% | Відмінне ([Kyverno Operations & CLI](module-1.2-kyverno-operations-cli/)) |
 
 ---
@@ -69,7 +69,7 @@ KCA (Kyverno Certified Associate) підтверджує знання Kyverno �
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Security Tools 4.7](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/) | Архітектура та встановлення Kyverno | Пряма |
+| [Security Tools 4.7](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | Архітектура та встановлення Kyverno | Пряма |
 | [Kyverno Operations & CLI](module-1.2-kyverno-operations-cli/) | HA розгортання таWebhook конфігурація | Пряма |
 
 ---
@@ -103,8 +103,8 @@ KCA (Kyverno Certified Associate) підтверджує знання Kyverno �
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Security Tools 4.7](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/) | match/exclude, вибір ресурсів | Пряма |
-| [OPA & Gatekeeper 4.2](../../platform/toolkits/security-quality/security-tools/module-4.2-opa-gatekeeper/) | Селектори обмежень (порівняння) | Контекст |
+| [Security Tools 4.7](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | match/exclude, вибір ресурсів | Пряма |
+| [OPA & Gatekeeper 4.2](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | Селектори обмежень (порівняння) | Контекст |
 
 ---
 
@@ -124,9 +124,9 @@ KCA (Kyverno Certified Associate) підтверджує знання Kyverno �
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Security Tools 4.7](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/) | Validate, mutate, generate з прикладами | Пряма |
-| [Просунуті політики Kyverno](module-1.1-advanced-kyverno-policies/) | verifyImages, CEL вирази, cleanup, складні патерни | Пряма |
-| [Supply Chain Security 4.4](../../platform/toolkits/security-quality/security-tools/module-4.4-supply-chain/) | Cosign, підписи образів (контекст verifyImages) | Пряма |
+| [Security Tools 4.7](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | Validate, mutate, generate з прикладами | Пряма |
+| [Просунуті політики Kyverno](/uk/k8s/cks/part1-cluster-setup/module-1.1-network-policies/) | verifyImages, CEL вирази, cleanup, складні патерни | Пряма |
+| [Supply Chain Security 4.4](/uk/k8s/kcsa/part4-threat-model/module-4.4-supply-chain/) | Cosign, підписи образів (контекст verifyImages) | Пряма |
 
 ---
 
@@ -142,7 +142,7 @@ KCA (Kyverno Certified Associate) підтверджує знання Kyverno �
 
 | Модуль | Тема | Релевантність |
 |--------|-------|-----------|
-| [Security Tools 4.7](../../platform/toolkits/security-quality/security-tools/module-4.7-kyverno/) | Звіти (reports), режим аудиту | Пряма |
+| [Security Tools 4.7](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | Звіти (reports), режим аудиту | Пряма |
 | [Kyverno Operations & CLI](module-1.2-kyverno-operations-cli/) | PolicyException CRD, метрики Prometheus | Пряма |
 
 ---

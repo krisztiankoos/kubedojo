@@ -473,4 +473,4 @@ k delete pvc data-pvc 2>/dev/null
 
 ## Next Part
 
-[Part 2: Application Deployment](../part2-deployment/module-2.1-deployments/) - Deployments, Helm, Kustomize, and deployment strategies.
+[Part 2: Application Deployment](/k8s/ckad/part2-deployment/module-2.1-deployments/) - Deployments, Helm, Kustomize, and deployment strategies.

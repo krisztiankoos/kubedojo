@@ -727,4 +727,4 @@ Best practices:
 
 ## Next Module
 
-[Module 4.1: Attack Surfaces](../part4-threat-model/module-4.1-attack-surfaces/) - Understanding Kubernetes attack vectors.
+[Module 4.1: Attack Surfaces](/k8s/kcsa/part4-threat-model/module-4.1-attack-surfaces/) - Understanding Kubernetes attack vectors.

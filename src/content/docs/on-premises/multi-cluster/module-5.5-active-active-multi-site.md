@@ -1,6 +1,7 @@
 ---
 title: "Active-Active Multi-Site"
 description: "Implement global load balancing and cross-DC data replication for bare-metal Kubernetes multi-site architectures."
+slug: on-premises/multi-cluster/module-5.5-active-active-multi-site
 sidebar:
   order: 55
 ---

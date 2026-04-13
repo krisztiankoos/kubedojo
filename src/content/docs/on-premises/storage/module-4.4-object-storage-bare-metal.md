@@ -1,6 +1,7 @@
 ---
 title: "Object Storage on Bare Metal"
 description: "Deploy, operate, and scale S3-compatible object storage on bare-metal Kubernetes using distributed MinIO, erasure coding, and DirectPV."
+slug: on-premises/storage/module-4.4-object-storage-bare-metal
 sidebar:
   order: 44
 ---

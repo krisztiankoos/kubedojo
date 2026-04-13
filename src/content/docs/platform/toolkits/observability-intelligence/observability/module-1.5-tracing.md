@@ -1366,8 +1366,8 @@ Congratulations! You've completed the Observability Toolkit. You now understand:
 - **Jaeger/Tempo** for traces
 
 Consider exploring:
-- [GitOps & Deployments Toolkit](../../cicd-delivery/gitops-deployments/) — Deploy your observable applications
-- [SRE Discipline](../../../disciplines/core-platform/sre/) — Apply observability for reliability
+- [GitOps & Deployments Toolkit](/platform/toolkits/cicd-delivery/gitops-deployments/) — Deploy your observable applications
+- [SRE Discipline](/platform/disciplines/core-platform/sre/) — Apply observability for reliability
 
 ---
 

@@ -15,7 +15,7 @@ lab:
 ## Prerequisites
 
 Before starting this module:
-- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Required**: [Module 1.2: Processes & Systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 - **Required**: [Module 6.2: Log Analysis](../module-6.2-log-analysis/)
 - **Helpful**: Understanding of system calls
 

@@ -1,6 +1,7 @@
 ---
 title: "Private AI Training Infrastructure"
 description: "Architecting and operating bare-metal Kubernetes infrastructure for distributed AI training workloads using PyTorch, NCCL, InfiniBand, and advanced batch schedulers."
+slug: on-premises/ai-ml-infrastructure/module-9.2-private-ai-training
 sidebar:
   order: 92
 ---
@@ -447,4 +448,4 @@ No, Volcano is the wrong tool for this scenario. Volcano is a batch scheduler de
 
 ## Next Module
 
-Now that you have established a resilient, topology-aware bare-metal cluster with kernel-bypass networking, it is time to optimize the application layer. In the next module, **[Module 9.3: Advanced Checkpointing and Fault Tolerance](./module-9.3-checkpointing)**, we will dive into asynchronous snapshotting mechanisms using distributed parallel file systems like WEKA and Lustre to eliminate synchronous I/O pauses entirely.
+Now that you have established a resilient, topology-aware bare-metal cluster with kernel-bypass networking, it is time to move from training infrastructure into model serving. In the next module, **[Module 9.3: Private LLM Serving](/on-premises/ai-ml-infrastructure/module-9.3-private-llm-serving/)**, we will focus on deploying optimized inference stacks for internal workloads.

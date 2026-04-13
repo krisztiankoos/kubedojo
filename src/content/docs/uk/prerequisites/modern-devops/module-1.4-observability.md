@@ -577,4 +577,4 @@ kubectl delete service web
 
 ## Наступний модуль
 
-[Module 1.5: Platform Engineering Concepts](../module-1.5-platform-engineering/) — Побудова внутрішніх платформ для розробників.
+[Module 1.5: Platform Engineering Concepts](/uk/platform/disciplines/core-platform/platform-engineering/) — Побудова внутрішніх платформ для розробників.

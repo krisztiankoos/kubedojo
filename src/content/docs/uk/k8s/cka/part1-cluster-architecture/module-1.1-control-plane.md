@@ -833,4 +833,4 @@ kubectl delete pod recovery-test
 
 ## Наступний модуль
 
-[Модуль 1.2: Інтерфейси розширення (CNI, CSI, CRI)](module-1.2-extension-interfaces/) — Як Kubernetes підключає мережі, сховища та контейнерні середовища.
+[Модуль 1.2: Інтерфейси розширення (CNI, CSI, CRI)](/uk/k8s/cka/part1-cluster-architecture/module-1.2-extension-interfaces/) — Як Kubernetes підключає мережі, сховища та контейнерні середовища.

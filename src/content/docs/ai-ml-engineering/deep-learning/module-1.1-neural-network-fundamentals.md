@@ -1,6 +1,6 @@
 ---
 title: "Neural Network Fundamentals"
-slug: ai-ml-engineering/deep-learning/module-9.1-neural-network-fundamentals
+slug: ai-ml-engineering/deep-learning/module-1.1-neural-network-fundamentals
 sidebar:
   order: 1002
 ---

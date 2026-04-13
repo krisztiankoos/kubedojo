@@ -28,7 +28,7 @@ sidebar:
 | 14.2 | [k0s](module-14.2-k0s/) | `[MEDIUM]` | 40-45 хв |
 | 14.3 | [MicroK8s](module-14.3-microk8s/) | `[MEDIUM]` | 40-45 хв |
 | 14.4 | [Talos](module-14.4-talos/) | `[COMPLEX]` | 50-55 хв |
-| 14.5 | [OpenShift](module-14.5-openshift/) | `[COMPLEX]` | 50-55 хв |
+| 14.5 | [OpenShift](/uk/k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods/) | `[COMPLEX]` | 50-55 хв |
 | 14.6 | [Керований Kubernetes](module-14.6-managed-kubernetes/) | `[COMPLEX]` | 55-60 хв |
 
 ## Результати навчання

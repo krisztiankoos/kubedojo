@@ -578,4 +578,4 @@ kubectl delete pod no-ptrace-pod
 
 ## Наступний модуль
 
-[Модуль 3.3: Зміцнення ядра Linux](module-3.3-kernel-hardening/) — Зменшення поверхні атаки ОС.
+[Модуль 3.3: Зміцнення ядра Linux](/uk/k8s/cks/part3-system-hardening/module-3.3-kernel-hardening/) — Зменшення поверхні атаки ОС.

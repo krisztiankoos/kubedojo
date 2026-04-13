@@ -17,7 +17,7 @@ lab:
 Перед початком цього модуля:
 - **Обов'язково**: [Модуль 7.1: Основи Bash](../module-7.1-bash-fundamentals/)
 - **Обов'язково**: Базове розуміння регулярних виразів.
-- **Бажано**: [Модуль 6.2: Аналіз логів](../troubleshooting/module-6.2-log-analysis/)
+- **Бажано**: [Модуль 6.2: Аналіз логів](/uk/linux/operations/troubleshooting/module-6.2-log-analysis/)
 
 ---
 

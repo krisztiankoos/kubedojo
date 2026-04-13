@@ -16,7 +16,7 @@ lab:
 
 Before starting this module:
 - **Required**: [Module 5.1: USE Method](../module-5.1-use-method/)
-- **Required**: [Module 1.3: Filesystem Hierarchy](../../foundations/system-essentials/module-1.3-filesystem-hierarchy/)
+- **Required**: [Module 1.3: Filesystem Hierarchy](/linux/foundations/system-essentials/module-1.3-filesystem-hierarchy/)
 - **Helpful**: [Module 5.3: Memory Management](../module-5.3-memory-management/) for page cache understanding
 
 ---

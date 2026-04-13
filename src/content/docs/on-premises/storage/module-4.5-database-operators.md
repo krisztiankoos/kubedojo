@@ -1,6 +1,7 @@
 ---
 title: "Database Operators"
 description: "Deploying, scaling, and managing relational and in-memory databases on bare-metal Kubernetes using pattern-encoded operators."
+slug: on-premises/storage/module-4.5-database-operators
 sidebar:
   order: 45
 ---

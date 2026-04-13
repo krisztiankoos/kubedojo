@@ -562,4 +562,4 @@ kubectl create token myapp-sa --duration=1h
 
 ## Наступний модуль
 
-[Модуль 2.3: Безпека API-сервера](module-2.3-api-server-security/) — Захист API-сервера Kubernetes.
+[Модуль 2.3: Безпека API-сервера](/uk/k8s/cks/part2-cluster-hardening/module-2.3-api-server-security/) — Захист API-сервера Kubernetes.

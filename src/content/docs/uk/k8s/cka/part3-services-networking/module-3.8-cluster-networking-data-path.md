@@ -14,7 +14,7 @@ lab:
 >
 > **Час на виконання**: ~35 хвилин
 >
-> **Передумови**: [Модуль 3.1 (Сервіси)](module-3.1-services/), [Модуль 3.6 (Мережеві політики)](module-3.6-network-policies/), [Модуль 3.7 (CNI)](module-3.7-cni/)
+> **Передумови**: [Модуль 3.1 (Сервіси)](/uk/k8s/cka/part3-services-networking/module-3.1-services/), [Модуль 3.6 (Мережеві політики)](/uk/k8s/cka/part3-services-networking/module-3.6-network-policies/), [Модуль 3.7 (CNI)](/uk/k8s/cka/part3-services-networking/module-3.7-cni/)
 
 ---
 
@@ -803,13 +803,13 @@ k delete svc trace-svc
 
 ## Додаткове читання
 
-- [Модуль 3.1: Глибоке занурення в Сервіси](module-3.1-services/) — Типи Сервісів, селектори та endpoints
-- [Модуль 3.6: Мережеві політики](module-3.6-network-policies/) — Як політики взаємодіють зі шляхом даних
-- [Модуль 3.7: Плагіни CNI](module-3.7-cni/) — Глибоке занурення в архітектуру та конфігурацію CNI
-- [Модуль 3.3: DNS у Kubernetes](module-3.3-dns/) — Повна конфігурація CoreDNS та діагностика
+- [Модуль 3.1: Глибоке занурення в Сервіси](/uk/k8s/cka/part3-services-networking/module-3.1-services/) — Типи Сервісів, селектори та endpoints
+- [Модуль 3.6: Мережеві політики](/uk/k8s/cka/part3-services-networking/module-3.6-network-policies/) — Як політики взаємодіють зі шляхом даних
+- [Модуль 3.7: Плагіни CNI](/uk/k8s/cka/part3-services-networking/module-3.7-cni/) — Глибоке занурення в архітектуру та конфігурацію CNI
+- [Модуль 3.3: DNS у Kubernetes](/uk/k8s/cka/part3-services-networking/module-3.3-dns/) — Повна конфігурація CoreDNS та діагностика
 
 ---
 
 ## Наступний модуль
 
-[Модуль 3.3: DNS у Kubernetes](module-3.3-dns/) — Глибоке занурення в конфігурацію CoreDNS, користувацькі DNS-політики та розширену діагностику.
+[Модуль 3.3: DNS у Kubernetes](/uk/k8s/cka/part3-services-networking/module-3.3-dns/) — Глибоке занурення в конфігурацію CoreDNS, користувацькі DNS-політики та розширену діагностику.

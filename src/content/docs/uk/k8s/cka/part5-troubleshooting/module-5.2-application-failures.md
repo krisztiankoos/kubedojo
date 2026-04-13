@@ -902,4 +902,4 @@ k get pod <pod> -o yaml | grep -A 15 readinessProbe
 
 ## Наступний модуль
 
-Переходьте до [Модуль 5.3: Збої площини управління](module-5.3-control-plane/), щоб навчитися усувати несправності API-сервера, планувальника, controller manager та etcd.
+Переходьте до [Модуль 5.3: Збої площини управління](/uk/k8s/cka/part5-troubleshooting/module-5.3-control-plane/), щоб навчитися усувати несправності API-сервера, планувальника, controller manager та etcd.

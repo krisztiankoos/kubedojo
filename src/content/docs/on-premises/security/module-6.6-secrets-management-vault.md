@@ -1,6 +1,7 @@
 ---
 title: "Secrets Management on Bare Metal"
 description: Architect, deploy, and operate HashiCorp Vault, External Secrets Operator, and Kubernetes Encryption at Rest without cloud-managed services.
+slug: on-premises/security/module-6.6-secrets-management-vault
 sidebar:
   order: 66
 ---

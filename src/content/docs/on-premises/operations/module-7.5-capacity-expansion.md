@@ -7,7 +7,7 @@ sidebar:
 
 > **Complexity**: `[COMPLEX]` | Time: 60 minutes
 >
-> **Prerequisites**: [Module 7.4: Observability Without Cloud Services](../module-7.4-observability/), [Module 1.2: Server Sizing](../planning/module-1.2-server-sizing/)
+> **Prerequisites**: [Module 7.4: Observability Without Cloud Services](../module-7.4-observability/), [Module 1.2: Server Sizing](/on-premises/planning/module-1.2-server-sizing/)
 
 ---
 
@@ -714,4 +714,4 @@ You have a 60-node cluster across 3 racks (20 nodes each) running at 65% CPU uti
 
 ## Next Module
 
-This concludes the Day-2 Operations section. Return to the [Operations index](../operations/) to review all modules, or continue to the next section in the on-premises track.
+This concludes the Day-2 Operations section. Return to the [Operations index](/on-premises/operations/) to review all modules, or continue to the next section in the on-premises track.

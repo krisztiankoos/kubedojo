@@ -1168,4 +1168,4 @@ rm tls.key tls.crt
 
 ## Наступний модуль
 
-[Модуль 3.5: Gateway API](module-3.5-gateway-api/) — Наступне покоління Kubernetes Інгресу.
+[Модуль 3.5: Gateway API](/uk/k8s/cka/part3-services-networking/module-3.5-gateway-api/) — Наступне покоління Kubernetes Інгресу.

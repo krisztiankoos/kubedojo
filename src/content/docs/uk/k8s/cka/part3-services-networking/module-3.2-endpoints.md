@@ -1009,4 +1009,4 @@ k delete endpoints manual-svc
 
 ## Наступний модуль
 
-[Модуль 3.3: DNS та CoreDNS](module-3.3-dns/) - Глибоке занурення у Kubernetes DNS та виявлення сервісів.
+[Модуль 3.3: DNS та CoreDNS](/uk/k8s/cka/part3-services-networking/module-3.3-dns/) - Глибоке занурення у Kubernetes DNS та виявлення сервісів.

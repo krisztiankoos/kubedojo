@@ -673,4 +673,4 @@ k delete deploy webapp
 
 ## Наступний модуль
 
-[Модуль 1.2: Jobs та CronJobs](module-1.2-jobs-cronjobs/) — Запуск одноразових та запланованих пакетних завдань.
+[Модуль 1.2: Jobs та CronJobs](/uk/k8s/ckad/part1-design-build/module-1.2-jobs-cronjobs/) — Запуск одноразових та запланованих пакетних завдань.

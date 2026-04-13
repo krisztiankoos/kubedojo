@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 25-30 хвилин
 >
-> **Передумови**: [Модуль 3.2: Основи RBAC](module-3.2-rbac/)
+> **Передумови**: [Модуль 3.2: Основи RBAC](/uk/k8s/kcsa/part3-security-fundamentals/module-3.2-rbac/)
 
 ---
 
@@ -219,4 +219,4 @@ resources:
 
 ## Наступний модуль
 
-[Модуль 3.4: Безпека ServiceAccount](module-3.4-serviceaccounts/) - Захист ідентифікації подів та доступу до API.
+[Модуль 3.4: Безпека ServiceAccount](/uk/k8s/kcsa/part3-security-fundamentals/module-3.4-serviceaccounts/) - Захист ідентифікації подів та доступу до API.

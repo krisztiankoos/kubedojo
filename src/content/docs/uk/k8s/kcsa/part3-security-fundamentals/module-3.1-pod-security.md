@@ -8,7 +8,7 @@ sidebar:
 >
 > **Час на виконання**: 30-35 хвилин
 >
-> **Передумови**: [Модуль 2.4: PKI та сертифікати](../part2-cluster-component-security/module-2.4-pki-certificates/)
+> **Передумови**: [Модуль 2.4: PKI та сертифікати](/uk/k8s/kcsa/part2-cluster-component-security/module-2.4-pki-certificates/)
 
 ---
 
@@ -255,4 +255,4 @@ Pod Security Standards:
 
 ## Наступний модуль
 
-[Модуль 3.2: Основи RBAC](module-3.2-rbac/) - Контроль доступу на основі ролей для авторизації Kubernetes.
+[Модуль 3.2: Основи RBAC](/uk/k8s/kcsa/part3-security-fundamentals/module-3.2-rbac/) - Контроль доступу на основі ролей для авторизації Kubernetes.

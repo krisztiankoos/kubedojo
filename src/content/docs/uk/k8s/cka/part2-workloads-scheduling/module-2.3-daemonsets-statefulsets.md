@@ -1067,4 +1067,4 @@ kubectl delete ds with-toleration
 
 ## Наступний модуль
 
-[Модуль 2.4: Jobs та CronJobs](module-2.4-jobs-cronjobs/) — Пакетні навантаження та заплановані завдання.
+[Модуль 2.4: Jobs та CronJobs](/uk/k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs/) — Пакетні навантаження та заплановані завдання.

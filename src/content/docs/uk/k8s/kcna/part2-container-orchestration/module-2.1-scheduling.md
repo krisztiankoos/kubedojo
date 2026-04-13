@@ -261,4 +261,4 @@ spec:
 
 ## Наступний модуль
 
-[Модуль 2.2: Масштабування](module-2.2-scaling/) - Як Kubernetes автоматично масштабує застосунки.
+[Модуль 2.2: Масштабування](/uk/k8s/kcna/part2-container-orchestration/module-2.2-scaling/) - Як Kubernetes автоматично масштабує застосунки.

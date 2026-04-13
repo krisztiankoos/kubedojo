@@ -1,6 +1,6 @@
 ---
 title: "Data Pipelines"
-slug: ai-ml-engineering/mlops/module-5.7-data-pipelines
+slug: ai-ml-engineering/mlops/module-1.7-data-pipelines
 sidebar:
   order: 608
 ---

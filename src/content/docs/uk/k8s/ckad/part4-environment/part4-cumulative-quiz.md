@@ -396,15 +396,15 @@ k delete database production-db 2>/dev/null
 
 Якщо ви набрали менше 80%, перегляньте ці теми:
 
-- **Пропустили Q1, Q5**: Перегляньте [Модуль 4.1](module-4.1-configmaps/) (ConfigMaps) — створення та монтування томів
-- **Пропустили Q2, Q7**: Перегляньте [Модуль 4.2](module-4.2-secrets/) (Secrets) — змінні оточення та декодування
-- **Пропустили Q3, Q9**: Перегляньте [Модуль 4.3](module-4.3-resources/) (Ресурси) — запити, ліміти, QoS
-- **Пропустили Q4, Q8**: Перегляньте [Модуль 4.4](module-4.4-securitycontext/) (SecurityContexts) — користувач/група, capabilities
-- **Пропустили Q6**: Перегляньте [Модуль 4.5](module-4.5-serviceaccounts/) (Сервісні акаунти) — створення та призначення
-- **Пропустили Q10**: Перегляньте [Модуль 4.6](module-4.6-crds/) (CRDs) — власні ресурси
+- **Пропустили Q1, Q5**: Перегляньте [Модуль 4.1](/uk/k8s/ckad/part4-environment/module-4.1-configmaps/) (ConfigMaps) — створення та монтування томів
+- **Пропустили Q2, Q7**: Перегляньте [Модуль 4.2](/uk/k8s/ckad/part4-environment/module-4.2-secrets/) (Secrets) — змінні оточення та декодування
+- **Пропустили Q3, Q9**: Перегляньте [Модуль 4.3](/uk/k8s/ckad/part4-environment/module-4.3-resources/) (Ресурси) — запити, ліміти, QoS
+- **Пропустили Q4, Q8**: Перегляньте [Модуль 4.4](/uk/k8s/ckad/part4-environment/module-4.4-securitycontext/) (SecurityContexts) — користувач/група, capabilities
+- **Пропустили Q6**: Перегляньте [Модуль 4.5](/uk/k8s/ckad/part4-environment/module-4.5-serviceaccounts/) (Сервісні акаунти) — створення та призначення
+- **Пропустили Q10**: Перегляньте [Модуль 4.6](/uk/k8s/ckad/part4-environment/module-4.6-crds/) (CRDs) — власні ресурси
 
 ---
 
 ## Наступна частина
 
-[Частина 5: Сервіси та мережа](../part5-networking/module-5.1-services/) — Сервіси, Ingress та мережеві політики.
+[Частина 5: Сервіси та мережа](/uk/k8s/ckad/part5-networking/module-5.1-services/) — Сервіси, Ingress та мережеві політики.

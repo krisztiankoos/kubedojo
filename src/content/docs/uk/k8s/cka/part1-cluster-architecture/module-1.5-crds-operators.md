@@ -1036,4 +1036,4 @@ kubectl delete crd backups.backup.example.com
 
 ## Наступний модуль
 
-[Модуль 1.6: RBAC](module-1.6-rbac/) — контроль доступу на основі ролей для захисту вашого кластера.
+[Модуль 1.6: RBAC](/uk/k8s/cka/part1-cluster-architecture/module-1.6-rbac/) — контроль доступу на основі ролей для захисту вашого кластера.

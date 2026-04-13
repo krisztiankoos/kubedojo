@@ -16,7 +16,7 @@ lab:
 
 Before starting this module:
 - **Required**: [Module 6.1: Systematic Troubleshooting](../module-6.1-systematic-troubleshooting/)
-- **Required**: [Module 1.2: Processes & Systemd](../../foundations/system-essentials/module-1.2-processes-systemd/)
+- **Required**: [Module 1.2: Processes & Systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/)
 - **Helpful**: Basic regex knowledge
 
 ---

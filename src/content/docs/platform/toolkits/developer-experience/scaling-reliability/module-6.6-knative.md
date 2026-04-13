@@ -21,8 +21,8 @@ You have 200 microservices running in your cluster. Most of them sit idle 80% of
 
 **Prerequisites**:
 - Kubernetes Deployments, Services, and Ingress basics
-- [KEDA](./module-6.2-keda/) -- Understanding scale-to-zero concepts
-- [Reliability Engineering](../../../foundations/reliability-engineering/) -- SLO awareness
+- [KEDA](/platform/toolkits/developer-experience/scaling-reliability/module-6.2-keda/) -- Understanding scale-to-zero concepts
+- [Reliability Engineering](/platform/foundations/reliability-engineering/) -- SLO awareness
 - Familiarity with Helm and kubectl
 
 ---
@@ -1086,7 +1086,7 @@ Install Knative Eventing and create a PingSource that fires every 30 seconds, a 
 
 ## Next Module
 
-Return to [Module 6.2: KEDA](./module-6.2-keda/) to compare event-driven autoscaling approaches, or explore [Module 6.4: FinOps with OpenCost](./module-6.4-finops-opencost/) to measure the cost savings from scale-to-zero.
+Return to [Module 6.2: KEDA](/platform/toolkits/developer-experience/scaling-reliability/module-6.2-keda/) to compare event-driven autoscaling approaches, or explore [Module 6.4: FinOps with OpenCost](/platform/toolkits/developer-experience/scaling-reliability/module-6.4-finops-opencost/) to measure the cost savings from scale-to-zero.
 
 ---
 

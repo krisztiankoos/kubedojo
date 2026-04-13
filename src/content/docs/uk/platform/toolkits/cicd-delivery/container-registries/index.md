@@ -24,9 +24,9 @@ sidebar:
 
 | # | Модуль | Складність | Час |
 |---|--------|------------|------|
-| 13.1 | [Harbor](module-13.1-harbor/) | `[COMPLEX]` | 50-60 хв |
-| 13.2 | [Zot](module-13.2-zot/) | `[MEDIUM]` | 40-45 хв |
-| 13.3 | [Dragonfly](module-13.3-dragonfly/) | `[COMPLEX]` | 45-50 хв |
+| 13.1 | [Harbor](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[COMPLEX]` | 50-60 хв |
+| 13.2 | [Zot](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[MEDIUM]` | 40-45 хв |
+| 13.3 | [Dragonfly](/uk/platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab/) | `[COMPLEX]` | 45-50 хв |
 
 ## Результати навчання
 
