@@ -46,25 +46,19 @@ This is not a religious debate. It is a cost and operational decision matrix.
 
 ### The Cost Crossover Point
 
+```mermaid
+xychart-beta
+  title "The Cost Crossover Point"
+  x-axis "Requests/month (Millions)" [0, 1, 2, 3, 4, 5]
+  y-axis "Cost ($)" 0 --> 100
+  line "Serverless" [0, 25, 50, 75, 100, 100]
+  line "Kubernetes (on-demand)" [50, 50, 50, 50, 50, 50]
+  line "Kubernetes (spot/reserved)" [25, 25, 25, 25, 25, 25]
 ```
-Cost ($)
-  |
-  |   Serverless
-  |   /
-  |  /
-  | /          Kubernetes (on-demand)
-  |/          /
-  +----------/---------------------> Requests/month
-  |         /
-  |        / Kubernetes (spot/reserved)
-  |       /
-  |      /
-  |     /
 
-  ~2M requests/month: serverless and K8s cost roughly the same
-  Below: serverless wins
-  Above: K8s wins (especially with spot instances)
-```
+- **~2M requests/month**: serverless and K8s cost roughly the same
+- **Below**: serverless wins
+- **Above**: K8s wins (especially with spot instances)
 
 The exact crossover depends on execution time, memory, and provider pricing. But the general shape is always the same: serverless is cheaper at low volume, Kubernetes is cheaper at scale.
 
@@ -78,20 +72,11 @@ The most common pattern is using Kubernetes workloads as producers and cloud fun
 
 ### Pattern 1: Queue-Triggered Functions
 
-```
-  K8s Pod (producer)
-       |
-       | publish message
-       v
-  [ SQS Queue / Pub/Sub Topic ]
-       |
-       | event trigger
-       v
-  Lambda / Cloud Function
-       |
-       | write result
-       v
-  [ S3 / GCS / Database ]
+```mermaid
+graph TD
+    A[K8s Pod producer] -->|publish message| B[(SQS Queue / Pub/Sub Topic)]
+    B -->|event trigger| C[Lambda / Cloud Function]
+    C -->|write result| D[(S3 / GCS / Database)]
 ```
 
 ```bash
@@ -128,23 +113,18 @@ def request_report(user_id, report_type):
         MessageBody=json.dumps({
             'user_id': user_id,
             'report_type': report_type,
-            'requested_at': '2025-11-15T10:30:00Z'
+            'requested_at': '2026-11-15T10:30:00Z'
         })
     )
 ```
 
 ### Pattern 2: HTTP-Triggered Functions via API Gateway
 
-```
-  Client
-    |
-    v
-  [ API Gateway ]
-    |         |
-    | /api/*  | /reports/*
-    v         v
-  K8s ALB   Lambda Function URL
-  Ingress
+```mermaid
+graph TD
+    A[Client] --> B[API Gateway]
+    B -->|/api/*| C[K8s ALB Ingress]
+    B -->|/reports/*| D[Lambda Function URL]
 ```
 
 ```bash
@@ -221,23 +201,12 @@ Cloud API Gateways sit in front of both Kubernetes services and serverless funct
 
 ### Multi-Backend Architecture
 
-```
-                         Internet
-                            |
-                    +-------+-------+
-                    | Cloud API GW  |
-                    | (rate limit,  |
-                    |  auth, WAF)   |
-                    +---+---+---+---+
-                        |   |   |
-           +------------+   |   +------------+
-           |                |                |
-     /api/v1/*        /webhooks/*       /reports/*
-           |                |                |
-    +------+------+  +-----+------+  +------+------+
-    | K8s Service |  | Lambda     |  | Cloud       |
-    | (ALB/NLB)   |  | Functions  |  | Function    |
-    +-------------+  +------------+  +-------------+
+```mermaid
+graph TD
+    A[Internet] --> B[Cloud API GW<br/>rate limit, auth, WAF]
+    B -->|/api/v1/*| C[K8s Service<br/>ALB/NLB]
+    B -->|/webhooks/*| D[Lambda Functions]
+    B -->|/reports/*| E[Cloud Function]
 ```
 
 ### GCP: Cloud Endpoints with GKE and Cloud Functions
@@ -282,21 +251,16 @@ Knative brings serverless semantics directly into your cluster. Instead of deplo
 
 ### Knative Architecture
 
-```
-                    +-------------------+
-                    | Knative Serving   |
-                    |                   |
-  Request -------> | Activator         |
-                    |   |               |
-                    |   v               |
-                    | Queue-Proxy       |
-                    |   |               |
-                    |   v               |
-                    | Your Container    |
-                    |                   |
-                    | Autoscaler (KPA)  |
-                    | (scale 0 -> N)    |
-                    +-------------------+
+```mermaid
+graph TD
+    Req[Request] --> Act[Activator]
+    subgraph Knative Serving
+        Act --> QP[Queue-Proxy]
+        QP --> C[Your Container]
+        AS[Autoscaler KPA<br/>scale 0 -> N]
+    end
+    AS -.-> Act
+    AS -.-> C
 ```
 
 > **Stop and think**: When the Knative Activator buffers an incoming request for a scaled-to-zero service, the caller experiences latency while the new pod starts. If your container image is 2GB and takes 15 seconds to initialize its application framework, what will happen to the caller's HTTP request? How would you design the application differently for Knative compared to a standard Kubernetes Deployment?
@@ -518,33 +482,22 @@ aws lambda put-provisioned-concurrency-config \
 
 A real-world architecture combining Kubernetes and serverless:
 
-```
-                          Internet
-                             |
-                     [ API Gateway + WAF ]
-                        |            |
-                   /api/*        /webhooks/*
-                        |            |
-              [ ALB Ingress ]   [ Lambda ]
-                   |                 |
-          +--------+--------+        |
-          |        |        |        |
-       +--+--+ +--+--+ +--+--+  Process
-       | API | | API | | API |   webhook
-       | Pod | | Pod | | Pod |   payload
-       +-----+ +-----+ +-----+    |
-          |                        |
-     [ RDS PostgreSQL ]      [ SQS Queue ]
-                                   |
-                             [ Lambda ]
-                              Generate
-                               report
-                                   |
-                              [ S3 Bucket ]
-                                   |
-                             [ SNS Topic ]
-                                   |
-                          Email notification
+```mermaid
+graph TD
+    A[Internet] --> B[API Gateway + WAF]
+    B -->|/api/*| C[ALB Ingress]
+    C --> D[API Pod]
+    C --> E[API Pod]
+    C --> F[API Pod]
+    D --> G[(RDS PostgreSQL)]
+    E --> G
+    F --> G
+    B -->|/webhooks/*| H[Lambda: Process webhook payload]
+    H --> I[(SQS Queue)]
+    I --> J[Lambda: Generate report]
+    J --> K[(S3 Bucket)]
+    K --> L[(SNS Topic)]
+    L --> M[Email notification]
 ```
 
 - **API pods on EKS**: Steady traffic, complex logic, persistent DB connections
