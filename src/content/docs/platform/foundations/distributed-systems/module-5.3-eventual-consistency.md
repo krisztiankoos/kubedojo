@@ -66,164 +66,74 @@ This module explores eventual consistency: what it means, when to use it, how to
 
 ### 1.1 What is Eventual Consistency?
 
+**Eventual Consistency Definition**
+"If no new updates are made, eventually all nodes will return the same value for a given key."
+
+**Key Properties:**
+1. **Eventual Convergence**: All replicas will eventually have the same data. "Eventually" could be milliseconds or seconds.
+2. **No Guarantee on "When"**: No bound on how long convergence takes. (Though in practice, usually very fast).
+3. **Reads May Return Stale Data**: You might read old values during propagation. Different clients might see different values.
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as Replica A
+    participant B as Replica B
+    participant R as Replica C
+
+    Note over A,R: Time 0: All replicas have X = 1
+    C->>A: Write X = 2
+    Note over A: X=2
+    Note over B: X=1
+    Note over R: X=1
+    A-->>B: replication
+    A-->>R: replication
+    Note over A,R: Time 2: Replication in progress
+    Note over A: X=2
+    Note over B: X=2
+    Note over R: X=1
+    B-->>R: replication (or A->R finishes)
+    Note over A,R: Time 3: All replicas converged
+    Note over A: X=2
+    Note over B: X=2
+    Note over R: X=2
 ```
-EVENTUAL CONSISTENCY DEFINITION
-═══════════════════════════════════════════════════════════════
 
-"If no new updates are made, eventually all nodes will return
-the same value for a given key."
-
-KEY PROPERTIES
-─────────────────────────────────────────────────────────────
-1. EVENTUAL CONVERGENCE
-   All replicas will eventually have the same data.
-   "Eventually" could be milliseconds or seconds.
-
-2. NO GUARANTEE ON "WHEN"
-   No bound on how long convergence takes.
-   (Though in practice, usually very fast)
-
-3. READS MAY RETURN STALE DATA
-   You might read old values during propagation.
-   Different clients might see different values.
-
-EXAMPLE
-─────────────────────────────────────────────────────────────
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│  Time 0: All replicas have X = 1                          │
-│                                                            │
-│       Replica A        Replica B        Replica C         │
-│          X=1              X=1              X=1            │
-│                                                            │
-│  Time 1: Client writes X = 2 to Replica A                 │
-│                                                            │
-│       Replica A        Replica B        Replica C         │
-│          X=2              X=1              X=1            │
-│           │                                                │
-│           │────────replication───────────▶                │
-│                                                            │
-│  Time 2: Replication in progress                          │
-│                                                            │
-│       Replica A        Replica B        Replica C         │
-│          X=2              X=2              X=1            │
-│                           │                                │
-│                           │──────────────▶                │
-│                                                            │
-│  Time 3: All replicas converged (eventually consistent)   │
-│                                                            │
-│       Replica A        Replica B        Replica C         │
-│          X=2              X=2              X=2            │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
-```
+> **Stop and think**: If eventual consistency means data can be stale, how long is "eventually"? What factors might delay convergence in a real network?
 
 ### 1.2 The Consistency Spectrum
 
+```mermaid
+flowchart LR
+    L[Linearizability<br/>Strongest] --> S[Sequential<br/>Consistency]
+    S --> C[Causal<br/>Consistency]
+    C --> Se[Session<br/>Guarantees]
+    Se --> E[Eventual<br/>Consistency<br/>Weakest]
 ```
-CONSISTENCY MODELS SPECTRUM
-═══════════════════════════════════════════════════════════════
 
-STRONGEST                                              WEAKEST
-    │                                                      │
-    ▼                                                      ▼
-┌────────┬──────────┬──────────────┬───────────┬──────────┐
-│Lineariz│Sequential│   Causal     │  Session  │ Eventual │
-│ ability│Consistency│ Consistency │ Guarantees│Consistency│
-└────────┴──────────┴──────────────┴───────────┴──────────┘
-    │                      │              │           │
-    │                      │              │           │
-"Global real-      "If A caused    "Within one  "Eventually
- time order"        B, see A         session,    converges"
-                    before B"        see own
-                                    writes"
-
-LINEARIZABILITY (Strongest)
-─────────────────────────────────────────────────────────────
-Operations appear to execute atomically at a single point in time.
-All clients see operations in real-time order.
-
-    Example: etcd, Spanner
-    Cost: High latency, limited availability
-
-SEQUENTIAL CONSISTENCY
-─────────────────────────────────────────────────────────────
-Operations appear in some total order consistent with program order.
-Not necessarily real-time order.
-
-CAUSAL CONSISTENCY
-─────────────────────────────────────────────────────────────
-Causally related operations seen in order.
-Concurrent operations may be seen in any order.
-
-    If I write X, then read X, then write Y...
-    Anyone who sees Y must have seen my X.
-
-SESSION CONSISTENCY
-─────────────────────────────────────────────────────────────
-Within a session, client sees consistent view.
-May include read-your-writes, monotonic reads.
-
-EVENTUAL CONSISTENCY (Weakest)
-─────────────────────────────────────────────────────────────
-Only guarantees eventual convergence.
-No ordering guarantees.
-
-    Example: DNS, CDN caches
-    Benefit: Maximum availability, lowest latency
-```
+- **Linearizability (Strongest)**: Operations appear to execute atomically at a single point in time. All clients see operations in real-time order. Example: etcd, Spanner. Cost: High latency, limited availability.
+- **Sequential Consistency**: Operations appear in some total order consistent with program order. Not necessarily real-time order.
+- **Causal Consistency**: Causally related operations seen in order. Concurrent operations may be seen in any order. ("If I write X, then read X, then write Y... anyone who sees Y must have seen my X.")
+- **Session Consistency**: Within a session, a client sees a consistent view. May include read-your-writes, monotonic reads.
+- **Eventual Consistency (Weakest)**: Only guarantees eventual convergence. No ordering guarantees. Example: DNS, CDN caches. Benefit: Maximum availability, lowest latency.
 
 ### 1.3 Why Choose Eventual Consistency?
 
-```
-TRADE-OFFS
-═══════════════════════════════════════════════════════════════
+**Strong Consistency Trade-offs:**
+- ✓ Easy to reason about, no stale reads, no conflict resolution needed.
+- ✗ Higher latency (wait for replication), lower availability (need quorum), doesn't scale writes well.
 
-STRONG CONSISTENCY
-─────────────────────────────────────────────────────────────
-    ✓ Easy to reason about
-    ✓ No stale reads
-    ✓ No conflict resolution needed
+**Eventual Consistency Trade-offs:**
+- ✓ Lower latency (respond immediately), higher availability (no quorum needed), better write scalability, works during partitions.
+- ✗ Harder to reason about, may read stale data, must handle conflicts.
 
-    ✗ Higher latency (wait for replication)
-    ✗ Lower availability (need quorum)
-    ✗ Doesn't scale writes well
-
-EVENTUAL CONSISTENCY
-─────────────────────────────────────────────────────────────
-    ✓ Lower latency (respond immediately)
-    ✓ Higher availability (no quorum needed)
-    ✓ Better write scalability
-    ✓ Works during partitions
-
-    ✗ Harder to reason about
-    ✗ May read stale data
-    ✗ Must handle conflicts
-
-WHEN EVENTUAL CONSISTENCY MAKES SENSE
-─────────────────────────────────────────────────────────────
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│  ✓ User-generated content (posts, comments)               │
-│    Seeing a post 1 second late is fine.                   │
-│                                                            │
-│  ✓ Like counts, view counts                               │
-│    Approximate is good enough.                            │
-│                                                            │
-│  ✓ Shopping carts                                         │
-│    Merge on checkout, not on every add.                   │
-│                                                            │
-│  ✓ DNS                                                    │
-│    TTL-based caching, eventual propagation.               │
-│                                                            │
-│  ✓ CDN cached content                                     │
-│    Stale content is better than no content.               │
-│                                                            │
-│  ✓ Session data                                           │
-│    User doesn't notice brief inconsistency.               │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
-```
+**When Eventual Consistency Makes Sense:**
+- ✓ User-generated content (posts, comments) — seeing a post 1 second late is fine.
+- ✓ Like counts, view counts — approximate is good enough.
+- ✓ Shopping carts — merge on checkout, not on every add.
+- ✓ DNS — TTL-based caching, eventual propagation.
+- ✓ CDN cached content — stale content is better than no content.
+- ✓ Session data — user doesn't notice brief inconsistency.
 
 > **Try This (2 minutes)**
 >
@@ -243,174 +153,103 @@ WHEN EVENTUAL CONSISTENCY MAKES SENSE
 
 ### 2.1 Synchronous vs Asynchronous Replication
 
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant P as Primary
+    participant R1 as Replica 1
+    participant R2 as Replica 2
+
+    rect rgb(240, 248, 255)
+    Note over C,R2: Synchronous Replication
+    C->>P: Write
+    P->>R1: Replicate
+    P->>R2: Replicate
+    R1-->>P: ACK
+    R2-->>P: ACK
+    P-->>C: ACK (Wait for all)
+    end
+
+    rect rgb(240, 255, 240)
+    Note over C,R2: Asynchronous Replication
+    C->>P: Write
+    P-->>C: ACK (Respond immediately)
+    P->>R1: Replicate (background)
+    P->>R2: Replicate (background)
+    end
+
+    rect rgb(255, 240, 240)
+    Note over C,R2: Semi-Synchronous (Quorum)
+    C->>P: Write
+    P->>R1: Replicate
+    P->>R2: Replicate
+    R1-->>P: ACK
+    P-->>C: ACK (Wait for majority, e.g. 1 replica)
+    end
 ```
-REPLICATION STRATEGIES
-═══════════════════════════════════════════════════════════════
 
-SYNCHRONOUS REPLICATION
-─────────────────────────────────────────────────────────────
-Write completes after ALL replicas acknowledge.
-
-    Client ──Write──▶ Primary
-                        │
-                        ├──▶ Replica 1 ──ACK──┐
-                        │                     │
-                        └──▶ Replica 2 ──ACK──┼──▶ Primary ──ACK──▶ Client
-                                              │
-                                              │
-                        Wait for all ACKs before responding
-
-    ✓ Strong consistency
-    ✓ No data loss on primary failure
-    ✗ High latency (wait for slowest replica)
-    ✗ Availability depends on all replicas
-
-ASYNCHRONOUS REPLICATION
-─────────────────────────────────────────────────────────────
-Write completes after PRIMARY acknowledges.
-
-    Client ──Write──▶ Primary ──ACK──▶ Client
-                        │
-                        │ (background)
-                        │
-                        ├──▶ Replica 1
-                        │
-                        └──▶ Replica 2
-
-    ✓ Low latency (respond immediately)
-    ✓ Availability only needs primary
-    ✗ Eventual consistency
-    ✗ Data loss possible if primary fails before replication
-
-SEMI-SYNCHRONOUS (Quorum)
-─────────────────────────────────────────────────────────────
-Write completes after MAJORITY acknowledges.
-
-    Client ──Write──▶ Primary
-                        │
-                        ├──▶ Replica 1 ──ACK──┐
-                        │                     │
-                        └──▶ Replica 2        ├──▶ Primary ──ACK──▶ Client
-                                              │
-                        Wait for majority (2 of 3)
-
-    ✓ Balance of consistency and performance
-    ✓ Tolerate some replica failures
-    ✗ Still some latency for quorum
-```
+- **Synchronous Replication**: Write completes after ALL replicas acknowledge. Strong consistency, no data loss on primary failure. High latency (wait for slowest replica), availability depends on all replicas.
+- **Asynchronous Replication**: Write completes after PRIMARY acknowledges. Low latency (respond immediately), availability only needs primary. Eventual consistency, data loss possible if primary fails before replication.
+- **Semi-Synchronous (Quorum)**: Write completes after MAJORITY acknowledges. Balances consistency and performance, tolerates some replica failures. Still has some latency for quorum.
 
 ### 2.2 Multi-Leader and Leaderless Replication
 
+```mermaid
+flowchart TD
+    subgraph Single-Leader
+        L1[Leader] --> F1[Follower 1]
+        L1 --> F2[Follower 2]
+    end
+
+    subgraph Multi-Leader
+        LA[Leader A] <-->|Sync| LB[Leader B]
+        LA --> FA[Followers A]
+        LB --> FB[Followers B]
+    end
+
+    subgraph Leaderless
+        C[Client] -->|Write| N1[Node 1]
+        C -->|Write| N2[Node 2]
+        C -.->|Read| N3[Node 3]
+    end
 ```
-REPLICATION TOPOLOGIES
-═══════════════════════════════════════════════════════════════
 
-SINGLE-LEADER
-─────────────────────────────────────────────────────────────
-    All writes go to one leader.
-    Leader replicates to followers.
-
-        Writes ──▶ Leader ──▶ Follower 1
-                     │
-                     └──────▶ Follower 2
-
-    ✓ No write conflicts
-    ✓ Simple
-    ✗ Leader is bottleneck
-    ✗ Cross-region latency for writes
-
-MULTI-LEADER
-─────────────────────────────────────────────────────────────
-    Each region has a leader.
-    Leaders sync with each other.
-
-        Region A                    Region B
-        ┌────────┐                 ┌────────┐
-        │Leader A│◀═══ sync ═════▶│Leader B│
-        └────────┘                 └────────┘
-             │                          │
-        ┌────▼────┐                ┌────▼────┐
-        │Followers│                │Followers│
-        └─────────┘                └─────────┘
-
-    ✓ Low latency writes in each region
-    ✓ Tolerates region failure
-    ✗ Write conflicts between regions
-    ✗ Conflict resolution complexity
-
-LEADERLESS (Dynamo-style)
-─────────────────────────────────────────────────────────────
-    Write to ANY node.
-    Read from multiple nodes, resolve conflicts.
-
-        Client writes to W nodes (e.g., 2 of 3)
-        Client reads from R nodes (e.g., 2 of 3)
-        If W + R > N, guaranteed overlap (quorum)
-
-        ┌─────────┐
-        │ Node 1  │◀──write──┐
-        └─────────┘          │
-        ┌─────────┐          │
-        │ Node 2  │◀──write──┼── Client
-        └─────────┘          │
-        ┌─────────┐          │
-        │ Node 3  │          │
-        └─────────┘
-
-    ✓ No single point of failure
-    ✓ High availability
-    ✗ Must handle conflicts on read
-    ✗ Complex consistency tuning (W, R, N values)
-```
+- **Single-Leader**: All writes go to one leader. Leader replicates to followers. No write conflicts. Leader is bottleneck, cross-region latency for writes.
+- **Multi-Leader**: Each region has a leader. Leaders sync with each other. Low latency writes in each region, tolerates region failure. Introduces write conflicts between regions and conflict resolution complexity.
+- **Leaderless (Dynamo-style)**: Write to ANY node. Read from multiple nodes, resolve conflicts. No single point of failure, high availability. Must handle conflicts on read, complex consistency tuning (W, R, N values).
 
 ### 2.3 Consistency Tuning
 
+In quorum systems:
+- **N** = Number of replicas
+- **W** = Write quorum (how many must acknowledge write)
+- **R** = Read quorum (how many to read from)
+
+```mermaid
+flowchart LR
+    subgraph Strong Consistency W+R > N
+        W[Write] --> A1[Node A]
+        W --> B1[Node B]
+        A1 -.->|overlap| R[Read]
+        B1 -.-> R
+    end
+    subgraph Eventual Consistency W+R <= N
+        W2[Write] --> A2[Node A]
+        B2[Node B] -.->|no overlap| R2[Read]
+    end
 ```
-QUORUM CONSISTENCY
-═══════════════════════════════════════════════════════════════
 
-N = Number of replicas
-W = Write quorum (how many must acknowledge write)
-R = Read quorum (how many to read from)
+**Strong Consistency (W + R > N):**
+Write touches enough nodes that a read is guaranteed to hit at least one node with the latest data. Example: N=3, W=2, R=2.
 
-STRONG CONSISTENCY
-─────────────────────────────────────────────────────────────
-    W + R > N
+**Eventual Consistency (W + R ≤ N):**
+Faster but might read stale data. Example: N=3, W=1, R=1.
 
-    Example: N=3, W=2, R=2
-
-    Write touches 2 nodes.
-    Read touches 2 nodes.
-    At least 1 node has latest data.
-
-          Write         Read
-           │             │
-           ▼             ▼
-        ┌─────┐       ┌─────┐
-        │  A  │◀──────│  A  │ ← overlaps, sees latest
-        └─────┘       └─────┘
-        ┌─────┐       ┌─────┐
-        │  B  │◀──────│  B  │
-        └─────┘       └─────┘
-        ┌─────┐       ┌─────┐
-        │  C  │       │  C  │
-        └─────┘       └─────┘
-
-EVENTUAL CONSISTENCY
-─────────────────────────────────────────────────────────────
-    W + R ≤ N
-
-    Example: N=3, W=1, R=1
-
-    Faster but might read stale data.
-
-TUNING EXAMPLES
-─────────────────────────────────────────────────────────────
-N=3, W=1, R=3: Fast writes, slow reads, eventual
-N=3, W=3, R=1: Slow writes, fast reads, strong
-N=3, W=2, R=2: Balanced, strong consistency
-N=5, W=3, R=3: More fault tolerant, still strong
-```
+**Tuning Examples:**
+- `N=3, W=1, R=3`: Fast writes, slow reads, eventual.
+- `N=3, W=3, R=1`: Slow writes, fast reads, strong.
+- `N=3, W=2, R=2`: Balanced, strong consistency.
+- `N=5, W=3, R=3`: More fault tolerant, still strong.
 
 ---
 
@@ -418,143 +257,33 @@ N=5, W=3, R=3: More fault tolerant, still strong
 
 ### 3.1 Why Conflicts Happen
 
-```
-CONFLICT SCENARIOS
-═══════════════════════════════════════════════════════════════
+- **Concurrent Writes**: Two clients write different values to the same key simultaneously. (e.g., Client 1 sets email to `alice@new.com`, Client 2 sets to `alice@work.com`).
+- **Partition During Writes**: Network partition splits replicas. Both sides accept writes. When the partition heals, which update wins?
+- **Offline Edits**: User edits a document offline. Another user edits online. The offline user reconnects, causing a conflict.
 
-CONCURRENT WRITES
-─────────────────────────────────────────────────────────────
-Two clients write different values to the same key simultaneously.
-
-    Client 1: SET user.email = "alice@new.com"
-    Client 2: SET user.email = "alice@work.com"
-
-    Both happen at "the same time" (no ordering).
-    Which one wins?
-
-PARTITION DURING WRITES
-─────────────────────────────────────────────────────────────
-Network partition splits replicas. Both sides accept writes.
-
-    Region A (partition) ─────── Region B
-
-    User in A: Update profile
-    User in B: Update profile
-
-    Partition heals. Which update wins?
-
-OFFLINE EDITS
-─────────────────────────────────────────────────────────────
-User edits document offline. Another user edits online.
-
-    User A (offline): Edit paragraph 1
-    User B (online): Edit paragraph 1
-
-    User A reconnects. Conflict!
-```
+> **Pause and predict**: If a system uses "Last-Write-Wins" (LWW) based on timestamps, what happens if two servers have their system clocks out of sync by 5 minutes?
 
 ### 3.2 Conflict Resolution Strategies
 
-```
-CONFLICT RESOLUTION STRATEGIES
-═══════════════════════════════════════════════════════════════
-
-LAST-WRITE-WINS (LWW)
-─────────────────────────────────────────────────────────────
-Highest timestamp wins. Simple but lossy.
-
-    Write 1: {value: "A", timestamp: 100}
-    Write 2: {value: "B", timestamp: 101}
-
-    Result: "B" (higher timestamp)
-
-    ✓ Simple, deterministic
-    ✗ Loses data (A is discarded)
-    ✗ Depends on clock accuracy
-
-FIRST-WRITE-WINS
-─────────────────────────────────────────────────────────────
-Lowest timestamp wins. Used for immutable data.
-
-    Once created, can't be overwritten.
-    Useful for: Event logs, ledgers
-
-MULTI-VALUE (Siblings)
-─────────────────────────────────────────────────────────────
-Keep all conflicting values. Application resolves.
-
-    Write 1: "A"
-    Write 2: "B"
-
-    Read returns: ["A", "B"] (conflict!)
-    Application must choose or merge.
-
-    ✓ No data loss
-    ✗ Application complexity
-    ✗ Conflicts can cascade
-
-MERGE FUNCTION
-─────────────────────────────────────────────────────────────
-Custom logic to merge conflicting values.
-
-    Shopping cart merge:
-    Cart A: [item1, item2]
-    Cart B: [item1, item3]
-    Merged: [item1, item2, item3] (union)
-
-    ✓ Semantic merge
-    ✗ Application-specific logic
-    ✗ Not always possible
-
-OPERATIONAL TRANSFORMATION
-─────────────────────────────────────────────────────────────
-Transform operations to preserve intent.
-
-    Used by: Google Docs, collaborative editors
-
-    User A: Insert "hello" at position 0
-    User B: Insert "world" at position 0
-
-    Transform: A sees B's insert, adjusts position
-    Result: "worldhello" or "helloworld" (consistent order)
-```
+- **Last-Write-Wins (LWW)**: Highest timestamp wins. Simple but lossy. Depends heavily on accurate clock synchronization.
+- **First-Write-Wins**: Lowest timestamp wins. Used for immutable data (event logs, ledgers) where once created, data cannot be overwritten.
+- **Multi-Value (Siblings)**: Keep all conflicting values and return them to the application to resolve. (Read returns `["A", "B"]`). No data loss, but pushes complexity to the application.
+- **Merge Function**: Custom logic to merge conflicting values. (e.g., merging shopping cart `[item1, item2]` and `[item1, item3]` results in `[item1, item2, item3]`).
+- **Operational Transformation (OT)**: Transform operations to preserve intent. Used heavily in collaborative text editors to adjust index positions when concurrent inserts occur.
 
 ### 3.3 Version Vectors
 
-```
-VERSION VECTORS
-═══════════════════════════════════════════════════════════════
+Version vectors track causality, not wall-clock time. Each node maintains a counter per known node.
 
-Track causality, not wall-clock time.
-Each node maintains counter per known node.
+**Example:**
+Initial: `X = {value: "A", version: {Node1: 1, Node2: 0}}`
 
-EXAMPLE
-─────────────────────────────────────────────────────────────
-Initial: X = {value: "A", version: {Node1: 1, Node2: 0}}
+Node 1 writes: `X = {value: "B", version: {Node1: 2, Node2: 0}}`
+Node 2 writes (didn't see Node 1's update): `X = {value: "C", version: {Node1: 1, Node2: 1}}`
 
-Node 1 writes:
-    X = {value: "B", version: {Node1: 2, Node2: 0}}
-
-Node 2 writes (didn't see Node 1's update):
-    X = {value: "C", version: {Node1: 1, Node2: 1}}
-
-CONFLICT DETECTION
-─────────────────────────────────────────────────────────────
-Version {Node1: 2, Node2: 0} vs {Node1: 1, Node2: 1}
-
-Neither dominates (not strictly greater in all components).
-This is a conflict!
-
-Version {Node1: 2, Node2: 0} vs {Node1: 1, Node2: 0}
-
-First dominates (Node1: 2 > 1, Node2: 0 = 0).
-No conflict, first is newer.
-
-AFTER MERGE
-─────────────────────────────────────────────────────────────
-Merged version: {Node1: 2, Node2: 1}
-Merged value: Application decides (merge or pick one)
-```
+**Conflict Detection:**
+Compare `{Node1: 2, Node2: 0}` vs `{Node1: 1, Node2: 1}`. Neither strictly dominates in all components. This indicates a concurrent write conflict.
+If comparing `{Node1: 2, Node2: 0}` vs `{Node1: 1, Node2: 0}`, the first dominates. No conflict; the first is strictly newer.
 
 > **War Story: The $8.2 Million Shopping Cart Bug**
 >
@@ -578,12 +307,14 @@ Merged value: Application decides (merge or pick one)
 > - $1.3 million in overtime engineering and customer service
 >
 > **The fix**: The team replaced their cart data structure with a CRDT-style design:
-> ```
-> Before: cart = {items: ["tv", "laptop"]}  // Single value, LWW
-> After:  cart = {
->           adds: {"tv": uuid1, "laptop": uuid2},
->           removes: {}
->         }  // OR-Set style, merges correctly
+> ```javascript
+> // Before: Single value, LWW
+> cart = {items: ["tv", "laptop"]}  
+> // After: OR-Set style, merges correctly
+> cart = {
+>   adds: {"tv": uuid1, "laptop": uuid2},
+>   removes: {}
+> }  
 > ```
 >
 > **The lesson**: Eventual consistency requires thinking about conflict resolution at design time, not after the bug reports come in. "Last-write-wins" is almost never what you actually want for user data.
@@ -594,124 +325,42 @@ Merged value: Application decides (merge or pick one)
 
 ### 4.1 Read-Your-Writes
 
+Users should always see their own updates. Even with eventual consistency, this is often required. The problem arises when a user writes to Node A, but their next read hits Node B before replication is complete.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant NA as Node A
+    participant NB as Node B
+
+    U->>NA: Write
+    NA-->>NB: replicating...
+    U->>NB: Read (Next request)
+    NB-->>U: Return stale data!
 ```
-READ-YOUR-WRITES CONSISTENCY
-═══════════════════════════════════════════════════════════════
 
-Users should always see their own updates.
-Even with eventual consistency, this is often required.
-
-THE PROBLEM
-─────────────────────────────────────────────────────────────
-User writes to Node A.
-User's next read goes to Node B (not yet replicated).
-User sees old data. "Where's my update?!"
-
-        User ──write──▶ Node A ──(replicating)──▶ Node B
-             ◀──read────────────────────────────── Node B
-                                              (stale data!)
-
-SOLUTIONS
-─────────────────────────────────────────────────────────────
-1. STICKY SESSIONS
-   Route user to same node that received write.
-
-       User writes to Node A
-       All reads from same user go to Node A
-
-   ✓ Simple
-   ✗ Load imbalance, failover complexity
-
-2. READ FROM WRITE QUORUM
-   Read from enough nodes to guarantee overlap.
-
-       Write to W nodes
-       Read from R nodes where W + R > N
-
-   ✓ Guaranteed consistency
-   ✗ Higher latency
-
-3. VERSION-BASED READS
-   Client tracks version of last write.
-   Reads wait until node has that version.
-
-       User writes, gets version V
-       Read request includes "at least version V"
-       Node waits until it has V or newer
-
-   ✓ Precise guarantees
-   ✗ Complexity, potential delays
-
-4. SYNCHRONOUS REPLICATION FOR SENSITIVE DATA
-   Write synchronously, read from anywhere.
-
-   ✓ Simple reads
-   ✗ Higher write latency
-```
+**Solutions:**
+1. **Sticky Sessions**: Route the user to the same node that received the write. Simple, but complicates load balancing and failovers.
+2. **Read from Write Quorum**: Read from enough nodes to guarantee overlap (`W + R > N`). Higher latency but guaranteed consistency.
+3. **Version-Based Reads**: Client tracks the version of their last write. Reads include an "at least version V" parameter, and the node waits until it has that version to respond.
+4. **Synchronous Replication for Sensitive Data**: Write synchronously, read from anywhere.
 
 ### 4.2 Monotonic Reads
 
-```
-MONOTONIC READS
-═══════════════════════════════════════════════════════════════
+Once you've seen a value, you shouldn't see an older one. Time shouldn't "go backwards."
+If Read 1 returns `X=2` (from a fully replicated node) and Read 2 returns `X=1` (from a lagging node), the user experiences a jarring rewind in state.
 
-Once you've seen a value, you shouldn't see an older one.
-Time shouldn't "go backwards."
-
-THE PROBLEM
-─────────────────────────────────────────────────────────────
-Read 1: User sees X = 2 (from Node A, fully replicated)
-Read 2: User sees X = 1 (from Node B, lagging behind)
-
-"Wait, the count went down!"
-
-SOLUTION: SAME NODE OR VERSION TRACKING
-─────────────────────────────────────────────────────────────
-1. Session affinity to same replica
-2. Track last-seen version, only accept newer
-
-    Read 1 from Node A: X = 2, version V1
-    Read 2 to Node B: "I've seen V1"
-    Node B: Waits until it has V1 or newer
-```
+**Solutions:**
+- Session affinity to the same replica.
+- Track last-seen version, and only accept responses that are newer or equal to that version.
 
 ### 4.3 Causal Consistency
 
-```
-CAUSAL CONSISTENCY
-═══════════════════════════════════════════════════════════════
+If event B depends on event A, everyone sees A before B. Concurrent events (no dependency) can appear in any order.
 
-If event B depends on event A, everyone sees A before B.
-Concurrent events (no dependency) can appear in any order.
+For example, Alice posts: "I got a promotion!" Bob comments: "Congratulations!" Bob's comment DEPENDS on Alice's post. Without causal consistency, a user might see the comment before the post exists.
 
-EXAMPLE
-─────────────────────────────────────────────────────────────
-Alice posts: "I got a promotion!"
-Bob comments: "Congratulations!"
-
-Bob's comment DEPENDS on Alice's post.
-Everyone should see post before comment.
-
-Without causal consistency:
-    Some users see: "Congratulations!" (comment on... what?)
-    Then later: "I got a promotion!"
-
-IMPLEMENTATION
-─────────────────────────────────────────────────────────────
-Track dependencies with version vectors or explicit references.
-
-    Post: {id: 1, content: "I got a promotion!", deps: []}
-    Comment: {id: 2, content: "Congratulations!", deps: [1]}
-
-    Replica doesn't show comment until it has post 1.
-
-CAUSAL CONSISTENCY IN DATABASES
-─────────────────────────────────────────────────────────────
-Some databases offer causal consistency:
-- MongoDB (causal consistency sessions)
-- CockroachDB (by default)
-- Spanner (via TrueTime)
-```
+**Implementation:** Track dependencies with version vectors or explicit references. A replica will not show the comment until the referenced post dependency is satisfied locally.
 
 ---
 
@@ -719,171 +368,41 @@ Some databases offer causal consistency:
 
 ### 5.1 What are CRDTs?
 
-```
-CONFLICT-FREE REPLICATED DATA TYPES
-═══════════════════════════════════════════════════════════════
+Conflict-Free Replicated Data Types (CRDTs) are data structures that automatically merge without conflicts. No coordination is needed—mathematical properties guarantee convergence.
 
-Data structures that automatically merge without conflicts.
-No coordination needed—math guarantees convergence.
+**Key Property: Commutativity & Associativity**
+The order and grouping of operations don't matter. `A + B = B + A`.
 
-KEY PROPERTY: COMMUTATIVITY
-─────────────────────────────────────────────────────────────
-Order of operations doesn't matter.
-A + B = B + A
-
-    Node 1: Add "apple"
-    Node 2: Add "banana"
-
-    Order doesn't matter:
-    {"apple", "banana"} = {"banana", "apple"}
-
-WHY CRDTs MATTER
-─────────────────────────────────────────────────────────────
-Traditional data + replication = conflicts
-CRDTs + replication = automatic merge
-
-    ┌──────────────────────────────────────────────────────┐
-    │                                                      │
-    │   Node A: counter = 5                                │
-    │   Node B: counter = 5                                │
-    │                                                      │
-    │   Node A: increment() → 6                            │
-    │   Node B: increment() → 6                            │
-    │                                                      │
-    │   Regular merge: 6 vs 6 = 6 (lost one increment!)   │
-    │                                                      │
-    │   CRDT G-Counter:                                    │
-    │   Node A: {A: 6, B: 5}                               │
-    │   Node B: {A: 5, B: 6}                               │
-    │   Merge: {A: 6, B: 6} = 12 (correct!)               │
-    │                                                      │
-    └──────────────────────────────────────────────────────┘
-```
+If Node A and Node B both increment a standard integer concurrently, a naive merge of the final values might discard one increment. With a CRDT like a G-Counter, Node A tracks its own increments, Node B tracks its own, and the merge function safely combines them without data loss.
 
 ### 5.2 Common CRDTs
 
-```
-COMMON CRDT TYPES
-═══════════════════════════════════════════════════════════════
-
-G-COUNTER (Grow-only counter)
-─────────────────────────────────────────────────────────────
-Only increments. Each node has its own counter.
-
-    Structure: {nodeA: count, nodeB: count, ...}
-    Increment: node[self]++
-    Value: sum(all counts)
-    Merge: max(each node's count)
-
-    Node A: {A: 3, B: 0}
-    Node B: {A: 0, B: 2}
-    Merge: {A: 3, B: 2} = 5
-
-PN-COUNTER (Positive-Negative counter)
-─────────────────────────────────────────────────────────────
-Increments and decrements. Two G-Counters.
-
-    Structure: {P: G-Counter, N: G-Counter}
-    Increment: P.increment()
-    Decrement: N.increment()
-    Value: P.value - N.value
-
-G-SET (Grow-only set)
-─────────────────────────────────────────────────────────────
-Only add, never remove.
-
-    Add: set.add(element)
-    Merge: union of sets
-
-    Node A: {apple, banana}
-    Node B: {apple, cherry}
-    Merge: {apple, banana, cherry}
-
-2P-SET (Two-Phase set)
-─────────────────────────────────────────────────────────────
-Add and remove, but removed elements can't be re-added.
-
-    Structure: {added: G-Set, removed: G-Set}
-    Add: added.add(element)
-    Remove: removed.add(element)
-    Value: added - removed
-
-OR-SET (Observed-Remove set)
-─────────────────────────────────────────────────────────────
-Add and remove. Can re-add after remove.
-Each add tagged with unique ID.
-
-    Add "apple" → {(apple, uuid1)}
-    Add "apple" again → {(apple, uuid1), (apple, uuid2)}
-    Remove "apple" uuid1 → {(apple, uuid2)}
-    Apple is still in set!
-
-LWW-REGISTER (Last-Writer-Wins register)
-─────────────────────────────────────────────────────────────
-Simple value with timestamp.
-
-    Structure: {value, timestamp}
-    Write: if new_timestamp > timestamp: update
-    Merge: keep higher timestamp
-```
+- **G-Counter (Grow-only counter)**: Only increments. Each node has its own counter. Merge by taking the `max()` of each node's count.
+- **PN-Counter (Positive-Negative counter)**: Increments and decrements. Implemented as two G-Counters (one for positives, one for negatives).
+- **G-Set (Grow-only set)**: Only add, never remove. Merge via standard set union.
+- **2P-Set (Two-Phase set)**: Add and remove, but removed elements can't be re-added. Two G-Sets internally (`added` and `removed`).
+- **OR-Set (Observed-Remove set)**: Add and remove. Can re-add after remove. Each add is tagged with a unique ID.
+- **LWW-Register (Last-Writer-Wins register)**: Simple value with timestamp. Keeps the value with the highest timestamp.
 
 ### 5.3 CRDTs in Practice
 
-```
-CRDTs IN PRODUCTION
-═══════════════════════════════════════════════════════════════
+- **Riak**: Database with built-in CRDT support for counters, sets, and maps.
+- **Redis Enterprise**: Conflict-free replication across geo-distributed clusters.
+- **Automerge**: A JSON CRDT library heavily used for building collaborative applications.
+- **SoundCloud**: Uses G-Counters for eventually consistent play counts and likes.
 
-RIAK (Database)
-─────────────────────────────────────────────────────────────
-Built-in CRDT support: counters, sets, maps, registers.
-
-    # Increment a counter
-    riak.update_type(bucket, key, :counter, 1)
-
-REDIS (CRDTs in Redis Enterprise)
-─────────────────────────────────────────────────────────────
-Conflict-free replication across geo-distributed clusters.
-
-AUTOMERGE (Collaborative editing)
-─────────────────────────────────────────────────────────────
-JSON CRDT for building collaborative apps.
-
-    import Automerge from 'automerge'
-
-    let doc1 = Automerge.change(doc, d => {
-        d.text = "Hello"
-    })
-
-    let doc2 = Automerge.change(doc, d => {
-        d.text = "World"
-    })
-
-    let merged = Automerge.merge(doc1, doc2)
-    // Conflict resolved automatically
-
-SOUNDCLOUD (Activity counts)
-─────────────────────────────────────────────────────────────
-G-Counters for play counts, like counts.
-Eventually consistent but always increasing.
-
-LIMITATIONS
-─────────────────────────────────────────────────────────────
-✗ Memory overhead (version vectors grow)
-✗ Limited operations (can't do arbitrary logic)
-✗ Eventual, not immediate consistency
-✗ Some types are complex (OR-Set)
-```
+**Limitations:**
+- Memory overhead (version vectors and metadata grow over time).
+- Limited operations (you cannot apply arbitrary, non-commutative logic safely).
+- They only guarantee eventual consistency, not immediate correctness in business rules.
 
 ---
 
 ## Did You Know?
 
 - **Amazon's shopping cart** was one of the first famous eventually consistent systems. Their 2007 Dynamo paper showed how eventual consistency enables high availability and became the blueprint for Cassandra, Riak, and DynamoDB.
-
 - **CRDTs were independently discovered** multiple times. The mathematical foundations (lattices, semilattices) existed long before distributed systems, but applying them to replication was a breakthrough in 2011.
-
 - **DNS is eventually consistent** by design. When you update a DNS record, it can take up to 48 hours (or the TTL) to propagate worldwide. Yet the internet works fine because most applications tolerate stale DNS.
-
 - **Figma uses CRDTs** for real-time collaborative design. Multiple designers can edit the same file simultaneously, and their changes merge automatically without conflicts. When you drag a shape while your colleague resizes it, both operations succeed—no "your changes were overwritten" errors.
 
 ---
@@ -903,219 +422,57 @@ LIMITATIONS
 
 ## Quiz
 
-1. **What does "eventual consistency" actually guarantee?**
+1. **You are designing a globally distributed user profile service for a social media app. You choose eventual consistency to keep latency low. When explaining the system guarantees to the product manager, what exactly are you promising about the data state?**
    <details markdown="1">
    <summary>Answer</summary>
 
-   Eventual consistency guarantees:
-
-   1. **Convergence**: If no new updates occur, all replicas will eventually have identical data
-   2. **No data loss**: All acknowledged writes will eventually be visible everywhere
-
-   It does NOT guarantee:
-   - When convergence happens (could be milliseconds or seconds)
-   - What you'll read during propagation
-   - Order of operations across nodes
-
-   "Eventually" means "given enough time without updates"—in practice, this is usually very fast (milliseconds to seconds), but there's no strict bound.
+   Eventual consistency guarantees two things: first, that if no new updates occur, all replicas will eventually converge to identical data. Second, there will be no permanent data loss for acknowledged writes. It does NOT guarantee when convergence happens (it could take milliseconds or minutes) or what intermediate stale states a user might read during propagation. Ultimately, you are promising that the system will prioritize availability over returning the strict, globally real-time correct data on every read.
    </details>
 
-2. **How do version vectors help with conflict detection?**
+2. **Two users in a collaborative document editor are working offline. User A changes the title to "Draft 1", and User B changes it to "Final Draft". When both reconnect, the system uses version vectors to detect a conflict. How does this mechanism identify that neither change should automatically overwrite the other?**
    <details markdown="1">
    <summary>Answer</summary>
 
-   Version vectors track causality instead of wall-clock time:
-
-   - Each node maintains a counter per known node
-   - When node X writes, it increments its own counter
-   - When nodes sync, they exchange version vectors
-
-   Conflict detection:
-   - Compare two version vectors element by element
-   - If A ≥ B in all elements, A dominates (no conflict)
-   - If neither dominates, it's a concurrent write (conflict!)
-
-   Example:
-   ```
-   {Node1: 2, Node2: 1} vs {Node1: 1, Node2: 2}
-   Neither dominates → Conflict!
-
-   {Node1: 2, Node2: 1} vs {Node1: 1, Node2: 1}
-   First dominates → No conflict, first is newer
-   ```
-
-   Unlike timestamps, version vectors don't depend on synchronized clocks.
+   Version vectors track the causal history of data rather than wall-clock time. Each node maintains a counter array representing the updates it has seen. When User A and User B edit offline, they both fork from the same baseline version vector, incrementing their own local node counter without seeing the other's increment. Upon reconnecting, the system compares their vectors and finds that neither vector strictly dominates the other across all elements. Because neither has seen the other's operation, the system flags it as a true concurrent write conflict requiring a merge strategy.
    </details>
 
-3. **What is a CRDT and why does it eliminate conflicts?**
+3. **You are migrating a distributed "like" counter for a video streaming service from a simple integer column to a CRDT (G-Counter). How does the mathematical structure of the CRDT guarantee that concurrent "likes" from different regions will merge perfectly without dropping counts?**
    <details markdown="1">
    <summary>Answer</summary>
 
-   **CRDT** (Conflict-free Replicated Data Type) is a data structure designed so that concurrent operations always merge deterministically.
-
-   Why no conflicts:
-   1. **Commutative operations**: Order doesn't matter (A + B = B + A)
-   2. **Associative operations**: Grouping doesn't matter ((A + B) + C = A + (B + C))
-   3. **Idempotent merge**: Merging same data twice gives same result
-
-   Example (G-Counter):
-   - Each node tracks its own increment count
-   - Merge takes maximum of each node's count
-   - No matter what order updates arrive, result is correct
-
-   ```
-   Node A: {A: 5, B: 3}
-   Node B: {A: 4, B: 7}
-   Merge: {A: 5, B: 7} = 12 (always correct)
-   ```
-
-   CRDTs trade some expressiveness for automatic conflict resolution.
+   A G-Counter CRDT works by having every node independently track only its own increments in a local variable, rather than mutating a shared global integer. Because the merge function uses the mathematical `max()` operation across each node's array of counts, the operations become commutative, associative, and idempotent. This means the order in which region synchronizations arrive doesn't matter, and applying the same sync payload twice won't duplicate counts. By eliminating the need to lock and modify a single scalar value, concurrent increments merge safely and deterministically without data loss.
    </details>
 
-4. **When should you use eventual consistency vs strong consistency?**
+4. **Your e-commerce architecture review board is debating the consistency models for two microservices: the Product Catalog and the Payment Ledger. What consistency models should you apply to each, and why?**
    <details markdown="1">
    <summary>Answer</summary>
 
-   **Use eventual consistency when**:
-   - Availability matters more than immediate consistency
-   - Stale reads are acceptable (social media, metrics, caches)
-   - Operations can be merged or ordered later (shopping carts)
-   - High write throughput needed
-   - Geographic distribution required
-
-   **Use strong consistency when**:
-   - Correctness is critical (financial transactions, inventory)
-   - Users must see their own writes immediately
-   - Operations don't commute (can't be reordered)
-   - Regulatory requirements demand it
-
-   **Hybrid approach**:
-   - Strong consistency for critical paths (payment, inventory decrement)
-   - Eventual consistency for everything else (product views, recommendations)
-   - Read-your-writes within sessions, eventual across users
+   The Product Catalog should use Eventual Consistency, while the Payment Ledger requires Strong Consistency. For the catalog, high availability and low read latency are critical for user experience; if a user sees stale pricing or an old image for a few seconds, the business impact is minimal. Conversely, the payment ledger handles financial state, where correctness is absolutely critical. A stale read on a payment ledger could result in double-charging or shipping goods without confirmed payment, making the latency costs of strong consistency (quorum/consensus) an acceptable and necessary trade-off.
    </details>
 
-5. **A system uses N=5 replicas. Calculate the minimum W and R values needed for: (a) strong consistency, (b) fast writes with strong reads, (c) maximum availability.**
+5. **Your database cluster has 5 nodes (N=5). You are deploying a new microservice that requires high availability for reads, but writes must be strictly strongly consistent. What read (R) and write (W) quorum values should you configure, and how does this affect system latency during a node failure?**
    <details markdown="1">
    <summary>Answer</summary>
 
-   **Quorum rule for strong consistency**: W + R > N
-
-   **For N=5:**
-
-   **(a) Strong consistency (balanced):**
-   - W=3, R=3 (3+3=6 > 5) ✓
-   - Tolerates 2 failures for both reads and writes
-   - Most common production configuration
-
-   **(b) Fast writes, strong reads:**
-   - W=1, R=5 (1+5=6 > 5) ✓
-   - Writes return immediately after 1 ACK
-   - Reads must contact all 5 nodes
-   - Use case: Write-heavy workloads where reads are less frequent
-
-   **(c) Maximum availability (eventual consistency):**
-   - W=1, R=1 (1+1=2 ≤ 5) ✗ (not strongly consistent)
-   - Can tolerate 4 failures
-   - Fastest but may read stale data
-   - Use case: Caching, metrics, non-critical data
-
-</details>
-
-**Trade-off matrix:**
-
-| Config | Write Latency | Read Latency | Consistency | Availability |
-|--------|---------------|--------------|-------------|--------------|
-| W=3,R=3 | Medium | Medium | Strong | Medium |
-| W=1,R=5 | Low | High | Strong | Low (reads) |
-| W=5,R=1 | High | Low | Strong | Low (writes) |
-| W=1,R=1 | Low | Low | Eventual | High |
-
-6. **A social media platform stores user posts with eventual consistency. User A posts "Hello", then immediately comments "First!". Another user B sees "First!" but not "Hello". What consistency property is violated? How would you fix it?**
-   <details markdown="1">
-   <summary>Answer</summary>
-
-   **Violated property: Causal consistency**
-
-   The comment causally depends on the post (you can't comment on something that doesn't exist). User B should never see the effect (comment) before the cause (post).
-
-   **Why it happened:**
-   - Post written to Replica 1
-   - Comment written to Replica 1 (references post)
-   - User B reads from Replica 2
-   - Comment replicated faster than post (or post delayed)
-   - Replica 2 has comment but not post
-
-   **Solutions:**
-
-   1. **Explicit dependencies:**
-   ```
-   Post: {id: 1, content: "Hello", deps: []}
-   Comment: {id: 2, content: "First!", deps: [1]}
-   ```
-   Replica doesn't show comment until it has all dependencies.
-
-   2. **Version vectors:**
-   - Post increments writer's version: {A: 1}
-   - Comment includes causal context: {A: 1}
-   - Replica delays showing comment until it's seen {A: 1}
-
-   3. **Same-replica routing:**
-   - Route all reads for a thread to the same replica
-   - That replica has consistent view of causally related items
-
-   4. **Synchronous replication for dependencies:**
-   - When writing comment, wait for post to replicate first
-   - Increases latency but guarantees causality
+   For strict strong consistency, you must satisfy the quorum rule `W + R > N`. To prioritize high availability and fast reads, you should set `R=1` and `W=5`. By reading from just 1 node, read latency is extremely low, but writing requires an acknowledgement from all 5 nodes to guarantee overlap. The major drawback is fault tolerance: if even a single node goes down, your write operations will block or fail entirely. This configuration heavily penalizes write latency and write availability to ensure readers never wait and always see the latest data.
    </details>
 
-7. **You're implementing a collaborative document editor. User A inserts "Hello" at position 0. User B inserts "World" at position 0 (concurrently, before seeing A's edit). After sync, what are the possible results? How do CRDTs or OT handle this?**
+6. **A social media platform stores user posts with eventual consistency. User A posts "Hello", then immediately comments "First!" on their own post. Another user B refreshes their feed and sees the comment "First!" but not the original "Hello" post. What specific consistency property is violated, and how would you architecturally prevent it?**
    <details markdown="1">
    <summary>Answer</summary>
 
-   **Possible results without proper handling:**
-   - "HelloWorld" (A's edit applied first)
-   - "WorldHello" (B's edit applied first)
-   - "Hello" or "World" (one overwrites the other - data loss!)
+   This scenario violates **Causal Consistency**, as a dependent event (the comment) was made visible before its cause (the original post). This happens when the comment replicates to a secondary node faster than the post itself. To prevent this, you should implement explicit causal dependency tracking. The comment object would include the post ID in a dependencies list (e.g., `deps: [post_id]`), and the receiving replica would hold the comment in a pending state, refusing to serve it to clients until the required parent post has successfully replicated locally.
+   </details>
 
-   **The challenge:**
-   Both edits target position 0, but position 0 means something different after the first edit is applied.
+7. **You're implementing a collaborative document editor. User A inserts "Hello" at position 0. User B inserts "World" at position 0 (concurrently, before seeing A's edit). After syncing, what mechanism prevents the document state from being scrambled or losing data?**
+   <details markdown="1">
+   <summary>Answer</summary>
 
-   **Operational Transformation (OT) approach:**
-   ```
-   A's operation: insert("Hello", pos=0)
-   B's operation: insert("World", pos=0)
-
-   When A receives B's op:
-   - A already has "Hello" at 0-4
-   - Transform B's op: insert("World", pos=0) stays at 0
-   - Result at A: "WorldHello"
-
-   When B receives A's op:
-   - B already has "World" at 0-4
-   - Transform A's op: insert("Hello", pos=5) (shifted by "World" length)
-   - Result at B: "WorldHello"
-   ```
-   Both converge to same result through transformation.
-
-   **CRDT approach (e.g., RGA - Replicated Growable Array):**
-   - Each character has unique ID (timestamp + node)
-   - Insert specifies "insert after character with ID X"
-   - Concurrent inserts at same position sorted by ID
-   - Deterministic ordering without transformation
-
-   ```
-   A inserts "Hello" with ID (A,1) after start
-   B inserts "World" with ID (B,1) after start
-   Sort by ID: (A,1) < (B,1) → "HelloWorld"
-   (or (B,1) < (A,1) → "WorldHello" - consistent either way)
-   ```
-
-   **Key insight**: Both OT and CRDTs guarantee convergence, but via different mechanisms—OT transforms operations, CRDTs use commutative data structures.
+   Systems prevent this using either Operational Transformation (OT) or Replicated Growable Array CRDTs. If using OT, when User A receives B's operation, the system algorithmically transforms the index of B's insert to account for the length of "Hello", shifting it so both strings are preserved. If using a CRDT, every inserted character is assigned a unique, immutable ID (comprising a timestamp and node ID) rather than relying on absolute indices. Because the edits are anchored to surrounding character IDs, they will sort deterministically across all clients, resulting in either "HelloWorld" or "WorldHello" consistently everywhere without data loss.
    </details>
 
 8. **A G-Counter CRDT has the following state across 3 nodes. Calculate the total count. Then Node B increments by 5 and syncs with Node A. What's Node A's new state?**
-   ```
+   ```text
    Node A: {A: 10, B: 3, C: 7}
    Node B: {A: 8,  B: 3, C: 5}
    Node C: {A: 10, B: 2, C: 7}
@@ -1123,39 +480,8 @@ LIMITATIONS
    <details markdown="1">
    <summary>Answer</summary>
 
-   **Current total count at each node:**
-   - Node A: 10 + 3 + 7 = **20**
-   - Node B: 8 + 3 + 5 = **16**
-   - Node C: 10 + 2 + 7 = **19**
-
-   Note: Nodes have different views because replication is eventual. The "true" count is the maximum of each component: max(10,8,10) + max(3,3,2) + max(7,5,7) = 10 + 3 + 7 = **20**
-
-   **After Node B increments by 5:**
-   ```
-   Node B: {A: 8, B: 8, C: 5}  (B's count: 3 + 5 = 8)
-   ```
-
-   **After Node B syncs with Node A:**
-
-   G-Counter merge rule: take max of each component
-   ```
-   Node A before: {A: 10, B: 3, C: 7}
-   Node B after:  {A: 8,  B: 8, C: 5}
-
-   Merge:
-   A: max(10, 8) = 10
-   B: max(3, 8) = 8
-   C: max(7, 5) = 7
-
-   Node A after: {A: 10, B: 8, C: 7}
-   Total: 10 + 8 + 7 = 25
-   ```
-
-   **Why this works:**
-   - Each node only ever increments its own counter
-   - Taking max never loses increments
-   - Order of syncs doesn't matter (commutative)
-   - Syncing twice gives same result (idempotent)
+   The true total count initially is the sum of the maximums of each component across all nodes: `max(10,8,10) + max(3,3,2) + max(7,5,7) = 10 + 3 + 7 = 20`. 
+   When Node B increments by 5, its local state becomes `{A: 8, B: 8, C: 5}`. When Node B syncs this new vector to Node A, the merge function takes the highest known value for each node key. Node A's state updates to `{A: max(10,8), B: max(3,8), C: max(7,5)}`, resulting in `{A: 10, B: 8, C: 7}`. The mathematical max function ensures increments are safely merged without duplication.
    </details>
 
 ---
@@ -1183,7 +509,7 @@ kubectl patch configmap test-data -p '{"data":{"value":"2"}}'
 # (Kubernetes uses etcd with strong consistency)
 ```
 
-Note: Kubernetes uses strongly consistent etcd, so you won't see replication lag. This exercise shows the contrast.
+Note: Kubernetes (v1.35+) uses strongly consistent etcd, so you won't see replication lag. This exercise shows the contrast.
 
 **Part 2: Simulate Conflict Resolution (15 minutes)**
 
@@ -1244,9 +570,7 @@ Questions:
 ## Further Reading
 
 - **"Designing Data-Intensive Applications"** - Martin Kleppmann. Chapter 5 covers replication and consistency in depth.
-
 - **"A comprehensive study of Convergent and Commutative Replicated Data Types"** - Shapiro et al. The foundational CRDT paper.
-
 - **"Dynamo: Amazon's Highly Available Key-value Store"** - DeCandia et al. The paper that popularized eventual consistency.
 
 ---
