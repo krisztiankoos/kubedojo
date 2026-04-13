@@ -605,6 +605,8 @@ count by (pod) (http_requests_total)
 # If this returns 500+ series, "pod" label is too granular
 ```
 
+> **Pause and predict**: If you implement a recording rule to aggregate metrics by deployment, what happens to the historical data stored under the original pod-level metric name?
+
 ---
 
 ## Cross-Cloud Distributed Tracing
@@ -638,6 +640,8 @@ flowchart TD
     OTelA --> Tempo
     OTelB --> Tempo
 ```
+
+> **Pause and predict**: If the Frontend Service and Payment Service belong to different teams using different tracing instrumentation (e.g., Jaeger vs. Zipkin clients), what happens to the trace context when the HTTP request crosses the cluster boundary?
 
 ### Tail-Based Sampling for Traces
 
@@ -784,7 +788,7 @@ In this exercise, you will deploy a monitoring stack with Prometheus, Thanos Sid
 
 ```bash
 # Create cluster
-kind create cluster --name obs-lab
+kind create cluster --name obs-lab --image kindest/node:v1.35.0
 
 # Add Helm repos
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
