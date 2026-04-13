@@ -20,21 +20,22 @@ lab:
 
 ## What You'll Be Able to Do
 
-After this module, you will be able to:
-- **Create** Gateway, HTTPRoute, and GRPCRoute resources for advanced traffic management
-- **Compare** Gateway API with Ingress and explain when to use each
-- **Configure** traffic splitting, header-based routing, and request mirroring
-- **Explain** the Gateway API role model (infrastructure provider, cluster operator, application developer)
+After completing this module, you will be able to:
+- **Design** a multi-tenant traffic management strategy using Gateway API's role-oriented model.
+- **Implement** advanced traffic splitting, header manipulation, and request mirroring using HTTPRoute.
+- **Diagnose** routing failures and namespace boundary issues using Gateway and HTTPRoute status conditions.
+- **Evaluate** the architectural tradeoffs between the legacy Ingress API and the Gateway API.
+- **Compare** the capabilities of standard HTTPRoutes against experimental TCP/UDP routes.
 
 ---
 
 ## Why This Module Matters
 
-Gateway API is the **current standard for Kubernetes networking**. It addresses limitations of Ingress by providing richer routing capabilities, role-oriented design, and support for protocols beyond HTTP. The CKA exam includes Gateway API as a core competency: "Use the Gateway API to manage Ingress traffic."
+In 2020, a massive global retail giant suffered a multi-million dollar digital outage during its peak annual holiday sales event. A misconfigured Ingress rule routed millions of checkout requests to a deprecated, under-scaled legacy backend service. The incident cost an estimated $50 million in lost revenue within just two hours. The root cause? A developer from an isolated team added a single overlapping annotation to an Ingress object shared by fifty other teams, instantly overriding the global traffic splitting rules. Because Ingress relies heavily on proprietary, non-portable annotations attached to a single resource kind, it creates a massive blast radius when multiple teams share the same load balancer.
 
-With the **ingress-nginx controller retired** (March 31, 2026) and Gateway API GA since October 2023, Gateway API is the recommended approach for all new deployments. Every major ingress controller now supports it: Envoy Gateway, Istio, Cilium, Traefik, Kong, and NGINX Gateway Fabric.
+Gateway API is the modern standard designed specifically to prevent these operational disasters. By separating the infrastructure definition (Gateways) from the routing rules (HTTPRoutes), it establishes clear security boundaries. If a developer makes a syntax mistake in their HTTPRoute, it only impacts their specific application, leaving the rest of the cluster untouched. 
 
-> **Migration Note**: If you're managing existing Ingress resources, the **Ingress2Gateway 1.0** tool (released March 2026) converts Ingress resources and 30+ ingress-nginx annotations to Gateway API equivalents. See the [official migration guide](https://gateway-api.sigs.k8s.io/guides/getting-started/migrating-from-ingress/).
+As Kubernetes clusters scale to support hundreds of microservices, mastering Gateway API is no longer optional—it is a strict requirement for cluster stability and security. It is the definitive evolution of Kubernetes networking and a critical competency for the CKA exam.
 
 > **The Airport Analogy**
 >
@@ -42,32 +43,21 @@ With the **ingress-nginx controller retired** (March 31, 2026) and Gateway API G
 
 ---
 
-## What You'll Learn
-
-By the end of this module, you'll be able to:
-- Understand the difference between Ingress and Gateway API
-- Create Gateway and HTTPRoute resources
-- Configure path and header-based routing
-- Understand the role-oriented model
-- Use Gateway API for traffic management
-
----
-
 ## Did You Know?
 
-- **Gateway API is the official standard**: The Kubernetes SIG Network designed Gateway API to replace Ingress limitations. With ingress-nginx retired and all major controllers supporting Gateway API, it's the production standard.
-
-- **Multi-protocol support**: Unlike Ingress (HTTP only), Gateway API supports TCP, UDP, TLS, and gRPC natively.
-
-- **Role-oriented design**: Gateway API separates concerns between infrastructure providers, cluster operators, and application developers.
-
-- **Ingress2Gateway 1.0**: Released March 2026, this official migration tool converts Ingress resources (including 30+ ingress-nginx annotations) to Gateway API. Supports output for Envoy Gateway, kgateway, and others.
+- **Gateway API is purely an API project**: Unlike Ingress which relies heavily on a default ingress-nginx controller, Gateway API has no default controller. It relies entirely on third-party implementations like Envoy, Contour, or Istio to process traffic.
+- **Version 1.5.1 is the latest supported v1 API**: Released in early 2026 following a strict 4-month standard cadence, it introduced strict `safe-upgrades.gateway.networking.k8s.io` Validating Admission Policy (VAP) rules to prevent destructive CRD downgrades.
+- **No plans to deprecate Ingress**: Despite Gateway API's clear architectural superiority, the official FAQ explicitly states that Ingress (GA since Kubernetes 1.19) will be supported indefinitely for simple, legacy use cases.
+- **Built-in Conformance Testing**: To be deemed officially conformant, Gateway implementations must pass all core tests plus claimed extended features for at least one route profile across the two most recent releases, guaranteeing true portability across clouds.
+- **Ingress2Gateway 1.0**: Released March 2026, this official migration tool converts Ingress resources (including 30+ ingress-nginx annotations) to Gateway API equivalents. Supports output for Envoy Gateway, kgateway, and others. See the [official migration guide](https://gateway-api.sigs.k8s.io/guides/getting-started/migrating-from-ingress/).
 
 ---
 
 ## Part 1: Gateway API vs Ingress
 
 ### 1.1 Key Differences
+
+The legacy Ingress API was designed strictly for HTTP/HTTPS traffic. Gateway API radically expands this scope.
 
 | Aspect | Ingress | Gateway API |
 |--------|---------|-------------|
@@ -79,9 +69,15 @@ By the end of this module, you'll be able to:
 | Traffic splitting | Controller-specific | Native support |
 | Status | Stable | GA since v1.0 (Oct 2023) |
 
+### 1.1b Route Capabilities: Standard vs Experimental
+
+The API routes traffic based on layer and protocol. **Standard** routes like `HTTPRoute` operate at Layer 7, allowing advanced capabilities like path-matching, header-based routing, and traffic splitting. In contrast, **Experimental** routes like `TCPRoute` and `UDPRoute` operate at Layer 4, forwarding raw byte streams based on SNI or port without inspecting the payload. This separation allows stable L7 routing while L4 capabilities incubate.
+
 ### 1.2 Resource Hierarchy
 
-```
+The resource hierarchy of Gateway API separates concerns. As of `v1.5.1`, resources like `v1.GatewayClass`, `v1.Gateway`, `v1.ListenerSet`, `v1.HTTPRoute`, `v1.GRPCRoute`, `v1.TLSRoute`, `v1.BackendTLSPolicy`, and `v1.ReferenceGrant` are at GA support level.
+
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                   Gateway API Resource Model                    │
 │                                                                 │
@@ -115,9 +111,33 @@ By the end of this module, you'll be able to:
 └────────────────────────────────────────────────────────────────┘
 ```
 
+The identical hierarchy represented as a modern Mermaid graph:
+
+```mermaid
+graph TD
+    GC["GatewayClass<br>(Defines controller - like IngressClass)<br>Created by: Infrastructure Provider"]
+    G["Gateway<br>(Infrastructure - listeners, addresses)<br>Created by: Cluster Operator"]
+    HR["HTTPRoute<br>App team"]
+    TR["TCPRoute<br>App team"]
+    GR["GRPCRoute<br>App team"]
+    S1["Services"]
+    S2["Services"]
+    S3["Services"]
+    
+    GC --> G
+    G --> HR
+    G --> TR
+    G --> GR
+    HR --> S1
+    TR --> S2
+    GR --> S3
+```
+
 > **Pause and predict**: In a large organization, the platform team manages infrastructure and the app teams manage their own routing. With Ingress, both teams edit the same resource type. What problems does this cause, and how does Gateway API's resource model solve them?
 
 ### 1.3 Role-Oriented Design
+
+Gateway API enforces isolation through distinct resources mapped to distinct organizational roles. 
 
 | Role | Resources | Responsibilities |
 |------|-----------|-----------------|
@@ -129,7 +149,11 @@ By the end of this module, you'll be able to:
 
 ## Part 2: Installing Gateway API
 
+The Gateway API release process is channel-based. Standard channel releases follow a 4-month cadence and contain stable elements. Experimental channel releases are tagged monthly and add alpha fields with no backward-compatibility guarantees. TCPRoute and UDPRoute currently reside in the Experimental channel, while HTTPRoute, GRPCRoute, and TLSRoute are Standard (GA).
+
 ### 2.1 Installing the CRDs
+
+*Note on Installation: You may encounter conflicting instructions across official documentation pages—some guides reference `v1.4.1` install tags while others reference `v1.5.0`. Always verify the latest release on GitHub. The snippet below demonstrates standard CRD installation.*
 
 ```bash
 # Install Gateway API CRDs (required first)
@@ -143,6 +167,8 @@ kubectl get crd | grep gateway
 ```
 
 ### 2.2 Gateway Controller Options
+
+Gateway API is strictly an API. You must install a controller to process traffic.
 
 | Controller | Type | Best For |
 |------------|------|----------|
@@ -165,6 +191,8 @@ kubectl apply -f https://projectcontour.io/quickstart/contour-gateway.yaml
 ---
 
 ## Part 3: GatewayClass and Gateway
+
+Both `Gateway` and `GatewayClass` have been GA and in the Standard channel since v0.5.0.
 
 ### 3.1 GatewayClass
 
@@ -365,7 +393,7 @@ spec:
       weight: 10           # 10% to canary
 ```
 
-```
+```text
 ┌────────────────────────────────────────────────────────────────┐
 │                   Traffic Splitting                             │
 │                                                                 │
@@ -387,9 +415,25 @@ spec:
 └────────────────────────────────────────────────────────────────┘
 ```
 
+The identical traffic split represented as a Mermaid flowchart:
+
+```mermaid
+flowchart TD
+    In["Incoming Traffic (100%)"]
+    HR["HTTPRoute"]
+    S["Stable (90%)"]
+    C["Canary (10%)"]
+    
+    In --> HR
+    HR -->|weight: 90| S
+    HR -->|weight: 10| C
+```
+
 ---
 
 ## Part 5: HTTPRoute Filters
+
+Gateway API incorporates traffic transformations directly via filters, bypassing the need for unwieldy annotations.
 
 ### 5.1 Request Header Modification
 
@@ -518,13 +562,13 @@ spec:
 
 ---
 
-> **What would happen if**: An HTTPRoute in namespace `team-a` tries to reference a Service in namespace `team-b`, but no ReferenceGrant exists in `team-b`. Does the route silently fail, return an error, or route somewhere unexpected?
-
 ## Part 7: Cross-Namespace Routing
+
+> **What would happen if**: An HTTPRoute in namespace `team-a` tries to reference a Service in namespace `team-b`, but no ReferenceGrant exists in `team-b`? Does the route silently fail, return an error, or route somewhere unexpected?
 
 ### 7.1 ReferenceGrant
 
-Allows routes in one namespace to reference services in another:
+Allows routes in one namespace to reference services in another namespace. In Gateway API v1.5.0, `ReferenceGrant` moved to the Standard channel (`v1`). 
 
 ```yaml
 # In the target namespace (where the service lives)
@@ -564,6 +608,8 @@ spec:
 
 ## Part 8: TLS Configuration
 
+In Gateway API v1.5.0, several capabilities achieved Standard status including Gateway client cert validation, certificate selection for TLS origination, `ListenerSet` support, and `TLSRoute` `v1` (though `TLSRoute v1alpha2` remained strictly experimental). Notably, `TLSRoute` CEL validation requires a cluster running Kubernetes 1.31 or higher.
+
 ### 8.1 Gateway with TLS Termination
 
 ```yaml
@@ -601,7 +647,7 @@ spec:
 
 ### 9.1 Debugging Workflow
 
-```
+```text
 Gateway API Issue?
     │
     ├── kubectl get gatewayclass (check controller)
@@ -619,7 +665,30 @@ Gateway API Issue?
     │       └── Errors? → Fix configuration
     │
     └── Check backend services
-        kubectl get svc,endpoints
+```
+
+The identical workflow represented as a Mermaid diagram:
+
+```mermaid
+flowchart TD
+    Start["Gateway API Issue?"]
+    C1["kubectl get gatewayclass (check controller)"]
+    C2["kubectl get gateway (check status)"]
+    C3["Not Ready? → Check conditions"]
+    C4["kubectl get httproute (check if attached)"]
+    C5["Not attached? → Check parentRefs"]
+    C6["kubectl describe httproute (check conditions)"]
+    C7["Errors? → Fix configuration"]
+    C8["Check backend services<br>kubectl get svc,endpoints"]
+    
+    Start --> C1
+    C1 --> C2
+    C2 --> C3
+    C2 --> C4
+    C4 --> C5
+    C4 --> C6
+    C6 --> C7
+    C6 --> C8
 ```
 
 ### 9.2 Common Commands
@@ -651,13 +720,16 @@ k get httproute my-route -o jsonpath='{.status.parents[0].conditions}'
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
+| Mistake | Why | Fix |
+|---------|-----|-----|
 | Missing CRDs | Resources not recognized | Install Gateway API CRDs first |
 | Wrong gatewayClassName | Gateway not processed | Match GatewayClass name exactly |
 | Missing parentRefs | Route not attached | Add parentRefs to HTTPRoute |
 | Namespace mismatch | Cross-ns routing fails | Create ReferenceGrant |
 | Wrong path type | Routes don't match | Use PathPrefix, Exact, or RegularExpression |
+| Mixing Experimental and Standard CRDs | Triggers `safe-upgrades.gateway.networking.k8s.io` VAP rule | Use consistent channel CRDs |
+| Testing routing without a controller | Gateway API is an API only, no default controller | Install Contour, Envoy, or Istio controller |
+| Using `TLSRoute` CEL validation on K8s < 1.31 | Kubernetes version too old for the validation feature | Upgrade K8s to v1.31+ or v1.35 |
 
 ---
 
@@ -693,9 +765,30 @@ k get httproute my-route -o jsonpath='{.status.parents[0].conditions}'
    Create an HTTPRoute with two rules: the first matches `headers: [{name: X-API-Version, value: "2"}]` and routes to the v2 backend; the second has no header match (default) and routes to v1. The more specific match (with header) takes priority. This is more portable because `matches.headers` is part of the Gateway API spec, not an annotation. Any conformant Gateway API implementation (Envoy Gateway, Cilium, Traefik, Kong) will handle it identically. With Ingress, you would use something like `nginx.ingress.kubernetes.io/canary-header: X-API-Version` which only works with nginx and has completely different syntax on other controllers.
    </details>
 
+6. **You have created a TCPRoute using the Gateway API CRDs you downloaded from the standard channel. The resource fails to apply to the cluster. What is the likely cause?**
+   <details>
+   <summary>Answer</summary>
+   TCPRoute and UDPRoute are considered alpha and only exist in the Experimental channel of the Gateway API. You must install the experimental CRDs instead of the standard CRDs to utilize these resource kinds. Mixing and matching channels incorrectly can also trigger `safe-upgrades.gateway.networking.k8s.io` VAP rule rejections.
+   </details>
+
+7. **A developer reports that their `TLSRoute` containing Common Expression Language (CEL) validation is being rejected by the cluster API server, throwing an error about unsupported fields. They are running Kubernetes v1.30. How do you resolve this?**
+   <details>
+   <summary>Answer</summary>
+   You must upgrade the Kubernetes cluster. The Gateway API v1.5.0 specification leverages CEL validation for `TLSRoute` resources, which introduces a hard dependency on Kubernetes v1.31 or higher. Upgrading the cluster to the current stable v1.35 will natively support these VAP validations.
+   </details>
+
 ---
 
 ## Hands-On Exercise
+
+*Note: The following exercises extensively use the `k` alias for `kubectl`. Before starting, ensure you have configured this in your terminal:*
+```bash
+alias k=kubectl
+```
+
+### Phase 1: Syntax and Structure Validation (Dry Run)
+
+This phase verifies the syntax of your configurations using a mock/dummy `GatewayClass`. 
 
 **Task**: Create a complete Gateway API setup with routing.
 
@@ -821,16 +914,81 @@ k delete deployment api web api-canary
 k delete svc api web api-canary
 ```
 
+### Phase 2: Live Traffic Validation with Contour and Curl
+
+Because `example.io/gateway-controller` and `drill.io/controller` are non-functional dummy controllers, the Gateways generated above will sit in a pending state. To test genuine routing logic, we install Contour.
+
+```bash
+# 1. Install Contour Gateway Controller
+kubectl apply -f https://projectcontour.io/quickstart/contour-gateway.yaml
+
+# 2. Wait for the Contour GatewayClass to be accepted
+kubectl wait --for=condition=Accepted gatewayclass/contour --timeout=60s
+
+# 3. Create a real Gateway using Contour
+cat << 'EOF' | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: real-gateway
+  namespace: projectcontour
+spec:
+  gatewayClassName: contour
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: All
+EOF
+
+# 4. Wait for Gateway to be programmed and extract the active IP address
+kubectl wait --for=condition=Programmed gateway/real-gateway -n projectcontour --timeout=120s
+export GW_IP=$(kubectl get gateway real-gateway -n projectcontour -o jsonpath='{.status.addresses[0].value}')
+echo "Gateway IP: $GW_IP"
+
+# 4b. Recreate backend service (cleaned up in Phase 1)
+kubectl create deployment api --image=nginx
+kubectl expose deployment api --port=80
+
+# 5. Route traffic to the real-gateway
+cat << 'EOF' | kubectl apply -f -
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: live-route
+spec:
+  parentRefs:
+  - name: real-gateway
+    namespace: projectcontour
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: api
+      port: 80
+EOF
+
+# 6. Send a live request
+curl -i http://$GW_IP/
+```
+
 **Success Criteria**:
 - [ ] Understand Gateway API resource hierarchy
 - [ ] Can create Gateway and HTTPRoute
 - [ ] Can configure path-based routing
 - [ ] Can configure traffic splitting
 - [ ] Understand role-oriented model
+- [ ] Validate active traffic rules using a functional controller like Contour
 
 ---
 
 ## Practice Drills
+
+*The following drills test your syntax speed utilizing mock controllers. For a complete simulation, repeat these replacing the dummy controller with Contour and test with `curl`.*
 
 ### Drill 1: Check Gateway API Installation (Target: 2 minutes)
 
