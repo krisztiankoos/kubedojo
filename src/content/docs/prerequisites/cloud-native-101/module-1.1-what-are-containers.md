@@ -162,12 +162,14 @@ flowchart LR
 
 cgroups limit how much resource a container can use:
 
-```text
-Container A: max 512MB RAM, 0.5 CPU
-Container B: max 1GB RAM, 1 CPU
-Container C: max 256MB RAM, 0.25 CPU
-
-Each container is limited, can't starve others
+```mermaid
+flowchart LR
+    Host[Host Resources: CPU & RAM]
+    Host -->|Limit: 0.5 CPU, 512MB| CA[Container A]
+    Host -->|Limit: 1.0 CPU, 1GB| CB[Container B]
+    Host -->|Limit: 0.25 CPU, 256MB| CC[Container C]
+    
+    style Host fill:#f9f,stroke:#333,stroke-width:2px
 ```
 
 ### 3. Union Filesystems (Layered Images)
@@ -374,7 +376,7 @@ Software Containers:
 
    <details>
    <summary>Answer</summary>
-   The system will instantly launch 9 new containers from the 1 existing container image. A container image serves as a static, immutable, and read-only template or blueprint for your application. A container is simply the running, instantiated object created from that blueprint. Because the underlying image is an immutable template, the container orchestrator can rapidly stamp out as many identical running containers as your underlying hardware can support without needing to rebuild or download the application code again.
+   The system will instantly launch 9 new containers from the 1 existing container image. A container image serves as a static, immutable, and read-only template or blueprint for your application. A container is simply the running, instantiated object created from that blueprint. Because the underlying image is an immutable template, the container orchestrator can rapidly stamp out as many identical running containers as your underlying hardware can support without needing to rebuild or download the application code again. This rapid instantiation is what makes containers so powerful for dynamic scaling.
    </details>
 
 6. **Scenario**: A junior developer configures a containerized blogging platform to save uploaded user profile pictures directly to the `/var/www/uploads` directory inside the running container. Later that night, the container crashes and is automatically restarted.
