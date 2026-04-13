@@ -260,44 +260,29 @@ A single EC2 instance is a single point of failure. Modern architectures distrib
 
 ### Architecture Overview
 
-```text
-                          Internet
-                             |
-                    +--------+--------+
-                    | Application     |
-                    | Load Balancer   |
-                    | (ALB)           |
-                    +--------+--------+
-                             |
-             +---------------+---------------+
-             |               |               |
-     +-------+------+ +-----+------+ +------+-------+
-     | Target Group | | Target     | | Target       |
-     | Instance A   | | Group      | | Group        |
-     | (AZ-1a)      | | Instance B | | Instance C   |
-     |              | | (AZ-1b)    | | (AZ-1a)      |
-     +--------------+ +------------+ +--------------+
-             |               |               |
-             +---------------+---------------+
-                             |
-                    +--------+--------+
-                    | Auto Scaling    |
-                    | Group (ASG)     |
-                    |                 |
-                    | Min: 2          |
-                    | Desired: 3      |
-                    | Max: 10         |
-                    |                 |
-                    | Launch Template |
-                    | - AMI           |
-                    | - Instance Type |
-                    | - Security Grp  |
-                    | - User Data     |
-                    +-----------------+
-
-    Scaling Policy (CloudWatch):
-    - CPU > 70% for 3 min  --> Add 2 instances
-    - CPU < 30% for 10 min --> Remove 1 instance
+```mermaid
+flowchart TD
+    Internet([Internet]) --> ALB[Application Load Balancer<br/>ALB]
+    
+    subgraph ASG [Auto Scaling Group]
+        direction TB
+        TGA[Target Group<br/>Instance A<br/>AZ-1a]
+        TGB[Target Group<br/>Instance B<br/>AZ-1b]
+        TGC[Target Group<br/>Instance C<br/>AZ-1a]
+    end
+    
+    ALB --> TGA
+    ALB --> TGB
+    ALB --> TGC
+    
+    subgraph Config [ASG Settings]
+        direction TB
+        Cap[Capacity: Min 2, Desired 3, Max 10]
+        LT[Launch Template: AMI, Type, SG, User Data]
+        Pol[Scaling Policy: CPU > 70% add 2, CPU < 30% remove 1]
+    end
+    
+    Config -.-> ASG
 ```
 
 ### Application Load Balancer (ALB)
