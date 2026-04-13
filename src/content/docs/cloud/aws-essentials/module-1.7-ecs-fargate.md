@@ -45,47 +45,50 @@ In this module, you will learn ECS from the ground up: clusters, task definition
 
 ECS has a handful of core concepts that fit together like nesting boxes. Let us walk through each one.
 
-```
-ECS Architecture:
+```mermaid
+flowchart TB
+    subgraph cluster_ECS [ECS Cluster]
+        direction TB
+        subgraph service_api [Service: api-service]
+            direction TB
+            s1_info["Desired count: 3<br>Launch type: FARGATE"]
+            subgraph tasks_api [Tasks]
+                direction LR
+                t1[Task api]
+                t2[Task api]
+                t3[Task api]
+            end
+            s1_info --- tasks_api
+        end
+        
+        subgraph service_worker [Service: worker-service]
+            direction TB
+            s2_info["Desired count: 2<br>Launch type: FARGATE"]
+            subgraph tasks_worker [Tasks]
+                direction LR
+                t4[Task worker]
+                t5[Task worker]
+            end
+            s2_info --- tasks_worker
+        end
+        
+        standalone["Standalone Task<br>one-off migration job"]
+    end
 
-+------------------------------------------------------------------+
-|  ECS Cluster                                                      |
-|  (Logical grouping of tasks/services)                            |
-|                                                                   |
-|  +---------------------------+  +-----------------------------+  |
-|  | Service: api-service      |  | Service: worker-service     |  |
-|  | Desired count: 3          |  | Desired count: 2            |  |
-|  | Launch type: FARGATE      |  | Launch type: FARGATE        |  |
-|  |                           |  |                             |  |
-|  | +-------+ +-------+ +--+ |  | +-------+ +-------+         |  |
-|  | | Task  | | Task  | |T | |  | | Task  | | Task  |         |  |
-|  | | (api) | | (api) | |(a)| |  | |(work)| |(work)|         |  |
-|  | +-------+ +-------+ +--+ |  | +-------+ +-------+         |  |
-|  +---------------------------+  +-----------------------------+  |
-|                                                                   |
-|  +---------------------------+                                   |
-|  | Standalone Task           |  (Not part of a service)          |
-|  | (one-off migration job)   |                                   |
-|  +---------------------------+                                   |
-+------------------------------------------------------------------+
-
-Each Task runs one or more containers defined in a Task Definition:
-
-Task Definition (JSON blueprint):
-+------------------------------------------+
-| Family: api-task                         |
-| CPU: 512 (.5 vCPU)    Memory: 1024 (1GB)|
-| Network Mode: awsvpc                     |
-|                                          |
-| Container 1: api                         |
-|   Image: 123456789012.dkr.ecr....:v1.0  |
-|   Port: 8080                             |
-|   Environment: [...]                     |
-|                                          |
-| Container 2: envoy-sidecar               |
-|   Image: envoyproxy/envoy:v1.28         |
-|   Port: 9901                             |
-+------------------------------------------+
+    subgraph task_def [Task Definition JSON blueprint]
+        direction TB
+        td_meta["Family: api-task<br>CPU: 512 | Memory: 1024<br>Network Mode: awsvpc"]
+        c1["Container 1: api<br>Image: .../api:v1.0<br>Port: 8080"]
+        c2["Container 2: envoy-sidecar<br>Image: envoyproxy/envoy:v1.31<br>Port: 9901"]
+        
+        td_meta --- c1
+        td_meta --- c2
+    end
+    
+    t1 -. "runs from" .-> task_def
+    style s1_info fill:none,stroke:none
+    style s2_info fill:none,stroke:none
+    style td_meta fill:none,stroke:none
 ```
 
 ### Core Concepts
@@ -210,22 +213,23 @@ Fargate does not let you choose arbitrary CPU/memory combinations. Here are the 
 
 This is one of the most commonly confused concepts in ECS.
 
-```
-IAM Role Separation:
+```mermaid
+flowchart TD
+    subgraph ExecRole [Task Execution Role]
+        direction TB
+        ER_Name["ecsTaskExecutionRole"]
+        ER_Agent["Used by ECS AGENT to:<br/>- Pull images from ECR<br/>- Fetch secrets from Secrets Manager / SSM<br/>- Write logs to CloudWatch<br/>- Infrastructure actions needed to START"]
+        ER_Time["Runs BEFORE your code starts"]
+        ER_Name --> ER_Agent --> ER_Time
+    end
 
-Task Execution Role                    Task Role
-(ecsTaskExecutionRole)                 (your-app-task-role)
-         |                                    |
-   Used by ECS AGENT to:               Used by YOUR CODE to:
-   - Pull images from ECR              - Read from S3
-   - Fetch secrets from                - Write to DynamoDB
-     Secrets Manager / SSM             - Publish to SNS/SQS
-   - Write logs to CloudWatch          - Call any AWS API your
-   - Any infrastructure action            application needs
-     needed to START the task
-         |                                    |
-   Runs BEFORE your code starts        Available INSIDE the container
-                                       via the metadata endpoint
+    subgraph TaskRole [Task Role]
+        direction TB
+        TR_Name["your-app-task-role"]
+        TR_Code["Used by YOUR CODE to:<br/>- Read from S3<br/>- Write to DynamoDB<br/>- Publish to SNS/SQS<br/>- Call any needed AWS API"]
+        TR_Avail["Available INSIDE the container<br/>via the metadata endpoint"]
+        TR_Name --> TR_Code --> TR_Avail
+    end
 ```
 
 ```bash
@@ -637,17 +641,15 @@ ECS supports several deployment strategies. Understanding when to use each one p
 
 ### Rolling Update (Default)
 
-```
-Rolling Update (minimumHealthyPercent: 100, maximumPercent: 200):
-
-Time 0:  [v1] [v1] [v1]              <- 3 tasks running v1
-Time 1:  [v1] [v1] [v1] [v2] [v2]    <- 2 new v2 tasks launching
-Time 2:  [v1] [v1] [v1] [v2] [v2]    <- v2 tasks pass health checks
-Time 3:  [v1]       [v2] [v2] [v2]    <- 2 v1 tasks draining
-Time 4:             [v2] [v2] [v2]    <- Deployment complete
-
-Total time: ~3-5 minutes
-Downtime: Zero (if health checks are correct)
+```mermaid
+flowchart TB
+    T0["Time 0: [v1] [v1] [v1] (3 tasks running v1)"]
+    T1["Time 1: [v1] [v1] [v1] [v2] [v2] (2 new v2 tasks launching)"]
+    T2["Time 2: [v1] [v1] [v1] [v2] [v2] (v2 tasks pass health checks)"]
+    T3["Time 3: [v1] [v2] [v2] [v2] (2 v1 tasks draining)"]
+    T4["Time 4: [v2] [v2] [v2] (Deployment complete)"]
+    
+    T0 --> T1 --> T2 --> T3 --> T4
 ```
 
 ### Blue/Green with CodeDeploy
@@ -677,25 +679,15 @@ aws ecs create-service \
   }]'
 ```
 
-```
-Blue/Green Deployment:
+```mermaid
+flowchart TB
+    T0["Time 0: All traffic to blue<br/>ALB ➔ [TG-Blue: v1, v1, v1]<br/>ALB   [TG-Green: empty]"]
+    T1["Time 1: Green tasks launching<br/>ALB ➔ [TG-Blue: v1, v1, v1]<br/>ALB   [TG-Green: v2, v2, v2]"]
+    T2["Time 2: Green passes health checks<br/>ALB ➔ [TG-Blue: v1, v1, v1]<br/>ALB ⤬ [TG-Green: v2, v2, v2] (Test traffic)"]
+    T3["Time 3: Traffic shifts to green<br/>ALB   [TG-Blue: v1, v1, v1]<br/>ALB ➔ [TG-Green: v2, v2, v2]"]
+    T4["Time 4: Blue drains and terminates<br/>ALB   [TG-Blue: draining...]<br/>ALB ➔ [TG-Green: v2, v2, v2]"]
 
-Time 0:  ALB --> [TG-Blue: v1, v1, v1]     <- All traffic to blue
-         ALB     [TG-Green: empty]
-
-Time 1:  ALB --> [TG-Blue: v1, v1, v1]     <- Green tasks launching
-         ALB     [TG-Green: v2, v2, v2]
-
-Time 2:  ALB --> [TG-Blue: v1, v1, v1]     <- Green passes health checks
-         ALB -x  [TG-Green: v2, v2, v2]    <- Test traffic to green (optional)
-
-Time 3:  ALB     [TG-Blue: v1, v1, v1]     <- Traffic shifts to green
-         ALB --> [TG-Green: v2, v2, v2]
-
-Time 4:  ALB     [TG-Blue: draining...]    <- Blue drains and terminates
-         ALB --> [TG-Green: v2, v2, v2]
-
-Rollback at any point: Shift traffic back to Blue instantly
+    T0 --> T1 --> T2 --> T3 --> T4
 ```
 
 > **Pause and predict**: You manage a high-traffic payment processing API. A failed deployment that causes even 30 seconds of downtime will result in thousands of dropped transactions. The new version (v2) includes a subtle database connection pool bug that only manifests under high load, meaning it will pass the initial ALB health checks. If you use a Rolling Update, what will happen when v2 is deployed? How would Blue/Green mitigate this?
@@ -770,37 +762,37 @@ This configuration guarantees 2 tasks on regular Fargate (`base: 2`) and distrib
 <details>
 <summary>1. Scenario: You are migrating a monolithic application to AWS. Your team wants to run a single container for a one-off database migration script, and a fleet of 5 containers for the main web application that must automatically replace any containers that crash. How do ECS Tasks and Services map to these two requirements?</summary>
 
-For the database migration script, you would run a standalone ECS Task. A task is simply a running instance of a task definition, perfect for one-off jobs that start, do their work, and terminate. For the web application, you would create an ECS Service with a desired count of 5. The service acts as a process manager that ensures exactly 5 tasks are running at all times, integrates with your load balancer to distribute traffic, and automatically launches replacements if a task fails health checks or crashes.
+For the database migration script, you would run a standalone ECS Task. A task is simply a running instance of a task definition, perfect for one-off jobs that start, do their work, and then terminate once complete. Because you do not want the migration to run continuously or restart after it finishes successfully, a service is the wrong choice here. Conversely, for the web application, you would create an ECS Service with a desired count of 5. The service acts as an intelligent process manager that ensures exactly 5 tasks are running at all times to handle incoming traffic. By using a service, ECS integrates directly with your load balancer to distribute traffic evenly and automatically launches replacements if a task fails health checks or crashes, ensuring high availability.
 </details>
 
 <details>
 <summary>2. Scenario: Your security team mandates that the `payment-processing` container must be completely isolated at the network level from the `public-api` container, even if they happen to be scheduled on the same underlying physical infrastructure. How does Fargate's `awsvpc` network mode achieve this, and what architectural constraint does this introduce?</summary>
 
-The `awsvpc` network mode assigns each individual task its own Elastic Network Interface (ENI) with a dedicated private IP address from your VPC. This means you can attach completely different Security Groups to the `payment-processing` task and the `public-api` task, providing strict network isolation at the ENI level regardless of where the tasks physically run. The architectural constraint this introduces is IP address exhaustion; because every single task consumes an IP address from your subnet, a service scaling out to hundreds of tasks requires a VPC and subnets with a sufficiently large CIDR block (e.g., /19 or /20) to accommodate them.
+The `awsvpc` network mode assigns each individual task its own Elastic Network Interface (ENI) with a dedicated private IP address from your VPC. This means you can attach completely different Security Groups directly to the `payment-processing` task and the `public-api` task. By doing so, you achieve strict network isolation at the ENI level regardless of where the tasks physically run, satisfying the security team's requirement. The primary architectural constraint this introduces is IP address exhaustion. Because every single task consumes an IP address from your subnet, a service scaling out to hundreds of tasks requires a VPC and subnets with a sufficiently large CIDR block (e.g., /19 or /20) to accommodate them all.
 </details>
 
 <details>
 <summary>3. Scenario: You deploy a new version of your application with a misconfigured environment variable causing the container to crash immediately on startup. Your ECS service has a desired count of 4. What exactly will ECS do in response to this bad deployment if the deployment circuit breaker is NOT enabled, versus if it IS enabled?</summary>
 
-Without the deployment circuit breaker, ECS will enter an endless loop of launching new tasks, seeing them fail health checks, stopping them, and launching more replacements indefinitely. Your service will be stuck in a "deploying" state forever, consuming resources and muddying your logs without ever stabilizing. You would have to manually intervene by forcing a new deployment with the previous task definition to break the loop. With the circuit breaker enabled, ECS actively monitors the failure rate of the newly launched tasks; once a threshold of failures is reached, it automatically halts the deployment and rolls the service back to the last known healthy task definition revision, restoring stability without human intervention.
+Without the deployment circuit breaker, ECS will enter an endless loop of launching new tasks, seeing them fail health checks, stopping them, and launching more replacements indefinitely. Your service will be stuck in a "deploying" state forever, consuming resources and muddying your logs without ever stabilizing, which requires manual intervention to force a new deployment. With the circuit breaker enabled, ECS actively monitors the failure rate of the newly launched tasks during the deployment. Once a threshold of failures is reached, it automatically halts the deployment and rolls the service back to the last known healthy task definition revision. This built-in mechanism restores stability without human intervention and prevents a bad configuration from taking down your entire service.
 </details>
 
 <details>
 <summary>4. Scenario: A memory leak is occurring in your production Fargate task, but it only happens after several hours of sustained traffic. The logs do not provide enough detail, and you need to run `jmap` (a Java profiling tool) inside the running container to dump the heap. How do you gain access to this container given that Fargate does not allow SSH to the host machine?</summary>
 
-You must use ECS Exec, which leverages AWS Systems Manager (SSM) Session Manager to establish a secure WebSocket connection directly into the running container. To make this work, your task role must have the necessary `ssmmessages` IAM permissions, and your ECS service must have been created or updated with the `--enable-execute-command` flag. Once configured, you can use the AWS CLI (`aws ecs execute-command`) to drop into an interactive shell inside the container without needing an SSH server. This allows you to run your profiling tools just like you would with `docker exec`, all while maintaining a secure, centrally logged audit trail of every command executed.
+You must use ECS Exec, which leverages AWS Systems Manager (SSM) Session Manager to establish a secure WebSocket connection directly into the running container. To make this work, your task role must have the necessary `ssmmessages` IAM permissions, and your ECS service must have been created or updated with the `--enable-execute-command` flag. Once configured, you can use the AWS CLI (`aws ecs execute-command`) to drop into an interactive shell inside the container without needing an SSH server. This allows you to run your profiling tools just like you would with `docker exec`, all while maintaining a secure, centrally logged audit trail of every command executed, which is critical for compliance in production.
 </details>
 
 <details>
 <summary>5. Scenario: Your company processes satellite imagery using a proprietary machine learning model that requires NVIDIA GPUs to complete processing within acceptable timeframes. At the same time, you have a lightweight Go-based API that serves the processed images to web clients with highly unpredictable traffic spikes. Which ECS launch type should you choose for each workload, and why?</summary>
 
-For the satellite imagery processing workload, you must use the EC2 launch type because Fargate does not support GPU instances as of the current AWS offerings. You will need to provision EC2 instances with GPUs (like the p3 or g5 families), manage their AMIs, and register them to your ECS cluster. Conversely, for the Go-based API, you should use the Fargate launch type because its unpredictable traffic spikes benefit from Fargate's ability to seamlessly scale out tasks. Fargate abstracts away the underlying infrastructure completely, allowing you to quickly scale up to meet demand and pay only for the precise compute the API consumes during those spikes.
+For the satellite imagery processing workload, you must use the EC2 launch type because Fargate does not support GPU instances natively as of the current AWS offerings. You will need to provision EC2 instances with GPUs (like the p3 or g5 families), manage their AMIs, and register them to your ECS cluster to provide the necessary hardware acceleration. Conversely, for the Go-based API, you should use the Fargate launch type. Fargate's ability to seamlessly scale out tasks is perfect for unpredictable traffic spikes, as it abstracts away the underlying infrastructure completely. This allows you to quickly scale up to meet demand without pre-provisioning idle capacity, ensuring you pay only for the precise compute the API consumes during those bursts.
 </details>
 
 <details>
 <summary>6. Scenario: You are designing the compute architecture for a system that generates end-of-month financial reports. The job takes about 45 minutes to run, is triggered asynchronously via an SQS queue, and if it fails, the system simply picks the message back up and tries again. You need to minimize AWS costs. How should you configure your ECS capacity providers for this workload?</summary>
 
-You should run this workload entirely on Fargate Spot, which provides up to a 70% discount compared to regular Fargate pricing by utilizing spare AWS compute capacity. Because your application is driven by an SQS queue and is designed to retry automatically upon failure, it can perfectly tolerate the 2-minute interruption warning that Fargate Spot issues when AWS reclaims the capacity. By setting the capacity provider strategy to use Fargate Spot exclusively for this specific worker service, you achieve massive cost savings without risking data loss. This perfectly aligns with the architectural best practice of matching fault-tolerant, asynchronous background jobs to deeply discounted, interruptible compute.
+You should run this workload entirely on Fargate Spot, which provides up to a 70% discount compared to regular Fargate pricing by utilizing spare AWS compute capacity. Because your application is driven by an SQS queue and is designed to retry automatically upon failure, it can perfectly tolerate the 2-minute interruption warning that Fargate Spot issues when AWS reclaims the capacity. If an interruption occurs, the task terminates, the SQS message visibility timeout expires, and another Spot task simply picks it up later. By setting the capacity provider strategy to use Fargate Spot exclusively for this specific worker service, you achieve massive cost savings without risking data loss. This perfectly aligns with the architectural best practice of matching fault-tolerant, asynchronous background jobs to deeply discounted, interruptible compute.
 </details>
 
 ---
