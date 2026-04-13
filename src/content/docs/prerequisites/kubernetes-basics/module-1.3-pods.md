@@ -345,7 +345,7 @@ spec:
         sizeLimit: 1Gi
   initContainers:
     - name: vault-bootstrap
-      image: hashicorp/vault-agent:1.12
+      image: hashicorp/vault-agent:1.16
       command: ["/bin/sh", "-c", "vault pull-secrets > /shared/secrets.env"]
       volumeMounts:
         - name: tmp-scratch-data
@@ -436,7 +436,7 @@ Based on how you configure these two values, Kubernetes categorizes your Pod int
 2. **Burstable**: The Pod has Requests defined that are strictly lower than its Limits. It is guaranteed a baseline, but can "burst" up to its limit if the node has spare resources. If the node runs out of memory, Burstable pods that are exceeding their requests are killed before Guaranteed pods.
 3. **BestEffort**: The Pod has zero Requests and zero Limits defined. It is allowed to use whatever resources are freely available, but if the node experiences the slightest memory pressure, BestEffort pods are terminated immediately to protect the system.
 
-> **Try It Now**: Look at the following specification: CPU Request: 250m, CPU Limit: 500m, Memory Request: 512Mi, Memory Limit: 512Mi. What QoS class will Kubernetes assign to this Pod?
+> **Pause and predict**: Look at the following specification: CPU Request: 250m, CPU Limit: 500m, Memory Request: 512Mi, Memory Limit: 512Mi. What QoS class will Kubernetes assign to this Pod?
 > *(Kubernetes will assign the `Burstable` QoS class. Even though the memory request and limit are equal, the CPU request is strictly less than the CPU limit. For a Pod to be classified as `Guaranteed`, both CPU and memory must have requests perfectly equal to limits.)*
 
 ## Imperative vs. Declarative Management
@@ -451,7 +451,7 @@ This approach is fast and excellent for rapidly generating YAML templates via dr
 This is the universally accepted industry standard. The YAML file is securely committed to a Git repository (a practice known as GitOps). Any changes to the infrastructure must go through a formal pull request and peer code review. If the entire data center burns to the ground, you simply re-apply the repository of YAML files to a new cluster, and your architecture is restored autonomously.
 
 ### War Story: The Ephemeral Ghost in the Machine
-At a major international news agency during a breaking news event, a site reliability engineer manually updated the container image of a critical caching Pod using a fast imperative command (`kubectl set image pod/cache-pod cache=redis:6.2-alpine`). They fixed the bug instantly, restored service, and went home for the weekend. 
+At a major international news agency during a breaking news event, a site reliability engineer manually updated the container image of a critical caching Pod using a fast imperative command (`kubectl set image pod/cache-pod cache=redis:7.2-alpine`). They fixed the bug instantly, restored service, and went home for the weekend. 
 
 However, on Sunday morning, a node hardware failure caused the imperative caching Pod to be automatically evicted and forcefully rescheduled onto a healthy node. Because the engineer's imperative change was completely ephemeral and was never saved to the declarative YAML manifests, the cluster automatically pulled the *old*, buggy image definition directly from the Git repository to recreate the new Pod instance. The application broke again, the entire website went down, and the platform team learned a hard lesson: **If it isn't defined in Git, it simply does not exist.** Never use imperative commands to alter production state.
 
@@ -524,49 +524,49 @@ Now, opening `http://localhost:8080` in your local web browser will route the HT
 <details>
 <summary>1. Scenario: You have an entrenched legacy application that hardcodes its critical audit logs to a local file `/var/log/app.log`. Your organization's strict monitoring standard requires all logs to be streamed to standard output (`stdout`) for Fluentd collection. How should you architect the Pod to meet this requirement without rewriting a single line of the legacy application's C++ source code?</summary>
 
-**Answer:** Implement the Sidecar architectural pattern to solve this without modifying the legacy code. Deploy a multi-container Pod where the legacy application writes its logs to a shared `emptyDir` volume mount. Next, deploy a second sidecar container within the same Pod that mounts this shared volume and runs a continuous command like `tail -f /var/log/app.log`. Because the sidecar reads the file and outputs the data to its own `stdout` stream, the cluster's logging daemon can scrape it seamlessly.
+**Answer:** Implement the Sidecar architectural pattern to solve this without modifying the legacy code. Deploy a multi-container Pod where the legacy application writes its logs to a shared `emptyDir` volume mount. Next, deploy a second sidecar container within the same Pod that mounts this shared volume and runs a continuous command like `tail -f /var/log/app.log`. Because the sidecar reads the file and outputs the data to its own `stdout` stream, the cluster's logging daemon can scrape it seamlessly. This approach successfully isolates the legacy codebase from modern infrastructure requirements.
 </details>
 
 <details>
 <summary>2. Scenario: Your new microservice Pod has been stuck in a `Pending` state for over 15 minutes. You run `kubectl describe pod my-microservice` and see the event: `0/50 nodes are available: 50 Insufficient cpu`. What is the root cause, and what are your two architectural options to resolve it?</summary>
 
-**Answer:** The root cause is that the Pod's requested CPU is higher than the available, unallocated CPU capacity on any single worker node across the cluster. The Scheduler cannot find a node with enough space to accommodate it. To resolve this, you can decrease the CPU `requests` in the Pod's YAML specification if the application does not actually need that much compute. Alternatively, you can add a larger worker node to the cluster or trigger an autoscaling event to provide enough physical capacity.
+**Answer:** The root cause is that the Pod's requested CPU is higher than the available, unallocated CPU capacity on any single worker node across the cluster. The Scheduler evaluates these constraints mathematically and cannot find a node with enough space to accommodate it. To resolve this, you can decrease the CPU `requests` in the Pod's YAML specification if the application does not actually need that much compute. Alternatively, you can add a larger worker node to the cluster or trigger an autoscaling event to provide enough physical capacity. Both options ensure the Scheduler's resource equation can be satisfied.
 </details>
 
 <details>
 <summary>3. Scenario: You are designing a Pod that needs to download a 500MB machine learning model from an S3 bucket before the main Python inference application starts serving traffic. What Kubernetes feature should you implement to guarantee the file is downloaded before the web server boots?</summary>
 
-**Answer:** You should use an Init Container for this strict bootstrapping requirement. Define an Init Container with the `aws-cli` tool and mount an `emptyDir` volume shared with the main Python application. The Init Container runs the S3 download command into the shared volume and exits with a code of 0. Kubernetes guarantees the main container will not start until the Init Container successfully finishes, preventing the application from booting without its required data.
+**Answer:** You should use an Init Container for this strict bootstrapping requirement. Define an Init Container with the `aws-cli` tool and mount an `emptyDir` volume shared with the main Python application. The Init Container runs the S3 download command into the shared volume and exits with a code of 0. Kubernetes guarantees the main container will not start until the Init Container successfully finishes, preventing the application from booting without its required data. By sharing the volume, the downloaded model is immediately available to the main container once it begins initialization.
 </details>
 
 <details>
 <summary>4. Scenario: A developer complains that their Node.js application restarts randomly under load. You inspect the Pod and see a Restart Count of 14, with the Last State indicating `Reason: OOMKilled` and `Exit Code: 137`. What kernel subsystem terminated the container, and what modification is required?</summary>
 
-**Answer:** The Linux kernel's Out Of Memory (OOM) Killer terminated the container. This occurred because the Node.js process attempted to allocate more RAM than permitted by the container's cgroup hard limit. To fix this permanently, you must edit the Pod's declarative YAML manifest and increase the `resources.limits.memory` value. However, you should also ensure the application is not suffering from a continuous memory leak before simply raising the limit.
+**Answer:** The Linux kernel's Out Of Memory (OOM) Killer terminated the container. This occurred because the Node.js process attempted to allocate more RAM than permitted by the container's cgroup hard limit. To fix this permanently, you must edit the Pod's declarative YAML manifest and increase the `resources.limits.memory` value. However, you should also ensure the application is not suffering from a continuous memory leak before simply raising the limit. Addressing the underlying memory usage is just as important as adjusting the cgroup boundary.
 </details>
 
 <details>
 <summary>5. Scenario: Two separate containers are defined in the same Pod. Container A runs an Nginx web server on port 80. Container B runs a Prometheus metrics exporter that needs to scrape the status page from Container A. What hostname and port should Container B use in its HTTP request to connect to Container A?</summary>
 
-**Answer:** Container B should make its HTTP request directly to `http://localhost:80`. This is perfectly possible because all containers within a single Pod share the same network namespace provided by the `pause` container. They can communicate with each other over the loopback interface just as if they were processes running on the same physical server. There is no need to use complex external service names or external cluster IPs.
+**Answer:** Container B should make its HTTP request directly to `http://localhost:80`. This is perfectly possible because all containers within a single Pod share the same network namespace provided by the `pause` container. They can communicate with each other over the loopback interface just as if they were isolated processes running on the exact same physical server. There is no need to use complex external service names or external cluster IPs. This shared networking model significantly simplifies intra-Pod architecture and reduces communication latency.
 </details>
 
 <details>
 <summary>6. Scenario: You notice a production Pod is stuck in `CrashLoopBackOff`. You run `kubectl logs my-failing-pod`, but the terminal output is completely blank. Why might the logs be empty, and how can you determine why the container failed to start?</summary>
 
-**Answer:** The logs might be blank because the application crashed before it could initialize and write any data to standard output. This often happens if the container image is physically missing the entrypoint executable or if a file permission error prevents the process from launching. To investigate, you should use `kubectl describe pod my-failing-pod` and look deeply at the State and Events sections. These sections will reveal the raw exit code or any underlying container runtime errors that definitively explain the failure.
+**Answer:** The logs might be blank because the application crashed before it could initialize and write any data to standard output. This often happens if the container image is physically missing the entrypoint executable or if a file permission error prevents the process from launching. To investigate, you should use `kubectl describe pod my-failing-pod` and look deeply at the State and Events sections. These sections will reveal the raw exit code or any underlying container runtime errors that definitively explain the failure. Diagnosing these early failures is critical because application-level logs simply cannot be generated if the process fails to start.
 </details>
 
 <details>
 <summary>7. Scenario: You used the imperative command `kubectl run test-pod --image=nginx` to test network connectivity. Ten minutes later, the worker node your Pod was scheduled on suffers a hardware failure and loses power. What will happen to your `test-pod`?</summary>
 
-**Answer:** Your `test-pod` will be permanently lost and will not recover on its own. Because the Pod was created imperatively as a naked, unmanaged resource, it is not monitored or governed by a higher-level autonomous controller like a Deployment or ReplicaSet. The control plane will eventually notice the node is dead and mark the Pod's state as `Terminating`. It will not automatically recreate or reschedule the Pod onto a healthy node.
+**Answer:** Your `test-pod` will be permanently lost and will not recover on its own. Because the Pod was created imperatively as a naked, unmanaged resource, it is not monitored or governed by a higher-level autonomous controller like a Deployment or ReplicaSet. The control plane will eventually notice the node is dead and mark the Pod's state as `Terminating`. It will not automatically recreate or reschedule the Pod onto a healthy node. This demonstrates exactly why declarative management and controllers are strictly required for production workloads.
 </details>
 
 <details>
 <summary>8. Scenario: A security audit reveals that an attacker escaped an application container and executed a remote code payload because the container was running as the root user. What YAML configuration must you add to the Pod manifest to prevent this?</summary>
 
-**Answer:** You must add a `securityContext` block to the Pod or container specification. Specifically, add `runAsNonRoot: true` to mandate that the container executes as an unprivileged user. Additionally, setting `readOnlyRootFilesystem: true` forcefully prevents an attacker from downloading destructive payload binaries directly onto the container disk. These settings drastically reduce the attack surface area and harden the cluster.
+**Answer:** You must add a `securityContext` block to the Pod or container specification to implement least privilege. Specifically, add `runAsNonRoot: true` to mandate that the container runtime executes the process as an unprivileged user. Additionally, setting `readOnlyRootFilesystem: true` forcefully prevents an attacker from downloading destructive payload binaries directly onto the container disk. These settings drastically reduce the viable attack surface area by constraining what the compromised process can physically do. Properly applying these context rules hardens the overall cluster against dangerous lateral movement.
 </details>
 
 ## Hands-On Exercise: The Ultimate Multi-Container Debugging Challenge
