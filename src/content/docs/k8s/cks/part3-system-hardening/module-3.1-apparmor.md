@@ -418,6 +418,9 @@ spec:
     image: nginx
 EOF
 
+# Wait for pod to be ready
+kubectl wait --for=condition=Ready pod/secured-nginx --timeout=60s
+
 # Verify
 kubectl exec secured-nginx -- touch /etc/test
 # Should fail due to AppArmor
@@ -546,12 +549,12 @@ kubectl exec no-network-pod -- curl -s https://kubernetes.io --connect-timeout 5
 # Should fail due to AppArmor denying network
 
 # Step 8: Create pod without restriction for comparison
-kubectl run network-allowed --image=curlimages/curl --rm -it --restart=Never -- \
+kubectl run network-allowed --image=curlimages/curl --rm -i --restart=Never -- \
   curl -s https://kubernetes.io -o /dev/null -w "%{http_code}"
 # Should succeed (200)
 
 # Cleanup
-kubectl delete pod no-network-pod
+kubectl delete pod no-network-pod --force --grace-period=0
 ```
 
 **Success criteria**: Pod with AppArmor profile cannot make network connections.
