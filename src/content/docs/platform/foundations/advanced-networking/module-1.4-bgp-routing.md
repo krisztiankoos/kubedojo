@@ -64,7 +64,7 @@ Most engineers never touch a BGP router directly. But understanding how BGP work
 
 ### 1.1 What is an Autonomous System?
 
-```
+```text
 AUTONOMOUS SYSTEMS (AS)
 ═══════════════════════════════════════════════════════════════
 
@@ -116,7 +116,7 @@ HOW TO LOOK UP AN ASN
 
 ### 1.2 Internet Topology
 
-```
+```text
 INTERNET HIERARCHY
 ═══════════════════════════════════════════════════════════════
 
@@ -159,45 +159,53 @@ Don't fit the hierarchy. Peer directly with everyone.
 
 INTERNET TOPOLOGY DIAGRAM
 ─────────────────────────────────────────────────────────────
+```
 
-    ┌───────────────────────────────────────────────────────┐
-    │                  TIER 1 MESH                          │
-    │                                                       │
-    │  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐         │
-    │  │Lumen │───│ NTT  │───│Cogent│───│Telia │         │
-    │  │AS3356│   │AS2914│   │AS174 │   │AS1299│         │
-    │  └──┬───┘   └──┬───┘   └──┬───┘   └──┬───┘         │
-    │     │          │          │          │               │
-    └─────┼──────────┼──────────┼──────────┼───────────────┘
-          │          │          │          │
-    ┌─────┼──────────┼──────────┼──────────┼───────────────┐
-    │     │   TIER 2 / LARGE ISPs          │               │
-    │  ┌──┴────┐  ┌──┴────┐  ┌──┴────┐  ┌──┴────┐        │
-    │  │Comcast│  │Deutsche│  │Telefon│  │ BSNL  │        │
-    │  │  US   │  │Telekom │  │ -ica  │  │ India │        │
-    │  └──┬────┘  └──┬────┘  └──┬────┘  └──┬────┘        │
-    └─────┼──────────┼──────────┼──────────┼───────────────┘
-          │          │          │          │
-    ┌─────┼──────────┼──────────┼──────────┼───────────────┐
-    │     │   TIER 3 / END USERS           │               │
-    │  ┌──┴──┐    ┌──┴──┐    ┌──┴──┐   ┌──┴──┐           │
-    │  │Local│    │Local│    │Local│   │Local│            │
-    │  │ ISP │    │ ISP │    │ ISP │   │ ISP │            │
-    │  └─────┘    └─────┘    └─────┘   └─────┘            │
-    └──────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph T1 [TIER 1 MESH]
+        Lumen["Lumen AS3356"] <--> NTT["NTT AS2914"]
+        NTT <--> Cogent["Cogent AS174"]
+        Cogent <--> Telia["Telia AS1299"]
+        Telia <--> Lumen
+    end
 
-                ┌──────────────────────────────┐
-                │   CONTENT NETWORKS            │
-                │   (peer with everyone)        │
-                │                              │
-                │  Google  Meta  Netflix  CDNs  │
-                │  (connect at all tiers)       │
-                └──────────────────────────────┘
+    subgraph T2 [TIER 2 / LARGE ISPs]
+        Comcast["Comcast US"]
+        DT["Deutsche Telekom"]
+        Tele["Telefonica"]
+        BSNL["BSNL India"]
+    end
+
+    subgraph T3 [TIER 3 / END USERS]
+        L1["Local ISP"]
+        L2["Local ISP"]
+        L3["Local ISP"]
+        L4["Local ISP"]
+    end
+
+    subgraph Content [CONTENT NETWORKS]
+        G["Google, Meta, Netflix, CDNs<br>(Peer with everyone)"]
+    end
+
+    Lumen <--> Comcast
+    NTT <--> DT
+    Cogent <--> Tele
+    Telia <--> BSNL
+
+    Comcast <--> L1
+    DT <--> L2
+    Tele <--> L3
+    BSNL <--> L4
+
+    G -. "peer" .- Lumen
+    G -. "peer" .- Comcast
+    G -. "peer" .- L1
 ```
 
 ### 1.3 Transit vs Peering
 
-```
+```text
 CONNECTIVITY ECONOMICS
 ═══════════════════════════════════════════════════════════════
 
@@ -261,7 +269,7 @@ WHERE PEERING HAPPENS
 
 ### 2.1 BGP Basics
 
-```
+```text
 BGP FUNDAMENTALS
 ═══════════════════════════════════════════════════════════════
 
@@ -291,15 +299,22 @@ BGP SESSION ESTABLISHMENT
     2. OPEN message (ASN, hold time, router ID)
     3. KEEPALIVE exchange
     4. UPDATE messages (full routing table, then incremental)
+```
 
-    ┌──────────────┐  TCP:179  ┌──────────────┐
-    │  Router A    │──────────→│  Router B    │
-    │  AS65001     │←──────────│  AS65002     │
-    │              │  OPEN     │              │
-    │              │  KEEPALIVE│              │
-    │              │  UPDATE   │              │
-    └──────────────┘           └──────────────┘
+```mermaid
+sequenceDiagram
+    participant A as Router A (AS65001)
+    participant B as Router B (AS65002)
+    Note over A,B: TCP connection on port 179
+    A->>B: OPEN
+    B->>A: OPEN
+    A->>B: KEEPALIVE
+    B->>A: KEEPALIVE
+    A->>B: UPDATE
+    B->>A: UPDATE
+```
 
+```text
     Full internet routing table: ~1,000,000 IPv4 prefixes (2025)
                                  ~230,000 IPv6 prefixes
     Memory needed: ~2-4 GB RAM for full table
@@ -323,33 +338,27 @@ eBGP vs iBGP
     ─────────────────────────────────────────────
     Within the SAME Autonomous System.
     Distributes external routes to internal routers.
+```
 
-    Router-A ←──iBGP──→ Router-B   (both in AS65001)
+```mermaid
+graph TD
+    subgraph AS65001 [AS 65001]
+        RA["Router-A (edge)"] <-->|"iBGP"| RB["Router-B (edge)"]
+    end
+    AS65002["AS65002 (ISP-A)"] <-->|"eBGP"| RA
+    RB <-->|"eBGP"| AS65003["AS65003 (ISP-B)"]
+```
 
+```text
     - Full mesh required (or use route reflectors)
     - AS-Path NOT modified
     - Next-hop NOT changed (must be reachable via IGP)
     - Prevents routing loops within the AS
-
-    ┌─────────── AS 65001 ──────────────────────┐
-    │                                           │
-    │  ┌─────────┐  iBGP  ┌─────────┐         │
-    │  │Router-A │────────│Router-B │         │
-    │  │(edge)   │        │(edge)   │         │
-    │  └────┬────┘        └────┬────┘         │
-    │       │                  │               │
-    │       │ eBGP             │ eBGP          │
-    └───────┼──────────────────┼───────────────┘
-            │                  │
-       ┌────┴────┐        ┌────┴────┐
-       │ AS65002 │        │ AS65003 │
-       │ (ISP-A) │        │ (ISP-B) │
-       └─────────┘        └─────────┘
 ```
 
 ### 2.2 BGP Path Selection (The Decision Process)
 
-```
+```text
 BGP BEST PATH SELECTION — THE FULL ALGORITHM
 ═══════════════════════════════════════════════════════════════
 
@@ -421,7 +430,11 @@ STEP  ATTRIBUTE              PREFER        TYPICAL USE
 
  10   ROUTER ID              LOWEST         Tiebreaker. Lowest
                                            router IP wins.
+```
 
+> **Stop and think**: If AS-Path length is the default way BGP determines the "shortest" route, how might an attacker manipulate this attribute to draw traffic toward their network without changing the origin ASN?
+
+```text
 MOST IMPORTANT IN PRACTICE
 ─────────────────────────────────────────────────────────────
     LOCAL_PREF:  Controls YOUR outbound preferences
@@ -433,7 +446,7 @@ MOST IMPORTANT IN PRACTICE
 
 ### 2.3 BGP Communities
 
-```
+```text
 BGP COMMUNITIES — SIGNALING BETWEEN NETWORKS
 ═══════════════════════════════════════════════════════════════
 
@@ -499,7 +512,7 @@ COMMON USES
 
 ### 3.1 Route Hijacking
 
-```
+```text
 BGP ROUTE HIJACKING
 ═══════════════════════════════════════════════════════════════
 
@@ -518,21 +531,23 @@ HOW IT WORKS
     BGP prefers more specific prefixes (longest match).
     Even if AS15169 announces 8.8.8.0/24, the /25 wins
     for half the address space.
+```
 
-    ┌──────────────────────────────────────────────────┐
-    │  Before Hijack                                   │
-    │                                                  │
-    │  User → ISP → Tier1 → AS15169 (Google)          │
-    │                        8.8.8.0/24 ✓              │
-    │                                                  │
-    │  After Hijack                                    │
-    │                                                  │
-    │  User → ISP → AS666 (Attacker)                   │
-    │                8.8.8.0/25 (more specific wins!)  │
-    │                                                  │
-    │  Traffic intercepted, redirected, or blackholed. │
-    └──────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph Before[Before Hijack]
+        User1[User] --> ISP1[ISP]
+        ISP1 --> Tier1[Tier 1]
+        Tier1 --> Google["AS15169 (Google)<br>8.8.8.0/24 ✓"]
+    end
+    subgraph After[After Hijack]
+        User2[User] --> ISP2[ISP]
+        ISP2 --> Attacker["AS666 (Attacker)<br>8.8.8.0/25 (more specific wins!)"]
+        style Attacker fill:#f99,stroke:#333,stroke-width:2px
+    end
+```
 
+```text
 NOTABLE INCIDENTS
 ─────────────────────────────────────────────────────────────
 
@@ -564,7 +579,7 @@ NOTABLE INCIDENTS
 
 ### 3.2 Route Leaks
 
-```
+```text
 BGP ROUTE LEAKS
 ═══════════════════════════════════════════════════════════════
 
@@ -573,14 +588,24 @@ NOT announce — not maliciously, but by misconfiguration.
 
 HOW ROUTE LEAKS HAPPEN
 ─────────────────────────────────────────────────────────────
+```
 
-    Normal: Customer → Transit → Internet
-    Leak:   Transit-A → Customer → Transit-B → Internet
-                                    ↑
-                            Customer accidentally
-                            re-announces Transit-A's
-                            routes to Transit-B
+```mermaid
+graph TD
+    subgraph Normal Flow
+        C[Customer] -->|Announces own routes| T[Transit]
+        T -->|Propagates to| I[Internet]
+    end
 
+    subgraph Route Leak
+        TA[Transit-A] -->|Sends routes to| C2[Customer]
+        C2 -->|Accidentally re-announces<br>Transit-A's routes| TB[Transit-B]
+        TB -->|Propagates to| I2[Internet]
+    end
+    style C2 fill:#f9a,stroke:#333,stroke-width:2px
+```
+
+```text
     The customer becomes a "transit" between two providers.
     Traffic that should flow directly between Tier 1s now
     flows through a small customer network (bottleneck!).
@@ -621,7 +646,7 @@ ROUTE LEAK vs HIJACK
 
 ### 3.3 BGP Blackholing
 
-```
+```text
 BGP BLACKHOLE ROUTING — INTENTIONAL TRAFFIC DROPPING
 ═══════════════════════════════════════════════════════════════
 
@@ -646,24 +671,28 @@ REMOTE TRIGGERED BLACKHOLE (RTBH)
 
     ⚠️  The sacrifice: 203.0.113.10 is now unreachable.
         You've "cut off the gangrenous limb to save the body."
+```
 
-    ┌────────────────────────────────────────────────────┐
-    │  YOUR NETWORK (AS65001)                            │
-    │                                                    │
-    │  BGP Announce to transit:                          │
-    │    203.0.113.10/32                                 │
-    │    Community: 3356:9999 (blackhole)                │
-    │    Next-Hop: 192.0.2.1 (null route)               │
-    │                                                    │
-    │  Transit (AS3356) receives announcement:           │
-    │    "Drop all traffic for 203.0.113.10"             │
-    │    → null0 (discard)                               │
-    │                                                    │
-    │  Attack traffic dropped at transit edge.           │
-    │  Never reaches your network.                       │
-    │  Your other /24 traffic flows normally.            │
-    └────────────────────────────────────────────────────┘
+```mermaid
+graph LR
+    subgraph AS65001 [YOUR NETWORK AS65001]
+        Router[Your Router]
+    end
 
+    subgraph AS3356 [Transit AS3356]
+        Transit[Transit Edge Router]
+        Null0[null0 / discard]
+    end
+
+    Router -. "BGP Announce:<br>203.0.113.10/32<br>Community: 3356:9999" .-> Transit
+    Transit -- "Match 3356:9999<br>Drop traffic" --> Null0
+
+    Attack[Attack Traffic] --> Transit
+    Legit[Legitimate /24 Traffic] --> Transit
+    Transit -- "Allow /24" --> Router
+```
+
+```text
 FLOWSPEC — SURGICAL BLACKHOLING
 ─────────────────────────────────────────────────────────────
     Instead of dropping ALL traffic to an IP, FlowSpec
@@ -686,7 +715,7 @@ FLOWSPEC — SURGICAL BLACKHOLING
 
 ### 4.1 RPKI (Resource Public Key Infrastructure)
 
-```
+```text
 RPKI — ADDING TRUST TO BGP
 ═══════════════════════════════════════════════════════════════
 
@@ -706,38 +735,28 @@ HOW RPKI WORKS
        Build a validated cache of authorized announcements
 
     4. Routers query validator before accepting routes
+```
 
-    ┌──────────────┐         ┌──────────────┐
-    │  RIPE NCC    │         │  ARIN        │
-    │  (Europe)    │         │  (Americas)  │
-    │  ROA: AS15169│         │  ROA: AS16509│
-    │  → 8.8.8/24 │         │  → 52.0.0/10 │
-    └──────┬───────┘         └──────┬───────┘
-           │                        │
-           ▼                        ▼
-    ┌──────────────────────────────────────┐
-    │  RPKI Validator (e.g., Routinator)   │
-    │  Downloads and validates all ROAs    │
-    │  Serves validated data to routers    │
-    └──────────────┬───────────────────────┘
-                   │  RTR Protocol
-                   ▼
-    ┌──────────────────────────────────────┐
-    │  BGP Router                          │
-    │                                      │
-    │  Receives route: 8.8.8.0/24 from     │
-    │    AS15169 → VALID (matches ROA) ✓   │
-    │    AS666   → INVALID (no ROA) ✗      │
-    │                                      │
-    │  Policy: Drop INVALID routes         │
-    └──────────────────────────────────────┘
+```mermaid
+graph TD
+    RIPE["RIPE NCC<br>ROA: AS15169 -> 8.8.8.0/24"] --> Validator["RPKI Validator (e.g., Routinator)<br>Downloads and validates all ROAs"]
+    ARIN["ARIN<br>ROA: AS16509 -> 52.0.0.0/10"] --> Validator
+    Validator -- "RTR Protocol" --> Router["BGP Router"]
+    Router -. "Receives 8.8.8.0/24 from AS15169" .-> Valid["Matches ROA -> VALID ✓"]
+    Router -. "Receives 8.8.8.0/24 from AS666" .-> Invalid["No ROA Match -> INVALID ✗"]
+```
 
+```text
 VALIDATION STATES
 ─────────────────────────────────────────────────────────────
     VALID:     Route matches a ROA (correct AS, correct prefix)
     INVALID:   Route conflicts with a ROA (wrong AS or too specific)
     NOT FOUND: No ROA exists for this prefix (unknown)
+```
 
+> **Pause and predict**: If a major Tier 1 provider drops all "INVALID" routes but accepts "NOT FOUND" routes, what happens to traffic destined for an organization that has never created a ROA?
+
+```text
 RPKI ADOPTION (2025)
 ─────────────────────────────────────────────────────────────
     ROA coverage:
@@ -760,7 +779,7 @@ RPKI ADOPTION (2025)
 
 ### 4.2 Other BGP Security Mechanisms
 
-```
+```text
 ADDITIONAL BGP SECURITY
 ═══════════════════════════════════════════════════════════════
 
@@ -812,7 +831,7 @@ PREFIX FILTERING BEST PRACTICES
 
 ### 5.1 Direct Connect / ExpressRoute / Cloud Interconnect
 
-```
+```text
 PRIVATE CLOUD CONNECTIVITY
 ═══════════════════════════════════════════════════════════════
 
@@ -821,20 +840,25 @@ you can establish dedicated, private connections via BGP.
 
 AWS DIRECT CONNECT
 ─────────────────────────────────────────────────────────────
+```
 
-    ┌──────────────┐   Dedicated    ┌──────────────┐
-    │ Your         │   1/10/100     │ AWS Direct   │
-    │ Datacenter   │───Gbps Fiber──→│ Connect      │
-    │              │                │ Location     │
-    │ Your Router  │◄── eBGP ──────│ AWS Router   │
-    │ (AS65001)    │               │ (AS16509)    │
-    └──────────────┘               └──────┬───────┘
-                                          │
-                                     ┌────┴────────┐
-                                     │ AWS VPC     │
-                                     │ us-east-1   │
-                                     └─────────────┘
+```mermaid
+graph LR
+    subgraph Customer [Your Datacenter]
+        Router["Your Router<br>(AS65001)"]
+    end
 
+    subgraph AWS Cloud
+        DX["AWS Router<br>(AS16509)"]
+        VPC["AWS VPC<br>(us-east-1)"]
+    end
+
+    Router <-->|"Dedicated 1/10/100 Gbps Fiber"| DX
+    Router -. "eBGP Session" .- DX
+    DX --- VPC
+```
+
+```text
     Types:
     ─────────────────────────────────────────────
     Dedicated Connection: 1/10/100 Gbps physical port
@@ -889,7 +913,7 @@ WHY USE PRIVATE INTERCONNECT?
 
 ### 5.2 BGP in Kubernetes
 
-```
+```text
 BGP IN KUBERNETES
 ═══════════════════════════════════════════════════════════════
 
@@ -898,51 +922,50 @@ pod and service IPs to the physical network.
 
 CALICO BGP MODE
 ─────────────────────────────────────────────────────────────
+```
 
-    ┌─── Node 1 ──────────┐    ┌─── Node 2 ──────────┐
-    │ Pod: 10.244.1.5     │    │ Pod: 10.244.2.8     │
-    │ Pod: 10.244.1.6     │    │ Pod: 10.244.2.9     │
-    │                     │    │                     │
-    │ Calico (BIRD)       │    │ Calico (BIRD)       │
-    │ BGP: announces      │    │ BGP: announces      │
-    │  10.244.1.0/24      │    │  10.244.2.0/24      │
-    └──────────┬──────────┘    └──────────┬──────────┘
-               │                          │
-               │    eBGP peering          │
-               ▼                          ▼
-    ┌──────────────────────────────────────────────────┐
-    │  Top-of-Rack Switch / Router                     │
-    │                                                  │
-    │  Routing table:                                  │
-    │    10.244.1.0/24 → Node 1                       │
-    │    10.244.2.0/24 → Node 2                       │
-    │                                                  │
-    │  Physical network can route to pods directly!    │
-    └──────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Node 1
+        P1["Pod: 10.244.1.5"]
+        P2["Pod: 10.244.1.6"]
+        C1["Calico (BIRD)<br>BGP: announces 10.244.1.0/24"]
+    end
+
+    subgraph Node 2
+        P3["Pod: 10.244.2.8"]
+        P4["Pod: 10.244.2.9"]
+        C2["Calico (BIRD)<br>BGP: announces 10.244.2.0/24"]
+    end
+
+    ToR["Top-of-Rack Switch / Router<br>Route: 10.244.1.0/24 -> Node 1<br>Route: 10.244.2.0/24 -> Node 2"]
+
+    C1 -- "eBGP peering" --> ToR
+    C2 -- "eBGP peering" --> ToR
+```
+
+```text
+    Physical network can route to pods directly!
 
 METALLB BGP MODE
 ─────────────────────────────────────────────────────────────
 
     MetalLB assigns external IPs to LoadBalancer services
     and announces them via BGP.
+```
 
-    ┌─── K8s Cluster ─────────────────────────┐
-    │                                         │
-    │  Service: my-app (type: LoadBalancer)   │
-    │  External IP: 192.168.1.240             │
-    │                                         │
-    │  MetalLB Speaker (BGP mode):            │
-    │  Announces 192.168.1.240/32 to router   │
-    └──────────────┬──────────────────────────┘
-                   │  eBGP
-                   ▼
-    ┌──────────────────────────────────────────┐
-    │  Network Router                          │
-    │  Route: 192.168.1.240/32 → K8s Node    │
-    │                                          │
-    │  External traffic for 192.168.1.240     │
-    │  now routed directly to the cluster!    │
-    └──────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph K8s Cluster
+        Svc["Service: my-app (LoadBalancer)<br>External IP: 192.168.1.240"]
+        MLB["MetalLB Speaker (BGP mode)<br>Announces 192.168.1.240/32"]
+    end
+
+    Router["Network Router<br>Route: 192.168.1.240/32 -> K8s Node"]
+
+    MLB -- "eBGP" --> Router
+    Ext["External Traffic for 192.168.1.240"] --> Router
+    Router --> Svc
 ```
 
 ---
@@ -974,130 +997,46 @@ METALLB BGP MODE
 
 ## Quiz
 
-1. **Explain the difference between eBGP and iBGP. Why does iBGP not modify the AS-Path?**
+1. **Your team is designing a multi-region network for a new datacenter. One engineer suggests using eBGP between all routers inside the datacenter to ensure paths are properly tracked. Why might this approach be flawed, and how does the standard iBGP approach handle routing loops without modifying the AS-Path?**
    <details>
    <summary>Answer</summary>
 
-   **eBGP (External BGP)** runs between routers in different Autonomous Systems. It is the protocol used for inter-domain routing on the internet. When a route is sent via eBGP, the sending AS prepends its ASN to the AS-Path, the next-hop is updated to the sender's address, and TTL is set to 1 (directly connected by default).
-
-   **iBGP (Internal BGP)** runs between routers within the same Autonomous System. It distributes externally learned routes to all internal routers that need them.
-
-   iBGP does not modify the AS-Path because:
-   1. **Loop prevention**: eBGP uses AS-Path for loop detection — if a router sees its own ASN in the path, it rejects the route. If iBGP prepended the local ASN, every internal router would see its own ASN and reject the route.
-   2. **Path integrity**: The AS-Path represents inter-domain hops. Internal distribution within one AS is not an inter-domain hop and should not inflate the path length.
-   3. **iBGP uses a different loop prevention mechanism**: iBGP routes are not re-advertised to other iBGP peers (split-horizon rule), requiring either a full mesh of iBGP sessions or route reflectors.
+   eBGP is designed for inter-domain routing between different Autonomous Systems, where it inherently prevents loops by rejecting routes that contain the local ASN in the AS-Path. If you use eBGP within a single datacenter, you would either have to assign a unique ASN to every single router, which becomes an administrative nightmare, or override loop prevention mechanisms, risking routing loops. Instead, iBGP is used within the same AS to distribute externally learned routes without modifying the AS-Path. Because iBGP does not update the AS-Path, it relies on a different loop prevention rule: iBGP routers never re-advertise a route learned from one iBGP peer to another iBGP peer. This split-horizon rule ensures loops cannot form, but requires either a full mesh of iBGP connections or the use of route reflectors to scale.
    </details>
 
-2. **Walk through the BGP path selection algorithm. If two routes to the same prefix have the same LOCAL_PREF, what determines which one wins?**
+2. **You receive alerts that outbound traffic to a major cloud provider has suddenly shifted from your dedicated 10Gbps transit link to a more expensive, congested backup link. Both links advertise the same prefix, and your edge router's BGP configuration sets the same LOCAL_PREF for both. What mechanism in the BGP path selection algorithm is likely causing this shift, and how does the router break the tie?**
    <details>
    <summary>Answer</summary>
 
-   The BGP path selection algorithm evaluates criteria in strict order. Each step is only considered if all previous steps resulted in a tie:
-
-   1. **Highest Weight** (Cisco-specific, local to router)
-   2. **Highest LOCAL_PREF** (preference for exiting the AS)
-   3. **Locally originated** (prefer routes you generate)
-   4. **Shortest AS-Path** (fewer network hops)
-   5. **Lowest Origin type** (IGP > EGP > Incomplete)
-   6. **Lowest MED** (neighbor's entrance preference, compared only between routes from the same AS)
-   7. **eBGP over iBGP** (prefer externally learned)
-   8. **Lowest IGP metric to next-hop** (closest exit — "hot potato")
-   9. **Oldest route** (prefer stability)
-   10. **Lowest Router ID** (final tiebreaker)
-
-   If two routes have the same LOCAL_PREF, the next deciding factor is whether one was locally originated (step 3), then AS-Path length (step 4). In most practical scenarios, AS-Path length is the tiebreaker that matters most after LOCAL_PREF.
+   When BGP evaluates multiple routes to the same destination, it processes attributes in a strict, ordered sequence. Since the LOCAL_PREF is identical for both links, the router moves to the next criteria in the decision process, which evaluates whether the route was locally originated. If neither is local, it checks the AS-Path length, preferring the path with the fewest number of network hops. It is highly likely that the primary link's AS-Path increased because the cloud provider or an intermediate ISP began prepending their ASN, making the backup link appear as the "shorter" path. If the AS-Path lengths are also identical, the router will continue down the list, evaluating the Origin type and MED, until a tiebreaker like the lowest Router ID finally determines the best path.
    </details>
 
-3. **What is a BGP route leak and how does it differ from a route hijack? Give an example of each.**
+3. **A monitoring tool reports that traffic bound for your main application from users in Europe is suddenly being routed through a small regional ISP in South America, causing massive latency. The origin ASN in the BGP updates is still correctly showing as your ASN. Based on this evidence, are you experiencing a route hijack or a route leak? Explain the mechanics of what happened.**
    <details>
    <summary>Answer</summary>
 
-   **Route hijack**: A network announces IP prefixes that belong to someone else, claiming to be the origin. The hijacker's ASN appears as the origin AS in the path.
-
-   Example: AS666 (attacker) announces 8.8.8.0/24 with path [AS666]. This prefix belongs to Google (AS15169). Other networks now have two origins for the same prefix and may choose the attacker's route.
-
-   **Route leak**: A network re-announces routes it learned from one provider to another provider or peer, against the intended routing policy. The original origin AS is preserved in the path, but traffic flows through an unauthorized path.
-
-   Example: Company AS65001 has transit from both Verizon (AS701) and Cogent (AS174). A misconfiguration causes AS65001 to re-announce all routes learned from Verizon to Cogent. Now Cogent's customers might route their Verizon-bound traffic through AS65001 — a small company network not designed to handle transit traffic. The AS-Path shows the correct origin but an extra (unauthorized) intermediate hop.
-
-   Key differences:
-   - Hijack: Wrong origin AS, intentional or accidental origin forgery
-   - Leak: Correct origin AS, incorrect propagation path
-   - Hijack: RPKI can detect (wrong origin)
-   - Leak: RPKI cannot detect (origin is valid, path is wrong) — needs ASPA
-   - Leaks are far more common than hijacks in practice
+   Based on the evidence, your network is experiencing a route leak rather than a route hijack. In a route hijack, an attacker maliciously or accidentally announces your prefix while claiming to be the origin, which would result in the origin ASN changing to the attacker's ASN. Because the origin ASN remains correct, the route is legitimate at its source but is being propagated along an unauthorized path. This happens when a network, like the small South American ISP, accidentally re-announces routes it learned from one transit provider to another, effectively turning itself into an unintended transit path for global traffic.
    </details>
 
-4. **Your company is hit with a 100 Gbps DDoS attack targeting a single IP address. Describe how BGP blackholing works and what trade-off you're making.**
+4. **Your company is hit with a 100 Gbps DDoS attack targeting a single IP address on your network. Your upstream provider offers a BGP blackholing service. Describe the process of triggering this mitigation, and explain the exact trade-off you must make when employing it.**
    <details>
    <summary>Answer</summary>
 
-   **BGP blackholing process**:
-
-   1. Identify the target IP under attack (e.g., 203.0.113.10)
-   2. Announce a /32 host route (203.0.113.10/32) to your transit provider with the blackhole community (e.g., 3356:9999 for Lumen)
-   3. The transit provider installs a null route — all traffic destined for 203.0.113.10 is dropped at the transit provider's edge routers
-   4. Attack traffic is dropped before it enters your network
-   5. Your other IP addresses (the rest of your /24) continue to function normally
-
-   **The trade-off**: You sacrifice the availability of the target IP entirely. All traffic to 203.0.113.10 is dropped — both attack traffic AND legitimate user traffic. The target IP becomes completely unreachable from the internet.
-
-   This is acceptable when:
-   - The attack is saturating your uplinks, affecting all your services
-   - One IP going offline is better than your entire network being unreachable
-   - You can move the service to a different IP and update DNS
-
-   A better alternative when available is **FlowSpec**, which can drop traffic matching specific criteria (e.g., only UDP traffic from certain source ports) while allowing legitimate traffic through. However, FlowSpec has less universal support among transit providers.
+   To trigger BGP blackholing, you configure your edge router to announce a /32 host route for the specific targeted IP address, attaching a predetermined BGP community string (such as the blackhole community) to the announcement. When your transit provider receives this route, their routers are configured to match that community and immediately rewrite the next-hop for that IP to a null interface, dropping the traffic at the provider's edge. The critical trade-off is that you are completely sacrificing the availability of that specific IP address, cutting off all legitimate traffic alongside the malicious traffic. However, this protects your uplinks from being saturated, ensuring that the rest of the IP addresses in your subnet remain online and unaffected by the volumetric attack.
    </details>
 
-5. **Why is RPKI necessary but insufficient for BGP security? What threats does it address and what does it miss?**
+5. **After implementing strict RPKI Route Origin Validation (ROV) on all edge routers, your CISO asks if the network is now fully protected against all BGP-related traffic redirection attacks. How should you respond, and what specific types of routing incidents could still occur despite having RPKI in place?**
    <details>
    <summary>Answer</summary>
 
-   **What RPKI addresses**: RPKI (Route Origin Validation) cryptographically verifies that an AS is authorized to originate a specific prefix. A ROA (Route Origin Authorization) says "AS15169 is authorized to announce 8.8.8.0/24."
-
-   Threats RPKI prevents:
-   - Prefix hijacking (wrong AS announcing someone else's prefix)
-   - Sub-prefix hijacking (announcing more specific routes of someone else's prefix)
-   - Accidental prefix origination (misconfigured router announces wrong prefix)
-
-   **Threats RPKI misses**:
-   - **Route leaks**: The origin AS is correct but the route propagates through unauthorized paths. RPKI validates origin, not path.
-   - **Path manipulation**: An attacker could insert fake ASNs into the AS-Path. RPKI does not validate the full path.
-   - **First-hop hijacking**: If the attacker is on the same network segment as the victim's BGP router, they could intercept the session.
-   - **NOT FOUND routes**: ~48% of routes have no ROA. These cannot be validated (dropping them would break half the internet).
-
-   **Complementary solutions needed**:
-   - BGPsec: Validates the full AS-Path (but near-zero adoption due to complexity)
-   - ASPA: Validates transit relationships (simpler than BGPsec, gaining traction)
-   - IRR filtering: Cross-reference with routing registry data
-   - Peer-level prefix limits: Prevent unexpected route counts
+   You must inform the CISO that while RPKI is a critical security control, it does not fully protect against all BGP-related redirection attacks. RPKI exclusively validates the origin ASN of a prefix announcement against cryptographically signed records (ROAs), effectively preventing simple prefix hijacks where an attacker claims to originate your IP space. However, RPKI provides absolutely no validation of the AS-Path itself. This means the network remains entirely vulnerable to route leaks, where a legitimate origin route is mistakenly propagated through an unauthorized intermediary network. Furthermore, an attacker can still execute a path manipulation attack by injecting your valid ASN at the end of a spoofed path, bypassing ROV completely.
    </details>
 
 6. **A company uses AWS Direct Connect for their primary cloud connectivity. Their single 10 Gbps connection goes down. What happens to their cloud workloads, and how should they architect for resilience?**
    <details>
    <summary>Answer</summary>
 
-   **What happens**: All traffic between the on-premises datacenter and AWS VPCs is interrupted. Workloads running in AWS continue functioning (they don't depend on the Direct Connect link to run), but on-premises users cannot reach cloud resources and any hybrid workflows fail.
-
-   If a VPN backup exists over the public internet, BGP failover can route traffic through the VPN — but with higher latency, lower bandwidth, and potential congestion.
-
-   **Resilient architecture**:
-
-   1. **Two Direct Connect connections** in different physical facilities:
-      - Connection A: Equinix DC1 → AWS Direct Connect location 1
-      - Connection B: CoreSite DC2 → AWS Direct Connect location 2
-      - BGP active/active with equal LOCAL_PREF (or active/passive with different LOCAL_PREF)
-
-   2. **VPN backup** over the public internet:
-      - AWS Site-to-Site VPN as a third path
-      - Lower BGP LOCAL_PREF than Direct Connect (used only when both DX connections fail)
-
-   3. **Use different carriers** for the two DX connections to avoid single-carrier failure
-
-   4. **LAG (Link Aggregation Group)**: If using multiple connections to the same DX location, aggregate them for higher throughput and single-link failure resilience
-
-   5. **Monitor BGP session state**: Alert when a DX BGP session goes down, even if failover is automatic
+   When the single Direct Connect link fails, all private routing between the on-premises network and the AWS VPC is severed, though the cloud workloads themselves will continue to run normally in AWS. Any on-premises services relying on private IP communication with the cloud will experience immediate timeouts and failures because the BGP session drops and the routes are withdrawn. To architect for resilience, the company should provision at least two Direct Connect links terminating in completely separate physical facilities, using different hardware and carriers. Additionally, they can configure a Site-to-Site VPN over the public internet as a path of last resort, setting a lower BGP LOCAL_PREF so it is only used if both physical links fail.
    </details>
 
 ---
@@ -1150,24 +1089,15 @@ docker network connect --ip 10.0.23.3 link-as2-as3 as3-router
 
 ### Topology
 
-```
-                ┌──────────────┐
-                │   AS1        │
-                │  (AS 65001)  │
-                │  10.0.12.1   │
-                │  10.0.13.1   │
-                └──┬────────┬──┘
-                   │        │
-        10.0.12.0/24    10.0.13.0/24
-                   │        │
-     ┌─────────────┘        └─────────────┐
-     │                                    │
-┌────┴─────────┐                  ┌───────┴──────┐
-│   AS2        │                  │   AS3        │
-│  (AS 65002)  │                  │  (AS 65003)  │
-│  10.0.12.2   │                  │  10.0.13.3   │
-│  10.0.23.2   │──── 10.0.23.0/24 ────│  10.0.23.3   │
-└──────────────┘                  └──────────────┘
+```mermaid
+graph TD
+    AS1["AS1 (AS 65001)<br>10.0.12.1<br>10.0.13.1"]
+    AS2["AS2 (AS 65002)<br>10.0.12.2<br>10.0.23.2"]
+    AS3["AS3 (AS 65003)<br>10.0.13.3<br>10.0.23.3"]
+
+    AS1 <-->|"10.0.12.0/24"| AS2
+    AS1 <-->|"10.0.13.0/24"| AS3
+    AS2 <-->|"10.0.23.0/24"| AS3
 ```
 
 ### Part 2: Configure BGP on AS1 (15 minutes)
