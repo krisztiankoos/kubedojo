@@ -104,22 +104,28 @@ Regional PDs synchronously replicate data to two zones within the same region. T
 
 ### How Regional PDs Work
 
-```text
-  Zonal PD:                          Regional PD:
-  ┌─────────────────┐               ┌─────────────────┐
-  │  us-central1-a  │               │  us-central1-a  │
-  │  ┌─────────┐    │               │  ┌─────────┐    │
-  │  │ PD-SSD  │    │               │  │ PD-SSD  │◄───┼──── Synchronous
-  │  │ (data)  │    │               │  │ (copy 1)│    │     replication
-  │  └─────────┘    │               │  └─────────┘    │
-  │                 │               └─────────────────┘
-  │  If zone fails: │               ┌─────────────────┐
-  │  DATA IS        │               │  us-central1-b  │
-  │  INACCESSIBLE   │               │  ┌─────────┐    │
-  │                 │               │  │ PD-SSD  │◄──── If zone-a fails:
-  └─────────────────┘               │  │ (copy 2)│    │  Pod restarts in
-                                    │  └─────────┘    │  zone-b, mounts
-                                    └─────────────────┘  copy 2 (<60 sec)
+```mermaid
+graph TD
+    subgraph Zonal["Zonal PD"]
+        subgraph ZA["us-central1-a"]
+            PD1["PD-SSD (data)"]
+        end
+        Fail1["If zone fails:<br>DATA IS INACCESSIBLE"]
+        ZA -.-> Fail1
+    end
+
+    subgraph Regional["Regional PD"]
+        subgraph RA["us-central1-a"]
+            PDR1["PD-SSD (copy 1)"]
+        end
+        subgraph RB["us-central1-b"]
+            PDR2["PD-SSD (copy 2)"]
+        end
+        PDR1 <-->|"Synchronous replication"| PDR2
+        Fail2["If zone-a fails:<br>Pod restarts in zone-b,<br>mounts copy 2 (< 60 sec)"]
+        RA -.-> Fail2
+        Fail2 -.-> PDR2
+    end
 ```
 
 ### Provisioning Regional PDs
@@ -383,24 +389,18 @@ Cloud Storage FUSE mounts GCS buckets as local filesystems inside pods. This giv
 
 ### How It Works
 
-```text
-  ┌──────────────────────────────────────────────┐
-  │  Pod                                         │
-  │  ┌──────────────────────────────────────┐   │
-  │  │  Application                         │   │
-  │  │  open("/data/model.bin", "r")        │   │
-  │  └──────────────┬───────────────────────┘   │
-  │                 │ POSIX file operations      │
-  │  ┌──────────────▼───────────────────────┐   │
-  │  │  FUSE sidecar (gcsfuse)              │   │
-  │  │  Translates file ops → GCS API calls │   │
-  │  └──────────────┬───────────────────────┘   │
-  └─────────────────┼──────────────────────────┘
-                    │ GCS JSON API
-  ┌─────────────────▼──────────────────────────┐
-  │  Cloud Storage Bucket                      │
-  │  gs://my-ml-datasets/model.bin             │
-  └────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Pod["Pod"]
+        App["Application<br>open('/data/model.bin', 'r')"]
+        Sidecar["FUSE sidecar (gcsfuse)<br>Translates file ops → GCS API calls"]
+        
+        App -->|"POSIX file operations"| Sidecar
+    end
+    
+    Bucket[/"Cloud Storage Bucket<br>gs://my-ml-datasets/model.bin"/]
+    
+    Sidecar -->|"GCS JSON API"| Bucket
 ```
 
 ### Enabling Cloud Storage FUSE
@@ -505,29 +505,20 @@ Backup for GKE provides managed backup and restore for your entire GKE workloads
 
 ### Architecture
 
-```text
-  ┌──────────────────────────────────────────────────┐
-  │  Backup for GKE                                  │
-  │                                                  │
-  │  ┌────────────────┐    ┌────────────────┐       │
-  │  │  Backup Plan    │    │  Backup Plan    │       │
-  │  │  (daily, 30d    │    │  (weekly, 90d   │       │
-  │  │   retention)    │    │   retention)    │       │
-  │  └───────┬────────┘    └───────┬────────┘       │
-  │          │                     │                 │
-  │          ▼                     ▼                 │
-  │  ┌──────────────────────────────────────┐       │
-  │  │  Backups                              │       │
-  │  │  backup-2024-03-15-0200 (config+data)│       │
-  │  │  backup-2024-03-14-0200 (config+data)│       │
-  │  │  backup-2024-03-13-0200 (config+data)│       │
-  │  └──────────────────────────────────────┘       │
-  │                                                  │
-  │  Restores:                                       │
-  │  - Same cluster (in-place rollback)              │
-  │  - Different cluster (migration/DR)              │
-  │  - Selective (specific namespaces only)          │
-  └──────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph BackupForGKE["Backup for GKE"]
+        Plan1["Backup Plan<br>(daily, 30d retention)"]
+        Plan2["Backup Plan<br>(weekly, 90d retention)"]
+        
+        Backups[("Backups<br>backup-2024-03-15-0200 (config+data)<br>backup-2024-03-14-0200 (config+data)<br>backup-2024-03-13-0200 (config+data)")]
+        
+        Plan1 --> Backups
+        Plan2 --> Backups
+        
+        Restores["Restores:<br>- Same cluster (in-place rollback)<br>- Different cluster (migration/DR)<br>- Selective (specific namespaces only)"]
+        Backups -.-> Restores
+    end
 ```
 
 ### Setting Up Backup for GKE
@@ -616,22 +607,20 @@ gcloud beta container backup-restore restore-plans create payments-restore \
 
 Choosing the right storage for your workload:
 
-```text
-  Need block storage for a single pod?
-  │
-  ├── YES → Is HA required?
-  │         ├── YES → Regional PD (pd-ssd or pd-balanced)
-  │         └── NO  → Zonal PD (cheaper, dev/test)
-  │
-  Need shared filesystem across pods?
-  │
-  ├── YES → How much data?
-  │         ├── < 10 TiB, need POSIX → Filestore
-  │         └── > 10 TiB, read-heavy → Cloud Storage FUSE
-  │
-  Need object storage access from pods?
-  │
-  └── YES → Cloud Storage FUSE (or use GCS client libraries directly)
+```mermaid
+flowchart TD
+    Q1{"Need block storage<br>for a single pod?"}
+    Q1 -- "YES" --> Q2{"Is HA required?"}
+    Q2 -- "YES" --> A1["Regional PD<br>(pd-ssd or pd-balanced)"]
+    Q2 -- "NO" --> A2["Zonal PD<br>(cheaper, dev/test)"]
+    
+    Q1 -- "NO" --> Q3{"Need shared filesystem<br>across pods?"}
+    Q3 -- "YES" --> Q4{"How much data?"}
+    Q4 -- "< 10 TiB, need POSIX" --> A3["Filestore"]
+    Q4 -- "> 10 TiB, read-heavy" --> A4["Cloud Storage FUSE"]
+    
+    Q3 -- "NO" --> Q5{"Need object storage<br>access from pods?"}
+    Q5 -- "YES" --> A5["Cloud Storage FUSE<br>(or use GCS client libraries directly)"]
 ```
 
 > **Pause and predict**: You are deploying a highly available legacy CMS. The application requires three replicas of the web tier to share a single directory for user-uploaded media (images, PDFs), which currently totals around 2 TiB. Based on the decision matrix below, which GKE storage solution should you choose and why?
