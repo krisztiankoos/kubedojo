@@ -43,30 +43,35 @@ When you run multiple Kubernetes clusters, you have a fundamental architectural 
 
 In a flat network, every pod across every cluster has a unique, routable IP address. A pod in cluster-A can reach a pod in cluster-B by IP, the same way it would reach a pod in its own cluster.
 
+```mermaid
+flowchart LR
+    subgraph Cluster A ["Cluster A (us-east-1)<br>Pod CIDR: 100.64.0.0/16"]
+        PodA["frontend-pod<br>100.64.12.5"]
+        PodB["api-pod<br>100.64.33.18"]
+        PodA -->|"Direct IP"| PodB
+    end
+    
+    subgraph VPC ["VPC Peering or TGW"]
+        route["Routing"]
+    end
+    
+    subgraph Cluster B ["Cluster B (eu-west-1)<br>Pod CIDR: 100.65.0.0/16"]
+        PodC["frontend-pod<br>100.65.8.22"]
+        PodD["api-pod<br>100.65.41.9"]
+        PodC --> PodD
+    end
+    
+    PodB -->|"Direct IP"| route
+    route -->|"Direct IP"| PodD
+    
+    classDef cluster fill:none,stroke:#333,stroke-width:2px;
+    class Cluster A,Cluster B cluster;
 ```
-FLAT NETWORKING MODEL
-════════════════════════════════════════════════════════════════
 
-  Cluster A (us-east-1)              Cluster B (eu-west-1)
-  Pod CIDR: 100.64.0.0/16           Pod CIDR: 100.65.0.0/16
-  ┌─────────────────────┐           ┌─────────────────────┐
-  │                     │           │                     │
-  │  frontend-pod       │           │  frontend-pod       │
-  │  100.64.12.5        │           │  100.65.8.22        │
-  │       │             │           │       │             │
-  │       │ Direct IP   │           │       │             │
-  │       ▼             │    VPC    │       ▼             │
-  │  api-pod            │  Peering  │  api-pod            │
-  │  100.64.33.18  ─────┼──────────┼──▶ 100.65.41.9      │
-  │                     │    or    │                     │
-  │                     │   TGW    │                     │
-  └─────────────────────┘           └─────────────────────┘
-
-  Requirements:
-  - Non-overlapping Pod CIDRs across ALL clusters
-  - VPC-level routing for pod CIDRs (routes in VPC route tables)
-  - CNI must advertise pod routes to the VPC (e.g., AWS VPC CNI)
-```
+**Requirements:**
+- Non-overlapping Pod CIDRs across ALL clusters
+- VPC-level routing for pod CIDRs (routes in VPC route tables)
+- CNI must advertise pod routes to the VPC (e.g., AWS VPC CNI)
 
 **Pros**: Simple mental model. Any pod can reach any other pod. No service mesh or gateway required for basic connectivity. Tools like `curl <pod-ip>` work across clusters.
 
@@ -76,28 +81,30 @@ FLAT NETWORKING MODEL
 
 In the island model, each cluster is a networking island. Pod CIDRs can overlap between clusters. Cross-cluster communication happens only through explicit gateways or service abstractions.
 
+```mermaid
+flowchart LR
+    subgraph Cluster A ["Cluster A (us-east-1)<br>Pod CIDR: 10.244.0.0/16"]
+        PodA["frontend-pod<br>10.244.1.5"]
+        GWA["Gateway/LB<br>(NodePort, NLB, or Istio GW)"]
+        PodA --> GWA
+    end
+    
+    subgraph Cluster B ["Cluster B (eu-west-1)<br>Pod CIDR: 10.244.0.0/16"]
+        PodB["frontend-pod<br>10.244.1.5"]
+        GWB["Gateway/LB<br>(NodePort, NLB, or Istio GW)"]
+        GWB --> PodB
+    end
+    
+    GWA -->|"HTTPS<br>(public or private link)"| GWB
+    
+    classDef cluster fill:none,stroke:#333,stroke-width:2px;
+    class Cluster A,Cluster B cluster;
 ```
-ISLAND NETWORKING MODEL
-════════════════════════════════════════════════════════════════
 
-  Cluster A (us-east-1)              Cluster B (eu-west-1)
-  Pod CIDR: 10.244.0.0/16           Pod CIDR: 10.244.0.0/16
-  ┌─────────────────────┐           ┌─────────────────────┐
-  │                     │           │                     │
-  │  frontend-pod       │           │  frontend-pod       │
-  │  10.244.1.5         │           │  10.244.1.5         │
-  │       │             │           │       ▲             │
-  │       ▼             │           │       │             │
-  │  Gateway/LB  ───────┼───HTTPS──┼──▶ Gateway/LB       │
-  │  (NodePort,NLB,     │  (public │  (NodePort,NLB,     │
-  │   or Istio GW)      │  or priv │   or Istio GW)      │
-  │                     │  link)   │                     │
-  └─────────────────────┘           └─────────────────────┘
-
-  Pod CIDRs CAN overlap (10.244.x.x in both clusters)
-  Communication: Only through explicit gateways
-  Access control: Built into the gateway layer
-```
+**Characteristics:**
+- Pod CIDRs CAN overlap (10.244.x.x in both clusters)
+- Communication: Only through explicit gateways
+- Access control: Built into the gateway layer
 
 **Pros**: No CIDR coordination needed. Clusters are independently deployable. Natural access control boundary. Scales to hundreds of clusters. Works across cloud providers.
 
@@ -125,41 +132,34 @@ Cilium Cluster Mesh is the most mature open-source solution for connecting multi
 
 ### How It Works
 
+```mermaid
+flowchart TD
+    subgraph Cluster A ["Cluster A"]
+        A_Agent["Cilium Agent<br>(every node)"]
+        A_API["clustermesh-apiserver<br>(watches local endpoints)"]
+        A_etcd["etcd (kvstore)<br>stores service + endpoint info"]
+        
+        A_Agent <--> A_API
+        A_API <--> A_etcd
+    end
+    
+    subgraph Cluster B ["Cluster B"]
+        B_Agent["Cilium Agent<br>(every node)"]
+        B_API["clustermesh-apiserver<br>(watches local endpoints)"]
+        B_etcd["etcd (kvstore)<br>stores service + endpoint info"]
+        
+        B_Agent <--> B_API
+        B_API <--> B_etcd
+    end
+    
+    A_Agent <-->|"gRPC"| B_API
+    B_Agent <-->|"gRPC"| A_API
 ```
-CILIUM CLUSTER MESH ARCHITECTURE
-════════════════════════════════════════════════════════════════
 
-  Cluster A                           Cluster B
-  ┌────────────────────────┐         ┌────────────────────────┐
-  │  ┌──────────────────┐  │         │  ┌──────────────────┐  │
-  │  │  Cilium Agent     │  │         │  │  Cilium Agent     │  │
-  │  │  (every node)     │  │         │  │  (every node)     │  │
-  │  └────────┬─────────┘  │         │  └────────┬─────────┘  │
-  │           │             │         │           │             │
-  │  ┌────────┴─────────┐  │   gRPC  │  ┌────────┴─────────┐  │
-  │  │  clustermesh-     │──┼─────────┼──│  clustermesh-     │  │
-  │  │  apiserver        │  │         │  │  apiserver        │  │
-  │  │  (watches local   │◀─┼─────────┼──│  (watches local   │  │
-  │  │   endpoints)      │  │         │  │   endpoints)      │  │
-  │  └────────┬─────────┘  │         │  └────────┬─────────┘  │
-  │           │             │         │           │             │
-  │  ┌────────┴─────────┐  │         │  ┌────────┴─────────┐  │
-  │  │  etcd (kvstore)   │  │         │  │  etcd (kvstore)   │  │
-  │  │  stores service   │  │         │  │  stores service   │  │
-  │  │  + endpoint info  │  │         │  │  + endpoint info  │  │
-  │  └──────────────────┘  │         │  └──────────────────┘  │
-  └────────────────────────┘         └────────────────────────┘
-
-  1. Each cluster runs a clustermesh-apiserver that exposes its
-     service and endpoint information
-  2. Cilium agents in each cluster connect to the OTHER cluster's
-     apiserver to learn about remote services
-  3. When a pod in Cluster A resolves a service that exists in
-     both clusters, Cilium load-balances across local AND remote
-     endpoints
-  4. Traffic between clusters flows directly (pod IP to pod IP)
-     through the underlying network (VPC peering, TGW, etc.)
-```
+1. Each cluster runs a `clustermesh-apiserver` that exposes its service and endpoint information.
+2. Cilium agents in each cluster connect to the OTHER cluster's apiserver to learn about remote services.
+3. When a pod in Cluster A resolves a service that exists in both clusters, Cilium load-balances across local AND remote endpoints.
+4. Traffic between clusters flows directly (pod IP to pod IP) through the underlying network (VPC peering, TGW, etc.).
 
 ### Setting Up Cluster Mesh
 
@@ -278,36 +278,29 @@ The Kubernetes Multi-Cluster Services API (KEP-1645) is the official Kubernetes 
 
 ### Core Concepts
 
+```mermaid
+flowchart TD
+    subgraph Cluster A ["Cluster A"]
+        A_Svc["Service: web-api<br>(ClusterIP)"]
+        A_Exp["ServiceExport:<br>'export web-api to the cluster set'"]
+        A_Svc --> A_Exp
+    end
+    
+    subgraph Cluster B ["Cluster B"]
+        B_Svc["Service: web-api<br>(ClusterIP)"]
+        B_Exp["ServiceExport:<br>'export web-api to the cluster set'"]
+        B_Svc --> B_Exp
+    end
+    
+    MCS["MCS Controller<br>(GKE Multi-Cluster Services, Submariner, Lighthouse)<br><br>Creates ServiceImport in BOTH clusters:<br>web-api.payments.svc.clusterset.local<br>Endpoints: [cluster-a IPs] + [cluster-b IPs]"]
+    
+    A_Exp --> MCS
+    B_Exp --> MCS
 ```
-MCS API ARCHITECTURE
-════════════════════════════════════════════════════════════════
 
-  Cluster A                              Cluster B
-  ┌────────────────────────┐            ┌────────────────────────┐
-  │                        │            │                        │
-  │  Service: web-api      │            │  Service: web-api      │
-  │  (ClusterIP)           │            │  (ClusterIP)           │
-  │                        │            │                        │
-  │  ServiceExport:        │            │  ServiceExport:        │
-  │  "export web-api to    │            │  "export web-api to    │
-  │   the cluster set"     │            │   the cluster set"     │
-  │          │             │            │          │             │
-  └──────────┼─────────────┘            └──────────┼─────────────┘
-             │                                     │
-             ▼                                     ▼
-  ┌──────────────────────────────────────────────────────────┐
-  │                   MCS Controller                         │
-  │  (GKE Multi-Cluster Services, Submariner, Lighthouse)   │
-  │                                                          │
-  │  Creates ServiceImport in BOTH clusters:                │
-  │  web-api.payments.svc.clusterset.local                   │
-  │  Endpoints: [cluster-a IPs] + [cluster-b IPs]           │
-  └──────────────────────────────────────────────────────────┘
-
-  Resolution:
-  web-api.payments.svc.cluster.local     -> local endpoints only
-  web-api.payments.svc.clusterset.local  -> ALL cluster endpoints
-```
+**Resolution:**
+- `web-api.payments.svc.cluster.local` -> local endpoints only
+- `web-api.payments.svc.clusterset.local` -> ALL cluster endpoints
 
 ### Using MCS API on GKE
 
@@ -387,24 +380,36 @@ spec:
     - port: 8080
 ```
 
+```mermaid
+flowchart TD
+    subgraph Without ["WITHOUT topology hints"]
+        direction LR
+        subgraph AZ_A1 ["AZ-a"]
+            C1["Cli"]
+            P1["Svc Pod"]
+            C1 --> P1
+        end
+        subgraph AZ_B1 ["AZ-b"]
+            P2["Svc Pod"]
+        end
+        C1 -->|"Cross-AZ! $0.01/GB"| P2
+    end
+    
+    subgraph With ["WITH topology hints"]
+        direction LR
+        subgraph AZ_A2 ["AZ-a"]
+            C2["Cli"]
+            P3["Svc Pod"]
+            P4["Svc Pod"]
+            C2 -->|"Same-AZ! Free!"| P3
+            C2 -->|"Same-AZ! Free!"| P4
+        end
+        subgraph AZ_B2 ["AZ-b"]
+            P5["Svc Pod"]
+        end
+    end
 ```
-TOPOLOGY-AWARE ROUTING
-════════════════════════════════════════════════════════════════
-
-WITHOUT topology hints:            WITH topology hints:
-  AZ-a        AZ-b                   AZ-a        AZ-b
-  ┌─────┐    ┌─────┐                ┌─────┐    ┌─────┐
-  │ Cli │───▶│ Svc │ Cross-AZ!      │ Cli │    │     │
-  │     │    │ Pod │ $0.01/GB       │     │    │ Svc │
-  │     │    └─────┘                │     │    │ Pod │
-  │     │    ┌─────┐                │  ┌──┴──┐ └─────┘
-  │     │    │ Svc │                │  │ Svc │
-  │     │───▶│ Pod │ Cross-AZ!      │  │ Pod │ Same-AZ!
-  └─────┘    └─────┘                └──┴─────┘ Free!
-                                      │
-  kube-proxy picks randomly           kube-proxy prefers
-  from all endpoints                  same-zone endpoints
-```
+*Without topology hints, kube-proxy picks randomly from all endpoints. With topology hints, kube-proxy prefers same-zone endpoints.*
 
 ### Monitoring Cross-AZ Traffic
 
@@ -447,28 +452,23 @@ SQL
 
 When you run clusters in multiple regions, you need a way to route users to the nearest healthy cluster. Global load balancing solves this at the edge.
 
-### Cloud-Native Global LB Options
+### Global Load Balancing Comparison
 
-```
-GLOBAL LOAD BALANCING COMPARISON
-════════════════════════════════════════════════════════════════
+- **AWS: Route53 + Global Accelerator**
+  - Route53: DNS-based (latency/geolocation/failover routing)
+  - Global Accelerator: Anycast IP, TCP/UDP level, health checks
 
-AWS: Route53 + Global Accelerator
-  Route53: DNS-based (latency/geolocation/failover routing)
-  Global Accelerator: Anycast IP, TCP/UDP level, health checks
+- **GCP: Cloud Load Balancing (Global)**
+  - Single anycast IP for the entire world
+  - HTTP(S), TCP, UDP load balancing
+  - Native integration with GKE NEG (Network Endpoint Groups)
 
-GCP: Cloud Load Balancing (Global)
-  Single anycast IP for the entire world
-  HTTP(S), TCP, UDP load balancing
-  Native integration with GKE NEG (Network Endpoint Groups)
+- **Azure: Front Door + Traffic Manager**
+  - Front Door: HTTP/HTTPS, edge caching, WAF
+  - Traffic Manager: DNS-based, any protocol
 
-Azure: Front Door + Traffic Manager
-  Front Door: HTTP/HTTPS, edge caching, WAF
-  Traffic Manager: DNS-based, any protocol
-
-Cloudflare / Fastly / Akamai:
-  CDN + LB, provider-agnostic, works across clouds
-```
+- **Cloudflare / Fastly / Akamai**
+  - CDN + LB, provider-agnostic, works across clouds
 
 ### GCP Global Load Balancer with Multi-Cluster Gateway
 
@@ -583,26 +583,28 @@ aws route53 change-resource-record-sets \
 
 Split-brain occurs when clusters lose connectivity to each other but continue operating independently. Each cluster believes it is the authoritative source of truth. When connectivity restores, you have conflicting state.
 
-```
-SPLIT-BRAIN SCENARIO
-════════════════════════════════════════════════════════════════
-
-  Normal Operation:
-  Cluster A ◄────────────────────► Cluster B
-  "User X balance: $500"           "User X balance: $500"
-
-  Network partition occurs:
-  Cluster A          ╳              Cluster B
-  User deposits $100               User withdraws $200
-  "User X: $600"                   "User X: $300"
-
-  Network restores:
-  Cluster A ◄────────────────────► Cluster B
-  "User X: $600"    vs             "User X: $300"
-
-  Which is correct? BOTH are. And NEITHER is.
-  The real answer should be $400 ($500 + $100 - $200)
-  but neither cluster knows about the other's operation.
+```mermaid
+sequenceDiagram
+    participant A as Cluster A
+    participant B as Cluster B
+    
+    Note over A,B: Normal Operation
+    A<-->>B: Network Connected
+    Note left of A: User X balance: $500
+    Note right of B: User X balance: $500
+    
+    Note over A,B: Network partition occurs! ╳
+    Note left of A: User deposits $100
+    Note right of B: User withdraws $200
+    Note left of A: User X: $600
+    Note right of B: User X: $300
+    
+    Note over A,B: Network restores
+    A<-->>B: Network Connected
+    Note left of A: "User X: $600"
+    Note right of B: "User X: $300"
+    
+    Note over A,B: Which is correct? BOTH are. And NEITHER is.<br/>The real answer should be $400 ($500 + $100 - $200)<br/>but neither cluster knows about the other's operation.
 ```
 
 ### Mitigation Strategies
