@@ -38,40 +38,37 @@ That is the exact nightmare Kubernetes was built to prevent. This module gives y
 
 ## The Problem: Containers at Scale
 
-Docker is great for running a few containers on your laptop. But production needs more:
+Docker is great for running a few containers on your laptop. But production needs more.
 
+```mermaid
+flowchart TD
+    subgraph Host["Your Single Docker Host"]
+        direction LR
+        C1[Container 1]
+        C2[Container 2]
+        C3[Container 3]
+        C4[Container 4]
+        C5[Container 5]
+        C6[Container 6]
+    end
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              SINGLE MACHINE LIMITATIONS                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Your Docker Host:                                         │
-│  ┌────────────────────────────────────────────────────┐    │
-│  │  🐳 Container 1  🐳 Container 2  🐳 Container 3    │    │
-│  │  🐳 Container 4  🐳 Container 5  🐳 Container 6    │    │
-│  └────────────────────────────────────────────────────┘    │
-│                                                             │
-│  Problems:                                                  │
-│  ❌ Machine dies = ALL containers die                      │
-│  ❌ Need more capacity? Buy bigger machine                 │
-│  ❌ No automatic recovery                                  │
-│  ❌ Manual load balancing                                  │
-│  ❌ Updates require downtime                               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**Single Machine Limitations:**
+- **Machine dies:** ALL containers die.
+- **Need more capacity:** You must buy a bigger machine.
+- **No automatic recovery:** Manual intervention is required if an app crashes.
+- **Manual load balancing:** You have to configure proxies by hand.
+- **Updates require downtime:** No native rolling updates across multiple hosts.
 
 ### What Production Needs
 
-```
-✅ Run containers across multiple machines
-✅ Automatic restart when containers crash
-✅ Automatic placement (which machine has capacity?)
-✅ Load balancing between containers
-✅ Rolling updates without downtime
-✅ Scaling up/down based on demand
-✅ Self-healing when things break
-```
+- ✅ Run containers across multiple machines
+- ✅ Automatic restart when containers crash
+- ✅ Automatic placement (which machine has capacity?)
+- ✅ Load balancing between containers
+- ✅ Rolling updates without downtime
+- ✅ Scaling up/down based on demand
+- ✅ Self-healing when things break
 
 This is **container orchestration**, and Kubernetes is the industry standard.
 
@@ -91,68 +88,72 @@ Kubernetes (K8s) is an open-source container orchestration platform. It:
 
 ### The Analogy: Airport Operations
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              KUBERNETES AS AIRPORT OPERATIONS               │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Airport Control Tower = Kubernetes Control Plane          │
-│  - Assigns planes to gates (schedules pods to nodes)        │
-│  - Monitors all activity (tracks cluster state)             │
-│  - Responds to incidents (restarts failed containers)       │
-│                                                             │
-│  Gates/Runways = Worker Nodes                               │
-│  - Physical infrastructure where work happens               │
-│  - Control tower assigns, gates execute                     │
-│                                                             │
-│  Planes = Pods (containers)                                 │
-│  - Arrive, depart, get serviced                            │
-│  - Control tower tracks status of each                      │
-│                                                             │
-│  Airlines = Namespaces                                      │
-│  - Delta uses gates 1-10                                   │
-│  - United uses gates 11-20                                 │
-│  - Isolation between tenants                                │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Airport["Airport Operations"]
+        Tower[Control Tower\n- Assigns planes to gates\n- Monitors activity\n- Responds to incidents]
+        Gates[Gates / Runways\n- Physical infrastructure\n- Executes assignments]
+        Planes[Planes\n- Arrive, depart, get serviced\n- Tracked by tower]
+        Airlines[Airlines\n- Isolate groups of planes\n- e.g., Delta uses gates 1-10]
+    end
+
+    subgraph K8s["Kubernetes Analogy"]
+        CP[Control Plane\n- Schedules pods to nodes\n- Tracks cluster state\n- Restarts failed containers]
+        Nodes[Worker Nodes\n- Physical/virtual machines\n- Kubelet executes work]
+        Pods[Pods\n- Running containers\n- Tracked by control plane]
+        NS[Namespaces\n- Tenant isolation\n- e.g., Team A vs Team B]
+    end
+
+    Tower -.->|"Maps to"| CP
+    Gates -.->|"Maps to"| Nodes
+    Planes -.->|"Maps to"| Pods
+    Airlines -.->|"Maps to"| NS
 ```
 
 ---
 
 ## Kubernetes Architecture (Simplified)
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              KUBERNETES CLUSTER                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │           CONTROL PLANE (Master)                    │   │
-│  │  ┌───────────┐  ┌──────────┐  ┌───────────────┐    │   │
-│  │  │ API       │  │Scheduler │  │ Controller    │    │   │
-│  │  │ Server    │  │          │  │ Manager       │    │   │
-│  │  └───────────┘  └──────────┘  └───────────────┘    │   │
-│  │  ┌───────────────────────────────────────────┐     │   │
-│  │  │              etcd (database)              │     │   │
-│  │  └───────────────────────────────────────────┘     │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                          │                                  │
-│                          ▼                                  │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                   WORKER NODES                      │   │
-│  │                                                     │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────┐  │   │
-│  │  │   Node 1     │  │   Node 2     │  │  Node 3  │  │   │
-│  │  │ ┌──┐ ┌──┐    │  │ ┌──┐ ┌──┐    │  │ ┌──┐     │  │   │
-│  │  │ │P1│ │P2│    │  │ │P3│ │P4│    │  │ │P5│     │  │   │
-│  │  │ └──┘ └──┘    │  │ └──┘ └──┘    │  │ └──┘     │  │   │
-│  │  └──────────────┘  └──────────────┘  └──────────┘  │   │
-│  │                                                     │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                             │
-│  P1-P5 = Pods (your containers)                            │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph CP["Control Plane (Master)"]
+        direction LR
+        API[API Server]
+        Sched[Scheduler]
+        CM[Controller Manager]
+        ETCD[(etcd Database)]
+        
+        API <--> ETCD
+        API <--> Sched
+        API <--> CM
+    end
+
+    subgraph WN["Worker Nodes"]
+        direction LR
+        subgraph Node1["Node 1"]
+            K1[kubelet]
+            P1((Pod 1))
+            P2((Pod 2))
+            K1 -.-> P1
+            K1 -.-> P2
+        end
+        subgraph Node2["Node 2"]
+            K2[kubelet]
+            P3((Pod 3))
+            P4((Pod 4))
+            K2 -.-> P3
+            K2 -.-> P4
+        end
+        subgraph Node3["Node 3"]
+            K3[kubelet]
+            P5((Pod 5))
+            K3 -.-> P5
+        end
+    end
+
+    API <==>|"Manages"| K1
+    API <==>|"Manages"| K2
+    API <==>|"Manages"| K3
 ```
 
 > **Connect to Module 0.1**: Remember the restaurant kitchen from Module 0.1? The control plane is the restaurant management team. The API Server is the front desk (all orders go through it), the Scheduler is the floor manager (decides which kitchen handles which order), etcd is the order log (records everything), and the Controller Manager is the shift supervisor (makes sure the right number of staff are working).
@@ -220,6 +221,9 @@ spec:
         image: nginx:1.25
 ```
 
+> **Pause and predict**: If a Deployment ensures 3 Pods are always running, but those Pods are frequently destroyed and recreated with new IP addresses, how will your users ever reliably connect to the app?
+> *Answer: They won't, if they rely on Pod IPs. That is why Kubernetes provides the Service resource, which acts as a stable, unchanging entryway (with a static IP and DNS name) that routes traffic to whichever underlying Pods are currently alive.*
+
 ### Services
 Stable networking for pods. Pods come and go; Services provide consistent access.
 
@@ -286,42 +290,25 @@ For learning and development.
 
 ## Visualization: Request Flow
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              HOW A REQUEST FLOWS IN K8S                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. User runs kubectl command                               │
-│     ┌─────────────┐                                        │
-│     │ kubectl     │──────────────────┐                     │
-│     │ apply -f    │                  │                     │
-│     │ deploy.yaml │                  ▼                     │
-│     └─────────────┘          ┌──────────────┐              │
-│                              │  API Server  │              │
-│                              └──────┬───────┘              │
-│                                     │                       │
-│  2. API Server validates & stores   ▼                       │
-│                              ┌──────────────┐              │
-│                              │    etcd      │              │
-│                              └──────┬───────┘              │
-│                                     │                       │
-│  3. Scheduler assigns pod to node   ▼                       │
-│                              ┌──────────────┐              │
-│                              │  Scheduler   │              │
-│                              └──────┬───────┘              │
-│                                     │                       │
-│  4. Kubelet on node starts pod      ▼                       │
-│                              ┌──────────────┐              │
-│                              │   kubelet    │              │
-│                              │  (on node)   │              │
-│                              └──────┬───────┘              │
-│                                     │                       │
-│  5. Container runtime runs it       ▼                       │
-│                              ┌──────────────┐              │
-│                              │  containerd  │──► 🐳 Running│
-│                              └──────────────┘              │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User (kubectl)
+    participant API as API Server
+    participant ETCD as etcd
+    participant S as Scheduler
+    participant K as Kubelet (Worker Node)
+    participant C as Container Runtime (containerd)
+
+    U->>API: kubectl apply -f deploy.yaml
+    API->>ETCD: Validate & store desired state
+    ETCD-->>API: State persisted
+    API->>S: Notify about unassigned pod
+    S->>API: Assign pod to specific Node
+    API->>K: Inform Kubelet on assigned Node
+    K->>C: Instruct runtime to start container
+    C-->>K: Container running
+    K-->>API: Pod status update (Running)
 ```
 
 ---
