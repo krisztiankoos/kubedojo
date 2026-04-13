@@ -1,6 +1,6 @@
 ---
 title: "Advanced Kubernetes"
-slug: ai-ml-engineering/mlops/module-5.5-advanced-kubernetes
+slug: ai-ml-engineering/mlops/module-1.5-advanced-kubernetes
 sidebar:
   order: 606
 ---
@@ -37,6 +37,8 @@ By the end of this module, you will:
 ---
 
 ##  The ML Platform Stack on Kubernetes
+
+> **Pause and predict**: Before reading further, think about what Kubernetes provides out of the box. What specific concerns of an ML workload—training, serving, experimentation—do you think Kubernetes *cannot* address natively?
 
 In Module 46, you learned Kubernetes fundamentals—Pods, Deployments, Services, and the resource model that makes container orchestration possible. But if you've tried to run actual ML workloads on Kubernetes, you've probably discovered an uncomfortable truth: the primitives don't fit.
 
@@ -463,6 +465,8 @@ When a request arrives, it flows through transformer → predictor → transform
 
 ### Canary Deployments: Safe Model Rollouts
 
+> **Stop and think**: If you were deploying a new model version to production, what percentage of traffic would you route to it first? What metrics would tell you the rollout is safe?
+
 Deploying a new model version is risky. The model that performed beautifully on your test set might behave completely differently in production with real data. Canary deployments mitigate this risk by sending a small percentage of traffic to the new version while the old version handles the rest.
 
 Think of it like testing a new recipe at a restaurant. Instead of changing the entire menu immediately, you offer the new dish as a special to a few tables and watch how they react. If customers love it, you add it to the regular menu. If they don't, you tweak the recipe without having ruined dinner for everyone.
@@ -816,6 +820,8 @@ Clients see a single endpoint that takes raw text and returns sentiment plus con
 
 ## 5. Decision Matrix: When to Use What
 
+> **Stop and think**: You've now seen four tools—Kubeflow, KServe, Ray, and Triton. Before reading the decision matrix, sketch out your own mental model. What is each tool's core strength? When would you reach for each one?
+
 Choosing between these tools isn't always obvious. Here's a framework for thinking about it:
 
 **Start with vanilla Kubernetes** if you have fewer than 3 models, simple serving requirements, and a team already comfortable with Kubernetes. Sometimes the overhead of ML-specific tooling isn't worth it.
@@ -856,13 +862,22 @@ spec:
       storageUri: "gs://kfserving-examples/models/sklearn/1.0/model"
 EOF
 
-# Wait for ready and test
+# Wait for ready
 kubectl wait --for=condition=Ready inferenceservice/sklearn-iris --timeout=120s
+
+# Test with a sample request
+SERVICE_URL=$(kubectl get inferenceservice sklearn-iris -o jsonpath='{.status.url}')
+curl -X POST ${SERVICE_URL}/v1/models/sklearn-iris:predict -d '{"instances": [[6.8, 2.8, 4.8, 1.4]]}'
 ```
 
 ### Exercise 2: Create a Kubeflow Pipeline
 
 Build a simple two-step pipeline that adds numbers and multiplies the result. Compile it and view the DAG.
+
+```bash
+# Install Kubeflow Pipelines SDK
+pip install kfp
+```
 
 ```python
 from kfp import dsl, compiler
@@ -881,23 +896,109 @@ def math_pipeline(x: float = 2.0, y: float = 3.0):
     multiply(a=sum_result.output, b=2.0)
 
 compiler.Compiler().compile(math_pipeline, "pipeline.yaml")
+
+# Note: To view the DAG, upload pipeline.yaml to the Kubeflow Pipelines UI in your browser.
 ```
 
 ### Exercise 3: Deploy a Ray Cluster
 
-Install the Ray operator and deploy a cluster. Submit a simple task to verify it's working.
+Install the Ray operator and deploy a minimal CPU-based cluster. Submit a task to verify the cluster is working.
 
 ```bash
 # Install Ray operator
 helm repo add kuberay https://ray-project.github.io/kuberay-helm/
-helm install kuberay-operator kuberay/kuberay-operator
+helm install kuberay-operator kuberay/kuberay-operator --wait
 
-# Deploy cluster and submit job
-kubectl apply -f ray-cluster.yaml
-ray job submit --address http://ray-head:8265 -- python -c "import ray; ray.init(); print(ray.cluster_resources())"
+# Deploy a minimal CPU RayCluster (no GPU required for this exercise)
+kubectl apply -f - <<'EOF'
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: ray-demo-cluster
+spec:
+  rayVersion: '2.9.0'
+  headGroupSpec:
+    rayStartParams:
+      dashboard-host: '0.0.0.0'
+      num-cpus: '2'
+    template:
+      spec:
+        containers:
+          - name: ray-head
+            image: rayproject/ray:2.9.0-py310
+            resources:
+              requests:
+                cpu: 2
+                memory: 4Gi
+              limits:
+                cpu: 2
+                memory: 4Gi
+  workerGroupSpecs:
+    - groupName: cpu-workers
+      replicas: 2
+      minReplicas: 1
+      maxReplicas: 4
+      rayStartParams: {}
+      template:
+        spec:
+          containers:
+            - name: ray-worker
+              image: rayproject/ray:2.9.0-py310
+              resources:
+                requests:
+                  cpu: 1
+                  memory: 2Gi
+                limits:
+                  cpu: 1
+                  memory: 2Gi
+EOF
+
+# Wait for head node to be ready
+kubectl wait --for=condition=Ready pod -l ray.io/node-type=head --timeout=300s
+
+# Submit a job directly to the head pod — no port-forward required
+HEAD_POD=$(kubectl get pod -l ray.io/node-type=head -o jsonpath='{.items[0].metadata.name}')
+kubectl exec "$HEAD_POD" -- python -c "
+import ray
+ray.init()
+print('Cluster resources:', ray.cluster_resources())
+
+@ray.remote
+def hello(worker_id):
+    import socket
+    return f'Worker {worker_id} running on {socket.gethostname()}'
+
+futures = [hello.remote(i) for i in range(4)]
+results = ray.get(futures)
+for r in results:
+    print(r)
+print('Ray cluster verified successfully.')
+"
 ```
 
+The `kubectl exec` approach connects directly to the Ray head pod without requiring a port-forward. For GPU-accelerated training (as shown in the architecture section), you would add the `nodeSelector` and GPU resource limits from the full cluster spec above.
+
 ---
+
+##  Quiz
+
+1. **A team is deploying a new recommendation model but is concerned about a sudden drop in performance affecting users. They want to route 5% of traffic to the new model and monitor it before a full rollout. Which tool and feature best solves this?**
+   <details>
+   <summary>Answer</summary>
+   KServe with canary deployments is the right tool here, using `canaryTrafficPercent: 5` in the InferenceService spec. KServe natively handles fractional traffic routing because it uses Knative Serving under the hood, which has traffic-splitting built into its revision model. This is fundamentally different from vanilla Kubernetes, where you would have to manually deploy two separate Deployments and a Service with weighted backends—a fragile setup that requires custom logic to adjust the split. With KServe, increasing from 5% to 50% is a single field update, and rolling back to 0% is equally instant. The blast radius of a bad model is bounded to exactly 5% of users until you have confidence to proceed.
+   </details>
+
+2. **Your machine learning team has a text classification pipeline: Tokenizer -> BERT Encoder -> Postprocessor. The tokenizer runs efficiently on CPU, but BERT needs GPU. How can you optimize inference without writing a custom microservice for each?**
+   <details>
+   <summary>Answer</summary>
+   Use NVIDIA Triton Inference Server's Model Ensembles. Triton lets you declare a pipeline of models as a single ensemble endpoint, where each stage has its own `instance_group` configuration—tokenizer routed to CPU, BERT to GPU. Clients send raw text to one endpoint and receive predictions back; Triton handles all inter-stage routing internally. This is far better than building a custom microservice chain because Triton applies dynamic batching across the entire pipeline: requests accumulate at each stage until a preferred batch size is reached, dramatically increasing GPU utilization. Writing three separate FastAPI services would require you to implement batching, retry logic, and request routing yourself—Triton makes this declarative configuration.
+   </details>
+
+3. **You are executing a hyperparameter optimization job across 100 different configurations. Many configurations perform poorly after just a few epochs. Which component should you use to efficiently kill poor performers and allocate compute to promising ones?**
+   <details>
+   <summary>Answer</summary>
+   Use either Ray Tune with the ASHA scheduler or Kubeflow's Katib configured with the Hyperband algorithm—both implement the same core idea of successive halving. The key insight is that you do not need to run all 100 configurations to completion to identify the best ones: a model that is performing in the bottom quartile after 5 epochs almost never recovers to be the top performer after 100 epochs. ASHA/Hyperband exploits this by running all configurations with a tiny budget (e.g., 5 epochs), eliminating the bottom half, doubling the budget for survivors, and repeating. This early-stopping strategy finds configurations competitive with an exhaustive search while using a fraction of the compute—often 10-50x fewer GPU-hours. The choice between Ray Tune and Katib depends on your existing stack: Ray Tune is Python-native and easier to integrate into existing training scripts, while Katib is Kubernetes-native and better for teams already on Kubeflow.
+   </details>
 
 ##  Further Reading
 
