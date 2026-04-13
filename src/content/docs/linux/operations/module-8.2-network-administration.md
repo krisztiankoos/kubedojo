@@ -593,7 +593,7 @@ SSH is the primary remote access method for Linux servers. Default configuration
 
 ```bash
 # Generate an SSH key pair (on client machine)
-ssh-keygen -t ed25519 -C "admin @company.com"
+ssh-keygen -t ed25519 -C "admin@company.com"
 # Ed25519 is preferred over RSA — shorter, faster, more secure
 
 # Copy public key to server
@@ -603,7 +603,7 @@ ssh-copy-id -i ~/.ssh/id_ed25519.pub user@server
 cat ~/.ssh/id_ed25519.pub | ssh user@server "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 
 # Test key login
-ssh -i ~/.ssh/id_ed25519 user @src/content/docs/uk/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh.md
+ssh -i ~/.ssh/id_ed25519 user@server
 ```
 
 ### Hardening sshd_config
