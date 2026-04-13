@@ -757,6 +757,9 @@ spec:
 EOF
 
 kubectl apply -f dev-pod.yaml
+
+# Wait for the pod to be running
+kubectl wait --for=condition=Ready pod/dev-shell -n dev-team --timeout=60s
 ```
 
 7. **Test from inside the pod**:
