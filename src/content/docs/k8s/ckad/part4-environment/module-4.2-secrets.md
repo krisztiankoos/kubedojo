@@ -365,6 +365,7 @@ k delete secret NAME
 | Mistake | Why It Hurts | Solution |
 |---------|--------------|----------|
 | Forgetting `-n` when encoding | Newline gets encoded with data | Always use `echo -n` |
+| Referencing a missing Secret | Pod stuck in `CreateContainerConfigError` or `ContainerCreating` | Check `kubectl describe pod` events for missing Secret name |
 | Thinking base64 is secure | Anyone can decode | Use proper RBAC + encryption at rest |
 | Logging secret env vars | Secrets exposed in logs | Mount as files, don't log |
 | Not setting readOnly | Container could modify mount | Always use `readOnly: true` |
