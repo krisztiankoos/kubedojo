@@ -5,7 +5,7 @@ sidebar:
   order: 4
 lab:
   id: cka-1.3-helm
-  url: https://killercoda.com/kubedojo/scenario/cka-1.3-helm
+  url: https://killercoda.com/playgrounds/scenario/kubernetes
   duration: "40 min"
   difficulty: intermediate
   environment: kubernetes
@@ -20,40 +20,27 @@ lab:
 
 ## What You'll Be Able to Do
 
-After this module, you will be able to:
-- **Deploy** applications using Helm charts (install, upgrade, rollback, uninstall)
-- **Customize** Helm releases with values files and --set overrides
-- **Debug** a failed Helm release by inspecting release history and template rendering
-- **Explain** the Helm architecture (charts, releases, repositories) and when to use Helm vs raw manifests
+After completing this module, you will be able to:
+- **Diagnose** failed Helm deployments by analyzing release secrets and history logs.
+- **Implement** custom infrastructure configurations using complex Helm values overrides and values files.
+- **Evaluate** the state of a cluster by tracking down orphaned releases and performing safe, immediate rollbacks.
+- **Design** robust deployment workflows using the `helm upgrade --install` pattern for idempotent CI/CD integration.
 
 ---
 
 ## Why This Module Matters
 
-Helm is **new to the CKA 2025 curriculum**. You will be tested on it.
+In 2012, Knight Capital Group suffered a catastrophic deployment failure, resulting in a staggering $460 million loss and the company's subsequent bankruptcy in under an hour. Their engineers deployed new trading algorithms but failed to properly manage the configuration flags across their entire fleet of servers. This misalignment between the deployed codebase and the required configuration flags caused the system to execute millions of erroneous trades in just 45 minutes.
 
-Before Helm, deploying a complex application meant managing dozens of YAML files. A typical web app needs Deployments, Services, ConfigMaps, Secrets, Ingress, ServiceAccounts, RBAC rules... all maintained separately, all needing updates together.
+While Knight Capital predates Kubernetes, the core problem—managing complex, multi-component deployments consistently—is exactly why Helm was created. When managing microservices on Kubernetes, a single application might require Deployments, Services, Ingress rules, ConfigMaps, Secrets, and RBAC bindings. Manually applying dozens of individual YAML files invites human error, configuration drift, and exactly the kind of catastrophic outages that destroy companies.
 
-Helm packages all these resources into a single **chart**. Install with one command. Upgrade with one command. Rollback with one command. It's why Helm is called "the package manager for Kubernetes"—same concept as apt/yum/brew, but for K8s resources.
-
-> **The App Store Analogy**
->
-> Think of Helm like an app store. Instead of manually downloading and configuring software piece by piece, you search for what you need (nginx, prometheus, mysql), click install, and everything is set up correctly. Want to customize? Adjust the settings (values). Want to update? Click upgrade. Something broke? Rollback to the previous version.
-
----
-
-## What You'll Learn
-
-By the end of this module, you'll be able to:
-- Install and manage applications with Helm
-- Search for and use public charts
-- Customize deployments with values
-- Upgrade and rollback releases
-- Understand chart structure (for troubleshooting)
+Helm prevents this chaos by packaging all necessary Kubernetes resources into a single, versioned artifact called a "chart." This ensures repeatable, idempotent deployments across development, staging, and production environments. The CKA 2025 curriculum strictly tests your ability to leverage Helm for these scenarios. You must prove you can orchestrate complex applications securely, override configurations deterministically, and roll back instantly when disaster strikes. 
 
 ---
 
 ## Part 1: Helm Concepts
+
+Helm operates heavily on a specific set of terminologies that map directly to standard package management concepts you are likely already familiar with (like `apt` or `brew`). 
 
 ### 1.1 Core Terminology
 
@@ -66,34 +53,19 @@ By the end of this module, you'll be able to:
 
 ### 1.2 How Helm Works
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                      Helm Architecture                          │
-│                                                                 │
-│   You                                                           │
-│    │                                                            │
-│    │  helm install myapp bitnami/nginx                         │
-│    ▼                                                            │
-│   ┌──────────┐     ┌─────────────┐     ┌────────────────────┐  │
-│   │  Helm    │────►│   Chart     │────►│ Kubernetes API     │  │
-│   │  CLI     │     │  (template) │     │ (creates resources)│  │
-│   └──────────┘     └─────────────┘     └────────────────────┘  │
-│        │                                                        │
-│        │  Values (customization)                               │
-│        │  --set replicas=3                                     │
-│        │  -f myvalues.yaml                                     │
-│        ▼                                                        │
-│   ┌──────────────────────────────────────────────────────────┐ │
-│   │ Release stored as Secret in cluster                       │ │
-│   │ (tracks version, values, manifests for rollback)          │ │
-│   └──────────────────────────────────────────────────────────┘ │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
+Helm takes the generic templates provided by a chart, merges them with your specific values, and sends the resulting raw YAML manifests to the Kubernetes API server. It also stores a record of this action inside the cluster itself.
+
+```mermaid
+flowchart TD
+    User["You<br>helm install myapp bitnami/nginx"] --> HelmCLI["Helm CLI"]
+    HelmCLI --> Chart["Chart (template)"]
+    HelmCLI --> API["Kubernetes API<br>(creates resources)"]
+    HelmCLI -- "Values (customization)<br>--set replicas=3<br>-f myvalues.yaml" --> Secret["Release stored as Secret in cluster<br>(tracks version, values, manifests for rollback)"]
 ```
 
 ### 1.3 Helm 3 vs Helm 2
 
-Helm 3 (current) removed Tiller—a server component that ran in the cluster. Now Helm talks directly to the Kubernetes API using your kubeconfig. This is simpler and more secure.
+If you are reading older tutorials, you might see references to "Tiller." Helm 3 (current) removed Tiller—a server component that ran in the cluster. Now Helm talks directly to the Kubernetes API using your kubeconfig. This is simpler and vastly improves security by leveraging your existing RBAC permissions instead of requiring a highly privileged cluster-wide service account.
 
 ```bash
 # Helm 3 (current) - no Tiller needed
@@ -103,13 +75,11 @@ helm install myapp ./mychart
 # Don't use this anymore
 ```
 
-> **Did You Know?**
->
-> Helm release information is stored as Secrets in your cluster. Run `kubectl get secrets -l owner=helm` to see them. This is how Helm tracks what's installed and enables rollback.
-
 ---
 
 ## Part 2: Installing Helm
+
+Helm is a single statically compiled Go binary. It requires no server-side installation on the cluster itself. 
 
 ### 2.1 Install Helm CLI
 
@@ -122,8 +92,8 @@ curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
 # Linux (package manager)
 # Debian/Ubuntu
-curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
 sudo apt-get update
 sudo apt-get install helm
 
@@ -133,9 +103,11 @@ helm version
 
 ### 2.2 Add a Repository
 
+A repository is simply an HTTP server that houses an `index.yaml` file and packaged charts. **ChartMuseum** is an open-source Helm repository server. Organizations use it to host private charts securely behind their firewalls.
+
 ```bash
 # Add the Bitnami repository (popular, well-maintained charts)
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add bitnami https://github.com/bitnami/charts
 
 # Add other common repositories
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -151,6 +123,8 @@ helm repo list
 ---
 
 ## Part 3: Working with Charts
+
+Helm allows you to search for software much like you would use a search engine, retrieving the artifacts and reading their documentation directly from the command line.
 
 ### 3.1 Searching for Charts
 
@@ -171,6 +145,8 @@ helm show values bitnami/nginx  # See all configurable values
 ```
 
 ### 3.2 Installing a Chart
+
+When you run `helm install`, Helm renders the chart templates, generates standard Kubernetes YAML, and applies it to your cluster.
 
 ```bash
 # Basic install
@@ -200,6 +176,8 @@ helm template my-nginx bitnami/nginx > manifests.yaml
 
 ### 3.3 Listing and Inspecting Releases
 
+Helm uses Kubernetes Secrets to store the state of your releases. These secrets are typically named `sh.helm.release.v1.<release-name>.v1`. 
+
 ```bash
 # List all releases
 helm list
@@ -223,13 +201,11 @@ helm get values my-nginx --all
 helm get manifest my-nginx
 ```
 
-> **Gotcha: Namespace Matters**
->
-> Helm releases are namespaced. If you installed in namespace `web`, you must specify `-n web` for all subsequent commands, or you'll get "release not found."
-
 ---
 
 ## Part 4: Customizing with Values
+
+Values are how you inject custom parameters (like replica counts, image tags, or storage sizes) into the generic chart templates.
 
 > **Pause and predict**: You run `helm install my-app bitnami/nginx --set replicaCount=3 -f values.yaml` where `values.yaml` contains `replicaCount: 5`. How many replicas will you get? Think about which source of values takes priority.
 
@@ -250,6 +226,8 @@ helm install my-nginx bitnami/nginx \
 
 ### 4.2 Using --set
 
+For quick overrides, `--set` is incredibly useful, but it can become unwieldy for complex, nested configurations.
+
 ```bash
 # Simple value
 helm install my-nginx bitnami/nginx --set replicaCount=3
@@ -267,10 +245,12 @@ helm install my-nginx bitnami/nginx \
 helm install my-app ./mychart --set 'ingress.hosts[0]=example.com'
 
 # String that looks like number (use quotes)
-helm install my-app ./mychart --set 'version="1.0"'
+helm install my-app ./mychart --set 'version="1.35"'
 ```
 
 ### 4.3 Using Values Files
+
+For production deployments, you should always declare your state using a values file tracked in version control.
 
 ```yaml
 # myvalues.yaml
@@ -309,13 +289,13 @@ helm show values bitnami/nginx
 helm show values bitnami/nginx > nginx-defaults.yaml
 ```
 
-> **Exam Tip**
->
-> During the CKA exam, use `helm show values <chart>` to quickly see what can be customized. Don't memorize chart values—learn to look them up.
-
 ---
 
 ## Part 5: Upgrading and Rolling Back
+
+One of Helm's strongest features is lifecycle management. It tracks every change you make to a release.
+
+> **Stop and think**: You run `helm upgrade my-app bitnami/nginx` without `--reuse-values` and without specifying any values. What happens to all the custom values you set during the original install? Where does Helm get the values for this upgrade?
 
 ### 5.1 Upgrading a Release
 
@@ -336,9 +316,9 @@ helm upgrade --install my-nginx bitnami/nginx
 helm upgrade my-nginx bitnami/nginx --reuse-values --set replicaCount=5
 ```
 
-> **Stop and think**: You run `helm upgrade my-app bitnami/nginx` without `--reuse-values` and without specifying any values. What happens to all the custom values you set during the original install? Where does Helm get the values for this upgrade?
-
 ### 5.2 Release History
+
+Every time you install, upgrade, or rollback, Helm creates a new revision secret.
 
 ```bash
 # View upgrade history
@@ -364,13 +344,11 @@ helm rollback my-nginx 1
 helm rollback my-nginx 1 --dry-run
 ```
 
-> **War Story: The Accidental Upgrade**
->
-> An engineer ran `helm upgrade my-app ./chart` without specifying values, accidentally resetting everything to defaults. Production database credentials? Gone. Custom resource limits? Gone. The fix was `helm rollback my-app 1`, but it took 20 minutes to figure out what happened. Lesson: Always use `--reuse-values` or explicitly specify all values on upgrade.
-
 ---
 
 ## Part 6: Uninstalling
+
+Uninstalling removes all Kubernetes resources associated with the release, but you can opt to retain the history secrets.
 
 ```bash
 # Uninstall a release
@@ -387,9 +365,9 @@ helm uninstall my-nginx -n web
 
 ## Part 7: Chart Structure (For Understanding)
 
-You don't need to create charts for CKA, but understanding structure helps troubleshooting.
+While you will not be required to write complex charts from scratch during the exam, you must understand their internal anatomy to effectively debug broken configurations.
 
-```
+```text
 mychart/
 ├── Chart.yaml          # Metadata (name, version, description)
 ├── values.yaml         # Default configuration
@@ -407,12 +385,14 @@ mychart/
 
 ### 7.1 How Templates Work
 
+Helm utilizes the Go template engine. It injects the merged values into specific placeholders within the YAML framework.
+
 ```yaml
 # templates/deployment.yaml (simplified)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Release.Name }}-nginx
+  name: "{{ .Release.Name }}-nginx"
 spec:
   replicas: {{ .Values.replicaCount }}
   template:
@@ -422,9 +402,9 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
 ```
 
-Values from `values.yaml` or `--set` replace the `{{ }}` placeholders.
-
 ### 7.2 Debugging Templates
+
+If a chart fails to install, rendering the templates locally is your first debugging step.
 
 ```bash
 # See what YAML would be generated
@@ -438,13 +418,15 @@ helm install my-nginx bitnami/nginx --debug --dry-run
 
 ## Part 8: Common Exam Scenarios
 
+These are the exact patterns you will likely encounter in a high-pressure exam or production incident environment.
+
 ### 8.1 Install an Application
 
 ```bash
 # Task: Install nginx with 3 replicas exposed on NodePort 30080
 
 # Solution:
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add bitnami https://github.com/bitnami/charts
 helm repo update
 
 helm install web bitnami/nginx \
@@ -482,51 +464,77 @@ helm status web
 
 ## Did You Know?
 
-- **Helm hooks** let you run jobs before/after install, upgrade, or delete. Charts use this for database migrations, certificate generation, etc.
-
-- **Helm uses Go templates**. The `{{ }}` syntax is Go's template language. Understanding basic Go templating helps when debugging complex charts.
-
-- **ChartMuseum** is an open-source Helm repository server. Organizations use it to host private charts.
+- Helm was originally created by Deis in 2015 and was donated to the CNCF in 2018, eventually graduating as a top-level project in April 2020.
+- By default, Helm retains up to 10 revision secrets per release to prevent etcd database bloat, though you can adjust this limit globally via the `--history-max` flag.
+- Helm templates are powered by the Go template engine, which allows complex logic, conditionals, and loops, handling over 150 built-in template functions inherited from the Sprig library.
+- The transition from Helm 2 to Helm 3 in November 2019 eliminated the in-cluster Tiller component entirely, migrating to a client-only architecture that dramatically reduced cluster attack surfaces.
 
 ---
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
+| Mistake | Why | Fix |
+|---------|-----|-----|
 | Forgetting `-n namespace` | Release not found | Always specify namespace |
 | Not using `--reuse-values` | Values reset on upgrade | Use `--reuse-values` or specify all values |
 | Wrong repo URL | Chart not found | Check `helm repo list`, `helm repo update` |
 | Ignoring dry-run | Unexpected resources created | Always `--dry-run` first for complex changes |
 | Not checking helm status | Don't know if install succeeded | Run `helm status <release>` after install |
+| Manually deleting Helm secrets | Helm loses track of the release state | Never manually delete `sh.helm.release` secrets; use `helm uninstall` |
+| Hardcoding passwords in values | Exposes credentials in git | Use external secret stores or pass via `--set` during CI/CD execution |
+| Applying templates manually | Loses lifecycle tracking and rollback capabilities | Always use `helm install` or `helm upgrade --install` instead of raw template pipes |
 
 ---
 
 ## Quiz
 
-1. **During the CKA exam, you need to install a chart but you don't know the exact parameter name for setting the Service type to NodePort. The exam environment has no internet access. How do you find the correct parameter name, and what command do you use?**
-   <details>
-   <summary>Answer</summary>
-   Run `helm show values <chart-name>` to display all configurable values with their defaults and structure. You can pipe it through grep to narrow down: `helm show values bitnami/nginx | grep -i service` to find service-related parameters. This works entirely offline since the chart is already in your local repository cache. For the actual install, you'd use something like `helm install my-app bitnami/nginx --set service.type=NodePort`. The key exam skill is knowing that `helm show values` is your documentation when you can't access the internet.
-   </details>
+<details>
+<summary>1. During the CKA exam, you need to install a chart but you don't know the exact parameter name for setting the Service type to NodePort. The exam environment has no internet access. How do you find the correct parameter name, and what command do you use?</summary>
 
-2. **A teammate installed a Helm release last week, but now `helm list` shows nothing and `helm status my-app` returns "release not found." However, `kubectl get deploy my-app` shows the deployment still running. What are two possible explanations?**
-   <details>
-   <summary>Answer</summary>
-   First, the release may have been installed in a different namespace — Helm releases are namespaced, so you need `helm list -n <namespace>` or `helm list -A` to find it. Second, someone may have run `helm uninstall my-app` without `--keep-history`, which removes the Helm release metadata (stored as Secrets labeled `owner=helm`) but doesn't delete the Kubernetes resources if they were modified outside Helm or if the uninstall partially failed. You can verify by checking `kubectl get secrets -l owner=helm -A` to see if any release secrets exist. The running deployment is now "orphaned" from Helm's perspective and must be managed directly with kubectl.
-   </details>
+Run `helm show values <chart-name>` to display all configurable values with their defaults and structure. You can pipe it through grep to narrow down: `helm show values bitnami/nginx | grep -i service` to find service-related parameters. This works entirely offline since the chart is already in your local repository cache. For the actual install, you'd use something like `helm install my-app bitnami/nginx --set service.type=NodePort`. The key exam skill is knowing that `helm show values` is your documentation when you can't access the internet.
+</details>
 
-3. **You upgraded a production Helm release, and now the application is returning 500 errors. You need to revert immediately. The release has 4 revisions in its history. What commands do you run, and how do you verify the rollback succeeded?**
-   <details>
-   <summary>Answer</summary>
-   First, check the history: `helm history my-app -n production` to see which revision was the last working one. Then roll back: `helm rollback my-app 3 -n production` (assuming revision 3 was the last good state, since revision 4 caused the issue). Verify with: `helm status my-app -n production` to confirm the release status is "deployed" at the expected revision, then `kubectl get pods -n production` to check pods are Running and not in CrashLoopBackOff. You can also run `helm get values my-app -n production` to confirm the values match the known-good configuration. Helm rollback creates a new revision (5) with the same config as revision 3, so your history is preserved.
-   </details>
+<details>
+<summary>2. A teammate installed a Helm release last week, but now `helm list` shows nothing and `helm status my-app` returns "release not found." However, `kubectl get deploy my-app` shows the deployment still running. What are two possible explanations?</summary>
 
-4. **Your CI/CD pipeline runs `helm template my-app ./chart > manifests.yaml && kubectl apply -f manifests.yaml` instead of `helm install`. A colleague suggests using `helm install --dry-run` for validation instead. What critical difference would this catch that `helm template` misses?**
-   <details>
-   <summary>Answer</summary>
-   `helm template` renders templates locally without connecting to the Kubernetes cluster. It cannot validate whether the API resources actually exist on the cluster (e.g., if you reference a CRD that isn't installed), whether resource names conflict with existing objects, or whether the cluster's API version supports the resources in the chart. `helm install --dry-run` connects to the cluster and runs server-side validation, catching issues like "no matches for kind 'ServiceMonitor'" (missing CRD) or invalid API versions. However, neither approach actually creates resources. For the CI/CD pipeline, using `helm install` or `helm upgrade --install` is better than the template-and-apply pattern because it also gives you Helm's release tracking, history, and rollback capabilities.
-   </details>
+First, the release may have been installed in a different namespace — Helm releases are namespaced, so you need `helm list -n <namespace>` or `helm list -A` to find it. Second, someone may have run `helm uninstall my-app` without `--keep-history`, which removes the Helm release metadata (stored as Secrets labeled `owner=helm`) but doesn't delete the Kubernetes resources if they were modified outside Helm or if the uninstall partially failed. You can verify by checking `kubectl get secrets -l owner=helm -A` to see if any release secrets exist. The running deployment is now "orphaned" from Helm's perspective and must be managed directly with kubectl.
+</details>
+
+<details>
+<summary>3. You upgraded a production Helm release, and now the application is returning 500 errors. You need to revert immediately. The release has 4 revisions in its history. What commands do you run, and how do you verify the rollback succeeded?</summary>
+
+First, check the history: `helm history my-app -n production` to see which revision was the last working one. Then roll back: `helm rollback my-app 3 -n production` (assuming revision 3 was the last good state, since revision 4 caused the issue). Verify with: `helm status my-app -n production` to confirm the release status is "deployed" at the expected revision, then `kubectl get pods -n production` to check pods are Running and not in CrashLoopBackOff. You can also run `helm get values my-app -n production` to confirm the values match the known-good configuration. Helm rollback creates a new revision (5) with the same config as revision 3, so your history is preserved.
+</details>
+
+<details>
+<summary>4. Your CI/CD pipeline runs `helm template my-app ./chart > manifests.yaml && kubectl apply -f manifests.yaml` instead of `helm install`. A colleague suggests using `helm install --dry-run` for validation instead. What critical difference would this catch that `helm template` misses?</summary>
+
+`helm template` renders templates locally without connecting to the Kubernetes cluster. It cannot validate whether the API resources actually exist on the cluster (e.g., if you reference a CRD that isn't installed), whether resource names conflict with existing objects, or whether the cluster's API version supports the resources in the chart. `helm install --dry-run` connects to the cluster and runs server-side validation, catching issues like "no matches for kind 'ServiceMonitor'" (missing CRD) or invalid API versions. However, neither approach actually creates resources. For the CI/CD pipeline, using `helm install` or `helm upgrade --install` is better than the template-and-apply pattern because it also gives you Helm's release tracking, history, and rollback capabilities.
+</details>
+
+<details>
+<summary>5. You deploy a monitoring stack using Helm, but the Prometheus pod enters CrashLoopBackOff due to a misconfigured storage class. You have updated the values file to fix the storage class. What command must you run to safely apply this fix without losing your previous configurations?</summary>
+
+You should run `helm upgrade monitoring-stack prometheus-community/kube-prometheus-stack -f updated-values.yaml --reuse-values`. The `--reuse-values` flag ensures that any other custom settings applied during the initial installation are preserved, while the new values file overwrites only the specific storage class parameters.
+</details>
+
+<details>
+<summary>6. A junior engineer accidentally deletes the namespace `frontend` where a Helm release named `webapp` was deployed. When you attempt to run `helm uninstall webapp -n frontend`, Helm throws an error. How do you properly clean up the residual Helm release data?</summary>
+
+When a namespace is deleted, Kubernetes automatically garbage collects all resources within it, including the Secret objects that Helm uses to track the release state. Because the secrets are gone, Helm no longer recognizes the release. No further Helm cleanup is required; the release is effectively uninstalled from Helm's perspective.
+</details>
+
+<details>
+<summary>7. You are writing a deployment pipeline and need to ensure that an application is installed if it doesn't exist, but merely upgraded if it is already running. Which command and flags provide this exact idempotent behavior?</summary>
+
+Use the `helm upgrade --install <release-name> <chart-name>` command. This combined command instructs Helm to check the cluster state; if the release is missing, it performs an initial installation, and if it exists, it performs an in-place upgrade, making it ideal for automated CI/CD workflows.
+</details>
+
+<details>
+<summary>8. During an incident, you suspect that the running configuration of a Helm release has drifted from the configuration stored in source control. How can you extract the exact values that were passed to Helm during the last successful upgrade, including the default values?</summary>
+
+Execute `helm get values <release-name> --all`. By default, `helm get values` only shows the values that were explicitly overridden via `--set` or a values file. Adding the `--all` flag merges and outputs the complete set of parameters, allowing you to accurately audit the current running state against your repository.
+</details>
 
 ---
 
@@ -538,7 +546,7 @@ helm status web
 
 1. **Add the Bitnami repository**:
 ```bash
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add bitnami https://github.com/bitnami/charts
 helm repo update
 ```
 
@@ -615,7 +623,7 @@ Complete these tasks as fast as possible:
 
 ```bash
 # 1. Add bitnami repo (if not added)
-helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add bitnami https://github.com/bitnami/charts
 
 # 2. Search for redis
 helm search repo redis
@@ -712,7 +720,7 @@ kubectl get pods  # ImagePullBackOff
 helm get values broken-nginx
 
 # Fix with upgrade
-helm upgrade broken-nginx bitnami/nginx --reuse-values --set image.tag=1.25
+helm upgrade broken-nginx bitnami/nginx --reuse-values --set image.tag=1.35.0
 
 # Verify
 kubectl get pods  # Running!
@@ -800,4 +808,4 @@ helm uninstall mydb
 
 ## Next Module
 
-[Module 1.4: Kustomize](../module-1.4-kustomize/) - Configuration management without templates, Kubernetes-native customization.
+[Module 1.4: Kustomize](../module-1.4-kustomize/) - Configuration management without templates, exploring native Kubernetes deployment customization.
