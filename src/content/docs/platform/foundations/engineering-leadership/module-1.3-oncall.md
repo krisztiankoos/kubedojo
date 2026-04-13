@@ -41,23 +41,20 @@ Her manager noticed the dark circles. "You doing okay?" he asked.
 
 By month six, Priya put in her two weeks' notice. She didn't have another job lined up. She just couldn't do it anymore. The company lost one of its best engineers—not because of compensation, not because of career growth, not because of a toxic culture. Because they let bad on-call practices grind her into dust.
 
-```
-THE HIDDEN COST OF BAD ON-CALL
-═══════════════════════════════════════════════════════════════════════════════
+> **Stop and think**: What organizational failures led to Priya's resignation? Was it just the volume of alerts, or did the lack of systemic feedback loops play a larger role?
 
-What Priya's company thought they saved:
-  - $0 (no on-call tooling investment, no rotation redesign)
-
-What Priya's company actually lost:
-  ┌──────────────────────────────────────────────────────────────────────────┐
-  │  Recruiting her replacement:              ~$25,000                      │
-  │  Ramp-up time for new hire (6 months):    ~$75,000 in reduced output   │
-  │  Knowledge that walked out the door:       Priceless (and unrecoverable)│
-  │  Team morale damage:                       2 more resignations followed │
-  │                                                                        │
-  │  TOTAL:  $100,000+ and a mass attrition event                          │
-  └──────────────────────────────────────────────────────────────────────────┘
-```
+> **The Hidden Cost of Bad On-Call**
+>
+> What Priya's company thought they saved:
+> - $0 (no on-call tooling investment, no rotation redesign)
+>
+> What Priya's company actually lost:
+> - Recruiting her replacement: ~$25,000
+> - Ramp-up time for new hire (6 months): ~$75,000 in reduced output
+> - Knowledge that walked out the door: Priceless (and unrecoverable)
+> - Team morale damage: 2 more resignations followed
+>
+> **TOTAL: $100,000+ and a mass attrition event**
 
 Priya's story isn't rare. It's the norm at companies that treat on-call as an afterthought. This module exists to make sure you never build—or tolerate—an on-call system that destroys people.
 
@@ -101,75 +98,61 @@ A well-designed rotation answers five questions: **who**, **when**, **how long**
 
 ### Rotation Models
 
+```mermaid
+gantt
+    title Model 1: Simple Weekly Rotation
+    dateFormat YYYY-MM-DD
+    axisFormat %m/%d
+    section Primary
+    Alex :active, 2026-04-06, 7d
+    Beth :active, 2026-04-13, 7d
+    Chen :active, 2026-04-20, 7d
+    Dana :active, 2026-04-27, 7d
+    Alex :active, 2026-05-04, 7d
+    section Secondary
+    Beth :2026-04-06, 7d
+    Chen :2026-04-13, 7d
+    Dana :2026-04-20, 7d
+    Alex :2026-04-27, 7d
+    Beth :2026-05-04, 7d
 ```
-MODEL 1: SIMPLE WEEKLY ROTATION
-═══════════════════════════════════════════════════════════════════════════════
+*Best for: Small teams (4-6 people), single timezone. Pros: Simple, predictable. Cons: Full week is exhausting, weekends are consumed.*
 
-Best for: Small teams (4-6 people), single timezone
-
-  Week 1     Week 2     Week 3     Week 4     Week 5
-  ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐   ┌──────┐
-  │ Alex │   │ Beth │   │ Chen │   │ Dana │   │ Alex │
-  │  1°  │   │  1°  │   │  1°  │   │  1°  │   │  1°  │
-  ├──────┤   ├──────┤   ├──────┤   ├──────┤   ├──────┤
-  │ Beth │   │ Chen │   │ Dana │   │ Alex │   │ Beth │
-  │  2°  │   │  2°  │   │  2°  │   │  2°  │   │  2°  │
-  └──────┘   └──────┘   └──────┘   └──────┘   └──────┘
-
-1° = Primary (gets paged first)
-2° = Secondary (escalation after 15 min)
-
-Pros: Simple, predictable, easy to manage
-Cons: Full week is exhausting, weekends included
-      Every 4th week, your entire week is on-call
+```mermaid
+gantt
+    title Model 2: Weekday/Weekend Split
+    dateFormat YYYY-MM-DD
+    axisFormat %m/%d
+    section Weekdays (Mon-Fri)
+    Alex (1°), Beth (2°) :2026-04-06, 5d
+    Chen (1°), Dana (2°) :2026-04-13, 5d
+    Erin (1°), Alex (2°) :2026-04-20, 5d
+    Beth (1°), Chen (2°) :2026-04-27, 5d
+    section Weekends (Fri-Mon)
+    Chen :active, 2026-04-11, 2d
+    Dana :active, 2026-04-18, 2d
+    Erin :active, 2026-04-25, 2d
+    Alex :active, 2026-05-02, 2d
 ```
+*Best for: Teams that want to protect weekends, 5-8 people. Pros: Weekend rotation is separate and can be compensated differently. Cons: Handoff friction at boundaries.*
 
+```mermaid
+gantt
+    title Model 3: Follow-the-Sun Rotation
+    dateFormat YYYY-MM-DD HH:mm
+    axisFormat %H:%M
+    section US Pacific
+    Off-duty :2026-04-13 00:00, 8h
+    ON-CALL :active, 2026-04-13 08:00, 8h
+    Off-duty :2026-04-13 16:00, 8h
+    section Europe
+    ON-CALL :active, 2026-04-13 00:00, 8h
+    Off-duty :2026-04-13 08:00, 16h
+    section Asia
+    Off-duty :2026-04-13 00:00, 16h
+    ON-CALL :active, 2026-04-13 16:00, 8h
 ```
-MODEL 2: WEEKDAY/WEEKEND SPLIT
-═══════════════════════════════════════════════════════════════════════════════
-
-Best for: Teams that want to protect weekends, 5-8 people
-
-  ┌─── Weekdays (Mon 09:00 - Fri 17:00) ───┐  ┌─── Weekend ───────────────┐
-  │                                          │  │ (Fri 17:00 - Mon 09:00)  │
-  │  Week 1: Alex (1°), Beth (2°)           │  │  Weekend 1: Chen          │
-  │  Week 2: Chen (1°), Dana (2°)           │  │  Weekend 2: Dana          │
-  │  Week 3: Erin (1°), Alex (2°)           │  │  Weekend 3: Erin          │
-  │  Week 4: Beth (1°), Chen (2°)           │  │  Weekend 4: Alex          │
-  └──────────────────────────────────────────┘  └───────────────────────────┘
-
-Pros: People who had weekday on-call don't also do the weekend
-      Weekend rotation is separate, can be compensated differently
-Cons: Handoff friction at boundaries
-      Needs clear context transfer at Fri 17:00 and Mon 09:00
-```
-
-```
-MODEL 3: FOLLOW-THE-SUN
-═══════════════════════════════════════════════════════════════════════════════
-
-Best for: Distributed teams across 2-3 timezones, no one gets paged at night
-
-                    00:00     06:00     12:00     18:00     24:00
-                    │         │         │         │         │
-  US Pacific        │░░░░░░░░░│████████████████████│░░░░░░░░│
-  (San Francisco)   │  sleep  │    ON-CALL (8hr)   │  sleep │
-                    │         │         │         │         │
-  Europe            │████████████████████│░░░░░░░░░│░░░░░░░░│
-  (Berlin)          │    ON-CALL (8hr)   │  sleep  │  sleep │
-                    │         │         │         │         │
-  Asia              │░░░░░░░░░│░░░░░░░░░│░░░░░░░░░│████████│
-  (Singapore)       │  sleep  │  sleep  │  sleep  │ON-CALL │
-                    │         │         │         │(8hr)   │
-
-  ████ = On-call window (business hours only!)
-  ░░░░ = Off-duty
-
-Pros: NOBODY gets paged at night. This is the gold standard.
-Cons: Requires teams in 2-3 timezones
-      Handoff quality must be excellent
-      Not every company can staff this way
-```
+*Best for: Distributed teams across 2-3 timezones. Pros: Nobody gets paged at night (Gold Standard). Cons: Requires hiring globally.*
 
 ### Primary / Secondary Model
 
@@ -189,27 +172,20 @@ The secondary role is not just a safety net for missed pages. It serves three cr
 
 ### Rotation Length and Frequency
 
-```
-ROTATION LENGTH TRADE-OFFS
-═══════════════════════════════════════════════════════════════════════════════
+| Duration | Assessment | Notes |
+|----------|------------|-------|
+| **24 hours** | Too short | Constant handoffs destroy context. |
+| **3 days** | Awkward | Scheduling overlaps with weekends unpredictably. |
+| **1 week** | ✅ **Ideal** | Industry standard. Long enough for context, short enough to not burn out. Most teams use this. |
+| **2 weeks** | Too long | Only acceptable for low-page services (< 1 page/day average). Exhausting for high-volume. |
 
-24 hours:    Too short. Constant handoffs destroy context.
-3 days:      Awkward scheduling, overlaps with weekends unpredictably.
-1 week:      ✅ Industry standard. Long enough for context, short enough to
-             not burn out. Most teams use this.
-2 weeks:     Too long for high-volume rotations. Acceptable for low-page
-             services (< 1 page/day average).
+**Minimum Team Size for Healthy Rotation:**
+- **4 people**: On-call every 4th week → MINIMUM viable (borderline)
+- **5 people**: On-call every 5th week → Acceptable
+- **6 people**: On-call every 6th week → Good
+- **8 people**: On-call every 8th week → ✅ Ideal
 
-MINIMUM TEAM SIZE FOR HEALTHY ROTATION:
-─────────────────────────────────────────
-4 people  → On-call every 4th week → MINIMUM viable (borderline)
-5 people  → On-call every 5th week → Acceptable
-6 people  → On-call every 6th week → Good
-8 people  → On-call every 8th week → ✅ Ideal
-
-RULE OF THUMB: No one should be on-call more than one week out of every four.
-Google's SRE practice targets a maximum of one week in every three to four.
-```
+> **Rule of Thumb**: No one should be on-call more than one week out of every four. Google's SRE practice targets a maximum of one week in every three to four.
 
 ---
 
@@ -219,40 +195,26 @@ Alert fatigue is what happens when an on-call engineer receives so many alerts t
 
 This is how real incidents get missed. Not because nobody was on-call, but because the person on-call had been conditioned by weeks of false positives to assume the next page is also noise.
 
+> **Pause and predict**: If you lower the threshold for a CPU alert to be "safer" and catch issues earlier, what psychological effect will that ultimately have on the on-call engineer?
+
 ### Measuring Signal-to-Noise Ratio
 
 Every on-call team should track this metric:
 
-```
-SIGNAL-TO-NOISE RATIO (SNR)
-═══════════════════════════════════════════════════════════════════════════════
-
-              Actionable Alerts
-  SNR  =  ─────────────────────── × 100%
-              Total Alerts
+**SNR = (Actionable Alerts / Total Alerts) × 100%**
 
 Where "Actionable" means:
-  - Required human intervention
-  - Would have caused user impact if not addressed
-  - Was NOT a duplicate of another alert
-  - Was NOT a transient blip that self-resolved
+- Required human intervention
+- Would have caused user impact if not addressed
+- Was NOT a duplicate of another alert
+- Was NOT a transient blip that self-resolved
 
-BENCHMARKS:
-─────────────────────────────────────────────────────────────────────────────
-  < 30% SNR     CRITICAL. Your team is drowning. Stop everything and fix
-                alerting before it causes a real incident (or a resignation).
-
-  30-50% SNR    Poor. Significant noise. Dedicate sprint time to alert
-                hygiene.
-
-  50-70% SNR    Acceptable. Normal for growing systems. Continuous
-                improvement needed.
-
-  70-90% SNR    Good. Your alerting is healthy. Keep iterating.
-
-  > 90% SNR     Excellent. You might be under-alerting—double-check
-                coverage. But probably you're just doing a great job.
-```
+**Benchmarks:**
+- **< 30% SNR**: CRITICAL. Your team is drowning. Stop everything and fix alerting before it causes a real incident (or a resignation).
+- **30-50% SNR**: Poor. Significant noise. Dedicate sprint time to alert hygiene.
+- **50-70% SNR**: Acceptable. Normal for growing systems. Continuous improvement needed.
+- **70-90% SNR**: Good. Your alerting is healthy. Keep iterating.
+- **> 90% SNR**: Excellent. You might be under-alerting (double-check coverage), but likely you're doing a great job.
 
 ### Systematically Reducing Noise
 
@@ -284,54 +246,48 @@ Multiply all three. Fix the highest-scoring alerts first.
 
 A shocking number of false positive alerts come from momentary threshold crossings:
 
-```
-WITHOUT HYSTERESIS (bad):
-─────────────────────────────────────────────────────────────────────────────
-CPU Threshold: 80%
+```mermaid
+stateDiagram-v2
+    title Hysteresis (Debouncing) Logic
+    state "Normal Operations\n(CPU < 80%)" as Normal
+    state "Spike Detected\n(CPU > 80%)" as Spike
+    state "Alerting State\n(CPU > 80% for 5m)" as Alerting
 
-  90% ┤              ╭─╮     ╭╮
-  80% ┤─ ─ ─ ─ ─ ─ ╱──╲─ ─╱╲──── THRESHOLD
-  70% ┤           ╭╯    ╲╭╯  ╲
-  60% ┤──────────╯        ╰    ╲──────────
-      └──────────────────────────────────→ time
-
-  ALERTS FIRED: 3 (each time it crossed 80%)
-  ALERTS THAT NEEDED ACTION: 0 (transient spikes)
-
-WITH HYSTERESIS (good):
-─────────────────────────────────────────────────────────────────────────────
-Alert fires at:   80% sustained for 5 minutes
-Alert clears at:  70% sustained for 5 minutes
-
-  Same traffic pattern → ALERTS FIRED: 0
-  Because the spikes never sustained above 80% for 5 full minutes.
+    Normal --> Spike : CPU crosses 80% threshold
+    Spike --> Normal : CPU drops below 80% before 5 min (Transient)
+    Spike --> Alerting : CPU remains > 80% for 5 min (Alert Fires)
+    Alerting --> Normal : CPU drops below 70% for 5 min (Alert Clears)
+    
+    note right of Spike
+      Without hysteresis, 
+      every transient spike 
+      causes an alert.
+    end note
 ```
 
 **Step 4: Group correlated alerts.**
 
 When a database goes down, you don't need 47 alerts for every service that depends on it. You need one alert that says "database is down" and a suppression rule that silences downstream symptoms for a defined window.
 
+**BAD: Alert storm from a single root cause**
+```text
+03:14:22  CRITICAL  payment-service: connection timeout to postgres
+03:14:23  CRITICAL  order-service: connection timeout to postgres
+03:14:23  WARNING   inventory-service: high error rate
+03:14:24  CRITICAL  user-service: connection timeout to postgres
+03:14:25  CRITICAL  notification-service: unhandled exception
+... (38 more alerts over next 5 minutes)
+
+Engineer's phone: *vibrating continuously for 5 minutes straight*
 ```
-BAD: Alert storm from a single root cause
-─────────────────────────────────────────────────────────────────────────────
-  03:14:22  CRITICAL  payment-service: connection timeout to postgres
-  03:14:23  CRITICAL  order-service: connection timeout to postgres
-  03:14:23  WARNING   inventory-service: high error rate
-  03:14:24  CRITICAL  user-service: connection timeout to postgres
-  03:14:25  CRITICAL  notification-service: unhandled exception
-  03:14:26  WARNING   api-gateway: 5xx rate > 10%
-  03:14:27  CRITICAL  checkout-flow: end-to-end failure
-  ... (38 more alerts over next 5 minutes)
 
-  Engineer's phone: *vibrating continuously for 5 minutes straight*
+**GOOD: Root cause detection with suppression**
+```text
+03:14:22  CRITICAL  postgres-primary: connection refused (port 5432)
+          ↳ Suppressing 44 downstream dependency alerts for 15 minutes
+          ↳ Runbook: https://wiki.internal/runbooks/postgres-connection
 
-GOOD: Root cause detection with suppression
-─────────────────────────────────────────────────────────────────────────────
-  03:14:22  CRITICAL  postgres-primary: connection refused (port 5432)
-            ↳ Suppressing 44 downstream dependency alerts for 15 minutes
-            ↳ Runbook: https://wiki.internal/runbooks/postgres-connection
-
-  Engineer's phone: *one page, one runbook link, clear root cause*
+Engineer's phone: *one page, one runbook link, clear root cause*
 ```
 
 ---
@@ -366,41 +322,33 @@ Not everything deserves a page. A page is a statement that says: "This problem i
 
 A well-designed escalation policy has clear timing, clear ownership, and an explicit "stop" condition:
 
+```mermaid
+timeline
+    title Escalation Policy Example (SEV-1)
+    T+0 min : Page PRIMARY on-call
+    T+5 min : Page SECONDARY on-call
+    T+10 min : Page ENGINEERING MANAGER
+    T+15 min : Page VP OF ENGINEERING
+    T+20 min : Page CTO
+    T+30 min : Auto-escalate to incident commander
+    T+60 min : Status update required to stakeholder channel
 ```
-ESCALATION POLICY EXAMPLE
-═══════════════════════════════════════════════════════════════════════════════
 
-SEVERITY 1 (Service down, data loss, security breach):
-──────────────────────────────────────────────────────
-  T+0 min    Page PRIMARY on-call
-  T+5 min    If not acknowledged → Page SECONDARY on-call
-  T+10 min   If not acknowledged → Page ENGINEERING MANAGER
-  T+15 min   If not acknowledged → Page VP OF ENGINEERING
-  T+20 min   If not acknowledged → Page CTO (yes, really)
-
-  Once acknowledged:
-  T+30 min   If not resolved → Auto-escalate to incident commander
-  T+60 min   Status update required to stakeholder channel
-
-SEVERITY 2 (Degraded service, partial impact):
-──────────────────────────────────────────────
-  T+0 min    Page PRIMARY on-call
-  T+15 min   If not acknowledged → Page SECONDARY on-call
-  T+30 min   If not acknowledged → Page ENGINEERING MANAGER
-
-  Once acknowledged:
-  T+60 min   Status update required
-
-SEVERITY 3 (Minor issue, no user impact):
-──────────────────────────────────────────
-  T+0 min    Slack notification to #oncall channel
-  T+0 min    Auto-create JIRA ticket
-  No page. Address during next business day.
-
-SEVERITY 4 (Cosmetic, informational):
-──────────────────────────────────────
-  Log only. Review in weekly alert triage meeting.
+```mermaid
+timeline
+    title Escalation Policy Example (SEV-2)
+    T+0 min : Page PRIMARY on-call
+    T+15 min : Page SECONDARY on-call
+    T+30 min : Page ENGINEERING MANAGER
+    T+60 min : Status update required
 ```
+
+**SEVERITY 3 (Minor issue, no user impact):**
+- Slack notification to `#oncall` channel.
+- Auto-create Jira ticket. No page. Address during next business day.
+
+**SEVERITY 4 (Cosmetic, informational):**
+- Log only. Review in weekly alert triage meeting.
 
 ### The "Two Pizza Rule" for Pages
 
@@ -417,6 +365,8 @@ If you cannot answer "yes" to at least one of the first two questions, the alert
 ## Runbooks: Your 3 AM Best Friend
 
 A runbook is a document that tells an on-call engineer exactly what to do when a specific alert fires. Good runbooks are the difference between a 5-minute resolution and a 45-minute panicked investigation.
+
+> **Stop and think**: Why is it dangerous to have a single "Subject Matter Expert" as the sole escalation path listed in a runbook? What happens when they go on vacation?
 
 ### What Makes a Good Runbook
 
@@ -506,45 +456,31 @@ The World Health Organization classifies burnout as an **occupational phenomenon
 2. **Cynicism**: Mental distancing from work, negativity, detachment
 3. **Reduced efficacy**: Feeling incompetent, unproductive, like nothing you do matters
 
+> **Pause and predict**: What is typically the first observable behavioral sign that a highly engaged engineer is entering the early stages of burnout?
+
 ### Warning Signs
 
 **In Yourself:**
 
-```
-BURNOUT PROGRESSION — THE SLOW DESCENT
-═══════════════════════════════════════════════════════════════════════════════
-
-Stage 1: STRESS RESPONSE (weeks 1-4)
-───────────────────────────────────────
-  ✦ Difficulty unwinding after on-call shifts
-  ✦ Checking your phone compulsively even when not on-call
-  ✦ Trouble falling asleep before an on-call shift ("anticipatory anxiety")
-  ✦ Mild irritability
-
-Stage 2: CHRONIC STRESS (months 1-3)
-───────────────────────────────────────
-  ✦ Persistent fatigue that sleep doesn't fix
-  ✦ Dreading the start of your on-call week days in advance
-  ✦ Reduced interest in work you used to enjoy
-  ✦ Physical symptoms: headaches, stomach issues, muscle tension
-  ✦ Withdrawing from social interaction at work
-
-Stage 3: BURNOUT (months 3-6)
-───────────────────────────────────────
-  ✦ Emotional numbness — alerts don't even cause anxiety anymore,
-    just... nothing
-  ✦ Calling in sick on on-call days
-  ✦ Thinking "I don't care if this breaks" about systems you built
-  ✦ Fantasizing about quitting without another job
-  ✦ Cynicism: "Why bother fixing this? It'll just break again."
-  ✦ Depression, anxiety, or panic attacks
-
-Stage 4: HABITUAL BURNOUT (months 6+)
-───────────────────────────────────────
-  ✦ Chronic sadness or emptiness
-  ✦ Complete disengagement from work and possibly personal life
-  ✦ Physical illness (immune system is measurably suppressed)
-  ✦ At this stage, recovery typically requires extended leave
+```mermaid
+timeline
+    title Burnout Progression — The Slow Descent
+    Stage 1 : STRESS RESPONSE (weeks 1-4)
+            : Difficulty unwinding after shifts
+            : Checking phone compulsively
+            : Anticipatory anxiety before shifts
+    Stage 2 : CHRONIC STRESS (months 1-3)
+            : Persistent fatigue that sleep doesn't fix
+            : Dreading the start of on-call
+            : Physical symptoms (headaches, tension)
+    Stage 3 : BURNOUT (months 3-6)
+            : Emotional numbness
+            : Cynicism ("Why bother fixing this?")
+            : Calling in sick on on-call days
+    Stage 4 : HABITUAL BURNOUT (months 6+)
+            : Chronic sadness or emptiness
+            : Complete disengagement
+            : Physical illness (suppressed immunity)
 ```
 
 **In Your Teammates:**
@@ -586,30 +522,21 @@ Engineers make a mistake when they frame reliability work in technical terms. "W
 
 Instead, translate to business impact:
 
-```
-BEFORE (Technical framing — nobody outside engineering cares):
-─────────────────────────────────────────────────────────────────────────────
-  "We need to reduce alert noise and improve our runbook coverage."
+**BEFORE (Technical framing — nobody outside engineering cares):**
+> "We need to reduce alert noise and improve our runbook coverage."
 
-AFTER (Business framing — everyone cares):
-─────────────────────────────────────────────────────────────────────────────
-  "Last quarter, our on-call team received 847 pages. 73% were false
-   positives that required no action. That's 618 unnecessary wake-ups.
-
-   We've calculated that this noise:
-   - Increased our mean time to respond to REAL incidents by 340%
-     (because engineers stopped trusting alerts)
-   - Contributed to 2 engineer departures (exit interviews cited on-call
-     stress), costing ~$200K in recruiting and ramp-up
-   - Resulted in 3 incidents where the actual page was ignored for 20+
-     minutes because it looked like another false positive
-
-   We're proposing 3 weeks of engineering time to reduce false positives
-   by 60%. Based on our analysis, this will:
-   - Reduce MTTR by ~40% (faster response to real incidents)
-   - Save ~$150K/year in reduced attrition risk
-   - Improve customer experience (fewer prolonged outages)"
-```
+**AFTER (Business framing — everyone cares):**
+> "Last quarter, our on-call team received 847 pages. 73% were false positives that required no action. That's 618 unnecessary wake-ups.
+>
+> We've calculated that this noise:
+> - Increased our mean time to respond to REAL incidents by 340% (because engineers stopped trusting alerts)
+> - Contributed to 2 engineer departures (exit interviews cited on-call stress), costing ~$200K in recruiting and ramp-up
+> - Resulted in 3 incidents where the actual page was ignored for 20+ minutes because it looked like another false positive
+>
+> We're proposing 3 weeks of engineering time to reduce false positives by 60%. Based on our analysis, this will:
+> - Reduce MTTR by ~40% (faster response to real incidents)
+> - Save ~$150K/year in reduced attrition risk
+> - Improve customer experience (fewer prolonged outages)"
 
 ### The Toil Budget
 
@@ -652,66 +579,39 @@ You can't improve what you don't measure. These are the metrics every on-call te
 
 ### Core Metrics
 
+```mermaid
+gantt
+    title MTTA and MTTR Timeline
+    dateFormat YYYY-MM-DD HH:mm
+    axisFormat %H:%M
+    section Incident Lifecycle
+    MTTA (Time to Acknowledge) :a1, 2026-04-13 02:00, 5m
+    Investigation & Resolution :a2, after a1, 25m
+    section Milestones
+    Page Fires :milestone, m1, 2026-04-13 02:00, 0m
+    Acknowledged by Engineer :milestone, m2, 2026-04-13 02:05, 0m
+    Resolved (Service Recovered) :milestone, m3, 2026-04-13 02:30, 0m
 ```
-METRIC 1: MTTA (Mean Time to Acknowledge)
-═══════════════════════════════════════════════════════════════════════════════
 
-  Definition: Average time from page firing to engineer acknowledging
+**METRIC 1: MTTA (Mean Time to Acknowledge)**
+- **Definition**: Average time from page firing to engineer acknowledging.
+- **Good**: < 5 minutes
+- **Okay**: 5-15 minutes
+- **Bad**: > 15 minutes (means pages are being ignored or missed)
 
-                   Page         Acknowledged
-                   fires        by engineer
-                     │               │
-                     ▼               ▼
-  ──────────────────┤ ◄──── MTTA ──►├────────────────────────────
-                     │               │
-                     └── This gap ──┘
+**METRIC 2: MTTR (Mean Time to Resolve)**
+- **Definition**: Average time from page firing to incident resolved.
+- **Good**: < 30 minutes (depends heavily on service complexity)
 
-  Good:     < 5 minutes
-  Okay:     5-15 minutes
-  Bad:      > 15 minutes (means pages are being ignored or missed)
+**METRIC 3: PAGES PER SHIFT**
+- **Definition**: Total pages received during one on-call shift.
+- **Google's guidance**: ≤ 2 events per 12-hour on-call shift
+- **Red line**: > 2 per day sustained = rotation is unhealthy
 
-  Track by: Time of day, day of week, engineer, alert type
-
-
-METRIC 2: MTTR (Mean Time to Resolve)
-═══════════════════════════════════════════════════════════════════════════════
-
-  Definition: Average time from page firing to incident resolved
-
-                   Page         Acknowledged    Resolved
-                   fires        by engineer     (service recovered)
-                     │               │               │
-                     ▼               ▼               ▼
-  ──────────────────┤ ◄─── MTTA ──►├◄── Work ────►├──────────────
-                     │               │               │
-                     └────────────── MTTR ──────────┘
-
-  Good:     < 30 minutes (depends heavily on service complexity)
-  Track by: Severity, service, root cause category
-
-
-METRIC 3: PAGES PER SHIFT
-═══════════════════════════════════════════════════════════════════════════════
-
-  Definition: Total pages received during one on-call shift
-
-  Google's guidance:    ≤ 2 events per 12-hour on-call shift
-  Realistic target:     ≤ 5 per week for most teams
-  Red line:             > 2 per day sustained = rotation is unhealthy
-
-
-METRIC 4: FALSE POSITIVE RATE
-═══════════════════════════════════════════════════════════════════════════════
-
-  Definition: % of pages that required no action
-
-              False Positives
-  FP Rate = ────────────────── × 100%
-              Total Pages
-
-  Target:   < 30%
-  Red line: > 50% = alert configuration is broken
-```
+**METRIC 4: FALSE POSITIVE RATE**
+- **Definition**: % of pages that required no action.
+- **Target**: < 30%
+- **Red line**: > 50% = alert configuration is broken
 
 ### Tracking and Review Cadence
 
@@ -800,17 +700,15 @@ Test your understanding of on-call best practices:
 <details>
 <summary>Show Answer</summary>
 
-Google's SRE book recommends a maximum of **2 events per 12-hour shift**. At 8 pages per shift, your team is receiving 4x the recommended volume. You should **immediately prioritize alert noise reduction**: classify recent alerts, identify and silence false positives, add hysteresis to threshold-based alerts, and deduplicate correlated alerts. This is not optional improvement work—at this volume, alert fatigue is actively making your team less reliable.
+Google's SRE book recommends a maximum of **2 events per 12-hour shift** to maintain high incident response quality. At 8 pages per shift, your team is receiving four times the recommended volume, which significantly impairs their ability to deeply investigate issues. You should **immediately prioritize alert noise reduction** by classifying recent alerts, adding hysteresis to threshold-based alerts, and deduplicating correlated events. This is not optional improvement work; at this high volume, alert fatigue is actively making your team less reliable and heavily increasing the risk of burnout.
 </details>
 
-**Question 2:** An alert fires at 2:30 AM for "disk usage at 73% on staging server (threshold: 70%)." What's wrong with this alert?
+**Question 2:** An alert fires at 2:30 AM for "disk usage at 73% on staging server (threshold: 70%)." What's wrong with this alert configuration?
 
 <details>
 <summary>Show Answer</summary>
 
-Two things are wrong:
-1. **It's a staging environment.** Staging issues should never generate pages. They should be non-paging notifications addressed during business hours.
-2. **The threshold is too tight.** 73% disk usage is not an emergency. A better approach would be to alert (non-paging) at 80%, and page only at 90% or higher on production systems—with a 10-minute sustained duration to avoid transient spikes.
+There are multiple fundamental flaws with this alert configuration. First, it targets a staging environment, which should never generate after-hours pages because it does not directly impact customers or production integrity. Staging issues should be routed to non-paging notifications and addressed during normal business hours. Second, the threshold of 73% disk usage is far too tight and does not represent an immediate emergency requiring human intervention at 2:30 AM. A more appropriate approach would be a non-paging warning at 80%, with a critical page reserved for 90% or higher on production systems, configured with a sustained duration to filter out transient spikes.
 </details>
 
 **Question 3:** Your team's signal-to-noise ratio (SNR) for on-call alerts is 35%. What does this mean, and how would you classify the health of your alerting system?
@@ -818,27 +716,23 @@ Two things are wrong:
 <details>
 <summary>Show Answer</summary>
 
-An SNR of 35% means that only 35% of pages were actionable—65% were false positives, duplicates, or informational alerts that didn't need human intervention. This is classified as **Poor**. The team is spending roughly two-thirds of their on-call effort on noise. You should dedicate sprint time to alert hygiene: classify all alerts from the past 30 days, eliminate false positives, add deduplication, and convert informational alerts to non-paging notifications.
+An SNR of 35% indicates that only 35% of the pages your team receives require actual human intervention to prevent or resolve user impact. The remaining 65% consists of false positives, duplicates, or informational alerts that train engineers to ignore their pagers over time. This state is classified as "Poor" and indicates a system where engineers are spending the vast majority of their emotional energy on noise rather than signal. To restore the health of the alerting system, you must dedicate immediate sprint capacity to alert hygiene, eliminating useless notifications until the SNR returns to the target of 70% or higher.
 </details>
 
-**Question 4:** An engineer on your team has been on-call for three weeks in a row (covering for teammates on vacation). They tell you "it's fine, I don't mind." Should you take this at face value?
+**Question 4:** An engineer on your team has been on-call for three weeks in a row to cover for teammates who are on vacation. They tell you "it's fine, I don't mind." Should you take this at face value?
 
 <details>
 <summary>Show Answer</summary>
 
-**No.** Three consecutive weeks of on-call is a burnout risk regardless of what the person says. Engineers are trained to push through and minimize their own struggles. As a manager or team lead, you should:
-1. Thank them for their flexibility
-2. Remove them from the next 2-3 rotation cycles to ensure recovery
-3. Address the root cause—if vacation coverage requires someone to triple their on-call load, the rotation is understaffed
-4. Consider whether the "volunteers" who went on vacation are carrying their fair share of on-call burden
+**No.** You absolutely should not take this statement at face value. Engineers are culturally conditioned to push through exhaustion and minimize their own struggles, leading them to hide early symptoms of burnout. Three consecutive weeks of on-call introduces severe, compounding fatigue that disrupts sleep cycles and heavily degrades cognitive performance, regardless of the individual's stated willingness. As a manager or team lead, you must intervene by removing them from the rotation for the next several cycles and ensuring standard vacation coverage does not severely destabilize the remaining team members.
 </details>
 
-**Question 5:** You're writing a runbook for a critical alert. Your first line says "Investigate the issue and determine root cause." What's wrong with this?
+**Question 5:** You're writing a runbook for a critical alert. Your first instruction line says "Investigate the issue and determine root cause." What's wrong with this?
 
 <details>
 <summary>Show Answer</summary>
 
-"Investigate the issue and determine root cause" is what the engineer is already doing—it provides zero actionable guidance. A runbook should tell the reader **exactly what to check and in what order**. The first line should be something like: "Check the service dashboard at [link]. If the error rate is above 5%, check recent deployments with `kubectl rollout history deployment/[service] -n production`. If a deployment happened in the last 2 hours, roll it back with `kubectl rollout undo deployment/[service] -n production`."
+The instruction "Investigate the issue and determine root cause" is entirely unhelpful because it describes the overarching goal rather than the specific actions required to achieve it. A responder reading a runbook at 3 AM is likely sleep-deprived and operating under immense cognitive load, making vague directives actively harmful to incident resolution times. A high-quality runbook must provide concrete, step-by-step diagnostic instructions tailored to the specific alert. It should immediately direct the engineer to the correct dashboard, provide exact CLI commands to copy and paste, and outline the specific rollback or mitigation procedures that resolve the problem 80% of the time.
 </details>
 
 **Question 6:** Your company pays no on-call compensation. When you raise this with leadership, they say "on-call is part of the job description." How would you make a business case for on-call compensation?
@@ -846,12 +740,7 @@ An SNR of 35% means that only 35% of pages were actionable—65% were false posi
 <details>
 <summary>Show Answer</summary>
 
-Frame it in terms leadership cares about—retention and cost:
-
-1. **Market data**: Most competitive tech companies offer on-call compensation ($400-800/week or equivalent). Not offering it puts you at a hiring and retention disadvantage.
-2. **Attrition cost**: Replacing an engineer costs $50-100K+ (recruiting, ramp-up, lost productivity). If even one engineer per year leaves citing on-call burden, compensation pays for itself.
-3. **Fairness optics**: Engineers who are not in the on-call rotation earn the same salary for less disruptive work. This breeds resentment.
-4. **Concrete proposal**: "A $500/week on-call stipend for a 6-person rotation costs $26K/year. That's less than 1/4 the cost of replacing a single engineer who quits over on-call burnout."
+To effectively advocate for on-call compensation, you must translate the human cost of uncompensated labor into tangible financial risks that leadership understands. Begin by highlighting the extreme cost of engineer attrition; replacing a single senior engineer easily costs upwards of $100,000 in recruiting fees, ramp-up time, and lost institutional knowledge. Frame the lack of compensation as a competitive disadvantage, noting that the broader market standardizes on-call pay, meaning your best engineers will inevitably be poached by organizations that value their off-hours time. Finally, present a concrete proposal demonstrating that an annual budget of $30,000 for a rotation stipend is a fraction of the cost of replacing just one burned-out engineer, making it a highly effective insurance policy for team stability.
 </details>
 
 ---
@@ -866,7 +755,7 @@ Below is the raw alert log from a week of PagerDuty data. Your job is to calcula
 
 ### Sample Data: Week of March 10-16, 2026
 
-```
+```text
 PAGERDUTY ALERT LOG — Team: checkout-platform
 ═══════════════════════════════════════════════════════════════════════════════
 
