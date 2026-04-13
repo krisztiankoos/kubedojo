@@ -53,69 +53,57 @@ This module teaches you how Spark works on Kubernetes, how to optimize it for re
 
 Every Spark application has two types of processes:
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                   KUBERNETES CLUSTER                     │
-│                                                          │
-│  ┌─────────────────┐                                     │
-│  │   Spark Driver   │ ← The brain: plans, coordinates    │
-│  │   (1 Pod)        │                                    │
-│  │                   │                                   │
-│  │  SparkContext     │                                   │
-│  │  DAG Scheduler   │                                   │
-│  │  Task Scheduler  │                                   │
-│  └────────┬──────────┘                                   │
-│           │ Spawns & manages                             │
-│     ┌─────┴─────────────────────────┐                    │
-│     │                               │                    │
-│  ┌──▼──────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │  Executor 1  │  │  Executor 2  │  │  Executor 3  │   │
-│  │  (Pod)       │  │  (Pod)       │  │  (Pod)       │   │
-│  │              │  │              │  │              │    │
-│  │  Tasks: 4    │  │  Tasks: 4    │  │  Tasks: 4    │   │
-│  │  Cache: 2GB  │  │  Cache: 2GB  │  │  Cache: 2GB  │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘   │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph K8s["KUBERNETES CLUSTER"]
+        subgraph Driver["Spark Driver (1 Pod)"]
+            SC["SparkContext"]
+            DS["DAG Scheduler"]
+            TS["Task Scheduler"]
+        end
+        Driver -- "Spawns & manages" --> Executors
+        subgraph Executors[" "]
+            direction LR
+            E1["Executor 1 (Pod)\nTasks: 4\nCache: 2GB"]
+            E2["Executor 2 (Pod)\nTasks: 4\nCache: 2GB"]
+            E3["Executor 3 (Pod)\nTasks: 4\nCache: 2GB"]
+        end
+    end
 ```
 
 **Driver Pod**: Created first. Plans the execution, divides work into stages and tasks, distributes tasks to executors, collects results. If the driver dies, the entire job fails.
 
 **Executor Pods**: Created by the driver via the Kubernetes API. Each executor runs multiple tasks in parallel, caches data in memory, and reports results back to the driver. When the job finishes, executors are terminated.
 
+> **Stop and think**: If the driver Pod fails due to an Out Of Memory (OOM) error or node eviction, what happens to the executor Pods? Since the driver is the brain that coordinates everything, its failure terminates the entire Spark application, and all associated executor Pods will be cleaned up by Kubernetes.
+
 ### How Spark Submits Jobs to Kubernetes
 
-```
-┌──────────┐     ┌──────────────┐     ┌──────────────────┐
-│ spark-   │────→│ K8s API      │────→│ Driver Pod       │
-│ submit   │     │ Server       │     │ created          │
-└──────────┘     └──────────────┘     └────────┬─────────┘
-                                               │
-                                    Driver requests
-                                    executor Pods
-                                               │
-                                      ┌────────▼─────────┐
-                                      │ Executor Pods    │
-                                      │ created on       │
-                                      │ available nodes  │
-                                      └──────────────────┘
+```mermaid
+flowchart LR
+    Submit["spark-submit"] -->|Creates| API["K8s API Server"]
+    API -->|Schedules| Driver["Driver Pod created"]
+    Driver -->|Requests executor Pods| API
+    API -->|Schedules| Execs["Executor Pods created on available nodes"]
 ```
 
 Unlike YARN, where a permanent cluster manager allocates resources, Kubernetes IS the cluster manager. Spark talks directly to the Kubernetes API server to create and manage Pods. No YARN, no Mesos, no standalone cluster — just Kubernetes.
 
 ### The Execution Model: Jobs, Stages, Tasks
 
-```
-Spark Application
-  └── Job 1 (triggered by an action: count(), save(), etc.)
-       ├── Stage 1 (narrow transformations: map, filter)
-       │    ├── Task 1 → Executor 1, Partition 0
-       │    ├── Task 2 → Executor 2, Partition 1
-       │    └── Task 3 → Executor 3, Partition 2
-       └── Stage 2 (after shuffle: groupBy, join)
-            ├── Task 1 → Executor 1
-            ├── Task 2 → Executor 2
-            └── Task 3 → Executor 3
+```mermaid
+flowchart TD
+    App["Spark Application"] --> Job["Job 1 (triggered by an action: count, save, etc.)"]
+    Job --> Stage1["Stage 1 (narrow transformations: map, filter)"]
+    Job --> Stage2["Stage 2 (after shuffle: groupBy, join)"]
+    
+    Stage1 --> T1_1["Task 1 → Executor 1, Partition 0"]
+    Stage1 --> T1_2["Task 2 → Executor 2, Partition 1"]
+    Stage1 --> T1_3["Task 3 → Executor 3, Partition 2"]
+    
+    Stage2 --> T2_1["Task 1 → Executor 1"]
+    Stage2 --> T2_2["Task 2 → Executor 2"]
+    Stage2 --> T2_3["Task 3 → Executor 3"]
 ```
 
 A **shuffle** is the most expensive operation — it redistributes data across executors. Shuffles happen during wide transformations (groupBy, join, repartition). Minimizing shuffles is the single most important Spark optimization.
@@ -133,7 +121,9 @@ Running `spark-submit` directly works for ad-hoc jobs. But for production, you n
 - Consistent configuration management
 - GitOps-compatible declarative definitions
 
-The Spark Operator (maintained by Kubeflow) wraps Spark jobs in a Kubernetes Custom Resource, giving you all of these.
+> **Pause and predict**: If `spark-submit` works fine from your local terminal, why might relying on it be dangerous for a production data pipeline running at 3 AM?
+
+The Spark Operator (maintained by Kubeflow) wraps Spark jobs in a Kubernetes Custom Resource, giving you all of these capabilities declaratively.
 
 ### Installing the Spark Operator
 
@@ -266,6 +256,8 @@ spec:
 
 The default Spark Docker image is over 1 GB. When you spin up 50 executors, that is 50 GB of image pulls — which adds minutes to job startup.
 
+> **Stop and think**: Why is downloading a 1 GB image on 50 nodes simultaneously a problem for a Kubernetes cluster? Consider the impact on the container runtime, network bandwidth, and the startup time of your data pipeline.
+
 ### Building Optimized Images
 
 ```dockerfile
@@ -343,10 +335,11 @@ spec:
 
 During a shuffle (e.g., `groupBy`, `join`), every executor writes intermediate data to local disk, and every other executor reads from it. On Kubernetes, this means:
 
-```
-Executor 1 ──shuffle write──→ Local Disk ──shuffle read──→ Executor 3
-Executor 2 ──shuffle write──→ Local Disk ──shuffle read──→ Executor 1
-Executor 3 ──shuffle write──→ Local Disk ──shuffle read──→ Executor 2
+```mermaid
+flowchart LR
+    E1["Executor 1"] -- "shuffle write" --> D1[("Local Disk")] -- "shuffle read" --> E3["Executor 3"]
+    E2["Executor 2"] -- "shuffle write" --> D2[("Local Disk")] -- "shuffle read" --> E1
+    E3["Executor 3"] -- "shuffle write" --> D3[("Local Disk")] -- "shuffle read" --> E2["Executor 2"]
 ```
 
 If an executor dies before the shuffle data is read, the entire stage must be recomputed. On Kubernetes, where Pods are ephemeral, this is a real risk.
@@ -416,6 +409,8 @@ sparkConf:
   spark.sql.adaptive.localShuffleReader.enabled: "true"
 ```
 
+> **Pause and predict**: If you are processing a dataset where 80% of the sales records belong to a single city, what will happen during a `groupBy("city")` operation without AQE enabled?
+
 AQE is so effective that it should be enabled for every Spark 3+ job. It often eliminates the need for manual tuning of partition counts.
 
 ---
@@ -451,13 +446,20 @@ sparkConf:
 
 **How it works on Kubernetes:**
 
-```
-Time ──────────────────────────────────────────────→
-
-Stage 1 (narrow):  ██  2 executors
-Stage 2 (wide):    ████████████████████  20 executors  ← scaled up
-Stage 3 (narrow):  ████  4 executors                   ← scaled down
-Stage 4 (output):  ██  2 executors                     ← scaled down
+```mermaid
+gantt
+    title Dynamic Executor Allocation over Time
+    dateFormat  s
+    axisFormat %S
+    
+    section Stage 1 (narrow)
+    2 executors : 0, 10s
+    section Stage 2 (wide)
+    20 executors (scaled up) : 10, 30s
+    section Stage 3 (narrow)
+    4 executors (scaled down) : 30, 45s
+    section Stage 4 (output)
+    2 executors (scaled down) : 45, 55s
 ```
 
 The driver requests new executor Pods from Kubernetes when tasks are queued and removes idle Pods when work is done. `shuffleTracking.enabled: true` ensures executors with unrequested shuffle data are not removed prematurely.
@@ -468,36 +470,22 @@ The driver requests new executor Pods from Kubernetes when tasks are queued and 
 
 ### Spark Memory Layout on Kubernetes
 
-```
-┌──────────────────────────────────────────────┐
-│            EXECUTOR POD MEMORY               │
-│                                              │
-│  ┌──────────────────────────────────────┐    │
-│  │         spark.executor.memory        │    │
-│  │              (8 GB)                  │    │
-│  │  ┌──────────────────────────────┐    │    │
-│  │  │  Unified Memory (60%)       │    │    │
-│  │  │  ┌────────┐ ┌────────────┐  │    │    │
-│  │  │  │Execution│ │  Storage   │  │    │    │
-│  │  │  │(shuffle,│ │  (cached   │  │    │    │
-│  │  │  │ sort,   │ │   data)    │  │    │    │
-│  │  │  │ join)   │ │            │  │    │    │
-│  │  │  └────────┘ └────────────┘  │    │    │
-│  │  └──────────────────────────────┘    │    │
-│  │  ┌──────────────────────────────┐    │    │
-│  │  │  User Memory (40%)          │    │    │
-│  │  │  (data structures, UDFs)    │    │    │
-│  │  └──────────────────────────────┘    │    │
-│  └──────────────────────────────────────┘    │
-│  ┌──────────────────────────────────────┐    │
-│  │  spark.executor.memoryOverhead       │    │
-│  │         (2 GB or 10%, whichever      │    │
-│  │          is larger)                  │    │
-│  │  (off-heap, PySpark, native libs)    │    │
-│  └──────────────────────────────────────┘    │
-│                                              │
-│  Total Pod memory request = 8 + 2 = 10 GB   │
-└──────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Pod["EXECUTOR POD MEMORY (Total request = 10 GB)"]
+        subgraph ExecMem["spark.executor.memory (8 GB)"]
+            subgraph Unified["Unified Memory (60%)"]
+                Exec["Execution (shuffle, sort, join)"]
+                Store["Storage (cached data)"]
+            end
+            subgraph UserMem["User Memory (40%)"]
+                UMDesc["(data structures, UDFs)"]
+            end
+        end
+        subgraph Overhead["spark.executor.memoryOverhead (2 GB or 10%)"]
+            OHDesc["(off-heap, PySpark, native libs)"]
+        end
+    end
 ```
 
 **Critical settings:**
@@ -531,73 +519,48 @@ The driver requests new executor Pods from Kubernetes when tasks are queued and 
 
 ## Quiz
 
-**Question 1:** How does Spark on Kubernetes differ from Spark on YARN?
+**Question 1:** Your team is migrating a legacy Hadoop cluster to Kubernetes. A data engineer asks why they cannot just keep the YARN resource manager and run it inside Kubernetes, or how the architectural model actually changes when Spark runs natively on Kubernetes. Explain the key architectural differences they need to understand.
 
 <details>
 <summary>Show Answer</summary>
 
-Key differences:
-1. **No permanent cluster**: YARN requires a long-running cluster (ResourceManager, NodeManagers). On Kubernetes, Spark Pods are ephemeral — created for each job and destroyed after.
-2. **Native container support**: On YARN, Spark runs inside JVM processes on existing nodes. On Kubernetes, each executor is an isolated Pod with its own resource limits.
-3. **Resource sharing**: YARN manages resources within the Hadoop cluster. Kubernetes manages resources across ALL workloads, allowing Spark to share a cluster with web services, databases, and other applications.
-4. **Image-based deployment**: On Kubernetes, the Spark application and its dependencies are packaged as a container image. On YARN, JARs are distributed at runtime.
-5. **No shuffle service by default**: YARN has a built-in shuffle service. On Kubernetes, shuffle data lives on executor Pods (lost if Pod dies) unless an external shuffle service is configured.
+When moving from YARN to Kubernetes, the most fundamental shift is the elimination of a permanent, always-on cluster manager. On YARN, you maintain long-running NodeManager and ResourceManager processes that wait for jobs. On Kubernetes, Spark Pods are entirely ephemeral—the driver and executor Pods are created natively via the Kubernetes API only when a job is submitted, and they are destroyed immediately after completion. Furthermore, Kubernetes manages these resources alongside all other workloads (like web APIs and databases), whereas YARN isolates Hadoop workloads. Finally, YARN relies on a persistent external shuffle service built into the NodeManagers, while Kubernetes requires explicit configuration for shuffle data survival since executor Pods and their local storage disappear upon failure.
 
 </details>
 
-**Question 2:** What is the purpose of `spark.executor.memoryOverhead` and why is it critical for PySpark?
+**Question 2:** You have deployed a PySpark ETL job on Kubernetes that joins two large datasets. The job consistently fails with an `OOMKilled` status on the executor Pods. You verify that `spark.executor.memory` is set to 16GB, which should be plenty for the dataset size. Why is the job still being killed, and how does `spark.executor.memoryOverhead` factor into the solution?
 
 <details>
 <summary>Show Answer</summary>
 
-`memoryOverhead` is memory allocated outside the JVM heap for:
-- Container process overhead
-- Native library allocations
-- PySpark Python worker processes
-- Off-heap storage
-- Direct byte buffers
-
-For PySpark, it is critical because Python runs as a **separate process** alongside the JVM in each executor. Python's memory usage (pandas DataFrames, numpy arrays, UDF data) comes from the overhead allocation, not from `spark.executor.memory`. The default 10% is almost always insufficient for PySpark workloads — 20-30% is recommended. OOMKilled errors in PySpark jobs are nearly always caused by insufficient memoryOverhead.
+The job is failing because PySpark runs Python worker processes entirely outside the JVM heap, and these processes are exceeding the container's total memory limit. In Spark, `spark.executor.memory` only controls the JVM heap size, which does not account for memory used by pandas DataFrames, numpy arrays, or Python UDFs. The `spark.executor.memoryOverhead` setting defines the amount of off-heap memory allocated to the container to accommodate these non-JVM processes. By default, this is only 10% of the executor memory, which is notoriously insufficient for Python-heavy data processing. To fix the `OOMKilled` issue, you must significantly increase the memory overhead (typically to 20-30% or more) so Kubernetes provisions enough total container memory to support the Python runtime alongside the JVM.
 
 </details>
 
-**Question 3:** Explain what Adaptive Query Execution (AQE) does and name three specific optimizations it provides.
+**Question 3:** A data scientist submits a Spark 3.5 job that filters a massive dataset and then joins it with a lookup table. The job is painfully slow, and upon checking the Spark UI, you notice that the join stage consists of 10,000 tasks, but 9,998 of them finish in milliseconds while two tasks take 45 minutes. How can Adaptive Query Execution (AQE) automatically resolve this specific issue, and what other optimizations does it apply?
 
 <details>
 <summary>Show Answer</summary>
 
-AQE optimizes query plans **at runtime** based on actual data statistics collected after each stage, rather than relying on potentially inaccurate pre-execution estimates.
-
-Three specific optimizations:
-1. **Coalescing post-shuffle partitions**: After a shuffle, if many partitions are very small, AQE merges them into fewer, larger partitions, reducing task overhead.
-2. **Skew join optimization**: If one partition is much larger than others (skew), AQE splits it into smaller sub-partitions and processes them in parallel, preventing one task from being a bottleneck.
-3. **Dynamic join strategy switching**: If the actual size of a table after filtering is small enough, AQE switches from a sort-merge join to a broadcast hash join at runtime, which is dramatically faster.
+Adaptive Query Execution (AQE) resolves this exact scenario by applying runtime optimizations based on actual data statistics rather than flawed upfront estimates. The scenario describes severe data skew, which AQE handles by automatically detecting the oversized partitions and splitting them into smaller sub-partitions, allowing multiple executors to process the skewed data in parallel. Beyond skew join optimization, AQE dynamically coalesces small partitions after a shuffle, merging them to reduce the overhead of launching thousands of tiny tasks. Additionally, if AQE detects that a dataset has been filtered down to a small enough size, it can dynamically switch the join strategy from an expensive sort-merge join to a highly efficient broadcast hash join on the fly.
 
 </details>
 
-**Question 4:** Why is shuffle data management a bigger challenge on Kubernetes than on YARN?
+**Question 4:** During a heavy aggregation job running on your Kubernetes cluster, a node experiences CPU pressure and evicts one of the Spark executor Pods. Although the cluster has plenty of capacity to spin up a replacement executor, the Spark job suddenly drops back to a previous stage and begins recomputing hours of work. Why does this happen on Kubernetes, and how does it differ from the YARN environment your team used previously?
 
 <details>
 <summary>Show Answer</summary>
 
-On YARN, shuffle data is written to local disks on the NodeManager, and the **external shuffle service** (a long-running process) serves this data even after the executor exits. Since NodeManagers are persistent, shuffle data survives executor failures.
-
-On Kubernetes, executor Pods are ephemeral. When an executor Pod is terminated (scaled down, OOMKilled, preempted), its local storage (emptyDir) is deleted. Any shuffle data it produced is lost, forcing the upstream stage to recompute the data. This can cause cascading recomputation in shuffle-heavy jobs.
-
-Solutions include: configuring an external shuffle service on Kubernetes, enabling `shuffleTracking` with dynamic allocation, or using persistent storage for shuffle data.
+This cascading recomputation occurs because Spark executor Pods on Kubernetes are ephemeral, and their default local storage (`emptyDir`) is permanently deleted when the Pod is evicted. During a shuffle, executors write intermediate data to their local disks for other executors to read; if the Pod dies before the data is consumed, the entire upstream stage must be rerun to regenerate that lost shuffle data. In contrast, YARN runs a persistent external shuffle service on its long-running NodeManagers, meaning shuffle data safely survives the death of any individual executor process. To achieve similar resilience on Kubernetes, you must either deploy a dedicated external shuffle service, mount persistent volumes for scratch space, or enable shuffle tracking with dynamic allocation so the driver knows not to scale down executors holding unread shuffle files.
 
 </details>
 
-**Question 5:** A PySpark job with 10 executors (4 cores, 8 GB memory each) is processing 100 GB of parquet data. It runs for 2 hours but should finish in 20 minutes. What are the top 3 things you would check?
+**Question 5:** An analyst complains that their scheduled PySpark job is taking 2 hours to process 100 GB of Parquet data using 10 executors (4 cores, 8 GB memory each). Historically, similar jobs finish in under 20 minutes. You are tasked with debugging the performance bottleneck in the production Kubernetes environment. What are the top three specific areas you would investigate in the Spark UI to diagnose the root cause?
 
 <details>
 <summary>Show Answer</summary>
 
-1. **Data skew**: Check the Spark UI "Stages" tab for tasks that take much longer than the median. If one task processes 50 GB while others process 5 GB, you have skew. Fix with salting, repartitioning, or enabling AQE skew join handling.
-
-2. **Shuffle volume**: Check the "Stages" tab for shuffle read/write bytes. If shuffle exceeds the input data size, the query plan is inefficient. Look for unnecessary wide operations, missing filter pushdowns, or unoptimized joins. Enable AQE if not already enabled.
-
-3. **Resource utilization**: Check if executors are actually busy. Low CPU usage with high GC time means memory pressure — increase `spark.executor.memory`. If executors are idle waiting, you may need more partitions (check if partition count < total cores). Also verify the input is not a single non-splittable file (gzip) — use splittable formats like parquet or snappy.
+First, you should investigate potential data skew by checking the "Stages" tab in the Spark UI; if the summary metrics show that the maximum task duration is vastly longer than the median, a few stranded tasks are holding up the entire job. Second, examine the shuffle volume (Shuffle Read/Write bytes) for each stage to see if the query plan is generating excessive network I/O, which often indicates missing filter pushdowns or unoptimized joins that require AQE intervention. Third, check the resource utilization and task concurrency; if the CPU usage is low but Garbage Collection (GC) time is high, the executors are experiencing memory pressure and need larger heap allocations. Alternatively, if tasks are simply waiting in the queue, you may need to increase the partition count to ensure all 40 available cores are fully utilized.
 
 </details>
 
