@@ -142,13 +142,13 @@ When you run `kubectl create deployment nginx --image=nginx`, here is exactly wh
 
 ```bash
 # Check if you can create deployments
-k auth can-i create deployments --namespace=default
+kubectl auth can-i create deployments --namespace=default
 
 # Check as a specific user
-k auth can-i create pods --as=system:serviceaccount:default:my-sa
+kubectl auth can-i create pods --as=system:serviceaccount:default:my-sa
 
 # List all permissions
-k auth can-i --list
+kubectl auth can-i --list
 ```
 
 **Admission Controllers** are the most important extensibility point. They come in two flavors:
@@ -200,7 +200,7 @@ Every Kubernetes API follows a consistent URL structure:
 
 ```bash
 # Start a kubectl proxy to handle authentication
-k proxy --port=8080 &
+kubectl proxy --port=8080 &
 
 # Discover all API groups
 curl -s http://localhost:8080/apis | python3 -m json.tool | head -40
@@ -221,9 +221,12 @@ curl -s "http://localhost:8080/api/v1/namespaces/default/pods?watch=true"
 ### 2.2 Direct API Access (Without Proxy)
 
 ```bash
+# Grant permission to the default ServiceAccount to manage pods
+kubectl create rolebinding default-edit --clusterrole=edit --serviceaccount=default:default
+
 # Get API server URL and token
-APISERVER=$(k config view --minify -o jsonpath='{.clusters[0].cluster.server}')
-TOKEN=$(k create token default)
+APISERVER=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
+TOKEN=$(kubectl create token default)
 
 # Direct API call with certificate verification skipped (dev only!)
 curl -s -k -H "Authorization: Bearer $TOKEN" \
@@ -548,6 +551,24 @@ func processNextItem(queue workqueue.TypedRateLimitingInterface[string]) bool {
 }
 ```
 
+### 3.7 Creating and Modifying Resources
+
+While Informers and Workqueues handle reading and reacting to state, you will use the `Clientset` directly to create and modify resources. Always fetch the latest version before updating to avoid resource version conflicts:
+
+```go
+// Create a Pod
+newPod := &corev1.Pod{
+	ObjectMeta: metav1.ObjectMeta{Name: "example-pod"},
+	Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: "nginx", Image: "nginx"}}},
+}
+_, _ = clientset.CoreV1().Pods("default").Create(context.TODO(), newPod, metav1.CreateOptions{})
+
+// Modify a Pod
+pod, _ := clientset.CoreV1().Pods("default").Get(context.TODO(), "example-pod", metav1.GetOptions{})
+pod.Annotations = map[string]string{"updated": "true"}
+_, _ = clientset.CoreV1().Pods("default").Update(context.TODO(), pod, metav1.UpdateOptions{})
+```
+
 > **Stop and think**: If your controller's processing logic encounters a temporary network error when talking to an external API, what happens if you return an error to the Workqueue versus acknowledging the item and dropping the error? How does the Workqueue's rate limiter prevent this failure from overwhelming the API Server?
 
 ---
@@ -566,13 +587,13 @@ Kubernetes uses API groups to organize resources and API versioning to evolve th
 
 ```bash
 # See all API versions available
-k api-versions
+kubectl api-versions
 
 # See all resources and their API groups
-k api-resources -o wide
+kubectl api-resources -o wide
 
 # Check specific resource API details
-k explain deployment --api-version=apps/v1
+kubectl explain deployment --api-version=apps/v1
 ```
 
 ### 4.2 Content Negotiation
@@ -597,14 +618,17 @@ curl -s -H "Accept: application/json;as=Table;g=meta.k8s.io;v=v1" \
 Two powerful API features that are often overlooked:
 
 ```bash
+# Create a deployment manifest
+kubectl create deployment my-app --image=nginx --dry-run=client -o yaml > deployment.yaml
+
 # Dry run: validate without persisting
-k apply -f deployment.yaml --dry-run=server
+kubectl apply -f deployment.yaml --dry-run=server
 
 # Server-side apply: the API server manages field ownership
-k apply -f deployment.yaml --server-side --field-manager=my-controller
+kubectl apply -f deployment.yaml --server-side --field-manager=my-controller
 
 # View field ownership
-k get deployment my-app -o yaml | head -40
+kubectl get deployment my-app -o yaml | head -40
 # Look for managedFields section
 ```
 
@@ -618,10 +642,10 @@ Since Kubernetes 1.29+, API Priority and Fairness (APF) replaced the old max-in-
 
 ```bash
 # View flow schemas (how requests are classified)
-k get flowschemas
+kubectl get flowschemas
 
 # View priority levels
-k get prioritylevelconfigurations
+kubectl get prioritylevelconfigurations
 
 # Check API request metrics (if you have access to API server metrics)
 # These show you if requests are being queued or rejected
@@ -975,6 +999,9 @@ func main() {
 # Ensure you have a running cluster (kind or minikube)
 kind create cluster --name extending-k8s
 
+# Checkpoint: Verify cluster is running
+kubectl cluster-info
+
 # Create the project
 mkdir -p ~/extending-k8s/pod-annotation-watcher
 cd ~/extending-k8s/pod-annotation-watcher
@@ -998,19 +1025,22 @@ go get k8s.io/klog/v2@latest
 3. **In another terminal, create and annotate pods**:
    ```bash
    # Create a pod
-   k run test-pod --image=nginx
+   kubectl run test-pod --image=nginx
+
+   # Checkpoint: Wait for pod to be running
+   kubectl wait --for=condition=Ready pod/test-pod
 
    # Add annotations
-   k annotate pod test-pod team=backend priority=high
+   kubectl annotate pod test-pod team=backend priority=high
 
    # Modify an annotation
-   k annotate pod test-pod priority=critical --overwrite
+   kubectl annotate pod test-pod priority=critical --overwrite
 
    # Remove an annotation
-   k annotate pod test-pod team-
+   kubectl annotate pod test-pod team-
 
    # Delete the pod
-   k delete pod test-pod
+   kubectl delete pod test-pod
    ```
 
 4. **Verify the watcher reports each change** in the first terminal
