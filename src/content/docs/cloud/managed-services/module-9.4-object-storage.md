@@ -159,7 +159,7 @@ metadata:
 az identity federated-credential create \
   --identity-name blob-writer-identity \
   --resource-group myRG \
-  --issuer "https://oidc.eks.us-east-1.amazonaws.com/id/EXAMPLED539D4633E53DE1B716D3041E" \
+  --issuer "$(az aks show -g myRG -n myAKSCluster --query 'oidcIssuerProfile.issuerUrl' -o tsv)" \
   --subject system:serviceaccount:production:blob-writer
 
 # Assign Storage Blob Data Contributor role
@@ -403,6 +403,8 @@ Object storage costs are dominated by storage volume, not access. Moving infrequ
 | Archive | S3 Glacier IR | Coldline | Cold | $0.004 | Quarterly access |
 | Deep archive | S3 Glacier Deep | Archive | Archive | $0.00099 | Yearly/compliance |
 
+> **Stop and think**: You configured a lifecycle rule to move all objects to Glacier Deep Archive after 90 days. A week later, your cloud bill spikes unexpectedly. What could cause this? (Hint: consider the cost of the transition operation itself if your bucket contains millions of tiny objects).
+
 ### AWS S3 Lifecycle Configuration
 
 ```json
@@ -498,6 +500,8 @@ aws s3api list-multipart-uploads --bucket video-content-prod
 For disaster recovery or serving content from multiple regions, cross-region replication copies objects automatically.
 
 ### AWS S3 Cross-Region Replication
+
+> **Pause and predict**: When configuring active-active clusters across two regions with bi-directional bucket replication, what mechanism prevents an infinite replication loop (Region A replicates to Region B, which replicates back to Region A)?
 
 ```bash
 # Enable versioning (required for replication)
@@ -690,7 +694,7 @@ Object storage CSI drivers present a filesystem interface, but they fundamentall
 <details>
 <summary>3. After six months in production, your cloud bill shows S3 storage costs are double what the actual total size of your active objects should dictate. What silent mechanism likely caused this, and how do you permanently fix it?</summary>
 
-The hidden cost is almost certainly caused by incomplete multipart uploads. When large file uploads fail or are interrupted mid-transfer, the partial chunks remain stored in the bucket indefinitely but are completely invisible to standard `list-objects` API calls. Because they take up physical space, the cloud provider continues to charge you for them month over month. To fix this permanently, you must configure a bucket lifecycle rule such as `AbortIncompleteMultipartUpload` set to 1-7 days, which automatically purges any orphaned upload fragments.
+The hidden cost is almost certainly caused by incomplete multipart uploads. When large file uploads fail or are interrupted mid-transfer, the partial chunks remain stored in the bucket indefinitely but are completely invisible to standard list-objects API calls. Because they take up physical space, the cloud provider continues to charge you for them month over month. To fix this permanently, you must configure a bucket lifecycle rule such as AbortIncompleteMultipartUpload set to 1-7 days, which automatically purges any orphaned upload fragments.
 </details>
 
 <details>
@@ -708,7 +712,7 @@ Without a Multi-Region Access Point (MRAP), your deployment manifests would need
 <details>
 <summary>6. Your application code is explicitly configured to use `https://` for all S3 API calls. Why do security auditors still require you to implement a `DenyNonHTTPS` bucket policy statement?</summary>
 
-Relying solely on application configuration violates the principle of defense-in-depth, as a simple configuration drift, typo, or new tool (like an admin running a local script) could accidentally use HTTP. By enforcing TLS at the bucket policy level, you create an infrastructure-enforced guardrail that actively denies any unencrypted request regardless of the client's configuration. This guarantees data in transit is protected and satisfies strict compliance frameworks (like HIPAA or PCI-DSS) that require systemic, rather than application-level, enforcement of encryption.
+Relying solely on application configuration violates the principle of defense-in-depth, as a simple configuration drift, typo, or new tool (like an admin running a local script) could accidentally use HTTP. For example, if an engineer tests an endpoint using `curl` without HTTPS, the bucket policy will reject the insecure request. By enforcing TLS at the bucket policy level, you create an infrastructure-enforced guardrail that actively denies any unencrypted request regardless of the client's configuration. This guarantees data in transit is protected and satisfies strict compliance frameworks (like HIPAA or PCI-DSS) that require systemic, rather than application-level, enforcement of encryption.
 </details>
 
 ---
