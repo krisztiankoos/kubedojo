@@ -42,6 +42,8 @@ This module teaches you how to promote changes safely through environments using
 
 ---
 
+> **Stop and think**: How many manual steps exist in your current deployment process? Every manual step is an opportunity for human error or config drift between environments.
+
 ## The Promotion Problem
 
 In traditional deployments, promotion often means:
@@ -114,19 +116,19 @@ images:
 
 ### The Promotion Flow
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                        Git Repository                        │
-└─────────────────────────────────────────────────────────────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-   overlays/dev/        overlays/staging/    overlays/prod/
-   image: v1.2.3        image: v1.2.2        image: v1.2.1
-         │                    │                    │
-         │                    │                    │
-    Promote:             Promote:             Deployed:
-    PR to update         PR to update         GitOps syncs
-    staging/tag          prod/tag
+```mermaid
+graph TD
+    subgraph Git Repository
+        A[Git Repository]
+    end
+    
+    A --> D[overlays/dev/<br>image: v1.2.3]
+    A --> S[overlays/staging/<br>image: v1.2.2]
+    A --> P[overlays/prod/<br>image: v1.2.1]
+    
+    D -- "Promote: PR to update<br>staging/tag" --> S
+    S -- "Promote: PR to update<br>prod/tag" --> P
+    P -. "Deployed:<br>GitOps syncs" .-> C[Production Cluster]
 ```
 
 ### Manual Promotion
@@ -204,6 +206,8 @@ Think about a recent deployment to production:
 If you can't answer these easily, your promotion process needs work.
 
 ---
+
+> **Pause and predict**: If you use the `latest` tag in your deployment files, how does the cluster know when the image has actually changed in the registry?
 
 ## Image Tag Promotion
 
@@ -304,24 +308,24 @@ echo "Committed. Push to deploy."
 
 ---
 
+> **Stop and think**: If a new deployment introduces a subtle memory leak, how long does it take for your current monitoring to catch it, and how many users are affected in the meantime?
+
 ## Progressive Delivery
 
 Beyond simple environment promotion, progressive delivery gradually shifts traffic.
 
 ### Canary Deployments
 
+```mermaid
+graph LR
+    User([Users]) -->|95% Traffic| Stable[v1.2.2 Stable]
+    User -->|5% Traffic| Canary[v1.2.3 Canary]
 ```
-100% traffic │████████████████████████│ v1.2.2 (stable)
-             │                        │
-  5% traffic │█                       │ v1.2.3 (canary)
-             │                        │
-             └────────────────────────┘
 
 Monitor canary for errors...
 
 If OK:   Increase to 25%, 50%, 100%
 If bad:  Roll back canary
-```
 
 **GitOps Canary with Flagger:**
 
@@ -356,18 +360,16 @@ spec:
 
 ### Blue-Green Deployments
 
+```mermaid
+graph LR
+    User([Users]) -->|100% Traffic| Blue[Blue Environment<br>v1.2.2]
+    Test([Tests]) -->|Validation| Green[Green Environment<br>v1.2.3]
 ```
-Blue (current)  │████████████████████████│ v1.2.2 (100%)
-                │                        │
-Green (new)     │████████████████████████│ v1.2.3 (0%)
-                │                        │
-                └────────────────────────┘
 
 Test Green environment...
 
 If OK:   Switch traffic: Blue=0%, Green=100%
 If bad:  Keep traffic on Blue
-```
 
 **GitOps Blue-Green with Argo Rollouts:**
 
@@ -412,6 +414,8 @@ spec:
 4. **LinkedIn's deployment system** promotes changes through 5 stages before reaching all users: canary → early adopters → first tier → second tier → full rollout. Each stage has automated health checks that can halt the promotion.
 
 ---
+
+> **Pause and predict**: Think of the last "emergency hotfix" your team deployed. Did the rush to fix the problem introduce any new, unexpected issues?
 
 ## War Story: The Promotion That Skipped Staging
 
@@ -551,138 +555,42 @@ spec:
 ## Quiz: Check Your Understanding
 
 ### Question 1
-Why is promoting image tags better than promoting "latest"?
+**Scenario:** Your team is moving to GitOps and a developer suggests using the `latest` tag for the production image so that the cluster always pulls the most recent build automatically. What is the critical flaw in this approach for a GitOps workflow?
 
 <details>
 <summary>Show Answer</summary>
 
-**Image tags provide:**
-
-1. **Immutability**: `v1.2.3` is always the same image
-2. **Traceability**: Know exactly what's deployed
-3. **Reproducibility**: Can deploy same version anywhere
-4. **Rollback clarity**: Roll back to `v1.2.2`, not "previous latest"
-
-**"latest" problems:**
-
-1. **Mutable**: Changes over time
-2. **Ambiguous**: "latest" when? Built by whom?
-3. **Not reproducible**: Can't redeploy same "latest" later
-4. **Rollback unclear**: What was previous "latest"?
-
-**Rule**: Never use `latest` in production. Use immutable tags (semver or git SHA).
+Using the `latest` tag breaks the core GitOps principle of immutability and reproducibility. Because the `latest` tag constantly points to different image digests over time, you cannot guarantee what exact artifact is running in your cluster just by looking at the Git repository. Furthermore, if a deployment fails, rolling back becomes dangerous and unpredictable because the previous "latest" state is no longer explicitly defined or easily retrievable. Instead, you should always promote immutable artifacts, such as semantic versions (e.g., `v1.2.3`) or Git SHA tags, ensuring that what is tested in staging is the exact identical image deployed to production.
 
 </details>
 
 ### Question 2
-Your prod deployment failed. How do you roll back with GitOps?
+**Scenario:** A newly promoted version of the `checkout-service` (v2.1.0) is crashing in the production environment. Your GitOps controller (like Argo CD or Flux) is actively syncing the `prod` overlay from your Git repository. What is the safest and most idiomatic GitOps way to restore the service to the previous working version?
 
 <details>
 <summary>Show Answer</summary>
 
-**Option 1: Git revert (recommended)**
-```bash
-# Find the promotion commit
-git log --oneline overlays/prod/
-
-# Revert it
-git revert <commit-sha>
-git push origin main
-
-# GitOps agent syncs reverted state
-```
-
-**Option 2: Update to previous version**
-```bash
-# Set image back to previous version
-yq eval '.images[0].newTag = "v1.2.2"' -i overlays/prod/kustomization.yaml
-git commit -m "Rollback: v1.2.3 -> v1.2.2 due to <reason>"
-git push origin main
-```
-
-**Option 3: GitOps tool rollback**
-```bash
-# ArgoCD
-argocd app rollback my-app
-
-# Flux
-flux suspend kustomization prod
-# Fix in Git, then:
-flux resume kustomization prod
-```
-
-**Best practice**: Use git revert to maintain history. The rollback itself is audited.
+The most idiomatic GitOps rollback is to use `git revert` on the commit that promoted the broken version, or to manually update the image tag back to the previous stable version in your Git repository and commit the change. By changing the desired state in Git, you maintain a single source of truth and a clear audit trail of the incident and resolution. If you were to manually use `kubectl rollout undo` or a tool's CLI to force a rollback, the GitOps controller would detect the cluster drift and likely overwrite your fix with the broken state still defined in Git. Reverting in Git ensures the automated controller itself safely applies the rollback.
 
 </details>
 
 ### Question 3
-How do you ensure staging is always tested before prod?
+**Scenario:** Your organization has suffered multiple production outages because developers are merging hotfixes directly into the `prod` branch without testing them in `staging`. You need to implement an automated mechanism to prevent this bypass. How do you ensure staging is always tested before prod?
 
 <details>
 <summary>Show Answer</summary>
 
-**Technical controls:**
-
-1. **PR rules**: Prod changes require staging version match
-   ```yaml
-   # CI check: verify staging has the version being promoted to prod
-   ```
-
-2. **Required checks**: Tests must pass in staging before prod merge
-
-3. **Sync windows**: Prod only deploys after staging stabilization period
-
-4. **Alerts**: Notify if prod has version not in staging
-
-**Process controls:**
-
-1. **Policy**: All promotions follow dev → staging → prod
-2. **Review**: Prod PRs require evidence of staging success
-3. **Automation**: Promotion scripts enforce the path
-
-**Example CI check:**
-```bash
-STAGING_VERSION=$(yq '.images[0].newTag' overlays/staging/kustomization.yaml)
-PROD_VERSION=$(yq '.images[0].newTag' overlays/prod/kustomization.yaml)
-NEW_PROD_VERSION=$(git diff HEAD^ -- overlays/prod/ | grep newTag | ...)
-
-if [ "$NEW_PROD_VERSION" != "$STAGING_VERSION" ]; then
-  echo "Error: Promoting $NEW_PROD_VERSION to prod but staging has $STAGING_VERSION"
-  exit 1
-fi
-```
+To prevent skipping environments, you should implement branch protection rules and CI pipeline checks that enforce the promotion path. Your CI system can run a check on any Pull Request targeting the production overlay to verify that the exact same image tag or artifact already exists and has successfully passed tests in the staging overlay. Additionally, you can configure your GitOps controllers to only sync production from a specific branch that requires approvals from QA or automated test suites. By embedding these checks directly into the Git repository's merge conditions, you physically prevent untested code from reaching the production environment.
 
 </details>
 
 ### Question 4
-When would you use canary vs blue-green deployment?
+**Scenario:** You are deploying a massive architectural update to a legacy monolithic application. The application takes several minutes to start up, and any failure would impact all active users immediately. Which progressive delivery strategy should you use, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-**Canary (gradual rollout):**
-- Slowly increase traffic to new version
-- Good for: catching issues with real traffic patterns
-- Rollback: shift traffic back to stable
-- Use when: you want production traffic validation
-
-**Blue-green (parallel environments):**
-- Run both versions simultaneously
-- Test new version completely before switching
-- Rollback: instant switch back to blue
-- Use when: you need full testing before any production traffic
-
-**Decision factors:**
-
-| Factor | Canary | Blue-Green |
-|--------|--------|------------|
-| Resource usage | Lower (gradual) | Higher (2x during deploy) |
-| Rollback speed | Gradual | Instant |
-| Production testing | Yes (partial traffic) | No (separate preview) |
-| User impact on failure | Partial users affected | No users affected |
-| Complexity | Medium | Medium |
-
-**Common approach**: Blue-green for staging (safe testing), canary for prod (gradual exposure).
+For a high-risk, slow-starting application where you need comprehensive testing before any user impact, a Blue-Green deployment is the most appropriate strategy. A Blue-Green deployment provisions an entirely separate environment (the "Green" environment) running the new version, allowing you to run full integration and smoke tests without routing any real user traffic to it. Once the Green environment is fully validated and warmed up, traffic is switched over instantaneously via a load balancer or ingress change. This provides a zero-downtime deployment and an immediate, simple rollback mechanism (switching traffic back to the "Blue" environment) if issues are discovered post-launch.
 
 </details>
 
