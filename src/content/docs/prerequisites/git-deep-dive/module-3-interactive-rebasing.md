@@ -295,6 +295,10 @@ When this happens, you are in a detached HEAD state at the specific step of the 
 3. Do **not** run `git commit`. The rebase engine is managing the commits.
 4. Tell the engine to proceed by running `git rebase --continue`.
 
+> **Stop and think**: Why do you use `git rebase --continue` instead of `git commit` after resolving a conflict?
+> 
+> *Answer: The rebase engine is in the middle of a loop, constructing the commit for you based on the rebase plan. If you manually run `git commit`, you create a new commit outside of that plan, which can break the sequence and lead to duplicated or tangled history. `git rebase --continue` tells the engine you have resolved the issue so it can finalize the commit it was currently working on.*
+
 If you realize the rebase was a mistake and you are hopelessly lost in conflicts, you can always bail out safely:
 
 ```bash
