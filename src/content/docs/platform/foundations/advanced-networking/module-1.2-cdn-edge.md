@@ -62,155 +62,113 @@ Understanding CDN architecture isn't optional for anyone building applications t
 
 ### 1.1 Points of Presence (PoPs)
 
+A CDN is a globally distributed network of servers (PoPs) that cache and serve content close to end users.
+
+**Single PoP Anatomy**
+
+```mermaid
+flowchart TD
+    subgraph PoP ["PoP: Tokyo (TYO)"]
+        direction TB
+        LB["Load Balancers / Routers\n(Direct traffic, Anycast, health checks)"]
+        TLS["TLS Terminators\n(Handle HTTPS, offload crypto from origin)"]
+        subgraph Edge ["Edge Servers (Cache Layer)"]
+            direction LR
+            E1["E-1\n256GB SSD"]
+            E2["E-2\n256GB SSD"]
+            E3["E-3\n256GB SSD"]
+            E4["E-4\n256GB SSD"]
+            E5["E-5\n256GB SSD"]
+        end
+        
+        LB --> TLS
+        TLS --> Edge
+    end
+    Net["Network: 10-100 Gbps peering with local ISPs"]
+    Net --> LB
 ```
-CDN NETWORK ARCHITECTURE
-═══════════════════════════════════════════════════════════════
 
-A CDN is a globally distributed network of servers (PoPs)
-that cache and serve content close to end users.
+**Global CDN Scale (2025)**
 
-SINGLE PoP ANATOMY
-─────────────────────────────────────────────────────────────
-
-    ┌──────────────────────────────────────────────────────┐
-    │  PoP: Tokyo (TYO)                                    │
-    │                                                      │
-    │  ┌──────────────────────────────────────────────────┐ │
-    │  │  Edge Servers (Cache Layer)                      │ │
-    │  │  ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐     │ │
-    │  │  │ E-1 │ │ E-2 │ │ E-3 │ │ E-4 │ │ E-5 │     │ │
-    │  │  │256GB│ │256GB│ │256GB│ │256GB│ │256GB│     │ │
-    │  │  │ SSD │ │ SSD │ │ SSD │ │ SSD │ │ SSD │     │ │
-    │  │  └─────┘ └─────┘ └─────┘ └─────┘ └─────┘     │ │
-    │  └──────────────────────────────────────────────────┘ │
-    │                                                      │
-    │  ┌──────────────────────────────────────────────────┐ │
-    │  │  TLS Terminators                                │ │
-    │  │  (Handle HTTPS, offload crypto from origin)     │ │
-    │  └──────────────────────────────────────────────────┘ │
-    │                                                      │
-    │  ┌──────────────────────────────────────────────────┐ │
-    │  │  Load Balancers / Routers                        │ │
-    │  │  (Direct traffic, Anycast, health checks)       │ │
-    │  └──────────────────────────────────────────────────┘ │
-    │                                                      │
-    │  Network: 10-100 Gbps peering with local ISPs       │
-    └──────────────────────────────────────────────────────┘
-
-GLOBAL CDN SCALE (2025)
-─────────────────────────────────────────────────────────────
-    Cloudflare:     330+ cities, 120+ countries
-    Akamai:         4,200+ PoPs, 135+ countries
-    AWS CloudFront: 600+ PoPs, 100+ cities
-    Fastly:         90+ PoPs (fewer but larger, programmable)
-    Google Cloud CDN: 180+ PoPs via Google's network
-```
+- **Cloudflare**: 330+ cities, 120+ countries
+- **Akamai**: 4,200+ PoPs, 135+ countries
+- **AWS CloudFront**: 600+ PoPs, 100+ cities
+- **Fastly**: 90+ PoPs (fewer but larger, programmable)
+- **Google Cloud CDN**: 180+ PoPs via Google's network
 
 ### 1.2 Tiered Caching
 
+Without tiered caching, every edge PoP with a cache miss goes directly to origin.
+100 PoPs × 1 cache miss each = 100 requests to origin.
+
+```mermaid
+flowchart LR
+    T["Tokyo (MISS)"] --> O["Origin\nVirginia"]
+    S["Seoul (MISS)"] --> O
+    D["Delhi (MISS)"] --> O
+    Db["Dubai (MISS)"] --> O
 ```
-TIERED CACHING — REDUCING ORIGIN LOAD
-═══════════════════════════════════════════════════════════════
 
-Without tiered caching:
-    Every edge PoP with a cache miss goes directly to origin.
-    100 PoPs × 1 cache miss each = 100 requests to origin
+With tiered caching (shield / midgress), edge PoPs check a regional "shield" tier first. The shield has a larger cache and fewer instances.
 
-    ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐     ┌────────┐
-    │Tokyo│ │Seoul│ │Delhi│ │Dubai│ ···→ │ Origin │
-    │ MISS│→│ MISS│→│ MISS│→│ MISS│     │Virginia│
-    └─────┘ └─────┘ └─────┘ └─────┘     └────────┘
-                                   100 requests!
-
-With tiered caching (shield / midgress):
-    Edge PoPs check a regional "shield" tier first.
-    Shield has larger cache, fewer instances.
-
-    ┌─────┐                 ┌──────────┐     ┌────────┐
-    │Tokyo│── MISS ──→      │  Shield  │     │ Origin │
-    │     │          │      │  (SIN)   │     │Virginia│
-    └─────┘          │      │          │     │        │
-    ┌─────┐          ├─────→│  Cache   │─?──→│        │
-    │Seoul│── MISS ──┘      │  HIT! ✓  │     │        │
-    │     │                 │          │     │        │
-    └─────┘                 └──────────┘     └────────┘
-    ┌─────┐                 ┌──────────┐
-    │Delhi│── MISS ──┐      │  Shield  │
-    │     │          ├─────→│  (BOM)   │
-    └─────┘          │      │  HIT! ✓  │
-    ┌─────┐          │      └──────────┘
-    │Dubai│── MISS ──┘
-    └─────┘
-
-    Only 2 requests reach the shield. Only 1 reaches origin.
-
-CLOUDFRONT ORIGIN SHIELD
-─────────────────────────────────────────────────────────────
-    Enable origin shield in the region closest to your origin.
-    Adds one more cache layer between edge and origin.
-    Reduces origin load by 50-80% in practice.
-
-    Edge (330+ locations)
-      → Regional Edge Cache (13 locations)
-        → Origin Shield (1 location you choose)
-          → Your Origin Server
+```mermaid
+flowchart LR
+    T["Tokyo (MISS)"] --> S1["Shield (SIN)\nCache HIT!"]
+    S["Seoul (MISS)"] --> S1
+    S1 -.->|If Miss| O["Origin\nVirginia"]
+    
+    D["Delhi (MISS)"] --> S2["Shield (BOM)\nCache HIT!"]
+    Db["Dubai (MISS)"] --> S2
 ```
+
+Only 2 requests reach the shield. Only 1 reaches origin if missed at the shield.
+
+**CloudFront Origin Shield**
+
+Enable origin shield in the region closest to your origin. Adds one more cache layer between edge and origin. Reduces origin load by 50-80% in practice.
+
+`Edge (330+ locations) -> Regional Edge Cache (13 locations) -> Origin Shield (1 location you choose) -> Your Origin Server`
 
 ### 1.3 How CDNs Connect: Peering and Transit
 
+CDNs minimize hops between themselves and ISPs through direct peering — physical connections in data centers.
+
+**Internet Exchange Points (IXPs)**
+
+```mermaid
+flowchart LR
+    subgraph IXP ["Internet Exchange Point (e.g., DE-CIX Frankfurt)"]
+        SF["Switch Fabric"]
+    end
+    
+    ISPA["ISP-A\n(Deutsche Telekom)"] --- SF
+    ISPB["ISP-B\n(Vodafone)"] --- SF
+    CDNA["CDN\n(Akamai)"] --- SF
+    CDNC["CDN\n(Cloudflare)"] --- SF
 ```
-CDN NETWORK CONNECTIVITY
-═══════════════════════════════════════════════════════════════
 
-CDNs minimize hops between themselves and ISPs through
-direct peering — physical connections in data centers.
+Direct peering means CDN traffic to ISP subscribers crosses ONE network hop instead of traversing the public internet through multiple autonomous systems.
 
-INTERNET EXCHANGE POINTS (IXPs)
-─────────────────────────────────────────────────────────────
+- DE-CIX Frankfurt: 1,100+ connected networks
+- AMS-IX Amsterdam: 900+ connected networks
+- LINX London: 950+ connected networks
 
-    ┌──────────────────────────────────────────────────┐
-    │  Internet Exchange Point (e.g., DE-CIX Frankfurt)│
-    │                                                  │
-    │  ┌────────┐  ┌────────┐  ┌────────┐            │
-    │  │ ISP-A  │──│ Switch │──│ CDN    │            │
-    │  │Deutsche│  │ Fabric │  │Akamai  │            │
-    │  │Telekom │  │        │  │        │            │
-    │  └────────┘  │        │  └────────┘            │
-    │              │        │                         │
-    │  ┌────────┐  │        │  ┌────────┐            │
-    │  │ ISP-B  │──│        │──│ CDN    │            │
-    │  │Vodafone│  │        │  │Cloudfl.│            │
-    │  └────────┘  └────────┘  └────────┘            │
-    └──────────────────────────────────────────────────┘
+**Embedded Caching**
 
-    Direct peering means CDN traffic to ISP subscribers
-    crosses ONE network hop instead of traversing the
-    public internet through multiple autonomous systems.
-
-    DE-CIX Frankfurt: 1,100+ connected networks
-    AMS-IX Amsterdam: 900+ connected networks
-    LINX London:      950+ connected networks
-
-EMBEDDED CACHING
-─────────────────────────────────────────────────────────────
 Some CDNs place servers INSIDE ISP networks.
 
-    ┌──────────────────────────────────────────────────┐
-    │  ISP Network (e.g., Comcast)                     │
-    │                                                  │
-    │  ┌──────────┐        ┌──────────┐              │
-    │  │ Akamai   │        │ Netflix  │              │
-    │  │ Cache    │        │ OCA      │              │
-    │  │ Server   │        │ Server   │              │
-    │  └──────────┘        └──────────┘              │
-    │                                                  │
-    │  CDN content never leaves the ISP network!      │
-    │  Latency: <5ms. Bandwidth: free to ISP.         │
-    └──────────────────────────────────────────────────┘
-
-    Netflix Open Connect: 18,000+ servers in 6,000+ ISPs
-    Serves 95%+ of Netflix traffic from within ISP networks
+```mermaid
+flowchart LR
+    subgraph ISP ["ISP Network (e.g., Comcast)"]
+        AC["Akamai Cache Server"]
+        NC["Netflix OCA Server"]
+    end
 ```
+
+CDN content never leaves the ISP network! Latency: <5ms. Bandwidth: free to ISP.
+
+- Netflix Open Connect: 18,000+ servers in 6,000+ ISPs
+- Serves 95%+ of Netflix traffic from within ISP networks
 
 ---
 
@@ -218,223 +176,143 @@ Some CDNs place servers INSIDE ISP networks.
 
 ### 2.1 Cache-Control Headers
 
+The `Cache-Control` header tells CDNs (and browsers) how to cache a response.
+
+**Directives Reference**
+
+*Cacheable for a duration*
+```http
+Cache-Control: public, max-age=86400
 ```
-HTTP CACHE-CONTROL — THE FULL PICTURE
-═══════════════════════════════════════════════════════════════
+- `public`: Any cache can store (CDN, browser, proxy)
+- `max-age`: Cache for N seconds (86400 = 24 hours)
 
-The Cache-Control header tells CDNs (and browsers) how
-to cache a response.
-
-DIRECTIVES REFERENCE
-─────────────────────────────────────────────────────────────
-
-    CACHEABLE FOR A DURATION
-    ─────────────────────────────────────────────
-    Cache-Control: public, max-age=86400
-
-    public:    Any cache can store (CDN, browser, proxy)
-    max-age:   Cache for N seconds (86400 = 24 hours)
-
-    DIFFERENT TTL FOR CDN vs BROWSER
-    ─────────────────────────────────────────────
-    Cache-Control: public, max-age=60, s-maxage=86400
-
-    max-age:    Browser caches for 60 seconds
-    s-maxage:   Shared caches (CDN) cache for 86400 seconds
-
-    This lets you control browser freshness separately
-    from CDN freshness. Very useful pattern.
-
-    STALE CONTENT CONTROL
-    ─────────────────────────────────────────────
-    Cache-Control: public, max-age=300,
-                   stale-while-revalidate=60,
-                   stale-if-error=86400
-
-    stale-while-revalidate:  Serve stale for 60s while
-                              fetching fresh in background
-    stale-if-error:          Serve stale for 24h if origin
-                              is down (graceful degradation!)
-
-    NEVER CACHE
-    ─────────────────────────────────────────────
-    Cache-Control: no-store
-
-    no-store:  Never cache. Not in CDN, not in browser.
-               Use for sensitive data (banking, health).
-
-    ⚠️ Common mistake: Using "no-cache" when you mean
-       "no-store." no-cache means "cache it, but revalidate
-       with origin before serving" — NOT "don't cache."
-
-    REVALIDATION
-    ─────────────────────────────────────────────
-    Cache-Control: no-cache
-    ETag: "v1.2.3-abc123"
-
-    CDN caches the response but checks with origin
-    before every serve using If-None-Match header.
-    Origin responds 304 Not Modified if unchanged.
-
-PRACTICAL CACHING STRATEGIES
-─────────────────────────────────────────────────────────────
-
-    Static assets (images, fonts, JS/CSS with hash):
-        Cache-Control: public, max-age=31536000, immutable
-        (1 year! Safe because filename contains content hash)
-
-        /assets/app.a1b2c3d4.js   ← change content = new hash
-        /assets/style.e5f6g7h8.css
-
-    HTML pages:
-        Cache-Control: public, max-age=0, s-maxage=60,
-                       stale-while-revalidate=30
-        (Browser always revalidates, CDN caches 60s)
-
-    API responses:
-        Cache-Control: private, max-age=0
-        (Never cache in shared caches — user-specific data)
-
-    API responses (public, same for all users):
-        Cache-Control: public, s-maxage=10,
-                       stale-while-revalidate=5
-        (CDN caches 10s, serves stale 5s while refreshing)
+*Different TTL for CDN vs Browser*
+```http
+Cache-Control: public, max-age=60, s-maxage=86400
 ```
+- `max-age`: Browser caches for 60 seconds
+- `s-maxage`: Shared caches (CDN) cache for 86400 seconds
+This lets you control browser freshness separately from CDN freshness. Very useful pattern.
+
+*Stale Content Control*
+```http
+Cache-Control: public, max-age=300, stale-while-revalidate=60, stale-if-error=86400
+```
+- `stale-while-revalidate`: Serve stale for 60s while fetching fresh in background
+- `stale-if-error`: Serve stale for 24h if origin is down (graceful degradation!)
+
+*Never Cache*
+```http
+Cache-Control: no-store
+```
+- `no-store`: Never cache. Not in CDN, not in browser. Use for sensitive data (banking, health).
+
+> **Stop and think**: A common mistake is using `no-cache` when you actually mean `no-store`. `no-cache` means "cache it, but revalidate with origin before serving" — NOT "don't cache."
+
+*Revalidation*
+```http
+Cache-Control: no-cache
+ETag: "v1.2.3-abc123"
+```
+CDN caches the response but checks with origin before every serve using the `If-None-Match` header. Origin responds `304 Not Modified` if unchanged.
+
+**Practical Caching Strategies**
+
+- **Static assets (images, fonts, JS/CSS with hash):**
+  `Cache-Control: public, max-age=31536000, immutable`
+  (1 year! Safe because filename contains content hash: `/assets/app.a1b2c3d4.js`)
+- **HTML pages:**
+  `Cache-Control: public, max-age=0, s-maxage=60, stale-while-revalidate=30`
+  (Browser always revalidates, CDN caches 60s)
+- **API responses (private):**
+  `Cache-Control: private, max-age=0`
+  (Never cache in shared caches — user-specific data)
+- **API responses (public, same for all users):**
+  `Cache-Control: public, s-maxage=10, stale-while-revalidate=5`
+  (CDN caches 10s, serves stale 5s while refreshing)
 
 ### 2.2 Cache Keys and Vary
 
-```
-CACHE KEYS — WHAT MAKES A REQUEST "THE SAME"?
-═══════════════════════════════════════════════════════════════
-
 A cache key determines if two requests can share a response.
 
-DEFAULT CACHE KEY
-─────────────────────────────────────────────────────────────
-    Scheme + Host + Path + Query String
+**Default Cache Key**
+`Scheme + Host + Path + Query String`
 
-    https://example.com/image.png         → Key 1
-    https://example.com/image.png?v=2     → Key 2  (different!)
-    http://example.com/image.png          → Key 3  (different!)
-    https://example.com/IMAGE.png         → Key 4  (depends on CDN)
+- `https://example.com/image.png` → Key 1
+- `https://example.com/image.png?v=2` → Key 2 (different!)
+- `http://example.com/image.png` → Key 3 (different!)
+- `https://example.com/IMAGE.png` → Key 4 (depends on CDN)
 
-THE Vary HEADER — SPLITTING CACHES
-─────────────────────────────────────────────────────────────
-    Vary tells the CDN: "The response changes based on
-    these request headers. Cache separately for each value."
+**The Vary Header — Splitting Caches**
+`Vary` tells the CDN: "The response changes based on these request headers. Cache separately for each value."
 
-    Vary: Accept-Encoding
-    ─────────────────────────────────────────────────
-    Cache separately for gzip, brotli, identity.
+*Vary: Accept-Encoding*
+Cache separately for gzip, brotli, identity.
+- `GET /app.js` with `Accept-Encoding: gzip` → Cached (gzip)
+- `GET /app.js` with `Accept-Encoding: br` → Cached (brotli)
 
-        GET /app.js  Accept-Encoding: gzip   → Cached (gzip)
-        GET /app.js  Accept-Encoding: br     → Cached (brotli)
-        GET /app.js  (no encoding)           → Cached (plain)
+*Vary: Accept-Language*
+Cache separately per language. Sounds good, BUT: `en`, `en-US`, `en-GB`, `en-AU`, `en-CA`, `en-us`, `EN-US`... Each is a different cache key!
 
-    Vary: Accept-Language
-    ─────────────────────────────────────────────────
-    Cache separately per language. Sounds good, BUT:
+> **Pause and predict**: What happens to your cache hit ratio if you use `Vary: Accept-Language` without normalizing the header first? It gets destroyed!
 
-        en, en-US, en-GB, en-AU, en-CA, en-us, EN-US...
-        Each is a different cache key!
+*Vary: \**
+NEVER cache. Every request is unique. This is almost always a mistake.
 
-        ⚠️  Can destroy cache hit ratio. Normalize first!
-
-    Vary: *
-    ─────────────────────────────────────────────────
-    NEVER cache. Every request is unique.
-    This is almost always a mistake.
-
-CACHE KEY BEST PRACTICES
-─────────────────────────────────────────────────────────────
-    ✓ Include only what affects the response
-    ✓ Strip unnecessary query parameters (tracking: utm_*, fbclid)
-    ✓ Sort query parameters (a=1&b=2 = b=2&a=1)
-    ✓ Normalize Accept-Encoding to a few canonical values
-    ✗ Don't Vary on Cookie (almost every user has different cookies)
-    ✗ Don't Vary on User-Agent (thousands of unique values)
-```
+**Cache Key Best Practices**
+- Include only what affects the response
+- Strip unnecessary query parameters (tracking: `utm_*`, `fbclid`)
+- Sort query parameters (`a=1&b=2` = `b=2&a=1`)
+- Normalize `Accept-Encoding` to a few canonical values
+- **Don't** Vary on `Cookie` (almost every user has different cookies)
+- **Don't** Vary on `User-Agent` (thousands of unique values)
 
 ### 2.3 Cache Invalidation
 
+> *"There are only two hard things in Computer Science: cache invalidation and naming things."* — Phil Karlton
+
+**Strategy 1: TTL-Based Expiration**
+Just wait for the cache to expire naturally.
+- `max-age=300` → Content refreshes every 5 minutes
+- `max-age=60` → Content refreshes every minute
+*Pros*: Simple, no invalidation infrastructure needed.
+*Cons*: Users see stale content for up to TTL duration.
+
+**Strategy 2: Purge / Ban**
+Explicitly remove content from cache.
+```bash
+# Purge a specific URL
+curl -X PURGE https://cdn.example.com/image.png
+
+# Ban by pattern (Fastly/Varnish)
+curl -X BAN https://cdn.example.com/ -H "X-Ban-Pattern: /products/.*"
 ```
-CACHE INVALIDATION — "THE HARDEST PROBLEM"
-═══════════════════════════════════════════════════════════════
+*Pros*: Immediate invalidation.
+*Cons*: Must know what to purge, propagation time across PoPs.
+*(Cloudflare: <2s, CloudFront: 5-15m, Fastly: <150ms, Akamai: <5s)*
 
-    "There are only two hard things in Computer Science:
-     cache invalidation and naming things."
-     — Phil Karlton
+**Strategy 3: Versioned URLs (Cache Busting)**
+Include a version/hash in the filename.
+- Old: `/assets/app.v1.js` (or better: `/assets/app.a1b2c3.js`)
+- New: `/assets/app.v2.js` (or better: `/assets/app.d4e5f6.js`)
 
-STRATEGY 1: TTL-BASED EXPIRATION
-─────────────────────────────────────────────────────────────
-    Just wait for the cache to expire naturally.
+HTML references the new filename → new cache key. Old version naturally expires. No purge needed.
+*Pros*: Perfect cache busting, immutable caching.
+*Cons*: Only works for assets referenced from HTML/CSS. Can't version API responses or HTML pages.
 
-    max-age=300 → Content refreshes every 5 minutes
-    max-age=60  → Content refreshes every minute
+**Strategy 4: Stale-While-Revalidate**
+Serve stale content while fetching fresh in background.
+`Cache-Control: max-age=60, stale-while-revalidate=30`
 
-    Pros: Simple, no invalidation infrastructure needed
-    Cons: Users see stale content for up to TTL duration
+*Timeline:*
+- **t=0**: Content cached. Fresh.
+- **t=60**: max-age expired. Content is "stale."
+- **t=61**: Request arrives. Serve stale content immediately (fast!). Background: fetch fresh from origin.
+- **t=61.5**: Background fetch completes. Cache updated with fresh content.
+- **t=62**: Next request gets fresh content.
 
-STRATEGY 2: PURGE / BAN
-─────────────────────────────────────────────────────────────
-    Explicitly remove content from cache.
-
-    # Purge a specific URL
-    curl -X PURGE https://cdn.example.com/image.png
-
-    # Ban by pattern (Fastly/Varnish)
-    curl -X BAN https://cdn.example.com/ \
-      -H "X-Ban-Pattern: /products/.*"
-
-    Pros: Immediate invalidation
-    Cons: Must know what to purge, propagation time across PoPs
-
-    Propagation timing:
-        Cloudflare:   <2 seconds globally
-        CloudFront:   5-15 minutes (invalidation distribution)
-        Fastly:       <150ms globally (Instant Purge)
-        Akamai:       <5 seconds (Fast Purge)
-
-STRATEGY 3: VERSIONED URLS (CACHE BUSTING)
-─────────────────────────────────────────────────────────────
-    Include a version/hash in the filename.
-
-    Old: /assets/app.v1.js
-    New: /assets/app.v2.js
-
-    Or with content hashes (better):
-    Old: /assets/app.a1b2c3.js
-    New: /assets/app.d4e5f6.js
-
-    HTML references the new filename → new cache key.
-    Old version naturally expires. No purge needed.
-
-    Pros: Perfect cache busting, immutable caching
-    Cons: Only works for assets referenced from HTML/CSS
-          Can't version API responses or HTML pages
-
-STRATEGY 4: STALE-WHILE-REVALIDATE
-─────────────────────────────────────────────────────────────
-    Serve stale content while fetching fresh in background.
-
-    Cache-Control: max-age=60, stale-while-revalidate=30
-
-    Timeline:
-    ─────────────────────────────────────────────────
-    t=0      Content cached. Fresh.
-    t=60     max-age expired. Content is "stale."
-    t=61     Request arrives:
-             → Serve stale content immediately (fast!)
-             → Background: fetch fresh from origin
-    t=61.5   Background fetch completes
-             → Cache updated with fresh content
-    t=62     Next request gets fresh content
-
-    Best of both worlds:
-    ✓ User always gets instant response
-    ✓ Content is never more than max-age + stale-while-revalidate old
-    ✗ One user sees stale content per refresh cycle
-```
+Best of both worlds: User always gets instant response, and content is never more than `max-age + stale-while-revalidate` old.
 
 ---
 
@@ -442,116 +320,66 @@ STRATEGY 4: STALE-WHILE-REVALIDATE
 
 ### 3.1 Dynamic Content Acceleration
 
+Not everything can be cached. API responses, personalized pages, database queries — these are unique per request. CDNs still help through network optimization.
+
+**1. Persistent Connections (Connection Pooling)**
+Without CDN:
+- Client -> TLS handshake -> Origin (150ms each time)
+
+With CDN:
+- Client -> TLS -> Edge (20ms)
+- Edge -> pre-established connection -> Origin (0ms setup)
+
+Edge keeps warm connections to origin. Saves 130ms+ on every new client connection.
+
+**2. TCP Optimization**
+CDN edge servers tune TCP parameters for the last-mile connection to each client:
+- Larger initial congestion window (start faster)
+- BBR congestion control (better than Cubic on lossy links)
+- TCP Fast Open (reduce handshake RTT)
+
+Between edge and origin, use optimized backbone:
+- Dedicated fiber paths (less congestion)
+- Fewer hops (direct routing)
+- Larger buffers (handle bursts)
+
+**3. Protocol Optimization**
+
+Edge can speak newer protocols to clients even if origin only supports HTTP/1.1.
+
+```mermaid
+flowchart LR
+    C["Client\n(QUIC)"] -- "HTTP/3\n0-RTT\n~20ms" --> E["Edge"]
+    E -- "HTTP/2\nmux, warm" --> O["Origin\n(H/1.1)"]
 ```
-DYNAMIC ACCELERATION — CDNs FOR UNCACHEABLE CONTENT
-═══════════════════════════════════════════════════════════════
 
-Not everything can be cached. API responses, personalized
-pages, database queries — these are unique per request.
-CDNs still help through network optimization.
+**4. Route Optimization (Argo Smart Routing)**
+Internet routing (BGP) optimizes for policy, not speed. CDN backbone routing optimizes for latency.
 
-OPTIMIZATION TECHNIQUES
-─────────────────────────────────────────────────────────────
+- Public internet path: Client -> 7 hops -> Origin (120ms)
+- CDN optimized path: Client -> Edge -> 3 hops -> Origin (75ms)
 
-1. PERSISTENT CONNECTIONS (Connection Pooling)
-─────────────────────────────────────────────────────────────
-    Without CDN:
-        Client → TLS handshake → Origin (150ms each time)
-
-    With CDN:
-        Client → TLS → Edge (20ms)
-        Edge → pre-established connection → Origin (0ms setup)
-
-    Edge keeps warm connections to origin.
-    Saves 130ms+ on every new client connection.
-
-2. TCP OPTIMIZATION
-─────────────────────────────────────────────────────────────
-    CDN edge servers tune TCP parameters for the
-    last-mile connection to each client:
-
-    - Larger initial congestion window (start faster)
-    - BBR congestion control (better than Cubic on lossy links)
-    - TCP Fast Open (reduce handshake RTT)
-
-    Between edge and origin, use optimized backbone:
-    - Dedicated fiber paths (less congestion)
-    - Fewer hops (direct routing)
-    - Larger buffers (handle bursts)
-
-3. PROTOCOL OPTIMIZATION
-─────────────────────────────────────────────────────────────
-    Client → Edge:  HTTP/3 (QUIC, 0-RTT)
-    Edge → Origin:  HTTP/2 (multiplexed, compressed)
-
-    Edge can speak newer protocols to clients even if
-    origin only supports HTTP/1.1.
-
-    ┌────────┐  HTTP/3   ┌──────┐  HTTP/2  ┌────────┐
-    │ Client │ ────────→ │ Edge │ ───────→ │ Origin │
-    │ (QUIC) │  0-RTT    │      │  mux     │ (H/1.1)│
-    └────────┘  ~20ms    └──────┘  warm    └────────┘
-
-4. ROUTE OPTIMIZATION (Argo Smart Routing)
-─────────────────────────────────────────────────────────────
-    Internet routing (BGP) optimizes for policy, not speed.
-    CDN backbone routing optimizes for latency.
-
-    Public internet path: Client → 7 hops → Origin (120ms)
-    CDN optimized path:   Client → Edge → 3 hops → Origin (75ms)
-
-    Cloudflare Argo: ~30% latency reduction on average
-    Measured by testing all paths and choosing fastest.
-```
+Cloudflare Argo: ~30% latency reduction on average. Measured by testing all paths and choosing fastest.
 
 ### 3.2 Image Optimization at the Edge
 
-```
-EDGE IMAGE OPTIMIZATION
-═══════════════════════════════════════════════════════════════
+Images are 40-60% of most web page weight. Modern CDNs optimize images on the fly.
 
-Images are 40-60% of most web page weight.
-Modern CDNs optimize images on the fly.
+**Transformations**
+Original: `product-photo.png` (4.2 MB, 4000x3000, PNG)
 
-TRANSFORMATIONS
-─────────────────────────────────────────────────────────────
+- *Desktop request*: Resize to 1200x900, Convert to WebP, Quality 85%. Result: 142 KB (97% smaller!)
+- *Mobile request*: Resize to 600x450, Convert to AVIF, Quality 75%. Result: 48 KB (99% smaller!)
 
-    Original: product-photo.png (4.2 MB, 4000x3000, PNG)
+Format selection based on `Accept` header:
+- `Accept: image/avif,image/webp,image/*` → AVIF
+- `Accept: image/webp,image/*` → WebP
+- `Accept: image/*` → Original format
 
-    Desktop request:
-      → Resize to 1200x900
-      → Convert to WebP
-      → Quality 85%
-      → Result: 142 KB (97% smaller!)
+**URL-Based Transforms (Cloudflare, imgix)**
+`/cdn-cgi/image/width=800,quality=80,format=auto/photo.jpg`
 
-    Mobile request:
-      → Resize to 600x450
-      → Convert to AVIF
-      → Quality 75%
-      → Result: 48 KB (99% smaller!)
-
-    Format selection based on Accept header:
-      Accept: image/avif,image/webp,image/*  → AVIF
-      Accept: image/webp,image/*             → WebP
-      Accept: image/*                        → Original format
-
-URL-BASED TRANSFORMS (Cloudflare, imgix)
-─────────────────────────────────────────────────────────────
-    /cdn-cgi/image/width=800,quality=80,format=auto/photo.jpg
-
-    Parameters:
-      width=800        Resize width
-      height=600       Resize height
-      fit=cover        Crop strategy
-      quality=80       Compression level
-      format=auto      Best format for browser
-      dpr=2            Device pixel ratio (retina)
-      blur=50          Gaussian blur
-      sharpen=2        Sharpen amount
-
-    Each unique parameter set = separate cache entry.
-    Transformed images are cached at edge, not re-generated.
-```
+Parameters like `width`, `height`, `fit`, `quality`, `format`, `dpr`, `blur`, `sharpen` can be passed. Each unique parameter set = separate cache entry. Transformed images are cached at edge, not re-generated.
 
 ---
 
@@ -559,165 +387,65 @@ URL-BASED TRANSFORMS (Cloudflare, imgix)
 
 ### 4.1 What is Edge Compute?
 
+Edge compute lets you run code at CDN PoP locations, within milliseconds of users, instead of in a central datacenter hundreds of milliseconds away.
+
+**The Evolution**
+- **Era 1: Static CDN** (cache files) - "Here's the image, cached at the edge."
+- **Era 2: Dynamic CDN** (optimize delivery) - "I'll optimize the connection and route."
+- **Era 3: Edge Compute** (run logic) - "I'll run your code at the edge and respond directly."
+
+```mermaid
+flowchart LR
+    C["Client\n(Tokyo)"] -- "request\n~5ms" --> E["Edge Worker\n(Tokyo PoP)"]
+    E -- "response" --> C
+    E -.-> O["Origin or\nEdge DB"]
 ```
-EDGE COMPUTE — CODE AT CDN LOCATIONS
-═══════════════════════════════════════════════════════════════
 
-Edge compute lets you run code at CDN PoP locations,
-within milliseconds of users, instead of in a central
-datacenter hundreds of milliseconds away.
+No round trip to origin! Response in single-digit ms.
 
-THE EVOLUTION
-─────────────────────────────────────────────────────────────
+**Platforms**
 
-    Era 1: Static CDN (cache files)
-        "Here's the image, cached at the edge."
-
-    Era 2: Dynamic CDN (optimize delivery)
-        "I'll optimize the connection and route."
-
-    Era 3: Edge Compute (run logic)
-        "I'll run your code at the edge and respond directly."
-
-    ┌────────┐  request   ┌──────────────┐
-    │ Client │ ──────────→│ Edge Worker  │
-    │ Tokyo  │            │ Tokyo PoP    │
-    │        │←───────────│              │
-    └────────┘  response  │ Runs code,   │
-        ~5ms              │ may call     │
-                          │ origin or    │
-                          │ edge DB      │
-                          └──────────────┘
-
-    No round trip to origin! Response in single-digit ms.
-
-PLATFORMS
-─────────────────────────────────────────────────────────────
-
-    Cloudflare Workers
-    ─────────────────────────────────────────────
-    Runtime: V8 isolates (not containers)
-    Startup: <5ms cold start (no container boot)
-    Locations: 330+ cities
-    Languages: JavaScript/TypeScript, Rust, C, C++ (WASM)
-    Storage: Workers KV (eventually consistent key-value)
-             Durable Objects (strongly consistent, single-leader)
-             D1 (SQLite at the edge)
-             R2 (S3-compatible object storage)
-    Limits: 10ms CPU per request (free), 30s (paid)
-
-    AWS Lambda@Edge / CloudFront Functions
-    ─────────────────────────────────────────────
-    Lambda@Edge:
-      Runtime: Node.js, Python
-      Locations: 13 regional edge caches
-      Cold start: 50-200ms
-      Limits: 5s (viewer triggers), 30s (origin triggers)
-
-    CloudFront Functions:
-      Runtime: JavaScript (limited)
-      Locations: 600+ PoPs (runs everywhere)
-      Startup: <1ms
-      Limits: 2ms execution, no network calls
-      Use for: Header manipulation, URL rewrites, simple auth
-
-    Fastly Compute
-    ─────────────────────────────────────────────
-    Runtime: WebAssembly
-    Startup: ~35μs cold start (microseconds!)
-    Locations: 90+ PoPs
-    Languages: Rust, Go, JavaScript (compiled to WASM)
-    Limits: 120s execution, full network access
-
-    Deno Deploy
-    ─────────────────────────────────────────────
-    Runtime: Deno (V8-based)
-    Locations: 35+ regions
-    Languages: TypeScript/JavaScript
-    Storage: Deno KV (globally replicated)
-```
+- **Cloudflare Workers**: Runtime: V8 isolates (not containers). Startup: <5ms cold start. Locations: 330+ cities. Languages: JavaScript/TypeScript, Rust, C, C++ (WASM). Storage: KV, Durable Objects, D1, R2.
+- **AWS Lambda@Edge / CloudFront Functions**: Lambda@Edge (Node.js/Python) runs at 13 regional edge caches with 50-200ms cold starts. CloudFront Functions (JavaScript) runs everywhere with <1ms startup for ultra-fast header manipulation.
+- **Fastly Compute**: Runtime: WebAssembly. Startup: ~35μs cold start (microseconds!). Languages: Rust, Go, JavaScript (compiled to WASM).
+- **Deno Deploy**: Runtime: Deno (V8-based) in 35+ regions. Languages: TypeScript/JavaScript.
 
 ### 4.2 Edge Compute Use Cases
 
-```
-WHAT TO RUN AT THE EDGE
-═══════════════════════════════════════════════════════════════
-
-AUTHENTICATION & AUTHORIZATION
-─────────────────────────────────────────────────────────────
-    Validate JWT tokens at the edge.
-    Reject unauthorized requests before they reach origin.
-
-    // Cloudflare Worker example
-    export default {
-      async fetch(request) {
-        const token = request.headers.get("Authorization");
-        if (!token) {
-          return new Response("Unauthorized", { status: 401 });
-        }
-
-        try {
-          const payload = await verifyJWT(token, JWT_SECRET);
-          // Add user info as header for origin
-          const newRequest = new Request(request);
-          newRequest.headers.set("X-User-ID", payload.sub);
-          return fetch(newRequest);
-        } catch (e) {
-          return new Response("Invalid token", { status: 403 });
-        }
-      }
-    };
-
-A/B TESTING
-─────────────────────────────────────────────────────────────
-    Route users to different origins based on cookies/headers.
-    No client-side JavaScript, no flash of unstyled content.
-
-    // Assign variant at edge
-    const variant = request.headers.get("cookie")?.includes("variant=B")
-      ? "B" : "A";
-    const origin = variant === "B"
-      ? "https://experiment-b.example.com"
-      : "https://experiment-a.example.com";
-
-SECURITY HEADERS
-─────────────────────────────────────────────────────────────
-    Add Content-Security-Policy, HSTS, X-Frame-Options
-    consistently across all responses, regardless of origin.
-
-    const securityHeaders = {
-      "Content-Security-Policy": "default-src 'self'",
-      "Strict-Transport-Security": "max-age=63072000",
-      "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "DENY",
-      "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Permissions-Policy": "camera=(), microphone=()"
-    };
-
-GEOLOCATION ROUTING
-─────────────────────────────────────────────────────────────
-    Route requests based on user location, available
-    automatically at the edge via request metadata.
-
-    // Cloudflare provides country, city, timezone, etc.
-    const country = request.cf.country;  // "JP"
-    const city = request.cf.city;        // "Tokyo"
-
-    if (country === "CN") {
-      return Response.redirect("https://cn.example.com");
+**Authentication & Authorization**
+Validate JWT tokens at the edge. Reject unauthorized requests before they reach origin.
+```javascript
+export default {
+  async fetch(request) {
+    const token = request.headers.get("Authorization");
+    if (!token) {
+      return new Response("Unauthorized", { status: 401 });
     }
 
-URL REWRITING & REDIRECTS
-─────────────────────────────────────────────────────────────
-    Handle thousands of redirects at the edge.
-    No origin request needed.
-
-    const redirects = {
-      "/old-page": "/new-page",
-      "/blog/2023/post": "/articles/post",
-      // ... thousands of rules
-    };
+    try {
+      const payload = await verifyJWT(token, JWT_SECRET);
+      // Add user info as header for origin
+      const newRequest = new Request(request);
+      newRequest.headers.set("X-User-ID", payload.sub);
+      return fetch(newRequest);
+    } catch (e) {
+      return new Response("Invalid token", { status: 403 });
+    }
+  }
+};
 ```
+
+**A/B Testing**
+Route users to different origins based on cookies/headers. No client-side JavaScript, no flash of unstyled content.
+
+**Security Headers**
+Add `Content-Security-Policy`, `HSTS`, `X-Frame-Options` consistently across all responses, regardless of origin.
+
+**Geolocation Routing**
+Route requests based on user location, available automatically at the edge via request metadata (e.g., `request.cf.country`).
+
+**URL Rewriting & Redirects**
+Handle thousands of redirects at the edge. No origin request needed.
 
 ---
 
@@ -725,81 +453,53 @@ URL REWRITING & REDIRECTS
 
 ### 5.1 TLS Termination Strategies
 
+Where should you decrypt HTTPS traffic?
+
+```mermaid
+flowchart LR
+    subgraph Option 1: Full Strict - Most Secure
+    C1["Client"] -- "HTTPS\nTLS 1.3" --> E1["Edge\n(Edge cert)"]
+    E1 -- "HTTPS\nTLS 1.3" --> O1["Origin\n(Origin cert verified)"]
+    end
 ```
-TLS TERMINATION — WHERE TO DECRYPT
-═══════════════════════════════════════════════════════════════
+Edge verifies origin certificate (strict validation). End-to-end encryption.
+- ✓ Data encrypted everywhere. Protects against MITM between edge and origin.
+- ✗ Must manage certificate on origin. Slightly higher latency.
 
-OPTION 1: FULL (STRICT) — Edge to Origin Encrypted
-─────────────────────────────────────────────────────────────
-
-    Client ── HTTPS ──→ Edge ── HTTPS ──→ Origin
-              TLS 1.3          TLS 1.3
-              Edge cert         Origin cert
-
-    Edge verifies origin certificate (strict validation).
-    End-to-end encryption. Most secure.
-
-    ✓ Data encrypted everywhere
-    ✓ Protects against MITM between edge and origin
-    ✗ Must manage certificate on origin
-    ✗ Slightly higher latency (TLS handshake to origin)
-
-OPTION 2: FULL — Edge Encrypts, Doesn't Validate Origin
-─────────────────────────────────────────────────────────────
-
-    Client ── HTTPS ──→ Edge ── HTTPS ──→ Origin
-              TLS 1.3          TLS 1.3
-              Edge cert         Self-signed OK
-
-    Edge connects to origin via HTTPS but accepts any cert.
-
-    ✓ Encrypted in transit
-    ✗ Origin certificate not validated (MITM possible)
-    ✗ False sense of security
-
-OPTION 3: FLEXIBLE — Encrypted to Edge Only
-─────────────────────────────────────────────────────────────
-
-    Client ── HTTPS ──→ Edge ── HTTP ──→ Origin
-              TLS 1.3          Plaintext!
-
-    ⚠️  Data is unencrypted between edge and origin.
-        Only acceptable if edge and origin are in the
-        same physical network (never over the internet).
-
-    ✓ Simple origin setup (no certificate)
-    ✗ Data exposed between edge and origin
-    ✗ Common source of security vulnerabilities
-
-OPTION 4: ORIGIN PULL CERTIFICATE (mTLS)
-─────────────────────────────────────────────────────────────
-
-    Client ── HTTPS ──→ Edge ── mTLS ──→ Origin
-                               Both sides
-                               present certs
-
-    Origin ONLY accepts connections from CDN.
-    Prevents direct-to-origin attacks bypassing CDN/WAF.
-
-    ✓ Origin guaranteed that traffic comes from CDN
-    ✓ Can't bypass CDN protections
-    ✗ More complex certificate management
-
-CERTIFICATE MANAGEMENT AT SCALE
-─────────────────────────────────────────────────────────────
-    CDNs manage millions of certificates automatically:
-
-    Let's Encrypt integration:
-        Auto-issue, auto-renew, zero downtime rotation.
-
-    SAN certificates:
-        One cert covering many domains (efficient for CDNs).
-
-    Keyless SSL (Cloudflare):
-        Private key never leaves your infrastructure.
-        CDN handles TLS but calls your key server for signing.
-        Required by some regulatory/compliance frameworks.
+```mermaid
+flowchart LR
+    subgraph Option 2: Full - Unvalidated
+    C2["Client"] -- "HTTPS" --> E2["Edge"]
+    E2 -- "HTTPS" --> O2["Origin\n(Self-signed OK)"]
+    end
 ```
+Edge connects to origin via HTTPS but accepts any cert.
+- ✓ Encrypted in transit.
+- ✗ Origin certificate not validated (MITM possible). False sense of security.
+
+```mermaid
+flowchart LR
+    subgraph Option 3: Flexible - Insecure over Internet
+    C3["Client"] -- "HTTPS" --> E3["Edge"]
+    E3 -- "HTTP\n(Plaintext!)" --> O3["Origin"]
+    end
+```
+> **Stop and think**: Data is unencrypted between edge and origin. This is only acceptable if the edge and origin are in the exact same private physical network.
+
+```mermaid
+flowchart LR
+    subgraph Option 4: Origin Pull (mTLS)
+    C4["Client"] -- "HTTPS" --> E4["Edge"]
+    E4 -- "mTLS\n(Both present certs)" --> O4["Origin"]
+    end
+```
+Origin ONLY accepts connections from CDN. Prevents direct-to-origin attacks bypassing CDN/WAF.
+
+**Certificate Management at Scale**
+CDNs manage millions of certificates automatically:
+- **Let's Encrypt integration**: Auto-issue, auto-renew, zero downtime rotation.
+- **SAN certificates**: One cert covering many domains.
+- **Keyless SSL (Cloudflare)**: Private key never leaves your infrastructure. CDN handles TLS but calls your key server for signing.
 
 ---
 
@@ -831,115 +531,39 @@ CERTIFICATE MANAGEMENT AT SCALE
 
 ## Quiz
 
-1. **Explain the difference between `max-age`, `s-maxage`, and `stale-while-revalidate`. When would you use all three together?**
+1. **You are optimizing the caching strategy for a global news website's homepage, which updates frequently. You want returning readers to experience zero latency, but you also want to reduce load on your origin server and keep the news relatively fresh. How would you use `max-age`, `s-maxage`, and `stale-while-revalidate` to achieve this?**
    <details>
    <summary>Answer</summary>
 
-   - `max-age=N`: How long the **browser** (and any cache) considers the response fresh.
-   - `s-maxage=N`: How long **shared caches** (CDNs, proxies) consider the response fresh. Overrides `max-age` for shared caches only.
-   - `stale-while-revalidate=N`: After the response becomes stale, serve the stale version for up to N seconds while fetching a fresh copy in the background.
-
-   Example combining all three:
-   ```
-   Cache-Control: public, max-age=0, s-maxage=300, stale-while-revalidate=60
-   ```
-
-   This means:
-   - Browser: Always revalidate (max-age=0) — users always get fresh content on hard refresh
-   - CDN: Cache for 5 minutes (s-maxage=300) — reduces origin load
-   - CDN stale serving: After 5 minutes, serve stale for up to 60 seconds while fetching fresh in background — users never wait for origin
-
-   Use all three together for HTML pages or API responses that change periodically but where instant freshness is less important than instant response.
+   By combining these three directives, you create a tiered caching strategy that perfectly balances instant load times with content freshness. Setting `max-age=0` forces the browser to always revalidate, ensuring it never uses an outdated local copy without checking first. However, setting `s-maxage=300` allows the CDN (shared cache) to cache the homepage for 5 minutes, which shields your origin server from the thousands of users requesting the site during that window. Adding `stale-while-revalidate=60` ensures that when the 5-minute CDN cache expires, the very next user isn't punished with a slow origin request; instead, the CDN instantly serves them the slightly stale copy while asynchronously fetching the fresh news homepage from the origin. This guarantees that no user ever experiences origin latency, and content is never older than 6 minutes.
    </details>
 
-2. **Why does `Vary: User-Agent` destroy CDN cache hit rates? What's the correct approach for serving different content to mobile vs desktop?**
+2. **Your team notices that your CDN cache hit rate has plummeted to 2% after a new release. You inspect the HTTP headers and discover `Vary: User-Agent` was added so the backend could return different HTML for mobile and desktop users. Why did this destroy your hit rate, and how should you redesign this delivery?**
    <details>
    <summary>Answer</summary>
 
-   `Vary: User-Agent` creates a separate cache entry for every unique User-Agent string. In 2025, there are thousands of unique User-Agent strings — different browser versions, OS versions, device models, and bot crawlers each have distinct strings.
-
-   A page that should be cached once gets cached thousands of times, and each variation rarely gets a cache hit because the exact same User-Agent string repeats infrequently.
-
-   Correct approach:
-   1. **Client hints**: Use `Sec-CH-UA-Mobile` header and `Vary: Sec-CH-UA-Mobile` — only two values: `?0` (desktop) and `?1` (mobile).
-   2. **CDN device detection**: Most CDNs (Cloudflare, Akamai, Fastly) provide a normalized device-type header (mobile/desktop/tablet). Vary on that header instead.
-   3. **Responsive design**: Serve the same HTML and use CSS media queries for layout changes — no Vary header needed at all.
-   4. **Edge function**: Detect device type in an edge function and rewrite to different origins or transform the response.
+   The `Vary` header instructs the CDN to cache a separate copy of the response for every unique value of the specified header. Because there are thousands of unique `User-Agent` strings in the wild—varying by browser version, minor OS updates, device models, and bots—the CDN treats almost every request as unique, preventing cache sharing between users and driving your hit rate to near zero. Instead of varying by raw User-Agent, you should use client hints like `Sec-CH-UA-Mobile` (which only has two values: `?0` or `?1`) or rely on the CDN's normalized device-type headers (e.g., `Cloudflare-Device-Type`). Better yet, serve a single responsive HTML payload and use CSS media queries to adapt the layout, completely eliminating the need for backend variation and maximizing cacheability.
    </details>
 
-3. **What is tiered caching and how does it reduce origin load?**
+3. **Your startup just launched a viral campaign, and traffic is spiking globally. You are using a CDN with 300+ edge locations, but your single origin server in Virginia is still getting overwhelmed by thousands of cache miss requests for new content. How would implementing tiered caching resolve this "thundering herd" problem?**
    <details>
    <summary>Answer</summary>
 
-   Tiered caching adds intermediate cache layers between edge PoPs and the origin server.
-
-   Without tiered caching, every edge PoP with a cache miss makes a separate request to the origin. With 300+ PoPs, a popular piece of new content could trigger 300 near-simultaneous requests to origin — a "thundering herd."
-
-   With tiered caching:
-   - **Edge tier**: Hundreds of PoPs, small caches, serve most hits
-   - **Shield/midgress tier**: A few regional caches (5-15 locations), larger storage
-   - **Origin**: Your actual server
-
-   When an edge PoP has a cache miss, it checks the regional shield first. If the shield has the content (populated by an earlier request from a different edge PoP in the same region), the origin is never contacted.
-
-   In practice, tiered caching reduces origin requests by 50-80%. It is especially effective for "long tail" content that is popular enough to be in the shield cache but not popular enough to stay in every individual edge cache.
+   Without tiered caching, every single CDN edge location that experiences a cache miss will independently request the asset from your origin, meaning a new viral video could generate over 300 simultaneous requests to your Virginia server. Tiered caching introduces an intermediate layer (a regional "shield" cache) between the hundreds of edge nodes and your origin server. When users in Tokyo, Seoul, and Sydney request the video, their local edge nodes check the APAC regional shield; only the very first request misses the shield and travels to Virginia. The shield caches the response, and subsequent misses from other APAC edge nodes are served directly from the shield, protecting your origin server from redundant requests and reducing overall origin load by up to 80%.
    </details>
 
-4. **Compare Cloudflare Workers, Lambda@Edge, and CloudFront Functions. When would you choose each?**
+4. **You are architecting a new application that needs to intercept incoming requests and validate JWT tokens before allowing them to reach your API origin. You evaluate Cloudflare Workers, Lambda@Edge, and CloudFront Functions. Based on performance profiles and execution limits, under what circumstances would you choose each of these edge compute solutions?**
    <details>
    <summary>Answer</summary>
 
-   **Cloudflare Workers**:
-   - Best for: Full application logic at the edge, lowest latency globally
-   - V8 isolates with <5ms cold start, 330+ locations
-   - Rich ecosystem: KV, Durable Objects, D1, R2, Queues
-   - Choose when: Building full edge applications, need consistent global performance, want edge-native storage
-
-   **Lambda@Edge**:
-   - Best for: Complex request/response manipulation tied to CloudFront
-   - Node.js/Python, runs at 13 regional edge caches (not all PoPs)
-   - 50-200ms cold starts, up to 30s execution
-   - Choose when: Already on AWS, need to modify CloudFront behavior, need longer execution time or origin-facing triggers
-
-   **CloudFront Functions**:
-   - Best for: Simple, fast header manipulation and URL rewrites
-   - JavaScript only, runs at all 600+ CloudFront PoPs
-   - <1ms startup, but limited to 2ms execution, no network calls
-   - Choose when: Need simple transformations at every PoP (redirect rules, header injection, simple auth token validation)
-
-   Summary:
-   - Need full edge app? → Cloudflare Workers or Fastly Compute
-   - Need AWS integration with moderate logic? → Lambda@Edge
-   - Need ultra-fast, ultra-simple transforms? → CloudFront Functions
+   The choice of edge runtime depends entirely on the complexity of your logic and your required start-up latency. If you are building a full application with complex routing, external network calls, or require global sub-millisecond cold starts, Cloudflare Workers (running on V8 isolates) provides the best performance and ecosystem. If you are already deeply embedded in the AWS ecosystem and need to perform complex request manipulation that might take up to 30 seconds or requires Node/Python libraries, Lambda@Edge is appropriate despite its higher 50-200ms cold starts. However, if your JWT validation is extremely lightweight, requires no external network calls, and must execute in under 2ms at every edge location, CloudFront Functions offers near-instant startup latency at a lower cost than Lambda@Edge.
    </details>
 
-5. **Your e-commerce site has a product page that shows the same product info to all users but includes a "Welcome, {name}" header and a cart count badge. How would you architect this for CDN caching?**
+5. **You are tasked with caching product pages for an e-commerce site to handle a major flash sale. The product descriptions and images are identical for everyone, but the top navigation bar displays the logged-in user's name and a dynamic shopping cart count. How can you architect this page to achieve a 99% CDN cache hit rate without showing users the wrong names?**
    <details>
    <summary>Answer</summary>
 
-   The challenge is that the page is 95% cacheable (product info) but 5% personalized (name, cart count). Several approaches:
-
-   1. **Edge Side Includes (ESI)**: Cache the page body at the CDN and use ESI tags to inject personalized fragments. The CDN assembles the final page from cached + dynamic parts. Supported by Akamai, Fastly, Varnish.
-
-   2. **Client-side personalization** (recommended for most cases):
-      - Cache the full HTML page at CDN (`s-maxage=300`)
-      - Use JavaScript to fetch user name and cart count from an API
-      - API call: `GET /api/user/me` with `Cache-Control: private`
-      - Page loads instantly from cache, personalization fills in within 100ms
-      - This is how most major e-commerce sites work
-
-   3. **Edge compute assembly**:
-      - Edge function fetches cached page body from CDN cache
-      - Edge function fetches user data from edge KV store (if available)
-      - Assembles final HTML with personalization injected server-side
-      - More complex but avoids client-side JavaScript flash
-
-   4. **HTML streaming with edge injection**:
-      - Stream the cached HTML from CDN
-      - At the edge, inject personalized data into specific markers
-      - User sees content progressively without waiting for full assembly
-
-   The client-side approach (option 2) is simplest and most resilient. The page works even if the personalization API is slow or down.
+   The most resilient and standard approach is to decouple the static content from the personalized state using a client-side architecture. You should cache the full, unpersonalized HTML page at the CDN with a long `s-maxage`, ensuring the heavy lifting of rendering product data is served instantly from the edge for 99% of requests. To handle the personalization, the cached HTML should include lightweight JavaScript that asynchronously fetches the user's specific state (name, cart count) from a private API endpoint (using `Cache-Control: private`). This guarantees that users get an instant page load from the CDN and never see another user's cached session data, while the small, targeted API call resolves a fraction of a second later to populate the cart and greeting.
    </details>
 
 ---
@@ -949,6 +573,8 @@ CERTIFICATE MANAGEMENT AT SCALE
 **Objective**: Deploy a static site with CDN-style caching, custom cache headers, and an edge function that adds security headers.
 
 **Environment**: kind cluster with nginx as origin + Varnish as CDN simulation
+
+> **Note:** This exercise is validated against Kubernetes v1.35+.
 
 ### Part 1: Deploy Origin Server (15 minutes)
 
