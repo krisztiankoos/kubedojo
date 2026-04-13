@@ -65,7 +65,7 @@ This module introduces the fundamental challenges of distributed systems—the l
 
 ### 1.1 What is a Distributed System?
 
-```
+```text
 DISTRIBUTED SYSTEM DEFINITION
 ═══════════════════════════════════════════════════════════════
 
@@ -88,7 +88,7 @@ KEY PROPERTIES
 
 ### 1.2 Why Distribute?
 
-```
+```text
 REASONS TO DISTRIBUTE
 ═══════════════════════════════════════════════════════════════
 
@@ -125,26 +125,22 @@ Different teams, different services, different deployment cycles.
 
 ### 1.3 The Distribution Spectrum
 
-```
-DISTRIBUTION SPECTRUM
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart LR
+    A[Single Process] --> B[Web + DB]
+    B --> C[Microservices]
+    C --> D[Global Multi-region]
 
-NOT DISTRIBUTED                                    FULLY DISTRIBUTED
-      │                                                      │
-      ▼                                                      ▼
-┌──────────┐  ┌──────────────┐  ┌────────────┐  ┌──────────────┐
-│ Single   │  │ Web + DB     │  │ Microsvcs  │  │ Global       │
-│ Process  │  │ (2 servers)  │  │ (dozens)   │  │ Multi-region │
-└──────────┘  └──────────────┘  └────────────┘  └──────────────┘
-     │              │                  │                │
-     │              │                  │                │
- No network    Simple          Complex          Maximum
- No latency    failure modes   coordination     complexity
- Easy debug    Easy reasoning  Hard to debug    Very hard
+    A -.-> A1(No network<br/>No latency<br/>Easy debug)
+    B -.-> B1(Simple failure modes<br/>Easy reasoning)
+    C -.-> C1(Complex coordination<br/>Hard to debug)
+    D -.-> D1(Maximum complexity<br/>Very hard)
 
-Most systems live in the middle—distributed enough to need
-the mental models, but not so distributed that nothing works.
+    classDef plain fill:none,stroke:none
+    class A1,B1,C1,D1 plain
 ```
+
+Most systems live in the middle—distributed enough to need the mental models, but not so distributed that nothing works.
 
 > **Try This (2 minutes)**
 >
@@ -164,7 +160,7 @@ the mental models, but not so distributed that nothing works.
 
 ### 2.1 Challenge #1: Latency
 
-```
+```text
 LATENCY: THE SPEED OF LIGHT PROBLEM
 ═══════════════════════════════════════════════════════════════
 
@@ -205,9 +201,11 @@ Disk seek:                       2,000,000 ns   (2 ms)
 Network round trip (US→EU):    100,000,000 ns   (100 ms)
 ```
 
+> **Stop and think**: If the speed of light is a hard physical limit on network latency, how can a global system like a Content Delivery Network (CDN) serve files to users worldwide in just a few milliseconds?
+
 ### 2.2 Challenge #2: Partial Failure
 
-```
+```text
 PARTIAL FAILURE: THE UNRELIABILITY PROBLEM
 ═══════════════════════════════════════════════════════════════
 
@@ -257,28 +255,19 @@ This is fundamental. No protocol can solve it.
 
 ### 2.3 Challenge #3: No Global Clock
 
+```mermaid
+sequenceDiagram
+    participant A as Server A
+    participant B as Server B
+
+    Note over A: 10:00:00.001
+    A->>B: Request
+    Note over B: 10:00:00.003
+
+    Note over B: 10:00:00.004
+    B-->>A: Response
+    Note over A: 10:00:00.005
 ```
-NO GLOBAL CLOCK: THE ORDERING PROBLEM
-═══════════════════════════════════════════════════════════════
-
-In a single machine:
-    Events have a clear order.
-    Thread A did X, then Thread B did Y.
-    System clock is the arbiter.
-
-In a distributed system:
-    No shared clock. Each machine has its own.
-    Clocks drift. Even GPS-synced clocks differ by milliseconds.
-    "Before" and "after" become fuzzy concepts.
-
-THE ORDERING PROBLEM
-─────────────────────────────────────────────────────────────
-                  Server A              Server B
-                     │                     │
-     10:00:00.001    │ ─── Request ───────▶│   10:00:00.003
-                     │                     │
-     10:00:00.005    │◀─── Response ───── │   10:00:00.004
-                     │                     │
 
 Which happened first? The request or the response?
 
@@ -287,13 +276,11 @@ Server B says: Request at 10:00:00.003, response at 10:00:00.004
 
 Server B's clock is 2ms ahead. The timestamps are misleading.
 
-CONSEQUENCES
-─────────────────────────────────────────────────────────────
+**CONSEQUENCES**
 - Can't use timestamps to order events across machines
 - "Last write wins" requires agreeing on what "last" means
 - Debugging is hard: logs from different servers don't align
 - Need logical clocks (Lamport clocks, vector clocks) for ordering
-```
 
 > **War Story: The $12 Million Clock Skew Incident**
 >
@@ -320,7 +307,7 @@ CONSEQUENCES
 
 ### 3.1 Understanding CAP
 
-```
+```text
 THE CAP THEOREM
 ═══════════════════════════════════════════════════════════════
 
@@ -360,7 +347,7 @@ So really, during a partition you choose between:
 
 ### 3.2 CAP in Practice
 
-```
+```text
 CAP TRADE-OFFS IN REAL SYSTEMS
 ═══════════════════════════════════════════════════════════════
 
@@ -405,7 +392,7 @@ Design for partition. Choose your trade-off deliberately.
 
 ### 3.3 Beyond CAP: PACELC
 
-```
+```text
 PACELC: A MORE COMPLETE MODEL
 ═══════════════════════════════════════════════════════════════
 
@@ -456,50 +443,31 @@ or consistency for latency (asynchronous replication).
 
 ### 4.1 The Two Generals Problem
 
+```mermaid
+sequenceDiagram
+    participant A as General A
+    participant B as General B
+
+    A->>B: "Attack at dawn" (messenger)
+    B-->>A: "Got it" (messenger)
+    Note over A: But did B receive my ack?
+    A->>B: "I got your ack" (messenger)
+    Note over B: But did A receive...
+    Note over A,B: (infinite regress)
 ```
-THE TWO GENERALS PROBLEM
-═══════════════════════════════════════════════════════════════
 
-Setup:
-    Two generals must coordinate an attack.
-    They can only communicate via messengers.
-    Messengers may be captured (lost messages).
-    Both must attack simultaneously or not at all.
+**IMPOSSIBILITY**
+There is NO protocol that guarantees agreement if messages can be lost. This is proven mathematically impossible.
 
-The Problem:
-─────────────────────────────────────────────────────────────
-    General A                           General B
-        │                                   │
-        │ "Attack at dawn"                  │
-        │ ─────────messenger──────────────▶ │
-        │                                   │
-        │           "Got it"                │
-        │ ◀────────messenger─────────────── │
-        │                                   │
-        │   But did B receive my ack?       │
-        │   "I got your ack"                │
-        │ ─────────messenger──────────────▶ │
-        │                                   │
-        │   But did A receive...            │
-        │   (infinite regress)              │
-
-IMPOSSIBILITY
-─────────────────────────────────────────────────────────────
-There is NO protocol that guarantees agreement if messages
-can be lost. This is proven mathematically impossible.
-
-IMPLICATIONS FOR DISTRIBUTED SYSTEMS
-─────────────────────────────────────────────────────────────
-You cannot guarantee that two nodes agree on anything
-if the network is unreliable. The best you can do:
-    - Increase probability (retries, acknowledgments)
-    - Accept uncertainty (eventual consistency)
-    - Use consensus protocols (Paxos, Raft) when possible
-```
+**IMPLICATIONS FOR DISTRIBUTED SYSTEMS**
+You cannot guarantee that two nodes agree on anything if the network is unreliable. The best you can do:
+- Increase probability (retries, acknowledgments)
+- Accept uncertainty (eventual consistency)
+- Use consensus protocols (Paxos, Raft) when possible
 
 ### 4.2 The Byzantine Generals Problem
 
-```
+```text
 BYZANTINE GENERALS PROBLEM
 ═══════════════════════════════════════════════════════════════
 
@@ -540,7 +508,7 @@ They handle crash failures, not Byzantine failures.
 
 ### 4.3 Idempotency
 
-```
+```text
 IDEMPOTENCY: SAFE TO RETRY
 ═══════════════════════════════════════════════════════════════
 
@@ -578,59 +546,41 @@ Add a unique request ID. Server tracks completed requests.
     Client timeout → Retry with same abc123 → Safe!
 ```
 
+> **Pause and predict**: If a network partition occurs between a mobile app and its backend API, what is the safest failure mode for a "transfer funds" operation?
+
 ---
 
 ## Part 5: Kubernetes as a Distributed System
 
 ### 5.1 Kubernetes Architecture
 
-```
-KUBERNETES: A DISTRIBUTED SYSTEM
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    subgraph Control_Plane [Control Plane]
+        API[API Servers HA]
+        CM[Controller Manager leader elect]
+        SCHED[Scheduler leader elect]
+        ETCD[(etcd distributed consensus, Raft)]
+        
+        API <--> ETCD
+        CM -.-> API
+        SCHED -.-> API
+    end
 
-CONTROL PLANE
-─────────────────────────────────────────────────────────────
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   ┌───────────┐  ┌───────────┐  ┌───────────┐             │
-│   │ API Server│  │ API Server│  │ API Server│  (HA)       │
-│   └─────┬─────┘  └─────┬─────┘  └─────┬─────┘             │
-│         │              │              │                     │
-│         └──────────────┼──────────────┘                     │
-│                        │                                    │
-│                        ▼                                    │
-│              ┌─────────────────┐                           │
-│              │      etcd       │  (distributed consensus)  │
-│              │   ┌───┬───┬───┐ │                           │
-│              │   │ 1 │ 2 │ 3 │ │  (Raft protocol)         │
-│              │   └───┴───┴───┘ │                           │
-│              └─────────────────┘                           │
-│                                                             │
-│   ┌────────────────┐    ┌────────────────┐                │
-│   │ Controller Mgr │    │   Scheduler    │                │
-│   │  (leader elect)│    │  (leader elect)│                │
-│   └────────────────┘    └────────────────┘                │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+    subgraph Data_Plane [Data Plane]
+        N1[Node 1: kubelet, kube-proxy, pods]
+        N2[Node 2: kubelet, kube-proxy, pods]
+        N3[Node 3: kubelet, kube-proxy, pods]
+    end
 
-DATA PLANE (Nodes)
-─────────────────────────────────────────────────────────────
-┌────────────┐  ┌────────────┐  ┌────────────┐
-│   Node 1   │  │   Node 2   │  │   Node 3   │
-│  ┌──────┐  │  │  ┌──────┐  │  │  ┌──────┐  │
-│  │kubelet│  │  │  │kubelet│  │  │  │kubelet│  │
-│  └──────┘  │  │  └──────┘  │  │  └──────┘  │
-│  ┌──────┐  │  │  ┌──────┐  │  │  ┌──────┐  │
-│  │kube- │  │  │  │kube- │  │  │  │kube- │  │
-│  │proxy │  │  │  │proxy │  │  │  │proxy │  │
-│  └──────┘  │  │  └──────┘  │  │  └──────┘  │
-│  [pods]    │  │  [pods]    │  │  [pods]    │
-└────────────┘  └────────────┘  └────────────┘
+    API <--> N1
+    API <--> N2
+    API <--> N3
 ```
 
 ### 5.2 How Kubernetes Handles Distribution
 
-```
+```text
 KUBERNETES DISTRIBUTED PATTERNS
 ═══════════════════════════════════════════════════════════════
 
@@ -672,7 +622,7 @@ Reduces load, provides near-real-time updates.
 
 ### 5.3 Kubernetes Failure Modes
 
-```
+```text
 KUBERNETES FAILURE SCENARIOS
 ═══════════════════════════════════════════════════════════════
 
@@ -716,6 +666,8 @@ kubectl commands may fail temporarily.
 Pods keep running (kubelet operates independently).
 ```
 
+> **Pause and predict**: If a network partition isolates a Kubernetes worker node from the control plane, what do you think happens to the pods running on that node? Will they be terminated, continue running, or pause?
+
 ---
 
 ## Did You Know?
@@ -745,188 +697,60 @@ Pods keep running (kubelet operates independently).
 
 ## Quiz
 
-1. **What are the three fundamental challenges of distributed systems?**
+1. **You are designing a global e-commerce platform. During Black Friday, a database node in the EU region slows down, causing the US web servers to report timeout errors. Which fundamental challenge of distributed systems is primarily responsible for the difficulty in diagnosing whether the EU database actually processed the orders?**
    <details>
    <summary>Answer</summary>
 
-   The three fundamental challenges are:
-
-   1. **Latency**: Network communication is millions of times slower than local function calls. Speed of light imposes physical limits.
-
-   2. **Partial failure**: Components can fail independently. You can't always tell if a remote call succeeded, failed, or is just slow.
-
-   3. **No global clock**: Each machine has its own clock that drifts. You can't rely on timestamps to order events across machines.
-
-   These challenges are fundamental—they can be mitigated but not eliminated. Any distributed system design must account for all three.
+   This scenario illustrates the challenge of partial failure and the fundamental uncertainty it creates. In a distributed system, a timeout or lost connection doesn't tell you what actually happened on the remote server. The EU database might have crashed before receiving the request, processed the request but failed to send the response, or it might just be running very slowly due to the high Black Friday load. Because the US web servers cannot distinguish between these states, they cannot safely assume the order failed without risking duplicate charges. This is why distributed systems require mechanisms like idempotent operations and unique request IDs to safely handle retries when partial failures occur.
    </details>
 
-2. **Explain the CAP theorem in your own words.**
+2. **A hospital's patient records system replicates data across three different buildings. A construction accident severs the fiber link to Building C, isolating it from the rest of the network. Doctors in Building C urgently need to update a patient's allergy information. Based on the CAP theorem, how should the system be designed to handle this partition, and why?**
    <details>
    <summary>Answer</summary>
 
-   The CAP theorem states that during a network partition, a distributed system must choose between consistency and availability:
-
-   - **Consistency**: All nodes see the same data
-   - **Availability**: All requests get responses
-   - **Partition tolerance**: System handles network splits
-
-   Since network partitions are inevitable, the real choice is:
-   - **CP**: During partition, refuse some requests to maintain consistency
-   - **AP**: During partition, serve requests but data might diverge
-
-   In normal operation (no partition), you can have both. The choice matters when things go wrong.
-
-   Example: A banking system chooses CP—better to reject a transaction than show wrong balance. A social media site chooses AP—better to show slightly stale like count than fail entirely.
+   In this life-critical healthcare scenario, the system should be designed to prioritize Consistency over Availability (CP) during a network partition. If the isolated Building C accepts the allergy update while disconnected, it risks introducing conflicting medical records once the partition heals, which could lead to fatal medical errors if doctors in other buildings see outdated information. By choosing CP, the system would refuse the write request in Building C until connectivity is restored, ensuring that there is only ever one true, globally consistent state of the patient's records. While it is frustrating for the doctors to be unable to update the system immediately, preventing contradictory medical data is vastly more important than keeping the update function available at all times.
    </details>
 
-3. **Why can't you use timestamps to order events in a distributed system?**
+3. **A financial trading application relies on system timestamps to determine the exact order of stock trades. Server A processes Trade X at 14:00:00.005 according to its clock. Server B processes Trade Y at 14:00:00.004 according to its clock. Later analysis proves Trade X actually triggered Trade Y. What distributed systems concept explains this discrepancy, and how should the system be redesigned?**
    <details>
    <summary>Answer</summary>
 
-   You can't rely on timestamps because:
-
-   1. **Clock drift**: Each machine's clock runs slightly fast or slow. Over time, clocks diverge.
-
-   2. **No perfect sync**: Even with NTP, clocks differ by milliseconds. Events happening close together may get wrong order.
-
-   3. **Network delay**: A message sent "earlier" might arrive "later" than one sent after it.
-
-   Example: Server A (clock running fast) timestamps event at 10:00:00.050. Server B (accurate clock) timestamps event at 10:00:00.045. B's event actually happened after A's, but has earlier timestamp.
-
-   Solutions:
-   - Logical clocks (Lamport clocks): Track causality, not wall time
-   - Vector clocks: Track causality per node
-   - Hybrid logical clocks: Combine physical and logical time
+   This discrepancy is caused by the lack of a global clock and the inevitable clock skew that occurs between independent machines in a distributed system. Even if Server A and Server B synchronize via NTP, their physical clocks will drift apart by several milliseconds, making it impossible to rely on wall-clock time to determine the true sequence of events. Because Trade X caused Trade Y, the system must capture this causal relationship rather than relying on absolute time. The application should be redesigned to use logical clocks, such as Lamport timestamps or vector clocks, which increment a logical counter with every operation and pass that counter along with messages to guarantee that a cause always has a lower logical timestamp than its effect.
    </details>
 
-4. **What makes Kubernetes a distributed system, and how does it handle distribution?**
+4. **You deploy a new version of your application using `kubectl set image`. The API server accepts the request, but before the pods can be updated, the network connection between the control plane and the worker nodes goes down. What happens to the existing running pods, and which Kubernetes distributed system pattern does this demonstrate?**
    <details>
    <summary>Answer</summary>
 
-   Kubernetes is distributed because:
-   - Multiple components (API server, etcd, controllers, kubelets)
-   - Running on multiple machines
-   - Coordinating via network messages
-   - No single point of failure (when properly configured)
-
-   How it handles distribution:
-
-   1. **etcd for consensus**: Uses Raft protocol for strong consistency of cluster state. Requires quorum for writes.
-
-   2. **Leader election**: Controller Manager and Scheduler elect leaders to avoid duplicate work.
-
-   3. **Eventual consistency**: Controllers continuously reconcile desired vs actual state. Changes propagate over time.
-
-   4. **Watch pattern**: Components watch etcd for changes instead of polling, reducing load.
-
-   5. **Autonomous kubelets**: Nodes keep running pods even if disconnected from control plane.
-
-   Kubernetes chooses CP during partitions—better to refuse changes than have inconsistent state.
+   When the network partition occurs, the worker nodes are isolated from the control plane, but the `kubelet` on each node continues to operate autonomously using its locally cached state. The existing pods will continue running without interruption, continuing to serve traffic as long as they remain healthy. This demonstrates how Kubernetes embraces eventual consistency and partial failure tolerance by decoupling the control plane's desired state from the data plane's actual state. Once the partition heals, the controllers will reconnect, notice the discrepancy between the desired new image and the running pods, and resume rolling out the update until the cluster achieves the new desired state.
    </details>
 
-5. **A service makes 50 sequential database calls per request. Each call takes 2ms over the network. What's the minimum latency for a user request? How could you improve it?**
+5. **A microservice architecture processes user registrations by making 50 sequential database calls to various verification tables. Each database call takes 2ms of network transit time. Users are complaining that registration feels sluggish. What is the absolute minimum latency for a user request, and what architectural changes could solve this?**
    <details>
    <summary>Answer</summary>
 
-   **Calculation:**
-   - 50 calls × 2ms = **100ms minimum latency**
-   - This doesn't include processing time, just network round trips
-
-   **Improvement strategies:**
-
-   1. **Batch calls**: Instead of 50 individual calls, combine into fewer queries
-      - 5 batched calls × 2ms = 10ms (10x improvement)
-
-   2. **Parallelize**: If calls are independent, execute simultaneously
-      - 50 parallel calls = 2ms (50x improvement)
-
-   3. **Cache**: Store frequently accessed data locally
-      - Cache hit: 0.1ms vs 2ms network call
-
-   4. **Denormalize**: Store data together to reduce joins/calls
-      - Single call with all data: 2ms total
-
-   **The lesson**: Network latency compounds. Design minimizes round trips.
+   The absolute minimum latency for this request is 100ms (50 calls × 2ms per call), and this is before accounting for any actual processing time on the database or application servers. This compounding latency is a direct consequence of the physical limits of network communication. To improve this, the architecture needs to minimize network round trips by employing techniques like query batching, where the 50 calls are combined into a single payload. Alternatively, the application could use parallelization if the queries are independent, caching for frequently accessed verification data, or data denormalization to retrieve all necessary information in a single database lookup.
    </details>
 
-6. **You send a request to a service and don't receive a response after 5 seconds. List all possible states the request could be in. Why is this uncertainty fundamental?**
+6. **An automated billing service sends a "charge customer $50" request to a payment gateway but receives a network timeout error after 5 seconds instead of an acknowledgment. List the possible states of the transaction on the payment gateway, and explain why this uncertainty dictates how the billing service must be designed.**
    <details>
    <summary>Answer</summary>
 
-   **Possible states:**
-
-   1. **Request lost in transit** - Never reached server
-   2. **Server received but crashed before processing** - No work done
-   3. **Server processing but slow** - Will eventually complete
-   4. **Server processed successfully, response lost** - Work completed!
-   5. **Server processed, crashed after responding** - Work completed!
-   6. **Response delayed in network** - Will eventually arrive
-
-   **Why fundamental:**
-
-   This uncertainty cannot be eliminated by any protocol. From the client's perspective, states 2, 3, 4, 5, and 6 look identical: silence.
-
-   This is the **Two Generals Problem**—you cannot achieve certainty about remote state over an unreliable channel.
-
-   **Practical implications:**
-   - Must design operations to be idempotent (safe to retry)
-   - Use unique request IDs to detect duplicates
-   - Implement timeouts and retries with exponential backoff
-   - Accept that "at-most-once" or "at-least-once" delivery—never "exactly-once"
+   The transaction could be in several states: the request might have been lost in transit and never reached the gateway, the gateway might have crashed before processing it, the gateway might be processing it very slowly, or the gateway might have successfully processed the charge but the success response was lost in transit back to the billing service. This uncertainty is a fundamental property of distributed systems, famously illustrated by the Two Generals Problem, meaning the billing service can never definitively know the outcome from the timeout alone. Because of this, the billing service cannot simply retry the 'charge $50' command, as it risks double-charging the customer if the initial request actually succeeded. The system must be designed using idempotent operations, such as attaching a unique idempotency key (e.g., a transaction ID) to the request, allowing the payment gateway to recognize and safely ignore duplicate retry attempts.
    </details>
 
-7. **An etcd cluster has 5 nodes. How many can fail while maintaining quorum? If you lose quorum, what happens to the Kubernetes cluster?**
+7. **Your company operates a critical Kubernetes cluster with a 5-node etcd cluster spread across three availability zones. During a severe storm, power is lost to two of the availability zones, taking three etcd nodes offline. What is the immediate impact on the Kubernetes cluster, and what actions can cluster administrators take?**
    <details>
    <summary>Answer</summary>
 
-   **Quorum calculation:**
-   - Quorum requires majority: floor(n/2) + 1
-   - For 5 nodes: floor(5/2) + 1 = 3 nodes required
-   - **Can lose 2 nodes** and still have quorum (3 remaining)
-
-   **If quorum is lost (3+ nodes fail):**
-
-   1. **etcd becomes read-only** - No writes accepted
-   2. **No new pods can be scheduled** - Scheduler can't write
-   3. **No deployments can update** - Controllers can't write
-   4. **Existing pods keep running** - kubelets have cached state
-   5. **kubectl get works** - Reads still succeed
-   6. **kubectl apply fails** - Writes rejected
-
-   **Recovery:**
-   - Restore failed nodes to regain quorum
-   - Or restore from etcd backup to new cluster
-   - Never reduce below 3 nodes (can't lose any)
-
-   **Best practice**: Use 5 nodes for production (tolerates 2 failures), 3 for smaller clusters (tolerates 1 failure).
+   Because the etcd cluster requires a majority quorum to function—which is 3 nodes for a 5-node cluster (floor(5/2) + 1)—losing three nodes means the cluster has lost quorum and can no longer agree on the state. As a result, etcd enters a read-only mode to protect data integrity, meaning the Kubernetes API server will reject any write requests, preventing the creation of new pods, deployments, or configuration changes. However, the existing pods on the surviving worker nodes will continue to run and serve traffic because the local kubelets operate autonomously. Cluster administrators cannot simply wait; they must either restore power to the failed nodes to regain quorum or perform a disaster recovery procedure by restoring an etcd snapshot to a newly provisioned cluster.
    </details>
 
-8. **A social media platform shows like counts that update every 30 seconds. During a network partition between US and EU datacenters, a post gets 1000 likes in US and 500 likes in EU. When the partition heals, what should the count be? What CAP trade-off did this system make?**
+8. **A global streaming platform maintains a "currently watching" counter for live events. During a network partition between the US and EU datacenters, the US region registers 10,000 new viewers and the EU region registers 5,000 new viewers. When the partition heals, the system automatically merges these into a total of 15,000 viewers. What CAP theorem trade-off did this system make, and why is it appropriate for this specific use case?**
    <details>
    <summary>Answer</summary>
 
-   **The count should be 1500** (1000 + 500)
-
-   This requires a **CRDT (Conflict-free Replicated Data Type)**—specifically a G-Counter (grow-only counter) that merges by summing per-replica increments.
-
-   **CAP trade-off:**
-   - System chose **AP (Availability over Consistency)**
-   - During partition: Both regions accepted writes (available)
-   - Result: Temporary inconsistency (US saw 1000, EU saw 500)
-   - After partition: Merge brings eventual consistency
-
-   **Why this is appropriate for likes:**
-   - Temporary wrong count is acceptable
-   - Users don't expect real-time accuracy
-   - Unavailability (can't like) would be worse than inconsistency
-
-   **Contrast with banking:**
-   - Bank would choose CP
-   - During partition: Reject transactions
-   - Why: Incorrect balance is unacceptable
-   - Unavailability is better than double-spending
-
-   **The pattern**: Choose AP for data where "close enough" is acceptable, CP for data where correctness is critical.
+   This system explicitly chose Availability over Consistency (AP) during the network partition. By allowing both the US and EU datacenters to continue accepting viewer updates independently, the platform ensured the counter feature remained available to users, even though the total count was temporarily inconsistent and globally inaccurate. Once the network partition healed, the system used a Conflict-free Replicated Data Type (CRDT), such as a grow-only counter, to mathematically merge the disparate states and achieve eventual consistency. This trade-off is highly appropriate for a 'currently watching' counter because users prioritize seeing the system work smoothly over having perfectly instantaneous global accuracy, whereas a CP approach would have frustratingly disabled the counter for half the world.
    </details>
 
 ---
