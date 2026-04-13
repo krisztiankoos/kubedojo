@@ -1,184 +1,180 @@
 ---
-title: "ICA — Сертифікований спеціаліст із Istio"
+title: "ICA — Istio Certified Associate"
+slug: "uk/k8s/ica"
 sidebar:
-  order: 1
+  order: 0
   label: "ICA"
+en_commit: "47bf257c3ec7632099185c630faf64d73e48caea"
+en_file: "src/content/docs/k8s/ica/index.md"
 ---
-> **Іспит із множинним вибором** | 90 хвилин | Прохідний бал: 75% | $250 USD | **Сертифікація CNCF**
+> **Іспит на основі продуктивності** | 120 хвилин | Прохідний бал: 68% | $250 USD
 
 ## Огляд
 
-ICA (Istio Certified Associate) підтверджує знання архітектури Istio, управління трафіком, безпеки (mTLS) та спостережуваності у сервісній мережі (service mesh). Як і PCA, це **теоретичний іспит** — питання з множинним вибором, які перевіряють ваше розуміння того, як Istio вирішує проблеми мікросервісів у масштабі.
+ICA (Istio Certified Associate) підтверджує вашу здатність встановлювати, налаштовувати та експлуатувати сервісну сітку (service mesh) Istio в середовищах Kubernetes. Це **практичний іспит** — ви будете налаштовувати реальні ресурси Istio в живих кластерах, а не відповідати на тести з вибором варіантів.
 
-**KubeDojo охоплює ~90% тем ICA** через існуючі модулі мереж та спостережуваності, плюс один спеціалізований модуль ICA, що охоплює просунуту конфігурацію Istio та режими Ambient Mesh.
+**KubeDojo охоплює ~90%+ тем ICA** через існуючі модулі плюс цей спеціальний трек ICA з 4 модулів, що охоплюють всі домени. Ця сторінка відображає домени ICA на весь відповідний контент.
 
-> **Istio є найпопулярнішим Service Mesh у світі.** Він став проєктом CNCF Graduated у 2023 році і є стандартом для корпоративних компаній, яким потрібен mTLS за замовчуванням, просунуте керування трафіком та глибока видимість мережі без зміни коду застосунку.
-
----
-
-## Модулі, специфічні для ICA
-
-Цей модуль заповнює прогалину між загальними знаннями сервісних мереж та вимогами іспиту ICA:
-
-| # | Модуль | Тема | Охоплені домени |
-|---|--------|-------|-----------------|
-| 1 | [Глибоке занурення в Istio](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Envoy Proxy, режими Sidecar vs. Ambient, WASM розширення, мультикластерні топології, налагодження istioctl | Домени 1-5 |
+> **Чому ICA важливий**: Istio — це найпоширеніша сервісна сітка. З ростом мікросервісних архітектур навички роботи з service mesh стають необхідними для управління трафіком, безпеки (mTLS) та спостережуваності. ICA доводить, що ви дійсно можете виконувати цю роботу, а не просто говорити про неї.
 
 ---
 
-## Домени іспиту
+## Деталі іспиту
 
-| Домен | Вага | Охоплення в KubeDojo |
-|--------|--------|-------------------|
-| Основи Service Mesh | 15% | Відмінне ([Networking 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/)) |
-| Архітектура Istio | 20% | Відмінне ([Глибоке занурення в Istio](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/)) |
-| Управління трафіком | 25% | Відмінне ([Networking 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/)) |
-| Безпека та ідентичність | 20% | Відмінне ([Security 4.8](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/)) |
-| Спостережуваність | 20% | Відмінне ([Observability Toolkit](../../platform/toolkits/observability-intelligence/observability/)) |
+| Аспект | Деталі |
+|--------|---------|
+| **Формат** | На основі продуктивності (практичний) |
+| **Тривалість** | 120 хвилин |
+| **Прохідний бал** | 68% |
+| **Середовище** | Реальні кластери Kubernetes з Istio |
+| **Термін дії** | 3 роки |
+| **Вартість** | $250 USD (включає одну безкоштовну перездачу) |
+| **Версія Kubernetes** | 1.31+ |
+| **Версія Istio** | 1.22+ |
 
----
+### Стратегія трьох проходів для ICA
 
-## Домен 1: Основи Service Mesh (15%)
-
-### Компетенції
-- Розуміння проблем, які вирішує service mesh (надійність, безпека, видимість)
-- Порівняння service mesh із традиційними бібліотеками додатків
-- Розуміння концепції Data Plane vs. Control Plane
-
-### Шлях навчання в KubeDojo
-
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Мережі 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/) | Чому нам потрібен Service Mesh? Основи | Пряма |
-| [Розподілені системи 5.1](../../platform/foundations/distributed-systems/module-5.1-what-makes-systems-distributed/) | Виклики мережі в розподілених системах | Контекст |
-
----
-
-## Домен 2: Архітектура Istio (20%)
-
-### Компетенції
-- Розуміння компонентів Istiod (Pilot, Citadel, Galley)
-- Робота з Envoy Proxy як Data Plane
-- **Режим Ambient Mesh** (ztunnel, waypoints) — *Нова критична тема!*
-- Ін'єкція sidecar-контейнерів
-- Життєвий цикл конфігурації Istio
-
-### Шлях навчання в KubeDojo
-
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Глибоке занурення в Istio](/uk/k8s/cks/part2-cluster-hardening/module-2.1-rbac-deep-dive/) | Детальна архітектура Istiod та Ambient Mesh | Пряма |
-| [Networking Toolkit 1.2](../../platform/toolkits/infrastructure-networking/networking/module-1.2-service-mesh/) | Встановлення та базова архітектура | Пряма |
-
----
-
-## Домен 3: Управління трафіком (25%)
-
-### Компетенції
-- Використання Gateway та VirtualService для зовнішнього трафіку
-- Налаштування DestinationRule (subset, load balancing, outlier detection)
-- Впровадження стійкості: retries, timeouts, circuit breakers
-- Користувацька маршрутизація: Canary, Blue-Green, Mirroring
-- ServiceEntry для доступу до зовнішніх сервісів
-
-### Шлях навчання в KubeDojo
-
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Мережі 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/) | Практична маршрутизація Istio | Пряма |
-| [Release Engineering 1.1](/uk/k8s/kcna/part4-application-delivery/module-4.3-release-strategies/) | Стратегії Canary та Blue-Green | Контекст |
-
----
-
-## Домен 4: Безпека та ідентичність (20%)
-
-### Компетенції
-- Розуміння mTLS (Mutual TLS) у Istio
-- Налаштування PeerAuthentication та RequestAuthentication
-- Використання AuthorizationPolicy (RBAC на рівні L7)
-- Ідентичність через SPIFFE
-- Інтеграція із зовнішніми Identity Providers (JWT/OIDC)
-
-### Шлях навчання в KubeDojo
-
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Мережі 1.4](../../platform/disciplines/reliability-security/networking/module-1.4-service-mesh/) | mTLS та політики авторизації Istio | Пряма |
-| [Security Tools 4.8](/uk/platform/toolkits/security-quality/code-quality/module-12.5-trivy/) | SPIFFE/SPIRE — ідентичність у сервісній мережі | Пряма |
-
----
-
-## Домен 5: Спостережуваність (20%)
-
-### Компетенції
-- Генерація та збір метрик (Prometheus інтеграція)
-- Розподілене трасування з Istio
-- Використання Kiali для візуалізації топології мережі
-- Налаштування логів доступу Envoy (Access Logs)
-
-### Шлях навчання в KubeDojo
-
-| Модуль | Тема | Релевантність |
-|--------|-------|-----------|
-| [Observability Toolkit 1.5](../../platform/toolkits/observability-intelligence/observability/module-1.5-tracing/) | Розподілене трасування | Пряма |
-| [Networking Toolkit 1.2](../../platform/toolkits/infrastructure-networking/networking/module-1.2-service-mesh/) | Kiali, Grafana та Prometheus для Istio | Пряма |
-
----
-
-## Стратегія підготовки
+Як і для CKA/CKS, підхід трьох проходів працює добре:
 
 ```
-ШЛЯХ ПІДГОТОВКИ ДО ICA (рекомендований порядок)
-══════════════════════════════════════════════════════════════
+Прохід 1 (0-40 хв): Швидкі перемоги — маркування просторів імен, застосування базових політик
+Прохід 2 (40-90 хв): Завдання середньої складності — маршрутизація VirtualService, DestinationRules
+Прохід 3 (90-120 хв): Складні завдання — багатокрокове управління трафіком, налагодження
+```
 
-Тиждень 1: Концепції та Data Plane (15% + 20%)
-├── Модуль Мережі 1.4 (Service Mesh Intro)
-├── Модуль "Глибоке занурення в Istio" ( Envoy & istiod)
-└── Практика: Встановіть Istio через istioctl, вивчіть компоненти
+> **Порада**: `istioctl` — ваш найкращий друг. На відміну від іспитів, де використовується лише kubectl, ICA вимагає використання `istioctl` для встановлення, діагностики та перевірки проксі.
 
-Тиждень 2: Traffic Management (25%)
-├── Практика: Gateway -> VirtualService -> DestinationRule
-├── Реалізуйте Canary розгортання з вагами
-└── Вивчіть: Circuit Breaking та Outlier Detection
+---
 
-Тиждень 3: Безпека (20%)
-├── Практика: Увімкніть STRICT mTLS у всьому кластері
-├── Напишіть AuthorizationPolicy для доступу між сервісами
-└── Вивчіть: JWT валідація через RequestAuthentication
+## Теми іспиту
 
-Тиждень 4: Ambient Mesh та Спостережуваність (20%)
-├── Модуль "Глибоке занурення в Istio" (Ambient Mode)
-├── Практика: Kiali для візуалізації трафіку
-└── Огляд: istioctl analyze та дебаг Envoy конфігурації
+| Домен | Вага | Модуль | Статус |
+|--------|--------|--------|--------|
+| Встановлення, оновлення та конфігурація | 20% | [Модуль 1.1: Встановлення та архітектура Istio](module-1.1-istio-installation-architecture/) | Новий |
+| Управління трафіком | 35% | [Модуль 1.2: Управління трафіком в Istio](module-1.2-istio-traffic-management/) | Новий |
+| Відмовостійкість та впровадження помилок | 10% | [Модуль 1.2: Управління трафіком в Istio](module-1.2-istio-traffic-management/) (включено) | Новий |
+| Безпека | 15% | [Модуль 1.3: Безпека та усунення несправностей в Istio](module-1.3-istio-security-troubleshooting/) | Новий |
+| Спостережуваність | 10% | [Модуль 1.4: Спостережуваність в Istio](module-1.4-istio-observability/) | Новий |
+| Усунення несправностей | 10% | [Модуль 1.3: Безпека та усунення несправностей в Istio](module-1.3-istio-security-troubleshooting/) (включено) | Новий |
+
+### Візуалізація ваги доменів
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ Домени іспиту ICA за вагою                                          │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Управління трафіком    ████████████████████████████████████  35%    │
+│  Встановлення та конфіг ████████████████████               20%      │
+│  Безпека                ███████████████                    15%      │
+│  Відмовостійкість       ██████████                         10%      │
+│  Спостережуваність      ██████████                         10%      │
+│  Усунення несправностей ██████████                         10%      │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Поради для іспиту
+## Шлях навчання
 
-- **VirtualService vs DestinationRule** — Чітко розумійте різницю: VirtualService каже "куди йти" (routing), DestinationRule каже "як поводитись" (TLS, LB, subsets).
-- **Ambient Mesh — це майбутнє** — Очікуйте багато питань про режим без Sidecar. Знайте, що таке `ztunnel` та `Waypoint proxy`.
-- **istioctl — ваш кращий друг** — Знайте команди `istioctl analyze`, `istioctl proxy-config` та `istioctl dashboard`.
-- **mTLS рівні** — Розрізняйте `PERMISSIVE` та `STRICT` режими в PeerAuthentication.
-- **Envoy фільтри** — Хоча глибокого Envoy не буде, розуміння того, як Istio генерує Envoy config, допоможе.
+### Крок 1: Передумови
+
+Перед початком підготовки до ICA переконайтеся, що ви знаєте:
+
+| Передумова | Де вивчити |
+|-------------|----------------|
+| Мережі та сервіси Kubernetes | [CKA Частина 3](../cka/part3-services-networking/) |
+| Gateway API | [CKA Модуль 3.5](../cka/part3-services-networking/module-3.5-gateway-api/) |
+| Концепції Service Mesh | [Platform Networking 5.2](../../platform/toolkits/infrastructure-networking/networking/module-5.2-service-mesh/) |
+| Основи TLS/mTLS | [Принципи безпеки](../../platform/foundations/security-principles/) |
+
+### Крок 2: Модулі ICA (цей трек)
+
+Вивчайте їх по порядку:
+
+| # | Модуль | Домен | Час |
+|---|--------|--------|------|
+| 1 | [Модуль 1.1: Встановлення та архітектура Istio](module-1.1-istio-installation-architecture/) | Встановлення, оновлення та конфігурація (20%) | 50-60 хв |
+| 2 | [Модуль 1.2: Управління трафіком в Istio](module-1.2-istio-traffic-management/) | Управління трафіком (35%) + Відмовостійкість (10%) | 60-75 хв |
+| 3 | [Модуль 1.3: Безпека та усунення несправностей в Istio](module-1.3-istio-security-troubleshooting/) | Безпека (15%) + Усунення несправностей (10%) | 50-60 хв |
+| 4 | [Модуль 1.4: Спостережуваність в Istio](module-1.4-istio-observability/) | Спостережуваність (10%) | 40-50 хв |
+
+### Крок 3: Перехресні модулі
+
+Ці існуючі модулі KubeDojo охоплюють теми, релевантні для ICA:
+
+**Спостережуваність (глибше занурення):**
+
+| Модуль | Тема | Релевантність |
+|--------|-------|-----------|
+| [Теорія спостережуваності платформи](../../platform/foundations/observability-theory/) | Основи метрик, логів та трейсів | Теоретична база |
+| [Інструменти спостережуваності платформи](../../platform/toolkits/observability-intelligence/observability/) | Prometheus, Grafana, Jaeger | Пряма — Istio інтегрується з усіма трьома |
+
+**Основи Service Mesh:**
+
+| Модуль | Тема | Релевантність |
+|--------|-------|-----------|
+| [Service Mesh](../../platform/toolkits/infrastructure-networking/networking/module-5.2-service-mesh/) | Коли використовувати service mesh, Istio проти Linkerd | Теоретична база |
+| [Cilium](../../platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/) | Мережа на основі eBPF (альтернатива sidecar mesh) | Контекстна |
 
 ---
 
-## Пов'язані сертифікації
+## ICA проти інших сертифікацій
 
+| Аспект | ICA | CKA | CKS |
+|--------|-----|-----|-----|
+| Фокус | Service mesh | Адміністрування кластера | Безпека кластера |
+| Інструмент | istioctl + kubectl | kubectl | kubectl + інструменти безпеки |
+| Ресурси | VirtualService, DestinationRule тощо | Поди, сервіси тощо | NetworkPolicy, RBAC тощо |
+| Перетин | Мережі, TLS | Основа для ICA | Перетин концепцій mTLS |
+| Рекомендований порядок | Після CKA | Першим | Після CKA |
+
+---
+
+## Поради до іспиту
+
+1. **Знайте `istioctl` досконало** — встановлення, діагностика, перевірка проксі. Це не обговорюється.
+2. **VirtualService + DestinationRule = 35% іспиту** — практикуйте розподіл трафіку, впровадження помилок, повторні спроби до автоматизму.
+3. **Маркуйте свої простори імен** — впровадження sidecar через `istio-injection=enabled` є фундаментальним. Пропустіть це, і нічого не запрацює.
+4. **Режими mTLS мають значення** — знайте STRICT проти PERMISSIVE та коли який доречний.
+5. **Використовуйте `istioctl analyze`** — вона виявляє помилки конфігурації швидше, ніж вдивляння в YAML.
+6. **Практикуйтеся на кластерах kind** — `istioctl install --set profile=demo` чудово працює на kind.
+7. **Додайте документацію Istio у закладки** — ви матимете до неї доступ під час іспиту. Знайте, де що знаходиться.
+
+---
+
+## Налаштування середовища для практики
+
+```bash
+# Створення кластера kind для практики ICA
+kind create cluster --name ica-practice --config - <<EOF
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: worker
+- role: worker
+EOF
+
+# Встановлення Istio з профілем demo (всі функції увімкнені)
+istioctl install --set profile=demo -y
+
+# Увімкнення впровадження sidecar у просторі імен default
+kubectl label namespace default istio-injection=enabled
+
+# Розгортання зразкового застоунку
+kubectl apply -f https://raw.githubusercontent.com/istio/istio/release-1.22/samples/bookinfo/platform/kube/bookinfo.yaml
+
+# Перевірка, що все запущено
+kubectl get pods
+istioctl analyze
 ```
-ШЛЯХ СЕРТИФІКАЦІЇ
-══════════════════════════════════════════════════════════════
 
-Рівень Associate:
-├── KCNA (Cloud Native Associate) — Основи K8s
-├── PCA (Prometheus Associate) — Моніторинг
-└── ICA (Istio Associate) ← ВИ ТУТ
+---
 
-Рівень Professional:
-├── CKA (K8s Administrator) — Операції
-├── CKS (K8s Security Specialist) — Зміцнення (Istio допомагає!)
-└── CNPE (Platform Engineer) — Service Mesh є обов'язковим
-```
+## Почати навчання
 
-ICA ідеально підходить для **Platform Engineers**, оскільки Istio часто є центральним компонентом внутрішньої платформи розробки (IDP).
+Почніть з [Модуля 1.1: Встановлення та архітектура Istio](module-1.1-istio-installation-architecture/), щоб зрозуміти, як Istio працює "під капотом", а потім проходьте модулі по порядку.
+
+Успіхів у вашій подорожі до ICA!

@@ -47,12 +47,12 @@ Pass 3 (90-120 min): Complex tasks — multi-step traffic management, debugging
 
 | Domain | Weight | Module | Status |
 |--------|--------|--------|--------|
-| Installation, Upgrade & Configuration | 20% | [Module 1](module-1.1-istio-installation-architecture/) | New |
-| Traffic Management | 35% | [Module 2](module-1.2-istio-traffic-management/) | New |
-| Resilience and Fault Injection | 10% | [Module 2](module-1.2-istio-traffic-management/) (included) | New |
-| Security | 15% | [Module 3](module-1.3-istio-security-troubleshooting/) | New |
-| Observability | 10% | [Module 4](module-1.4-istio-observability/) | New |
-| Troubleshooting | 10% | [Module 3](module-1.3-istio-security-troubleshooting/) (included) | New |
+| Installation, Upgrade & Configuration | 20% | [Module 1.1: Istio Installation & Architecture](module-1.1-istio-installation-architecture/) | New |
+| Traffic Management | 35% | [Module 1.2: Istio Traffic Management](module-1.2-istio-traffic-management/) | New |
+| Resilience and Fault Injection | 10% | [Module 1.2: Istio Traffic Management](module-1.2-istio-traffic-management/) (included) | New |
+| Security | 15% | [Module 1.3: Istio Security & Troubleshooting](module-1.3-istio-security-troubleshooting/) | New |
+| Observability | 10% | [Module 1.4: Istio Observability](module-1.4-istio-observability/) | New |
+| Troubleshooting | 10% | [Module 1.3: Istio Security & Troubleshooting](module-1.3-istio-security-troubleshooting/) (included) | New |
 
 ### Domain Weight Visualization
 
@@ -92,10 +92,10 @@ Follow these in order:
 
 | # | Module | Domain | Time |
 |---|--------|--------|------|
-| 1 | [Installation & Architecture](module-1.1-istio-installation-architecture/) | Installation, Upgrade & Configuration (20%) | 50-60 min |
-| 2 | [Traffic Management](module-1.2-istio-traffic-management/) | Traffic Management (35%) + Resilience (10%) | 60-75 min |
-| 3 | [Security & Troubleshooting](module-1.3-istio-security-troubleshooting/) | Security (15%) + Troubleshooting (10%) | 50-60 min |
-| 4 | [Observability](module-1.4-istio-observability/) | Observability (10%) | 40-50 min |
+| 1 | [Module 1.1: Istio Installation & Architecture](module-1.1-istio-installation-architecture/) | Installation, Upgrade & Configuration (20%) | 50-60 min |
+| 2 | [Module 1.2: Istio Traffic Management](module-1.2-istio-traffic-management/) | Traffic Management (35%) + Resilience (10%) | 60-75 min |
+| 3 | [Module 1.3: Istio Security & Troubleshooting](module-1.3-istio-security-troubleshooting/) | Security (15%) + Troubleshooting (10%) | 50-60 min |
+| 4 | [Module 1.4: Istio Observability](module-1.4-istio-observability/) | Observability (10%) | 40-50 min |
 
 ### Step 3: Cross-Reference Modules
 
@@ -172,6 +172,6 @@ istioctl analyze
 
 ## Start Learning
 
-Begin with [Module 1: Installation & Architecture](module-1.1-istio-installation-architecture/) to understand how Istio works under the hood, then proceed through modules in order.
+Begin with [Module 1.1: Istio Installation & Architecture](module-1.1-istio-installation-architecture/) to understand how Istio works under the hood, then proceed through modules in order.
 
 Good luck on your ICA journey!
