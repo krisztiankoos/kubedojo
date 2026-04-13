@@ -188,7 +188,7 @@ flowchart TD
 
 When the Kubernetes Scheduler assigns your Pod to a worker node, the following sequence occurs:
 1. The Kubelet commands the local CRI runtime to establish the Pod Sandbox via the `pause` container.
-2. Before the Kubelet allows any application containers to boot, it physically calls the configured CNI binary executable residing on the node.
+2. Before the Kubelet allows any application containers to boot, it physically calls the configured CNI plugin binary executable residing on the node.
 3. The CNI plugin evaluates its configuration and securely allocates a unique IP address from the cluster's CIDR block designated for that node.
 4. The CNI plugin executes Linux networking commands to dynamically create a virtual ethernet interface pair (a `veth` pair). It inserts one end of the `veth` pair inside the Pod's network namespace (assigning it the requested IP address as `eth0`) and binds the opposing end to the host machine's network bridge.
 5. The CNI plugin programs the host node's `iptables` rules or eBPF maps to guarantee that network packets destined for that IP address are routed from the physical ethernet card directly into the Pod's interface.
