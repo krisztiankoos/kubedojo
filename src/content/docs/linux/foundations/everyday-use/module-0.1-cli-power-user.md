@@ -149,15 +149,11 @@ mkdir -p project/{src,tests,docs}
 
 Every single command in Linux works with three invisible channels of data. Understanding these channels is the foundation for everything else in this module.
 
-```
-                    ┌─────────────────────┐
-  Keyboard -------->│                     │--------> Screen
-   (stdin)          │    Your Command     │        (stdout)
-   Stream 0         │    (e.g., grep)     │        Stream 1
-                    │                     │
-                    │                     │--------> Screen
-                    └─────────────────────┘        (stderr)
-                                                   Stream 2
+```mermaid
+flowchart LR
+    Keyboard["Keyboard<br/>(stdin)<br/>Stream 0"] --> Command["Your Command<br/>(e.g., grep)"]
+    Command -- "Stream 1" --> Stdout["Screen<br/>(stdout)"]
+    Command -- "Stream 2" --> Stderr["Screen<br/>(stderr)"]
 ```
 
 > **Pause and predict**: If you run a command that produces both normal output and an error message, and you redirect stream 1 (`>`) to a file, what will you see on your terminal screen?
@@ -283,13 +279,12 @@ Pipes (`|`) are the single most powerful concept in this module. A pipe takes th
 
 Think of it like a factory assembly line: each machine (command) does one small job and passes the result to the next machine.
 
-```
-┌──────┐    ┌──────┐    ┌──────┐    ┌──────┐
-│ cmd1 │--->│ cmd2 │--->│ cmd3 │--->│ cmd4 │---> Final output
-└──────┘    └──────┘    └──────┘    └──────┘
-  stdout      stdout      stdout      stdout
-  becomes     becomes     becomes
-  stdin       stdin       stdin
+```mermaid
+flowchart LR
+    cmd1["cmd1"] -- "stdout becomes stdin" --> cmd2["cmd2"]
+    cmd2 -- "stdout becomes stdin" --> cmd3["cmd3"]
+    cmd3 -- "stdout becomes stdin" --> cmd4["cmd4"]
+    cmd4 -- "stdout" --> final["Final output"]
 ```
 
 > **Stop and think**: If `cmd2` in the assembly line fails and produces an error message (stderr), does that error flow into `cmd3`? (Hint: look at which stream the pipe connects!)
