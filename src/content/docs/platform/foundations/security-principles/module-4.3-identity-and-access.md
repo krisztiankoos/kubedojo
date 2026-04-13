@@ -89,6 +89,8 @@ WHAT AUTHENTICATION IS NOT
 Authentication just answers: "Is this really Alice?"
 ```
 
+> **Stop and think**: If a user is successfully authenticated, does that mean they can modify any data in the system? Why or why not?
+
 ### 1.2 Authentication Factors
 
 ```
@@ -230,6 +232,8 @@ Policies evaluate attributes of user, resource, context.
     Very flexible. Can express complex rules.
     Can become hard to understand and audit.
 ```
+
+> **Pause and predict**: If you have 500 users and 50 applications, how many permission assignments would you need to manage with ACLs compared to RBAC?
 
 ### 2.3 RBAC in Practice
 
@@ -432,42 +436,19 @@ CRITICAL: Never trust claims without verifying signature!
 
 ### 4.3 OAuth 2.0 and OpenID Connect
 
-```
-OAUTH 2.0 / OIDC FLOW
-═══════════════════════════════════════════════════════════════
+```mermaid
+sequenceDiagram
+    participant User
+    participant App as App (Client)
+    participant IdP as Identity Provider
 
-┌─────────┐          ┌─────────┐          ┌─────────────┐
-│  User   │          │  App    │          │   Identity  │
-│         │          │(Client) │          │   Provider  │
-└────┬────┘          └────┬────┘          └──────┬──────┘
-     │                    │                       │
-     │  1. Click "Login   │                       │
-     │     with Google"   │                       │
-     │───────────────────▶│                       │
-     │                    │                       │
-     │                    │  2. Redirect to IdP   │
-     │◀───────────────────│                       │
-     │                    │                       │
-     │  3. Login at IdP   │                       │
-     │────────────────────┼──────────────────────▶│
-     │                    │                       │
-     │  4. Redirect back  │                       │
-     │    with auth code  │                       │
-     │◀───────────────────┼───────────────────────│
-     │                    │                       │
-     │                    │  5. Exchange code     │
-     │                    │     for tokens        │
-     │                    │──────────────────────▶│
-     │                    │                       │
-     │                    │  6. Access + ID token │
-     │                    │◀──────────────────────│
-     │                    │                       │
-     │  7. User is        │                       │
-     │     logged in      │                       │
-     │◀───────────────────│                       │
-
-OAuth 2.0: Authorization (access token)
-OIDC: Authentication (ID token with user info)
+    User->>App: 1. Click "Login with Google"
+    App-->>User: 2. Redirect to IdP
+    User->>IdP: 3. Login at IdP
+    IdP-->>App: 4. Redirect back with auth code
+    App->>IdP: 5. Exchange code for tokens
+    IdP-->>App: 6. Access + ID token
+    App-->>User: 7. User is logged in
 ```
 
 > **Try This (3 minutes)**
@@ -571,45 +552,18 @@ spec:
 
 ### 5.3 Workload Identity
 
-```
-WORKLOAD IDENTITY (Cloud-Native)
-═══════════════════════════════════════════════════════════════
+```mermaid
+sequenceDiagram
+    participant Pod as Pod (ServiceAcct)
+    participant K8s as Kubernetes OIDC
+    participant IAM as Cloud IAM
+    participant Services as Cloud Services (S3, RDS)
 
-Problem: How do pods authenticate to cloud services?
-
-OLD WAY (Static credentials)
-─────────────────────────────────────────────────────────────
-Pod has AWS access key stored as secret
-    - Long-lived credentials
-    - If leaked, attacker has cloud access
-    - Hard to rotate across pods
-
-NEW WAY (Workload Identity)
-─────────────────────────────────────────────────────────────
-Pod gets temporary cloud credentials via Kubernetes identity
-
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐ │
-│  │    Pod      │     │ Kubernetes  │     │    Cloud    │ │
-│  │             │     │   OIDC      │     │    IAM      │ │
-│  │ ServiceAcct │────▶│   Provider  │────▶│             │ │
-│  └─────────────┘     └─────────────┘     └─────────────┘ │
-│                                                  │        │
-│  1. Pod presents K8s token                       │        │
-│  2. K8s OIDC signs token                         │        │
-│  3. Cloud IAM trusts K8s OIDC                    │        │
-│  4. Pod gets temporary cloud credentials         │        │
-│                                                  ▼        │
-│                                          ┌─────────────┐ │
-│                                          │  S3, RDS,   │ │
-│                                          │  etc.       │ │
-│                                          └─────────────┘ │
-└────────────────────────────────────────────────────────────┘
-
-AWS: IAM Roles for Service Accounts (IRSA)
-GCP: Workload Identity
-Azure: Azure AD Workload Identity
+    Pod->>K8s: 1. Pod presents K8s token
+    K8s->>IAM: 2. K8s OIDC signs token
+    Note over IAM: 3. Cloud IAM trusts K8s OIDC
+    IAM-->>Pod: 4. Pod gets temporary cloud credentials
+    Pod->>Services: 5. Access cloud resources
 ```
 
 ---
@@ -634,195 +588,67 @@ Azure: Azure AD Workload Identity
 | No MFA on critical systems | Single factor easily bypassed | MFA everywhere possible |
 | Overly broad roles | More access than needed | Granular, purpose-specific roles |
 | Long-lived tokens | Large exposure window if leaked | Short-lived tokens, refresh flow |
-| Shared service accounts | Can't attribute actions | One account per service |
+| Shared service accounts | Can attribute actions | One account per service |
 | No access review | Permissions accumulate | Regular audits, remove unused |
 
 ---
 
 ## Quiz
 
-1. **What's the difference between authentication and authorization?**
+1. **Scenario: A developer configures an API gateway to verify JWT signatures from Okta, but users report they can access administrative endpoints they shouldn't. Is this a failure of authentication or authorization, and what is the difference between the two in this context?**
    <details>
    <summary>Answer</summary>
 
-   **Authentication** answers "Who are you?" — It verifies the claimed identity by checking proof (password, certificate, token).
-
-   **Authorization** answers "What can you do?" — It determines whether the authenticated identity is allowed to perform a specific action on a specific resource.
-
-   They're sequential: You must authenticate (prove identity) before authorization (check permissions). A valid identity doesn't automatically mean access is granted.
-
-   Example: Alice authenticates with password+MFA. She's confirmed as Alice. Then authorization checks: Can Alice delete this file? Maybe yes, maybe no—depends on her permissions.
+   In this scenario, the failure is in authorization, not authentication. Authentication answers "Who are you?"—the API gateway successfully verified the JWT, confirming the users' identities via Okta. Authorization answers "What can you do?"—the system failed to check if those authenticated users had the specific permissions required to access administrative endpoints. Because the two processes are distinct, a system must explicitly enforce authorization rules after successfully authenticating a user to prevent privilege escalation.
    </details>
 
-2. **Why is multi-factor authentication more secure than single factor?**
+2. **Scenario: An attacker manages to steal a database containing all user passwords for your application. If your application enforces MFA, why are the user accounts still secure? Explain how the different authentication factors work together.**
    <details>
    <summary>Answer</summary>
 
-   MFA requires multiple independent proofs of identity from different factor categories:
-   - Something you know (password)
-   - Something you have (phone, hardware key)
-   - Something you are (biometrics)
-
-   An attacker must compromise ALL factors to succeed. Different factors require different attack techniques:
-   - Passwords: Phishing, guessing, database breaches
-   - TOTP: Device theft, SIM swapping
-   - Hardware keys: Physical theft
-
-   Single factor: Attacker needs one technique.
-   Multi-factor: Attacker needs multiple different techniques simultaneously.
-
-   The probability of successful attack drops significantly with each factor added.
+   The accounts remain secure because MFA requires multiple independent proofs of identity from different factor categories. Even though the attacker obtained the passwords (something you know), they still lack the second factor (such as a physical TOTP token from the user's phone). An attacker must compromise all required factors simultaneously, which demands entirely different attack techniques like physical device theft or SIM swapping. The mathematical probability of a successful attack drops significantly when combining factors, making mass exploitation of stolen passwords nearly impossible.
    </details>
 
-3. **What is the principle of least privilege and how do you implement it?**
+3. **Scenario: You are auditing a Kubernetes cluster and notice that the CI/CD pipeline's ServiceAccount has cluster-admin privileges, even though it only deploys to the 'frontend' and 'backend' namespaces. Explain why this violates the principle of least privilege and describe the specific steps to implement it correctly in this case.**
    <details>
    <summary>Answer</summary>
 
-   **Least privilege**: Grant only the minimum permissions necessary to perform a required function.
-
-   Implementation:
-   1. **Default deny**: Start with no permissions; add only what's needed
-   2. **Scope narrowly**: Limit by action (read vs write), resource (specific items), context (time, location)
-   3. **Use roles**: Group related permissions, assign roles instead of individual permissions
-   4. **Time-bound access**: Grant elevated access temporarily, not permanently
-   5. **Separate concerns**: Different accounts for different functions
-   6. **Regular review**: Audit permissions, remove unused access
-
-   Example: A deployment service doesn't need to delete production databases. Grant only deploy permissions.
+   This setup violates the principle of least privilege because the CI/CD pipeline is granted cluster-wide, unrestricted access when it only requires deployment capabilities in two specific namespaces. Least privilege dictates granting only the minimum permissions necessary to perform a function. To fix this, you would implement a default deny approach by removing the cluster-admin RoleBinding entirely. Then, create specific Roles in the 'frontend' and 'backend' namespaces that only allow the pipeline to create, update, and get necessary resources, and bind those Roles to the pipeline's ServiceAccount.
    </details>
 
-4. **Why are short-lived tokens preferred over long-lived credentials?**
+4. **Scenario: A developer accidentally commits a credential to a public GitHub repository. Within minutes, bots scan it and attempt to use it. If the credential was a short-lived token versus a long-lived API key, how does the impact differ and why are short-lived tokens preferred?**
    <details>
    <summary>Answer</summary>
 
-   Short-lived tokens limit exposure:
-
-   **Long-lived credentials** (API keys, passwords):
-   - If stolen, attacker has access until key is rotated
-   - May never be discovered as stolen
-   - Hard to rotate across many systems
-   - Exposure window: unlimited
-
-   **Short-lived tokens** (JWT, OAuth tokens):
-   - Expire automatically (minutes to hours)
-   - If stolen, attacker has limited time window
-   - New tokens issued regularly
-   - Exposure window: token lifetime only
-
-   Even if an attacker gets a short-lived token, they have hours, not forever. Regular token refresh also forces re-authentication, catching revoked access.
+   If the leaked credential was a long-lived API key, the attacker would have permanent access until an administrator manually discovered the leak and revoked the key, resulting in an unlimited exposure window. In contrast, if it was a short-lived token (like a JWT), it would automatically expire within a short timeframe (such as 15 minutes). Even though the attacker can use the short-lived token immediately, the potential damage is inherently limited to the token's remaining lifetime. Short-lived credentials are mathematically safer because they minimize the window of opportunity for attackers and reduce reliance on slow manual revocation processes.
    </details>
 
-5. **A company has 500 employees and 50 applications. Using ACLs, how many permission entries might be needed? How does RBAC reduce this?**
+5. **Scenario: Your company is rapidly growing and adding new internal applications every week. The IT team is overwhelmed managing access for each new hire across dozens of systems using direct user-to-resource ACLs. How would migrating to Role-Based Access Control (RBAC) reduce this operational burden, and what is the mathematical difference in permission management?**
    <details>
    <summary>Answer</summary>
 
-   **ACL approach (user-to-resource):**
-
-   If each user might need different permissions on each application:
-   - Worst case: 500 users × 50 apps = 25,000 permission entries
-   - Each user has a list of permissions for each app
-   - When a user's role changes, update up to 50 entries
-
-   **RBAC approach (user-to-role, role-to-permission):**
-
-   Define roles that map to job functions:
-   - 10 roles (developer, tester, manager, admin, etc.)
-   - 500 user-to-role mappings (one per user)
-   - 50 role-to-app permission sets (10 roles × 5 permission levels)
-   - Total: ~550 entries vs 25,000
-
-   When a user's job changes:
-   - ACL: Update 50 app permissions
-   - RBAC: Change 1 role assignment
-
-   RBAC scales because permission logic is centralized in roles, not duplicated per user.
+   With direct ACLs, managing access for 500 users across 50 applications could require up to 25,000 individual permission entries, forcing IT to manually update dozens of records for every role change. Migrating to RBAC introduces an abstraction layer where permissions are assigned to roles rather than individual users. If you define 10 standard roles, you only manage 500 user-to-role mappings and 500 role-to-app permissions, drastically reducing the total entries. When a user changes jobs under RBAC, IT only updates their single role assignment, instantly updating their access across all 50 applications and preventing permission drift.
    </details>
 
-6. **In the Twitter 2020 breach, attackers used social engineering to get employee credentials. What IAM controls would have limited the damage even after credentials were compromised?**
+6. **Scenario: A support engineer's laptop is compromised via malware, giving attackers access to their active session in an internal admin tool. Based on the 2020 Twitter breach case study, what specific IAM authorization controls should have been in place to limit the blast radius of this compromised identity?**
    <details>
    <summary>Answer</summary>
 
-   Several controls could have limited blast radius:
-
-   1. **Least privilege**: Admin tool access shouldn't include all accounts. Tiered access: support staff access regular accounts, elevated approval required for verified accounts, senior approval for high-profile accounts.
-
-   2. **Just-in-time access**: Instead of permanent admin access, require requesting elevated permissions for specific actions, with automatic expiration.
-
-   3. **Multi-person authorization**: Actions on high-profile accounts require approval from multiple people (two-person rule).
-
-   4. **Anomaly detection**: Alert on unusual patterns—same user accessing many high-profile accounts rapidly is not normal support behavior.
-
-   5. **Session controls**: Admin sessions timeout quickly. Compromised credentials can't be used indefinitely.
-
-   6. **Separate authentication for sensitive actions**: Even with valid session, require re-authentication for account takeover actions.
-
-   The attack succeeded not because authentication failed, but because authorization was too broad and no controls existed for sensitive actions.
+   Even with a compromised active session, the blast radius could have been contained through strict authorization controls and least privilege. Instead of broad administrative access to all accounts, the tool should have enforced scoped permissions where support staff can only access standard user accounts. Furthermore, sensitive actions like account takeover should have required just-in-time access approvals or multi-person authorization (a two-person rule). Finally, requiring step-up authentication (re-prompting for a physical security key) for critical administrative actions would have blocked the attacker despite them possessing a valid session token.
    </details>
 
-7. **A JWT token has `exp: 1700003600` (Unix timestamp). It's currently `1700000000`. How long until the token expires? What happens if an attacker steals this token?**
+7. **Scenario: While analyzing network traffic, you discover an attacker has intercepted a JWT token with `exp: 1700003600` (Unix timestamp). It's currently `1700000000`. How long does the attacker have to use this token, what actions can they perform, and why can't the server immediately detect the theft?**
    <details>
    <summary>Answer</summary>
 
-   **Time until expiration:**
-
-   1700003600 - 1700000000 = 3600 seconds = **1 hour**
-
-   **If attacker steals the token:**
-
-   1. **Attacker can use the token** for up to 1 hour (until expiration)
-
-   2. **Attacker gets the same permissions** as the legitimate user for that time window
-
-   3. **Server cannot detect the theft** from the token alone—it's a valid, unexpired token
-
-   4. **After 1 hour, token becomes useless**—attacker must steal a new one
-
-   **Mitigations:**
-
-   - Shorter expiration times reduce exposure window (trade-off: more frequent refresh)
-   - Token binding: tie token to IP, device fingerprint (breaks if these change)
-   - Refresh token rotation: each refresh invalidates the old refresh token
-   - Anomaly detection: alert on tokens used from unusual locations/patterns
-   - Token revocation list: check if token is explicitly revoked (adds server-side state)
-
-   Short-lived tokens don't prevent theft, but they limit the damage window.
+   The attacker has exactly 3,600 seconds (1 hour) to use the token before it expires and is rejected by the server. During this one-hour window, the attacker assumes the identity of the user and can perform any actions that the token's claims and the server's authorization policies allow. The server cannot immediately detect the theft because the token is stateless; since the token is legitimately signed and unexpired, the server inherently trusts it. To mitigate this, systems rely on short expiration times to limit the damage window and use refresh token rotation to force periodic re-authentication.
    </details>
 
-8. **A Kubernetes ServiceAccount has `automountServiceAccountToken: true`. Why is this often a security risk, and when should it be disabled?**
+8. **Scenario: During a penetration test, the red team exploits a remote code execution vulnerability in a simple Nginx web pod. They immediately pivot to query the Kubernetes API and list all secrets in the namespace. What specific ServiceAccount configuration enabled this lateral movement, why is it a risk, and what is the correct remediation?**
    <details>
    <summary>Answer</summary>
 
-   **The risk:**
-
-   When `automountServiceAccountToken: true`, the pod automatically receives a token that can authenticate to the Kubernetes API server. If the pod is compromised, the attacker gets this token and can:
-
-   1. Query the API server for cluster information
-   2. Access any resources the ServiceAccount is authorized to access
-   3. Potentially escalate privileges if the ServiceAccount has broad permissions
-
-   **When to disable:**
-
-   Disable when the application doesn't need to interact with the Kubernetes API:
-   - Web servers serving static content
-   - Databases
-   - Most application workloads
-
-   **When to enable (carefully):**
-
-   Enable only when the application legitimately needs API access:
-   - Operators that manage Kubernetes resources
-   - Controllers that watch for changes
-   - Applications that read ConfigMaps dynamically
-
-   **Best practice:**
-
-   ```yaml
-   spec:
-     serviceAccountName: my-minimal-sa  # Use dedicated SA
-     automountServiceAccountToken: false  # Disable by default
-   ```
-
-   If API access is needed, create a ServiceAccount with minimal RBAC permissions and explicitly mount only in pods that need it.
+   The lateral movement was enabled because the pod's ServiceAccount was configured with `automountServiceAccountToken: true`, which automatically injected a valid API token into the pod's filesystem. This is a severe security risk for an Nginx web pod because standard web servers do not need to interact with the Kubernetes API, yet the token provides a built-in mechanism for privilege escalation or cluster reconnaissance. The correct remediation is to explicitly set `automountServiceAccountToken: false` in the pod spec or ServiceAccount for any workload that doesn't need API access. Doing so adheres to the principle of least privilege and removes an unnecessary attack vector.
    </details>
 
 ---
