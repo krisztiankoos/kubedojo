@@ -566,6 +566,7 @@ You'll create several broken resources and practice systematic troubleshooting.
 
 ```bash
 # Create namespace
+alias k=kubectl
 k create ns troubleshoot-lab
 
 # Create a "broken" deployment - see if you can spot all issues
@@ -678,7 +679,15 @@ spec:
 EOF
 ```
 
-Troubleshoot each one systematically.
+Troubleshoot each one systematically:
+
+```bash
+# Diagnose crash-pod (check logs for exit command)
+k logs crash-pod -n troubleshoot-lab
+
+# Diagnose pending-pod (check Events for FailedScheduling)
+k describe pod pending-pod -n troubleshoot-lab | grep -A 10 Events
+```
 
 ### Success Criteria
 
