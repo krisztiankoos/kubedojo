@@ -288,7 +288,7 @@ Same strategy as CKA, security-focused:
 # Step 1: Check if your cluster has basic security features
 echo "=== Checking API Server Security ==="
 kubectl get pods -n kube-system | grep apiserver
-kubectl get pods -n kube-system kube-apiserver-* -o yaml 2>/dev/null | grep -E "enable-admission|audit" | head -5 || echo "Check on control plane node"
+kubectl get pods -n kube-system -l component=kube-apiserver -o yaml 2>/dev/null | grep -E "enable-admission|audit" | head -5 || echo "Check on control plane node"
 
 # Step 2: Check for NetworkPolicies (most clusters have none by default!)
 echo "=== NetworkPolicy Count ==="
