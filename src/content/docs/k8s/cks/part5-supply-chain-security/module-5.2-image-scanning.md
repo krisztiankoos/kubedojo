@@ -74,10 +74,10 @@ CKS tests your ability to scan images and interpret vulnerability reports.
 
 ```bash
 # Debian/Ubuntu
-sudo apt-get install wget apt-transport-https gnupg lsb-release
+sudo apt-get install -y wget apt-transport-https gnupg lsb-release
 wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
 echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-sudo apt-get update && sudo apt-get install trivy
+sudo apt-get update && sudo apt-get install -y trivy
 
 # macOS
 brew install trivy
@@ -257,6 +257,10 @@ trivy config ./manifests/
 
 # Scan for both vulnerabilities and misconfigs
 trivy fs --security-checks vuln,config ./
+
+# Scan explicitly for embedded secrets
+trivy fs --security-checks secret ./
+trivy image --security-checks secret nginx:1.25
 ```
 
 ---
@@ -314,6 +318,8 @@ trivy config pod.yaml
 ## CI/CD Integration
 
 ### GitHub Actions
+
+Integrating Trivy into CI/CD ensures vulnerabilities are caught before they reach a registry. We set `exit-code: '1'` to fail the build if vulnerabilities are found, and filter by `CRITICAL,HIGH` severity to avoid failing builds for low-risk or unpatchable issues.
 
 ```yaml
 name: Security Scan
@@ -557,6 +563,10 @@ trivy config test-pod.yaml
 # Step 7: Generate JSON report
 trivy image --format json --output scan-report.json nginx:latest
 echo "Report saved to scan-report.json"
+
+# Verify report generation
+ls -lh scan-report.json
+head -n 5 scan-report.json
 
 # Cleanup
 rm -f test-pod.yaml scan-report.json
