@@ -4,61 +4,62 @@ slug: k8s/capa/module-1.1-advanced-argo-workflows
 sidebar:
   order: 2
 ---
+
 > **CAPA Track -- Domain 1 (36%)** | Complexity: `[COMPLEX]` | Time: 50-60 min
 
-A global logistics firm experienced a silent nightmare. Their nightly supply chain reconciliation—a 14-step sequential process—began failing silently twice a week. The data pipeline lacked built-in observability, and the legacy orchestration scripts would just halt on transient network errors. Nobody knew the manifests hadn't processed until the morning standup, costing the company hundreds of thousands of dollars in delayed shipping schedules and manual recovery efforts.
+The platform team at FinCorp Global faced a catastrophic failure. Their nightly reconciliation workflow, processing $4.5 million in daily settlements, ran 14 manual steps sequentially via legacy bash scripts. One night, a temporary API rate limit caused step 8 to fail silently. The script continued, processing corrupted data downstream. This blind spot cost the company $280,000 in SLA penalties and required 72 hours of exhaustive manual database rollbacks to correct the ledger.
 
-After migrating to Argo Workflows, the entire paradigm shifted. They implemented exit handlers to push instant Slack alerts, leveraged CronWorkflows with IANA timezones for exact scheduling, and utilized memoization to bypass unchanged processing steps. With exponential backoff retry strategies handling transient Kubernetes errors automatically, the pipeline duration shrank from 3 hours to just 40 minutes. The operations team went from spending 12 hours a week manually babysitting batch jobs to virtually zero intervention.
+They needed a modern, declarative orchestration system. They migrated to Argo Workflows, leveraging advanced features like DAG dependency logic to parallelize independent tasks, `OnError` retry strategies with exponential backoff to handle network rate limits seamlessly, and exit handlers to immediately page the on-call engineer via Slack if the pipeline state became degraded. 
+
+By utilizing these advanced patterns, the pipeline execution time shrank from 3 hours to just 40 minutes. Memoization bypassed unchanged datasets to save compute resources, and database-backed semaphores ensured no two geographic regions reconciled the same ledger concurrently. The team went from dedicating 12 hours a week to pipeline babysitting to running fully automated, self-healing operations.
 
 ## Prerequisites
 
 - [Module 3.3: Argo Workflows](/platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.3-argo-workflows/) -- Container, Script, Steps, DAG, Artifacts
-- Kubernetes RBAC basics (ServiceAccounts, Roles, RoleBindings)
-- Basic understanding of Kubernetes Custom Resource Definitions (CRDs)
+- Kubernetes RBAC basics (ServiceAccounts, Roles)
+- CronJob scheduling syntax
 
 ## What You'll Be Able to Do
 
 After completing this module, you will be able to:
 
-1. **Design** advanced Argo Workflows integrating all nine core and extended template types, including leveraging Resource templates for direct Kubernetes API interactions.
-2. **Implement** resilient, self-healing pipelines by designing sophisticated retry strategies and comprehensive exit handlers.
-3. **Evaluate** and select appropriate concurrency and synchronization limits using plural mutexes and semaphores backed by ConfigMaps or databases.
-4. **Compare** and employ Python SDK alternatives to write infrastructure-as-code definitions for workflows dynamically.
-5. **Diagnose** common workflow anti-patterns related to memoization limits, scheduling deprecations, and artifact garbage collection.
+1. **Construct** advanced Argo Workflows using all 9 template types, including Resource templates for direct Kubernetes object manipulation.
+2. **Design** CronWorkflows, memoization strategies, and synchronization locks to build scheduled, efficient, and concurrency-safe pipelines.
+3. **Implement** exit handlers, lifecycle hooks, and retry strategies that make workflows self-healing and auditable.
+4. **Evaluate** workflow security best practices, including scoped ServiceAccounts, artifact repository configuration, and RBAC for workflow submission.
+
+## Why This Module Matters
+
+The CAPA exam dedicates 36% to Domain 1, covering Argo Workflows in extensive depth. Module 3.3 taught the fundamentals. This module covers the advanced concepts: the remaining template types, scheduled workflows, reusable templates, exit handlers, synchronization, memoization, lifecycle hooks, expression variables, robust retry strategies, and security.
 
 ## Did You Know?
 
-- **The v4.0.0 GA release dropped on February 4, 2026** — bringing massive breaking changes like the complete removal of the singular `schedule`, `mutex`, and `semaphore` fields in favor of strictly enforced plural arrays.
-- **Argo Workflows now validates schemas via CEL** — starting in v4.0, Common Expression Language (CEL) validation is baked directly into the CRDs, catching logical errors at cluster admission time before they can crash your pipelines.
-- **Memoization has a rigid 1MB limit per entry** — because it relies entirely on Kubernetes ConfigMaps under the hood, caching outputs larger than 1MB will silently fail or break your orchestration.
-- **Pod logs are strictly bypassed during workflow archival** — while status states and execution results can be persisted to PostgreSQL (>=9.4) or MySQL (>=5.7.8), you must configure a separate logging pipeline to save actual container outputs.
+- **Argo Workflows v4.0.0 was released on February 4, 2026** (latest stable v4.0.4 released 2026-04-02), bringing strict CEL-based CRD validation enforced directly at cluster admission time.
+- **Argo supports exactly 9 template types** -- while most teams only use container, script, and dag, the system also supports resource, steps, suspend, http, plugin, and containerSet templates.
+- **The official Python SDK was replaced** -- the `argo-workflows` PyPI package was removed in v4.0. Hera (maintained under the `argoproj-labs` GitHub organization) is now the officially recommended SDK.
+- **Pod logs are permanently lost by default** -- while Workflow archival persists completed state to PostgreSQL (>=9.4) or MySQL (>=5.7.8), it explicitly does NOT archive pod logs, requiring a separate logging solution.
 
-## 1. The Argo Ecosystem and Architecture
+## 1. The Argo Ecosystem and v4.0 Evolution
 
-Argo Workflows is a CNCF Graduated project implemented entirely as a Kubernetes Custom Resource Definition (CRD). It operates natively on Kubernetes, translating pipeline definitions directly into running Pods.
+Argo Workflows is an open-source container-native workflow engine implemented as a Kubernetes CRD, meaning it runs natively on your cluster without requiring external databases for active state. It is a CNCF Graduated project (accepted into graduation on December 6, 2022). 
 
-### Executor and Versions
-Since version 3.4, Argo exclusively supports the `emissary` workflow executor. Older execution runtimes like `docker`, `pns`, `k8sapi`, and `kubelet` were removed to improve security and standardize the logging architecture. The project follows a strict lifecycle: the latest stable release is v4.0.4 (released April 2, 2026), and maintainers only test against the two most recent minor Kubernetes versions per release. Instead of publishing a single universal minimum Kubernetes version, backward compatibility largely dictates support. Minor Argo versions ship roughly every six months, maintaining release branches only for the two most recent minor series.
+Argo maintains release branches for only the two most recent minor versions, shipping a new minor version approximately every 6 months. It tests against two minor Kubernetes versions per release, but does not publish a single universal minimum Kubernetes version requirement. 
 
-### Validation and Tooling
-With v4.0, CEL-based CRD validation rules were introduced. This prevents malformed definitions from being persisted into the API server. To help engineers migrate legacy YAMLs, the `argo convert` CLI command automatically transforms v3.x manifests into the strictly compliant v4.0 syntax (such as migrating a singular `schedule` string to a `schedules` list).
+### Key v4.0 Changes
 
-```mermaid
-flowchart TD
-    User([Platform Engineer]) -->|Submits YAML| API[Kubernetes API Server]
-    API -->|CEL Validation| Valid{Valid?}
-    Valid -->|No| Reject[Admission Denied]
-    Valid -->|Yes| Controller[Argo Workflow Controller]
-    Controller -->|Creates| Pods[Executor Pods running emissary]
-    Controller -->|Archives to| DB[(PostgreSQL / MySQL)]
-```
+The v4.0 release brought significant breaking changes to modernize the platform:
+- The singular `schedule` field in CronWorkflows was removed in favor of the `schedules` list.
+- The singular `mutex` and `semaphore` fields were removed in favor of `mutexes` and `semaphores` arrays.
+- A new CLI command, `argo convert`, was introduced to seamlessly upgrade Workflow, WorkflowTemplate, ClusterWorkflowTemplate, and CronWorkflow manifests to the v4.0 syntax.
+- Since v3.4, `emissary` is the sole supported workflow executor. The `docker`, `pns`, `k8sapi`, and `kubelet` executors have been completely removed.
 
 ## 2. Advanced Template Types
 
-While basic containers and steps handle typical loads, Argo Workflows officially supports nine template types: `container`, `script`, `resource`, `dag`, `steps`, `suspend`, `http`, `plugin`, and `containerSet`.
+Beyond the standard Container, Script, Steps, and DAG templates, Argo Workflows supports five additional types to handle complex orchestration.
 
 ### Resource Template
-The `resource` template bypasses creating an explicit executor container. Instead, it tells the Argo controller to speak directly to the Kubernetes API to perform CRUD operations on other resources. This allows native querying via `successCondition` and `failureCondition` JSON paths.
+
+The Resource template performs CRUD operations on Kubernetes resources directly via the API server, entirely bypassing the need to spin up a pod running `kubectl`.
 
 ```yaml
 - name: create-configmap
@@ -76,7 +77,8 @@ The `resource` template bypasses creating an explicit executor container. Instea
 ```
 
 ### Suspend Template
-If you need manual approval gates or specific delays in your pipeline, use a `suspend` template. 
+
+The Suspend template pauses execution until manually resumed via the CLI or UI, or until a specified duration elapses. This is the primary mechanism for building manual approval gates.
 
 ```yaml
 - name: approval-gate
@@ -88,12 +90,13 @@ If you need manual approval gates or specific delays in your pipeline, use a `su
 ```
 
 ### HTTP and Plugin Templates
-The `http` and `plugin` templates operate differently than everything else. They do not run as Pods scheduled by the main controller. Instead, they execute via the Argo Agent process, communicating asynchronously via a `WorkflowTaskSet` CRD.
+
+HTTP and Plugin templates do not create pods. Instead, they execute via the Argo Agent process, which communicates with the workflow controller through a unique `WorkflowTaskSet` CRD created per running workflow.
 
 ```yaml
 - name: call-webhook
   http:
-    url: "http://localhost:8080/notify"
+    url: "https://httpbin.org/post"
     method: POST
     headers:
       - name: Authorization
@@ -103,10 +106,9 @@ The `http` and `plugin` templates operate differently than everything else. They
     successCondition: "response.statusCode >= 200 && response.statusCode < 300"
 ```
 
-> **Pause and predict**: If the Argo Agent is severely resource-constrained, how might the execution of an `http` template differ from a standard `container` template?
-
 ### ContainerSet Template
-A `containerSet` launches multiple containers simultaneously within a single Pod. Because they share the same network namespace and volume mounts, it is highly efficient for tight coupling. However, because they share a Pod lifecycle, they cannot utilize the enhanced boolean `depends` logic available to full DAGs. Resource requests are calculated as the sum of all containers in the set.
+
+The ContainerSet template runs multiple containers concurrently within a single Pod. This allows containers to share local storage volumes and loopback networking. 
 
 ```yaml
 - name: multi-container
@@ -116,7 +118,7 @@ A `containerSet` launches multiple containers simultaneously within a single Pod
         mountPath: /workspace
     containers:
       - name: clone
-        image: alpine/git
+        image: alpine/git:v2.43.0
         command: [sh, -c, "git clone https://github.com/argoproj/argo-workflows /workspace/repo"]
       - name: build
         image: golang:1.24
@@ -131,45 +133,45 @@ A `containerSet` launches multiple containers simultaneously within a single Pod
       emptyDir: {}
 ```
 
-## 3. DAGs, Variables, and Logic Control
+> **Stop and think**: Does a ContainerSet support the advanced boolean dependency logic (like `A.Succeeded || B.Failed`) available in DAGs? No, ContainerSet dependency management is strictly sequential; it cannot use the enhanced `depends` logic.
 
-Directed Acyclic Graphs (DAGs) shine because of their flexibility. They unlock an advanced `depends` field that accepts boolean logic expressions like `A.Succeeded || B.Failed`. 
+## 3. DAG Logic, Loops, and Context Variables
 
-Furthermore, you can control the failure propagation. By default, DAGs have `failFast` set to `true`, preventing new tasks from scheduling if any single task errors out. Setting `failFast: false` lets all independent branches run to completion regardless of peer failures. Template-level `when` fields provide even more granular conditional step execution.
+### Enhanced DAG Dependencies
 
-### Fan-out Variables
-When dynamically looping over tasks, the property you use dictates the data structure:
-- `withItems` accepts a standard inline YAML list.
-- `withParam` accepts a JSON string, which is generally provided by the output of a preceding step.
+While `dependencies` expects a simple array, DAG tasks support a `depends` field for enhanced dependency logic using boolean expressions. For example, `depends: "A.Succeeded || B.Failed"`.
 
-### Parameter Scoping
-Global workflow parameters set in `spec.arguments.parameters` are universally accessible throughout the entire run using the `{{workflow.parameters.<name>}}` syntax.
+Additionally, DAG templates have a `failFast` field that defaults to `true`. When one task fails, no new tasks are scheduled. Setting `failFast: false` allows all independent branches to run to completion even if an unrelated branch fails.
 
-### Simple vs. Expression Tags
-Argo supports simple string tags, but also expression tags running expr-lang logic.
+### Conditionals and Looping
 
-```yaml
-# Examples of Simple Tags
-variables:
-  - "{{workflow.name}}"
-  - "{{workflow.status}}"
-  - "{{inputs.parameters.my-param}}"
-  - "{{tasks.task-a.outputs.result}}"
-```
+The template-level `when` field enables conditional step execution using expression-based conditions.
+For fanning out jobs, `withItems` accepts a YAML list (usually inlined) for looping, while `withParam` accepts a JSON string (typically passed from a prior step's output).
+
+### Variables: Simple Tags vs Expression Tags
+
+Global workflow parameters set in `spec.arguments.parameters` are accessible throughout the entire workflow via `{{workflow.parameters.<name>}}`.
+
+**Simple tags** provide plain string substitution:
 
 ```yaml
-# Examples of Expression Tags
-expressions:
-  - "{{=workflow.status == 'Succeeded' ? 'PASS' : 'FAIL'}}"
-  - "{{=asInt(inputs.parameters.replicas) + 1}}"
-  - "{{=sprig.upper(workflow.name)}}"
+- "{{workflow.name}}"
+- "{{workflow.status}}"
+- "{{inputs.parameters.my-param}}"
+- "{{tasks.task-a.outputs.result}}"
 ```
 
-## 4. Scheduling execution: CronWorkflows
+**Expression tags** (`{{=...}}`) evaluate logic using the expr-lang syntax:
 
-CronWorkflows operate as a unique CRD managing Workflow lifecycles over time. They are fundamentally separate from Kubernetes' native `CronJob` kinds.
+```yaml
+- "{{=workflow.status == 'Succeeded' ? 'PASS' : 'FAIL'}}"
+- "{{=asInt(inputs.parameters.replicas) + 1}}"
+- "{{=sprig.upper(workflow.name)}}"
+```
 
-With the release of v4.0, the singular `schedule` parameter was completely removed (having been deprecated since v3.6). You must now provide a `schedules` list. The `timezone` field is incredibly robust, accepting IANA timezone strings (like `America/New_York`) to accurately adjust for daylight saving offsets natively, overriding the host machine's local time.
+## 4. Scheduling with CronWorkflows
+
+CronWorkflows create standard Workflow objects automatically based on a schedule.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -178,8 +180,8 @@ metadata:
   name: nightly-etl
 spec:
   schedules:
-    - "0 2 * * *"
-  timezone: "America/New_York"    # Default: local machine time
+    - "0 2 * * *"                 # 2 AM daily
+  timezone: "America/New_York"    # Default: UTC
   startingDeadlineSeconds: 300    # Skip if missed by >5min
   concurrencyPolicy: Replace      # Kill previous if still running
   successfulJobsHistoryLimit: 3
@@ -197,41 +199,34 @@ spec:
               dependencies: [extract]
       - name: run-etl
         container:
-          image: etl-runner:v3
+          image: etl-runner:v1.35
           command: [python, run.py]
 ```
 
-### Concurrency Strategies
+Note that the `timezone` field accepts any standard IANA timezone string (like `America/New_York`) and falls back to the machine's local time if omitted.
 
 ```mermaid
-stateDiagram-v2
-    [*] --> CronTrigger
-    CronTrigger --> CheckPrevious: Is previous run active?
-    
-    state CheckPrevious {
-        direction LR
-        Allow --> StartNew
-        Forbid --> SkipNew
-        Replace --> KillOld_StartNew
-    }
+flowchart TD
+    A[CronWorkflow Triggered] --> B{Concurrency Policy?}
+    B -->|Allow| C[Start New Workflow]
+    B -->|Forbid| D{Previous Running?}
+    D -->|Yes| E[Skip New Workflow]
+    D -->|No| C
+    B -->|Replace| F[Kill Previous Workflow]
+    F --> C
 ```
 
-> **Stop and think**: If a cluster outage lasts for 4 hours, missing three scheduled executions of a CronWorkflow, what happens when the cluster returns online? Does Argo backfill the jobs?
+## 5. Resilience: Retries, Exit Handlers, and GC
 
-## 5. Architecture Resiliency: Retries and Exit Handlers
+### Retry Strategies
 
-Transient failures destroy linear pipelines. You can combat this with explicit retry policies and exit handlers. 
-
-### Retry Strategy Logic
-The `retryStrategy` blocks allow defining conditions under which a failed container should trigger a restart. The `retryPolicy` field configures what qualifies as a recoverable failure, offering options like `OnFailure` (the default for container exit errors), `OnError` (underlying infrastructure issues like OOMKilled), and `OnTransientError`. Advanced workflows can use expression-based retry controls utilizing `lastRetry.exitCode` or `lastRetry.duration`.
-
-The `backoff` dictates the delay: defining a `duration` (initial delay), an exponential `factor`, and an ultimate `maxDuration`.
+Robust pipelines anticipate failure. The `retryStrategy` block defines how a template behaves when a container exits unexpectedly.
 
 ```yaml
 - name: call-api
   retryStrategy:
     limit: 5
-    retryPolicy: OnError         
+    retryPolicy: OnError         # See table
     backoff:
       duration: 10s              # Initial delay
       factor: 2                  # Multiplier per retry
@@ -239,21 +234,30 @@ The `backoff` dictates the delay: defining a `duration` (initial delay), an expo
     affinity:
       nodeAntiAffinity: {}       # Retry on different node
   container:
-    image: curlimages/curl
-    command: [curl, -f, "http://localhost:8080/process"]
+    image: curlimages/curl:8.7.1
+    command: [curl, -f, "https://httpbin.org/post"]
 ```
+
+The `retryPolicy` supports `OnFailure` (default, triggers on container failure), `OnError` (infrastructure errors), and `OnTransientError` (transient errors like I/O/TLS timeouts). Advanced expression-based retry control is possible using `lastRetry.exitCode` or `lastRetry.status`. Backoff configuration relies on the `duration`, `factor`, and `maxDuration` fields.
 
 ```mermaid
 flowchart TD
     A[Task Fails] --> B{Retry Policy}
-    B -->|Always| C[Retry regardless of error]
-    B -->|OnFailure| D[Retry if exit code != 0]
-    B -->|OnError| E[Retry if infrastructure issue\ne.g., OOM, Node failed]
-    B -->|OnTransientError| F[Retry if temporary K8s error\ne.g., pod eviction]
+    B -->|Always| C[Retry Task]
+    B -->|OnFailure| D{Exit Code != 0?}
+    D -->|Yes| C
+    D -->|No| E[Fail Task]
+    B -->|OnError| F{Infrastructure Error?}
+    F -->|Yes| C
+    F -->|No| E
+    B -->|OnTransientError| G{K8s Transient Error?}
+    G -->|Yes| C
+    G -->|No| E
 ```
 
 ### Exit Handlers
-Exit handlers are triggered reliably at the end of the workflow, irrespective of success or failure. Configured via `spec.onExit`, the handler logic can route execution flows dynamically using the `{{workflow.status}}` variable (which yields `Succeeded`, `Failed`, or `Error`).
+
+Exit handlers run reliably at the conclusion of a workflow or template, regardless of whether it succeeded or failed. 
 
 ```yaml
 spec:
@@ -262,7 +266,7 @@ spec:
   templates:
     - name: main
       container:
-        image: alpine
+        image: alpine:3.19
         command: [sh, -c, "echo 'working'"]
     - name: exit-handler
       steps:
@@ -274,28 +278,13 @@ spec:
             when: "{{workflow.status}} != Succeeded"
 ```
 
-## 6. Lifecycle Hooks and Memoization
+### Artifact Garbage Collection
 
-Sometimes you want logic to execute concurrently with state changes without altering the pipeline DAG.
+Artifact Garbage Collection (`artifactGC`) was introduced in v3.4. It supports `OnWorkflowDeletion` and `OnWorkflowCompletion` strategies to clean up bulky S3 objects to prevent runaway cloud storage bills.
 
-### Lifecycle Hooks
-Hooks let you trigger templates when a node moves into a `running` or `exit` state.
+## 6. Optimization: Memoization and Artifacts
 
-```yaml
-- name: deploy
-  hooks:
-    running:
-      template: log-start
-    exit:
-      template: log-completion
-      expression: "steps['deploy'].status == 'Failed'"  # Conditional
-  container:
-    image: bitnami/kubectl:1.35
-    command: [kubectl, apply, -f, /manifests/]
-```
-
-### Memoization
-Memoization allows you to skip expensive steps if the inputs have not changed. The caching engine relies on ConfigMaps, strictly capping output payloads at 1MB per entry. Note that it specifically caches parameter outputs, NOT artifact volumes.
+Memoization caches the output parameters of an expensive step in a Kubernetes ConfigMap. If the input parameters map to an existing cache key, the workflow skips container execution entirely and injects the cached output.
 
 ```yaml
 - name: expensive-step
@@ -308,7 +297,7 @@ Memoization allows you to skip expensive steps if the inputs have not changed. T
   inputs:
     parameters: [{name: dataset}, {name: version}]
   container:
-    image: processor:v3.0
+    image: processor:v1.35
     command: [python, process.py]
   outputs:
     parameters:
@@ -317,36 +306,13 @@ Memoization allows you to skip expensive steps if the inputs have not changed. T
           path: /tmp/result.json
 ```
 
-## 7. Synchronization, Security, and Scalability
+> **Pause and predict**: What happens if the JSON output is 2.5MB? ConfigMaps possess a strict 1MB hard limit. The caching operation will fail silently. Always use artifacts for large payloads.
 
-### Mutexes and Semaphores
-To prevent concurrent runs of workflows that manipulate shared resources, Argo uses synchronization locks. In v4.0, the singular keys were replaced with plural `mutexes` and `semaphores` arrays. Argo supports local mutexes and ConfigMap-backed local semaphores. Furthermore, since late v3.x and stabilized in v4.0, database-backed multi-controller locks provide synchronization across highly available active-active clusters.
+Argo Workflows supports artifact storage in S3-compatible stores (AWS S3, MinIO), Azure Blob, Artifactory, HTTP, and OSS. GCS is accessible via S3-compatible interoperability APIs. Artifact streaming for Plugin artifact drivers was officially added in v4.0.
 
-```yaml
-# Mutex -- exclusive lock, one workflow at a time:
-spec:
-  synchronization:
-    mutexes:
-      - name: deploy-production
-```
+## 7. Security, Authentication, and Metrics
 
-```yaml
-# Semaphore -- N concurrent holders, backed by a ConfigMap (data: { gpu-jobs: "3" }):
-spec:
-  synchronization:
-    semaphores:
-      - configMapKeyRef:
-          name: semaphore-config
-          key: gpu-jobs
-```
-
-### Artifact Storage and GC
-Workflows can stream artifacts to a massive array of providers: S3-compatible stores (AWS S3, MinIO), Azure Blob, HTTP stores, Artifactory, OSS, and (as of v4.0) streaming via Plugin artifact drivers. To prevent storage bloat, Artifact Garbage Collection (`artifactGC`), introduced in v3.4, cleans up objects asynchronously using `OnWorkflowDeletion` or `OnWorkflowCompletion` strategies.
-
-### Security Dimensions
-Argo Server provides three authentication modes: `client` (defaulting to the user's K8s bearer token), `server` (falling back to the server ServiceAccount), and `sso`. 
-
-Controller metrics are exposed natively at `9090/metrics`, though the actual `Service` object must be deployed manually. Workflows themselves should enforce granular RBAC and drop privileges at the Pod spec level.
+Workflows should always operate under the principle of least privilege using scoped ServiceAccounts.
 
 ```yaml
 spec:
@@ -356,13 +322,15 @@ spec:
       serviceAccountName: argo-builder    # Template-level override
 ```
 
+Additionally, Pod Security Contexts restrict container permissions to prevent container escapes:
+
 ```yaml
 - name: secure-step
   securityContext:
     runAsUser: 1000
     runAsNonRoot: true
   container:
-    image: my-app:v3.0.0
+    image: my-app:v1.35
     securityContext:
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
@@ -370,8 +338,34 @@ spec:
         drop: [ALL]
 ```
 
-### WorkflowTemplates
-For code reuse, Argo provides `WorkflowTemplate` (namespaced) and `ClusterWorkflowTemplate` (cluster-scoped).
+The Argo Server supports three primary auth modes: `client` (default since v3.0, mapping to the user's K8s token), `server`, and `sso`. For observability, controller metrics are exposed at port `9090/metrics` by default, though the metrics service itself is not installed as part of the default `install.yaml`.
+
+## 8. Concurrency and Synchronization
+
+Synchronization prevents destructive parallel execution through either exclusive locks (mutexes) or rate limits (semaphores). In v4.0, synchronization expanded to include database-backed multi-controller locks, alongside the traditional ConfigMap-backed local semaphores.
+
+**Mutex (exclusive lock, one workflow at a time):**
+```yaml
+spec:
+  synchronization:
+    mutexes:
+      - name: deploy-production
+```
+
+**Semaphore (N concurrent holders, backed by a ConfigMap):**
+```yaml
+# ConfigMap: data: { gpu-jobs: "3" }
+spec:
+  synchronization:
+    semaphores:
+      - configMapKeyRef:
+          name: semaphore-config
+          key: gpu-jobs
+```
+
+## 9. Reusability and Archiving
+
+To share workflow logic, use a `WorkflowTemplate` (which is namespace-scoped) or a `ClusterWorkflowTemplate` (which is accessible across all namespaces).
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -385,8 +379,10 @@ spec:
   arguments:
     parameters:
       - name: image-tag
-        value: ghcr.io/org/app:v3.0.0
+        value: ghcr.io/org/app:v1.35.0
 ```
+
+You can also reference templates at the task level inside a DAG:
 
 ```yaml
 dag:
@@ -397,34 +393,41 @@ dag:
         template: security-scan
         clusterScope: true
       arguments:
-        parameters: [{name: image, value: "myapp:latest"}]
+        parameters: [{name: image, value: "myapp:v1.35"}]
 ```
-
-## Python SDKs
-Maintaining YAML manually becomes tedious. Previously, the `argo-workflows` PyPI package acted as the official generator. However, due to systemic build issues, it was entirely removed in v4.0. The officially recommended replacement is **Hera**, a comprehensive SDK maintained by the community under the `argoproj-labs/hera` GitHub organization.
 
 ## Common Mistakes
 
 | Mistake | Why It Hurts | Better Approach |
 |---|---|---|
-| **`Always` retry for logic errors** | Bad application code retries forever, burning cluster resources. | Use `OnError` for infrastructure faults, and `OnFailure` only for self-healing application bugs. |
-| **Memoized outputs > 1MB** | ConfigMaps silently fail when limits are hit, breaking the execution DAG implicitly. | Keep memoized outputs strictly under the 1MB cap; rely on artifacts for large datasets. |
-| **CronWorkflow without `startingDeadlineSeconds`** | Missed workflow runs vanish silently during an outage. | Always configure deadlines and monitor controller events for skipped schedules. |
-| **Single SA for all workflows** | One compromised template grants full API access across your entire cluster namespace. | Institute strict least-privilege using per-workflow or per-template ServiceAccounts. |
-| **Missing `clusterScope: true` in `templateRef`** | ClusterWorkflowTemplate references will fail to resolve inside namespaced workflows. | Always hardcode `clusterScope: true` when consuming cluster-wide templates. |
-| **Exit handler uses artifacts** | If the parent workflow crashed prematurely, standard artifacts might not exist. | Pass exit data exclusively via parameter strings or external remote data stores. |
-| **Mutex name collisions** | Unrelated workflows accidentally block each other because the mutex identifier overlaps. | Always namespace mutex string names syntactically: `team-a/deploy-prod`. |
-| **Unquoted expression tags** | The Kubernetes YAML parser violently rejects unquoted `{{=...}}` objects. | Encapsulate expression blocks inside quotes: `value: "{{=expr}}"`. |
+| `Always` retry for logic errors | Bad code retries forever | `OnError` for infra, `OnFailure` for self-healing bugs |
+| Memoized outputs > 1MB | ConfigMap silently fails | Keep memoized outputs small; artifacts for large data |
+| CronWorkflow without `startingDeadlineSeconds` | Missed runs vanish silently | Set deadline, monitor for skips |
+| Single SA for all workflows | One compromise = full access | Least-privilege SA per workflow |
+| Missing `clusterScope: true` in templateRef | ClusterWorkflowTemplate ref fails | Always set when referencing cluster-scoped |
+| Exit handler uses artifacts | Artifacts may not be available | Pass data via parameters or external store |
+| Mutex name collisions across teams | Unrelated workflows block each other | Namespace mutex names: `team-a/deploy-prod` |
+| Unquoted expression tags | YAML parser breaks on `{{=...}}` | Always quote: `"{{=expr}}"` |
+
+```mermaid
+graph TD
+    M1[Mistake: 'Always' retry] --> F1[Fix: Use 'OnError' or 'OnFailure']
+    M2[Mistake: Memoize > 1MB] --> F2[Fix: Use artifacts for large data]
+    M3[Mistake: Missing Deadline] --> F3[Fix: Set startingDeadlineSeconds]
+    M4[Mistake: Single SA] --> F4[Fix: Least-privilege SA per workflow]
+    M5[Mistake: Missing clusterScope] --> F5[Fix: Add to templateRef]
+    M6[Mistake: Unquoted expressions] --> F6[Fix: Always quote expressions]
+```
 
 ## Quiz
 
-### Question 1: What is the primary difference between a Resource template and a generic Container template running a kubectl image?
+### Question 1: What is the difference between a Resource template and a Container running kubectl?
 
 <details><summary>Show Answer</summary>
-Resource templates operate by communicating with the Kubernetes API server directly. There is no executor container scheduled and no image pull required. It natively supports `successCondition` and `failureCondition` for actively polling resource status phases. Container-based kubectl executions are much heavier but provide the full flexibility of shell scripting.
+Resource templates operate through the API server directly -- no container, no image pull, supports `successCondition`/`failureCondition` for watching status. Container+kubectl is heavier but allows shell scripting. Use Resource for simple CRUD, Container for complex logic.
 </details>
 
-### Question 2: Write the CronWorkflow specification for triggering a pipeline at 3 AM UTC on weekdays, skipping the run if it is delayed by more than 10 minutes.
+### Question 2: Write the CronWorkflow spec for 3 AM UTC weekdays, skip if missed by >10 min.
 
 <details><summary>Show Answer</summary>
 
@@ -436,40 +439,39 @@ spec:
   startingDeadlineSeconds: 600
   concurrencyPolicy: Forbid
 ```
-Note the plural `schedules` field, ensuring compatibility with Argo v4.0+.
 </details>
 
-### Question 3: How does Argo's memoization feature function under the hood, and what is its primary technical constraint?
+### Question 3: How does memoization work, and what is its key limitation?
 
 <details><summary>Show Answer</summary>
-Memoization caches workflow output parameters inside a Kubernetes ConfigMap, mapped against a user-defined expression key. If a cache hit is verified (meaning the key exists and isn't expired), Argo skips task execution entirely and pulls the output directly. The primary limitation is the strict 1MB size limit per entry enforced by Kubernetes ConfigMaps.
+Caches output parameters in a ConfigMap keyed by a user-defined key. On cache hit (matching key, not expired), returns cached output without executing. Key limitation: **1MB per entry** (ConfigMap value cap). Only output parameters are cached, not artifacts.
 </details>
 
-### Question 4: Explain the functional difference between defining `{{workflow.name}}` versus `{{=workflow.name}}`.
+### Question 4: Explain `{{workflow.name}}` vs `{{=workflow.name}}`.
 
 <details><summary>Show Answer</summary>
-The simple tag `{{workflow.name}}` resolves as a direct string substitution performed before task execution. The expression tag `{{=workflow.name}}` passes the string to the expr-lang evaluator. While they yield the same result for simple strings, the expression tag enables deep logic like conditional branching and arithmetic evaluation inline.
+`{{workflow.name}}` is simple string substitution. `{{=workflow.name}}` evaluates an expr-lang expression -- identical for simple refs, but expression tags enable logic: `"{{=workflow.status == 'Succeeded' ? 'PASS' : 'FAIL'}}"`.
 </details>
 
-### Question 5: You need to ensure that a massive GPU training workflow only allows 4 concurrent instances globally. How do you implement this?
+### Question 5: Limit GPU training workflows to 4 concurrent. How?
 
 <details><summary>Show Answer</summary>
-First, create a ConfigMap holding `data: { gpu: "4" }`. Then, inside the workflow, configure `spec.synchronization.semaphores` with a `configMapKeyRef` pointing to that resource. The fifth concurrent workflow will sit in a pending queue until one of the active four finishes and releases the semaphore lock.
+Create ConfigMap with `data: { gpu: "4" }`, then use `spec.synchronization.semaphores` array pointing to that key. Fifth workflow queues until one completes. ConfigMap value can be changed at runtime.
 </details>
 
-### Question 6: What is the end result if a specified exit handler step fails during execution?
+### Question 6: What happens when an exit handler fails?
 
 <details><summary>Show Answer</summary>
-The overarching workflow's final status forcefully transitions to `Error`, potentially masking a successful pipeline outcome. Because of this, exit handlers must be designed robustly. You should keep logic minimal, utilize HTTP templates for rapid execution, and consider implementing targeted retries to prevent network blips from corrupting observability states.
+The workflow's final status becomes `Error`. Design robust exit handlers: add retries, use HTTP templates for speed, keep logic minimal. For critical notifications, use a fallback (dead-letter queue or persistent store).
 </details>
 
-### Question 7: A `WorkflowTemplate` is dramatically rewritten while an active workflow referencing it is running. Does the running workflow adopt the old or new logic?
+### Question 7: A WorkflowTemplate is updated after a workflow starts. Old or new version?
 
 <details><summary>Show Answer</summary>
-The running workflow uses the **old version**. WorkflowTemplates are completely resolved and flattened at submission time. The full execution state is stored within the independent Workflow object, insulating active pipelines from sudden template mutations.
+**Old version.** Templates are resolved at submission time and stored in the Workflow object. Updates do not affect in-flight workflows.
 </details>
 
-### Question 8: Define a YAML retry strategy that triggers 3 retries on any failure type, features a 30s exponential backoff capped at 5 minutes, and prevents retries from hitting the same node twice.
+### Question 8: Write a retry strategy: 3 retries, 30s exponential backoff capped at 5m, different nodes.
 
 <details><summary>Show Answer</summary>
 
@@ -481,20 +483,19 @@ retryStrategy:
   affinity:
     nodeAntiAffinity: {}
 ```
-The execution sequence guarantees attempt 1 fires immediately, followed by retry sequences after 30s, 60s, and 120s, actively anti-affining against previous node assignments.
+
+Sequence: attempt 1 immediate, retry after 30s/60s/120s on different nodes each time.
 </details>
 
-### Question 9: In an architecture design phase, how do you evaluate whether to use a `containerSet` over a standard `DAG` with disparate containers?
+### Question 9: When use ContainerSet vs DAG with Containers?
 
 <details><summary>Show Answer</summary>
-A `containerSet` launches all images into a single Pod, meaning they share a local filesystem and have practically zero scheduling overhead between steps. However, they are confined to a single node's resources and cannot utilize boolean DAG dependencies. A `DAG` schedules independent Pods, allowing for massive parallel scaling, specific resource limits per step, and individual retries, at the cost of relying on artifact storage for data transfer.
+**ContainerSet**: shared filesystem, tightly coupled steps, minimize scheduling overhead, fits on one node. **DAG**: independent steps, different resource needs, artifact passing via S3, independent retry/timeout per step, exceeds single-node capacity.
 </details>
 
 ## Hands-On Exercise: Production-Ready Scheduled Pipeline
 
-This exercise brings together CronWorkflows, synchronization semaphores, memoization, and conditional exit handlers.
-
-### Step 1: Initialize the Environment
+### Setup
 
 ```bash
 kind create cluster --name capa-lab
@@ -503,7 +504,7 @@ kubectl apply -n argo -f https://github.com/argoproj/argo-workflows/releases/lat
 kubectl -n argo wait --for=condition=ready pod -l app=workflow-controller --timeout=120s
 ```
 
-### Step 2: Establish Synchronization and Caching Stores
+### Step 1: Create supporting ConfigMaps
 
 ```bash
 kubectl apply -n argo -f - <<'EOF'
@@ -522,85 +523,84 @@ data: {}
 EOF
 ```
 
-### Step 3: Implement the Pipeline Manifests
-
-Deploy both the reusable template and the scheduled CronWorkflow utilizing a K8s List object to ensure seamless multi-document validation.
+### Step 2: Create WorkflowTemplate and CronWorkflow
 
 ```yaml
-apiVersion: v1
-kind: List
-items:
-  - apiVersion: argoproj.io/v1alpha1
-    kind: WorkflowTemplate
-    metadata:
-      name: build-step
-      namespace: argo
-    spec:
-      templates:
-        - name: build
-          inputs:
-            parameters: [{name: app-name}]
-          memoize:
-            key: "build-{{inputs.parameters.app-name}}"
-            maxAge: "1h"
-            cache:
-              configMap: {name: build-cache}
-          container:
-            image: alpine
-            command: [sh, -c]
-            args: ["echo 'Building {{inputs.parameters.app-name}}' && sleep 3 && echo 'done' > /tmp/result.txt"]
-          outputs:
-            parameters:
-              - name: build-id
-                valueFrom: {path: /tmp/result.txt}
-  - apiVersion: argoproj.io/v1alpha1
-    kind: CronWorkflow
-    metadata:
-      name: scheduled-pipeline
-      namespace: argo
-    spec:
-      schedules:
-        - "*/5 * * * *"
-      startingDeadlineSeconds: 120
-      concurrencyPolicy: Forbid
-      workflowSpec:
-        entrypoint: main
-        onExit: cleanup
-        synchronization:
-          semaphores:
-            - configMapKeyRef: {name: deploy-semaphore, key: limit}
-        templates:
-          - name: main
-            dag:
-              tasks:
-                - name: build-app
-                  templateRef: {name: build-step, template: build}
-                  arguments:
-                    parameters: [{name: app-name, value: my-service}]
-                - name: approval
-                  template: pause
-                  dependencies: [build-app]
-                - name: deploy
-                  template: deploy-step
-                  dependencies: [approval]
-          - name: pause
-            suspend: {duration: "10s"}
-          - name: deploy-step
-            retryStrategy: {limit: 2, retryPolicy: OnError, backoff: {duration: 5s, factor: 2}}
-            container:
-              image: alpine
-              command: [sh, -c, "echo 'Deploying...' && sleep 2 && echo 'Done'"]
-          - name: cleanup
-            container:
-              image: alpine
-              command: [sh, -c]
-              args: ["echo 'Exit handler: {{workflow.name}} status={{workflow.status}}'"]
+# Save as pipeline-part1.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: build-step
+  namespace: argo
+spec:
+  templates:
+    - name: build
+      inputs:
+        parameters: [{name: app-name}]
+      memoize:
+        key: "build-{{inputs.parameters.app-name}}"
+        maxAge: "1h"
+        cache:
+          configMap: {name: build-cache}
+      container:
+        image: alpine:3.19
+        command: [sh, -c]
+        args: ["echo 'Building {{inputs.parameters.app-name}}' && sleep 3 && echo 'done' > /tmp/result.txt"]
+      outputs:
+        parameters:
+          - name: build-id
+            valueFrom: {path: /tmp/result.txt}
 ```
 
-Save the block above to `pipeline.yaml`.
+```yaml
+# Save as pipeline-part2.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: scheduled-pipeline
+  namespace: argo
+spec:
+  schedules:
+    - "*/5 * * * *"
+  startingDeadlineSeconds: 120
+  concurrencyPolicy: Forbid
+  workflowSpec:
+    entrypoint: main
+    onExit: cleanup
+    synchronization:
+      semaphores:
+        - configMapKeyRef: {name: deploy-semaphore, key: limit}
+    templates:
+      - name: main
+        dag:
+          tasks:
+            - name: build-app
+              templateRef: {name: build-step, template: build}
+              arguments:
+                parameters: [{name: app-name, value: my-service}]
+            - name: approval
+              template: pause
+              dependencies: [build-app]
+            - name: deploy
+              template: deploy-step
+              dependencies: [approval]
+      - name: pause
+        suspend: {duration: "10s"}
+      - name: deploy-step
+        retryStrategy: {limit: 2, retryPolicy: OnError, backoff: {duration: 5s, factor: 2}}
+        container:
+          image: alpine:3.19
+          command: [sh, -c, "echo 'Deploying...' && sleep 2 && echo 'Done'"]
+      - name: cleanup
+        container:
+          image: alpine:3.19
+          command: [sh, -c]
+          args: ["echo 'Exit handler: {{workflow.name}} status={{workflow.status}}'"]
+```
 
 ```bash
-kubectl apply -n argo -f pipeline.yaml
+kubectl apply -n argo -f pipeline-part1.yaml
+kubectl apply -n argo -f pipeline-part2.yaml
 # Manually trigger instead of waiting 5 min
 argo submit -n argo --from cronwf/scheduled-pipeline --watch
 # Run again to verify memoization (build step should be cached)
@@ -609,12 +609,12 @@ argo submit -n argo --from cronwf/scheduled-pipeline --watch
 
 ### Success Criteria
 
-- [ ] CronWorkflow successfully spawns child workflow objects on the required schedule.
-- [ ] Task effectively references external definitions using `templateRef`.
-- [ ] Memoization system circumvents redundant build container execution during subsequent manual triggers.
-- [ ] Suspend templates intercept execution, honoring timeout and manual resume signals.
-- [ ] Exit handler captures deterministic terminal parameters via `{{workflow.status}}`.
-- [ ] ConfigMap-backed semaphores guarantee that only 1 deployment thread executes concurrently.
+- [ ] CronWorkflow creates workflows on schedule
+- [ ] WorkflowTemplate referenced via `templateRef`
+- [ ] Memoization caches build on second run
+- [ ] Suspend template pauses and auto-resumes
+- [ ] Exit handler reports workflow status
+- [ ] Semaphore prevents concurrent runs
 
 ### Cleanup
 
@@ -624,18 +624,21 @@ kind delete cluster --name capa-lab
 
 ## Key Takeaways
 
-- [ ] Describe the nine distinct Argo template architectures and explicitly match use cases to functionality.
-- [ ] Construct CronWorkflows relying on multiple IANA timezones and hard concurrency replacements.
-- [ ] Design decoupled orchestration structures invoking WorkflowTemplates and ClusterWorkflowTemplates.
-- [ ] Formulate reactive exit handlers driving Slack alerts based strictly on `workflow.status`.
-- [ ] Enforce pipeline isolation utilizing plural arrays of mutexes and config-backed semaphores.
-- [ ] Diagnose caching pipeline degradation by ensuring output payloads stay underneath ConfigMap 1MB limitations.
-- [ ] Establish audit footprints via granular lifecycle hooks triggering across node initialization.
-- [ ] Parse expression vs. simple variable tags specifically applying expr-lang bounds effectively.
-- [ ] Tune retries targeting node anti-affinity mechanisms and exponential backoff intervals preventing localized crashes.
-- [ ] Deploy locked-down execution contexts relying on read-only root filesystems and targeted workload identity boundaries.
+- [ ] Describe all 9 template types and when to deploy each.
+- [ ] Configure CronWorkflows utilizing timezone, deadline, and concurrency arrays.
+- [ ] Create and reference WorkflowTemplates safely across namespace borders.
+- [ ] Implement robust exit handlers that dynamically branch on workflow status.
+- [ ] Protect sensitive infrastructure using synchronization mutexes and semaphores.
+- [ ] Configure memoization while strictly avoiding the 1MB ConfigMap hard limit.
+- [ ] Attach lifecycle hooks to satisfy external audit logging requirements.
+- [ ] Evaluate simple variable string tags versus dynamic expr-lang tags.
+- [ ] Design comprehensive retry strategies targeting specific infrastructure failures.
+- [ ] Apply least-privilege RBAC controls by binding dedicated service accounts per run.
+
+## Next Module
+
+Ready to move past standard orchestration and into event-driven patterns? Head over to [Module 1.2: Argo Events and Sensor Architecture](/platform/toolkits/cicd-delivery/ci-cd-pipelines/module-1.2-argo-events/) to learn how to dynamically trigger pipelines from external webhooks and message queues.
 
 ---
 
-*[Next up: Module 1.2: Extending Argo CD](/platform/toolkits/cicd-delivery/ci-cd-pipelines/module-1.2-extending-argo-cd/)*  
 *"Advanced workflows are not about complexity for its own sake. They are about making failure visible, recovery automatic, and operations completely predictable."*
