@@ -98,14 +98,13 @@ We don't try to cover everything. We cover what matters for passing.
 
 ### Reason 1: Time Efficiency
 
+```mermaid
+flowchart LR
+    A[Learning everything about Kubernetes] -->|6-12 months| B(Overwhelmed)
+    C[Passing CKA with focused study] -->|4-8 weeks| D(Certified)
 ```
-Learning everything about Kubernetes: 6-12 months
-Passing CKA with focused study: 4-8 weeks
 
-The difference: Focus
-```
-
-Certifications are gates, not destinations. Pass efficiently, then go deep on what your job requires.
+The difference is focus. Certifications are gates, not destinations. Pass efficiently, then go deep on what your job requires.
 
 ### Reason 2: Exam Relevance
 
