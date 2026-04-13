@@ -42,6 +42,8 @@ Within minutes, they draw a diagram on a whiteboard. Frontend retries on timeout
 
 The fix took 30 seconds: disable retries. The outage had lasted three hours because nobody had the right mental model to see what was happening.
 
+> **Stop and think**: If the database was perfectly healthy, what system behavior actually brought it down in this scenario?
+
 ---
 
 ## Why This Module Matters
@@ -85,54 +87,41 @@ When something goes wrong, there's usually an obvious fix: add more servers, inc
 
 They're also usually wrong.
 
+> **Pause and predict**: Before reading further, think about the last incident you handled. Did your team's fix involve changing a number (like a timeout) or changing a rule?
+
 **Leverage points** are places in a system where a small change can produce big results. Donella Meadows, the systems thinker behind "Limits to Growth," identified 12 leverage points, ranked from least to most effective.
 
 The counterintuitive insight: **the most obvious interventions are usually the weakest**.
 
-```
-THE LEVERAGE POINTS HIERARCHY
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    classDef weak fill:#f2f2f2,stroke:#333,stroke-width:1px;
+    classDef strong fill:#e6f3ff,stroke:#0066cc,stroke-width:2px;
 
-WEAK LEVERAGE                           STRONG LEVERAGE
-(Easy but ineffective)                  (Harder but transformative)
-      │                                         │
-      ▼                                         ▼
+    subgraph Weak ["WEAK LEVERAGE (Easy but ineffective)"]
+        direction TB
+        L12["12. Constants and parameters (numbers)<br/>'Increase timeout from 5s to 10s'"]
+        L11["11. Buffer sizes and stabilizing stocks<br/>'Increase connection pool from 50 to 100'"]
+        L10["10. Structure of material stocks and flows<br/>'Add a queue between services'"]
+        L9["9. Lengths of delays<br/>'Reduce metric collection interval'"]
+    end
 
-12. Constants and parameters (numbers)
-    "Increase timeout from 5s to 10s"
-    │
-11. Buffer sizes and stabilizing stocks
-    "Increase connection pool from 50 to 100"
-    │
-10. Structure of material stocks and flows
-    "Add a queue between services"
-    │
- 9. Lengths of delays
-    "Reduce metric collection interval"
-    │
- 8. Strength of balancing feedback loops
-    "Add autoscaling"
-    │
- 7. Gain around reinforcing feedback loops
-    "Add circuit breaker to stop retry storm"
-    │
- 6. Structure of information flows
-    "Add distributed tracing"
-    │
- 5. Rules of the system
-    "Change from 'no deploy Friday' to 'deploy anytime with canary'"
-    │
- 4. Power to add, change, or self-organize system structure
-    "Teams can create their own SLOs"
-    │
- 3. Goals of the system
-    "Optimize for reliability, not throughput"
-    │
- 2. Mindset or paradigm that created the system
-    "Users are partners, not problems"
-    │
- 1. Power to transcend paradigms
-    "All mental models are limited"
+    subgraph Strong ["STRONG LEVERAGE (Harder but transformative)"]
+        direction TB
+        L8["8. Strength of balancing feedback loops<br/>'Add autoscaling'"]
+        L7["7. Gain around reinforcing feedback loops<br/>'Add circuit breaker to stop retry storm'"]
+        L6["6. Structure of information flows<br/>'Add distributed tracing'"]
+        L5["5. Rules of the system<br/>'Change from no deploy Friday to deploy anytime with canary'"]
+        L4["4. Power to add, change, or self-organize system structure<br/>'Teams can create their own SLOs'"]
+        L3["3. Goals of the system<br/>'Optimize for reliability, not throughput'"]
+        L2["2. Mindset or paradigm that created the system<br/>'Users are partners, not problems'"]
+        L1["1. Power to transcend paradigms<br/>'All mental models are limited'"]
+    end
+
+    L12 --> L11 --> L10 --> L9 --> L8 --> L7 --> L6 --> L5 --> L4 --> L3 --> L2 --> L1
+    
+    class L12,L11,L10,L9 weak;
+    class L8,L7,L6,L5,L4,L3,L2,L1 strong;
 ```
 
 ### 1.2 Leverage Points in Action
@@ -165,81 +154,45 @@ Notice the pattern: **interventions at levels 12-11 are what everyone tries firs
 
 When you're in an incident or designing a system, ask these questions in order:
 
-```
-THE HIGH-LEVERAGE QUESTION SEQUENCE
-═══════════════════════════════════════════════════════════════
+### The High-Leverage Question Sequence
 
-1. REINFORCING LOOPS (Level 7)
-   "Where's the amplification?"
+1. **REINFORCING LOOPS (Level 7)**: *"Where's the amplification?"*
    - Is there a retry storm?
    - Is something filling up and making things worse?
    - Is success breeding more success (or failure breeding failure)?
+   - *Breaking a reinforcing loop is almost always high leverage.*
 
-   Breaking a reinforcing loop is almost always high leverage.
-
-2. INFORMATION GAPS (Level 6)
-   "Who doesn't have information they need?"
+2. **INFORMATION GAPS (Level 6)**: *"Who doesn't have information they need?"*
    - Can the on-call see what's happening?
    - Does the autoscaler know about the real load?
    - Can developers see the production impact of their code?
+   - *Adding visibility enables all other improvements.*
 
-   Adding visibility enables all other improvements.
-
-3. RULES (Level 5)
-   "What rule prevents the obvious solution?"
+3. **RULES (Level 5)**: *"What rule prevents the obvious solution?"*
    - Why can't we deploy the fix now?
    - Why do we retry on every error?
    - Why don't we have that circuit breaker?
+   - *Often the barrier is a rule nobody remembers making.*
 
-   Often the barrier is a rule nobody remembers making.
-
-4. GOALS (Level 3)
-   "What is the system actually optimizing for?"
+4. **GOALS (Level 3)**: *"What is the system actually optimizing for?"*
    - Is the team measured on features shipped or reliability?
    - Does the business prioritize speed or stability?
    - What gets celebrated vs. what gets punished?
-
-   Changing goals changes everything downstream.
-```
+   - *Changing goals changes everything downstream.*
 
 **Worked Example:**
 
-```
-SCENARIO: Frequent production incidents (3-4 per week)
-
-╔═══════════════════════════════════════════════════════════════╗
-║ Team's first instinct (Level 12):                             ║
-║ "Add more on-call engineers"                                  ║
-║                                                               ║
-║ Problem: More people doing the same broken process.           ║
-║ Incidents keep happening at the same rate.                    ║
-╚═══════════════════════════════════════════════════════════════╝
-
-╔═══════════════════════════════════════════════════════════════╗
-║ Better intervention (Level 8):                                ║
-║ "Add PagerDuty escalation policies"                           ║
-║                                                               ║
-║ Improvement: Better balancing loop for incident response.     ║
-║ Problem: Doesn't prevent incidents, just handles them better. ║
-╚═══════════════════════════════════════════════════════════════╝
-
-╔═══════════════════════════════════════════════════════════════╗
-║ High-leverage intervention (Level 6):                         ║
-║ "Replay production traffic in staging before every deploy"    ║
-║                                                               ║
-║ Impact: New information flow catches issues before production.║
-║ Incidents drop from 4/week to 1/month.                        ║
-╚═══════════════════════════════════════════════════════════════╝
-
-╔═══════════════════════════════════════════════════════════════╗
-║ Highest-leverage intervention (Level 3):                      ║
-║ "Team goal changes from 'ship features' to 'ship reliable    ║
-║ features' - with error budget enforcing the balance"          ║
-║                                                               ║
-║ Impact: Changes what the whole system optimizes for.          ║
-║ Incidents become rare because preventing them is now valued.  ║
-╚═══════════════════════════════════════════════════════════════╝
-```
+> **SCENARIO: Frequent production incidents (3-4 per week)**
+>
+> * **Team's first instinct (Level 12)**: "Add more on-call engineers"
+>   * **Problem**: More people doing the same broken process. Incidents keep happening at the same rate.
+> * **Better intervention (Level 8)**: "Add PagerDuty escalation policies"
+>   * **Improvement**: Better balancing loop for incident response.
+>   * **Problem**: Doesn't prevent incidents, just handles them better.
+> * **High-leverage intervention (Level 6)**: "Replay production traffic in staging before every deploy"
+>   * **Impact**: New information flow catches issues before production. Incidents drop from 4/week to 1/month.
+> * **Highest-leverage intervention (Level 3)**: "Team goal changes from 'ship features' to 'ship reliable features' - with error budget enforcing the balance"
+>   * **Impact**: Changes what the whole system optimizes for. Incidents become rare because preventing them is now valued.
 
 ---
 
@@ -249,32 +202,20 @@ SCENARIO: Frequent production incidents (3-4 per week)
 
 Imagine a bathtub. The water level is the **stock**—it's what you can measure at a point in time. The faucet is the **inflow**—water entering. The drain is the **outflow**—water leaving.
 
-```
-THE BATHTUB MODEL
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    Faucet["FAUCET<br/>(Inflow: gal/min)"] -->|Water Flow| WaterLevel["WATER LEVEL (Stock)<br/>(gallons at this moment)"]
+    WaterLevel -->|Water Flow| Drain["DRAIN<br/>(Outflow: gal/min)"]
 
-           FAUCET                              DRAIN
-       (Inflow: gal/min)                  (Outflow: gal/min)
-             │                                    │
-             │                                    │
-             ▼                                    │
-      ╔═════════════════════════════════════════╗│
-      ║                                         ║│
-      ║       WATER LEVEL (Stock)               ║┼─────▶
-      ║       (gallons at this moment)          ║│
-      ║                                         ║│
-      ╚═════════════════════════════════════════╝│
-
-If faucet runs faster than drain: Water level RISES
-If drain flows faster than faucet: Water level FALLS
-If they're equal: Water level STABLE
-
-This is the fundamental unit of all system dynamics.
+    classDef stock fill:#d4e6f1,stroke:#2874a6,stroke-width:2px;
+    class WaterLevel stock;
 ```
 
 Simple, right? But this model explains why queue depths grow, why memory fills up, why connection pools exhaust, and why incidents cascade.
 
 ### 2.2 Stocks and Flows in Operations
+
+> **Stop and think**: Where does "technical debt" fit in the stock-and-flow model? What is the inflow, and what is the outflow?
 
 | Stock (What accumulates) | Inflow (What adds) | Outflow (What removes) | Why It Matters |
 |--------------------------|-------------------|----------------------|----------------|
@@ -290,77 +231,36 @@ Simple, right? But this model explains why queue depths grow, why memory fills u
 
 **Example: Request Processing Pipeline**
 
+```mermaid
+flowchart TD
+    Incoming["Incoming requests<br/>Rate: 100/s"] --> Queue["REQUEST QUEUE<br/>Stock Level: Currently 50 items<br/>Max Capacity: 1000 items<br/>(If max -> HTTP 503)"]
+    Queue -->|Processed requests<br/>Rate: 100/s (healthy)<br/>Rate: 40/s (DB slow)| Processed{"Outcome"}
+    
+    Processed -->|95/s| Successes["Successes"]
+    Processed -->|5/s| Failures["Failures"]
+    
+    Failures -->|60% retry| Retries["Retries<br/>3/s"]
+    Retries -.->|Adds to inflow!| Incoming
+    
+    classDef stock fill:#d4e6f1,stroke:#2874a6,stroke-width:2px;
+    class Queue stock;
 ```
-REQUEST PROCESSING STOCK-AND-FLOW
-═══════════════════════════════════════════════════════════════
 
-                    Incoming requests
-                    ────────────────
-                    Rate: 100/s
-                           │
-                           │
-                           ▼
-╔═══════════════════════════════════════════════════════════╗
-║                                                           ║
-║                     REQUEST QUEUE                         ║
-║                                                           ║
-║   Stock Level: Currently 50 items                         ║
-║   Max Capacity: 1000 items                                ║
-║                                                           ║
-║   If stock hits max → requests dropped (HTTP 503)         ║
-║                                                           ║
-╚═══════════════════════════════════════════════════════════╝
-                           │
-                           │
-                           ▼
-                    Processed requests
-                    ──────────────────
-                    Rate: 100/s (when healthy)
-                    Rate: 40/s (when database slow)
-                           │
-                           │
-              ┌────────────┴────────────┐
-              │                         │
-              ▼                         ▼
-        ┌───────────┐            ┌───────────┐
-        │ Successes │            │ Failures  │
-        │   95/s    │            │    5/s    │
-        └───────────┘            └─────┬─────┘
-                                       │
-                                       │ 60% retry
-                                       ▼
-                               ┌───────────────┐
-                               │   Retries     │
-                               │   3/s         │
-                               └───────┬───────┘
-                                       │
-                                       │
-                                       ▼
-                              Back to "Incoming requests"
-                              (adds to inflow!)
+**What This Diagram Reveals:**
 
-
-═══════════════════════════════════════════════════════════════
-WHAT THIS DIAGRAM REVEALS:
-
-1. If incoming (100/s) = processing (100/s): Queue stable at 50
-
+1. If incoming (100/s) = processing (100/s): Queue stable at 50.
 2. If database slows (processing drops to 40/s):
-   - Queue grows by 60 items/second
-   - Queue full in ~16 seconds
-   - Then requests start dropping
-
+   - Queue grows by 60 items/second.
+   - Queue full in ~16 seconds.
+   - Then requests start dropping.
 3. Retries add 3/s to inflow when failing:
-   - Effective inflow becomes 103/s
-   - If failures increase, retries increase
+   - Effective inflow becomes 103/s.
+   - If failures increase, retries increase.
    - This is a reinforcing loop hiding in the diagram!
-
 4. The queue is your BUFFER:
-   - Small queue = fast response, but fragile
-   - Large queue = can absorb bursts, but high latency
-   - Choose based on your SLO
-═══════════════════════════════════════════════════════════════
-```
+   - Small queue = fast response, but fragile.
+   - Large queue = can absorb bursts, but high latency.
+   - Choose based on your SLO.
 
 ### 2.4 Using Stock-and-Flow for Incident Diagnosis
 
@@ -368,61 +268,25 @@ WHAT THIS DIAGRAM REVEALS:
 
 The mental model immediately tells you what to check:
 
-```
-STOCK-AND-FLOW INCIDENT DIAGNOSIS
-═══════════════════════════════════════════════════════════════
+### Stock-and-Flow Incident Diagnosis
 
-SYMPTOM: Queue depth (stock) is growing
-         Latency = Queue Depth / Processing Rate
-         Growing queue = growing latency
+**SYMPTOM**: Queue depth (stock) is growing. Latency = Queue Depth / Processing Rate. Growing queue = growing latency.
 
-DIAGNOSIS: Inflow > Outflow
+**DIAGNOSIS**: Inflow > Outflow. Two possibilities:
 
-Two possibilities:
+**POSSIBILITY A: INFLOW INCREASED**
+* **Traffic spike?** → Check: Load balancer request rate. Cause: Marketing campaign, viral content, attack.
+* **Retry storm?** → Check: Error rate and retry metrics. Cause: Downstream failure triggering retries.
+* **Batch job started?** → Check: Cron schedules, job queues. Cause: Nightly ETL, report generation.
+* **Backlog processing?** → Check: Was there recent downtime? Cause: System catching up on missed work.
 
-┌─────────────────────────────────────────────────────────────┐
-│ POSSIBILITY A: INFLOW INCREASED                             │
-├─────────────────────────────────────────────────────────────┤
-│ □ Traffic spike?                                            │
-│   → Check: Load balancer request rate                       │
-│   → Cause: Marketing campaign, viral content, attack        │
-│                                                             │
-│ □ Retry storm?                                              │
-│   → Check: Error rate and retry metrics                     │
-│   → Cause: Downstream failure triggering retries            │
-│                                                             │
-│ □ Batch job started?                                        │
-│   → Check: Cron schedules, job queues                       │
-│   → Cause: Nightly ETL, report generation                   │
-│                                                             │
-│ □ Backlog processing?                                       │
-│   → Check: Was there recent downtime?                       │
-│   → Cause: System catching up on missed work                │
-└─────────────────────────────────────────────────────────────┘
+**POSSIBILITY B: OUTFLOW DECREASED**
+* **Fewer workers?** → Check: Pod count, node status. Cause: Eviction, failed deployment, node failure.
+* **Slower processing?** → Check: Request latency breakdown. Cause: Database slow, dependency slow, CPU throttle.
+* **Resource contention?** → Check: CPU, memory, network, disk I/O. Cause: Noisy neighbor, resource limits hit.
+* **Lock contention?** → Check: Database locks, mutex waits. Cause: Blocking queries, deadlocks.
 
-┌─────────────────────────────────────────────────────────────┐
-│ POSSIBILITY B: OUTFLOW DECREASED                            │
-├─────────────────────────────────────────────────────────────┤
-│ □ Fewer workers?                                            │
-│   → Check: Pod count, node status                           │
-│   → Cause: Eviction, failed deployment, node failure        │
-│                                                             │
-│ □ Slower processing?                                        │
-│   → Check: Request latency breakdown                        │
-│   → Cause: Database slow, dependency slow, CPU throttle     │
-│                                                             │
-│ □ Resource contention?                                      │
-│   → Check: CPU, memory, network, disk I/O                   │
-│   → Cause: Noisy neighbor, resource limits hit              │
-│                                                             │
-│ □ Lock contention?                                          │
-│   → Check: Database locks, mutex waits                      │
-│   → Cause: Blocking queries, deadlocks                      │
-└─────────────────────────────────────────────────────────────┘
-
-Check each systematically. The answer is always:
-inflow went up OR outflow went down (or both).
-```
+*Check each systematically. The answer is always: inflow went up OR outflow went down (or both).*
 
 > **War Story: The Invisible Stock**
 >
@@ -447,249 +311,99 @@ inflow went up OR outflow went down (or both).
 
 Causal loop diagrams show how variables influence each other. They're the X-ray vision of systems thinking—revealing connections that dashboards hide.
 
-```
-CAUSAL LOOP NOTATION
-═══════════════════════════════════════════════════════════════
+### Causal Loop Notation
 
-POSITIVE (+) LINK: Same direction
-───────────────────────────────────────────────────────────────
+**POSITIVE (+) LINK: Same direction**
+When A increases, B increases. When A decreases, B decreases.
+*Examples:* Load (+)→ Latency (More load = more latency). Users (+)→ Revenue (More users = more revenue). Failures (+)→ Retries (More failures = more retries).
 
-A ───(+)───▶ B    When A increases, B increases
-                  When A decreases, B decreases
+**NEGATIVE (-) LINK: Opposite direction**
+When A increases, B decreases. When A decreases, B increases.
+*Examples:* Pods (-)→ CPU per pod (More pods = less CPU each). Cache hits (-)→ DB load (More cache hits = less DB load). Circuit open (-)→ Requests (Breaker open = fewer requests).
 
-Examples:
-- Load (+)→ Latency          More load = more latency
-- Users (+)→ Revenue         More users = more revenue
-- Failures (+)→ Retries      More failures = more retries
-
-
-NEGATIVE (-) LINK: Opposite direction
-───────────────────────────────────────────────────────────────
-
-A ───(−)───▶ B    When A increases, B decreases
-                  When A decreases, B increases
-
-Examples:
-- Pods (−)→ CPU per pod      More pods = less CPU each
-- Cache hits (−)→ DB load    More cache hits = less DB load
-- Circuit open (−)→ Requests Breaker open = fewer requests
-
-
-LOOP TYPES: Count the negative links
-───────────────────────────────────────────────────────────────
-
-REINFORCING (R): Even number of (−) links (0, 2, 4...)
-- Amplifies change
-- Creates exponential growth or collapse
-- Unstable without limits
-
-BALANCING (B): Odd number of (−) links (1, 3, 5...)
-- Opposes change
-- Creates stability or oscillation
-- Seeks equilibrium
-```
+**LOOP TYPES: Count the negative links**
+* **REINFORCING (R)**: Even number of (-) links (0, 2, 4...). Amplifies change, creates exponential growth or collapse, unstable without limits.
+* **BALANCING (B)**: Odd number of (-) links (1, 3, 5...). Opposes change, creates stability or oscillation, seeks equilibrium.
 
 ### 3.2 Mapping Real Systems
 
 **Example 1: The Retry Storm**
 
+```mermaid
+flowchart TD
+    subgraph R1 ["R1: DEATH SPIRAL (Reinforcing)"]
+        direction TB
+        Load["Load"] -- "(+)" --> Latency["Latency"]
+        Latency -- "(+)" --> Timeouts["Timeouts"]
+        Timeouts -- "(+)" --> Retries["Retries"]
+        Retries -- "(+)" --> Load
+    end
 ```
-THE ANATOMY OF A RETRY STORM (Causal Loop Diagram)
-═══════════════════════════════════════════════════════════════
-
-            ┌────────────────────────────────────────────────┐
-            │                                                │
-            │            R1: DEATH SPIRAL                    │
-            │            (Reinforcing Loop)                  │
-            │                                                │
-            │                    (+)                         │
-            └────────────────────┐                           │
-                                 │                           │
-                                 │                           │
-      ┌──────────────────────────┴───────────────┐           │
-      │                                          │           │
-      ▼                                          │           │
-┌──────────┐         (+)         ┌──────────┐    │    ┌──────┴─────┐
-│   Load   │────────────────────▶│ Latency  │────┴───▶│  Timeouts  │
-│          │                     │          │         │            │
-└────┬─────┘                     └──────────┘         └──────┬─────┘
-     │                                                       │
-     │                                                       │
-     │                                                (+)    │
-     │                                                       │
-     │         ┌──────────┐                                  │
-     └─────────│ Retries  │◀────────────────────────────────┘
-       (+)     │          │
-               └──────────┘
-
-READING THE LOOP:
-────────────────────────────────────────────────────────────────
-Load ↑ → Latency ↑ → Timeouts ↑ → Retries ↑ → Load ↑ (more!)
-
-All links are positive (+) = 0 negative links = REINFORCING
-
-This loop has no natural stopping point.
-It will grow exponentially until something breaks.
-```
+*Reading the Loop: Load ↑ → Latency ↑ → Timeouts ↑ → Retries ↑ → Load ↑ (more!). All links are positive (+) = 0 negative links = REINFORCING. This loop has no natural stopping point. It will grow exponentially until something breaks.*
 
 **Example 2: Autoscaling (the Savior)**
 
+```mermaid
+flowchart TD
+    subgraph B1 ["B1: AUTOSCALER (Balancing)"]
+        direction TB
+        CPU["CPU Usage"] -- "(+)" --> Compare["Compare to Target (70%)"]
+        Compare -- "(+)" --> Decision["Scaling Decision"]
+        Decision -- "(+)" --> Pods["Pod Count"]
+        Pods -- "(-)" --> CPU
+    end
 ```
-AUTOSCALING AS A BALANCING LOOP
-═══════════════════════════════════════════════════════════════
-
-                    ┌───────────────────────────────────────┐
-                    │                                       │
-                    │       B1: AUTOSCALER                  │
-                    │       (Balancing Loop)                │
-                    │                                       │
-                    │                 (−)                   │
-                    └───────────────────────────────────────┘
-                                      │
-                                      │
-                                      │
-                  ┌───────────────────┘
-                  │
-                  │                        Target: 70% CPU
-                  │                              │
-                  ▼                              │
-            ┌──────────┐                   ┌─────┴─────┐
-            │   CPU    │─────────(+)──────▶│  Compare  │
-            │  Usage   │                   │ to Target │
-            └────┬─────┘                   └─────┬─────┘
-                 │                               │
-                 │                               │
-                 │                               │ (+)
-                 │                               │
-                 │                         ┌─────▼─────┐
-                 │                         │  Scaling  │
-                 │                         │  Decision │
-                 │                         └─────┬─────┘
-                 │                               │
-                 │                               │ (+)
-                 │                               │
-                 │         ┌──────────┐          │
-                 └────(−)──│   Pod    │◀─────────┘
-                           │  Count   │
-                           └──────────┘
-
-READING THE LOOP:
-────────────────────────────────────────────────────────────────
-CPU ↑ → Decision: scale up → Pods ↑ → CPU per pod ↓
-
-One negative link (more pods = less CPU) = BALANCING
-
-This loop opposes change. High CPU triggers more pods,
-which reduces CPU. System seeks equilibrium.
-
-BUT: If there are delays, it can oscillate!
-(See Module 1.2 on delays)
-```
+*Reading the Loop: CPU ↑ → Decision: scale up → Pods ↑ → CPU per pod ↓. One negative link (more pods = less CPU) = BALANCING. This loop opposes change. High CPU triggers more pods, which reduces CPU. System seeks equilibrium. BUT: If there are delays, it can oscillate!*
 
 **Example 3: The Complex Reality**
 
+```mermaid
+flowchart TD
+    Load["Load"] -- "(+)" --> Latency["Latency"]
+    Latency -- "(+)" --> Timeouts["Timeouts"]
+    Timeouts -- "(+)" --> Retries["Retries"]
+    Retries -- "(+)" --> Load
+    
+    Latency -- "(+)" --> Pods["Pods"]
+    Pods -- "(-)" --> Latency
+    
+    Timeouts -- "(+)" --> CircuitState["Circuit State (Open)"]
+    CircuitState -- "(-)" --> Load
 ```
-MICROSERVICE UNDER STRESS: COMPLETE PICTURE
-═══════════════════════════════════════════════════════════════
 
-               ┌─────────────────────────────────────────────────┐
-               │        R1: RETRY STORM                          │
-               │        (Reinforcing - DANGER)                   │
-               │                                                 │
-               │                      (+)                        │
-               └───────────────────────┐                         │
-                                       │                         │
-   ┌──────────────────────────────────┐│  ┌───────────────────────┐
-   │         B2: AUTOSCALER           ││  │      B3: CIRCUIT      │
-   │         (Balancing)              ││  │      BREAKER          │
-   │                                  ││  │      (Balancing)      │
-   │                 (−)              ││  │             (−)       │
-   └───────────────────┐              ││  └───────────────────────┘
-                       │              ││              │
-                       │              ││              │
-      ┌────────────────┼──────────────┼┼──────────────┼──────────────┐
-      │                │              ││              │              │
-      │                ▼              ▼│              ▼              │
-      │          ┌──────────┐   ┌─────┴────┐   ┌──────────┐         │
-      │          │   Pods   │   │   Load   │   │ Circuit  │         │
-      │          │          │   │          │   │  State   │         │
-      │          └────┬─────┘   └────┬─────┘   └────┬─────┘         │
-      │               │              │              │               │
-      │               │              │ (+)          │               │
-      │        (−)    │              │              │ (−)           │
-      │               │              │              │               │
-      │               │         ┌────▼────┐        │               │
-      │               └────────▶│ Latency │◀───────┘               │
-      │                         │         │                        │
-      │                         └────┬────┘                        │
-      │                              │                             │
-      │                              │ (+)                         │
-      │                              │                             │
-      │                         ┌────▼────┐                        │
-      │                         │Timeouts │                        │
-      │                         │         │                        │
-      │                         └────┬────┘                        │
-      │                              │                             │
-      │                              │ (+)                         │
-      │                              │                             │
-      │                         ┌────▼────┐                        │
-      │                         │ Retries │────────────────────────┘
-      │                         │         │        (+)
-      │                         └─────────┘
-      │                              │
-      │                              │ (+)
-      │                              └────────────────▶ BACK TO LOAD
-      │
-      └────────────────────────────────────────────────────────────
+*Three Loops Interacting:*
+* **R1 (Retry Storm)**: Load → Latency → Timeouts → Retries → Load. DANGEROUS: Exponential growth toward failure.
+* **B2 (Autoscaler)**: Load → Latency → Pods → Latency. PROTECTIVE: Adds capacity to handle load. BUT: Has delays, might oscillate.
+* **B3 (Circuit Breaker)**: Timeouts → Circuit opens → Load drops → Latency drops. PROTECTIVE: Breaks the retry storm. FASTEST: Acts immediately when failures spike.
 
-
-THREE LOOPS INTERACTING:
-────────────────────────────────────────────────────────────────
-R1 (Retry Storm): Load → Latency → Timeouts → Retries → Load
-   → DANGEROUS: Exponential growth toward failure
-
-B2 (Autoscaler): Load → Latency → Pods → Latency
-   → PROTECTIVE: Adds capacity to handle load
-   → BUT: Has delays, might oscillate
-
-B3 (Circuit Breaker): Timeouts → Circuit opens → Load drops → Latency drops
-   → PROTECTIVE: Breaks the retry storm
-   → FASTEST: Acts immediately when failures spike
-
-ANALYSIS: B3 (circuit breaker) protects against R1 (retry storm)
-          B2 (autoscaler) handles sustained load
-          Without B3, R1 can overwhelm B2's ability to respond
-```
+*Analysis: B3 (circuit breaker) protects against R1 (retry storm). B2 (autoscaler) handles sustained load. Without B3, R1 can overwhelm B2's ability to respond.*
 
 ### 3.3 Using Causal Loops for Design
 
 Before building any feature that involves feedback, draw the loops:
 
-```
-CAUSAL LOOP DESIGN CHECKLIST
-═══════════════════════════════════════════════════════════════
+### Causal Loop Design Checklist
 
-1. IDENTIFY ALL LOOPS
-   □ What feedback mechanisms exist?
-   □ Are they reinforcing or balancing?
-   □ Are there hidden loops you haven't considered?
+1. **IDENTIFY ALL LOOPS**
+   * [ ] What feedback mechanisms exist?
+   * [ ] Are they reinforcing or balancing?
+   * [ ] Are there hidden loops you haven't considered?
 
-2. ASSESS EACH LOOP
-   □ What triggers it?
-   □ What delays are involved?
-   □ What limits exist?
-   □ What happens at the limits?
+2. **ASSESS EACH LOOP**
+   * [ ] What triggers it?
+   * [ ] What delays are involved?
+   * [ ] What limits exist?
+   * [ ] What happens at the limits?
 
-3. CHECK LOOP INTERACTIONS
-   □ Can reinforcing loops overpower balancing ones?
-   □ Can balancing loops fight each other?
-   □ Is there a sequence where loops activate?
+3. **CHECK LOOP INTERACTIONS**
+   * [ ] Can reinforcing loops overpower balancing ones?
+   * [ ] Can balancing loops fight each other?
+   * [ ] Is there a sequence where loops activate?
 
-4. DESIGN SAFETY MECHANISMS
-   □ Every reinforcing loop needs a circuit breaker
-   □ Every balancing loop needs appropriate delays
-   □ Every loop needs observability
-```
+4. **DESIGN SAFETY MECHANISMS**
+   * [ ] Every reinforcing loop needs a circuit breaker.
+   * [ ] Every balancing loop needs appropriate delays.
+   * [ ] Every loop needs observability.
 
 > **Gotcha: Fighting Autoscalers**
 >
@@ -714,54 +428,22 @@ CAUSAL LOOP DESIGN CHECKLIST
 
 When an incident occurs, use all three models in sequence:
 
-```
-MENTAL MODEL INCIDENT FRAMEWORK
-═══════════════════════════════════════════════════════════════
+### Mental Model Incident Framework
 
-STEP 1: STOCK-AND-FLOW (What's accumulating?)
-────────────────────────────────────────────────────────────────
-"Something is growing that shouldn't be."
+**STEP 1: STOCK-AND-FLOW (What's accumulating?)**
+*"Something is growing that shouldn't be."*
+* **Ask**: What stocks are changing? Is inflow > outflow? Where's the bottleneck?
+* **Quick checks**: Queue depths, connection pool usage, memory trends, error counts.
 
-Ask:
-- What stocks are changing? (queue, connections, memory, errors)
-- Is inflow > outflow?
-- Where's the bottleneck?
+**STEP 2: CAUSAL LOOPS (Why is it accumulating?)**
+*"What's driving the accumulation?"*
+* **Ask**: Is there a reinforcing loop amplifying the problem? Is a balancing loop broken or overwhelmed? What feedback is missing?
+* **Quick checks**: Retry rates (retry storm?), autoscaler behavior (fighting or oscillating?), circuit breaker states.
 
-Quick checks:
-- Queue depths
-- Connection pool usage
-- Memory trends
-- Error counts
-
-STEP 2: CAUSAL LOOPS (Why is it accumulating?)
-────────────────────────────────────────────────────────────────
-"What's driving the accumulation?"
-
-Ask:
-- Is there a reinforcing loop amplifying the problem?
-- Is a balancing loop broken or overwhelmed?
-- What feedback is missing?
-
-Quick checks:
-- Retry rates (retry storm?)
-- Autoscaler behavior (fighting or oscillating?)
-- Circuit breaker states (open, closed, half-open?)
-
-STEP 3: LEVERAGE POINTS (Where to intervene?)
-────────────────────────────────────────────────────────────────
-"What's the highest-leverage fix?"
-
-Ask:
-- Can we break a reinforcing loop? (Level 7)
-- Can we add information? (Level 6)
-- Do we need to change a rule? (Level 5)
-- Or just tune a parameter temporarily? (Level 12)
-
-Quick checks:
-- What's the immediate need (stop bleeding)?
-- What's the root cause fix?
-- What prevents this from recurring?
-```
+**STEP 3: LEVERAGE POINTS (Where to intervene?)**
+*"What's the highest-leverage fix?"*
+* **Ask**: Can we break a reinforcing loop? Can we add information? Do we need to change a rule? Or just tune a parameter?
+* **Quick checks**: What's the immediate need (stop bleeding)? What's the root cause fix? What prevents this from recurring?
 
 ### 4.2 Worked Example: Database Connection Exhaustion
 
@@ -769,70 +451,30 @@ Quick checks:
 
 **Step 1: Stock-and-Flow Analysis**
 
+```mermaid
+flowchart TD
+    Incoming["New queries<br/>Rate: 50/s"] --> Pool["ACTIVE CONNECTIONS<br/>Stock: 200 (AT MAX!)<br/>Max: 200"]
+    Pool -->|Rate: 20/s (!!)| Completed["Completed queries"]
+    
+    classDef stock fill:#d4e6f1,stroke:#2874a6,stroke-width:2px;
+    class Pool stock;
 ```
-CURRENT STATE:
-═══════════════════════════════════════════════════════════════
-
-         New queries                Completed queries
-         ───────────                 ─────────────────
-         Rate: 50/s                  Rate: 20/s (!!)
-              │                            │
-              │                            │
-              ▼                            │
-       ╔══════════════════════════════════╗│
-       ║                                  ║│
-       ║     ACTIVE CONNECTIONS           ║┼───▶
-       ║                                  ║│
-       ║     Stock: 200 (AT MAX!)         ║│
-       ║     Max: 200                     ║│
-       ║                                  ║│
-       ╚══════════════════════════════════╝│
-
-Inflow (50/s) > Outflow (20/s) = Stock was growing
-Stock hit max (200) = New queries can't get connections
-
-Why is outflow only 20/s when it should be 50/s?
-→ Queries are taking 10x longer than normal (1s vs 100ms)
-→ Connections held 10x longer
-→ Pool saturated with slow queries
-```
+*Inflow (50/s) > Outflow (20/s) = Stock was growing. Stock hit max (200) = New queries can't get connections.*
+*Why is outflow only 20/s when it should be 50/s? Queries are taking 10x longer than normal (1s vs 100ms). Connections held 10x longer. Pool saturated with slow queries.*
 
 **Step 2: Causal Loop Analysis**
 
+```mermaid
+flowchart TD
+    subgraph R1 ["R1: CONTENTION SPIRAL (Reinforcing)"]
+        direction TB
+        Queries["Concurrent Queries"] -- "(+)" --> Contention["Lock Contention"]
+        Contention -- "(+)" --> Latency["Query Latency"]
+        Latency -- "(+)" --> Held["Connections Held"]
+        Held -- "(+)" --> Queries
+    end
 ```
-WHY ARE QUERIES SLOW?
-═══════════════════════════════════════════════════════════════
-
-            ┌────────────────────────────────────────────────┐
-            │                                                │
-            │         R1: CONTENTION SPIRAL                  │
-            │         (Reinforcing - This is the killer)     │
-            │                                                │
-            └────────────────────────────────────────────────┘
-                                   ▲
-                                   │
-┌──────────────┐      (+)     ┌────┴───────┐      (+)     ┌──────────────┐
-│ Concurrent   │─────────────▶│   Lock     │─────────────▶│    Query     │
-│   Queries    │              │ Contention │              │   Latency    │
-└──────────────┘              └────────────┘              └──────┬───────┘
-       ▲                                                         │
-       │                                                         │
-       │                           (+)                           │
-       │                                                         │
-       │                    ┌────────────┐                       │
-       └────────────────────│ Connections│◀──────────────────────┘
-                            │    Held    │
-                            └────────────┘
-
-READING: More concurrent queries → more lock contention
-         More contention → slower queries
-         Slower queries → connections held longer
-         Connections held → more concurrent queries (waiting)
-         → More contention → slower → held longer → ...
-
-This is REINFORCING. It has no natural stopping point.
-The database will get slower and slower until it dies.
-```
+*Reading: More concurrent queries → more lock contention. More contention → slower queries. Slower queries → connections held longer. Connections held → more concurrent queries (waiting). This is REINFORCING. It has no natural stopping point. The database will get slower and slower until it dies.*
 
 **Step 3: Leverage Point Analysis**
 
@@ -848,41 +490,21 @@ The database will get slower and slower until it dies.
 
 **Action Plan**:
 
-```
-IMMEDIATE (next 5 minutes):
-────────────────────────────────────────────────────────────────
-→ Kill long-running queries (break the loop now)
-  Command: Kill queries running > 30 seconds
+**IMMEDIATE (next 5 minutes):**
+* **Kill long-running queries** (break the loop now): Command to kill queries running > 30 seconds.
+* **Reduce connection pool temporarily** (counterintuitive!): Fewer concurrent queries = less contention = faster queries. Pool: 200 → 50.
 
-→ Reduce connection pool temporarily (counterintuitive!)
-  Why: Fewer concurrent queries = less contention = faster queries
-  Pool: 200 → 50
+**SHORT-TERM (next hour):**
+* **Add query timeouts** (change rules): Every query gets a 5-second timeout, no exceptions.
+* **Identify the slow queries** (add information): Enable slow query log, threshold = 500ms.
 
-SHORT-TERM (next hour):
-────────────────────────────────────────────────────────────────
-→ Add query timeouts (change rules)
-  Every query gets 5 second timeout, no exceptions
+**MEDIUM-TERM (next sprint):**
+* **Add circuit breaker on database calls** (break reinforcing loop): If 5 failures in 30 seconds, return cached/default value.
+* **Add read replica for heavy queries** (structural change): Route reporting queries to replica.
 
-→ Identify the slow queries (add information)
-  Enable slow query log, threshold = 500ms
-
-MEDIUM-TERM (next sprint):
-────────────────────────────────────────────────────────────────
-→ Add circuit breaker on database calls (break reinforcing loop)
-  If 5 failures in 30 seconds, return cached/default value
-
-→ Add read replica for heavy queries (structural change)
-  Route reporting queries to replica
-
-LONG-TERM (next quarter):
-────────────────────────────────────────────────────────────────
-→ Add database connection observability (information flow)
-  Dashboard showing: active connections, query times, lock waits
-
-→ Change team goal (highest leverage)
-  "Every query must be explainable and have an index"
-  Review before merge, not after incident
-```
+**LONG-TERM (next quarter):**
+* **Add database connection observability** (information flow): Dashboard showing active connections, query times, lock waits.
+* **Change team goal** (highest leverage): "Every query must be explainable and have an index". Review before merge, not after incident.
 
 ---
 
@@ -914,84 +536,32 @@ LONG-TERM (next quarter):
 
 ## Quiz
 
-1. **Why are high-leverage interventions often counterintuitive?**
+1. **During a major Black Friday event, the checkout service starts dropping requests. The on-call engineer's first instinct is to double the connection pool size, but the incident commander instead asks to enable a circuit breaker that will drop 10% of traffic immediately. Why is the incident commander's approach considered higher leverage?**
    <details>
    <summary>Answer</summary>
 
-   High-leverage interventions are counterintuitive because:
-
-   1. **They don't look like action**: Changing a goal or adding observability doesn't feel like "doing something." Increasing a timeout feels productive even though it's low leverage.
-
-   2. **They require systemic understanding**: Finding the reinforcing loop or the missing information flow requires stepping back from the symptoms.
-
-   3. **Results are delayed**: Structural changes take time to show effects. Parameter changes show immediate (if temporary) improvement.
-
-   4. **They challenge assumptions**: The highest leverage often involves changing rules or goals that nobody wants to question.
-
-   We're biased toward visible, immediate action. The best interventions often look like "doing nothing" from outside the system.
+   The incident commander's approach operates at a higher leverage point (Level 7: breaking a reinforcing loop) compared to the engineer's approach (Level 11: increasing buffer sizes). Doubling the connection pool only delays the inevitable by providing a larger buffer to fill up, which is a weak intervention. In contrast, the circuit breaker actively prevents the system from entering a death spiral by breaking the reinforcing loop of retries and resource exhaustion. By shedding load early, the system can recover and process the remaining 90% of traffic successfully, rather than crashing entirely. This demonstrates why the most effective interventions often feel counterintuitive or punitive in the moment.
    </details>
 
-2. **How do you diagnose a growing stock (like queue depth)?**
+2. **You are investigating an alert for 'High API Latency'. Looking at the dashboard, you see the active request queue has grown from a steady 50 items to over 800 items in the last five minutes. Walk through the diagnostic branching process you would use to determine the cause of this accumulation.**
    <details>
    <summary>Answer</summary>
 
-   A growing stock means **inflow > outflow**. Diagnosis has two branches:
-
-   **Either inflow increased:**
-   - Traffic spike (marketing, attack, viral content)
-   - Retry storm (failures causing retries)
-   - Batch job started
-   - Backlog processing after downtime
-
-   **Or outflow decreased:**
-   - Fewer workers (pods crashed, scaled down)
-   - Slower processing (database, dependencies)
-   - Resource contention (CPU, memory, network)
-   - Lock contention (deadlocks, blocking queries)
-
-   Check both systematically:
-   1. Compare current inflow rate to baseline
-   2. Compare current outflow rate to baseline
-   3. The one that changed is your answer
-   4. Trace that change to root cause
+   A growing queue depth indicates a fundamental imbalance where the inflow of requests exceeds the outflow (processing rate). To diagnose this, you must first investigate if the inflow has increased unexpectedly by checking metrics like load balancer request rates for traffic spikes or retry storms. If the inflow is normal, you must investigate if the outflow has decreased by checking for issues like node failures, CPU throttling, or downstream database latency. By systematically isolating whether the faucet was turned up or the drain got clogged, you eliminate half of the potential root causes immediately. This structured approach prevents engineers from guessing and directs them to the exact metrics needed to confirm the hypothesis.
    </details>
 
-3. **How do you identify if a causal loop is reinforcing or balancing?**
+3. **Your team implements a new caching layer. When cache hit rates are high, database load drops, which makes cache population queries faster, encouraging more cache usage. However, when the cache is cold, database load spikes, making cache population fail, leading to more cache misses. What type of causal loop is this, and how can you mathematically prove it using link polarities?**
    <details>
    <summary>Answer</summary>
 
-   Count the negative (-) links in the loop:
-   - **Even number (0, 2, 4...)**: Reinforcing loop (amplifies change)
-   - **Odd number (1, 3, 5...)**: Balancing loop (opposes change)
-
-   Alternative method—trace manually:
-   - Start: "If A increases..."
-   - Trace through all links
-   - End: "...does A increase more (reinforcing) or decrease (balancing)?"
-
-   Common examples:
-   - Retry storm: Load(+)→Latency(+)→Timeouts(+)→Retries(+)→Load = 0 negatives = **Reinforcing**
-   - Autoscaler: Load(+)→Pods(+)→LoadPerPod(-)→Load = 1 negative = **Balancing**
-   - Cache: Requests(+)→CacheHits(+)→DBLoad(-)→Latency(-)→Requests = 2 negatives = **Reinforcing** (growth via caching benefit)
+   This scenario describes a reinforcing loop, which amplifies change and leads to either exponential success or a death spiral. You can prove this mathematically by mapping the variables and counting the negative links: Cache Misses (+) -> DB Load (+) -> Cache Population Failure (+) -> Cache Misses. Since all links are positive (moving in the same direction), the total count of negative links is zero (an even number), confirming it is a reinforcing loop. If it were a balancing loop, it would contain an odd number of negative links and naturally seek equilibrium, rather than spiraling out of control when stressed.
    </details>
 
-4. **Why is "add more information flow" often a high-leverage intervention?**
+4. **A team has experienced three database exhaustion incidents this month. Leadership wants to rewrite the data access layer in Rust for better performance. Instead, the Staff Engineer suggests spending a week adding distributed tracing and query attribution headers. Why is the Staff Engineer's proposal likely to be a much higher-leverage intervention than the rewrite?**
    <details>
    <summary>Answer</summary>
 
-   Information flow is high leverage (Level 6) because:
-
-   1. **Feedback requires information**: Without seeing the problem, the system literally cannot correct itself. No metrics = no autoscaling = no alerting.
-
-   2. **It enables other loops**: Autoscaling, circuit breakers, alerting—all depend on information. Add visibility, and many problems become auto-correcting.
-
-   3. **It changes decisions**: When developers see the production impact of their code (APM, profiling, error tracking), they write different code.
-
-   4. **It persists**: Once you add observability, it keeps providing value for every future incident.
-
-   Classic example: Adding distributed tracing doesn't fix latency directly, but it reveals exactly where time goes. This information enables targeted fixes that would otherwise require guessing.
-
-   Another example: Adding error budget visibility to a team dashboard changes behavior without changing any rules—people naturally protect what they can see.
+   Adding information flow is a Level 6 leverage point because it changes how the system and its operators perceive reality, enabling better decisions across the board. A rewrite without observability might just recreate the same bottlenecks faster, as the team still wouldn't know *which* queries are causing the exhaustion. By adding tracing and attribution, the team gains the missing feedback loop needed to identify the exact problematic query patterns. This visibility will likely reveal that a simple index or a minor code change can solve the problem, saving months of unnecessary rewrite effort. Information interventions are powerful because they permanently improve the team's ability to navigate the system.
    </details>
 
 ---
@@ -1077,21 +647,18 @@ kubectl delete namespace stocks-lab
 
 **Scenario**: You operate a web application with this architecture:
 
+```mermaid
+flowchart LR
+    Users["Users"] --> LB["Load Balancer"]
+    LB --> API["API Pods (HPA)"]
+    API --> DB["Database"]
+    API --> Redis["Redis Cache"]
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│   Users ──▶ Load Balancer ──▶ API Pods (HPA) ──▶ Database  │
-│                                      │                      │
-│                                      ▼                      │
-│                               Redis Cache                   │
-│                                                             │
-│   Current issues:                                           │
-│   - Latency spikes every hour (on the hour)                │
-│   - Occasional cascading failures during traffic spikes    │
-│   - Cache hit rate drops from 95% to 60% periodically      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+
+**Current issues:**
+- Latency spikes every hour (on the hour)
+- Occasional cascading failures during traffic spikes
+- Cache hit rate drops from 95% to 60% periodically
 
 **Your Analysis:**
 
@@ -1154,3 +721,4 @@ For "cascading failures during traffic spikes," list interventions:
 ## Next Module
 
 [Module 1.4: Complexity and Emergent Behavior](../module-1.4-complexity-and-emergent-behavior/) - The Cynefin framework for decision-making, why complex systems fail unpredictably, and how to design for resilience in environments you can't fully understand.
+---
