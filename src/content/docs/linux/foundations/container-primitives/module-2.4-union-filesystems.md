@@ -60,35 +60,17 @@ A **union filesystem** merges multiple directories (layers) into a single unifie
 
 > **Stop and think**: If you delete a file in a container that originated from the base image, how does the filesystem remember it's deleted without actually modifying the read-only base image?
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    UNION FILESYSTEM VIEW                         │
-│                                                                  │
-│                     What the container sees:                     │
-│                     ┌─────────────────────┐                     │
-│                     │ /                   │                     │
-│                     │ ├── bin/            │                     │
-│                     │ ├── etc/nginx/      │                     │
-│                     │ ├── var/log/        │                     │
-│                     │ └── app/myapp       │                     │
-│                     └─────────────────────┘                     │
-│                              ▲                                   │
-│                              │                                   │
-│              ┌───────────────┴───────────────┐                  │
-│              │    Union/Merge Operation      │                  │
-│              └───────────────────────────────┘                  │
-│                      ▲       ▲       ▲                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │ Container    │  │ Image Layer  │  │ Base Layer   │          │
-│  │ Layer (RW)   │  │    (RO)      │  │    (RO)      │          │
-│  │              │  │              │  │              │          │
-│  │ /var/log/    │  │ /etc/nginx/  │  │ /bin/        │          │
-│  │   app.log    │  │   nginx.conf │  │   bash       │          │
-│  │ /app/myapp   │  │              │  │   ls         │          │
-│  │   (modified) │  │              │  │              │          │
-│  └──────────────┘  └──────────────┘  └──────────────┘          │
-│      upperdir          lowerdir          lowerdir               │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart BT
+    Merged["/merged (Unified View) <br><br> / <br> ├── bin/ <br> ├── etc/nginx/ <br> ├── var/log/ <br> └── app/myapp"]
+
+    Upper["Container Layer (RW)<br><i>upperdir</i><br>/var/log/app.log<br>/app/myapp (modified)"]
+    Lower1["Image Layer (RO)<br><i>lowerdir</i><br>/etc/nginx/nginx.conf"]
+    Lower2["Base Layer (RO)<br><i>lowerdir</i><br>/bin/bash, ls"]
+
+    Upper -->|Union/Merge| Merged
+    Lower1 -->|Union/Merge| Merged
+    Lower2 -->|Union/Merge| Merged
 ```
 
 ### Key Concepts
@@ -110,32 +92,28 @@ A **union filesystem** merges multiple directories (layers) into a single unifie
 
 ### How OverlayFS Works
 
+```bash
+# Mount command:
+mount -t overlay overlay -o \
+  lowerdir=/lower1:/lower2, \
+  upperdir=/upper, \
+  workdir=/work \
+  /merged
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        OVERLAYFS                                 │
-│                                                                  │
-│  Mount command:                                                  │
-│  mount -t overlay overlay -o \                                  │
-│    lowerdir=/lower1:/lower2, \                                  │
-│    upperdir=/upper, \                                           │
-│    workdir=/work \                                              │
-│    /merged                                                       │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────┐     │
-│  │                    /merged (unified view)               │     │
-│  └────────────────────────────────────────────────────────┘     │
-│                              ▲                                   │
-│      ┌───────────────────────┼───────────────────────┐          │
-│      │                       │                       │          │
-│  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐              │
-│  │/upper  │  │/work   │  │/lower1 │  │/lower2 │              │
-│  │(RW)    │  │(scratch│  │(RO)    │  │(RO)    │              │
-│  │        │  │ space) │  │        │  │        │              │
-│  └────────┘  └────────┘  └────────┘  └────────┘              │
-│                                                                  │
-│  Changes go    Temporary      Image layers (read-only,          │
-│  here          operations     stacked with lower1 on top)       │
-└─────────────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart BT
+    Merged["/merged (unified view)"]
+
+    Upper["/upper (RW)<br>Changes go here"]
+    Work["/work (scratch space)<br>Temporary operations"]
+    Lower1["/lower1 (RO)<br>Image layers (stacked)"]
+    Lower2["/lower2 (RO)<br>Image layers (base)"]
+
+    Upper --> Merged
+    Lower1 --> Merged
+    Lower2 --> Merged
+    Work -.->|internal| Upper
 ```
 
 ### OverlayFS Operations
@@ -204,27 +182,21 @@ rm -rf /tmp/overlay
 
 ### Anatomy of an Image
 
+```bash
+docker pull nginx:alpine
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    DOCKER IMAGE STRUCTURE                        │
-│                                                                  │
-│  docker pull nginx:alpine                                       │
-│                                                                  │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │ Layer 5: COPY nginx.conf /etc/nginx/ (2KB)              │    │
-│  ├─────────────────────────────────────────────────────────┤    │
-│  │ Layer 4: RUN apk add nginx (10MB)                       │    │
-│  ├─────────────────────────────────────────────────────────┤    │
-│  │ Layer 3: RUN apk update (5MB)                           │    │
-│  ├─────────────────────────────────────────────────────────┤    │
-│  │ Layer 2: ENV PATH=/usr/local/sbin:... (metadata only)   │    │
-│  ├─────────────────────────────────────────────────────────┤    │
-│  │ Layer 1: Alpine base image (5MB)                        │    │
-│  └─────────────────────────────────────────────────────────┘    │
-│                                                                  │
-│  Total: ~22MB (but shared with other alpine-based images)       │
-└─────────────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart TB
+    L5["Layer 5: COPY nginx.conf /etc/nginx/ (2KB)"]
+    L4["Layer 4: RUN apk add nginx (10MB)"]
+    L3["Layer 3: RUN apk update (5MB)"]
+    L2["Layer 2: ENV PATH=/usr/local/sbin:... (metadata only)"]
+    L1["Layer 1: Alpine base image (5MB)"]
+
+    L5 --- L4 --- L3 --- L2 --- L1
 ```
+*Total: ~22MB (but shared with other alpine-based images)*
 
 ### Viewing Image Layers
 
@@ -241,20 +213,14 @@ ls /var/lib/docker/overlay2/
 
 ### Layer Sharing
 
-```
-Container 1 (nginx:alpine)    Container 2 (nginx:alpine)
-┌─────────────────────────┐   ┌─────────────────────────┐
-│ Container Layer (RW)    │   │ Container Layer (RW)    │
-│ /var/log/nginx/access.. │   │ /var/cache/nginx/...   │
-└───────────┬─────────────┘   └───────────┬─────────────┘
-            │                             │
-            └──────────┬──────────────────┘
-                       │
-                       ▼  SHARED (one copy!)
-            ┌─────────────────────────┐
-            │ nginx:alpine layers     │
-            │ (read-only)             │
-            └─────────────────────────┘
+```mermaid
+flowchart TD
+    C1["Container 1 Layer (RW)<br>/var/log/nginx/access..."]
+    C2["Container 2 Layer (RW)<br>/var/cache/nginx/..."]
+    Base["SHARED (one copy!)<br>nginx:alpine layers (read-only)"]
+
+    C1 --> Base
+    C2 --> Base
 ```
 
 100 containers from nginx:alpine = 1 copy of image + 100 thin container layers
@@ -265,34 +231,24 @@ Container 1 (nginx:alpine)    Container 2 (nginx:alpine)
 
 ### How COW Works
 
+```mermaid
+flowchart TD
+    subgraph Before ["1. Before Modification"]
+        UB["Upper (empty)"] --- LB["Lower: nginx.conf (Container reads from here)"]
+    end
+
+    subgraph During ["2. During Modification"]
+        Step1["Copy nginx.conf from lower to upper"] --> Step2["Modify the copy in upper"]
+    end
+
+    subgraph After ["3. After Modification"]
+        UA["Upper: nginx.conf (Container reads modified version)"] --- LA["Lower: nginx.conf (Still exists, unchanged)"]
+    end
+
+    Before --> During --> After
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     COPY-ON-WRITE                                │
-│                                                                  │
-│  BEFORE MODIFICATION:                                           │
-│  ┌───────────────┐                                              │
-│  │ Upper (empty) │                                              │
-│  ├───────────────┤                                              │
-│  │ Lower         │                                              │
-│  │ nginx.conf    │ ← Container reads from here                  │
-│  └───────────────┘                                              │
-│                                                                  │
-│  DURING MODIFICATION:                                           │
-│  1. Copy nginx.conf from lower to upper                         │
-│  2. Modify the copy in upper                                    │
-│                                                                  │
-│  AFTER MODIFICATION:                                            │
-│  ┌───────────────┐                                              │
-│  │ Upper         │                                              │
-│  │ nginx.conf    │ ← Container now reads modified version      │
-│  ├───────────────┤                                              │
-│  │ Lower         │                                              │
-│  │ nginx.conf    │ ← Still exists, unchanged                   │
-│  └───────────────┘                                              │
-│                                                                  │
-│  Lower layer is NEVER modified (other containers use it!)       │
-└─────────────────────────────────────────────────────────────────┘
-```
+
+*(Note: The lower layer is NEVER modified, ensuring other containers can safely use it.)*
 
 ### COW Performance Implications
 
