@@ -40,6 +40,8 @@ This module teaches you how to design and implement ring deployments, manage dat
 
 ## The Geography of Failure
 
+> **Stop and think**: In a multi-region architecture, if an in-cluster canary affects 5% of users globally across all clusters simultaneously, how is that different from affecting 100% of users in a single region that handles 5% of global traffic? Consider the underlying infrastructure, networking, and containment boundaries.
+
 ### Why Single-Region Deployments Are Not Enough
 
 In a single cluster, a bad canary affects a percentage of your users. In a global deployment, a bad canary can affect an entire continent:
@@ -62,22 +64,16 @@ Ring deployment:
 
 The core principle: **geography is a natural blast radius boundary**.
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                        Global User Base                          │
-│                                                                  │
-│   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐       │
-│   │  EU-West     │   │  US-East     │   │  AP-South    │       │
-│   │  Region      │   │  Region      │   │  Region      │       │
-│   │              │   │              │   │              │       │
-│   │  30% users   │   │  45% users   │   │  25% users   │       │
-│   │              │   │              │   │              │       │
-│   └──────────────┘   └──────────────┘   └──────────────┘       │
-│                                                                  │
-│   Ring 1 (Canary)     Ring 2              Ring 3                │
-│   Deploy first        Deploy after        Deploy last           │
-│   Smallest region     validation          Largest region        │
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Global User Base
+        direction LR
+        R1["Ring 1 (Canary)<br/>AP-South Region<br/>25% users<br/>Deploy first<br/>Smallest region"]
+        R2["Ring 2<br/>EU-West Region<br/>30% users<br/>Deploy after validation"]
+        R3["Ring 3<br/>US-East Region<br/>45% users<br/>Deploy last<br/>Largest region"]
+        
+        R1 -.-> R2 -.-> R3
+    end
 ```
 
 If Ring 1 fails, 70% of your users are untouched. If Ring 2 also fails, 25% of your users are still safe. Geography gives you natural isolation that no amount of in-cluster canary analysis can provide.
@@ -113,20 +109,14 @@ Ring 3: Primary Regions
 
 ### Ring Progression
 
-```
-Time ──────────────────────────────────────────────────────►
-
-Ring 0 (Internal)
-  ████████ Deploy → Validate (1h) → ✓ Promote
-                                      │
-Ring 1 (Canary: ap-south-1)           │
-  ░░░░░░░░░████████ Deploy → Validate (4h) → ✓ Promote
-                                                 │
-Ring 2 (eu-west-1)                               │
-  ░░░░░░░░░░░░░░░░░░░████████ Deploy → Validate (2h) → ✓ Promote
-                                                           │
-Ring 3 (us-east-1)                                         │
-  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░████████ Deploy → ✓ GA
+```mermaid
+flowchart LR
+    R0["Ring 0 (Internal)<br/>Deploy → Validate (1h) → Promote"]
+    R1["Ring 1 (Canary: ap-south-1)<br/>Deploy → Validate (4h) → Promote"]
+    R2["Ring 2 (eu-west-1)<br/>Deploy → Validate (2h) → Promote"]
+    R3["Ring 3 (us-east-1)<br/>Deploy → GA"]
+    
+    R0 --> R1 --> R2 --> R3
 ```
 
 ### Choosing Your Canary Region
@@ -150,19 +140,20 @@ The canary region should be:
 
 ## Data Replication During Rollouts
 
+> **Pause and predict**: If you introduce a new required field to your database schema in the v2 release, what exactly will happen when the v1 application running in another region tries to write to or read from that replicated table?
+
 ### The Cross-Region Data Problem
 
 When deploying across regions, data consistency becomes critical. If the new version writes data in a format the old version cannot read, and data replicates between regions, you have a problem:
 
-```
-Region A (v2)          Region B (v1)
-  │                       │
-  │ Write new format      │
-  │ {"name": "Alice",     │
-  │  "email_v2": true}    │
-  │                       │
-  └───── Replicates ──────►  v1 cannot read "email_v2"
-                              field → errors or data loss
+```mermaid
+sequenceDiagram
+    participant RA as Region A (v2)
+    participant RB as Region B (v1)
+    
+    Note over RA: Write new format:<br/>{"name": "Alice",<br/>"email_v2": true}
+    RA->>RB: Replicates data
+    Note over RB: v1 cannot read "email_v2"<br/>field → errors or data loss
 ```
 
 ### Safe Cross-Region Deployment Patterns
@@ -181,12 +172,15 @@ Phase 3: Clean up OLD format
 
 Each region has its own database. No cross-region replication during rollout:
 
-```
-Region A (v2)          Region B (v1)
-  │                       │
-  │ DB-A (v2 schema)      │ DB-B (v1 schema)
-  │                       │
-  └─── No replication ────┘  (temporarily paused)
+```mermaid
+flowchart LR
+    subgraph Region A
+        AppV2["App (v2)"] --> DBA["DB-A (v2 schema)"]
+    end
+    subgraph Region B
+        AppV1["App (v1)"] --> DBB["DB-B (v1 schema)"]
+    end
+    DBA -. "Replication temporarily paused" .-x DBB
 ```
 
 After all regions are on v2, resume replication. This requires your application to tolerate temporary data divergence.
@@ -221,20 +215,12 @@ This is the safest approach but requires the feature flag infrastructure from Mo
 
 The simplest form of global traffic management uses DNS:
 
-```
-                    ┌──────────────────┐
-   User request ──► │  DNS (e.g.,     │
-                    │  Route 53,       │
-                    │  Cloud DNS)      │
-                    └────────┬─────────┘
-                             │
-           ┌─────────────────┼─────────────────┐
-           │ Geo-routed      │                  │
-           ▼                 ▼                  ▼
-    ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-    │  EU Cluster  │  │  US Cluster  │  │  AP Cluster  │
-    │  (v2)        │  │  (v1)        │  │  (v1)        │
-    └─────────────┘  └─────────────┘  └─────────────┘
+```mermaid
+flowchart TD
+    User["User request"] --> DNS["DNS<br/>(e.g., Route 53, Cloud DNS)"]
+    DNS -- "Geo-routed" --> EU["EU Cluster<br/>(v2)"]
+    DNS -- "Geo-routed" --> US["US Cluster<br/>(v1)"]
+    DNS -- "Geo-routed" --> AP["AP Cluster<br/>(v1)"]
 ```
 
 **Limitations of DNS-based shifting:**
@@ -269,33 +255,25 @@ listener:
 
 ### Traffic Shifting During Ring Deployment
 
-```
-Ring 1 Deploy:
-  ┌─────────────────────────────────────────────────────────┐
-  │ ap-south-1: 100% traffic → v2 (canary ring)            │
-  │ eu-west-1:  100% traffic → v1                          │
-  │ us-east-1:  100% traffic → v1                          │
-  └─────────────────────────────────────────────────────────┘
-                        │
-            Validate for 4 hours ✓
-                        │
-                        ▼
-Ring 2 Deploy:
-  ┌─────────────────────────────────────────────────────────┐
-  │ ap-south-1: 100% traffic → v2 ✓                        │
-  │ eu-west-1:  100% traffic → v2 (deploying)              │
-  │ us-east-1:  100% traffic → v1                          │
-  └─────────────────────────────────────────────────────────┘
-                        │
-            Validate for 2 hours ✓
-                        │
-                        ▼
-Ring 3 Deploy:
-  ┌─────────────────────────────────────────────────────────┐
-  │ ap-south-1: 100% traffic → v2 ✓                        │
-  │ eu-west-1:  100% traffic → v2 ✓                        │
-  │ us-east-1:  100% traffic → v2 (deploying)              │
-  └─────────────────────────────────────────────────────────┘
+```mermaid
+stateDiagram-v2
+    state "Ring 1 Deploy" as R1
+    R1 : ap-south-1 traffic → v2 (canary ring)
+    R1 : eu-west-1 traffic → v1
+    R1 : us-east-1 traffic → v1
+    
+    state "Ring 2 Deploy" as R2
+    R2 : ap-south-1 traffic → v2 ✓
+    R2 : eu-west-1 traffic → v2 (deploying)
+    R2 : us-east-1 traffic → v1
+    
+    state "Ring 3 Deploy" as R3
+    R3 : ap-south-1 traffic → v2 ✓
+    R3 : eu-west-1 traffic → v2 ✓
+    R3 : us-east-1 traffic → v2 (deploying)
+    
+    R1 --> R2 : Validate for 4 hours ✓
+    R2 --> R3 : Validate for 2 hours ✓
 ```
 
 ### Emergency Regional Failover
@@ -327,12 +305,12 @@ ArgoCD manages deployments to Kubernetes clusters via `Application` CRDs. For a 
 
 **ApplicationSets** are a template that generates Applications dynamically:
 
-```
-ApplicationSet (template)
-         │
-         ├── generates → Application (eu-west-1)
-         ├── generates → Application (us-east-1)
-         └── generates → Application (ap-south-1)
+```mermaid
+flowchart TD
+    AppSet["ApplicationSet (template)"]
+    AppSet -- "generates" --> AppEU["Application (eu-west-1)"]
+    AppSet -- "generates" --> AppUS["Application (us-east-1)"]
+    AppSet -- "generates" --> AppAP["Application (ap-south-1)"]
 ```
 
 ### Basic ApplicationSet
@@ -612,126 +590,62 @@ Ring 3: Deploy → Wait 6 hours minimum
 ## Quiz: Check Your Understanding
 
 ### Question 1
-Why is geography used as a blast radius boundary in ring deployments?
+Your team is debating whether to use in-cluster canary deployments or geographic ring deployments for a new critical payment service. A senior engineer argues that doing a 5% canary in every cluster simultaneously is identical to doing a 100% deployment in a region that handles 5% of your global traffic. Why is the senior engineer incorrect, and why does the geographic ring deployment offer a superior blast radius boundary?
 
 <details>
 <summary>Show Answer</summary>
 
-Geography provides natural isolation because:
-
-1. **Infrastructure isolation**: Each region has its own clusters, databases, and networking. A failure in one region's infrastructure does not directly cascade to another.
-
-2. **Traffic isolation**: Users are typically routed to their nearest region. A bad deployment in ap-south-1 only affects users routed to that region.
-
-3. **Independent rollback**: You can roll back one region without affecting others, since each region's deployment is managed independently.
-
-4. **Capacity absorption**: Healthy regions can absorb traffic from a failed region (if provisioned with headroom), providing graceful degradation rather than total outage.
-
-In-cluster canary deployments control blast radius within a single region. Ring deployments control blast radius across regions. They are complementary strategies.
+The senior engineer is incorrect because a simultaneous 5% canary across all clusters exposes every geographical region to the new code at the same time. If the new release contains a catastrophic configuration error—such as a malformed BGP route or a broken external dependency integration—it could instantly degrade the service globally, even if only for 5% of requests. Geographic ring deployments provide natural isolation because each region operates with independent infrastructure, databases, and networking stacks. A failure in the canary region (like ap-south-1) is completely contained to that specific geography, leaving the rest of the world entirely unaffected. Furthermore, healthy regions can often absorb the traffic from the failed region via global load balancing, providing graceful degradation rather than a widespread partial outage.
 
 </details>
 
 ### Question 2
-What are the three approaches to handling data replication during cross-region rollouts?
+You are planning a global rollout for a feature that introduces a heavily modified user profile schema. The application relies on active-active cross-region database replication to ensure users can log in anywhere. Because the rollout will take several days to reach all regions, you must ensure that users interacting with v1 and v2 simultaneously do not experience data corruption. What are three distinct architectural approaches you can use to safely handle this cross-region data consistency challenge?
 
 <details>
 <summary>Show Answer</summary>
 
-1. **Schema-compatible versions**: Both v1 and v2 read and write the same data format using the expand-contract pattern. v2 writes new format AND old format (backward compatible). Safe but constrains the types of schema changes per release.
-
-2. **Region-isolated data**: Temporarily pause cross-region replication during the rollout. Each region operates on its own database. After all regions are on v2, resume replication. Requires the application to tolerate temporary data divergence.
-
-3. **Feature-flagged data paths**: Deploy v2 everywhere with the new data path behind a feature flag (OFF). After all regions have v2 code, enable the flag globally. The new data path activates everywhere simultaneously, avoiding cross-version data conflicts.
-
-The safest approach is feature-flagged data paths because it avoids any window where different versions handle different data formats simultaneously.
+To safely handle cross-region data consistency during a prolonged rollout, you must prevent schema incompatibilities from crashing the application. The first approach is using schema-compatible versions via the expand-contract pattern, where the v2 application writes to both the old and new schema formats, ensuring that v1 regions can still read the replicated data. The second approach is region-isolated data, which involves temporarily pausing cross-region replication so that each region operates independently on its local database schema until the rollout completes. The third and safest approach relies on feature-flagged data paths, where the v2 code is fully deployed to all regions globally with the new data logic disabled; once every region is confirmed to be running v2, the feature flag is flipped to enable the new data path everywhere simultaneously.
 
 </details>
 
 ### Question 3
-How does ArgoCD ApplicationSets enable ring deployments?
+Your organization operates 15 Kubernetes clusters globally and currently manages deployments by manually updating 15 separate ArgoCD Application manifests. The release team wants to implement a ring deployment strategy (Canary -> EU -> US) but is worried about the operational overhead of coordinating manual updates across so many clusters. How can ArgoCD ApplicationSets solve this problem and enforce a structured ring deployment?
 
 <details>
 <summary>Show Answer</summary>
 
-ApplicationSets generate ArgoCD Applications from a template, one per cluster. For ring deployments, you control which clusters get the new version through several mechanisms:
-
-1. **Branch/tag per ring**: Each cluster's Application points to a different Git revision. Ring 1 points to the release branch, others point to the stable tag. Promote by changing the revision in the ApplicationSet configuration.
-
-2. **Directory per ring**: Each ring has a Kustomize overlay with its own image version. Promote by updating the overlay for the next ring.
-
-3. **Sync waves**: Ring numbers map to sync wave annotations. ArgoCD processes lower waves first, creating natural ordering.
-
-All approaches result in Git commits for promotion and rollback, providing full auditability and reversibility through GitOps.
+ArgoCD ApplicationSets solve this overhead by acting as a dynamic template that automatically generates and manages individual Application CRDs for all 15 clusters from a single source of truth. To enforce a ring deployment, you can map specific clusters to different rings using Git revisions, directory overlays, or ArgoCD sync waves. For example, you can configure the ApplicationSet so that clusters in Ring 1 point to a `release/v2.1.0` branch or overlay, while clusters in Rings 2 and 3 remain pinned to the stable `v2.0.0` version. Promotion is then executed via a simple, auditable Git commit that updates the target revision or overlay for the next ring's clusters, effectively eliminating the need to manually edit 15 separate files while maintaining strict version control.
 
 </details>
 
 ### Question 4
-Why should Ring 1 bake for a minimum of 24 hours?
+A development team just deployed a minor update to the core transaction engine in the Singapore (Ring 1) region. After monitoring the deployment for 6 hours during local peak business hours, all metrics—latency, error rates, and CPU usage—look perfectly healthy. The team lead wants to immediately promote the release to the London (Ring 2) region to accelerate the delivery schedule. Why should you block this early promotion and insist on a full 24-hour bake time for Ring 1?
 
 <details>
 <summary>Show Answer</summary>
 
-A 24-hour bake time is necessary to catch time-dependent bugs that only manifest at specific times:
-
-- **Midnight rollover issues**: Date parsing bugs, timezone transitions, day-boundary calculations
-- **Cron job interactions**: Daily batch jobs that interact with the new code
-- **Traffic pattern coverage**: Morning peak, afternoon lull, evening peak, overnight batch processing
-- **Cache expiry cycles**: Caches that refresh on daily cycles may expose issues when they expire
-- **Certificate/token rotation**: Daily rotations that interact with new authentication code
-
-Shorter bake times only validate the traffic patterns present during that window. A 4-hour bake during business hours misses overnight processing entirely. Only a full 24-hour cycle guarantees all time-dependent code paths are exercised.
+You must block the early promotion because a 6-hour window, even during peak traffic, completely misses time-dependent code paths that only execute during specific parts of the day. Modern applications rely heavily on daily cycles, such as midnight UTC rollovers, overnight batch processing jobs, cron-based database maintenance, or 24-hour cache expiry windows. If the new release contains a bug related to date parsing or a memory leak that slowly compounds over time, it will not manifest during the initial 6-hour observation period. Insisting on a minimum 24-hour bake time for the canary ring ensures the new code is exposed to a complete day and night cycle, catching these latent time-dependent bugs before they are promoted to larger regions.
 
 </details>
 
 ### Question 5
-What happens when Ring 2 fails in a ring deployment?
+During a three-ring global deployment, the Ring 1 rollout to the APAC region succeeded and ran flawlessly for 24 hours. The team then promoted the release to Ring 2 (EU regions). Two hours into the Ring 2 deployment, alerting systems fire as error rates spike to 10%, indicating a clear failure in the EU clusters. Describe the immediate operational steps you must take to contain the failure and explain how you should handle the stable Ring 1 deployment.
 
 <details>
 <summary>Show Answer</summary>
 
-When Ring 2 fails:
-
-1. **Halt propagation**: Ring 3 deployment is immediately blocked. Do not deploy to any further rings.
-
-2. **Roll back Ring 2**: Revert Ring 2 clusters to the previous stable version. With GitOps/ApplicationSets, this is a Git revert of the Ring 2 promotion commit.
-
-3. **Evaluate Ring 1**: Ring 1 was stable, but the Ring 2 failure might indicate a latent issue. Either roll back Ring 1 as well (safest) or investigate why Ring 1 passed but Ring 2 failed (different traffic patterns, scale, or data).
-
-4. **Diagnose**: The bug may be scale-dependent (Ring 2 has more traffic), data-dependent (Ring 2 has different data patterns), or region-specific (Ring 2's infrastructure differs).
-
-5. **Fix and restart**: After fixing the issue, restart the ring deployment from Ring 1 with the fix included.
-
-The key principle: a ring failure blocks all downstream rings and triggers investigation of all upstream rings.
+The absolute first step is to halt the propagation of the release to ensure that Ring 3 (US regions) is entirely blocked from receiving the faulty update. Once propagation is stopped, you must immediately roll back Ring 2 to the previous stable version, which is typically executed by reverting the Git commit that triggered the ApplicationSet promotion for that ring. After stabilizing Ring 2, you must critically evaluate the currently "stable" Ring 1 deployment. Because the failure in Ring 2 might be related to scale, regional data variations, or a delayed time-dependent issue, the safest course of action is to roll back Ring 1 as well until the root cause is fully diagnosed. Once the bug is identified and fixed, the entire ring deployment process must be restarted from the beginning with the corrected version.
 
 </details>
 
 ### Question 6
-How would you handle a database migration that requires a new column across a globally distributed system?
+You are tasked with deploying a new feature that requires adding a non-nullable `tax_id` column to the `users` table. Your global application is deployed across three geographic rings, and the database relies on active cross-region replication. If you deploy the new code and the schema migration simultaneously in Ring 1, the replicated data will immediately break the stable application instances running in Rings 2 and 3. How do you sequence this deployment to prevent widespread application crashes?
 
 <details>
 <summary>Show Answer</summary>
 
-Use the expand-contract pattern coordinated across all regions:
-
-**Release N (schema migration only, no code change):**
-1. Run `ALTER TABLE ADD COLUMN new_col DEFAULT NULL` in ALL regions simultaneously
-2. This is backward-compatible — old code ignores the new column
-3. Wait for replication to propagate the schema everywhere
-
-**Release N+1 (ring deploy the new code):**
-1. New code writes to both old and new columns (dual-write)
-2. Deploy via rings: Ring 1 → Ring 2 → Ring 3
-3. Old code in later rings ignores the new column; new code in earlier rings writes to both
-
-**Release N+2 (after all regions on N+1):**
-1. Backfill old rows: `UPDATE table SET new_col = computed_value WHERE new_col IS NULL`
-2. New code reads from new column only
-
-**Release N+3 (cleanup):**
-1. Stop writing to old column
-2. Drop old column (after verifying no code references it)
-
-The critical principle: **deploy schema changes separately from code changes**, and ensure every schema change is backward-compatible.
+To prevent application crashes across regions, you must decouple the schema migration from the application code deployment by using the expand-contract pattern. In the first phase, you must deploy the database schema change globally to all regions, adding the `tax_id` column with a temporary default or nullable value so that the existing v1 application safely ignores it. Once the schema change has fully propagated and replicated across all databases, you begin the ring deployment of the v2 application, which is configured to write to the new column. After the v2 application is successfully deployed to all global rings, you can safely execute a final cleanup phase to backfill missing data and enforce the non-nullable constraint on the column.
 
 </details>
 
@@ -747,6 +661,7 @@ Simulate a ring deployment across three "regions" using namespaces on a local ki
 
 ```bash
 # Create a multi-context kind cluster (simulating multiple regions)
+# Requires Kubernetes v1.35+ compatibility in kind
 cat <<'EOF' > /tmp/kind-config.yaml
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
