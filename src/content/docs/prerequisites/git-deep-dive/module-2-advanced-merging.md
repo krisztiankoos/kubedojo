@@ -286,7 +286,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.30
+        image: nginx:1.35
 ```
 ```bash
 git add deployment.yaml
@@ -303,9 +303,9 @@ git commit -m "feat: scale api to 5 replicas"
 ```bash
 git checkout main
 git checkout -b feature/update-image
-sed -i.bak 's/image: nginx:1.30/image: nginx:1.34/g' deployment.yaml && rm deployment.yaml.bak
+sed -i.bak 's/image: nginx:1.35/image: nginx:1.36/g' deployment.yaml && rm deployment.yaml.bak
 git add deployment.yaml
-git commit -m "chore: update nginx to 1.34"
+git commit -m "chore: update nginx to 1.36"
 ```
 
 Step 3: Executing the merge
@@ -328,14 +328,14 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.30
+        image: nginx:1.35
 =======
   replicas: 2
   template:
     spec:
       containers:
       - name: api
-        image: nginx:1.34
+        image: nginx:1.36
 >>>>>>> feature/update-image
 ```
 
@@ -351,7 +351,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.34
+        image: nginx:1.36
 ```
 
 And validate before committing:
@@ -380,9 +380,9 @@ git commit -m "feat: scale api to 5 replicas"
 ```bash
 git checkout main
 git checkout -b feature/update-image
-sed -i.bak 's/image: nginx:1.30/image: nginx:1.34/g' deployment.yaml && rm deployment.yaml.bak
+sed -i.bak 's/image: nginx:1.35/image: nginx:1.36/g' deployment.yaml && rm deployment.yaml.bak
 git add deployment.yaml
-git commit -m "chore: update nginx to 1.34"
+git commit -m "chore: update nginx to 1.36"
 ```
 
 **Task 3: Trigger the Conflict**
@@ -406,14 +406,14 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.30
+        image: nginx:1.35
 =======
   replicas: 2
   template:
     spec:
       containers:
       - name: api
-        image: nginx:1.34
+        image: nginx:1.36
 >>>>>>> feature/update-image
 ```
 
@@ -429,7 +429,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: nginx:1.34
+        image: nginx:1.36
 ```
 
 **Task 5: Validate the YAML**
@@ -468,7 +468,7 @@ graph LR
 ```
 
 ```bash
-git checkout release-v1.30
+git checkout release-v1.35
 git merge feature/ingress feature/autoscaling feature/network-policies
 ```
 
