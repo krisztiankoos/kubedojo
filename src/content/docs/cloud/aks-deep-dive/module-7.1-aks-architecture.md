@@ -33,33 +33,23 @@ When you create an AKS cluster, Microsoft provisions and manages the Kubernetes 
 
 But "managed" does not mean "hands-off." You still make critical decisions that determine how the control plane behaves:
 
-```text
-    ┌──────────────────────────────────────────────────────────────────┐
-    │                    Microsoft-Managed Control Plane                │
-    │                                                                  │
-    │   ┌─────────┐  ┌─────────┐  ┌──────────────────┐  ┌──────────┐  │
-    │   │   API   │  │  etcd   │  │   Controller     │  │Scheduler │  │
-    │   │  Server │  │         │  │   Manager        │  │          │  │
-    │   └────┬────┘  └─────────┘  └──────────────────┘  └──────────┘  │
-    │        │                                                         │
-    │        │  SLA: 99.95% (with AZs) / 99.9% (without AZs)         │
-    │        │  Free tier: no SLA, no uptime guarantee                 │
-    └────────┼─────────────────────────────────────────────────────────┘
-             │
-             │  kubelet communicates over TLS
-             │
-    ┌────────┼─────────────────────────────────────────────────────────┐
-    │        ▼              Customer-Managed Data Plane                │
-    │                                                                  │
-    │   ┌────────────────────┐    ┌────────────────────────────────┐   │
-    │   │  System Node Pool  │    │      User Node Pool(s)         │   │
-    │   │  (CoreDNS, tunnel, │    │  (Your workloads, your apps,   │   │
-    │   │   metrics-server)  │    │   your responsibility)         │   │
-    │   └────────────────────┘    └────────────────────────────────┘   │
-    │                                                                  │
-    │   You choose: VM size, node count, OS disk type, OS SKU,        │
-    │   availability zones, auto-scaling, upgrade strategy             │
-    └──────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph ControlPlane [Microsoft-Managed Control Plane]
+        direction LR
+        API[API Server]
+        etcd[etcd]
+        CM[Controller Manager]
+        Sched[Scheduler]
+    end
+    
+    subgraph DataPlane [Customer-Managed Data Plane]
+        direction LR
+        Sys[System Node Pool<br/>CoreDNS, tunnel, metrics-server]
+        Usr[User Node Pool<br/>Your workloads, your responsibility]
+    end
+    
+    ControlPlane -- kubelet communicates over TLS --> DataPlane
 ```
 
 The SLA numbers matter. If you deploy AKS across availability zones with the Standard tier, Microsoft guarantees 99.95% uptime for the API server. Without zones, you get 99.9%. On the Free tier, you get zero uptime guarantee---fine for dev, unacceptable for production. The Premium tier adds a 99.99% SLA for mission-critical workloads.
@@ -70,7 +60,7 @@ az aks create \
   --resource-group rg-aks-prod \
   --name aks-prod-westeurope \
   --tier standard \
-  --kubernetes-version 1.30.7 \
+  --kubernetes-version 1.35.2 \
   --location westeurope
 
 # Check your cluster's current tier
@@ -198,20 +188,26 @@ az resource list --resource-group $INFRA_RG \
 
 An Azure region typically contains three availability zones. Each zone is a physically separate datacenter (or group of datacenters) with independent power, cooling, and networking. When you deploy AKS nodes across all three zones, a complete datacenter failure takes out at most one-third of your capacity.
 
-```text
-    Azure Region: West Europe
-    ┌──────────────────────────────────────────────────────────────┐
-    │                                                              │
-    │  Zone 1              Zone 2              Zone 3              │
-    │  ┌──────────┐       ┌──────────┐       ┌──────────┐         │
-    │  │ node-01  │       │ node-02  │       │ node-03  │         │
-    │  │ node-04  │       │ node-05  │       │ node-06  │         │
-    │  └──────────┘       └──────────┘       └──────────┘         │
-    │                                                              │
-    │  If Zone 1 fails:   nodes 02,03,05,06 continue serving      │
-    │  Autoscaler adds    new nodes in zones 2 and 3               │
-    └──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Region [Azure Region: West Europe]
+        direction LR
+        subgraph Z1 [Zone 1]
+            N1[node-01]
+            N4[node-04]
+        end
+        subgraph Z2 [Zone 2]
+            N2[node-02]
+            N5[node-05]
+        end
+        subgraph Z3 [Zone 3]
+            N3[node-03]
+            N6[node-06]
+        end
+    end
 ```
+
+*Note: If Zone 1 fails, nodes 02, 03, 05, and 06 continue serving. The cluster autoscaler will add new nodes in zones 2 and 3 to recover capacity.*
 
 There is a catch that trips up many teams: **AKS does not guarantee even distribution across zones**. If you request 5 nodes across 3 zones, you might get 2-2-1 or even 3-1-1 distribution. The VMSS tries to balance, but it is not guaranteed. You should always deploy node counts that are multiples of your zone count (3, 6, 9, 12) to maximize balance.
 
@@ -265,7 +261,7 @@ Kubernetes releases a new minor version roughly every four months. AKS supports 
 | Channel | Behavior | Best For |
 | :--- | :--- | :--- |
 | **none** | No automatic upgrades. You upgrade manually. | Teams needing full control over upgrade timing |
-| **patch** | Automatically applies the latest patch within your current minor version (e.g., 1.30.5 to 1.30.7) | Most production clusters |
+| **patch** | Automatically applies the latest patch within your current minor version (e.g., 1.35.0 to 1.35.2) | Most production clusters |
 | **stable** | Upgrades to the latest patch of the N-1 minor version (one behind latest) | Conservative production environments |
 | **rapid** | Upgrades to the latest patch of the latest minor version | Dev/test environments, early adopters |
 | **node-image** | Only upgrades the node OS image, not the Kubernetes version | When you want OS patches but not K8s version changes |
@@ -315,7 +311,7 @@ az aks nodepool update \
 az aks upgrade \
   --resource-group rg-aks-prod \
   --name aks-prod-westeurope \
-  --kubernetes-version 1.30.7
+  --kubernetes-version 1.35.2
 
 # Check upgrade progress
 az aks show --resource-group rg-aks-prod --name aks-prod-westeurope \
@@ -360,24 +356,21 @@ The default AKS authentication mechanism uses x509 client certificates embedded 
 
 Entra ID integration replaces certificates with OAuth 2.0 tokens. When a user runs `kubectl get pods`, the kubeconfig triggers a browser-based login flow (or uses a cached token) against Entra ID. The API server validates the token, extracts the user's group memberships, and applies Kubernetes RBAC rules based on those groups.
 
-```text
-    Developer runs                   Entra ID validates
-    "kubectl get pods"               and issues token
-          │                                │
-          ▼                                ▼
-    ┌──────────┐     OAuth2 flow     ┌──────────────┐
-    │ kubelogin │ ──────────────────► │  Entra ID    │
-    │ (kubectl  │ ◄────────────────── │  Tenant      │
-    │  plugin)  │     JWT token       └──────────────┘
-    └─────┬────┘
-          │  Bearer token in Authorization header
-          ▼
-    ┌──────────────┐    Validate token,    ┌──────────────────┐
-    │  AKS API     │    extract groups ──► │  K8s RBAC        │
-    │  Server      │                       │  ClusterRole     │
-    │              │ ◄──────────────────── │  Bindings map    │
-    └──────────────┘    allow/deny         │  Entra groups    │
-                                           └──────────────────┘
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant kubelogin as kubelogin (kubectl plugin)
+    participant Entra as Entra ID Tenant
+    participant API as AKS API Server
+    participant RBAC as K8s RBAC
+
+    Dev->>kubelogin: Runs "kubectl get pods"
+    kubelogin->>Entra: OAuth2 flow
+    Entra-->>kubelogin: JWT token
+    kubelogin->>API: Bearer token in Authorization header
+    API->>RBAC: Validate token, extract groups
+    RBAC-->>API: allow/deny (ClusterRoleBindings map Entra groups)
+    API-->>Dev: Pod data or Access Denied
 ```
 
 ### Setting Up Entra ID Integration
@@ -482,7 +475,7 @@ You should switch the node pool to use Ephemeral OS disks instead of standard ma
 <details>
 <summary>6. Your security compliance team requires a unified audit trail for all access grants and the ability to instantly revoke a user's access across all cloud resources, including Kubernetes clusters. They are frustrated by the current process of manually updating `ClusterRoleBindings` in each AKS cluster. How does integrating Entra ID and Azure RBAC solve their problem?</summary>
 
-Integrating Entra ID with Azure RBAC allows you to manage Kubernetes authorization using the exact same Azure role assignment model used for storage accounts or virtual machines. Instead of maintaining disconnected `ClusterRoleBindings` inside each cluster, you assign built-in Azure roles (like 'Azure Kubernetes Service RBAC Writer') directly to Entra ID groups at the cluster or namespace scope. This provides the security team with a single pane of glass for auditing access via the Azure Activity Log, allows them to enforce access via Azure Policy, and ensures that removing a user from an Entra ID group instantly revokes their Kubernetes access without running any `kubectl` commands.
+Integrating Entra ID with Azure RBAC allows you to manage Kubernetes authorization using the exact same Azure role assignment model used for storage accounts or virtual machines. Instead of maintaining disconnected `ClusterRoleBindings` inside each cluster, you assign built-in Azure roles (like 'Azure Kubernetes Service RBAC Writer') directly to Entra ID groups at the cluster or namespace scope. This provides the security team with a single pane of glass for auditing access via the Azure Activity Log, allows them to enforce access via Azure Policy, and ensures that removing a user from an Entra ID group instantly revokes their Kubernetes access without running any `kubectl` commands. This centralized approach completely eliminates the operational overhead of managing lifecycle access per cluster.
 </details>
 
 <details>
@@ -551,7 +544,7 @@ param location string = resourceGroup().location
 param adminGroupObjectId string
 
 @description('Kubernetes version')
-param kubernetesVersion string = '1.30.7'
+param kubernetesVersion string = '1.35.2'
 
 var clusterName = 'aks-prod-${location}'
 var systemPoolName = 'system'
