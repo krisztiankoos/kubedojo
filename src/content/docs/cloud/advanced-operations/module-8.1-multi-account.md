@@ -48,30 +48,25 @@ The single-account model works for a solo developer building a side project. It 
 
 > **Stop and think**: Consider a scenario where an attacker compromises a developer's IAM credentials in a single-account setup. Even if the developer only has permissions for staging resources, how might the shared underlying control plane (like API rate limits or centralized networking) still allow the attacker to impact production availability?
 
+```mermaid
+flowchart TD
+    subgraph AWS ["AWS Account: 123456789012"]
+        P["Prod<br/>EKS + RDS + S3"]
+        S["Staging<br/>EKS + RDS + S3"]
+        D["Dev Sandbox<br/>Random EC2s +<br/>Load tests + Experiments"]
+        Shared["Shared: VPC, NAT GW, IAM roles, CloudTrail<br/>Result: One blast radius. One bill. One nightmare."]
+        
+        P --- Shared
+        S --- Shared
+        D --- Shared
+    end
 ```
-SINGLE-ACCOUNT ANTI-PATTERN
-════════════════════════════════════════════════════════════════
 
-    ┌─────────────────────────────────────────────────────┐
-    │              AWS Account: 123456789012               │
-    │                                                     │
-    │  ┌──────────┐  ┌──────────┐  ┌──────────────────┐  │
-    │  │   Prod    │  │  Staging │  │   Dev Sandbox    │  │
-    │  │  EKS +    │  │  EKS +   │  │  Random EC2s +   │  │
-    │  │  RDS +    │  │  RDS +   │  │  Load tests +    │  │
-    │  │  S3       │  │  S3      │  │  Experiments     │  │
-    │  └──────────┘  └──────────┘  └──────────────────┘  │
-    │                                                     │
-    │  Shared: VPC, NAT GW, IAM roles, CloudTrail        │
-    │  Result: One blast radius. One bill. One nightmare. │
-    └─────────────────────────────────────────────────────┘
-
-    Problems:
-    - Dev load test saturates prod NAT Gateway
-    - IAM role for staging accidentally gets prod DB access
-    - Cost report says "$84,000 this month" but WHO spent it?
-    - CloudTrail logs mix dev experiments with prod audit events
-```
+Problems:
+- Dev load test saturates prod NAT Gateway
+- IAM role for staging accidentally gets prod DB access
+- Cost report says "$84,000 this month" but WHO spent it?
+- CloudTrail logs mix dev experiments with prod audit events
 
 The multi-account model solves all of these by creating hard boundaries. An AWS account, a GCP project, or an Azure subscription is the strongest isolation boundary each cloud offers below the organization level.
 
@@ -83,31 +78,43 @@ Every hyperscaler provides a hierarchy for organizing accounts. The terminology 
 
 ### The Rosetta Stone of Cloud Organization
 
-```
-ORGANIZATIONAL HIERARCHY COMPARISON
-════════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    subgraph AWS [AWS]
+        A1[Organization] --> A2[Root OU]
+        A2 --> A3[OU]
+        A3 --> A4[Account]
+        A3 --> A5[Account]
+        A2 --> A6[OU]
+        A6 --> A7[Account]
+        
+        A8["Policy Mechanism:<br/>Service Control Policies (SCPs)<br/>Inherited downward"]
+        A1 -.-> A8
+    end
 
-AWS                    GCP                    Azure
-───────────────────    ───────────────────    ───────────────────
-Organization           Organization           Tenant (Entra ID)
-  │                      │                      │
-  ├─ Root OU             ├─ Folder              ├─ Management Group
-  │   │                  │   │                  │   │
-  │   ├─ OU              │   ├─ Folder          │   ├─ Management Group
-  │   │   │              │   │   │              │   │   │
-  │   │   ├─ Account     │   │   ├─ Project     │   │   ├─ Subscription
-  │   │   └─ Account     │   │   └─ Project     │   │   └─ Subscription
-  │   │                  │   │                  │   │
-  │   └─ OU              │   └─ Folder          │   └─ Management Group
-  │       │              │       │              │       │
-  │       └─ Account     │       └─ Project     │       └─ Subscription
-  │                      │                      │
-  └─ Root OU             └─ Folder              └─ Management Group
+    subgraph GCP [GCP]
+        G1[Organization] --> G2[Folder]
+        G2 --> G3[Folder]
+        G3 --> G4[Project]
+        G3 --> G5[Project]
+        G2 --> G6[Folder]
+        G6 --> G7[Project]
+        
+        G8["Policy Mechanism:<br/>Organization Policies<br/>Inherited downward"]
+        G1 -.-> G8
+    end
 
-Policy Mechanism:      Policy Mechanism:      Policy Mechanism:
-  Service Control        Organization           Azure Policy
-  Policies (SCPs)        Policies               (assigned at MG level)
-  Inherited downward     Inherited downward     Inherited downward
+    subgraph Azure [Azure]
+        Z1[Tenant / Entra ID] --> Z2[Management Group]
+        Z2 --> Z3[Management Group]
+        Z3 --> Z4[Subscription]
+        Z3 --> Z5[Subscription]
+        Z2 --> Z6[Management Group]
+        Z6 --> Z7[Subscription]
+        
+        Z8["Policy Mechanism:<br/>Azure Policy (assigned at MG level)<br/>Inherited downward"]
+        Z1 -.-> Z8
+    end
 ```
 
 ### Key Differences That Matter
@@ -133,40 +140,40 @@ The organizational unit (OU) structure is the skeleton of your cloud architectur
 
 Here is a battle-tested OU structure used by organizations running 20-200 AWS accounts. The same pattern maps to GCP folders and Azure management groups.
 
-```
-RECOMMENDED OU STRUCTURE
-════════════════════════════════════════════════════════════════
+```mermaid
+flowchart LR
+    Root[Root] --> Sec[Security OU]
+    Root --> Infra[Infrastructure OU]
+    Root --> WL[Workloads OU]
+    Root --> SB[Sandbox OU]
+    Root --> Susp[Suspended OU]
 
-Root
-├── Security OU
-│   ├── Log Archive Account          (centralized logging)
-│   ├── Security Tooling Account     (GuardDuty, SecurityHub)
-│   └── Audit Account                (read-only cross-account)
-│
-├── Infrastructure OU
-│   ├── Network Hub Account          (Transit Gateway, DNS)
-│   ├── Shared Services Account      (CI/CD, artifact registries)
-│   └── Identity Account             (SSO, directory services)
-│
-├── Workloads OU
-│   ├── Production OU
-│   │   ├── Team-A Prod Account      (EKS cluster + workloads)
-│   │   ├── Team-B Prod Account      (EKS cluster + workloads)
-│   │   └── Data Platform Prod       (analytics + ML)
-│   │
-│   ├── Staging OU
-│   │   ├── Team-A Staging Account
-│   │   └── Team-B Staging Account
-│   │
-│   └── Development OU
-│       ├── Team-A Dev Account
-│       └── Team-B Dev Account
-│
-├── Sandbox OU
-│   ├── Developer-1 Sandbox
-│   └── Developer-2 Sandbox
-│
-└── Suspended OU                     (decommissioned accounts)
+    Sec --> Sec1["Log Archive Account<br/>(centralized logging)"]
+    Sec --> Sec2["Security Tooling Account<br/>(GuardDuty, SecurityHub)"]
+    Sec --> Sec3["Audit Account<br/>(read-only cross-account)"]
+
+    Infra --> Inf1["Network Hub Account<br/>(Transit Gateway, DNS)"]
+    Infra --> Inf2["Shared Services Account<br/>(CI/CD, artifact registries)"]
+    Infra --> Inf3["Identity Account<br/>(SSO, directory services)"]
+
+    WL --> Prod[Production OU]
+    WL --> Stg[Staging OU]
+    WL --> Dev[Development OU]
+
+    Prod --> P1["Team-A Prod Account<br/>(EKS cluster + workloads)"]
+    Prod --> P2["Team-B Prod Account<br/>(EKS cluster + workloads)"]
+    Prod --> P3["Data Platform Prod<br/>(analytics + ML)"]
+
+    Stg --> S1[Team-A Staging Account]
+    Stg --> S2[Team-B Staging Account]
+
+    Dev --> D1[Team-A Dev Account]
+    Dev --> D2[Team-B Dev Account]
+
+    SB --> SB1[Developer-1 Sandbox]
+    SB --> SB2[Developer-2 Sandbox]
+
+    Susp --> Susp1["(decommissioned accounts)"]
 ```
 
 ### Why This Structure Works
@@ -301,29 +308,36 @@ Lesson: decide your isolation boundaries before you have tenants, not after.
 
 Each account that runs Kubernetes clusters needs a clear lifecycle model:
 
-```
-K8S CLUSTER LIFECYCLE PER ACCOUNT
-════════════════════════════════════════════════════════════════
+```mermaid
+flowchart LR
+    subgraph SS [Shared Services Account]
+        TF["Terraform/Crossplane<br/>(IaC source of truth)"]
+        GitOps["ArgoCD / Flux<br/>(GitOps controller)"]
+        Reg["ECR / Artifact Reg<br/>(shared registry)"]
+    end
 
-Shared Services Account              Workload Account (Team-A Prod)
-┌────────────────────────┐           ┌────────────────────────────┐
-│                        │           │                            │
-│  Terraform/Crossplane  │──creates──▶  EKS/GKE/AKS Cluster     │
-│  (IaC source of truth) │           │                            │
-│                        │           │  ┌──────────────────────┐  │
-│  ArgoCD / Flux         │──deploys──▶  │  Workloads           │  │
-│  (GitOps controller)   │           │  │  - app deployments   │  │
-│                        │           │  │  - ingress configs   │  │
-│  ECR / Artifact Reg    │──images───▶  │  - secrets (ESO)     │  │
-│  (shared registry)     │           │  └──────────────────────┘  │
-│                        │           │                            │
-│  Central Logging       │◀──logs────│  Fluentbit / OTel agent   │
-│  (Log Archive account) │           │                            │
-└────────────────────────┘           └────────────────────────────┘
+    subgraph WL ["Workload Account (Team-A Prod)"]
+        Clust["EKS/GKE/AKS Cluster"]
+        subgraph W [Workloads]
+            Apps["- app deployments<br/>- ingress configs<br/>- secrets (ESO)"]
+        end
+        Agent["Fluentbit / OTel agent"]
+        Clust --- W
+        Clust --- Agent
+    end
+
+    subgraph LA [Log Archive account]
+        Log[Central Logging]
+    end
+
+    TF -- "creates" --> Clust
+    GitOps -- "deploys" --> W
+    Reg -- "images" --> W
+    Agent -- "logs" --> Log
+```
 
 Key principle: Clusters are CATTLE, not pets.
 The IaC in Shared Services can recreate any cluster from scratch.
-```
 
 The critical decision is whether each team manages their own cluster infrastructure or whether a platform team provisions clusters centrally. Most organizations that scale past five teams find that central provisioning with team-owned workload deployment strikes the best balance.
 
@@ -335,32 +349,29 @@ In a multi-account world, logging becomes both more important and more complex. 
 
 ### The Immutable Log Archive Pattern
 
-```
-CENTRALIZED LOGGING ARCHITECTURE
-════════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    subgraph WLA [Workload Account A]
+        CT_A[CloudTrail]
+        VPC_A[VPC Flow Logs]
+        EKS_A[EKS Audit Logs]
+    end
 
-  Workload Account A          Workload Account B
-  ┌───────────────────┐       ┌───────────────────┐
-  │ CloudTrail ──────────────────────────────────────┐
-  │ VPC Flow Logs ───────────────────────────────────┤
-  │ EKS Audit Logs ──────────────────────────────────┤
-  └───────────────────┘       └───────────────────┘  │
-                                                      │
-                                                      ▼
-                              Log Archive Account (Security OU)
-                              ┌──────────────────────────────┐
-                              │  S3 Bucket (Object Lock)     │
-                              │  - Governance mode: 1 year   │
-                              │  - No delete, even by root   │
-                              │                              │
-                              │  Athena / OpenSearch for     │
-                              │  query and investigation     │
-                              │                              │
-                              │  SCP prevents:               │
-                              │  - Disabling CloudTrail      │
-                              │  - Deleting log buckets      │
-                              │  - Modifying Object Lock     │
-                              └──────────────────────────────┘
+    subgraph WLB [Workload Account B]
+        CT_B[CloudTrail]
+        VPC_B[VPC Flow Logs]
+        EKS_B[EKS Audit Logs]
+    end
+
+    subgraph LA ["Log Archive Account (Security OU)"]
+        S3["S3 Bucket (Object Lock)<br/>- Governance mode: 1 year<br/>- No delete, even by root"]
+        Query["Athena / OpenSearch for<br/>query and investigation"]
+        SCP["SCP prevents:<br/>- Disabling CloudTrail<br/>- Deleting log buckets<br/>- Modifying Object Lock"]
+        S3 --- Query
+        S3 --- SCP
+    end
+
+    CT_A & VPC_A & EKS_A & CT_B & VPC_B & EKS_B --> S3
 ```
 
 ### AWS: Organization-Wide CloudTrail
@@ -559,36 +570,38 @@ aws budgets create-budget \
 
 ### Cost Hierarchy Visualization
 
-```
-HIERARCHICAL BILLING STRUCTURE
-════════════════════════════════════════════════════════════════
+```mermaid
+flowchart LR
+    Org["Organization Payer Account<br/>Total: $75,100/month"]
+    Sec["Security OU<br/>$2,100/month"]
+    Infra["Infrastructure OU<br/>$8,300/month"]
+    WL["Workloads OU<br/>$63,500/month"]
+    SB["Sandbox OU<br/>$1,200/month"]
 
-Organization Payer Account
-├── Security OU ────────────────── $2,100/month
-│   ├── Log Archive ──── $1,400   (S3 storage, Athena queries)
-│   ├── Security Tools ── $500    (GuardDuty, SecurityHub)
-│   └── Audit ─────────── $200    (read-only access tooling)
-│
-├── Infrastructure OU ──────────── $8,300/month
-│   ├── Network Hub ───── $3,200  (Transit GW, NAT GWs, DNS)
-│   ├── Shared Services ─ $4,100  (CI/CD runners, ECR, ArgoCD)
-│   └── Identity ──────── $1,000  (SSO, directory sync)
-│
-├── Workloads OU ───────────────── $63,500/month
-│   ├── Production OU ── $48,000
-│   │   ├── Team-A ───── $22,000  (3 EKS clusters, RDS, ElastiCache)
-│   │   ├── Team-B ───── $18,000  (2 EKS clusters, DynamoDB)
-│   │   └── Data ──────── $8,000  (EMR, Redshift)
-│   ├── Staging OU ────── $9,500
-│   └── Development OU ── $6,000
-│
-└── Sandbox OU ─────────────────── $1,200/month
-                                   ─────────
-                          Total:  $75,100/month
+    Org --> Sec
+    Org --> Infra
+    Org --> WL
+    Org --> SB
+
+    Sec --> LA["Log Archive ──── $1,400<br/>(S3 storage, Athena queries)"]
+    Sec --> ST["Security Tools ── $500<br/>(GuardDuty, SecurityHub)"]
+    Sec --> Aud["Audit ─────────── $200<br/>(read-only access tooling)"]
+
+    Infra --> NH["Network Hub ───── $3,200<br/>(Transit GW, NAT GWs, DNS)"]
+    Infra --> SS["Shared Services ─ $4,100<br/>(CI/CD runners, ECR, ArgoCD)"]
+    Infra --> Id["Identity ──────── $1,000<br/>(SSO, directory sync)"]
+
+    WL --> Prod["Production OU ── $48,000"]
+    WL --> Stg["Staging OU ────── $9,500"]
+    WL --> Dev["Development OU ── $6,000"]
+
+    Prod --> TA["Team-A ───── $22,000<br/>(3 EKS clusters, RDS, ElastiCache)"]
+    Prod --> TB["Team-B ───── $18,000<br/>(2 EKS clusters, DynamoDB)"]
+    Prod --> Data["Data ──────── $8,000<br/>(EMR, Redshift)"]
+```
 
 With single-account: "$75,100 — but we have no idea where it goes"
 With multi-account:  Per-team, per-environment breakdown by default
-```
 
 ### Pro tip: Tagging standards across accounts
 
@@ -721,35 +734,39 @@ Design the OU hierarchy for CloudBrew. Include all accounts, organized by OU.
 <details>
 <summary>Solution</summary>
 
-```
-Root
-├── Security OU
-│   ├── log-archive (immutable S3, 1-year retention for SOC2)
-│   ├── security-tooling (GuardDuty, SecurityHub, Inspector)
-│   └── audit-readonly (auditor access, no write permissions)
-│
-├── Infrastructure OU
-│   ├── network-hub (Transit Gateway, central DNS, NAT)
-│   ├── shared-services (CI/CD, ECR, ArgoCD management)
-│   └── identity (IAM Identity Center, Okta/Entra connector)
-│
-├── Workloads OU
-│   ├── Production OU (SCP: no public S3, no IMDSv1, no large instances w/o approval)
-│   │   ├── analytics-prod
-│   │   ├── ingestion-prod
-│   │   ├── api-prod
-│   │   ├── ml-prod
-│   │   ├── frontend-prod
-│   │   └── data-prod
-│   ├── Staging OU (SCP: relaxed, but still no public S3)
-│   │   └── (mirror of prod accounts)
-│   └── Development OU (SCP: region-restricted, instance-size limited)
-│       └── (mirror of prod accounts)
-│
-├── Sandbox OU (SCP: 72hr auto-nuke, $100/month budget, restricted regions)
-│   └── (one per developer, auto-provisioned)
-│
-└── Suspended OU (SCP: deny all)
+```mermaid
+flowchart LR
+    Root[Root] --> Sec[Security OU]
+    Root --> Infra[Infrastructure OU]
+    Root --> WL[Workloads OU]
+    Root --> SB[Sandbox OU]
+    Root --> Susp[Suspended OU]
+
+    Sec --> Sec1["log-archive<br/>(immutable S3, 1-year retention for SOC2)"]
+    Sec --> Sec2["security-tooling<br/>(GuardDuty, SecurityHub, Inspector)"]
+    Sec --> Sec3["audit-readonly<br/>(auditor access, no write permissions)"]
+
+    Infra --> Inf1["network-hub<br/>(Transit Gateway, central DNS, NAT)"]
+    Infra --> Inf2["shared-services<br/>(CI/CD, ECR, ArgoCD management)"]
+    Infra --> Inf3["identity<br/>(IAM Identity Center, Okta/Entra connector)"]
+
+    WL --> Prod["Production OU<br/>(SCP: no public S3, no IMDSv1, no large instances)"]
+    WL --> Stg["Staging OU<br/>(SCP: relaxed, but still no public S3)"]
+    WL --> Dev["Development OU<br/>(SCP: region-restricted, instance-size limited)"]
+
+    Prod --> P1[analytics-prod]
+    Prod --> P2[ingestion-prod]
+    Prod --> P3[api-prod]
+    Prod --> P4[ml-prod]
+    Prod --> P5[frontend-prod]
+    Prod --> P6[data-prod]
+
+    Stg --> S1["(mirror of prod accounts)"]
+    Dev --> D1["(mirror of prod accounts)"]
+
+    SB --> SB1["(one per developer, auto-provisioned)<br/>(SCP: 72hr auto-nuke, $100/month budget, restricted regions)"]
+
+    Susp --> Susp1["(SCP: deny all)"]
 ```
 
 Total accounts: 3 (security) + 3 (infra) + 18 (workloads: 6 teams x 3 envs) + N (sandboxes) = 24 + sandboxes
