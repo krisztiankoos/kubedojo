@@ -29,6 +29,8 @@ The room goes quiet. Engineers exchange glances. The tech lead who made that dec
 
 So the team does what every team does in this situation: they relitigate the decision from scratch. Two senior engineers spend a week benchmarking. A third writes a comparison document. The VP of Engineering weighs in during a 1:1 and mentions a constraint nobody else knew about. Three weeks later, they arrive at the same conclusion the previous tech lead reached in 2022---but they've burned a month of engineering time to get there.
 
+> **Stop and think**: How many times in the last six months has your team debated a technical decision that was already 'settled' a year ago? How much engineering time did that cost?
+
 This happens *constantly*. Not because engineers are careless, but because most organizations have no systematic way to record *why* decisions were made. They document *what* was built (API docs, runbooks, READMEs) but almost never *why it was built that way*.
 
 Architecture Decision Records fix this. They're one of the highest-leverage tools in engineering leadership, and they take about 30 minutes to write.
@@ -79,6 +81,8 @@ This module teaches the discipline of capturing and communicating technical deci
 ### What Decisions Deserve Recording?
 
 Not every decision needs an ADR. You don't need one for choosing between `camelCase` and `snake_case` (that goes in a style guide). You don't need one for which CI/CD tool to use if your company already standardized on one.
+
+> **Pause and predict**: If you left your company tomorrow, which three technical decisions would your team struggle to explain to your replacement? Those are your next three ADRs.
 
 ADRs are for **architecturally significant decisions**---choices that are:
 
@@ -242,31 +246,16 @@ RISKS:
 
 ADRs are not static documents. They have a lifecycle:
 
-```
-ADR LIFECYCLE
-======================================================================
+```mermaid
+flowchart TD
+    Proposed["PROPOSED<br/>Someone writes the ADR and opens it for discussion.<br/>This might be a PR, a design review agenda item,<br/>or an RFC shared on Slack."]
+    Accepted["ACCEPTED<br/>The team agrees on the decision. The ADR is merged.<br/>The decision is now the team's official stance.<br/>Implementation begins."]
+    Deprecated["DEPRECATED<br/>The decision no longer applies. The technology was<br/>sunset, the requirements changed, or a better option<br/>emerged. A new ADR explains why."]
+    Superseded["SUPERSEDED BY ADR-XXX<br/>A new ADR explicitly replaces this one.<br/>The old ADR links to the new one, preserving<br/>the full decision history."]
 
-  PROPOSED        Someone writes the ADR and opens it for discussion.
-      │           This might be a PR, a design review agenda item,
-      │           or an RFC shared on Slack.
-      │
-      ▼
-  ACCEPTED        The team agrees on the decision. The ADR is merged.
-      │           The decision is now the team's official stance.
-      │           Implementation begins.
-      │
-      ▼
-  [Time passes, the world changes]
-      │
-      ▼
-  DEPRECATED      The decision no longer applies. The technology was
-      │           sunset, the requirements changed, or a better option
-      │           emerged. A new ADR explains why.
-      │
-      ▼
-  SUPERSEDED      A new ADR explicitly replaces this one.
-  BY ADR-XXX      The old ADR links to the new one, preserving
-                  the full decision history.
+    Proposed --> Accepted
+    Accepted -- "[Time passes, the world changes]" --> Deprecated
+    Deprecated --> Superseded
 ```
 
 ### Never Delete ADRs
@@ -321,27 +310,19 @@ An ADR is written for engineers. But the same decision often needs to be communi
 
 ### The Audience Pyramid
 
-```
-THE AUDIENCE PYRAMID
-======================================================================
+```mermaid
+flowchart BT
+    subgraph Rule ["Rule: As you go UP the pyramid, remove technical detail and add business context."]
+        direction BT
+        Eng["ENGINEERING TEAM<br/>Full technical detail.<br/>'How does this work and why?'"]
+        Prod["PRODUCT MANAGERS<br/>User impact, feature implications.<br/>'How does this affect the roadmap?'"]
+        VP["VP / DIRECTOR<br/>Risk, cost, timeline.<br/>'What are the trade-offs and when will it be done?'"]
+        Exec["C-SUITE / EXECS<br/>Impact. One paragraph.<br/>'What does this mean for the business?'"]
 
-                    ┌─────────┐
-                    │  C-SUITE │   Impact. One paragraph.
-                    │  / EXECS │   "What does this mean for the business?"
-                    ├──────────┤
-                    │    VP /   │   Risk, cost, timeline.
-                    │  DIRECTOR │   "What are the trade-offs and
-                    │           │    when will it be done?"
-                    ├───────────┤
-                    │  PRODUCT   │   User impact, feature implications.
-                    │  MANAGERS  │   "How does this affect the roadmap?"
-                    ├────────────┤
-                    │  ENGINEERING │   Full technical detail.
-                    │  TEAM        │   "How does this work and why?"
-                    └──────────────┘
-
-  Rule: As you go UP the pyramid, remove technical detail
-        and add business context.
+        Eng --> Prod
+        Prod --> VP
+        VP --> Exec
+    end
 ```
 
 ### Same Decision, Four Audiences
@@ -369,6 +350,8 @@ Before sending any technical communication, ask: **"So what?"**
 - "We're refactoring the auth module." **So what?** *We can add SSO support, which Sales has been requesting for 6 months.*
 
 Every communication to a non-technical audience should lead with the "so what" answer, not the technical detail.
+
+> **Stop and think**: Look at the last technical email or Slack update you sent to a product manager. Did it lead with the 'So what?' or did it bury the business impact under technical details?
 
 ---
 
@@ -590,8 +573,7 @@ Support tickets about API inefficiency have increased 40% QoQ.
 
 ## Decision
 Internal services will continue using REST with OpenAPI specs.
-The public-facing API will add a GraphQL layer backed by the
-existing REST services.
+The public-facing API will add a GraphQL layer backed by the existing REST services.
 
 ## Consequences
 + External consumers get flexible data fetching (reduced API calls)
@@ -624,16 +606,12 @@ existing REST services.
 
 Test your understanding of ADRs and technical writing.
 
-**Question 1:** What are the four core sections of a standard ADR?
+**Question 1:** You are drafting a decision record for adopting GraphQL. A colleague reviews it and notes that you only included the final choice and the code changes required. Based on the standard ADR format, what critical structural components are missing from your document, and what risk does this create?
 
 <details>
 <summary>Show Answer</summary>
 
-**Context**, **Options Considered**, **Decision**, and **Consequences**.
-
-The Context explains why the decision is needed. Options Considered shows the alternatives evaluated. Decision states what was chosen and why. Consequences lists both positive and negative outcomes.
-
-Some templates also include Status and Date, which are important metadata but not part of the core reasoning structure.
+You are missing the **Context**, **Options Considered**, and **Consequences** sections. Without the Context, future engineers will not understand the business or technical constraints that forced this decision at this specific time. Omitting the Options Considered means the team will likely relitigate discarded alternatives (like gRPC or REST) because there is no proof they were evaluated. Finally, failing to list Consequences (especially negative ones) creates a false sense of perfection and leaves future maintainers unprepared for the architectural trade-offs they will inherit.
 </details>
 
 **Question 2:** Your team decided to use Redis for caching 2 years ago. Now you're migrating to Memcached. What should you do with the original Redis ADR?
@@ -641,12 +619,10 @@ Some templates also include Status and Date, which are important metadata but no
 <details>
 <summary>Show Answer</summary>
 
-**Do not delete it.** Mark it as "Superseded by ADR-XXX" (the Memcached ADR) and add a brief note explaining the transition. The original ADR is valuable history---it explains why Redis was chosen at the time, which helps future engineers understand the evolution of the system.
-
-The new Memcached ADR should reference the original and explain what changed (requirements, scale, team expertise, cost) to motivate the migration.
+You should absolutely **not delete the original ADR**. Instead, you must mark it as "Superseded by ADR-XXX" (pointing to the new Memcached ADR) and leave it in the repository as a historical artifact. ADRs are meant to capture the point-in-time reasoning of the engineering team, and deleting them destroys the context of why the system evolved the way it did. By preserving the old document, you help future engineers understand the prior constraints, scale limits, or team capabilities that originally justified Redis before the migration became necessary.
 </details>
 
-**Question 3:** You need to explain a database migration to your CEO. Which of these is better?
+**Question 3:** You need to explain a database migration to your CEO. Which of these approaches is better and why?
 
 A) "We're migrating from MySQL 5.7 to PostgreSQL 16 because MySQL's query optimizer doesn't support hash joins and our analytical workloads require better parallel query execution."
 
@@ -655,62 +631,39 @@ B) "We're switching databases to handle 10x more reporting queries without slowi
 <details>
 <summary>Show Answer</summary>
 
-**B is better.** The CEO cares about business impact (enterprise sales, customer features), not query optimizer internals. Option A provides technical detail that's irrelevant to the CEO's decision-making context.
-
-Option A would be appropriate for the engineering team's ADR. The skill is matching the depth and framing to your audience.
+**Option B is the correct approach.** The CEO operates at the business and strategic level, so they care primarily about market impact, customer features, and organizational risk rather than query optimizer internals. Option A provides technical details that are entirely irrelevant to the CEO's decision-making context, likely causing confusion or lost attention. By using Option B, you successfully apply the "So What?" test, translating a highly technical migration into the direct business value (enterprise sales and real-time dashboards) that justifies the engineering investment.
 </details>
 
-**Question 4:** What is the key difference between an ADR and an RFC?
+**Question 4:** Your team is planning a major overhaul of the authentication system. A senior engineer says, "I'll go write an ADR so we can get everyone's feedback on the design before we start." What is conceptually wrong with this statement, and what document should they be writing instead?
 
 <details>
 <summary>Show Answer</summary>
 
-An **RFC** (Request for Comments) is written *before* a decision to propose a change and solicit feedback. It's a discussion document.
-
-An **ADR** (Architecture Decision Record) is written *when* a decision is made to record the outcome. It's a historical record.
-
-Think of it this way: the RFC is the debate, the ADR is the verdict. An RFC often results in one or more ADRs.
+The engineer is confusing the purpose of an ADR with that of an **RFC (Request for Comments)**. An ADR is intended to be a historical record written *after* or exactly *when* a decision is finalized, serving as a permanent log of the outcome. An RFC, on the other hand, is a propositional document written *before* any work begins specifically to propose a design and solicit the very feedback the engineer is looking for. Using an ADR to gather feedback creates confusion about whether the decision is still up for debate or already settled policy.
 </details>
 
-**Question 5:** A junior engineer asks, "Why do we keep ADRs in the git repo instead of Confluence?" Give two strong reasons.
+**Question 5:** A junior engineer asks, "Why do we keep ADRs in the git repo instead of our corporate Confluence instance?" Give two strong reasons explaining the architectural benefit of this practice.
 
 <details>
 <summary>Show Answer</summary>
 
-1. **Version control**: ADRs in the repo are versioned alongside the code they describe. You can see exactly what decisions were in effect when a particular version of the code was written. Confluence doesn't provide this temporal alignment.
-
-2. **Durability**: Companies switch wiki tools every few years (Confluence to Notion to Slite to whatever's next). Files in a git repo survive tool migrations. The ADR from 2020 is still readable in 2030.
-
-Bonus reasons: ADRs in the repo are discoverable via `grep`, can be reviewed in pull requests, and can be linked from code comments.
+The most critical reason is **version control alignment**, as keeping ADRs in the repository ensures they are versioned alongside the exact code they describe, allowing developers to see the specific decisions in effect at any historical commit. Secondly, this practice ensures **durability and tool independence**. Corporate wikis change frequently (from Confluence to Notion to something else), often resulting in broken links and lost history, whereas markdown files in a Git repository will survive indefinitely regardless of the SaaS tools the company adopts. Finally, keeping them in the repository allows them to go through the standard Pull Request review process, tightly integrating architectural decisions into the existing engineering workflow.
 </details>
 
-**Question 6:** You're writing an ADR and you can only think of one option. What should you do?
+**Question 6:** You are writing an ADR for adopting a specific CI/CD tool, but you can only think of one option because it seems completely obvious. How should you handle the "Options Considered" section?
 
 <details>
 <summary>Show Answer</summary>
 
-If you can only think of one option, you haven't done enough research---or the decision isn't significant enough to warrant an ADR.
-
-Every architectural decision has alternatives. At minimum, consider:
-- **Do nothing** (keep the status quo)
-- **Build vs buy** (if applicable)
-- **A competing technology** in the same category
-
-If after research you genuinely believe there's only one viable option, document the alternatives you considered and explain why they were eliminated. The "Options Considered" section should show your reasoning process, even if the conclusion is obvious.
+If you genuinely believe there is only one viable option, you still must document the alternatives you implicitly rejected and explain exactly why they were eliminated. At a minimum, you should evaluate the "Do nothing" (status quo) approach or a direct market competitor to prove that your "obvious" choice holds up under scrutiny. Documenting this reasoning is critical because what seems obvious to you today will not be obvious to a new hire in two years. Providing these discarded options prevents future teams from wasting time investigating alternatives you already knew were insufficient.
 </details>
 
-**Question 7:** What is the "So What?" test and when should you apply it?
+**Question 7:** You are presenting a proposal to containerize the legacy monolith to the Product Management team. You plan to spend 15 minutes explaining how Docker namespaces and cgroups work. What communication framework are you violating, and how should you adjust your presentation?
 
 <details>
 <summary>Show Answer</summary>
 
-The "So What?" test is a technique for ensuring technical communication is relevant to its audience. After writing a statement, ask "So what?"---if the audience wouldn't care about the answer, you're writing at the wrong level of abstraction.
-
-Apply it whenever communicating with non-technical stakeholders:
-- "We're adding a CDN." **So what?** "Pages will load 3x faster for international customers."
-- "We're containerizing the app." **So what?** "Deployments will go from 2 hours to 5 minutes, and we'll ship features faster."
-
-The test forces you to connect technical decisions to outcomes that matter to your audience.
+You are violating the **"So What?" test** and failing to adapt your message to the appropriate audience tier. Product managers are focused on user impact, feature delivery, and roadmap implications, not the low-level kernel primitives that make containerization possible. You should adjust your presentation to focus entirely on the outcomes: how containerization will reduce deployment times from hours to minutes, eliminate "it works on my machine" bugs, and ultimately allow the product team to ship features significantly faster and with greater reliability.
 </details>
 
 ---
@@ -762,8 +715,8 @@ TRADE-OFF ANALYSIS FRAMEWORK
                     customization          and version
 
  Scaling            AWS handles broker     Team must plan and
-                    scaling, you manage    execute scaling
-                    partition scaling      operations manually
+                    execute scaling        operations manually
+                    partition scaling      
 
  Skills Required    Kafka application      Kafka application +
                     knowledge only         Kafka operations +
