@@ -68,14 +68,13 @@ Cron is the workhorse of Linux automation. It runs in the background, checks its
 
 Every cron entry has five time fields followed by the command:
 
-```
-+-------------------  minute (0-59)
-|  +----------------  hour (0-23)
-|  |  +-------------  day of month (1-31)
-|  |  |  +----------  month (1-12)
-|  |  |  |  +-------  day of week (0-7, 0 and 7 = Sunday)
-|  |  |  |  |
-*  *  *  *  *  command to execute
+```mermaid
+flowchart LR
+    min["*<br/>minute<br/>(0-59)"] --- hour["*<br/>hour<br/>(0-23)"]
+    hour --- dom["*<br/>day of month<br/>(1-31)"]
+    dom --- mon["*<br/>month<br/>(1-12)"]
+    mon --- dow["*<br/>day of week<br/>(0-7, 0/7=Sun)"]
+    dow --- cmd["command to execute"]
 ```
 
 Special characters:
@@ -561,23 +560,27 @@ rsync -av --progress /large-file.iso /backup/
 
 Understanding these three strategies is essential for designing backup systems:
 
-```
-Week 1:
+```mermaid
+flowchart TD
+    subgraph Incremental Strategy
+        direction LR
+        I_Sun[FULL] --> I_Mon[inc<br/>Mon only]
+        I_Mon --> I_Tue[inc<br/>Tue only]
+        I_Tue --> I_Wed[inc<br/>Wed only]
+        I_Wed --> I_Thu[inc<br/>Thu only]
+        I_Thu --> I_Fri[inc<br/>Fri only]
+        I_Fri --> I_Sat[inc<br/>Sat only]
+    end
 
-Sun     Mon     Tue     Wed     Thu     Fri     Sat
-FULL    inc     inc     inc     inc     inc     inc     <-- Incremental
- |       |       |       |       |       |       |
- |       +--+    +--+    +--+    +--+    +--+    +--+
- |       only    only    only    only    only    only
- |       Mon     Tue     Wed     Thu     Fri     Sat
- |       changes changes changes changes changes changes
-
-FULL    diff    diff    diff    diff    diff    diff    <-- Differential
- |       |       |       |       |       |       |
- |       +--+    +----+  +------+  +--------+  ...
- |       Mon     Mon-    Mon-      Mon-
- |       changes Tue     Wed       Thu
- |               changes changes   changes
+    subgraph Differential Strategy
+        direction LR
+        D_Sun[FULL] --> D_Mon[diff<br/>Mon changes]
+        D_Sun --> D_Tue[diff<br/>Mon-Tue changes]
+        D_Sun --> D_Wed[diff<br/>Mon-Wed changes]
+        D_Sun --> D_Thu[diff<br/>Mon-Thu changes]
+        D_Sun --> D_Fri[diff<br/>Mon-Fri changes]
+        D_Sun --> D_Sat[diff<br/>Mon-Sat changes]
+    end
 ```
 
 | Strategy | Backup Size | Restore Speed | Restore Complexity |
