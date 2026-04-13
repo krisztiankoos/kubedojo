@@ -45,25 +45,24 @@ She switches to tracing. Finds a failing trace. The error is "connection timeout
 
 **The cost**: 47 minutes × 2.3% error rate × Black Friday traffic = $2.8 million in abandoned carts. Plus customer support costs. Plus reputation damage.
 
-```
-THE DATA-TO-INSIGHT GAP
-═══════════════════════════════════════════════════════════════════════════════
+> **Stop and think**: How would having a defined dashboard hierarchy have changed the on-call engineer's first 5 minutes of investigation?
 
-WHAT THEY HAD                          WHAT THEY LACKED
-─────────────────────────────────────  ─────────────────────────────────────
-☑ 2.3 million metrics                  ✗ Dashboard hierarchy (what matters now?)
-☑ 4TB daily logs                       ✗ Consistent field names (can't query)
-☑ 500 million spans                    ✗ SLO-based alerting (why 2%? is that bad?)
-☑ Beautiful dashboards                 ✗ Runbooks (what to do when this happens)
-☑ All three pillars                    ✗ Investigation workflow (where to start)
-☑ Perfect instrumentation              ✗ Mental model of failure modes
+### The Data-to-Insight Gap
 
-DATA ≠ INSIGHT
+| What They Had | What They Lacked |
+|---|---|
+| ☑ 2.3 million metrics | ✗ Dashboard hierarchy (what matters now?) |
+| ☑ 4TB daily logs | ✗ Consistent field names (can't query) |
+| ☑ 500 million spans | ✗ SLO-based alerting (why 2%? is that bad?) |
+| ☑ Beautiful dashboards | ✗ Runbooks (what to do when this happens) |
+| ☑ All three pillars | ✗ Investigation workflow (where to start) |
+| ☑ Perfect instrumentation | ✗ Mental model of failure modes |
+
+**DATA ≠ INSIGHT**
 
 They had all the data to find the problem in 5 minutes.
 They lacked the insight to navigate that data effectively.
 Cost of the gap: $2.8 million.
-```
 
 After the incident, they rebuilt their approach:
 - Created dashboard hierarchy (summary → signals → details)
@@ -106,102 +105,48 @@ This module teaches you how to use observability data effectively: asking the ri
 
 Not all questions are equally useful. Start broad, narrow down:
 
+```mermaid
+flowchart TD
+    L1["Level 1: DETECTION<br>'Is something wrong?'<br>→ Alerts, SLO dashboards, error rates<br>→ Answers: Yes/No"]
+    L2["Level 2: SCOPE<br>'How bad is it? Who's affected?'<br>→ Break down by dimension: region, user type, endpoint<br>→ Answers: X% of users, Y region, Z feature"]
+    L3["Level 3: LOCALIZATION<br>'Where is the problem?'<br>→ Service dependency analysis, trace flamegraphs<br>→ Answers: Service X, database Y, function Z"]
+    L4["Level 4: ROOT CAUSE<br>'Why is this happening?'<br>→ Logs, code, recent changes<br>→ Answers: Bug in version 2.3.1, config change, external dependency"]
+
+    L1 --> L2
+    L2 --> L3
+    L3 --> L4
 ```
-THE QUESTION HIERARCHY
-═══════════════════════════════════════════════════════════════
 
-Level 1: DETECTION
-─────────────────────────────────────────────────────────────
-"Is something wrong?"
-    → Alerts, SLO dashboards, error rates
-    → Answers: Yes/No
-
-Level 2: SCOPE
-─────────────────────────────────────────────────────────────
-"How bad is it? Who's affected?"
-    → Break down by dimension: region, user type, endpoint
-    → Answers: X% of users, Y region, Z feature
-
-Level 3: LOCALIZATION
-─────────────────────────────────────────────────────────────
-"Where is the problem?"
-    → Service dependency analysis, trace flamegraphs
-    → Answers: Service X, database Y, function Z
-
-Level 4: ROOT CAUSE
-─────────────────────────────────────────────────────────────
-"Why is this happening?"
-    → Logs, code, recent changes
-    → Answers: Bug in version 2.3.1, config change, external dependency
-```
+> **Pause and predict**: If you jump straight from Level 1 (Detection) to Level 4 (Root Cause) without scoping or localizing, what kinds of mistakes are you likely to make?
 
 ### 1.2 Good Questions vs. Bad Questions
 
-```
-QUESTION QUALITY
-═══════════════════════════════════════════════════════════════
-
-BAD QUESTIONS (vague, hard to answer)
-─────────────────────────────────────────────────────────────
-"Why is the site slow?"
-    → What is "slow"? For whom? Since when?
-
-"Is everything okay?"
-    → Define "okay"
-
-"What happened yesterday?"
-    → What specifically?
-
-GOOD QUESTIONS (specific, answerable)
-─────────────────────────────────────────────────────────────
-"What's the p99 latency for /api/checkout in the last hour?"
-    → Specific metric, specific endpoint, specific timeframe
-
-"Which users experienced errors during the deploy at 3pm?"
-    → Specific event, specific population
-
-"What changed between 2pm (working) and 3pm (broken)?"
-    → Specific comparison, specific times
-```
+| Bad Questions (vague, hard to answer) | Good Questions (specific, answerable) |
+|---|---|
+| **"Why is the site slow?"**<br>→ What is "slow"? For whom? Since when? | **"What's the p99 latency for `/api/checkout` in the last hour?"**<br>→ Specific metric, specific endpoint, specific timeframe |
+| **"Is everything okay?"**<br>→ Define "okay" | **"Which users experienced errors during the deploy at 3pm?"**<br>→ Specific event, specific population |
+| **"What happened yesterday?"**<br>→ What specifically? | **"What changed between 2pm (working) and 3pm (broken)?"**<br>→ Specific comparison, specific times |
 
 ### 1.3 The Exploratory Investigation Pattern
 
-```
-EXPLORATORY INVESTIGATION
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    Start(["START: 'Something is wrong' (symptom)"])
+    Q1["1. QUANTIFY<br>'How wrong? What's the error rate/latency/failure count?'<br>→ Establishes baseline for comparison"]
+    Q2["2. SEGMENT<br>'Is it all requests or some? Which ones?'<br>→ Group by: endpoint, user_type, region, version, time<br>→ Find: Where is the problem concentrated?"]
+    Q3["3. CORRELATE<br>'What else happened at the same time?'<br>→ Deploys, config changes, dependency issues, traffic spike<br>→ Find: Potential causes"]
+    Q4["4. EXEMPLIFY<br>'Show me a specific failing request'<br>→ Trace → Logs → Detailed error<br>→ Find: Concrete evidence"]
+    Q5["5. HYPOTHESIZE<br>'I think the problem is X because of Y'<br>→ Test: If X is the problem, what else should be true?"]
+    Q6["6. VERIFY<br>'Let me confirm by checking Z'<br>→ Additional queries to confirm/refute hypothesis"]
+    Q7["7. RESOLVE<br>'The problem is X, fixed by Y'<br>→ Document for future reference"]
 
-START: "Something is wrong" (symptom)
-
-1. QUANTIFY
-   "How wrong? What's the error rate/latency/failure count?"
-   → Establishes baseline for comparison
-
-2. SEGMENT
-   "Is it all requests or some? Which ones?"
-   → Group by: endpoint, user_type, region, version, time
-   → Find: Where is the problem concentrated?
-
-3. CORRELATE
-   "What else happened at the same time?"
-   → Deploys, config changes, dependency issues, traffic spike
-   → Find: Potential causes
-
-4. EXEMPLIFY
-   "Show me a specific failing request"
-   → Trace → Logs → Detailed error
-   → Find: Concrete evidence
-
-5. HYPOTHESIZE
-   "I think the problem is X because of Y"
-   → Test: If X is the problem, what else should be true?
-
-6. VERIFY
-   "Let me confirm by checking Z"
-   → Additional queries to confirm/refute hypothesis
-
-7. RESOLVE
-   "The problem is X, fixed by Y"
-   → Document for future reference
+    Start --> Q1
+    Q1 --> Q2
+    Q2 --> Q3
+    Q3 --> Q4
+    Q4 --> Q5
+    Q5 --> Q6
+    Q6 --> Q7
 ```
 
 > **Try This (3 minutes)**
@@ -218,61 +163,33 @@ START: "Something is wrong" (symptom)
 
 ### 2.1 Alert Philosophy
 
-```
-ALERTING PRINCIPLES
-═══════════════════════════════════════════════════════════════
+**ALERT ONLY WHEN ACTION IS NEEDED**
+- If the alert fires and you do nothing → Remove the alert
+- If the alert fires and you always do the same thing → Automate it
+- If the alert fires and you investigate → Good alert
 
-ALERT ONLY WHEN ACTION IS NEEDED
-─────────────────────────────────────────────────────────────
-If the alert fires and you do nothing → Remove the alert
-If the alert fires and you always do the same thing → Automate it
-If the alert fires and you investigate → Good alert
+**ALERT ON SYMPTOMS, NOT CAUSES**
+- Bad: "CPU > 80%" (cause - might be fine)
+- Good: "Error rate > 1%" (symptom - users affected)
+- Good: "p99 latency > 500ms" (symptom - users affected)
 
-ALERT ON SYMPTOMS, NOT CAUSES
-─────────────────────────────────────────────────────────────
-Bad:  "CPU > 80%"           (cause - might be fine)
-Good: "Error rate > 1%"     (symptom - users affected)
-Good: "p99 latency > 500ms" (symptom - users affected)
-
-ALERT ON USER IMPACT
-─────────────────────────────────────────────────────────────
-Would a user notice? Alert.
-Would only you notice? Maybe don't alert.
-
-Error budget burn rate > threshold → Users will be affected → Alert
-```
+**ALERT ON USER IMPACT**
+- Would a user notice? Alert.
+- Would only you notice? Maybe don't alert.
+- Error budget burn rate > threshold → Users will be affected → Alert
 
 ### 2.2 SLO-Based Alerting
 
-```
-SLO-BASED ALERTS
-═══════════════════════════════════════════════════════════════
-
 Instead of arbitrary thresholds, alert based on error budget:
 
-SLO: 99.9% availability (error budget: 43 minutes/month)
+**SLO: 99.9% availability (error budget: 43 minutes/month)**
 
-Alert conditions:
-─────────────────────────────────────────────────────────────
-SEVERE (page immediately):
-    Error budget burn rate that would exhaust budget in 1 hour
-    = 720x normal burn rate
-    "At this rate, we're out of budget in 1 hour"
-
-HIGH (page during business hours):
-    Error budget burn rate that would exhaust budget in 6 hours
-    = 120x normal burn rate
-    "At this rate, we're out of budget in 6 hours"
-
-MEDIUM (ticket):
-    Error budget burn rate that would exhaust budget in 3 days
-    = 10x normal burn rate
-    "At this rate, we're out of budget this week"
-
-LOW (dashboard):
-    Any error budget consumption
-    "We're using budget, but within acceptable range"
-```
+| Severity | Alert Condition | Meaning |
+|---|---|---|
+| **SEVERE** (page immediately) | Burn rate that would exhaust budget in 1 hour (720x normal) | "At this rate, we're out of budget in 1 hour" |
+| **HIGH** (page during business hours) | Burn rate that would exhaust budget in 6 hours (120x normal) | "At this rate, we're out of budget in 6 hours" |
+| **MEDIUM** (ticket) | Burn rate that would exhaust budget in 3 days (10x normal) | "At this rate, we're out of budget this week" |
+| **LOW** (dashboard) | Any error budget consumption | "We're using budget, but within acceptable range" |
 
 ### 2.3 Reducing Alert Fatigue
 
@@ -284,19 +201,16 @@ LOW (dashboard):
 | Duplicate alerts | Multiple rules for same issue | Deduplicate, use alert hierarchy |
 | Unactionable alerts | No clear response | Add runbook, or delete alert |
 
-```
-ALERT HYGIENE CHECKLIST
-═══════════════════════════════════════════════════════════════
+### Alert Hygiene Checklist
 
 For each alert, answer:
-[ ] Does this require human action?
-[ ] Is the action clear? (link to runbook)
-[ ] Does this fire rarely enough to be noticed?
-[ ] Is the severity appropriate?
-[ ] Has this alert been useful in the last 30 days?
+- [ ] Does this require human action?
+- [ ] Is the action clear? (link to runbook)
+- [ ] Does this fire rarely enough to be noticed?
+- [ ] Is the severity appropriate?
+- [ ] Has this alert been useful in the last 30 days?
 
 If you can't answer "yes" to all → Fix or remove the alert.
-```
 
 > **Did You Know?**
 >
@@ -308,111 +222,69 @@ If you can't answer "yes" to all → Fix or remove the alert.
 
 ### 3.1 The Debugging Workflow
 
-```
-DEBUGGING WORKFLOW
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    Metrics1["Metrics: Alert fires (Error rate spike)<br>Dashboard: 5% errors on /api/checkout"]
+    Metrics2["Metrics: Segment (Which errors? Where?)<br>90% of errors from US-West region<br>Started 14:32, correlates with deploy"]
+    Traces["Traces: Exemplar (Get example failing trace)<br>Trace abc-123: Timeout on payment-service<br>3 retry attempts, all timed out"]
+    Logs["Logs: Detail (What's in the logs?)<br>Connection refused: payment-db-west-02<br>Database server is unreachable"]
+    RootCause["Root Cause: payment-db-west-02 in maintenance<br>Failover didn't trigger correctly"]
 
-            ┌─────────────────────────────────────────────┐
-METRICS ───▶│ Alert fires: Error rate spike              │
-            │ Dashboard: 5% errors on /api/checkout      │
-            └──────────────────┬──────────────────────────┘
-                               │
-            ┌──────────────────▼──────────────────────────┐
-METRICS ───▶│ Segment: Which errors? Where?              │
-            │ 90% of errors from US-West region          │
-            │ Started 14:32, correlates with deploy      │
-            └──────────────────┬──────────────────────────┘
-                               │
-            ┌──────────────────▼──────────────────────────┐
-TRACES ────▶│ Exemplar: Get example failing trace        │
-            │ Trace abc-123: Timeout on payment-service  │
-            │ 3 retry attempts, all timed out            │
-            └──────────────────┬──────────────────────────┘
-                               │
-            ┌──────────────────▼──────────────────────────┐
-LOGS ──────▶│ Detail: What's in the logs?                │
-            │ "Connection refused: payment-db-west-02"   │
-            │ Database server is unreachable             │
-            └──────────────────┬──────────────────────────┘
-                               │
-            ┌──────────────────▼──────────────────────────┐
-ROOT CAUSE ▶│ payment-db-west-02 in maintenance         │
-            │ Failover didn't trigger correctly          │
-            └─────────────────────────────────────────────┘
+    Metrics1 --> Metrics2
+    Metrics2 --> Traces
+    Traces --> Logs
+    Logs --> RootCause
 ```
 
 ### 3.2 Common Debugging Patterns
 
 **"It's slow"**
-
-```
-DEBUGGING LATENCY
-═══════════════════════════════════════════════════════════════
-
-1. Confirm: What's the actual latency? p50? p99?
-2. Scope: All requests or some? Which endpoints?
-3. Trace: Get example slow traces
-4. Flamegraph: Where is time spent?
+1. **Confirm**: What's the actual latency? p50? p99?
+2. **Scope**: All requests or some? Which endpoints?
+3. **Trace**: Get example slow traces
+4. **Flamegraph**: Where is time spent?
    └── Network call to service X: 800ms (80% of time)
-5. Drill down: Why is service X slow?
-6. Repeat until root cause found
-```
+5. **Drill down**: Why is service X slow?
+6. **Repeat** until root cause found
 
 **"It's broken"**
-
-```
-DEBUGGING ERRORS
-═══════════════════════════════════════════════════════════════
-
-1. Confirm: What's the error rate? Error types?
-2. Scope: Which users? Which endpoints? Which versions?
-3. Compare: What's different about failing requests?
-4. Exemplify: Get specific error logs
+1. **Confirm**: What's the error rate? Error types?
+2. **Scope**: Which users? Which endpoints? Which versions?
+3. **Compare**: What's different about failing requests?
+4. **Exemplify**: Get specific error logs
    └── Stack trace, error message, context
-5. Correlate: What changed? Deploy? Config? Dependency?
-6. Hypothesize and verify
-```
+5. **Correlate**: What changed? Deploy? Config? Dependency?
+6. **Hypothesize and verify**
 
 **"It's weird"**
-
-```
-DEBUGGING STRANGE BEHAVIOR
-═══════════════════════════════════════════════════════════════
-
-1. Define: What exactly is "weird"? Quantify it.
-2. Baseline: What's "normal"? Compare to historical data.
-3. Isolate: Find the smallest reproducing case.
-4. Trace: Follow request through system.
-5. Diff: What's different from normal requests?
-6. Often: Race condition, caching issue, state dependency
-```
+1. **Define**: What exactly is "weird"? Quantify it.
+2. **Baseline**: What's "normal"? Compare to historical data.
+3. **Isolate**: Find the smallest reproducing case.
+4. **Trace**: Follow request through system.
+5. **Diff**: What's different from normal requests?
+6. **Often**: Race condition, caching issue, state dependency
 
 ### 3.3 Comparison: Then vs. Now
 
-```
-COMPARISON QUERIES
-═══════════════════════════════════════════════════════════════
+**"It was working yesterday, now it's broken"**
 
-"It was working yesterday, now it's broken"
+**Query pattern**:
+Compare: `metric_X` at `time_good` vs `time_bad`
 
-Query pattern:
-    Compare: metric_X at time_good vs time_bad
+**Example**:
+- **GOOD**: 2024-01-15 10:00-12:00, error_rate = 0.1%
+- **BAD**:  2024-01-16 10:00-12:00, error_rate = 5.0%
 
-    Example:
-    GOOD: 2024-01-15 10:00-12:00, error_rate = 0.1%
-    BAD:  2024-01-16 10:00-12:00, error_rate = 5.0%
+**Segment by deploy_version**:
+- **GOOD**: version 2.3.0, error_rate = 0.1%
+- **BAD**:  version 2.3.1, error_rate = 4.9%
 
-    Segment by deploy_version:
-    GOOD: version 2.3.0, error_rate = 0.1%
-    BAD:  version 2.3.1, error_rate = 4.9%
-
-    Conclusion: Version 2.3.1 introduced the problem.
+**Conclusion**: Version 2.3.1 introduced the problem.
 
 Similar pattern for:
-    - Before/after deploy
-    - This week vs. last week
-    - Failing user vs. working user
-```
+- Before/after deploy
+- This week vs. last week
+- Failing user vs. working user
 
 > **War Story: The $4.2 Million Lesson in Systematic Investigation**
 >
@@ -470,66 +342,48 @@ Similar pattern for:
 
 ### 4.1 Dashboard Anti-Patterns
 
+```mermaid
+flowchart TD
+    subgraph "Anti-Pattern 1: The Wall of Metrics (No Hierarchy)"
+        direction LR
+        M1[Metric] --- M2[Metric] --- M3[Metric] --- M4[Metric]
+        M5[Metric] --- M6[Metric] --- M7[Metric] --- M8[Metric]
+    end
+    subgraph "Anti-Pattern 2: The Vanity Dashboard"
+        direction TB
+        V1["REQUESTS TODAY: 1,234,567,890"]
+        V2["UPTIME: 99.999%"]
+        V3["SERVERS: 1,234"]
+    end
 ```
-DASHBOARD ANTI-PATTERNS
-═══════════════════════════════════════════════════════════════
-
-THE WALL OF METRICS
-─────────────────────────────────────────────────────────────
-┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐
-│    ││    ││    ││    ││    ││    ││    ││    │
-└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘
-┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐┌────┐
-│    ││    ││    ││    ││    ││    ││    ││    │
-└────┘└────┘└────┘└────┘└────┘└────┘└────┘└────┘
-
-Problem: No hierarchy, everything equal importance
-Result: Eyes glaze over, important signals missed
-
-THE VANITY DASHBOARD
-─────────────────────────────────────────────────────────────
-┌────────────────────────────────────────────────────────────┐
-│  REQUESTS TODAY: 1,234,567,890                             │
-│  UPTIME: 99.999%                                           │
-│  SERVERS: 1,234                                            │
-└────────────────────────────────────────────────────────────┘
-
-Problem: Big numbers that never change actionably
-Result: Looks impressive, helps no one
-```
+- **The Wall of Metrics Problem**: No hierarchy, everything equal importance. Result: Eyes glaze over, important signals missed.
+- **The Vanity Dashboard Problem**: Big numbers that never change actionably. Result: Looks impressive, helps no one.
 
 ### 4.2 Good Dashboard Structure
 
-```
-DASHBOARD STRUCTURE
-═══════════════════════════════════════════════════════════════
+```mermaid
+flowchart TD
+    subgraph Level1 ["LEVEL 1: EXECUTIVE SUMMARY (top) - 'Are we okay?'"]
+        direction LR
+        S1["SLO Status: 99.95% (target: 99.9%)<br>Error Budget: 65% remaining<br>Active Incidents: 0"]
+    end
 
-LEVEL 1: EXECUTIVE SUMMARY (top)
-┌─────────────────────────────────────────────────────────────┐
-│  SLO Status: 99.95% (target: 99.9%) ✅                     │
-│  Error Budget: 65% remaining                                │
-│  Active Incidents: 0                                        │
-└─────────────────────────────────────────────────────────────┘
-"At a glance: Are we okay?"
+    subgraph Level2 ["LEVEL 2: THE GOLDEN SIGNALS (middle) - 'What's the current behavior?'"]
+        direction LR
+        S2_1["Latency<br>p50: 45ms<br>p99: 200ms"]
+        S2_2["Errors<br>0.1%"]
+        S2_3["Traffic<br>1,234/s"]
+    end
 
-LEVEL 2: THE GOLDEN SIGNALS (middle)
-┌─────────────────────────────────────────────────────────────┐
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Latency    │  │    Errors    │  │   Traffic    │     │
-│  │   p50: 45ms  │  │    0.1%      │  │   1,234/s    │     │
-│  │   p99: 200ms │  │              │  │              │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-"What's the current behavior?"
+    subgraph Level3 ["LEVEL 3: DRILL-DOWN (expandable) - 'Where should I look if something's wrong?'"]
+        direction LR
+        S3_1["By Endpoint:<br>/api/checkout 50ms<br>/api/search 30ms<br>/api/user 25ms"]
+        S3_2["By Region:<br>US-West 45ms<br>EU-Central 52ms<br>AP-South 60ms"]
+        S3_3["By Version:<br>v2.3.1 48ms<br>v2.3.0 45ms"]
+    end
 
-LEVEL 3: DRILL-DOWN (expandable)
-┌─────────────────────────────────────────────────────────────┐
-│  By Endpoint:        By Region:        By Version:          │
-│  /api/checkout 50ms  US-West 45ms     v2.3.1 48ms          │
-│  /api/search   30ms  EU-Central 52ms  v2.3.0 45ms          │
-│  /api/user     25ms  AP-South 60ms                          │
-└─────────────────────────────────────────────────────────────┘
-"Where should I look if something's wrong?"
+    Level1 --> Level2
+    Level2 --> Level3
 ```
 
 ### 4.3 Dashboard Design Principles
@@ -558,62 +412,34 @@ LEVEL 3: DRILL-DOWN (expandable)
 
 A **mental model** is your understanding of how the system actually works—not the documentation, but your intuition built from experience.
 
-```
-MENTAL MODEL COMPONENTS
-═══════════════════════════════════════════════════════════════
-
-ARCHITECTURE
-    "Request comes in at load balancer, goes to API server,
-     which calls auth service, then the appropriate backend."
-
-DEPENDENCIES
-    "If Redis is down, sessions break. If Postgres is down,
-     nothing works. If payment API is slow, checkout is slow."
-
-BEHAVIOR UNDER STRESS
-    "Under high load, the API starts queueing requests.
-     Past 1000 QPS, we see cascading timeouts."
-
-FAILURE MODES
-    "When disk fills, logs stop but service keeps running.
-     When memory fills, OOM killer takes random processes."
-
-RECENT CHANGES
-    "We deployed v2.3.1 yesterday, added new caching layer
-     last week, migrated database replica last month."
-```
+- **Architecture**: "Request comes in at load balancer, goes to API server, which calls auth service, then the appropriate backend."
+- **Dependencies**: "If Redis is down, sessions break. If Postgres is down, nothing works. If payment API is slow, checkout is slow."
+- **Behavior Under Stress**: "Under high load, the API starts queueing requests. Past 1000 QPS, we see cascading timeouts."
+- **Failure Modes**: "When disk fills, logs stop but service keeps running. When memory fills, OOM killer takes random processes."
+- **Recent Changes**: "We deployed v2.3.1 yesterday, added new caching layer last week, migrated database replica last month."
 
 ### 5.2 Building Mental Models
 
-```
-HOW TO BUILD MENTAL MODELS
-═══════════════════════════════════════════════════════════════
-
-1. WATCH NORMAL BEHAVIOR
+1. **Watch Normal Behavior**
    └── What do metrics look like during a normal day?
    └── What's the typical request flow?
    └── What are normal log patterns?
-
-2. WATCH ABNORMAL BEHAVIOR
+2. **Watch Abnormal Behavior**
    └── What happens during incidents?
    └── What breaks first under load?
    └── What error messages appear?
-
-3. TRACE REQUESTS END-TO-END
+3. **Trace Requests End-to-End**
    └── Pick a request type, follow it through
    └── Understand every service it touches
    └── Know the critical path
-
-4. LEARN FROM POSTMORTEMS
+4. **Learn from Postmortems**
    └── What failed? Why didn't we catch it?
    └── What was the actual impact?
    └── What did we learn about the system?
-
-5. EXPERIMENT (carefully)
+5. **Experiment (carefully)**
    └── What happens if we scale down?
    └── What happens if we add latency?
    └── Chaos engineering builds models
-```
 
 ### 5.3 Sharing Mental Models
 
@@ -656,246 +482,100 @@ Mental models in one person's head don't scale. Share them:
 
 ## Quiz
 
-1. **Why should you alert on symptoms rather than causes?**
+1. **You are setting up alerts for a new microservice. Your teammate suggests alerting whenever CPU usage exceeds 80%. What is the danger of this approach, and what should you alert on instead?**
    <details>
    <summary>Answer</summary>
 
-   **Alerting on symptoms** (error rate, latency) tells you when users are affected. You know action is needed.
-
-   **Alerting on causes** (CPU, memory, connections) often fires when nothing is wrong. High CPU might be fine if latency is good. Low disk might never cause issues.
-
-   Examples:
-   - Bad: "CPU > 80%" (might be fine, might not be)
-   - Good: "Error rate > 1%" (users definitely affected)
-   - Bad: "DB connections > 90%" (might handle it fine)
-   - Good: "p99 latency > 500ms" (users definitely affected)
-
-   When you alert on symptoms, every alert means user impact. When you alert on causes, you're often paged for non-issues.
+   Alerting on CPU usage is alerting on a cause rather than a symptom. High CPU usage might be completely fine if the service is still responding quickly and without errors, leading to false positives and alert fatigue. Instead, you should alert on symptoms that directly impact the user experience, such as elevated error rates or increased p99 latency. By alerting on symptoms, every page represents actual user impact, ensuring that when an alert fires, immediate action is truly needed.
    </details>
 
-2. **What's the benefit of SLO-based alerting over threshold-based alerting?**
+2. **Your current alerting rule triggers whenever the error rate exceeds 2% for 5 minutes. During a low-traffic night shift, a brief network blip causes a 3% error rate for 6 minutes, waking up the on-call engineer, though it resolves on its own. How would SLO-based alerting handle this situation differently?**
    <details>
    <summary>Answer</summary>
 
-   **Threshold-based**: "Alert if error rate > X" - arbitrary number, doesn't consider time or budget.
-
-   **SLO-based**: "Alert if error budget burn rate threatens monthly target" - tied to actual user impact over time.
-
-   Benefits of SLO-based:
-   1. **Context-aware**: A 1% error rate might be fine for 5 minutes but not for 5 hours
-   2. **Budget-preserving**: Alerts fire when you'll actually miss your SLO
-   3. **Less noise**: Brief spikes don't page if budget is healthy
-   4. **Proportional severity**: Burn rate determines urgency (1 hour vs 6 hours to exhaustion)
-
-   SLO-based alerts say "this matters" rather than "this is different from arbitrary threshold."
+   SLO-based alerting ties alerts to the error budget burn rate rather than an arbitrary threshold. During a low-traffic period, a brief spike in error rate consumes very little of the overall error budget, so it wouldn't trigger a critical page. Instead, it might only register as a low-severity notification or appear on a dashboard for later review. This approach prevents unnecessary wake-ups for self-resolving issues while still aggressively paging if the burn rate threatens to exhaust the budget over a sustained period.
    </details>
 
-3. **What is the exploratory investigation pattern and why is it effective?**
+3. **An alert fires for high latency on the checkout service. The on-call engineer immediately starts randomly checking logs and restarting database pods, hoping to fix it, which takes 40 minutes. How would applying the exploratory investigation pattern have changed this response?**
    <details>
    <summary>Answer</summary>
 
-   The exploratory investigation pattern is a systematic approach:
-   1. **Quantify** - How bad is it?
-   2. **Segment** - Which subset is affected?
-   3. **Correlate** - What else happened?
-   4. **Exemplify** - Show me a specific case
-   5. **Hypothesize** - I think X is the cause
-   6. **Verify** - Test the hypothesis
-   7. **Resolve** - Fix and document
-
-   It's effective because:
-   - **Systematic**: Doesn't skip steps or jump to conclusions
-   - **Evidence-based**: Each step produces data to inform the next
-   - **Narrowing**: Each step reduces the scope of the problem
-   - **Verifiable**: Hypotheses are tested, not assumed
-
-   Without a pattern, debugging becomes random guessing. With a pattern, you efficiently converge on the answer.
+   Without a structured approach, debugging devolves into random guessing and potentially destructive actions like restarting pods without capturing evidence. The exploratory investigation pattern provides a systematic, step-by-step workflow: quantify the latency, segment to see which users or endpoints are affected, correlate with recent changes, find an exemplar trace, hypothesize a cause, and verify it before acting. By methodically narrowing down the scope of the problem based on data, the engineer would efficiently converge on the true root cause, dramatically reducing the time to resolution.
    </details>
 
-4. **Why are mental models important for operations?**
+4. **Two engineers are investigating a sudden spike in failed background jobs. Engineer A immediately checks the Redis memory metrics, while Engineer B spends 15 minutes reading architecture documentation to understand how the job queue works. What concept does Engineer A possess that Engineer B lacks, and why is it valuable?**
    <details>
    <summary>Answer</summary>
 
-   Mental models are your internalized understanding of how the system works. They're important because:
-
-   1. **Speed**: You know what to check without reading documentation
-   2. **Intuition**: You can sense when something is "off" even without alerts
-   3. **Prediction**: You can anticipate what will happen (e.g., "if we lose Redis, sessions break")
-   4. **Context**: You understand why things are designed the way they are
-   5. **Efficiency**: You skip irrelevant paths and focus on likely causes
-
-   Without mental models, every incident is like operating a new system—slow, methodical, starting from scratch. With mental models, you leverage experience to solve problems faster.
-
-   The challenge: Mental models are in people's heads. Sharing them through runbooks, postmortems, and pairing is essential for team resilience.
+   Engineer A possesses a strong mental model of the system's architecture and dependencies, instinctively knowing that the background jobs rely heavily on Redis. A mental model is an internalized understanding of how the system actually operates and fails in the real world. Having this intuition allows operators to jump straight to likely causes and narrow down investigations quickly, without needing to reference documentation from scratch. Sharing these mental models across the team through pairing, runbooks, and postmortems ensures everyone can investigate with similar efficiency.
    </details>
 
 5. **An SRE team receives 150 alerts per week. 90% require no action after investigation. What is the "signal ratio" and what should they do?**
    <details>
    <summary>Answer</summary>
 
-   **Signal ratio**: 15 actionable alerts ÷ 150 total alerts = **10%**
-
-   This is critically low. Google recommends targeting 50% signal ratio.
-
-   **Problems with 10% signal ratio**:
-   - Alert fatigue: Engineers start ignoring alerts
-   - Slow response: Real issues get lost in noise
-   - Burnout: Constant interruption with no value
-   - Missed incidents: When everything alerts, nothing alerts
-
-   **What they should do**:
-
-   1. **Audit each alert**: For alerts that required no action, why did they fire?
-   2. **Delete or fix**: Remove alerts that never need action; fix thresholds on noisy alerts
-   3. **Move to symptoms**: Replace cause-based alerts (CPU > 80%) with symptom-based (error rate > 1%)
-   4. **Add duration**: "Error rate > 1% for 5 minutes" reduces flapping
-   5. **Use SLO-based alerting**: Alert on error budget burn, not arbitrary thresholds
-
-   **Target**: After cleanup, aim for 50-80% signal ratio. Every alert should feel important.
+   The team's signal ratio is 10%, meaning only 15 out of 150 alerts are actually actionable. This is critically low, as Google recommends targeting a 50% signal ratio. A low signal ratio causes alert fatigue, leading engineers to ignore alerts and resulting in real issues getting lost in the noise. To fix this, the team must audit their noisy alerts, delete the ones that never require action, and shift from cause-based alerts to symptom-based, SLO-aligned alerts.
    </details>
 
 6. **Your team has a dashboard with 47 panels. During an incident, the on-call engineer spends 10 minutes finding the relevant panel. What's wrong and how would you fix it?**
    <details>
    <summary>Answer</summary>
 
-   **Problem**: No hierarchy. All 47 panels treated equally.
-
-   **The fix—implement dashboard hierarchy**:
-
-   ```
-   TOP (5 seconds to answer "are we okay?")
-   ┌────────────────────────────────────────────┐
-   │ SLO Status | Error Budget | Active Alerts  │
-   └────────────────────────────────────────────┘
-
-   MIDDLE (30 seconds to answer "what's the behavior?")
-   ┌──────────┐ ┌──────────┐ ┌──────────┐
-   │ Latency  │ │ Errors   │ │ Traffic  │
-   └──────────┘ └──────────┘ └──────────┘
-
-   BOTTOM (drill-down when investigating)
-   ┌────────────────────────────────────────────┐
-   │ By Endpoint | By Region | By Version | ... │
-   └────────────────────────────────────────────┘
-   ```
-
-   **Additional improvements**:
-   - Use collapsible sections for detail panels
-   - Color-code based on status (green/yellow/red)
-   - Add "jump to" links based on alert type
-   - Create separate dashboards for different use cases (overview vs. deep-dive)
-
-   **Result**: 10 minutes → 30 seconds to find relevant information
+   The primary problem is a complete lack of visual hierarchy, meaning all 47 panels are competing equally for attention. To fix this, the team should reorganize the dashboard into clear tiers. The top row should provide an executive summary answering "are we okay?" in five seconds. The middle row should surface the golden signals (latency, traffic, errors) to indicate current behavior. Finally, the bottom section should contain expandable drill-down panels for when deep investigation is actually required.
    </details>
 
 7. **An engineer's hypothesis during debugging is "the database is slow." They restart the database and the problem goes away. Did they find the root cause? What should they do differently?**
    <details>
    <summary>Answer</summary>
 
-   **No**, they did not find the root cause. They found a *mitigation* that happens to work.
-
-   **Problems with "restart and hope"**:
-   1. **Will recur**: The actual cause is still there
-   2. **No learning**: Team doesn't understand the system better
-   3. **Masks issues**: Might be masking multiple problems
-   4. **Wastes time**: Next incident will require same investigation
-
-   **What they should do differently**:
-
-   1. **Before restarting**, capture evidence:
-      - Database metrics at time of issue
-      - Slow query logs
-      - Connection pool state
-      - Recent changes (deploys, config, traffic patterns)
-
-   2. **After restarting**, investigate why:
-      - Why was the database slow?
-      - What queries were problematic?
-      - What changed to cause this?
-      - Will it happen again?
-
-   3. **Document** in postmortem:
-      - Actual root cause (even if discovered later)
-      - Why restart helped (and why it's not a real fix)
-      - Actions to prevent recurrence
-
-   **The rule**: Mitigation first (get users happy), then investigation (understand why). Mitigation without investigation is incomplete.
+   No, they did not find the root cause; they merely found a mitigation that temporarily masks the underlying issue. By blindly restarting the database without capturing evidence first, they destroyed valuable state that could have explained the slowness. The problem is highly likely to recur, and the team has learned nothing about how to prevent it. Instead, they should have first gathered metrics, slow query logs, and connection pool states to form a testable hypothesis before applying a fix.
    </details>
 
 8. **Calculate the cost of a 30-minute investigation delay for a service with: 100,000 requests/minute, 5% error rate during incident, $0.50 average revenue per successful request. How does this justify investment in observability tooling?**
    <details>
    <summary>Answer</summary>
 
-   **Calculation**:
-   - Requests during 30 minutes: 100,000/min × 30 min = 3,000,000 requests
-   - Failed requests: 3,000,000 × 5% = 150,000 failures
-   - Lost revenue: 150,000 × $0.50 = **$75,000 lost in 30 minutes**
-
-   **Justification math**:
-
-   If better tooling reduces investigation time from 30 minutes to 10 minutes:
-   - Savings per incident: $75,000 - $25,000 = $50,000
-   - If you have 2 incidents/month: $100,000/month saved
-   - Annual savings: $1.2 million
-
-   **Typical observability investment**:
-   - Enterprise observability platform: $100,000-500,000/year
-   - Engineering time to implement: $200,000 (one-time)
-   - Total year-one cost: ~$500,000
-
-   **ROI**: $1.2M savings - $500K investment = **$700,000 net benefit year one**
-
-   **Beyond revenue**:
-   - Customer trust (hard to quantify, real impact)
-   - Engineering morale (fewer 3 AM scrambles)
-   - Regulatory compliance (faster incident response)
-
-   Observability tooling almost always pays for itself in reduced incident impact.
+   A 30-minute delay costs the business significant revenue, calculated as 150,000 failed requests over that period multiplied by $0.50 per request, totaling $75,000 in lost revenue. If an observability tool reduces investigation time to just 10 minutes, the company saves $50,000 per incident. Assuming multiple similar incidents occur throughout the year, the financial savings easily exceed the hundreds of thousands of dollars spent on enterprise observability platforms and engineering time. This demonstrates that proper observability tooling almost always pays for itself by minimizing the direct financial impact of prolonged outages.
    </details>
 
 ---
 
 ## Key Takeaways
 
-```
-DATA-TO-INSIGHT ESSENTIALS CHECKLIST
-═══════════════════════════════════════════════════════════════════════════════
+**Asking Good Questions**
+- [x] Start broad (is something wrong?) then narrow
+- [x] Be specific: endpoint, timeframe, metric
+- [x] Avoid vague questions ("why is it slow?")
+- [x] Follow the question hierarchy: Detection → Scope → Localization → Root Cause
 
-ASKING GOOD QUESTIONS
-☑ Start broad (is something wrong?) then narrow
-☑ Be specific: endpoint, timeframe, metric
-☑ Avoid vague questions ("why is it slow?")
-☑ Follow the question hierarchy: Detection → Scope → Localization → Root Cause
+**The Exploratory Investigation Pattern**
+- [x] 1. Quantify - how bad is it?
+- [x] 2. Segment - who/what is affected?
+- [x] 3. Correlate - what else happened?
+- [x] 4. Exemplify - show me a specific case
+- [x] 5. Hypothesize - I think X is the cause
+- [x] 6. Verify - test the hypothesis
+- [x] 7. Resolve - fix and document
 
-THE EXPLORATORY INVESTIGATION PATTERN
-☑ 1. Quantify - how bad is it?
-☑ 2. Segment - who/what is affected?
-☑ 3. Correlate - what else happened?
-☑ 4. Exemplify - show me a specific case
-☑ 5. Hypothesize - I think X is the cause
-☑ 6. Verify - test the hypothesis
-☑ 7. Resolve - fix and document
+**Effective Alerting**
+- [x] Alert on symptoms (user impact), not causes (CPU/memory)
+- [x] Use SLO-based alerting with error budgets
+- [x] Target 50%+ signal ratio (actionable alerts)
+- [x] Every alert must have: clear action + runbook link
+- [x] Delete alerts that never require action
 
-EFFECTIVE ALERTING
-☑ Alert on symptoms (user impact), not causes (CPU/memory)
-☑ Use SLO-based alerting with error budgets
-☑ Target 50%+ signal ratio (actionable alerts)
-☑ Every alert must have: clear action + runbook link
-☑ Delete alerts that never require action
+**Dashboard Design**
+- [x] Hierarchy: Summary → Golden Signals → Drill-down
+- [x] Answer "are we okay?" in 5 seconds (top row)
+- [x] Consistency across services (same layout)
+- [x] Link to next step (metric → traces → logs)
 
-DASHBOARD DESIGN
-☑ Hierarchy: Summary → Golden Signals → Drill-down
-☑ Answer "are we okay?" in 5 seconds (top row)
-☑ Consistency across services (same layout)
-☑ Link to next step (metric → traces → logs)
-
-BUILDING MENTAL MODELS
-☑ Watch normal behavior to recognize abnormal
-☑ Learn from postmortems (failure modes)
-☑ Trace requests end-to-end (understand flow)
-☑ Share knowledge: runbooks, docs, pairing
-☑ Experiment carefully (chaos engineering)
-```
+**Building Mental Models**
+- [x] Watch normal behavior to recognize abnormal
+- [x] Learn from postmortems (failure modes)
+- [x] Trace requests end-to-end (understand flow)
+- [x] Share knowledge: runbooks, docs, pairing
+- [x] Experiment carefully (chaos engineering)
 
 ---
 
