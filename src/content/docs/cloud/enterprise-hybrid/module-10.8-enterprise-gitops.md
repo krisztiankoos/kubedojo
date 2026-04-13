@@ -651,6 +651,78 @@ git commit -m "feat: Add payments database credentials (encrypted)"
 
 ---
 
+## Progressive Delivery with Argo Rollouts
+
+While ArgoCD excels at syncing the desired state from Git to Kubernetes, it relies on standard Kubernetes deployment strategies (like `RollingUpdate`) which lack advanced traffic control. For enterprise applications where downtime or regression is costly, you need **progressive delivery**.
+
+Argo Rollouts is a Kubernetes controller and set of CRDs that provide advanced deployment capabilities such as blue/green, canary, canary analysis, and experimentation.
+
+> **Pause and predict**: If a bad version of a microservice passes all CI/CD tests but fails under real-world user traffic, how can you minimize the blast radius before rolling back?
+
+### The Rollout Resource
+
+The `Rollout` custom resource acts as a drop-in replacement for the standard Kubernetes `Deployment`. It manages the creation, scaling, and deletion of ReplicaSets based on a defined strategy.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: payments-processor
+  namespace: payments
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: payments-processor
+  template:
+    metadata:
+      labels:
+        app: payments-processor
+    spec:
+      containers:
+      - name: processor
+        image: company/payments-processor:v2.1.0
+  strategy:
+    canary:
+      steps:
+      - setWeight: 10
+      - pause: {duration: 10m} # Wait 10 minutes at 10% traffic
+      - setWeight: 30
+      - pause: {} # Wait indefinitely for manual approval
+      - setWeight: 100
+```
+
+### Automated Rollback with AnalysisRuns
+
+To truly scale progressive delivery, human approval must be replaced with automated metrics analysis. Argo Rollouts integrates with Prometheus, Datadog, or New Relic via an `AnalysisTemplate`.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: success-rate
+  namespace: payments
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: success-rate
+    interval: 1m
+    successCondition: result[0] >= 0.99
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          sum(rate(http_requests_total{service="{{args.service-name}}",status=~"2.."}[1m])) 
+          / 
+          sum(rate(http_requests_total{service="{{args.service-name}}"}[1m]))
+```
+
+When you link this `AnalysisTemplate` to your `Rollout`, Argo Rollouts will automatically query Prometheus during the canary steps. If the success rate drops below 99% three times, the rollout is automatically aborted, routing 100% of traffic back to the stable version without human intervention.
+
+---
+
 ## Did You Know?
 
 1. Backstage has been adopted by over 3,200 companies as of 2025, making it the de facto standard for Internal Developer Platforms. Spotify's internal Backstage instance manages over 7,500 services, 4,500 templates, and serves 6,000 developers. The average developer at Spotify interacts with Backstage 18 times per day -- more than any other internal tool except their IDE.
@@ -714,6 +786,12 @@ The mono-repo becomes a bottleneck at scale because as the number of teams and m
 <summary>Question 6: Scenario: The 'payments' team and 'identity' team share a central ArgoCD instance. A developer on the 'payments' team accidentally modifies their Application manifest to target the `identity-prod` namespace. How does ArgoCD's architecture prevent the 'payments' team from overwriting the 'identity' team's workloads, even if they commit this change to their repository?</summary>
 
 This cross-tenant deployment attempt is blocked by enforcing strict boundary restrictions using ArgoCD AppProjects. The platform team configures the 'payments' AppProject to explicitly define allowed destination namespaces, restricting them solely to the 'payments' environment. When the developer commits the invalid manifest targeting the 'identity' namespace, the ArgoCD application controller evaluates the target against the AppProject's destination whitelist and rejects the sync operation entirely because it is not permitted. To provide defense-in-depth, the platform team also uses Kubernetes RBAC to restrict the specific ArgoCD service account associated with the 'payments' project, ensuring it physically lacks the permissions to modify resources in the 'identity' namespace.
+</details>
+
+<details>
+<summary>Question 7: Scenario: Your team uses Argo Rollouts for progressive delivery with an AnalysisTemplate connected to Prometheus. During a canary deployment at 20% traffic, the background AnalysisRun queries the error rate metric and determines the failure threshold is breached. What sequence of automated actions does Argo Rollouts take immediately after the failure, and why is this critical for the user experience?</summary>
+
+When an AnalysisRun breaches the defined failure limit, Argo Rollouts immediately aborts the progressive delivery process and automatically routes 100% of the traffic back to the stable, known-good ReplicaSet. It then scales down the failing canary ReplicaSet to zero, halting any further exposure to the buggy version. This instantaneous, automated rollback is critical because it minimizes the blast radius of a bad release to only a fraction of users for a very short duration, preventing widespread outages or degraded user experiences without waiting for human intervention or manual Git reverts.
 </details>
 
 ---
