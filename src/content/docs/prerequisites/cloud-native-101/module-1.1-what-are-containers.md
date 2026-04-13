@@ -34,12 +34,12 @@ This isn't about memorizing technical details—it's about understanding the "wh
 
 ### The Classic Deployment Problem
 
-```
+```text
 Developer: "It works on my machine!"
 Operations: "But it doesn't work in production."
 Developer: "My machine has Python 3.9, the right libraries, correct paths..."
 Operations: "Production has Python 3.7, different libraries, different paths..."
-Everyone: 😤
+Everyone: [Frustrated sigh]
 ```
 
 This is the **environment consistency problem**. Applications depend on:
@@ -55,7 +55,7 @@ When any of these differ between development and production, things break.
 ### Traditional Solutions (That Didn't Scale)
 
 **Solution 1: Detailed Documentation**
-```
+```text
 README.md:
 1. Install Python 3.9.7
 2. Run `pip install -r requirements.txt`
@@ -65,7 +65,7 @@ README.md:
 ```
 
 **Solution 2: Virtual Machines**
-```
+```text
 Ship the entire operating system:
 - Works consistently
 - But 10GB+ per application
@@ -76,7 +76,7 @@ Ship the entire operating system:
 
 ### The Container Solution
 
-```
+```text
 What if we could package:
 - The application
 - Its dependencies
@@ -111,8 +111,9 @@ flowchart BT
         hw2[Hardware] --> host2[Host OS]
         host2 --> cr[Container Runtime]
         cr --> capp1[App A]
-        cr --> capp2[App B]
+        cr capp2[App B]
         cr --> capp3[App C]
+        cr --> capp2
     end
 ```
 
@@ -162,7 +163,7 @@ flowchart LR
 
 cgroups limit how much resource a container can use:
 
-```
+```text
 Container A: max 512MB RAM, 0.5 CPU
 Container B: max 1GB RAM, 1 CPU
 Container C: max 256MB RAM, 0.25 CPU
@@ -216,7 +217,7 @@ A container is a **running instance** of an image.
 
 Think of it like an **object**—it's the instantiation.
 
-```
+```text
 Image → Container
 (Class → Object)
 (Blueprint → Building)
@@ -256,7 +257,7 @@ docker pull gcr.io/project/app # From Google
 
 Container images have a specific naming format:
 
-```
+```text
 [registry/][namespace/]repository[:tag]
 
 Examples:
@@ -269,7 +270,7 @@ ghcr.io/username/app:sha-abc123 # GitHub Container Registry
 
 ### Tags Are Important
 
-```
+```text
 nginx:latest     # Whatever is newest (unpredictable!)
 nginx:1.25       # Specific version (better)
 nginx:1.25.3     # Exact version (best for production)
@@ -310,7 +311,7 @@ Rule: Never use :latest in production
 
 The name "container" comes from shipping containers:
 
-```
+```text
 Before Shipping Containers (1950s):
 - Each product packed differently
 - Manual loading/unloading
@@ -439,7 +440,7 @@ docker exec isolation-test cat /secret.txt
 docker rm -f isolation-test
 ```
 
-### ✅ Success Criteria
+### Success Criteria
 - [ ] You verified that the container process believes it is PID 1 (Namespace isolation).
 - [ ] You located the exact same process running on your host OS with a different PID (proving it shares the host kernel).
 - [ ] You experienced data loss by destroying a container, proving their ephemeral nature.
