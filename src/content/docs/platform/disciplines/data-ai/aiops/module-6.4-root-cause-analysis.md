@@ -25,7 +25,7 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-Correlation tells you alerts are related. Root Cause Analysis (RCA) tells you *why*. When 47 services alert simultaneously, which one actually failed? Is it the database, the network, or a misconfigured deployment?
+Correlation tells you alerts are related. Root Cause Analysis (RCA) tells you *why*. When 50 services alert simultaneously, which one actually failed? Is it the database, the network, or a misconfigured deployment?
 
 Manual RCA is detective work—following logs, traces, and metrics across systems. AIOps automates this investigation, identifying probable causes in seconds instead of hours. For teams drowning in incidents, automated RCA is the difference between firefighting and actual engineering.
 
@@ -40,29 +40,30 @@ Manual RCA is detective work—following logs, traces, and metrics across system
 
 ### Symptoms vs Root Causes
 
+```mermaid
+graph TD
+    subgraph Symptoms ["What You See (Symptoms)"]
+        A1["[ALERT] Frontend: Slow"]
+        A2["[ALERT] API: High latency"]
+        A3["[ALERT] API: Timeout errors"]
+        A4["[ALERT] UserService: DB timeout"]
+        A5["[ALERT] OrderService: DB timeout"]
+        A6["[ALERT] Cache: Miss rate high"]
+        A7["[ALERT] Database: Slow queries"]
+        A8["[ALERT] Database: Connection pool"]
+    end
+
+    subgraph RootCause ["What You Need (Root Cause)"]
+        Q["Which one caused the others?<br/>Was it:<br/>- Database?<br/>- Network?<br/>- A deployment?<br/>- Traffic spike?"]
+    end
+
+    Symptoms -.-> Q
 ```
-THE RCA CHALLENGE
-─────────────────────────────────────────────────────────────────
-
-WHAT YOU SEE (Symptoms)           WHAT YOU NEED (Root Cause)
-─────────────────────────────────────────────────────────────────
-
-[ALERT] Frontend: Slow            ┌─────────────────────────────┐
-[ALERT] API: High latency         │                             │
-[ALERT] API: Timeout errors       │   Which one caused the      │
-[ALERT] UserService: DB timeout   │   others?                   │
-[ALERT] OrderService: DB timeout  │                             │
-[ALERT] Cache: Miss rate high     │   Was it:                   │
-[ALERT] Database: Slow queries    │   - Database?               │
-[ALERT] Database: Connection pool │   - Network?                │
-                                  │   - A deployment?           │
-                                  │   - Traffic spike?          │
-                                  │                             │
-                                  └─────────────────────────────┘
 
 Without RCA: Check each alert, correlate manually (hours)
 With RCA: "Database slow queries caused cascade" (seconds)
-```
+
+> **Stop and think**: How much time does your team currently spend manually cross-referencing dashboards and logs during a major incident?
 
 ### Root Cause Categories
 
@@ -77,39 +78,36 @@ With RCA: "Database slow queries caused cascade" (seconds)
 
 ## RCA Approaches
 
+> **Pause and predict**: If service A calls service B, and both are alerting for high latency, which one is statistically more likely to be the actual cause of the delay?
+
 ### 1. Dependency Graph Analysis
 
 Follow the dependency chain to find the deepest failure:
 
-```
-DEPENDENCY-BASED RCA
-─────────────────────────────────────────────────────────────────
+```mermaid
+graph TD
+    classDef alert fill:#ffcccc,stroke:#ff0000,stroke-width:2px;
+    classDef rootCause fill:#ff9999,stroke:#cc0000,stroke-width:4px;
 
-SERVICE DEPENDENCY GRAPH
-                                              ALERT
-                    ┌─────────┐                 │
-                    │ Frontend│ ◀───────────────┤
-                    └────┬────┘                 │
-                         │                      │
-                    ┌────▼────┐                 │
-                    │   API   │ ◀───────────────┤
-                    └────┬────┘                 │
-              ┌──────────┼──────────┐           │
-              │          │          │           │
-         ┌────▼────┐┌────▼────┐┌────▼────┐     │
-         │  User   ││ Order   ││ Product │ ◀───┤
-         │ Service ││ Service ││ Service │     │
-         └────┬────┘└────┬────┘└────┬────┘     │
-              │          │          │           │
-              └──────────┼──────────┘           │
-                         │                      │
-                    ┌────▼────┐                 │
-                    │Database │ ◀───────────────┘
-                    └─────────┘
-                         ▲
-                         │
-                    ROOT CAUSE
-                (Deepest alerting node)
+    F["Frontend"]:::alert
+    API["API"]:::alert
+    U["User Service"]:::alert
+    O["Order Service"]:::alert
+    P["Product Service"]:::alert
+    DB["Database"]:::rootCause
+
+    F --> API
+    API --> U
+    API --> O
+    API --> P
+    U --> DB
+    O --> DB
+    P --> DB
+
+    subgraph Legend
+        L1["Alerting Node"]:::alert
+        L2["Root Cause (Deepest Alerting Node)"]:::rootCause
+    end
 ```
 
 ```python
@@ -218,29 +216,23 @@ root, confidence, blast = rca.find_root_cause(alerting)
 # root = 'database', confidence = 1.0 (explains all alerts)
 ```
 
+> **Stop and think**: Think about the last three major incidents in your organization. How many of them were immediately preceded by a deployment or configuration change?
+
 ### 2. Change Correlation
 
 Most incidents follow changes (deployments, config updates, traffic shifts):
 
-```
-CHANGE CORRELATION TIMELINE
-─────────────────────────────────────────────────────────────────
+```mermaid
+graph TD
+    T1["10:00 - Deploy: user-service v2.3.1"]
+    T2["10:15 - Config change: database connection pool size"]
+    T3["10:30 - [ALERT] user-service: High error rate"]
 
-Timeline
-      │
-10:00 ├── Deploy: user-service v2.3.1
-      │
-10:15 ├── Config change: database connection pool size
-      │
-10:30 ├── [ALERT] user-service: High error rate
-      │         │
-      │         └──▶ Correlate with changes in last 30 min
-      │              ┌─────────────────────────────────────┐
-      │              │ Probable cause: Deploy v2.3.1      │
-      │              │ Confidence: HIGH (time proximity)  │
-      │              │ Suggestion: Check v2.3.1 changelog │
-      │              │             or rollback            │
-      │              └─────────────────────────────────────┘
+    T1 --> T2 --> T3
+
+    C["<b>Correlate with changes in last 30 min</b><br/>Probable cause: Deploy v2.3.1<br/>Confidence: HIGH (time proximity)<br/>Suggestion: Check v2.3.1 changelog or rollback"]
+
+    T3 -.-> C
 ```
 
 ```python
@@ -345,25 +337,19 @@ class ChangeCorrelationRCA:
 
 Find metrics that changed before the incident:
 
-```
-METRIC CAUSALITY ANALYSIS
-─────────────────────────────────────────────────────────────────
+### Metric Causality Analysis
 
-INCIDENT: API latency spike at 10:30
+**INCIDENT:** API latency spike at 10:30
 
-METRIC ANALYSIS:
+| Metric | 10:00 | 10:15 | 10:30 | Verdict |
+|--------|-------|-------|-------|---------|
+| API latency (symptom) | 50ms | 55ms | 500ms | **← EFFECT** |
+| Database query time | 10ms | 50ms | 400ms | **← CAUSE?** |
+| Database connections | 50 | 80 | 100 | **← CAUSE?** |
+| Request rate | 1000 | 1000 | 1000 | Stable |
+| Memory usage | 60% | 61% | 62% | Stable |
 
-Metric                      | 10:00 | 10:15 | 10:30 | Verdict
-────────────────────────────────────────────────────────────────
-API latency (symptom)       | 50ms  | 55ms  | 500ms | ← EFFECT
-Database query time         | 10ms  | 50ms  | 400ms | ← CAUSE?
-Database connections        | 50    | 80    | 100   | ← CAUSE?
-Request rate                | 1000  | 1000  | 1000  | ← Stable
-Memory usage                | 60%   | 61%   | 62%   | ← Stable
-
-FINDING: Database metrics degraded BEFORE API latency
-         suggesting database is root cause
-```
+**FINDING:** Database metrics degraded BEFORE API latency, suggesting the database is the root cause.
 
 ```python
 import numpy as np
@@ -566,44 +552,32 @@ class LogBasedRCA:
         }
 ```
 
+> **Pause and predict**: What happens if the topology analysis points to the database, but the change correlation points to a frontend deployment? How should the system resolve the conflict?
+
 ## Combining RCA Strategies
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                 COMPREHENSIVE RCA PIPELINE                      │
-│                                                                  │
-│  INPUT: Correlated Incident                                     │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  - Alerting services: [A, B, C, D]                       │   │
-│  │  - Time range: 10:30 - 10:45                             │   │
-│  │  - Severity: Critical                                    │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                           │                                      │
-│  PARALLEL ANALYSIS        ▼                                      │
-│  ┌──────────┬──────────┬──────────┬──────────┐                  │
-│  │ Topology │  Change  │  Metric  │   Log    │                  │
-│  │   RCA    │ Correlat.│ Causality│ Analysis │                  │
-│  │          │          │          │          │                  │
-│  │Root: D   │Deploy at │DB query  │First err:│                  │
-│  │Conf: 90% │10:25     │degraded  │D connref │                  │
-│  │          │Score: 85 │at 10:28  │at 10:29  │                  │
-│  └────┬─────┴────┬─────┴────┬─────┴────┬─────┘                  │
-│       │          │          │          │                         │
-│       └──────────┴──────────┴──────────┘                         │
-│                           │                                      │
-│  SYNTHESIS                ▼                                      │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  Root Cause Synthesizer                                  │   │
-│  │                                                          │   │
-│  │  Weighted voting:                                        │   │
-│  │  - Service D: 4 signals                                  │   │
-│  │  - Deployment: 3 signals                                 │   │
-│  │                                                          │   │
-│  │  CONCLUSION: Service D failure after 10:25 deployment    │   │
-│  │              Suggest: Rollback to v2.3.0                 │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Input["<b>INPUT: Correlated Incident</b><br/>Alerting services: [A, B, C, D]<br/>Time range: 10:30 - 10:45<br/>Severity: Critical"]
+
+    subgraph Parallel Analysis
+        T["<b>Topology RCA</b><br/>Root: D<br/>Conf: 90%"]
+        C["<b>Change Correlation</b><br/>Deploy at 10:25<br/>Score: 85"]
+        M["<b>Metric Causality</b><br/>DB query degraded<br/>at 10:28"]
+        L["<b>Log Analysis</b><br/>First err: D connref<br/>at 10:29"]
+    end
+
+    Input --> T
+    Input --> C
+    Input --> M
+    Input --> L
+
+    Synth["<b>Root Cause Synthesizer</b><br/>Weighted voting:<br/>- Service D: 4 signals<br/>- Deployment: 3 signals<br/><br/><b>CONCLUSION:</b> Service D failure after 10:25 deployment<br/><b>Suggest:</b> Rollback to v2.3.0"]
+
+    T --> Synth
+    C --> Synth
+    M --> Synth
+    L --> Synth
 ```
 
 ```python
@@ -737,62 +711,27 @@ class ComprehensiveRCA:
 ## Quiz
 
 <details>
-<summary>1. Why is the "deepest alerting service" heuristic effective for topology-based RCA?</summary>
+<summary>1. You are investigating a massive outage where the frontend, API gateway, user service, and database are all firing high-latency alerts simultaneously. The topology analyzer flags the database as the root cause because it is the "deepest alerting service." Why does this specific heuristic correctly point to the database in this scenario?</summary>
 
-**Answer**: In service dependency graphs:
-1. Failures propagate **upward** (from dependencies to dependents)
-2. A database failure causes API failures, not vice versa
-3. The **deepest** service is furthest from leaf nodes
-4. If it's alerting, it likely caused alerts in all services above it
-
-This heuristic works because it follows the direction of causality in distributed systems.
+**Answer**: In service dependency graphs, failures inherently propagate upward from downstream dependencies to the upstream services that call them. If the database fails, it will cause the user service to time out, which cascades to the API gateway and finally the frontend. The deepest service in the dependency tree is the furthest from the user-facing leaf nodes. Therefore, if it is alerting, it almost certainly triggered the cascade of alerts in all the services positioned above it.
 </details>
 
 <details>
-<summary>2. How does change correlation complement topology-based RCA?</summary>
+<summary>2. During a Black Friday traffic spike, your topology-based RCA correctly identifies the `checkout-service` as the root cause of a site-wide slowdown. However, your team still doesn't know what to fix until the change correlation engine points to a configuration update made ten minutes prior. How does change correlation complement the topology findings in this specific incident?</summary>
 
-**Answer**: Topology-based RCA finds **what** failed. Change correlation finds **why** it failed:
-
-- Topology: "Database is root cause"
-- Change correlation: "Deployment 10 minutes ago changed connection pool settings"
-
-Together they provide:
-1. Root cause identification (topology)
-2. Probable trigger (change)
-3. Remediation path (rollback deployment)
+**Answer**: Topology-based RCA is excellent at finding *what* part of the system failed, but it cannot explain the underlying reason *why* it failed. In this scenario, knowing the `checkout-service` is broken doesn't provide a remediation path on its own. Change correlation bridges this gap by identifying the exact trigger—in this case, the recent configuration update. Together, they provide both the location of the failure and an immediate path to resolution, such as rolling back the bad config.
 </details>
 
 <details>
-<summary>3. What's the key principle behind metric-based causal analysis?</summary>
+<summary>3. You are reviewing an incident report where an API latency spike triggered alerts at 10:30. The metric-based causal analyzer highlights that database query times began degrading at 10:28, while memory usage remained stable. What is the fundamental principle the analyzer is using to flag the database metrics over others?</summary>
 
-**Answer**: **Causes precede effects**. If metric A changes before metric B:
-- A might cause B
-- Or they share a common cause
-
-The analysis:
-1. Find when the symptom metric started degrading
-2. Find metrics that changed **before** the symptom
-3. Rank by lead time (shorter = more correlated)
-
-This temporal ordering helps distinguish causes from symptoms.
+**Answer**: The analyzer relies on the fundamental principle that causes must strictly precede their effects in time. If the database query times started degrading before the API latency spiked, it establishes a temporal ordering that strongly suggests causality. The analyzer finds the exact moment the symptom metric degraded and then looks backward for metrics that shifted beforehand. By ranking these preceding changes by lead time, it filters out concurrent symptoms and isolates the true trigger.
 </details>
 
 <details>
-<summary>4. Why should RCA systems combine multiple strategies rather than using one?</summary>
+<summary>4. Your platform team initially deployed an RCA system that only used topology-based dependency tracing. While it worked well for cascading timeouts, it completely missed a recent outage caused by a misconfigured load balancer that didn't trigger dependency alerts. Why must a robust RCA system combine multiple analytical strategies to prevent blind spots like this?</summary>
 
-**Answer**: Different strategies catch different failure modes:
-
-| Strategy | Best At | Misses |
-|----------|---------|--------|
-| Topology | Cascading failures | Config issues |
-| Change correlation | Deployment issues | Capacity failures |
-| Metric analysis | Gradual degradation | Instant failures |
-| Log analysis | Application errors | Infrastructure issues |
-
-Combining with voting:
-- Increases accuracy when strategies agree
-- Provides confidence scores
-- Handles cases where one strategy has incomplete data
+**Answer**: Different failure modes manifest in entirely different ways that no single analytical strategy can capture completely. Topology analysis excels at tracking cascading timeouts but is blind to configuration issues or instant application crashes. Change correlation catches bad deployments but misses slow resource exhaustion, while log analysis finds application errors but might miss network partitions. By combining multiple strategies with a weighted voting mechanism, the system can cross-validate signals, cover each method's blind spots, and drastically increase overall diagnostic accuracy.
 </details>
 
 ## Hands-On Exercise: Build an RCA System
