@@ -10,7 +10,13 @@ sidebar:
 
 Operating Kubernetes on bare metal often involves strict data privacy, compliance, or air-gapped constraints that preclude the use of SaaS observability platforms like Datadog, New Relic, or cloud-vendor AIOps tools. Private AIOps brings machine learning (ML) and artificial intelligence (AI) directly into your cluster to automate root cause analysis (RCA), detect metric anomalies, and execute self-healing workflows without transmitting cluster state or telemetry over the internet.
 
-This module covers the architecture and implementation of in-cluster AIOps, focusing on localized telemetry anomaly detection, AI-augmented incident response using Robusta and local Large Language Models (LLMs), and predictive scaling.
+## Why This Module Matters
+
+In August 2012, Knight Capital Group deployed a dormant, buggy piece of code to their production environment. The lack of anomalous behavior detection and automated, intelligent circuit breakers resulted in their systems executing millions of erroneous trades. Within just 45 minutes, Knight Capital lost $460 million, eventually leading to the company's acquisition. While this was an application deployment error, the fundamental observability failure remains universal: humans cannot react quickly enough to machine-speed cascading failures without intelligent assistance and predictive analytics. 
+
+More recently, catastrophic global network outages have demonstrated that relying entirely on external SaaS providers for incident response is a critical vulnerability. When an underlying network backbone goes down, so does your access to cloud-based monitoring, dashboards, and alerting, leaving platform teams completely blind precisely when they need visibility the most. Furthermore, sending sensitive internal cluster logs to a public API can result in severe data leakage.
+
+Private AIOps solves these dilemmas by bringing the machine learning and analytical reasoning capabilities of AI directly into your bare-metal Kubernetes clusters. This ensures that your telemetry stays secure and strictly air-gapped, your root-cause analysis functions reliably even during upstream network partitions, and your automated remediations are executed locally with minimal latency.
 
 ## Learning Outcomes
 
@@ -18,9 +24,9 @@ This module covers the architecture and implementation of in-cluster AIOps, focu
 * **Configure** Robusta to enrich Prometheus alerts with cluster context and AI-generated root cause analysis without relying on external SaaS APIs.
 * **Implement** statistical anomaly detection rules in Prometheus and VictoriaMetrics to replace brittle static alerting thresholds.
 * **Evaluate** predictive scaling mechanisms against reactive Horizontal Pod Autoscaler (HPA) behaviors for spiky workloads.
-* **Establish** operational guardrails to constrain automated self-healing workflows, preventing cascading failures caused by AI hallucinations or aggressive remediation loops.
+* **Diagnose** complex cascading failures by leveraging local trace intelligence and machine learning models running directly on cluster nodes.
 
-## Architectural Paradigms for Private AIOps
+## 1. Architectural Paradigms for Private AIOps
 
 A Private AIOps stack shifts the computational burden of telemetry analysis and natural language reasoning to the local cluster infrastructure. 
 
@@ -28,11 +34,13 @@ A Private AIOps stack shifts the computational burden of telemetry analysis and 
 Running local LLMs and ML models requires dedicated GPU resources or significant CPU overhead. On bare metal, isolate these workloads using node selectors, taints, and tolerations (e.g., `nvidia.com/gpu`) to prevent them from starving critical control plane or application workloads.
 :::
 
+Interestingly, if you search the CNCF landscape, you will find that there is no dedicated "AIOps" category. AIOps tooling spans the Observability, Machine Learning, and AI Inference categories, requiring platform engineers to piece together their own stack.
+
 The architecture consists of four distinct pillars:
 
-1. **Telemetry Ingestion & Storage:** Prometheus, VictoriaMetrics, or Thanos for metrics; Vector or Fluent Bit for logs.
-2. **Anomaly Detection Engine:** Statistical engines (VictoriaMetrics `vmanomaly`) or advanced PromQL queries that generate dynamic alerts based on historical baselines rather than static thresholds.
-3. **Incident Response & Automation:** Robusta or custom Kubernetes Operators acting as the glue between alerts, cluster state, and the AI backend.
+1. **Telemetry Ingestion & Storage:** Prometheus, VictoriaMetrics, Thanos, or Cortex for metrics; OpenTelemetry for traces.
+2. **Anomaly Detection Engine:** Statistical engines (like VictoriaMetrics `vmanomaly`) or advanced PromQL queries that generate dynamic alerts based on historical baselines rather than static thresholds.
+3. **Incident Response & Automation:** Robusta, Argo Workflows, or custom Kubernetes Operators acting as the glue between alerts, cluster state, and the AI backend.
 4. **Local AI Backend:** An OpenAI-compatible API serving local models (e.g., Ollama or vLLM running Llama 3, Qwen, or Mistral).
 
 ```mermaid
@@ -60,7 +68,15 @@ graph TD
 | **Model Capability** | Limited by local VRAM (typically 7B-70B parameter models). | State-of-the-art reasoning (GPT-4, Claude 3.5 Sonnet). |
 | **Cost** | High CapEx (GPUs, power, cooling). Zero OpEx. | Low CapEx. High, unpredictable OpEx based on token usage. |
 
-## Anomaly Detection in Cluster Metrics
+> **Pause and predict**: If your SaaS AIOps provider has a sudden network outage, what happens to your cluster's alerting pipeline? How does an air-gapped Private AIOps implementation mitigate this dependency risk?
+
+### The CNCF Ecosystem Context
+
+To build this stack, we rely on established CNCF projects. Prometheus is a CNCF Graduated project (it graduated on August 9, 2018, making it the second project to graduate after Kubernetes). The current stable release is Prometheus v3.11.1 (released April 7, 2026). For long-term metrics storage, Thanos and Cortex both hold CNCF Incubating status (accepted in August 2020).
+
+For traces and logs, OpenTelemetry holds CNCF Incubating status, with the OpenTelemetry Collector at v0.149.0 as the current stable release. The CNCF recently cited that OpenTelemetry production adoption tripled from 3% to 10% year-over-year.
+
+## 2. Anomaly Detection in Cluster Metrics
 
 Static thresholds in Prometheus (`container_memory_usage_bytes > 8Gi`) inevitably lead to alert fatigue. Workloads have diurnal patterns, weekly cycles, and seasonal spikes. Anomaly detection identifies deviations from expected patterns.
 
@@ -96,11 +112,11 @@ groups:
 PromQL evaluation of long time windows (`[1w]`) is extremely memory-intensive. On large clusters, this will cause Prometheus OOM kills. Offload these calculations to Thanos Ruler or VictoriaMetrics.
 :::
 
-### Machine Learning with VictoriaMetrics Anomaly Detection (vmanomaly)
+### Specialized Anomaly Engines
 
-For environments already utilizing VictoriaMetrics, `vmanomaly` provides an external service that queries historical data, applies ML models (like Prophet or Holt-Winters), and pushes an anomaly score metric (`anomaly_score`) back into the time-series database.
+Many observability tools offer ML-based anomaly detection. However, some are strictly proprietary. For example, Grafana's ML-based anomaly detection and forecasting features (like Sift and outlier detection) are available only in Grafana Cloud and Grafana Enterprise, not in the open-source distribution. The Grafana open-source stable release is in the v12.x line (v12.4.1 as of April 2026).
 
-A typical `vmanomaly` configuration defines a model and a schedule:
+Similarly, while VictoriaMetrics is excellent, its `vmanomaly` component requires an Enterprise license key since v1.5.0. If you have the license, it provides an external service that queries historical data, applies ML models, and pushes an anomaly score metric back into the database.
 
 ```yaml
 # vmanomaly-config.yaml
@@ -127,7 +143,17 @@ You then alert on the resulting metric:
     for: 5m
 ```
 
-## AI-Augmented Incident Response with Robusta
+For purely open-source alternatives, Netdata v2.10.1 trains an ensemble of 18 ML models per metric locally at the edge for anomaly detection. OpenSearch (currently at major version v3.x, requiring verification for exact synchronized core and Dashboards patch versions) offers Anomaly Detection using the Random Cut Forest (RCF) algorithm. *Note: Research suggests Elasticsearch ML features may require a paid Elastic license tier, though definitive tier mappings frequently change.*
+
+## 3. Log and Trace Intelligence
+
+AIOps heavily relies on logs and traces to contextualize metric anomalies. 
+
+Grafana Loki v3.7 is the current stable release. Note that Promtail officially reached end-of-life on March 2, 2026, with its functionality merged into Grafana Alloy. If you are deploying Loki, ensure you use the updated Helm charts, which migrated to the `grafana-community/helm-charts` repository effective March 16, 2026.
+
+For distributed tracing, Grafana Tempo v2.10.0 is the current stable release. Other tracing solutions like SigNoz (reported as v0.114.1, though unverified by official CNCF channels) can also provide deep application insights that an AIOps LLM can parse.
+
+## 4. AI-Augmented Incident Response with Robusta
 
 When an alert fires, engineers waste minutes (or hours) manually gathering context: running `kubectl get events`, checking logs, and viewing associated Grafana dashboards. Robusta automates this triage phase.
 
@@ -135,7 +161,7 @@ Robusta consists of an in-cluster runner that intercepts Alertmanager webhooks, 
 
 ### Integrating Local LLMs
 
-To utilize Robusta for RCA without leaking data to OpenAI, you must point Robusta's AI features to a local, OpenAI-compatible endpoint. Ollama or vLLM are the standard choices.
+To utilize Robusta for RCA without leaking data to OpenAI, you must point Robusta's AI features to a local, OpenAI-compatible endpoint. Ollama or vLLM are the standard choices. 
 
 The LLM is prompted with the alert details, recent events, and pod logs. The model returns a structured RCA and suggested remediation steps.
 
@@ -161,32 +187,30 @@ sinksConfig:
 enablePrometheusStack: false # Set to false if you already have kube-prometheus-stack
 ```
 
-When Robusta receives an alert (e.g., `CrashLoopBackOff`), it automatically queries the local endpoint, analyzes the crash logs, and appends the AI's explanation to the Slack message.
+When Robusta receives an alert (e.g., `CrashLoopBackOff`), it automatically queries the local endpoint, analyzes the crash logs, and appends the AI's explanation to the Slack message. *Note: If using Grafana OnCall as your sink, be aware that OnCall OSS entered maintenance mode on March 11, 2025, and its cloud-connected features were archived March 24, 2026.*
 
-## Predictive Scaling
+## 5. Machine Learning Workflows and Predictive Scaling
 
 Standard Horizontal Pod Autoscaler (HPA) is reactive. It scales up *after* CPU spikes or queue lengths increase. This causes a cold-start latency window where incoming requests are dropped or degraded while new pods initialize.
 
-Predictive scaling analyzes historical metric patterns to scale out proactively, *before* the anticipated load arrives.
+Predictive scaling analyzes historical metric patterns to scale out proactively, *before* the anticipated load arrives. The models driving these predictions can be trained using ML pipelines like Kubeflow or MLflow. 
 
-### KEDA Predictive Scaling
-
-KEDA (Kubernetes Event-driven Autoscaling) can integrate with predictive models via external metric scalers. While native predictive scaling in KEDA is still maturing, the standard pattern involves deploying a custom metrics API server that exposes predictions generated by an ML model as standard Kubernetes custom metrics.
-
-Alternatively, operators use tools like **Predictive Horizontal Pod Autoscaler (PHPA)** which acts as a drop-in replacement or wrapper around the standard HPA. It fetches historical metrics, runs statistical models (like Holt-Winters), and overrides the replica count ahead of time.
+Kubeflow v1.10 is the current stable release (released March 31, 2025) and is a CNCF Incubating project, following a twice-yearly release cadence aligned with KubeCon EU (March) and KubeCon NA (October). MLflow (currently in the v3.x major version line, v3.10+) is governed by the Linux Foundation AI & Data (LF AI & Data), not the CNCF.
 
 ### The Dangers of Black-Box Scaling
 
-Predictive scaling introduces significant operational risk. If the model hallucinates a traffic spike (e.g., due to anomalous historical data from a previous outage), it may scale deployments to their maximum limits, exhausting node resources and starving other workloads.
+Predictive scaling introduces significant operational risk. If the model hallucinates a traffic spike (e.g., due to anomalous historical data from a previous outage), it may scale deployments to their maximum limits, exhausting node resources and starving other workloads. Data for these models is often streamed via Apache Kafka. Apache Kafka v4.2.0 is the current stable release (released February 17, 2026). *It is widely reported that Kafka 4.x removes the ZooKeeper dependency entirely to run in KRaft mode, though exact architectural deprecation timelines should be verified in Apache documentation.*
 
 **Guardrails for Predictive Scaling:**
 1. **Tight `maxReplicas` bounds:** Never set `maxReplicas` arbitrarily high. Cap it at 120% of your known peak capacity.
 2. **Fallback to Reactive HPA:** If the predictive metric server goes down or returns NaN, the system must immediately fall back to standard CPU/Memory reactive scaling.
 3. **Ignore Anomaly Windows:** The training pipeline for the predictive model must strip out data generated during outages or DDoS attacks, otherwise the model will predict "outages" as standard seasonal traffic.
 
-## Self-Healing Workflows and Guardrails
+> **Stop and think**: What happens if your predictive scaling model is fed an entire week of DDOS traffic data during its training cycle? How will it interpret normal traffic the following week?
 
-The ultimate goal of AIOps is automated remediation: the system detects an anomaly, the LLM determines the fix, and an operator applies it. On bare metal, automated remediation usually involves node cordoning, pod evictions, restarting deadlocked services, or rolling back deployments.
+## 6. Self-Healing Workflows and Guardrails
+
+The ultimate goal of AIOps is automated remediation: the system detects an anomaly, the LLM determines the fix, and an operator applies it. Automated orchestration can be handled by Argo Workflows (v4.0.4 is current as of April 2, 2026, and part of the Argo Project, which is actively seeking/maintaining CNCF status).
 
 ### Implementing Playbooks
 
@@ -214,12 +238,36 @@ Permitting an LLM to autonomously execute state-mutating commands (`kubectl dele
 3. **Approval Webhooks:** If automated execution is required, implement a Slack interactive button (e.g., "Approve Rollback"). The button triggers an intermediary service that validates the request against an allowlist of permitted actions before executing it with elevated privileges.
 4. **Rate Limiting:** If a self-healing loop initiates, it must be rate-limited. If a node is cordoned and workloads are evicted, the system must wait for cluster stabilization before cordoning a second node. Failure to rate-limit can lead to all nodes being cordoned simultaneously.
 
+---
+
+## 🌟 Did You Know?
+
+1. Prometheus graduated from the CNCF on August 9, 2018, making it the second project to graduate after Kubernetes.
+2. According to a CNCF survey, OpenTelemetry production adoption tripled from 3% to 10% year-over-year between 2025 and 2026.
+3. Promtail officially reached end-of-life on March 2, 2026, and its functionality was merged entirely into Grafana Alloy.
+4. Grafana OnCall OSS entered maintenance mode on March 11, 2025, and all its cloud-connected features were fully archived by March 24, 2026.
+
+---
+
+## Common Mistakes
+
+| Mistake | Why It Happens | How to Fix |
+| :--- | :--- | :--- |
+| **Giving LLM Cluster Admin** | Wanting true "self-healing" without human intervention. | Use read-only RBAC and implement human-in-the-loop approval webhooks via ChatOps. |
+| **Piping AI to `bash`** | Automating LLM remediation outputs directly to a shell. | Never pipe AI output directly into `bash` or `kubectl`. LLMs hallucinate resource names and CRDs. |
+| **Context Window Truncation** | Feeding 5,000 lines of pod logs to a local 8B model. | Implement log tailing limits (e.g., last 50 lines) before sending data to the AI backend. |
+| **Ignoring Timeout Constraints** | Alertmanager webhook times out because CPU inference is slow. | Increase webhook timeout limits to 60s+ or ensure GPU acceleration for the local LLM. |
+| **Standard Deviation Alert Flapping** | Applying Z-score rules to low-variance baseline metrics. | Combine statistical anomaly detection with an absolute minimum threshold (e.g., `rate > 100`). |
+| **Unbounded Predictive Scaling** | Using a raw model output to set pod replicas. | Cap `maxReplicas` strictly to 120% of expected peak to prevent hallucinated scale-out events. |
+
+---
+
 ## Hands-on Lab: AI-Enriched Alerting with Robusta and Local LLMs
 
 In this lab, you will deploy a local Ollama instance running a small LLM, install Robusta, and configure it to intercept a failing Pod alert, utilizing the local AI to explain the failure.
 
 ### Prerequisites
-* A Kubernetes cluster (v1.32+). `kind` or `minikube` is sufficient if you have at least 8GB of RAM available.
+* A Kubernetes cluster (v1.35+). `kind` or `minikube` is sufficient if you have at least 8GB of RAM available.
 * `helm` and `kubectl` installed.
 * `kube-prometheus-stack` installed in the `monitoring` namespace.
 
@@ -399,69 +447,59 @@ Suggested Actions:
 2. Check recent logs: `kubectl logs failing-app -n default --previous`
 ```
 
-### Troubleshooting
-* **LLM Connection Refused:** Ensure the Ollama pod is running and the service endpoint `http://ollama.monitoring.svc.cluster.local:11434` resolves from within the `robusta-runner` pod.
-* **Alerts not arriving:** Check Alertmanager logs (`kubectl logs statefulset/alertmanager-kube-prometheus-stack-alertmanager -n monitoring`) to ensure the webhook to Robusta is succeeding.
-* **OOMKilled Ollama:** Local LLMs consume significant memory. If the Ollama pod restarts with `OOMKilled`, increase the memory limits or use a smaller model quantization (e.g., `q4_0`).
+### Success Checklist
+- [ ] Deployed an isolated Ollama pod with Llama3.2.
+- [ ] Configured Robusta to point its `chat_gpt_endpoint` to the local service.
+- [ ] Confirmed Alertmanager webhooks are routed to `robusta-runner`.
+- [ ] Successfully triggered a CrashLoopBackOff and verified the local LLM generated an RCA.
 
-## Practitioner Gotchas
-
-* **Context Window Truncation:** Feeding `kubectl describe pod` and 500 lines of logs into a local LLM will rapidly exceed the model's context window (often 8k tokens for smaller models), resulting in truncated prompts or HTTP 500 errors. Implement log tailing limits (e.g., last 50 lines) before sending data to the AI backend.
-* **LLM API Timeout Constraints:** Robusta and Alertmanager webhooks expect relatively fast responses. Inference on CPU-only bare metal nodes for a 8B parameter model can take 30-60 seconds. This will cause webhook timeouts. You must increase Alertmanager webhook timeout configurations or ensure GPU acceleration for the LLM inference server.
-* **Hallucinated Kubernetes Objects:** LLMs confidently hallucinate CRDs and specific resource names. An AI might suggest running `kubectl restart deployment/db-backend` when the actual resource is a StatefulSet named `postgres-db`. Never pipe AI output directly into `bash` or `kubectl`.
-* **Standard Deviation Alert Flapping:** Using Z-scores for anomaly detection on metrics with low baseline variance (e.g., a service that receives exactly 1 request per hour) will cause minor fluctuations to appear as massive anomalies (Z-score > 10). Always combine statistical anomaly detection with an absolute minimum threshold (e.g., `z_score > 3 AND rate > 100`).
+---
 
 ## Quiz
 
 **1. You are configuring Robusta to use a local LLM running in your cluster to ensure strict data privacy. The Robusta Helm chart requires a `chat_gpt_api_key`. What is the correct approach?**
-* A) Leave the field empty or comment it out; the local API doesn't need it.
-* B) Provide a dummy string; the OpenAI compatible client requires the field to be populated, but the local backend (like Ollama) will ignore it.
-* C) Generate an API key from the OpenAI platform and use it to authenticate the local traffic.
-* D) Configure the Robusta runner RBAC to read the key dynamically from the `kube-system` namespace.
 <details>
 <summary>Answer</summary>
 **Correct Answer: B.** The underlying Python OpenAI client library used by Robusta strictly requires an API key string to initialize, even if the base URL is pointed to a local unauthenticated service like Ollama. A dummy string satisfies the client.
 </details>
 
 **2. Which of the following is a critical operational guardrail when implementing Predictive Horizontal Pod Autoscaling (PHPA)?**
-* A) Setting the minimum replica count to zero to maximize resource utilization during off-peak hours.
-* B) Ensuring the predictive model has admin access to the cluster to create new node pools.
-* C) Capping the `maxReplicas` to a conservative boundary (e.g., 120% of expected peak) to prevent hallucinated traffic spikes from exhausting cluster resources.
-* D) Disabling the reactive HPA entirely to prevent conflict with the predictive scaler.
 <details>
 <summary>Answer</summary>
 **Correct Answer: C.** Predictive models can hallucinate or over-predict based on dirty historical data. Tight `maxReplicas` bounds prevent the scaler from requesting infinite pods and crashing the cluster.
 </details>
 
 **3. When implementing PromQL-based anomaly detection using Z-scores (`expr: node:cpu_usage:z_score > 3`), you notice the alert is flapping continuously on a low-traffic development cluster. What is the most likely architectural flaw?**
-* A) The standard deviation is too high, masking the true anomalies.
-* B) The baseline time window (`1w`) is too short to capture standard variance.
-* C) Evaluating long time windows is causing Prometheus to silently drop metrics.
-* D) The metric has a near-zero baseline variance, meaning tiny absolute changes generate massive Z-scores.
 <details>
 <summary>Answer</summary>
 **Correct Answer: D.** If a baseline is perfectly flat, the standard deviation approaches zero. Any minor change divided by near-zero results in a massive Z-score, triggering the anomaly alert. You must add an absolute minimum threshold to the rule.
 </details>
 
 **4. Why is routing automated remediation playbooks directly from an LLM to the Kubernetes API server (e.g., `kubectl delete pod`) considered a severe anti-pattern?**
-* A) The API server rate limits incoming requests from service accounts by default.
-* B) LLMs hallucinate resource names and remediation steps, which can escalate a localized failure into a cluster outage if executed autonomously.
-* C) Robusta does not support executing commands against the local cluster.
-* D) Local LLMs cannot process JSON output required by the Kubernetes API.
 <details>
 <summary>Answer</summary>
-**Correct Answer: B.** LLMs lack situational awareness and absolute determinism. They may hallucinate a fix that destroys healthy resources. Human-in-the-loop verification is mandatory for destructive actions.
+**Correct Answer: B.** LLMs lack situational awareness and absolute determinism. They may hallucinate a fix that destroys healthy resources. Human-in-the-loop verification is mandatory for destructive actions. (Also, note that C is false: Robusta *does* support executing commands against the local cluster, which makes guardrails even more critical.)
 </details>
 
 **5. You are running a 7B parameter local LLM for private AIOps on bare metal without GPUs. You notice that Robusta often fails to attach AI summaries to Slack alerts, and the Robusta logs show `HTTP 504 Gateway Timeout`. What is the primary cause?**
-* A) The Alertmanager webhook timeout is shorter than the CPU-bound inference time required by the LLM.
-* B) Robusta cannot communicate with services in the `monitoring` namespace.
-* C) The LLM's context window has been exceeded by the size of the Slack payload.
-* D) The Slack API is rejecting messages that contain AI-generated content.
 <details>
 <summary>Answer</summary>
 **Correct Answer: A.** Inference on CPU is slow. Generating a response might take 30-60 seconds, which easily exceeds standard webhook timeout defaults (often 10s or 15s) configured in Alertmanager or the Robusta client.
 </details>
+
+**6. A security audit flags your Private AIOps pipeline because a custom interactive Slack button triggers `kubectl rollback` directly from a user click. How should this be rectified while maintaining automated remediations?**
+<details>
+<summary>Answer</summary>
+**Correct Answer:** Implement an intermediary approval webhook service. The Slack button should not have direct API credentials. Instead, it must trigger an intermediary service that validates the request against an allowlist of permitted actions before executing it with elevated privileges.
+</details>
+
+**7. You want to implement anomaly detection on your metrics but are operating in a fully disconnected air-gapped environment with strict open-source software requirements. You evaluate Grafana's Sift feature. Is this a viable solution?**
+<details>
+<summary>Answer</summary>
+**Correct Answer:** No. Grafana's advanced ML anomaly detection features like Sift are exclusive to Grafana Cloud and Grafana Enterprise, and are not available in the open-source distribution. You should evaluate open-source options like Netdata's localized models or custom PromQL baselines.
+</details>
+
+---
 
 ## Further Reading
 
@@ -469,3 +507,6 @@ Suggested Actions:
 * [VictoriaMetrics Anomaly Detection (vmanomaly) Guide](https://docs.victoriametrics.com/vmanomaly/)
 * [KEDA Predictive Scaling Discussion (GitHub)](https://github.com/kedacore/keda/issues/2301)
 * [Ollama Kubernetes Deployment Examples](https://github.com/ollama/ollama/tree/main/docs)
+
+---
+[Next Module: 9.6 Distributed GPU Scheduling and Multi-Tenancy →](/on-premises/ai-ml-infrastructure/module-9.6-gpu-scheduling)
