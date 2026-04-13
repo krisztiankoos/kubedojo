@@ -813,23 +813,23 @@ k run log-ingester --rm -it --image=curlimages/curl -n search --restart=Never \
 import requests, random, json
 from datetime import datetime
 
-OPENSEARCH = \"http://opensearch-cluster-master:9200\"
-namespaces = [\"payments\", \"frontend\", \"api-gateway\", \"checkout\", \"analytics\"]
-levels = [\"info\"] * 6 + [\"warn\"] * 2 + [\"error\"] * 2
+OPENSEARCH = \\\"http://opensearch-cluster-master:9200\\\"
+namespaces = [\\\"payments\\\", \\\"frontend\\\", \\\"api-gateway\\\", \\\"checkout\\\", \\\"analytics\\\"]
+levels = [\\\"info\\\"] * 6 + [\\\"warn\\\"] * 2 + [\\\"error\\\"] * 2
 
-bulk = \"\"
+bulk = \\\"\\\"
 for i in range(500):
     ns = random.choice(namespaces)
     lvl = random.choice(levels)
-    ts = datetime.utcnow().strftime(\"%Y-%m-%dT%H:%M:%S.000Z\")
-    idx = datetime.utcnow().strftime(\"k8s-logs-%Y.%m.%d\")
-    doc = {\"@timestamp\": ts, \"level\": lvl, \"message\": f\"Request {i} processed in {random.randint(5,500)}ms\", \"kubernetes\": {\"namespace\": ns, \"pod\": f\"{ns}-deploy-{i:04d}\", \"container\": \"app\", \"node\": \"worker-1\"}}
-    bulk += json.dumps({\"index\": {\"_index\": idx}}) + chr(10) + json.dumps(doc) + chr(10)
+    ts = datetime.utcnow().strftime(\\\"%Y-%m-%dT%H:%M:%S.000Z\\\")
+    idx = datetime.utcnow().strftime(\\\"k8s-logs-%Y.%m.%d\\\")
+    doc = {\\\"@timestamp\\\": ts, \\\"level\\\": lvl, \\\"message\\\": f\\\"Request {i} processed in {random.randint(5,500)}ms\\\", \\\"kubernetes\\\": {\\\"namespace\\\": ns, \\\"pod\\\": f\\\"{ns}-deploy-{i:04d}\\\", \\\"container\\\": \\\"app\\\", \\\"node\\\": \\\"worker-1\\\"}}
+    bulk += json.dumps({\\\"index\\\": {\\\"_index\\\": idx}}) + chr(10) + json.dumps(doc) + chr(10)
 
-r = requests.post(f\"{OPENSEARCH}/_bulk\", data=bulk, headers={\"Content-Type\": \"application/x-ndjson\"})
-print(f\"Bulk status: {r.status_code}\")
-count = requests.get(f\"{OPENSEARCH}/{idx}/_count\").json()
-print(f\"Total documents: {count.get(\"count\", 0)}\")
+r = requests.post(f\\\"{OPENSEARCH}/_bulk\\\", data=bulk, headers={\\\"Content-Type\\\": \\\"application/x-ndjson\\\"})
+print(f\\\"Bulk status: {r.status_code}\\\")
+count = requests.get(f\\\"{OPENSEARCH}/{idx}/_count\\\").json()
+print(f\\\"Total documents: {count.get(\\\"count\\\", 0)}\\\")
 \""]
       }]
     }
