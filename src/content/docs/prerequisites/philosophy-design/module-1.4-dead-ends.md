@@ -38,7 +38,7 @@ In technology, knowing what **NOT** to learn is as important as knowing what to 
 
 **Status**: Effectively deprecated. Docker Desktop removed Swarm mode in 2022.
 
-```
+```text
 Timeline:
 2015: Docker Swarm launched as K8s competitor
 2017: Docker adds K8s support (admission of defeat)
@@ -65,7 +65,7 @@ Timeline:
 
 **Status**: Marathon abandoned. Mesos in maintenance mode.
 
-```
+```text
 Timeline:
 2009: Mesos created at UC Berkeley
 2013: Marathon launched for containers
@@ -108,7 +108,7 @@ Cloud Foundry was incredible at its narrow use case: `cf push` and your app was 
 
 **Status**: Removed from Kubernetes in version 1.24 (May 2022).
 
-```
+```text
 Timeline:
 2014-2016: Docker is THE way to run containers in K8s
 2016: CRI (Container Runtime Interface) introduced
@@ -127,24 +127,20 @@ Timeline:
 
 **Still valid**: Docker for building images. `docker build` and Dockerfiles are fine.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              DOCKER VS CONTAINERD IN K8S                    │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Before K8s 1.24:                                          │
-│  ┌───────────┐    ┌───────────┐    ┌───────────┐          │
-│  │ Kubernetes│───►│  Docker   │───►│containerd │───► 🐳   │
-│  └───────────┘    └───────────┘    └───────────┘          │
-│                      Unnecessary layer                      │
-│                                                             │
-│  After K8s 1.24:                                           │
-│  ┌───────────┐    ┌───────────┐                           │
-│  │ Kubernetes│───►│containerd │───► 🐳                    │
-│  └───────────┘    └───────────┘                           │
-│                      Direct, efficient                      │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Before ["Before K8s 1.24 (Unnecessary layer)"]
+        direction LR
+        K1[Kubernetes] --> D[Docker]
+        D --> C1[containerd]
+        C1 --> W1[Container]
+    end
+    
+    subgraph After ["After K8s 1.24 (Direct, efficient)"]
+        direction LR
+        K2[Kubernetes] --> C2[containerd]
+        C2 --> W2[Container]
+    end
 ```
 
 ---
@@ -167,7 +163,7 @@ Timeline:
 | Agent on each server | No agents needed |
 | Imperative scripts | Declarative YAML |
 
-```
+```text
 Traditional (Chef/Puppet/Ansible):
 1. SSH to server
 2. Check current state
@@ -229,7 +225,7 @@ Common patterns in technological dead ends:
 
 ### Pattern 1: Single Vendor vs. Community
 
-```
+```text
 Swarm:    Docker Inc. controlled → Limited adoption
 K8s:      CNCF neutral → Industry-wide adoption
 Lesson:   Community governance wins for infrastructure
@@ -237,7 +233,7 @@ Lesson:   Community governance wins for infrastructure
 
 ### Pattern 2: Complexity Without Benefit
 
-```
+```text
 Mesos:    Powerful but complex → Limited ecosystem
 K8s:      Complex but valuable → Massive ecosystem
 Lesson:   Complexity is only acceptable with proportional benefit
@@ -245,7 +241,7 @@ Lesson:   Complexity is only acceptable with proportional benefit
 
 ### Pattern 3: Wrong Abstraction Level
 
-```
+```text
 Chef/Puppet: Server-level → Doesn't fit containers
 K8s:         Container-level → Perfect fit
 Lesson:      Paradigm shifts require new tools
@@ -253,7 +249,7 @@ Lesson:      Paradigm shifts require new tools
 
 ### Pattern 4: Ecosystem Effects
 
-```
+```text
 Once K8s hit critical mass:
 - Cloud providers built managed services
 - Tool vendors targeted K8s
@@ -298,32 +294,20 @@ To contrast the dead ends, here's what IS current:
 
 ## Visualization: Technology Evolution
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              CONTAINER TECHNOLOGY TIMELINE                  │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  2013  2014  2015  2016  2017  2018  2019  2020  2021  2022│
-│    │     │     │     │     │     │     │     │     │     │ │
-│    │     │     │     │     │     │     │     │     │     │ │
-│    ▼     ▼     ▼     ▼     ▼     ▼     ▼     ▼     ▼     ▼ │
-│                                                             │
-│  Docker ══════════════════════════════════════════════════  │
-│  (images)                    (Still valid for building)     │
-│                                                             │
-│        Swarm ══════════════════════░░░░░░░░░ (deprecated)   │
-│                                                             │
-│        Mesos ════════════════════░░░░░░░░░░ (abandoned)     │
-│                                                             │
-│              K8s ══════════════════════════════════════════ │
-│              (Winner, still growing)                        │
-│                                                             │
-│                    containerd ═════════════════════════════ │
-│                    (Default K8s runtime)                    │
-│                                                             │
-│  Legend: ════ Active  ░░░░ Deprecated/Dead                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+gantt
+    title Container Technology Timeline
+    dateFormat  YYYY
+    axisFormat  %Y
+    
+    section Images & Runtimes
+    Docker (Images - Still valid)      :active, 2013-01-01, 2026-12-31
+    containerd (Default K8s runtime)   :active, 2017-01-01, 2026-12-31
+    
+    section Orchestration
+    Docker Swarm (Deprecated)          :done, 2015-01-01, 2022-01-01
+    Apache Mesos (Abandoned)           :done, 2013-01-01, 2021-01-01
+    Kubernetes (Winner)                :active, 2014-06-01, 2026-12-31
 ```
 
 ---
@@ -403,7 +387,7 @@ In this exercise, you will audit an imaginary legacy tech stack and propose a mo
 5. **Scenario**: Your team evaluates a new, highly-hyped open-source deployment tool. It's built entirely by a single startup, has no open governance model, and isn't part of any foundation like the CNCF. Based on historical patterns in the container ecosystem, what is the primary risk of adopting this tool?
    <details>
    <summary>Answer</summary>
-   The primary risk is vendor lock-in combined with ecosystem isolation, similar to what happened with Docker Swarm. When a single company controls the roadmap without neutral foundation governance, competitors and major cloud providers are unlikely to build deep integrations or managed services for it. If the startup pivots, gets acquired, or fails to compete with community-backed alternatives, your team will be stuck supporting an orphaned technology with a shrinking talent pool and no industry standard support.
+   The primary risk is vendor lock-in combined with ecosystem isolation, similar to what happened with Docker Swarm. When a single company controls the roadmap without neutral foundation governance, competitors and major cloud providers are unlikely to build deep integrations or managed services for it. If the startup pivots, gets acquired, or fails to compete with community-backed alternatives, your team will be stuck supporting an orphaned technology with a shrinking talent pool and no industry standard support. To minimize risk, infrastructure tools should ideally be backed by a neutral entity like the CNCF.
    </details>
 
 6. **Scenario**: Your company has been happily using Cloud Foundry for years to deploy stateless Node.js web apps. Now, the data science team wants to deploy complex, stateful machine learning pipelines that require specific GPU sharing and custom networking. Why might the original Cloud Foundry architecture struggle with this, prompting a move to Kubernetes?
