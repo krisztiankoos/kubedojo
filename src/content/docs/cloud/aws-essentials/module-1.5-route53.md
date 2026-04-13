@@ -44,43 +44,21 @@ Before we touch Route 53, let us make sure the foundation is solid. DNS is often
 
 Here is what happens when a user types your domain into their browser:
 
-```
-                    User's Browser
-                         |
-                    [1] Query: api.yourapp.com?
-                         |
-                         v
-                  Local DNS Resolver          <-- ISP or corporate resolver
-                  (Recursive Resolver)             (e.g., 8.8.8.8)
-                         |
-           [2] Not in cache? Ask root servers
-                         |
-                         v
-                   Root Name Servers          <-- 13 root server clusters worldwide
-                   (., root zone)
-                         |
-           [3] "Try .com TLD servers"
-                         |
-                         v
-                  TLD Name Servers            <-- Managed by Verisign for .com
-                  (.com zone)
-                         |
-           [4] "Try ns-123.awsdns-45.com"
-                         |
-                         v
-              Authoritative Name Server       <-- THIS IS ROUTE 53
-              (yourapp.com zone)
-                         |
-           [5] "api.yourapp.com = 54.231.128.12"
-                         |
-                         v
-                  Local DNS Resolver
-                         |
-           [6] Returns IP to browser (cached for TTL)
-                         |
-                         v
-                    User's Browser
-                    Connects to 54.231.128.12
+```mermaid
+flowchart TD
+    Browser[User's Browser]
+    Resolver[Local DNS Resolver<br/>ISP or corporate resolver<br/>e.g., 8.8.8.8]
+    Root[Root Name Servers<br/>., root zone<br/>13 clusters worldwide]
+    TLD[TLD Name Servers<br/>.com zone<br/>Managed by Verisign]
+    Auth[Authoritative Name Server<br/>THIS IS ROUTE 53<br/>yourapp.com zone]
+
+    Browser -- "[1] Query: api.yourapp.com?" --> Resolver
+    Resolver -- "[2] Not in cache? Ask root servers" --> Root
+    Root -- "[3] 'Try .com TLD servers'" --> TLD
+    TLD -- "[4] 'Try ns-123.awsdns-45.com'" --> Auth
+    Auth -- "[5] 'api.yourapp.com = 54.231.128.12'" --> Resolver
+    Resolver -- "[6] Returns IP (cached for TTL)" --> Browser
+    Browser -. "Connects to 54.231.128.12" .-> Server((Server: 54.231.128.12))
 ```
 
 Route 53 lives at step 4-5 in this chain. It is the **authoritative name server** for your domains. When any resolver in the world asks "where is api.yourapp.com?", Route 53 answers.
@@ -150,20 +128,30 @@ aws route53 associate-vpc-with-hosted-zone \
 
 A common pattern is split-horizon DNS: the same domain name resolves to different IPs depending on whether the query comes from inside or outside your VPC. For example, `api.yourapp.com` might resolve to a public ALB IP for external users, but to a private IP for services running inside the VPC. This reduces latency and avoids unnecessary trips through the internet gateway.
 
-```
-Split-Horizon DNS Architecture:
+```mermaid
+flowchart TD
+    subgraph External[External Network]
+        ExtUser[External User]
+        PubZone[Public Hosted Zone<br/>api.yourapp.com -> 54.231.128.12<br/>Public ALB IP]
+    end
 
-External User                          Internal Service (in VPC)
-     |                                       |
-     | Query: api.yourapp.com                | Query: api.yourapp.com
-     v                                       v
- Public Hosted Zone                    Private Hosted Zone
- api.yourapp.com -> 54.231.128.12      api.yourapp.com -> 10.0.1.50
- (Public ALB IP)                       (Private ALB IP)
-     |                                       |
-     v                                       v
- Traffic goes through Internet          Traffic stays inside VPC
- -> ALB -> Target Group                 -> Internal ALB -> Target Group
+    subgraph VPC[AWS VPC]
+        IntService[Internal Service]
+        PrivZone[Private Hosted Zone<br/>api.yourapp.com -> 10.0.1.50<br/>Private ALB IP]
+        PubALB[Public ALB]
+        IntALB[Internal ALB]
+        TG1[Target Group]
+        TG2[Target Group]
+    end
+
+    ExtUser -- "Query: api.yourapp.com" --> PubZone
+    IntService -- "Query: api.yourapp.com" --> PrivZone
+
+    PubZone -. "Traffic goes through Internet" .-> PubALB
+    PrivZone -. "Traffic stays inside VPC" .-> IntALB
+
+    PubALB --> TG1
+    IntALB --> TG2
 ```
 
 ### Hosted Zone Costs
@@ -439,22 +427,33 @@ aws route53 change-resource-record-sets \
 
 ### Routing Policy Decision Matrix
 
-```
-Which routing policy should I use?
+```mermaid
+flowchart TD
+    Start{Do you need failover?}
+    FailType{Active-Active or<br/>Active-Passive?}
+    Geo{Do you need<br/>geographic control?}
+    Comp{Compliance/<br/>data residency?}
+    Split{Do you need<br/>traffic splitting?}
 
-[Do you need failover?]
-    |-- YES --> [Active-Active or Active-Passive?]
-    |               |-- Active-Passive --> FAILOVER routing
-    |               |-- Active-Active  --> LATENCY routing + health checks
-    |
-    |-- NO --> [Do you need geographic control?]
-                   |-- YES --> [Compliance/data residency?]
-                   |               |-- YES --> GEOLOCATION routing
-                   |               |-- NO  --> LATENCY routing
-                   |
-                   |-- NO --> [Do you need traffic splitting?]
-                                  |-- YES --> WEIGHTED routing
-                                  |-- NO  --> SIMPLE routing
+    Failover[FAILOVER routing]
+    LatHC[LATENCY routing + health checks]
+    GeoR[GEOLOCATION routing]
+    LatR[LATENCY routing]
+    Weight[WEIGHTED routing]
+    Simple[SIMPLE routing]
+
+    Start -- YES --> FailType
+    FailType -- Active-Passive --> Failover
+    FailType -- Active-Active --> LatHC
+
+    Start -- NO --> Geo
+    Geo -- YES --> Comp
+    Comp -- YES --> GeoR
+    Comp -- NO --> LatR
+
+    Geo -- NO --> Split
+    Split -- YES --> Weight
+    Split -- NO --> Simple
 ```
 
 ---
@@ -510,25 +509,29 @@ aws route53 create-health-check \
 
 Route 53 health checkers run from data centers in multiple AWS regions. By default, they check your endpoint every 30 seconds from about 15 locations worldwide. The endpoint is considered healthy if at least 18% of health checkers (roughly 3 out of 15) report it as healthy.
 
-```
-Route 53 Health Check Architecture:
-
-  Health Checkers (15+ global locations)
-
-  [US-East] ----> /health --> 200 OK    = Healthy
-  [US-West] ----> /health --> 200 OK    = Healthy
-  [EU-West] ----> /health --> 200 OK    = Healthy
-  [AP-South] ---> /health --> 503 Error  = Unhealthy
-  [SA-East] ----> /health --> 200 OK    = Healthy
-  ...
-
-  Result: 4/5 healthy (80%) > 18% threshold = ENDPOINT HEALTHY
-
-  When checkers report unhealthy:
-  - If < 18% report healthy --> Route 53 marks endpoint UNHEALTHY
-  - Failover routing activates secondary record
-  - Weighted/latency routing removes endpoint from responses
-  - CloudWatch alarm triggers (if configured)
+```mermaid
+flowchart TD
+    subgraph Checkers[Health Checkers: 15+ global locations]
+        USE[US-East]
+        USW[US-West]
+        EUW[EU-West]
+        APS[AP-South]
+        SAE[SA-East]
+    end
+    
+    Target[Endpoint: /health]
+    
+    USE -- "200 OK" --> Target
+    USW -- "200 OK" --> Target
+    EUW -- "200 OK" --> Target
+    APS -. "503 Error" .-> Target
+    SAE -- "200 OK" --> Target
+    
+    Eval["Result: 4/5 healthy (80%) > 18% threshold<br/>STATUS: ENDPOINT HEALTHY"]
+    Target --> Eval
+    
+    Unhealthy[/"When checkers report unhealthy:<br/>- If < 18% report healthy, Route 53 marks endpoint UNHEALTHY<br/>- Failover routing activates secondary record<br/>- Weighted/latency routing removes endpoint from responses<br/>- CloudWatch alarm triggers (if configured)"/]
+    Eval ~~~ Unhealthy
 ```
 
 ### Health Check Types
@@ -634,25 +637,25 @@ A CNAME record creates an alias from one domain name to another, but the DNS pro
 <details>
 <summary>2. You have deployed a global web application using latency-based routing, with Application Load Balancers in `us-east-1` (Virginia) and `eu-west-1` (Ireland). A user sitting in a cafe in Sao Paulo, Brazil, opens your website. Which regional endpoint will Route 53 direct them to, and how is this decision made?</summary>
 
-The user in Brazil will be directed to whichever endpoint has the lowest measured network latency from their specific network location, which is typically `us-east-1` (Virginia) in this scenario. Route 53 does not make decisions based on physical geographic distance; instead, it relies on a constantly updated database of actual network latency measurements between internet providers worldwide and AWS regions. If the user's local ISP in Sao Paulo happens to have superior peering and routing agreements with European backbone networks, they could technically be routed to `eu-west-1`, despite it being further away geographically.
+The user in Brazil will be directed to whichever endpoint has the lowest measured network latency from their specific network location, which is typically `us-east-1` (Virginia) in this scenario. Route 53 does not make decisions based on physical geographic distance; instead, it relies on a constantly updated database of actual network latency measurements between internet providers worldwide and AWS regions. This approach ensures optimal performance rather than just geographical proximity. If the user's local ISP in Sao Paulo happens to have superior peering and routing agreements with European backbone networks, they could technically be routed to `eu-west-1`, despite it being further away geographically. Ultimately, the latency telemetry collected by AWS dictates the routing outcome.
 </details>
 
 <details>
 <summary>3. Your Route 53 HTTP health check for `api.example.com` shows the endpoint as 100% healthy, but your monitoring tools indicate that the backend database is down and users are receiving 500 Internal Server Error responses. Why didn't Route 53 detect this outage, and how should you reconfigure the health check?</summary>
 
-The standard HTTP health check only verifies that the server responds with a successful HTTP status code (2xx or 3xx) at the specific `/health` path. If your `/health` endpoint is simply a static page or a basic function that doesn't check backend dependencies, it will continue returning `200 OK` even if the database is completely offline. To fix this, you should update your application's health endpoint to perform deep checks of critical dependencies, and ideally use a Route 53 `HTTPS_STR_MATCH` health check. This ensures Route 53 only marks the endpoint as healthy if the application explicitly returns a specific confirmation string like `"status":"healthy"` after validating its own dependencies.
+The standard HTTP health check only verifies that the server responds with a successful HTTP status code (2xx or 3xx) at the specific `/health` path. If your `/health` endpoint is simply a static page or a basic function that doesn't check backend dependencies, it will continue returning `200 OK` even if the database is completely offline. To fix this, you should update your application's health endpoint to perform deep checks of critical dependencies, and ideally use a Route 53 `HTTPS_STR_MATCH` health check. This ensures Route 53 only marks the endpoint as healthy if the application explicitly returns a specific confirmation string like `"status":"healthy"` after validating its own dependencies. Implementing this strategy prevents false positives and ensures traffic is only sent to fully operational instances.
 </details>
 
 <details>
 <summary>4. Your security team mandates DNSSEC for all public zones. A junior engineer creates the required KMS Key Signing Key in `eu-west-1` because that is where your application is hosted, but the Route 53 console rejects it. Why did this fail, and how must it be fixed?</summary>
 
-The failure occurred because Route 53's DNSSEC signing infrastructure is physically centralized in the `us-east-1` (N. Virginia) region, regardless of where your application traffic originates. The KMS key used for the Key Signing Key (KSK) must be accessible to these specific Route 53 signing operations. Therefore, the architectural requirement dictates that the KMS key must be created in `us-east-1`. This regional requirement only applies to the signing process when records are updated; it does not affect the performance or latency for end users, as the signed records are still distributed globally through Route 53's anycast network.
+The failure occurred because Route 53's DNSSEC signing infrastructure is physically centralized in the `us-east-1` (N. Virginia) region, regardless of where your application traffic originates. The KMS key used for the Key Signing Key (KSK) must be accessible to these specific Route 53 signing operations. Therefore, the architectural requirement dictates that the KMS key must be created in `us-east-1`. This regional requirement only applies to the signing process when records are updated; it does not affect the performance or latency for end users, as the signed records are still distributed globally through Route 53's anycast network. It is a crucial detail to remember when configuring DNSSEC, as failing to adhere to this restriction will block the entire setup process.
 </details>
 
 <details>
 <summary>5. Your team is performing a canary deployment using Route 53 weighted routing. You have three records for `api.example.com`: the existing production environment (weight 70), a new canary environment (weight 20), and a legacy fallback environment (weight 10). Out of 10,000 incoming DNS queries, approximately how many will be routed to the canary environment, and why?</summary>
 
-Approximately 2,000 queries will be routed to the canary environment. Route 53 calculates the probability of selecting a specific record by dividing its individual weight by the sum of all weights in the routing group. In this scenario, the total sum of weights is 100 (70 + 20 + 10), and the canary weight is 20, resulting in a 20% probability (20/100) for each query. Because Route 53 evaluates these probabilities dynamically on every single query rather than tracking state, the distribution is statistical and will align closely with 20% over a large volume of requests.
+Approximately 2,000 queries will be routed to the canary environment. Route 53 calculates the probability of selecting a specific record by dividing its individual weight by the sum of all weights in the routing group. In this scenario, the total sum of weights is 100 (70 + 20 + 10), and the canary weight is 20, resulting in a 20% probability (20/100) for each query. Because Route 53 evaluates these probabilities dynamically on every single query rather than tracking state, the distribution is statistical and will align closely with 20% over a large volume of requests. This mechanism allows teams to precisely control traffic flow and gradually expose new features with minimal risk.
 </details>
 
 <details>
