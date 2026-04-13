@@ -40,23 +40,19 @@ Azure AD Pod Identity (v1) was the original mechanism for giving AKS pods Azure 
 
 Pod Identity was deprecated in October 2022 and replaced by Entra Workload Identity, which uses an entirely different mechanism based on OIDC federation.
 
-```text
-    Pod Identity (Deprecated)           Workload Identity (Current)
-    ─────────────────────────           ──────────────────────────
+```mermaid
+graph TD
+    subgraph Pod Identity DEPRECATED
+        A[Pod] -->|IMDS 169.254.169.254| B[NMI DaemonSet intercepts<br>and redirects to correct<br>managed identity]
+        B --> C[Azure AD returns token<br>via NMI proxy]
+        C --> D[Pod calls Azure service]
+    end
 
-    Pod → IMDS (169.254.169.254)        Pod → mounted service account token
-       │                                   │
-       ▼                                   ▼
-    NMI DaemonSet intercepts            Azure SDK exchanges token via
-    and redirects to correct            OIDC federation (no interception,
-    managed identity                    no DaemonSet, no iptables)
-       │                                   │
-       ▼                                   ▼
-    Azure AD returns token              Entra ID validates OIDC issuer
-    via NMI proxy                       and returns token directly
-       │                                   │
-       ▼                                   ▼
-    Pod calls Azure service             Pod calls Azure service
+    subgraph Workload Identity CURRENT
+        E[Pod] -->|mounted service<br>account token| F[Azure SDK exchanges token<br>via OIDC federation<br>no interception/DaemonSet]
+        F --> G[Entra ID validates OIDC issuer<br>and returns token directly]
+        G --> H[Pod calls Azure service]
+    end
 ```
 
 If you are still running Pod Identity, migrate immediately. Microsoft has published a migration guide, and the process is straightforward for most workloads.
@@ -194,32 +190,19 @@ spec:
               memory: "512Mi"
 ```
 
-```text
-    Complete Authentication Flow:
-    ┌─────────────────────────────────────────────────────────────────┐
-    │                                                                 │
-    │  1. Pod starts with projected service account token             │
-    │     (short-lived JWT signed by AKS OIDC issuer)                 │
-    │                                                                 │
-    │  2. Azure SDK reads AZURE_FEDERATED_TOKEN_FILE                  │
-    │     and AZURE_CLIENT_ID                                         │
-    │                                                                 │
-    │  3. SDK calls Entra ID token endpoint:                          │
-    │     "Exchange this K8s token for an Azure access token          │
-    │      for managed identity {CLIENT_ID}"                          │
-    │                                                                 │
-    │  4. Entra ID validates:                                         │
-    │     - Token signature matches OIDC issuer's public key          │
-    │     - Issuer URL matches the federated credential               │
-    │     - Subject (namespace:sa) matches the federated credential   │
-    │     - Audience matches ("api://AzureADTokenExchange")           │
-    │                                                                 │
-    │  5. Entra ID issues an Azure access token                       │
-    │     (scoped to the managed identity's permissions)              │
-    │                                                                 │
-    │  6. Pod uses the Azure token to call Azure services             │
-    │     (Key Vault, SQL, Storage, etc.)                             │
-    └─────────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant Pod
+    participant SDK as Azure SDK
+    participant Entra as Entra ID
+    participant Azure as Azure Services
+
+    Note over Pod: 1. Pod starts with projected service account token<br>(short-lived JWT signed by AKS OIDC issuer)
+    Pod->>SDK: 2. Reads AZURE_FEDERATED_TOKEN_FILE<br>and AZURE_CLIENT_ID
+    SDK->>Entra: 3. Exchange K8s token for Azure access token<br>for managed identity
+    Note over Entra: 4. Validates:<br>- Token signature matches OIDC issuer public key<br>- Issuer URL matches federated credential<br>- Subject matches namespace:sa<br>- Audience matches
+    Entra-->>SDK: 5. Issues Azure access token
+    SDK->>Azure: 6. Pod uses Azure token to call Azure services<br>(Key Vault, SQL, Storage, etc.)
 ```
 
 ---
