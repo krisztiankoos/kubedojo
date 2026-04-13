@@ -40,20 +40,23 @@ This module teaches you to measure, understand, and systematically improve devel
 
 ---
 
+> **Stop and think**: What is the single most frustrating part of your current daily development workflow? Does it stem from a lack of tools, overly complex processes, or communication breakdowns?
+
 ## What is Developer Experience?
 
 ### Definition
 
 Developer Experience (DevEx or DX) encompasses everything that influences how developers feel about and perform their work:
 
-```
-Developer Experience =
-  + Tools & Technology
-  + Processes & Workflows
-  + Culture & Collaboration
-  + Environment & Context
-  ─────────────────────────
-  → Productivity + Satisfaction
+```mermaid
+graph TD
+    subgraph "Developer Experience (DevEx)"
+        A[Tools & Technology]
+        B[Processes & Workflows]
+        C[Culture & Collaboration]
+        D[Environment & Context]
+    end
+    A & B & C & D --> E[Productivity + Satisfaction]
 ```
 
 ### The Three Dimensions
@@ -106,12 +109,14 @@ Flow-enabling:
 
 Flow-breaking:
 - Constant meetings
-- Slack @channel every hour
+- Slack pings every hour
 - Unclear requirements
 - Interrupt-driven work
 ```
 
 ---
+
+> **Pause and predict**: Before reading about the SPACE framework, consider how you might measure developer productivity without just counting lines of code or the number of commits. What other dimensions of a developer's day matter?
 
 ## The SPACE Framework
 
@@ -326,31 +331,40 @@ survey_questions:
 
 Combine metrics into a single view:
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    DevEx Dashboard                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  Satisfaction            CI/CD Performance                   │
-│  ┌─────────────────┐    ┌─────────────────────────────────┐ │
-│  │ NPS: 42 (+5)    │    │ Build Time: 8.2 min (↓ 2.1)    │ │
-│  │ CSAT: 4.1/5     │    │ Deploy Freq: 12/day (↑ 3)      │ │
-│  │                 │    │ Lead Time: 4.2h (↓ 1.8h)       │ │
-│  └─────────────────┘    └─────────────────────────────────┘ │
-│                                                              │
-│  Flow State              Collaboration                       │
-│  ┌─────────────────┐    ┌─────────────────────────────────┐ │
-│  │ Meetings: 2.1/d │    │ PR Review: 2.8h (↓ 1.2h)       │ │
-│  │ Focus Time: 4h  │    │ PR Cycle: 18h (↓ 6h)           │ │
-│  │ Interrupts: 3/d │    │ Docs Updated: 15 this week     │ │
-│  └─────────────────┘    └─────────────────────────────────┘ │
-│                                                              │
-│  Top Pain Points (from surveys)                              │
-│  1. "Environment setup takes too long" (mentioned 12x)       │
-│  2. "Tests are flaky" (mentioned 9x)                         │
-│  3. "Documentation is outdated" (mentioned 7x)               │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph "DevEx Dashboard"
+        direction TB
+        subgraph "Satisfaction"
+            direction TB
+            S1["NPS: 42 (+5)"]
+            S2["CSAT: 4.1/5"]
+        end
+        subgraph "CI/CD Performance"
+            direction TB
+            C1["Build Time: 8.2 min (↓ 2.1)"]
+            C2["Deploy Freq: 12/day (↑ 3)"]
+            C3["Lead Time: 4.2h (↓ 1.8h)"]
+        end
+        subgraph "Flow State"
+            direction TB
+            F1["Meetings: 2.1/d"]
+            F2["Focus Time: 4h"]
+            F3["Interrupts: 3/d"]
+        end
+        subgraph "Collaboration"
+            direction TB
+            CO1["PR Review: 2.8h (↓ 1.2h)"]
+            CO2["PR Cycle: 18h (↓ 6h)"]
+            CO3["Docs Updated: 15 this week"]
+        end
+        subgraph "Top Pain Points (from surveys)"
+            direction TB
+            P1["1. Environment setup takes too long (mentioned 12x)"]
+            P2["2. Tests are flaky (mentioned 9x)"]
+            P3["3. Documentation is outdated (mentioned 7x)"]
+        end
+    end
 ```
 
 ---
@@ -415,6 +429,8 @@ After switching to balanced metrics:
 **The Lesson**: Any single metric can be gamed. Measure multiple dimensions. Include satisfaction—it's harder to fake.
 
 ---
+
+> **Stop and think**: Recall a recent task that took much longer than expected not because the coding was hard, but because the setup or tooling was confusing. That is extraneous cognitive load.
 
 ## Cognitive Load Deep Dive
 
@@ -543,43 +559,37 @@ When developer encounters error:
 
 ---
 
+> **Pause and predict**: If you mapped your own onboarding experience at your current company, at which stage would you find the most significant delays or extraneous cognitive load?
+
 ## Developer Journey Mapping
 
 Map the developer's journey to find improvement opportunities.
 
 ### The Developer Journey
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    Developer Journey                          │
-├──────────────────────────────────────────────────────────────┤
-│                                                               │
-│  Day 1: Onboarding                                           │
-│  ├── Account setup          ← How long? Friction points?     │
-│  ├── Dev environment        ← First code running?            │
-│  ├── First commit           ← Time to first contribution?    │
-│  └── Understanding codebase ← Docs, mentors, tribal?         │
-│                                                               │
-│  Daily: Development Loop                                      │
-│  ├── Write code             ← IDE experience?                │
-│  ├── Test locally           ← How fast? How reliable?        │
-│  ├── Create PR              ← Templates? CI feedback?        │
-│  ├── Code review            ← Wait time? Quality?            │
-│  └── Merge                  ← Confidence in main?            │
-│                                                               │
-│  Weekly: Deployment                                           │
-│  ├── Deploy to staging      ← Self-service? Manual?          │
-│  ├── Test in staging        ← Environment parity?            │
-│  ├── Deploy to production   ← Approval process?              │
-│  └── Monitor                ← Visibility? Alerts?            │
-│                                                               │
-│  Periodic: Operations                                         │
-│  ├── Debug issues           ← Observability? Logs?           │
-│  ├── Scale service          ← Self-service? Tickets?         │
-│  ├── Incident response      ← Tooling? Runbooks?             │
-│  └── Maintenance            ← Dependencies? Security?        │
-│                                                               │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Day 1: Onboarding"
+        A[Account setup] -->|How long? Friction points?| B[Dev environment]
+        B -->|First code running?| C[First commit]
+        C -->|Time to first contribution?| D[Understanding codebase]
+    end
+    subgraph "Daily: Development Loop"
+        E[Write code] -->|IDE experience?| F[Test locally]
+        F -->|How fast? How reliable?| G[Create PR]
+        G -->|Templates? CI feedback?| H[Code review]
+        H -->|Wait time? Quality?| I[Merge]
+    end
+    subgraph "Weekly: Deployment"
+        J[Deploy to staging] -->|Self-service? Manual?| K[Test in staging]
+        K -->|Environment parity?| L[Deploy to production]
+        L -->|Approval process?| M[Monitor]
+    end
+    subgraph "Periodic: Operations"
+        N[Debug issues] -->|Observability? Logs?| O[Scale service]
+        O -->|Self-service? Tickets?| P[Incident response]
+        P -->|Tooling? Runbooks?| Q[Maintenance]
+    end
 ```
 
 ### Mapping Exercise
@@ -630,168 +640,42 @@ For each stage, identify:
 ## Quiz: Check Your Understanding
 
 ### Question 1
-A team's CI pipeline takes 45 minutes. Which SPACE dimensions does this affect most?
+*Scenario*: Your platform team notices that the core monolith's CI pipeline takes 45 minutes to complete. Developers frequently complain that they lose their train of thought while waiting, leading them to context-switch to emails or Slack. Based on the SPACE framework, which dimensions are most directly impacted by this slow pipeline, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-**Primary dimensions affected:**
-
-1. **Efficiency and Flow**
-   - 45 minutes of wait time per change
-   - Breaks flow state—developers context switch
-   - Batching behavior (wait to push multiple changes)
-
-2. **Satisfaction**
-   - Frustration from waiting
-   - "I could've done X in that time"
-   - Impacts perception of tooling quality
-
-3. **Activity** (secondary)
-   - Fewer CI runs per day
-   - May reduce experimentation
-   - Could reduce deployment frequency
-
-**Impact calculation:**
-- If developer pushes 4x per day: 3 hours waiting for CI daily
-- 15 hours per week watching a progress bar
-- Opportunity cost massive
-
-**Fix priority**: This is a HIGH impact issue. Platform investment in faster CI has direct DevEx ROI.
+**Answer**: The primary dimensions impacted are Efficiency and Flow, as well as Satisfaction. When a CI pipeline takes 45 minutes, it introduces massive wait times that completely break a developer's flow state, forcing them into disruptive context switching. This context switching requires high cognitive effort to re-engage with the original task later, directly reducing efficiency. Furthermore, the constant waiting breeds frustration and damages satisfaction, because developers feel their time is being wasted by inadequate tooling. Ultimately, this can also artificially lower the Activity dimension, as developers might batch their commits to avoid waiting for the pipeline multiple times.
 
 </details>
 
 ### Question 2
-Developer satisfaction scores dropped, but all other metrics are green. What should you investigate?
+*Scenario*: In your quarterly review, you observe that deployment frequency and lead time are both meeting your aggressive targets (multiple deploys per day, under 2 hours lead time). However, the latest developer survey shows a 20% drop in overall satisfaction, with comments mentioning burnout and constant fire-fighting. What is the most likely cause of this discrepancy, and how should you address it?
 
 <details>
 <summary>Show Answer</summary>
 
-**Satisfaction drops while metrics are green suggests you're measuring the wrong things.**
-
-**Investigation areas:**
-
-1. **Unmeasured pain points**
-   - What's not in your dashboards?
-   - New friction introduced recently?
-   - Survey for qualitative feedback
-
-2. **Work environment changes**
-   - More meetings?
-   - Organizational changes?
-   - Priority whiplash?
-   - Culture shifts?
-
-3. **Metric gaming**
-   - Are teams hitting numbers without real improvement?
-   - "Making metrics green" vs "actually working well"
-
-4. **Hidden work**
-   - Toil not captured in metrics?
-   - Manual processes outside tooling?
-   - Shadow work
-
-5. **External factors**
-   - Industry concerns?
-   - Compensation issues?
-   - Remote work challenges?
-
-**Action**: Run focused interviews. Ask "What's frustrating you lately?" without leading. Often reveals things metrics miss.
+**Answer**: The most likely cause is that the team is optimizing for activity and system performance metrics at the expense of developer well-being and actual quality. When deployment frequency becomes a rigid target, teams often game the metric by pushing smaller, riskier, or incomplete changes, which leads to increased production incidents and operational fire-fighting. This directly causes burnout and lowers satisfaction, because developers are forced to maintain an unsustainable pace of work while constantly reacting to broken systems. To address this, you must look at the SPACE framework holistically by correlating deployment frequency with the change failure rate and incorporating qualitative feedback to ensure the high deployment rate isn't masking a toxic, interrupt-driven environment.
 
 </details>
 
 ### Question 3
-How do you reduce cognitive load without removing developer flexibility?
+*Scenario*: You are designing a new self-service deployment portal. Junior developers need a simple way to get a web service running without learning Kubernetes, while the data science team needs fine-grained control over GPU node scheduling and custom sidecars. How can you design the platform to reduce cognitive load for the juniors without blocking the data science team?
 
 <details>
 <summary>Show Answer</summary>
 
-**The key: Progressive disclosure and optional complexity**
-
-**Strategy 1: Sensible Defaults + Escape Hatches**
-```yaml
-# Simple case: one line
-replicas: auto  # Platform handles scaling
-
-# Advanced case: full control available
-replicas:
-  min: 3
-  max: 100
-  targetCPU: 80%
-  scaleDown:
-    stabilizationWindow: 300s
-```
-
-**Strategy 2: Layers of Abstraction**
-```
-Level 1: "Just deploy my code" (most developers)
-Level 2: "Let me configure resources" (some developers)
-Level 3: "Let me write raw K8s YAML" (few developers)
-Level 4: "Let me bypass platform entirely" (rare, but possible)
-```
-
-**Strategy 3: Golden Path + Alternatives**
-```
-Golden Path: "Use our standard service template"
-Alternative: "Or bring your own Dockerfile"
-Advanced: "Or use our custom resource directly"
-```
-
-**Strategy 4: Extension Points**
-```yaml
-# Platform handles standard cases
-standard_config:
-  monitoring: default
-
-# Extension point for custom needs
-custom:
-  monitoring:
-    extra_metrics:
-      - custom_business_metric
-```
-
-**The principle**: Make simple things simple, complex things possible.
+**Answer**: You should implement a strategy of progressive disclosure utilizing golden paths and sensible defaults. By providing a default, highly abstracted service template, junior developers experience minimal extraneous cognitive load because the platform automatically handles complex Kubernetes configurations like ingresses and resource limits behind the scenes. However, this golden path must include an escape hatch or extension points that allow advanced users, like the data science team, to override defaults and inject custom configurations such as specific GPU node selectors or sidecars. This layered approach ensures that the platform is accessible and frictionless for standard use cases while remaining flexible enough to support complex, specialized requirements without forcing everyone to learn the underlying complexity.
 
 </details>
 
 ### Question 4
-You want to improve DevEx. You have budget for one initiative. How do you choose?
+*Scenario*: Your team has gathered DevEx survey results showing three major complaints: 1) The VPN disconnects randomly, 2) The local development environment takes two days to set up, and 3) The internal wiki search is terrible. You only have the capacity to tackle one issue this quarter. How do you systematically decide which initiative will provide the highest return on investment for the platform?
 
 <details>
 <summary>Show Answer</summary>
 
-**Framework for prioritization:**
-
-**Step 1: Gather data**
-```
-- Survey: "What's your biggest daily friction?"
-- Interviews: Deep-dive on top complaints
-- Metrics: Where are the longest wait times?
-```
-
-**Step 2: Score candidates**
-
-| Initiative | Impact | Reach | Confidence | Effort |
-|------------|--------|-------|------------|--------|
-| Faster CI | High | 100% devs | High | Medium |
-| Better docs | Medium | 50% devs | Medium | Low |
-| Self-serve envs | High | 30% devs | High | High |
-
-**Step 3: Calculate priority**
-
-```
-Priority = (Impact × Reach × Confidence) / Effort
-```
-
-**Step 4: Consider second-order effects**
-- Faster CI → more deploys → more experiments → faster learning
-- Better docs → less interruptions → more flow time
-
-**Step 5: Validate with users**
-- "We're thinking of improving X. Would this help?"
-- Avoid sunk cost—pivot if wrong
-
-**Common winner**: Usually the thing that affects ALL developers daily (CI speed, environment setup, deployment process) beats specialized improvements that help few.
+**Answer**: You should evaluate these initiatives using a prioritization framework that balances Impact, Reach, Confidence, and Effort across your entire engineering organization. The local development setup time has a high impact but might only reach new hires or developers switching machines, making its overall organizational reach lower at any given time. Conversely, a disconnecting VPN likely impacts 100 percent of the engineering organization on a daily basis, severely breaking flow state and causing widespread frustration for every single developer. By calculating the total ROI—where a high-reach, high-impact issue like the VPN affects daily productivity for everyone—you can systematically justify prioritizing it over localized or less frequent friction points, even if the VPN fix requires moderate effort.
 
 </details>
 
