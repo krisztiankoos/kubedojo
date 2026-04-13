@@ -98,7 +98,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.28
+        image: nginx:1.26
         ports:
         - containerPort: 80
 ```
@@ -161,7 +161,7 @@ kubectl get pods -w
 
 ```bash
 # Update image
-kubectl set image deployment/nginx nginx=nginx:1.29
+kubectl set image deployment/nginx nginx=nginx:1.27
 
 # Or edit deployment
 kubectl edit deployment nginx
@@ -244,7 +244,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.28
+        image: nginx:1.26
         ports:
         - containerPort: 80
         resources:
@@ -354,7 +354,7 @@ kubectl get deployment nginx
 
 ```bash
 # 1. Create deployment
-kubectl create deployment web --image=nginx:1.28
+kubectl create deployment web --image=nginx:1.26
 
 # 2. Scale to 3 replicas
 kubectl scale deployment web --replicas=3
@@ -363,7 +363,7 @@ kubectl scale deployment web --replicas=3
 kubectl get deploy,rs,pods
 
 # 4. Update image
-kubectl set image deployment/web nginx=nginx:1.29
+kubectl set image deployment/web nginx=nginx:1.27
 
 # 5. Watch rollout
 kubectl rollout status deployment web
@@ -376,20 +376,20 @@ kubectl rollout undo deployment web
 
 # 8. Verify rollback
 kubectl get deployment web -o jsonpath='{.spec.template.spec.containers[0].image}'
-# Should show nginx:1.28
+# Should show nginx:1.26
 
 # 9. Cleanup
 kubectl delete deployment web
 ```
 
 **Success Criteria**:
-- [ ] Create a deployment named `web` with image `nginx:1.28`
+- [ ] Create a deployment named `web` with image `nginx:1.26`
 - [ ] Scale the deployment to 3 replicas
 - [ ] Verify 3 pods are running using `kubectl get pods`
-- [ ] Update the image to `nginx:1.29`
+- [ ] Update the image to `nginx:1.27`
 - [ ] Watch the rollout complete using `kubectl rollout status`
 - [ ] Roll back the deployment to the previous version
-- [ ] Verify the active pods are running `nginx:1.28`
+- [ ] Verify the active pods are running `nginx:1.26`
 - [ ] Clean up by deleting the deployment
 
 ---
