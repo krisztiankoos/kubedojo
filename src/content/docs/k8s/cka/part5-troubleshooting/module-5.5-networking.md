@@ -54,7 +54,7 @@ By the end of this module, you'll be able to:
 - **Every pod gets an IP**: Unlike Docker, Kubernetes pods have their own IP addresses - no port mapping needed
 - **DNS queries go to CoreDNS**: All cluster DNS resolution goes through CoreDNS pods in kube-system
 - **NetworkPolicies are additive**: If any policy allows traffic, it's allowed - but having ANY policy creates default deny
-- **Services use kube-proxy**: Service IPs are virtual - kube-proxy programs iptables/IPVS rules to route traffic
+- **Services use kube-proxy**: Service IPs are virtual - kube-proxy programs iptables/nftables rules (IPVS is deprecated in v1.35) to route traffic
 
 ---
 
@@ -107,6 +107,9 @@ k get pods -o wide
 k exec <source-pod> -- ping -c 3 <target-pod-ip>
 k exec <source-pod> -- wget -qO- --timeout=2 http://<target-pod-ip>:<port>
 k exec <source-pod> -- nc -zv <target-pod-ip> <port>
+
+# Capture packets using an ephemeral debug container (necessary when target pods run distroless/minimal images lacking native tools like tcpdump)
+k debug <target-pod> -it --image=nicolaka/netshoot -- tcpdump -nni eth0 -c 10 port <port>
 ```
 
 ### 2.2 Pod-to-Pod Failure Symptoms
@@ -269,7 +272,7 @@ cat /var/lib/kubelet/config.yaml | grep -A 5 "clusterDNS"
 flowchart TD
     A["Client Pod"]
     B["DNS Resolution<br>(service.namespace → ClusterIP)"]
-    C["kube-proxy Rules<br>(iptables/IPVS)"]
+    C["kube-proxy Rules<br>(iptables/nftables)"]
     D["Endpoint Selection<br>(one of the backend pods)"]
     E["Target Pod"]
 
@@ -624,7 +627,7 @@ k -n network-lab run client --image=busybox:1.36 --command -- sleep 3600
 
 ```bash
 # Wait for pods to be ready
-k -n network-lab get pods -w
+k -n network-lab wait --for=condition=ready pod --all --timeout=60s
 
 # Get service and pod IPs
 k -n network-lab get svc,pods -o wide
