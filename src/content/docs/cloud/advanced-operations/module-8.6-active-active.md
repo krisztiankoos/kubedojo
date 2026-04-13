@@ -565,6 +565,8 @@ spec:
 
 ---
 
+> **Stop and think**: When doubling your infrastructure across two regions, will your monthly bill exactly double, or will it be more? Consider the cross-region networking and coordination layer.
+
 ## Cost Implications of Active-Active
 
 Active-active is expensive. Understanding the cost model helps you make informed decisions about which components justify the investment.
@@ -737,9 +739,8 @@ For each database, specify the replication approach and expected lag.
 <details>
 <summary>Solution</summary>
 
-```
+```text
 Database Replication Plan
-═══════════════════════════════════════
 
 1. Primary PostgreSQL (users, bookings, payments)
    Primary: us-east-1 (RDS Multi-AZ)
@@ -953,34 +954,34 @@ Estimate the monthly cost difference between single-region and active-active for
 <details>
 <summary>Solution</summary>
 
-```
+```text
 Single-Region (us-east-1):
-  EKS (6x m7i.xlarge nodes)         $3,600
-  RDS (db.r7g.xlarge, Multi-AZ)     $2,800
-  ElastiCache (cache.r7g.large)     $900
-  Elasticsearch (3x r7g.large)      $1,500
-  ALB                                $200
-  NAT Gateway + data processing     $800
-  S3 + CloudFront                    $500
+  EKS (6x m7i.xlarge nodes)          $3,600
+  RDS (db.r7g.xlarge, Multi-AZ)      $2,800
+  ElastiCache (cache.r7g.large)        $900
+  Elasticsearch (3x r7g.large)       $1,500
+  ALB                                  $200
+  NAT Gateway + data processing        $800
+  S3 + CloudFront                      $500
   Data transfer (internet egress)    $1,800
   Monitoring (Datadog/Prometheus)    $1,200
   ─────────────────────────────────────────
   TOTAL:                            $13,300/month
 
 Active-Active (us-east-1 + eu-west-1):
-  2x EKS (5 nodes each, smaller secondary) $5,800
-  RDS Primary + Cross-Region Replica       $4,100
-  ElastiCache Global Datastore             $2,400
-  2x Elasticsearch (independent clusters)  $3,000
-  2x ALB                                   $400
-  2x NAT Gateway                           $1,600
-  S3 + CRR + CloudFront                    $800
-  Cross-region data transfer               $2,200
-  Global Load Balancer (Route53/GA)        $400
-  2x Monitoring                            $2,400
-  Additional operational overhead          $1,500
-  ─────────────────────────────────────────────
-  TOTAL:                                   $24,600/month
+  2x EKS (5 nodes each, smaller sec) $5,800
+  RDS Primary + Cross-Region Replica $4,100
+  ElastiCache Global Datastore       $2,400
+  2x Elasticsearch (independent)     $3,000
+  2x ALB                               $400
+  2x NAT Gateway                     $1,600
+  S3 + CRR + CloudFront                $800
+  Cross-region data transfer         $2,200
+  Global Load Balancer (Route53/GA)    $400
+  2x Monitoring                      $2,400
+  Additional operational overhead    $1,500
+  ─────────────────────────────────────────
+  TOTAL:                            $24,600/month
 
 Cost increase: $11,300/month (+85%)
 
