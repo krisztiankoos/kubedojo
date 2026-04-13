@@ -42,6 +42,8 @@ This module teaches you to identify toil, measure it, and eliminate it through a
 
 ## What Is Toil?
 
+> **Stop and think**: Think about the most annoying task you performed this week. Did it require you to make a creative decision, or were you just acting as a human script runner? If it's the latter, you were performing toil.
+
 Toil is work that:
 - **Manual**: Requires human hands
 - **Repetitive**: Done over and over
@@ -96,6 +98,8 @@ Not all operational work is toil:
 ---
 
 ## The 50% Rule
+
+> **Pause and predict**: If a team spends 90% of their time resolving tickets manually, what happens to the reliability of the system over the next year?
 
 Google's SRE teams have a hard rule:
 
@@ -231,6 +235,8 @@ Start simple — a shared spreadsheet:
 
 ## Automation Strategies
 
+> **Stop and think**: Is it possible to over-automate? Think about a scenario where automating a task might actually be a bad idea.
+
 ### The Automation Hierarchy
 
 Not everything should be automated the same way:
@@ -292,28 +298,22 @@ XKCD's classic chart helps decide:
 
 ### What to Automate First
 
-Prioritize by:
+Prioritize by combining frequency and complexity:
 
-1. **High frequency, low complexity**: Quick wins
-2. **High frequency, high time**: Big impact
-3. **Medium everything**: Steady progress
-4. **Low frequency, high complexity**: Maybe don't automate
+1. **High frequency, low complexity**: Quick wins (Do these first)
+2. **High frequency, high complexity**: Big impact (Major engineering projects)
+3. **Low frequency, low complexity**: Steady progress (Good for onboarding or slow days)
+4. **Low frequency, high complexity**: Maybe don't automate (Negative ROI)
 
-```
-                     HIGH COMPLEXITY
-                          │
-                    ┌─────┼─────┐
-                    │  3  │  4  │
-                    │     │     │
-         LOW  ──────┼─────┼─────┼────── HIGH
-         FREQ       │     │     │       FREQ
-                    │  1  │  2  │
-                    │     │     │
-                    └─────┼─────┘
-                          │
-                     LOW COMPLEXITY
-
-Priority order: 2 → 1 → 3 → (maybe 4)
+```mermaid
+quadrantChart
+    title Automation Priority
+    x-axis "Low Frequency" --> "High Frequency"
+    y-axis "Low Complexity" --> "High Complexity"
+    quadrant-1 "2. Big impact"
+    quadrant-2 "4. Maybe don't automate"
+    quadrant-3 "3. Steady progress"
+    quadrant-4 "1. Quick wins"
 ```
 
 ---
@@ -490,97 +490,51 @@ scale_up {
 ## Quiz: Check Your Understanding
 
 ### Question 1
-What makes something "toil" rather than regular work?
+**Scenario:**
+You are an SRE reviewing the weekly task list. One task involves writing a detailed postmortem for a recent database outage, which takes 4 hours. Another task is manually running a database backup verification script every morning, which takes 15 minutes. How do you classify these tasks, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-Toil is work that is:
-- **Manual**: Requires human action
-- **Repetitive**: Done over and over
-- **Automatable**: Could be done by machines
-- **Tactical**: Reactive, not strategic
-- **No lasting value**: Doesn't permanently improve anything
-- **Scales with load**: More growth = more toil
+The backup verification is toil, while the postmortem is not.
 
-Key distinction: Toil doesn't require human judgment and doesn't create lasting improvement. Writing a postmortem requires judgment and creates learning — not toil. Restarting a service for the 50th time is toil.
-
+Toil is defined by work that is manual, repetitive, automatable, and devoid of enduring value, scaling linearly with the system's growth. Verifying backups every morning fits this definition perfectly because it could be automated and requires no special human judgment. In contrast, writing a postmortem requires deep analysis, human judgment, and produces lasting value by improving system reliability. Therefore, the postmortem is considered engineering or operational overhead, not toil.
 </details>
 
 ### Question 2
-Why is 50% the limit for toil?
+**Scenario:**
+Your SRE team has been tracking its time and discovers that over the last quarter, the team spent 70% of its hours executing manual user provisioning, responding to routine paging alerts, and manually scaling infrastructure. The team is proud they kept the system running, but management is concerned. How should this situation be handled according to SRE principles?
 
 <details>
 <summary>Show Answer</summary>
 
-The 50% rule exists because:
+The team has exceeded the 50% limit for toil and must take immediate action to reduce it.
 
-1. **Ensures engineering time**: At least half the time goes to improvement projects
-2. **Prevents ops trap**: Without the limit, toil expands to fill all time
-3. **Maintains discipline**: SRE is engineering, not just operations
-4. **Forces prioritization**: Must address root causes, not just symptoms
-
-If toil exceeds 50%:
-- Automate aggressively
-- Push back on service quality
-- Increase staffing
-- Hand service back to developers
-
+Google's SRE model strictly limits toil to 50% of an engineer's time to ensure that at least half of their time is dedicated to engineering projects that permanently improve the system. When toil exceeds 50%, the team is trapped in a reactive operations mode and cannot build the automation needed to scale. To fix this, the team should push back on service levels, heavily prioritize automation projects, request additional staffing, or temporarily hand operational responsibilities back to the development team until the toil is manageable.
 </details>
 
 ### Question 3
-A task takes 15 minutes and happens twice a week. How do you decide if it's worth automating?
+**Scenario:**
+You manage a legacy reporting service that requires a manual cache clearing process every Friday afternoon. The process takes you 30 minutes to perform safely. You estimate it would take you 20 hours to write, test, and safely deploy a fully automated script to handle this. Using ROI principles, should you prioritize automating this task right now?
 
 <details>
 <summary>Show Answer</summary>
 
-Calculate the ROI:
+Yes, you should prioritize automating this task because the payback period is reasonable and it eliminates a recurring interruption.
 
-```
-Weekly toil: 15 min × 2 = 30 minutes
-Monthly toil: 30 min × 4 = 2 hours
-Yearly toil: 2 hours × 12 = 24 hours
-
-If automation takes 8 hours to build:
-  Payback period = 8 / 2 = 4 months
-
-Decision factors:
-  - 4-month payback is reasonable
-  - Consider error reduction value
-  - Consider documentation value
-  - Is this growing? (scaling)
-```
-
-For 2 hours/month savings, automation under 8 hours is usually worth it.
-
+The manual task costs you 2 hours per month (30 minutes × 4 weeks). If you invest 20 hours to automate it, the automation will pay for itself in exactly 10 months (20 hours / 2 hours per month). In SRE, calculating the Return on Investment (ROI) for automation helps prioritize engineering effort. Since this task is highly repetitive and the payback period is less than a year, automating it is a sound engineering decision that will permanently free up your Friday afternoons for higher-value work.
 </details>
 
 ### Question 4
-What's the difference between automation levels 2, 3, and 4?
+**Scenario:**
+Your team currently handles high CPU alerts by manually SSHing into a server and running a script named `./scale_up.sh`. You want to improve this process. First, you configure an alert system that prompts you in Slack: "High CPU detected. Run scale_up.sh? [Y/n]". Later, you replace this entirely with a Kubernetes HorizontalPodAutoscaler that automatically adds pods when CPU hits 80%. Describe the transitions in automation levels that occurred here.
 
 <details>
 <summary>Show Answer</summary>
 
-**Level 2: Semi-automated**
-- Script exists
-- Human triggers it
-- Human decides when to run
-- Example: `./restart_service.sh`
+The process transitioned from Level 2 (Semi-automated) to Level 3 (Auto-triggered), and finally to Level 4 (Fully automated).
 
-**Level 3: Auto-triggered**
-- System detects the need
-- System asks permission
-- Human approves
-- Example: "CPU high. Scale up? [Y/n]"
-
-**Level 4: Fully automated**
-- System detects the need
-- System takes action
-- No human involved
-- Example: Kubernetes pod restart on probe failure
-
-Progress: Each level reduces human involvement until humans only handle exceptions.
-
+Initially, the human had to decide when to run the script and trigger it manually, which corresponds to Level 2. By moving the trigger to Slack, where the system detects the issue and asks for human permission, the automation reached Level 3. Finally, implementing the HorizontalPodAutoscaler removed the human from the loop entirely, allowing the system to detect and remediate the issue on its own, achieving Level 4. This progression demonstrates the ideal path for eliminating toil, moving from human-initiated actions to true self-healing systems.
 </details>
 
 ---
