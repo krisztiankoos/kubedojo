@@ -60,26 +60,18 @@ Training and inference have fundamentally different resource profiles:
 | Scaling unit | Fixed cluster for days/weeks | Elastic, minute-to-minute |
 | Cost optimization | Maximize GPU utilization | Minimize cost per request |
 
+> **Stop and think**: Consider the lifecycle of a standard web request (e.g., retrieving a user profile). How does holding a connection open for 30 seconds while an LLM generates a response change how you must handle load balancing and timeouts?
+
 ### The Two Inference Phases
 
 LLM inference has two distinct phases:
 
-```
-┌──────────────────────────┐    ┌──────────────────────────────┐
-│    Prefill Phase          │    │    Decode Phase               │
-│                           │    │                               │
-│  Process entire prompt    │    │  Generate tokens one at a     │
-│  in parallel              │    │  time, autoregressively       │
-│                           │    │                               │
-│  Compute-bound            │    │  Memory-bandwidth-bound       │
-│  (matrix multiplications) │    │  (reading KV cache)           │
-│                           │    │                               │
-│  Duration: 100-500ms      │    │  Duration: 2-30s              │
-│  (proportional to prompt) │    │  (proportional to output)     │
-│                           │    │                               │
-│  TTFT (Time to First      │    │  TPOT (Time Per Output Token) │
-│  Token)                   │    │  ~20-50ms per token           │
-└──────────────────────────┘    └──────────────────────────────┘
+```mermaid
+flowchart LR
+    Prefill["<b>Prefill Phase</b><br><br>Process entire prompt in parallel<br>Compute-bound (matrix multiplications)<br>Duration: 100-500ms<br><br><i>TTFT (Time to First Token)</i>"]
+    Decode["<b>Decode Phase</b><br><br>Generate tokens one at a time<br>Memory-bandwidth-bound (KV cache)<br>Duration: 2-30s<br><br><i>TPOT (Time Per Output Token)</i>"]
+    
+    Prefill --> Decode
 ```
 
 **TTFT** (Time to First Token): How long until the first token appears. Users perceive this as "responsiveness."
@@ -109,27 +101,32 @@ Llama-3-8B, sequence length 4096:
 With 40GB GPU: max ~20 concurrent requests
 ```
 
+> **Pause and predict**: If we pre-allocate memory for the maximum possible sequence length for every request, what happens to our GPU's memory capacity when most users only send short prompts?
+
 **The waste**: Traditional frameworks pre-allocate KV cache for the maximum sequence length, even if the actual sequence is much shorter. A request that generates 100 tokens wastes 97.5% of its pre-allocated 4096-token KV cache.
 
 #### PagedAttention
 
 PagedAttention (invented by the vLLM team at UC Berkeley) manages KV cache like an operating system manages virtual memory:
 
-```
-Traditional:
-┌─────────────────────────────────────────┐
-│ Request 1: [████░░░░░░░░░░░░░░░░░░░░░]  │  4096 slots, 400 used
-│ Request 2: [████████░░░░░░░░░░░░░░░░░]  │  4096 slots, 800 used
-│ Request 3: [██░░░░░░░░░░░░░░░░░░░░░░░]  │  4096 slots, 200 used
-│ WASTED:     10,788 slots (88%)           │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Traditional["Traditional (Static Allocation)"]
+        direction TB
+        TR1["Request 1: 400 slots used, 3696 wasted"]
+        TR2["Request 2: 800 slots used, 3296 wasted"]
+        TR3["Request 3: 200 slots used, 3896 wasted"]
+        TR4["WASTED: 88% of allocated memory"]
+        TR1 ~~~ TR2 ~~~ TR3 ~~~ TR4
+    end
 
-PagedAttention:
-┌─────────────────────────────────────────┐
-│ Pages: [R1][R1][R2][R2][R2][R3][free]   │  Variable allocation
-│        [R2][R2][R1][free][free][free]    │  Pages allocated on demand
-│ WASTED: 5 pages of ~512 slots (4%)      │  Fragment only in last page
-└─────────────────────────────────────────┘
+    subgraph Paged["PagedAttention (Dynamic Allocation)"]
+        direction TB
+        PA1["Physical Pages: R1, R1, R2, R2, R2, R3, Free"]
+        PA2["                R2, R2, R1, Free, Free, Free"]
+        PA3["WASTED: 4% (Fragmentation only in last page)"]
+        PA1 ~~~ PA2 ~~~ PA3
+    end
 ```
 
 This simple change increases the number of concurrent requests a GPU can handle by **2-4x**.
@@ -308,31 +305,49 @@ spec:
 
 Traditional batching waits for N requests, then processes them together. The problem: all requests must wait for the longest one to finish.
 
-```
-Static Batch (batch_size=3):
-Time ──────────────────────────────────────────────────►
-
-Req A (short):  [████████░░░░░░░░░░░░░░░░]  ← waits for Req C
-Req B (medium): [████████████████░░░░░░░░]  ← waits for Req C
-Req C (long):   [████████████████████████]
-
-Total GPU-time wasted: 36% (padded slots)
+```mermaid
+gantt
+    title Static Batching (Waits for longest request)
+    dateFormat  X
+    axisFormat %s
+    
+    section Request A (short)
+    Processing :a1, 0, 8
+    Waiting (Wasted GPU) :crit, w1, 8, 24
+    
+    section Request B (medium)
+    Processing :b1, 0, 16
+    Waiting (Wasted GPU) :crit, w2, 16, 24
+    
+    section Request C (long)
+    Processing :c1, 0, 24
 ```
 
 ### Continuous Batching (Iteration-Level Batching)
 
 Continuous batching inserts and removes requests at every decode step:
 
+```mermaid
+gantt
+    title Continuous Batching (No waiting)
+    dateFormat  X
+    axisFormat %s
+    
+    section Slot 1
+    Req A Processing :a1, 0, 8
+    Req D Processing :d1, 8, 20
+    Req F Processing :f1, 20, 24
+    
+    section Slot 2
+    Req B Processing :b1, 0, 16
+    Req E Processing :e1, 16, 36
+    
+    section Slot 3
+    Req C Processing :c1, 0, 24
+    Req G Processing :g1, 24, 32
 ```
-Continuous Batch:
-Time ──────────────────────────────────────────────────►
 
-Req A: [████████]  DONE → Req D: [████████████]  DONE → Req F: [████]
-Req B: [████████████████]  DONE → Req E: [████████████████████]
-Req C: [████████████████████████]  DONE → Req G: [████████]
-
-GPU never idles — new requests fill slots immediately
-```
+> **Stop and think**: How does continuous batching handle the fact that requests have different token lengths? What happens to the GPU slots when a short request finishes while a long request is still generating?
 
 This is what makes vLLM and TGI dramatically faster than naive serving: the GPU is always doing useful work, and completed requests free resources immediately for waiting requests.
 
@@ -410,13 +425,29 @@ spec:
 
 Pipeline parallelism splits layers across GPUs sequentially. It is less common for inference because it increases TTFT (the prompt must flow through all stages serially), but it uses less inter-GPU bandwidth than tensor parallelism:
 
-```
-Tensor Parallel (TP=2):         Pipeline Parallel (PP=2):
-GPU 0: Half of every layer       GPU 0: Layers 0-15
-GPU 1: Other half of every layer  GPU 1: Layers 16-31
-Inter-GPU: Every layer            Inter-GPU: Once per forward pass
-Bandwidth: High                   Bandwidth: Low
-Latency: Lower per-token          Latency: Higher per-token
+```mermaid
+flowchart LR
+    subgraph TP["Tensor Parallel (TP=2)"]
+        direction TB
+        TP_G0["GPU 0: Half of every layer"]
+        TP_G1["GPU 1: Other half of every layer"]
+        TP_Comm["Inter-GPU: Every layer"]
+        TP_Band["Bandwidth: High"]
+        TP_Lat["Latency: Lower per-token"]
+        TP_G0 <--> TP_G1
+        TP_G1 ~~~ TP_Comm ~~~ TP_Band ~~~ TP_Lat
+    end
+
+    subgraph PP["Pipeline Parallel (PP=2)"]
+        direction TB
+        PP_G0["GPU 0: Layers 0-15"]
+        PP_G1["GPU 1: Layers 16-31"]
+        PP_Comm["Inter-GPU: Once per forward pass"]
+        PP_Band["Bandwidth: Low"]
+        PP_Lat["Latency: Higher per-token"]
+        PP_G0 --> PP_G1
+        PP_G1 ~~~ PP_Comm ~~~ PP_Band ~~~ PP_Lat
+    end
 ```
 
 Use tensor parallelism when GPUs are connected by NVLink (intra-node). Use pipeline parallelism when GPUs are on different nodes (slower interconnect).
@@ -434,6 +465,8 @@ The standard Kubernetes HPA scales on CPU or memory utilization. For LLM inferen
 - **GPU utilization**: A GPU at 90% utilization might be handling requests fine, or it might have a 30-second queue
 
 The right metric is **queue depth** — how many requests are waiting to be processed.
+
+> **Pause and predict**: If you autoscale based on CPU utilization, what will happen when your GPU is fully saturated with queued requests but the CPU is mostly idle?
 
 ### KEDA: Kubernetes Event-Driven Autoscaler
 
@@ -662,6 +695,8 @@ A team deployed a 70B parameter model on 2x A100-80GB via vLLM in their producti
 
 The new replicas took **7 minutes** to become Ready. During those 7 minutes, the original replica was overwhelmed, P95 latency spiked to 45 seconds, and users saw timeouts.
 
+> **Stop and think**: What happens to in-flight requests that take 45 seconds to generate if Kubernetes sends a SIGTERM and the default termination grace period is 30 seconds?
+
 Investigation revealed three stacking delays:
 
 1. **Model download** (3 min): The 140GB model was being downloaded from Hugging Face Hub on every scale-up. No PVC was caching the weights.
@@ -698,94 +733,48 @@ New scale-up time: 90 seconds. Still not instant, but manageable with proactive 
 ## Quiz: Check Your Understanding
 
 ### Question 1
-Explain why PagedAttention increases the number of concurrent LLM requests a GPU can handle.
+You are reviewing a Grafana dashboard for a deployment of a 7B parameter model. The GPU VRAM is 95% full, but you notice that the active computation utilization is extremely low, and the server is only handling 4 concurrent requests. The developer used a naive inference script instead of vLLM. What is likely happening in memory, and how would deploying vLLM (which uses PagedAttention) solve this bottleneck?
 
 <details>
 <summary>Show Answer</summary>
 
-Traditional KV cache allocation reserves a contiguous block of GPU memory for the maximum sequence length for **every** request. If max_seq_len=4096 and a request only generates 200 tokens, 95% of the allocated memory is wasted.
-
-PagedAttention divides KV cache into fixed-size blocks (pages) and allocates them **on demand** as tokens are generated. Pages are stored non-contiguously in GPU memory and mapped via a block table (analogous to a page table in OS virtual memory).
-
-This reduces memory waste from ~60-90% (static allocation) to ~4% (only the last partially-filled page). The freed memory can hold KV cache for additional concurrent requests, effectively 2-4x the concurrency capacity of the GPU.
+Traditional KV cache allocation reserves a contiguous block of GPU memory for the maximum sequence length for every request. If max_seq_len=4096 and a request only generates 200 tokens, 95% of the allocated memory is wasted. PagedAttention divides KV cache into fixed-size blocks (pages) and allocates them on demand as tokens are generated. Pages are stored non-contiguously in GPU memory and mapped via a block table (analogous to a page table in OS virtual memory). This reduces memory waste from ~60-90% (static allocation) to ~4% (only the last partially-filled page). The freed memory can hold KV cache for additional concurrent requests, effectively increasing the concurrency capacity of the GPU by 2-4x.
 </details>
 
 ### Question 2
-Why is scaling LLM inference on GPU utilization a bad idea? What should you scale on instead?
+Your infrastructure team sets up an HPA to scale a cluster of Llama-3 nodes based on a target of 80% GPU utilization. During a sudden traffic spike, users complain of 45-second response times, but the HPA only added one additional replica and stopped scaling. What is the fundamental flaw in using GPU utilization for LLM autoscaling, and what metric should the team use instead?
 
 <details>
 <summary>Show Answer</summary>
 
-GPU utilization measures compute usage but doesn't reflect user experience:
-
-1. **High utilization doesn't mean overloaded**: A GPU at 95% utilization might be efficiently processing a batch of requests with low queue depth — everything is fine.
-2. **Medium utilization can mean overloaded**: A GPU at 70% utilization during the decode phase (memory-bandwidth-bound) might have a queue of 50 requests waiting — users are suffering.
-3. **Low utilization doesn't mean idle**: Between requests, GPU drops to 0%, then spikes to 100% during compute — the average hides the burst pattern.
-
-Better scaling metrics:
-- **Queue depth** (`vllm:num_requests_waiting`): Directly measures how many users are waiting
-- **P95 TPOT**: Measures user-perceived generation speed
-- **P95 TTFT**: Measures user-perceived responsiveness
-- **Request rate** vs capacity: Predictive scaling based on traffic trends
+GPU utilization measures compute usage but fundamentally fails to reflect the user experience for LLM workloads. A GPU at 95% utilization might be efficiently processing a batch of requests with low queue depth, while a GPU at 70% utilization during the memory-bandwidth-bound decode phase might have a massive queue of waiting requests. Furthermore, between requests, GPU utilization drops to 0%, then spikes to 100% during compute, making the average hide the burst pattern. Instead, teams should scale on queue depth (e.g., `vllm:num_requests_waiting`) because it directly measures how many users are waiting. Alternatively, latency-based metrics like P95 Time Per Output Token (TPOT) accurately reflect the user's perceived generation speed.
 </details>
 
 ### Question 3
-A vLLM deployment serves Llama-3.1-8B with `--max-model-len=32768` on an A100-40GB. Users report that only 8 concurrent requests are possible before new requests queue. With `--max-model-len=4096`, 48 concurrent requests are possible. Why?
+Your team deploys a coding assistant LLM on an A100-40GB. To be safe, a developer sets `--max-model-len=32768` (the model's theoretical maximum). However, the system starts queuing requests after just 8 concurrent users, even though the actual prompts being sent are only 500 tokens long. When the developer changes the parameter to `--max-model-len=4096`, the system handles 48 concurrent users seamlessly. Explain why this configuration change drastically increased the concurrency limit.
 
 <details>
 <summary>Show Answer</summary>
 
-vLLM pre-allocates the KV cache pool based on `--gpu-memory-utilization` and the available GPU memory (total VRAM minus model weights). The `--max-model-len` parameter sets the maximum sequence length the scheduler allows per request, which determines how much KV cache each concurrent request can consume:
-
-- At 32768: Each request can reserve up to ~4GB of KV cache. With ~32GB available for KV cache (40GB total - 8GB model weights), the scheduler can fit ~8 concurrent requests at maximum length.
-- At 4096: Each request can reserve up to ~0.5GB. Same 32GB pool allows ~64 theoretical slots; vLLM manages 48 practically due to internal overhead.
-
-In both cases, the total KV cache pool size is the same (determined by `--gpu-memory-utilization`), but the maximum per-request allocation changes, which controls how many concurrent requests fit.
-
-The fix: Set `--max-model-len` to the actual maximum you expect (e.g., 4096 for a chatbot with short conversations), not the model's theoretical maximum (32768). You can still handle occasional longer sequences by enabling `--swap-space` to move inactive KV cache to CPU memory.
+vLLM pre-allocates the KV cache pool based on `--gpu-memory-utilization` and the available GPU memory. The `--max-model-len` parameter sets the maximum sequence length the scheduler allows per request, which directly determines how much KV cache each concurrent request is permitted to consume. At 32768 tokens, each request can reserve up to ~4GB of KV cache, meaning a 32GB cache pool can only fit ~8 concurrent requests at maximum length. When reduced to 4096 tokens, each request reserves only up to ~0.5GB, allowing the same 32GB pool to theoretically accommodate 64 slots (or 48 practically). Setting `--max-model-len` to the actual expected maximum rather than the theoretical maximum prevents artificial capping of concurrency.
 </details>
 
 ### Question 4
-Why should rolling updates for LLM deployments use `maxUnavailable: 0, maxSurge: 1` instead of the default `maxUnavailable: 25%, maxSurge: 25%`?
+You trigger a routine image tag update for your LLM serving Deployment during business hours. The deployment uses Kubernetes' default rolling update strategy (`maxUnavailable: 25%, maxSurge: 25%`). Immediately, the on-call engineer gets paged for a spike in HTTP 503s and 60-second timeouts. Why did the default update strategy cause an outage for this specific workload, and what values should be used instead?
 
 <details>
 <summary>Show Answer</summary>
 
-LLM inference Pods take 1-7 minutes to become Ready (model loading, CUDA compilation, health check). During a rolling update with `maxUnavailable: 25%`:
-
-1. Kubernetes terminates 25% of Pods immediately
-2. New Pods start but take 1-7 minutes to become Ready
-3. For those 1-7 minutes, you have 25% less capacity
-4. If traffic is high, the remaining 75% of Pods are overwhelmed
-5. Users experience timeouts and high latency
-
-With `maxUnavailable: 0, maxSurge: 1`:
-1. Kubernetes creates 1 new Pod with the updated version
-2. Waits until the new Pod is Ready (model loaded, health check passing)
-3. Only then terminates 1 old Pod
-4. Repeats until all Pods are updated
-5. Capacity never drops below the original level
+LLM inference Pods take 1-7 minutes to become Ready because they must load massive model weights into VRAM and compile CUDA graphs. During a rolling update with `maxUnavailable: 25%`, Kubernetes immediately terminates 25% of the active Pods while the new ones take minutes to start. For those several minutes, the deployment runs with 25% less capacity, which overwhelms the remaining Pods and causes severe latency spikes and timeouts. By configuring `maxUnavailable: 0` and `maxSurge: 1`, Kubernetes will create one new Pod and wait until it is fully Ready before terminating an old one. This ensures that the total serving capacity never drops below the original level, resulting in a zero-downtime update.
 </details>
 
 ### Question 5
-What is continuous batching and why does it improve throughput by 2-5x over static batching?
+You are comparing two inference servers. Server A waits for 16 requests to arrive, processes them all together, and returns the results. Server B immediately begins processing requests as they arrive, and finishes them at different times, continually accepting new ones. Server B achieves 4x the total tokens-per-second throughput of Server A. What is the name of the technique Server B is using, and why does it result in such a dramatic throughput increase?
 
 <details>
 <summary>Show Answer</summary>
 
-**Static batching** collects N requests, processes them together, and only returns results when the longest request in the batch finishes. Shorter requests waste GPU cycles waiting. New requests must wait for the next batch window.
-
-**Continuous batching** operates at the iteration (token) level:
-1. After each decode step, check if any request in the batch has finished
-2. Remove finished requests from the batch immediately
-3. Insert waiting requests into the freed slots immediately
-4. The GPU processes a new mix of requests at every iteration
-
-Why 2-5x improvement:
-- **No padding waste**: Short requests don't wait for long ones
-- **No batching delay**: New requests join immediately, no waiting for batch windows
-- **Higher GPU utilization**: Slots freed by completed requests are instantly reused
-- **Better latency**: Individual request latency is determined by its own length, not the batch's longest request
+Static batching collects N requests and processes them together, forcing shorter requests to waste GPU cycles waiting for the longest request in the batch to finish. Continuous batching operates at the iteration (token) level, checking if any request has finished after each decode step. Completed requests are immediately removed from the batch, and waiting requests are instantly inserted into the freed slots. This ensures the GPU never idles and slots freed by completed requests are instantly reused. Because individual request latency is determined by its own length rather than the batch's longest request, total throughput dramatically increases by 2-5x.
 </details>
 
 ---
