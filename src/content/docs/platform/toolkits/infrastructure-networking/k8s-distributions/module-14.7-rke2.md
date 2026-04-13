@@ -158,7 +158,7 @@ The CIS (Center for Internet Security) Kubernetes Benchmark contains over 100 pa
 In RKE2, you don't manually tune 200 flags. You use a single configuration line in `/etc/rancher/rke2/config.yaml`:
 
 ```yaml
-profile: "cis-1.23"
+profile: "cis-1.8"
 ```
 
 > **Stop and think**: If the CIS profile automatically forces the `restricted` Pod Security Standard, what will happen to a legacy application that requires root access if you migrate it to RKE2 without modifying its manifest?
@@ -334,32 +334,32 @@ RKE2 certificates expire every 12 months. **RKE2 automatically rotates them** if
 
 <details>
 <summary>1. A federal auditor has arrived on-site and demands proof that your newly deployed RKE2 cluster is actually utilizing FIPS 140-2 validated cryptographic modules, rather than just standard Go cryptography. How do you definitively demonstrate this boundary to the auditor?</summary>
-You can prove this by inspecting the RKE2 binary itself for the presence of the BoringCrypto module. By running `nm /var/lib/rancher/rke2/bin/rke2 | grep "_Cfunc__goboringcrypto_"`, you demonstrate that the binary was compiled with the FIPS wrapper that intercepts cryptographic calls. Furthermore, you must also show that the underlying Linux kernel has FIPS mode enabled (e.g., checking `/proc/sys/crypto/fips_enabled`), as RKE2's FIPS compliance is holistic and relies on the host OS being compliant.
+You can prove this by inspecting the RKE2 binary itself for the presence of the BoringCrypto module. By running `nm /usr/bin/rke2 | grep "_Cfunc__goboringcrypto_"`, you demonstrate that the binary was compiled with the FIPS wrapper that intercepts standard cryptographic calls. This proves that the binary is physically capable of enforcing the required cryptographic boundaries. Furthermore, you must also show that the underlying Linux kernel has FIPS mode enabled (e.g., by checking `/proc/sys/crypto/fips_enabled`). RKE2's FIPS compliance is holistic; the binary will only operate in validated FIPS mode if it detects that the host operating system kernel is also strictly enforcing FIPS standards.
 </details>
 
 <details>
 <summary>2. You deploy a monitoring DaemonSet that mounts a host directory (`/var/log/app`) with 777 permissions. However, the pod consistently crashes with "Permission Denied" errors when trying to read the files. What is the most likely cause in an RKE2 environment?</summary>
-The most likely cause is an SELinux policy violation, as RKE2 enforces Mandatory Access Control by default. Even though the standard Linux file permissions (777) allow access, the SELinux context on the host directory likely lacks the `svirt_sandbox_file_t` label required for container access. To resolve this, you need to append the `:z` or `:Z` flag to your volume mount in the pod specification, which instructs the container runtime to automatically relabel the directory with the correct SELinux context.
+The most likely cause is an SELinux policy violation, as RKE2 embraces and enforces Mandatory Access Control by default. Even though the standard Linux file permissions (like 777) technically allow broad access, the SELinux context on the host directory likely lacks the `svirt_sandbox_file_t` label required for a confined container process to interact with it. To resolve this issue, you need to append the `:z` or `:Z` flag to your volume mount definition within the pod specification. This flag explicitly instructs the container runtime to automatically relabel the target directory with the correct SELinux context before the pod starts, allowing the container to read and write without being blocked by the kernel.
 </details>
 
 <details>
-<summary>3. A developer attempts to deploy a legacy application pod that requests `privileged: true` and host network access. Your RKE2 cluster was bootstrapped with the `profile: "cis-1.23"` flag in its config file. What is the immediate result of this deployment attempt?</summary>
-The Kubernetes API server will immediately reject the pod deployment request. When the CIS profile is enabled in RKE2, it automatically configures Pod Security Admissions (PSA) to enforce the `restricted` profile across the cluster. This enforcement prevents any pod from running as root, using host networking, or gaining privileged escalation. The developer will receive an admission webhook denial message detailing which security standards their manifest violated.
+<summary>3. A developer attempts to deploy a legacy application pod that requests `privileged: true` and host network access. Your RKE2 cluster was bootstrapped with the `profile: "cis-1.8"` flag in its config file. What is the immediate result of this deployment attempt?</summary>
+The Kubernetes API server will immediately reject the pod deployment request and return an error to the user. When the CIS profile is enabled in RKE2 via the config file, it automatically configures Pod Security Admissions (PSA) to enforce the `restricted` profile globally across the cluster. This strict enforcement proactively prevents any pod from running as the root user, utilizing host networking namespaces, or gaining privileged escalation capabilities. Because the developer's manifest explicitly requested `privileged: true`, the admission controller intercepts the request, blocks the creation of the pod, and issues a webhook denial message detailing the exact security standards that were violated.
 </details>
 
 <details>
 <summary>4. Your team has written a custom security scanning tool packaged as a Helm chart. You need this tool to automatically deploy and reconcile itself during the initial bootstrap of every new RKE2 edge node, without requiring a separate CI/CD pipeline step. How do you achieve this?</summary>
-You achieve this by leveraging RKE2's built-in Helm Controller and static manifest directory. By placing your custom Helm chart and its corresponding `HelmChart` manifest into the `/var/lib/rancher/rke2/server/manifests/` directory on the server node, RKE2 will automatically detect it. The Helm Controller will then parse the manifest and deploy the chart as part of the bootstrap process, ensuring the security tool is running before any user workloads are scheduled.
+You achieve this by leveraging RKE2's built-in Helm Controller and its dedicated static manifest directory. By placing your custom Helm chart and its corresponding `HelmChart` manifest directly into the `/var/lib/rancher/rke2/server/manifests/` directory on the server node, RKE2 will automatically detect the new files. The Helm Controller is designed to continuously monitor this directory, parse any valid manifests it finds, and seamlessly deploy the chart as part of the cluster bootstrap process. This mechanism guarantees that your custom security tool is fully running and active before any standard user workloads can be scheduled on the new edge node.
 </details>
 
 <details>
 <summary>5. You inherit an RKE2 cluster that was deployed exactly 10 months ago. You are concerned because upstream Kubernetes clusters often suffer catastrophic outages when their 1-year control plane certificates expire. What action do you need to take to prevent this outage in RKE2?</summary>
-In most cases, you only need to restart the `rke2-server` service on your control plane nodes. RKE2 is designed to automatically check the expiration dates of its internal certificates during startup. If it detects that any control plane certificates are within 90 days of expiring, it will automatically rotate them and generate new ones. This eliminates the need for manual certificate generation and prevents the "hidden time bomb" of cluster expiration, provided the service is restarted periodically (like during OS patching).
+In most operational scenarios, you simply need to restart the `rke2-server` service on your control plane nodes to trigger a renewal. RKE2 is intentionally designed to automatically check the expiration dates of its internal TLS certificates during its standard startup sequence. If the system detects that any control plane certificates are within 90 days of expiring, it will automatically rotate them and generate fresh credentials. This automated lifecycle management eliminates the need for complex, manual certificate generation procedures and prevents the "hidden time bomb" of cluster expiration, provided the service is restarted periodically during routine OS patching or maintenance windows.
 </details>
 
 <details>
 <summary>6. Your enterprise architecture team dictates that your new RKE2 cluster must support both standard Linux microservices and legacy .NET applications running on Windows Server worker nodes. Which Container Network Interface (CNI) should you configure during installation?</summary>
-You should configure the cluster to use pure Calico (`cni: calico`) rather than the default Canal CNI. While Canal is excellent for standard Linux deployments, its reliance on Flannel for VXLAN encapsulation does not provide optimal native support for hybrid Windows/Linux networking. Calico, on the other hand, offers first-class routing and network policy enforcement across both operating systems, ensuring seamless communication and strict security controls between your Linux and Windows workloads.
+You should configure the cluster to use pure Calico (`cni: calico`) rather than relying on the default Canal CNI during installation. While Canal is an excellent and simple choice for standard Linux-only deployments, its reliance on Flannel for VXLAN network encapsulation does not provide optimal or native support for complex hybrid Windows/Linux environments. Calico, on the other hand, offers first-class routing, robust network policy enforcement, and native dataplane integrations across both operating systems. Choosing Calico ensures seamless cross-platform communication and allows you to apply strict, unified security controls between your Linux microservices and Windows workloads.
 </details>
 
 ---
@@ -379,7 +379,7 @@ sudo sysctl -p /etc/sysctl.d/90-rke2.conf
 ### Task 2: Configure and Install
 Create `/etc/rancher/rke2/config.yaml`:
 ```yaml
-profile: "cis-1.23"
+profile: "cis-1.8"
 selinux: true
 write-kubeconfig-mode: "0644"
 ```
