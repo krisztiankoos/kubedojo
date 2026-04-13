@@ -170,7 +170,7 @@ k apply -f <fixed-yaml>    # Apply corrected spec
 k delete pod <pod>         # Force restart
 
 # Verify the fix
-k get pods -w              # Watch for status change
+k get pods                 # Check pod status (add -w to watch for changes)
 k logs <pod>               # Check new logs
 ```
 
@@ -637,7 +637,8 @@ k set image deployment/broken-app -n troubleshoot-lab app=nginx:latest
 k create configmap nginx-config -n troubleshoot-lab --from-literal=placeholder=true
 
 # Verify
-k get pods -n troubleshoot-lab -w
+k rollout status deployment/broken-app -n troubleshoot-lab --timeout=60s
+k get pods -n troubleshoot-lab
 ```
 
 ### Extended Challenge
@@ -739,20 +740,22 @@ k get pods -l <service-selector>
 ### Drill 6: DNS Verification (1 min)
 ```bash
 # Task: Verify DNS working in cluster
-k run dnstest --image=busybox:1.36 --rm -it --restart=Never -- nslookup kubernetes
+k run dnstest --image=busybox:1.36 -i --rm --restart=Never -- nslookup kubernetes
 ```
 
 ### Drill 7: Container Shell Access (30 sec)
 ```bash
-# Task: Get shell in running container
-k exec -it <pod> -- /bin/sh
+# Task: Execute a command inside a running container
+k exec <pod> -- echo "Inside container"
+# Note: For an interactive shell, use the -it flags manually:
+# k exec -it <pod> -- /bin/sh
 # If sh not available: k exec -it <pod> -- /bin/bash
 ```
 
 ### Drill 8: Multi-Container Logs (1 min)
 ```bash
-# Task: View logs from specific container and follow
-k logs <pod> -c <container> -f
+# Task: View logs from specific container (add -f to follow interactively)
+k logs <pod> -c <container>
 # List all containers: k get pod <pod> -o jsonpath='{.spec.containers[*].name}'
 ```
 
