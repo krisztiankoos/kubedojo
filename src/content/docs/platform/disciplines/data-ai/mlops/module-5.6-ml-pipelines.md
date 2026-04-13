@@ -42,41 +42,38 @@ This is where MLOps maturity reaches Level 3: continuous training and automated 
 
 ### End-to-End Pipeline
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   ML PIPELINE ARCHITECTURE                       │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  TRIGGER                                                         │
-│  ├── Schedule (daily/weekly)                                    │
-│  ├── New data arrival                                           │
-│  ├── Drift detected                                             │
-│  └── Manual trigger                                             │
-│           │                                                      │
-│           ▼                                                      │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │                     PIPELINE                                 ││
-│  │                                                              ││
-│  │  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐     ││
-│  │  │  Data   │──▶│  Data   │──▶│ Feature │──▶│ Feature ││     ││
-│  │  │ Ingest  │   │Validate │   │  Eng.   │   │  Store  ││     ││
-│  │  └─────────┘   └─────────┘   └─────────┘   └─────────┘│     ││
-│  │                                                   │          ││
-│  │                                                   ▼          ││
-│  │  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐     ││
-│  │  │ Deploy  │◀──│  Model  │◀──│  Model  │◀──│  Train  │     ││
-│  │  │         │   │ Registry│   │Validate │   │         │     ││
-│  │  └─────────┘   └─────────┘   └─────────┘   └─────────┘     ││
-│  │       │                                                      ││
-│  └───────┼──────────────────────────────────────────────────────┘│
-│          ▼                                                       │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │                    MONITORING                                ││
-│  │  • Drift detection → Trigger retrain                        ││
-│  │  • Performance drop → Alert + rollback                       ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Triggers
+        direction TB
+        T1[Schedule]
+        T2[New data arrival]
+        T3[Drift detected]
+        T4[Manual trigger]
+    end
+
+    subgraph Pipeline
+        direction LR
+        DI[Data Ingest] --> DV[Data Validate]
+        DV --> FE[Feature Eng.]
+        FE --> FS[Feature Store]
+        
+        T[Train] --> MV[Model Validate]
+        MV --> MR[Model Registry]
+        MR --> D[Deploy]
+        
+        FS --> T
+    end
+
+    subgraph Monitoring
+        direction TB
+        M1[Drift detection -> Trigger retrain]
+        M2[Performance drop -> Alert + rollback]
+    end
+
+    Triggers --> Pipeline
+    D --> Monitoring
+    Monitoring -.-> Triggers
 ```
 
 ### Pipeline Components
@@ -94,41 +91,33 @@ This is where MLOps maturity reaches Level 3: continuous training and automated 
 
 ## Pipeline Orchestrators
 
+> **Stop and think**: If your team is already heavily invested in Kubernetes and uses Argo CD for standard application deployments, which ML orchestrator might offer the lowest operational overhead and learning curve for your platform team?
+
 ### Tool Comparison
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                PIPELINE ORCHESTRATOR COMPARISON                  │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  KUBEFLOW PIPELINES                                             │
-│  ├── Kubernetes-native                                          │
-│  ├── Python SDK for defining pipelines                          │
-│  ├── Built-in experiment tracking                               │
-│  ├── Component reusability                                      │
-│  └── Best for: K8s-first organizations                          │
-│                                                                  │
-│  APACHE AIRFLOW                                                 │
-│  ├── General-purpose orchestration                              │
-│  ├── Rich ecosystem of operators                                │
-│  ├── Strong scheduling capabilities                             │
-│  ├── Web UI for monitoring                                      │
-│  └── Best for: Data engineering + ML                            │
-│                                                                  │
-│  ARGO WORKFLOWS                                                 │
-│  ├── Kubernetes-native                                          │
-│  ├── YAML-based workflow definitions                            │
-│  ├── DAG and step-based workflows                               │
-│  ├── Lightweight                                                │
-│  └── Best for: Simple K8s workflows                             │
-│                                                                  │
-│  PREFECT / DAGSTER                                              │
-│  ├── Modern Python-native                                       │
-│  ├── Data-centric abstractions                                  │
-│  ├── Strong testing support                                     │
-│  └── Best for: Python-first teams                               │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+mindmap
+  root((Orchestrators))
+    Kubeflow Pipelines
+      Kubernetes-native
+      Python SDK
+      Built-in tracking
+      Best for K8s-first
+    Apache Airflow
+      General-purpose
+      Rich operators
+      Strong scheduling
+      Best for Data Eng
+    Argo Workflows
+      Kubernetes-native
+      YAML-based
+      Lightweight
+      Best for simple K8s
+    Prefect / Dagster
+      Modern Python-native
+      Data-centric
+      Strong testing
+      Best for Python-first
 ```
 
 ### War Story: The 3AM Pager
@@ -282,33 +271,29 @@ print(f"Run submitted: {run.run_id}")
 
 ### Trigger Strategies
 
-```
-CONTINUOUS TRAINING TRIGGERS
-─────────────────────────────────────────────────────────────────
-
-SCHEDULE-BASED
-├── Daily: Good for slowly changing data
-├── Weekly: Good for stable domains
-├── Monthly: Good for very stable models
-└── Implementation: Cron trigger in orchestrator
-
-DATA-DRIVEN
-├── New data volume threshold (e.g., 10,000 new rows)
-├── Time since last training
-├── Data freshness requirements
-└── Implementation: Event trigger on data arrival
-
-PERFORMANCE-DRIVEN
-├── Accuracy drop detected
-├── Drift score exceeds threshold
-├── Business metric decline
-└── Implementation: Monitoring → trigger pipeline
-
-HYBRID
-├── Scheduled + performance checks
-├── Retrain only if needed
-├── Cost-effective
-└── Implementation: Scheduled check, conditional training
+```mermaid
+mindmap
+  root((Continuous<br/>Training<br/>Triggers))
+    Schedule-Based
+      Daily for slow data
+      Weekly for stable domains
+      Monthly for very stable
+      Implementation: Cron
+    Data-Driven
+      New volume threshold
+      Time since last training
+      Data freshness
+      Implementation: Event trigger
+    Performance-Driven
+      Accuracy drop
+      Drift score threshold
+      Business metric decline
+      Implementation: Monitoring trigger
+    Hybrid
+      Scheduled + performance
+      Retrain if needed
+      Cost-effective
+      Implementation: Scheduled check
 ```
 
 ### Automated Retraining Pipeline
@@ -355,50 +340,45 @@ def continuous_training_pipeline(
 
 ## CI/CD for ML
 
+> **Pause and predict**: How would an ML CI/CD pipeline handle a scenario where the codebase hasn't changed at all, but the statistical distribution of the incoming data has shifted significantly over the weekend?
+
 ### ML CI/CD Pipeline
 
-```
-ML CI/CD PIPELINE
-─────────────────────────────────────────────────────────────────
+```mermaid
+flowchart TD
+    subgraph Triggers
+        direction TB
+        C1[Code Changes]
+        C2[Data/Model Changes]
+    end
 
-CODE CHANGES                    DATA/MODEL CHANGES
-     │                                │
-     ▼                                ▼
-┌─────────────┐               ┌─────────────┐
-│  Unit Tests │               │ Data Tests  │
-│  (code)     │               │ (quality)   │
-└──────┬──────┘               └──────┬──────┘
-       │                             │
-       ▼                             ▼
-┌─────────────┐               ┌─────────────┐
-│ Integration │               │   Model     │
-│   Tests     │               │  Training   │
-└──────┬──────┘               └──────┬──────┘
-       │                             │
-       ▼                             ▼
-┌─────────────┐               ┌─────────────┐
-│   Build     │               │   Model     │
-│  Container  │               │ Validation  │
-└──────┬──────┘               └──────┬──────┘
-       │                             │
-       └──────────────┬──────────────┘
-                      ▼
-              ┌─────────────┐
-              │   Deploy    │
-              │  (staging)  │
-              └──────┬──────┘
-                     │
-                     ▼
-              ┌─────────────┐
-              │  E2E Tests  │
-              │  (staging)  │
-              └──────┬──────┘
-                     │
-                     ▼
-              ┌─────────────┐
-              │   Deploy    │
-              │(production) │
-              └─────────────┘
+    UT[Unit Tests]
+    DT[Data Tests]
+    
+    IT[Integration Tests]
+    MT[Model Training]
+    
+    BC[Build Container]
+    MV[Model Validation]
+    
+    DS[Deploy to Staging]
+    E2E[E2E Tests]
+    DP[Deploy to Production]
+    
+    C1 --> UT
+    C2 --> DT
+    
+    UT --> IT
+    DT --> MT
+    
+    IT --> BC
+    MT --> MV
+    
+    BC --> DS
+    MV --> DS
+    
+    DS --> E2E
+    E2E --> DP
 ```
 
 ### GitHub Actions for ML
@@ -544,7 +524,7 @@ def train(data_version: str, run_id: str):
 ### 2. Checkpointing
 
 ```python
-@component
+@component(base_image="python:3.10")
 def train_with_checkpoints(
     data: Input[Dataset],
     checkpoint_dir: str,
@@ -645,55 +625,27 @@ def robust_pipeline():
 Test your understanding:
 
 <details>
-<summary>1. Why use an orchestrator instead of cron jobs for ML pipelines?</summary>
+<summary>1. Your team currently triggers a nightly model retraining script via a simple Linux cron job. Last week, the database connection failed, but the script continued and trained a model on empty data, overwriting production. Why is migrating to a dedicated ML orchestrator like Kubeflow or Airflow the correct architectural response?</summary>
 
-**Answer**: Orchestrators provide:
-- **Dependency management**: Steps run in correct order
-- **Failure handling**: Retries, fallbacks, notifications
-- **Visibility**: UI to monitor pipeline status
-- **Parameterization**: Easy to tune pipeline runs
-- **Reproducibility**: Track all pipeline inputs/outputs
-- **Resource management**: Efficient scheduling
-
-Cron jobs just trigger—they don't manage the complexity of ML workflows.
+**Answer**: A cron job only provides time-based scheduling without any awareness of the underlying task dependencies or state. An orchestrator manages the entire Directed Acyclic Graph (DAG) of your ML process, ensuring that downstream tasks (like training) only execute if upstream tasks (like data extraction and validation) succeed. If a failure occurs, the orchestrator halts the pipeline, prevents bad models from deploying, and can automatically trigger alerts or retries. This dependency management and state awareness are critical for preventing catastrophic production failures in automated ML systems.
 </details>
 
 <details>
-<summary>2. What triggers should initiate model retraining?</summary>
+<summary>2. An e-commerce platform deployed a new recommendation model that performed well initially. Two months later, marketing launched a massive campaign in a new country, drastically changing user behavior patterns. The model's click-through rate plummeted, but no retraining was triggered because the weekly schedule wasn't due for another five days. What retraining trigger strategy would have prevented this degradation?</summary>
 
-**Answer**: Trigger strategies:
-- **Scheduled**: Regular intervals (daily, weekly)
-- **Data-driven**: New data arrives, threshold reached
-- **Performance-driven**: Drift detected, accuracy drops
-- **Manual**: Team decides to retrain
-
-Best practice: Combine strategies. Schedule checks, retrain only when needed (drift or performance degradation).
+**Answer**: The team should have implemented a performance-driven or data-driven trigger strategy alongside their scheduled retraining. Performance-driven triggers constantly monitor operational metrics (like click-through rate or prediction drift) and automatically initiate a pipeline run when these metrics breach a predefined threshold. Data-driven triggers watch for significant shifts in input data volume or distribution. By relying solely on a rigid time-based schedule, the system was blind to real-world context changes; a hybrid approach ensures models remain fresh exactly when business conditions demand it.
 </details>
 
 <details>
-<summary>3. What's the difference between CI/CD for traditional software vs. ML?</summary>
+<summary>3. A DevOps engineer moving to the ML platform team sets up a standard CI/CD pipeline that runs unit tests, builds a Docker container, and deploys to staging whenever a pull request is merged. However, the data scientists complain that broken models are reaching production despite the tests passing. What key differences between traditional CI/CD and ML CI/CD is the engineer missing?</summary>
 
-**Answer**:
-| Aspect | Traditional CI/CD | ML CI/CD |
-|--------|------------------|----------|
-| Artifacts | Code | Code + Data + Model |
-| Tests | Unit, integration | + Data validation, model validation |
-| Versioning | Git | Git + DVC/MLflow |
-| Build | Compile code | Train model |
-| Quality gates | Test coverage | Model metrics |
-| Deploy trigger | Code change | Code OR data OR performance change |
+**Answer**: Traditional CI/CD focuses almost entirely on code correctness, whereas ML CI/CD must validate code, data, and the model artifact itself. The engineer's pipeline is missing data validation gates (checking for schema changes or null values) and model validation gates (evaluating accuracy, F1 score, or fairness metrics against a baseline). Furthermore, in ML systems, a deployment shouldn't just be triggered by code changes; it must also be triggered by data changes or model degradation. Ignoring these ML-specific dimensions allows mathematically flawed but syntactically correct models to pass traditional quality checks.
 </details>
 
 <details>
-<summary>4. Why is idempotency important for ML pipelines?</summary>
+<summary>4. A data scientist is debugging a Kubeflow pipeline that failed during the deployment step. They re-run the exact same pipeline execution, but this time the model validation step fails because the training step produced a slightly different model. Upon inspection, the data loading component pulls `SELECT * FROM table ORDER BY date DESC LIMIT 1000`. Why does this violate pipeline best practices, and how should it be fixed?</summary>
 
-**Answer**: Idempotent pipelines:
-- **Reproducible**: Same inputs → same outputs
-- **Restartable**: Can re-run failed pipelines safely
-- **Debuggable**: Can reproduce issues
-- **Auditable**: Know exactly what produced each model
-
-Non-idempotent pipelines (using "latest" data, random seeds, overwriting files) make it impossible to reproduce or debug results.
+**Answer**: The pipeline lacks idempotency, meaning identical inputs do not consistently produce identical outputs across multiple runs. Because the data loading query fetches the "latest" 1000 rows, any new data inserted between pipeline runs changes the underlying training set, making the process impossible to reproduce or debug reliably. To fix this, the pipeline must use strict versioning for all inputs, such as querying data up to a specific, immutable timestamp or referencing a version-controlled dataset hash. Idempotency guarantees that re-running a failed DAG will process the exact same state, which is foundational for reliable MLOps.
 </details>
 
 ## Hands-On Exercise: Build an End-to-End Pipeline
@@ -1028,3 +980,4 @@ Congratulations on completing the MLOps Discipline! You now understand:
 - Pipeline orchestration and automation
 
 Next, explore the [ML Platforms Toolkit](/platform/toolkits/data-ai-platforms/ml-platforms/) for hands-on implementations with Kubeflow, MLflow, and other tools.
+---
