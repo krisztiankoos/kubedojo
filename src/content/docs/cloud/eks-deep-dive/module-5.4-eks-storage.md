@@ -465,18 +465,22 @@ The ad-tech company from the opening learned the hard way that EBS volumes are t
 
 ### The Problem
 
-```text
-AZ-1a                              AZ-1b
-┌─────────────────────┐           ┌─────────────────────┐
-│ Node-1              │           │ Node-2              │
-│                     │           │                     │
-│ postgres-0 ◄── EBS  │           │                     │
-│ (AZ-1a volume)      │           │                     │
-└─────────────────────┘           └─────────────────────┘
-
-If Node-1 fails, Kubernetes reschedules postgres-0 to Node-2.
-But the EBS volume is in AZ-1a. Node-2 is in AZ-1b.
-Volume cannot be attached. Pod is stuck in Pending.
+```mermaid
+graph TD
+    subgraph AZ_1a [AZ-1a]
+        Node1[Node-1]
+        Pod1[postgres-0]
+        Vol1[(EBS: AZ-1a volume)]
+        Node1 --- Pod1
+        Pod1 <--> Vol1
+    end
+    
+    subgraph AZ_1b [AZ-1b]
+        Node2[Node-2]
+    end
+    
+    Pod1 -. "Rescheduled on node failure" .-> Node2
+    Node2 -.-x Vol1
 ```
 
 ### Solution 1: Topology-Aware Scheduling
@@ -555,13 +559,28 @@ With 6 nodes across 3 AZs (2 per AZ), if a node fails, the StatefulSet pod can m
 
 For truly critical databases, use application-level replication instead of relying on a single EBS volume:
 
-```text
-AZ-1a                    AZ-1b                    AZ-1c
-┌──────────────┐        ┌──────────────┐        ┌──────────────┐
-│ postgres-0   │        │ postgres-1   │        │ postgres-2   │
-│ (primary)    │───────►│ (replica)    │───────►│ (replica)    │
-│ EBS: vol-aaa │ stream │ EBS: vol-bbb │ stream │ EBS: vol-ccc │
-└──────────────┘  rep.  └──────────────┘  rep.  └──────────────┘
+```mermaid
+graph LR
+    subgraph AZ_1a [AZ-1a]
+        P0[postgres-0<br>Primary]
+        V0[(EBS: vol-aaa)]
+        P0 --- V0
+    end
+    
+    subgraph AZ_1b [AZ-1b]
+        P1[postgres-1<br>Replica]
+        V1[(EBS: vol-bbb)]
+        P1 --- V1
+    end
+    
+    subgraph AZ_1c [AZ-1c]
+        P2[postgres-2<br>Replica]
+        V2[(EBS: vol-ccc)]
+        P2 --- V2
+    end
+    
+    P0 -- "stream rep." --> P1
+    P1 -- "stream rep." --> P2
 ```
 
 Each replica has its own EBS volume in its own AZ. If AZ-1a fails entirely, postgres-1 or postgres-2 can be promoted. This is the pattern used by PostgreSQL (Patroni), MySQL (Group Replication), and MongoDB (replica sets).
@@ -611,39 +630,39 @@ Each replica has its own EBS volume in its own AZ. If AZ-1a fails entirely, post
 ## Quiz
 
 <details>
-<summary>Question 1: You create a PersistentVolumeClaim using a StorageClass with `volumeBindingMode: Immediate`. The PVC is created and bound, but when the pod using it is scheduled, the pod stays in Pending state with an "volume node affinity conflict" error. What happened?</summary>
+<summary>Question 1: You create a PersistentVolumeClaim using a StorageClass with `volumeBindingMode: Immediate`. The PVC is created and bound, but when the pod using it is scheduled, the pod stays in Pending state with a "volume node affinity conflict" error. What happened?</summary>
 
-With `Immediate` binding mode, Kubernetes creates the EBS volume as soon as the PVC is created, before any pod is scheduled. The volume might be created in AZ-1a. When the scheduler tries to place the pod, it might select a node in AZ-1b. Since EBS volumes can only be attached to instances in the same AZ, the pod cannot start. The fix is to use `volumeBindingMode: WaitForFirstConsumer`, which delays volume creation until the pod is scheduled, ensuring the volume is created in the same AZ as the selected node.
+With `Immediate` binding mode, Kubernetes provisions the EBS volume as soon as the PVC is created, completely independent of where the pod will eventually be scheduled. As a result, the volume might be created in one Availability Zone (e.g., AZ-1a), but when the scheduler later evaluates node resources to place the pod, it might select a node in a different zone (e.g., AZ-1b). Because EBS volumes are zonal resources and can only be attached to EC2 instances within the same AZ, the volume cannot be mounted to the chosen node. Consequently, the pod cannot start and remains stuck in a Pending state. The fix is to use `volumeBindingMode: WaitForFirstConsumer`, which delays volume creation until the pod is scheduled, ensuring the storage backend provisions the volume in the exact same AZ as the selected node.
 </details>
 
 <details>
-<summary>Question 2: Your team needs shared storage accessible by 10 pods across 3 nodes in different AZs. Which storage option should you use and why?</summary>
+<summary>Question 2: Your team needs shared storage accessible by 10 pods across 3 nodes in different AZs for a content management system. Which storage option should you use and why?</summary>
 
-Use **Amazon EFS** with the EFS CSI driver. EFS supports `ReadWriteMany` (RWX) access mode, meaning multiple pods on multiple nodes can read and write simultaneously. EFS is a regional service that spans all AZs automatically (as long as you create mount targets in each AZ). EBS cannot be used because it only supports `ReadWriteOnce` (single node attachment). Mountpoint for S3 could work for read-heavy workloads but does not support random writes or file modifications.
+For this scenario, you must use **Amazon EFS** paired with the EFS CSI driver. EFS natively supports the `ReadWriteMany` (RWX) access mode, meaning multiple pods spread across multiple nodes can read and write to the shared filesystem simultaneously. Furthermore, EFS is a regional AWS service that spans all Availability Zones automatically, provided you create mount targets in each corresponding subnet. Conversely, EBS cannot be used here because it is restricted to the `ReadWriteOnce` access mode and is confined to a single Availability Zone. While Mountpoint for S3 could technically span AZs, it does not support the random writes or file modifications typically required by a content management system.
 </details>
 
 <details>
-<summary>Question 3: You have a 50 GB EBS gp3 volume that needs to be resized to 200 GB. Can this be done without downtime? What about shrinking from 200 GB to 100 GB later?</summary>
+<summary>Question 3: You have a 50 GB EBS gp3 volume attached to a live database that needs to be resized to 200 GB. Can this be done without downtime? What about shrinking from 200 GB to 100 GB a month later?</summary>
 
-**Expanding** from 50 GB to 200 GB can be done online without downtime, provided the StorageClass has `allowVolumeExpansion: true`. You simply edit the PVC to request 200 GB, and the EBS CSI driver handles the volume expansion and filesystem resize in the background. **Shrinking** from 200 GB to 100 GB is **not possible**. EBS volumes can only be expanded, never shrunk. If you need a smaller volume, you must create a new 100 GB volume, copy the data, and switch the PVC. Also remember there is a 6-hour cooldown between volume modifications.
+Expanding the volume from 50 GB to 200 GB can be executed online without any downtime, provided the underlying StorageClass is configured with `allowVolumeExpansion: true`. You simply edit the PVC to request 200 GB, and the EBS CSI driver transparently handles the AWS block storage expansion and the host-level filesystem resize in the background. However, shrinking the volume from 200 GB to 100 GB is strictly impossible due to fundamental EBS limitations. EBS volumes can only be expanded, never shrunk. If you need a smaller volume, you must manually provision a new 100 GB volume, migrate the data at the application layer, and update your manifests to use the new PVC.
 </details>
 
 <details>
-<summary>Question 4: When would you choose Mountpoint for S3 over EFS for a machine learning workload?</summary>
+<summary>Question 4: Your data science team is running a machine learning training pipeline on EKS that needs to read a 5 TB dataset. When would you choose Mountpoint for S3 over EFS for this workload?</summary>
 
-Choose Mountpoint for S3 when the ML workload needs to **read large datasets** (training data, feature stores) that already exist in S3 and the application expects filesystem-style access (reading files from a directory path). S3 storage costs $0.023/GB-month vs EFS at $0.30/GB-month -- a 13x cost difference. Mountpoint for S3 also achieves very high sequential read throughput (up to 100 Gbps) via parallel multi-part downloads. Choose EFS instead if the workload needs to write intermediate results, modify files in place, or requires file locking between processes.
+You should choose Mountpoint for S3 when the ML workload exclusively needs to read large, pre-existing datasets and expects standard POSIX filesystem semantics to access them. Since S3 storage costs are drastically lower than EFS (roughly $0.023/GB-month versus $0.30/GB-month), hosting a 5 TB dataset on S3 yields massive cost savings. Additionally, Mountpoint for S3 achieves exceptionally high sequential read throughput by automatically parallelizing multi-part downloads under the hood. You would only opt for EFS if the training pipeline needed to write intermediate checkpoints, modify files in-place, or required POSIX file locking mechanisms across parallel workers, which Mountpoint does not support.
 </details>
 
 <details>
-<summary>Question 5: A StatefulSet has 3 replicas spread across 3 AZs. AZ-1b suffers a complete outage. What happens to the replica in AZ-1b, and can Kubernetes reschedule it to AZ-1a or AZ-1c?</summary>
+<summary>Question 5: A PostgreSQL StatefulSet has 3 replicas spread evenly across 3 Availability Zones. AZ-1b suffers a complete hardware outage. What happens to the replica in AZ-1b, and can Kubernetes simply reschedule it to AZ-1a or AZ-1c?</summary>
 
-The replica in AZ-1b becomes unreachable. After the node's `node.kubernetes.io/unreachable` taint timeout (default 5 minutes), Kubernetes marks the pod for deletion. However, Kubernetes **cannot reschedule it to AZ-1a or AZ-1c** because its EBS PersistentVolume is physically in AZ-1b and cannot be attached to nodes in other AZs. The pod will remain unschedulable until AZ-1b recovers or until an administrator manually deletes the PVC and allows a new volume to be created in a healthy AZ (losing the data). This is why application-level replication (e.g., PostgreSQL streaming replication across AZs) is essential for critical stateful workloads.
+When AZ-1b fails, the node hosting the replica becomes unreachable, and after the default 5-minute taint timeout, Kubernetes marks the pod for deletion. However, the Kubernetes scheduler cannot simply place a replacement pod in AZ-1a or AZ-1c because the pod is strictly bound to its specific EBS PersistentVolume. Since EBS volumes are isolated to the Availability Zone where they were created, the data physically trapped in AZ-1b cannot be attached to instances in surviving zones. The replacement pod will remain in an unschedulable `Pending` state until AZ-1b fully recovers. This scenario perfectly illustrates why application-level replication, such as PostgreSQL streaming replication across independent AZs, is absolutely essential for critical stateful workloads to survive zonal outages.
 </details>
 
 <details>
-<summary>Question 6: What is the difference between `ReadWriteOnce` and `ReadWriteOncePod`, and when does the distinction matter?</summary>
+<summary>Question 6: During a rolling update of a critical database StatefulSet, you notice that two database pods briefly end up running on the exact same node and both attempt to mount the same EBS volume, leading to data corruption. How does the distinction between `ReadWriteOnce` and `ReadWriteOncePod` apply to this scenario?</summary>
 
-`ReadWriteOnce` (RWO) allows the volume to be mounted as read-write by a **single node**. However, multiple pods on that same node can all mount the volume simultaneously. `ReadWriteOncePod` (RWOP, available in Kubernetes 1.27+) restricts the volume to a **single pod** across the entire cluster. The distinction matters for databases where only one process should write to the data directory. With RWO, if you accidentally run two database pods on the same node (e.g., during a rolling update), both could write to the volume simultaneously, causing data corruption. RWOP prevents this by ensuring only one pod can mount the volume at a time.
+The `ReadWriteOnce` (RWO) access mode guarantees that a volume is mounted as read-write by a single node, but it explicitly allows multiple pods on that specific node to mount the volume concurrently. In your scenario, the rolling update placed both the terminating pod and the new pod on the same physical host, allowing both to write to the data directory simultaneously and corrupting the database. To prevent this, you should use `ReadWriteOncePod` (RWOP), which was introduced in Kubernetes 1.27. RWOP strictly limits volume access to a single pod across the entire cluster, regardless of node placement. By using RWOP, the new pod would be blocked from mounting the volume until the old pod had completely terminated and released its lock.
 </details>
 
 ---
@@ -654,22 +673,26 @@ In this exercise, you will build a content management system with PostgreSQL on 
 
 **What you will build:**
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│  EKS Cluster                                                   │
-│                                                                │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Namespace: cms                                          │  │
-│  │                                                          │  │
-│  │  ┌─────────────┐     ┌─────────────┐                    │  │
-│  │  │ postgres-0  │     │ cms-web     │ x3 replicas       │  │
-│  │  │ (StatefulSet)│     │ (Deployment) │                    │  │
-│  │  │             │     │             │                    │  │
-│  │  │ EBS gp3     │     │ EFS Mount   │ ← all 3 share     │  │
-│  │  │ /var/lib/pg │     │ /media      │   same EFS volume  │  │
-│  │  └─────────────┘     └─────────────┘                    │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Cluster [EKS Cluster]
+        subgraph NS [Namespace: cms]
+            
+            subgraph DB [StatefulSet]
+                P0[postgres-0]
+                EBS[(EBS gp3<br>/var/lib/pg)]
+                P0 --- EBS
+            end
+            
+            subgraph Web [Deployment]
+                W[cms-web<br>x3 replicas]
+            end
+            
+            EFS[(EFS Mount<br>/media)]
+            
+            W -->|all 3 share| EFS
+        end
+    end
 ```
 
 ### Task 1: Install EBS and EFS CSI Drivers
