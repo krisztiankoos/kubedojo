@@ -140,6 +140,12 @@ The exam is divided into five weighted domains:
 
 ---
 
+## Creating Your Study Plan
+
+To create your personalized study plan, audit your existing knowledge against the domain weights. Fast-track basic Pods and Services if you already hold the CKA. Focus your schedule proportionally on new topics: map each week of your preparation to a specific domain, dedicating at least 25% of your time to Domain 4 (Environment, Configuration and Security) due to its heavy weight. Prioritize learning Init Containers and Jobs early.
+
+---
+
 ## The Three-Pass Strategy (Same as CKA)
 
 Time is your enemy. The same strategy applies:
@@ -182,6 +188,7 @@ Time is your enemy. The same strategy applies:
 
 1. **Master imperative commands for common tasks:**
    ```bash
+   alias k=kubectl
    # These should be muscle memory
    k run nginx --image=nginx
    k create deploy web --image=nginx --replicas=3
@@ -253,7 +260,7 @@ Time is your enemy. The same strategy applies:
 
 ## Did You Know?
 
-- **CKAD was the first Kubernetes certification** (launched 2017), followed by CKA later that year. It was designed specifically for developers who deploy to Kubernetes but don't manage clusters.
+- **CKA was the first Kubernetes certification** (launched 2017), followed by CKAD in May 2018. It was designed specifically for developers who deploy to Kubernetes but don't manage clusters.
 
 - **The CKAD pass rate is slightly higher than CKA** because developers often find the hands-on format more intuitive—it mirrors their daily work of creating and debugging applications.
 
@@ -327,6 +334,26 @@ k run test --image=busybox --rm -it --restart=Never -- wget -qO- http://service
 
 ---
 
+## Deploying Your Practice Environment
+
+To prepare for the CKAD effectively, deploy a local practice environment using `kind` (Kubernetes in Docker). This ensures you have an isolated, multi-node cluster to practice creating and destroying resources safely.
+
+```bash
+# Create a multi-node CKAD practice cluster
+cat <<EOF > ckad-cluster.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+- role: worker
+EOF
+kind create cluster --config ckad-cluster.yaml --name ckad-prep
+```
+
+This setup provides the essential tools required to practice the full spectrum of CKAD tasks in an environment similar to the exam.
+
+---
+
 ## Hands-On Exercise
 
 **Task**: Verify you have the CKA fundamentals needed for CKAD.
@@ -334,6 +361,8 @@ k run test --image=busybox --rm -it --restart=Never -- wget -qO- http://service
 **Success Criteria**: Complete these tasks in under 5 minutes total:
 
 ```bash
+alias k=kubectl
+
 # 1. Create a deployment with 3 replicas
 k create deploy ckad-test --image=nginx --replicas=3
 
@@ -341,10 +370,10 @@ k create deploy ckad-test --image=nginx --replicas=3
 k expose deploy ckad-test --port=80
 
 # 3. Create a ConfigMap
-k create configmap app-config --from-literal=env=production
+k create configmap ckad-config --from-literal=env=production
 
 # 4. Create a Secret
-k create secret generic app-secret --from-literal=password=secret123
+k create secret generic ckad-secret --from-literal=password=secret123
 
 # 5. Verify everything
 k get deploy,svc,cm,secret | grep ckad
@@ -356,8 +385,8 @@ If you struggled with any of these, review the relevant CKA modules before conti
 ```bash
 k delete deploy ckad-test
 k delete svc ckad-test
-k delete cm app-config
-k delete secret app-secret
+k delete cm ckad-config
+k delete secret ckad-secret
 ```
 
 ---
@@ -422,8 +451,8 @@ The CKAD exam uses multiple cluster contexts. Practice switching:
 # List available contexts
 k config get-contexts
 
-# Switch context (use your actual context names)
-k config use-context kind-kind
+# Switch context (to the practice cluster created earlier)
+k config use-context kind-ckad-prep
 
 # Verify current context
 k config current-context
