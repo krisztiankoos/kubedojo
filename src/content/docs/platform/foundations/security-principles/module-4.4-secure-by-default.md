@@ -65,45 +65,21 @@ This module teaches you how to build systems where the path of least resistance 
 
 ### 1.1 Default State Matters
 
-```
-THE IMPORTANCE OF DEFAULTS
-═══════════════════════════════════════════════════════════════
+```mermaid
+graph TD
+    subgraph Insecure [INSECURE BY DEFAULT]
+        I_1["Installation &rarr; Everything open"]
+        I_2["User must manually secure each setting"]
+        I_Box["<b>Default Settings:</b><br/>• Admin password: admin<br/>• API authentication: disabled<br/>• Encryption: disabled<br/>• Firewall: allow all<br/>• Debug mode: enabled<br/><br/><i>'Please secure before production use'</i><br/><b>Reality: Most users don't.</b>"]
+        I_1 --> I_2 --> I_Box
+    end
 
-INSECURE BY DEFAULT
-─────────────────────────────────────────────────────────────
-    Installation → Everything open
-    User must manually secure each setting
-
-    ┌────────────────────────────────────────────────────────┐
-    │ Default Settings:                                      │
-    │   Admin password: admin                                │
-    │   API authentication: disabled                         │
-    │   Encryption: disabled                                 │
-    │   Firewall: allow all                                  │
-    │   Debug mode: enabled                                  │
-    │                                                        │
-    │ "Please secure before production use"                  │
-    │                                                        │
-    │ Reality: Most users don't.                            │
-    └────────────────────────────────────────────────────────┘
-
-SECURE BY DEFAULT
-─────────────────────────────────────────────────────────────
-    Installation → Everything locked down
-    User must explicitly open what's needed
-
-    ┌────────────────────────────────────────────────────────┐
-    │ Default Settings:                                      │
-    │   Admin password: must be set on first run            │
-    │   API authentication: required                         │
-    │   Encryption: TLS enabled                             │
-    │   Firewall: deny all (allowlist needed)               │
-    │   Debug mode: disabled                                 │
-    │                                                        │
-    │ "Enable features as needed"                           │
-    │                                                        │
-    │ Reality: Security happens automatically.              │
-    └────────────────────────────────────────────────────────┘
+    subgraph Secure [SECURE BY DEFAULT]
+        S_1["Installation &rarr; Everything locked down"]
+        S_2["User must explicitly open what's needed"]
+        S_Box["<b>Default Settings:</b><br/>• Admin password: must be set on first run<br/>• API authentication: required<br/>• Encryption: TLS enabled<br/>• Firewall: deny all (allowlist needed)<br/>• Debug mode: disabled<br/><br/><i>'Enable features as needed'</i><br/><b>Reality: Security happens automatically.</b>"]
+        S_1 --> S_2 --> S_Box
+    end
 ```
 
 ### 1.2 Why Secure Defaults Win
@@ -115,6 +91,8 @@ SECURE BY DEFAULT
 | **Forgotten configs** | Become attack vectors | Remain safe |
 | **Time pressure** | "We'll secure later" (won't) | Already secure |
 | **Audit findings** | Many defaults insecure | Clean by default |
+
+> **Pause and predict**: Think of a brand new internal developer tool you might deploy. Should it be accessible to everyone on the company VPN by default, or should it require explicit VPN groups and credentials out of the box? Which approach scales securely?
 
 > **Try This (2 minutes)**
 >
@@ -134,7 +112,7 @@ SECURE BY DEFAULT
 
 ### 2.1 Authentication Defaults
 
-```
+```text
 AUTHENTICATION DEFAULTS
 ═══════════════════════════════════════════════════════════════
 
@@ -161,7 +139,7 @@ API ACCESS
     class APIView:
         pass
 
-    @public  # Must explicitly mark as public
+    @public/**  # Must explicitly mark as public
     class HealthCheck:
         pass
 
@@ -175,7 +153,7 @@ SESSION MANAGEMENT
 
 ### 2.2 Network Defaults
 
-```
+```text
 NETWORK DEFAULTS
 ═══════════════════════════════════════════════════════════════
 
@@ -210,7 +188,7 @@ FIREWALL / NETWORK POLICY
 
 ### 2.3 Data Defaults
 
-```
+```text
 DATA DEFAULTS
 ═══════════════════════════════════════════════════════════════
 
@@ -253,45 +231,31 @@ INPUT HANDLING
 
 ### 3.1 What are Guardrails?
 
-```
-GUARDRAILS
-═══════════════════════════════════════════════════════════════
+Guardrails are constraints that prevent mistakes without blocking legitimate work.
 
-Guardrails are constraints that prevent mistakes without
-blocking legitimate work.
+```mermaid
+graph TD
+    subgraph HIGHWAY_GUARDRAILS [Highway Guardrails]
+        H1["Don't slow you down during normal driving"]
+        H2["Prevent you from going off a cliff"]
+        H3["You hit them only when something goes wrong"]
+    end
 
-HIGHWAY GUARDRAILS
-─────────────────────────────────────────────────────────────
-    - Don't slow you down during normal driving
-    - Prevent you from going off a cliff
-    - You hit them only when something goes wrong
+    subgraph SECURITY_GUARDRAILS [Security Guardrails]
+        S1["Don't block normal development"]
+        S2["Prevent dangerous configurations"]
+        S3["You notice them only when doing something risky"]
+    end
 
-SECURITY GUARDRAILS
-─────────────────────────────────────────────────────────────
-    - Don't block normal development
-    - Prevent dangerous configurations
-    - You notice them only when doing something risky
-
-EXAMPLES
-─────────────────────────────────────────────────────────────
-┌────────────────────────────────────────────────────────────┐
-│ CI/CD Pipeline:                                            │
-│   ✓ Allows all normal deployments                         │
-│   ✗ Blocks deployment without security scan               │
-│   ✗ Blocks deployment of containers as root               │
-│   ✗ Blocks deployment with critical vulnerabilities       │
-│                                                            │
-│ Policy as Code:                                            │
-│   ✓ Allows pods with security context                     │
-│   ✗ Blocks pods without resource limits                   │
-│   ✗ Blocks pods with hostNetwork: true                    │
-│   ✗ Blocks images from untrusted registries               │
-└────────────────────────────────────────────────────────────┘
+    subgraph EXAMPLES [Examples]
+        C1["<b>CI/CD Pipeline:</b><br/>✓ Allows all normal deployments<br/>✗ Blocks deployment without security scan<br/>✗ Blocks deployment of containers as root<br/>✗ Blocks deployment with critical vulnerabilities"]
+        P1["<b>Policy as Code:</b><br/>✓ Allows pods with security context<br/>✗ Blocks pods without resource limits<br/>✗ Blocks pods with hostNetwork: true<br/>✗ Blocks images from untrusted registries"]
+    end
 ```
 
 ### 3.2 Implementing Guardrails
 
-```
+```yaml
 GUARDRAIL IMPLEMENTATION
 ═══════════════════════════════════════════════════════════════
 
@@ -335,7 +299,7 @@ Stop problems before they're deployed.
 
 ### 3.3 Kubernetes Pod Security Standards
 
-```
+```yaml
 POD SECURITY STANDARDS
 ═══════════════════════════════════════════════════════════════
 
@@ -372,6 +336,8 @@ metadata:
 # Now all pods in production must meet restricted standard
 ```
 
+> **Stop and think**: If Pod Security Standards (PSS) actively block `privileged: true`, how would a cluster administrator deploy a DaemonSet that genuinely needs host network access (like a CNI plugin or a storage CSI driver)? How do automated guardrails handle legitimate exceptions securely?
+
 > **War Story: The $2.3 Million Privileged Container**
 >
 > **September 2022.** A developer at a healthcare technology company needed to debug a production networking issue. "I'll just run a privileged container real quick to capture network traffic." They deployed with `privileged: true`, fixed the issue, and moved on to the next ticket. The privileged container stayed running.
@@ -390,7 +356,7 @@ metadata:
 
 ### 4.1 Configuration as Code
 
-```
+```text
 CONFIGURATION MANAGEMENT
 ═══════════════════════════════════════════════════════════════
 
@@ -424,7 +390,7 @@ PATTERN: Configuration as code
 
 ### 4.2 Secrets Management
 
-```
+```yaml
 SECRETS MANAGEMENT
 ═══════════════════════════════════════════════════════════════
 
@@ -471,45 +437,32 @@ KUBERNETES SECRETS
           key: secret/db/password
 ```
 
+> **Pause and predict**: You've migrated all secrets to HashiCorp Vault and use ExternalSecrets to inject them. But your application pods keep crashing on startup because they attempt to read the database password before ExternalSecrets has finished syncing it from Vault. How does a secure system elegantly handle startup dependencies like this?
+
 ### 4.3 Immutable Infrastructure
 
+```mermaid
+flowchart TD
+    subgraph Mutable [MUTABLE - Traditional]
+        direction LR
+        M1["Server v1"] -->|Update in place| M2["Updated v1.1"] -->|Update again| M3["Updated v1.2"]
+    end
+
+    subgraph Immutable [IMMUTABLE]
+        direction LR
+        I1["Image v1"] -->|Deploy| S1["Server A"]
+        I2["Image v2"] -->|Deploy| S2["Server B"]
+        I3["Image v3"] -->|Deploy| S3["Server C"]
+        S1 -.->|Delete| X1(( ))
+        S2 -.->|Delete| X2(( ))
+    end
 ```
-IMMUTABLE INFRASTRUCTURE
-═══════════════════════════════════════════════════════════════
 
-MUTABLE (Traditional)
-─────────────────────────────────────────────────────────────
-    Deploy server → Update in place → Update again → ...
-
-    ┌──────────┐   ┌──────────┐   ┌──────────┐
-    │ Server   │──▶│ Updated  │──▶│ Updated  │
-    │ v1       │   │ v1.1     │   │ v1.2     │
-    └──────────┘   └──────────┘   └──────────┘
-
-    Problems:
-    - Configuration drift
-    - "Works on my machine"
-    - Security patches inconsistent
-    - Hard to know current state
-
-IMMUTABLE
-─────────────────────────────────────────────────────────────
-    Build image → Deploy → Replace (never update)
-
-    ┌──────────┐        ┌──────────┐        ┌──────────┐
-    │ Image v1 │        │ Image v2 │        │ Image v3 │
-    └────┬─────┘        └────┬─────┘        └────┬─────┘
-         │   Delete          │   Delete          │
-    ┌────▼─────┐        ┌────▼─────┐        ┌────▼─────┐
-    │ Server A │        │ Server B │        │ Server C │
-    └──────────┘        └──────────┘        └──────────┘
-
-    Benefits:
-    - Reproducible deployments
-    - Known state at all times
-    - Easy rollback (deploy previous image)
-    - Security: can't modify running container
-```
+**Benefits of Immutable Infrastructure:**
+- **Reproducible deployments:** The server always matches the code exactly.
+- **Known state at all times:** No hidden configuration drift or "ghost" processes.
+- **Easy rollback:** Deploy the previous container image instead of attempting to revert changes via scripts.
+- **Security:** You can't modify a running container (especially if it has a read-only filesystem). Attackers cannot persist.
 
 > **Try This (3 minutes)**
 >
@@ -528,7 +481,7 @@ IMMUTABLE
 
 ### 5.1 Secure Framework Patterns
 
-```
+```python
 SECURE FRAMEWORK PATTERNS
 ═══════════════════════════════════════════════════════════════
 
@@ -565,7 +518,7 @@ CSRF PROTECTION
 
 ### 5.2 Secure API Patterns
 
-```
+```python
 SECURE API PATTERNS
 ═══════════════════════════════════════════════════════════════
 
@@ -578,7 +531,7 @@ AUTHENTICATION REQUIRED BY DEFAULT
         pass
 
     @app.route('/health')
-    @public  # Explicit opt-out
+    @public/**  # Explicit opt-out
     def health_check():
         return 'OK'
 
@@ -607,18 +560,18 @@ INPUT VALIDATION BY DEFAULT
 
 ### 5.3 Secure Deployment Patterns
 
-```
+```dockerfile
 SECURE DEPLOYMENT PATTERNS
 ═══════════════════════════════════════════════════════════════
 
 MINIMAL BASE IMAGES
 ─────────────────────────────────────────────────────────────
     # Bad: Full OS with unnecessary packages
-    FROM ubuntu:22.04
+    FROM ubuntu:24.04
     # Contains: bash, curl, wget, apt, hundreds of packages
 
     # Better: Minimal base
-    FROM alpine:3.18
+    FROM alpine:3.19
     # Contains: minimal shell, busybox utilities
 
     # Best: Distroless (no shell at all)
@@ -641,7 +594,9 @@ NON-ROOT BY DEFAULT
     # Run as non-root
     USER app
     CMD ["node", "server.js"]
+```
 
+```yaml
 READ-ONLY FILESYSTEM
 ─────────────────────────────────────────────────────────────
     # Kubernetes deployment
@@ -687,207 +642,60 @@ READ-ONLY FILESYSTEM
 
 ## Quiz
 
-1. **Why is "secure by default" more effective than "security checklist"?**
+1. **Scenario: Your organization currently relies on a 50-point security checklist that developers must manually verify before each release. Despite this checklist, a recent audit found multiple services deployed with missing firewall rules and default passwords. You are proposing a shift to a "secure by default" architecture. Why is this approach more effective at preventing these types of misconfigurations?**
    <details>
    <summary>Answer</summary>
 
-   A security checklist requires active effort—someone must remember to check each item. Items get skipped under time pressure, forgotten during updates, or missed by new team members.
-
-   Secure by default means security happens automatically:
-   - No action required to be secure
-   - Must take explicit action to be insecure
-   - Works for experts and beginners alike
-   - Survives staff turnover
-   - Can't be skipped under pressure
-
-   Example: A checklist says "configure firewall rules." Secure by default means the firewall denies all traffic until rules are added. The checklist can be ignored; the default cannot.
+   The checklist approach relies on human perfection; developers must actively remember and take time to apply each security measure, which often fails under pressure. A "secure by default" architecture shifts this burden by ensuring systems are inherently secure out of the box without requiring manual intervention. If a developer forgets a step in a secure-by-default system, the application might fail to function (failing safely), but it won't expose a vulnerability. This makes the easiest path the secure path, drastically reducing the chance of human error leading to a breach.
    </details>
 
-2. **What's the difference between a guardrail and a gate?**
+2. **Scenario: You are designing a CI/CD pipeline. You need to implement a mechanism that blocks deployments containing hardcoded secrets, and another mechanism that requires all high-risk changes to be manually reviewed by the security team. How do guardrails and gates apply to these two requirements, and what is the key difference between them?**
    <details>
    <summary>Answer</summary>
 
-   **Guardrails** prevent you from going off course while allowing normal movement. They're passive—you don't notice them until you hit them.
-   - Example: Pod Security Standards that block privileged containers
-   - Normal deployments pass through; only dangerous ones are stopped
-
-   **Gates** are checkpoints everyone must pass through. They're active—everyone interacts with them.
-   - Example: Manual security review required for every PR
-   - All deployments wait; throughput slows
-
-   Best practice: Use guardrails for common risks (automated, scalable) and gates for high-stakes decisions (manual review when warranted). Too many gates slow everything down; too few guardrails let problems through.
+   Guardrails are passive constraints that prevent dangerous actions without interrupting normal workflows, such as an automated CI check that dynamically blocks hardcoded secrets only when they are detected. Gates, on the other hand, are active checkpoints that stop all progress until a specific condition is met, like requiring a mandatory manual security review for all high-risk deployments regardless of the automated scan results. The key difference is that guardrails only create friction when someone makes a mistake, allowing high velocity for safe changes, whereas gates intentionally introduce friction for every targeted change to ensure thorough human inspection.
    </details>
 
-3. **How does immutable infrastructure improve security?**
+3. **Scenario: An attacker discovers a Remote Code Execution (RCE) vulnerability in your web application. They use it to gain a shell, download malicious tools, and modify the application's configuration files to establish persistence. However, when your team deploys the next regular update, the attacker's access and tools completely disappear. How does the concept of immutable infrastructure explain this outcome, and why does it improve security?**
    <details>
    <summary>Answer</summary>
 
-   Immutable infrastructure improves security several ways:
-
-   1. **Known state**: Servers match the deployed image exactly. No configuration drift or unknown modifications.
-
-   2. **No persistent attackers**: Attackers can't install backdoors that survive deployment. Next deploy starts fresh.
-
-   3. **Easy patching**: Deploy new image with patches. No complex in-place upgrade process.
-
-   4. **Forensics**: Can compare running container to original image to detect modifications.
-
-   5. **Reduced attack surface**: Read-only filesystems prevent attackers from writing malicious files.
-
-   With mutable infrastructure, an attacker who gains access can modify the system and persist. With immutable, they're removed on next deploy.
+   Immutable infrastructure dictates that servers or containers are never updated in place; instead, they are entirely replaced with fresh instances built from a known-good image during every deployment. Because the underlying infrastructure is immutable, any unauthorized modifications, backdoors, or malicious tools downloaded by the attacker are completely destroyed the moment the old container is spun down. This significantly improves security by limiting the lifespan of any compromise and erasing persistent threats. It guarantees that the running state always perfectly matches the audited, secure state defined in version control.
    </details>
 
-4. **Why should secrets never be in version control?**
+4. **Scenario: A developer is troubleshooting a database connection issue in a local environment. To speed things up, they temporarily paste the production database password directly into the `config.yaml` file, commit the change, but then realize their mistake. They immediately delete the password, create a new commit, and push both commits to the central repository. Why does this still present a critical security risk, and what is the secure-by-default alternative?**
    <details>
    <summary>Answer</summary>
 
-   Version control creates permanent, searchable history:
-
-   1. **History is forever**: Even if you delete a secret, it's in git history. Anyone with repo access can find it.
-
-   2. **Broad access**: Many people have repo access who shouldn't have production secrets.
-
-   3. **Forks and clones**: Secrets spread to every fork, every developer's machine.
-
-   4. **No rotation**: Secrets in code are hard to rotate. Change requires redeploy.
-
-   5. **Audit**: No log of who accessed the secret—anyone who cloned the repo has it.
-
-   Instead:
-   - Use environment variables (for simple cases)
-   - Use secrets managers (Vault, AWS Secrets Manager)
-   - Use Kubernetes ExternalSecrets to sync from secrets manager
-   - Reference secrets by path/name, not value
+   Once a secret is committed to version control, it becomes a permanent part of the repository's history, meaning anyone with read access to the repository can view the initial commit and extract the password. Even if the secret is deleted in a subsequent commit, the original commit remains in the git log indefinitely and can be recovered by anyone. Repositories are often cloned to many developer laptops and CI/CD servers, creating widespread, uncontrolled proliferation of the exposed secret. The secure-by-default alternative is to use an external secrets manager and reference the secret dynamically via environment variables or operators like Kubernetes ExternalSecrets, ensuring the actual value is never written to disk or source code.
    </details>
 
-5. **An organization deploys 500 new services per month. Each deployment has a 5% chance of having a misconfiguration if checked manually. With automated guardrails, the chance drops to 0.1%. Over a year, how many misconfigurations does each approach produce?**
+5. **Scenario: An organization deploys 500 new services per month. Each deployment has a 5% chance of having a critical misconfiguration if checked manually. If the organization implements automated guardrails instead, the chance drops to 0.1%. Why is the automated approach mandatory at scale?**
    <details>
    <summary>Answer</summary>
 
-   **Manual checks:**
-
-   - Services per year: 500 × 12 = 6,000
-   - Misconfigurations: 6,000 × 0.05 = **300 misconfigurations per year**
-
-   **Automated guardrails:**
-
-   - Services per year: 6,000
-   - Misconfigurations: 6,000 × 0.001 = **6 misconfigurations per year**
-
-   **Difference: 294 fewer misconfigurations per year**
-
-   This illustrates why secure by default scales:
-   - Manual processes degrade under volume and time pressure
-   - Automated checks run consistently on every deployment
-   - Small percentage improvements compound across thousands of deployments
-   - Security doesn't depend on individual vigilance
-
-   If each misconfiguration has a 10% chance of being exploited and costs $50,000 on average:
-   - Manual: 300 × 0.1 × $50,000 = $1.5M expected annual cost
-   - Automated: 6 × 0.1 × $50,000 = $30K expected annual cost
+   The manual check approach relies on human vigilance, which naturally degrades under the volume of 500 deployments a month and time pressure, leading to an expected 300 misconfigurations annually (6,000 deployments × 5%). Automated guardrails, however, run consistently and tirelessly on every single deployment, enforcing security rules without human fatigue. The math proves that relying on automated secure defaults scales effectively, dropping expected misconfigurations to just 6 per year. Manual processes inevitably fail at scale because human error is a statistical certainty, making automation the only viable path to true security.
    </details>
 
-6. **The MongoDB ransomware attacks exploited databases binding to 0.0.0.0 by default. What "secure by default" changes would have prevented this, and what trade-offs do they create?**
+6. **Scenario: In 2017, ransomware automated scripts exploited 27,000 MongoDB databases because the default configuration bound to all network interfaces (0.0.0.0) with authentication disabled. What "secure by default" changes would have prevented this, and what trade-offs do they create for developers?**
    <details>
    <summary>Answer</summary>
 
-   **Secure default changes:**
-
-   1. **Bind to localhost (127.0.0.1) by default**
-      - Trade-off: Remote connections require explicit configuration
-      - Users must know to change the bind address for legitimate remote access
-
-   2. **Require authentication setup during installation**
-      - Trade-off: Adds friction to getting started
-      - Development/testing environments need extra steps
-
-   3. **Block external connections until auth is configured**
-      - Trade-off: Can't run a quick test database remotely
-      - Local development is easy; production requires configuration
-
-   4. **Warning messages when running in insecure mode**
-      - Trade-off: Noise in development environments
-      - Can be ignored (but at least it's explicit)
-
-   **The principle:**
-
-   Secure by default shifts the burden:
-   - Before: Easy to run insecurely, hard to run securely
-   - After: Easy to run securely, requires effort to run insecurely
-
-   The trade-off is intentional friction. Users who need insecure configurations (development, isolated networks) must explicitly choose them. Users who don't know better are protected by default.
+   To prevent this, the default installation should have bound exclusively to localhost (127.0.0.1) and required an explicit administrator password to be set upon the first startup. The primary trade-off is that this introduces initial friction for developers who just want to quickly spin up a test database for local development without dealing with credentials. They now have to perform extra configuration steps to enable remote access and set up authentication. However, this intentional friction ensures that users must explicitly choose to make their database accessible and insecure, fundamentally protecting them from accidental public exposure.
    </details>
 
-7. **A framework auto-escapes HTML output by default. Why is it better to require developers to explicitly mark unsafe output with `|safe` rather than requiring them to explicitly escape output?**
+7. **Scenario: A web framework automatically escapes all HTML output in its templates by default, requiring developers to explicitly use a `|safe` filter to render raw HTML. Why is this "opt-in" approach to raw output fundamentally more secure than requiring developers to explicitly apply an `|escape` filter to untrusted data?**
    <details>
    <summary>Answer</summary>
 
-   **Forgetting has different consequences:**
-
-   **If escaping is opt-in (insecure default):**
-   - Developer forgets to escape → XSS vulnerability
-   - Mistakes create security holes
-   - Every template is a potential vulnerability
-   - Must review all code for missing escaping
-
-   **If raw output is opt-in (secure default):**
-   - Developer forgets to mark as safe → Broken HTML display
-   - Mistakes create visual bugs, not security holes
-   - Vulnerabilities only possible where `|safe` is used
-   - Security review focuses on explicit `|safe` usage
-
-   **The key insight:**
-
-   With secure defaults, mistakes fail safe:
-   - Forgotten escaping → Content renders as literal text `&lt;script&gt;`
-   - User sees broken display, reports bug, developer fixes it
-   - No security impact
-
-   With insecure defaults, mistakes fail dangerous:
-   - Forgotten escaping → XSS attack possible
-   - User might not notice
-   - Attacker notices, exploits it
-
-   The same principle applies to: parameterized queries (prevent SQL injection by default), CSRF tokens (validated by default), authentication (required by default).
+   When a framework requires developers to explicitly apply an `|escape` filter, a simple lapse in memory or a rushed deployment results in an immediate Cross-Site Scripting (XSS) vulnerability that fails silently and dangerously. By making escaping the default, the framework ensures that a developer's mistake (forgetting the `|safe` filter) results only in a harmless visual bug where literal HTML tags are displayed on the screen. This fails safe, meaning security is guaranteed by default, and a deliberate, conscious action is required to bypass it. It also makes security audits much easier by allowing reviewers to focus exclusively on validating the explicit uses of the `|safe` filter.
    </details>
 
-8. **A Kubernetes deployment uses `image: nginx:latest`. Why is this insecure by default, and what should be used instead?**
+8. **Scenario: A Kubernetes deployment manifest for a critical microservice uses `image: backend-api:latest`. During an incident, the cluster autoscaler spins up a new pod, but it suddenly crashes due to a missing dependency, even though the older pods are running perfectly fine. Why is using the `latest` tag insecure by default, and what specific configuration should be used instead?**
    <details>
    <summary>Answer</summary>
 
-   **Problems with `nginx:latest`:**
-
-   1. **Mutable tag**: `latest` points to different images over time. The image running today might not be the image running after a restart.
-
-   2. **No reproducibility**: Can't rebuild the exact same deployment. `latest` six months ago is different from `latest` today.
-
-   3. **Surprise changes**: Nginx might update `latest` to a new major version with breaking changes or new vulnerabilities.
-
-   4. **No audit trail**: Can't determine what image was running at a specific time.
-
-   5. **Supply chain risk**: If an attacker compromises the `latest` tag, all future pulls get the malicious image.
-
-   **Secure alternatives:**
-
-   ```yaml
-   # Good: Specific version tag
-   image: nginx:1.25.3
-
-   # Better: Include variant
-   image: nginx:1.25.3-alpine
-
-   # Best: Immutable digest
-   image: nginx@sha256:abc123def456...
-   ```
-
-   **Why digests are best:**
-
-   - `sha256` digest is a content hash—if the image changes, the hash changes
-   - Completely immutable—you always get exactly this image
-   - Can't be overwritten by attackers
-   - Admission controllers can enforce digest-based images
-
-   Trade-off: Updating requires changing the digest in manifests. This is a feature—updates are explicit and trackable.
+   The `latest` tag is mutable, meaning the underlying image it points to can be changed at any time by the registry owner or a compromised CI pipeline. This leads to different pods running completely different code if pulled at different times, causing inconsistent runtime behavior and crashing instances. This lack of reproducibility creates massive supply chain risks, as an attacker could overwrite the `latest` tag with a malicious image, instantly compromising any newly scheduled pods. Instead, the deployment should use an immutable image digest (e.g., `image: backend-api@sha256:abc123...`), which guarantees that every single pod will pull the exact same, cryptographically verified contents.
    </details>
 
 ---
