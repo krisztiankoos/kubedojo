@@ -45,31 +45,26 @@ Imagine you are looking for a specific word in a 1,000-page physical dictionary.
 
 Based on your answer (`good` or `bad`), Git discards half the commits and moves to the middle of the remaining half.
 
-```text
-+--------------------------------------------------------------------+
-| The Git Bisect Process (Searching 7 Commits)                       |
-|                                                                    |
-| [G] = Known Good     [B] = Known Bad     [?] = Unknown State       |
-| [*] = Git's selected midpoint to test (Detached HEAD)              |
-|                                                                    |
-| Step 1: Define boundaries. Git picks the midpoint (Commit 4).      |
-| C1[G] --- C2[?] --- C3[?] --- C4[*] --- C5[?] --- C6[?] --- C7[B]  |
-|                                                                    |
-| You test C4. It is BAD. Git discards C4, C5, C6, C7.               |
-| Search space is now C1 to C4. Git picks the new midpoint (C2).     |
-|                                                                    |
-| Step 2:                                                            |
-| C1[G] --- C2[*] --- C3[?] --- C4[B]                                |
-|                                                                    |
-| You test C2. It is GOOD. Git discards C1, C2.                      |
-| Search space is now C2 to C4. Git picks the midpoint (C3).         |
-|                                                                    |
-| Step 3:                                                            |
-| C2[G] --- C3[*] --- C4[B]                                          |
-|                                                                    |
-| You test C3. It is GOOD.                                           |
-| Conclusion: C4 is the exact commit where the bug was introduced.   |
-+--------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph S1 [Step 1: Test Midpoint C4]
+        direction LR
+        C1[C1: Good] --- C2[C2: ?] --- C3[C3: ?] --- C4{C4: Test} --- C5[C5: ?] --- C6[C6: ?] --- C7[C7: Bad]
+    end
+
+    subgraph S2 [Step 2: C4 is BAD, Test Midpoint C2]
+        direction LR
+        C1_2[C1: Good] --- C2_2{C2: Test} --- C3_2[C3: ?] --- C4_2[C4: Bad]
+    end
+
+    subgraph S3 [Step 3: C2 is GOOD, Test Midpoint C3]
+        direction LR
+        C2_3[C2: Good] --- C3_3{C3: Test} --- C4_3[C4: Bad]
+    end
+    
+    S1 -->|Result: BAD| S2
+    S2 -->|Result: GOOD| S3
+    S3 -->|Result: GOOD| R[Conclusion: C4 is the first bad commit]
 ```
 
 ### The Manual Bisect Workflow in Practice
@@ -334,7 +329,7 @@ a1b2c3d4 (Alice     2023-11-15 09:15:00 -0400 12) {{ include "mychart.labels" . 
 ```
 *Notice how the advanced blame correctly attributes the line to Alice's original creation, looking straight past Bob's organizational commit.*
 
-> **Which approach would you choose here and why?**
+> **Stop and think**: Which approach would you choose here and why?
 > You are auditing a critical `securityContext` block in a Pod manifest. The block looks highly suspicious and insecure. Standard `git blame` says "Jenkins CI User" last touched the lines. You check the Jenkins commit, and it was an automated task that converted all YAML files from 4 spaces to 2 spaces. How do you find the human who actually authored the insecure block?
 >
 > *Answer*: You must combine flags. You use `git blame -w` (which explicitly ignores whitespace changes) combined with `-C` (in case the block was also moved). The formatting commit purely altered whitespace, so `-w` will look right past it to the underlying text change.
@@ -423,7 +418,7 @@ If you *are* searching for something that currently exists in your repository sn
 
 ### Searching Alternate Dimensions (Branches)
 
-> **Which tool would you choose?**: How would you search a colleague's branch for a specific configuration without checking it out or stashing your current uncommitted work?
+> **Stop and think**: Which tool would you choose? How would you search a colleague's branch for a specific configuration without checking it out or stashing your current uncommitted work?
 >
 > *Answer*: You append the remote branch name to `git grep`. Because `git grep` natively reads Git's internal tree objects, running `git grep "search-term" origin/their-branch` searches their snapshot directly from your current working directory.
 
@@ -542,19 +537,19 @@ By mastering these targeted filters and formatting options, you transform Git fr
 <details>
 <summary><strong>Question 1</strong>: You are running an automated <code>git bisect run ./test.sh</code>. On the third algorithm step, the commit checked out introduces a severe syntax error in your build Makefile that has absolutely nothing to do with the Kubernetes routing bug you are investigating. The build fails completely. What must <code>test.sh</code> do to handle this gracefully without ruining the bisection?</summary>
 
-**Answer**: The script must be intelligent enough to detect the build/syntax error independently of the routing test and exit with code `125`. Exit code `125` specifically communicates to `git bisect` that the current commit is completely untestable. Git will then discard this commit from the calculation and select an adjacent commit to test instead, preserving the mathematical integrity of the binary search for the actual routing bug.
+**Answer**: The script must be intelligent enough to detect the build/syntax error independently of the routing test and exit with code `125`. Exit code `125` specifically communicates to `git bisect` that the current commit is completely untestable. Git will then discard this commit from the calculation and select an adjacent commit to test instead, preserving the mathematical integrity of the binary search for the actual routing bug. This prevents the algorithm from falsely marking the commit as the source of the routing regression.
 </details>
 
 <details>
 <summary><strong>Question 2</strong>: A critical security patch was applied to a Kubernetes `NetworkPolicy` three months ago. Today, a security scan reveals the vulnerability has returned. The policy file looks correct now, but you strongly suspect a contractor temporarily removed the patch last month before quietly putting it back. How do you definitively prove the patch was temporarily removed?</summary>
 
-**Answer**: Utilize the Pickaxe search: `git log -S "your-specific-patch-string"`. Because `git log -S` searches the diffs for commits where the string was either added *or* removed, it will expose the entire timeline. If the output shows three distinct commits (the original addition, a removal commit, and a recent re-addition commit), you have incontrovertible proof the patch was temporarily reverted.
+**Answer**: Utilize the Pickaxe search: `git log -S "your-specific-patch-string"`. Because `git log -S` searches the diffs for commits where the string was either added *or* removed, it will expose the entire timeline. If the output shows three distinct commits (the original addition, a removal commit, and a recent re-addition commit), you have incontrovertible proof the patch was temporarily reverted. Standard `git grep` would only show that the string exists currently, failing to expose the historical deletion and re-addition.
 </details>
 
 <details>
 <summary><strong>Question 3</strong>: You are reviewing a monolithic `StatefulSet` manifest. `git blame` indicates that your junior engineer, Sam, wrote a highly complex, potentially dangerous storage volume configuration yesterday. However, during a code review, Sam claims they merely moved the file from `infra/` to `k8s/` during a reorg and didn't write the actual logic. How do you verify Sam's claim and locate the true author?</summary>
 
-**Answer**: Execute `git blame -C k8s/statefulset.yaml`. The `-C` flag explicitly instructs Git to detect code movement and copying across files within the same commit. Git will look right past Sam's file-move commit and annotate the lines with the original author who wrote the storage configuration in the `infra/` directory months ago.
+**Answer**: Execute `git blame -C k8s/statefulset.yaml`. The `-C` flag explicitly instructs Git to detect code movement and copying across files within the same commit. Git will look right past Sam's file-move commit and annotate the lines with the original author who wrote the storage configuration in the `infra/` directory months ago. By tracing the content rather than just the file path, you can accurately identify who originally designed the complex and dangerous volume configuration.
 </details>
 
 <details>
@@ -566,13 +561,13 @@ By mastering these targeted filters and formatting options, you transform Git fr
 <details>
 <summary><strong>Question 5</strong>: You need to find a forgotten AWS API key (`AKIAIOSFODNN7EXAMPLE`) that someone accidentally committed to the repository months ago and later removed to cover their tracks. You run `git grep "AKIAIOSFODNN7EXAMPLE"`. It returns nothing. Why, and what is the correct command to find the breach?</summary>
 
-**Answer**: `git grep` only searches the files as they exist in the currently checked-out snapshot (the working directory). Since the key was removed in a later commit, it physically does not exist in the current files. You must use `git log -S "AKIAIOSFODNN7EXAMPLE"` to search through the historical diffs of the entire repository to locate the exact commit where the key was originally added.
+**Answer**: `git grep` only searches the files as they exist in the currently checked-out snapshot (the working directory). Since the key was removed in a later commit, it physically does not exist in the current files. You must use `git log -S "AKIAIOSFODNN7EXAMPLE"` to search through the historical diffs of the entire repository to locate the exact commit where the key was originally added. This allows you to find exactly when the breach occurred and verify when it was eventually patched out.
 </details>
 
 <details>
 <summary><strong>Question 6</strong>: You are auditing a messy commit history. You want to extract all commits made by the "platform-team" that specifically modified files inside the `k8s/networking/` directory, and you mandate seeing exactly which files were changed (Added, Modified, Deleted) in each commit. What exact command achieves this?</summary>
 
-**Answer**: You must execute `git log --author="platform-team" --name-status -- k8s/networking/`. The `--author` flag filters by the committer name, the `--name-status` flag modifies the output to list the specific files altered in each commit, and the `--` followed by the directory path strictly limits the search to only commits that mutated that specific networking folder.
+**Answer**: You must execute `git log --author="platform-team" --name-status -- k8s/networking/`. The `--author` flag filters by the committer name, the `--name-status` flag modifies the output to list the specific files altered in each commit, and the `--` followed by the directory path strictly limits the search to only commits that mutated that specific networking folder. Using these combined filters allows you to quickly generate an audit trail that pinpoints exact file modifications made by a specific group without being overwhelmed by unrelated repository activity.
 </details>
 
 ## Hands-On Exercise: The Case of the Broken Manifest
@@ -605,7 +600,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.21
+        image: nginx:1.27.0
         ports:
         - containerPort: 80
 EOF
