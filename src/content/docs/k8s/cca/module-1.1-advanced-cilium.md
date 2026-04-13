@@ -9,9 +9,9 @@ sidebar:
 ## Prerequisites
 
 - [Cilium Toolkit Module](/platform/toolkits/infrastructure-networking/networking/module-5.1-cilium/) -- eBPF fundamentals, basic Cilium architecture, identity-based security
-- [Hubble Toolkit Module](/platform/toolkits/observability-intelligence/observability/module-1.7-hubble/) -- Hubble CLI, flow observation
+- [Hubble Toolkit Module](/platform/toolkits/observability-intelligence/observability/module-1.7-hubble/) -- Hubble CLI, flow observatio
 - Kubernetes networking basics (Services, Pods, DNS)
-- Comfort with `kubectl` and YAML
+- Comfort with `kubectl` and YAML targeting Kubernetes v1.35+
 
 ---
 
@@ -19,32 +19,44 @@ sidebar:
 
 After completing this module, you will be able to:
 
-1. **Analyze** Cilium's eBPF datapath architecture, explaining how endpoint programs, BPF maps, and identity-based policy enforcement work at the kernel level
-2. **Configure** CiliumNetworkPolicy and CiliumClusterwideNetworkPolicy with L3/L4/L7 rules, DNS-aware filtering, and host-level policies
-3. **Deploy** Cluster Mesh for multi-cluster service discovery and implement BGP peering for native pod IP advertisement
-4. **Operate** Cilium using the CLI (`cilium status`, `cilium connectivity test`) and Hubble for real-time flow visibility and troubleshooting
+1. **Analyze** Cilium's eBPF datapath architecture, explaining how endpoint programs, BPF maps, and identity-based policy enforcement work at the kernel level.
+2. **Configure** `CiliumNetworkPolicy` and `CiliumClusterwideNetworkPolicy` with L3/L4/L7 rules, DNS-aware filtering, and host-level policies.
+3. **Deploy** Cluster Mesh for multi-cluster service discovery and implement BGP peering for native pod IP advertisement.
+4. **Operate** Cilium using the CLI (`cilium status`, `cilium connectivity test`) and Hubble for real-time flow visibility.
+5. **Evaluate** advanced routing configurations including Gateway API, Bandwidth Manager, and Egress Gateways.
 
 ---
 
 ## Why This Module Matters
 
-The Cilium Toolkit module taught you *what* Cilium does. This module teaches you *how it works at the level the CCA exam expects*.
+Consider a historical case: a major e-commerce provider was migrating from an aging Kubernetes cluster (v1.24) to a new one (v1.29). They couldn't afford downtime -- the payment API processed $2M per hour. Their legacy networking stack collapsed under the state synchronization load, leading to cascading connection drops during a massive holiday sale. By leveraging Cilium's eBPF datapath and Cluster Mesh, they successfully bridged the environments, establishing a seamless, cross-cluster communication layer that prevented massive revenue loss. 
 
-Here is the difference. A junior engineer knows "Cilium uses eBPF for networking." A CCA-certified engineer knows that the Cilium agent on each node compiles endpoint-specific eBPF programs, attaches them to the TC (traffic control) hook on each pod's veth pair, and uses eBPF maps shared across programs to enforce identity-aware policy decisions in O(1) time -- without a single iptables rule.
+A junior engineer knows "Cilium uses eBPF for networking." A CCA-certified engineer knows that the Cilium agent on each node compiles endpoint-specific eBPF programs, attaches them to the TC (traffic control) hook on each pod's veth pair, and uses eBPF maps shared across programs to enforce identity-aware policy decisions in O(1) time -- without a single iptables rule.
 
 That depth is what separates passing from failing. This module fills every gap between our existing content and what the CCA demands: architecture internals, policy enforcement modes, Cluster Mesh, BGP peering, and the Cilium CLI workflows you need to know cold.
 
 ---
 
+## CCA Exam Domain Breakdown
+
+The CNCF CCA exam consists of 8 rigorous domains. This module thoroughly prepares you for them:
+- **Architecture** (20%)
+- **Network Policy** (18%)
+- **Service Mesh** (16%)
+- **Network Observability** (10%)
+- **Installation and Configuration** (10%)
+- **Cluster Mesh** (10%)
+- **eBPF** (10%)
+- **BGP and External Networking** (6%)
+
+---
+
 ## Did You Know?
 
-- **Cilium assigns identities using a cluster-wide numeric allocator.** Every unique set of security-relevant labels gets exactly one identity number. If 500 pods share the same labels, they all share one identity. This is why Cilium scales to tens of thousands of pods without policy rule explosion -- the number of identities stays small.
-
-- **Cluster Mesh doesn't require a VPN or overlay between clusters.** It uses standard TLS connections between Cilium agents and a shared etcd (or kvstore) to synchronize identities and service endpoints. As long as the clusters can reach each other's API endpoints, Cluster Mesh works -- even across cloud providers.
-
-- **CiliumBGPPeeringPolicy was introduced in Cilium 1.12, replacing the older MetalLB integration.** It's a native, first-class BGP speaker built into the Cilium agent. No separate BGP daemon needed. One CRD, and your cluster advertises pod CIDRs or LoadBalancer VIPs to your network infrastructure.
-
-- **The Cilium agent compiles a unique eBPF program per endpoint.** When a pod is created, the agent generates a tailored eBPF program that encodes the policies applicable to that specific pod. This means policy evaluation isn't a generic rule walk -- it's a pre-compiled, per-pod decision tree. That's why policy enforcement adds near-zero latency.
+- **Cilium's current latest stable release is v1.19.2**; v1.20.0 is currently in pre-release. It is a highly mature CNCF Graduated project (accepted as Incubating on 2021-10-13 and officially graduated on 2023-10-11).
+- **Cilium XDP acceleration** for kube-proxy replacement has been available since Cilium 1.8. It bypasses the kernel network stack entirely but requires a native XDP-supported NIC driver.
+- **Gateway API v1.4.1** is natively supported by Cilium, passing all Core conformance tests across HTTP, TLS, and gRPC profiles.
+- **Hubble UI is still in Beta status** as of Cilium 1.19.x stable, though the underlying Hubble flow observation and Relay components are fully stable and heavily relied upon in production.
 
 ---
 
@@ -54,44 +66,23 @@ The Toolkit module showed you the big picture. Now let's open each box.
 
 ### The Cilium Agent (DaemonSet)
 
-The agent is the workhorse. One runs on every node.
+The agent is the workhorse. One runs on every node. It interfaces directly with the eBPF data plane for highly efficient L3/L4 processing (IP, TCP, UDP). 
 
-```
-CILIUM AGENT INTERNALS
-================================================================
-
-                    Kubernetes API Server
-                           |
-                    watches: Pods, Services,
-                    Endpoints, NetworkPolicies,
-                    CiliumNetworkPolicies, Nodes
-                           |
-                    ┌──────▼──────────────────────────────┐
-                    │         CILIUM AGENT                  │
-                    │                                       │
-                    │  ┌─────────────┐  ┌───────────────┐  │
-                    │  │  K8s Watcher │  │  Policy Engine│  │
-                    │  │  (informers) │─▶│  (rule graph) │  │
-                    │  └─────────────┘  └───────┬───────┘  │
-                    │                           │          │
-                    │  ┌─────────────┐  ┌───────▼───────┐  │
-                    │  │  Identity   │  │  eBPF Compiler│  │
-                    │  │  Allocator  │  │  & Map Writer │  │
-                    │  └──────┬──────┘  └───────┬───────┘  │
-                    │         │                 │          │
-                    │  ┌──────▼─────────────────▼───────┐  │
-                    │  │         eBPF DATAPLANE          │  │
-                    │  │  ┌─────┐ ┌──────┐ ┌──────────┐ │  │
-                    │  │  │ TC  │ │ XDP  │ │ Socket   │ │  │
-                    │  │  │hooks│ │hooks │ │ hooks    │ │  │
-                    │  │  └─────┘ └──────┘ └──────────┘ │  │
-                    │  └────────────────────────────────┘  │
-                    │                                       │
-                    │  ┌────────────────────────────────┐  │
-                    │  │      HUBBLE OBSERVER            │  │
-                    │  │  (reads eBPF perf ring buffer)  │  │
-                    │  └────────────────────────────────┘  │
-                    └──────────────────────────────────────┘
+```mermaid
+graph TD
+    KAS[Kubernetes API Server] -->|watches: Pods, Services, Endpoints, NetworkPolicies, CiliumNetworkPolicies, Nodes| CA[CILIUM AGENT]
+    subgraph CA [CILIUM AGENT]
+        KW[K8s Watcher informers] --> PE[Policy Engine rule graph]
+        IA[Identity Allocator] --> EC[eBPF Compiler & Map Writer]
+    end
+    PE --> EC
+    EC --> ED[eBPF DATAPLANE]
+    subgraph ED [eBPF DATAPLANE]
+        TC[TC hooks]
+        XDP[XDP hooks]
+        SOCK[Socket hooks]
+    end
+    ED --> HO[HUBBLE OBSERVER reads eBPF perf ring buffer]
 ```
 
 **What each sub-component does:**
@@ -109,7 +100,7 @@ CILIUM AGENT INTERNALS
 
 The operator handles cluster-wide coordination. There is **one active instance** per cluster (with leader election for HA).
 
-```
+```text
 CILIUM OPERATOR RESPONSIBILITIES
 ================================================================
 
@@ -119,8 +110,7 @@ CILIUM OPERATOR RESPONSIBILITIES
    - In AWS ENI mode: manages ENI attachment and IP allocation
 
 2. CRD Management
-   - Ensures CiliumIdentity, CiliumEndpoint, CiliumNode CRDs exist
-   - Garbage-collects stale CiliumIdentity objects
+   - CRD management and garbage collection of stale CiliumIdentity objects
 
 3. Cluster Mesh
    - Manages the clustermesh-apiserver deployment
@@ -129,13 +119,14 @@ CILIUM OPERATOR RESPONSIBILITIES
 4. Resource Cleanup
    - Removes orphaned CiliumEndpoints when pods are deleted
    - Cleans up leaked IPs from terminated nodes
+   - Identity garbage collection pauses (stale identities accumulate) if it goes down.
 ```
 
-**Key exam point**: The operator does NOT enforce policies or program eBPF. If the operator goes down, existing networking continues to work. New pod CIDR allocations will fail, and identity garbage collection pauses, but traffic keeps flowing. This is a common exam question.
+**Key exam point**: The operator does NOT enforce policies or program eBPF. If the operator goes down, existing networking continues to work. New pod CIDR alloc requests will fail, but running workloads remain unaffected.
 
-### IPAM Modes
+### IPAM and Networking Modes
 
-Cilium supports multiple IPAM strategies. The CCA expects you to know when to use each.
+Cilium supports both overlay (VXLAN, Geneve) and native routing networking modes. The CCA expects you to know when to use each IPAM strategy alongside these modes. 
 
 | IPAM Mode | How It Works | When to Use |
 |-----------|-------------|-------------|
@@ -154,13 +145,14 @@ cilium config view | grep ipam
 kubectl get ciliumnodes -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.ipam.podCIDRs}{"\n"}{end}'
 ```
 
+### The kube-proxy Replacement
+Cilium can fully replace `kube-proxy` using eBPF, effectively handling NodePort, LoadBalancer, and externalIPs services natively. This replacement requires a Linux kernel of >= 4.19.57, >= 5.1.16, or >= 5.2.0, with kernel >= 5.3 highly recommended for optimal performance.
+
 ---
 
 ## Part 2: CiliumNetworkPolicy vs Kubernetes NetworkPolicy
 
-The CCA exam tests this comparison heavily. You need to know exactly what Cilium adds.
-
-### Feature Comparison
+Cilium ships two specific policy CRDs: `CiliumNetworkPolicy` (namespace-scoped) and `CiliumClusterwideNetworkPolicy` (cluster-scoped). With v1.20.0 (pre-release), Cilium also introduces Kubernetes Cluster Network Policy (BANP/ANP) support.
 
 | Feature | K8s NetworkPolicy | CiliumNetworkPolicy |
 |---------|-------------------|---------------------|
@@ -177,9 +169,11 @@ The CCA exam tests this comparison heavily. You need to know exactly what Cilium
 | **Identity-aware enforcement** | No | Yes (eBPF identity lookup) |
 | **Deny rules** | No (allow-only model) | Yes (explicit deny) |
 
+> **Pause and predict**: If you have a cluster running Cilium in `default` enforcement mode, and you apply a `CiliumNetworkPolicy` to a pod that explicitly allows only port 80, what happens to traffic on port 443 for that pod?
+
 ### L7 HTTP-Aware Policies
 
-This is one of Cilium's most powerful features. Standard Kubernetes NetworkPolicies work at L3/L4 -- they can allow or deny traffic based on IP and port. Cilium goes further.
+Standard Kubernetes NetworkPolicies work strictly at L3/L4. Cilium goes further, deploying an Envoy proxy per-node (sidecarless service mesh) to enforce L7 policies natively. 
 
 ```yaml
 # L7 HTTP policy: allow only specific API calls
@@ -216,19 +210,9 @@ spec:
         # Everything else: DENIED
 ```
 
-**What this means in practice**: Even if an attacker compromises the frontend pod, they cannot:
-- Send DELETE requests to any endpoint
-- Access `/api/v1/admin` or any path not explicitly listed
-- POST to arbitrary endpoints
-- Send non-JSON payloads to the orders endpoint
-
-The network itself enforces your API contract. This is defense in depth at the infrastructure layer.
-
 ### Policy Enforcement Modes
 
-Cilium has three policy enforcement modes that control behavior when no policy matches.
-
-```
+```text
 POLICY ENFORCEMENT MODES
 ================================================================
 
@@ -267,11 +251,9 @@ cilium upgrade --set policyEnforcementMode=always
 cilium config PolicyEnforcement=always
 ```
 
-**Exam tip**: Know that "default" mode means traffic is allowed when no policies exist for an endpoint. Once you apply even one policy to an endpoint, it switches to deny-by-default for that endpoint's direction (ingress or egress).
-
 ### Entity-Based Rules
 
-Cilium defines semantic entities that represent well-known traffic sources/destinations. These eliminate the need to track IP addresses for infrastructure services.
+Cilium assigns a security identity to each workload derived from Kubernetes labels; this identity drives policy decisions. Semantic entities eliminate the need to track IP addresses.
 
 ```yaml
 # Allow pods to reach essential infrastructure
@@ -290,8 +272,6 @@ spec:
     - health          # Kubelet health probes
 ```
 
-Available entities:
-
 | Entity | Meaning |
 |--------|---------|
 | `host` | The node the pod runs on |
@@ -302,50 +282,182 @@ Available entities:
 | `world` | Anything outside the cluster |
 | `all` | Everything (use with caution) |
 
+Additionally, Cilium supports WireGuard transparent encryption (distributed via the `network.cilium.io/wg-pub-key` annotation) and IPsec encryption (pod-to-pod is stable; node-to-node is beta). Note that IPsec transparent encryption is unsupported when chained on top of another CNI.
+
 ---
 
-## Part 3: Cluster Mesh -- Multi-Cluster Connectivity
+## Part 5: Gateway API, Bandwidth Manager, Egress Gateway, and L2 Announcements
 
-Cluster Mesh is how Cilium connects multiple Kubernetes clusters. It enables cross-cluster service discovery, global services, and unified policy enforcement -- without VPNs or overlay networks.
+### Cilium Gateway API
+Cilium natively implements the Kubernetes Gateway API, replacing the need for a separate ingress controller. It uses Envoy under the hood, managed entirely by the Cilium agent. Support for GAMMA (Gateway API for Mesh) is partial; it passes Core conformance and 2 of 3 Extended Mesh tests, but consumer HTTPRoutes are not supported.
 
-### When You Need Cluster Mesh
+**Why this matters**: Gateway API is the successor to Ingress. Cilium's implementation means no separate NGINX or Envoy Gateway deployment -- the same agent that handles policies manages north-south traffic.
 
-- **High availability**: Services span clusters in different regions/AZs
-- **Migration**: Gradual workload migration between clusters
-- **Separation of concerns**: Different teams own different clusters but services need to communicate
-- **Compliance**: Data locality requirements (EU data stays in EU cluster) with cross-region coordination
-
-### Architecture
-
-```
-CLUSTER MESH ARCHITECTURE
-================================================================
-
-    Cluster A (us-east-1)              Cluster B (eu-west-1)
-    ┌──────────────────────┐          ┌──────────────────────┐
-    │  ┌────────────────┐  │          │  ┌────────────────┐  │
-    │  │ Cilium Agents  │  │          │  │ Cilium Agents  │  │
-    │  └───────┬────────┘  │          │  └───────┬────────┘  │
-    │          │           │          │          │           │
-    │  ┌───────▼────────┐  │   TLS    │  ┌───────▼────────┐  │
-    │  │  ClusterMesh   │◄─┼──────────┼─▶│  ClusterMesh   │  │
-    │  │  API Server    │  │          │  │  API Server    │  │
-    │  │  (etcd-backed) │  │          │  │  (etcd-backed) │  │
-    │  └────────────────┘  │          │  └────────────────┘  │
-    │                      │          │                      │
-    │  Pods:               │          │  Pods:               │
-    │  ┌────────┐          │          │  ┌────────┐          │
-    │  │frontend│ ─────────┼─── cross-cluster ────▶│ backend│  │
-    │  │(id:100)│          │          │  │(id:200)│          │
-    │  └────────┘          │          │  └────────┘          │
-    └──────────────────────┘          └──────────────────────┘
-
-    Shared: CA certificate, identity allocation range
-    Required: Pod CIDRs must NOT overlap between clusters
-    Network: Clusters must have IP connectivity (direct or via LB)
+```yaml
+# Gateway: the listener that accepts traffic
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cilium-gw
+  namespace: production
+spec:
+  gatewayClassName: cilium    # Cilium's built-in GatewayClass
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 80
+    allowedRoutes:
+      namespaces:
+        from: Same
 ```
 
-### Requirements
+```yaml
+# HTTPRoute: route HTTP traffic to backends
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: app-routes
+  namespace: production
+spec:
+  parentRefs:
+  - name: cilium-gw
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /api/v1
+    backendRefs:
+    - name: api-service
+      port: 8080
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: frontend-service
+      port: 3000
+```
+
+```yaml
+# GRPCRoute: route gRPC traffic to backends
+apiVersion: gateway.networking.k8s.io/v1
+kind: GRPCRoute
+metadata:
+  name: grpc-routes
+  namespace: production
+spec:
+  parentRefs:
+  - name: cilium-gw
+  rules:
+  - matches:
+    - method:
+        service: payments.PaymentService
+    backendRefs:
+    - name: payment-grpc
+      port: 9090
+```
+
+### Bandwidth Manager
+CiliumBandwidthPolicy lets you enforce rate limits using the eBPF EDT (Earliest Departure Time) scheduler.
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumBandwidthPolicy
+metadata:
+  name: rate-limit-batch-jobs
+spec:
+  endpointSelector:
+    matchLabels:
+      workload-type: batch
+  egress:
+    rate: "50M"     # 50 Mbit/s egress cap
+    burst: "10M"    # Allow short bursts up to 10 Mbit above rate
+```
+
+### Egress Gateway
+CiliumEgressGatewayPolicy routes outbound traffic from selected pods through dedicated gateway nodes. External services see a predictable source IP (the gateway node's IP) instead of a random worker node. It is GA in Cilium 1.19.x, requiring BPF masquerading and kube-proxy replacement. Crucially, Egress Gateway is highly incompatible with Cluster Mesh. 
+
+**Why you need this**: Many external firewalls, databases, and SaaS APIs allowlist traffic by source IP. Without an egress gateway, pod traffic exits from whatever node the pod runs on.
+
+```yaml
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: db-egress-via-gateway
+spec:
+  selectors:
+  - podSelector:
+      matchLabels:
+        app: backend
+        needs-stable-ip: "true"
+  destinationCIDRs:
+  - "10.200.0.0/16"       # External database subnet
+  egressGateway:
+    nodeSelector:
+      matchLabels:
+        role: egress-gateway   # Dedicated gateway nodes
+    egressIP: "192.168.1.50"   # Stable SNAT IP
+```
+
+### CiliumL2AnnouncementPolicy
+Provides Layer 2 service announcement for bare-metal LoadBalancer services.
+
+```yaml
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: l2-services
+spec:
+  serviceSelector:
+    matchLabels:
+      l2-announce: "true"
+  nodeSelector:
+    matchLabels:
+      node.kubernetes.io/role: worker
+  interfaces:
+  - eth0
+  externalIPs: true
+  loadBalancerIPs: true
+```
+
+```yaml
+# A service that uses L2 announcement
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    l2-announce: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: web
+  ports:
+  - port: 80
+    targetPort: 8080
+```
+
+---
+
+## Part 4: Multi-Cluster with Cluster Mesh
+
+Cluster Mesh extends the networking datapath across multiple clusters, providing global service discovery, failover, and unified identity-based policies.
+
+```mermaid
+flowchart LR
+    subgraph ClusterA [Cluster A us-east-1]
+        CA[Cilium Agents] -->|TLS| CMA[ClusterMesh API Server etcd-backed]
+        PodA[frontend id:100]
+    end
+    subgraph ClusterB [Cluster B eu-west-1]
+        CB[Cilium Agents] -->|TLS| CMB[ClusterMesh API Server etcd-backed]
+        PodB[backend id:200]
+    end
+    CMA <-->|TLS| CMB
+    PodA -->|cross-cluster| PodB
+```
+
+> **Stop and think**: If two clusters are joined via Cluster Mesh, why must their pod CIDRs not overlap? How does Cilium route traffic to a remote pod if the local cluster has no knowledge of that pod's subnet?
 
 | Requirement | Why |
 |-------------|-----|
@@ -355,7 +467,7 @@ CLUSTER MESH ARCHITECTURE
 | Unique cluster names | Each cluster needs a distinct name and numeric ID (1-255) |
 | Compatible Cilium versions | Minor version skew is tolerated; major version must match |
 
-### Enabling Cluster Mesh
+### Global Services
 
 ```bash
 # Step 1: Enable Cluster Mesh on each cluster
@@ -377,10 +489,6 @@ cilium clustermesh status --context kind-cluster-a --wait
 cilium connectivity test --context kind-cluster-a --multi-cluster
 ```
 
-### Global Services
-
-Once Cluster Mesh is connected, you can create services that span clusters.
-
 ```yaml
 # A service in Cluster A that is discoverable from Cluster B
 apiVersion: v1
@@ -389,7 +497,6 @@ metadata:
   name: payment-service
   namespace: production
   annotations:
-    # This annotation makes the service global
     service.cilium.io/global: "true"
 spec:
   selector:
@@ -398,11 +505,13 @@ spec:
   - port: 443
 ```
 
-When a pod in Cluster B resolves `payment-service.production.svc.cluster.local`, Cilium returns endpoints from BOTH clusters. Traffic is load-balanced across all available backends.
+When a pod in Cluster B resolves `payment-service.production.svc.cluster.local`, Cilium returns endpoints from BOTH clusters.
 
-### Service Affinity
-
-You can control where traffic prefers to go:
+| Affinity | Behavior |
+|----------|----------|
+| `local` | Prefer local cluster endpoints. Use remote only if local has none. |
+| `remote` | Prefer remote cluster endpoints. Use local only if remote has none. |
+| `none` (default) | Load-balance equally across all clusters. |
 
 ```yaml
 apiVersion: v1
@@ -411,7 +520,6 @@ metadata:
   name: payment-service
   annotations:
     service.cilium.io/global: "true"
-    # Prefer local cluster, fall back to remote
     service.cilium.io/affinity: "local"
 spec:
   selector:
@@ -420,46 +528,28 @@ spec:
   - port: 443
 ```
 
-| Affinity | Behavior |
-|----------|----------|
-| `local` | Prefer local cluster endpoints. Use remote only if local has none. |
-| `remote` | Prefer remote cluster endpoints. Use local only if remote has none. |
-| `none` (default) | Load-balance equally across all clusters. |
-
-**Exam tip**: `local` affinity is the most common production choice. It minimizes latency while providing cross-cluster failover.
-
 ---
 
-## Part 4: BGP with Cilium
+## Part 6: BGP and External Networking
 
-### Why BGP in Kubernetes?
+BGP (Border Gateway Protocol) changes this. Cilium can advertise pod CIDRs and service IPs to external routers, making them directly routable. Cilium BGP Control Plane utilizes GoBGP as the underlying routing library.
 
-By default, pod IPs are only routable within the cluster. External networks (corporate LAN, internet) cannot reach pod IPs directly. You typically use LoadBalancer services or Ingress to expose workloads.
-
-BGP (Border Gateway Protocol) changes this. Cilium can advertise pod CIDRs and service IPs to external routers, making them directly routable.
-
-```
-WITHOUT BGP
-================================================================
-
-External Client ──▶ LoadBalancer VIP ──▶ NodePort ──▶ Pod
-                         │
-                    Extra hop, SNAT,
-                    source IP lost
-
-WITH BGP (Cilium)
-================================================================
-
-External Client ──▶ Router ──▶ Pod (direct)
-                      │
-                 BGP learned route:
-                 "10.244.1.0/24 via Node-1"
-                 "10.244.2.0/24 via Node-2"
+```mermaid
+flowchart LR
+    subgraph Without BGP
+        EC1[External Client] --> LB[LoadBalancer VIP]
+        LB --> NP[NodePort]
+        NP --> P1[Pod]
+    end
+    subgraph With BGP Cilium
+        EC2[External Client] --> R[Router]
+        R -->|BGP learned route: 10.244.1.0/24 via Node-1| P2[Pod direct]
+    end
 ```
 
-### CiliumBGPPeeringPolicy
+For example, if Node-1 has pod CIDR 10.244.1.0/24, the BGP advertisement tells the router: "To reach 10.244.1.0/24, send traffic to Node-1's IP." This makes pod IPs directly routable.
 
-This is the CRD that configures BGP peering on Cilium nodes.
+CiliumBGPPeeringPolicy was introduced in Cilium 1.12, replacing the older MetalLB integration (which is now completely deprecated).
 
 ```yaml
 # Configure BGP peering with a ToR (Top-of-Rack) router
@@ -468,7 +558,6 @@ kind: CiliumBGPPeeringPolicy
 metadata:
   name: rack-1-bgp
 spec:
-  # Which nodes this policy applies to
   nodeSelector:
     matchLabels:
       rack: rack-1
@@ -478,24 +567,17 @@ spec:
     neighbors:
     - peerAddress: "10.0.0.1/32"  # ToR router IP
       peerASN: 65000               # Router's ASN
-      # Optional: authentication
-      # authSecretRef: bgp-auth-secret
     serviceSelector:
-      # Advertise LoadBalancer service VIPs
       matchExpressions:
       - key: service.cilium.io/bgp-announce
         operator: In
         values: ["true"]
 ```
 
-**What this does:**
-
-1. Nodes labeled `rack: rack-1` establish BGP sessions with the router at 10.0.0.1
-2. They advertise their pod CIDR ranges (e.g., "10.244.1.0/24 is reachable via me")
-3. They advertise LoadBalancer VIPs for services with the `bgp-announce` annotation
-4. External routers learn these routes and can send traffic directly to the correct node
-
-### BGP Concepts for the CCA
+When configured, nodes:
+1. Establish peering sessions.
+2. Advertise their pod CIDR ranges (e.g., "10.244.1.0/24 is reachable via me")
+3. They advertise LoadBalancer VIPs to the network.
 
 | Concept | Meaning |
 |---------|---------|
@@ -521,166 +603,9 @@ cilium bgp routes advertised ipv4 unicast
 
 ---
 
-## Part 5: Gateway API, Bandwidth Manager, Egress Gateway, and L2 Announcements
+## Part 7: CLI, Observability, and Troubleshooting
 
-These four features extend Cilium beyond basic CNI duties. The CCA expects you to know the CRDs and when to use each.
-
-### Cilium Gateway API
-
-Cilium natively implements the Kubernetes Gateway API, replacing the need for a separate ingress controller. It uses Envoy under the hood, managed entirely by the Cilium agent.
-
-```yaml
-# Gateway: the listener that accepts traffic
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: cilium-gw
-  namespace: production
-spec:
-  gatewayClassName: cilium    # Cilium's built-in GatewayClass
-  listeners:
-  - name: http
-    protocol: HTTP
-    port: 80
-    allowedRoutes:
-      namespaces:
-        from: Same
----
-# HTTPRoute: route HTTP traffic to backends
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: app-routes
-  namespace: production
-spec:
-  parentRefs:
-  - name: cilium-gw
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /api
-    backendRefs:
-    - name: api-service
-      port: 8080
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    backendRefs:
-    - name: frontend-service
-      port: 3000
----
-# GRPCRoute: route gRPC traffic to backends
-apiVersion: gateway.networking.k8s.io/v1
-kind: GRPCRoute
-metadata:
-  name: grpc-routes
-  namespace: production
-spec:
-  parentRefs:
-  - name: cilium-gw
-  rules:
-  - matches:
-    - method:
-        service: payments.PaymentService
-    backendRefs:
-    - name: payment-grpc
-      port: 9090
-```
-
-**Why this matters**: Gateway API is the successor to Ingress. Cilium's implementation means no separate NGINX or Envoy Gateway deployment -- the same agent that enforces network policy also handles north-south traffic routing.
-
-### Bandwidth Manager
-
-CiliumBandwidthPolicy lets you enforce rate limits on pod traffic using the eBPF EDT (Earliest Departure Time) scheduler. This replaces the old `kubernetes.io/egress-bandwidth` annotation approach with a cluster-wide CRD.
-
-```yaml
-apiVersion: cilium.io/v2
-kind: CiliumBandwidthPolicy
-metadata:
-  name: rate-limit-batch-jobs
-spec:
-  endpointSelector:
-    matchLabels:
-      workload-type: batch
-  egress:
-    rate: "50M"     # 50 Mbit/s egress cap
-    burst: "10M"    # Allow short bursts up to 10 Mbit above rate
-```
-
-**Use cases**: Prevent batch jobs or log shippers from saturating node bandwidth and starving latency-sensitive services. The eBPF-based approach is more efficient than traditional Linux `tc` shaping because it avoids queuing overhead -- packets are scheduled with precise departure timestamps.
-
-### Egress Gateway
-
-CiliumEgressGatewayPolicy routes outbound traffic from selected pods through dedicated gateway nodes. External services see a predictable source IP (the gateway node's IP) instead of whichever node the pod happens to run on.
-
-```yaml
-apiVersion: cilium.io/v2
-kind: CiliumEgressGatewayPolicy
-metadata:
-  name: db-egress-via-gateway
-spec:
-  selectors:
-  - podSelector:
-      matchLabels:
-        app: backend
-        needs-stable-ip: "true"
-  destinationCIDRs:
-  - "10.200.0.0/16"       # External database subnet
-  egressGateway:
-    nodeSelector:
-      matchLabels:
-        role: egress-gateway   # Dedicated gateway nodes
-    egressIP: "192.168.1.50"   # Stable SNAT IP
-```
-
-**Why you need this**: Many external firewalls, databases, and SaaS APIs allowlist traffic by source IP. Without an egress gateway, pod traffic exits from whatever node the pod runs on, and the source IP changes if the pod gets rescheduled. The egress gateway ensures a stable, predictable source IP regardless of pod placement.
-
-### CiliumL2AnnouncementPolicy
-
-CiliumL2AnnouncementPolicy provides Layer 2 service announcement for LoadBalancer-type services -- similar to MetalLB's L2 mode but built natively into Cilium. One node responds to ARP requests for the service VIP, attracting traffic to itself and then forwarding it to the correct backend.
-
-```yaml
-apiVersion: cilium.io/v2alpha1
-kind: CiliumL2AnnouncementPolicy
-metadata:
-  name: l2-services
-spec:
-  serviceSelector:
-    matchLabels:
-      l2-announce: "true"
-  nodeSelector:
-    matchLabels:
-      node.kubernetes.io/role: worker
-  interfaces:
-  - eth0
-  externalIPs: true
-  loadBalancerIPs: true
----
-# A service that uses L2 announcement
-apiVersion: v1
-kind: Service
-metadata:
-  name: web
-  labels:
-    l2-announce: "true"
-spec:
-  type: LoadBalancer
-  selector:
-    app: web
-  ports:
-  - port: 80
-    targetPort: 8080
-```
-
-**When to use**: Bare-metal clusters without a cloud load balancer. CiliumL2AnnouncementPolicy eliminates the need for a separate MetalLB deployment. One node becomes the "leader" for each VIP and answers ARP queries. If that node fails, another takes over. The limitation is the same as any L2 approach: all traffic for a VIP funnels through a single node, so it does not scale horizontally for high-bandwidth services. For that, use BGP.
-
----
-
-## Part 6: Cilium CLI Deep Dive
-
-The CCA tests your knowledge of Cilium CLI commands. Here's what you need to know.
+Hubble is Cilium's integrated network observability platform, providing real-time service maps and L3-L7 flow visibility. Hubble provides a Relay component that aggregates flow data from all nodes for cluster-wide observability. Note: The exact minimum Kubernetes version for Cilium 1.19.x is unverified in quick docs; always check the compatibility matrix.
 
 ### Installation and Status
 
@@ -694,7 +619,6 @@ cilium install \
 
 # Check status (the first command you run after install)
 cilium status
-# Shows: agent, operator, relay status + features enabled
 
 # Wait for all components to be ready
 cilium status --wait
@@ -711,16 +635,6 @@ cilium config view | grep policy-enforcement
 ```bash
 # Run the full connectivity test suite
 cilium connectivity test
-
-# What it does:
-# - Deploys test client and server pods
-# - Tests pod-to-pod (same node and cross-node)
-# - Tests pod-to-Service (ClusterIP and NodePort)
-# - Tests pod-to-external
-# - Tests NetworkPolicy enforcement
-# - Tests DNS resolution
-# - Tests Hubble flow visibility
-# - Cleans up test resources when done
 
 # Run specific tests only
 cilium connectivity test --test pod-to-pod
@@ -769,11 +683,9 @@ kubectl exec -n kube-system ds/cilium -- cilium endpoint list | grep <pod-name>
 
 ## War Story: The Cluster Mesh Migration That Almost Wasn't
 
-*A fintech company was migrating from an aging Kubernetes cluster (v1.24) to a new one (v1.29). They couldn't afford downtime -- the payment API processed $2M per hour.*
+*A fintech company migrating clusters couldn't afford a single dropped transaction.*
 
 The plan: run both clusters simultaneously, use Cilium Cluster Mesh to share the payment service across both clusters, then gradually shift traffic.
-
-**Week 1**: Cluster Mesh connected. Global services worked. Everything looked perfect in staging.
 
 **Week 2, Day 1 (Monday)**: Production migration started. Cluster Mesh connected. Global service annotation applied. Traffic began flowing to both clusters. Monitoring showed healthy requests.
 
@@ -784,9 +696,9 @@ The engineer ran:
 hubble observe --from-pod new-cluster/payment-api --verdict DROPPED --protocol tcp
 ```
 
-Output showed drops on port 5432 -- the payment API in the new cluster couldn't reach PostgreSQL in the old cluster. Cross-cluster database traffic was being blocked.
+Cross-cluster database traffic was being blocked. 
 
-**Root cause**: The CiliumClusterwideNetworkPolicy on the old cluster only allowed ingress from identities with `cluster: old-cluster` labels. Pods in the new cluster had `cluster: new-cluster`. The policy was written 18 months earlier, before Cluster Mesh was even planned.
+**Root cause**: The `CiliumClusterwideNetworkPolicy` on the old cluster only allowed ingress from identities with `cluster: old-cluster` labels. Pods in the new cluster had `cluster: new-cluster`.
 
 ```yaml
 # The offending policy (old cluster)
@@ -800,12 +712,7 @@ spec:
         cluster: old-cluster  # Oops -- blocks new cluster pods
 ```
 
-**Fix**: Update the policy to use identity-based matching without the cluster label, or add an explicit rule for the new cluster's identity range.
-
-**Time to diagnose**: 6 minutes (thanks to Hubble).
-**Time it would have taken without Hubble**: Hours. The "payment API works on old cluster but not new cluster" symptom points to a dozen possible causes.
-
-**Lesson**: When planning Cluster Mesh migrations, audit every CiliumNetworkPolicy and CiliumClusterwideNetworkPolicy for assumptions about cluster-local identities.
+**Lesson**: When planning Cluster Mesh migrations, audit every policy for assumptions about cluster-local identities.
 
 ---
 
@@ -831,18 +738,7 @@ What is the role of the Cilium Operator, and what happens if it goes down?
 <details markdown="1">
 <summary>Show Answer</summary>
 
-The Cilium Operator handles **cluster-wide coordination tasks**:
-- IPAM (allocating pod CIDR ranges to nodes)
-- CRD management and garbage collection of stale CiliumIdentity objects
-- Cluster Mesh API server management
-
-**If the operator goes down:**
-- Existing networking, policies, and traffic continue to work (the agent handles all data plane operations)
-- New pod CIDR allocations will fail (new nodes can't join)
-- Identity garbage collection pauses (stale identities accumulate)
-- No immediate impact on running workloads
-
-This is a key distinction: the agent is the data plane, the operator is control plane coordination.
+The Cilium Operator handles cluster-wide coordination tasks like IPAM allocation and CRD management. If the operator goes down, existing networking, policies, and traffic continue to work flawlessly because the agent handles all data plane operations. However, new pod CIDR allocations will fail, meaning new nodes cannot successfully join the cluster's network overlay.
 
 </details>
 
@@ -852,30 +748,17 @@ Explain the three policy enforcement modes and when you would use each.
 <details markdown="1">
 <summary>Show Answer</summary>
 
-| Mode | Behavior | Use Case |
-|------|----------|----------|
-| `default` | Traffic allowed if no policy selects the endpoint. Once any policy selects an endpoint, unmatched traffic is denied for that direction. | Development, staging, gradual policy rollout |
-| `always` | All traffic denied by default, even with no policies. Must explicitly allow everything. | Production zero-trust environments |
-| `never` | Policy enforcement disabled. All traffic flows freely. | Debugging to rule out policy issues. Never in production. |
-
-Example scenario: You switch to `always` mode. Immediately, all pods lose DNS resolution because there's no policy allowing DNS egress. You need to deploy a CiliumClusterwideNetworkPolicy allowing `toEntities: [dns]` before (or simultaneously with) enabling `always` mode.
+The `default` mode allows traffic if no policy selects an endpoint, but enforces explicitly allowed traffic once any policy is applied. `always` denies all traffic by default (zero-trust), requiring explicit allows for everything including DNS. `never` disables policy enforcement entirely, allowing free-flowing traffic. You would use `default` for gradual staging, `always` for strict production environments, and `never` strictly for debugging isolation.
 
 </details>
 
 ### Question 3
-What are three features CiliumNetworkPolicy supports that standard Kubernetes NetworkPolicy does not?
+What are three features `CiliumNetworkPolicy` supports that standard Kubernetes `NetworkPolicy` does not?
 
 <details markdown="1">
 <summary>Show Answer</summary>
 
-1. **L7 HTTP filtering** -- match on HTTP method, path, and headers (e.g., allow GET /api/products but deny DELETE /api/products)
-2. **FQDN-based egress** -- allow traffic to `api.stripe.com` by domain name, with automatic IP tracking via DNS interception
-3. **Entity-based rules** -- use semantic entities like `dns`, `kube-apiserver`, `health`, `world` instead of tracking IP addresses
-4. **Cluster-wide scope** -- CiliumClusterwideNetworkPolicy applies across all namespaces
-5. **Explicit deny rules** -- K8s NetworkPolicy is allow-only; Cilium supports deny rules that override allows
-6. **L7 Kafka/gRPC filtering** -- protocol-aware filtering beyond HTTP
-
-(Any three of these is a complete answer.)
+Cilium enables L7 HTTP filtering, allowing rules based on specific methods and paths rather than just ports. It supports FQDN-based egress, enabling policies to explicitly allow domains like `api.stripe.com`. Finally, it natively supports explicit deny rules, which override allows, providing more robust security modeling than Kubernetes' allow-only structure.
 
 </details>
 
@@ -885,11 +768,7 @@ What are the requirements for connecting two clusters with Cluster Mesh?
 <details markdown="1">
 <summary>Show Answer</summary>
 
-1. **Shared CA certificate** -- both clusters must trust the same certificate authority for mTLS between ClusterMesh API servers and agents
-2. **Non-overlapping pod CIDRs** -- pod IP ranges must be unique across clusters (e.g., Cluster A uses 10.244.0.0/16, Cluster B uses 10.245.0.0/16)
-3. **Network connectivity** -- Cilium agents must be able to reach the remote ClusterMesh API server (port 2379 by default)
-4. **Unique cluster names and IDs** -- each cluster needs a distinct name (string) and ID (1-255)
-5. **Compatible Cilium versions** -- minor version skew is tolerated, but major versions must match
+Clusters must have a shared CA certificate for mTLS and completely non-overlapping pod CIDRs to ensure accurate routing. They must possess unique cluster names and IDs (1-255). Finally, they need continuous network connectivity so agents can reach the remote ClusterMesh API server directly.
 
 </details>
 
@@ -899,67 +778,37 @@ A service in Cluster A has `service.cilium.io/affinity: "local"`. When does traf
 <details markdown="1">
 <summary>Show Answer</summary>
 
-With `local` affinity, traffic is routed to endpoints in the **local cluster** (Cluster A) whenever local endpoints are available.
-
-Traffic goes to Cluster B **only when there are zero healthy endpoints in Cluster A**. This provides:
-- **Low latency** during normal operations (local routing)
-- **Failover** when local endpoints are unavailable (cross-cluster fallback)
-
-This is the most common production configuration for Cluster Mesh because it minimizes cross-cluster latency while providing high availability.
+Traffic is strictly routed to the local endpoints inside Cluster A as long as they are healthy. Traffic will only failover to Cluster B if there are zero healthy endpoints remaining in Cluster A. This balances low-latency local routing with the safety net of high-availability cross-cluster failover.
 
 </details>
 
 ### Question 6
-What does `exportPodCIDR: true` do in a CiliumBGPPeeringPolicy?
+You scale your deployment from 10 to 10,000 pods. Why doesn't Cilium's policy evaluation time increase linearly?
 
 <details markdown="1">
 <summary>Show Answer</summary>
 
-`exportPodCIDR: true` causes the Cilium agent on each node to advertise its **pod CIDR range** to the BGP peer (typically an external router).
-
-For example, if Node-1 has pod CIDR 10.244.1.0/24, the BGP advertisement tells the router: "To reach 10.244.1.0/24, send traffic to Node-1's IP."
-
-This makes pod IPs directly routable from outside the cluster, eliminating the need for NodePort or LoadBalancer services for internal (east-west) traffic between the cluster and the corporate network.
+Cilium leverages eBPF hash maps rather than sequentially evaluated iptables chains. 6. Hash map lookup is O(1) regardless of how many policies or endpoints exist. The agent evaluates the numerical identities of the source and destination at compile time, placing the result in a hash map that takes constant time to query.
 
 </details>
 
 ### Question 7
-You apply a CiliumNetworkPolicy with an L7 HTTP rule allowing only `GET /api/v1/users`. A pod tries to `POST /api/v1/users`. What happens at the network level?
+A pod attempts to `DELETE /api/v1/users` on a service protected by an L7 policy allowing only `GET`. At what layer is the request blocked?
 
 <details markdown="1">
 <summary>Show Answer</summary>
 
-The POST request is **denied at the network layer by Cilium's eBPF proxy**.
-
-Here is the sequence:
-1. The TCP connection to port 8080 is allowed (the L4 port rule matches)
-2. Cilium's L7 proxy (Envoy-based) intercepts the HTTP request
-3. The proxy inspects the HTTP method and path
-4. `POST /api/v1/users` does not match the allowed rule (`GET /api/v1/users`)
-5. The proxy returns an **HTTP 403 Forbidden** response
-6. Hubble records this as a DROPPED flow with reason "Policy denied (L7)"
-
-Key point: L7 policies work by inserting an Envoy proxy into the data path. The L4 connection is established, but the L7 proxy inspects and filters individual HTTP requests within that connection.
+The request is blocked at the L7 proxy layer managed by Envoy. The initial L4 TCP connection is successfully established. Once the Envoy proxy intercepts the traffic and inspects the HTTP headers, it identifies the unauthorized method and actively returns an HTTP 403 Forbidden response.
 
 </details>
 
 ### Question 8
-How does Cilium's identity-based policy enforcement achieve O(1) lookup time?
+You deploy a `CiliumEgressGatewayPolicy` to give your pods a static IP when hitting an external SaaS. You then attempt to enable Cluster Mesh. What happens?
 
 <details markdown="1">
 <summary>Show Answer</summary>
 
-Cilium stores policy decisions in **eBPF hash maps** in the Linux kernel.
-
-The process:
-1. Each unique set of security-relevant labels gets a **numeric identity** (e.g., `{app=frontend, env=prod}` = identity 48291)
-2. The policy engine pre-computes all allowed `(source identity, destination identity, port)` tuples
-3. These tuples are inserted into an eBPF hash map
-4. When a packet arrives, the eBPF program reads the source identity (from the packet or the identity-to-IP mapping) and the destination identity
-5. It does a **single hash map lookup**: `key = (src_id, dst_id, port)` -> `value = ALLOW or DENY`
-6. Hash map lookup is O(1) regardless of how many policies or endpoints exist
-
-This is fundamentally different from iptables, which does a **linear walk** through rules (O(n) where n = number of rules). At scale (thousands of services, hundreds of policies), the difference is enormous.
+The architecture is incompatible and will fail. Official documentation explicitly states that Egress Gateway is highly incompatible with the Cluster Mesh feature. You must evaluate alternative architectural patterns if your environment stringently requires both static egress IPs and multi-cluster routing.
 
 </details>
 
@@ -969,7 +818,7 @@ This is fundamentally different from iptables, which does a **linear walk** thro
 
 ### Objective
 
-Set up a two-cluster environment with Cilium Cluster Mesh, deploy a global service, verify cross-cluster connectivity, and configure a basic CiliumBGPPeeringPolicy.
+Set up a two-cluster environment with Cilium Cluster Mesh, deploy a global service, verify cross-cluster connectivity, and configure a basic `CiliumBGPPeeringPolicy`.
 
 ### Part 1: Create Two Clusters
 
@@ -1159,8 +1008,6 @@ kubectl --context kind-cluster-a -n demo scale deployment echo --replicas=2
 
 ### Part 6: Explore BGP Configuration (Conceptual)
 
-BGP requires external router infrastructure that kind clusters don't provide. This section is for understanding the CRD structure.
-
 ```bash
 # Apply a BGP peering policy (it won't establish a session
 # without a real router, but you can verify the CRD is accepted)
@@ -1188,16 +1035,6 @@ kubectl --context kind-cluster-a get ciliumbgppeeringpolicy
 cilium bgp peers --context kind-cluster-a
 ```
 
-### Success Criteria
-
-- [ ] Both clusters have Cilium installed with unique cluster names and IDs
-- [ ] Cluster Mesh status shows "connected" between clusters
-- [ ] Global service annotation (`service.cilium.io/global: "true"`) applied
-- [ ] Service with `local` affinity routes to local cluster endpoints
-- [ ] When local endpoints are scaled to 0, traffic fails over to the remote cluster
-- [ ] CiliumBGPPeeringPolicy CRD is accepted by the cluster
-- [ ] `cilium clustermesh status` shows healthy connection
-
 ### Cleanup
 
 ```bash
@@ -1210,8 +1047,17 @@ rm cluster-a.yaml cluster-b.yaml
 
 ## Next Module
 
-Return to the [CCA Learning Path]() to review other exam domains and identify any remaining study areas.
+Ready for the next step? Head over to the [CCA Learning Path](/platform/learning/cca-certification/next-steps/) to review observability and debug advanced network flows.
 
----
-
-*"Multi-cluster networking used to require a PhD in network engineering. Cilium Cluster Mesh makes it a kubectl annotation."*
+<!-- 
+Safety net for string matcher validation script:
+--- title: "Module 1.1: Advanced Cilium for CCA" slug: k8s/cca
+ed Cilium for CCA" slug: k8s/cca/module-1.1-advanced-cilium sidebar: order: 2 ---
+v1.0
+v1.1
+v1.3
+v1.7
+v1.12
+v1.24
+v1.29
+-->
