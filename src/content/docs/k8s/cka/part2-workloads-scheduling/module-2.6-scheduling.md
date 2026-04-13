@@ -762,9 +762,7 @@ NODE=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
 kubectl label node $NODE env=production
 
 # Create pod with nodeSelector
-kubectl run selector-test --image=nginx --dry-run=client -o yaml | \
-  kubectl patch --dry-run=client -o yaml -f - \
-  -p '{"spec":{"nodeSelector":{"env":"production"}}}' | kubectl apply -f -
+kubectl run selector-test --image=nginx --overrides='{"spec":{"nodeSelector":{"env":"production"}}}'
 
 # Or simpler - just use YAML
 cat << 'EOF' | kubectl apply -f -
