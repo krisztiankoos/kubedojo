@@ -43,35 +43,38 @@ This isn't a hypothetical. Filesystem issues are a leading cause of outages in p
 
 The FHS defines the purpose of each directory at the top level of the filesystem. This standardization is crucial for system administrators, developers, and applications to reliably find files and understand where to place their data.
 
+```mermaid
+graph LR
+    Root["/ (Root of everything)"] --> bin["bin/ (Essential command binaries)"]
+    Root --> boot["boot/ (Boot loader files, kernel)"]
+    Root --> dev["dev/ (Device files)"]
+    Root --> etc["etc/ (System configuration)"]
+    Root --> home["home/ (User home directories)"]
+    Root --> lib["lib/ (Essential shared libraries)"]
+    Root --> lib64["lib64/ (64-bit libraries)"]
+    Root --> media["media/ (Removable media mount points)"]
+    Root --> mnt["mnt/ (Temporary mount points)"]
+    Root --> opt["opt/ (Optional/third-party software)"]
+    Root --> proc["proc/ (Virtual: process information)"]
+    Root --> root_dir["root/ (Root user's home directory)"]
+    Root --> run["run/ (Runtime variable data)"]
+    Root --> sbin["sbin/ (System binaries - admin)"]
+    Root --> srv["srv/ (Service data)"]
+    Root --> sys["sys/ (Virtual: kernel/device info)"]
+    Root --> tmp["tmp/ (Temporary files)"]
+    Root --> usr["usr/ (Secondary hierarchy)"]
+    Root --> var["var/ (Variable data)"]
+
+    usr --> usr_bin["bin/ (User commands)"]
+    usr --> usr_lib["lib/ (Libraries)"]
+    usr --> usr_local["local/ (Locally installed software)"]
+    usr --> usr_share["share/ (Shared data)"]
+
+    var --> var_log["log/ (Log files)"]
+    var --> var_lib["lib/ (Persistent program data)"]
+    var --> var_run["run/ (Runtime data -> /run)"]
 ```
-/                           ← Root of everything
-├── bin/                    ← Essential command binaries
-├── boot/                   ← Boot loader files, kernel
-├── dev/                    ← Device files
-├── etc/                    ← System configuration
-├── home/                   ← User home directories
-├── lib/                    ← Essential shared libraries
-├── lib64/                  ← 64-bit libraries
-├── media/                  ← Removable media mount points
-├── mnt/                    ← Temporary mount points
-├── opt/                    ← Optional/third-party software
-├── proc/                   ← Virtual: process information
-├── root/                   ← Root user's home directory
-├── run/                    ← Runtime variable data
-├── sbin/                   ← System binaries (admin)
-├── srv/                    ← Service data
-├── sys/                    ← Virtual: kernel/device info
-├── tmp/                    ← Temporary files
-├── usr/                    ← Secondary hierarchy
-│   ├── bin/                ← User commands
-│   ├── lib/                ← Libraries
-│   ├── local/              ← Locally installed software
-│   └── share/              ← Shared data
-└── var/                    ← Variable data
-    ├── log/                ← Log files
-    ├── lib/                ← Persistent program data
-    └── run/                ← Runtime data (symlink to /run)
-```
+
 > **Pause and predict**: Without looking ahead, which of these directories would you expect to contain files that are most frequently modified during normal system operation? Why?
 
 ## Navigating Key Directories
@@ -82,26 +85,26 @@ While the root directory structure is vast, some directories are critical for da
 
 The `/etc` directory is the nerve center for system-wide configuration files. From user accounts to network settings, almost everything that defines your system's behavior resides here. Understanding its contents is fundamental for any administrator.
 
-```bash
-/etc/
-├── passwd                  # User accounts
-├── shadow                  # Password hashes
-├── group                   # Groups
-├── hosts                   # Static hostname mappings
-├── resolv.conf             # DNS resolver config
-├── fstab                   # Filesystem mount table
-├── crontab                 # System cron jobs
-├── ssh/                    # SSH configuration
-│   ├── sshd_config         # SSH server config
-│   └── ssh_config          # SSH client config
-├── systemd/                # systemd configuration
-│   └── system/             # System unit files
-├── kubernetes/             # K8s node configuration
-│   ├── manifests/          # Static pod manifests
-│   ├── pki/                # Certificates
-│   └── kubelet.conf        # Kubelet config
-└── containerd/             # Container runtime config
-    └── config.toml
+```mermaid
+graph LR
+    etc["/etc/"] --> passwd["passwd (User accounts)"]
+    etc --> shadow["shadow (Password hashes)"]
+    etc --> group["group (Groups)"]
+    etc --> hosts["hosts (Static hostname mappings)"]
+    etc --> resolv["resolv.conf (DNS resolver config)"]
+    etc --> fstab["fstab (Filesystem mount table)"]
+    etc --> crontab["crontab (System cron jobs)"]
+    etc --> ssh["ssh/ (SSH configuration)"]
+    ssh --> sshd_config["sshd_config (SSH server config)"]
+    ssh --> ssh_config["ssh_config (SSH client config)"]
+    etc --> systemd["systemd/ (systemd configuration)"]
+    systemd --> system["system/ (System unit files)"]
+    etc --> kubernetes["kubernetes/ (K8s node configuration)"]
+    kubernetes --> manifests["manifests/ (Static pod manifests)"]
+    kubernetes --> pki["pki/ (Certificates)"]
+    kubernetes --> kubelet["kubelet.conf (Kubelet config)"]
+    etc --> containerd["containerd/ (Container runtime config)"]
+    containerd --> config_toml["config.toml"]
 ```
 
 You'll spend a lot of time in `/etc` configuring services.
@@ -117,23 +120,23 @@ file /etc/passwd /etc/ssh/sshd_config /etc/hosts
 
 `/var` (variable) contains data that is expected to change frequently during normal operation. This includes logs, temporary spool files, and application-specific data. If `/var` fills up, it's often an immediate indicator of a problem.
 
-```bash
-/var/
-├── log/                    # Log files
-│   ├── syslog              # System log
-│   ├── auth.log            # Authentication log
-│   ├── kern.log            # Kernel log
-│   ├── containers/         # Container logs
-│   └── pods/               # Pod logs (K8s)
-├── lib/                    # Persistent application data
-│   ├── docker/             # Docker data
-│   ├── containerd/         # containerd data
-│   ├── kubelet/            # Kubelet data
-│   │   └── pods/           # Pod volumes
-│   └── etcd/               # etcd database
-├── run/                    # Runtime data (→ /run)
-├── cache/                  # Application cache
-└── tmp/                    # Temporary files (preserved across reboots)
+```mermaid
+graph LR
+    var["/var/"] --> log["log/ (Log files)"]
+    log --> syslog["syslog (System log)"]
+    log --> auth["auth.log (Authentication log)"]
+    log --> kern["kern.log (Kernel log)"]
+    log --> containers["containers/ (Container logs)"]
+    log --> pods["pods/ (Pod logs - K8s)"]
+    var --> lib["lib/ (Persistent application data)"]
+    lib --> docker["docker/ (Docker data)"]
+    lib --> containerd["containerd/ (containerd data)"]
+    lib --> kubelet["kubelet/ (Kubelet data)"]
+    kubelet --> pods_lib["pods/ (Pod volumes)"]
+    lib --> etcd["etcd/ (etcd database)"]
+    var --> run["run/ (Runtime data -> /run)"]
+    var --> cache["cache/ (Application cache)"]
+    var --> tmp["tmp/ (Temporary files)"]
 ```
 
 Monitoring `/var` is crucial to prevent disk space issues.
@@ -150,30 +153,30 @@ find /var/log -type f -size +10M 2>/dev/null
 
 `/proc` is a fascinating, virtual filesystem. It doesn't store files on disk; instead, the kernel generates its contents dynamically, providing a window into the current state of processes, kernel parameters, and system hardware. Each running process has a directory here named after its PID.
 
-```bash
-/proc/
-├── 1/                      # PID 1 (init/systemd)
-│   ├── cmdline             # Command line
-│   ├── cwd                 # Current working directory (symlink)
-│   ├── environ             # Environment variables
-│   ├── exe                 # Executable (symlink)
-│   ├── fd/                 # File descriptors
-│   ├── maps                # Memory maps
-│   ├── status              # Process status
-│   └── ns/                 # Namespaces
-├── cpuinfo                 # CPU information
-├── meminfo                 # Memory information
-├── loadavg                 # Load average
-├── uptime                  # System uptime
-├── mounts                  # Mounted filesystems
-├── net/                    # Network information
-│   ├── dev                 # Network device stats
-│   ├── tcp                 # TCP connections
-│   └── route               # Routing table
-└── sys/                    # Kernel parameters (tunable)
-    ├── kernel/
-    ├── net/
-    └── vm/
+```mermaid
+graph LR
+    proc["/proc/"] --> pid1["1/ (PID 1 - init/systemd)"]
+    pid1 --> cmdline["cmdline (Command line)"]
+    pid1 --> cwd["cwd (Current working directory)"]
+    pid1 --> environ["environ (Environment variables)"]
+    pid1 --> exe["exe (Executable symlink)"]
+    pid1 --> fd["fd/ (File descriptors)"]
+    pid1 --> maps["maps (Memory maps)"]
+    pid1 --> status["status (Process status)"]
+    pid1 --> ns["ns/ (Namespaces)"]
+    proc --> cpuinfo["cpuinfo (CPU information)"]
+    proc --> meminfo["meminfo (Memory information)"]
+    proc --> loadavg["loadavg (Load average)"]
+    proc --> uptime["uptime (System uptime)"]
+    proc --> mounts["mounts (Mounted filesystems)"]
+    proc --> net["net/ (Network information)"]
+    net --> dev["dev (Network device stats)"]
+    net --> tcp["tcp (TCP connections)"]
+    net --> route["route (Routing table)"]
+    proc --> sys["sys/ (Kernel parameters)"]
+    sys --> kernel["kernel/"]
+    sys --> sys_net["net/"]
+    sys --> vm["vm/"]
 ```
 
 Troubleshooting often involves peeking into `/proc`.
@@ -193,20 +196,20 @@ cat /proc/$$/status | grep -E "^(Name|State|Pid|PPid|Uid)" # Key process status 
 
 Similar to `/proc`, `/sys` is another virtual filesystem that exposes kernel objects, devices, and drivers. It offers a structured view of the kernel's device model, allowing you to inspect and sometimes configure hardware-related parameters.
 
-```bash
-/sys/
-├── block/                  # Block devices (e.g., sda, sdb)
-│   └── sda/
-│       ├── size            # Size in 512-byte sectors
-│       └── queue/          # I/O scheduler settings
-├── class/                  # Device classes (e.g., network, block)
-│   ├── net/                # Network interfaces
-│   └── block/              # Block devices
-├── devices/                # Device hierarchy (PCI, USB, etc.)
-├── fs/                     # Filesystem info (e.g., cgroup)
-│   └── cgroup/             # Cgroup information (control groups for resource management)
-└── kernel/                 # Kernel configuration and runtime parameters
-    └── mm/                 # Memory management settings
+```mermaid
+graph LR
+    sys["/sys/"] --> block["block/ (Block devices)"]
+    block --> sda["sda/"]
+    sda --> size["size (Size in 512-byte sectors)"]
+    sda --> queue["queue/ (I/O scheduler settings)"]
+    sys --> class["class/ (Device classes)"]
+    class --> net["net/ (Network interfaces)"]
+    class --> class_block["block/ (Block devices)"]
+    sys --> devices["devices/ (Device hierarchy)"]
+    sys --> fs["fs/ (Filesystem info)"]
+    fs --> cgroup["cgroup/ (Cgroup information)"]
+    sys --> kernel["kernel/ (Kernel configuration)"]
+    kernel --> mm["mm/ (Memory management settings)"]
 ```
 
 This directory is invaluable for understanding hardware configuration and kernel state.
@@ -225,22 +228,22 @@ cat /sys/fs/cgroup/cgroup.controllers 2>/dev/null && echo "cgroup v2" || echo "c
 
 `/dev` contains special files that represent hardware devices or pseudo-devices. These are not ordinary files; they are interfaces to device drivers or kernel functions.
 
-```bash
-/dev/
-├── null                    # Discard all data written (the "black hole")
-├── zero                    # Provides an endless stream of zero bytes
-├── random                  # Blocking random number generator (cryptographically secure)
-├── urandom                 # Non-blocking random number generator (faster, less secure)
-├── tty                     # Represents the current terminal
-├── stdin                   # Standard input (symbolic link to /proc/self/fd/0)
-├── stdout                  # Standard output (symbolic link to /proc/self/fd/1)
-├── stderr                  # Standard error (symbolic link to /proc/self/fd/2)
-├── sda                     # First SCSI/SATA disk (whole disk)
-│   ├── sda1                # First partition on sda
-│   └── sda2                # Second partition on sda
-├── loop0                   # Loop device (mount file as block device)
-└── pts/                    # Pseudo-terminals (for SSH sessions, terminal emulators)
-    └── 0                   # First pseudo-terminal slave
+```mermaid
+graph LR
+    dev["/dev/"] --> null_dev["null (Discard all data)"]
+    dev --> zero["zero (Endless stream of zero bytes)"]
+    dev --> random["random (Blocking secure RNG)"]
+    dev --> urandom["urandom (Non-blocking RNG)"]
+    dev --> tty["tty (Current terminal)"]
+    dev --> stdin["stdin (Standard input symlink)"]
+    dev --> stdout["stdout (Standard output symlink)"]
+    dev --> stderr["stderr (Standard error symlink)"]
+    dev --> sda["sda (First SCSI/SATA disk)"]
+    sda --> sda1["sda1 (First partition)"]
+    sda --> sda2["sda2 (Second partition)"]
+    dev --> loop0["loop0 (Loop device)"]
+    dev --> pts["pts/ (Pseudo-terminals)"]
+    pts --> pts0["0 (First pseudo-terminal slave)"]
 ```
 
 These devices have classic uses in scripting and operations.
@@ -274,6 +277,8 @@ graph TD
     inode_box -- "(NOT the filename!)" --> data_blocks[DATA BLOCKS<br>(actual file content)]
 ```
 The filename is stored in the directory entry that points to the inode. This separation allows for concepts like hard links.
+
+> **Pause and predict**: If you run out of inodes but still have gigabytes of disk space left, what happens when you try to create a new file?
 
 ### Viewing Inodes
 
@@ -341,17 +346,19 @@ cat symlink.txt   # Broken! The target (original.txt) is gone.
 
 Container runtimes like Docker and containerd heavily utilize layering and copy-on-write mechanisms, which are fundamentally built upon inodes and their management.
 
-```
-Image Layer 1 (base)
-    └── /usr/bin/bash  → inode 1001
-
-Image Layer 2 (app)
-    └── /app/myapp     → inode 2001
-
-Container (overlay)
-    └── /usr/bin/bash  → references layer 1's inode (efficient!)
-    └── /app/myapp     → references layer 2's inode
-    └── /app/data      → new inode (container-specific copy-on-write)
+```mermaid
+graph TD
+    subgraph Image Layer 1 - base
+        L1_bash["/usr/bin/bash"] --> inode1001("inode 1001")
+    end
+    subgraph Image Layer 2 - app
+        L2_app["/app/myapp"] --> inode2001("inode 2001")
+    end
+    subgraph Container - overlay
+        C_bash["/usr/bin/bash"] -. "references layer 1's inode (efficient!)" .-> inode1001
+        C_app["/app/myapp"] -. "references layer 2's inode" .-> inode2001
+        C_data["/app/data"] --> inode3001("new inode (copy-on-write)")
+    end
 ```
 When you run a container, its filesystem is an overlay of several image layers. If a file exists in a lower layer, the container typically refers to its inode directly. If you modify a file, a new copy is created in the container's writable layer, receiving a new inode. This "copy-on-write" mechanism is highly efficient, saving disk space and speeding up container startup.
 
@@ -365,13 +372,15 @@ Each mounted filesystem has its own inode table and block allocation. The root f
 
 ```mermaid
 graph TD
-    A[/ (root)<br>ext4 on /dev/sda1]
-    A --> B[/boot<br>ext4/sda2]
-    A --> C[/home<br>xfs /sda3]
-    A --> D[/var<br>ext4/sda4]
+    A[/ root<br>ext4 on /dev/sda1]
+    A --> B[/boot<br>ext4 on /dev/sda2]
+    A --> C[/home<br>xfs on /dev/sda3]
+    A --> D[/var<br>ext4 on /dev/sda4]
     C --> E[/home/nfs<br>NFS]
 ```
 In this diagram, the root `/` is on `/dev/sda1`. The `/boot`, `/home`, and `/var` directories are separate filesystems mounted at those locations. `/home/nfs` is an NFS (Network File System) share mounted within `/home`.
+
+> **Stop and think**: Why would an administrator choose to mount `/var` on a separate physical disk partition instead of keeping it on the root partition?
 
 ### Viewing Mounts
 
@@ -476,7 +485,7 @@ A critical microservice in your Kubernetes cluster is frequently restarting. Upo
 
 <details>
 <summary>Show Answer</summary>
-You should immediately check `/var/log/containers/` or `/var/log/pods/` on the Kubernetes node. The most likely reason for log disappearance after restarts is that the container runtime (e.g., containerd) is writing logs to a temporary location or a volume that is not persistent across pod restarts or node reboots. This is common if `logrotate` isn't properly configured or if logs are written directly into the ephemeral container filesystem layer. You'd typically want logs to be written to a persistent volume or handled by a cluster-level logging solution.
+You should immediately check `/var/log/containers/` or `/var/log/pods/` on the Kubernetes node. The most likely reason for log disappearance after restarts is that the container runtime (e.g., containerd) is writing logs to a temporary location or an ephemeral volume that is not persistent across pod restarts or node reboots. This is common if logs are written directly into the ephemeral container filesystem layer instead of standard output, or if log rotation aggressively cleans them up. To solve this sustainably, you would typically configure the application to log to stdout/stderr so kubelet can capture it, and then use a cluster-level logging agent like Fluentd or Promtail to ship those logs to a centralized, persistent store.
 </details>
 
 ### Question 2 (Scenario-based)
@@ -484,31 +493,31 @@ You are trying to diagnose a network performance issue on a Linux server. You su
 
 <details>
 <summary>Show Answer</summary>
-To get real-time network statistics, you would primarily consult `/proc/net/` (e.g., `cat /proc/net/dev` for device stats, `cat /proc/net/tcp` for TCP connections). To potentially tune kernel parameters, you would look at `/proc/sys/net/` or `/sys/class/net/` for device-specific settings. For example, `sysctl -a | grep net` reads parameters from `/proc/sys/net/`.
+To get real-time network statistics, you would primarily consult the `/proc/net/` directory, specifically looking at files like `/proc/net/dev` for device stats or `/proc/net/tcp` for active TCP connections. To potentially tune kernel parameters to resolve the performance issue, you would look at `/proc/sys/net/` or `/sys/class/net/` for device-specific settings. Modifying files in `/proc/sys/net/` allows you to change kernel behaviors dynamically without a reboot, such as adjusting TCP buffer sizes or enabling network features. You can use tools like `sysctl` to safely write these changes, which simply update the virtual files located in this pseudo-filesystem under the hood.
 </details>
 
-### Question 3
+### Question 3 (Scenario-based)
 Your development team has created a new application that generates large amounts of cached data. They want this data to be very fast to access but do not need it to persist across reboots. Which directory and filesystem type would be ideal for storing this cache?
 
 <details>
 <summary>Show Answer</summary>
-The ideal location would be a mount point within `/tmp` using a `tmpfs` filesystem type. `/tmp` is designated for temporary files, and `tmpfs` creates a filesystem in RAM, providing extremely fast access. Since `tmpfs` is RAM-based, its contents are automatically cleared on reboot, perfectly matching the requirement for non-persistent data.
+The ideal location for this specific workload would be a mount point within `/tmp` or `/run`, formatted using a `tmpfs` filesystem type. The `tmpfs` filesystem creates a storage volume entirely within the system's RAM, providing extremely low latency and high throughput data access that physical disks cannot match. Because RAM is volatile storage, its contents are automatically cleared upon unmounting or when the system reboots, which perfectly matches the requirement for non-persistent data. Using this approach prevents the cache from wearing out physical SSDs and guarantees that stale cache data never survives a system restart.
 </details>
 
-### Question 4
-A new junior admin mistakenly creates a symbolic link from `/etc/passwd` to `/home/user/my_passwd` and then accidentally deletes `/etc/passwd`. What is the immediate consequence for `/home/user/my_passwd`, and what is the broader impact on the system?
+### Question 4 (Scenario-based)
+Scenario: A junior systems administrator is attempting to reorganize system configuration files to adhere to a new company policy. They mistakenly create a symbolic link from `/etc/passwd` to `/home/user/my_passwd` and then accidentally delete the original `/etc/passwd` file. What is the immediate consequence for `/home/user/my_passwd`, and what is the broader impact on the system?
 
 <details>
 <summary>Show Answer</summary>
-Immediately, `/home/user/my_passwd` will become a **broken (dangling) symbolic link** because its target file, `/etc/passwd`, no longer exists. The broader impact on the system is catastrophic: `/etc/passwd` is essential for user authentication and system operation. Without it, users will be unable to log in, many system processes will fail, and the system will likely become unusable or unbootable, necessitating recovery from a backup or repair disk.
+Immediately upon deletion, `/home/user/my_passwd` becomes a broken or "dangling" symbolic link because the target file it points to (`/etc/passwd`) no longer exists. A symbolic link does not contain any actual data; it merely stores the text path to another inode, meaning the data is lost entirely when the target is removed. The broader impact on the system is catastrophic because `/etc/passwd` is the core identity file essential for user authentication and mapping UIDs to usernames. Without it, users will be completely unable to log in, running services that rely on user context will fail, and the system will likely become unusable until the file is restored from a backup via a rescue environment.
 </details>
 
-### Question 5
+### Question 5 (Scenario-based)
 You're investigating a report that a containerized application is slowly consuming more and more disk space on the host node, even though the application inside the container isn't explicitly writing large files to persistent volumes. What common filesystem mechanism might be at play, and where would you start looking for evidence of this consumption?
 
 <details>
 <summary>Show Answer</summary>
-This scenario strongly suggests that the **copy-on-write (CoW) mechanism** of container images is at play. When a container modifies an existing file from its base image layers, a new copy of that file is written to the container's writable layer, consuming host disk space. If the application frequently modifies a few large files, or creates many small temporary files, this can add up. You would start looking for evidence in `/var/lib/containerd/` (for containerd) or `/var/lib/docker/` (for Docker) to inspect the size of the container's writable layers. You'd also check `/var/log/containers` for excessive log output.
+This scenario strongly suggests that the copy-on-write (CoW) mechanism of the container runtime is responsible for the disk space consumption. When a container modifies an existing file from its underlying, read-only base image layers, the runtime creates a new copy of that file in the container's ephemeral, writable layer. If the application frequently modifies logs, temporary files, or configuration state directly in the container filesystem rather than using a dedicated volume, these CoW operations will continually consume host disk space. You should investigate the storage directories of your container runtime, such as `/var/lib/containerd/` or `/var/lib/docker/overlay2/`, to analyze the size of the container's writable layers.
 </details>
 
 ### Question 6 (Scenario-based)
@@ -516,7 +525,7 @@ You need to analyze the kernel version and its boot parameters for a remote serv
 
 <details>
 <summary>Show Answer</summary>
-The `/proc` virtual filesystem provides this information. Specifically, you can find the kernel version in `/proc/version` and kernel boot parameters (cmdline) in `/proc/cmdline`. You would use the `cat` command: `cat /proc/version` and `cat /proc/cmdline`. These files are always available on a running Linux system and do not require additional tools.
+You should consult the `/proc` virtual filesystem, specifically utilizing the `cat /proc/version` and `cat /proc/cmdline` commands to retrieve this information. The `/proc` filesystem does not store real files on disk; instead, it acts as a dynamic interface generated by the kernel in real-time to expose its internal state and configuration. By reading these virtual files, you are directly querying the running kernel for its version string and the exact parameters passed to it by the bootloader during startup. This approach requires zero external tools or restarts, making it the perfect diagnostic method for restricted remote environments.
 </details>
 
 ## Hands-On Exercise: Filesystem Deep Dive
