@@ -57,27 +57,24 @@ When a pod is evicted for memory pressure or your application is mysteriously sl
 
 **Control groups (cgroups)** organize processes into hierarchical groups whose resource usage can be limited, monitored, and controlled.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                          CGROUP HIERARCHY                        │
-│                                                                  │
-│                            / (root)                              │
-│                               │                                  │
-│              ┌────────────────┼────────────────┐                 │
-│              ▼                ▼                ▼                 │
-│        ┌──────────┐    ┌──────────┐    ┌──────────┐             │
-│        │ system   │    │  user    │    │ kubepods │             │
-│        └────┬─────┘    └────┬─────┘    └────┬─────┘             │
-│             │               │               │                    │
-│        ┌────┴────┐         ...        ┌─────┴─────┐             │
-│        ▼         ▼                    ▼           ▼             │
-│   ┌─────────┐ ┌─────────┐      ┌──────────┐ ┌──────────┐        │
-│   │  sshd   │ │ docker  │      │ burstable│ │guaranteed│        │
-│   │ 512 MB  │ │ 2 GB    │      │          │ │          │        │
-│   └─────────┘ └─────────┘      └────┬─────┘ └────┬─────┘        │
-│                                     │            │               │
-│                                 pod-abc...   pod-xyz...          │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Root["/ (root)"]
+    
+    Root --> System["system"]
+    Root --> User["user"]
+    Root --> Kubepods["kubepods"]
+    
+    System --> SSHD["sshd<br>512 MB"]
+    System --> Docker["docker<br>2 GB"]
+    
+    User --> Dots["..."]
+    
+    Kubepods --> Burstable["burstable"]
+    Kubepods --> Guaranteed["guaranteed"]
+    
+    Burstable --> PodABC["pod-abc..."]
+    Guaranteed --> PodXYZ["pod-xyz..."]
 ```
 
 ### What cgroups Control
@@ -166,21 +163,17 @@ cat /sys/fs/cgroup/cgroup.controllers 2>/dev/null && echo "v2" || echo "v1 or mi
 
 > **Stop and think**: If a Java application with a 512MB heap size is placed in a container with a 512MB cgroup memory limit, it will almost certainly be OOMKilled. Why? Consider what else inside the container's environment or the JVM process requires memory beyond just the allocated heap space.
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    CONTAINER MEMORY                             │
-│                                                                 │
-│  memory.max = 512MB                                            │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                    Used: 400MB                           │   │
-│  │  ███████████████████████████████████████░░░░░░░░░░░░░░  │   │
-│  │  ◄──────── 400MB ─────────►│◄── 112MB ──►              │   │
-│  │              Used           │   Available                │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                 │
-│  If usage reaches 512MB → OOM KILL                             │
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph Container_Memory ["Container Memory (memory.max = 512MB)"]
+        direction LR
+        U["Used: 400MB"] --- A["Available: 112MB"]
+    end
+    Container_Memory --> OOM["If usage reaches 512MB → OOM KILL"]
+    
+    style U fill:#ff9999,stroke:#333,stroke-width:2px
+    style A fill:#99ff99,stroke:#333,stroke-width:2px
+    style OOM fill:#ff4444,color:white,stroke:#333,stroke-width:2px
 ```
 
 ### The OOM Killer
@@ -238,23 +231,18 @@ cat /sys/fs/cgroup/user.slice/memory.stat
 
 Unlike memory, CPU doesn't trigger kills—it **throttles**.
 
-```
-┌────────────────────────────────────────────────────────────────┐
-│                    CPU CFS BANDWIDTH                            │
-│                                                                 │
-│  Period: 100ms                                                  │
-│  Quota: 50ms (50% of one CPU = "500m" in Kubernetes)           │
-│                                                                 │
-│  ┌────────────────────────────────────────────────────────┐    │
-│  │ Time: 0ms                                    100ms     │    │
-│  │ ├─────────────────────────────────────────────────────►│    │
-│  │                                                         │    │
-│  │ ████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░ │    │
-│  │ ◄──── Running (50ms) ────►│◄──── Throttled ────────► │    │
-│  └────────────────────────────────────────────────────────┘    │
-│                                                                 │
-│  After using 50ms in 100ms period → throttled until next period│
-└────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph CFS_Bandwidth ["CPU CFS Bandwidth (Period: 100ms, Quota: 50ms = '500m')"]
+        direction LR
+        Start["Time: 0ms"] --> R["Running (50ms)"]
+        R --> T["Throttled (50ms)"]
+        T --> End["Time: 100ms"]
+    end
+    CFS_Bandwidth --> Note["After using 50ms in 100ms period → throttled until next period"]
+    
+    style R fill:#99ff99,stroke:#333,stroke-width:2px
+    style T fill:#ff9999,stroke:#333,stroke-width:2px
 ```
 
 ### Kubernetes CPU Units
@@ -316,22 +304,19 @@ resources:
 
 ### QoS Classes and cgroups
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    KUBEPODS CGROUP HIERARCHY                     │
-│                                                                  │
-│  /sys/fs/cgroup/kubepods.slice/                                 │
-│  │                                                               │
-│  ├── kubepods-burstable.slice/          ← Burstable pods        │
-│  │   └── kubepods-burstable-pod<uid>/   ← Individual pod        │
-│  │       └── cri-containerd-<id>/       ← Container             │
-│  │                                                               │
-│  ├── kubepods-besteffort.slice/         ← BestEffort pods       │
-│  │   └── ...                                                     │
-│  │                                                               │
-│  └── kubepods-pod<uid>/                 ← Guaranteed pods       │
-│      └── ...                            (directly under kubepods)│
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    Root["/sys/fs/cgroup/kubepods.slice/"]
+    
+    Root --> Burstable["kubepods-burstable.slice/ (Burstable pods)"]
+    Root --> BestEffort["kubepods-besteffort.slice/ (BestEffort pods)"]
+    Root --> Guaranteed["kubepods-pod<uid>/ (Guaranteed pods directly under kubepods)"]
+    
+    Burstable --> B_Pod["kubepods-burstable-pod<uid>/ (Individual pod)"]
+    B_Pod --> B_Container["cri-containerd-<id>/ (Container)"]
+    
+    BestEffort --> BE_Dots["..."]
+    Guaranteed --> G_Dots["..."]
 ```
 
 ### Finding Pod cgroups
