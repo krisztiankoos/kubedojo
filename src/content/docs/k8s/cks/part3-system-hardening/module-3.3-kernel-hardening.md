@@ -83,7 +83,7 @@ dpkg -l | wc -l  # Debian/Ubuntu
 rpm -qa | wc -l  # RHEL/CentOS
 
 # Remove unnecessary packages
-sudo apt remove --purge $(dpkg -l | grep -E 'games|office' | awk '{print $2}')
+sudo apt remove -y --purge $(dpkg -l | grep -E 'games|office' | awk '{print $2}')
 
 # Kubernetes nodes should have minimal software:
 # - Container runtime (containerd, CRI-O)
@@ -336,7 +336,7 @@ sudo chmod 644 /etc/kubernetes/pki/*.crt
 
 ```bash
 # Install auditd
-sudo apt install auditd
+sudo apt install -y auditd
 
 # Configure audit rules for container security
 # /etc/audit/rules.d/docker.rules
@@ -415,7 +415,7 @@ ls -la /var/lib/kubelet/config.yaml
 |------|----------------|----------------|
 | Packages | Minimal install | Remove unused packages |
 | Services | Disable unused | `systemctl disable <service>` |
-| Updates | Regular patching | `apt update && apt upgrade` |
+| Updates | Regular patching | `apt update && apt upgrade -y` |
 | SSH | No root, key only | `/etc/ssh/sshd_config` |
 | sysctl | Restrictive settings | `/etc/sysctl.d/*.conf` |
 | Files | Proper permissions | `chmod 600` for sensitive files |
