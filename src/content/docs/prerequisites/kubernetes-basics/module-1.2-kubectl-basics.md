@@ -52,7 +52,7 @@ kubectl describe pod nginx         # Detailed info
 kubectl delete pod nginx           # Delete resource
 ```
 
-> **Stop and think**: If `kubectl get pods` lists pods, what command would you guess lists the nodes that make up your cluster? 
+> **Stop and think**: If `kubectl get pods` lists pods, what command would you guess lists the nodes that make up your cluster? (Answer: `kubectl get nodes`).
 
 ---
 
@@ -119,7 +119,7 @@ kubectl patch deployment nginx -p '{"spec":{"replicas":3}}'
 kubectl scale deployment nginx --replicas=5
 
 # Set image
-kubectl set image deployment/nginx nginx=nginx:1.26
+kubectl set image deployment/nginx nginx=nginx:1.28.0
 ```
 
 ### Deleting Resources
