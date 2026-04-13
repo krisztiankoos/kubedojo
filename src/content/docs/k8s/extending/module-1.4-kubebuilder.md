@@ -75,41 +75,31 @@ By the end of this module, you will be able to:
 
 ### 1.2 controller-runtime Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    controller-runtime                                │
-│                                                                     │
-│   ┌──────────────────────────────────────────────────────────┐     │
-│   │                       Manager                             │     │
-│   │                                                           │     │
-│   │   • Creates shared cache (informers)                      │     │
-│   │   • Manages controller lifecycle                          │     │
-│   │   • Handles leader election                               │     │
-│   │   • Runs webhook server                                   │     │
-│   │   • Provides health/readiness endpoints                   │     │
-│   └──────────────┬──────────────────┬────────────────────────┘     │
-│                  │                  │                               │
-│        ┌─────────▼────────┐  ┌─────▼──────────────┐               │
-│        │   Controller 1   │  │   Controller 2     │               │
-│        │                  │  │                    │               │
-│        │  ┌────────────┐  │  │  ┌────────────┐   │               │
-│        │  │ Reconciler │  │  │  │ Reconciler │   │               │
-│        │  │ (YOUR CODE)│  │  │  │ (YOUR CODE)│   │               │
-│        │  └────────────┘  │  │  └────────────┘   │               │
-│        │                  │  │                    │               │
-│        │  Watches:        │  │  Watches:          │               │
-│        │  - Primary CR    │  │  - Primary CR      │               │
-│        │  - Owned Deps    │  │  - Owned ConfigMaps│               │
-│        └──────────────────┘  └────────────────────┘               │
-│                                                                     │
-│   ┌──────────────────────────────────────────────────────────┐     │
-│   │                     Shared Cache                          │     │
-│   │                                                           │     │
-│   │   All controllers share the same informer cache.          │     │
-│   │   One Watch per GVK, not per controller.                  │     │
-│   └──────────────────────────────────────────────────────────┘     │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph CR [controller-runtime]
+        direction TB
+        
+        M["Manager<br/>• Creates shared cache (informers)<br/>• Manages controller lifecycle<br/>• Handles leader election<br/>• Runs webhook server<br/>• Provides health/readiness endpoints"]
+        
+        subgraph C1 ["Controller 1"]
+            R1["Reconciler<br/>(YOUR CODE)"]
+            W1["Watches:<br/>- Primary CR<br/>- Owned Deps"]
+        end
+        
+        subgraph C2 ["Controller 2"]
+            R2["Reconciler<br/>(YOUR CODE)"]
+            W2["Watches:<br/>- Primary CR<br/>- Owned ConfigMaps"]
+        end
+        
+        SC["Shared Cache<br/>All controllers share the same informer cache.<br/>One Watch per GVK, not per controller."]
+        
+        M --> C1
+        M --> C2
+        
+        C1 -.-> SC
+        C2 -.-> SC
+    end
 ```
 
 ---
@@ -327,6 +317,8 @@ func init() {
 | `+kubebuilder:validation:MaxItems=N` | Field | Array max length |
 | `+kubebuilder:default=...` | Field | Default value |
 | `+optional` | Field | Field is optional |
+
+> **Pause and predict**: If you forget to run `make manifests` after changing a marker like `+kubebuilder:validation:Minimum`, what will happen when a user tries to submit an invalid resource to the cluster?
 
 ### 3.3 Generate CRD and DeepCopy
 
@@ -567,6 +559,8 @@ func (r *WebAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 ```
 
+> **Stop and think**: How can a controller efficiently ensure a Deployment's configuration matches the desired state, even if a cluster administrator manually alters the Deployment using kubectl?
+
 ### 4.2 Understanding `CreateOrUpdate`
 
 The `controllerutil.CreateOrUpdate` function is a powerful helper:
@@ -665,6 +659,8 @@ k logs -n webapp-operator-system -l control-plane=controller-manager -f
 ---
 
 ## Part 6: The Manager and Main Entry Point
+
+> **Stop and think**: If the manager handles leader election, what happens if you run two instances of your operator simultaneously in the cluster?
 
 ### 6.1 Manager Configuration
 
@@ -772,40 +768,40 @@ func main() {
 
 ## Quiz
 
-1. **What is the purpose of the `//+kubebuilder:rbac` markers?**
+1. **You have written a Reconciler that creates ConfigMaps, but you notice in the operator logs that it keeps failing with a "forbidden: User cannot create resource" error. You check your code and the logic is correct. What did you likely forget to include, and why is this causing the error?**
    <details>
    <summary>Answer</summary>
-   They tell controller-gen what RBAC permissions the controller needs. When you run `make manifests`, controller-gen reads these markers and generates ClusterRole/Role YAML in `config/rbac/`. Without them, the controller would be denied access to the resources it needs. Every resource type you access (Get, List, Watch, Create, Update, Delete) needs a corresponding RBAC marker.
+   You likely forgot to include the `//+kubebuilder:rbac` markers for the ConfigMap resource above your Reconciler function. These markers tell `controller-gen` what RBAC permissions the controller requires to function properly. When you run `make manifests`, the tool parses these markers to automatically generate the correct ClusterRole or Role YAML files in the `config/rbac/` directory. Without the generated RBAC manifests, the operator runs with a service account that has no permissions to interact with ConfigMaps, resulting in the forbidden error.
    </details>
 
-2. **How does `controllerutil.CreateOrUpdate` achieve idempotency?**
+2. **Your controller manages a Deployment and a user accidentally modifies the Deployment's image using `kubectl edit`. On the next reconciliation loop, your operator automatically reverts the change. How does `controllerutil.CreateOrUpdate` handle the underlying mechanics to enforce this desired state and achieve idempotency?**
    <details>
    <summary>Answer</summary>
-   It first tries to Get the object. If not found, it calls the mutate function and Creates the object. If found, it calls the mutate function on the existing object and only issues an Update if the mutated object differs from the current state. The mutate function defines the desired state, and CreateOrUpdate ensures convergence regardless of the current state. It returns OperationResultNone if no change was needed.
+   `controllerutil.CreateOrUpdate` achieves this by first fetching the current state of the object from the cluster. If the object does not exist, it applies the mutation function you provide to define the desired state and creates it. If the object already exists, it applies your mutation function to the fetched object and compares the result against the current state in the cluster. It will only issue an Update request to the API Server if the mutated object actually differs from the current state, ensuring that the cluster always converges to your desired configuration without making unnecessary API calls.
    </details>
 
-3. **Explain the difference between `ctrl.Result{Requeue: true}` and returning an error.**
+3. **During a reconciliation loop, your controller successfully updates a Custom Resource's status to "Deploying" but needs to check back later to see if the underlying Pods are ready. Another part of your logic encounters a network timeout when talking to an external API. How should your return values differ for these two situations, and why?**
    <details>
    <summary>Answer</summary>
-   `Requeue: true` with nil error means "the reconciliation was successful, but I want to check again soon" (e.g., waiting for a Deployment to become ready). The item is requeued immediately without backoff. Returning an error means "the reconciliation failed" and the item is requeued with exponential backoff. Use `RequeueAfter` for periodic checks and errors for actual failures.
+   For the successful status update where you simply need to check back later, you should return `ctrl.Result{Requeue: true}` (or `RequeueAfter`) and a `nil` error. This tells the controller runtime that the reconciliation succeeded but the object should be added back to the workqueue to monitor ongoing progress, avoiding any backoff penalties. For the network timeout, you should return `ctrl.Result{}` alongside the actual `error` object. Returning an error signals to the framework that a failure occurred, which triggers an exponential backoff mechanism to prevent overloading the system while retrying the failed operation.
    </details>
 
-4. **Why does the Manager use a shared cache instead of separate informers per controller?**
+4. **You are designing a complex operator with five different controllers, all of which need to monitor changes to Pod resources in the cluster. If you were writing raw client-go, you might accidentally instantiate five separate informers. Why does the Kubebuilder Manager provide a shared cache for this scenario, and what are the benefits?**
    <details>
    <summary>Answer</summary>
-   If you have 5 controllers all watching Pods, a shared cache opens only one Watch connection for Pods. Without sharing, you would have 5 Watch connections, 5 separate caches, and 5x the memory usage. The shared cache also means that all controllers see a consistent view of the cluster state, since they read from the same informer.
+   The Kubebuilder Manager uses a shared cache to heavily optimize resource consumption and reduce load on the Kubernetes API Server. If each controller had its own informer, the operator would open five separate watch connections to the API Server and store five duplicate copies of the Pod data in memory. By using a shared cache, the Manager ensures that only one watch connection is established per GroupVersionKind (GVK), regardless of how many controllers are watching it. This shared approach dramatically reduces memory overhead and ensures all controllers operate from a single, consistent view of the cluster state.
    </details>
 
-5. **A WebApp has `generation: 5` but its status shows `observedGeneration: 3`. What does this mean?**
+5. **You are investigating a user report that their `WebApp` resource is not scaling up as requested. You inspect the resource and notice the metadata has `generation: 5`, but the status section shows `observedGeneration: 3`. What exactly does this discrepancy indicate about the state of your controller?**
    <details>
    <summary>Answer</summary>
-   It means the controller has not yet reconciled the latest spec changes. The `generation` field increments on every spec change (by the API Server). The `observedGeneration` is set by the controller to indicate which generation it last processed. A gap means either the controller is behind (busy processing other objects) or it encountered errors. Users and monitoring tools use this gap to detect stale reconciliation.
+   This discrepancy indicates that your controller has not yet successfully reconciled the latest specification changes made to the resource. The `generation` field is automatically incremented by the Kubernetes API Server every time the resource's `spec` is modified. The `observedGeneration` field, however, is manually set by your controller in the status subresource only after it successfully finishes processing a given generation. A gap between these two numbers means the controller is either currently busy processing a backlog of events, stuck in an error loop with exponential backoff, or completely offline.
    </details>
 
-6. **What happens when you call `Owns(&appsv1.Deployment{})` in `SetupWithManager`?**
+6. **Your operator creates a Deployment as a child resource of a `WebApp` Custom Resource. To ensure the operator notices if someone deletes this child Deployment, you add `Owns(&appsv1.Deployment{})` to your `SetupWithManager` function. How does this specific configuration wire up the event handling beneath the surface?**
    <details>
    <summary>Answer</summary>
-   It tells controller-runtime to watch all Deployments and, for any Deployment that has an OwnerReference pointing to a WebApp, enqueue that WebApp for reconciliation. The handler automatically looks up the owner via the OwnerReference metadata. This is how the controller detects when someone modifies or deletes a child Deployment -- it triggers a reconciliation of the parent WebApp, which can then correct the drift.
+   Calling `Owns` configures the controller runtime to establish a watch on the specified child resource type (in this case, Deployments). When a change occurs to a Deployment, the event handler inspects the object's metadata for an `OwnerReference` pointing back to a parent resource. If the handler finds an `OwnerReference` that matches the GVK of your primary resource (the `WebApp`), it automatically extracts the parent's name and namespace and enqueues a reconciliation request for that specific parent. This is the mechanism that allows your controller to detect drift in child resources and instantly trigger a reconciliation loop to restore the desired state.
    </details>
 
 ---
