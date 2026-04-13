@@ -323,7 +323,7 @@ helm install my-nginx bitnami/nginx \
 
 # Verify
 helm list -n web
-k get pods -n web
+kubectl get pods -n web
 ```
 
 ### Scenario 2: Upgrade and Rollback
@@ -338,7 +338,7 @@ helm upgrade my-nginx bitnami/nginx --set replicaCount=3 -n web
 
 # Verify upgrade
 helm history my-nginx -n web
-k get pods -n web
+kubectl get pods -n web
 
 # Something goes wrong - rollback
 helm rollback my-nginx 1 -n web
@@ -393,7 +393,7 @@ helm list --pending
 helm uninstall stuck-release
 
 # See what's wrong
-helm get manifest my-release | k apply --dry-run=server -f -
+helm get manifest my-release | kubectl apply --dry-run=server -f -
 
 # Debug template rendering
 helm template my-release bitnami/nginx --debug
@@ -492,7 +492,7 @@ helm install web bitnami/nginx \
 
 # Verify installation
 helm list
-k get pods -l app.kubernetes.io/instance=web
+kubectl get pods -l app.kubernetes.io/instance=web
 ```
 
 **Part 2: Upgrade**
@@ -504,7 +504,7 @@ helm upgrade web bitnami/nginx --reuse-values --set replicaCount=3
 helm history web
 
 # Verify pods
-k get pods -l app.kubernetes.io/instance=web
+kubectl get pods -l app.kubernetes.io/instance=web
 ```
 
 **Part 3: Rollback**
@@ -514,7 +514,7 @@ helm rollback web 1
 
 # Verify reverted
 helm get values web
-k get pods -l app.kubernetes.io/instance=web
+kubectl get pods -l app.kubernetes.io/instance=web
 ```
 
 **Part 4: Cleanup**
@@ -613,11 +613,11 @@ helm install drill5 bitnami/nginx -n helm-test --create-namespace
 helm list -n helm-test
 
 # Get pods in namespace
-k get pods -n helm-test
+kubectl get pods -n helm-test
 
 # Cleanup
 helm uninstall drill5 -n helm-test
-k delete ns helm-test
+kubectl delete ns helm-test
 ```
 
 ### Drill 6: Complete Scenario (Target: 6 minutes)
@@ -652,14 +652,14 @@ helm install prod-web bitnami/nginx -f /tmp/prod-values.yaml
 # 4. Verify
 helm list
 helm get values prod-web
-k get pods -l app.kubernetes.io/instance=prod-web
+kubectl get pods -l app.kubernetes.io/instance=prod-web
 
 # 5. Upgrade with more replicas
 helm upgrade prod-web bitnami/nginx -f /tmp/prod-values.yaml --set replicaCount=5
 
 # Verify upgrade
 helm status prod-web
-k get pods -l app.kubernetes.io/instance=prod-web
+kubectl get pods -l app.kubernetes.io/instance=prod-web
 
 # 6. Something wrong - rollback
 helm rollback prod-web 1
