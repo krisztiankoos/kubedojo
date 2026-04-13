@@ -75,6 +75,8 @@ In a Continuous Deployment workflow:
 2. There are absolutely no manual approval gates. No "Release Managers" or "Change Advisory Boards."
 3. This requires immense, absolute trust in your automated testing suite, robust observability (monitoring and alerting), and rapid, automated rollback mechanisms. Companies like Netflix, Amazon, and Etsy deploy thousands of times a day using this model. A developer merges a pull request, goes to get a coffee, and by the time they return, their code is serving live customer traffic.
 
+> **Pause and predict**: If a team transitions from Continuous Delivery to Continuous Deployment, what is the absolute most critical automated system they must strengthen to prevent catastrophic outages?
+
 ### Active Learning Prompt
 
 > **Scenario A:** A developer merges code to `main`. The code compiles, tests run, and a Docker image is built and pushed to a container registry. The pipeline stops. On Friday evening, the Ops team manually pulls that specific image tag and applies it to the Kubernetes cluster using `kubectl set image`.
