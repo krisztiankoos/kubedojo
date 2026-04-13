@@ -89,7 +89,7 @@ flowchart TD
 
 ## Categories of Tools
 
-> **Don't panic**: The CNCF landscape has 1,000+ projects. You don't need to know them all. In your first Kubernetes job, you'll likely use 5-6 tools daily. The goal here is to know what categories exist so when someone says "we need a service mesh" or "set up observability," you know what they're talking about.
+> **Stop and think**: The CNCF landscape has 1,000+ projects. You don't need to know them all. In your first Kubernetes job, you'll likely use 5-6 tools daily. The goal here is to know what categories exist so when someone says "we need a service mesh" or "set up observability," you know what they're talking about.
 
 ### 1. Orchestration (Core)
 
