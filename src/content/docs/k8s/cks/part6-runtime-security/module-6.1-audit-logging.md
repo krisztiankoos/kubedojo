@@ -284,7 +284,7 @@ ps aux | grep kube-apiserver | grep audit
 ls -la /var/log/kubernetes/audit/
 
 # Tail the audit log
-tail -f /var/log/kubernetes/audit/audit.log | jq .
+tail -n 10 /var/log/kubernetes/audit/audit.log | jq .
 ```
 
 ---
@@ -373,6 +373,8 @@ cat audit.log | jq 'select(.objectRef.resource == "secrets" and .verb == "get") 
 
 ### Scenario 1: Enable Audit Logging
 
+First, create the audit policy and the log directory:
+
 ```bash
 # Step 1: Create audit policy
 sudo tee /etc/kubernetes/audit-policy.yaml << 'EOF'
@@ -402,23 +404,47 @@ EOF
 
 # Step 2: Create log directory
 sudo mkdir -p /var/log/kubernetes/audit
+```
 
+Next, edit the API server manifest. In a real cluster or exam, you do this manually:
+
+```bash
 # Step 3: Edit API server manifest
 sudo vi /etc/kubernetes/manifests/kube-apiserver.yaml
+```
 
-# Add these flags:
-# - --audit-policy-file=/etc/kubernetes/audit-policy.yaml
-# - --audit-log-path=/var/log/kubernetes/audit/audit.log
-# - --audit-log-maxage=30
-# - --audit-log-maxbackup=3
-# - --audit-log-maxsize=100
+Add these flags to the `kube-apiserver` command array, along with the corresponding `volumeMounts` and `volumes`:
 
-# Add volume mounts and volumes for:
-# - audit-policy.yaml
-# - /var/log/kubernetes/audit/
+```yaml
+    - --audit-policy-file=/etc/kubernetes/audit-policy.yaml
+    - --audit-log-path=/var/log/kubernetes/audit/audit.log
+    - --audit-log-maxage=30
+    - --audit-log-maxbackup=3
+    - --audit-log-maxsize=100
 
+    # Under volumeMounts:
+    - mountPath: /etc/kubernetes/audit-policy.yaml
+      name: audit-policy
+      readOnly: true
+    - mountPath: /var/log/kubernetes/audit/
+      name: audit-log
+
+    # Under volumes:
+    - hostPath:
+        path: /etc/kubernetes/audit-policy.yaml
+        type: File
+      name: audit-policy
+    - hostPath:
+        path: /var/log/kubernetes/audit/
+        type: DirectoryOrCreate
+      name: audit-log
+```
+
+Finally, wait for the API server to restart and verify the logs:
+
+```bash
 # Step 4: Wait for API server restart
-kubectl get nodes
+until kubectl get nodes; do sleep 2; done
 
 # Step 5: Verify logs are created
 ls /var/log/kubernetes/audit/
