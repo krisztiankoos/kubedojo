@@ -51,29 +51,20 @@ This module teaches you how to drive adoption and manage migrations without mand
 
 ---
 
+> **Stop and think**: If you were forced to migrate to a new tool with a tight deadline and no support, how would you react? How would that impact your trust in the tool creators?
+
 ## Adoption Models: Voluntary vs Mandatory
 
 ### The Adoption Spectrum
 
-```
-VOLUNTARY ◄─────────────────────────────────────► MANDATORY
-
-  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐
-  │ Fully    │  │ Strongly │  │ Opt-out  │  │ Fully    │
-  │ Optional │  │ Encour-  │  │ (default │  │ Mandatory│
-  │          │  │ aged     │  │  but can  │  │          │
-  │ "Use it  │  │ "Here's  │  │  exempt)  │  │ "You    │
-  │  if you  │  │  why you │  │           │  │  must    │
-  │  want"   │  │  should" │  │ "You're   │  │  use it" │
-  │          │  │          │  │  on it    │  │          │
-  │          │  │          │  │  unless   │  │          │
-  │          │  │          │  │  you opt  │  │          │
-  │          │  │          │  │  out"     │  │          │
-  └──────────┘  └──────────┘  └──────────┘  └──────────┘
-
-  Low adoption     Sweet spot                 High adoption
-  risk-free        for most                   high resentment
-                   organizations
+```mermaid
+flowchart LR
+    A["Fully Optional<br>('Use it if you want')<br><br>Low adoption<br>risk-free"] 
+    B["Strongly Encouraged<br>('Here is why you should')<br><br>Sweet spot<br>for most orgs"]
+    C["Opt-out<br>('Default but can exempt')<br><br>Sweet spot<br>for most orgs"]
+    D["Fully Mandatory<br>('You must use it')<br><br>High adoption<br>high resentment"]
+    
+    A --> B --> C --> D
 ```
 
 ### When Each Model Is Appropriate
@@ -89,27 +80,26 @@ VOLUNTARY ◄──────────────────────�
 
 Most successful platforms use a layered model:
 
-```
-┌──────────────────────────────────────────┐
-│  MANDATORY (guardrails)                   │
-│  Security scanning, access controls,      │
-│  audit logging, resource limits            │
-│  → Enforced by automated policies          │
-├──────────────────────────────────────────┤
-│  OPT-OUT DEFAULT (strong defaults)        │
-│  Standard CI/CD, monitoring, alerting,    │
-│  deployment pipeline                       │
-│  → Teams use by default, can opt out      │
-│    with justification                      │
-├──────────────────────────────────────────┤
-│  VOLUNTARY (golden paths)                 │
-│  Service templates, developer portal,     │
-│  advanced features                         │
-│  → Teams choose to adopt                   │
-└──────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Mandatory [MANDATORY - Guardrails]
+        M1["Security scanning, access controls, audit logging, resource limits<br/>Enforced by automated policies"]
+    end
+    subgraph OptOut [OPT-OUT DEFAULT - Strong Defaults]
+        O1["Standard CI/CD, monitoring, alerting, deployment pipeline<br/>Teams use by default, can opt out with justification"]
+    end
+    subgraph Voluntary [VOLUNTARY - Golden Paths]
+        V1["Service templates, developer portal, advanced features<br/>Teams choose to adopt"]
+    end
+    Mandatory --> OptOut --> Voluntary
+    style Mandatory fill:#ffcccc,stroke:#cc0000
+    style OptOut fill:#fff2cc,stroke:#d6b656
+    style Voluntary fill:#d5e8d4,stroke:#82b366
 ```
 
 ---
+
+> **Pause and predict**: If a "Big Bang" migration fails, what is the immediate impact on the organization? Why might a phased approach mitigate this?
 
 ## Migration Patterns
 
@@ -117,30 +107,11 @@ Most successful platforms use a layered model:
 
 **How it works**: Gradually route functionality from the old system to the new system. The old system continues to work but handles less and less until it can be decommissioned.
 
-```
-Phase 1: New system handles 0%, old handles 100%
-┌─────────────────────────────────┐
-│ OLD SYSTEM ████████████████████ │  100%
-│ NEW SYSTEM                      │    0%
-└─────────────────────────────────┘
-
-Phase 2: New system handles 30%, old handles 70%
-┌─────────────────────────────────┐
-│ OLD SYSTEM ██████████████       │   70%
-│ NEW SYSTEM ██████               │   30%
-└─────────────────────────────────┘
-
-Phase 3: New system handles 80%, old handles 20%
-┌─────────────────────────────────┐
-│ OLD SYSTEM ████                 │   20%
-│ NEW SYSTEM ████████████████     │   80%
-└─────────────────────────────────┘
-
-Phase 4: New system handles 100%, old decommissioned
-┌─────────────────────────────────┐
-│ OLD SYSTEM                      │    0%
-│ NEW SYSTEM ████████████████████ │  100%
-└─────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["Phase 1<br/>Old: 100% | New: 0%"] --> B["Phase 2<br/>Old: 70% | New: 30%"]
+    B --> C["Phase 3<br/>Old: 20% | New: 80%"]
+    C --> D["Phase 4<br/>Old: Decommissioned | New: 100%"]
 ```
 
 **When to use**: Most migrations. Lowest risk. Allows learning and adjustment during migration.
@@ -153,25 +124,14 @@ Phase 4: New system handles 100%, old decommissioned
 
 **How it works**: Both systems run simultaneously with the same inputs. Compare outputs to verify the new system is correct before switching.
 
-```
-┌──────────┐
-│  Input   │
-└────┬─────┘
-     │
-     ├────────────────────────┐
-     ▼                        ▼
-┌──────────┐           ┌──────────┐
-│ OLD      │           │ NEW      │
-│ SYSTEM   │           │ SYSTEM   │
-│ (primary)│           │ (shadow) │
-└────┬─────┘           └────┬─────┘
-     │                      │
-     ▼                      ▼
-┌────────────────────────────────┐
-│      COMPARE OUTPUTS           │
-│  Match? → Ready to switch      │
-│  Mismatch? → Debug new system  │
-└────────────────────────────────┘
+```mermaid
+flowchart TD
+    Input[Input] --> Old[Old System<br>Primary]
+    Input --> New[New System<br>Shadow]
+    Old --> Compare[Compare Outputs]
+    New --> Compare
+    Compare --> Match[Match? -> Ready to switch]
+    Compare --> Mismatch[Mismatch? -> Debug new system]
 ```
 
 **When to use**: Critical systems where correctness must be verified. Payment processing, data pipelines, authentication.
@@ -203,12 +163,22 @@ Phase 4: New system handles 100%, old decommissioned
 
 **How it works**: Use feature flags to gradually shift teams from old to new system. Each team (or percentage of traffic) can be individually toggled.
 
-```
-Team A: ──old──→ [flag on] ──new──→
-Team B: ──old────────────→ [flag on] ──new──→
-Team C: ──old──────────────────────→ [flag on] ──new──→
-                                                  │
-Time ─────────────────────────────────────────────►
+```mermaid
+gantt
+    title Feature Flag Migration Over Time
+    dateFormat  YYYY-MM-DD
+    
+    section Team A
+    Old System :a1, 2026-01-01, 10d
+    Flag On (New System) :a2, after a1, 30d
+    
+    section Team B
+    Old System :b1, 2026-01-01, 20d
+    Flag On (New System) :b2, after b1, 20d
+    
+    section Team C
+    Old System :c1, 2026-01-01, 30d
+    Flag On (New System) :c2, after c1, 10d
 ```
 
 **When to use**: Platform services that can be toggled per-team. Deployment pipelines, monitoring integrations, DNS routing.
@@ -216,6 +186,8 @@ Time ─────────────────────────
 **Key success factor**: Robust feature flag infrastructure. The ability to quickly toggle back if problems arise.
 
 ---
+
+> **Stop and think**: When a team says "we don't have time to migrate," what underlying concerns might they actually be expressing?
 
 ## Dealing with Holdouts and Legacy Teams
 
@@ -270,6 +242,8 @@ Understanding resistance is the first step to overcoming it. Common reasons:
 - Be patient — political resistance dissolves when peer teams succeed visibly
 
 ---
+
+> **Pause and predict**: How might offering to pay the AWS bill for teams on the new platform influence their desire to migrate?
 
 ## Incentive Design for Adoption
 
@@ -610,98 +584,82 @@ The engineering director stepped in and made three changes:
 ## Knowledge Check
 
 ### Question 1
-What are the four migration patterns and when is each appropriate?
+**Scenario**: Your platform team needs to migrate 50 development teams from a legacy on-premise logging stack to a new cloud-native observability platform. The legacy system frequently drops logs, and the new system has a fundamentally different query language. You want to minimize risk while ensuring teams can learn the new system incrementally. Which migration pattern should you select, and how would you apply it here?
 
 <details>
 <summary>Show Answer</summary>
 
-**Strangler Fig**: Gradually route functionality from old to new system. Use for most migrations — lowest risk, allows incremental learning.
-
-**Parallel Run**: Run both systems simultaneously and compare outputs. Use for critical systems where correctness must be verified (payments, data pipelines).
-
-**Big Bang**: Switch everyone at once on a specific date. Use rarely — only when systems cannot run in parallel or vendor deadlines force it.
-
-**Feature Flag**: Toggle teams individually from old to new using feature flags. Use when the platform service can be switched per-team. Combines the safety of strangler fig with the speed of big bang.
+You should select the Strangler Fig pattern for this scenario. This approach allows you to gradually route functionality—such as onboarding one service or team at a time to the new observability platform—while the legacy system remains functional for the rest. By doing this, you drastically reduce the risk of a widespread outage if the new system experiences issues under load. Furthermore, teams can learn the new query language incrementally rather than being forced into a disruptive "Big Bang" switch, allowing your platform team to gather feedback and refine training materials as the migration progresses.
 
 </details>
 
 ### Question 2
-A team says: "We tried your platform last year and had a 4-hour outage." How do you handle this?
+**Scenario**: You are meeting with the lead of the payment processing team to discuss their migration to the new standard CI/CD pipeline. The lead crosses their arms and says, "We tried migrating to your beta pipeline last year, and it caused a 4-hour production outage during our busiest period. We cannot afford that risk again." What is your immediate response strategy to rebuild trust?
 
 <details>
 <summary>Show Answer</summary>
 
-First, **acknowledge the failure honestly**: "You're right, that happened and it shouldn't have. I'm sorry for the impact." Then explain **what changed**: specific improvements, new safeguards, what you learned from that incident. Offer a **low-risk trial**: migrate a non-critical service first, with a guaranteed instant rollback path. Provide **extra support**: embedded platform engineer for their migration. Share **data from recent migrations**: how many teams migrated since then without incidents. Do NOT: dismiss their concern, blame their team, or pretend it didn't happen. Trust is rebuilt through actions, not words.
+You must first honestly acknowledge the past failure and validate their concern without being defensive, as dismissing their experience will instantly destroy any remaining trust. Next, clearly articulate exactly what technical and procedural safeguards have changed since that incident, providing concrete evidence that the platform is now stable. You should then offer a low-risk trial, such as migrating a non-critical internal service first, coupled with a guaranteed, instant rollback path. Finally, provide them with dedicated, white-glove support (like an embedded platform engineer) during their migration to demonstrate your commitment to their success and safety.
 
 </details>
 
 ### Question 3
-Why is "strongly encouraged" usually better than "mandatory" for platform adoption?
+**Scenario**: The CTO wants to send a company-wide email stating that all teams MUST adopt the new internal developer portal within 30 days. You advise against a "fully mandatory" approach, suggesting instead a "strongly encouraged" model with incentives. How do you justify this recommendation to the CTO?
 
 <details>
 <summary>Show Answer</summary>
 
-"Strongly encouraged" preserves team autonomy while creating strong incentives to adopt. It avoids the negative effects of mandates: resentment, shadow IT, compliance theater, and loss of trust. When adoption is encouraged rather than forced, the feedback you receive is honest ("I'm not using it because X doesn't work") rather than political ("I'll get to it eventually"). It also means that adoption signals genuine value — if 80% of teams voluntarily choose your platform, that proves it's good. If 80% of teams are forced onto it, you have no signal about quality. The exception: security and compliance requirements should be mandatory, enforced by automated guardrails.
+A "strongly encouraged" model preserves team autonomy while motivating adoption through clear incentives, whereas strict mandates typically breed resentment and malicious compliance. When you mandate adoption without considering the specific context or workload of individual teams, developers often resort to building "shadow IT" to bypass poorly fitting tools. Furthermore, if teams adopt the platform voluntarily because of its merits (such as reduced toil or better support), their adoption serves as a genuine signal of the platform's quality. In contrast, 100% mandated compliance provides zero useful feedback about whether the platform actually solves real developer problems. Mandatory policies should be strictly reserved for non-negotiable security and compliance guardrails.
 
 </details>
 
 ### Question 4
-Explain the ADKAR model. Which stage do platform teams most often skip?
+**Scenario**: You have provided excellent documentation, automated migration scripts, and dedicated office hours for the move to a new Kubernetes ingress controller. Despite this "perfect" technical execution, teams are ignoring your emails and delaying the work indefinitely. Using the ADKAR model, identify the likely root cause of this resistance and explain how to address it.
 
 <details>
 <summary>Show Answer</summary>
 
-ADKAR: **Awareness** (do they know why?), **Desire** (do they want to?), **Knowledge** (do they know how?), **Ability** (can they do it?), **Reinforcement** (will they stick with it?).
-
-Platform teams most often skip **Awareness** and **Desire**. They jump straight to Knowledge ("here's the documentation") and Ability ("here's the migration tool") without establishing why the migration matters and why it benefits the migrating team. Without Awareness, developers see migration as a burden imposed on them. Without Desire, they will procrastinate indefinitely or comply minimally. The fix: start every migration initiative with a clear business case that explains benefits to the migrating team, not just the platform team.
+The root cause is likely a complete lack of Awareness and Desire, which are the stages platform teams most frequently skip when rolling out changes. By jumping straight into Knowledge (documentation) and Ability (migration scripts), you have provided the "how" without ever establishing the "why." Developers currently view the migration as an arbitrary burden imposed on them by the platform team rather than a solution to their problems. To fix this, you must pause the technical push and clearly communicate the business case and personal benefits for the migrating teams, ensuring they understand the necessity of the change and actually want to adopt it before you hand them the tools.
 
 </details>
 
 ### Question 5
-You're sunsetting an old system. Three teams refuse to migrate with 2 months left on the timeline. What do you do?
+**Scenario**: The legacy Jenkins server is scheduled for decommissioning in two months. Three teams have flatly refused to migrate, citing complex legacy build steps that the new GitHub Actions platform does not natively support. The platform engineers are demanding that these teams figure it out or face the deadline. How do you resolve this standoff?
 
 <details>
 <summary>Show Answer</summary>
 
-Step 1: **Talk to each team individually** to understand their specific blockers. Are they legitimate (missing features, genuine risk) or organizational (inertia, competing priorities)?
-
-Step 2: For legitimate blockers, **extend the timeline for those teams** while you fix the gaps. Breaking things for teams with real concerns destroys trust.
-
-Step 3: For organizational blockers, **reduce migration effort** (automated tooling, embedded support, white-glove service).
-
-Step 4: **Escalate to leadership only if necessary** and only after exhausting support options. Present it as "these teams need prioritization support" not "these teams are non-compliant."
-
-Step 5: **Never decommission until all teams are migrated or explicitly exempted.** Surprise decommissions are the fastest way to destroy platform team credibility.
+You must first sit down with each of the three teams to deeply understand their specific blockers, distinguishing between legitimate capability gaps and mere organizational inertia. In this case, since they have complex legacy build steps that the new platform lacks, this is a legitimate technical concern that your team failed to account for. You should explicitly extend the sunset timeline for these specific teams while your platform engineers build the missing capabilities or design a supported workaround. Forcing a hard decommissioning deadline when the new platform lacks necessary features will break their builds, halt product delivery, and permanently destroy the platform team's credibility across the engineering organization.
 
 </details>
 
 ### Question 6
-Scenario: Your platform has 60% adoption. The remaining 40% are teams with 3+ years of custom infrastructure. What's your strategy?
+**Scenario**: Your internal platform has successfully captured the 60% of teams that were eager "early adopters." However, adoption has completely stalled for the remaining 40%, which consist of pragmatic teams with 3+ years of custom, heavily entrenched infrastructure. How do you alter your adoption strategy to cross this chasm?
 
 <details>
 <summary>Show Answer</summary>
 
-This is a classic "chasm" problem — you've saturated early adopters and the remaining teams have higher switching costs. Strategy: (1) **Quantify the cost of staying off-platform** for each team: maintenance burden, security risk, operational overhead. Make the invisible cost visible. (2) **Invest in migration tooling** specific to their legacy setup. If migration takes 2 weeks, few will do it. If it takes 2 days, many will. (3) **Offer incremental migration**: don't require all-or-nothing. Can they migrate CI but keep their deployment? Can they use platform monitoring but keep their own deployment pipeline? (4) **Budget conversation**: if the old infrastructure costs are charged to the teams instead of centralized, the business case for migration becomes personal. (5) **Accept that some teams may never migrate** — if their setup works and the cost is acceptable, forced migration may not be worth the political capital.
+You must shift your strategy from marketing new features to aggressively lowering the switching costs for these deeply entrenched teams. Begin by heavily investing in automated migration tooling specifically designed to translate their custom legacy configurations into the new platform's format, turning a multi-week chore into a multi-day task. Additionally, you should offer an incremental migration path—such as allowing them to adopt the platform's CI and monitoring while temporarily keeping their bespoke deployment pipeline—so they do not face an all-or-nothing risk. Finally, make the invisible costs of their custom setup visible by quantifying their maintenance burden and security risks, contrasting that with the guaranteed support SLAs they would receive on the unified platform.
 
 </details>
 
 ### Question 7
-What is the strangler fig pattern and why is it the safest migration approach?
+**Scenario**: Your company processes millions of financial transactions daily. You have built a robust, Kubernetes-native transaction routing service (v1.35) that needs to replace a brittle legacy monolith. A single dropped transaction costs thousands of dollars. Describe the safest migration pattern for this transition and explain why it minimizes risk.
 
 <details>
 <summary>Show Answer</summary>
 
-The strangler fig pattern gradually replaces a legacy system by routing functionality to the new system piece by piece, while the old system continues to work. It is the safest because: (1) **The old system remains functional** — if the new system fails, traffic routes back. (2) **Issues are discovered incrementally** — problems with 5% of traffic are manageable; problems with 100% of traffic are outages. (3) **Teams migrate at their own pace** — no big-bang coordination required. (4) **Learning happens during migration** — each phase teaches you something for the next. (5) **Rollback is per-component**, not all-or-nothing. Named after the strangler fig tree which grows around an existing tree, gradually replacing it.
+The safest approach for this high-stakes transition is the Strangler Fig pattern, where you gradually route small, carefully controlled percentages of traffic from the legacy monolith to the new Kubernetes service. This pattern minimizes risk because the old system remains fully operational and acts as a safety net; if the new service exhibits unexpected latency or errors, traffic can be instantly routed back. Furthermore, this incremental shift allows your team to discover edge cases and performance bottlenecks under manageable loads, rather than causing a catastrophic system-wide outage. By migrating piece by piece, you build organizational confidence through demonstrated stability, avoiding the severe disruptions typical of a "Big Bang" release.
 
 </details>
 
 ### Question 8
-Your platform team built automated migration tooling. Only 3 teams have used it. Why might this be?
+**Scenario**: To accelerate the move to ArgoCD, your team spent three weeks building an advanced, automated CLI migration tool. You announced it in Slack with great fanfare. Two months later, telemetry shows that only 3 out of 45 teams have ever executed the tool. What are the potential reasons for this failure, and how should you investigate?
 
 <details>
 <summary>Show Answer</summary>
 
-Possible reasons: (1) **Teams don't know it exists** — marketing and discoverability problem. (2) **They don't trust it** — no evidence it works safely. Fix by publishing success data from teams that used it. (3) **It doesn't work for their setup** — the tool may only handle common cases and their setup is non-standard. (4) **They haven't allocated time** — even automated migration requires someone to run it, verify, and fix edge cases. (5) **It's hard to use** — the tool itself has poor DX. (6) **They tried it and it failed** — bugs or edge cases broke their confidence. Check your usage analytics: are teams trying the tool and abandoning it (UX/bug problem) or never trying it (awareness/trust problem)?
+The failure could stem from several distinct issues ranging from poor discoverability to a lack of underlying trust in the automation. Teams might not know the tool exists if they missed the single Slack announcement, or they might actively distrust it because they fear a "black box" script will silently corrupt their production configurations. It is also possible the tool fails on edge cases specific to their legacy setups, or that it has a terrible developer experience that causes teams to abandon it after the first error message. To investigate, you should immediately check the tool's usage analytics to see if teams are abandoning it mid-run, and proactively interview the non-adopting teams to uncover whether the problem is a lack of awareness, a lack of trust, or a technical mismatch.
 
 </details>
 
