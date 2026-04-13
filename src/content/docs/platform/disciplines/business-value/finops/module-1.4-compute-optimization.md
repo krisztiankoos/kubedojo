@@ -32,49 +32,49 @@ Module 1.3 taught you to rightsize individual workloads — giving each Pod exac
 
 Consider this scenario:
 
+**Before Node Optimization:**
+
+```mermaid
+graph TD
+    subgraph Node 1 [Node 1: m6i.2xlarge - 8 vCPU, 32GB - $285/mo]
+        P1A[Pod A: 500m/2Gi]
+        P1B[Pod B: 300m/1Gi]
+        I1[Idle: 7.2 CPU, 29GB<br>Wasted: $253/mo]
+    end
+
+    subgraph Node 2 [Node 2: m6i.2xlarge - 8 vCPU, 32GB - $285/mo]
+        P2C[Pod C: 200m/512Mi]
+        I2[Idle: 7.8 CPU, 31.5GB<br>Wasted: $277/mo]
+    end
+
+    subgraph Node 3 [Node 3: m6i.2xlarge - 8 vCPU, 32GB - $285/mo]
+        P3D[Pod D: 1CPU/4Gi]
+        P3E[Pod E: 1CPU/4Gi]
+        P3F[Pod F: 500m/2Gi]
+        I3[Idle: 5.5 CPU, 22GB]
+    end
 ```
-Before Node Optimization:
-┌──────────────────────────────────────────────────┐
-│ Node 1 (m6i.2xlarge - 8 vCPU, 32GB - $285/mo)   │
-│ ┌──────────┐ ┌──────────┐                        │
-│ │ Pod A    │ │ Pod B    │        Empty space     │
-│ │ 500m/2Gi │ │ 300m/1Gi │        = 7.2 CPU idle │
-│ └──────────┘ └──────────┘        = 29 GB idle   │
-│                                   ($253 wasted)  │
-│──────────────────────────────────────────────────│
-│ Node 2 (m6i.2xlarge - 8 vCPU, 32GB - $285/mo)   │
-│ ┌──────────┐                                     │
-│ │ Pod C    │                     Empty space     │
-│ │ 200m/512M│                     = 7.8 CPU idle │
-│ └──────────┘                     = 31.5 GB idle │
-│                                   ($277 wasted)  │
-│──────────────────────────────────────────────────│
-│ Node 3 (m6i.2xlarge - 8 vCPU, 32GB - $285/mo)   │
-│ ┌──────────┐ ┌──────────┐ ┌──────────┐          │
-│ │ Pod D    │ │ Pod E    │ │ Pod F    │          │
-│ │ 1CPU/4Gi │ │ 1CPU/4Gi │ │ 500m/2Gi│          │
-│ └──────────┘ └──────────┘ └──────────┘          │
-│                              5.5 CPU / 22GB idle│
-└──────────────────────────────────────────────────┘
 Total: 3 nodes × $285 = $855/mo
 Utilization: ~15% CPU, ~14% memory
-```
 
 After optimization (consolidation + right-sized nodes):
 
+**After Node Optimization:**
+
+```mermaid
+graph TD
+    subgraph Node 1 [Node 1: m6i.xlarge - 4 vCPU, 16GB - $140/mo]
+        PA[Pod A: 500m]
+        PB[Pod B: 300m]
+        PC[Pod C: 200m]
+        PD[Pod D: 1CPU]
+        PE[Pod E: 1CPU]
+        PF[Pod F: 500m]
+        U[Utilization: 87.5% CPU, 84% Memory]
+    end
 ```
-After Node Optimization:
-┌──────────────────────────────────────────────────┐
-│ Node 1 (m6i.xlarge - 4 vCPU, 16GB - $140/mo)    │
-│ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐ ┌─────┐│
-│ │ A   │ │ B   │ │ C   │ │ D   │ │ E   │ │ F   ││
-│ │500m │ │300m │ │200m │ │1CPU │ │1CPU │ │500m ││
-│ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘ └─────┘│
-│ Utilization: 87.5% CPU, 84% memory              │
-└──────────────────────────────────────────────────┘
 Total: 1 node × $140 = $140/mo
 Savings: $715/mo (84% reduction)
-```
 
 This module covers the tools and strategies that make this consolidation happen automatically: **Karpenter, Cluster Autoscaler, Spot instances, bin-packing, and ARM migration**.
 
@@ -96,13 +96,13 @@ This module covers the tools and strategies that make this consolidation happen 
 
 The original Kubernetes node autoscaler. Works with cloud provider Auto Scaling Groups (ASGs).
 
-```
-Cluster Autoscaler Workflow:
-┌──────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
-│ Pod is   │────▶│ CAS sees │────▶│ CAS asks │────▶│ ASG adds │
-│ Pending  │     │ unschedul│     │ ASG to   │     │ a node   │
-│ (no node)│     │ -able pod│     │ scale up │     │ (3-5 min)│
-└──────────┘     └──────────┘     └──────────┘     └──────────┘
+**Cluster Autoscaler Workflow:**
+
+```mermaid
+flowchart LR
+    A[Pod is Pending<br>no node] --> B[CAS sees<br>unschedulable pod]
+    B --> C[CAS asks ASG<br>to scale up]
+    C --> D[ASG adds<br>a node<br>3-5 min]
 ```
 
 **How it works**:
@@ -123,15 +123,15 @@ Cluster Autoscaler Workflow:
 
 The next-generation Kubernetes node provisioner. Replaces ASGs entirely.
 
+**Karpenter Workflow:**
+
+```mermaid
+flowchart LR
+    A[Pod is Pending<br>no node] --> B[Karpenter calculates<br>optimal instance]
+    B --> C[EC2 Fleet API<br>spins up node<br>~1 min]
 ```
-Karpenter Workflow:
-┌──────────┐     ┌──────────┐     ┌──────────┐
-│ Pod is   │────▶│ Karpenter│────▶│ EC2 Fleet│
-│ Pending  │     │ calculates     │ API spins│
-│ (no node)│     │ optimal  │     │ up node  │
-│          │     │ instance │     │ (~1 min) │
-└──────────┘     └──────────┘     └──────────┘
-```
+
+> **Stop and think**: How does the provisioning speed of Karpenter compared to Cluster Autoscaler change your approach to capacity planning and over-provisioning?
 
 **How it works**:
 1. Pods become `Pending`
@@ -330,36 +330,37 @@ Consolidation is Karpenter's killer feature for cost savings. It continuously ev
 
 ### How Consolidation Works
 
+**Before Consolidation:**
+
+```mermaid
+graph TD
+    subgraph Node A [Node A: xlarge - 4 CPU, 16 GB - $140/mo]
+        P1[Pod 1: 1CPU]
+        P2[Pod 2: 500m]
+        UA[Used: 1.5/4 CPU]
+    end
+    subgraph Node B [Node B: xlarge - 4 CPU, 16 GB - $140/mo]
+        P3[Pod 3: 300m<br>mostly empty]
+        UB[Used: 0.3/4 CPU]
+    end
 ```
-Before Consolidation:
-┌────────────────────┐  ┌────────────────────┐
-│ Node A (xlarge)    │  │ Node B (xlarge)    │
-│ 4 CPU, 16 GB      │  │ 4 CPU, 16 GB      │
-│                    │  │                    │
-│ ┌─────┐ ┌─────┐   │  │ ┌─────┐           │
-│ │Pod 1│ │Pod 2│   │  │ │Pod 3│ (mostly   │
-│ │1CPU │ │500m │   │  │ │300m │  empty)    │
-│ └─────┘ └─────┘   │  │ └─────┘           │
-│ Used: 1.5/4 CPU   │  │ Used: 0.3/4 CPU   │
-│ Cost: $140/mo     │  │ Cost: $140/mo      │
-└────────────────────┘  └────────────────────┘
 Total: $280/mo, 1.8 CPU used of 8 available (22%)
 
-After Consolidation:
-┌────────────────────┐
-│ Node C (large)     │  Karpenter replaced 2 xlarge
-│ 2 CPU, 8 GB       │  with 1 large
-│                    │
-│ ┌─────┐┌─────┐┌────┐│
-│ │Pod 1││Pod 2││Pod3││
-│ │1CPU ││500m ││300m││
-│ └─────┘└─────┘└────┘│
-│ Used: 1.8/2 CPU   │
-│ Cost: $70/mo       │
-└────────────────────┘
+**After Consolidation:**
+
+```mermaid
+graph TD
+    subgraph Node C [Node C: large - 2 CPU, 8 GB - $70/mo]
+        P1[Pod 1: 1CPU]
+        P2[Pod 2: 500m]
+        P3[Pod 3: 300m]
+        UC[Used: 1.8/2 CPU]
+    end
+    Note[Karpenter replaced 2 xlarge<br>with 1 large.<br>Savings: $210/mo - 75%]
+```
+
 Total: $70/mo, 1.8 CPU used of 2 available (90%)
 Savings: $210/mo (75%)
-```
 
 ### Consolidation Policies
 
@@ -402,29 +403,33 @@ Bin-packing is the art of fitting pods onto nodes with minimal wasted space — 
 
 The default scheduler (`kube-scheduler`) uses a `MostRequestedPriority` or `LeastRequestedPriority` scoring function:
 
-```
-LeastRequestedPriority (default):
-┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Node A   │  │ Node B   │  │ Node C   │
-│ 60% full │  │ 30% full │  │ 80% full │
-│          │  │  ← Pod   │  │          │
-│          │  │  goes    │  │          │
-│          │  │  HERE    │  │          │
-└──────────┘  └──────────┘  └──────────┘
-Spreads pods across nodes (good for availability)
-Bad for cost (keeps more nodes active)
+**LeastRequestedPriority (default):**
 
-MostRequestedPriority:
-┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Node A   │  │ Node B   │  │ Node C   │
-│ 60% full │  │ 30% full │  │ 80% full │
-│          │  │          │  │  ← Pod   │
-│          │  │          │  │  goes    │
-│          │  │          │  │  HERE    │
-└──────────┘  └──────────┘  └──────────┘
-Packs pods onto fullest nodes (good for cost)
-Node B can potentially be removed
+```mermaid
+graph TD
+    subgraph Least Requested Priority
+        direction LR
+        NodeA[Node A: 60% full]
+        NodeB[Node B: 30% full]
+        NodeC[Node C: 80% full]
+        Pod[New Pod] --> NodeB
+    end
 ```
+Spreads pods across nodes (good for availability). Bad for cost (keeps more nodes active).
+
+**MostRequestedPriority:**
+
+```mermaid
+graph TD
+    subgraph Most Requested Priority
+        direction LR
+        NodeA[Node A: 60% full]
+        NodeB[Node B: 30% full]
+        NodeC[Node C: 80% full]
+        Pod[New Pod] --> NodeC
+    end
+```
+Packs pods onto fullest nodes (good for cost). Node B can potentially be removed.
 
 ### Cost-Optimized Scheduler Profile
 
@@ -453,26 +458,26 @@ profiles:
           weight: 1
 ```
 
+> **Pause and predict**: If you implement aggressive bin-packing, what happens when a node fails? How should you mitigate this risk?
+
 ### Karpenter's Bin-Packing
 
 Karpenter naturally bin-packs because it selects the optimal instance size for pending pods:
 
-```
 Pending pods need: 2.5 CPU, 6 GB total
 
-Cluster Autoscaler (ASG with m6i.2xlarge):
+**Cluster Autoscaler (ASG with m6i.2xlarge):**
   → Adds m6i.2xlarge (8 CPU, 32 GB) = $285/mo
   → Utilization: 31% CPU, 19% memory
   → Wasted: $196/mo
 
-Karpenter (flexible instance selection):
+**Karpenter (flexible instance selection):**
   → Selects m6i.large (2 CPU, 8 GB) = $70/mo  ← too small
   → Selects c6i.xlarge (4 CPU, 8 GB) = $122/mo ← fits!
   → Utilization: 63% CPU, 75% memory
   → Wasted: $45/mo
 
 Savings: $163/mo per node decision
-```
 
 ---
 
@@ -570,20 +575,16 @@ AWS Graviton processors (ARM architecture) offer:
 - **Up to 40% better price-performance** for many workloads
 - **Lower energy consumption** (sustainability bonus)
 
-```
-Price Comparison:
-┌─────────────────────────────────────────────────┐
-│ Instance Type    │ Arch │  $/hr  │ Monthly(730h)│
-├──────────────────┼──────┼────────┼──────────────│
-│ m6i.xlarge       │ x86  │ $0.192 │ $140.16      │
-│ m6g.xlarge       │ ARM  │ $0.154 │ $112.42      │
-│ Savings          │      │  20%   │ $27.74/mo    │
-│──────────────────┼──────┼────────┼──────────────│
-│ c6i.2xlarge      │ x86  │ $0.340 │ $248.20      │
-│ c6g.2xlarge      │ ARM  │ $0.272 │ $198.56      │
-│ Savings          │      │  20%   │ $49.64/mo    │
-└─────────────────────────────────────────────────┘
-```
+**Price Comparison:**
+
+| Instance Type | Arch | $/hr | Monthly (730h) |
+|---|---|---|---|
+| m6i.xlarge | x86 | $0.192 | $140.16 |
+| m6g.xlarge | ARM | $0.154 | $112.42 |
+| **Savings** | | **20%** | **$27.74/mo** |
+| c6i.2xlarge | x86 | $0.340 | $248.20 |
+| c6g.2xlarge | ARM | $0.272 | $198.56 |
+| **Savings** | | **20%** | **$49.64/mo** |
 
 ### Migrating Workloads to ARM
 
@@ -674,18 +675,15 @@ On a `m6i.large` (2 CPU, 8 GB):
 | Use managed alternatives | AWS CloudWatch instead of fluent-bit DaemonSet | Medium |
 | Consolidate agents | One observability agent instead of three | Medium |
 
-```
-DaemonSet overhead impact by node size:
-┌──────────────────────────────────────────────────────┐
-│ Node Type    │ Total CPU │ DS Overhead │ % Overhead │
-├──────────────┼───────────┼─────────────┼────────────│
-│ m6i.medium   │  1 CPU    │   485m      │    49%     │ ← terrible
-│ m6i.large    │  2 CPU    │   485m      │    24%     │
-│ m6i.xlarge   │  4 CPU    │   485m      │    12%     │
-│ m6i.2xlarge  │  8 CPU    │   485m      │     6%     │
-│ m6i.4xlarge  │ 16 CPU    │   485m      │     3%     │ ← efficient
-└──────────────────────────────────────────────────────┘
-```
+**DaemonSet overhead impact by node size:**
+
+| Node Type | Total CPU | DS Overhead | % Overhead |
+|---|---|---|---|
+| m6i.medium | 1 CPU | 485m | 49% (terrible) |
+| m6i.large | 2 CPU | 485m | 24% |
+| m6i.xlarge | 4 CPU | 485m | 12% |
+| m6i.2xlarge | 8 CPU | 485m | 6% |
+| m6i.4xlarge | 16 CPU | 485m | 3% (efficient) |
 
 **Takeaway**: With significant DaemonSet overhead, fewer large nodes are more cost-effective than many small nodes.
 
@@ -709,78 +707,48 @@ DaemonSet overhead impact by node size:
 ## Quiz
 
 ### Question 1
-What is the key architectural difference between Cluster Autoscaler and Karpenter?
+Your team is currently using Cluster Autoscaler with three pre-defined Auto Scaling Groups (m6i.large, c6i.xlarge, r6i.2xlarge). You are evaluating a move to Karpenter to reduce provisioning time and lower costs. Based on their architectural differences, how will Karpenter change how your team manages node sizes and provisioning?
 
 <details>
 <summary>Show Answer</summary>
 
-**Cluster Autoscaler** works through Auto Scaling Groups (ASGs). You pre-define node groups with specific instance types, and CAS scales those groups up or down. It can only add instances of the types configured in each ASG.
-
-**Karpenter** bypasses ASGs entirely and calls the EC2 Fleet API directly. It evaluates pending pods' requirements and selects the optimal instance type from a large pool of candidates — potentially choosing an instance type you never explicitly configured. This makes it faster (~60s vs 3-5 minutes) and more cost-efficient (right-sized instance selection, better bin-packing).
+Cluster Autoscaler relies on cloud provider Auto Scaling Groups (ASGs) and is restricted to the specific instance types configured within those pre-defined groups. If pending pods need a different size, CAS cannot provision it, potentially leading to wasted space or unschedulable workloads. In contrast, Karpenter bypasses ASGs entirely and communicates directly with the EC2 Fleet API. It dynamically evaluates pending pods' exact requirements and selects the most cost-effective instance type from a massive pool of candidates. This means your team no longer needs to manage static node groups, and the cluster gains the flexibility to bin-pack pods tightly on right-sized nodes in a fraction of the time.
 </details>
 
 ### Question 2
-Why are fewer, larger nodes generally more cost-efficient than many small nodes in Kubernetes?
+You are designing a new cluster architecture and must choose between provisioning fifty 2-vCPU nodes or twelve 8-vCPU nodes. Both options provide roughly 100 vCPUs total. Which option is more cost-efficient for a typical Kubernetes workload, and why?
 
 <details>
 <summary>Show Answer</summary>
 
-**DaemonSet overhead.** Every node runs the same set of DaemonSets (kube-proxy, CNI, logging, monitoring, etc.) regardless of node size. On a small node (2 CPU), DaemonSets might consume 25% of capacity. On a large node (16 CPU), the same DaemonSets consume only 3%. Additionally, Kubernetes reserves resources on each node for system components (kubelet, OS). Fewer, larger nodes mean less total overhead and more capacity available for actual workloads.
+The twelve 8-vCPU nodes will be significantly more cost-efficient due to the fixed overhead introduced by DaemonSets and Kubernetes system components. Every node in a cluster must run essential services like kube-proxy, CNI plugins, logging agents, and monitoring tools, which consume a baseline amount of CPU and memory. On a small 2-vCPU node, this fixed overhead might consume 25% to 40% of the total capacity, leaving very little room for your actual applications. By using fewer, larger nodes, you pay this 'DaemonSet tax' fewer times, resulting in a much higher percentage of your purchased compute capacity being available for application pods.
 </details>
 
 ### Question 3
-A team wants to run their payment processing service on Spot instances to save money. What's your advice?
+A team wants to run their critical payment processing service entirely on Spot instances to drastically reduce their AWS bill. They currently run 5 replicas across three Availability Zones. What is your advice regarding this strategy?
 
 <details>
 <summary>Show Answer</summary>
 
-It depends on the architecture:
-
-**Yes, if**: The service runs 3+ replicas, is stateless, handles SIGTERM gracefully, and has PodDisruptionBudgets ensuring minimum availability. Spread replicas across multiple AZs and instance types. Use Spot for the majority of replicas, keep 1-2 on On-Demand as a baseline.
-
-**No, if**: It's a single replica, maintains critical in-memory state, or has long-running transactions that can't be interrupted. Payment processing often has strict reliability requirements — a 2-minute interruption could mean failed transactions.
-
-**Compromise**: Run the stateless API tier on Spot, but keep the database and any stateful components on On-Demand.
+While running workloads on Spot instances can yield 60-90% savings, placing a critical payment processing service entirely on Spot is highly risky and generally not recommended. Spot instances can be interrupted with only a two-minute warning, which could cause inflight payment transactions to be dropped if the application cannot gracefully shut down and drain connections in time. Even with multiple replicas, a simultaneous reclamation of Spot capacity in a specific Availability Zone could cause an unacceptable outage for a tier-1 service. A safer compromise is to run the baseline capacity on On-Demand instances to guarantee availability, and configure horizontal pod autoscaling to use Spot instances only for handling traffic spikes.
 </details>
 
 ### Question 4
-Karpenter's consolidation policy is set to `WhenEmptyOrUnderutilized`. Explain what happens when a node is only 15% utilized.
+During a low-traffic period at 2:00 AM, one of your cluster's m6i.4xlarge nodes drops to 15% utilization. Your Karpenter configuration has `consolidationPolicy: WhenEmptyOrUnderutilized` enabled. Detail the exact sequence of events Karpenter will orchestrate to optimize this state and explain why each step is necessary.
 
 <details>
 <summary>Show Answer</summary>
 
-Karpenter detects that the node is under-utilized (15%) and evaluates whether the pods on that node could fit onto other existing nodes — or onto a smaller, cheaper replacement node. If consolidation is possible:
-
-1. Karpenter cordons the node (prevents new pods from scheduling)
-2. It respects PodDisruptionBudgets and `do-not-disrupt` annotations
-3. Pods are drained and rescheduled onto other nodes (or a new smaller node)
-4. The under-utilized node is terminated
-5. This happens after `consolidateAfter` duration (e.g., 30 seconds of being under-utilized)
-
-The result: a tighter, more cost-efficient cluster with higher average utilization.
+Karpenter constantly monitors node utilization and will identify the `m6i.4xlarge` node as highly inefficient at 15% capacity. It first simulates the cluster state to determine if the pods on this node can fit onto other existing nodes, or if replacing the node with a smaller, cheaper instance (like an `m6i.large`) would save money. Once a cheaper configuration is found, Karpenter cordons the under-utilized node to prevent new pods from being scheduled there. It then respects any PodDisruptionBudgets and gracefully evicts the pods, ensuring workload availability isn't compromised during the move. Finally, after all pods are safely rescheduled, Karpenter terminates the expensive `m6i.4xlarge` node, leaving the cluster in a more cost-efficient state without manual intervention.
 </details>
 
 ### Question 5
-Your cluster runs 30 `m6i.xlarge` (x86) nodes. A colleague suggests migrating to `m6g.xlarge` (Graviton/ARM) for 20% savings. What steps would you take?
+Your cluster currently runs 30 `m6i.xlarge` (x86) nodes. A colleague suggests migrating all workloads to `m6g.xlarge` (Graviton/ARM) over the weekend to immediately capture a 20% cost savings. How should you approach this migration to prevent application outages?
 
 <details>
 <summary>Show Answer</summary>
 
-1. **Audit container images**: Check which images support `linux/arm64` using `docker manifest inspect`. Most official images (nginx, redis, postgres, etc.) already support multi-arch.
-
-2. **Identify blockers**: Find images that are x86-only. These need multi-arch builds (`docker buildx`) or vendor updates.
-
-3. **Start with non-critical workloads**: Move development and staging to Graviton first.
-
-4. **Add ARM to Karpenter NodePool**: Set `kubernetes.io/arch` to `["amd64", "arm64"]` — Karpenter will automatically prefer cheaper Graviton instances.
-
-5. **Use node affinity for testing**: Schedule specific workloads on ARM nodes while keeping the rest on x86.
-
-6. **Monitor performance**: Compare latency, throughput, and error rates between x86 and ARM pods.
-
-7. **Gradual rollout**: Move production workloads one service at a time, starting with the easiest (stateless, multi-arch image available).
-
-Expected savings on 30 nodes: ~$835/month (30 * $27.74).
+A sudden, cluster-wide migration to ARM without validation is dangerous because container images compiled exclusively for x86 architectures will fail to start on Graviton nodes with an `exec format error`. You must first audit all container images in the cluster using `docker manifest inspect` to ensure they support the `linux/arm64` architecture. Once multi-arch images are confirmed or built, you should roll out the change gradually by adding the ARM architecture to your Karpenter NodePool requirements rather than forcing a hard cutover. By utilizing node affinity during testing, you can safely monitor performance and reliability on Graviton instances before fully committing production workloads to the new architecture.
 </details>
 
 ---
