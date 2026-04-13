@@ -1,6 +1,6 @@
 ---
 title: "Text Generation & Sampling Strategies"
-slug: ai-ml-engineering/generative-ai/module-2.3-text-generation-sampling-strategies
+slug: ai-ml-engineering/generative-ai/module-1.3-text-generation-sampling-strategies
 sidebar:
   order: 304
 ---
@@ -35,6 +35,8 @@ When an LLM generates text, it doesn't just pick "the best" word. It **samples**
 - **Consistency** (deterministic vs random)
 - **Quality** (coherent vs nonsensical)
 - **Diversity** (varied vs repetitive)
+
+> **Stop and think**: If you were building an automated medical diagnosis summarizer for doctors, would you want the model to be creative and diverse, or boring and consistent? How might sampling parameters impact patient safety?
 
 **This module teaches you the hidden levers that control LLM generation.**
 
@@ -99,39 +101,37 @@ Understanding sampling parameters is like learning to drive - theory is importan
 **Autoregressive generation**: Generate one token at a time, using previous tokens as context.
 
 **Process**:
-```
-1. Start with prompt: "The cat sat on the"
-2. Model predicts next token: " mat" (or " chair" or " roof" or...)
-3. Append to sequence: "The cat sat on the mat"
-4. Predict next token: "." (or ", sleeping" or " and" or...)
-5. Append: "The cat sat on the mat."
-6. Repeat until stop condition
+
+```mermaid
+flowchart TD
+    A[1. Start with prompt: 'The cat sat on the'] --> B[2. Model predicts next token: ' mat']
+    B --> C[3. Append to sequence: 'The cat sat on the mat']
+    C --> D[4. Predict next token: '.']
+    D --> E[5. Append: 'The cat sat on the mat.']
+    E --> F{6. Stop condition met?}
+    F -- No --> B
+    F -- Yes --> G[End Generation]
 ```
 
 **Visualized**:
-```
-Input:  "The cat sat on the"
-Model:  → Probability distribution over all possible next tokens
-        " mat":     0.35  (35%)
-        " floor":   0.25  (25%)
-        " chair":   0.15  (15%)
-        " roof":    0.10  (10%)
-        " sofa":    0.05   (5%)
-        (50,000 other tokens with lower probabilities)
-Sample: → Choose one token based on sampling strategy
-Output: " mat"
 
-Next iteration:
-Input:  "The cat sat on the mat"
-Model:  → New probability distribution
-        ".":        0.40  (40%)
-        ",":        0.20  (20%)
-        " and":     0.15  (15%)
-        ...
-Sample: → Choose next token
-Output: "."
-
-Final: "The cat sat on the mat."
+```mermaid
+flowchart TD
+    subgraph Iteration 1
+        I1["Input: 'The cat sat on the'"] --> M1("Model: Probability distribution")
+        M1 --> D1["' mat': 0.35 (35%)<br>' floor': 0.25 (25%)<br>' chair': 0.15 (15%)<br>' roof': 0.10 (10%)<br>' sofa': 0.05 (5%)<br>(50,000 other tokens)"]
+        D1 -.->|Sample Strategy| O1["Output: ' mat'"]
+    end
+    
+    O1 --> I2
+    
+    subgraph Iteration 2
+        I2["Input: 'The cat sat on the mat'"] --> M2("Model: Probability distribution")
+        M2 --> D2["'.': 0.40 (40%)<br>',': 0.20 (20%)<br>' and': 0.15 (15%)<br>..."]
+        D2 -.->|Sample Strategy| O2["Output: '.'"]
+    end
+    
+    O2 --> F["Final: 'The cat sat on the mat.'"]
 ```
 
 ---
@@ -313,6 +313,8 @@ With temperature = 1.5:
 
 **Danger**: Too high (>2.0) and outputs become incoherent!
 
+> **Pause and predict**: If you are writing a script to generate Python unit tests for a strict CI pipeline, should you use a temperature of 0.1 or 0.9? Why?
+
 **Did You Know?** 
 The "temperature" name comes from statistical mechanics in physics! In thermodynamics, higher temperature means more random molecular motion. Similarly, in LLMs, higher temperature means more random token selection. At temperature = 0 (absolute zero), all randomness disappears - just like molecules would stop moving at 0 Kelvin. The mathematical connection is real: both use the Boltzmann distribution!
 
@@ -368,6 +370,8 @@ Sample randomly from the nucleus.
 ```
 
 **Result**: Filters out low-probability "tail" tokens that would make output weird.
+
+> **Stop and think**: If `top_p` is set to 0.9 and the highest probability token alone has a probability of 0.95, how many tokens will be included in the nucleus?
 
 **Did You Know?** 
 Top-p sampling (nucleus sampling) was introduced in 2019 by researchers at the University of Washington and AI2 in their paper "The Curious Case of Neural Text Degeneration." Before this, most systems used top-k or pure sampling, which often produced repetitive or weird text. Nucleus sampling revolutionized text generation by dynamically adapting to the model's confidence - when the model is certain (one token has high probability), nucleus is small; when uncertain, nucleus grows to include more options. This is why modern APIs default to top-p instead of top-k!
@@ -744,14 +748,20 @@ Some APIs support **length penalty**:
 
 **Determinism ↔ Creativity**
 
-```
-Temperature = 0.0         Temperature = 1.0         Temperature = 2.0
-    ↓                          ↓                          ↓
-Boring but                 Balanced                   Creative but
-reliable                   quality                    unpredictable
-    ↓                          ↓                          ↓
-"The cat sat            "The cat sat             "The cat sat
- on the mat."            on the chair."            on the spaceship."
+```mermaid
+flowchart TD
+    subgraph T0 [Temperature = 0.0]
+        direction TB
+        A1[Boring but reliable] --> A2["The cat sat on the mat."]
+    end
+    subgraph T1 [Temperature = 1.0]
+        direction TB
+        B1[Balanced quality] --> B2["The cat sat on the chair."]
+    end
+    subgraph T2 [Temperature = 2.0]
+        direction TB
+        C1[Creative but unpredictable] --> C2["The cat sat on the spaceship."]
+    end
 ```
 
 **You can't have maximum creativity AND maximum consistency!**
@@ -1174,18 +1184,49 @@ By 2023, some AI products started exposing temperature as a user-facing feature:
 
 ---
 
-## Knowledge Check
+## Knowledge Check: Scenario-Based Quiz
 
-Before moving to Module 9, you should be able to:
+**1. You are building an automated customer support bot that parses messy customer emails to extract a standardized JSON payload for your ticketing system. During testing, the bot occasionally prepends "Here is the extracted information:" before the JSON, which breaks your downstream parser. Which sampling configuration is most appropriate to fix this?**
+- A) `temperature: 0.7`, `top_p: 0.9`, no stop sequences
+- B) `temperature: 1.0`, `repetition_penalty: 1.5`, max tokens 500
+- C) `temperature: 0.0`, `stop_sequences: ["\n}"]`, `max_tokens`: 1000
+- D) `temperature: 0.2`, `top_k: 50`, no stop sequences
 
-- [ ] Explain how autoregressive generation works
-- [ ] Describe what temperature does and when to use different values
-- [ ] Explain the difference between top-p and top-k sampling
-- [ ] Choose appropriate sampling strategies for different use cases
-- [ ] Understand when to use repetition penalty
-- [ ] Set max_tokens appropriately for your use case
-- [ ] Debug sampling-related issues in generated text
-- [ ] Balance creativity and consistency based on requirements
+<details>
+<summary>Click for the answer</summary>
+
+**Correct Answer: C**
+
+**Why:** Extracting structured data like JSON requires absolute determinism to ensure the output schema is strictly followed without any creative flair or conversational filler. Setting the temperature to `0.0` (greedy decoding) ensures the model consistently chooses the highest probability tokens, which aligns with predictable data formatting. Furthermore, using a stop sequence like `\n}` prevents the model from generating extraneous text after the JSON object has been completed. The other options introduce randomness (`temperature > 0`) or fail to provide a definitive stopping mechanism, both of which risk breaking the parser.
+</details>
+
+**2. Your startup has built an "AI Brainstorming Partner" designed to help writers overcome writer's block by suggesting wild, unexpected plot twists. However, beta testers are complaining that the suggestions are highly repetitive and feel like standard Hollywood tropes. You check the backend and see the configuration is `{"temperature": 0.5, "top_p": 0.9}`. What is the most effective adjustment?**
+- A) Decrease `temperature` to 0.0 and increase `top_p` to 1.0
+- B) Increase `temperature` to 1.2 and add a `repetition_penalty` of 1.3
+- C) Switch to top-k sampling with `top_k: 5`
+- D) Add stop sequences to end the generations earlier
+
+<details>
+<summary>Click for the answer</summary>
+
+**Correct Answer: B**
+
+**Why:** The goal of a brainstorming tool is to maximize creativity and surface unusual or surprising ideas, which means you need to flatten the probability distribution. Increasing the temperature to `1.2` encourages the model to select lower-probability, less obvious tokens, directly combating the "standard trope" problem. Additionally, introducing a `repetition_penalty` of `1.3` actively discourages the model from reusing the same words or phrases, ensuring the generated plot twists remain diverse and varied. Lowering the temperature or restricting the token pool (like with `top_k: 5`) would only make the outputs more predictable and boring.
+</details>
+
+**3. You are configuring an LLM for a public-facing chatbot. You want it to be conversational and natural, but you absolutely cannot afford for it to start hallucinating completely nonsensical words or generating gibberish. You've set the temperature to `0.8`. Which parameter should you pair with this to act as a safety net against gibberish?**
+- A) `top_p: 0.9`
+- B) `repetition_penalty: 2.0`
+- C) `top_k: 1`
+- D) `temperature: 0.0` (as a fallback)
+
+<details>
+<summary>Click for the answer</summary>
+
+**Correct Answer: A**
+
+**Why:** A temperature of `0.8` provides the desired conversational variety, but it also increases the likelihood of sampling from the very low-probability "tail" of the distribution, which can lead to nonsensical output. Nucleus sampling (`top_p: 0.9`) acts as a dynamic safety net by dynamically truncating that tail and restricting the sample pool to only the tokens that make up the top 90% of the cumulative probability mass. This guarantees that while the response remains varied, the model will never select bizarre, statistically improbable tokens. Setting `top_k: 1` would defeat the purpose of the temperature setting by forcing deterministic output.
+</details>
 
 ---
 
