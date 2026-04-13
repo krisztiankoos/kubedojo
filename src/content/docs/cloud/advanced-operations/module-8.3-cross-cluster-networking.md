@@ -362,18 +362,17 @@ Cross-cluster networking is not just a technical challenge -- it is a cost chall
 
 ### Topology-Aware Routing
 
-Kubernetes 1.27+ supports topology hints that tell kube-proxy to prefer endpoints in the same zone.
+Modern Kubernetes (v1.30+) supports topology-aware routing via the `trafficDistribution` field, which tells kube-proxy to prefer endpoints in the same zone. (In older versions, this was done via annotations like `service.kubernetes.io/topology-mode: Auto`).
 
 ```yaml
-# Enable topology-aware routing on a service
+# Enable topology-aware routing on a service (Kubernetes 1.30+)
 apiVersion: v1
 kind: Service
 metadata:
   name: fraud-detection
   namespace: payments
-  annotations:
-    service.kubernetes.io/topology-mode: Auto
 spec:
+  trafficDistribution: PreferClose
   selector:
     app: fraud-detection
   ports:
@@ -720,11 +719,11 @@ The team should choose Cilium Cluster Mesh for this requirement. Cilium Cluster 
 <details>
 <summary>3. A service has 6 replicas: 4 running in us-east-1a and 2 running in us-east-1b. A client pod makes a request from us-east-1a. How does traffic distribution change if you enable topology-aware routing on the service?</summary>
 
-Without topology hints, kube-proxy randomly distributes traffic across all 6 endpoints, meaning roughly 33% of requests from the client in `us-east-1a` would cross the availability zone boundary to `us-east-1b`. With topology-aware routing enabled (`topology-mode: Auto`), kube-proxy creates endpoint slices that heavily prefer routing traffic to endpoints located in the exact same zone as the requesting client. Because there are four healthy endpoints available in `us-east-1a` to handle the load, kube-proxy will route nearly 100% of the client's traffic to those local endpoints. This eliminates the latency and the $0.01/GB cross-AZ data transfer charges that would otherwise occur.
+Without topology hints, kube-proxy randomly distributes traffic across all 6 endpoints, meaning roughly 33% of requests from the client in `us-east-1a` would cross the availability zone boundary to `us-east-1b`. With topology-aware routing enabled (`trafficDistribution: PreferClose`), kube-proxy creates endpoint slices that heavily prefer routing traffic to endpoints located in the exact same zone as the requesting client. Because there are four healthy endpoints available in `us-east-1a` to handle the load, kube-proxy will route nearly 100% of the client's traffic to those local endpoints. This eliminates the latency and the $0.01/GB cross-AZ data transfer charges that would otherwise occur.
 </details>
 
 <details>
-<summary>4. Your multi-region payment gateway experiences a 10-minute network partition where the US-East and EU-West clusters lose connectivity to each other, but both remain online and accept user traffic. Explain the 'split-brain' phenomenon that occurs during this time and why it is dangerous for the system's data integrity.</summary>
+<summary>4. Your multi-region payment gateway experiences a 10-minute network partition where the US-East and EU-West clusters lose connectivity to each other, but both remain online and accept user traffic. What phenomenon occurs during this time, and why is it dangerous for the system's data integrity?</summary>
 
 During this partition, a 'split-brain' scenario occurs because both the US-East and EU-West clusters continue operating independently, with each believing it is the sole authoritative source of truth. This is incredibly dangerous because users might perform concurrent write operations—such as depositing funds in the US and withdrawing them in the EU—creating conflicting state changes that the system cannot easily reconcile once the network restores. Since neither cluster is aware of the other's transactions during the outage, simple synchronization will overwrite or lose data. To prevent catastrophic data corruption, systems must implement application-level mitigations like single-writer architectures, CRDTs, or strict partition detection that forces the system into a read-only safe mode.
 </details>
