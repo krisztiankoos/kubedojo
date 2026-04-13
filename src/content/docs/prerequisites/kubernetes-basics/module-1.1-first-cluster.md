@@ -566,6 +566,16 @@ You must design and provision a multi-node cluster configuration utilizing `kind
 </details>
 
 <details>
+<summary><strong>[Tests LO5: Evaluate the impact of control plane component failures]</strong> During a routine chaos engineering exercise on your local `kind` multi-node cluster, you accidentally delete the `kube-scheduler` pod running in the `kube-system` namespace. Immediately after, you submit a new `Deployment` manifest for a critical frontend application. What exact state will the new frontend pods enter, and why?</summary>
+The newly created frontend pods will transition immediately into a `Pending` state and remain there indefinitely. The API Server will successfully authenticate the request, validate the manifest, and persist the desired state to `etcd`, meaning the pods exist as records in the datastore. However, because the `kube-scheduler` is responsible for evaluating node resources and assigning pods to specific worker nodes, its absence breaks the deployment chain. Without the scheduler's node assignment, the `kubelet` processes on the worker nodes will never be instructed to actually start the containers.
+</details>
+
+<details>
+<summary><strong>[Tests LO6: Analyze and manipulate the kubeconfig file]</strong> You are consulting for a team managing multiple Kubernetes environments. A developer provides you with a custom `kubeconfig` file containing administrative credentials for their staging cluster and asks you to debug a deployment. You do not want to risk permanently modifying your default `~/.kube/config` file. How do you securely interact with the staging cluster using their provided file without altering your existing global configuration?</summary>
+You must explicitly export the `KUBECONFIG` environment variable in your terminal session, pointing it directly to the absolute path of the provided file (e.g., `export KUBECONFIG=/path/to/staging-config.yaml`). When this variable is set, the `kubectl` binary completely bypasses the default `~/.kube/config` location and exclusively reads authentication and routing data from the specified path. This ensures perfect isolation for your debugging session. Once you close the terminal window or unset the variable, your `kubectl` tool will safely revert to utilizing your original, unmodified default configuration file.
+</details>
+
+<details>
 <summary><strong>[Tests LO7: Formulate a strict local development strategy]</strong> You successfully provision a local `kind` cluster. You then run `kubectl port-forward svc/my-web-app 8080:80` to access a web server pod. You open a browser and the site loads perfectly. You then press `Ctrl+C` in your terminal to stop the command, and refresh the browser. What happens and why?</summary>
 The browser will immediately return a "Connection Refused" or "Site cannot be reached" error. `kubectl port-forward` creates an active, foreground proxy tunnel between your local workstation and the API Server, which then tunnels directly to the specific pod network namespace. When you terminate the process (`Ctrl+C`), the tunnel is immediately destroyed, completely severing the network path. It is not a permanent routing configuration or a load balancer; it is strictly an ephemeral debugging utility that relies on the foreground process remaining active.
 </details>
