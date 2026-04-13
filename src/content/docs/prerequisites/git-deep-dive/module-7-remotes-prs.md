@@ -405,17 +405,17 @@ When reviewing, be kind but rigorous. Instead of saying, "This is wrong, use a S
 
 <details>
 <summary>Question 1: You are ready to start work on a new feature. You know the upstream `main` branch has received updates since yesterday. What sequence of commands ensures your local `main` is perfectly synced before you branch off?</summary>
-Answer: First, `git fetch upstream` to update your tracking branches. Then, `git checkout main` to ensure you are on the correct local branch. Finally, `git rebase upstream/main` to fast-forward your local branch to match the remote state. (Using `git pull --rebase upstream main` achieves the same in one step). This multi-step process is crucial because it cleanly updates your local state without creating unnecessary merge commits, ensuring your new feature branch starts from a pristine, linear history.
+Answer: First, `git fetch upstream` to update your tracking branches. Then, `git checkout main` to ensure you are on the correct local branch. Finally, `git rebase upstream/main` to fast-forward your local branch to match the remote state. Using `git pull --rebase upstream main` achieves the exact same result in a single, more efficient step. This multi-step process is crucial because it cleanly updates your local state without creating unnecessary merge commits. Ensuring your new feature branch starts from a pristine, linear history prevents complicated conflicts later in the PR lifecycle.
 </details>
 
 <details>
 <summary>Question 2: You just spent an hour rebasing your local feature branch to squash some messy commits. You run `git push origin my-feature` and it is rejected. Why did this happen, and what is the safest way to proceed?</summary>
-Answer: It was rejected because rebasing rewrites commit hashes, causing your local history to diverge from the remote history. The server sees this as a conflict. The safest way to proceed is `git push --force-with-lease origin my-feature`. This is crucial because it forces the update but includes a safety check that aborts if a teammate has pushed new commits to the remote in the meantime, preventing you from accidentally overwriting their work.
+Answer: It was rejected because rebasing rewrites commit hashes, causing your local history to diverge from the remote history. The server sees this as a conflict. The safest way to proceed is `git push --force-with-lease origin my-feature`. This is crucial because it forces the update but includes a safety check that aborts if a teammate has pushed new commits to the remote in the meantime. If the lease fails, you will know immediately that you must fetch and integrate their changes before attempting to push again, preventing you from accidentally overwriting their work.
 </details>
 
 <details>
 <summary>Question 3: Your team requires atomic commits. You have added a new Redis deployment manifest, updated the backend Service manifest to expose a new port, and fixed a typo in the README. How should you commit these?</summary>
-Answer: You should create three separate commits using `git add -p` or by specifying the files individually: one commit for the Redis deployment (`feat(cache): add redis deployment`), one for the Service port update (`feat(api): expose backend port 8080`), and one for the README typo (`docs: fix typo in setup instructions`). This separation is necessary because it isolates changes by their logical purpose, allowing reviewers to verify them independently. Furthermore, atomic commits enable safe, precise rollbacks if one specific component fails without taking down unrelated changes. If you grouped them together, a rollback of the Redis deployment would needlessly revert the typo fix as well.
+Answer: You should create three separate commits using `git add -p` or by specifying the files individually: one commit for the Redis deployment, one for the Service port update, and one for the README typo. This separation is necessary because it isolates changes by their logical purpose, allowing reviewers to verify them independently. Furthermore, atomic commits enable safe, precise rollbacks if one specific component fails without taking down unrelated changes. If you grouped them together, a rollback of the Redis deployment would needlessly revert the typo fix as well.
 </details>
 
 <details>
@@ -434,7 +434,7 @@ Answer: You stage the change with `git add deployment.yaml`, then run `git commi
 </details>
 
 <details>
-<summary>Question 7: Your CI pipeline uses commit prefixes to decide whether to trigger a deployment. A teammate pushes a commit with the message `chore(deps): bump helm to 3.15`. Should the pipeline trigger a production deployment? Why or why not?</summary>
+<summary>Question 7: Your CI pipeline uses commit prefixes to decide whether to trigger a deployment. A teammate pushes a commit with the message `chore(deps): bump helm to 3.16`. Should the pipeline trigger a production deployment? Why or why not?</summary>
 Answer: The pipeline should not trigger a production deployment. According to the Conventional Commits specification, the `chore` type indicates routine maintenance that does not modify application logic or add features. Specifically, `chore(deps)` means a dependency was updated. Triggering a deployment for non-functional or non-user-facing changes introduces unnecessary risk and deployment churn, which is why CI pipelines typically ignore these commits. By reserving deployments for `feat` or `fix` commits, the team ensures that releases are stable and purpose-driven.
 </details>
 
@@ -537,7 +537,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.24-alpine
+        image: nginx:1.27-alpine
 ```
 Commit this file isolated:
 ```bash
