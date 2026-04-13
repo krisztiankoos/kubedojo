@@ -33,6 +33,8 @@ This makes it perfect for:
 - Anyone starting their Kubernetes journey
 - IT professionals transitioning to cloud native
 
+> **Practitioner Insight**: In enterprise environments, the KCNA serves a strategic operational purpose. Platform engineering teams frequently use the KCNA curriculum as a mandatory onboarding baseline for non-engineering roles (Product Managers, Technical Writers, Agile Coaches). When cross-functional teams share this common vocabulary, the "translation tax" during incident post-mortems and sprint planning drops significantly.
+
 ---
 
 ## What is KCNA?
