@@ -56,7 +56,7 @@ For very short, localized interruptions (e.g., pulling the latest changes before
 
 When you stash changes, they lose their immediate context. If you stash work, spend three days on a hotfix, and then attempt to restore the stash, you often forget exactly what the stashed changes represent. More critically, if the underlying branch has advanced significantly or if you attempt to pop the stash onto a different branch, you will encounter severe, sometimes unresolvable merge conflicts.
 
-> **Pause and predict: what do you think happens if you run `git stash` when you have newly created files that you haven't yet run `git add` on?**
+> **Pause and predict**: What do you think happens if you run `git stash` when you have newly created files that you haven't yet run `git add` on?
 >
 > *Consider how Git tracks files before reading further.*
 
@@ -112,7 +112,7 @@ git stash show -p stash@{1}
 
 > **Try it now:** Initialize a temporary git repository, create a file, commit it, modify the file, and stash the changes. Run `git stash list`, then run `git stash show -p stash@{0}` to see your stashed modifications in patch format.
 
-> **Stop and think:** You have 3 stashes. You apply `stash@{1}` and it works perfectly. What is the state of your stash stack now? Has anything changed?
+> **Stop and think**: You have 3 stashes. You apply `stash@{1}` and it works perfectly. What is the state of your stash stack now? Has anything changed?
 >
 > *Because you used `apply` instead of `pop`, the stash stack remains exactly the same. `stash@{1}` is still safely on the stack. The index numbers of your stashes do not change, ensuring you can still reference them or drop them manually later.*
 
@@ -206,37 +206,33 @@ Let's visualize how worktrees are structured on disk.
 
 When you run `git clone`, you create the "main" worktree. Inside this directory is the standard `.git` folder containing all the repository data.
 
-```text
-+-------------------------------------------------+
-| Main Worktree: /projects/k8s-operator           |
-|                                                 |
-|  deploy/                                        |
-|  src/                                           |
-|  go.mod                                         |
-|  .git/  <-- The actual repository database      |
-|    objects/                                     |
-|    refs/                                        |
-|    worktrees/  <-- Sub-worktree configurations  |
-+-------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph MainWorktree ["Main Worktree: /projects/k8s-operator"]
+        deploy["deploy/"] ~~~ src["src/"]
+        src ~~~ gomod["go.mod"]
+        gomod ~~~ dotgit[".git/  <-- The actual repository database"]
+        
+        dotgit --> objects["objects/"]
+        dotgit --> refs["refs/"]
+        dotgit --> worktrees["worktrees/  <-- Sub-worktree configurations"]
+    end
 ```
 
 When you add a new linked worktree (e.g., in a sibling directory), Git does not copy the repository. Instead, it creates a special `.git` file (not a directory) in the new location. This file contains a single line pointing back to the main repository. Inside the main repository's `.git/worktrees/` directory, Git stores the specific HEAD and index state for the linked worktree.
 
-```text
-+-------------------------------------------------+
-| Linked Worktree: /projects/k8s-operator-hotfix  |
-|                                                 |
-|  deploy/                                        |
-|  src/                                           |
-|  go.mod                                         |
-|  .git  <-- FILE pointing to main repo           |
-|            (gitdir: /projects/k8s-operator/.git/worktrees/hotfix)
-+-------------------------------------------------+
+```mermaid
+flowchart TD
+    subgraph LinkedWorktree ["Linked Worktree: /projects/k8s-operator-hotfix"]
+        deploy["deploy/"] ~~~ src["src/"]
+        src ~~~ gomod["go.mod"]
+        gomod ~~~ dotgit[".git  <-- FILE pointing to main repo<br/>(gitdir: /projects/k8s-operator/.git/worktrees/hotfix)"]
+    end
 ```
 
 This architecture ensures perfect isolation of the working tree and the staging area (index), while maintaining a completely unified commit history and network state.
 
-> **Stop and think:** If you run `git fetch` in worktree A, do you need to run `git fetch` again in worktree B to see the updated remote branches? Why or why not?
+> **Stop and think**: If you run `git fetch` in worktree A, do you need to run `git fetch` again in worktree B to see the updated remote branches? Why or why not?
 >
 > *No, you do not need to run it again. Because all linked worktrees share the same underlying `.git` object database and references in the main repository, a network operation in one worktree updates the repository state for all of them instantly.*
 
@@ -265,7 +261,7 @@ You now have a completely clean working directory at `../k8s-operator-hotfix` on
 
 Once the hotfix is merged, you simply close that terminal tab, switch back to your original tab, and continue your feature work without skipping a beat.
 
-> **Before running this, what output do you expect if you try to create a worktree for a branch that is already checked out in another worktree?**
+> **Pause and predict**: Before running this, what output do you expect if you try to create a worktree for a branch that is already checked out in another worktree?
 >
 > *Think about the constraints of a working directory.*
 
@@ -311,7 +307,7 @@ Running `prune` forces Git to verify the existence of every registered worktree 
 
 Understanding when to use which tool is the hallmark of a senior engineer. Use this matrix to guide your workflow decisions.
 
-> **Pause and predict:** Your colleague asks you to review their PR. They changed 2 files. You have no uncommitted work. What strategy do you use and why?
+> **Pause and predict**: Your colleague asks you to review their PR. They changed 2 files. You have no uncommitted work. What strategy do you use and why?
 >
 > *If you have no uncommitted work, you don't actually need stash or worktrees to save state! You can simply check out their branch in your current directory. However, if you want to keep your current branch checked out so you can instantly return to it without searching through branch history, creating a quick worktree is still an excellent choice to isolate the review context.*
 
@@ -391,7 +387,7 @@ Because the new Python script had never been added to the index, Git did not con
 <details>
 <summary>Question 5: You need to test a database migration script locally, but you don't want to disrupt your current environment. You are debating whether to run `git clone` into a new directory or use `git worktree add`. What is the fundamental architectural difference on disk between these two approaches?</summary>
 
-**Answer:** A second `git clone` duplicates the entire object database (history, commits, blobs) creating an entirely independent `.git` directory, which consumes significant disk space and requires its own network operations. `git worktree add` creates a new working directory but uses a tiny `.git` file to point back to the *original* repository's object database. This means it shares the complete commit history and network state with your main repository while conserving disk space, making it a much more efficient choice for local testing.
+**Answer:** A second `git clone` duplicates the entire object database (history, commits, blobs) creating an entirely independent `.git` directory, which consumes significant disk space and requires its own network operations. `git worktree add` creates a new working directory but uses a tiny `.git` file to point back to the *original* repository's object database. It prevents synchronization drift between the two environments, as any fetch in one is immediately reflected in the other. This means it shares the complete commit history and network state with your main repository while conserving disk space, making it a much more efficient choice for local testing.
 </details>
 
 <details>
