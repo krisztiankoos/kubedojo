@@ -1,6 +1,6 @@
 ---
 title: "LLM Evaluation"
-slug: ai-ml-engineering/advanced-genai/module-7.6-llm-evaluation
+slug: ai-ml-engineering/advanced-genai/module-1.6-llm-evaluation
 sidebar:
   order: 807
 ---

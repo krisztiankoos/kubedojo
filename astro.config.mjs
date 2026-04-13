@@ -204,17 +204,17 @@ export default defineConfig({
           collapsed: true,
           items: [
             { label: 'AI/ML Hub', link: '/ai-ml-engineering/' },
-            { label: 'Phase 0: Prerequisites', autogenerate: { directory: 'ai-ml-engineering/prerequisites' }, collapsed: true },
-            { label: 'Phase 1: AI-Native Development', autogenerate: { directory: 'ai-ml-engineering/ai-native-development' }, collapsed: true },
-            { label: 'Phase 2: Generative AI', autogenerate: { directory: 'ai-ml-engineering/generative-ai' }, collapsed: true },
-            { label: 'Phase 3: Vector Search & RAG', autogenerate: { directory: 'ai-ml-engineering/vector-rag' }, collapsed: true },
-            { label: 'Phase 4: Frameworks & Agents', autogenerate: { directory: 'ai-ml-engineering/frameworks-agents' }, collapsed: true },
-            { label: 'Phase 5: MLOps & LLMOps', autogenerate: { directory: 'ai-ml-engineering/mlops' }, collapsed: true },
-            { label: 'Phase 6: AI Infrastructure', autogenerate: { directory: 'ai-ml-engineering/ai-infrastructure' }, collapsed: true },
-            { label: 'Phase 7: Advanced GenAI & Safety', autogenerate: { directory: 'ai-ml-engineering/advanced-genai' }, collapsed: true },
-            { label: 'Phase 8: Multimodal AI', autogenerate: { directory: 'ai-ml-engineering/multimodal-ai' }, collapsed: true },
-            { label: 'Phase 9: Deep Learning Foundations', autogenerate: { directory: 'ai-ml-engineering/deep-learning' }, collapsed: true },
-            { label: 'Phase 10: Classical ML', autogenerate: { directory: 'ai-ml-engineering/classical-ml' }, collapsed: true },
+            { label: 'Prerequisites', autogenerate: { directory: 'ai-ml-engineering/prerequisites' }, collapsed: true },
+            { label: 'AI-Native Development', autogenerate: { directory: 'ai-ml-engineering/ai-native-development' }, collapsed: true },
+            { label: 'Generative AI', autogenerate: { directory: 'ai-ml-engineering/generative-ai' }, collapsed: true },
+            { label: 'Vector Search & RAG', autogenerate: { directory: 'ai-ml-engineering/vector-rag' }, collapsed: true },
+            { label: 'Frameworks & Agents', autogenerate: { directory: 'ai-ml-engineering/frameworks-agents' }, collapsed: true },
+            { label: 'MLOps & LLMOps', autogenerate: { directory: 'ai-ml-engineering/mlops' }, collapsed: true },
+            { label: 'AI Infrastructure', autogenerate: { directory: 'ai-ml-engineering/ai-infrastructure' }, collapsed: true },
+            { label: 'Advanced GenAI & Safety', autogenerate: { directory: 'ai-ml-engineering/advanced-genai' }, collapsed: true },
+            { label: 'Multimodal AI', autogenerate: { directory: 'ai-ml-engineering/multimodal-ai' }, collapsed: true },
+            { label: 'Deep Learning Foundations', autogenerate: { directory: 'ai-ml-engineering/deep-learning' }, collapsed: true },
+            { label: 'Classical ML', autogenerate: { directory: 'ai-ml-engineering/classical-ml' }, collapsed: true },
             { label: 'Appendix A: History of AI/ML', autogenerate: { directory: 'ai-ml-engineering/history' }, collapsed: true },
           ],
         },
@@ -245,14 +245,14 @@ export default defineConfig({
 
             // ── Part 1: Foundations (timeless theory) ──
             {
-              label: 'Part 1: Foundations',
+              label: 'Foundations',
               collapsed: true,
               autogenerate: { directory: 'platform/foundations' },
             },
 
             // ── Part 2: Disciplines (applied practices) ──
             {
-              label: 'Part 2: Disciplines',
+              label: 'Disciplines',
               collapsed: true,
               items: [
                 {
@@ -298,7 +298,7 @@ export default defineConfig({
 
             // ── Part 3: Toolkits (current tools) ──
             {
-              label: 'Part 3: Toolkits',
+              label: 'Toolkits',
               collapsed: true,
               items: [
                 { label: 'Toolkit Directory', link: '/platform/toolkits/' },

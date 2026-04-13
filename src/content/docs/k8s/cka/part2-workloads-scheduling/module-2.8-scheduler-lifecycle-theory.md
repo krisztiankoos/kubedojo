@@ -5,6 +5,7 @@ sidebar:
   order: 9
 lab:
   id: cka-2.8-scheduler-lifecycle
+  url: https://killercoda.com/kubedojo/scenario/cka-2.8-scheduler-lifecycle
   duration: "30 min"
   difficulty: advanced
   environment: kubernetes
