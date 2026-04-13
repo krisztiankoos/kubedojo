@@ -150,7 +150,7 @@ Similar to the CRI, the CNI is a standardized interface, but specifically for ne
 > **Pause and predict**: What do you think happens if the `kube-scheduler` process crashes, but all other components remain healthy? If you attempt to deploy a new application while the scheduler is down, what exact state will that application be stuck in?
 > <details>
 > <summary>Reveal Answer</summary>
-> The API Server will accept the pod creation, but it will remain in a `Pending` state indefinitely because no process will ever assign it to a node.
+> The API Server will successfully authenticate your request and persist the pod definition into the `etcd` datastore. However, the pod will remain in a `Pending` state indefinitely. This occurs because the `kube-scheduler` is exclusively responsible for evaluating nodes and assigning the pod to a specific worker. Without that assignment, no `kubelet` will ever be instructed to launch the corresponding container.
 > </details>
 
 ## Section 2: The Local Kubernetes Arena - Choosing Your Weapon
@@ -217,7 +217,7 @@ flowchart TD
 > **Pause and predict**: If a `kind` worker node is fundamentally just a Docker container running on your host machine, what happens if you restart the Docker daemon on your host? Will the Kubernetes cluster survive?
 > <details>
 > <summary>Reveal Answer</summary>
-> No. When the Docker daemon restarts, it stops all running containers, effectively destroying the active state of your `kind` nodes.
+> No, the Kubernetes cluster will not survive a Docker daemon restart. Because `kind` nodes are essentially just privileged Docker containers, restarting the host daemon forcibly stops and reconstructs the container environments. This terminates all active Kubernetes processes, including the API Server and `etcd`. Consequently, the active state of your local cluster is destroyed, requiring a complete recreation of the cluster to restore functionality.
 > </details>
 
 ## Section 3: Demystifying Kubeconfig - The Passport to Your Cluster
@@ -296,7 +296,7 @@ export KUBECONFIG=~/.kube/config:/path/to/another/config.yaml
 > **Pause and predict**: If you possess a `kubeconfig` file containing administrative credentials for a production cluster, what are the security implications of accidentally committing that file to a public GitHub repository?
 > <details>
 > <summary>Reveal Answer</summary>
-> Total cluster compromise. Attackers scan public repos for kubeconfigs continuously and can instantly hijack your API Server, deploy cryptominers, or steal secrets.
+> It would result in an immediate and total cluster compromise. Automated bots continuously scan public repositories for exposed credentials and `kubeconfig` files. Once obtained, malicious actors can use the embedded certificates to bypass authentication and gain full administrative access to your API Server. They will instantly deploy malicious workloads, such as cryptominers, or exfiltrate highly sensitive secrets and customer data from your environment.
 > </details>
 
 > **Stop and think**: Run `kubectl config get-contexts` in your terminal. Examine the output and locate the context with a `*` next to it, which indicates your currently active cluster connection.
@@ -378,7 +378,7 @@ If you deploy a web application and want to view it in your browser, you cannot 
 > **Pause and predict**: If you run `kubectl port-forward`, and then close your terminal window, what happens to the network tunnel?
 > <details>
 > <summary>Reveal Answer</summary>
-> The tunnel process is terminated immediately, and access to the pod is cut off.
+> The tunnel process is terminated immediately, and all access to the pod is completely severed. The `kubectl port-forward` command runs as a foreground process in your local terminal session to maintain the proxy connection. When you close the terminal, the operating system sends a termination signal to the process. Since the tunnel relies entirely on that active client-side process, closing the window destroys the routing path.
 > </details>
 
 ## Section 6: Designing Multi-Node Topologies
@@ -471,7 +471,7 @@ You will likely discover an `OOMKilled` (Out Of Memory) event injected by the Li
 
 ### Scenario 3: The API Negotiation Failure (Version Skew)
 **Symptom:** The cluster bootstraps perfectly. However, when you type `kubectl get pods`, you receive bizarre errors like `the server could not find the requested resource` or completely silent formatting failures.
-**Diagnosis:** You have a severe version skew between your `kubectl` client binary and the cluster's API Server version. Kubernetes officially supports a version skew of exactly +/- 1 minor version (e.g., client v1.34 can talk to server v1.33, v1.34, or v1.35). If your local client is v1.30 and `kind` just booted a v1.35 cluster, the API schemas are fundamentally incompatible.
+**Diagnosis:** You have a severe version skew between your `kubectl` client binary and the cluster's API Server version. Kubernetes officially supports a version skew of exactly +/- 1 minor version (e.g., client v1.34 can talk to server v1.33, v1.34, or v1.35). If your local client is v1.33 and `kind` just booted a v1.35 cluster, the API schemas are fundamentally incompatible.
 **Action:** Check your skew by running `kubectl version`. Utilize a strict version manager like `asdf`, `mise`, or `brew` to ensure your local `kubectl` binary is upgraded to match your cluster version.
 
 ### Scenario 4: The Daemon Disconnect
@@ -586,8 +586,8 @@ The most probable root cause is that the underlying Docker daemon is either not 
 </details>
 
 <details>
-<summary><strong>[Tests LO3: Diagnose cluster failures]</strong> You run `kubectl get pods`, and you immediately receive an error: `the server could not find the requested resource`. You check `docker ps` and see the control plane container is running perfectly. What is the likely mismatch occurring here?</summary>
-This is the classic symptom of severe Version Skew between your client and the server. The `kubectl` binary you are using on your host machine is too far out of date (or too far ahead) compared to the Kubernetes version running inside the `kind` cluster API Server. The API schemas and endpoints have fundamentally changed between those versions, and the client no longer knows how to correctly construct or parse the REST requests. To resolve this, you must upgrade (or downgrade) your `kubectl` binary to ensure it is within the officially supported +/- 1 minor version window of the cluster.
+<summary><strong>[Tests LO3: Diagnose cluster failures]</strong> You recently joined a new project and are tasked with testing a deployment on a local `kind` cluster running Kubernetes v1.35. You run `kubectl get pods` on your workstation, and you immediately receive an error: `the server could not find the requested resource`. You check `docker ps` and see the control plane container is running perfectly. What is the likely mismatch occurring here, and how do you resolve it?</summary>
+This is the classic symptom of severe Version Skew between your client and the server. The `kubectl` binary you are using on your host machine is likely too far out of date (e.g., v1.33) compared to the Kubernetes version running inside the `kind` cluster API Server (v1.35). The API schemas and endpoints have fundamentally changed between those versions, and the client no longer knows how to correctly construct or parse the REST requests. To resolve this, you must upgrade your `kubectl` binary to ensure it is within the officially supported +/- 1 minor version window of the cluster.
 </details>
 
 ## Hands-On Exercise
