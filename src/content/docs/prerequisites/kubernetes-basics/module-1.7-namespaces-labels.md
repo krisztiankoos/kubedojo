@@ -42,22 +42,22 @@ It is crucial to understand exactly what a Namespace provides out of the box, be
 graph TD
     subgraph "Kubernetes Cluster"
         subgraph "Cluster-Scoped Resources (No Namespace)"
-            N1[Node 1]
-            N2[Node 2]
-            PV[Persistent Volumes]
-            CR[ClusterRoles]
+            N1["Node 1"]
+            N2["Node 2"]
+            PV["Persistent Volumes"]
+            CR["ClusterRoles"]
         end
         
         subgraph "Namespace: prod-frontend"
-            P1[Pod: web-prod]
-            S1[Service: web-svc]
-            R1[Role: frontend-admin]
+            P1["Pod: web-prod"]
+            S1["Service: web-svc"]
+            R1["Role: frontend-admin"]
         end
         
         subgraph "Namespace: dev-backend"
-            P2[Pod: api-dev]
-            S2[Service: api-svc]
-            R2[Role: backend-dev]
+            P2["Pod: api-dev"]
+            S2["Service: api-svc"]
+            R2["Role: backend-dev"]
         end
         
         P1 -. "Network traffic is ALLOWED by default!" .-> P2
@@ -263,16 +263,16 @@ Because both versions share the `app=frontend` label, the Service will automatic
 
 ```mermaid
 graph TD
-    User-->SVC[Service\nselector: app=frontend]
+    User-->SVC["Service<br>selector: app=frontend"]
     
     subgraph "Deployment v1 (10 Replicas)"
-        P1[Pod\napp=frontend\nversion=v1]
-        P2[Pod\napp=frontend\nversion=v1]
-        P3[...]
+        P1["Pod<br>app=frontend<br>version=v1"]
+        P2["Pod<br>app=frontend<br>version=v1"]
+        P3["..."]
     end
     
     subgraph "Deployment v2 (1 Replica - Canary)"
-        P4[Pod\napp=frontend\nversion=v2]
+        P4["Pod<br>app=frontend<br>version=v2"]
     end
     
     SVC-->P1
