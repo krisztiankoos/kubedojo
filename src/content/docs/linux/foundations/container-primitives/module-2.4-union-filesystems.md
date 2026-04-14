@@ -229,6 +229,8 @@ flowchart TD
 
 ## Copy-on-Write (COW)
 
+> **Stop and think**: If you append a single 1KB line to a 5GB log file that lives in a lower image layer, how much disk space will the operation consume in the upper layer?
+
 ### How COW Works
 
 ```mermaid
