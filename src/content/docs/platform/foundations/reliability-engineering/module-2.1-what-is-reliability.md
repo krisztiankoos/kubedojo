@@ -441,29 +441,28 @@ flowchart LR
 
 MTBF measures how frequently failures occur. Higher MTBF = fewer failures = better.
 
-```
-MTBF CALCULATION
-═══════════════════════════════════════════════════════════════════════════════
+**MTBF CALCULATION**
 
-Formula: MTBF = Total Operating Time / Number of Failures
+Formula: `MTBF = Total Operating Time / Number of Failures`
 
-Example Scenario:
-─────────────────────────────────────────────────────────────────────────────
+**Example Scenario:**
+
 Timeline over 1000 hours:
 
-Hour 0        Hour 200      Hour 450      Hour 800      Hour 1000
-  │              │             │             │             │
-  ▼              ▼             ▼             ▼             ▼
-  START        FAIL #1      FAIL #2      FAIL #3        END
-              (15 min)     (30 min)     (45 min)
+```mermaid
+flowchart LR
+    H0["Hour 0<br/>START"] --> H200["Hour 200<br/>FAIL #1<br/>(15 min)"]
+    H200 --> H450["Hour 450<br/>FAIL #2<br/>(30 min)"]
+    H450 --> H800["Hour 800<br/>FAIL #3<br/>(45 min)"]
+    H800 --> H1000["Hour 1000<br/>END"]
+```
 
-Calculation:
-• Total operating time: 1000 hours
-• Number of failures: 3
-• MTBF = 1000 / 3 = 333.3 hours
+**Calculation:**
+- Total operating time: 1000 hours
+- Number of failures: 3
+- `MTBF = 1000 / 3 = 333.3 hours`
 
 Interpretation: On average, expect a failure every 333 hours (~14 days)
-```
 
 **MTTR - Mean Time To Recovery**
 
@@ -711,50 +710,37 @@ Let's talk about something engineers need to accept: **100% reliability is impos
 
 Not "very expensive." Not "only for Google." **Physically impossible.**
 
+**WHY 100% RELIABILITY CANNOT EXIST**
+
+**THE PHYSICS PROBLEM**
+- Hardware fails randomly (transistors wear out, solder cracks)
+- Cosmic rays flip bits in memory (really! ~1 error per GB per month)
+- Power grids have outages (transformers explode, trees fall)
+- Datacenter cooling fails (air conditioners break)
+
+**THE DEPENDENCY PROBLEM**
+- DNS can fail (Dyn DDoS attack 2016 took down half the internet)
+- Cloud providers have outages (AWS has had 6+ major outages)
+- Certificate authorities get compromised (DigiNotar 2011)
+- BGP gets hijacked (routing your traffic to wrong places)
+
+**THE HUMAN PROBLEM**
+- Engineers make mistakes (fat-finger deploy to production)
+- On-call gets sick (at 3 AM, during a snowstorm)
+- Documentation becomes outdated (runbook says "click button" but UI changed)
+- Knowledge leaves (the one person who understood that system quit)
+
+**THE ECONOMICS PROBLEM**
+
+```mermaid
+xychart-beta
+    title "Cost vs. Reliability"
+    x-axis ["90%", "99%", "99.9%", "99.99%", "99.999%", "100%"]
+    y-axis "Cost" 0 --> 35
+    line [1, 2, 4, 8, 16, 32]
 ```
-WHY 100% RELIABILITY CANNOT EXIST
-═══════════════════════════════════════════════════════════════════════════════
 
-THE PHYSICS PROBLEM
-─────────────────────────────────────────────────────────────────────────────
-• Hardware fails randomly (transistors wear out, solder cracks)
-• Cosmic rays flip bits in memory (really! ~1 error per GB per month)
-• Power grids have outages (transformers explode, trees fall)
-• Datacenter cooling fails (air conditioners break)
-
-THE DEPENDENCY PROBLEM
-─────────────────────────────────────────────────────────────────────────────
-• DNS can fail (Dyn DDoS attack 2016 took down half the internet)
-• Cloud providers have outages (AWS has had 6+ major outages)
-• Certificate authorities get compromised (DigiNotar 2011)
-• BGP gets hijacked (routing your traffic to wrong places)
-
-THE HUMAN PROBLEM
-─────────────────────────────────────────────────────────────────────────────
-• Engineers make mistakes (fat-finger deploy to production)
-• On-call gets sick (at 3 AM, during a snowstorm)
-• Documentation becomes outdated (runbook says "click button" but UI changed)
-• Knowledge leaves (the one person who understood that system quit)
-
-THE ECONOMICS PROBLEM
-─────────────────────────────────────────────────────────────────────────────
-             COST
-               ▲
-               │                                              *
-               │                                           *
-               │                                        *
-               │                                    *
-               │                              *
-               │                       *
-               │               *
-               │      *
-               │ *
-               └───────────────────────────────────────────────▶ RELIABILITY
-                   90%    99%   99.9%  99.99%  99.999%   100%
-
-Cost grows EXPONENTIALLY. At some point, another nine costs more than
-it's worth. That breakeven point is different for every system.
-```
+Cost grows EXPONENTIALLY. At some point, another nine costs more than it's worth. That breakeven point is different for every system.
 
 > **Did You Know?**
 >
