@@ -117,7 +117,7 @@ Instead, the first action the runtime takes is to start a tiny, invisible contai
 
 The `pause` container's only job is to request and claim the network, IPC, and UTS namespaces from the Linux kernel, and then go to sleep by executing the `pause()` system call. Your actual application containers are then launched and joined to the `pause` container's already-existing namespaces. 
 
-Imagine if your Pod only had one application container responsible for holding the network namespace. If that application crashed, the Linux namespace would be destroyed, the IP address released, and when the application restarted, it would be assigned a completely new IP address. This constant churn would destroy cluster networking. 
+Imagine if your Pod only had one application container responsible for holding the network namespace. If that application crashed, the Linux namespace repair would be destroyed, the IP address released, and when the application restarted, it would be assigned a completely new IP address. This constant churn would destroy cluster networking. 
 
 Because the `pause` container literally does nothing but sleep, it never crashes. It holds the network namespace open indefinitely, acting as an anchor. This means that if your application container crashes and restarts a hundred times, the Pod's IP address never changes.
 
