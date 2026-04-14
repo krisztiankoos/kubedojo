@@ -40,7 +40,7 @@ By the end of this module, you will be able to:
 >
 > The patch took five days to roll out across all 15 services. Why? Not because the code change was hard—it was a one-line version bump. The delay happened because the infrastructure and deployment tooling required highly specialized knowledge that the product developers simply did not possess. They were drowning in Kubernetes YAML, Terraform state lock errors, and esoteric CI/CD failures. The company had achieved "DevOps," but at the devastating cost of developer productivity. They had replaced a centralized, siloed operations team with distributed operational chaos.
 
-This is the exact crisis that Platform Engineering was born to solve. When Kubernetes and cloud-native ecosystems became too complex for product developers to manage alongside their primary goal—writing business logic—a new discipline emerged. Platform Engineering treats internal infrastructure as a curated product, offering a self-service Internal Developer Platform (IDP) that abstracts away the cognitive crushing weight of modern infrastructure while retaining its power.
+This is the exact crisis that Platform Engineering was born to solve. When Kubernetes and cloud-native ecosystems became too complex for product developers to manage alongside their primary goal—writing business logic—a new discipline emerged. Platform Engineering treats internal infrastructure as a curated product, offering a self-service Internal Developer Platform (IDP) that abstracts away the crushing cognitive weight of modern infrastructure while retaining its power.
 
 ## The Breaking Point of "You Build It, You Run It"
 
