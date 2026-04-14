@@ -265,7 +265,7 @@ Once the hotfix is merged, you simply close that terminal tab, switch back to yo
 >
 > *Think about the constraints of a working directory.*
 
-Git enforce a strict rule: a single branch can only be checked out in one worktree at a time. If you try to run `git worktree add ../another-dir feature-auth` while `feature-auth` is checked out in your main directory, Git will fiercely reject the command. This prevents schizophrenic states where two different directories are trying to update the same branch pointer simultaneously.
+Git enforces a strict rule: a single branch can only be checked out in one worktree at a time. If you try to run `git worktree add ../another-dir feature-auth` while `feature-auth` is checked out in your main directory, Git will fiercely reject the command. This prevents schizophrenic states where two different directories are trying to update the same branch pointer simultaneously.
 
 ### Worktree Lifecycle: Listing and Pruning
 
