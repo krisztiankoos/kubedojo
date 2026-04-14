@@ -35,34 +35,25 @@ Security used to be an afterthought—a team that said "no" at the end of develo
 
 DevSecOps is **security integrated into DevOps**, not bolted on afterward.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              TRADITIONAL vs DEVSECOPS                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Traditional Security:                                      │
-│  ┌─────┐    ┌─────┐    ┌──────────┐    ┌─────────────┐   │
-│  │ Dev │───►│ QA  │───►│ Security │───►│ Production  │   │
-│  └─────┘    └─────┘    │ Review   │    └─────────────┘   │
-│                        └──────────┘                        │
-│                             │                               │
-│                        Bottleneck!                          │
-│                        "Go back and fix"                   │
-│                                                             │
-│  DevSecOps:                                                │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │  Security at EVERY stage                             │  │
-│  │                                                      │  │
-│  │  Plan → Code → Build → Test → Deploy → Monitor     │  │
-│  │    ↑      ↑      ↑       ↑       ↑         ↑       │  │
-│  │  Threat  SAST   SCA   DAST   Config   Runtime     │  │
-│  │  Model        (deps)       Scan    Security       │  │
-│  │                                                      │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                             │
-│  Key shift: Security is everyone's job                     │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Traditional ["Traditional Security"]
+        direction LR
+        D[Dev] --> Q[QA] --> S[Security Review] --> P[Production]
+        S -.->|Bottleneck! Go back and fix| D
+    end
+
+    subgraph DSO ["DevSecOps: Security at EVERY stage"]
+        direction LR
+        Plan --> Code --> Build --> Test --> Deploy --> Monitor
+        
+        TM[Threat Model] --> Plan
+        SAST[SAST] --> Code
+        SCA[SCA deps] --> Build
+        DAST[DAST] --> Test
+        CS[Config Scan] --> Deploy
+        RS[Runtime Security] --> Monitor
+    end
 ```
 
 ---
@@ -73,65 +64,30 @@ DevSecOps is **security integrated into DevOps**, not bolted on afterward.
 
 > **Stop and think**: If a developer hardcodes a password in a feature branch, at what stage of the pipeline should it ideally be caught to minimize cost and risk?
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              COST OF FIXING SECURITY ISSUES                 │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Cost to Fix                                               │
-│       │                                                     │
-│   $$$│                                         ┌────┐      │
-│      │                                    ┌────┤    │      │
-│      │                               ┌────┤    │    │      │
-│    $$│                          ┌────┤    │    │    │      │
-│      │                     ┌────┤    │    │    │    │      │
-│     $│                ┌────┤    │    │    │    │    │      │
-│      │           ┌────┤    │    │    │    │    │    │      │
-│      │      ┌────┤    │    │    │    │    │    │    │      │
-│      └──────┴────┴────┴────┴────┴────┴────┴────┴────┴──►   │
-│           Code  Build Test Stage Prod Breach               │
-│                                                             │
-│  Find it early = cheap fix                                 │
-│  Find it in production = expensive fix                     │
-│  Find it after breach = catastrophic                       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+    A[Code] -- "$" --> B[Build]
+    B -- "$$" --> C[Test]
+    C -- "$$$" --> D[Stage]
+    D -- "$$$$" --> E[Production]
+    E -- "$$$$$$$" --> F[Breach!]
+
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;
+    style F fill:#ff9999,stroke:#cc0000,stroke-width:3px;
 ```
 
 ---
 
 ## Security in CI/CD Pipeline
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              SECURE CI/CD PIPELINE                          │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. PRE-COMMIT                                             │
-│     ├── Secret scanning (prevent committing secrets)       │
-│     └── git-secrets, detect-secrets                        │
-│                                                             │
-│  2. STATIC ANALYSIS (SAST)                                 │
-│     ├── Scan source code for vulnerabilities              │
-│     └── Semgrep, SonarQube, CodeQL                        │
-│                                                             │
-│  3. DEPENDENCY SCAN (SCA)                                  │
-│     ├── Check dependencies for known CVEs                 │
-│     └── npm audit, Snyk, Dependabot                       │
-│                                                             │
-│  4. CONTAINER SCAN                                          │
-│     ├── Scan images for vulnerabilities                   │
-│     └── Trivy, Grype, Clair                               │
-│                                                             │
-│  5. CONFIG SCAN                                             │
-│     ├── Check Kubernetes YAML for misconfigurations       │
-│     └── KubeLinter, Checkov, Kubescape                    │
-│                                                             │
-│  6. DYNAMIC ANALYSIS (DAST)                                │
-│     ├── Test running application                          │
-│     └── OWASP ZAP, Burp Suite                             │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A[1. PRE-COMMIT] -->|Secret scanning, git-secrets| B[2. STATIC ANALYSIS SAST]
+    B -->|Semgrep, SonarQube| C[3. DEPENDENCY SCAN SCA]
+    C -->|npm audit, Snyk| D[4. CONTAINER SCAN]
+    D -->|Trivy, Grype| E[5. CONFIG SCAN]
+    E -->|KubeLinter, Kubescape| F[6. DYNAMIC ANALYSIS DAST]
+    F -->|OWASP ZAP| G((Deploy))
 ```
 
 ---
@@ -231,7 +187,7 @@ spec:
 
 ### Pod Security Standards
 
-Kubernetes 1.25+ uses Pod Security Standards:
+Modern Kubernetes (v1.25+) uses Pod Security Standards:
 
 ```yaml
 # Enforce security standards at namespace level
@@ -269,27 +225,24 @@ data:
 
 ### Solutions
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              SECRET MANAGEMENT OPTIONS                      │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  1. External Secret Managers                               │
-│     ├── HashiCorp Vault         (most popular)            │
-│     ├── AWS Secrets Manager                               │
-│     ├── Azure Key Vault                                   │
-│     └── Google Secret Manager                             │
-│                                                             │
-│  2. Kubernetes-Native                                      │
-│     ├── Sealed Secrets         (encrypt for Git)          │
-│     ├── External Secrets       (sync from managers)       │
-│     └── SOPS                   (encrypt YAML files)       │
-│                                                             │
-│  3. Runtime Injection                                      │
-│     ├── Vault Agent Sidecar                              │
-│     └── CSI Secret Store Driver                          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Root[Secret Management Options]
+    
+    Root --> Ext[1. External Secret Managers]
+    Ext --> E1[HashiCorp Vault]
+    Ext --> E2[AWS Secrets Manager]
+    Ext --> E3[Azure Key Vault]
+    Ext --> E4[Google Secret Manager]
+
+    Root --> K8s[2. Kubernetes-Native]
+    K8s --> K1[Sealed Secrets]
+    K8s --> K2[External Secrets]
+    K8s --> K3[SOPS]
+
+    Root --> Run[3. Runtime Injection]
+    Run --> R1[Vault Agent Sidecar]
+    Run --> R2[CSI Secret Store Driver]
 ```
 
 ### Sealed Secrets Example
@@ -388,34 +341,27 @@ trivy k8s --report summary cluster
 
 ## Runtime Security
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│              RUNTIME SECURITY                               │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Detection: What's happening right now?                    │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │  Falco (CNCF)                                        │  │
-│  │  - Monitors system calls                            │  │
-│  │  - Detects anomalous behavior                       │  │
-│  │  - Alerts on security events                        │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                             │
-│  Example Falco rules:                                      │
-│  - Shell spawned in container                             │
-│  - Sensitive file read (/etc/shadow)                      │
-│  - Outbound connection to unusual port                    │
-│  - Process running as root                                │
-│                                                             │
-│  Prevention: Stop bad things from happening               │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │  OPA Gatekeeper / Kyverno                           │  │
-│  │  - Policy enforcement                               │  │
-│  │  - Admission control                                │  │
-│  │  - Block non-compliant resources                    │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Detection ["Detection: What's happening right now?"]
+        F[Falco CNCF]
+        F --> F1[Monitors system calls]
+        F --> F2[Detects anomalous behavior]
+        F --> F3[Alerts on security events]
+        
+        E[Example Falco rules:]
+        E -.-> E1[Shell spawned in container]
+        E -.-> E2[Sensitive file read /etc/shadow]
+        E -.-> E3[Outbound connection to unusual port]
+        E -.-> E4[Process running as root]
+    end
+
+    subgraph Prevention ["Prevention: Stop bad things from happening"]
+        O[OPA Gatekeeper / Kyverno]
+        O --> O1[Policy enforcement]
+        O --> O2[Admission control]
+        O --> O3[Block non-compliant resources]
+    end
 ```
 
 ---
