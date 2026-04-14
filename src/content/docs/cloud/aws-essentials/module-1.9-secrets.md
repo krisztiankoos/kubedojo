@@ -310,22 +310,14 @@ AWS provides pre-built Lambda rotation functions for:
 
 The rotation Lambda follows a four-step protocol:
 
-```
-Step 1: createSecret
-  - Generate new password
-  - Store as AWSPENDING version
+```mermaid
+flowchart TD
+    A["<b>Step 1: createSecret</b><br>• Generate new password<br>• Store as AWSPENDING version"]
+    B["<b>Step 2: setSecret</b><br>• Update the database with new credentials<br>• (e.g., ALTER USER appuser WITH PASSWORD 'newpass')"]
+    C["<b>Step 3: testSecret</b><br>• Verify new credentials work<br>• Connect to DB with AWSPENDING version"]
+    D["<b>Step 4: finishSecret</b><br>• Move AWSPENDING --> AWSCURRENT<br>• Move old AWSCURRENT --> AWSPREVIOUS"]
 
-Step 2: setSecret
-  - Update the database with new credentials
-  - (e.g., ALTER USER appuser WITH PASSWORD 'newpass')
-
-Step 3: testSecret
-  - Verify new credentials work
-  - Connect to DB with AWSPENDING version
-
-Step 4: finishSecret
-  - Move AWSPENDING --> AWSCURRENT
-  - Move old AWSCURRENT --> AWSPREVIOUS
+    A --> B --> C --> D
 ```
 
 If any step fails, the rotation rolls back and the existing AWSCURRENT credentials remain valid. Your application never breaks.
@@ -737,7 +729,7 @@ cat > /tmp/task-definition.json <<EOF
   "containerDefinitions": [
     {
       "name": "secret-reader",
-      "image": "amazonlinux:2",
+      "image": "amazonlinux:2023",
       "essential": true,
       "command": ["sh", "-c", "echo DB_USER=\$DB_USERNAME && echo DB_HOST=\$DB_HOST && echo 'Password length:' \$(echo -n \$DB_PASSWORD | wc -c) && sleep 120"],
       "secrets": [
