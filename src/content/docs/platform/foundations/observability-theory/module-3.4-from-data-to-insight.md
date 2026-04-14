@@ -161,6 +161,8 @@ flowchart TD
 
 ## Part 2: Effective Alerting
 
+> **Stop and think**: What happens to an engineering team's culture when 90% of their alerts are false positives? How does this affect their response time to real, critical incidents?
+
 ### 2.1 Alert Philosophy
 
 **ALERT ONLY WHEN ACTION IS NEEDED**
@@ -219,6 +221,8 @@ If you can't answer "yes" to all → Fix or remove the alert.
 ---
 
 ## Part 3: Debugging with Observability
+
+> **Pause and predict**: If you immediately restart a failing service before querying its current state, what crucial debugging information is lost forever?
 
 ### 3.1 The Debugging Workflow
 
@@ -500,7 +504,7 @@ Mental models in one person's head don't scale. Share them:
    <details>
    <summary>Answer</summary>
 
-   Without a structured approach, debugging devolves into random guessing and potentially destructive actions like restarting pods without capturing evidence. The exploratory investigation pattern provides a systematic, step-by-step workflow: quantify the latency, segment to see which users or endpoints are affected, correlate with recent changes, find an exemplar trace, hypothesize a cause, and verify it before acting. By methodically narrowing down the scope of the problem based on data, the engineer would efficiently converge on the true root cause, dramatically reducing the time to resolution.
+   Without a structured approach, debugging devolves into random guessing and potentially destructive actions like restarting pods without capturing evidence. The exploratory investigation pattern provides a systematic, step-by-step workflow: quantify the latency, segment to see which users or endpoints are affected, correlate with recent changes, find an exemplar trace, hypothesize a cause, and verify it before acting. By methodically narrowing down the scope of the problem based on data, the engineer would efficiently converge on the true root cause, dramatically reducing the time to resolution. This structured approach prevents wasted effort and preserves valuable diagnostic state that blind restarts would otherwise destroy.
    </details>
 
 4. **Two engineers are investigating a sudden spike in failed background jobs. Engineer A immediately checks the Redis memory metrics, while Engineer B spends 15 minutes reading architecture documentation to understand how the job queue works. What concept does Engineer A possess that Engineer B lacks, and why is it valuable?**
@@ -510,32 +514,32 @@ Mental models in one person's head don't scale. Share them:
    Engineer A possesses a strong mental model of the system's architecture and dependencies, instinctively knowing that the background jobs rely heavily on Redis. A mental model is an internalized understanding of how the system actually operates and fails in the real world. Having this intuition allows operators to jump straight to likely causes and narrow down investigations quickly, without needing to reference documentation from scratch. Sharing these mental models across the team through pairing, runbooks, and postmortems ensures everyone can investigate with similar efficiency.
    </details>
 
-5. **An SRE team receives 150 alerts per week. 90% require no action after investigation. What is the "signal ratio" and what should they do?**
+5. **Your SRE team is on-call for a major e-commerce platform. Over the past week, you received 150 pages, but 135 of them self-resolved before anyone could even log in, requiring zero intervention. What specific metric describes this situation, why is it dangerous, and what immediate steps should the team take?**
    <details>
    <summary>Answer</summary>
 
-   The team's signal ratio is 10%, meaning only 15 out of 150 alerts are actually actionable. This is critically low, as Google recommends targeting a 50% signal ratio. A low signal ratio causes alert fatigue, leading engineers to ignore alerts and resulting in real issues getting lost in the noise. To fix this, the team must audit their noisy alerts, delete the ones that never require action, and shift from cause-based alerts to symptom-based, SLO-aligned alerts.
+   The team's "signal ratio" is 10%, meaning only 15 out of 150 alerts are actually actionable. This is critically low, as Google recommends targeting a 50% signal ratio. A low signal ratio causes severe alert fatigue, psychologically training engineers to ignore alerts and resulting in real issues getting lost in the background noise. To fix this, the team must audit their noisy alerts, delete the ones that never require human action, and shift from arbitrary infrastructure thresholds to symptom-based, SLO-aligned alerts.
    </details>
 
-6. **Your team has a dashboard with 47 panels. During an incident, the on-call engineer spends 10 minutes finding the relevant panel. What's wrong and how would you fix it?**
+6. **During a P1 outage, the on-call engineer opens the 'Payment Service Health' dashboard, which contains 47 different metric panels arranged in alphabetical order by metric name. They spend 10 precious minutes just trying to figure out if the service is currently up or down. What fundamental design anti-pattern is this dashboard suffering from, and how should it be structurally reorganized to be useful during an incident?**
    <details>
    <summary>Answer</summary>
 
-   The primary problem is a complete lack of visual hierarchy, meaning all 47 panels are competing equally for attention. To fix this, the team should reorganize the dashboard into clear tiers. The top row should provide an executive summary answering "are we okay?" in five seconds. The middle row should surface the golden signals (latency, traffic, errors) to indicate current behavior. Finally, the bottom section should contain expandable drill-down panels for when deep investigation is actually required.
+   The primary problem is "The Wall of Metrics" anti-pattern, suffering from a complete lack of visual hierarchy where all 47 panels are competing equally for attention. To fix this, the team should reorganize the dashboard into clear, logical tiers. The top row should provide an executive summary answering "are we okay?" in five seconds with high-level SLO status. The middle row should surface the golden signals (latency, traffic, errors) to indicate current behavior, while the bottom section should contain expandable drill-down panels for when deep investigation is actually required.
    </details>
 
-7. **An engineer's hypothesis during debugging is "the database is slow." They restart the database and the problem goes away. Did they find the root cause? What should they do differently?**
+7. **At 3:00 AM, an alert fires for high latency on the user-profile service. The responding engineer hypothesizes "the database must be hung again," so they immediately restart the primary database pod. The latency drops back to normal, and the engineer closes the ticket with the note "Fixed root cause by restarting DB." Why is this conclusion dangerously incorrect, and what exact steps were skipped in the exploratory investigation pattern?**
    <details>
    <summary>Answer</summary>
 
-   No, they did not find the root cause; they merely found a mitigation that temporarily masks the underlying issue. By blindly restarting the database without capturing evidence first, they destroyed valuable state that could have explained the slowness. The problem is highly likely to recur, and the team has learned nothing about how to prevent it. Instead, they should have first gathered metrics, slow query logs, and connection pool states to form a testable hypothesis before applying a fix.
+   The engineer did not find the root cause; they merely applied a mitigation that temporarily masks the underlying issue. By blindly restarting the database without capturing evidence first, they destroyed valuable state (like active query locks, connection pool exhaustion, or memory leaks) that could have explained the slowness. The problem is highly likely to recur because they skipped the critical Verify step. In the exploratory investigation pattern, they completely bypassed Exemplify (finding a specific failing trace) and Verify (confirming the database was actually the source of the latency before acting).
    </details>
 
-8. **Calculate the cost of a 30-minute investigation delay for a service with: 100,000 requests/minute, 5% error rate during incident, $0.50 average revenue per successful request. How does this justify investment in observability tooling?**
+8. **Your engineering director is pushing back on a $100,000/year contract for a new tracing platform, arguing it's too expensive. Your critical checkout service processes 100,000 requests per minute with an average revenue of $0.50 per request. Last month, a 5% error rate incident took 40 minutes to investigate, which you estimate could have been reduced to 10 minutes with the new tracing tool. How would you justify the platform's cost using the financial impact of that single incident?**
    <details>
    <summary>Answer</summary>
 
-   A 30-minute delay costs the business significant revenue, calculated as 150,000 failed requests over that period multiplied by $0.50 per request, totaling $75,000 in lost revenue. If an observability tool reduces investigation time to just 10 minutes, the company saves $50,000 per incident. Assuming multiple similar incidents occur throughout the year, the financial savings easily exceed the hundreds of thousands of dollars spent on enterprise observability platforms and engineering time. This demonstrates that proper observability tooling almost always pays for itself by minimizing the direct financial impact of prolonged outages.
+   A 40-minute delay costs the business massive revenue, calculated as 200,000 failed requests over that period multiplied by $0.50 per request, totaling $100,000 in lost revenue. If the new tracing tool reduces investigation time to just 10 minutes, the financial impact drops to $25,000, meaning the company saves $75,000 on that single incident alone. Assuming multiple similar incidents occur throughout the year, the financial savings easily exceed the annual cost of the enterprise observability platform. This demonstrates that proper observability tooling almost always pays for itself by directly minimizing the revenue impact of prolonged outages.
    </details>
 
 ---
@@ -614,27 +618,27 @@ Design an SLO-based alert for this scenario:
 
 Sketch a simple dashboard for search health:
 
-```
-Top row (Executive Summary):
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│  [What should be here?]                                    │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Top ["Top row (Executive Summary)"]
+        direction LR
+        A["[What should be here?]"]
+    end
 
-Middle row (Golden Signals):
-┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐
-│                  │ │                  │ │                  │
-│  [Panel 1]       │ │  [Panel 2]       │ │  [Panel 3]       │
-│                  │ │                  │ │                  │
-└──────────────────┘ └──────────────────┘ └──────────────────┘
+    subgraph Middle ["Middle row (Golden Signals)"]
+        direction LR
+        B1["[Panel 1]"]
+        B2["[Panel 2]"]
+        B3["[Panel 3]"]
+    end
 
-Bottom row (Drill-down):
-┌────────────────────────────────────────────────────────────┐
-│                                                            │
-│  [What breakdowns would be useful?]                        │
-│                                                            │
-└────────────────────────────────────────────────────────────┘
+    subgraph Bottom ["Bottom row (Drill-down)"]
+        direction LR
+        C["[What breakdowns would be useful?]"]
+    end
+
+    Top --> Middle
+    Middle --> Bottom
 ```
 
 **Success Criteria**:
