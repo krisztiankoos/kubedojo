@@ -4,32 +4,31 @@ slug: cloud/enterprise-hybrid/module-10.3-compliance
 sidebar:
   order: 4
 ---
-**Complexity**: [COMPLEX] | **Time to Complete**: 2h | **Prerequisites**: Cloud Governance & Policy as Code (Module 10.2), Kubernetes Security Basics
+
+**Complexity**: [COMPLEX] | **Time to Complete**: 2h | **Prerequisites**: Cloud Governance & Policy as Code (Module 10.2), Kubernetes Security Basics, `jq` utility
 
 ## What You'll Be Able to Do
 
 After completing this module, you will be able to:
 
-- **Configure continuous compliance scanning using CSPM tools (Prisma Cloud, Wiz, cloud-native) for Kubernetes infrastructure**
-- **Implement audit logging pipelines that capture and retain Kubernetes API server events for regulatory compliance**
-- **Deploy CIS Kubernetes Benchmark scanning and automated remediation for cluster hardening across environments**
-- **Design compliance-as-code workflows that generate evidence artifacts for SOC 2, HIPAA, PCI DSS, and ISO 27001 audits**
-
----
+- **Design** continuous compliance scanning architectures using CSPM tools for Kubernetes infrastructure.
+- **Implement** automated evidence collection pipelines that capture and retain Kubernetes API server events.
+- **Diagnose** compliance drift using CIS Kubernetes Benchmark scanning and automate the remediation process.
+- **Evaluate** runtime vulnerabilities and network behaviors to satisfy SOC 2, HIPAA, PCI DSS, and ISO 27001 requirements.
 
 ## Why This Module Matters
 
-In January 2024, a healthcare SaaS company passed their SOC 2 Type II audit with flying colors. Three months later, an automated scanner discovered that 14 of their EKS clusters had Kubernetes audit logging disabled, 6 clusters were running containers with known critical CVEs, and their production namespace had no network policies. None of these issues existed during the audit. They had accumulated in the 90 days since the auditor's snapshot. The company's CISO described the situation as "compliance theater" -- they were compliant on audit day and non-compliant every other day.
+In January 2024, a healthcare SaaS company passed their SOC 2 Type II audit with flying colors. The financial impact of this certification was immense; it unblocked $4.2 million in enterprise contracts that had been stalled in procurement. Three months later, an automated cloud security scanner deployed by a newly hired platform engineer discovered that 14 of their production EKS clusters had Kubernetes audit logging completely disabled. Furthermore, 6 clusters were running backend containers with known critical CVEs, and their primary database namespace had no network policies enforcing ingress restrictions. None of these issues existed during the audit snapshot. They had accumulated silently in the 90 days since the auditor signed off. The company's CISO described the situation as "compliance theater" — they were compliant on audit day, but wildly non-compliant every other day of the year.
 
-This pattern is devastatingly common. Traditional compliance works on a point-in-time model: auditors come in, check a list, issue a certificate, and leave for 12 months. But infrastructure changes continuously. A single misconfigured Terraform apply, a Helm chart upgrade that removes a security context, or a new team deploying without proper guardrails can invalidate the entire compliance posture within hours of the audit ending.
+This pattern is devastatingly common in modern cloud-native organizations. Traditional compliance operates on a point-in-time model: auditors arrive, review a static checklist, issue a certificate, and depart for twelve months. However, Kubernetes infrastructure changes continuously. A single misconfigured Terraform apply, a Helm chart upgrade that silently drops a secure `SecurityContext`, or a junior team deploying a new microservice without proper role-based guardrails can invalidate the entire compliance posture within hours of the audit ending. When infrastructure is treated as code, compliance must be treated as code.
 
-Continuous compliance flips this model. Instead of proving compliance once per year, you prove it every minute of every day through automated evidence collection, real-time monitoring of compliance drift, and immediate remediation of violations. In this module, you will learn how CSPM tools work, how to map Kubernetes configurations to SOC 2, PCI-DSS, and HIPAA controls, how to automate evidence collection for auditors, and how to integrate vulnerability management tools like Trivy and Falco with cloud security hubs.
+Continuous compliance flips the traditional model entirely. Instead of scrambling to prove compliance once per year through manual artifact gathering, you prove it every minute of every day through automated evidence collection, real-time monitoring of compliance drift, and immediate algorithmic remediation of violations. In this module, you will learn how Cloud Security Posture Management (CSPM) tools operate, how to translate abstract compliance frameworks into concrete Kubernetes configurations, and how to automate evidence generation to ensure your clusters remain perpetually ready for audit.
 
----
-
-## From Point-in-Time to Continuous Compliance
+## Section 1: From Point-in-Time to Continuous Compliance
 
 ### The Traditional Compliance Model (Broken)
+
+Historically, infrastructure compliance relied on manual verification. Security teams would spend weeks gathering screenshots, running ad-hoc scripts, and exporting configuration files to prove that systems met regulatory standards. This approach, often termed the "compliance sprint," treats security as a milestone rather than a continuous state. 
 
 ```mermaid
 flowchart LR
@@ -51,7 +50,11 @@ flowchart LR
 - **"Compliance Sprint"**: 6 weeks of panic before an audit.
 - **Actual Status**: Compliant ~2 months/year, non-compliant ~10 months.
 
+Think of traditional compliance like a vehicle safety inspection. If you only check your brakes once a year, you might drive with failing brakes for eleven months without knowing it. In Kubernetes, "failing brakes" translates to exposed API servers, overly permissive RBAC roles, and unpatched container images deployed by automated pipelines.
+
 ### The Continuous Compliance Model (What You Want)
+
+The continuous compliance model integrates security directly into the lifecycle of the cluster. Instead of humans querying the system to verify compliance, the system continuously evaluates itself and reports its state.
 
 ```mermaid
 flowchart TD
@@ -65,11 +68,13 @@ flowchart TD
 
 **Audit Day Reality:** "Here is the dashboard. Every control has 12 months of continuous, immutable evidence."
 
----
+When an auditor requests proof that network segmentation is enforced, you don't need to manually run `kubectl get networkpolicy`. The automated pipeline has already been doing that every six hours, cryptographically signing the output, and storing it in a WORM (Write Once, Read Many) compliant storage bucket.
 
-## CSPM: Cloud Security Posture Management
+## Section 2: CSPM: Cloud Security Posture Management
 
-CSPM tools continuously scan your cloud environment for misconfigurations, policy violations, and security risks. They are the "detective controls" from the Policy Pyramid in Module 10.2, operating at the cloud infrastructure layer.
+CSPM tools continuously scan your cloud environment for misconfigurations, policy violations, and security risks. They act as the "detective controls" in a defense-in-depth strategy, operating at the cloud infrastructure layer to ensure that your Kubernetes clusters, worker nodes, and underlying network configurations remain secure.
+
+Think of a CSPM as a building inspector who continuously walks through your office holding a rulebook. The moment someone props open a fire door (by disabling a network policy) or unplugs a smoke detector (by turning off audit logging), the inspector immediately flags it and alerts the security desk.
 
 ### Cloud-Native CSPM Tools
 
@@ -83,6 +88,8 @@ CSPM tools continuously scan your cloud environment for misconfigurations, polic
 | Aqua Security | Multi-cloud | Deep K8s + runtime | Strongest open-source ecosystem (Trivy, Tracee) |
 
 ### AWS Security Hub + EKS Integration
+
+For organizations running EKS, AWS Security Hub acts as the centralized CSPM. By integrating it with Amazon GuardDuty and Amazon Inspector, you can consolidate cluster misconfigurations, runtime threats, and image vulnerabilities into a single pane of glass.
 
 ```bash
 # Enable Security Hub
@@ -118,6 +125,8 @@ aws securityhub get-findings \
 
 ### Microsoft Defender for Cloud + AKS
 
+In the Azure ecosystem, Microsoft Defender for Cloud provides comprehensive CSPM capabilities for AKS clusters. It actively assesses the cluster against security baselines and provides actionable remediation steps.
+
 ```bash
 # Enable Defender for Containers (covers AKS)
 az security pricing create \
@@ -146,15 +155,15 @@ az monitor diagnostic-settings create \
   --logs '[{"category": "kube-audit-admin", "enabled": true, "retentionPolicy": {"enabled": true, "days": 365}}]'
 ```
 
----
+## Section 3: Mapping Kubernetes to Compliance Frameworks
 
-## Mapping Kubernetes to Compliance Frameworks
-
-The most challenging part of Kubernetes compliance is translating abstract framework requirements into concrete technical controls. Here is how common controls map to Kubernetes configurations:
+The most challenging part of Kubernetes compliance is translating abstract framework requirements into concrete technical controls. Auditors speak in terms of "logical access" and "transmission security," while platform engineers speak in terms of `ClusterRoleBindings` and `PeerAuthentication`.
 
 > **Stop and think**: If an auditor asks for proof that your cluster is secure, what technical artifacts could you realistically provide to them within an hour?
 
 ### SOC 2 Trust Services Criteria
+
+SOC 2 focuses heavily on security, availability, processing integrity, confidentiality, and privacy. Here is how you map those abstract concepts to Kubernetes primitives:
 
 | SOC 2 Control | Category | Kubernetes Implementation | Evidence Source |
 | :--- | :--- | :--- | :--- |
@@ -168,6 +177,8 @@ The most challenging part of Kubernetes compliance is translating abstract frame
 
 ### PCI-DSS v4.0 (for Payment Processing)
 
+PCI-DSS has rigorous requirements for environments that store, process, or transmit cardholder data. In a Kubernetes context, isolation and strict boundary controls are paramount.
+
 | PCI-DSS Requirement | Kubernetes Control | How to Evidence |
 | :--- | :--- | :--- |
 | 1.3.1 - Inbound traffic restricted | NetworkPolicy default-deny + explicit allow rules | `kubectl get networkpolicy -A -o yaml` |
@@ -180,6 +191,8 @@ The most challenging part of Kubernetes compliance is translating abstract frame
 
 ### HIPAA (for Healthcare Data)
 
+HIPAA focuses on safeguarding Protected Health Information (PHI). Encryption, audit trails, and strict access controls are the pillars of HIPAA compliance in Kubernetes.
+
 | HIPAA Safeguard | Kubernetes Control | Evidence |
 | :--- | :--- | :--- |
 | Access Control (164.312(a)) | RBAC + OIDC, namespace isolation for PHI workloads | Role definitions, namespace labels |
@@ -188,13 +201,13 @@ The most challenging part of Kubernetes compliance is translating abstract frame
 | Transmission Security (164.312(e)) | mTLS everywhere, encrypted Ingress | Service mesh config, TLS certificates |
 | Encryption (164.312(a)(2)(iv)) | etcd encryption, PV encryption, in-transit encryption | Encryption configuration dumps |
 
----
+## Section 4: Automated Evidence Collection in Practice
 
-## Automated Evidence Collection
-
-The key to continuous compliance is automating evidence collection so that auditors never wait for manual data gathering. Every control should have a corresponding evidence pipeline.
+The key to continuous compliance is automating evidence collection so that auditors never wait for manual data gathering. Every control should have a corresponding evidence pipeline that continuously dumps the state of the cluster to an immutable storage location. 
 
 ### Building an Evidence Collection Pipeline
+
+By leveraging Kubernetes CronJobs, you can periodically extract the current state of RBAC, NetworkPolicies, and Vulnerability Reports. 
 
 ```mermaid
 flowchart LR
@@ -214,8 +227,35 @@ flowchart LR
 
 ### Evidence Collection CronJob
 
+The following YAML configurations deploy a `Namespace`, `PersistentVolumeClaim`, and a `CronJob` that acts as an automated evidence collector. It gathers the necessary data every six hours. 
+
+*(Note: To ensure structural integrity across different Kubernetes parsing engines, the configuration is provided as sequential blocks rather than a single multi-document stream.)*
+
 ```yaml
-# compliance-evidence-collector.yaml
+# compliance-evidence-collector-namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: compliance-system
+```
+
+```yaml
+# compliance-evidence-collector-pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: compliance-evidence-pvc
+  namespace: compliance-system
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+```
+
+```yaml
+# compliance-evidence-collector-cronjob.yaml
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -299,6 +339,8 @@ spec:
 
 ### Compliance Score Dashboard
 
+With evidence securely collected, you can build a system that evaluates this evidence and produces a quantifiable metric. The following script calculates a continuous compliance score by programmatically evaluating the cluster configuration.
+
 ```bash
 # compliance-score.sh - Calculate a compliance score from collected evidence
 #!/bin/bash
@@ -380,15 +422,17 @@ echo "============================================="
 calculate_score
 ```
 
----
+## Section 5: Vulnerability Lifecycle and Runtime Defense
 
-## Vulnerability Lifecycle Management
-
-Vulnerabilities in container images are a continuous compliance concern. The lifecycle from discovery to remediation must be automated.
+Vulnerabilities in container images are a continuous compliance concern. The lifecycle from discovery to remediation must be automated. Scanning images in a CI/CD pipeline is only half the battle.
 
 > **Pause and predict**: If you only scan container images in your CI/CD pipeline, what happens when a new vulnerability is discovered for an image that is already running in production?
 
+The answer is simple: you remain vulnerable without knowing it. A continuous compliance architecture demands continuous, in-cluster scanning.
+
 ### Trivy Operator for In-Cluster Scanning
+
+By deploying the Trivy Operator inside your cluster, you enable continuous evaluation of running workloads. Whenever the vulnerability database is updated (usually daily), Trivy automatically rescans the active workloads and surfaces newly published CVEs.
 
 ```bash
 # Install Trivy Operator
@@ -420,6 +464,8 @@ kubectl get vulnerabilityreport -n production \
 
 ### Integrating Trivy with Cloud Security Hubs
 
+A fundamental principle of enterprise security is visibility. If a finding only exists inside the cluster, the centralized security team will never see it. Exporting these findings to an aggregator like AWS Security Hub ensures that Kubernetes vulnerabilities are tracked alongside IAM misconfigurations and network firewall rule violations.
+
 ```yaml
 # trivy-to-securityhub.yaml
 # CronJob that exports Trivy findings to AWS Security Hub
@@ -437,7 +483,8 @@ spec:
           serviceAccountName: trivy-exporter
           containers:
             - name: exporter
-              image: amazon/aws-cli:2.22
+              # Note: Requires a custom image with aws-cli, kubectl, and jq installed
+              image: myregistry/compliance-tools:latest
               env:
                 - name: AWS_REGION
                   value: "us-east-1"
@@ -489,7 +536,7 @@ spec:
 
 ### Falco for Runtime Compliance
 
-Falco detects runtime violations that no static scanner can catch -- like a container exec'ing a shell, reading sensitive files, or making unexpected network connections.
+Falco detects runtime violations that no static scanner can catch. Consider a scenario where a legacy application is silently writing transaction logs to an unencrypted temporary directory inside a container, or a compromised pod attempts an unauthorized outbound connection. Falco's eBPF probes monitor these system calls in real-time.
 
 ```yaml
 # falco-rules-compliance.yaml
@@ -544,11 +591,30 @@ Falco detects runtime violations that no static scanner can catch -- like a cont
   tags: [soc2, runtime]
 ```
 
----
+## Section 6: CIS Benchmark Scanning and Automated Remediation
 
-## Building a Compliance Dashboard
+The Center for Internet Security (CIS) Kubernetes Benchmark provides prescriptive guidance for establishing a secure configuration posture. While Trivy handles vulnerability scanning, you must also continuously evaluate your cluster infrastructure against CIS benchmarks. A single misconfigured API server flag can expose your entire control plane.
 
-A compliance dashboard brings together findings from all layers into a single view that auditors, security teams, and engineering leadership can use.
+### Running kube-bench
+
+```bash
+# Run kube-bench as a Job to evaluate the cluster against CIS guidelines
+kubectl apply -f https://raw.githubusercontent.com/aquasecurity/kube-bench/main/job.yaml
+
+# Review the hardening findings
+kubectl logs job.batch/kube-bench
+```
+
+### Automated Remediation
+
+Identifying CIS violations (e.g., exposed kubelet APIs, permissive RBAC) is only the first step. Automated remediation ensures drift is corrected immediately without human intervention:
+
+1. **Admission Control**: Use Kyverno or Gatekeeper to automatically mutate incoming resources (e.g., dropping capabilities, injecting secure default `SecurityContexts`) so they align with CIS standards.
+2. **GitOps Reconciliation**: When a cluster configuration drifts from the CIS baseline, a controller like ArgoCD or Flux automatically overwrites the manual change with the compliant state stored in Git, self-healing the infrastructure.
+
+### Building a Compliance Dashboard
+
+A compliance dashboard brings together findings from all layers into a single view that auditors, security teams, and engineering leadership can use. 
 
 ```mermaid
 flowchart TD
@@ -565,19 +631,12 @@ flowchart TD
     end
 ```
 
----
-
 ## Did You Know?
 
 1. SOC 2 audits cost between $30,000 and $200,000 per engagement, depending on scope and auditor. Companies that implement continuous compliance tooling report spending 60-70% less on audit preparation because evidence is pre-collected and always current. The average "compliance sprint" before a traditional audit consumes 400-600 engineering hours. Continuous compliance reduces this to under 40 hours of auditor interaction time.
-
 2. PCI-DSS v4.0, released in March 2022, introduced "customized approach" as an alternative to the traditional "defined approach." This means organizations can now propose their own controls as long as they meet the intent of the requirement. For Kubernetes environments, this is significant: you can argue that a service mesh providing mTLS meets PCI requirement 4.2.1 (strong cryptography for transmitting cardholder data) even though the original requirement was written for TLS on web servers.
-
 3. Trivy, the open-source vulnerability scanner, scans over 1 billion container images per month across its user base. It detects vulnerabilities in OS packages, language-specific dependencies (npm, pip, Go modules), IaC misconfigurations, and Kubernetes manifests. A single Trivy scan of an average container image takes 8-15 seconds and checks against a database of over 150,000 known CVEs.
-
 4. The average time from CVE publication to exploit availability decreased from 45 days in 2020 to 15 days in 2024, according to Mandiant's threat intelligence reports. This means organizations running quarterly vulnerability scans are almost certainly running exploitable containers. Continuous scanning with tools like Trivy Operator catches new CVEs within hours of database updates, reducing the exposure window from months to hours.
-
----
 
 ## Common Mistakes
 
@@ -591,48 +650,6 @@ flowchart TD
 | **No vulnerability remediation SLA** | Vulnerabilities are found but nobody owns the fix. Critical CVEs sit for weeks. | Define SLAs: Critical = 24 hours, High = 7 days, Medium = 30 days. Automate escalation. Block deployments with critical CVEs via admission control. |
 | **Compliance dashboard only visible to security team** | Developers do not know their compliance status until something breaks. | Make the compliance dashboard visible to all engineering teams. Compliance is everyone's responsibility, not just security's. |
 | **Over-classifying data** | Everything is labeled "PCI" or "HIPAA" out of caution. Every cluster gets the strictest controls, slowing everyone down. | Classify data properly. Only workloads handling cardholder data need PCI controls. Only workloads with PHI need HIPAA controls. Use namespace labels to scope compliance policies. |
-
----
-
-## Quiz
-
-<details>
-<summary>Question 1: Your SOC 2 auditor asks for evidence of access control (CC6.1) for your Kubernetes clusters. What specific evidence would you provide?</summary>
-
-You must provide a combination of configuration artifacts and access logs to prove both the intended state and the actual behavior. Configuration artifacts, such as exported JSONs of `ClusterRoleBindings` and OIDC identity provider mappings, prove that the system is configured to restrict access appropriately. However, configuration alone does not prove that unauthorized access did not occur. Therefore, you must also provide Kubernetes audit logs showing successful and failed authentication events to prove that the controls are actively working. Providing both ensures the auditor sees that policies are not just defined, but also actively enforced.
-</details>
-
-<details>
-<summary>Question 2: A new critical CVE is published affecting the base image used by 80% of your containers. Your current vulnerability scan runs weekly. Is this sufficient for PCI-DSS compliance?</summary>
-
-No, a weekly scanning cadence is not sufficient. PCI-DSS v4.0 requirement 6.3.3 requires that vulnerabilities are identified and addressed in a timely manner. A weekly scan means your environment could be exposed to a known critical vulnerability for up to seven days before you even realize it exists. With exploit availability averaging 15 days from CVE publication, a weekly scan cycle leaves an extremely tight window for remediation. Best practice requires continuous scanning with tools like Trivy Operator, which re-evaluates running workloads immediately whenever the CVE database updates.
-</details>
-
-<details>
-<summary>Question 3: During a compliance review, your security team discovers that a container deployed yesterday is actively making outbound connections to an unknown IP address on port 4444. The deployment pipeline had successfully run a Trivy scan before deploying, showing zero vulnerabilities. Your compliance manager asks how this could happen and what tool could have detected it. How do you explain the situation and the necessary architectural changes?</summary>
-
-Trivy operates as a static scanner, meaning it only examines container images and manifests for known vulnerabilities or misconfigurations prior to deployment. It cannot detect zero-day exploits, compromised credentials, or malicious behavior that is initiated after the container is already running. In this scenario, the container might have been compromised at runtime via an unpatched application flaw, leading to the unexpected network traffic. To detect this behavior, you need a runtime security tool like Falco deployed in your cluster. Falco monitors system calls in real-time and would have immediately triggered an alert upon detecting the unauthorized outbound network connection, providing the necessary detective controls that static scanning lacks.
-</details>
-
-<details>
-<summary>Question 4: Your e-commerce company recently acquired a telehealth startup, and engineering leadership wants to consolidate workloads into a single Kubernetes cluster to save costs. This means the cluster will process both PCI cardholder data and HIPAA PHI. The compliance team is worried about cross-contamination. How should you structure the cluster to satisfy the requirements of both frameworks without building separate clusters?</summary>
-
-You must use namespace-based isolation with distinct compliance scopes to prevent cross-contamination and satisfy both frameworks. By creating separate namespaces for payment and healthcare workloads, you can apply strict `NetworkPolicies` that block all traffic between the distinct applications. Furthermore, you can use Kyverno or Gatekeeper to enforce framework-specific policies dynamically based on namespace labels. You must also implement separate ServiceAccounts and strict RBAC rules so that developers working on the PCI app cannot access the HIPAA namespace. Ultimately, enabling separate audit log streams for each namespace will ensure that evidence collection remains isolated and clearly scoped for different auditors.
-</details>
-
-<details>
-<summary>Question 5: During an ISO 27001 audit, the auditor notices that developers have permissions to push images directly to the production container registry. They issue a finding stating that a malicious developer could bypass CI/CD security checks and deploy a compromised image directly. How can you implement a Kubernetes-native mechanism to mathematically guarantee that only images built and verified by the official CI/CD pipeline can run in production?</summary>
-
-You should implement container image signing using tools like cosign paired with an admission controller like Kyverno or Gatekeeper. In this architecture, your trusted CI/CD pipeline cryptographically signs the image after it passes all security scans, storing the signature in the registry. When Kubernetes attempts to schedule a pod, the admission controller verifies the signature against the CI/CD pipeline's public key before allowing the deployment to proceed. If a developer manually pushes an image to the registry, it will lack the CI/CD pipeline's cryptographic signature. The admission controller will subsequently reject the deployment, completely eliminating the risk of unverified code reaching production.
-</details>
-
-<details>
-<summary>Question 6: Your organization recently purchased a Cloud Security Posture Management (CSPM) tool. The dashboard shows a perfect 100% score for your AWS environment, confirming that your EKS clusters have private endpoints and encrypted storage. However, a penetration tester was still able to compromise a pod and read sensitive data. Your CTO is confused why the CSPM tool did not catch the vulnerability. How do you explain the limitation of the current tooling and what is needed to fix it?</summary>
-
-A CSPM tool exclusively evaluates the configuration of the cloud infrastructure layer, ensuring things like network endpoints and storage buckets are properly secured. It does not have visibility into the actual workloads or the code running inside the containers on that infrastructure. The penetration tester likely exploited a vulnerable application dependency or a container running as root, which are workload-level issues that a CSPM cannot see. To detect and prevent these types of attacks, you must integrate a Cloud Workload Protection Platform (CWPP) alongside your CSPM. The CWPP will scan the container images for CVEs and monitor runtime behavior, providing the necessary defense-in-depth required for comprehensive Kubernetes compliance.
-</details>
-
----
 
 ## Hands-On Exercise: Build a Continuous Compliance Pipeline
 
@@ -1037,8 +1054,44 @@ rm /tmp/compliance-score.sh
 - [ ] I can explain the difference between point-in-time and continuous compliance
 - [ ] I can map at least 3 SOC 2 controls to specific Kubernetes configurations
 
----
+## Quiz
+
+<details>
+<summary>Question 1: Your SOC 2 auditor asks for evidence of access control (CC6.1) for your Kubernetes clusters. What specific evidence would you provide?</summary>
+
+You must provide a combination of configuration artifacts and access logs to prove both the intended state and the actual behavior. Configuration artifacts, such as exported JSONs of `ClusterRoleBindings` and OIDC identity provider mappings, prove that the system is configured to restrict access appropriately. However, configuration alone does not prove that unauthorized access did not occur. Therefore, you must also provide Kubernetes audit logs showing successful and failed authentication events to prove that the controls are actively working. Providing both ensures the auditor sees that policies are not just defined, but also actively enforced.
+</details>
+
+<details>
+<summary>Question 2: A new critical CVE is published affecting the base image used by 80% of your containers. Your current vulnerability scan runs weekly. Is this sufficient for PCI-DSS compliance?</summary>
+
+No, a weekly scanning cadence is not sufficient. PCI-DSS v4.0 requirement 6.3.3 requires that vulnerabilities are identified and addressed in a timely manner. A weekly scan means your environment could be exposed to a known critical vulnerability for up to seven days before you even realize it exists. With exploit availability averaging 15 days from CVE publication, a weekly scan cycle leaves an extremely tight window for remediation. Best practice requires continuous scanning with tools like Trivy Operator, which re-evaluates running workloads immediately whenever the CVE database updates.
+</details>
+
+<details>
+<summary>Question 3: During a compliance review, your security team discovers that a container deployed yesterday is actively making outbound connections to an unknown IP address on port 4444. The deployment pipeline had successfully run a Trivy scan before deploying, showing zero vulnerabilities. Your compliance manager asks how this could happen and what tool could have detected it. How do you explain the situation and the necessary architectural changes?</summary>
+
+Trivy operates as a static scanner, meaning it only examines container images and manifests for known vulnerabilities or misconfigurations prior to deployment. It cannot detect zero-day exploits, compromised credentials, or malicious behavior that is initiated after the container is already running. In this scenario, the container might have been compromised at runtime via an unpatched application flaw, leading to the unexpected network traffic. To detect this behavior, you need a runtime security tool like Falco deployed in your cluster. Falco monitors system calls in real-time and would have immediately triggered an alert upon detecting the unauthorized outbound network connection, providing the necessary detective controls that static scanning lacks.
+</details>
+
+<details>
+<summary>Question 4: Your e-commerce company recently acquired a telehealth startup, and engineering leadership wants to consolidate workloads into a single Kubernetes cluster to save costs. This means the cluster will process both PCI cardholder data and HIPAA PHI. The compliance team is worried about cross-contamination. How should you structure the cluster to satisfy the requirements of both frameworks without building separate clusters?</summary>
+
+You must use namespace-based isolation with distinct compliance scopes to prevent cross-contamination and satisfy both frameworks. By creating separate namespaces for payment and healthcare workloads, you can apply strict `NetworkPolicies` that block all traffic between the distinct applications. Furthermore, you can use Kyverno or Gatekeeper to enforce framework-specific policies dynamically based on namespace labels. You must also implement separate ServiceAccounts and strict RBAC rules so that developers working on the PCI app cannot access the HIPAA namespace. Ultimately, enabling separate audit log streams for each namespace will ensure that evidence collection remains isolated and clearly scoped for different auditors.
+</details>
+
+<details>
+<summary>Question 5: During an ISO 27001 audit, the auditor notices that developers have permissions to push images directly to the production container registry. They issue a finding stating that a malicious developer could bypass CI/CD security checks and deploy a compromised image directly. How can you implement a Kubernetes-native mechanism to mathematically guarantee that only images built and verified by the official CI/CD pipeline can run in production?</summary>
+
+You should implement container image signing using tools like cosign paired with an admission controller like Kyverno or Gatekeeper. In this architecture, your trusted CI/CD pipeline cryptographically signs the image after it passes all security scans, storing the signature in the registry. When Kubernetes attempts to schedule a pod, the admission controller verifies the signature against the CI/CD pipeline's public key before allowing the deployment to proceed. If a developer manually pushes an image to the registry, it will lack the CI/CD pipeline's cryptographic signature. The admission controller will subsequently reject the deployment, completely eliminating the risk of unverified code reaching production.
+</details>
+
+<details>
+<summary>Question 6: Your organization recently purchased a Cloud Security Posture Management (CSPM) tool. The dashboard shows a perfect 100% score for your AWS environment, confirming that your EKS clusters have private endpoints and encrypted storage. However, a penetration tester was still able to compromise a pod and read sensitive data. Your CTO is confused why the CSPM tool did not catch the vulnerability. How do you explain the limitation of the current tooling and what is needed to fix it?</summary>
+
+A CSPM tool exclusively evaluates the configuration of the cloud infrastructure layer, ensuring things like network endpoints and storage buckets are properly secured. It does not have visibility into the actual workloads or the code running inside the containers on that infrastructure. The penetration tester likely exploited a vulnerable application dependency or a container running as root, which are workload-level issues that a CSPM cannot see. To detect and prevent these types of attacks, you must integrate a Cloud Workload Protection Platform (CWPP) alongside your CSPM. The CWPP will scan the container images for CVEs and monitor runtime behavior, providing the necessary defense-in-depth required for comprehensive Kubernetes compliance.
+</details>
 
 ## Next Module
 
-With continuous compliance in place, it is time to bridge the gap between cloud and on-premises infrastructure. Head to [Module 10.4: Hybrid Cloud Architecture (On-Prem to Cloud)](../module-10.4-hybrid/) to learn about VPN vs Direct Connect, extending cloud identity to on-premises Kubernetes, and building unified control planes with EKS Anywhere and Anthos.
+With continuous compliance deeply embedded into your infrastructure lifecycle, it is time to bridge the gap between your cloud deployments and on-premises infrastructure. Head to [Module 10.4: Hybrid Cloud Architecture (On-Prem to Cloud)](../module-10.4-hybrid/) to explore the differences between VPN and Direct Connect, learn how to extend cloud identity to on-premises Kubernetes, and discover how to build unified control planes with EKS Anywhere and Azure Arc.
