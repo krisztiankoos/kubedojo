@@ -49,46 +49,6 @@ Once the DHCP lease is acquired, the server must download the bootloader. TFTP i
 
 ### The Network Boot Sequence
 
-*Legacy ASCII representation (preserved for historical reference):*
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                  PXE BOOT SEQUENCE                           │
-│                                                               │
-│  1. Server powers on (via BMC or button)                    │
-│     └── BIOS/UEFI starts POST (Power-On Self-Test)         │
-│                                                               │
-│  2. BIOS tries boot devices in order:                       │
-│     └── PXE Network Boot (configured in BIOS boot order)    │
-│                                                               │
-│  3. NIC broadcasts DHCP Discover                            │
-│     └── "I need an IP address and a boot file"              │
-│                                                               │
-│  4. DHCP server responds with:                              │
-│     ├── IP address (10.0.5.50)                              │
-│     ├── Gateway, DNS                                        │
-│     └── Next-server: 10.0.5.1 (TFTP server)                │
-│         Filename: pxelinux.0 (boot loader)                  │
-│                                                               │
-│  5. NIC downloads boot loader via TFTP                      │
-│     └── pxelinux.0 or grubx64.efi (for UEFI)              │
-│                                                               │
-│  6. Boot loader downloads kernel + initrd                   │
-│     └── vmlinuz + initrd.img via TFTP or HTTP               │
-│                                                               │
-│  7. Kernel starts, runs installer (autoinstall/kickstart)   │
-│     └── Downloads packages from HTTP repo                    │
-│     └── Partitions disks, installs OS                       │
-│     └── Runs post-install scripts (join K8s cluster)        │
-│                                                               │
-│  8. Server reboots into installed OS                        │
-│     └── Ready for kubeadm join or Cluster API enrollment    │
-│                                                               │
-│  Total time: 5-15 minutes per server (parallel)             │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-*Modern Architectural View:*
 ```mermaid
 sequenceDiagram
     participant S as Server (BIOS/UEFI)
@@ -113,28 +73,6 @@ sequenceDiagram
 
 To implement this flow, you need several interconnected services. 
 
-*Legacy ASCII representation:*
-```text
-┌─────────────────────────────────────────────────────────────┐
-│              PXE SERVER COMPONENTS                           │
-│                                                               │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │  DHCP    │  │  TFTP    │  │  HTTP    │  │ Autoinstall│   │
-│  │  Server  │  │  Server  │  │  Server  │  │  Config   │   │
-│  │          │  │          │  │          │  │           │   │
-│  │ Assigns  │  │ Serves   │  │ Serves   │  │ Answers   │   │
-│  │ IPs +    │  │ boot     │  │ OS repo  │  │ all       │   │
-│  │ boot     │  │ loader   │  │ packages │  │ installer │   │
-│  │ filename │  │ + kernel │  │          │  │ questions │   │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
-│                                                               │
-│  Can be one server or split across multiple                 │
-│  In practice: dnsmasq handles DHCP + TFTP in one process   │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-*Modern Architectural View:*
 ```mermaid
 flowchart TD
     subgraph PXEServer[PXE SERVER COMPONENTS]
@@ -273,7 +211,7 @@ autoinstall:
   ssh:
     install-server: true
     authorized-keys:
-      - ssh-ed25519 AAAA... admin@kubedojo
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGx... admin@kubedojo
 
   # Packages for Kubernetes
   packages:
@@ -309,46 +247,6 @@ Managing DHCP, TFTP, and configuration files manually scales poorly. Enterprise 
 
 Canonical MAAS (Metal as a Service) is an active bare-metal lifecycle management tool; its latest stable release is version 3.7 (released February 13, 2026). It treats physical servers like cloud instances. It was originally built for Ubuntu's own infrastructure and later open-sourced.
 
-*Legacy ASCII representation:*
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                    MAAS ARCHITECTURE                         │
-│                                                               │
-│  ┌──────────────────────────────────────┐                   │
-│  │           MAAS Region Controller      │                   │
-│  │  ┌──────────┐  ┌──────────┐          │                   │
-│  │  │ REST API │  │ Web UI   │          │                   │
-│  │  └──────────┘  └──────────┘          │                   │
-│  │  ┌──────────┐  ┌──────────┐          │                   │
-│  │  │PostgreSQL│  │  Image   │          │                   │
-│  │  │  (state) │  │  Store   │          │                   │
-│  │  └──────────┘  └──────────┘          │                   │
-│  └───────────────────┬──────────────────┘                   │
-│                      │                                       │
-│  ┌───────────────────▼──────────────────┐                   │
-│  │        MAAS Rack Controller           │                   │
-│  │  ┌──────┐ ┌──────┐ ┌──────┐         │                   │
-│  │  │ DHCP │ │ TFTP │ │ HTTP │         │                   │
-│  │  └──────┘ └──────┘ └──────┘         │                   │
-│  │  ┌──────┐ ┌──────┐                  │                   │
-│  │  │ DNS  │ │ Proxy│                  │                   │
-│  │  └──────┘ └──────┘                  │                   │
-│  └───────────────────┬──────────────────┘                   │
-│                      │                                       │
-│  ┌───────┐ ┌───────┐ ┌───────┐ ┌───────┐                  │
-│  │Server │ │Server │ │Server │ │Server │                  │
-│  │  01   │ │  02   │ │  03   │ │  04   │                  │
-│  └───────┘ └───────┘ └───────┘ └───────┘                  │
-│                                                               │
-│  Machine States:                                             │
-│  New → Commissioning → Ready → Deploying → Deployed         │
-│                                    ↓                         │
-│                               Releasing → Ready (recycled)  │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-*Modern Architectural View:*
 ```mermaid
 flowchart TD
     subgraph Region[MAAS Region Controller]
@@ -395,7 +293,7 @@ sudo snap install maas --channel=3.7
 
 # Initialize
 sudo maas init region+rack \
-  --database-uri "postgres://maas:password@localhost/maas"
+  --database-uri "postgres://maas:password @localhost/maas"
 
 # Create admin user
 sudo maas createadmin \
@@ -418,41 +316,12 @@ For immutable operating systems, Matchbox (poseidon/matchbox) is an active bare-
 
 > **Pause and predict**: Tinkerbell defines provisioning steps as container actions. How does this differ from a traditional kickstart/autoinstall approach? What advantage does containerized provisioning give you for reproducibility and testing?
 
-*Legacy ASCII representation (Tinkerbell):*
-```text
-┌─────────────────────────────────────────────────────────────┐
-│               TINKERBELL ARCHITECTURE                        │
-│                                                               │
-│  ┌──────────────────────────────────────┐                   │
-│  │           Tinkerbell Stack            │                   │
-│  │                                       │                   │
-│  │  ┌──────────┐  Workflow engine       │                   │
-│  │  │  Tink    │  Defines provisioning  │                   │
-│  │  │  Server  │  steps as containers   │                   │
-│  │  └──────────┘                        │                   │
-│  │  ┌──────────┐  DHCP + PXE + OSIE    │                   │
-│  │  │  Boots   │  Handles network boot  │                   │
-│  │  └──────────┘                        │                   │
-│  │  ┌──────────┐  Object storage       │                   │
-│  │  │  Hegel   │  Metadata service     │                   │
-│  │  └──────────┘  (like cloud metadata) │                   │
-│  └──────────────────────────────────────┘                   │
-│                                                               │
-│  Provisioning defined as Kubernetes CRDs:                   │
-│  - Hardware: describes physical machine                      │
-│  - Template: defines provisioning steps                      │
-│  - Workflow: links Hardware to Template                      │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-*Modern Architectural View:*
 ```mermaid
 flowchart TD
     subgraph Stack[Tinkerbell Stack]
-        TINK[Tink Server\nWorkflow engine\nDefines steps as containers]
-        BOOTS[Boots\nDHCP + PXE + OSIE\nHandles network boot]
-        HEGEL[Hegel\nObject storage\nMetadata service]
+        TINK[Tink ServernWorkflow enginenDefines steps as containers]
+        BOOTS[BootsnDHCP + PXE + OSIEnHandles network boot]
+        HEGEL[HegelnObject storagenMetadata service]
     end
 
     subgraph CRDs[Provisioning defined as Kubernetes CRDs]
@@ -687,118 +556,57 @@ You should see DHCP discovery, TFTP download, and the Ubuntu installer starting.
 ## Quiz
 
 ### Question 1
-A newly racked physical server is attempting to PXE boot but inexplicably hangs at "Waiting for DHCP..." for 60 seconds before failing. What are the most likely causes?
+A newly racked physical server is attempting to PXE boot but inexplicably hangs at "Waiting for DHCP..." for 60 seconds before failing. As the infrastructure engineer, what are the primary network and service configuration faults you must investigate to resolve this?
 
 <details>
 <summary>Answer</summary>
 
-In order of likelihood:
-
-1. **DHCP server not running** or not configured for the PXE VLAN. Check `systemctl status dnsmasq` and verify the DHCP range covers the server's subnet.
-
-2. **VLAN mismatch**: The server's port is in a different VLAN than the DHCP server. Check the switch port VLAN assignment and ensure DHCP relay is configured if they are on different VLANs.
-
-3. **Firewall blocking DHCP**: UDP ports 67/68 must be open between the server and the DHCP server.
-
-4. **DHCP range exhausted**: All IPs in the range are leased. Check `cat /var/lib/misc/dnsmasq.leases` for active leases.
-
-5. **NIC boot order**: The server is trying to PXE boot from the wrong NIC (e.g., the BMC NIC instead of the production NIC). Check BIOS boot order.
-
-Debug:
-```bash
-# On the DHCP server, watch for DHCP requests:
-tcpdump -i eth0 -n port 67 or port 68
-# You should see DHCPDISCOVER from the server's MAC
-```
+The most likely culprit is that the DHCP server handling PXE requests is either offline or not configured to listen on the specific provisioning VLAN where the newly racked server resides. Alternatively, a network boundary issue could be preventing the broadcast traffic; if the server and the DHCP server are on different VLANs, a missing or misconfigured DHCP relay (IP helper) on the top-of-rack switch will silently drop the Discover packets. Additionally, strict firewall rules might be blocking UDP ports 67 and 68, or the DHCP pool might simply be exhausted of available IP addresses. You must systematically verify the DHCP service status, inspect the switch port VLAN assignment, and perform packet captures to trace the DHCP broadcast domain.
 </details>
 
 ### Question 2
-Why is it a critical security and operational requirement to restrict PXE provisioning to a dedicated VLAN rather than exposing it on the production network?
+Your network engineering team notices that a production database server suddenly rebooted and began automatically reinstalling its operating system, erasing all data. Why did this catastrophic event occur, and how must you architect your network to prevent it?
 
 <details>
 <summary>Answer</summary>
 
-**Safety and security:**
-
-1. **Accidental reimaging**: If a production server reboots and its BIOS has PXE as the first boot device, it will DHCP discover and potentially start a fresh OS install — wiping the existing OS and all data. A dedicated provisioning VLAN prevents this because production servers are not on the PXE VLAN.
-
-2. **DHCP conflicts**: PXE requires a DHCP server with `next-server` and `filename` options. Running this on the production VLAN risks conflicting with the production DHCP server, causing IP assignment issues for existing infrastructure.
-
-3. **Attack surface**: The PXE server can push arbitrary OS images to any server that PXE boots. An attacker on the PXE VLAN could install a compromised OS on any server that reboots with PXE enabled.
-
-**Best practice**:
-- Provisioning VLAN (e.g., VLAN 100) — only new/reprovisioning servers
-- Production VLAN (e.g., VLAN 200) — running K8s nodes
-- After OS installation, the server's network config switches to the production VLAN
+This catastrophic event occurs because the production server was configured to attempt a PXE network boot before its local disks, and the provisioning DHCP server was exposed on the same production VLAN. When the server rebooted, it broadcast a DHCP Discover packet, received an IP and a bootloader filename, and dutifully began the automated installation process. To prevent this, it is a critical security and operational requirement to restrict PXE provisioning to a dedicated, heavily guarded VLAN. By isolating the DHCP server that provides the PXE boot options, production servers cannot accidentally receive boot images even if their BIOS boot order is incorrect.
 </details>
 
 ### Question 3
-Your infrastructure team is evaluating bare-metal orchestrators. Compare the design philosophies of MAAS and Tinkerbell. When would you strategically choose each?
+Your infrastructure team is tasked with automating the provisioning of 500 physical servers. Half the team wants to deploy Canonical MAAS, while the other half advocates for Tinkerbell. Evaluate the architectural paradigms of both platforms. When would you strategically choose each?
 
 <details>
 <summary>Answer</summary>
 
-**MAAS**:
-- Full lifecycle management with Web UI
-- Ubuntu-centric (best for Ubuntu/RHEL)
-- Includes networking, DNS, DHCP, storage management
-- PostgreSQL backend, monolithic architecture
-- Best for: organizations standardizing on Ubuntu, teams that want a GUI, environments where MAAS manages the full network stack
-
-**Tinkerbell**:
-- Kubernetes-native (CRD-based, declarative)
-- OS-agnostic (streams raw disk images)
-- Lightweight, microservices architecture
-- Integrates with Cluster API (Sidero/Metal3)
-- Best for: GitOps-driven environments, teams already running Kubernetes, integration with Cluster API for declarative cluster lifecycle
-
-**Decision guide**:
-- If you want a "cloud-like" bare metal experience with a UI → MAAS
-- If you want declarative, Kubernetes-native provisioning → Tinkerbell
-- If you are using Cluster API for cluster lifecycle → Tinkerbell + Sidero
+Canonical MAAS operates as a monolithic, full-lifecycle management platform that provides a comprehensive web UI and tightly integrates networking, DNS, DHCP, and storage management into a single control plane. In contrast, Tinkerbell follows a lightweight, Kubernetes-native microservices architecture that relies on Custom Resource Definitions (CRDs) and containerized workflows to stream immutable OS images. You would strategically choose MAAS if your organization standardizes heavily on Ubuntu and prefers a centralized, cloud-like management interface with built-in infrastructure services. Conversely, Tinkerbell is the superior choice if you are operating a GitOps-driven environment, prefer declarative infrastructure as code, and plan to integrate bare-metal provisioning directly with the Cluster API ecosystem.
 </details>
 
 ### Question 4
-Your organization strictly requires UEFI Secure Boot to be enabled for all production servers before they enter the cluster. How does this cryptographic requirement affect your PXE provisioning pipeline?
+Your organization strictly requires UEFI Secure Boot to be enabled for all production servers before they can join the Kubernetes cluster. You notice that your legacy PXE provisioning pipeline completely fails to boot these new servers. How does this cryptographic requirement affect your boot sequence, and what must change?
 
 <details>
 <summary>Answer</summary>
 
-With Secure Boot enabled, the UEFI firmware cryptographically verifies the signature of every boot component. Only code signed by a trusted certificate authority can execute:
-
-1. **Boot loader must be signed**: Use `shimx64.efi` (signed by Microsoft's UEFI CA) which then loads `grubx64.efi` (signed by your distribution's key).
-
-2. **Kernel must be signed**: Ubuntu and RHEL ship signed kernels. Custom kernels must be enrolled in the Secure Boot database (MOK — Machine Owner Key).
-
-3. **initrd is not signed** but is loaded by the signed kernel, which verifies it.
-
-4. **TFTP path changes**: Instead of `pxelinux.0` (unsigned BIOS loader), you must use `shimx64.efi` → `grubx64.efi` → signed kernel.
-
-**Impact on provisioning**:
-- Cannot boot unsigned custom images.
-- Must strictly use the distribution-provided, cryptographically signed boot chain.
-- Custom kernels require MOK enrollment, which adds manual intervention overhead unless automated via physical BMC tooling or `mokutil`.
-- This substantially increases security but heavily adds complexity to the boot chain.
-
-For Talos Linux and Flatcar (covered in Module 2.3), both provide Secure Boot-compatible signed images out of the box.
+With Secure Boot enabled, the UEFI firmware cryptographically verifies the signature of every component in the boot chain before allowing execution, explicitly rejecting unsigned binaries like the legacy `pxelinux.0`. To successfully provision these machines, you must transition to a fully signed boot chain starting with a signed UEFI shim (`shimx64.efi`), which then chain-loads a signed bootloader like `grubx64.efi`. Furthermore, the operating system kernel itself must be cryptographically signed by a trusted authority or manually enrolled in the Machine Owner Key (MOK) database. This dramatically increases the security posture of your bare-metal fleet by preventing malicious bootkits, but it requires you to overhaul your network boot infrastructure to serve strictly validated UEFI binaries over HTTP or TFTP.
 </details>
 
 ### Question 5
-You are configuring a fleet of Fedora CoreOS servers for a Kubernetes cluster using the Matchbox provisioner. The servers successfully pull their initial binaries via iPXE, but the operating system completely fails to apply your declarative configurations upon the first boot. What is the most likely provisioning format mismatch?
+You are configuring a fleet of Fedora CoreOS servers for a new Kubernetes cluster using the Matchbox provisioner. The servers successfully pull their initial binaries via iPXE, but the operating system completely fails to apply your declarative configurations upon the first boot. What is the most likely provisioning format mismatch, and why does it fail?
 
 <details>
 <summary>Answer</summary>
 
-You are likely attempting to use a traditional `cloud-init` or Kickstart format rather than Ignition. Ignition is the strict first-boot provisioning format mandated for Flatcar Container Linux and Fedora CoreOS. The current specification is version 3.3.0. Unlike cloud-init, which typically executes during the late boot process (after the network stack is up), Ignition executes deeply within the initramfs stage before the real root filesystem is fully mounted. This architectural difference makes Ignition ideal for strictly immutable operating systems.
+The most likely cause of this failure is attempting to use a traditional `cloud-init` or Kickstart configuration file rather than the mandated Ignition format. Ignition is the strict first-boot provisioning format required for immutable operating systems like Fedora CoreOS and Flatcar Container Linux, with the current specification being version 3.3.0. The failure occurs because of a fundamental architectural difference in when the provisioning tools execute during the boot sequence. While `cloud-init` typically runs late in the boot process after the network stack is initialized, Ignition executes deeply within the initramfs stage before the real root filesystem is even mounted, ensuring the system is correctly assembled before the OS officially starts.
 </details>
 
 ### Question 6
-A major datacenter refresh replaces all legacy physical hardware with modern UEFI systems. Your existing deployment infrastructure relies heavily on `pxelinux.0` and the TFTP protocol. Why will your provisioning pipelines suddenly fail, and what modern equivalents should you architect to resolve this?
+A major datacenter refresh replaces all legacy physical hardware with modern UEFI systems. Your existing deployment infrastructure relies heavily on the `pxelinux.0` bootloader and the TFTP protocol. Why will your provisioning pipelines suddenly fail, and what modern equivalents should you architect to resolve this bottleneck?
 
 <details>
 <summary>Answer</summary>
 
-Modern UEFI firmware categorically rejects legacy BIOS bootstrap programs. It requires a UEFI-compatible bootloader such as `grubx64.efi` or a Secure Boot shim (`shimx64.efi`), rather than the legacy `pxelinux.0` (which is part of the discontinued Syslinux project). Furthermore, relying solely on TFTP is outdated and exceptionally slow. Modern UEFI HTTP Boot (introduced in UEFI 2.5) allows the physical firmware to download the bootloader and kernel directly via plain HTTP. This is significantly faster due to larger packet sizes and native TCP windowing. To remediate the failure, you must update DHCP option 67 to point to a valid EFI binary and transition your file hosting from a TFTP root to a standard HTTP web server.
+Your provisioning pipelines will immediately fail because modern UEFI firmware categorically rejects legacy BIOS bootstrap programs like `pxelinux.0`, which belongs to the discontinued Syslinux project. Instead, the firmware expects a UEFI-compatible bootloader such as `grubx64.efi` or a cryptographically signed Secure Boot shim. Furthermore, relying solely on TFTP introduces massive performance bottlenecks in modern datacenters due to its primitive stop-and-wait acknowledgment mechanism. To resolve this, you must update your DHCP options to point to a valid EFI binary and transition your file hosting to UEFI HTTP Boot (introduced in UEFI 2.5), allowing the physical firmware to download the bootloader and kernel directly via plain HTTP for drastically improved transfer speeds.
 </details>
 
 ---
