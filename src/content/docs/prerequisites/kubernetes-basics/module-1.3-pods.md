@@ -617,15 +617,25 @@ Apply the declarative manifest to your local cluster. Verify that the Pod system
 # Apply the declarative manifest to the API Server
 kubectl apply -f multi-pod.yaml
 
-# Watch the pod status carefully until it shows 2/2 Ready
-kubectl get pods -w
+# Wait for the pod to become fully ready
+kubectl wait --for=condition=Ready pod/web-logger --timeout=60s
+```
 
-# Once running flawlessly, establish a secure port-forward tunnel to the Pod
-kubectl port-forward pod/web-logger 8080:80
+Open a new terminal window, or background the port-forward process to test it:
 
-# In a separate terminal window, curl the local port to verify
+```bash
+# Establish a secure port-forward tunnel to the Pod in the background
+kubectl port-forward pod/web-logger 8080:80 &
+
+# Wait a moment for the tunnel to establish
+sleep 2
+
+# Curl the local port to verify
 curl http://localhost:8080
 # You should see the current date and time printed, updating every 5 seconds!
+
+# Terminate the background port-forward process
+kill %1
 ```
 </details>
 
@@ -638,7 +648,11 @@ The `content-writer` container is continuously overwriting the physical file on 
 ```bash
 # Execute an interactive shell inside the specific container
 kubectl exec -it web-logger -c nginx-server -- /bin/sh
+```
 
+Once inside the container's interactive shell, execute the following:
+
+```bash
 # Inside the container's isolated mount namespace, quickly install curl
 apk add --no-cache curl
 
@@ -676,8 +690,9 @@ spec:
 # Apply the doomed pod to the cluster
 kubectl apply -f oom-pod.yaml
 
-# Watch the carnage unfold
-kubectl get pods -w
+# Watch the carnage unfold (wait a few seconds for the crash)
+sleep 5
+kubectl get pod memory-hog
 ```
 *You will briefly see it change to `Running`, and then almost immediately transition permanently to `OOMKilled`, followed by the frustrating `CrashLoopBackOff` cycle. The container software explicitly asked the Linux kernel to allocate precisely 150 Megabytes of RAM, but Kubernetes configured the cgroup hard limit to exactly 50 Megabytes. The kernel instantly terminated the rogue process.*
 </details>
@@ -703,7 +718,7 @@ Cleanly delete both completely broken Pods created during this exercise to immed
 **Solution:**
 ```bash
 # Delete the pods, returning the cluster to a clean state
-kubectl delete pod web-logger memory-hog
+kubectl delete pod web-logger memory-hog --force --grace-period=0
 ```
 </details>
 
