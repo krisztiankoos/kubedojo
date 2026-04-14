@@ -51,7 +51,7 @@ graph TD
 
 ## PostgreSQL: CloudNativePG (CNPG)
 
-CloudNativePG (a CNCF Sandbox project accepted in January 2025) is the current standard for running PostgreSQL on Kubernetes. The latest 1.29 series supports PostgreSQL versions 14 through 18, utilizing PostgreSQL 18.3 in its default container image. Unlike older operators that wrap external high-availability tools (like Patroni or Stolon), CNPG interacts directly with the Kubernetes API server for leader election and state management.
+CloudNativePG (a CNCF Sandbox project accepted on January 21, 2025, which applied for CNCF Incubating status in November 2025 but has not yet been promoted) is the current standard for running PostgreSQL on Kubernetes. The latest 1.29.0 release (March 31, 2026) supports PostgreSQL versions 14 through 18, utilizing PostgreSQL 18.3 in its default container image. Unlike older operators that wrap external high-availability tools (like Patroni or Stolon), CNPG interacts directly with the Kubernetes API server for leader election and state management.
 
 ### Architecture and Replication
 
@@ -79,12 +79,12 @@ Always set separate volume claims for data (`/var/lib/postgresql/data`) and WALs
 :::
 
 :::warning
-In CloudNativePG 1.29, the native Barman Cloud support for backup orchestration received a deprecation notice, with full removal planned for version 1.30.0. Future deployments will migrate to alternative backup implementations, but the `barmanObjectStore` configuration remains functional for current 1.29 deployments.
+In CloudNativePG 1.29, the native Barman Cloud support for backup orchestration received a deprecation notice, with full removal now planned for version 1.30.0. Future deployments will migrate to alternative backup implementations, but the `barmanObjectStore` configuration remains functional for current 1.29 deployments.
 :::
 
 ## MySQL at Scale: Vitess
 
-When a single MySQL primary cannot handle the write throughput or dataset size, vertical scaling on bare metal eventually hits a hardware ceiling. Vitess (a CNCF Graduated project) is a database clustering system for horizontal scaling of MySQL, originally built at YouTube. As of the v23.0 stable release series (GA in November 2025), Vitess sets MySQL 8.4 as the default engine to future-proof deployments.
+When a single MySQL primary cannot handle the write throughput or dataset size, vertical scaling on bare metal eventually hits a hardware ceiling. Vitess (a CNCF Graduated project since November 5, 2019) is a database clustering system for horizontal scaling of MySQL, originally built at YouTube. As of the v23.0 stable release series (GA on November 4, 2025, supported until November 4, 2026), Vitess sets MySQL 8.4 as the default engine to future-proof deployments.
 
 ### Vitess Topology
 
@@ -141,12 +141,12 @@ Following Redis Ltd's transition to the Server Side Public License (SSPL), the L
 
 While CloudNativePG and Vitess are standard for relational workloads, the Kubernetes ecosystem provides specialized operators for almost every datastore:
 
-* **MongoDB**: The MongoDB Community Operator has reached end-of-life. The unified successor is MongoDB Controllers for Kubernetes (MCK), with v1.7.0 being the latest stable release.
-* **Kafka**: Strimzi (a CNCF Incubating project) is the standard for Apache Kafka on Kubernetes. The 0.51.0 release targets Kubernetes 1.30+ and supports Kafka 4.2.0.
-* **Percona**: Offers robust operators for MySQL (based on Percona XtraDB Cluster 8.4) and PostgreSQL.
-* **Multi-Database Operators**: Projects like KubeDB (which provides tooling for migrating from CNPG/Zalando to its ecosystem) and KubeBlocks (an open-source AGPL-3.0 operator) aim to manage multiple distinct database engines under a single unified API.
+* **MongoDB**: The MongoDB Community Kubernetes Operator reached end-of-life with best-effort support ending in November 2025. The unified replacement recommended by MongoDB is MongoDB Controllers for Kubernetes (MCK), with v1.7.0 (released February 10, 2026) being the latest stable release.
+* **Kafka**: Strimzi (which moved from CNCF Sandbox to Incubating on February 8, 2024) is the standard for Apache Kafka on Kubernetes. The latest 0.51.0 release requires Kubernetes 1.30 or newer, dropping support for older clusters, and adds support for Apache Kafka 4.2.0.
+* **Percona**: Offers robust operators for MySQL (Percona Operator for MySQL based on Percona XtraDB Cluster 1.19.0, released January 19, 2026, using PXC 8.4 as the default) and PostgreSQL (version 2.9.0, released April 1, 2026, which removed support for PostgreSQL 13 due to upstream EOL).
+* **Multi-Database Operators**: Projects like KubeDB (v2026.2.26, released February 26, 2026, which introduces migration tooling for deployments like CloudNativePG and Zalando) and KubeBlocks (an open-source AGPL-3.0 operator) aim to manage multiple distinct database engines under a single unified API.
 
-Additionally, when managing these extensions across large fleets, cluster administrators typically use the Operator Lifecycle Manager (OLM). Note that OLM v0 is currently in maintenance mode, with OLM v1 (operator-controller) serving as the active successor, though automated migration paths are still evolving.
+Additionally, when managing these extensions across large fleets, cluster administrators typically use the Operator Lifecycle Manager (OLM). Note that OLM v0 is in maintenance mode, with OLM v1 (operator-controller) serving as its successor under active development, though there is no concrete automated migration path between v0 and v1 yet.
 
 ## Hands-on Lab
 
