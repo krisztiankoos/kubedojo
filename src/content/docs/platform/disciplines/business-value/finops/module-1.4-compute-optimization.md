@@ -487,6 +487,8 @@ Savings: $163/mo per node decision
 
 Spot instances offer 60-90% savings but can be reclaimed with 2 minutes' notice. The key is diversification and graceful handling.
 
+> **Stop and think**: If Spot instances can be reclaimed with only a two-minute warning, how does that impact long-running batch jobs versus quick API requests?
+
 ### Diversification Strategy
 
 Never rely on a single instance type for Spot:
@@ -636,6 +638,8 @@ Karpenter will automatically select Graviton instances when they're cheaper and 
 ## DaemonSet Overhead
 
 DaemonSets run on every node — and they eat into capacity that could run your workloads. This overhead matters more as you add more nodes.
+
+> **Pause and predict**: If you double your node count by using instances half the size, what happens to your total cluster memory consumption even if your workload size remains exactly the same?
 
 ### Calculating DaemonSet Tax
 
