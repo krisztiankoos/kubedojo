@@ -505,6 +505,8 @@ Backup for GKE provides managed backup and restore for your entire GKE workloads
 
 ### Architecture
 
+> **Stop and think**: If a developer accidentally deletes a CustomResourceDefinition (CRD) that your database operator relies on, taking down the entire database cluster, would a standard Persistent Disk snapshot help you recover? Why or why not?
+
 ```mermaid
 graph TD
     subgraph BackupForGKE["Backup for GKE"]
@@ -533,7 +535,7 @@ gcloud container clusters update my-cluster \
   --update-addons=BackupRestore=ENABLED
 
 # Create a backup plan (daily backups, 30-day retention)
-gcloud beta container backup-restore backup-plans create daily-backup \
+gcloud container backup-restore backup-plans create daily-backup \
   --project=$PROJECT_ID \
   --location=$REGION \
   --cluster=projects/$PROJECT_ID/locations/$REGION/clusters/my-cluster \
@@ -550,14 +552,14 @@ gcloud beta container backup-restore backup-plans create daily-backup \
 
 ```bash
 # Create an on-demand backup (before a risky deployment)
-gcloud beta container backup-restore backups create pre-deploy-backup \
+gcloud container backup-restore backups create pre-deploy-backup \
   --project=$PROJECT_ID \
   --location=$REGION \
   --backup-plan=daily-backup \
   --wait-for-completion
 
 # List backups
-gcloud beta container backup-restore backups list \
+gcloud container backup-restore backups list \
   --project=$PROJECT_ID \
   --location=$REGION \
   --backup-plan=daily-backup \
@@ -568,7 +570,7 @@ gcloud beta container backup-restore backups list \
 
 ```bash
 # Create a restore plan (defines how backups are restored)
-gcloud beta container backup-restore restore-plans create full-restore \
+gcloud container backup-restore restore-plans create full-restore \
   --project=$PROJECT_ID \
   --location=$REGION \
   --cluster=projects/$PROJECT_ID/locations/$REGION/clusters/my-cluster \
@@ -579,7 +581,7 @@ gcloud beta container backup-restore restore-plans create full-restore \
   --namespaced-resource-restore-mode=MERGE_SKIP_ON_CONFLICT
 
 # Execute a restore
-gcloud beta container backup-restore restores create restore-20240315 \
+gcloud container backup-restore restores create restore-20240315 \
   --project=$PROJECT_ID \
   --location=$REGION \
   --restore-plan=full-restore \
@@ -591,7 +593,7 @@ gcloud beta container backup-restore restores create restore-20240315 \
 
 ```bash
 # Restore only the "payments" namespace from a backup
-gcloud beta container backup-restore restore-plans create payments-restore \
+gcloud container backup-restore restore-plans create payments-restore \
   --project=$PROJECT_ID \
   --location=$REGION \
   --cluster=projects/$PROJECT_ID/locations/$REGION/clusters/my-cluster \
@@ -675,31 +677,31 @@ With a zonal Persistent Disk, your database goes completely offline and cannot b
 <details>
 <summary>2. You deploy a new application to a regional GKE cluster using a StorageClass with `Immediate` volume binding. The PersistentVolumeClaim bounds successfully, but the pod remains in a `Pending` state indefinitely, with an error citing a zone mismatch. Why did this happen, and how does changing the binding mode resolve the underlying issue?</summary>
 
-This happens because `Immediate` binding forces the Persistent Disk CSI driver to provision the storage instantly, picking a zone for the disk before the Kubernetes scheduler has decided where the pod will run. If the scheduler later places the pod on a node in a different zone than the newly created disk, the pod cannot mount it. By changing the StorageClass to use `WaitForFirstConsumer`, you instruct the CSI driver to delay volume creation until the pod is actually scheduled. This ensures the scheduler picks the optimal node first, and the disk is subsequently provisioned in the exact same zone, guaranteeing they are co-located.
+This happens because `Immediate` binding forces the Persistent Disk CSI driver to provision the storage instantly, picking a zone for the disk before the Kubernetes scheduler has decided where the pod will run. If the scheduler later places the pod on a node in a different zone than the newly created disk, the pod cannot mount it due to the strict zonal affinity of standard persistent disks. By changing the StorageClass to use `WaitForFirstConsumer`, you instruct the CSI driver to delay volume creation until the pod is actually scheduled. This ensures the scheduler picks the optimal node first, and the disk is subsequently provisioned in the exact same zone, guaranteeing they are physically co-located and mountable.
 </details>
 
 <details>
 <summary>3. A machine learning team needs to mount a 50 TB dataset of training images into 20 concurrent training pods. The data is read-only, and cost is a major concern. The DevOps team initially suggests Filestore Enterprise, but you propose Cloud Storage FUSE instead. Why is Cloud Storage FUSE the better architectural choice for this specific workload?</summary>
 
-Cloud Storage FUSE is the better choice because the workload involves large-scale, read-heavy data access where cost is the primary constraint and full POSIX compliance (like file locking or atomic renames) is not required. Filestore Enterprise would cost significantly more (around $0.20-$0.36/GB/month) and is designed for low-latency, complex file operations that ML training typically doesn't need. Cloud Storage FUSE leverages standard Google Cloud Storage buckets, dropping the cost to roughly $0.020/GB/month while easily scaling to 50 TB and supporting simultaneous `ReadWriteMany` access across all 20 pods. You can also enable FUSE file caching to mitigate the higher per-operation latency associated with object storage.
+Cloud Storage FUSE is the better choice because the workload involves large-scale, read-heavy data access where cost is the primary constraint and full POSIX compliance (like file locking or atomic renames) is not required. Filestore Enterprise would cost significantly more (around $0.20-$0.36/GB/month) and is designed for low-latency, complex file operations that ML training typically doesn't need. Cloud Storage FUSE leverages standard Google Cloud Storage buckets, dropping the cost to roughly $0.020/GB/month while easily scaling to 50 TB and supporting simultaneous `ReadWriteMany` access across all 20 pods. Furthermore, you can enable FUSE file caching directly on the pods to mitigate the higher per-operation latency naturally associated with object storage APIs.
 </details>
 
 <details>
 <summary>4. A junior engineer accidentally deletes an entire production namespace, including the StatefulSet, ConfigMaps, Secrets, and the associated PersistentVolumeClaims. You have daily PD snapshots enabled on the underlying disks. Why are these PD snapshots alone insufficient for a rapid recovery, and how would Backup for GKE have prevented a prolonged outage?</summary>
 
-Persistent Disk snapshots only capture the raw block data residing on the physical disk; they do not back up any Kubernetes state or configuration. To recover using only PD snapshots, you would have to manually recreate the deleted namespace, reconstruct the ConfigMaps and Secrets, redefine the StatefulSet, and manually orchestrate creating new PVCs from the snapshots. Backup for GKE solves this by capturing both the Kubernetes resource configurations (the "state") and the underlying volume data in a unified snapshot. In this disaster scenario, Backup for GKE would allow you to execute a single restore command to recreate the namespace, all its resources, and the populated volumes automatically, drastically reducing your Recovery Time Objective (RTO).
+Persistent Disk snapshots only capture the raw block data residing on the physical disk; they do not back up any Kubernetes state or configuration. To recover using only PD snapshots, you would have to manually recreate the deleted namespace, reconstruct the ConfigMaps and Secrets, redefine the StatefulSet, and manually orchestrate creating new PVCs from the snapshots. This highly manual process is error-prone and significantly increases the time it takes to restore service to your users. Backup for GKE solves this by capturing both the Kubernetes resource configurations (the "state") and the underlying volume data in a unified snapshot, allowing you to execute a single restore command to recreate the namespace, all its resources, and the populated volumes automatically.
 </details>
 
 <details>
 <summary>5. To handle a temporary spike in log generation, you edit a PersistentVolumeClaim to increase its storage request from 100Gi to 500Gi. A week later, log volume returns to normal, and you want to reduce the PVC back to 100Gi to save costs. Describe the exact process you must follow to achieve this size reduction.</summary>
 
-You cannot simply edit the existing PersistentVolumeClaim to reduce its size, because Google Cloud Persistent Disks do not support shrinking and volume expansion is strictly a one-way operation. To achieve the size reduction, you must manually create a brand new PVC requesting the desired 100Gi size. You then need to deploy a temporary pod that mounts both the old 500Gi volume and the new 100Gi volume to copy the data across using tools like `rsync`. Finally, you must update your application's deployment manifests to reference the new PVC, restart the application, and delete the original 500Gi PVC.
+You cannot simply edit the existing PersistentVolumeClaim to reduce its size, because Google Cloud Persistent Disks do not support shrinking and volume expansion is strictly a one-way operation at the infrastructure level. To achieve the size reduction, you must manually create a brand new PVC requesting the desired 100Gi size. You then need to deploy a temporary pod that mounts both the old 500Gi volume and the new 100Gi volume to literally copy the data across using tools like `rsync`. Finally, you must update your application's deployment manifests to reference the new PVC, restart the application so it mounts the new disk, and safely delete the original 500Gi PVC once verification is complete.
 </details>
 
 <details>
 <summary>6. You are tasked with providing shared filesystem storage for a small internal application that only generates about 50 GB of data. You decide to create a Basic SSD Filestore instance, but the provisioning command fails. Why does Filestore reject this configuration, and what is a more appropriate storage alternative for this workload?</summary>
 
-Filestore rejects the configuration because it enforces hard minimum capacity requirements to accommodate its dedicated underlying infrastructure; a Basic SSD tier requires an absolute minimum of 2.5 TiB. Attempting to provision only 50 GB violates this boundary, and provisioning the full 2.5 TiB would be a massive waste of resources and budget for such a small dataset. A more appropriate alternative would be to deploy a lightweight, in-cluster NFS server backed by a single 50 GB regional Persistent Disk, or to rewrite the application to use Cloud Storage FUSE if it simply needs object storage without strict POSIX filesystem requirements.
+Filestore rejects the configuration because it enforces hard minimum capacity requirements to accommodate its dedicated underlying infrastructure; a Basic SSD tier requires an absolute minimum of 2.5 TiB. Attempting to provision only 50 GB violates this boundary, and provisioning the full 2.5 TiB would be a massive waste of resources and budget for such a small dataset. A more appropriate alternative would be to deploy a lightweight, in-cluster NFS server backed by a single 50 GB regional Persistent Disk. Alternatively, you could rewrite the application to use Cloud Storage FUSE if it simply needs shared object storage without strict POSIX filesystem locking and rename capabilities.
 </details>
 
 ---
@@ -890,7 +892,7 @@ kubectl uncordon $NODE
 
 ```bash
 # Create a backup plan
-gcloud beta container backup-restore backup-plans create storage-demo-backup \
+gcloud container backup-restore backup-plans create storage-demo-backup \
   --project=$PROJECT_ID \
   --location=$REGION \
   --cluster=projects/$PROJECT_ID/locations/$REGION/clusters/storage-demo \
@@ -900,14 +902,14 @@ gcloud beta container backup-restore backup-plans create storage-demo-backup \
   --backup-retain-days=7
 
 # Create a manual backup
-gcloud beta container backup-restore backups create manual-backup-1 \
+gcloud container backup-restore backups create manual-backup-1 \
   --project=$PROJECT_ID \
   --location=$REGION \
   --backup-plan=storage-demo-backup \
   --wait-for-completion
 
 # Verify the backup
-gcloud beta container backup-restore backups describe manual-backup-1 \
+gcloud container backup-restore backups describe manual-backup-1 \
   --project=$PROJECT_ID \
   --location=$REGION \
   --backup-plan=storage-demo-backup \
@@ -932,7 +934,7 @@ kubectl delete statefulset counter-db
 kubectl delete pvc data-counter-db-0
 
 # Create a restore plan
-gcloud beta container backup-restore restore-plans create full-restore \
+gcloud container backup-restore restore-plans create full-restore \
   --project=$PROJECT_ID \
   --location=$REGION \
   --cluster=projects/$PROJECT_ID/locations/$REGION/clusters/storage-demo \
@@ -943,7 +945,7 @@ gcloud beta container backup-restore restore-plans create full-restore \
   --cluster-resource-conflict-policy=USE_BACKUP_VERSION
 
 # Execute the restore
-gcloud beta container backup-restore restores create restore-1 \
+gcloud container backup-restore restores create restore-1 \
   --project=$PROJECT_ID \
   --location=$REGION \
   --restore-plan=full-restore \
@@ -967,12 +969,12 @@ kubectl exec counter-db-0 -- psql -U app -d counter -c \
 
 ```bash
 # Delete backup resources first
-gcloud beta container backup-restore restore-plans delete full-restore \
+gcloud container backup-restore restore-plans delete full-restore \
   --project=$PROJECT_ID --location=$REGION --quiet 2>/dev/null
-gcloud beta container backup-restore backups delete manual-backup-1 \
+gcloud container backup-restore backups delete manual-backup-1 \
   --project=$PROJECT_ID --location=$REGION \
   --backup-plan=storage-demo-backup --quiet 2>/dev/null
-gcloud beta container backup-restore backup-plans delete storage-demo-backup \
+gcloud container backup-restore backup-plans delete storage-demo-backup \
   --project=$PROJECT_ID --location=$REGION --quiet
 
 # Delete the cluster
