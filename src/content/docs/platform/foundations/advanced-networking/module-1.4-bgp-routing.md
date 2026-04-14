@@ -156,9 +156,6 @@ Don't fit the hierarchy. Peer directly with everyone.
 
     These networks generate so much traffic that ISPs
     WANT to peer with them (saves transit costs).
-
-INTERNET TOPOLOGY DIAGRAM
-─────────────────────────────────────────────────────────────
 ```
 
 ```mermaid
@@ -262,6 +259,8 @@ WHERE PEERING HAPPENS
         Google → [fiber patch] → Comcast
         (in the same Equinix datacenter)
 ```
+
+> **Stop and think**: If peering is settlement-free (free), why wouldn't a Tier 3 ISP just peer with everyone instead of paying for transit?
 
 ---
 
@@ -429,7 +428,7 @@ STEP  ATTRIBUTE              PREFER        TYPICAL USE
                                            equal routes.
 
  10   ROUTER ID              LOWEST         Tiebreaker. Lowest
-                                           router IP wins.
+                                           router IP IP wins.
 ```
 
 > **Stop and think**: If AS-Path length is the default way BGP determines the "shortest" route, how might an attacker manipulate this attribute to draw traffic toward their network without changing the origin ASN?
@@ -644,6 +643,8 @@ ROUTE LEAK vs HIJACK
     Leaks are FAR more common than hijacks.
 ```
 
+> **Stop and think**: Why are route leaks often harder to automatically detect and drop than basic route hijacks?
+
 ### 3.3 BGP Blackholing
 
 ```text
@@ -691,6 +692,8 @@ graph LR
     Legit[Legitimate /24 Traffic] --> Transit
     Transit -- "Allow /24" --> Router
 ```
+
+> **Pause and predict**: If you use BGP blackholing for a single IP under attack, what happens to legitimate traffic trying to reach that specific IP during the mitigation?
 
 ```text
 FLOWSPEC — SURGICAL BLACKHOLING
