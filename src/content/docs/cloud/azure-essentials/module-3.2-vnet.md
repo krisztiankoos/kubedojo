@@ -62,33 +62,26 @@ az network vnet update \
 
 Subnets are subdivisions of your VNet's address space. Every Azure resource that needs a private IP address (VMs, load balancers, private endpoints, etc.) must be placed in a subnet. Subnets serve two purposes: **organization** (grouping related resources) and **security** (applying NSGs at the subnet level).
 
-```text
-    ┌─────────────────────────────────────────────────────────┐
-    │              VNet: hub-vnet (10.0.0.0/16)               │
-    │                                                         │
-    │  ┌─────────────────┐  ┌─────────────────┐              │
-    │  │   Subnet:       │  │   Subnet:       │              │
-    │  │   frontend      │  │   backend       │              │
-    │  │   10.0.1.0/24   │  │   10.0.2.0/24   │              │
-    │  │   251 usable    │  │   251 usable    │              │
-    │  │                 │  │                 │              │
-    │  │  [VM] [VM] [VM] │  │  [VM] [DB]      │              │
-    │  └─────────────────┘  └─────────────────┘              │
-    │                                                         │
-    │  ┌─────────────────┐  ┌─────────────────────────────┐  │
-    │  │   Subnet:       │  │   Subnet:                   │  │
-    │  │ AzureFirewallSubnet│  │   GatewaySubnet             │  │
-    │  │   10.0.3.0/26   │  │   10.0.255.0/27             │  │
-    │  │   59 usable     │  │   27 usable                 │  │
-    │  │                 │  │                             │  │
-    │  │  [AZ Firewall]  │  │  [VPN GW] or [ExpressRoute] │  │
-    │  └─────────────────┘  └─────────────────────────────┘  │
-    └─────────────────────────────────────────────────────────┘
-
-    Note: Azure reserves 5 IPs per subnet:
-    .0 (network), .1 (gateway), .2 & .3 (DNS), .255 (broadcast)
-    So a /24 gives 256 - 5 = 251 usable addresses.
+```mermaid
+flowchart TB
+    subgraph VNet["VNet: hub-vnet (10.0.0.0/16)"]
+        direction TB
+        subgraph S1["Subnet: frontend (10.0.1.0/24) - 251 usable"]
+            VMs["[VM] [VM] [VM]"]
+        end
+        subgraph S2["Subnet: backend (10.0.2.0/24) - 251 usable"]
+            Backend["[VM] [DB]"]
+        end
+        subgraph S3["Subnet: AzureFirewallSubnet (10.0.3.0/26) - 59 usable"]
+            FW["[AZ Firewall]"]
+        end
+        subgraph S4["Subnet: GatewaySubnet (10.0.255.0/27) - 27 usable"]
+            GW["[VPN GW] or [ExpressRoute]"]
+        end
+    end
 ```
+
+**Note:** Azure reserves 5 IPs per subnet: `.0` (network), `.1` (gateway), `.2` & `.3` (DNS), `.255` (broadcast). So a /24 gives 256 - 5 = 251 usable addresses.
 
 **Critical detail**: Azure reserves **5 IP addresses** in every subnet. For a /24 subnet (256 addresses), you get 251 usable. For a /27 (32 addresses), you get 27. For a /29 (8 addresses), you get only 3. This matters when you are sizing subnets for services like AKS that consume many IPs.
 
@@ -139,25 +132,25 @@ A Network Security Group is a stateful firewall that filters network traffic to 
 
 NSG rules have a **priority** (100-4096, lower number = higher priority). Azure evaluates rules from lowest priority number to highest and stops at the first match.
 
-```text
-    Inbound Traffic Evaluation:
-
-    ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-    │  Subnet NSG  │ ──> │   NIC NSG    │ ──> │   Resource   │
-    │  (if exists) │     │  (if exists) │     │   (VM, etc)  │
-    └──────────────┘     └──────────────┘     └──────────────┘
-
-    Both NSGs must ALLOW the traffic. If either denies it, traffic is dropped.
-
-    Outbound Traffic Evaluation:
-
-    ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-    │   Resource   │ ──> │   NIC NSG    │ ──> │  Subnet NSG  │
-    │   (VM, etc)  │     │  (if exists) │     │  (if exists) │
-    └──────────────┘     └──────────────┘     └──────────────┘
-
-    Note: For outbound, NIC NSG is evaluated FIRST, then Subnet NSG.
+```mermaid
+flowchart LR
+    subgraph Inbound["Inbound Traffic Evaluation"]
+        direction LR
+        S_NSG["Subnet NSG<br>(if exists)"] --> N_NSG["NIC NSG<br>(if exists)"] --> Res1["Resource<br>(VM, etc)"]
+    end
 ```
+
+**Note:** Both NSGs must ALLOW the traffic. If either denies it, traffic is dropped.
+
+```mermaid
+flowchart LR
+    subgraph Outbound["Outbound Traffic Evaluation"]
+        direction LR
+        Res2["Resource<br>(VM, etc)"] --> N_NSG2["NIC NSG<br>(if exists)"] --> S_NSG2["Subnet NSG<br>(if exists)"]
+    end
+```
+
+**Note:** For outbound, NIC NSG is evaluated FIRST, then Subnet NSG.
 
 Every NSG includes **default rules** that you cannot delete:
 
@@ -260,28 +253,30 @@ VNet peering creates a direct, high-bandwidth, low-latency connection between tw
 
 Peering is **non-transitive**. If VNet A is peered with VNet B, and VNet B is peered with VNet C, VNet A **cannot** reach VNet C through VNet B (unless you configure User-Defined Routes to force it, which is exactly what the hub-and-spoke topology does).
 
-```text
-    Non-Transitive Peering:
-
-    ┌───────┐     peered      ┌───────┐     peered      ┌───────┐
-    │ VNet A│ ◄─────────────► │ VNet B│ ◄─────────────► │ VNet C│
-    └───────┘                 └───────┘                 └───────┘
-
-    A can reach B: YES
-    B can reach C: YES
-    A can reach C: NO (peering is not transitive)
-
-
-    Hub-and-Spoke with Transit:
-
-    ┌─────────┐          ┌──────────────┐          ┌─────────┐
-    │ Spoke A │ ◄──────► │     Hub      │ ◄──────► │ Spoke B │
-    │         │          │ (NVA/Firewall)│          │         │
-    └─────────┘          └──────────────┘          └─────────┘
-
-    A can reach B: YES (traffic routes through Hub's NVA/Firewall)
-    Requires: UDR on spoke subnets + "Allow Forwarded Traffic" on peering
+```mermaid
+flowchart LR
+    subgraph NonTransitive["Non-Transitive Peering"]
+        direction LR
+        VA["VNet A"] <-->|"peered"| VB["VNet B"]
+        VB <-->|"peered"| VC["VNet C"]
+    end
 ```
+
+* **A can reach B:** YES
+* **B can reach C:** YES
+* **A can reach C:** NO (peering is not transitive)
+
+```mermaid
+flowchart LR
+    subgraph HubSpoke["Hub-and-Spoke with Transit"]
+        direction LR
+        SA["Spoke A"] <-->|"peered"| Hub["Hub<br>(NVA/Firewall)"]
+        Hub <-->|"peered"| SB["Spoke B"]
+    end
+```
+
+* **A can reach B:** YES (traffic routes through Hub's NVA/Firewall)
+* **Requires:** UDR on spoke subnets + "Allow Forwarded Traffic" on peering
 
 ```bash
 # Create two VNets
@@ -365,21 +360,15 @@ az network vnet subnet update \
 
 Azure Firewall is a managed, cloud-based network security service. Unlike NSGs (which operate at Layer 3/4), Azure Firewall can inspect traffic at Layer 7 (application level), performing URL filtering, TLS inspection, and threat intelligence-based filtering.
 
-```text
-    ┌──────────────────────────────────────────────────────────┐
-    │                  Azure Firewall Features                 │
-    ├──────────────────┬───────────────────────────────────────┤
-    │  NSG (Layer 3/4) │  Azure Firewall (Layer 3-7)          │
-    ├──────────────────┼───────────────────────────────────────┤
-    │ IP-based rules   │ IP, FQDN, URL-based rules            │
-    │ Port filtering   │ Port + protocol + app inspection     │
-    │ Stateful         │ Stateful + threat intelligence       │
-    │ Free             │ ~$912/month (Standard) + data costs  │
-    │ Per-subnet       │ Centralized (hub)                    │
-    │ No logging       │ Full diagnostic logging              │
-    │ No TLS inspect   │ TLS inspection (Premium)             │
-    └──────────────────┴───────────────────────────────────────┘
-```
+| Feature | NSG (Layer 3/4) | Azure Firewall (Layer 3-7) |
+| :--- | :--- | :--- |
+| **Rules** | IP-based rules | IP, FQDN, URL-based rules |
+| **Filtering** | Port filtering | Port + protocol + app inspection |
+| **Engine** | Stateful | Stateful + threat intelligence |
+| **Cost** | Free | ~$912/month (Standard) + data costs |
+| **Placement** | Per-subnet | Centralized (hub) |
+| **Logging** | No logging | Full diagnostic logging |
+| **Inspection** | No TLS inspect | TLS inspection (Premium) |
 
 ```bash
 # Create Azure Firewall subnet (must be named exactly AzureFirewallSubnet)
@@ -486,42 +475,31 @@ az network vnet-gateway show -g myRG -n hub-vpn-gateway --query provisioningStat
 
 The hub-and-spoke architecture is the most common network topology for enterprise Azure deployments. It centralizes shared services (firewall, VPN gateway, DNS, monitoring) in a hub VNet and connects workload VNets (spokes) via peering.
 
-```text
-    ┌──────────────────────────────────────────────────────────────────┐
-    │                        Hub VNet (10.0.0.0/16)                    │
-    │                                                                  │
-    │   ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐   │
-    │   │ Azure       │  │ VPN Gateway  │  │ Azure Bastion        │   │
-    │   │ Firewall    │  │ or Express-  │  │ (secure remote       │   │
-    │   │ 10.0.3.0/26 │  │ Route GW     │  │  access)             │   │
-    │   │             │  │ 10.0.255.0/27│  │ 10.0.4.0/26          │   │
-    │   └──────┬──────┘  └──────┬───────┘  └──────────────────────┘   │
-    │          │                │                                      │
-    │          │    ┌───────────┘                                      │
-    │          │    │    ┌────────────────┐                            │
-    │          │    │    │ DNS Resolver   │                            │
-    │          │    │    │ 10.0.5.0/24   │                            │
-    │          │    │    └────────────────┘                            │
-    └──────────┼────┼─────────────────────────────────────────────────┘
-               │    │
-     ┌─────────┴────┴─────────────────────────────────────────────┐
-     │                    VNet Peering                             │
-     ├──────────────────────────┬──────────────────────────────────┤
-     │                          │                                  │
-     ▼                          ▼                                  │
-    ┌────────────────────┐   ┌────────────────────┐               │
-    │ Spoke 1: App       │   │ Spoke 2: Data      │               │
-    │ (10.1.0.0/16)      │   │ (10.2.0.0/16)      │               │
-    │                    │   │                    │               │
-    │ ┌────────────────┐ │   │ ┌────────────────┐ │               │
-    │ │ App Subnet     │ │   │ │ DB Subnet      │ │               │
-    │ │ 10.1.1.0/24    │ │   │ │ 10.2.1.0/24    │ │               │
-    │ │ UDR → Firewall │ │   │ │ UDR → Firewall │ │               │
-    │ └────────────────┘ │   │ └────────────────┘ │               │
-    └────────────────────┘   └────────────────────┘               │
-                                                                   │
-                              On-Premises Network ◄────────────────┘
-                              (via VPN / ExpressRoute)
+```mermaid
+flowchart TD
+    subgraph Hub["Hub VNet (10.0.0.0/16)"]
+        direction TB
+        FW["Azure Firewall<br>10.0.3.0/26"]
+        GW["VPN Gateway<br>or ExpressRoute GW<br>10.0.255.0/27"]
+        Bastion["Azure Bastion<br>(secure remote access)<br>10.0.4.0/26"]
+        DNS["DNS Resolver<br>10.0.5.0/24"]
+        
+        GW -.- DNS
+    end
+    
+    subgraph Spoke1["Spoke 1: App (10.1.0.0/16)"]
+        S1App["App Subnet<br>10.1.1.0/24<br>UDR → Firewall"]
+    end
+    
+    subgraph Spoke2["Spoke 2: Data (10.2.0.0/16)"]
+        S2DB["DB Subnet<br>10.2.1.0/24<br>UDR → Firewall"]
+    end
+    
+    OnPrem["On-Premises Network<br>(via VPN / ExpressRoute)"]
+    
+    FW <-->|"VNet Peering"| S1App
+    FW <-->|"VNet Peering"| S2DB
+    GW <-->|"VPN / ExpressRoute"| OnPrem
 ```
 
 Benefits of hub-and-spoke:
@@ -565,43 +543,43 @@ Benefits of hub-and-spoke:
 <details>
 <summary>1. You are designing a network for a new application environment in Azure. You have allocated a VNet with the address space 10.0.0.0/16. For the frontend web servers, you create a subnet with the prefix 10.0.1.0/24 and plan to deploy exactly 255 small virtual machines. Will this deployment succeed?</summary>
 
-No, the deployment will fail because you do not have enough usable IP addresses. While a /24 subnet mathematically contains 256 total IP addresses, Azure reserves exactly 5 addresses in every subnet for internal operational purposes (network address, default gateway, two for DNS, and the broadcast address). This leaves only 251 usable IP addresses for your resources. Therefore, attempting to deploy 255 virtual machines into this subnet will exhaust the available address pool, causing the final four VM deployments to fail.
+No, the deployment will fail because you do not have enough usable IP addresses. While a /24 subnet mathematically contains 256 total IP addresses, Azure automatically reserves exactly 5 addresses in every subnet for internal operational purposes. These reserved addresses include the network address, the default gateway, two for DNS mapping, and the broadcast address. This constraint leaves only 251 usable IP addresses for your resources. Therefore, attempting to deploy 255 virtual machines into this subnet will exhaust the available address pool, causing the final four VM deployments to fail with an allocation error.
 </details>
 
 <details>
 <summary>2. Your company acquired a startup. Your main production network (VNet A) is peered to a shared services network (VNet B). The startup's network (VNet C) is now peered to VNet B. A developer in VNet A is trying to SSH directly into a database server in VNet C but the connection times out. What architectural characteristic of Azure networking is causing this, and how do you fix it?</summary>
 
-The developer's SSH connection fails because Azure VNet peering is strictly non-transitive by default. Even though VNet A is connected to VNet B, and VNet B is connected to VNet C, traffic from A does not automatically route through B to reach C. To establish this communication path, you must deploy a routing appliance (like Azure Firewall or an NVA) in the hub (VNet B). You then configure User-Defined Routes (UDRs) in VNets A and C to direct traffic to the appliance, and enable "Allow Forwarded Traffic" on the peering connections.
+The developer's SSH connection fails because Azure VNet peering is strictly non-transitive by default. Even though VNet A is connected to VNet B, and VNet B is connected to VNet C, traffic from A does not automatically route through B to reach C. To establish this communication path, you must design a transit routing architecture by deploying a routing appliance like Azure Firewall or a Network Virtual Appliance in the central hub (VNet B). You then must configure User-Defined Routes (UDRs) in VNets A and C to direct traffic to the appliance, and explicitly enable the "Allow Forwarded Traffic" setting on all peering connections.
 </details>
 
 <details>
 <summary>3. Your security team mandates that all outbound traffic to the internet must be restricted to a specific list of approved domain names (FQDNs), and all traffic must be logged. A developer suggests simply applying a Network Security Group (NSG) to all subnets to meet this requirement. Will the developer's solution work?</summary>
 
-No, the developer's solution will fail because NSGs cannot filter traffic based on domain names (FQDNs). NSGs operate at Layer 3/4 of the OSI model, meaning they can only filter traffic using IP addresses, ports, and protocols. To fulfill the security team's mandate for FQDN-based outbound filtering and comprehensive logging, you must deploy Azure Firewall, which operates up to Layer 7 and understands application-level constructs like URLs and domain names. While NSGs provide essential baseline security at the subnet level, Azure Firewall is required for centralized, advanced inspection and routing.
+No, the developer's solution will fail because NSGs cannot filter traffic based on domain names (FQDNs). Network Security Groups operate strictly at Layer 3/4 of the OSI model, meaning they can only filter traffic using IP addresses, ports, and basic protocols. To fulfill the security team's mandate for FQDN-based outbound filtering and comprehensive logging, you must deploy an advanced security service like Azure Firewall. Azure Firewall operates up to Layer 7 and deeply understands application-level constructs like URLs, domain names, and TLS traffic. While NSGs provide essential baseline security at the subnet level, Azure Firewall is absolutely required for centralized, advanced inspection and routing.
 </details>
 
 <details>
 <summary>4. An infrastructure-as-code deployment pipeline is failing. The error occurs when attempting to deploy an Azure Firewall into a subnet named "hub-firewall-snet" (prefix 10.0.3.0/26). The developer insists the subnet size is correct. Why is the deployment failing, and what is the underlying reason Azure enforces this?</summary>
 
-The deployment is failing because Azure requires the firewall's subnet to be named exactly "AzureFirewallSubnet". This is a hard-coded requirement within the Azure resource provider responsible for provisioning the firewall. By enforcing a specific, reserved subnet name, Azure ensures that the service is placed in a dedicated space with appropriate sizing (minimum /26) and prevents other resources from being accidentally deployed alongside the firewall. Renaming the subnet from "hub-firewall-snet" to the required name will resolve the deployment error.
+The deployment is failing because Azure requires the firewall's subnet to be named exactly "AzureFirewallSubnet" without exception. This is a hard-coded requirement within the Azure resource provider responsible for provisioning the firewall service. By enforcing a specific, reserved subnet name, Azure ensures that the service is placed in a dedicated space with appropriate sizing parameters (a minimum of /26). This strict naming convention also fundamentally prevents other infrastructure resources from being accidentally deployed alongside the firewall, which could disrupt its operation. Renaming the subnet from "hub-firewall-snet" to the required name will immediately resolve the deployment error.
 </details>
 
 <details>
 <summary>5. You have successfully built a hub-and-spoke architecture. VMs in Spoke 1 (10.1.0.0/16) can successfully download updates from the internet via the Azure Firewall in the hub. However, VMs in Spoke 1 cannot connect to the database servers in Spoke 2 (10.2.0.0/16). What specific configuration is likely missing in your network topology?</summary>
 
-The most likely issue is that the Azure Firewall (or Network Virtual Appliance) in the hub VNet lacks a network rule explicitly allowing traffic between the two spoke address spaces. Because you have configured User-Defined Routes (UDRs) on the spoke subnets to send all traffic (0.0.0.0/0) to the firewall, the traffic successfully reaches the hub. However, while the firewall is configured to forward internet-bound traffic, it drops the spoke-to-spoke traffic by default. You must create a firewall network rule allowing traffic from 10.1.0.0/16 to 10.2.0.0/16 (and vice versa), and ensure "Allow Forwarded Traffic" is enabled on all peering links.
+The most likely issue is that the Azure Firewall (or Network Virtual Appliance) in the hub VNet lacks a network rule explicitly allowing traffic between the two spoke address spaces. Because you have configured User-Defined Routes (UDRs) on the spoke subnets to send all traffic (0.0.0.0/0) directly to the firewall, the initial connection successfully reaches the hub. However, while the firewall is configured to forward internet-bound traffic, its default security posture drops any unknown internal spoke-to-spoke traffic. You must create a firewall network rule explicitly allowing traffic from 10.1.0.0/16 to 10.2.0.0/16 (and vice versa), and verify that "Allow Forwarded Traffic" is enabled on all associated peering links.
 </details>
 
 <details>
 <summary>6. Your environment has 50 web servers and 50 database servers in the same subnet. Web servers scale in and out dynamically based on load. Currently, the security team updates the NSG manually with individual IP addresses every time a new web server is created, which frequently causes delays and outages. How can you redesign this security model to be dynamic and resilient?</summary>
 
-You can redesign the security model by implementing Application Security Groups (ASGs). ASGs allow you to logically group network interfaces (e.g., creating a "web-servers" ASG and a "db-servers" ASG) and use these abstract groups as the source or destination in your NSG rules, rather than hardcoding individual IP addresses. When the web servers scale out, the newly created VMs simply join the "web-servers" ASG and automatically inherit the correct access rules to communicate with the databases. This completely eliminates the need for manual NSG updates, reducing human error and preventing deployment delays.
+You can fundamentally redesign the security model by implementing Application Security Groups (ASGs). ASGs allow you to logically group network interfaces (e.g., creating a "web-servers" ASG and a "db-servers" ASG) and use these abstract groups as the source or destination in your NSG rules, rather than hardcoding individual IP addresses. When the web servers scale out, the newly created VMs simply join the predefined "web-servers" ASG and automatically inherit the correct access rules to communicate with the databases. This declarative approach completely eliminates the need for manual NSG updates, drastically reducing human error and preventing deployment delays during scaling events.
 </details>
 
 <details>
 <summary>7. A financial institution is migrating their core transaction processing system to Azure. This system requires constant, highly predictable latency to on-premises mainframes and transfers around 5 Gbps of data continuously. The network team has proposed deploying a VPN Gateway to save costs. Why is this proposal risky for this specific workload?</summary>
 
-The proposal to use a VPN Gateway is highly risky because VPNs operate over the public internet, meaning latency is inherently unpredictable and subject to external congestion. Furthermore, most VPN Gateways cannot reliably sustain a continuous 5 Gbps throughput, which would lead to dropped packets and severe performance degradation for the transaction system. For a workload requiring predictable latency, high throughput, and enterprise-grade reliability, an ExpressRoute circuit must be used. ExpressRoute provides a dedicated, private connection to the Microsoft backbone, completely bypassing the public internet and easily accommodating multi-gigabit workloads.
+The proposal to use a VPN Gateway is highly risky because VPNs operate entirely over the public internet, meaning latency is inherently unpredictable and subject to external congestion beyond your control. Furthermore, most standard VPN Gateways cannot reliably sustain a continuous 5 Gbps throughput, which would rapidly lead to dropped packets and severe performance degradation for the critical transaction system. For a workload requiring predictable latency, high throughput, and enterprise-grade reliability, an ExpressRoute circuit must be architected. ExpressRoute provides a dedicated, private connection to the Microsoft backbone, completely bypassing the public internet and effortlessly accommodating massive multi-gigabit workloads.
 </details>
 
 ---
