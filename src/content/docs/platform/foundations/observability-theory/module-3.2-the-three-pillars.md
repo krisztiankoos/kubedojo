@@ -324,22 +324,22 @@ All spans share the `trace_id` and are linked logically by parent relationships.
 Each pillar alone has blind spots:
 
 **Logs Alone:**
-- ✅ "Error occurred in payment service"
-- ❌ "Was this the slow request? What called payment service?"
+- ✓ "Error occurred in payment service"
+- ✗ "Was this the slow request? What called payment service?"
 
 **Metrics Alone:**
-- ✅ "Error rate increased at 3pm"
-- ❌ "Which specific requests failed? What was the error?"
+- ✓ "Error rate increased at 3pm"
+- ✗ "Which specific requests failed? What was the error?"
 
 **Traces Alone:**
-- ✅ "Request took 500ms, 400ms in database"
-- ❌ "Is this normal? How many requests are affected?"
+- ✓ "Request took 500ms, 400ms in database"
+- ✗ "Is this normal? How many requests are affected?"
 
 **Connected (The True Power):**
-- ✅ Metric alert fires (error rate up)
-- ✅ Drill into traces (which requests are errors)
-- ✅ Look at logs (what's the error message)
-- ✅ Full picture: "Database connection pool exhausted, affecting 5% of checkout requests"
+- ✓ Metric alert fires (error rate up)
+- ✓ Drill into traces (which requests are errors)
+- ✓ Look at logs (what's the error message)
+- ✓ Full picture: "Database connection pool exhausted, affecting 5% of checkout requests"
 
 ### 4.2 Correlation via IDs
 
