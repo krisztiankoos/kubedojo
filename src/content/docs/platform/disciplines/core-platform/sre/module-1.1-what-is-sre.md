@@ -129,17 +129,21 @@ SRE embraces calculated risk through **error budgets** (more in Module 1.3).
 
 Think about your service's path to users:
 
-```text
-Your Service (99.9%)
-    → Load Balancer (99.95%)
-    → Internet (99.9%)
-    → User's ISP (99%)
-    → User's WiFi (99.5%)
-    → User's Browser (99.9%)
+```mermaid
+flowchart TD
+    S["Your Service (99.9%)"] --> LB["Load Balancer (99.95%)"]
+    LB --> I["Internet (99.9%)"]
+    I --> ISP["User's ISP (99%)"]
+    ISP --> W["User's WiFi (99.5%)"]
+    W --> B["User's Browser (99.9%)"]
+```
 
+```text
 Combined: 0.999 × 0.9995 × 0.999 × 0.99 × 0.995 × 0.999
         = ~97.3%
 ```
+
+> **Pause and predict**: If you spend engineering effort to increase your service reliability from 99.9% to 99.999%, how much will your users' perceived reliability improve?
 
 Your 99.9% doesn't matter much when users only see ~97.3%.
 
@@ -190,6 +194,8 @@ It provides:
 - **Standardization**: Consistent patterns across teams
 
 Platform Engineering is **what you build**.
+
+> **Stop and think**: Is your organization trying to "buy DevOps" by simply renaming your traditional operations team, or are you actually changing your practices to align with SRE?
 
 ### The Overlap
 
