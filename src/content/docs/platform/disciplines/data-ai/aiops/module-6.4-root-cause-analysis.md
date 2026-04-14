@@ -734,6 +734,8 @@ class ComprehensiveRCA:
 **Answer**: Different failure modes manifest in entirely different ways that no single analytical strategy can capture completely. Topology analysis excels at tracking cascading timeouts but is blind to configuration issues or instant application crashes. Change correlation catches bad deployments but misses slow resource exhaustion, while log analysis finds application errors but might miss network partitions. By combining multiple strategies with a weighted voting mechanism, the system can cross-validate signals, cover each method's blind spots, and drastically increase overall diagnostic accuracy.
 </details>
 
+> **Stop and think**: When building your own RCA system, what signals are unique to your environment that off-the-shelf tools might miss?
+
 ## Hands-On Exercise: Build an RCA System
 
 ### Setup
