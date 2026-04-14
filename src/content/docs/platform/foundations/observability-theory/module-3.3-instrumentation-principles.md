@@ -54,29 +54,18 @@ The senior engineer opens their logging system. Searches for "payment." Gets 847
 
 **The root cause**: Not the vulnerability itself—that was a common library issue affecting thousands of companies. The root cause was **invisible instrumentation**. They couldn't see what their systems had done.
 
-```
-THE INSTRUMENTATION BLINDNESS TRAP
-═══════════════════════════════════════════════════════════════════════════════
+### The Instrumentation Blindness Trap
 
-WHAT THEY HAD                          WHAT THEY NEEDED
-─────────────────────────────────────  ─────────────────────────────────────
-print("processing payment")            Structured: {"event": "payment_start",
-                                                    "transaction_id": "T-12345",
-                                                    "user_id": "U-6789",
-                                                    "trace_id": "abc-123"}
+| What They Had | What They Needed |
+|---------------|------------------|
+| `print("processing payment")` | **Structured:** `{"event": "payment_start", "transaction_id": "T-12345", "user_id": "U-6789", "trace_id": "abc-123"}` |
+| No metrics | **Counters:** `payments_processed_total`<br>**Histograms:** `payment_duration_seconds`<br>**Gauges:** `active_transactions` |
+| No tracing | **Spans:** `payment-service` → `fraud-check` → `processor-api` → `ledger-write` |
 
-No metrics                             Counters: payments_processed_total
-                                       Histograms: payment_duration_seconds
-                                       Gauges: active_transactions
+**Time to Answer: "What transactions used code path X?"**
 
-No tracing                             Spans: payment-service → fraud-check
-                                              → processor-api → ledger-write
-
-TIME TO ANSWER "What transactions used code path X?"
-
-With their setup:   4+ hours (and failed)
-With proper setup:  52 seconds (WHERE code_path = 'X' AND timestamp > '3 days ago')
-```
+- **With their setup:** 4+ hours (and failed)
+- **With proper setup:** 52 seconds (`WHERE code_path = 'X' AND timestamp > '3 days ago'`)
 
 After the incident, they spent 3 months instrumenting properly. The same regulatory request—which came again during the next quarterly audit—took 2 minutes to answer.
 
@@ -128,81 +117,67 @@ flowchart TD
 
 Every request entering or leaving your service should be instrumented:
 
-```
-SERVICE BOUNDARY INSTRUMENTATION
-═══════════════════════════════════════════════════════════════
+**Incoming (Inbound)**
 
-INCOMING (Inbound)
-─────────────────────────────────────────────────────────────
-→ HTTP request received
-   Log: request_id, method, path, headers, user_id
-   Metric: http_requests_total, http_request_duration
-   Trace: Create/continue span
+- **HTTP request received**
+  - **Log:** `request_id`, `method`, `path`, `headers`, `user_id`
+  - **Metric:** `http_requests_total`, `http_request_duration`
+  - **Trace:** Create/continue span
+- **Message consumed (Kafka, RabbitMQ)**
+  - **Log:** `message_id`, `topic/queue`, `consumer_group`
+  - **Metric:** `messages_consumed_total`, `processing_duration`
+  - **Trace:** Extract trace context from message headers
 
-→ Message consumed (Kafka, RabbitMQ)
-   Log: message_id, topic/queue, consumer_group
-   Metric: messages_consumed_total, processing_duration
-   Trace: Extract trace context from message headers
+**Outgoing (Outbound)**
 
-OUTGOING (Outbound)
-─────────────────────────────────────────────────────────────
-→ HTTP request to another service
-   Log: request_id, target_service, path, response_status
-   Metric: outbound_requests_total, outbound_request_duration
-   Trace: Create child span, propagate context
-
-→ Database query
-   Log: query (sanitized), duration, rows_affected
-   Metric: db_query_duration, db_connections_active
-   Trace: Child span with db.system, db.statement tags
-
-→ Cache access
-   Log: cache_key, hit/miss
-   Metric: cache_hits_total, cache_misses_total
-   Trace: Child span with cache.hit tag
-```
+- **HTTP request to another service**
+  - **Log:** `request_id`, `target_service`, `path`, `response_status`
+  - **Metric:** `outbound_requests_total`, `outbound_request_duration`
+  - **Trace:** Create child span, propagate context
+- **Database query**
+  - **Log:** `query` (sanitized), `duration`, `rows_affected`
+  - **Metric:** `db_query_duration`, `db_connections_active`
+  - **Trace:** Child span with `db.system`, `db.statement` tags
+- **Cache access**
+  - **Log:** `cache_key`, `hit/miss`
+  - **Metric:** `cache_hits_total`, `cache_misses_total`
+  - **Trace:** Child span with `cache.hit` tag
 
 ### 1.3 Must-Instrument: Business Operations
 
 Key domain events that matter to the business:
 
+```mermaid
+mindmap
+  root((Business Operations))
+    E-commerce
+      user_signup
+      product_viewed
+      add_to_cart
+      checkout_started
+      payment_processed
+      order_completed
+      refund_issued
+    SaaS
+      account_created
+      user_invited
+      subscription_started
+      feature_used
+      limit_reached
+      subscription_cancelled
+      account_deleted
 ```
-BUSINESS OPERATION EXAMPLES
-═══════════════════════════════════════════════════════════════
-
-E-commerce:
-├── user_signup
-├── product_viewed
-├── add_to_cart
-├── checkout_started
-├── payment_processed
-├── order_completed
-└── refund_issued
-
-SaaS:
-├── account_created
-├── user_invited
-├── subscription_started
-├── feature_used
-├── limit_reached
-├── subscription_cancelled
-└── account_deleted
 
 For each business operation:
 - Log with full context (who, what, when, outcome)
 - Metric for volume and success rate
 - Span if part of a larger flow
-```
 
 ### 1.4 Must-Instrument: Errors
 
 Every error should be captured with context:
 
-```
-ERROR INSTRUMENTATION
-═══════════════════════════════════════════════════════════════
-
-GOOD ERROR LOG
+```json
 {
   "timestamp": "2024-01-15T10:32:15.789Z",
   "level": "error",
@@ -219,14 +194,14 @@ GOOD ERROR LOG
   "service": "payment-api",
   "version": "2.3.1"
 }
-
-WHAT TO INCLUDE
-├── Context: Who? (user_id), What? (order_id), When? (timestamp)
-├── Error details: code, message, stack trace
-├── Correlation: trace_id, request_id
-├── Environment: service, version, region
-└── State: retry_count, previous_attempts
 ```
+
+**What to Include:**
+- **Context:** Who? (`user_id`), What? (`order_id`), When? (`timestamp`)
+- **Error details:** code, message, stack trace
+- **Correlation:** `trace_id`, `request_id`
+- **Environment:** service, version, region
+- **State:** retry_count, previous_attempts
 
 > **Try This (2 minutes)**
 >
@@ -274,71 +249,52 @@ logger.info("order_placed", extra={
 
 **USE Method** (Utilization, Saturation, Errors):
 
-```
-USE METHOD METRICS
-═══════════════════════════════════════════════════════════════
-
 For every resource (CPU, memory, connections, queues):
 
-UTILIZATION: How busy is it?
-    cpu_usage_percent
-    memory_usage_bytes
-    connection_pool_usage_ratio
-
-SATURATION: How overloaded is it?
-    request_queue_length
-    thread_pool_pending
-    connection_wait_time
-
-ERRORS: How often does it fail?
-    connection_errors_total
-    timeout_errors_total
-    oom_kills_total
-```
+- **Utilization:** How busy is it?
+  - `cpu_usage_percent`
+  - `memory_usage_bytes`
+  - `connection_pool_usage_ratio`
+- **Saturation:** How overloaded is it?
+  - `request_queue_length`
+  - `thread_pool_pending`
+  - `connection_wait_time`
+- **Errors:** How often does it fail?
+  - `connection_errors_total`
+  - `timeout_errors_total`
+  - `oom_kills_total`
 
 **RED Method** (Rate, Errors, Duration):
 
-```
-RED METHOD METRICS
-═══════════════════════════════════════════════════════════════
-
 For every service (user-facing):
 
-RATE: How many requests per second?
-    http_requests_total (rate over time)
-
-ERRORS: How many requests fail?
-    http_requests_total{status="5xx"}
-    error_rate = errors / total
-
-DURATION: How long do requests take?
-    http_request_duration_seconds (histogram)
-    p50, p90, p99 latencies
-```
+- **Rate:** How many requests per second?
+  - `http_requests_total` (rate over time)
+- **Errors:** How many requests fail?
+  - `http_requests_total{status="5xx"}`
+  - error_rate = errors / total
+- **Duration:** How long do requests take?
+  - `http_request_duration_seconds` (histogram)
+  - p50, p90, p99 latencies
 
 ### 2.3 Tracing Patterns
 
-**Span Naming**
+**Span Naming Conventions**
 
-```
-SPAN NAMING CONVENTIONS
-═══════════════════════════════════════════════════════════════
+**GOOD span names (low cardinality, descriptive):**
+- `HTTP GET /api/users/{id}`
+- `DB SELECT users`
+- `QUEUE process order`
+- `CACHE get session`
 
-GOOD span names (low cardinality, descriptive):
-    HTTP GET /api/users/{id}
-    DB SELECT users
-    QUEUE process order
-    CACHE get session
+**BAD span names (high cardinality, will explode):**
+- `HTTP GET /api/users/12345` (includes ID)
+- `DB SELECT * FROM users WHERE id = 12345` (includes query)
+- `GET user_12345` (includes ID)
 
-BAD span names (high cardinality, will explode):
-    HTTP GET /api/users/12345      ← includes ID
-    DB SELECT * FROM users WHERE id = 12345  ← includes query
-    GET user_12345                 ← includes ID
-
-Put variable data in TAGS, not span names:
-    Span: HTTP GET /api/users/{id}
-    Tags: http.user_id=12345
-```
+**Put variable data in TAGS, not span names:**
+- **Span:** `HTTP GET /api/users/{id}`
+- **Tags:** `http.user_id=12345`
 
 **Span Attributes**
 
@@ -360,56 +316,39 @@ Put variable data in TAGS, not span names:
 
 Without context, each service starts fresh. With context, you can:
 
-```
-CONTEXT PROPAGATION VALUE
-═══════════════════════════════════════════════════════════════
+**Without Context**
+- Service A logs: "Request received from user 123"
+- Service B logs: "Processing order"
+- Service C logs: "Database query executed"
+*Q: Did Service C's query relate to Service A's request?*
+*A: No idea. No connection between them.*
 
-WITHOUT CONTEXT
-────────────────────────────────────────
-Service A logs: "Request received from user 123"
-Service B logs: "Processing order"
-Service C logs: "Database query executed"
-
-Q: Did Service C's query relate to Service A's request?
-A: No idea. No connection between them.
-
-WITH CONTEXT
-────────────────────────────────────────
-Service A logs: "Request received" trace_id=abc-123 user_id=123
-Service B logs: "Processing order" trace_id=abc-123
-Service C logs: "Database query" trace_id=abc-123
-
-Q: Did Service C's query relate to Service A's request?
-A: Yes! Same trace_id. Can reconstruct full flow.
-```
+**With Context**
+- Service A logs: "Request received" `trace_id=abc-123 user_id=123`
+- Service B logs: "Processing order" `trace_id=abc-123`
+- Service C logs: "Database query" `trace_id=abc-123`
+*Q: Did Service C's query relate to Service A's request?*
+*A: Yes! Same trace_id. Can reconstruct full flow.*
 
 ### 3.2 What Context to Propagate
 
-```
-CONTEXT PROPAGATION
-═══════════════════════════════════════════════════════════════
+**Standard (W3C Trace Context)**
+- **Header:** `traceparent`
+- **Format:** `{version}-{trace_id}-{parent_span_id}-{flags}`
+- **Example:** `00-abc123def456-span001-01`
+- **Header:** `tracestate`
+- **Format:** vendor-specific data
+- **Example:** `congo=t61rcWkgMzE,rojo=00f067aa0ba902b7`
 
-STANDARD (W3C Trace Context)
-─────────────────────────────────────────────────────────────
-Header: traceparent
-Format: {version}-{trace_id}-{parent_span_id}-{flags}
-Example: 00-abc123def456-span001-01
-
-Header: tracestate
-Format: vendor-specific data
-Example: congo=t61rcWkgMzE,rojo=00f067aa0ba902b7
-
-APPLICATION CONTEXT (Baggage)
-─────────────────────────────────────────────────────────────
-Header: baggage
-Format: key=value pairs
-Example: user_id=12345,tenant=acme,feature_flag=new_checkout
+**Application Context (Baggage)**
+- **Header:** `baggage`
+- **Format:** `key=value` pairs
+- **Example:** `user_id=12345,tenant=acme,feature_flag=new_checkout`
 
 Use baggage for:
 - User/tenant ID (for filtering logs)
 - Feature flags (for understanding behavior)
 - Request source (for debugging)
-```
 
 ### 3.3 Propagation Implementation
 
@@ -442,109 +381,100 @@ flowchart TD
 
 ### 4.1 Performance Overhead
 
-```
-INSTRUMENTATION OVERHEAD
-═══════════════════════════════════════════════════════════════
+**Logging**
+- **CPU:** Serializing log data (JSON encoding)
+- **Memory:** Buffering logs before flush
+- **I/O:** Writing to disk/network
+- **Latency:** Typically <1ms per log if async
 
-LOGGING
-─────────────────────────────────────────────────────────────
-- CPU: Serializing log data (JSON encoding)
-- Memory: Buffering logs before flush
-- I/O: Writing to disk/network
-- Latency: Typically <1ms per log if async
-
-Mitigation:
+*Mitigation:*
 - Use async logging (don't block request)
 - Sample verbose logs
 - Use appropriate log levels
 
-METRICS
-─────────────────────────────────────────────────────────────
-- CPU: Incrementing counters (negligible)
-- Memory: Storing histogram buckets
-- Network: Scraping/pushing (batched)
-- Latency: Typically microseconds
+**Metrics**
+- **CPU:** Incrementing counters (negligible)
+- **Memory:** Storing histogram buckets
+- **Network:** Scraping/pushing (batched)
+- **Latency:** Typically microseconds
 
-Mitigation:
+*Mitigation:*
 - Keep cardinality bounded
 - Use appropriate histogram buckets
 - Batch metric updates
 
-TRACING
-─────────────────────────────────────────────────────────────
-- CPU: Creating spans, encoding
-- Memory: Storing span data until export
-- Network: Exporting spans (batched)
-- Latency: 1-5ms overhead typical
+**Tracing**
+- **CPU:** Creating spans, encoding
+- **Memory:** Storing span data until export
+- **Network:** Exporting spans (batched)
+- **Latency:** 1-5ms overhead typical
 
-Mitigation:
+*Mitigation:*
 - Sample traces (not all requests)
 - Use head-based or tail-based sampling
 - Batch exports
-```
 
 ### 4.2 Storage and Cost
 
-```
-COST CONSIDERATIONS
-═══════════════════════════════════════════════════════════════
+**Logs**
+- 1 request = ~500 bytes of logs
+- 1M requests/day = 500 MB/day = 15 GB/month
+- At $0.50/GB storage + query costs = $$$
 
-LOGS
-1 request = ~500 bytes of logs
-1M requests/day = 500 MB/day = 15 GB/month
-At $0.50/GB storage + query costs = $$$
+**Metrics**
+- 1 metric × 100 label combinations × 15s scrape = moderate
+- High cardinality = storage explosion
+- At $0.10/million samples = manageable
 
-METRICS
-1 metric × 100 label combinations × 15s scrape = moderate
-High cardinality = storage explosion
-At $0.10/million samples = manageable
+**Traces**
+- 1 request = 5 spans × 200 bytes = 1KB
+- 1M requests/day sampled at 1% = 10GB/month
+- Full traces at 100% = 1TB/month = $$$$
 
-TRACES
-1 request = 5 spans × 200 bytes = 1KB
-1M requests/day sampled at 1% = 10GB/month
-Full traces at 100% = 1TB/month = $$$$
-
-Sampling is essential for traces at scale.
-```
+*Sampling is essential for traces at scale.*
 
 ### 4.3 Sampling Strategies
 
+**Head-Based Sampling**
+
+Decide at the START whether to trace.
+
+```mermaid
+flowchart LR
+    A[Request arrives] -->|Random: 1%| B[Trace]
+    A -->|Random: 99%| C[Don't trace]
 ```
-SAMPLING STRATEGIES
-═══════════════════════════════════════════════════════════════
 
-HEAD-BASED SAMPLING
-─────────────────────────────────────────────────────────────
-Decide at the START whether to trace
+- **Pros:** Simple, predictable cost
+- **Cons:** Might miss interesting requests
 
-    Request arrives → Random: 1% → Trace
-                   → Random: 99% → Don't trace
+**Tail-Based Sampling**
 
-Pros: Simple, predictable cost
-Cons: Might miss interesting requests
+Decide at the END based on what happened.
 
-TAIL-BASED SAMPLING
-─────────────────────────────────────────────────────────────
-Decide at the END based on what happened
-
-    Request completes → Error? → Keep trace
-                     → Slow (>1s)? → Keep trace
-                     → Normal → Sample at 0.1%
-
-Pros: Keeps interesting traces
-Cons: Must buffer all traces temporarily, more complex
-
-ADAPTIVE SAMPLING
-─────────────────────────────────────────────────────────────
-Adjust rate based on traffic
-
-    Low traffic → Sample 100%
-    High traffic → Sample 1%
-    Error spike → Increase error sampling
-
-Pros: Cost control with coverage
-Cons: Complex to implement correctly
+```mermaid
+flowchart LR
+    A[Request completes] -->|Error?| B[Keep trace]
+    A -->|Slow >1s?| B
+    A -->|Normal| C[Sample at 0.1%]
 ```
+
+- **Pros:** Keeps interesting traces
+- **Cons:** Must buffer all traces temporarily, more complex
+
+**Adaptive Sampling**
+
+Adjust rate based on traffic.
+
+```mermaid
+flowchart LR
+    A[Traffic State] -->|Low traffic| B[Sample 100%]
+    A -->|High traffic| C[Sample 1%]
+    A -->|Error spike| D[Increase error sampling]
+```
+
+- **Pros:** Cost control with coverage
+- **Cons:** Complex to implement correctly
 
 > **Try This (2 minutes)**
 >
@@ -559,38 +489,33 @@ Cons: Complex to implement correctly
 
 ### 5.1 The Golden Rules
 
-```
-INSTRUMENTATION GOLDEN RULES
-═══════════════════════════════════════════════════════════════
+**1. INSTRUMENT AT BOUNDARIES**
+- Every request in, every request out
+- Don't trust others to instrument for you
 
-1. INSTRUMENT AT BOUNDARIES
-   Every request in, every request out
-   Don't trust others to instrument for you
+**2. INCLUDE CONTEXT**
+- `trace_id` in every log
+- `user_id`, `request_id` where relevant
+- Correlation is key
 
-2. INCLUDE CONTEXT
-   trace_id in every log
-   user_id, request_id where relevant
-   Correlation is key
+**3. NAME CONSISTENTLY**
+- Same field names across services
+- `user_id` everywhere, not `user_id`/`userId`/`uid`
 
-3. NAME CONSISTENTLY
-   Same field names across services
-   user_id everywhere, not user_id/userId/uid
+**4. KEEP CARDINALITY BOUNDED**
+- Logs: high cardinality OK
+- Metrics: low cardinality only
+- Traces: low cardinality span names
 
-4. KEEP CARDINALITY BOUNDED
-   Logs: high cardinality OK
-   Metrics: low cardinality only
-   Traces: low cardinality span names
+**5. SAMPLE APPROPRIATELY**
+- 100% of errors
+- Sample normal requests
+- Adjust based on value vs. cost
 
-5. SAMPLE APPROPRIATELY
-   100% of errors
-   Sample normal requests
-   Adjust based on value vs. cost
-
-6. TEST YOUR INSTRUMENTATION
-   Can you find logs for a trace?
-   Can you see the full request flow?
-   Do metrics match reality?
-```
+**6. TEST YOUR INSTRUMENTATION**
+- Can you find logs for a trace?
+- Can you see the full request flow?
+- Do metrics match reality?
 
 ### 5.2 Common Patterns
 
@@ -661,7 +586,7 @@ except TimeoutError:
 > - Loop iteration metrics (who cares how many times a for-loop ran?)
 > - Internal function timing (nobody debugs at this granularity)
 > - Debug-level logs in production (useful in dev, noise in prod)
-> - Metrics with unbounded cardinality (user_id as a label = disaster)
+> - Metrics with unbounded cardinality (`user_id` as a label = disaster)
 >
 > **What they kept**:
 > - Every HTTP request in/out (boundaries)
@@ -760,44 +685,39 @@ except TimeoutError:
 
 ## Key Takeaways
 
-```
-INSTRUMENTATION ESSENTIALS CHECKLIST
-═══════════════════════════════════════════════════════════════════════════════
+**What to Instrument (Priority Order)**
+- [x] **1. Errors** - EVERYTHING that fails, with full context
+- [x] **2. Boundaries** - every request in, every request out
+- [x] **3. Business operations** - signup, payment, order, key events
+- [x] **4. Dependencies** - database, cache, external APIs
+- [x] **5. Internal operations** - SELECTIVE, not exhaustive
 
-WHAT TO INSTRUMENT (PRIORITY ORDER)
-☑ 1. Errors - EVERYTHING that fails, with full context
-☑ 2. Boundaries - every request in, every request out
-☑ 3. Business operations - signup, payment, order, key events
-☑ 4. Dependencies - database, cache, external APIs
-☑ 5. Internal operations - SELECTIVE, not exhaustive
+**Instrumentation Rules**
+- [x] Structured logs with consistent field names
+- [x] `trace_id` in EVERY log line (non-negotiable)
+- [x] Low-cardinality metric labels only
+- [x] Span names should be low-cardinality (variables in tags)
+- [x] NEVER log passwords, tokens, PII, credentials
 
-INSTRUMENTATION RULES
-☑ Structured logs with consistent field names
-☑ trace_id in EVERY log line (non-negotiable)
-☑ Low-cardinality metric labels only
-☑ Span names should be low-cardinality (variables in tags)
-☑ NEVER log passwords, tokens, PII, credentials
+**Cost Awareness**
+- [x] Every metric costs storage and query time
+- [x] Every log line costs storage and search time
+- [x] Every span costs memory and export bandwidth
+- [x] Sample traces strategically (100% for errors, % for normal)
+- [x] Calculate cardinality BEFORE adding labels
 
-COST AWARENESS
-☑ Every metric costs storage and query time
-☑ Every log line costs storage and search time
-☑ Every span costs memory and export bandwidth
-☑ Sample traces strategically (100% for errors, % for normal)
-☑ Calculate cardinality BEFORE adding labels
+**Context Propagation**
+- [x] Use W3C Trace Context standard (`traceparent` header)
+- [x] Test propagation across ALL service boundaries
+- [x] Include context in async operations (queues, callbacks)
+- [x] Use baggage for application-level context (`user_id`, `tenant`)
 
-CONTEXT PROPAGATION
-☑ Use W3C Trace Context standard (traceparent header)
-☑ Test propagation across ALL service boundaries
-☑ Include context in async operations (queues, callbacks)
-☑ Use baggage for application-level context (user_id, tenant)
-
-COMMON ANTI-PATTERNS TO AVOID
-☑ "Instrument everything" → instrument strategically
-☑ High-cardinality metrics → move to logs
-☑ Unstructured logs → structured JSON with fields
-☑ Missing trace_id → always include correlation
-☑ Sensitive data in logs → use allow-lists
-```
+**Common Anti-Patterns to Avoid**
+- [x] "Instrument everything" → instrument strategically
+- [x] High-cardinality metrics → move to logs
+- [x] Unstructured logs → structured JSON with fields
+- [x] Missing `trace_id` → always include correlation
+- [x] Sensitive data in logs → use allow-lists
 
 ---
 
@@ -809,7 +729,7 @@ COMMON ANTI-PATTERNS TO AVOID
 
 For this endpoint: `POST /api/orders` (create order)
 
-```
+```text
 Flow:
 1. Receive HTTP request
 2. Validate user authentication
