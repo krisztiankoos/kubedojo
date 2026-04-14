@@ -382,13 +382,16 @@ flowchart TD
 
 **DASHBOARD (monitoring)**
 Fixed views of predefined metrics. Good for known important signals, bad for investigating new problems.
-```text
-┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐
-│  CPU   │  │ Memory │  │ Errors │  │  QPS   │
-│  78%   │  │  60%   │  │  0.1%  │  │  1234  │
-└────────┘  └────────┘  └────────┘  └────────┘
-If these don't show the problem, you're stuck.
+
+```mermaid
+flowchart LR
+    CPU["CPU\n78%"]
+    Mem["Memory\n60%"]
+    Err["Errors\n0.1%"]
+    QPS["QPS\n1234"]
 ```
+
+If these don't show the problem, you're stuck.
 
 **EXPLORATION (observability)**
 Query interface for ad-hoc investigation. Good for discovering unknown issues.
@@ -440,6 +443,8 @@ With good observability, you can ask:
 > **The Lesson**: Their monitoring was technically excellent. Average latency? Perfect. p99? Good. Error rate? Great. But averages hid the pain of their most valuable customers. High-cardinality observability revealed what aggregate metrics couldn't see.
 
 ---
+
+> **Stop and think**: If you were forced to choose only one of the three pillars (logs, metrics, or traces) to start improving a complex distributed system, which one would give you the highest immediate return on investment for debugging?
 
 ## Part 5: Building Toward Observability
 
@@ -566,7 +571,7 @@ You don't need to build everything at once. Start with:
    <details>
    <summary>Answer</summary>
 
-   With a modern observability platform, the engineers would have been able to ask exploratory questions like "What dependencies are failing for the S3 index subsystem?" or "What systemic changes occurred immediately prior to the error spike?" They could have queried the telemetry to see that while individual servers were healthy, the requests between the index and billing subsystems were timing out or failing across the board. Furthermore, they could have asked "What is the exact blast radius of the affected requests?", allowing them to trace the failure back to the specific automation script that removed the crucial instances, rather than blindly trusting the aggregate green health checks.
+   With a modern observability platform, the engineers would have been able to ask exploratory questions like "What dependencies are failing for the S3 index subsystem?" or "What systemic changes occurred immediately prior to the error spike?" They could have queried the telemetry to see that while individual servers were healthy, the requests between the index and billing subsystems were timing out or failing across the board. Furthermore, they could have asked "What is the exact blast radius of the affected requests?", allowing them to trace the failure back to the specific automation script that removed the crucial instances, rather than blindly trusting the aggregate green health checks. This capability to interrogate the system's active connections would have drastically reduced the 4-hour mean time to resolution (MTTR) by pinpointing the issue's origin instantly.
    </details>
 
 ---
