@@ -239,17 +239,15 @@ xychart-beta
 
 > **Pause and predict**: If your application is currently running at 80% CPU and your database is at 40% CPU, what will happen to the overall system throughput if you simply double the size of the database instance?
 
+```mermaid
+flowchart LR
+    A[Web App<br/>CPU: 45%] --> B[Database<br/>CPU: 78%<br/>BOTTLENECK]
+    A --> C[Cache<br/>CPU: 30%]
+    style B stroke:#ff0000,stroke-width:2px
 ```
-System: Web App → Database → Cache
-
-Under load:
-  Web App CPU: 45%
-  Database CPU: 78% ← BOTTLENECK
-  Cache: 30%
 
 The database will fail first.
 Scaling web servers won't help.
-```
 
 Common bottlenecks:
 - Database connections
@@ -537,6 +535,8 @@ export default function () {
 
 Capacity planning isn't just about having enough — it's about not having too much.
 
+> **Pause and predict**: If your autoscaler aggressively scales up during a traffic spike but lacks a corresponding scale-down policy, what happens to your cloud bill after the spike subsides?
+
 ### The Cost-Reliability Trade-off
 
 ```mermaid
@@ -566,14 +566,13 @@ The goal: Find the right balance for your business
 ### Cost Optimization Strategies
 
 **1. Use Appropriate Instance Types**
-```
-Workload             Recommended
-─────────────────────────────────────
-CPU-intensive        Compute-optimized
-Memory-intensive     Memory-optimized
-General purpose      Balanced
-Burstable workloads  Burstable instances
-```
+
+| Workload | Recommended |
+|----------|-------------|
+| CPU-intensive | Compute-optimized |
+| Memory-intensive | Memory-optimized |
+| General purpose | Balanced |
+| Burstable workloads | Burstable instances |
 
 **2. Leverage Spot/Preemptible Instances**
 ```
