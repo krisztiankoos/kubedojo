@@ -14,7 +14,9 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import tempfile
+import threading
 import textwrap
 import unittest
 from argparse import Namespace
@@ -579,6 +581,248 @@ class TestStateManagement(unittest.TestCase):
         import v1_pipeline as p
         result = p.find_module_path("../../etc/passwd")
         self.assertIsNone(result)
+
+
+# ---------------------------------------------------------------------------
+# Test: Review audit log
+# ---------------------------------------------------------------------------
+
+class TestReviewAuditLog(unittest.TestCase):
+    """Test per-module review audit helpers and integration points."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.repo_root = Path(self.tmpdir)
+        self.content_root = self.repo_root / "src" / "content" / "docs"
+        self.content_root.mkdir(parents=True, exist_ok=True)
+        self.module_path = self.content_root / "test" / "module-0.1-test.md"
+        self.module_path.parent.mkdir(parents=True, exist_ok=True)
+        self.module_path.write_text(GOOD_MODULE)
+        self.state_file = self.repo_root / ".pipeline" / "state.yaml"
+        self.review_dir = self.repo_root / ".pipeline" / "reviews"
+        self.module_key = "test/module-0.1-test"
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _patch_paths(self, p):
+        return patch.multiple(
+            p,
+            REPO_ROOT=self.repo_root,
+            CONTENT_ROOT=self.content_root,
+            STATE_FILE=self.state_file,
+            REVIEW_AUDIT_DIR=self.review_dir,
+            KNOWLEDGE_CARD_DIR=self.repo_root / ".pipeline" / "knowledge-cards",
+            FACT_LEDGER_DIR=self.repo_root / ".pipeline" / "fact-ledgers",
+        )
+
+    def _write_state(self, phase="review", reviewer="gemini", severity="clean", errors=None):
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        state = {
+            "modules": {
+                self.module_key: {
+                    "phase": phase,
+                    "reviewer": reviewer,
+                    "severity": severity,
+                    "errors": errors or [],
+                }
+            }
+        }
+        self.state_file.write_text(yaml.dump(state, sort_keys=False))
+
+    def test_append_review_audit_creates_new_file(self):
+        import v1_pipeline as p
+
+        self._write_state(phase="review", reviewer="gemini", severity="targeted")
+
+        with self._patch_paths(p):
+            audit_path = p.append_review_audit(
+                self.module_path,
+                "WRITE",
+                writer="gemini-3.1-pro-preview",
+                mode="write",
+                duration=2.5,
+                plan="Initial write plan",
+                output_chars=1234,
+            )
+
+        content = audit_path.read_text()
+        self.assertTrue(audit_path.exists())
+        self.assertIn("# Review Audit: test/module-0.1-test", content)
+        self.assertIn("**Current phase**: review", content)
+        self.assertIn("**Current reviewer**: gemini", content)
+        self.assertIn("**Current severity**: targeted", content)
+        self.assertIn("**Total passes**: 1", content)
+        self.assertIn("`WRITE`", content)
+        self.assertIn("**Writer**: gemini-3.1-pro-preview", content)
+
+    def test_second_append_prepends_and_preserves_existing_entries(self):
+        import v1_pipeline as p
+
+        self._write_state(phase="review", reviewer="gemini", severity="targeted")
+
+        with self._patch_paths(p):
+            p.append_review_audit(
+                self.module_path,
+                "WRITE",
+                writer="writer-a",
+                mode="write",
+                duration=1,
+                plan="first plan",
+                output_chars=100,
+            )
+            p.append_review_audit(
+                self.module_path,
+                "REVIEW",
+                verdict="APPROVE",
+                reviewer="claude-sonnet-4-6",
+                attempt="1/5",
+                severity="clean",
+                duration=4,
+                checks=[{"id": cid, "passed": True} for cid in p.CHECK_IDS],
+                feedback="Looks good.",
+            )
+            content = p.review_audit_path_for_key(self.module_key).read_text()
+            self.assertLess(content.index("`REVIEW`"), content.index("`WRITE`"))
+            self.assertIn("writer-a", content)
+            self.assertIn("claude-sonnet-4-6", content)
+            self.assertIn("**Total passes**: 2", content)
+
+    def test_header_updates_on_each_append(self):
+        import v1_pipeline as p
+
+        with self._patch_paths(p):
+            self._write_state(phase="write", reviewer="gemini", severity="targeted")
+            p.append_review_audit(
+                self.module_path,
+                "WRITE",
+                writer="gemini-3.1-pro-preview",
+                mode="write",
+                duration=1,
+                plan="first",
+                output_chars=10,
+            )
+
+            self._write_state(phase="done", reviewer="claude", severity="clean")
+            p.append_review_audit(
+                self.module_path,
+                "DONE",
+                reviewer="claude",
+                pass_sum="all binary checks passed",
+            )
+            content = p.review_audit_path_for_key(self.module_key).read_text()
+            self.assertIn("**Current phase**: done", content)
+            self.assertIn("**Current reviewer**: claude", content)
+            self.assertIn("**Current severity**: clean", content)
+            self.assertIn("**Total passes**: 2", content)
+            self.assertRegex(content, r"\*\*First pass\*\*: [0-9TZ:\-]+")
+            self.assertRegex(content, r"\*\*Last pass\*\*: [0-9TZ:\-]+")
+
+    def test_concurrent_appends_do_not_corrupt_file(self):
+        import v1_pipeline as p
+
+        self._write_state(phase="review", reviewer="gemini", severity="targeted")
+
+        with self._patch_paths(p):
+            def worker(i: int):
+                p.append_review_audit(
+                    self.module_path,
+                    "WRITE",
+                    writer=f"writer-{i}",
+                    mode="write",
+                    duration=i + 1,
+                    plan=f"plan-{i}",
+                    output_chars=100 + i,
+                )
+
+            threads = [threading.Thread(target=worker, args=(i,)) for i in range(5)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+            content = p.review_audit_path_for_key(self.module_key).read_text()
+            self.assertEqual(content.count("## "), 5)
+            self.assertIn("**Total passes**: 5", content)
+            for i in range(5):
+                self.assertIn(f"writer-{i}", content)
+
+    def test_dry_run_creates_no_audit_file(self):
+        import v1_pipeline as p
+
+        state = {"modules": {}}
+        with self._patch_paths(p), \
+             patch.object(p, "dispatch_auto") as mock_dispatch:
+            result = p.run_module(self.module_path, state, dry_run=True)
+            self.assertFalse(result)
+            self.assertEqual(mock_dispatch.call_count, 0)
+            self.assertFalse(p.review_audit_path_for_key(self.module_key).exists())
+
+    def test_full_pipeline_pass_produces_complete_audit(self):
+        import v1_pipeline as p
+
+        state = {"modules": {}}
+        review_ok = {
+            "verdict": "APPROVE",
+            "checks": [{"id": cid, "passed": True} for cid in p.CHECK_IDS],
+            "edits": [],
+            "feedback": "Approved.",
+        }
+        git_ok = subprocess.CompletedProcess(["git"], 0, "", "")
+
+        with self._patch_paths(p), \
+             patch.object(p, "step_write", return_value=GOOD_MODULE), \
+             patch.object(p, "step_review", return_value=review_ok), \
+             patch.object(p, "ensure_fact_ledger", return_value=sample_fact_ledger()), \
+             patch.object(p, "step_content_aware_fact_ledger", return_value=None), \
+             patch.object(p, "step_check_integrity", return_value=(True, [])), \
+             patch.object(p, "step_check", return_value=(True, [])), \
+             patch.object(p, "_git_stage_and_commit", return_value=(git_ok, git_ok)) as mock_git:
+            ok = p.run_module(self.module_path, state)
+            self.assertTrue(ok)
+            audit_path = p.review_audit_path_for_key(self.module_key)
+            content = audit_path.read_text()
+            self.assertIn("`WRITE`", content)
+            self.assertIn("`REVIEW`", content)
+            self.assertIn("`CHECK_PASS`", content)
+            self.assertIn("`DONE`", content)
+            self.assertLess(content.index("`DONE`"), content.index("`CHECK_PASS`"))
+            self.assertLess(content.index("`CHECK_PASS`"), content.index("`REVIEW`"))
+            self.assertLess(content.index("`REVIEW`"), content.index("`WRITE`"))
+            add_paths = mock_git.call_args[0][0]
+            self.assertIn(str(self.module_path), add_paths)
+            self.assertIn(str(audit_path), add_paths)
+
+    def test_reset_stuck_writes_reset_audit_and_commits_batch(self):
+        import v1_pipeline as p
+
+        state = {
+            "modules": {
+                self.module_key: {
+                    "phase": "check",
+                    "reviewer": "gemini",
+                    "severity": "targeted",
+                    "errors": [
+                        "Deterministic checks failed after review",
+                        "Review rejected 5 times",
+                    ],
+                }
+            }
+        }
+        self.state_file.parent.mkdir(parents=True, exist_ok=True)
+        self.state_file.write_text(yaml.dump(state, sort_keys=False))
+        git_ok = subprocess.CompletedProcess(["git"], 0, "", "")
+
+        with self._patch_paths(p), \
+             patch.object(p, "_git_stage_and_commit", return_value=(git_ok, git_ok)) as mock_git:
+            p.cmd_reset_stuck(Namespace())
+            audit_path = p.review_audit_path_for_key(self.module_key)
+            content = audit_path.read_text()
+            self.assertIn("`RESET`", content)
+            self.assertIn("**New phase**: pending", content)
+            self.assertIn("Deterministic checks failed after review", content)
+            self.assertIn("Review rejected 5 times", content)
+            add_paths = mock_git.call_args[0][0]
+            self.assertEqual(add_paths, [str(audit_path)])
 
 
 # ---------------------------------------------------------------------------

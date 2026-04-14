@@ -65,6 +65,7 @@ REPORT_FILE = REPO_ROOT / ".pipeline" / "audit-report.json"
 SCORE_SCRIPT = REPO_ROOT / "scripts" / "score_module.py"
 KNOWLEDGE_CARD_DIR = REPO_ROOT / ".pipeline" / "knowledge-cards"
 FACT_LEDGER_DIR = REPO_ROOT / ".pipeline" / "fact-ledgers"
+REVIEW_AUDIT_DIR = REPO_ROOT / ".pipeline" / "reviews"
 FACT_LEDGER_TTL = timedelta(days=7)
 LINK_CACHE_FILE = REPO_ROOT / ".pipeline" / "link-cache.json"
 LINK_CACHE_TTL = timedelta(hours=24)
@@ -302,6 +303,11 @@ def knowledge_card_path_for_key(module_key: str) -> Path:
 def fact_ledger_path_for_key(module_key: str) -> Path:
     """Return the cached fact-ledger path for a module key."""
     return FACT_LEDGER_DIR / f"{sanitize_module_key(module_key)}.json"
+
+
+def review_audit_path_for_key(module_key: str) -> Path:
+    """Return the audit-log path for a module key."""
+    return REVIEW_AUDIT_DIR / f"{sanitize_module_key(module_key)}.md"
 
 
 def _extract_frontmatter_data(content: str) -> dict:
@@ -1559,6 +1565,242 @@ def _atomic_write_text(path: Path, content: str) -> None:
         raise
 
 
+def _format_audit_duration(seconds: float | int | None) -> str:
+    """Render a human-readable duration for audit entries."""
+    if seconds is None:
+        return "unknown"
+    try:
+        total = max(0.0, float(seconds))
+    except (TypeError, ValueError):
+        return str(seconds)
+    if total >= 60:
+        minutes = int(total // 60)
+        remainder = int(round(total - (minutes * 60)))
+        if remainder == 60:
+            minutes += 1
+            remainder = 0
+        return f"{minutes}m {remainder}s"
+    if total >= 10:
+        return f"{int(round(total))}s"
+    if total >= 1:
+        return f"{total:.1f}s"
+    return f"{int(round(total * 1000))}ms"
+
+
+def _format_audit_timestamp(value: datetime | str | None = None) -> str:
+    """Normalize datetimes to ISO-8601 UTC strings for audit entries."""
+    if value is None:
+        current = datetime.now(UTC)
+    elif isinstance(value, datetime):
+        current = value
+    elif isinstance(value, str):
+        try:
+            current = datetime.fromisoformat(value)
+        except ValueError:
+            return value
+    else:
+        return str(value)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=UTC)
+    else:
+        current = current.astimezone(UTC)
+    return current.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _audit_quote_block(text: str) -> str:
+    """Format free-form feedback as a markdown blockquote."""
+    lines = text.splitlines() or [text]
+    return "\n".join(f"> {line}" if line else ">" for line in lines)
+
+
+def _module_path_for_audit(module_path: Path) -> str:
+    """Format a module path for the audit header."""
+    try:
+        return str(module_path.resolve().relative_to(REPO_ROOT.resolve()))
+    except ValueError:
+        return str(module_path)
+
+
+def _extract_audit_entry_timestamps(content: str) -> list[str]:
+    """Extract entry timestamps from an existing audit file."""
+    return re.findall(r"^## ([0-9TZ:\-]+) — ", content, re.MULTILINE)
+
+
+def _split_audit_header_body(content: str) -> tuple[str, str]:
+    """Split the audit file into header and entry body."""
+    marker = "\n---\n"
+    if marker in content:
+        _header, body = content.split(marker, 1)
+        return _header, body.lstrip("\n")
+    return content, ""
+
+
+def _render_review_check_summary(checks: list[dict]) -> str:
+    """Summarize passed/failed review checks for markdown output."""
+    if not isinstance(checks, list) or not checks:
+        return "**Checks**: none"
+    passed = [str(c.get("id", "?")) for c in checks if isinstance(c, dict) and c.get("passed")]
+    failed = [str(c.get("id", "?")) for c in checks if isinstance(c, dict) and not c.get("passed")]
+    summary = f"**Checks**: {len(passed)}/{len(checks)} passed"
+    if passed:
+        summary += f" ({' '.join(passed)})"
+    if failed:
+        summary += f" | **Failed**: {' '.join(failed)}"
+    return summary
+
+
+def _render_review_failed_evidence(checks: list[dict]) -> str:
+    """Render failed-check evidence bullets for review audit entries."""
+    failed_lines = []
+    for check in checks:
+        if not isinstance(check, dict) or check.get("passed"):
+            continue
+        evidence = str(check.get("evidence", "")).strip()
+        if evidence:
+            failed_lines.append(f"- **{check.get('id', '?')}**: {evidence}")
+    if not failed_lines:
+        return ""
+    return "**Failed check evidence**:\n" + "\n".join(failed_lines)
+
+
+def _render_check_failures(results: list) -> list[str]:
+    """Extract failing deterministic check labels/messages from CHECK results."""
+    failures: list[str] = []
+    if not isinstance(results, list):
+        return failures
+    for result in results:
+        passed = getattr(result, "passed", None)
+        if passed is not False:
+            continue
+        check_name = getattr(result, "check", None)
+        message = getattr(result, "message", None)
+        if check_name and message:
+            failures.append(f"{check_name}: {message}")
+        elif check_name:
+            failures.append(str(check_name))
+        elif message:
+            failures.append(str(message))
+    return failures
+
+
+def _render_audit_entry(event: str, timestamp: str, fields: dict) -> str:
+    """Render a single markdown audit entry."""
+    heading = f"## {timestamp} — `{event}`"
+    if event == "REVIEW":
+        verdict = str(fields.get("verdict", "")).strip()
+        if verdict:
+            heading += f" — `{verdict}`"
+
+    lines = [heading, ""]
+
+    if event == "WRITE":
+        plan = str(fields.get("plan", ""))
+        plan_preview = plan[:500]
+        if len(plan) > 500:
+            plan_preview += "..."
+        lines.extend([
+            f"**Writer**: {fields.get('writer', 'unknown')}",
+            f"**Mode**: {fields.get('mode', 'write')}",
+            f"**Plan**: {plan_preview}",
+            f"**Output**: {fields.get('output_chars', 0)} chars",
+            f"**Duration**: {_format_audit_duration(fields.get('duration'))}",
+        ])
+    elif event == "REVIEW":
+        checks = fields.get("checks") if isinstance(fields.get("checks"), list) else []
+        lines.extend([
+            f"**Reviewer**: {fields.get('reviewer', 'unknown')}",
+            f"**Attempt**: {fields.get('attempt', '?')}",
+            f"**Severity**: {fields.get('severity', 'unknown')}",
+            f"**Duration**: {_format_audit_duration(fields.get('duration'))}",
+            f"{_render_review_check_summary(checks)}",
+        ])
+        if fields.get("reviewer_fallback_used"):
+            lines.append("**Reviewer fallback used**: true")
+        failed_evidence = _render_review_failed_evidence(checks)
+        if failed_evidence:
+            lines.extend(["", failed_evidence])
+        feedback = str(fields.get("feedback", "")).strip()
+        if feedback:
+            lines.extend(["", "**Feedback**:", _audit_quote_block(feedback)])
+    elif event == "INTEGRITY_FAIL":
+        errors = fields.get("errors") if isinstance(fields.get("errors"), list) else []
+        lines.append("**Errors**:")
+        lines.extend(f"- {error}" for error in errors)
+    elif event == "CHECK_FAIL":
+        failed_checks = fields.get("failed_checks") if isinstance(fields.get("failed_checks"), list) else []
+        lines.extend([
+            f"**Duration**: {_format_audit_duration(fields.get('duration'))}",
+            "**Failed checks**:",
+        ])
+        lines.extend(f"- {item}" for item in failed_checks)
+    elif event == "CHECK_PASS":
+        lines.extend([
+            f"**Duration**: {_format_audit_duration(fields.get('duration'))}",
+            f"**Warnings**: {fields.get('warnings_count', 0)}",
+        ])
+    elif event == "DONE":
+        lines.extend([
+            f"**Pass sum**: {fields.get('pass_sum', 'all binary checks passed')}",
+            f"**Reviewer**: {fields.get('reviewer', 'unknown')}",
+        ])
+    elif event == "RESET":
+        cleared = fields.get("cleared_errors") if isinstance(fields.get("cleared_errors"), list) else []
+        lines.extend([
+            f"**New phase**: {fields.get('new_phase', 'pending')}",
+            "**Cleared errors**:",
+        ])
+        lines.extend(f"- {item}" for item in cleared)
+    else:
+        for key, value in fields.items():
+            lines.append(f"**{key.replace('_', ' ').title()}**: {value}")
+
+    return "\n".join(lines).rstrip()
+
+
+def append_review_audit(module_path: Path, event: str, **fields) -> Path:
+    """Prepend a per-module markdown audit entry with atomic locked writes."""
+    module_key = module_key_from_path(module_path)
+    target = review_audit_path_for_key(module_key)
+    lock_file = target.with_suffix(".lock")
+    timestamp = _format_audit_timestamp(fields.pop("timestamp", None))
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_file, "w", encoding="utf-8") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            existing = target.read_text() if target.exists() else ""
+            _header, existing_body = _split_audit_header_body(existing)
+            existing_timestamps = _extract_audit_entry_timestamps(existing)
+            all_timestamps = existing_timestamps + [timestamp]
+            state = load_state()
+            module_state = state.get("modules", {}).get(module_key, {})
+            new_entry = _render_audit_entry(event, timestamp, fields)
+            new_body = new_entry
+            existing_body = existing_body.strip()
+            if existing_body:
+                new_body += f"\n\n---\n\n{existing_body}"
+
+            first_pass = min(all_timestamps) if all_timestamps else timestamp
+            last_pass = max(all_timestamps) if all_timestamps else timestamp
+            total_passes = len(existing_timestamps) + 1
+            header_lines = [
+                f"# Review Audit: {module_key}",
+                "",
+                f"**Path**: `{_module_path_for_audit(module_path)}`",
+                f"**First pass**: {first_pass}",
+                f"**Last pass**: {last_pass}",
+                f"**Total passes**: {total_passes}",
+                f"**Current phase**: {module_state.get('phase', 'pending')}",
+                f"**Current reviewer**: {module_state.get('reviewer', '-')}",
+                f"**Current severity**: {module_state.get('severity', '-')}",
+            ]
+            content = "\n".join(header_lines) + f"\n\n---\n\n{new_body}\n"
+            _atomic_write_text(target, content)
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+    return target
+
+
 def apply_review_edits(content: str, edits: list) -> tuple[str, list, list]:
     """Apply structured review edits to content via deterministic string ops.
 
@@ -2207,6 +2449,13 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
     print(f"  Current phase: {ms['phase']}")
     print(f"{'='*60}")
 
+    def emit_audit(event: str, **fields) -> Path | None:
+        if dry_run:
+            return None
+        if write_only and event != "WRITE":
+            return None
+        return append_review_audit(module_path, event, **fields)
+
     # Already-done resumption. If the module is flagged for independent
     # re-review (typically a same-family fallback approve when both Codex and
     # Claude were unavailable), reset to review so the current on-disk content
@@ -2392,6 +2641,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
         if ms["phase"] in ("write",):
             review_fact_ledger = ms.get("fact_ledger")
             writer_model = m["write_targeted"] if targeted_fix else m["write"]
+            write_started = datetime.now(UTC)
             try:
                 # knowledge_card is intentionally not passed to the writer:
                 # fact_ledger is the sole authoritative grounding source.
@@ -2438,6 +2688,15 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
 
             ms["phase"] = "review"
             save_state(state)
+            emit_audit(
+                "WRITE",
+                writer=writer_model,
+                mode=("rewrite" if needs_rewrite else
+                      "targeted fix" if targeted_fix else "write"),
+                duration=(datetime.now(UTC) - write_started).total_seconds(),
+                plan=plan,
+                output_chars=len(improved),
+            )
 
             # Write-only mode: save the draft and stop. No fact-ledger,
             # no review, no checks. Used for bulk content creation.
@@ -2512,13 +2771,16 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                     _atomic_write_text(staging_path, improved)
                 ms["phase"] = "write"
                 save_state(state)
+                emit_audit("INTEGRITY_FAIL", errors=integrity_errors)
                 print("  ⚠ Tier-1 integrity gate failed — routing to severe rewrite")
                 if attempt < max_retries:
                     continue
                 ms["errors"].append("Integrity gate failed after max retries")
                 return False
 
+            review_started = datetime.now(UTC)
             reviewer_model = m["review"]
+            used_fallback_reviewer = False
             review = step_review(
                 module_path,
                 improved or module_path.read_text(),
@@ -2557,6 +2819,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                         return False
                     if not isinstance(review, dict) or not review.get("rate_limited"):
                         reviewer_model = fallback_model
+                        used_fallback_reviewer = True
 
                 if not fallback_allowed or (isinstance(review, dict) and review.get("rate_limited")):
                     last_resort_model = m["write"]
@@ -2578,9 +2841,20 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                     if isinstance(review, dict) and review.get("rate_limited"):
                         ms["errors"].append("Primary, fallback, and last-resort reviewers all unavailable")
                         save_state(state)
+                        emit_audit(
+                            "REVIEW",
+                            verdict="FAILED",
+                            reviewer=last_resort_model,
+                            attempt=f"{attempt+1}/{max_retries+1}",
+                            severity="failed",
+                            duration=(datetime.now(UTC) - review_started).total_seconds(),
+                            checks=[],
+                            feedback="Primary, fallback, and last-resort reviewers all unavailable.",
+                            reviewer_fallback_used=True,
+                        )
                         return False
                     reviewer_model = last_resort_model
-                ms["used_fallback_reviewer"] = True
+                    used_fallback_reviewer = True
 
             if review is None:
                 ms["errors"].append(f"Review failed attempt {attempt+1}")
@@ -2619,6 +2893,17 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                 )
                 ms["phase"] = "check"
                 save_state(state)
+                emit_audit(
+                    "REVIEW",
+                    verdict=review.get("verdict", "APPROVE"),
+                    reviewer=reviewer_model,
+                    attempt=f"{attempt+1}/{max_retries+1}",
+                    severity=ms["severity"],
+                    duration=(datetime.now(UTC) - review_started).total_seconds(),
+                    checks=review.get("checks") or [],
+                    feedback=review.get("feedback", ""),
+                    reviewer_fallback_used=used_fallback_reviewer,
+                )
                 break
             else:
                 # REJECT — binary-gate routing based on code-computed severity.
@@ -2672,6 +2957,17 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                         ms.pop("sonnet_anchor_failures", None)
                         ms["phase"] = "review"
                         save_state(state)
+                        emit_audit(
+                            "REVIEW",
+                            verdict=review.get("verdict", "REJECT"),
+                            reviewer=reviewer_model,
+                            attempt=f"{attempt+1}/{max_retries+1}",
+                            severity=ms["severity"],
+                            duration=(datetime.now(UTC) - review_started).total_seconds(),
+                            checks=r_checks,
+                            feedback=r_feedback,
+                            reviewer_fallback_used=used_fallback_reviewer,
+                        )
                         print(f"  ✓ All {applied_count} edits applied cleanly — re-reviewing (no LLM writer call, staged to {staging_path.name})")
                         if attempt < max_retries:
                             continue
@@ -2718,7 +3014,6 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                         ms.pop("scores", None)
                         ms.pop("sum", None)
                         ms["phase"] = "write"
-                        save_state(state)
                         print(f"  → Sonnet fallback for {failed_count} failed edits (partial progress staged + plan persisted)")
                         # Circuit breaker (Gemini pair-review critique D):
                         # count consecutive Sonnet anchor-failure rounds and
@@ -2733,6 +3028,18 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                             # Fall through to the severe rewrite block below
                             # instead of looping the partial-apply path.
                         else:
+                            save_state(state)
+                            emit_audit(
+                                "REVIEW",
+                                verdict=review.get("verdict", "REJECT"),
+                                reviewer=reviewer_model,
+                                attempt=f"{attempt+1}/{max_retries+1}",
+                                severity=ms["severity"],
+                                duration=(datetime.now(UTC) - review_started).total_seconds(),
+                                checks=r_checks,
+                                feedback=r_feedback,
+                                reviewer_fallback_used=used_fallback_reviewer,
+                            )
                             if attempt < max_retries:
                                 continue
                             print("  ⚠ Max retries reached after partial deterministic apply — leaving phase=write for resume")
@@ -2803,6 +3110,17 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                     _atomic_write_text(staging_path, improved)
                 ms["phase"] = "write"
                 save_state(state)
+                emit_audit(
+                    "REVIEW",
+                    verdict=review.get("verdict", "REJECT"),
+                    reviewer=reviewer_model,
+                    attempt=f"{attempt+1}/{max_retries+1}",
+                    severity=ms["severity"],
+                    duration=(datetime.now(UTC) - review_started).total_seconds(),
+                    checks=r_checks,
+                    feedback=r_feedback,
+                    reviewer_fallback_used=used_fallback_reviewer,
+                )
                 if attempt < max_retries:
                     print(f"  ↻ Rejected, retrying ({attempt+1}/{max_retries})")
                     continue
@@ -2824,12 +3142,18 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
             print(f"  ❌ No improved content available for CHECK")
             return False
 
+        check_started = datetime.now(UTC)
         passed, results = step_check(improved, module_path)
         if not passed:
             ms["errors"].append("Deterministic checks failed after review")
             ms["check_failures"] = ms.get("check_failures", 0) + 1
             ms["targeted_fix"] = False
             save_state(state)
+            emit_audit(
+                "CHECK_FAIL",
+                duration=(datetime.now(UTC) - check_started).total_seconds(),
+                failed_checks=_render_check_failures(results),
+            )
             # Keep staging file so we can resume after fixing thresholds
             print(f"  Staging file kept: {staging}")
             return False
@@ -2848,6 +3172,15 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
         ms.pop("check_failures", None)
         ms["phase"] = "score"
         save_state(state)
+        warnings_count = len([
+            r for r in results
+            if getattr(r, "passed", True) is False and getattr(r, "severity", "") == "WARNING"
+        ])
+        emit_audit(
+            "CHECK_PASS",
+            duration=(datetime.now(UTC) - check_started).total_seconds(),
+            warnings_count=warnings_count,
+        )
 
     # SCORE
     if ms["phase"] == "score":
@@ -2895,6 +3228,9 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
             card_path = knowledge_card_path_for_key(key)
             if card_path.exists():
                 add_paths.append(str(card_path))
+            audit_path = emit_audit("DONE", reviewer=reviewer, pass_sum=result_label)
+            if audit_path is not None and audit_path.exists():
+                add_paths.append(str(audit_path))
             commit_msg = (
                 f"chore(quality): v1 pipeline pass [{key}] "
                 f"({result_label} reviewer={reviewer}{pending_tag})"
@@ -3638,13 +3974,17 @@ def cmd_reset_stuck(args):
     modules = state.get("modules", {})
 
     reset_count = 0
+    reset_events: list[tuple[str, list[str], str]] = []
     for key, ms in sorted(modules.items()):
         was_stuck = False
+        cleared_errors: list[str] = []
 
         # Deterministic check failures — route back to write
         errors = ms.get("errors", [])
-        if any("Deterministic" in str(e) for e in errors):
+        deterministic_errors = [str(e) for e in errors if "Deterministic" in str(e)]
+        if deterministic_errors:
             ms["errors"] = [e for e in errors if "Deterministic" not in str(e)]
+            cleared_errors.extend(deterministic_errors)
             ms.pop("check_failures", None)
             if ms.get("phase") == "check":
                 ms["phase"] = "write"
@@ -3654,20 +3994,27 @@ def cmd_reset_stuck(args):
 
         # Integrity gate max retries — restart from pending
         errors = ms.get("errors", [])
-        if any("Integrity gate failed" in str(e) for e in errors):
+        integrity_errors = [str(e) for e in errors if "Integrity gate failed" in str(e)]
+        if integrity_errors:
             ms["errors"] = [e for e in errors if "Integrity" not in str(e)]
+            cleared_errors.extend(integrity_errors)
             ms["phase"] = "pending"
             was_stuck = True
 
         # Review rejected max times — match any count
         errors = ms.get("errors", [])
-        if any(re.match(r"Review rejected \d+ times", str(e)) for e in errors):
+        rejected_errors = [
+            str(e) for e in errors if re.match(r"Review rejected \d+ times", str(e))
+        ]
+        if rejected_errors:
             ms["errors"] = [e for e in errors if not re.match(r"Review rejected \d+ times", str(e))]
+            cleared_errors.extend(rejected_errors)
             ms["phase"] = "pending"
             was_stuck = True
 
         if was_stuck:
             reset_count += 1
+            reset_events.append((key, cleared_errors, ms["phase"]))
             print(f"  ↻ {key}: → phase={ms['phase']}")
 
     if reset_count == 0:
@@ -3675,6 +4022,27 @@ def cmd_reset_stuck(args):
         return
 
     save_state(state)
+    audit_paths: list[str] = []
+    for key, cleared_errors, new_phase in reset_events:
+        path = find_module_path(key)
+        if path is None:
+            continue
+        audit_path = append_review_audit(
+            path,
+            "RESET",
+            cleared_errors=cleared_errors,
+            new_phase=new_phase,
+        )
+        audit_paths.append(str(audit_path))
+    if audit_paths:
+        add_result, commit_result = _git_stage_and_commit(
+            audit_paths,
+            "chore(pipeline): reset stuck modules [audit log] (#236)",
+        )
+        if add_result.returncode != 0:
+            print(f"  ⚠ git add failed: {add_result.stderr[:200]}")
+        if commit_result.returncode != 0:
+            print(f"  ⚠ git commit failed: {commit_result.stderr[:200]}")
     print(f"\n  Reset {reset_count} stuck modules. Run 'e2e' or 'resume' to re-process them.")
 
 
