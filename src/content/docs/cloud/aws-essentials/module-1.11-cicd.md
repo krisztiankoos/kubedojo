@@ -22,8 +22,8 @@ After completing this module, you will be able to:
 
 - **Deploy end-to-end CI/CD pipelines using CodePipeline, CodeBuild, and CodeDeploy for containerized applications**
 - **Configure CodeBuild projects with buildspec files that run tests, build images, and push to ECR**
-- **Implement blue/green and canary deployment strategies using CodeDeploy with ECS and Lambda targets**
-- **Design pipeline stages with manual approval gates, cross-account deployments, and artifact encryption**
+- **Implement blue/green and canary deployment strategies using CodeDeploy with ECS**
+- **Design pipeline stages with manual approval gates and automated rollbacks**
 
 ---
 
@@ -179,7 +179,7 @@ aws iam put-role-policy \
           \"logs:CreateLogStream\",
           \"logs:PutLogEvents\"
         ],
-        \"Resource\": \"arn:aws:logs:us-east-1:${ACCOUNT_ID}:log-group:/aws/codebuild/*\"
+        \"Resource\": \"arn:aws:logs:*:${ACCOUNT_ID}:log-group:/aws/codebuild/*\"
       },
       {
         \"Effect\": \"Allow\",
@@ -821,6 +821,7 @@ phases:
     commands:
       - docker push ${ECR_URI}/cicd-lab:${IMAGE_TAG}
       - docker push ${ECR_URI}/cicd-lab:latest
+      # NOTE: The name "cicd-lab" below must EXACTLY match the container name in your ECS task definition
       - printf '[{"name":"cicd-lab","imageUri":"%s"}]' ${ECR_URI}/cicd-lab:${IMAGE_TAG} > imagedefinitions.json
 
 artifacts:
@@ -891,7 +892,7 @@ aws iam put-role-policy \
     \"Statement\": [{
       \"Effect\": \"Allow\",
       \"Action\": [\"logs:CreateLogGroup\",\"logs:CreateLogStream\",\"logs:PutLogEvents\"],
-      \"Resource\": \"arn:aws:logs:us-east-1:${ACCOUNT_ID}:log-group:/aws/codebuild/*\"
+      \"Resource\": \"arn:aws:logs:*:${ACCOUNT_ID}:log-group:/aws/codebuild/*\"
     },{
       \"Effect\": \"Allow\",
       \"Action\": [\"s3:PutObject\",\"s3:GetObject\",\"s3:GetBucketAcl\",\"s3:GetBucketLocation\"],
@@ -953,7 +954,12 @@ aws iam put-role-policy \
     ]
   }"
 
-# Create the pipeline (update YOUR_ORG/YOUR_REPO)
+# Set these variables to match your environment
+GITHUB_REPO="YOUR_ORG/YOUR_REPO"  # e.g., octocat/my-app
+ECS_CLUSTER="YOUR_CLUSTER"        # e.g., ecs-lab-cluster
+ECS_SERVICE="YOUR_SERVICE"        # e.g., ecs-lab-service
+
+# Create the pipeline
 cat > /tmp/cicd-pipeline.json <<EOF
 {
   "pipeline": {
@@ -971,7 +977,7 @@ cat > /tmp/cicd-pipeline.json <<EOF
           "actionTypeId": {"category":"Source","owner":"AWS","provider":"CodeStarSourceConnection","version":"1"},
           "configuration": {
             "ConnectionArn": "${CONNECTION_ARN}",
-            "FullRepositoryId": "YOUR_ORG/YOUR_REPO",
+            "FullRepositoryId": "${GITHUB_REPO}",
             "BranchName": "main",
             "OutputArtifactFormat": "CODE_ZIP"
           },
@@ -994,8 +1000,8 @@ cat > /tmp/cicd-pipeline.json <<EOF
           "name": "ECS-Deploy",
           "actionTypeId": {"category":"Deploy","owner":"AWS","provider":"ECS","version":"1"},
           "configuration": {
-            "ClusterName": "YOUR_CLUSTER",
-            "ServiceName": "YOUR_SERVICE",
+            "ClusterName": "${ECS_CLUSTER}",
+            "ServiceName": "${ECS_SERVICE}",
             "FileName": "imagedefinitions.json"
           },
           "inputArtifacts": [{"name": "BuildOutput"}]
@@ -1039,8 +1045,8 @@ watch -n 10 'aws codepipeline get-pipeline-state \
 
 # After Deploy stage shows "Succeeded", verify the ECS service updated
 aws ecs describe-services \
-  --cluster YOUR_CLUSTER \
-  --services YOUR_SERVICE \
+  --cluster ${ECS_CLUSTER:-YOUR_CLUSTER} \
+  --services ${ECS_SERVICE:-YOUR_SERVICE} \
   --query 'services[0].deployments[*].[status,runningCount,taskDefinition]' \
   --output table
 ```
