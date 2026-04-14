@@ -625,13 +625,15 @@ LEFT JOIN
   UNNEST(labels) AS labels ON labels.key = "k8s-namespace"
 WHERE
   service.description = "Kubernetes Engine"
-  AND invoice.month = "202403"
+  AND invoice.month = "202603"
 GROUP BY
   namespace
 ORDER BY
   total_cost DESC
 SQL
 ```
+
+> **Stop and think**: If you rely solely on Spot VMs to reduce compute costs by 91%, how might a sudden, region-wide capacity constraint for that machine type impact your production workloads, and what GKE feature should you use to mitigate this?
 
 ### Cost Optimization Strategies
 
