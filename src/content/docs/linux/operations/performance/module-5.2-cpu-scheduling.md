@@ -271,6 +271,13 @@ mpstat -P ALL 1
 
 The output of `mpstat -P ALL 1` shows the utilization for each individual CPU core (`CPU 0`, `CPU 1`, etc.) as well as the average across all CPUs (`all`). This is invaluable for identifying "hot" cores that might be causing bottlenecks.
 
+> **Stop and think**: You notice that `CPU 0` is consistently at 100% usage (mostly `%sy` and `%si`), while `CPU 1` through `CPU 7` are 99% idle. What kind of system configuration might cause this specific core imbalance?
+
+<details>
+<summary>Show Answer</summary>
+A consistently maxed-out `CPU 0` with high system (`%sy`) and software interrupt (`%si`) time often points to hardware interrupt affinity issues. By default, many network interface cards (NICs) or storage controllers might route all their hardware interrupts to the first CPU core. If network traffic is extremely high, `CPU 0` spends all its time processing these interrupts, creating a bottleneck while other cores sit idle.
+</details>
+
 ### Context Switches
 
 A context switch occurs when the CPU scheduler stops one process from running and starts another. This involves saving the state of the current process and loading the state of the new one, which incurs a performance overhead. A high rate of context switches can indicate that the system is spending a lot of time managing processes rather than doing useful work.
@@ -360,6 +367,11 @@ graph LR
 ```
 
 > **Stop and think**: If CPU limits cause throttling and latency, why might a platform engineering team still choose to enforce them across a multi-tenant cluster?
+
+<details>
+<summary>Show Answer</summary>
+A platform engineering team might enforce CPU limits to ensure strict resource isolation and predictable billing in a multi-tenant environment. Without limits, a poorly optimized application in one namespace could burst and consume all available CPU, causing performance degradation for other tenants sharing the same physical node. Limits act as a safeguard to prevent noisy neighbor scenarios, prioritizing cluster-wide stability over the burst performance of individual pods.
+</details>
 
 ### The Problem with CPU Throttling
 
@@ -475,6 +487,13 @@ If your containerized applications are experiencing unexplained latency or degra
 
 The immediate solutions for CPU throttling are to either increase the CPU `limit` for the affected pod or, in some cases, remove the CPU `limit` entirely to allow the pod to burst freely. Many organizations have moved towards removing CPU limits entirely for latency-sensitive workloads, relying instead on horizontal pod autoscaling and node autoscaling to manage demand, arguing that throttling causes more problems than it solves.
 
+> **Pause and predict**: If you completely remove CPU limits for a latency-sensitive pod, what new risks do you introduce to the node and other workloads?
+
+<details>
+<summary>Show Answer</summary>
+Removing CPU limits allows the pod to burst and use all available idle CPU on the node, eliminating throttling latency. However, it introduces the risk of CPU starvation for other workloads if the node becomes fully saturated. Without limits, a runaway process could monopolize the CPU, potentially degrading the performance of system daemons or other tenant applications unless they are protected by appropriately sized CPU requests.
+</details>
+
 ### Visualizing Throttling Latency
 
 The impact of throttling on application latency can be counter-intuitive. Even if a container needs only a small amount of CPU, if its limit is set too low, it will be forced to wait.
@@ -561,7 +580,7 @@ Users are complaining about intermittent latency in a monolithic backend service
 
 <details>
 <summary>Show Answer</summary>
-To prove that the specific process is suffering from CPU contention, you should inspect the `/proc/54321/status` file and look specifically at the `nonvoluntary_ctxt_switches` metric. This counter tracks how many times the Linux scheduler forcibly preempted the process because its time slice expired or a higher-priority task became runnable. A rapidly increasing or unusually high value for this metric strongly indicates that the application is competing heavily for processor time and losing out to other processes. If the value of `voluntary_ctxt_switches` is low while `nonvoluntary_ctxt_switches` is high, it definitively confirms the process wants to compute but is being starved of CPU cycles by the noisy neighbor.
+To prove that the specific process is suffering from CPU contention, you should inspect the `/proc/54321/status` file and look specifically at the `nonvoluntary_ctxt_switches` metric. This counter tracks how many times the Linux scheduler forcibly preempted the process because its time slice expired or a higher-priority task became runnable. A rapidly increasing or unusually high value for this metric strongly indicates that the application is competing heavily for processor time and losing out to other processes. If the value of `voluntary_ctxt_switches` is low while `nonvoluntary_ctxt_switches` is high, it definitively confirms the process wants to compute but is being starved of CPU cycles by the noisy neighbor. Checking these metrics provides concrete evidence of CPU starvation without requiring external tools.
 </details>
 
 ### Question 6: Scenario-Based
@@ -569,7 +588,7 @@ A critical single-threaded Node.js application is failing to process its message
 
 <details>
 <summary>Show Answer</summary>
-The operations team should immediately use the `mpstat -P ALL` command (or press '1' while inside the `top` utility) to break down the CPU utilization on a per-core basis. Overall CPU averages can easily mask extreme uneven load distribution across multiple cores, which is especially problematic for single-threaded applications. Because a single-threaded Node.js process can only execute on one CPU core at a time, it will max out its assigned core (reaching 100% utilization for that specific core) while the other seven cores remain completely idle. This creates a severe performance bottleneck for the application, even though the aggregate system load mathematically averages out to a seemingly safe 12.5%.
+The operations team should immediately use the `mpstat -P ALL` command (or press '1' while inside the `top` utility) to break down the CPU utilization on a per-core basis. Overall CPU averages can easily mask extreme uneven load distribution across multiple cores, which is especially problematic for single-threaded applications. Because a single-threaded Node.js process can only execute on one CPU core at a time, it will max out its assigned core (reaching 100% utilization for that specific core) while the other seven cores remain completely idle. This creates a severe performance bottleneck for the application, even though the aggregate system load mathematically averages out to a seemingly safe 12.5%. This illustrates why checking per-core statistics is mandatory when debugging CPU performance.
 </details>
 
 ---
