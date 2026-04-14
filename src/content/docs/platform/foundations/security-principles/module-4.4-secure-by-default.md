@@ -139,7 +139,7 @@ API ACCESS
     class APIView:
         pass
 
-    @public/**  # Must explicitly mark as public
+    @public  # Must explicitly mark as public
     class HealthCheck:
         pass
 
@@ -531,7 +531,7 @@ AUTHENTICATION REQUIRED BY DEFAULT
         pass
 
     @app.route('/health')
-    @public/**  # Explicit opt-out
+    @public  # Explicit opt-out
     def health_check():
         return 'OK'
 
