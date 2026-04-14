@@ -1,16 +1,24 @@
 ---
-title: "Підготовка Bare Metal"
+title: "Розгортання на Bare Metal"
+slug: "uk/on-premises/provisioning/index"
 sidebar:
-  order: 1
+  order: 0
+en_commit: "47bf257c3ec7632099185c630faf64d73e48caea"
+en_file: "src/content/docs/on-premises/provisioning/index.md"
 ---
 
-Як пройти шлях від стійки з порожніми серверами до працюючого кластера Kubernetes? Цей розділ охоплює процес завантаження, встановлення ОС та декларативну інфраструктуру, яка перетворює залізо на платформу.
+Як пройти шлях від стійки з порожніми серверами до працюючого кластера Kubernetes? Цей розділ охоплює процес завантаження, встановлення ОС та декларативну інфраструктуру, яка перетворює апаратне забезпечення на повноцінну платформу.
+
+У публічних хмарних середовищах розгортання нового вузла (node) є таким же простим, як звичайний виклик API. У локальному центрі обробки даних (on-premises datacenter) ви повинні керувати фізичною реальністю обладнання. Це включає розуміння фізичної інфраструктури, такої як стійки, розподіл живлення та інтерфейси позасмугового керування (out-of-band management), ще до того, як буде встановлено будь-яке програмне забезпечення.
+
+Після того, як обладнання фізично змонтовано в стійки та підключено кабелями, наступним викликом є автоматизація встановлення операційної системи. Ми розглянемо мережеве завантаження через PXE, імутабельні операційні системи, оптимізовані спеціально для контейнерних навантажень, і, нарешті, як впровадити хмароподібне декларативне розгортання на ваших bare-metal серверах за допомогою таких інструментів, як Cluster API.
 
 ## Модулі
 
 | Модуль | Опис | Час |
-|--------|------|-----|
-| [2.1 Основи дата-центру](module-2.1-datacenter-fundamentals/) | Стійки, PDU, UPS, охолодження, IPMI/BMC/Redfish, out-of-band управління | 45 хв |
-| [2.2 Підготовка ОС та PXE Boot](module-2.2-pxe-provisioning/) | PXE/UEFI boot, DHCP/TFTP, MAAS, Tinkerbell, autoinstall | 60 хв |
-| [2.3 Незмінні ОС для Kubernetes](/uk/cloud/gcp-essentials/module-2.3-compute/) | Talos Linux, Flatcar Container Linux, RHCOS, чому незмінність важлива | 45 хв |
-| [2.4 Декларативний Bare Metal](/uk/prerequisites/philosophy-design/module-1.2-declarative-vs-imperative/) | Cluster API для bare metal, Metal3, Sidero, життєвий цикл машин | 60 хв |
+|--------|-------------|------|
+| [Модуль 2.1: Основи дата-центрів](module-2.1-datacenter-fundamentals/) | Стійки, PDU, UPS, охолодження, IPMI/BMC/Redfish, позасмугове керування | 45 хв |
+| [Модуль 2.2: Розгортання ОС та PXE Boot](module-2.2-pxe-provisioning/) | PXE/UEFI завантаження, DHCP/TFTP, MAAS, Tinkerbell, autoinstall | 60 хв |
+| [Модуль 2.3: Імутабельні ОС для Kubernetes](module-2.3-immutable-os/) | Talos Linux, Flatcar Container Linux, RHCOS, чому імутабельність важлива | 45 хв |
+| [Модуль 2.4: Декларативне Bare Metal з Cluster API](module-2.4-declarative-bare-metal/) | Cluster API для bare metal, Metal3, Sidero, життєвий цикл машин | 60 хв |
+```
