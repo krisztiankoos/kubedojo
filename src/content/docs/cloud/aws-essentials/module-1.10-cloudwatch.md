@@ -582,6 +582,26 @@ aws iam attach-role-policy \
 
 ---
 
+## CloudWatch Dashboards and Metric Math
+
+While alarms are critical for proactive response, dashboards provide the single pane of glass needed during an incident to correlate multiple signals. CloudWatch Dashboards allow you to visualize metrics from multiple regions and accounts.
+
+### Metric Math
+
+Metric Math enables you to query multiple CloudWatch metrics and use math expressions to create new time series based on these metrics. This is invaluable for calculating rates, percentages, or ratios that are not emitted directly by your application.
+
+For example, if your load balancer emits `RequestCount` and `HTTPCode_Target_5XX_Count`, you can use metric math to graph the error rate percentage:
+
+```json
+[
+  { "Id": "requests", "MetricStat": { "Metric": { "Namespace": "AWS/ApplicationELB", "MetricName": "RequestCount", "Dimensions": [ { "Name": "LoadBalancer", "Value": "app/my-alb/123" } ] }, "Period": 300, "Stat": "Sum" }, "ReturnData": false },
+  { "Id": "errors", "MetricStat": { "Metric": { "Namespace": "AWS/ApplicationELB", "MetricName": "HTTPCode_Target_5XX_Count", "Dimensions": [ { "Name": "LoadBalancer", "Value": "app/my-alb/123" } ] }, "Period": 300, "Stat": "Sum" }, "ReturnData": false },
+  { "Id": "error_rate", "Expression": "(errors / requests) * 100", "Label": "5xx Error Rate (%)", "ReturnData": true }
+]
+```
+
+In this example, `requests` and `errors` are not displayed (`"ReturnData": false`), but the calculated `error_rate` is graphed. This allows you to visualize the derived metric math expression on a dashboard.
+
 ## EventBridge: Event-Driven Automation
 
 EventBridge (formerly CloudWatch Events) is the event bus that connects AWS services together. When something happens in your account -- an EC2 instance changes state, a deployment completes, an alarm triggers -- EventBridge can route that event to a target for automated response.
@@ -786,7 +806,7 @@ SSH into the instance and install the agent.
 
 ```bash
 # SSH into the instance
-ssh -i your-key.pem ec2-user @INSTANCE_PUBLIC_IP
+ssh -i your-key.pem ec2-user@INSTANCE_PUBLIC_IP
 
 # Install the CloudWatch Agent
 sudo yum install -y amazon-cloudwatch-agent
@@ -952,7 +972,7 @@ TOPIC_ARN=$(aws sns create-topic --name cw-lab-alerts --query 'TopicArn' --outpu
 aws sns subscribe \
   --topic-arn $TOPIC_ARN \
   --protocol email \
-  --notification-endpoint your-email @example.com
+  --notification-endpoint your-email@example.com
 # Confirm the subscription via the email you receive
 
 # Create the CPU alarm
@@ -972,9 +992,11 @@ aws cloudwatch put-metric-alarm \
   --treat-missing-data missing
 
 # SSH into the instance and stress the CPU
-ssh -i your-key.pem ec2-user @INSTANCE_PUBLIC_IP
-# Run: stress-ng --cpu 2 --timeout 300
-# (Install if needed: sudo yum install -y stress-ng)
+ssh -i your-key.pem ec2-user@INSTANCE_PUBLIC_IP
+
+# Inside the EC2 instance, install and run stress-ng
+sudo yum install -y stress-ng
+stress-ng --cpu 2 --timeout 300
 
 # After 2-3 minutes, check alarm state from your local machine
 aws cloudwatch describe-alarms \
