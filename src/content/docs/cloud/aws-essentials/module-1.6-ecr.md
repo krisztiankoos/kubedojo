@@ -602,6 +602,8 @@ To use ECR privately, you must create two types of VPC endpoints:
 1. **ECR API Endpoint**: `com.amazonaws.region.ecr.api` (Used for authentication and API calls like `DescribeRepositories`)
 2. **ECR Docker Routing Layer Endpoint**: `com.amazonaws.region.ecr.dkr` (Used for the actual Docker `pull` and `push` operations)
 
+> **Pause and predict**: You configured both the ECR API and DKR VPC endpoints in your private subnet, routing all ECR traffic locally. However, when your ECS task attempts to start, it authenticates successfully but hangs while downloading the image layers. What crucial network path is missing?
+
 Because ECR stores image layers in S3, you **must also create an S3 Gateway Endpoint** (`com.amazonaws.region.s3`) in your VPC routing table. When the Docker daemon pulls an image layer, ECR provides a pre-signed S3 URL, and the actual layer data flows through the S3 Gateway Endpoint.
 
 ```bash
