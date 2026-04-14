@@ -217,8 +217,6 @@ Pay another network to carry your traffic to the full internet.
     Cost: $0.50-$5.00 per Mbps/month (depends on volume/location)
     10 Gbps transit in US: ~$5,000-$15,000/month
 
-    You ──$──→ Lumen ──→ Entire Internet
-
 PEERING (Settlement-Free)
 ─────────────────────────────────────────────────────────────
 Two networks agree to exchange traffic for free.
@@ -228,8 +226,6 @@ Each carries traffic only for their own customers.
     Comcast sends Google-bound traffic directly to Google.
     Google sends Comcast-subscriber traffic directly to Comcast.
     Neither pays the other.
-
-    Comcast ←──free──→ Google
 
     Why peer?
     - Saves transit costs (don't pay Lumen to reach Google)
@@ -241,7 +237,6 @@ PAID PEERING
 One network pays the other for direct peering.
 Cheaper than full transit. Used when traffic ratio is uneven.
 
-    Netflix ──$──→ Comcast
     (Netflix sends 100x more traffic than it receives)
 
 WHERE PEERING HAPPENS
@@ -255,9 +250,27 @@ WHERE PEERING HAPPENS
         Direct fiber between two networks in the same facility.
         Higher capacity, dedicated bandwidth.
         Common between hyperscalers and large ISPs.
+        (e.g., in the same Equinix datacenter)
+```
 
-        Google → [fiber patch] → Comcast
-        (in the same Equinix datacenter)
+```mermaid
+graph LR
+    subgraph Transit [Transit]
+        You["You (AS65001)"] -- "$" --> Lumen["Lumen (AS3356)"]
+        Lumen --> Internet["Entire Internet"]
+    end
+
+    subgraph Peering [Settlement-Free Peering]
+        Comcast["Comcast"] <-->|"free"| Google["Google"]
+    end
+
+    subgraph PaidPeering [Paid Peering]
+        Netflix["Netflix"] -- "$" --> Comcast2["Comcast"]
+    end
+
+    subgraph PNI [Private Network Interconnect]
+        Google2["Google"] -- "fiber patch" --> Comcast3["Comcast"]
+    end
 ```
 
 > **Stop and think**: If peering is settlement-free (free), why wouldn't a Tier 3 ISP just peer with everyone instead of paying for transit?
@@ -325,8 +338,6 @@ eBGP vs iBGP
     ─────────────────────────────────────────────
     Between DIFFERENT Autonomous Systems.
     Used for internet routing between organizations.
-
-    AS65001 ←──eBGP──→ AS65002
 
     - TTL=1 by default (directly connected)
     - AS-Path prepended when sending
@@ -971,6 +982,8 @@ graph TD
     Router --> Svc
 ```
 
+> **Stop and think**: If MetalLB in BGP mode announces a `/32` address to the top-of-rack switch, what must the physical network infrastructure support for external users to reach that service?
+
 ---
 
 ## Did You Know?
@@ -1018,14 +1031,14 @@ graph TD
    <details>
    <summary>Answer</summary>
 
-   Based on the evidence, your network is experiencing a route leak rather than a route hijack. In a route hijack, an attacker maliciously or accidentally announces your prefix while claiming to be the origin, which would result in the origin ASN changing to the attacker's ASN. Because the origin ASN remains correct, the route is legitimate at its source but is being propagated along an unauthorized path. This happens when a network, like the small South American ISP, accidentally re-announces routes it learned from one transit provider to another, effectively turning itself into an unintended transit path for global traffic.
+   Based on the evidence, your network is experiencing a route leak rather than a route hijack. In a route hijack, an attacker maliciously or accidentally announces your prefix while claiming to be the origin, which would result in the origin ASN changing to the attacker's ASN. Because the origin ASN remains correct in this scenario, the route is legitimate at its source but is being propagated along an unauthorized path. This happens when a network, like the small South American ISP, accidentally re-announces routes it learned from one transit provider to another. By doing so, it effectively turns itself into an unintended transit path for global traffic, creating a massive bottleneck that causes the observed latency.
    </details>
 
 4. **Your company is hit with a 100 Gbps DDoS attack targeting a single IP address on your network. Your upstream provider offers a BGP blackholing service. Describe the process of triggering this mitigation, and explain the exact trade-off you must make when employing it.**
    <details>
    <summary>Answer</summary>
 
-   To trigger BGP blackholing, you configure your edge router to announce a /32 host route for the specific targeted IP address, attaching a predetermined BGP community string (such as the blackhole community) to the announcement. When your transit provider receives this route, their routers are configured to match that community and immediately rewrite the next-hop for that IP to a null interface, dropping the traffic at the provider's edge. The critical trade-off is that you are completely sacrificing the availability of that specific IP address, cutting off all legitimate traffic alongside the malicious traffic. However, this protects your uplinks from being saturated, ensuring that the rest of the IP addresses in your subnet remain online and unaffected by the volumetric attack.
+   To trigger BGP blackholing, you configure your edge router to announce a /32 host route for the specific targeted IP address, attaching a predetermined BGP community string (such as the blackhole community) to the announcement. When your transit provider receives this route, their routers are configured to match that community and immediately rewrite the next-hop for that IP to a null interface, dropping the traffic at the provider's edge before it traverses your link. The critical trade-off is that you are completely sacrificing the availability of that specific IP address, cutting off all legitimate traffic alongside the malicious traffic. However, this aggressive measure protects your uplinks from being saturated by the volumetric attack. By dropping the attack traffic upstream, you ensure that the rest of the IP addresses and services in your subnet remain online and unaffected.
    </details>
 
 5. **After implementing strict RPKI Route Origin Validation (ROV) on all edge routers, your CISO asks if the network is now fully protected against all BGP-related traffic redirection attacks. How should you respond, and what specific types of routing incidents could still occur despite having RPKI in place?**
@@ -1039,7 +1052,7 @@ graph TD
    <details>
    <summary>Answer</summary>
 
-   When the single Direct Connect link fails, all private routing between the on-premises network and the AWS VPC is severed, though the cloud workloads themselves will continue to run normally in AWS. Any on-premises services relying on private IP communication with the cloud will experience immediate timeouts and failures because the BGP session drops and the routes are withdrawn. To architect for resilience, the company should provision at least two Direct Connect links terminating in completely separate physical facilities, using different hardware and carriers. Additionally, they can configure a Site-to-Site VPN over the public internet as a path of last resort, setting a lower BGP LOCAL_PREF so it is only used if both physical links fail.
+   When the single Direct Connect link fails, all private routing between the on-premises network and the AWS VPC is severed, though the cloud workloads themselves will continue to run normally in AWS. Any on-premises services relying on private IP communication with the cloud will experience immediate timeouts and failures because the BGP session drops and the corresponding routes are withdrawn. To architect for resilience, the company should provision at least two Direct Connect links terminating in completely separate physical facilities, using different hardware and carriers to eliminate single points of failure. Additionally, they can configure a Site-to-Site VPN over the public internet as a path of last resort. By setting a lower BGP LOCAL_PREF on the VPN connection, it remains in standby and is only utilized if both physical Direct Connect links fail.
    </details>
 
 ---
