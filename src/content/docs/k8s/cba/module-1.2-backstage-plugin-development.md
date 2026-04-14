@@ -49,10 +49,10 @@ The crucial lesson from this outage is that Backstage plugin development is not 
 
 ## Did You Know?
 
-1. **Massive Ecosystem**: The Backstage community maintains a public directory at `backstage.io/plugins` and a dedicated `backstage/community-plugins` repository governed strictly under the Apache License 2.0.
-2. **Strict Release Cadence**: As a CNCF Incubating project (not yet Graduated), Backstage follows a monthly main release line (shipping the Tuesday before the third Wednesday of each month) and a weekly `next` release line on Tuesdays for early access.
+1. **Massive Ecosystem**: The Backstage community maintains a public directory at `backstage.io/plugins` and a dedicated `backstage/community-plugins` repository governed strictly under the Apache License 2.0. The Certified Backstage Associate (CBA) certification itself is officially offered by the CNCF.
+2. **Strict Release Cadence**: As a CNCF Incubating project (not yet Graduated), Backstage follows a monthly main release line (shipping the Tuesday before the third Wednesday of each month) and a weekly `next` release line on Tuesdays for early access. The `next` release line offers early access to upcoming features with fewer stability guarantees.
 3. **Runtime Support Windows**: Backstage strictly supports exactly two adjacent even-numbered Node.js LTS releases (e.g., Node.js 22 and 24 as of v1.46.0) and the last three major TypeScript versions at any given time. React 18 is currently supported, with React 19 under evaluation.
-4. **The New Default**: As of v1.49.0, newly created Backstage apps use the New Frontend System by default. The old `--next` CLI flag has been removed and replaced by a `--legacy` flag.
+4. **The New Default**: The latest confirmed stable release is v1.49.0 (released 2026-01-28; note that later 1.50+ versions may have shipped by now but are unconfirmed in available search records). As of v1.49.0, newly created Backstage apps use the New Frontend System by default. The old `--next` CLI flag has been removed and replaced by a `--legacy` flag.
 
 ---
 
@@ -118,6 +118,9 @@ yarn new --select plugin
 # This creates: plugins/my-dashboard/
 ```
 
+> **Pause and predict**: What package naming convention does the CLI follow for new plugins?
+> The generated package follows the convention `@<scope>/plugin-<pluginId>` for the main package. If your plugin requires additional roles, those packages use suffixes like `-react`, `-common`, `-backend`, `-node`, or `-backend-module-<moduleId>`.
+
 The generated plugin structure:
 
 ```
@@ -141,7 +144,7 @@ plugins/my-dashboard/
 
 ### 2.2 The Plugin Definition — `createPlugin`
 
-Every frontend plugin starts with a plugin definition. While the New Frontend System utilizes `createFrontendPlugin`, the extensively tested legacy API relies on `createPlugin`. This defines the plugin's identity — it registers the plugin with Backstage and declares its routes, APIs, and extensions.
+Every frontend plugin starts with a plugin definition. While the New Frontend System utilizes `createFrontendPlugin` from `@backstage/frontend-plugin-api`, the extensively tested legacy API relies on `createPlugin` from `@backstage/core-plugin-api`. This defines the plugin's identity — it registers the plugin with Backstage and declares its routes, APIs, and extensions. The New Frontend System also provides extension blueprints such as `PageBlueprint` and `NavItemBlueprint` from `@backstage/frontend-plugin-api` to standardize definitions.
 
 ```typescript
 // plugins/my-dashboard/src/plugin.ts
@@ -170,7 +173,7 @@ export const MyDashboardPage = myDashboardPlugin.provide(
 
 What this code does, line by line:
 
-- `createPlugin({ id: 'my-dashboard' })` — Registers a plugin with a unique ID. Backstage uses this ID for routing, configuration, and analytics.
+- `createPlugin({ id: 'my-dashboard' })` — Registers a plugin with a unique ID. Backstage uses this ID for routing, configuration, and analytics. Plugin IDs must use kebab-case (e.g., `my-dashboard`). The plugin instance variable uses the camelCase version with a `Plugin` suffix (e.g., `myDashboardPlugin`).
 - `routes: { root: rootRouteRef }` — Associates named routes with the plugin. `rootRouteRef` is a reference created elsewhere (see below).
 - `createRoutableExtension()` — Creates a React component that Backstage can mount at a URL path. The `component` field uses dynamic `import()` for code splitting — the plugin code is only loaded when a user navigates to its page.
 - `mountPoint: rootRouteRef` — Ties this component to the route reference.
@@ -344,7 +347,7 @@ yarn new --select backend-plugin
 
 ### 3.2 Backend Plugin Structure (New Backend System)
 
-Backstage has migrated to a "new backend system" (introduced in Backstage 1.x). It reached stable 1.0 and is highly recommended for all new plugin development. The exam strongly tests the new pattern. Here is the full structure of a backend plugin using `createBackendPlugin`:
+Backstage has migrated to a "new backend system" (introduced in Backstage 1.x). It reached stable 1.0 and is highly recommended for all new plugin development. The exam strongly tests the new pattern. Here is the full structure of a backend plugin using `createBackendPlugin` from `@backstage/backend-plugin-api`:
 
 ```typescript
 // plugins/my-dashboard-backend/src/plugin.ts
@@ -388,6 +391,8 @@ Key concepts:
 - **`coreServices.httpRouter`** — An Express router scoped to `/api/<pluginId>`.
 - **`coreServices.database`** — A Knex.js database client. Backstage manages the connection.
 - **`coreServices.logger`** — A Winston logger scoped to the plugin.
+
+Additionally, backend extension points are created with `createExtensionPoint` from `@backstage/backend-plugin-api`. A backend module may only extend a single plugin and must be installed in the same backend instance as that plugin.
 
 ### 3.3 Writing an Express Router
 
@@ -1075,7 +1080,7 @@ export const authModuleGithubCustom = createBackendModule({
 
 ### 8.1 Frontend Plugin Tests
 
-Backstage provides test utilities that wrap `@testing-library/react`:
+Backstage provides test utilities that wrap `@testing-library/react`. `renderInTestApp` is available from `@backstage/test-utils` (legacy system) and from `@backstage/frontend-test-utils` (new frontend system). Additionally, `createDevApp` from `@backstage/frontend-dev-utils` simplifies setting up a local plugin development app. Jest is the primary testing framework used throughout the Backstage ecosystem.
 
 ```tsx
 // plugins/my-dashboard/src/components/MyDashboardPage/MyDashboardPage.test.tsx
@@ -1327,7 +1332,8 @@ npx @backstage/create-app@latest --legacy
 cd my-backstage-app
 ```
 
-> **Pause and predict**: Why did we use the `--legacy` flag here? As of Backstage v1.49.0, the New Frontend System is the default. Since this exercise focuses on the extensively-tested core API (`createPlugin`), we scaffold using the legacy frontend flag.
+> **Pause and predict**: Why did we use the `--legacy` flag here? 
+> As of Backstage v1.49.0, the New Frontend System is the default. Since this exercise focuses on the extensively-tested core API (`createPlugin`), we scaffold using the legacy frontend flag.
 
 **Checkpoint**: Verify the app was created successfully by checking the directory structure.
 ```bash
