@@ -115,14 +115,14 @@ The same storage account in Bicep:
 ```bicep
 // main.bicep
 
- @allowed(['dev', 'staging', 'prod'])
+@allowed(['dev', 'staging', 'prod'])
 param environment string = 'dev'
 
 param location string = resourceGroup().location
 
 var storageName = 'kubedojo${environment}${uniqueString(resourceGroup().id)}'
 
-resource storageAccount 'Microsoft.Storage/storageAccounts @2023-01-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: storageName
   location: location
   sku: {
@@ -156,18 +156,18 @@ The differences are stark:
 
 ```bicep
 // Parameters: Values provided at deployment time
- @description('The environment name')
- @allowed(['dev', 'staging', 'prod'])
+@description('The environment name')
+@allowed(['dev', 'staging', 'prod'])
 param environment string
 
- @description('Azure region for resources')
+@description('Azure region for resources')
 param location string = resourceGroup().location
 
- @minValue(1)
- @maxValue(10)
+@minValue(1)
+@maxValue(10)
 param instanceCount int = 2
 
- @secure()
+@secure()
 param adminPassword string  // Marked secure: not logged, not shown in outputs
 
 // Variables: Computed values
@@ -179,7 +179,7 @@ var tags = {
 }
 
 // Resources: Azure resources to deploy
-resource vnet 'Microsoft.Network/virtualNetworks @2023-04-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
   name: '${prefix}-vnet'
   location: location
   tags: tags
@@ -205,13 +205,13 @@ resource vnet 'Microsoft.Network/virtualNetworks @2023-04-01' = {
 }
 
 // Reference existing resources (not deployed by this template)
-resource existingKeyVault 'Microsoft.KeyVault/vaults @2023-02-01' existing = {
+resource existingKeyVault 'Microsoft.KeyVault/vaults@2023-02-01' existing = {
   name: 'my-existing-vault'
   scope: resourceGroup('other-rg')  // Can reference resources in other RGs
 }
 
 // Conditional deployment
-resource devStorage 'Microsoft.Storage/storageAccounts @2023-01-01' = if (environment == 'dev') {
+resource devStorage 'Microsoft.Storage/storageAccounts@2023-01-01' = if (environment == 'dev') {
   name: '${prefix}devstorage'
   location: location
   sku: { name: 'Standard_LRS' }
@@ -220,7 +220,7 @@ resource devStorage 'Microsoft.Storage/storageAccounts @2023-01-01' = if (enviro
 }
 
 // Loops
-resource nsgRules 'Microsoft.Network/networkSecurityGroups @2023-04-01' = [for i in range(0, instanceCount): {
+resource nsgRules 'Microsoft.Network/networkSecurityGroups@2023-04-01' = [for i in range(0, instanceCount): {
   name: '${prefix}-nsg-${i}'
   location: location
   properties: {}
@@ -304,19 +304,19 @@ graph TD
 
 ```bicep
 // modules/storage.bicep
- @description('Storage account name')
+@description('Storage account name')
 param name string
 
- @description('Azure region')
+@description('Azure region')
 param location string
 
- @description('Storage account SKU')
- @allowed(['Standard_LRS', 'Standard_ZRS', 'Standard_GRS'])
+@description('Storage account SKU')
+@allowed(['Standard_LRS', 'Standard_ZRS', 'Standard_GRS'])
 param skuName string = 'Standard_LRS'
 
 param tags object = {}
 
-resource storage 'Microsoft.Storage/storageAccounts @2023-01-01' = {
+resource storage 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: name
   location: location
   tags: tags
@@ -341,7 +341,7 @@ param location string
 param skuName string = 'B1'
 param tags object = {}
 
-resource plan 'Microsoft.Web/serverfarms @2023-01-01' = {
+resource plan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: name
   location: location
   tags: tags
@@ -360,7 +360,7 @@ output name string = plan.name
 
 ```bicep
 // main.bicep - Using modules
- @allowed(['dev', 'staging', 'prod'])
+@allowed(['dev', 'staging', 'prod'])
 param environment string
 
 param location string = resourceGroup().location
@@ -437,7 +437,7 @@ targetScope = 'subscription'
 param location string = 'eastus2'
 param environment string
 
-resource rg 'Microsoft.Resources/resourceGroups @2022-09-01' = {
+resource rg 'Microsoft.Resources/resourceGroups@2022-09-01' = {
   name: 'kubedojo-${environment}'
   location: location
 }
@@ -661,20 +661,20 @@ mkdir -p /tmp/bicep-lab/modules
 
 ```bash
 cat > /tmp/bicep-lab/modules/storage.bicep << 'BICEP'
- @description('Storage account name (must be globally unique)')
+@description('Storage account name (must be globally unique)')
 param name string
 
- @description('Azure region')
+@description('Azure region')
 param location string
 
- @description('Storage SKU')
- @allowed(['Standard_LRS', 'Standard_ZRS', 'Standard_GRS'])
+@description('Storage SKU')
+@allowed(['Standard_LRS', 'Standard_ZRS', 'Standard_GRS'])
 param skuName string = 'Standard_LRS'
 
- @description('Resource tags')
+@description('Resource tags')
 param tags object = {}
 
-resource storageAccount 'Microsoft.Storage/storageAccounts @2023-01-01' = {
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   name: name
   location: location
   tags: tags
@@ -708,26 +708,26 @@ echo "Build successful if no errors above"
 
 ```bash
 cat > /tmp/bicep-lab/modules/appservice.bicep << 'BICEP'
- @description('App Service Plan name')
+@description('App Service Plan name')
 param planName string
 
- @description('Web App name')
+@description('Web App name')
 param appName string
 
- @description('Azure region')
+@description('Azure region')
 param location string
 
- @description('App Service Plan SKU')
- @allowed(['B1', 'B2', 'S1', 'P1v3', 'P2v3'])
+@description('App Service Plan SKU')
+@allowed(['B1', 'B2', 'S1', 'P1v3', 'P2v3'])
 param skuName string = 'B1'
 
- @description('Runtime stack')
+@description('Runtime stack')
 param runtimeStack string = 'NODE:20-lts'
 
- @description('Resource tags')
+@description('Resource tags')
 param tags object = {}
 
-resource appServicePlan 'Microsoft.Web/serverfarms @2023-01-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
   name: planName
   location: location
   tags: tags
@@ -740,7 +740,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms @2023-01-01' = {
   }
 }
 
-resource webApp 'Microsoft.Web/sites @2023-01-01' = {
+resource webApp 'Microsoft.Web/sites@2023-01-01' = {
   name: appName
   location: location
   tags: tags
@@ -777,14 +777,14 @@ echo "Build successful if no errors above"
 cat > /tmp/bicep-lab/main.bicep << 'BICEP'
 // main.bicep - Complete environment deployment
 
- @description('Environment name')
- @allowed(['dev', 'staging', 'prod'])
+@description('Environment name')
+@allowed(['dev', 'staging', 'prod'])
 param environment string
 
- @description('Azure region')
+@description('Azure region')
 param location string = resourceGroup().location
 
- @description('Base name for resources')
+@description('Base name for resources')
 param baseName string = 'kubedojo'
 
 // Computed values
@@ -908,12 +908,12 @@ You should see a storage account, an App Service Plan, and a Web App.
 # Let's add a blob container to the storage account by updating the module
 cat >> /tmp/bicep-lab/modules/storage.bicep << 'BICEP'
 
-resource blobService 'Microsoft.Storage/storageAccounts/blobServices @2023-01-01' = {
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-01-01' = {
   parent: storageAccount
   name: 'default'
 }
 
-resource uploadsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers @2023-01-01' = {
+resource uploadsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
   parent: blobService
   name: 'uploads'
   properties: {
