@@ -47,38 +47,20 @@ Almost every real Kubernetes workload needs to talk to cloud services. Reading f
 
 ### The Old Way: Static Credentials
 
-```
-THE CREDENTIALS ANTI-PATTERN
-═══════════════════════════════════════════════════════════════
-
-Developer creates IAM user
-        │
-        ▼
-Generates access key + secret key
-        │
-        ▼
-Stores in Kubernetes Secret
-        │
-        ├──▶ Key committed to Git (risk: exposure)
-        ├──▶ Key shared across pods (risk: blast radius)
-        ├──▶ Key never rotated (risk: compromise window)
-        ├──▶ Key has broad permissions (risk: lateral movement)
-        └──▶ Key stored base64-encoded, not encrypted (risk: theft)
-               │
-               ▼
-        Attacker gains access to one pod
-               │
-               ▼
-        Reads mounted Secret (trivial)
-               │
-               ▼
-        Uses long-lived key to access cloud resources
-               │
-               ▼
-        Key works from ANYWHERE (no IP restriction)
-               │
-               ▼
-        Full S3 access, full DynamoDB access, etc.
+```mermaid
+graph TD
+    A[Developer creates IAM user] --> B[Generates access key + secret key]
+    B --> C[Stores in Kubernetes Secret]
+    C --> D[Key committed to Git<br/>risk: exposure]
+    C --> E[Key shared across pods<br/>risk: blast radius]
+    C --> F[Key never rotated<br/>risk: compromise window]
+    C --> G[Key has broad permissions<br/>risk: lateral movement]
+    C --> H[Key stored base64-encoded, not encrypted<br/>risk: theft]
+    H --> I[Attacker gains access to one pod]
+    I --> J[Reads mounted Secret<br/>trivial]
+    J --> K[Uses long-lived key to access cloud resources]
+    K --> L[Key works from ANYWHERE<br/>no IP restriction]
+    L --> M[Full S3 access, full DynamoDB access, etc.]
 ```
 
 ```yaml
@@ -115,41 +97,22 @@ spec:
 
 ### The New Way: Federated Identity
 
+```mermaid
+graph TD
+    A[Pod starts up with a ServiceAccount] --> B[Kubernetes injects a signed JWT token<br/>short-lived]
+    B --> C[Pod presents token to cloud provider's STS]
+    C --> D[Cloud provider verifies the token signature<br/>using the cluster's OIDC public key]
+    D --> E[Cloud provider returns temporary credentials<br/>valid for 15-60 minutes, scoped to one IAM role]
+    E --> F[Pod uses temporary credentials for cloud API calls]
+    F --> G[Credentials expire automatically<br/>No rotation needed. No secrets stored. Nothing to leak.]
 ```
-THE IDENTITY FEDERATION PATTERN
-═══════════════════════════════════════════════════════════════
 
-Pod starts up with a ServiceAccount
-        │
-        ▼
-Kubernetes injects a signed JWT token (short-lived)
-        │
-        ▼
-Pod presents token to cloud provider's STS
-        │
-        ▼
-Cloud provider verifies the token signature
-using the cluster's OIDC public key
-        │
-        ▼
-Cloud provider returns temporary credentials
-(valid for 15 minutes, scoped to one IAM role)
-        │
-        ▼
-Pod uses temporary credentials for cloud API calls
-        │
-        ▼
-Credentials expire automatically
-No rotation needed. No secrets stored. Nothing to leak.
-
-
-Security properties:
-  - Credentials are ephemeral (15-60 min lifetime)
-  - Credentials are scoped (one role per ServiceAccount)
-  - No secrets exist in cluster (nothing to steal from etcd)
-  - Audience-restricted (token only works with one provider)
-  - Auditable (cloud audit logs show which pod made which call)
-```
+**Security properties:**
+- Credentials are ephemeral (15-60 min lifetime)
+- Credentials are scoped (one role per ServiceAccount)
+- No secrets exist in cluster (nothing to steal from etcd)
+- Audience-restricted (token only works with one provider)
+- Auditable (cloud audit logs show which pod made which call)
 
 ---
 
@@ -234,42 +197,19 @@ cat /var/run/secrets/eks.amazonaws.com/serviceaccount/token | jwt decode -
 
 The AWS SDK (or GCP/Azure SDK) in the pod automatically detects the projected token and calls STS (Security Token Service) to exchange it.
 
-```
-TOKEN EXCHANGE FLOW
-═══════════════════════════════════════════════════════════════
+```mermaid
+sequenceDiagram
+    participant Pod
+    participant STS as AWS STS
+    participant IAM
 
-  Pod                         AWS STS                  IAM
-   │                            │                       │
-   │  AssumeRoleWithWebIdentity │                       │
-   │  (JWT token + role ARN)    │                       │
-   │ ─────────────────────────▶ │                       │
-   │                            │                       │
-   │                            │  Fetch OIDC public    │
-   │                            │  keys from cluster's  │
-   │                            │  JWKS endpoint        │
-   │                            │ ◀─────────────────▶   │
-   │                            │                       │
-   │                            │  Verify:              │
-   │                            │  1. Token signature   │
-   │                            │  2. Issuer matches    │
-   │                            │  3. Audience is STS   │
-   │                            │  4. Not expired       │
-   │                            │  5. Subject matches   │
-   │                            │     trust policy      │
-   │                            │                       │
-   │                            │  Check IAM role       │
-   │                            │  trust policy allows  │
-   │                            │  this ServiceAccount  │
-   │                            │ ──────────────────▶   │
-   │                            │                       │
-   │                            │  ◀── Policy OK ────── │
-   │                            │                       │
-   │  Temporary credentials     │                       │
-   │  (15-min expiry)           │                       │
-   │ ◀───────────────────────── │                       │
-   │                            │                       │
-   │  Use credentials for       │                       │
-   │  S3, DynamoDB, etc.        │                       │
+    Pod->>STS: AssumeRoleWithWebIdentity<br/>(JWT token + role ARN)
+    STS->>STS: Fetch OIDC public keys from<br/>cluster's JWKS endpoint
+    STS->>STS: Verify:<br/>1. Token signature<br/>2. Issuer matches<br/>3. Audience is STS<br/>4. Not expired<br/>5. Subject matches trust policy
+    STS->>IAM: Check IAM role trust policy<br/>allows this ServiceAccount
+    IAM-->>STS: Policy OK
+    STS-->>Pod: Temporary credentials<br/>(15-min expiry)
+    Pod->>Pod: Use credentials for<br/>S3, DynamoDB, etc.
 ```
 
 ### Step 4: IAM Trust Policy Controls Which Pods Get Which Roles
@@ -307,56 +247,31 @@ This trust policy says: "Only the `data-processor` ServiceAccount in the `produc
 
 The confused deputy problem is the most important security concept in IAM federation. Understanding it prevents a class of privilege escalation attacks.
 
+**WITHOUT proper scoping:**
+
+```mermaid
+sequenceDiagram
+    participant AP as Attacker's Pod<br/>(low privilege)
+    participant J as Jenkins (CI/CD)<br/>(high privilege)
+    participant AWS as AWS
+
+    AP->>J: "Please deploy this manifest to production"
+    J->>AWS: Deploy (using Jenkins's IAM role)
+    AWS-->>J: Allowed! Jenkins has production access
+    Note over AP, AWS: The attacker used Jenkins as a "confused deputy" --<br/>Jenkins acted on the attacker's behalf using its own elevated permissions.
 ```
-THE CONFUSED DEPUTY ATTACK
-═══════════════════════════════════════════════════════════════
 
-Scenario: A CI/CD service (Jenkins) has broad IAM permissions
-to deploy to Kubernetes. An attacker compromises a low-privilege
-pod and exploits the CI/CD service to act on their behalf.
+**WITH pod-level identity:**
 
-WITHOUT proper scoping:
+```mermaid
+sequenceDiagram
+    participant AP as Attacker's Pod<br/>(SA: "attacker-sa")
+    participant STS as AWS STS
 
-  Attacker's Pod                  Jenkins (CI/CD)              AWS
-  (low privilege)                 (high privilege)
-       │                               │                        │
-       │  "Please deploy this          │                        │
-       │   manifest to production"     │                        │
-       │ ─────────────────────────▶    │                        │
-       │                               │                        │
-       │                               │  Deploy (using         │
-       │                               │  Jenkins's IAM role)   │
-       │                               │ ─────────────────────▶ │
-       │                               │                        │
-       │                               │  Allowed! Jenkins has  │
-       │                               │  production access     │
-       │                               │ ◀───────────────────── │
-
-  The attacker used Jenkins as a "confused deputy" --
-  Jenkins acted on the attacker's behalf using its own
-  elevated permissions.
-
-
-WITH pod-level identity:
-
-  Attacker's Pod                  AWS STS
-  (ServiceAccount: "attacker-sa")
-       │                               │
-       │  AssumeRoleWithWebIdentity    │
-       │  (token for "attacker-sa")    │
-       │ ─────────────────────────▶    │
-       │                               │
-       │  Trust policy check:          │
-       │  "attacker-sa" is NOT in      │
-       │  the trust policy for the     │
-       │  production deploy role       │
-       │                               │
-       │  ACCESS DENIED                │
-       │ ◀───────────────────────────  │
-
-  The attacker's identity is their ServiceAccount,
-  not the CI/CD tool they're calling through.
-  The cloud provider checks the ORIGINAL caller's identity.
+    AP->>STS: AssumeRoleWithWebIdentity<br/>(token for "attacker-sa")
+    Note over STS: Trust policy check:<br/>"attacker-sa" is NOT in the trust policy<br/>for the production deploy role
+    STS-->>AP: ACCESS DENIED
+    Note over AP, STS: The attacker's identity is their ServiceAccount, not the CI/CD tool they're calling through.<br/>The cloud provider checks the ORIGINAL caller's identity.
 ```
 
 The fix is straightforward: every pod gets its own ServiceAccount, and each IAM role's trust policy specifies exactly which ServiceAccounts can assume it. A pod in the `staging` namespace can never assume a role that trusts only `production:data-processor`.
@@ -742,7 +657,7 @@ Yes, the attacker will successfully get AWS credentials in this scenario. The to
 <details>
 <summary>5. To save time, a platform engineer creates a single `ProdClusterRole` in AWS with access to S3, DynamoDB, and SQS. They map this role to every ServiceAccount in the `production` namespace. Months later, a vulnerability in the image resizing service is exploited. Explain the blast radius of this breach and how the incident response team will struggle to investigate it using CloudTrail.</summary>
 
-The blast radius of this breach is massive because the compromised image resizing service now has full access to S3, DynamoDB, and SQS, even if it only legitimately needed S3. The attacker can use the shared role to laterally move and exfiltrate data from databases or manipulate message queues that have nothing to do with image processing. Furthermore, incident response will be a nightmare because CloudTrail logs will show the exact same `ProdClusterRole` session name for every single cloud API call across the entire namespace. The security team will be unable to definitively distinguish which actions were performed by the compromised pod versus legitimate traffic from other services, delaying containment.
+The blast radius of this breach is massive because the compromised image resizing service now has full access to S3, DynamoDB, and SQS, even if it only legitimately needed S3. The attacker can use the shared role to laterally move and exfiltrate data from databases or manipulate message queues that have nothing to do with image processing. Furthermore, incident response will be a nightmare because CloudTrail logs will show the exact same `ProdClusterRole` session name for every single cloud API call across the entire namespace. The security team will be unable to definitively distinguish which actions were performed by the compromised pod versus legitimate traffic from other services, delaying containment efforts and root cause analysis.
 </details>
 
 <details>
