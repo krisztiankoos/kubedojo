@@ -86,11 +86,11 @@ sequenceDiagram
     B-->>C: Direct Response (Bypasses LB)
 ```
 
-- ✓ Massive throughput (LB only handles inbound)
-- ✓ LB doesn't become bandwidth bottleneck
-- ✗ LB can't inspect or modify responses
-- ✗ Backend must be L2-adjacent to LB
-- ✗ Backend must be configured to accept traffic for LB's IP
+- **Pro:** Massive throughput (LB only handles inbound)
+- **Pro:** LB doesn't become bandwidth bottleneck
+- **Con:** LB can't inspect or modify responses
+- **Con:** Backend must be L2-adjacent to LB
+- **Con:** Backend must be configured to accept traffic for LB's IP
 
 **Method 2: DNAT (Destination NAT)**
 LB rewrites destination IP to backend IP.
@@ -107,10 +107,10 @@ sequenceDiagram
     L-->>C: Forward (SNAT)
 ```
 
-- ✓ Works across L3 networks
-- ✓ LB sees all traffic (can do health tracking)
-- ✗ LB handles both directions (bandwidth)
-- ✗ Must maintain connection tracking table
+- **Pro:** Works across L3 networks
+- **Pro:** LB sees all traffic (can do health tracking)
+- **Con:** LB handles both directions (bandwidth)
+- **Con:** Must maintain connection tracking table
 
 **Method 3: Tunneling (IP-in-IP / GUE)**
 LB encapsulates packet in outer IP header.
@@ -204,19 +204,19 @@ This is why L7 LBs are also called "reverse proxies."
 
 | Requirement | L4 | L7 |
 | :--- | :--- | :--- |
-| **Maximum throughput** | ✓ Best | ✗ Limited |
-| **Lowest latency** | ✓ <1ms | ✗ 1-5ms |
-| **HTTP path/header routing** | ✗ Can't see | ✓ Full control |
-| **TLS termination** | ✗ Pass-through | ✓ Terminates |
-| **WebSocket support** | ✓ Transparent | ✓ Managed |
-| **gRPC load balancing** | ✗ Per-connection | ✓ Per-request |
-| **Non-HTTP protocols (DB, SMTP)**| ✓ Any protocol | ✗ HTTP only |
-| **Request/response modification**| ✗ No access | ✓ Full access |
-| **Cookie-based session affinity**| ✗ No cookies | ✓ Cookie aware |
-| **Client certificate (mTLS)** | ✗ Pass-through | ✓ Validates |
-| **Health checks (HTTP)** | ✗ TCP only* | ✓ HTTP checks |
-| **Connection draining** | ✓ Timer-based | ✓ Request-aware |
-| **Cost** | ✓ Lower | ✗ Higher |
+| **Maximum throughput** | Best | Limited |
+| **Lowest latency** | <1ms | 1-5ms |
+| **HTTP path/header routing** | Can't see | Full control |
+| **TLS termination** | Pass-through | Terminates |
+| **WebSocket support** | Transparent | Managed |
+| **gRPC load balancing** | Per-connection | Per-request |
+| **Non-HTTP protocols (DB, SMTP)**| Any protocol | HTTP only |
+| **Request/response modification**| No access | Full access |
+| **Cookie-based session affinity**| No cookies | Cookie aware |
+| **Client certificate (mTLS)** | Pass-through | Validates |
+| **Health checks (HTTP)** | TCP only* | HTTP checks |
+| **Connection draining** | Timer-based | Request-aware |
+| **Cost** | Lower | Higher |
 
 *\* Some L4 LBs support limited HTTP health checks*
 
@@ -327,24 +327,24 @@ Session affinity ensures the same client always reaches the same backend server.
 `hash(client_ip) % num_servers = selected_server`
 - Client 1.2.3.4 → always hits Server-A
 - Client 5.6.7.8 → always hits Server-B
-- ✓ Works at L4 (no HTTP inspection needed)
-- ✗ Breaks behind NAT (all users behind same IP → same server)
-- ✗ Uneven distribution, no affinity when servers are added/removed (rehashing)
+- **Pro:** Works at L4 (no HTTP inspection needed)
+- **Con:** Breaks behind NAT (all users behind same IP → same server)
+- **Con:** Uneven distribution, no affinity when servers are added/removed (rehashing)
 
 **Cookie-Based Affinity (L7)**
 LB sets a cookie on first response (`Set-Cookie: AWSALB=server-a`). Subsequent requests include the cookie, and LB routes appropriately.
-- ✓ Precise per-user affinity, survives NAT/VPNs
-- ✗ Requires L7 inspection, adds byte overhead
+- **Pro:** Precise per-user affinity, survives NAT/VPNs
+- **Con:** Requires L7 inspection, adds byte overhead
 
 **Application-Generated Affinity (L7)**
 Application sets its own session cookie (`Set-Cookie: JSESSIONID=abc123`). LB routes based on this value.
-- ✓ Application controls session semantics
-- ✗ Tighter coupling between app and LB config
+- **Pro:** Application controls session semantics
+- **Con:** Tighter coupling between app and LB config
 
 **Header-Based Affinity (L7)**
 Route based on a custom header (e.g., `X-User-ID: 12345`).
-- ✓ Works for API clients (no cookies)
-- ✗ Requires L7 inspection
+- **Pro:** Works for API clients (no cookies)
+- **Con:** Requires L7 inspection
 
 **The Case Against Sticky Sessions**
 
@@ -390,14 +390,14 @@ The backend sees the source IP of the NLB internal IP (10.0.1.x). The client's r
 Prepends a single text line before the TCP data stream.
 Format: `PROXY <protocol> <src_ip> <dst_ip> <src_port> <dst_port>\r\n`
 Example: `PROXY TCP4 203.0.113.5 10.0.0.1 54321 443\r\n`
-- ✓ Human-readable, simple to implement
-- ✗ Text parsing overhead, limited data
+- **Pro:** Human-readable, simple to implement
+- **Con:** Text parsing overhead, limited data
 
 **Proxy Protocol v2 (Binary)**
 Binary format. More efficient, extensible with TLV fields.
 Can carry TLS version, cipher negotiated, client cert details, and AWS VPC endpoint IDs.
-- ✓ More efficient, extensible
-- ✗ Not human-readable, more complex
+- **Pro:** More efficient, extensible
+- **Con:** Not human-readable, more complex
 
 **How It Works In Practice**
 
@@ -415,7 +415,7 @@ Backend application sees `X-Forwarded-For: 203.0.113.5` (real client IP!).
 
 ### 4.2 Proxy Protocol Configuration
 
-⚠️ **CRITICAL**: Both sides must agree! If LB sends Proxy Protocol but backend doesn't expect it, backend sees "PROXY TCP4..." as garbage → connection fails.
+**WARNING:** Both sides must agree! If LB sends Proxy Protocol but backend doesn't expect it, backend sees "PROXY TCP4..." as garbage → connection fails.
 
 **NGINX Configuration (Receiving Proxy Protocol)**
 ```nginx
@@ -446,7 +446,7 @@ backend servers
 
 **AWS NLB + Proxy Protocol**
 Target Group settings: Proxy Protocol v2 Enabled.
-⚠️ NLB sends Proxy Protocol v2 (binary). Your backend MUST support v2.
+**WARNING:** NLB sends Proxy Protocol v2 (binary). Your backend MUST support v2.
 
 **Common Gotcha: Health Checks**
 NLB health checks do NOT send Proxy Protocol headers. If your backend requires Proxy Protocol on ALL connections, NLB health checks will fail.
@@ -585,7 +585,7 @@ IPVS mode is better for large clusters (O(1) connection forwarding).
 
 **NodePort**
 Opens a port (30000-32767) on every node.
-⚠️ **Double-hop problem**: Traffic hits Node A → Pod is on Node B. Extra hop, SNAT hides client IP.
+**WARNING:** **Double-hop problem**: Traffic hits Node A → Pod is on Node B. Extra hop, SNAT hides client IP.
 `externalTrafficPolicy: Local` preserves client IP (no SNAT), but if no pod is on that node, the connection is refused.
 
 **LoadBalancer**
