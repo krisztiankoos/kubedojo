@@ -45,28 +45,16 @@ After completing this module, you will be able to:
 
 ## Firmware Update Architecture
 
-```
-+---------------------------------------------------------------+
-|            FIRMWARE UPDATE PIPELINE (ZERO DOWNTIME)            |
-|                                                                |
-|  +---------+    +--------+    +----------+    +---------+     |
-|  | Cordon  |--->| Drain  |--->| Stage FW |--->| Reboot  |     |
-|  | Node    |    | Pods   |    | via      |    | into FW |     |
-|  |         |    |        |    | Redfish  |    | update  |     |
-|  +---------+    +--------+    +----------+    +---------+     |
-|                                                    |           |
-|  +---------+    +--------+    +----------+    +----v----+     |
-|  | Update  |<---| Verify |<---| Wait for |<---| Server  |     |
-|  | CMDB    |    | FW ver |    | node     |    | reboots |     |
-|  |         |    | via    |    | Ready    |    | with    |     |
-|  |         |    | IPMI   |    |          |    | new FW  |     |
-|  +---------+    +--------+    +----------+    +---------+     |
-|       |                                                        |
-|  +----v----+                                                   |
-|  |Uncordon |                                                   |
-|  | Node    |                                                   |
-|  +---------+                                                   |
-+---------------------------------------------------------------+
+```mermaid
+graph TD
+    A[Cordon Node] --> B[Drain Pods]
+    B --> C[Stage FW via Redfish]
+    C --> D[Reboot into FW update]
+    D --> E[Server reboots with new FW]
+    E --> F[Wait for node Ready]
+    F --> G[Verify FW ver via IPMI/Redfish]
+    G --> H[Update CMDB]
+    G --> I[Uncordon Node]
 ```
 
 ### Types of Firmware to Manage
@@ -227,27 +215,19 @@ done
 
 ### Key SMART Attributes to Monitor
 
-```
-+---------------------------------------------------------------+
-|            SMART ATTRIBUTES FOR PREDICTIVE FAILURE             |
-|                                                                |
-|  Attribute                   Warning Threshold  Action         |
-|  ------------------------------------------------------------ |
-|  Reallocated Sector Count    > 0                Monitor        |
-|  Reallocated Sector Count    > 100              Replace soon   |
-|  Current Pending Sectors     > 0                Investigate    |
-|  Offline Uncorrectable       > 0                Replace soon   |
-|  UDMA CRC Error Count        Rising             Check cable    |
-|  Wear Leveling (SSD)         < 10%              Plan replace   |
-|  Media Wearout (NVMe)        < 10%              Plan replace   |
-|                                                                |
-|  For NVMe drives, use:                                         |
-|  nvme smart-log /dev/nvme0n1                                   |
-|  Key field: percentage_used (replace at > 90%)                 |
-+---------------------------------------------------------------+
-```
+| Attribute | Warning Threshold | Action |
+|-----------|-------------------|--------|
+| Reallocated Sector Count | > 0 | Monitor |
+| Reallocated Sector Count | > 100 | Replace soon |
+| Current Pending Sectors | > 0 | Investigate |
+| Offline Uncorrectable | > 0 | Replace soon |
+| UDMA CRC Error Count | Rising | Check cable |
+| Wear Leveling (SSD) | < 10% | Plan replace |
+| Media Wearout (NVMe) | < 10% | Plan replace |
 
-> **Stop and think**: The SMART data shows `Reallocated_Sector_Count = 47` and `Current_Pending_Sector = 3`. The disk is part of a Ceph OSD. Should you replace it now or wait for it to fail completely? What is the risk of waiting?
+*For NVMe drives, use `nvme smart-log /dev/nvme0n1`. The key field is `percentage_used` (replace at > 90%).*
+
+> **Stop and think**: The SMART data shows `Reallocated_Sector_Count = 52` and `Current_Pending_Sector = 3`. The disk is part of a Ceph OSD. Should you replace it now or wait for it to fail completely? What is the risk of waiting?
 
 ### Disk Replacement Workflow (Ceph OSD)
 
@@ -302,37 +282,31 @@ A complete hardware lifecycle encompasses more than just maintenance windows:
 3. **Maintenance**: See the calendar below for routine operations.
 4. **Decommissioning**: Securely wipe disks using `nvme format` or `hdparm` secure erase. Remove the node from the cluster (`kubectl delete node`), revoke its certificates, and clear its BMC IP from the inventory database.
 
-## Building a Hardware Maintenance Calendar
+### Annual Hardware Maintenance Calendar
 
-```
-+---------------------------------------------------------------+
-|         ANNUAL HARDWARE MAINTENANCE CALENDAR                   |
-|                                                                |
-|  Monthly:                                                      |
-|  - SMART health check on all disks (automated)                 |
-|  - Review BMC event logs for warnings                          |
-|  - Check PSU redundancy status                                 |
-|                                                                |
-|  Quarterly:                                                    |
-|  - Apply critical firmware updates (BIOS, BMC)                 |
-|  - Review NIC firmware versions against vendor advisories      |
-|  - Test IPMI/Redfish connectivity to all BMCs                  |
-|  - Verify backup power (UPS battery tests)                     |
-|                                                                |
-|  Annually:                                                     |
-|  - Full hardware inventory audit                               |
-|  - Warranty status review (identify expiring warranties)       |
-|  - Thermal audit (clean dust filters, check airflow)           |
-|  - Cable audit (reseat suspect connections)                    |
-|  - Evaluate hardware refresh candidates                        |
-|                                                                |
-|  As-needed:                                                    |
-|  - Emergency firmware patches (CVEs)                           |
-|  - Disk replacements (SMART alerts)                            |
-|  - Memory DIMM replacements (ECC error alerts)                 |
-|  - PSU replacements (redundancy lost alerts)                   |
-+---------------------------------------------------------------+
-```
+**Monthly:**
+- SMART health check on all disks (automated)
+- Review BMC event logs for warnings
+- Check PSU redundancy status
+
+**Quarterly:**
+- Apply critical firmware updates (BIOS, BMC)
+- Review NIC firmware versions against vendor advisories
+- Test IPMI/Redfish connectivity to all BMCs
+- Verify backup power (UPS battery tests)
+
+**Annually:**
+- Full hardware inventory audit
+- Warranty status review (identify expiring warranties)
+- Thermal audit (clean dust filters, check airflow)
+- Cable audit (reseat suspect connections)
+- Evaluate hardware refresh candidates
+
+**As-needed:**
+- Emergency firmware patches (CVEs)
+- Disk replacements (SMART alerts)
+- Memory DIMM replacements (ECC error alerts)
+- PSU replacements (redundancy lost alerts)
 
 ---
 
@@ -389,12 +363,10 @@ groups:
 
 ## Did You Know?
 
-- **Dell ships approximately 50 BIOS updates per server model over its 5-year lifecycle.** Most are cumulative, so you do not need to apply every one -- but skipping more than 2-3 versions increases the risk of hitting a bug that was fixed in an intermediate release.
-
-- **Redfish was developed by the DMTF (Distributed Management Task Force) starting in 2014** as a replacement for IPMI, which was designed in 1998. While IPMI uses a binary protocol on port 623, Redfish uses HTTPS with JSON payloads. Most servers shipped after 2018 support both, but IPMI is being deprecated by major vendors.
-
-- **NVMe drives do not use SMART in the traditional sense.** They use the NVMe health log (`nvme smart-log`), which reports `percentage_used` -- a value that can exceed 100% because it measures total bytes written against the vendor's endurance rating. A drive at 150% used may still work fine but is operating beyond its warranty.
-
+- **Redfish was developed by the DMTF (Distributed Management Task Force) starting in 2014** as a replacement for IPMI. IPMI 2.0 (Revision 1.1, 2004) is the final major version and is now effectively frozen. Redfish uses HTTPS with JSON payloads (current base protocol specification DSP0266 is 1.23.1, dated December 2025). Modern BMCs like Dell iDRAC10, HPE iLO 6/7, and Lenovo XCC3 support both during this transition period, but IPMI is being aggressively deprecated.
+- **The Linux Vendor Firmware Service (LVFS)** and its client `fwupd` (latest stable 2.1.1, March 2026) have revolutionized Linux firmware management. LVFS has delivered over 100 million cumulative firmware updates from over 100 hardware vendors, allowing native in-band updates for components without requiring vendor-specific proprietary binaries.
+- **Microsoft's original UEFI Secure Boot certificates (2011 vintage)** begin expiring in June 2026. This requires a fleet-wide update to new 2023-vintage Certificate Authorities to ensure nodes can continue to boot secure operating systems. Planning rolling firmware updates is essential to distribute these new KEK and DB entries seamlessly.
+- **OpenBMC** (latest release 2.18, May 2025) is increasingly becoming the foundation for enterprise management controllers. For example, Lenovo's ThinkSystem V4 servers use XClarity Controller 3 (XCC3), which is fully OpenBMC-based.
 - **The "bathtub curve" describes hardware failure rates**: high failure rate in the first 90 days (infant mortality), low and stable for years (useful life), then rising failure rate as components age (wear-out). Plan your spare inventory accordingly -- you need more spares in the first quarter after a hardware refresh and in years 4-5 of the lifecycle.
 
 ---
@@ -424,111 +396,29 @@ You need to update the BIOS on 40 bare metal Kubernetes nodes to patch a critica
 
 **Plan: Rolling BIOS update, 4 nodes per day, completing in 10 working days.**
 
-**Calculation:**
-- Per node: drain (5 min) + stage firmware (2 min) + reboot (8 min) + verify (5 min) + uncordon (1 min) = ~21 min
-- With a 5-minute buffer between nodes: ~26 min per node
-- 4 nodes per day = ~2 hours of active maintenance per day
-- 40 nodes / 4 per day = 10 days (within 14-day deadline)
-
-**Why 4 per day, not more?**
-- Maintains spare capacity (90% of cluster remains available)
-- Allows monitoring between updates to catch issues early
-- If a node fails to return, you have time to investigate before the next batch
-
-**Procedure:**
-1. Stage firmware on all 40 BMCs via Redfish (can be done in parallel, no reboot needed)
-2. Each day: cordon, drain, reboot (triggers staged update), wait for Ready, verify BIOS version, uncordon
-3. Track progress in a spreadsheet: node, old version, new version, timestamp, status
-
-**Risk mitigation:**
-- Keep 2 buffer days (days 11-12) for failed updates
-- Have Dell/HPE support case pre-opened in case of boot failures
-- Test on 1 node from each hardware generation on day 1
+By limiting to 4 nodes per day, you maintain spare capacity so that 90% of the cluster remains available to handle peak loads. This batch size allows the team to actively monitor the cluster between updates and catch systemic issues early. If a node fails to return, such as hitting a known boot bug, you have sufficient time to investigate and resolve it before the next batch is processed. The calculation supports this: at ~25 minutes per node (including cordon, drain, staging, and reboot), 4 nodes take roughly 2 hours of active maintenance per day, comfortably meeting the 14-day compliance deadline while leaving a safe buffer.
 </details>
 
 ### Question 2
-A SMART check on `/dev/sdb` shows `Reallocated_Sector_Count = 47` and `Current_Pending_Sector = 3`. The disk is part of a Ceph OSD. What do you do?
+A SMART check on `/dev/sdb` shows `Reallocated_Sector_Count = 52` and `Current_Pending_Sector = 3`. The disk is part of a Ceph OSD. What do you do?
 
 <details>
 <summary>Answer</summary>
 
 **This disk is showing signs of imminent failure and should be replaced proactively.**
 
-**Interpretation:**
-- `Reallocated_Sector_Count = 47`: The drive has already remapped 47 bad sectors to spare sectors. This is not immediately fatal but indicates the media is degrading.
-- `Current_Pending_Sector = 3`: Three sectors have pending read errors that the drive cannot resolve. These will either be reallocated (if a write succeeds) or become `Offline_Uncorrectable` (data loss).
-
-**Action plan:**
-1. **Set Ceph noout** to prevent unnecessary rebalancing:
-   ```bash
-   ceph osd set noout
-   ```
-2. **Mark the OSD out** to begin data migration away from this disk:
-   ```bash
-   ceph osd out osd.X
-   ```
-3. **Wait for data to migrate** (watch `ceph -w` until all PGs are active+clean)
-4. **Purge the OSD**:
-   ```bash
-   ceph osd purge osd.X --yes-i-really-mean-it
-   ```
-5. **Replace the physical disk** (schedule datacenter hands if remote)
-6. **Create new OSD on replacement disk**:
-   ```bash
-   ceph-volume lvm create --data /dev/sdb
-   ```
-7. **Unset noout**:
-   ```bash
-   ceph osd unset noout
-   ```
-
-**Do not wait** for the disk to fail completely. With `Current_Pending_Sector > 0`, the risk of data unavailability increases with each day. Ceph's replication protects you, but only if you act before multiple disks fail.
+The presence of pending sectors means the drive is already struggling to read data, and waiting for a complete failure significantly increases the risk of data unavailability if another drive fails simultaneously. Ceph's replication protects your data, but that protection is only effective if you act decisively before multiple disks in the same placement group fail. You must immediately set the OSD to `noout`, mark it `down` and `out`, allow the data to safely migrate, and then purge the OSD before physically replacing the drive.
 </details>
 
 ### Question 3
-You are managing firmware updates for a mixed fleet: 20 Dell R640s, 15 Dell R740s, and 10 HPE DL380 Gen10s. Each vendor has different Redfish API endpoints. How do you handle this?
+You are managing firmware updates for a mixed fleet: 20 Dell 17th Gen (iDRAC10), 15 HPE ProLiant (iLO 6), and 10 Lenovo ThinkSystem V4 (XCC3). Each vendor has different Redfish API endpoints and authentication methods. How do you handle this?
 
 <details>
 <summary>Answer</summary>
 
 **Build an abstraction layer that maps vendor-specific APIs to a common interface.**
 
-**Approach:**
-1. **Create a hardware inventory database** (CMDB) with:
-   - Hostname, BMC IP, vendor, model, current firmware versions
-   - Redfish API base URL and credentials (from a secrets manager)
-
-2. **Write vendor-specific adapters:**
-   ```bash
-   # Dell iDRAC Redfish endpoint for BIOS update
-   POST /redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate
-
-   # HPE iLO Redfish endpoint for BIOS update
-   POST /redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate
-   # (Same standard endpoint, but authentication and image staging differ)
-   ```
-
-3. **Use a configuration file per vendor:**
-   ```yaml
-   vendors:
-     dell:
-       bios_uri: /redfish/v1/Systems/System.Embedded.1/Bios
-       update_uri: /redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate
-       auth_type: basic
-     hpe:
-       bios_uri: /redfish/v1/Systems/1/Bios
-       update_uri: /redfish/v1/UpdateService/Actions/UpdateService.SimpleUpdate
-       auth_type: session
-   ```
-
-4. **Alternatively, use existing tools:**
-   - **Dell**: `racadm` CLI or Dell OpenManage
-   - **HPE**: `ilorest` CLI or HPE OneView
-   - **Multi-vendor**: `sushy-tools` (OpenStack's Redfish library) or Ansible modules (`community.general.redfish_*`)
-
-5. **Test each vendor's update path independently** before running a mixed-fleet rolling update.
-
-The Redfish standard (DMTF) aims for vendor interoperability, but implementations diverge on authentication, image staging, and task tracking. Always test with actual hardware.
+You should build an abstraction layer that maps vendor-specific APIs to a common interface, usually driven by a hardware inventory database. The Redfish standard aims for vendor interoperability, but practical implementations often diverge slightly on authentication mechanics, image staging URLs, and task tracking polling. By utilizing an abstraction library like sushy-tools or building vendor-specific adapter scripts around a unified CMDB, you can normalize the deployment pipeline. This ensures your Kubernetes drain and cordon automation remains vendor-agnostic while the underlying adapters handle the specific quirks of iDRAC10, iLO 6, or XCC3.
 </details>
 
 ### Question 4
@@ -537,44 +427,9 @@ After a BIOS update, a server fails to boot and sits at a blank screen. The BMC 
 <details>
 <summary>Answer</summary>
 
-**Recovery options, in order of preference:**
+**Recovery options typically start with the least invasive remote methods and escalate to physical intervention.**
 
-1. **Roll back BIOS via BMC:**
-   ```bash
-   # Dell iDRAC: restore previous BIOS version
-   curl -sk -u admin:password \
-     -X POST \
-     "https://bmc-addr/redfish/v1/Managers/iDRAC.Embedded.1/Actions/Oem/DellManager.BIOSRollback"
-
-   # HPE iLO: BIOS has a backup ROM, boot from it
-   # Use iLO virtual console to select "Boot from Backup ROM"
-   ```
-
-2. **Use BMC virtual console + virtual media:**
-   - Mount a recovery ISO via iDRAC/iLO virtual media
-   - Boot from the ISO
-   - Flash the previous BIOS version from within the recovery environment
-
-3. **Reset BIOS to factory defaults:**
-   ```bash
-   # Via Redfish
-   curl -sk -u admin:password \
-     -X POST \
-     "https://bmc-addr/redfish/v1/Systems/1/Bios/Actions/Bios.ResetBios"
-   ```
-   This loses custom BIOS settings (boot order, SR-IOV, virtualization) but should make the server bootable.
-
-4. **Physical intervention:**
-   - Clear CMOS via jumper on the motherboard
-   - Requires datacenter hands or physical access
-
-**Impact on Kubernetes:**
-- The node was already drained before the BIOS update (if you followed the procedure)
-- Workloads are running on other nodes
-- No data loss (no pods were running on this node during the update)
-- You have time to recover without pressure
-
-**Prevention:** Always test BIOS updates on one node from each hardware generation before rolling to the fleet.
+Your first step should be to use the BMC's Redfish API or virtual console to trigger a BIOS rollback, as modern BMCs maintain a backup ROM specifically for this scenario. If the rollback fails, resetting the BIOS to factory defaults via the BMC often clears corrupted NVRAM state that prevents POST. You have time to execute these steps safely because the node was already cordoned and drained prior to the update, meaning no Kubernetes workloads are currently impacted by the outage.
 </details>
 
 ---
