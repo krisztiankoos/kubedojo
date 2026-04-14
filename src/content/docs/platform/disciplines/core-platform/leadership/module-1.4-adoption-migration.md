@@ -274,22 +274,11 @@ Mandates create compliance. Incentives create adoption. The difference matters.
 
 If you need teams off the old system, sunset it gradually:
 
-```
-Month 0:  Announce sunset timeline. New system available.
-          "Old system supported until Month 12."
-
-Month 3:  Reduce support for old system.
-          "Old system: community support only. No SLA."
-
-Month 6:  Stop adding features to old system.
-          "No new integrations for old CI. All new work on new CI."
-
-Month 9:  Begin decomissioning old system infrastructure.
-          "Old system: read-only access to build history."
-
-Month 12: Decommission old system.
-          "Old system offline. Migration assistance available."
-```
+- **Month 0:** Announce sunset timeline. New system available. *"Old system supported until Month 12."*
+- **Month 3:** Reduce support for old system. *"Old system: community support only. No SLA."*
+- **Month 6:** Stop adding features to old system. *"No new integrations for old CI. All new work on new CI."*
+- **Month 9:** Begin decommissioning old system infrastructure. *"Old system: read-only access to build history."*
+- **Month 12:** Decommission old system. *"Old system offline. Migration assistance available."*
 
 **Critical rule**: Never decommission the old system before you have migrated (or explicitly exempted) every team. Surprise decommissions destroy trust permanently.
 
@@ -314,48 +303,43 @@ Different changes require different communication strategies:
 
 Breaking changes are where platform teams lose the most trust. Follow this protocol:
 
-```
-Breaking Change Communication Plan
-════════════════════════════════════
+**Week -8: Discovery**
+- [ ] Identify all affected teams and services
+- [ ] Quantify migration effort per team
+- [ ] Create migration guide and tooling
+- [ ] Identify highest-risk teams
 
-Week -8: Discovery
-  [ ] Identify all affected teams and services
-  [ ] Quantify migration effort per team
-  [ ] Create migration guide and tooling
-  [ ] Identify highest-risk teams
+**Week -6: Announcement**
+- [ ] Email to all platform users with:
+  - What is changing
+  - Why it is changing
+  - Who is affected
+  - What they need to do
+  - Timeline
+  - Where to get help
+- [ ] Slack announcement in `#platform`
+- [ ] Offer 1:1 meetings with high-risk teams
 
-Week -6: Announcement
-  [ ] Email to all platform users with:
-      - What is changing
-      - Why it is changing
-      - Who is affected
-      - What they need to do
-      - Timeline
-      - Where to get help
-  [ ] Slack announcement in #platform
-  [ ] Offer 1:1 meetings with high-risk teams
+**Week -4: Support**
+- [ ] Workshop for teams that need help
+- [ ] Migration office hours (weekly)
+- [ ] Track migration progress per team
+- [ ] Identify and unblock stuck teams
 
-Week -4: Support
-  [ ] Workshop for teams that need help
-  [ ] Migration office hours (weekly)
-  [ ] Track migration progress per team
-  [ ] Identify and unblock stuck teams
+**Week -2: Final push**
+- [ ] Contact non-migrated teams directly
+- [ ] Offer white-glove migration assistance
+- [ ] Confirm rollback plan if needed
 
-Week -2: Final push
-  [ ] Contact non-migrated teams directly
-  [ ] Offer white-glove migration assistance
-  [ ] Confirm rollback plan if needed
+**Week 0: Change goes live**
+- [ ] Monitor for issues
+- [ ] Rapid response team on standby
+- [ ] Post-change verification with affected teams
 
-Week 0: Change goes live
-  [ ] Monitor for issues
-  [ ] Rapid response team on standby
-  [ ] Post-change verification with affected teams
-
-Week +1: Retrospective
-  [ ] Survey affected teams
-  [ ] Document lessons learned
-  [ ] Update communication template
-```
+**Week +1: Retrospective**
+- [ ] Survey affected teams
+- [ ] Document lessons learned
+- [ ] Update communication template
 
 ### Managing Organizational Resistance
 
@@ -384,41 +368,33 @@ Design a migration strategy for a realistic scenario:
 **Scenario**: Your organization has 20 development teams using Jenkins (self-hosted). You have built a new CI/CD platform based on GitHub Actions + ArgoCD. You need to migrate all 20 teams.
 
 **Step 1**: Choose a migration pattern
-```
-Selected pattern: [ ] Strangler Fig  [ ] Parallel Run
-                  [ ] Big Bang       [ ] Feature Flag
-Justification:
-```
+- [ ] Strangler Fig
+- [ ] Parallel Run
+- [ ] Big Bang
+- [ ] Feature Flag
+
+**Justification:** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Step 2**: Design the migration timeline
-```
-Phase 1 (Month 1-2): _______________
-  Teams: [which teams and why?]
-  Success criteria: _______________
-
-Phase 2 (Month 3-4): _______________
-  Teams: [which teams and why?]
-  Success criteria: _______________
-
-Phase 3 (Month 5-6): _______________
-  Teams: [which teams and why?]
-  Success criteria: _______________
-
-Sunset (Month 7-9): _______________
-  Old system: _______________
-```
+- **Phase 1 (Month 1-2):** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+  - Teams: [which teams and why?]
+  - Success criteria: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- **Phase 2 (Month 3-4):** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+  - Teams: [which teams and why?]
+  - Success criteria: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- **Phase 3 (Month 5-6):** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+  - Teams: [which teams and why?]
+  - Success criteria: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- **Sunset (Month 7-9):** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+  - Old system: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Step 3**: Identify risks
-```
-Risk 1: _______________
-  Mitigation: _______________
-
-Risk 2: _______________
-  Mitigation: _______________
-
-Risk 3: _______________
-  Mitigation: _______________
-```
+- **Risk 1:** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+  - Mitigation: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- **Risk 2:** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+  - Mitigation: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- **Risk 3:** \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+  - Mitigation: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Step 4**: Design the communication plan using the breaking change protocol above.
 
@@ -427,22 +403,22 @@ Risk 3: _______________
 Practice handling the 6 types of resistance. For each scenario, write your response:
 
 **Scenario A** (risk-averse): "We handle patient data. We can't afford any downtime during migration."
-Your response: _______________
+Your response: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Scenario B** (capacity-constrained): "We're 3 weeks from our product launch. We can't migrate now."
-Your response: _______________
+Your response: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Scenario C** (comfortable): "Our setup works fine. We've been using it for 3 years."
-Your response: _______________
+Your response: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Scenario D** (bad experience): "Last time we migrated to your platform, we had 4 hours of downtime."
-Your response: _______________
+Your response: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Scenario E** (legitimate concern): "We use custom build steps that your new platform doesn't support."
-Your response: _______________
+Your response: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 **Scenario F** (political): "We've evaluated GitHub Actions and we prefer GitLab CI. We want to use our own."
-Your response: _______________
+Your response: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 For each response, check:
 - [ ] Did you acknowledge their concern?
@@ -454,41 +430,36 @@ For each response, check:
 
 Design a dashboard that tracks platform adoption:
 
-```
-PLATFORM ADOPTION DASHBOARD - [Platform Name]
-═══════════════════════════════════════════════
+**Overall Adoption**
+- Teams on platform: \_\_\_/\_\_\_ (\_\_\_%)
+- Services on platform: \_\_\_/\_\_\_ (\_\_\_%)
+- Deploys via platform (last 30d): \_\_\_/\_\_\_ (\_\_\_%)
 
-Overall Adoption
-  Teams on platform: ___/___  (___%)
-  Services on platform: ___/___  (___%)
-  Deploys via platform (last 30d): ___/___  (___%)
+**Adoption Trend (weekly)**
+- Week 1: \_\_\_%
+- Week 2: \_\_\_%
+- Week 3: \_\_\_%
+- Week 4: \_\_\_%
+- Trend: [ ] Growing  [ ] Flat  [ ] Declining
 
-Adoption Trend (weekly)
-  Week 1: ___%
-  Week 2: ___%
-  Week 3: ___%
-  Week 4: ___%
-  Trend: [ ] Growing  [ ] Flat  [ ] Declining
+**Migration Health**
+- Teams migrated this month: \_\_\_
+- Teams in-progress: \_\_\_
+- Teams blocked: \_\_\_
+- Average migration time: \_\_\_ days
 
-Migration Health
-  Teams migrated this month: ___
-  Teams in-progress: ___
-  Teams blocked: ___
-  Average migration time: ___ days
+**Adoption by Team**
 
-Adoption by Team
-  ┌────────────────┬──────────┬──────────┬──────────┐
-  │ Team           │ Status   │ Services │ Blockers │
-  ├────────────────┼──────────┼──────────┼──────────┤
-  │                │          │          │          │
-  └────────────────┴──────────┴──────────┴──────────┘
+| Team | Status | Services | Blockers |
+|------|--------|----------|----------|
+|      |        |          |          |
+|      |        |          |          |
 
-Satisfaction (migrated teams)
-  Overall: ___/5
-  Migration experience: ___/5
-  Platform reliability: ___/5
-  Support quality: ___/5
-```
+**Satisfaction (migrated teams)**
+- Overall: \_\_\_/5
+- Migration experience: \_\_\_/5
+- Platform reliability: \_\_\_/5
+- Support quality: \_\_\_/5
 
 Identify which metrics you would check daily vs weekly vs monthly.
 
@@ -496,43 +467,39 @@ Identify which metrics you would check daily vs weekly vs monthly.
 
 For your current or planned platform migration, assess each ADKAR stage:
 
-```
-ADKAR Assessment - [Migration Name]
-═════════════════════════════════════
+**AWARENESS (Do teams know why we're changing?)**
+- Score (1-5): \_\_\_
+- Evidence: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Gap: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Action: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-AWARENESS (Do teams know why we're changing?)
-  Score (1-5): ___
-  Evidence: _______________
-  Gap: _______________
-  Action: _______________
+**DESIRE (Do teams want to change?)**
+- Score (1-5): \_\_\_
+- Evidence: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Gap: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Action: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-DESIRE (Do teams want to change?)
-  Score (1-5): ___
-  Evidence: _______________
-  Gap: _______________
-  Action: _______________
+**KNOWLEDGE (Do teams know how to change?)**
+- Score (1-5): \_\_\_
+- Evidence: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Gap: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Action: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-KNOWLEDGE (Do teams know how to change?)
-  Score (1-5): ___
-  Evidence: _______________
-  Gap: _______________
-  Action: _______________
+**ABILITY (Can teams actually do it?)**
+- Score (1-5): \_\_\_
+- Evidence: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Gap: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Action: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-ABILITY (Can teams actually do it?)
-  Score (1-5): ___
-  Evidence: _______________
-  Gap: _______________
-  Action: _______________
+**REINFORCEMENT (Will teams stick with it?)**
+- Score (1-5): \_\_\_
+- Evidence: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Gap: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Action: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
-REINFORCEMENT (Will teams stick with it?)
-  Score (1-5): ___
-  Evidence: _______________
-  Gap: _______________
-  Action: _______________
-
-Weakest stage: _______________
-Priority action: _______________
-```
+**Summary:**
+- Weakest stage: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+- Priority action: \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
 
 ---
 
