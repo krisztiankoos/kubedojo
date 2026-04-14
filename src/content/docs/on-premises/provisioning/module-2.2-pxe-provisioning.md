@@ -13,7 +13,7 @@ sidebar:
 
 In August 2012, Knight Capital Group deployed a new software update to their SMARS high-frequency trading servers. Because the deployment and configuration process involved manual steps instead of an automated, strictly declarative provisioning pipeline, a technician missed one of the eight core servers. The stale code on that single server went rogue, causing erratic trading behavior that resulted in a staggering loss of $460 million in just 45 minutes, leading directly to the subsequent bankruptcy of the firm. 
 
-While Knight Capital's failure manifested at the application layer, the root cause—manual, inconsistent server configuration—plagues infrastructure teams daily. When you purchase 20 bare-metal servers for a Kubernetes cluster, they arrive as completely blank hardware. On-premises, you must solve the fundamental bootstrapping problem: how do you install an operating system on 20 servers that have no OS, ensuring absolute consistency across the entire fleet?
+While Knight Capital's failure manifested at the application layer, the root cause—manual, inconsistent server configuration—plagues infrastructure teams daily. When you purchase 20 bare-metal servers for a Kubernetes v1.35 cluster, they arrive as completely blank hardware. On-premises, you must solve the fundamental bootstrapping problem: how do you install an operating system on 20 servers that have no OS, ensuring absolute consistency across the entire fleet?
 
 You could walk to each server with a bootable USB stick. For three servers, this is annoying but workable. For 20 servers, it is a full day of repetitive, error-prone work. For 200 servers, it is impossible. Furthermore, every time you need to reprovision a node—after a hardware failure, a security incident, or a major Kubernetes version upgrade—you would need to perform this manual process again. 
 
@@ -98,9 +98,9 @@ sudo apt-get install -y dnsmasq
 sudo mkdir -p /srv/tftp/pxelinux.cfg
 sudo mkdir -p /srv/http/ubuntu
 
-# Download Ubuntu 22.04 server ISO and extract
-wget https://releases.ubuntu.com/22.04/ubuntu-22.04-live-server-amd64.iso
-sudo mount -o loop ubuntu-22.04-live-server-amd64.iso /mnt
+# Download Ubuntu 24.04 server ISO and extract
+wget https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso
+sudo mount -o loop ubuntu-24.04-live-server-amd64.iso /mnt
 sudo cp -r /mnt/* /srv/http/ubuntu/
 sudo umount /mnt
 
@@ -211,7 +211,7 @@ autoinstall:
   ssh:
     install-server: true
     authorized-keys:
-      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGx... admin@kubedojo
+      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGx... admin@kubedojo.local
 
   # Packages for Kubernetes
   packages:
@@ -293,7 +293,7 @@ sudo snap install maas --channel=3.7
 
 # Initialize
 sudo maas init region+rack \
-  --database-uri "postgres://maas:password @localhost/maas"
+  --database-uri "postgres://maas:password@localhost/maas"
 
 # Create admin user
 sudo maas createadmin \
@@ -351,7 +351,7 @@ spec:
     instance:
       hostname: k8s-worker-01
       operating_system:
-        slug: ubuntu_22_04
+        slug: ubuntu_24_04
   interfaces:
     - dhcp:
         mac: "aa:bb:cc:dd:ee:01"
@@ -379,7 +379,7 @@ spec:
             image: quay.io/tinkerbell-actions/image2disk:v3.0.0
             timeout: 600
             environment:
-              IMG_URL: http://10.0.5.1/images/ubuntu-22.04.raw.gz
+              IMG_URL: http://10.0.5.1/images/ubuntu-24.04.raw.gz
               DEST_DISK: /dev/sda
               COMPRESSED: true
           - name: install-containerd
@@ -437,12 +437,12 @@ sudo apt-get install -y dnsmasq nginx qemu-kvm
 # Create TFTP directory
 sudo mkdir -p /srv/tftp
 
-# Download Ubuntu 22.04 Live Server ISO and extract boot files
+# Download Ubuntu 24.04 Live Server ISO and extract boot files
 # Note: Canonical removed debian-installer netboot images after 20.04.
 # Extract vmlinuz and initrd from the ISO's casper directory instead.
-wget https://releases.ubuntu.com/22.04/ubuntu-22.04.5-live-server-amd64.iso
+wget https://releases.ubuntu.com/24.04/ubuntu-24.04-live-server-amd64.iso
 sudo mkdir -p /mnt/iso
-sudo mount -o loop ubuntu-22.04.5-live-server-amd64.iso /mnt/iso
+sudo mount -o loop ubuntu-24.04-live-server-amd64.iso /mnt/iso
 sudo cp /mnt/iso/casper/vmlinuz /srv/tftp/vmlinuz
 sudo cp /mnt/iso/casper/initrd /srv/tftp/initrd
 sudo umount /mnt/iso
