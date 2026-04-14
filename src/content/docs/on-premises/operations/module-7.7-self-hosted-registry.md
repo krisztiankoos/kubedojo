@@ -19,9 +19,9 @@ sidebar:
 
 ## The Operational Reality of Bare Metal Registries
 
-Running the upstream `distribution/distribution` (formerly Docker Registry `v2`) as a standalone pod is insufficient for production. A practitioner-grade registry requires Role-Based Access Control (RBAC), automated vulnerability scanning, artifact signing, replication, and high availability. 
+Running the upstream `distribution/distribution` (formerly Docker Registry) as a standalone pod is insufficient for production. With the release of Docker Registry v3.0.0, the project marked its first stable v3 release and notably removed support for older storage drivers like `oss` and `swift`, solidifying the need for modern object storage. A practitioner-grade registry requires Role-Based Access Control (RBAC), automated vulnerability scanning, artifact signing, replication, and high availability.
 
-On bare metal, you do not have AWS ECR or GCP Artifact Registry. You are responsible for the metadata database, the caching layer, the storage backend, and the ingress routing for potentially gigabytes of concurrent image layer pulls during a cluster-wide horizontal pod autoscaling (HPA) event.
+The OCI Distribution Specification (marked as Standards Track with a published metadata date of November 2025) defines a standardized API protocol for distributing OCI content, closely related to the OCI image format and runtime specifications. On bare metal, you do not have AWS ECR or GCP Artifact Registry abstracting this away. You are responsible for the metadata database, the caching layer, the storage backend, and the ingress routing for potentially gigabytes of concurrent image layer pulls during a cluster-wide horizontal pod autoscaling (HPA) event.
 
 ### Platform Comparisons
 
@@ -29,7 +29,7 @@ When selecting a registry for on-premises deployment, the choice dictates your m
 
 | Feature | Harbor | Quay | Zot | GitLab Registry |
 | :--- | :--- | :--- | :--- | :--- |
-| **Origin / Backer** | CNCF Graduated (VMware/Broadcom) | Red Hat | CNCF Incubating (Cisco) | GitLab |
+| **Origin / Backer** | CNCF Graduated (Accepted 2018-07-31, Graduated 2020-06-15) | Red Hat | CNCF Incubating (Cisco) | GitLab |
 | **Architecture** | Microservices (Registry, Core, Jobservice, Database, Redis) | Microservices (Quay, Clair, Postgres, Redis) | Single Go Binary | Integrated with GitLab monolith |
 | **Scanning** | Pluggable (Trivy default, Clair optional) | Clair (tightly integrated) | Trivy (built-in via extensions) | Trivy / GitLab Secure |
 | **Storage Backend** | S3, GCS, Azure, Swift, OSS, local | S3, GCS, Azure, Swift, RadosGW, local | Local filesystem, S3 | S3, GCS, Azure, local |
@@ -61,7 +61,24 @@ graph TD
 5.  **Cache/Queue (Redis):** Caches layer metadata and coordinates asynchronous jobs like replication, garbage collection, and scanning.
 6.  **Storage Backend:** Stores the immutable blobs (layers) and manifests. On bare metal, this should strictly be an S3-compatible endpoint (Ceph RadosGW or MinIO). **Do not use NFS for registry storage**; concurrent read/write locking issues on NFS will corrupt your registry state or cause severe latency spikes during layer pulls.
 
+### Authentication and Image Pulling Behavior
+
+When integrating your self-hosted registry with Kubernetes, you must handle authentication securely and understand how the kubelet caches and requests images. 
+
+Starting with Kubernetes v1.26, the legacy image credential mechanism was removed. You must now use kubelet credential provider configuration or attach `imagePullSecrets` to your Pods or ServiceAccounts. Registry authentication is stored as a Kubernetes Secret. You should use `kubectl create secret docker-registry`, which creates the recommended `kubernetes.io/dockerconfigjson` secret type (superseding the legacy `kubernetes.io/dockercfg`).
+
+> **Stop and think**: If you define an `imagePullSecret` in the `default` namespace, can a Pod in the `production` namespace use it to pull an image?
+
+Crucially, `imagePullSecrets` entries must reference Secrets in the *same namespace* as the Pod, and they are used directly by the kubelet to authenticate to private registries. To reduce operational toil, these credentials can be attached via a ServiceAccount-level `imagePullSecrets`, which are then automatically inherited by any Pods created with that ServiceAccount. Even for edge workloads or control plane components running as static Pods, `imagePullSecrets` and pre-pulled image approaches are fully supported for private registry access.
+
+Understanding the kubelet's image pulling behavior is equally important:
+* When `imagePullPolicy` is omitted, Kubernetes defaults it to `Always` for `:latest` tags or untagged images. It sets it to `IfNotPresent` for digest-based or tagged non-latest images. Once set, this policy is immutable for the life of the Pod, even if the tag changes in the registry.
+* With a policy of `IfNotPresent` or `Never`, the kubelet prefers local cached images. If you use cache-based strategies for private registry-driven pods, you must ensure all nodes share identical pre-pulled images.
+* To secure this caching layer, Kubernetes v1.35 introduces the `KubeletEnsureSecretPulledImages` feature (beta, enabled by default), which strictly validates credentials when pre-pulled images are used, preventing unauthorized pods from accessing cached images originating from a private registry.
+
 ### Pull-Through Caching (Proxy Cache)
+
+> **Pause and predict**: If your bare metal cluster scales out from 10 to 100 nodes, and every node attempts to pull the exact same 1GB image from Docker Hub simultaneously, what happens to your corporate firewall and external IP reputation?
 
 Upstream rate limits (e.g., Docker Hub's 100 pulls per 6 hours per IP) will break bare metal clusters where all egress traffic NATs through a single IP address. 
 
@@ -106,6 +123,10 @@ In this lab, we will deploy a lightweight instance of Harbor on a local `kind` c
 *   `kubectl` and `helm` installed.
 *   `docker` CLI installed.
 *   `cosign` CLI installed (`brew install cosign` or download binary).
+
+According to official installation guidance, Harbor can be deployed via Docker Compose or Kubernetes using Helm. The documented minimum resource and platform requirements include at least 2 CPU, 4 GB RAM, and a 40 GB disk. The host must run Docker Engine >20.10 and Docker Compose >2.3, and requires ports 80 and 443 to be open for registry and API access.
+
+*Note: For reference, Harbor's edge documentation branch currently indicates `2.14.0`, while the release history lists `v2.14.1` as the latest stable entry and `v2.14.2-rc1` as a pre-release.*
 
 ### Step 1: Provision the Cluster
 
@@ -301,43 +322,43 @@ Your organization restricts all bare metal nodes from communicating directly wit
 *   C) Configure registry mirrors in `/etc/containerd/config.toml` on all cluster nodes to intercept pulls for `docker.io` and route them to your internal Harbor Proxy Cache.
 *   D) Set `imagePullPolicy: Always` and configure the kubelet with a global HTTP_PROXY environment variable pointing to Harbor.
 
-*Correct Answer: C* (Configuring the containerd mirror allows the runtime to transparently rewrite `docker.io` requests to the internal cache without modifying the deployment YAML.)
+*Correct Answer: C* (Configuring the containerd mirror allows the runtime to transparently rewrite `docker.io` requests to the internal cache without modifying the deployment YAML. This means the deployment manifests remain clean and portable across environments. The container runtime seamlessly handles the interception and routing to your internal Harbor Proxy Cache, fully satisfying the air-gapped node requirements without introducing developer friction.)
 
 **Question 2**
-During a routine operational check, you notice that your Harbor S3 bucket (MinIO) is consuming 5TB of data, but querying the Harbor API shows total project quotas utilizing only 1TB. You have recently deleted hundreds of old image tags. What is the most likely cause?
+During a routine operational check, you notice that your Harbor S3 bucket (MinIO) is consuming 5TB of data, but querying the Harbor API shows total project quotas utilizing only 1TB. You have recently deleted hundreds of old image tags via the Harbor UI. What is the most likely cause?
 *   A) Trivy is storing its vulnerability database updates in the S3 bucket.
 *   B) You deleted the tags, but Garbage Collection has not been executed to prune the unreferenced layer blobs from the storage backend.
 *   C) Cosign signatures are taking up 4TB of space because they are not compressed.
 *   D) The PostgreSQL database transaction logs have expanded and are writing backups to the S3 bucket automatically.
 
-*Correct Answer: B* (Deleting a tag only removes the metadata pointer. The actual layer blobs remain in storage until the registry runs a Garbage Collection job to identify and delete unreferenced blobs.)
+*Correct Answer: B* (Deleting an image tag in a container registry only removes the metadata pointer stored within the registry database. The actual layer blobs remain in the underlying S3 storage backend to support efficient layer sharing across different images. Reclaiming this physical storage capacity requires explicitly executing a Garbage Collection (GC) job, which scans for and permanently deletes unreferenced blobs from the S3 bucket.)
 
 **Question 3**
-You are designing a high-availability registry for a bare-metal edge environment with extreme resource constraints (only 2 CPU cores and 4GB RAM available for the registry). You require OCI artifact support and basic pull-through caching, but do not need a web UI or complex RBAC. Which registry is the most appropriate choice?
+You are designing a high-availability registry for a bare-metal edge environment with extreme resource constraints. The available hardware only provides 2 CPU cores and 4GB RAM for the entire registry infrastructure. You require OCI artifact support and basic pull-through caching, but do not need a web UI or complex RBAC. Which registry is the most appropriate choice?
 *   A) Harbor
 *   B) GitLab Container Registry
 *   C) Quay
 *   D) Zot
 
-*Correct Answer: D* (Zot is a single Go binary designed specifically to be an OCI-native, extremely lightweight registry, making it ideal for edge environments where microservice architectures like Harbor or Quay are too heavy.)
+*Correct Answer: D* (Zot is intentionally designed as a single Go binary to function as an OCI-native, extremely lightweight registry. This minimal architectural footprint makes it the ideal solution for edge environments where hardware is severely constrained. In contrast, microservice-based architectures like Harbor or Quay require significant operational overhead, including separate databases and Redis instances, which would immediately overwhelm a strict 2 CPU and 4GB RAM allocation.)
 
 **Question 4**
-A developer pushes `app:v1.0.0`, signs it using Cosign, and verifies the signature exists in Harbor. The next day, another developer overwrites `app:v1.0.0` with a new, malicious image containing cryptominers. What happens to the signature?
-*   A) The signature remains valid because it is linked to the tag `v1.0.0`.
+A developer pushes `app:v1.0.0`, signs it using Cosign, and verifies the signature exists in Harbor. The next day, a compromised pipeline overwrites the `app:v1.0.0` tag with a new, malicious image containing cryptominers. What happens to the cryptographic signature?
+*   A) The signature remains valid because it is linked to the text tag `v1.0.0`.
 *   B) The signature is automatically transferred to the new image because Cosign trusts the Harbor admin account.
 *   C) The signature becomes invalid for the new image because the signature is cryptographically bound to the immutable digest (`sha256:...`) of the original image, not the mutable tag.
-*   D) Harbor will reject the push of the malicious image because the tag `v1.0.0` is permanently locked once signed.
+*   D) Harbor will natively reject the push of the malicious image because the tag `v1.0.0` is permanently locked once signed.
 
-*Correct Answer: C* (Cosign signs the specific digest of the image layer configuration. If the tag is overwritten with new layers, the digest changes, and the original signature no longer matches the new image.)
+*Correct Answer: C* (Cosign cryptographic signatures are intrinsically bound to the immutable digest of the specific image layer configuration, rather than the mutable string tag. When the tag is overwritten with malicious layers, the underlying computed digest fundamentally changes. Because the original cryptographic signature does not match this new digest, the malicious image will immediately fail verification, thereby protecting the deployment environment from the compromised pipeline.)
 
 **Question 5**
-You have configured Harbor to prevent pulling images with `CRITICAL` vulnerabilities. A pod scaling event triggers, and the kubelet attempts to pull an image that was pushed 6 months ago. The pull is rejected by Harbor, citing a critical vulnerability, even though the image passed its scan when it was originally pushed. Why did this happen?
+You have configured Harbor with a project-level policy to prevent pulling images with `CRITICAL` vulnerabilities. A pod scaling event triggers, and the kubelet attempts to pull an image that was pushed and scanned clean 6 months ago. The pull is rejected by Harbor at the API level, citing a critical vulnerability. Why did this happen?
 *   A) The original Trivy scan results expired after 90 days and defaulted to a failed state.
 *   B) A scheduled Trivy scan ran recently, utilizing an updated vulnerability database, and identified a newly disclosed CVE in the dormant image.
 *   C) The containerd runtime on the node has its own vulnerability scanner that rejected the layer extraction.
 *   D) The Harbor database lost connection to Redis, causing the policy engine to fail open and reject all pulls.
 
-*Correct Answer: B* (Vulnerability databases update daily. Scheduled scans re-evaluate existing images against the latest CVE definitions. An image clean 6 months ago may contain software that has since been discovered as vulnerable.)
+*Correct Answer: B* (Vulnerability databases are continuously updated by security researchers as new exploits are discovered in existing software packages. Scheduled periodic scans in Harbor re-evaluate all stored images against the latest CVE definitions, regardless of when they were originally pushed. An image that was perfectly clean six months ago likely contains software packages that have since been identified as vulnerable, prompting the policy engine to correctly block the deployment.)
 
 ## Further Reading
 
