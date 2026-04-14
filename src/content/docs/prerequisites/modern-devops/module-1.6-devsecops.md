@@ -117,6 +117,8 @@ The container image is the foundational artifact of cloud-native deployments. A 
 
 ### 1. Image Security and Minimal Attack Surfaces
 
+> **Pause and predict**: If a container runs as root by default, what happens when an attacker finds a remote code execution (RCE) vulnerability in your application?
+
 Consider a standard development practice: using a full-featured base image like `ubuntu:latest`. While convenient because it contains every utility a developer might need (like `curl`, `wget`, `netcat`, and package managers), it is a security nightmare. If an attacker gains shell execution inside the container, they have immediate access to all these tools to download malicious payloads or map the internal network.
 
 Furthermore, running the main process as the root user inside the container means that if the kernel isolation boundaries are bypassed, the attacker has root access on the host node.
@@ -255,6 +257,8 @@ By setting the `enforce: restricted` label, the Kubernetes API server will activ
 A perennial challenge in declarative infrastructure is handling secrets (passwords, API tokens, TLS certificates). Because GitOps mandates that all cluster state should be declared in version control, teams often struggle with where to store the sensitive data that enables the applications to connect to databases or third-party APIs.
 
 ### The Fundamental Problem
+
+> **Stop and think**: If a developer Base64 encodes a password and commits it as a Kubernetes Secret to a public Git repository, what is the immediate consequence?
 
 ```yaml
 # NEVER DO THIS
