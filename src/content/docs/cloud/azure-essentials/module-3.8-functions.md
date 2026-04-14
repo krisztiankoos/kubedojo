@@ -85,6 +85,24 @@ az functionapp create \
   --functions-version 4 \
   --name kubedojo-premium-func \
   --storage-account "$STORAGE_NAME"
+
+# Configure VNet integration for secure internal access
+az functionapp vnet-integration add \
+  --resource-group myRG \
+  --name kubedojo-premium-func \
+  --vnet myVNet \
+  --subnet mySubnet
+
+# Create a Flex Consumption plan Function App
+az functionapp create \
+  --resource-group myRG \
+  --name kubedojo-flex-func \
+  --location eastus2 \
+  --flexconsumption-location eastus2 \
+  --runtime python \
+  --runtime-version 3.11 \
+  --functions-version 4 \
+  --storage-account "$STORAGE_NAME"
 ```
 
 ### Understanding Cold Start
@@ -231,6 +249,17 @@ def process_upload(inputBlob: func.InputStream, outputQueue: func.Out[str]) -> N
     # Send result to queue via output binding
     outputQueue.set(json.dumps(result))
     logging.info(f"Result queued for {inputBlob.name}")
+```
+
+```python
+# Service Bus queue trigger
+@app.service_bus_queue_trigger(
+    arg_name="msg",
+    queue_name="orders",
+    connection="ServiceBusConnection"
+)
+def process_service_bus(msg: func.ServiceBusMessage) -> None:
+    logging.info(f"Processing Service Bus message: {msg.get_body().decode('utf-8')}")
 ```
 
 ### Deploying Functions
@@ -383,6 +412,33 @@ az functionapp config appsettings set \
 
 # Enable managed identity for Key Vault access
 az functionapp identity assign --resource-group myRG --name kubedojo-func-xxxx
+```
+
+### Performance and host.json Configuration
+
+You can optimize performance and control scaling behavior by configuring `host.json`. This is where you define concurrency limits, batch sizes, and scale-out rules for different trigger types.
+
+```json
+{
+  "version": "2.0",
+  "concurrency": {
+    "dynamicConcurrencyEnabled": true,
+    "snapshotPersistenceEnabled": true
+  },
+  "extensions": {
+    "serviceBus": {
+      "messageHandlerOptions": {
+        "maxConcurrentCalls": 16,
+        "maxAutoRenewDuration": "00:05:00"
+      }
+    },
+    "http": {
+      "routePrefix": "api",
+      "maxConcurrentRequests": 100,
+      "maxOutstandingRequests": 200
+    }
+  }
+}
 ```
 
 ### Authentication and Authorization
