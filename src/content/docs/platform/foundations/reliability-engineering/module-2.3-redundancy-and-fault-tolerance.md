@@ -536,6 +536,8 @@ flowchart LR
 | Scaling | Limited | Horizontal |
 | Cost efficiency | Lower | Higher |
 
+> **Stop and think**: If an active-active architecture utilizes 100% of available resources and offers instant failover, why wouldn't you use it for every single database in your system? Consider the complexity of distributed state and data replication conflicts.
+
 > **Did You Know?**
 >
 > Most cloud load balancers use active-active architecture internally. AWS ELB, for example, runs across multiple availability zones with all nodes active. When one fails, traffic is simply not sent there—no failover needed because there's no single "active" node.
@@ -589,7 +591,7 @@ If Pod A fails:
 - New pod scheduled automatically
 
 ```yaml
-# Kubernetes deployment with redundancy
+# Kubernetes deployment with redundancy (Tested on K8s v1.35)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -678,6 +680,8 @@ flowchart LR
     CB -- CLOSED --> Svc[Service]
     CB -- OPEN --> Fallback[Fallback Response<br>cached data, default error]
 ```
+
+> **Pause and predict**: In the circuit breaker pattern, what happens if the fallback response itself depends on a service that is currently experiencing an outage?
 
 > **Try This (3 minutes)**
 >
@@ -871,7 +875,7 @@ flowchart LR
    <details>
    <summary>Answer</summary>
 
-   The team ignored the physical limitations of network latency and the speed of light, which dictate that cross-country network trips take significantly longer than intra-region trips. By mandating synchronous replication to a region 3,000 miles away, every single database write was forced to wait for a 60-80 millisecond round-trip acknowledgment from `us-west-2` before the application could confirm the transaction. This massive increase in latency caused database transaction locks to be held longer, connection pools to exhaust rapidly, and web requests to hit their timeout thresholds, ultimately degrading the entire platform's performance. They should have used asynchronous replication or designed the application to handle eventual consistency across regions.
+   The team ignored the physical limitations of network latency and the speed of light, which dictate that cross-country network trips take significantly longer than intra-region trips. By mandating synchronous replication to a region 3,000 miles away, every single database write was forced to wait for a 60-80 millisecond round-trip acknowledgment from `us-west-2` before the application could confirm the transaction. This massive increase in latency caused database transaction locks to be held longer, connection pools to exhaust rapidly, and web requests to hit their timeout thresholds, ultimately degrading the entire platform's performance. They should have used asynchronous replication or designed the application to handle eventual consistency across regions to avoid coupling their primary region's availability to a distant geographic location.
    </details>
 
 ---
@@ -886,7 +890,7 @@ flowchart LR
 # Create namespace
 kubectl create namespace redundancy-lab
 
-# Create a deployment with redundancy
+# Create a deployment with redundancy (Requires K8s v1.35+)
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
 kind: Deployment
@@ -989,7 +993,7 @@ kubectl delete pod -n redundancy-lab -l app=web-app \
 **Part D: Test PodDisruptionBudget (5 minutes)**
 
 ```bash
-# Add a PodDisruptionBudget
+# Add a PodDisruptionBudget (Requires K8s v1.35+)
 cat <<EOF | kubectl apply -f -
 apiVersion: policy/v1
 kind: PodDisruptionBudget
