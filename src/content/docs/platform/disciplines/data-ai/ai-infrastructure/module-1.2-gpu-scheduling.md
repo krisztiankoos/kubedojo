@@ -465,7 +465,7 @@ MPS is particularly effective for inference workloads where:
 
 ### The Next Generation
 
-Dynamic Resource Allocation (DRA) is a Kubernetes API (beta in 1.32) that reimagines how devices are managed. Instead of the Device Plugin API's simple "advertise N identical devices" model, DRA introduces:
+Dynamic Resource Allocation (DRA) is a Kubernetes API (beta since v1.32 and supported in v1.35) that reimagines how devices are managed. Instead of the Device Plugin API's simple "advertise N identical devices" model, DRA introduces:
 
 - **Structured parameters**: Pods describe device requirements (memory, compute), not just counts
 - **Claim-based allocation**: Similar to PersistentVolumeClaims for storage
@@ -539,7 +539,7 @@ spec:
 | Fractional allocation | No (requires MIG/time-slicing hacks) | Yes (native) |
 | Topology awareness | No | Yes (built-in) |
 | Admin policies | None | DeviceClasses define allowed configs |
-| API maturity | Stable (v1) | Beta (v1beta1 in K8s 1.32) |
+| API maturity | Stable (v1) | Beta (v1beta1 since K8s v1.32) |
 | NVIDIA support | Full | nvidia-dra-driver available |
 
 DRA is the future of GPU scheduling in Kubernetes. As it matures, expect it to replace the combination of Device Plugin + time-slicing + MIG management with a single, unified API.
@@ -615,7 +615,7 @@ nvidia-smi topo -m
 
 ### The Topology Manager
 
-Kubernetes includes a **Topology Manager** (stable since 1.27) that aligns resource allocations with NUMA topology. Enable it in kubelet config:
+Kubernetes includes a **Topology Manager** (stable since v1.27) that aligns resource allocations with NUMA topology. Enable it in kubelet config:
 
 ```yaml
 # /var/lib/kubelet/config.yaml
@@ -739,9 +739,7 @@ Your company has 10 A100-80GB GPUs. The data science director demands support fo
 <details>
 <summary>Show Answer</summary>
 
-You must tailor the partitioning strategy to the specific isolation and compute needs of each workload. First, dedicate 4 full GPUs to the 4 training jobs (no sharing), as training requires maximum compute and memory bandwidth without context-switching overhead.
-
-Next, configure 3 GPUs with the MIG `1g.10gb` profile. This yields 21 hardware-isolated instances (7 per GPU), providing the 20 inference models with the strict latency guarantees and dedicated VRAM they require, with 1 spare instance. Finally, configure the remaining 3 GPUs with time-slicing set to `replicas: 10`. This creates 30 virtual GPUs for the interns' notebooks, which is acceptable since interactive work is bursty and tolerates the lack of memory isolation and occasional latency spikes.
+You must tailor the partitioning strategy to the specific isolation and compute needs of each workload. First, dedicate 4 full GPUs to the 4 training jobs (no sharing), as training requires maximum compute and memory bandwidth without context-switching overhead. Next, configure 3 GPUs with the MIG `1g.10gb` profile to yield 21 hardware-isolated instances. This provides the 20 inference models with the strict latency guarantees and dedicated VRAM they require, leaving 1 spare instance. Finally, configure the remaining 3 GPUs with time-slicing set to `replicas: 10`. This creates 30 virtual GPUs for the interns' notebooks, which is acceptable since interactive work is bursty and tolerates the lack of memory isolation and occasional latency spikes.
 </details>
 
 ### Question 2
@@ -750,9 +748,7 @@ You are tasked with providing GPU access to two different groups: a data science
 <details>
 <summary>Show Answer</summary>
 
-For the production engineering team, you should use **MIG (Multi-Instance GPU)**. MIG provides hardware-level isolation for both compute and memory. This ensures their latency-sensitive inference services have guaranteed resources and are completely protected from other workloads on the same physical GPU.
-
-For the data science team, you should use **Time-Slicing** (or isolated full GPUs if budget allows). Time-slicing allows many notebooks to share a single GPU by rotating compute access. However, it provides zero memory isolation. Since the data science team frequently leaks memory, placing them on time-sliced GPUs means they will likely cause Out-Of-Memory (OOM) crashes that affect other notebooks sharing that specific GPU. By keeping them isolated from the production team, their memory leaks only impact their own exploratory environments, not the critical inference services.
+For the production engineering team, you should use **MIG (Multi-Instance GPU)**. MIG provides hardware-level isolation for both compute and memory. This ensures their latency-sensitive inference services have guaranteed resources and are completely protected from other workloads on the same physical GPU. For the data science team, you should use **Time-Slicing** (or isolated full GPUs if budget allows). Time-slicing allows many notebooks to share a single GPU by rotating compute access, but provides zero memory isolation. Since the data science team frequently leaks memory, placing them on time-sliced GPUs means they will likely cause Out-Of-Memory (OOM) crashes that affect other notebooks sharing that specific GPU. By keeping them isolated from the production team, their memory leaks only impact their own exploratory environments, not the critical inference services.
 </details>
 
 ### Question 3
@@ -761,9 +757,7 @@ Your platform team currently relies on a fragile web of node selectors, taints, 
 <details>
 <summary>Show Answer</summary>
 
-Transitioning to DRA eliminates the need for node-level labeling hacks by moving device selection to the API level. Instead of requesting a generic `nvidia.com/gpu: 1` and hoping node selectors match the right hardware, engineers will create a `ResourceClaim` that specifies exactly what they need using structured attributes. 
-
-The claim can explicitly state requirements like "I need a GPU with >= 40GB VRAM and NVLink enabled." The Kubernetes scheduler, working with the DRA driver, natively understands these attributes and handles the complex topology and placement logic automatically. This abstracts the hardware details away from the Pod specification and allows the platform team to define robust `DeviceClass` policies, resulting in a cleaner and more reliable scheduling workflow.
+Transitioning to DRA eliminates the need for node-level labeling hacks by moving device selection to the API level. Instead of requesting a generic `nvidia.com/gpu: 1` and hoping node selectors match the right hardware, engineers will create a `ResourceClaim` that specifies exactly what they need using structured attributes. The claim can explicitly state requirements like "I need a GPU with >= 40GB VRAM and NVLink enabled." The Kubernetes scheduler, working with the DRA driver, natively understands these attributes and handles the complex topology and placement logic automatically. This abstracts the hardware details away from the Pod specification and allows the platform team to define robust `DeviceClass` policies, resulting in a cleaner and more reliable scheduling workflow.
 </details>
 
 ### Question 4
@@ -772,9 +766,7 @@ Your team purchased a cheaper 4-GPU server to run distributed training. When run
 <details>
 <summary>Show Answer</summary>
 
-The job is running slowly because the GPUs are communicating across inefficient pathways. In data-parallel training, GPUs must constantly synchronize gradients using all-reduce operations. The `SYS` topology indicates that some GPUs are on completely different NUMA nodes, meaning their communication must cross the CPU socket at roughly 16 GB/s, which introduces massive latency. The `PIX` links are better (same PCIe switch) but still bottlenecked compared to NVLink.
-
-Because the synchronization is only as fast as its slowest link, the `SYS` connections are crippling the entire training job. To fix this, you should enable the Kubernetes Topology Manager with a `restricted` or `single-numa-node` policy. This forces the scheduler to allocate GPUs that share the same NUMA node and PCIe complex (avoiding `SYS` links), drastically reducing the communication overhead and speeding up the training.
+The job is running slowly because the GPUs are communicating across inefficient hardware pathways. In data-parallel training, GPUs must constantly synchronize gradients using all-reduce operations. The `SYS` topology indicates that some GPUs are on completely different NUMA nodes, meaning their communication must cross the CPU socket at roughly 16 GB/s, which introduces massive latency. The `PIX` links are better (same PCIe switch) but still heavily bottlenecked compared to NVLink. To fix this, you should enable the Kubernetes Topology Manager with a `restricted` or `single-numa-node` policy. This forces the scheduler to allocate GPUs that share the same NUMA node and PCIe complex, drastically reducing the communication overhead and speeding up the training.
 </details>
 
 ### Question 5
@@ -783,9 +775,7 @@ You configured time-slicing with `replicas: 8` on a T4 GPU (16GB VRAM) to save m
 <details>
 <summary>Show Answer</summary>
 
-This happened because time-slicing provides no memory isolation. Even though the GPU compute is time-sliced into 8 virtual pieces, all 8 workloads share the exact same 16GB VRAM pool. When the engineer's service ran alone, it had access to the full 16GB. However, during peak hours, the combined memory allocations of all 7 active workloads exceeded the 16GB physical limit, triggering an OOM crash that likely killed multiple processes.
-
-To fix this, you must limit how much memory each workload can allocate. One approach is to reduce the time-slicing `replicas` to 4, guaranteeing that if each workload uses up to 4GB, the VRAM won't overflow. Alternatively, you can have the engineers set framework-specific limits in their code (like `CUDA_MEM_FRACTION` in PyTorch or TensorFlow) to restrict each Pod to a safe percentage of the GPU's memory. Switching to MPS (Multi-Process Service) with explicit memory limits would also solve the problem.
+This happened because time-slicing provides no memory isolation at the hardware level. Even though the GPU compute is time-sliced into 8 virtual pieces, all 8 workloads share the exact same 16GB VRAM pool. When the engineer's service ran alone, it had access to the full 16GB. However, during peak hours, the combined memory allocations of all active workloads exceeded the 16GB physical limit, triggering an OOM crash that likely killed multiple processes. To fix this, you must limit how much memory each workload can allocate. One approach is to reduce the time-slicing `replicas` to 4, guaranteeing that if each workload uses up to 4GB, the VRAM won't overflow. Alternatively, you can have the engineers set framework-specific limits in their code (like `CUDA_MEM_FRACTION` in PyTorch) to restrict each Pod to a safe percentage of the GPU's memory.
 </details>
 
 ---
