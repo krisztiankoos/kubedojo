@@ -2307,10 +2307,12 @@ def step_check_integrity(content: str, fact_ledger: dict) -> tuple[bool, list[st
         warnings.append(f"VERSION_MISMATCH_WARNING: {', '.join(sorted(versions))}")
 
     # 3) YAML lint for fenced ```yaml blocks
+    # Use safe_load_all to support multi-document YAML (K8s manifests with `---`
+    # separators are valid and very common in examples).
     for match in re.finditer(r"```yaml\s*\n([\s\S]*?)```", content, re.IGNORECASE):
         yaml_block = match.group(1)
         try:
-            yaml.safe_load(yaml_block)
+            list(yaml.safe_load_all(yaml_block))
         except yaml.YAMLError as e:
             line_offset = content[:match.start(1)].count("\n")
             line_no = line_offset + 1
