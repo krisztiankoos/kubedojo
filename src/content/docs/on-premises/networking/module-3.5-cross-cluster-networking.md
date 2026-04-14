@@ -16,9 +16,13 @@ sidebar:
 
 ## The Multi-Cluster Services (MCS) API
 
-By design, Kubernetes' networking model is cluster-scoped, giving each pod a unique cluster-wide IP and enabling pod-to-pod communication across nodes within a cluster without mandatory proxy/NAT in the basic model. Only a few Kubernetes networking functions are implemented by core Kubernetes itself; endpoint networking and proxy behavior are mostly provided by optional external components such as CNI implementations.
+By design, Kubernetes' networking model is cluster-scoped, giving each pod a unique cluster-wide IP and enabling pod-to-pod communication across nodes within a cluster without mandatory proxy/NAT in the basic model. Only a few Kubernetes networking functions are implemented by core Kubernetes itself; endpoint networking and proxy behavior are mostly provided by optional external components such as CNI/pod network implementations.
 
-When you need to span multiple clusters, they must first agree on how to discover services across boundaries. The Multi-Cluster Services (MCS) API is an extension of the Kubernetes Service across clusters using the concept of Namespace Sameness. It is API-focused and introduces two primary Custom Resource Definitions (CRDs):
+A Kubernetes Service exposes a stable address for one or more pod backends, while Kubernetes automatically manages EndpointSlice information for those backends. Service types include `ClusterIP`, `NodePort`, and `LoadBalancer` (though Kubernetes itself does not provide a built-in load-balancing component for external load-balanced services). Service DNS records are created for services and pods, allowing services to be discovered by DNS names inside the cluster. However, a pod’s default DNS search list includes its own namespace plus the cluster domain; DNS queries without a namespace are limited to the pod’s namespace.
+
+When you need to span multiple clusters, they must first agree on how to discover services across boundaries. You could manually create a Kubernetes Service without selectors to route to external services, including those in other namespaces or clusters. For more advanced ingress, the Gateway API handles cross-namespace references using a `ReferenceGrant` (a CORE conformance-level requirement in the Standard channel since v0.6.0). However, for native east-west service discovery, the Multi-Cluster Services (MCS) API is the standard.
+
+The MCS API is an extension of the Kubernetes Service across clusters using the concept of Namespace Sameness. It is API-focused and introduces two primary Custom Resource Definitions (CRDs):
 
 1. `ServiceExport`: Created in the exporting cluster to declare a service available globally. It maps a service by name, and can be combined across clusters by namespaced name. This exposes the service in the cluster-set under `svc.clusterset.local`, utilizing per-cluster EndpointSlices.
 2. `ServiceImport`: Created automatically in importing clusters by the MCS controller to represent the remote service.
@@ -42,7 +46,7 @@ Cilium Cluster Mesh extends networking across connected clusters with pod-to-pod
 - **Datapath**: eBPF-based VXLAN, Geneve, or direct routing (BGP).
 - **Encryption**: IPsec or WireGuard.
 - **Service Discovery**: Implements the MCS API natively.
-- **Constraint**: Requires consistent datapath mode and non-conflicting Pod and Service CIDRs across all participating clusters. Unique cluster IDs/names must be configured per cluster. By default, it supports 255 connected clusters (or 511 with `maxConnectedClusters`), and this limit must match across clusters and cannot be changed safely on running clusters.
+- **Constraint**: Requires consistent datapath mode and non-conflicting PodCIDRs across all participating clusters. Unique human-readable cluster IDs/names must be configured per cluster at install time. By default, it supports 255 connected clusters (or 511 with `maxConnectedClusters`), and this limit must match across clusters and cannot be changed safely on running clusters.
 - **Control Plane**: Uses an internal etcd cluster (kvstore) to synchronize endpoints, or a dedicated Cluster Mesh API server. As of Cilium v1.16, `KVStoreMesh` is enabled by default to optimize scalability when enabling Cluster Mesh.
 
 ```mermaid
@@ -61,7 +65,7 @@ graph TD
 
 ### Submariner
 
-Submariner is a dedicated cross-cluster networking tool designed to work *alongside* your existing CNI (Flannel, Calico, Weave). It is compatible with all currently-supported Kubernetes versions and is completely cloud-provider agnostic.
+Submariner is a dedicated cross-cluster networking tool designed to work *alongside* your existing CNI (Flannel, Calico, Weave). It explicitly claims compatibility with all currently-supported Kubernetes versions (where the release policy tracks the three most recent minor branches and 1.19+ receives about 1 year of patch support) and is completely cloud-provider agnostic, with support tested across multiple CNI plugins.
 
 - **Datapath**: Deploys a Gateway Engine pod on a designated gateway node in each cluster. All cross-cluster traffic is routed through these gateways.
 - **Encryption**: IPsec (via Libreswan) or WireGuard.
@@ -284,7 +288,7 @@ kubectl --context kind-cluster1 exec curl -- curl -s http://nginx.default.svc.cl
 - D) BGP Peering via Calico
 
 **Answer: B**
-*Explanation: Submariner supports Globalnet, which performs SNAT/DNAT to explicitly handle overlapping CIDRs between clusters. In contrast, Cilium requires strictly non-overlapping CIDRs across all connected clusters to route traffic natively via eBPF. BGP cannot resolve identical IP spaces without highly complex VRF configurations that are difficult to maintain. Furthermore, standard MCS provides an API for service discovery but does not handle datapath routing at all.*
+*Explanation: Submariner supports Globalnet, which performs SNAT/DNAT to explicitly handle overlapping CIDRs between clusters. In contrast, Cilium Cluster Mesh strictly requires non-conflicting PodCIDRs across all connected clusters to route traffic natively via eBPF. BGP cannot resolve identical IP spaces without highly complex VRF configurations that are difficult to maintain and configure correctly in standard Kubernetes. Furthermore, standard MCS provides an API for service discovery but does not handle datapath routing at all, meaning it cannot solve the IP overlap problem.*
 
 **2. A cross-cluster WireGuard tunnel is successfully established, but developers report a strange issue: while a basic `ping` works between pods in different clusters, large database queries frequently return timeouts. What is the most likely cause?**
 - A) The `ServiceExport` resource is misconfigured.
@@ -302,7 +306,7 @@ kubectl --context kind-cluster1 exec curl -- curl -s http://nginx.default.svc.cl
 - D) Traffic is encapsulated in an HTTP/2 tunnel via the Ingress Controller.
 
 **Answer: C**
-*Explanation: Cilium establishes direct node-to-node tunnels (using VXLAN, Geneve, or WireGuard) across the connected clusters. It does not funnel traffic through a centralized gateway node like Submariner does, which avoids single points of failure and prevents bottlenecks. The traffic leaves the source pod's host node and goes directly to the destination pod's host node over the encapsulated tunnel. This direct routing is possible because Cilium requires non-overlapping PodCIDRs to ensure global routing visibility.*
+*Explanation: Cilium establishes direct node-to-node tunnels (using VXLAN, Geneve, or WireGuard) across the connected clusters. It does not funnel traffic through a centralized gateway node like Submariner does, which avoids single points of failure and prevents bottlenecks. The traffic leaves the source pod's host node and goes directly to the destination pod's host node over the encapsulated tunnel. This direct routing is possible because Cilium requires non-overlapping PodCIDRs to ensure global routing visibility across the entire mesh.*
 
 **4. Your team has deployed a new payment microservice in Cluster A and wants to make it discoverable to billing services running in Cluster B using the MCS API standard. What specific action must the team take to trigger the creation of a global DNS record for this service?**
 - A) Creating a `ServiceExport` resource in the cluster where the service resides.
@@ -311,7 +315,7 @@ kubectl --context kind-cluster1 exec curl -- curl -s http://nginx.default.svc.cl
 - D) Creating a `ServiceImport` resource in the destination cluster.
 
 **Answer: A**
-*Explanation: The Multi-Cluster Services (MCS) API relies on the `ServiceExport` custom resource to signal intent for cross-cluster exposure. By creating a `ServiceExport` in the cluster where the service resides (Cluster A), the multi-cluster controller is notified that the service should be available globally. The controller then synchronizes the endpoint data across the mesh. Finally, it triggers the automatic creation of corresponding `ServiceImport` resources and DNS records (typically under `clusterset.local`) in the participating clusters to enable discovery.*
+*Explanation: The Multi-Cluster Services (MCS) API relies on the `ServiceExport` custom resource to signal intent for cross-cluster exposure. By creating a `ServiceExport` in the cluster where the service resides (Cluster A), the multi-cluster controller is notified that the service should be available globally. The controller then synchronizes the endpoint data across the mesh. Finally, it triggers the automatic creation of corresponding `ServiceImport` resources and DNS records (typically under `svc.clusterset.local`) in the participating clusters to enable discovery.*
 
 **5. Your infrastructure team has deployed a new bare-metal Kubernetes cluster. The physical switch MTU is configured strictly to 1500 bytes. Your security policy mandates IPsec encryption, and you are using VXLAN for the overlay network. To prevent packet fragmentation and blackholes, what is the maximum safe MTU you should configure for the CNI?**
 - A) 1500
@@ -320,7 +324,7 @@ kubectl --context kind-cluster1 exec curl -- curl -s http://nginx.default.svc.cl
 - D) 1200
 
 **Answer: C**
-*Explanation: When calculating the safe CNI MTU, you must strictly subtract all encapsulation and encryption overhead from the physical MTU base value. From the physical MTU of 1500 bytes, you must subtract the VXLAN overhead (50 bytes) and the IPsec overhead (approximately 73 bytes, depending on the specific cryptographic suite). Subtracting both overheads (1500 - 50 - 73) yields exactly 1377 bytes. Therefore, making 1370 the safest standard conservative value to configure ensures you completely avoid dropping packets due to fragmentation.*
+*Explanation: When calculating the safe CNI MTU, you must strictly subtract all encapsulation and encryption overhead from the physical MTU base value. From the physical MTU of 1500 bytes, you must subtract the VXLAN overhead (50 bytes) and the IPsec overhead (approximately 73 bytes, depending on the specific cryptographic suite). Subtracting both overheads (1500 - 50 - 73) yields exactly 1377 bytes. Therefore, configuring 1370 as the maximum safe MTU ensures you completely avoid dropping packets due to fragmentation.*
 
 ## Further Reading
 - [Kubernetes Multi-Cluster Services API (KEP-1645)](https://github.com/kubernetes/enhancements/tree/master/keps/sig-multicluster/1645-multi-cluster-services-api)
