@@ -33,31 +33,34 @@ Before you can understand IAM in GCP, you must understand *where* IAM policies l
 
 ### The Four Levels
 
-```text
-                    ┌───────────────────────┐
-                    │    Organization        │  ← Tied to your Google Workspace
-                    │   (example.com)        │     or Cloud Identity domain
-                    └───────────┬───────────┘
-                                │
-              ┌─────────────────┼─────────────────┐
-              │                 │                   │
-    ┌─────────▼────────┐ ┌─────▼──────┐  ┌────────▼────────┐
-    │  Folder:          │ │  Folder:    │  │  Folder:         │
-    │  Engineering      │ │  Finance    │  │  Shared Services │
-    └────────┬──────────┘ └─────┬──────┘  └────────┬─────────┘
-             │                  │                   │
-     ┌───────┼───────┐         │           ┌───────┼───────┐
-     │               │         │           │               │
-┌────▼────┐  ┌──────▼──┐ ┌────▼────┐ ┌────▼────┐  ┌──────▼──┐
-│ Project: │  │ Project: │ │ Project:│ │ Project: │  │ Project: │
-│ eng-dev  │  │ eng-prod │ │ fin-prod│ │ shared-  │  │ shared-  │
-│          │  │          │ │         │ │ logging  │  │ networking│
-└──────────┘  └──────────┘ └─────────┘ └──────────┘  └──────────┘
-     │               │
-     │               │
-  Resources       Resources
-  (VMs, GCS,      (VMs, GCS,
-   GKE, etc.)      GKE, etc.)
+```mermaid
+graph TD
+    Org["Organization<br>(example.com)"]
+    FolderEng["Folder:<br>Engineering"]
+    FolderFin["Folder:<br>Finance"]
+    FolderShared["Folder:<br>Shared Services"]
+
+    Org --> FolderEng
+    Org --> FolderFin
+    Org --> FolderShared
+
+    ProjEngDev["Project:<br>eng-dev"]
+    ProjEngProd["Project:<br>eng-prod"]
+    ProjFinProd["Project:<br>fin-prod"]
+    ProjSharedLog["Project:<br>shared-logging"]
+    ProjSharedNet["Project:<br>shared-networking"]
+
+    FolderEng --> ProjEngDev
+    FolderEng --> ProjEngProd
+    FolderFin --> ProjFinProd
+    FolderShared --> ProjSharedLog
+    FolderShared --> ProjSharedNet
+
+    ResDev["Resources<br>(VMs, GCS, GKE, etc.)"]
+    ResProd["Resources<br>(VMs, GCS, GKE, etc.)"]
+
+    ProjEngDev --> ResDev
+    ProjEngProd --> ResProd
 ```
 
 **Organization**: The root node. It is automatically created when you set up Google Workspace or Cloud Identity for your domain. Every resource in your company ultimately lives under this node. IAM policies set here apply to *everything* underneath.
@@ -370,32 +373,20 @@ Workload Identity Federation allows external identities (from AWS, Azure, GitHub
 
 ### How It Works
 
-```text
-  ┌─────────────────┐     1. Get OIDC Token      ┌─────────────────┐
-  │  External        │ ──────────────────────────> │  Identity        │
-  │  Workload        │                             │  Provider        │
-  │  (GitHub Actions,│     2. OIDC Token           │  (GitHub, AWS,   │
-  │   AWS, on-prem)  │ <────────────────────────── │   GitLab, etc.)  │
-  └────────┬─────────┘                             └──────────────────┘
-           │
-           │  3. Exchange OIDC token for
-           │     GCP STS token
-           ▼
-  ┌─────────────────┐     4. STS token             ┌──────────────────┐
-  │  GCP Security    │ ──────────────────────────> │  GCP Service      │
-  │  Token Service   │                             │  Account          │
-  │  (STS)           │     5. Short-lived           │  (impersonated)   │
-  │                  │        SA credentials        │                   │
-  └──────────────────┘                             └────────┬──────────┘
-                                                            │
-                                                   6. Access GCP resources
-                                                            │
-                                                            ▼
-                                                   ┌──────────────────┐
-                                                   │  GCP Resources    │
-                                                   │  (GCS, BigQuery,  │
-                                                   │   Cloud Run, etc.)│
-                                                   └──────────────────┘
+```mermaid
+graph TD
+    EW["External Workload<br>(GitHub Actions, AWS, on-prem)"]
+    IDP["Identity Provider<br>(GitHub, AWS, GitLab, etc.)"]
+    STS["GCP Security Token Service<br>(STS)"]
+    SA["GCP Service Account<br>(impersonated)"]
+    RES["GCP Resources<br>(GCS, BigQuery, Cloud Run, etc.)"]
+
+    EW -->|"1. Get OIDC Token"| IDP
+    IDP -->|"2. OIDC Token"| EW
+    EW -->|"3. Exchange OIDC token for GCP STS token"| STS
+    STS -->|"4. Pass STS token"| SA
+    SA -->|"5. Return short-lived SA credentials"| EW
+    EW -->|"6. Access GCP resources"| RES
 ```
 
 ### Setting Up Workload Identity Federation for GitHub Actions
@@ -558,31 +549,31 @@ The output will clearly state whether access is `GRANTED` or `DENIED` and, cruci
 <details>
 <summary>1. Scenario: An engineer leaves the company. You remove them from the 'gcp-developers' Google Group. However, they are still able to modify instances in the 'sandbox' project. Why might this happen, and how do you find out?</summary>
 
-They likely have a direct IAM binding on the project or a specific resource (like a VM), bypassing the Google Group. IAM policies are additive, so removing them from the group only removes the group's inherited permissions. To find out, use `gcloud asset search-all-iam-policies` to search across the organization for their specific email address, or use the Policy Troubleshooter if you know which resource they are modifying.
+They likely have a direct IAM binding on the project or a specific resource (like a VM), bypassing the Google Group. In GCP, IAM policies are purely additive and inherit downward through the resource hierarchy. This means that removing them from the group only revokes the group's inherited permissions, but any directly assigned roles remain intact. To definitively find out where these lingering permissions exist, you should use `gcloud asset search-all-iam-policies` to search across the entire organization for their specific email address. Alternatively, you can use the Policy Troubleshooter if you already know which specific resource they are still modifying.
 </details>
 
 <details>
 <summary>2. Scenario: Your CI/CD pipeline in GitLab needs to deploy a container to Cloud Run. The security team has strictly forbidden the creation of long-lived service account JSON keys. How do you authenticate the pipeline?</summary>
 
-You must implement Workload Identity Federation. This involves creating a Workload Identity Pool and a Provider configured to trust GitLab's OIDC issuer. The GitLab pipeline uses its native JWT to authenticate to the provider, which exchanges it for a short-lived GCP STS token. The pipeline then uses this token to impersonate a specific GCP service account that holds the `roles/run.admin` permission, completely eliminating the need for persistent secrets.
+You must implement Workload Identity Federation to securely authenticate without persistent keys. This process involves creating a Workload Identity Pool and a Provider that is explicitly configured to trust GitLab's OIDC issuer. During the deployment, the GitLab pipeline uses its native JWT to authenticate to the GCP provider, which then exchanges it for a short-lived GCP STS token. The pipeline subsequently uses this temporary token to impersonate a specific GCP service account that has been granted the `roles/run.admin` permission. This approach completely eliminates the need for long-lived secrets, satisfying the security team's requirements while maintaining automated deployment capabilities.
 </details>
 
 <details>
 <summary>3. Scenario: You assign <code>roles/storage.objectAdmin</code> to a service account at the Folder level. You want to prevent this service account from deleting objects in one specific production project within that folder. Can you do this by removing the role in the project's IAM policy? Why or why not?</summary>
 
-No, you cannot achieve this by modifying the project's allow policy. In GCP, IAM allow policies are additive and inherit downward; you cannot subtract or override an inherited allow permission by simply omitting it at a lower level. To block the deletion, you must create an IAM Deny Policy attached to the production project that explicitly denies the `storage.objects.delete` permission for that specific service account. The Deny policy will take precedence over the inherited Allow policy.
+No, you cannot achieve this by modifying the project's allow policy because of how IAM inheritance works. In GCP, IAM allow policies are strictly additive and inherit downward from the Organization to Folders to Projects. This means you cannot subtract or override an inherited allow permission by simply omitting it at a lower level in the hierarchy. To successfully block the deletion action, you must create an IAM Deny Policy attached directly to the production project that explicitly denies the `storage.objects.delete` permission for that specific service account. Because Deny policies are evaluated before Allow policies, this will effectively override the inherited permissions and protect the objects.
 </details>
 
 <details>
 <summary>4. Scenario: A developer complains they are getting a `403 Permission Denied` when trying to view Cloud SQL backups. They insist they have the `roles/editor` role on the project. How do you systematically identify the missing permission without blindly guessing?</summary>
 
-First, check the Cloud Audit Logs for the specific `403` error event. Expand the `protoPayload.authorizationInfo` field in the log entry to see the exact API permission that was evaluated and rejected (e.g., `cloudsql.backupRuns.get`). Once you have the exact permission string, use the IAM Policy Troubleshooter in the console or CLI, inputting the developer's email, the resource name, and the permission. The troubleshooter will analyze the role bindings and explain exactly why the permission is missing or blocked by a deny policy.
+First, you should check the Cloud Audit Logs for the specific `403` error event generated by the developer's action. By expanding the `protoPayload.authorizationInfo` field in the log entry, you can identify the exact API permission that was evaluated and rejected (e.g., `cloudsql.backupRuns.get`). Once you have isolated the exact permission string, you should use the IAM Policy Troubleshooter in the console or CLI. By inputting the developer's email, the target resource name, and the identified permission, the troubleshooter will analyze the role bindings. It will then provide a clear explanation of exactly why the permission is missing or if it is being actively blocked by an overriding deny policy.
 </details>
 
 <details>
 <summary>5. Scenario: A developer manually created a VM to run an internal script without explicitly specifying a service account. Two days later, a security scanner alerts that the VM has full read-write access to every resource in the project. Why did this happen?</summary>
 
-When a Compute Engine VM is created without specifying a service account, GCP automatically assigns it the default Compute Engine service account. This default service account is automatically granted the legacy `roles/editor` role on the project when the API is first enabled. Because `roles/editor` grants sweeping read-write access to almost all GCP services, the VM effectively inherited administrative power over the entire project. This violates the principle of least privilege.
+When a Compute Engine VM is created without specifying a service account, GCP automatically assigns it the default Compute Engine service account. This default service account is inherently dangerous because it is automatically granted the legacy `roles/editor` role on the project when the Compute API is first enabled. Because the `roles/editor` role grants sweeping read-write access to almost all GCP services, the VM effectively inherited broad administrative power over the entire project. This design violates the principle of least privilege and serves as a common vector for privilege escalation. To prevent this, you should always enforce the use of dedicated, least-privilege service accounts for every VM.
 </details>
 
 ---
