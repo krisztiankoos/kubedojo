@@ -65,28 +65,40 @@ Both Codex and Gemini flagged this as the spec-breaking weak spot in v1. Fix:
 
 **One SQLite transaction does EVERYTHING at dispatch time:**
 ```
-BEGIN EXCLUSIVE;
-  -- 1. Lease a job from the queue (SKIP LOCKED semantics via row state flip)
-  SELECT id FROM jobs WHERE state='pending' AND model=?
+BEGIN IMMEDIATE;
+  -- 1. Lease a queue row (queue row state, NOT module state)
+  SELECT id FROM jobs WHERE queue_state='pending' AND model=?
     ORDER BY priority, enqueued_at LIMIT 1;
-  UPDATE jobs SET state='leased', leased_by=?, leased_at=? WHERE id=?;
+  UPDATE jobs SET queue_state='leased', leased_by=?, leased_at=? WHERE id=?;
 
-  -- 2. Reserve a concurrency slot (enforced by unique constraint on active_leases)
-  INSERT INTO active_leases (model, job_id, lease_id, expires_at);
-  -- Unique index on (model, slot_number) — raises IntegrityError if full
+  -- 2. Concurrency check — COUNT live leases against current cap
+  --    (cap is read from budgets.yaml at dispatch time, not DB constant)
+  SELECT COUNT(*) FROM active_leases
+    WHERE model=? AND expires_at > strftime('%s','now');
+  -- If count >= budgets[model].max_concurrent: ROLLBACK, worker waits
 
-  -- 3. Reserve estimated budget (calls + dollars)
-  SELECT SUM(reserved_calls), SUM(reserved_usd) FROM reservations
-    WHERE model=? AND window='hourly';
-  -- If reservation + estimate > cap: ROLLBACK, worker pauses
+  INSERT INTO active_leases (lease_id, model, job_id, expires_at);
+  -- No unique slot index — count-based enforcement supports dynamic caps
 
-  INSERT INTO reservations (lease_id, model, window, reserved_calls,
-                             reserved_usd, reserved_at);
+  -- 3. Reserve budget — sum of recorded usage AND pending reservations
+  SELECT
+    (SELECT COALESCE(SUM(actual_calls), 0) FROM usage
+       WHERE model=? AND completed_at > strftime('%s','now','-1 hour')) +
+    (SELECT COALESCE(SUM(reserved_calls), 0) FROM reservations
+       WHERE model=? AND reserved_at > strftime('%s','now','-1 hour'))
+    AS hourly_committed;
+  -- If hourly_committed + estimate > hourly cap: ROLLBACK, worker pauses
+  -- (Same query for weekly window with -7 days)
+
+  INSERT INTO reservations (lease_id, model, reserved_calls, reserved_usd,
+                             reserved_at);
 
   -- 4. Emit event
   INSERT INTO events (type='job_leased', lease_id, model, job_id, at);
 COMMIT;
 ```
+
+**Authoritative time**: SQLite's `strftime('%s','now')` (DB time, not app time) so all workers race against the same clock. Lease `expires_at` is stored as Unix epoch.
 
 **Post-call reconciliation** (for dollar caps — actual cost arrives after API response):
 ```
@@ -127,13 +139,34 @@ Use cases:
 
 Lowering `max_concurrent` while leases are active does NOT kill running jobs — they finish naturally. New leases just block until enough release.
 
-### Budget tracker (built on the reservation model)
+**Edge cases**:
+- `max_concurrent: 0` → model is **paused** (all dispatch fails the COUNT check). Useful for "stop using this model entirely".
+- Malformed/partial `budgets.yaml` reload → worker falls back to **last known good config** in memory, emits `config_reload_failed` event with parse error. Does NOT halt workers.
+- Token estimation buffer (per Gemini): `reserved_usd = max_estimated_tokens × price_out × 1.20` (20% safety margin). Refunded post-call.
 
-- `.pipeline/usage.db` (SQLite) with tables: `jobs`, `active_leases`, `reservations`, `usage`, `events`
-- Unique index `(model, slot_number)` on `active_leases` enforces `max_concurrent` at the DB level
-- Rolling windows: hourly = `WHERE reserved_at > datetime('now', '-1 hour')` + same for usage
-- Weekly window: **UTC-based**, starts Monday 00:00 UTC (explicit timezone per Codex)
-- Budget check = atomic query inside the same transaction as lease
+### Why this is FIRST-class
+
+v1 tracked nothing. v2 refuses to dispatch without clearance from the atomic reservation transaction. This makes the user's "2-3 parallel" constraint trivial to enforce: set `max_concurrent: 2` and the COUNT check inside the transaction will REFUSE a third concurrent lease even if 10 workers race.
+
+### Storage model (single SQLite DB)
+
+**One DB**: `.pipeline/v2.db` (WAL mode for concurrent writers per Gemini)
+
+Tables:
+- `jobs` — queue rows. Columns: `id, module_key, phase, model, priority, queue_state ('pending'|'leased'|'completed'|'failed'), leased_by, leased_at, enqueued_at`. **NOTE**: `phase` here is the queue's *intended phase* for the next attempt, NOT the module's current state. Module state is derived from `events`.
+- `active_leases` — currently-held concurrency slots. Columns: `lease_id PK, model, job_id, expires_at`. NO unique index on slot_number — concurrency enforced by COUNT inside the dispatch transaction.
+- `reservations` — pre-call budget holds. Columns: `lease_id PK (FK), model, reserved_calls, reserved_usd, reserved_at`. Cleaned up on lease completion or expiry.
+- `usage` — actual post-call costs. Columns: `lease_id, model, actual_calls, actual_usd, tokens_in, tokens_out, completed_at`. Append-only.
+- `events` — append-only event log (module + control-plane). Columns: `id, type, module_key, lease_id, payload_json, at`. Module state derived by folding events.
+
+**Module state is derived, not stored.** No mutable `phase` column on a `modules` table. Queue row `phase` is the next-action hint for the worker, computed by event-folding.
+
+**Orphaned reservation cleanup**: when a lease's `expires_at < now` and no `usage` row exists, watchdog DELETEs the orphaned `reservation` and `active_leases` row, and emits `job_released` event with reason `lease_expired`.
+
+### Rolling windows
+
+- Hourly: `> strftime('%s','now','-1 hour')`
+- Weekly: `> strftime('%s','now','-7 days')`. Authoritative reset: **UTC, Monday 00:00**. The weekly cap is a rolling 7-day total, but if user prefers calendar-week semantics, set `weekly_window: calendar_utc` in budgets.yaml (defaults to `rolling_7d`).
 
 ### Cost estimation (for reservations)
 
@@ -156,17 +189,13 @@ If any model hits its hard weekly cap, config chooses policy:
 - If 3x 429s in 10 minutes: exponential backoff (cooldown doubles each time)
 - Emit event `attempt_rate_limited` with full context
 
-### Why this is FIRST-class
-
-v1 tracked nothing. v2 refuses to dispatch without clearance from the atomic reservation transaction. This makes the user's "2-3 parallel" constraint trivial to enforce: set `max_concurrent: 2` and the DB will REFUSE a third concurrent lease even if 10 workers race.
-
 ## Architecture
 
 ```
 ┌──────────────────┐
-│   jobs queue     │  SQLite jobs table: id, module_key, phase, attempt, state
-│   (.pipeline/    │  Immutable attempts table: attempt_id, inputs, outputs,
-│    jobs.db)      │                              verdict, cost, duration
+│   jobs queue     │  SQLite jobs table: queue_state, lease metadata
+│   (.pipeline/    │  Immutable attempts/events tables (see Storage Model)
+│    v2.db)        │
 └────────┬─────────┘
          │
          ├─── write-worker  (gemini-pro, max_conc=1)
@@ -334,6 +363,31 @@ pipeline show budget                    # Current usage vs caps per model
 pipeline show convergence-report        # Histograms, ratios, trends
 ```
 
+## Salvage of v1 work (no content loss)
+
+Nothing committed to `src/content/docs/**` is lost. v1 → v2 cutover preserves:
+
+| Asset | Location | v2 handling |
+|---|---|---|
+| Module .md content | `src/content/docs/**/*.md` | v2 reads same files. No migration. |
+| Lab content | `kubedojo-labs/{lab}/` | v2 lab pipeline (#237) already operates on these. |
+| Fact ledgers | `.pipeline/fact-ledgers/*.json` | Reused as-is by v2 (cache hit). |
+| Per-module audit log | `.pipeline/reviews/{module}.md` | Preserved as historical record. v2 appends new entries to same files. |
+| Lab audit log | `.pipeline/lab-reviews/{lab}.md` | Same — preserved. |
+
+**One-time migration script**: `scripts/migrate_v1_to_v2.py` reads `state.yaml` and emits synthetic events into `v2.db`:
+
+| v1 phase | v1 count (today) | v2 events emitted |
+|---|---|---|
+| `done` | 110 | `module_created` + `done` (terminal — never reprocessed) |
+| `review` | 306 | `module_created` + `attempt_succeeded` (write phase complete) — picks up at review |
+| `pending` | 33 | `module_created` only — fresh start |
+| `audit` (legacy) | 22 | Treated as `pending` |
+| `data_conflict` | 8 | `needs_human_intervention` (manual triage required anyway) |
+| `write` (stale) | 0 (just migrated to review by `reset-stuck`) | n/a |
+
+Result: zero re-review of already-passing modules. v2 starts knowing exactly where each module is.
+
 ## Migration plan (reordered per Codex — control plane first, not last)
 
 v1 continues to run. v2 builds alongside. The FIRST week delivers the real control plane — not just an observer — because the whole spec hinges on atomic dispatch.
@@ -379,7 +433,7 @@ Safe checkpoints: each week's deliverable is independently useful. v1 keeps runn
 - [ ] Lowering cap while leases are active doesn't kill running jobs — new leases block until enough release
 
 ### Job queue
-- [ ] SQLite `.pipeline/jobs.db` with jobs and attempts tables
+- [ ] SQLite `.pipeline/v2.db` (WAL mode) with tables: jobs, active_leases, reservations, usage, events
 - [ ] Workers pull from queue, dispatch to model with budget clearance
 - [ ] Immutable attempts (no UPDATE on attempts table, only INSERT)
 - [ ] Crash recovery = replay events to compute state
@@ -464,5 +518,10 @@ Safe checkpoints: each week's deliverable is independently useful. v1 keeps runn
 
 ## Design Review Sign-Off
 
-- [x] **Codex** (2026-04-14): Flagged atomic budget enforcement as the one flaw that would kill the rewrite. Fixed in v2.
-- [x] **Gemini** (2026-04-14): APPROVE with changes — required token reservation system, global kill-switch, human-in-the-loop. All addressed in v2.
+### First pass
+- [x] **Codex** (2026-04-14): Flagged atomic budget enforcement as the one flaw. Fixed.
+- [x] **Gemini** (2026-04-14): APPROVE with changes — token reservation, global kill-switch, human-in-the-loop. Fixed.
+
+### Second pass (post-revision)
+- [x] **Gemini** (2026-04-14): **APPROVE for Week 1 implementation.** All v1-pass changes verified. Two minor recommendations: SQLite WAL mode (added), 20% token estimation buffer (added).
+- [x] **Codex** (2026-04-14): Caught two spec contradictions I introduced — (1) dynamic concurrency vs unique slot index (resolved: COUNT-only), (2) DB ownership inconsistent (resolved: single `v2.db`, queue state vs module state distinguished). Plus edge cases: max_concurrent=0 semantics, malformed YAML reload behavior, DB-time vs app-time. All fixed in this revision.
