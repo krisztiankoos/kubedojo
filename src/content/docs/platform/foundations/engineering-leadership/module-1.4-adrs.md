@@ -642,12 +642,12 @@ B) "We're switching databases to handle 10x more reporting queries without slowi
 The engineer is confusing the purpose of an ADR with that of an **RFC (Request for Comments)**. An ADR is intended to be a historical record written *after* or exactly *when* a decision is finalized, serving as a permanent log of the outcome. An RFC, on the other hand, is a propositional document written *before* any work begins specifically to propose a design and solicit the very feedback the engineer is looking for. Using an ADR to gather feedback creates confusion about whether the decision is still up for debate or already settled policy.
 </details>
 
-**Question 5:** A junior engineer asks, "Why do we keep ADRs in the git repo instead of our corporate Confluence instance?" Give two strong reasons explaining the architectural benefit of this practice.
+**Question 5:** Your company has just adopted a new enterprise wiki, and the PMO director proposes migrating all architecture documentation, including ADRs, out of the Git repositories and into the new wiki to 'centralize knowledge.' As a technical lead, you need to defend keeping ADRs in the code repository. What are the primary architectural and operational reasons you would use to justify keeping ADRs versioned with the codebase rather than in the wiki?
 
 <details>
 <summary>Show Answer</summary>
 
-The most critical reason is **version control alignment**, as keeping ADRs in the repository ensures they are versioned alongside the exact code they describe, allowing developers to see the specific decisions in effect at any historical commit. Secondly, this practice ensures **durability and tool independence**. Corporate wikis change frequently (from Confluence to Notion to something else), often resulting in broken links and lost history, whereas markdown files in a Git repository will survive indefinitely regardless of the SaaS tools the company adopts. Finally, keeping them in the repository allows them to go through the standard Pull Request review process, tightly integrating architectural decisions into the existing engineering workflow.
+The most critical reason is **version control alignment**. Keeping ADRs in the repository ensures they are versioned alongside the exact code they describe, allowing developers to see the specific decisions in effect at any historical commit. Secondly, this practice ensures **durability and tool independence**. Corporate wikis change frequently, often resulting in broken links and lost history, whereas markdown files in a Git repository will survive indefinitely regardless of the SaaS tools the company adopts. Finally, keeping them in the repository allows them to go through the standard Pull Request review process, tightly integrating architectural decisions into the existing engineering workflow.
 </details>
 
 **Question 6:** You are writing an ADR for adopting a specific CI/CD tool, but you can only think of one option because it seems completely obvious. How should you handle the "Options Considered" section?
@@ -663,7 +663,7 @@ If you genuinely believe there is only one viable option, you still must documen
 <details>
 <summary>Show Answer</summary>
 
-You are violating the **"So What?" test** and failing to adapt your message to the appropriate audience tier. Product managers are focused on user impact, feature delivery, and roadmap implications, not the low-level kernel primitives that make containerization possible. You should adjust your presentation to focus entirely on the outcomes: how containerization will reduce deployment times from hours to minutes, eliminate "it works on my machine" bugs, and ultimately allow the product team to ship features significantly faster and with greater reliability.
+You are violating the **"So What?" test** and failing to adapt your message to the appropriate audience tier. Product managers are focused on user impact, feature delivery, and roadmap implications, not the low-level kernel primitives that make containerization possible. You should adjust your presentation to focus entirely on the outcomes: how containerization will reduce deployment times from hours to minutes, eliminate "it works on my machine" bugs, and ultimately allow the product team to ship features significantly faster and with greater reliability. By diving into technical implementations without explaining the business value, you risk losing their attention and failing to secure buy-in for the project.
 </details>
 
 ---
