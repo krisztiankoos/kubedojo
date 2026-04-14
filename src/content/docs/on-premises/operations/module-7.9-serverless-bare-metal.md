@@ -385,7 +385,7 @@ D) The custom resource must bypass the HPA entirely.
 <br><br>
 <b>Correct Answer: B</b>
 <br><br>
-<b>Explanation:</b> KEDA supports scaling standard Kubernetes Deployments and StatefulSets out of the box. However, it can also scale any custom resource provided that the resource explicitly exposes the standard Kubernetes `/scale` subresource. If the proprietary operator does not implement this subresource, KEDA has no standardized API mechanism to instruct the resource to increase or decrease its replica count.
+<b>Explanation:</b> KEDA supports scaling standard Kubernetes Deployments and StatefulSets out of the box. However, it can also scale any custom resource provided that the resource explicitly exposes the standard Kubernetes `/scale` subresource. If the proprietary operator does not implement this subresource, KEDA has no standardized API mechanism to instruct the resource to increase or decrease its replica count. Therefore, you would need to either implement the subresource in the operator or build a custom proxy scaling mechanism.
 </details>
 
 <details>
@@ -400,7 +400,7 @@ D) OpenFaaS CE requires a minimum of 50 compute nodes to initialize.
 <br><br>
 <b>Correct Answer: A</b>
 <br><br>
-<b>Explanation:</b> OpenFaaS Community Edition is explicitly designed for personal and non-production environments with internet connectivity. It requires a Kubernetes cluster with full internet access continuously to validate licensing, fetch updates, and pull specific remote assets. For air-gapped or heavily restricted environments, the official documentation states that these are a better fit for OpenFaaS Standard, which is designed to operate seamlessly without external connectivity.
+<b>Explanation:</b> OpenFaaS Community Edition is explicitly designed for personal and non-production environments with internet connectivity. It requires a Kubernetes cluster with full internet access continuously to validate licensing, fetch updates, and pull specific remote assets. For air-gapped or heavily restricted environments, the official documentation states that these are a better fit for OpenFaaS Standard, which is designed to operate seamlessly without external connectivity. Attempting to bypass these requirements with CE will result in crash loops as the validation checks inevitably fail.
 </details>
 
 <details>
@@ -415,7 +415,7 @@ D) Fission, utilizing pre-warmed environment pods.
 <br><br>
 <b>Correct Answer: B</b>
 <br><br>
-<b>Explanation:</b> KEDA scaling a standard Kubernetes Deployment is best suited for asynchronous, long-running processes (like a 4-5 minute PDF processor) triggered by a message queue. Knative Serving, OpenFaaS, and Fission are primarily designed for synchronous, short-lived HTTP request-response workloads, making them inappropriate for heavy background processing.
+<b>Explanation:</b> KEDA scaling a standard Kubernetes Deployment is best suited for asynchronous, long-running processes (like a 4-5 minute PDF processor) triggered by a message queue. KEDA acts as an intelligent bridge, monitoring the Kafka topic depth and waking up the Deployment from zero replicas only when work arrives. Once active, the application processes the heavy payload at its own pace without worrying about HTTP gateway timeouts. Knative Serving, OpenFaaS, and Fission are primarily designed for synchronous, short-lived HTTP request-response workloads, making them inappropriate for heavy background processing.
 </details>
 
 <details>
@@ -430,7 +430,7 @@ D) Fission deployed using Minikube.
 <br><br>
 <b>Correct Answer: C</b>
 <br><br>
-<b>Explanation:</b> While most serverless frameworks require a massive Kubernetes control plane, OpenFaaS offers a unique deployment model. OpenFaaS can also be deployed as `faasd` on a single host entirely without Kubernetes. It utilizes standard `containerd` and CNI directly, providing the exact same developer API and FaaS experience without the crushing overhead of maintaining a Kubernetes cluster on a resource-constrained edge device.
+<b>Explanation:</b> While most serverless frameworks require a massive Kubernetes control plane, OpenFaaS offers a unique deployment model. OpenFaaS can also be deployed as `faasd` on a single host entirely without Kubernetes. It utilizes standard `containerd` and CNI directly, providing the exact same developer API and FaaS experience without the crushing overhead of maintaining a Kubernetes cluster on a resource-constrained edge device. This ensures the edge device dedicates its limited compute cycles to executing functions rather than managing orchestration state.
 </details>
 
 <details>
@@ -445,7 +445,7 @@ D) They should use KEDA instead, as Knative cannot function without Eventing.
 <br><br>
 <b>Correct Answer: B</b>
 <br><br>
-<b>Explanation:</b> Knative is heavily modular by design. Knative Serving and Eventing can be installed completely independently of one another. The platform team can install Knative Serving to gain the advanced HTTP request-driven autoscaling and scale-to-zero capabilities, while entirely omitting the Knative Eventing components to remain compliant with their strict internal security policies.
+<b>Explanation:</b> Knative is heavily modular by design. Knative Serving and Eventing can be installed completely independently of one another. The platform team can install Knative Serving to gain the advanced HTTP request-driven autoscaling and scale-to-zero capabilities, while entirely omitting the Knative Eventing components to remain compliant with their strict internal security policies. This decoupling allows organizations to adopt Knative incrementally based on their specific architectural needs.
 </details>
 
 <details>
@@ -460,7 +460,7 @@ D) The Kourier ingress gateway dropped the termination signals.
 <br><br>
 <b>Correct Answer: B</b>
 <br><br>
-<b>Explanation:</b> Knative Serving absolutely supports autoscaling to zero, but it allows this behavior to be strictly controlled via scale-to-zero configuration annotations on the Knative Service itself. If the team explicitly disabled this feature, or misconfigured the grace periods and bounds, the workloads will remain active indefinitely, consuming precious bare-metal resources even when totally idle.
+<b>Explanation:</b> Knative Serving absolutely supports autoscaling to zero, but it allows this behavior to be strictly controlled via scale-to-zero configuration annotations on the Knative Service itself. If the team explicitly disabled this feature, or misconfigured the grace periods and bounds, the workloads will remain active indefinitely, consuming precious bare-metal resources even when totally idle. Knative's autoscaler relies on these specific settings to know when it is safe to terminate the final pod. Without proper configuration, the system defaults to maintaining at least one running instance per service revision, ultimately leading to resource exhaustion over time.
 </details>
 
 <details>
@@ -475,7 +475,7 @@ D) Fission modifies the container's entrypoint to download code from an external
 <br><br>
 <b>Correct Answer: C</b>
 <br><br>
-<b>Explanation:</b> Fission achieves sub-100ms cold starts by maintaining a pool of pre-warmed environment containers. When a request arrives, it injects the raw function code dynamically. This breaks the pattern of immutable container images, which triggers alerts in strictly governed environments because the running container no longer matches a static, scannable image hash from the registry.
+<b>Explanation:</b> Fission achieves sub-100ms cold starts by maintaining a pool of pre-warmed environment containers. When a request arrives, it injects the raw function code dynamically. This breaks the pattern of immutable container images, which triggers alerts in strictly governed environments because the running container no longer matches a static, scannable image hash from the registry. Security scanners expect the exact binary payload to be baked into the image at build time. Because Fission modifies the container memory and disk at runtime, standard container provenance validation fails.
 </details>
 
 <details>
@@ -490,7 +490,7 @@ D) Knative Services do not support ClusterIP routing and only listen on NodePort
 <br><br>
 <b>Correct Answer: A</b>
 <br><br>
-<b>Explanation:</b> When a Knative Service is scaled to zero, the ingress routing table is updated to point to the Activator instead of non-existent application pods. The Activator is the component responsible for buffering the request and triggering the scale-up. By bypassing the ingress layer and hitting the pod IP directly, the developer bypassed the Activator entirely, resulting in an immediate connection failure.
+<b>Explanation:</b> When a Knative Service is scaled to zero, the ingress routing table is updated to point to the Activator instead of non-existent application pods. The Activator is the component responsible for buffering the request and triggering the scale-up. By bypassing the ingress layer and hitting the pod IP directly, the developer bypassed the Activator entirely, resulting in an immediate connection failure. Because the target pod does not actually exist yet, the request falls into a routing black hole within the cluster network.
 </details>
 
 <details>
@@ -505,7 +505,7 @@ D) Java (Spring Boot framework, JIT compiled).
 <br><br>
 <b>Correct Answer: D</b>
 <br><br>
-<b>Explanation:</b> JIT-compiled languages like Java (especially with heavy frameworks like Spring Boot) suffer from extreme cold starts due to JVM initialization and framework bootstrapping. Statically compiled languages (Go, Rust) and interpreted languages (Node.js) have significantly faster startup times, making them less risky for scale-to-zero serverless environments.
+<b>Explanation:</b> JIT-compiled languages like Java (especially with heavy frameworks like Spring Boot) suffer from extreme cold starts due to JVM initialization and framework bootstrapping. Statically compiled languages (Go, Rust) and interpreted languages (Node.js) have significantly faster startup times, making them less risky for scale-to-zero serverless environments. The JVM requires significant CPU cycles and memory to load classes, perform bytecode verification, and compile hot paths before the application can accept its first request. In a serverless environment, this delay forces the Knative Activator to buffer incoming traffic for tens of seconds, drastically increasing the risk of dropped connections and SLA breaches.
 </details>
 
 ## Further Reading
