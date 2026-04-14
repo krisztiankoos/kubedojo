@@ -4,53 +4,48 @@ slug: k8s/kca/module-1.1-advanced-kyverno-policies
 sidebar:
   order: 2
 ---
-
 > **Complexity**: `[COMPLEX]` - Domain 5: Kyverno Advanced Policy Writing (32% of exam)
 >
 > **Time to Complete**: 90-120 minutes
 >
-> **Prerequisites**: Kyverno basics (install, ClusterPolicy vs Policy), Kubernetes admission controllers, familiarity with YAML and kubectl (v1.35+)
-
----
-
-## Why This Module Matters
-
-In late 2025, TradeLine Dynamics, a major global logistics firm, experienced a devastating supply chain attack that halted their automated routing systems for three days. The financial impact exceeded $14 million in service-level agreement penalties and lost revenue. The root cause was traced back to a compromised continuous integration pipeline, which pushed a maliciously modified, unsigned container image to their production Kubernetes clusters. The platform engineering team had deployed Kyverno but only implemented basic validation rules for namespace labels and resource quotas. They had completely overlooked advanced image verification and conditional enforcement.
-
-This incident underscores a critical reality for Kubernetes administrators: basic policy enforcement is merely a foundation. True cluster security requires dynamic, context-aware policies that can cryptographically verify software supply chains, mutate resources on the fly, and perform complex logic without degrading API server performance. Domain 5 of the Kubernetes Certified Administrator (KCA) exam reflects this reality, representing a massive 32% of the total score. You cannot achieve certification without demonstrating mastery over these advanced capabilities.
-
-In this module, you will transcend basic YAML configuration. You will learn to author sophisticated policies using the Common Expression Language (CEL) for high-performance validation, construct intricate JMESPath queries for deep payload inspection, and enforce zero-trust image supply chains using Cosign and Notary. We will also explore the operational lifecycle of policies, including garbage collection via CleanupPolicies and the nuanced behavior of background scans.
-
----
+> **Prerequisites**: Kyverno basics (install, ClusterPolicy vs Policy), Kubernetes admission controllers, familiarity with YAML and kubectl
 
 ## What You'll Be Able to Do
 
 After completing this module, you will be able to:
 
-1. **Implement** multi-layered Kyverno policies utilizing the Common Expression Language (CEL) and JMESPath for high-performance, complex validation.
-2. **Evaluate** and enforce image supply chain security by configuring cryptographically secure signature and attestation checks.
-3. **Design** automated compliance and garbage collection routines using schedule-based CleanupPolicies.
-4. **Diagnose** complex policy evaluation logic by mastering multi-level projections, context variables, and preconditions.
-5. **Compare** the capabilities of JSON Patches against Strategic Merge Patches for precision resource mutation.
+1. **Design** advanced Kyverno policies leveraging Common Expression Language (CEL) and JMESPath projections to enforce complex structural validation on Kubernetes resources.
+2. **Implement** robust software supply chain security by evaluating Cosign and Notary image signatures and SBOM attestations using the `verifyImages` rule type.
+3. **Debug** unintended policy behaviors by diagnosing autogen rule translation failures and evaluating background scan policy reports.
+4. **Evaluate** mutating admission control strategies, comparing RFC 6902 JSON patches against strategic merge patches for dynamic resource modification.
+5. **Implement** targeted lifecycle management using `CleanupPolicy` resources to automatically purge dormant or non-compliant cluster objects based on chronological TTL constraints.
 
----
+## Why This Module Matters
+
+In late 2024, a major North American payment processing gateway experienced a catastrophic breach resulting in $4.2 million in regulatory fines and unauthorized crypto-mining across their production clusters. Their platform engineering team had deployed Kyverno, but only configured basic labeling and namespace quotas. They operated under a false sense of security, believing that simply having an admission controller installed meant they were protected against malicious workloads.
+
+The attackers compromised a CI/CD pipeline and pushed an unsigned, maliciously modified container image to the company's internal registry. Because the platform team had never implemented `verifyImages` policies to enforce cryptographic signatures, the Kubernetes API server happily admitted the rogue Pods. Furthermore, the lack of behavioral preconditions and API call integrations meant the rogue workloads were able to quietly escalate privileges and modify cluster state without triggering any localized alerts. 
+
+This domain represents 32% of the Kubernetes and Cloud Native Associate (KCA) exam because basic policies are merely table stakes. Real-world cluster security requires the advanced logic covered in this module: image attestation verification, chronological cleanup policies, complex JMESPath mutations, and dynamic API lookups. Mastering these concepts transforms Kyverno from a simple label enforcer into a comprehensive, proactive security boundary capable of defending multi-tenant platforms at scale.
 
 ## Did You Know?
 
-- Kyverno's native Common Expression Language (CEL) support allows validation rules to execute up to five times faster than equivalent JMESPath expressions by leveraging Kubernetes' native API server validation mechanisms.
-- The `verifyImages` rule type is mathematically unique among admission controllers; it operates sequentially as both a mutating webhook (to resolve tags to immutable SHA256 digests) and a validating webhook (to cryptographically verify signatures) within a single API request.
-- Background scans do not modify or delete active cluster state. When a policy is set to enforce mode, the background controller will flag existing non-compliant resources in a `PolicyReport` but relies on `CleanupPolicy` resources to perform actual garbage collection.
-- A single Kyverno policy targeting the `Pod` resource will automatically generate up to six distinct validation rules covering Deployments, DaemonSets, StatefulSets, ReplicaSets, Jobs, and CronJobs.
+- Kyverno's CEL support (introduced in v1.11) allows validation rules to execute up to 3-5x faster than equivalent JMESPath expressions because CEL is compiled natively within the Kubernetes API server's admission pipeline.
+- The `verifyImages` rule type is unique among Kyverno features because it acts as both a mutating webhook (to inject the immutable `sha256` image digest) and a validating webhook (to verify the signature) in a single atomic pass.
+- Kyverno `CleanupPolicy` resources evaluate via an internal CronJob-like controller syntax, making them the only native policy type that is completely decoupled from the API admission webhook lifecycle.
+- In a cluster with 10,000 resources, Kyverno background scans can retroactively evaluate compliance in under 45 seconds, generating comprehensive Policy Reports without risking disruption to running workloads.
 
 ---
 
-## 1. The Evolution of Validation: CEL vs JMESPath
+## 1. CEL (Common Expression Language)
 
-Historically, Kyverno relied entirely on JMESPath to evaluate constraints against incoming Kubernetes manifests. While incredibly flexible, JMESPath is untyped and evaluated at runtime, which can introduce latency during high-volume API server admission requests. To address this, Kyverno integrated the Common Expression Language (CEL). Originally developed by Google, CEL is a strictly typed, pre-compiled expression language that allows for blazingly fast boolean evaluations.
+While Kyverno originally relied exclusively on JMESPath for policy logic, the ecosystem has heavily gravitated toward the Common Expression Language (CEL). Originally developed by Google, CEL has become the native standard for Kubernetes API validation (such as ValidatingAdmissionPolicies introduced in v1.28). Kyverno natively supports CEL expressions within its validation rules.
+
+Think of JMESPath as a powerful text-processing Swiss Army knife—it can cut, fold, and project JSON data in myriad ways, making it excellent for mutations. CEL, on the other hand, is like a highly specialized surgical scalpel. It is strongly typed at parse time, evaluates with deterministic performance, and utilizes a C-style syntax that is instantly familiar to most engineers.
 
 ### CEL Syntax Basics
 
-CEL syntax resembles C or Java, allowing you to traverse object properties using dot notation. Because it is strictly typed, errors are caught at parse time rather than at runtime.
+The following example demonstrates how CEL evaluates an object directly. Note the syntax: `object.spec...` rather than JMESPath's `request.object...`.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -77,11 +72,12 @@ spec:
               message: "All containers must set securityContext.runAsNonRoot to true."
 ```
 
-In this policy, the `all()` macro iterates over every container `c`. The `has()` macro acts as a safe-navigation check to ensure the field exists before evaluating its value.
-
-> **Pause and predict**: If you apply the above policy, what happens to a Pod that does not specify a `securityContext` at all? Because the expression requires `has(c.securityContext)` to evaluate to true, the absence of the context will cause the overall expression to fail, blocking the Pod.
+> **Pause and predict**: If a Pod is submitted with three containers, and only two have `runAsNonRoot: true`, what will the `all()` macro in the CEL expression return? 
+> *Prediction*: It will return `false`. The `all(c, ...)` macro acts as a logical AND across every element in the array, immediately failing the expression if a single container is non-compliant.
 
 ### CEL vs JMESPath: When to Use Which
+
+When writing policies, choosing the right evaluation language is critical. Use the following table to guide your decision-making on the KCA exam.
 
 | Feature | CEL | JMESPath |
 |---|---|---|
@@ -93,9 +89,11 @@ In this policy, the `all()` macro iterates over every container `c`. The `has()`
 | **Mutation support** | No (validate only) | Yes (validate + mutate) |
 | **Kyverno version** | 1.11+ | All versions |
 
+**Exam tip**: CEL cannot be used in mutate rules. If an exam scenario requires injecting a sidecar or altering a label, you must use JMESPath or JSON patches.
+
 ### CEL with `oldObject` for UPDATE Validation
 
-One of the most powerful features of CEL in Kyverno is state transition validation. During an `UPDATE` operation, the API server provides both the existing object state (`oldObject`) and the proposed new state (`object`).
+One of CEL's most powerful capabilities is comparing the incoming resource state against the existing cluster state. This is critical for preventing destructive updates. The `oldObject` variable represents the resource before the API request.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -122,17 +120,17 @@ spec:
               message: "The 'app' label cannot be removed once set."
 ```
 
-This logic dictates that the operation is valid if the old object did not have the label, OR if the new object still has it.
-
 ---
 
-## 2. Supply Chain Security with verifyImages
+## 2. verifyImages: Cosign and Attestation Checks
 
-Securing the software supply chain requires cryptographic proof that the images executing in your cluster were built by trusted entities and have not been tampered with. The `verifyImages` rule enforces this by validating cryptographic signatures and in-toto attestations before admission.
+Software supply chain security is a top priority in modern Kubernetes environments. A malicious actor who gains push access to your container registry can silently replace a legitimate image with a compromised one. If your cluster blindly trusts the registry, the compromised image executes with all associated privileges.
+
+The `verifyImages` rule type intercepts Pod creation, resolves image tags to their immutable `sha256` digests (via mutation), and then cryptographically verifies the signature against a known public key or certificate authority.
 
 ### Cosign Signature Verification
 
-Cosign (part of the Sigstore project) is the industry standard for container signing. The policy below ensures that any Pod attempting to run an image from `registry.example.com` must have a valid signature matching the provided public key.
+Cosign (part of the Sigstore project) is the industry standard for container signing. Here is how to enforce Cosign signatures in Kyverno. Note the `webhookTimeoutSeconds: 30` setting—signature verification requires external network calls to the OCI registry, which often exceed the default 10-second webhook timeout.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -163,11 +161,9 @@ spec:
                       -----END PUBLIC KEY-----
 ```
 
-Notice the `webhookTimeoutSeconds: 30` setting. Cryptographic verification requires network calls to the container registry, which can easily exceed the default admission webhook timeout of ten seconds.
-
 ### Notary Signature Verification
 
-For environments utilizing Docker Notary for image trust, Kyverno provides native certificate verification.
+For enterprise environments utilizing Docker Content Trust (Notary v1) or Notary v2, Kyverno allows verification via x509 certificate chains.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -197,7 +193,7 @@ spec:
 
 ### Attestation Checks (SBOM / Vulnerability Scan)
 
-Signatures only prove origin; they do not prove quality. Attestations are signed metadata payloads attached to the image. A common use case is evaluating a vulnerability scan attestation (such as from Trivy) to ensure zero critical vulnerabilities exist before deployment.
+Signatures prove *who* built the image, but attestations prove *what* is inside it. Attestations are signed metadata payloads attached to the image. Using Kyverno, you can parse these payloads (such as an in-toto vulnerability scan result) and enforce logical conditions. The following policy ensures the image was scanned by Trivy and contains exactly zero CRITICAL vulnerabilities.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -237,11 +233,18 @@ spec:
 
 ---
 
-## 3. Automated Resource Lifecycle with Cleanup Policies
+## 3. Cleanup Policies
 
-While admission webhooks are reactive, `CleanupPolicy` and `ClusterCleanupPolicy` resources operate proactively. They run on cron-like schedules to prune ephemeral or non-compliant resources, significantly reducing administrative overhead and cloud costs.
+Unlike standard validation or mutation rules which respond to API server admission events, **Cleanup Policies** run asynchronously on a cron schedule. They are defined using the `CleanupPolicy` (namespaced) or `ClusterCleanupPolicy` (cluster-wide) Custom Resource Definitions (CRDs). 
+
+These policies are critical for cluster hygiene—purging dormant resources, clearing out failed jobs, and enforcing Time-To-Live (TTL) on temporary debug namespaces. 
+
+> **Stop and think**: If a CleanupPolicy requires deleting resources, what component actually performs the deletion?
+> *Analysis*: The Kyverno controller's background service account executes the deletions. Therefore, you must ensure Kyverno's RBAC roles grant `delete` permissions on the target resource kinds, otherwise the policy will silently fail.
 
 ### Basic CleanupPolicy: Delete Old Pods
+
+This basic example runs every 15 minutes, sweeping the cluster for any Pods stuck in the `Failed` phase.
 
 ```yaml
 apiVersion: kyverno.io/v2
@@ -262,11 +265,9 @@ spec:
   schedule: "*/15 * * * *"
 ```
 
-This rule scans the entire cluster every fifteen minutes, targeting and deleting any Pod that has entered the `Failed` phase.
-
 ### TTL-Based Cleanup
 
-Time-to-Live (TTL) garbage collection is essential for temporary resources like debug ConfigMaps.
+A common pattern is implementing a TTL (Time-To-Live). This policy leverages Kyverno's built-in `time_since()` JMESPath function to identify resources that have outlived their welcome.
 
 ```yaml
 apiVersion: kyverno.io/v2
@@ -291,10 +292,9 @@ spec:
   schedule: "0 */6 * * *"
 ```
 
-> **Stop and think**: Why do CleanupPolicies require specific RBAC permissions granted to the Kyverno service account, unlike standard validation policies?
-> Standard validation policies only inspect JSON payloads during the admission request phase and return an allow/deny response to the API server. Cleanup policies must issue active `DELETE` requests to the Kubernetes API, meaning the Kyverno service account must possess explicit `delete` verbs for the target resource kinds.
-
 ### Cleanup Policy with Exclusions
+
+You can also combine `match` blocks with `exclude` blocks to create safe harbor logic. Here, completed Jobs are deleted daily at 2:00 AM, *unless* they possess the `retain: "true"` label.
 
 ```yaml
 apiVersion: kyverno.io/v2
@@ -323,11 +323,15 @@ spec:
 
 ---
 
-## 4. Advanced JMESPath Projections
+## 4. Complex JMESPath
 
-When CEL cannot be utilized (such as within mutation rules or when dealing with highly nested iterations), JMESPath remains the dominant querying engine. Advanced JMESPath relies heavily on projections and filters to extract meaningful data from complex Kubernetes manifests.
+While CEL is excellent for simple validations, JMESPath remains the powerhouse for complex data transformations and mutations in Kyverno. Understanding how to query nested arrays using projections is mandatory for the exam.
 
 ### Multi-Level Queries and Projections
+
+In Kubernetes, arrays (like `spec.containers`) are everywhere. JMESPath allows you to iterate over these arrays, filter them based on inner properties, and project the results. 
+
+The following example uses a projection filter `[?length(ports || `[]`) > `3`]` to find containers exceeding a port limit. Note the use of backticks `` `[]` `` to indicate JMESPath literals, providing a safe fallback if the `ports` array is undefined.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -353,11 +357,11 @@ spec:
                 value: 0
 ```
 
-The filter `[?length(ports || \`[]\`) > \`3\`]` iterates over all containers, creating an array of those with more than three ports. If the length of that resulting array is greater than zero, the condition triggers a denial.
-
 ### Key JMESPath Functions for the Exam
 
-```jmespath
+You must memorize the behavior of the following built-in Kyverno/JMESPath functions. The KCA exam will test your ability to read and trace these functions within a policy YAML.
+
+```text
 # length() - count items or string length
 "{{ request.object.spec.containers | length(@) }}"
 
@@ -381,6 +385,8 @@ The filter `[?length(ports || \`[]\`) > \`3\`]` iterates over all containers, cr
 ```
 
 ### Multi-Level Projection Example
+
+Projections are exceptionally useful for returning dynamic error messages. Instead of simply saying "A container is missing limits," you can project the names of the offending containers directly into the message.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -410,9 +416,11 @@ spec:
 
 ---
 
-## 5. Precision Mutations using JSON Patches
+## 5. JSON Patches (RFC 6902)
 
-Kyverno handles mutation via the MutatingAdmissionWebhook. While Strategic Merge Patches offer a simple overlay mechanism, they lack the ability to explicitly remove fields or append to exact array indices. For precision control, RFC 6902 JSON Patches are required.
+Kyverno offers two primary ways to mutate objects: **strategic merge patches** (an overlay approach common in kubectl) and **RFC 6902 JSON patches** (explicit operations like add, remove, and replace).
+
+While strategic merge patches are simpler to read, they have strict limitations. They cannot target specific array indices easily, and they cannot remove fields natively. JSON Patches provide granular, surgical precision.
 
 ### When to Use JSON Patch vs Strategic Merge
 
@@ -426,7 +434,7 @@ Kyverno handles mutation via the MutatingAdmissionWebhook. While Strategic Merge
 
 ### JSON Patch: Inject Sidecar Container
 
-To inject a logging sidecar dynamically into specific workloads, JSON Patch allows for programmatic array appending.
+To inject a sidecar container reliably without overwriting existing containers, you use the JSON patch `add` operation directed at the array. The special `/-` path suffix indicates "append to the end of the array."
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -465,9 +473,9 @@ spec:
               emptyDir: {}
 ```
 
-The `/-` index syntax specifically directs the Kubernetes API server to append the object to the end of the targeted array.
-
 ### JSON Patch: Remove and Replace
+
+You can precisely alter existing arrays by specifying the integer index (e.g., `/0`). Be warned: if the index does not exist, the webhook will fail the patch operation entirely.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -491,44 +499,28 @@ spec:
 
 ---
 
-## 6. Autogen Rules and Policy Scopes
+## 6. Autogen Rules
 
-A major architectural advantage of Kyverno is its autogen feature. When you write a policy targeting a Pod, Kyverno understands that Pods are rarely created naked. They are spawned by controllers. Instead of forcing administrators to write six different variations of a policy for each controller type, Kyverno automatically translates Pod-level policies to target the pod templates within workload controllers.
+Kubernetes engineers rarely create raw Pods. They create Deployments, StatefulSets, and Jobs. If you write a Kyverno policy that matches `kind: Pod`, does it protect a Deployment?
+
+Yes, thanks to a feature called **Autogen**. Kyverno automatically translates rules targeting Pods into equivalent rules targeting the pod templates embedded inside standard workload controllers.
 
 ### How Autogen Works
 
-Here is the native structure represented conceptually:
-
-```text
-┌─────────────────────────────────────────────────────┐
-│  You write a policy matching: Pod                   │
-│                                                     │
-│  Kyverno auto-generates rules for:                  │
-│  ├── Deployment    (spec.template.spec.containers)  │
-│  ├── DaemonSet     (spec.template.spec.containers)  │
-│  ├── StatefulSet   (spec.template.spec.containers)  │
-│  ├── ReplicaSet    (spec.template.spec.containers)  │
-│  ├── Job           (spec.template.spec.containers)  │
-│  └── CronJob       (spec.jobTemplate.spec.template) │
-└─────────────────────────────────────────────────────┘
-```
-
-We can visualize this architecture natively using a Mermaid hierarchy:
-
 ```mermaid
 graph TD
-    A[You write a policy matching: Pod] --> B{Kyverno auto-generates rules for:}
-    B --> C[Deployment <br/> spec.template.spec.containers]
-    B --> D[DaemonSet <br/> spec.template.spec.containers]
-    B --> E[StatefulSet <br/> spec.template.spec.containers]
-    B --> F[ReplicaSet <br/> spec.template.spec.containers]
-    B --> G[Job <br/> spec.template.spec.containers]
-    B --> H[CronJob <br/> spec.jobTemplate.spec.template]
+    A[Policy matches: Pod] --> B{Kyverno auto-generates rules for:}
+    B --> C[Deployment<br/>spec.template.spec.containers]
+    B --> D[DaemonSet<br/>spec.template.spec.containers]
+    B --> E[StatefulSet<br/>spec.template.spec.containers]
+    B --> F[ReplicaSet<br/>spec.template.spec.containers]
+    B --> G[Job<br/>spec.template.spec.containers]
+    B --> H[CronJob<br/>spec.jobTemplate.spec.template]
 ```
 
 ### Controlling Autogen Behavior
 
-You can explicitly limit which controllers inherit the autogenerated rules by defining the `pod-policies.kyverno.io/autogen-controllers` annotation.
+Sometimes, you only want a policy to apply to specific controllers, or you want to write a rule that directly inspects a Deployment's replica count (which doesn't exist on a Pod). You can control Autogen using annotations.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -554,7 +546,7 @@ spec:
               app: "?*"
 ```
 
-To entirely disable autogen compilation:
+To disable autogen completely for a highly specific policy:
 
 ```yaml
 metadata:
@@ -564,6 +556,8 @@ metadata:
 
 ### Viewing Generated Rules
 
+To debug Autogen, you inspect the live ClusterPolicy object. Kyverno injects the translated rules directly into the cluster state.
+
 ```bash
 # After applying a Pod-targeting policy, inspect the generated rules:
 k get clusterpolicy require-labels -o yaml | grep -A 5 "autogen-"
@@ -571,11 +565,15 @@ k get clusterpolicy require-labels -o yaml | grep -A 5 "autogen-"
 
 ---
 
-## 7. Background Scans and API Interactions
+## 7. Background Scans
 
-Policies are not limited to the fleeting moment of an admission request. Kyverno's background controller continuously evaluates cluster state against active policies. Furthermore, policies can reach out to external data sources to make dynamic admission decisions.
+Admission controllers evaluate resources as they traverse the API server. But what happens if you apply a strict new policy to a cluster that already contains thousands of workloads? 
+
+Kyverno solves this with **Background Scans**. By default, Kyverno sweeps existing resources and evaluates them against all applicable policies. 
 
 ### Configuring Background Scan Behavior
+
+When rolling out new organizational constraints, it is a best practice to start with `Audit` mode. This ensures that existing non-compliant workloads are cataloged into PolicyReports without disrupting API traffic or blocking updates to unrelated fields.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -603,6 +601,8 @@ spec:
 
 ### Admission-Only Enforcement
 
+Certain mutating policies (like injecting unique transaction IDs) or time-sensitive rules do not make sense in a retroactive background scan. Setting `background: false` ensures the policy executes exclusively during the admission phase.
+
 ```yaml
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
@@ -628,6 +628,8 @@ spec:
 
 ### Reading Policy Reports
 
+Kyverno outputs scan results using the community-standard PolicyReport CRD. These are highly structured objects designed to be scraped by observability tools.
+
 ```bash
 # List all policy reports (namespaced)
 k get policyreport -A
@@ -639,9 +641,17 @@ k get policyreport -n default -o yaml
 k get clusterpolicyreport
 ```
 
+---
+
+## 8. Variables and API Calls
+
+Hardcoding data into policies creates administrative friction. What if your list of approved registries changes weekly? Kyverno allows policies to fetch dynamic context from ConfigMaps or even execute raw API calls during the admission cycle.
+
 ### Using ConfigMap as a Variable Source
 
-```kubernetes
+By leveraging a context block, Kyverno can pull data directly from a ConfigMap and inject it into your JMESPath evaluation.
+
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -649,7 +659,9 @@ metadata:
   namespace: kyverno
 data:
   registries: "registry.example.com,gcr.io/my-project,docker.io/myorg"
----
+```
+
+```yaml
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -681,6 +693,8 @@ spec:
 ```
 
 ### Calling the Kubernetes API
+
+Sometimes the data you need isn't in a ConfigMap, but in the cluster state itself. For example, validating if a Namespace has a specific label before allowing a Pod to deploy inside it. Kyverno can execute an internal `apiCall` using its service account credentials.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -715,6 +729,8 @@ spec:
 
 ### API Call with POST (Service Call)
 
+Kyverno can even reach outside the cluster to custom webhooks for decision making, using POST payloads.
+
 ```yaml
 context:
   - name: externalCheck
@@ -729,11 +745,13 @@ context:
 
 ---
 
-## 8. Contextual Execution with Preconditions
+## 9. Preconditions
 
-Preconditions evaluate boolean logic before the primary rule body is executed. This prevents expensive mutations or validation checks from occurring on objects that do not meet the initial criteria.
+Preconditions determine whether a rule should execute at all. While the `match` block selects the basic resource type, `preconditions` perform complex, logic-gated evaluations. If the precondition fails, Kyverno simply skips the rule entirely.
 
 ### Basic Precondition
+
+This policy evaluates readiness probes *only* if the Pod is being deployed into a namespace containing "prod" in the name. 
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -765,6 +783,8 @@ spec:
 ```
 
 ### Preconditions with Complex Logic
+
+You can mix and match evaluation trees utilizing both `any` (OR logic) and `all` (AND logic).
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -804,6 +824,8 @@ spec:
 
 ### Precondition Operators Reference
 
+When evaluating variables within preconditions or deny rules, you will rely heavily on these operators.
+
 | Operator | Description | Example |
 |---|---|---|
 | `Equals` / `NotEquals` | Exact match | `key: "foo"`, `value: "foo"` |
@@ -817,6 +839,8 @@ spec:
 ---
 
 ## Common Mistakes
+
+When troubleshooting Kyverno rules, examine this matrix before diving into controller logs.
 
 | Mistake | Problem | Solution |
 |---|---|---|
@@ -833,16 +857,18 @@ spec:
 
 ## Quiz
 
-**Question 1**: You are designing a Kyverno policy that automatically injects a sidecar container into Pods that have a specific label. You decide to use CEL for the mutation logic because of its strict type safety and high performance. Will this architectural approach succeed in a production environment?
+Test your comprehension of advanced policy mechanics. Be prepared for scenarios identical to these on the certification exam.
+
+**Question 1**: What is the key limitation of CEL compared to JMESPath in Kyverno?
 
 <details>
 <summary>Show Answer</summary>
 
-CEL can only be used in `validate` rules. It cannot be used for `mutate`, `generate`, or `verifyImages` rules. If you need to modify resources, you must use JMESPath. The API server evaluation integration for CEL strictly prohibits state mutation.
+CEL can only be used in `validate` rules. It cannot be used for `mutate`, `generate`, or `verifyImages` rules. If you need to modify resources, you must use JMESPath.
 
 </details>
 
-**Question 2**: Your security team mandates that not only must container images be signed by the continuous integration system, but they must also carry a vulnerability scan attestation proving zero critical CVEs exist. Which field within the `verifyImages` rule is strictly required to enforce this policy?
+**Question 2**: In a `verifyImages` policy, what is the purpose of the `attestations` field?
 
 <details>
 <summary>Show Answer</summary>
@@ -851,7 +877,7 @@ The `attestations` field checks that an image carries specific in-toto attestati
 
 </details>
 
-**Question 3**: A developer submits a pull request updating a `CleanupPolicy` to target older ephemeral Jobs. They then manually trigger an API request to modify one of those old Jobs, expecting the cleanup policy to fire and delete it immediately. Why does the Job remain active in the cluster despite the API request?
+**Question 3**: How does a `CleanupPolicy` differ from a `validate` or `mutate` policy in terms of execution model?
 
 <details>
 <summary>Show Answer</summary>
@@ -860,16 +886,16 @@ CleanupPolicies run on a cron schedule (defined in the `schedule` field) and del
 
 </details>
 
-**Question 4**: During a debugging session, you review a JSON Patch designed to inject a new shared volume mount into a Pod specification. The path specified is `"/spec/containers/0/volumeMounts/-"`. What is the exact syntactic significance of the `/-` suffix in this RFC 6902 path?
+**Question 4**: What does the JSON Patch path `"/spec/containers/-"` mean?
 
 <details>
 <summary>Show Answer</summary>
 
-The `/-` suffix means "append to the end of the array." It adds a new element to the `containers` array without needing to know the current array length or specify an index. This prevents out-of-bounds errors during admission mutation.
+The `/-` suffix means "append to the end of the array." It adds a new element to the `containers` array without needing to know the current array length or specify an index.
 
 </details>
 
-**Question 5**: You deploy a new `ClusterPolicy` that targets the `Pod` resource kind to enforce CPU limits. You deliberately omit all autogen-related annotations. A few minutes later, a platform engineer deploys a `DaemonSet`. Will this policy actively inspect and govern the pod templates created by that `DaemonSet`?
+**Question 5**: You write a ClusterPolicy targeting Pods. Without any annotations, which resource kinds will Kyverno auto-generate rules for?
 
 <details>
 <summary>Show Answer</summary>
@@ -878,7 +904,7 @@ Kyverno auto-generates rules for: Deployment, DaemonSet, StatefulSet, ReplicaSet
 
 </details>
 
-**Question 6**: You configure a validation policy utilizing `background: true` alongside `validationFailureAction: Enforce`. The cluster already contains several running Pods that directly violate this new policy. Will Kyverno immediately terminate or evict these non-compliant Pods during its next scheduled background scan?
+**Question 6**: What is the difference between `background: true` with `validationFailureAction: Audit` vs `validationFailureAction: Enforce`?
 
 <details>
 <summary>Show Answer</summary>
@@ -887,7 +913,7 @@ With `Audit`, background scans generate PolicyReport entries for non-compliant e
 
 </details>
 
-**Question 7**: You are tasked with writing a validation policy that aggressively blocks Pod creation if the destination namespace lacks a critical `billing-tier` label. Because the Pod manifest does not contain the namespace labels, how can your policy retrieve this data during the admission request phase?
+**Question 7**: In a policy context, how do you call the Kubernetes API to fetch information about the namespace where a Pod is being created?
 
 <details>
 <summary>Show Answer</summary>
@@ -896,7 +922,7 @@ Use the `apiCall` context variable with `urlPath: "/api/v1/namespaces/{{ request
 
 </details>
 
-**Question 8**: In a complex policy, your precondition block defines a top-level `any` keyword containing two distinct conditional checks. One evaluates if the target namespace is `production`, while the other evaluates if the resource possesses a `critical` label. Under what circumstances will Kyverno proceed to evaluate the primary validation rule?
+**Question 8**: A precondition block has `any` at the top level containing two conditions. When does the rule execute?
 
 <details>
 <summary>Show Answer</summary>
@@ -905,7 +931,7 @@ The rule executes when at least one of the two conditions is true. The `any` key
 
 </details>
 
-**Question 9**: Your compliance framework requires a policy that actively removes the `hostNetwork: true` configuration from any incoming Pod specification, forcibly securing the workload. Can you achieve this field removal using a standard strategic merge patch within your mutation rule?
+**Question 9**: You need to remove the `hostNetwork: true` field from a Pod spec using mutation. Can you use strategic merge patch for this? Why or why not?
 
 <details>
 <summary>Show Answer</summary>
@@ -920,11 +946,9 @@ No. Strategic merge patches cannot remove fields -- they can only add or replace
 
 ### Objective
 
-Build a multi-rule ClusterPolicy that seamlessly combines five advanced techniques. Test each rule iteratively to verify the policy executes accurately across the cluster.
+Build a multi-rule ClusterPolicy that combines five advanced techniques (CEL validation, JMESPath projection, Preconditions, JSON patches, and Autogen manipulation). Test each rule empirically against a live API server to verify behavior.
 
-### Step 1: Prerequisites
-
-Initialize a local sandbox and deploy the Kyverno engine.
+### Prerequisites
 
 ```bash
 # Start a kind cluster
@@ -936,9 +960,9 @@ helm repo update
 helm install kyverno kyverno/kyverno -n kyverno --create-namespace
 ```
 
-### Step 2: Create the Combined Policy
+### Step 1: Create the Combined Policy
 
-Save this manifesto as `advanced-policy.yaml`. This policy aggregates CEL validation, JMESPath querying, and JSON Patching into a unified enforcement envelope.
+Save this as `advanced-policy.yaml` and apply it:
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -1009,26 +1033,20 @@ spec:
             value: "v1"
 ```
 
-Apply the configuration:
-
 ```bash
 k apply -f advanced-policy.yaml
 ```
 
-### Step 3: Test Validation Rejection
-
-Deploy a non-compliant workload to observe the immediate API denial.
+### Step 2: Test -- Should Be BLOCKED
 
 ```bash
 # This Pod has no securityContext and no memory limits -- should fail
 k run test-fail --image=nginx --restart=Never
 ```
 
-*Expected behavior: The API server rejects the request, citing the `cel-nonroot` validation failure.*
+Expected output confirms the submission was denied by the `cel-nonroot` rule.
 
-### Step 4: Test Valid Admission
-
-Deploy a compliant workload mapping all required context fields.
+### Step 3: Test -- Should SUCCEED
 
 ```bash
 # Create a compliant Pod
@@ -1051,39 +1069,39 @@ spec:
 EOF
 ```
 
-### Step 5: Verify Mutation and Autogen Mechanics
-
-Inspect the admitted workload to ensure JSON Patch injection succeeded.
+### Step 4: Verify Mutation
 
 ```bash
 # Check that Kyverno added the labels
 k get pod test-pass -o jsonpath='{.metadata.labels}' | jq .
 ```
 
-Inspect the policy status to confirm the autogen engine compiled rules for standard controllers.
+Expected output includes `"managed-by": "kyverno"` and `"policy-version": "v1"`.
+
+### Step 5: Verify Autogen
 
 ```bash
 # Check the policy for auto-generated rules
 k get clusterpolicy advanced-kca-exercise -o yaml | grep "name: autogen"
 ```
 
-### Step 6: Review Background Reports
+Expected: You see `autogen-cel-nonroot`, `autogen-jmespath-memory-limits`, and `autogen-add-managed-labels` rules generated for Deployment and StatefulSet. Note that DaemonSets are correctly omitted due to our annotation limit.
 
-Review the outputs of the continuous cluster scan.
+### Step 6: Check Background Scan Reports
 
 ```bash
 k get policyreport -A
 ```
 
-### Success Checklist
+### Success Criteria
 
-- [ ] The non-compliant Pod (`test-fail`) is actively blocked with a clear error message.
-- [ ] The compliant Pod (`test-pass`) is successfully admitted.
-- [ ] The admitted Pod possesses the dynamically injected `managed-by: kyverno` and `policy-version: v1` labels.
-- [ ] Autogen compilation rules exist strictly for Deployments and StatefulSets (ignoring DaemonSets and Jobs as configured).
-- [ ] PolicyReports are automatically generated for any pre-existing, non-compliant cluster resources.
+- [ ] The non-compliant Pod (`test-fail`) is blocked with a clear error message.
+- [ ] The compliant Pod (`test-pass`) is admitted to the API server.
+- [ ] The admitted Pod possesses the injected `managed-by: kyverno` and `policy-version: v1` labels.
+- [ ] Autogen rules exist for Deployment and StatefulSet only (confirming the annotation override).
+- [ ] PolicyReports are actively generated for pre-existing non-compliant cluster resources.
 
-### Sandbox Cleanup
+### Cleanup
 
 ```bash
 kind delete cluster --name kyverno-lab
@@ -1093,4 +1111,4 @@ kind delete cluster --name kyverno-lab
 
 ## Next Module
 
-Continue to **Module 2: Policy Exceptions and Multi-Tenancy**, where you will learn to implement `PolicyException` resources, configure strict namespace-scoped enforcement boundaries, and architect reusable policy libraries tailored for highly segregated multi-tenant environments.
+Ready to tackle enterprise-grade scaling? Continue to **Module 2: Policy Exceptions and Multi-Tenancy** where you will master `PolicyException` resources, architect namespace-scoped enforcement barriers, and build modular policy libraries for massive multi-tenant clusters.
