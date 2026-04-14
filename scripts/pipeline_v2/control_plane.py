@@ -769,6 +769,71 @@ class ControlPlane:
         finally:
             conn.close()
 
+    def fail_lease_terminal(
+        self,
+        lease_id: str,
+        *,
+        reason: str,
+        event_type: str = "needs_human_intervention",
+        event_payload: dict[str, Any] | None = None,
+    ) -> bool:
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            job = conn.execute(
+                """
+                SELECT id, module_key
+                FROM jobs
+                WHERE lease_id = ?
+                  AND queue_state = 'leased'
+                """,
+                (lease_id,),
+            ).fetchone()
+            if job is None:
+                conn.commit()
+                return False
+
+            payload = {
+                "job_id": int(job["id"]),
+                "reason": reason,
+                **(event_payload or {}),
+            }
+            conn.execute("DELETE FROM reservations WHERE lease_id = ?", (lease_id,))
+            conn.execute("DELETE FROM active_leases WHERE lease_id = ?", (lease_id,))
+            conn.execute(
+                """
+                UPDATE jobs
+                SET queue_state = 'failed',
+                    leased_by = NULL,
+                    leased_at = NULL,
+                    lease_expires_at = NULL
+                WHERE id = ?
+                """,
+                (int(job["id"]),),
+            )
+            _record_event(
+                conn,
+                event_type,
+                module_key=str(job["module_key"]),
+                lease_id=lease_id,
+                payload=payload,
+            )
+            if event_type == "needs_human_intervention":
+                _record_event(
+                    conn,
+                    "module_dead_lettered",
+                    module_key=str(job["module_key"]),
+                    lease_id=lease_id,
+                    payload=payload,
+                )
+            conn.commit()
+            return True
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def sweep_once(self) -> int:
         conn = self._connect()
         released = 0
@@ -902,6 +967,40 @@ class ControlPlane:
             if row is None:
                 return None
             return row[0]
+        finally:
+            conn.close()
+
+    def count_events_for_module(
+        self,
+        module_key: str,
+        event_type: str,
+        since: int | None = None,
+    ) -> int:
+        conn = self._connect()
+        try:
+            if since is None:
+                row = conn.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM events
+                    WHERE module_key = ?
+                      AND type = ?
+                    """,
+                    (module_key, event_type),
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM events
+                    WHERE module_key = ?
+                      AND type = ?
+                      AND at >= ?
+                    """,
+                    (module_key, event_type, since),
+                ).fetchone()
+            assert row is not None
+            return int(row[0])
         finally:
             conn.close()
 

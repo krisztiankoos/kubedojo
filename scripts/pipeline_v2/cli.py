@@ -10,6 +10,7 @@ from .control_plane import (
     DEFAULT_DB_PATH,
     ControlPlane,
 )
+from .patch_worker import PatchWorker
 from .preflight import run_preflight
 from .review_worker import ReviewWorker
 from .watchdog import sweep_once, watch_forever
@@ -53,6 +54,16 @@ def build_parser() -> argparse.ArgumentParser:
     show_subparsers = show.add_subparsers(dest="show_command", required=True)
     show_budget = show_subparsers.add_parser("budget", help="Show current usage vs caps")
     show_budget.add_argument("--json", action="store_true")
+    show_needs_human = show_subparsers.add_parser(
+        "needs-human",
+        help="Show modules dead-lettered for human intervention",
+    )
+    show_needs_human.add_argument("--json", action="store_true")
+    show_flapping = show_subparsers.add_parser(
+        "flapping",
+        help="Show modules with more than three attempts",
+    )
+    show_flapping.add_argument("--json", action="store_true")
 
     budget = subparsers.add_parser("budget", help="Alias for show budget; also supports edits")
     budget.add_argument("--json", action="store_true")
@@ -79,6 +90,18 @@ def build_parser() -> argparse.ArgumentParser:
     review_worker_loop = review_worker_subparsers.add_parser("loop", help="Run the review worker loop")
     review_worker_loop.add_argument("--worker-id", default="review-worker")
     review_worker_loop.add_argument("--sleep-seconds", type=float, default=5.0)
+
+    patch_worker = subparsers.add_parser("patch-worker", help="Run the Week 3 patch worker")
+    patch_worker_subparsers = patch_worker.add_subparsers(
+        dest="patch_worker_command",
+        required=True,
+    )
+    patch_worker_run = patch_worker_subparsers.add_parser("run", help="Patch one queued job")
+    patch_worker_run.add_argument("--worker-id", default="patch-worker")
+    patch_worker_run.add_argument("--json", action="store_true")
+    patch_worker_loop = patch_worker_subparsers.add_parser("loop", help="Run the patch worker loop")
+    patch_worker_loop.add_argument("--worker-id", default="patch-worker")
+    patch_worker_loop.add_argument("--sleep-seconds", type=float, default=5.0)
 
     preflight = subparsers.add_parser("preflight", help="Run deterministic pre-flight checks")
     preflight.add_argument("module_path", type=Path)
@@ -138,8 +161,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "show":
-        assert args.show_command == "budget"
-        return _show_budget(control_plane, json_output=args.json)
+        if args.show_command == "budget":
+            return _show_budget(control_plane, json_output=args.json)
+        if args.show_command == "needs-human":
+            return _show_needs_human(control_plane, json_output=args.json)
+        if args.show_command == "flapping":
+            return _show_flapping(control_plane, json_output=args.json)
+        parser.error(f"Unhandled show command: {args.show_command}")
 
     if args.command == "budget":
         if args.budget_command == "set":
@@ -181,6 +209,31 @@ def main(argv: list[str] | None = None) -> int:
         worker.loop_forever(sleep_seconds=args.sleep_seconds)
         return 0
 
+    if args.command == "patch-worker":
+        worker = PatchWorker(control_plane, worker_id=args.worker_id)
+        if args.patch_worker_command == "run":
+            outcome = worker.run_once()
+            if args.json:
+                print(
+                    json.dumps(
+                        {
+                            "status": outcome.status,
+                            "module_key": outcome.module_key,
+                            "lease_id": outcome.lease_id,
+                            "details": outcome.details,
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+            elif outcome.status == "idle":
+                print("no patch job available")
+            else:
+                print(f"{outcome.status}: {outcome.module_key}")
+            return 0
+        worker.loop_forever(sleep_seconds=args.sleep_seconds)
+        return 0
+
     if args.command == "preflight":
         result = run_preflight(args.module_path)
         if args.json:
@@ -214,6 +267,55 @@ def _show_budget(control_plane: ControlPlane, *, json_output: bool) -> int:
         )
     if not report["rows"]:
         print("(no configured or observed models)")
+    return 0
+
+
+def _show_needs_human(control_plane: ControlPlane, *, json_output: bool) -> int:
+    rows = []
+    for event in control_plane.iter_events("needs_human_intervention"):
+        payload = json.loads(event["payload_json"])
+        rows.append(
+            {
+                "module_key": event["module_key"],
+                "reason": payload.get("reason"),
+                "rewrite_attempts": payload.get("rewrite_attempts"),
+                "at": event["at"],
+            }
+        )
+    if json_output:
+        print(json.dumps(rows, indent=2, sort_keys=True))
+        return 0
+    if not rows:
+        print("(no modules need human intervention)")
+        return 0
+    print("Needs human intervention")
+    for row in rows:
+        print(
+            f"{row['module_key']}: {row['reason']} "
+            f"(rewrite_attempts={row['rewrite_attempts']}, at={row['at']})"
+        )
+    return 0
+
+
+def _show_flapping(control_plane: ControlPlane, *, json_output: bool) -> int:
+    counts: dict[str, int] = {}
+    for event in control_plane.iter_events("attempt_started"):
+        module_key = str(event["module_key"])
+        counts[module_key] = counts.get(module_key, 0) + 1
+    rows = [
+        {"module_key": module_key, "attempts": attempts}
+        for module_key, attempts in sorted(counts.items())
+        if attempts > 3
+    ]
+    if json_output:
+        print(json.dumps(rows, indent=2, sort_keys=True))
+        return 0
+    if not rows:
+        print("(no flapping modules)")
+        return 0
+    print("Flapping modules")
+    for row in rows:
+        print(f"{row['module_key']}: {row['attempts']} attempts")
     return 0
 
 
