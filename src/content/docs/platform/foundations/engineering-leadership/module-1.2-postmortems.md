@@ -102,7 +102,7 @@ graph TD
     B --- C["Reckless Neglect"]
     
     A_Desc["- 'Who did this?'<br/>- Punish the person.<br/>- Hide mistakes.<br/>- Deploy less often."]
-    B_Desc["- 'What made this possible?'<br/>- Fix the system.<br/>- Report freely.<br/>- Improve continuously.<br/><b>⭐ YOU WANT TO BE HERE</b>"]
+    B_Desc["- 'What made this possible?'<br/>- Fix the system.<br/>- Report freely.<br/>- Improve continuously.<br/><b>GOAL: YOU WANT TO BE HERE</b>"]
     C_Desc["- 'Nobody is responsible.'<br/>- No accountability.<br/>- No improvement."]
     
     A --- A_Desc
@@ -642,8 +642,8 @@ A4: The ArgoCD ApplicationSet did not enforce a promotion
 
 Q5: Why was there no deployment promotion workflow?
 A5: When ArgoCD was adopted 6 months ago, the team chose
-    speed over safety. A promotion workflow was on the
-    roadmap but never prioritized.
+    speed over safety. A promotion workflow was on the roadmap
+    but never prioritized.
 
 Root Cause: Missing deployment safety mechanisms --- no
 config validation, no staging gate, no promotion workflow.
@@ -677,7 +677,7 @@ P3 (This Quarter):
   [AI-5] Implement deployment freeze policy for top-5 traffic
          hours. Deployments during these windows require
          explicit approval from team lead.
-         Owner: @engineering-lead | Deadline: May 1
+         Owner: @team-lead | Deadline: May 1
 
   [AI-6] Audit all ArgoCD applications for auto-sync to
          production without promotion gates.
@@ -878,7 +878,7 @@ D) "Fix the monitoring so this doesn't happen again"
 <details>
 <summary>Show Answer</summary>
 
-Option B is the correct choice because it meets all the criteria of a SMART action item. An action item is only effective if it is Specific, Measurable, Assignable, Realistic, and Time-bound. Vague action items like options A, C, or D cannot be systematically tracked, have no clear completion state, and are almost never actually implemented by teams. By defining exactly what will be built (a canary deployment step), who specifically owns it (@jordan), and when it is due (April 15), you create accountability. This level of rigor ensures the systemic vulnerability is actually closed before another incident can exploit it.
+Option B is the correct choice because it meets all the criteria of a SMART action item. An action item is only effective if it is Specific, Measurable, Assignable, Realistic, and Time-bound. Vague action items like options A, C, or D cannot be systematically tracked, have no clear completion state, and are almost never actually implemented by teams. By defining exactly what will be built (a canary deployment step), who specifically owns it ( @jordan), and when it is due (April 15), you create accountability. This level of rigor ensures the systemic vulnerability is actually closed before another incident can exploit it.
 </details>
 
 **Question 4**: During a postmortem, a developer states: "The root cause of the outage was that the memory limit was updated to 256Mi in the PR." How should you, as the incident commander, address this statement in the context of triggers vs. root causes?
