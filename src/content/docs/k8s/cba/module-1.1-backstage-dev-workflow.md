@@ -38,9 +38,11 @@ After completing this module, you will be able to:
 
 ## Did You Know?
 
-- Backstage was created by Spotify and open-sourced on March 16, 2020. Before being open-sourced, Spotify internally used it to manage 2,000+ backend services, 300+ websites, and 4,000+ data pipelines.
-- The Backstage framework has a minimum hardware requirement of 20 GB disk space and 6 GB RAM for a standalone installation, ensuring sufficient resources for its extensive plugin ecosystem and local compilation.
-- According to the "Backstage Wrapped 2025" report published on December 30, 2025, Backstage boasts over 3,400 adopters, 31,000 GitHub stars, and 1,800 contributors, while the Backstage New Backend System officially reached stable 1.0 status in 2024.
+- Backstage was created by Spotify and open-sourced under the Apache License, Version 2.0 on March 16, 2020. Before being open-sourced, Spotify internally used it to manage 2,000+ backend services, 300+ websites, and 4,000+ data pipelines.
+- It joined the CNCF Sandbox on September 8, 2020, and moved to CNCF Incubating status on March 15, 2022. The project maintains an official roadmap that is updated every 6 months, and its ADOPTERS.md file lists over 150 named organizations.
+- The Backstage framework is primarily written in TypeScript. It requires Node.js Active LTS (Node 22 or 24) and Yarn 4.x, and has a minimum hardware requirement of 20 GB disk space and 6 GB RAM for a standalone installation. It supports Linux, macOS, and Windows (via WSL).
+- The latest stable Backstage release is v1.49.4. The Backstage New Backend System reached stable 1.0 status in 2024, and TechDocs has also reached v1.0 status. 
+- According to the "Backstage Wrapped 2025" report published on December 30, 2025, Backstage boasts over 3,400 adopters, 31,000 GitHub stars, and 1,800 contributors. The Backstage plugin directory lists over 250 open-source plugins.
 - Backstage claims an 89% market share among IDP tools versus SaaS competitors. Note: This statistic is self-reported and originates from a third-party survey cited in Backstage's own blog; the primary survey data is not independently accessible for verification, making this an unverified claim.
 
 ---
