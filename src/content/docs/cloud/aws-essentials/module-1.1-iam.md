@@ -72,32 +72,17 @@ The AWS Security Token Service (STS) is the engine behind IAM roles. When an ent
 
 Here is what happens under the hood:
 
-```text
-                    ┌──────────────────────────────────────────────────────┐
-                    │                    STS: AssumeRole Flow              │
-                    └──────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant Requester as Requester<br/>(EC2, User, Lambda)
+    participant STS as STS Service
+    participant Target as Target AWS Service<br/>(S3, EC2)
 
-  ┌─────────────┐          1. AssumeRole(RoleARN)           ┌─────────────┐
-  │             │ ─────────────────────────────────────────> │             │
-  │  Requester  │                                           │     STS     │
-  │ (EC2, User, │          2. Check Trust Policy             │   Service   │
-  │  Lambda)    │ <─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │             │
-  │             │          Is requester allowed?             │             │
-  │             │                                           │             │
-  │             │  3. Return Temporary Credentials           │             │
-  │             │ <═════════════════════════════════════════ │             │
-  │             │     AccessKeyId + SecretKey + Token        │             │
-  └──────┬──────┘     (Valid for 1-12 hours)                └─────────────┘
-         │
-         │  4. Make API calls using temporary credentials
-         │
-         ▼
-  ┌─────────────┐
-  │   Target     │     5. IAM evaluates the ROLE'S
-  │   AWS        │        Permissions Policy
-  │   Service    │        (not the requester's original perms)
-  │  (S3, EC2)   │
-  └─────────────┘
+    Requester->>STS: 1. AssumeRole(RoleARN)
+    Note over STS: 2. Check Trust Policy<br/>Is requester allowed?
+    STS-->>Requester: 3. Return Temporary Credentials<br/>(AccessKeyId + SecretKey + Token)<br/>Valid for 1-12 hours
+    Requester->>Target: 4. Make API calls using temporary credentials
+    Note over Target: 5. IAM evaluates the ROLE'S<br/>Permissions Policy<br/>(not the requester's original perms)
 ```
 
 Step by step:
@@ -317,53 +302,39 @@ Key condition operators to know:
 
 The IAM evaluation logic is strict and follows a well-defined order for every single API request. Understanding this flow is *essential* for debugging access issues.
 
-```text
-  ┌──────────────────────────────────────────────────────────────────────┐
-  │                  IAM Policy Evaluation Flow                         │
-  │                  (Same-Account Request)                             │
-  └──────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Start([API Request arrives]) --> Q1
 
-  API Request arrives
-       │
-       ▼
-  ┌─────────────────┐    YES
-  │ Explicit DENY    │──────────> DENIED (final, cannot be overridden)
-  │ in ANY policy?   │
-  └────────┬────────┘
-           │ NO
-           ▼
-  ┌─────────────────┐    YES
-  │ SCP allows it?   │◄──── Only applies if account is in AWS Org
-  │ (if applicable)  │
-  └────────┬────────┘
-           │ YES (or N/A)
-           ▼
-  ┌─────────────────┐    NO
-  │ Resource-based   │──────────┐
-  │ policy allows?   │          │
-  └────────┬────────┘          │
-           │ YES               │
-           ▼                   ▼
-  ┌─────────────────┐  ┌─────────────────┐
-  │ ALLOWED         │  │ Identity-based   │  NO
-  │ (if same-acct   │  │ policy allows?   │──────> DENIED (implicit)
-  │  & resource pol  │  └────────┬────────┘
-  │  has explicit    │           │ YES
-  │  Allow)          │           ▼
-  └─────────────────┘  ┌─────────────────┐
-                       │ Permission       │  NO
-                       │ Boundary allows? │──────> DENIED (implicit)
-                       └────────┬────────┘
-                                │ YES
-                                ▼
-                       ┌─────────────────┐
-                       │ Session policy   │  NO
-                       │ allows?          │──────> DENIED (implicit)
-                       │ (if applicable)  │
-                       └────────┬────────┘
-                                │ YES
-                                ▼
-                            ALLOWED
+    Q1{"Explicit DENY<br/>in ANY policy?"}
+    Q1 -- "YES" --> Denied1(["DENIED<br/>(final, cannot be overridden)"])
+    Q1 -- "NO" --> Q2
+
+    Q2{"SCP allows it?<br/>(if applicable)"}
+    Q2 -- "YES (or N/A)" --> Q3
+
+    Q3{"Resource-based<br/>policy allows?"}
+    Q3 -- "YES" --> Allowed1(["ALLOWED<br/>(if same-acct & resource pol<br/>has explicit Allow)"])
+    Q3 -- "NO" --> Q4
+
+    Q4{"Identity-based<br/>policy allows?"}
+    Q4 -- "NO" --> Denied2(["DENIED (implicit)"])
+    Q4 -- "YES" --> Q5
+
+    Q5{"Permission<br/>Boundary allows?"}
+    Q5 -- "NO" --> Denied3(["DENIED (implicit)"])
+    Q5 -- "YES" --> Q6
+
+    Q6{"Session policy<br/>allows?<br/>(if applicable)"}
+    Q6 -- "NO" --> Denied4(["DENIED (implicit)"])
+    Q6 -- "YES" --> Allowed2(["ALLOWED"])
+
+    style Denied1 fill:#f8d7da,stroke:#dc3545,color:#721c24
+    style Denied2 fill:#f8d7da,stroke:#dc3545,color:#721c24
+    style Denied3 fill:#f8d7da,stroke:#dc3545,color:#721c24
+    style Denied4 fill:#f8d7da,stroke:#dc3545,color:#721c24
+    style Allowed1 fill:#d4edda,stroke:#28a745,color:#155724
+    style Allowed2 fill:#d4edda,stroke:#28a745,color:#155724
 ```
 
 The four key rules:
@@ -470,6 +441,8 @@ Think of it like a fence around a playground. The kids (developers) can play any
 Imagine a developer wants to create a role for a Lambda function. You grant the developer the `iam:CreateRole` permission, but you enforce a Condition: they *must* attach a specific Permission Boundary policy (e.g., `Boundary-Developer-Max-Access`) to any role they create.
 
 If `Boundary-Developer-Max-Access` allows S3 and DynamoDB, but denies EC2, then even if the developer attaches `AdministratorAccess` to their new Lambda role, the effective permissions will only be S3 and DynamoDB. The boundary restricts the maximum possible ceiling of access.
+
+> **Pause and predict**: What happens if a developer creates a role with a permission boundary attached, but does not attach any permissions policy to the role? Will the role have any permissions?
 
 ```json
 // Policy attached to the developer: they can create roles, but MUST
@@ -648,9 +621,7 @@ This single policy works for every team. If Alice is tagged with `Project: payme
 <details>
 <summary>Question 1: You have an IAM role attached to an EC2 instance. The role's policy explicitly allows `s3:GetObject` on `arn:aws:s3:::financial-reports/*`. However, the EC2 instance receives an Access Denied error when trying to download a file. A developer points out that there is an S3 Bucket Policy on the `financial-reports` bucket. What must the Bucket Policy contain for the download to succeed?</summary>
 
-**Answer**: The Bucket Policy does not necessarily need to contain anything to allow the action, but it **must NOT** contain an Explicit Deny for that role or action. Because the IAM role already grants an explicit Allow, the evaluation logic permits the action as long as no resource policy (the Bucket Policy) or organizational policy (SCP) explicitly denies it. If the bucket and the EC2 instance are in the same account, the IAM policy alone is sufficient.
-
-However, if this were a **cross-account** scenario (EC2 in Account A, bucket in Account B), then the Bucket Policy in Account B *would* need to explicitly allow the EC2 role from Account A, because cross-account access requires both sides to grant permission.
+**Answer**: The Bucket Policy does not necessarily need to contain anything to allow the action, but it **must NOT** contain an Explicit Deny for that role or action. Because the IAM role already grants an explicit Allow, the evaluation logic permits the action as long as no resource policy (the Bucket Policy) or organizational policy (SCP) explicitly denies it. If the bucket and the EC2 instance are in the same account, the IAM policy alone is sufficient. However, if this were a **cross-account** scenario (EC2 in Account A, bucket in Account B), then the Bucket Policy in Account B *would* need to explicitly allow the EC2 role from Account A, because cross-account access requires both sides to grant permission.
 </details>
 
 <details>
