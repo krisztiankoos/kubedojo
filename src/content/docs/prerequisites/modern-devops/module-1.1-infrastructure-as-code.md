@@ -379,7 +379,7 @@ flowchart LR
 - **"Cattle, not pets"** is an IaC principle. Treat servers like cattle (replaceable, numbered), not pets (named, irreplaceable). You should be able to destroy and recreate any server without worry.
 - **"Configuration Drift"** was originally a systems administration term describing the phenomenon where servers in a cluster become increasingly different over time due to ad-hoc, undocumented manual updates.
 - **Pulumi** is an Apache 2.0 licensed IaC tool that lets you write infrastructure in general-purpose languages like TypeScript, Python, Go, Java, and .NET, compiling them into an infrastructure resource graph at runtime.
-- **Crossplane** is a CNCF Graduated project that uses Kubernetes itself to provision cloud resources, allowing you to manage AWS/Azure/GCP infrastructure using native Kubernetes YAML.
+- **Crossplane**, a prominent CNCF project, uses Kubernetes itself to provision cloud resources, allowing you to manage AWS/Azure/GCP infrastructure using native Kubernetes YAML.
 
 ---
 
@@ -547,7 +547,7 @@ rm deployment.yaml config.yaml
 6. **Your organization mandates that all infrastructure changes must be auditable, reversible, and reviewed by a peer before applying. A developer complains that Kubernetes makes this impossible because they have to use `kubectl run` commands all day. How do you correct this misunderstanding?**
    <details>
    <summary>Answer</summary>
-   The developer's complaint stems from using Kubernetes **imperatively** via the CLI, which circumvents IaC principles entirely. Kubernetes functions as a native IaC system when its desired state is defined using declarative YAML manifest files rather than imperative commands. By defining cluster resources in YAML and committing those files to a Git repository, the organization can easily enforce mandatory peer reviews through pull requests. Applying these manifests via an automated CI/CD pipeline ensures that Kubernetes fully supports auditable, reversible, and highly collaborative infrastructure management.
+   The developer's complaint stems from using Kubernetes **imperatively** via the CLI, which circumvents IaC principles entirely. Kubernetes functions as a native IaC system when its desired state is defined using declarative YAML manifest files rather than imperative commands. By defining cluster resources in YAML and committing those files to a Git repository, the organization can easily enforce mandatory peer reviews through pull requests. Applying these manifests via an automated CI/CD pipeline ensures that Kubernetes fully supports auditable, reversible, and highly collaborative infrastructure management. This entirely replaces the need for manual, unreviewed CLI commands.
    </details>
 
 7. **You apply a Kubernetes Deployment YAML file to a cluster, creating 3 replicas of a web app. Ten minutes later, you accidentally hit "Up" and "Enter" in your terminal, running the exact same `kubectl apply -f deployment.yaml` command again. What will the cluster do?**
