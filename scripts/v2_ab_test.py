@@ -113,6 +113,7 @@ def run_ab_test(
     budgets_path: Path = DEFAULT_BUDGETS_PATH,
     seed: int = 239,
     max_iterations: int = 24,
+    show_progress: bool = True,
 ) -> AbTestReport:
     selected = select_review_modules(
         state_path=state_path,
@@ -123,18 +124,71 @@ def run_ab_test(
     midpoint = len(selected) // 2
     v1_group = selected[:midpoint]
     v2_group = selected[midpoint:]
+    total_trials = len(selected)
+
+    if show_progress:
+        print("Starting v1 vs v2 A/B comparison", flush=True)
+        print(
+            f"total={total_trials} requested={count} filter={modules_filter or '(all review modules)'} "
+            f"seed={seed} max_iterations={max_iterations}",
+            flush=True,
+        )
+        print(f"state={state_path} budgets={budgets_path}", flush=True)
 
     results: list[TrialResult] = []
+    trial_number = 0
+
     for item in v1_group:
-        results.append(run_v1_trial(item, state_path=state_path))
-    for item in v2_group:
-        results.append(
-            run_v2_trial(
-                item,
-                budgets_path=budgets_path,
-                max_iterations=max_iterations,
+        trial_number += 1
+        if show_progress:
+            print(f"[{trial_number}/{total_trials} v1] {item.raw_key} - running...", flush=True)
+        result = run_v1_trial(item, state_path=state_path)
+        results.append(result)
+        if show_progress:
+            status = "PASS" if result.converged else "FAIL"
+            print(
+                f"[{trial_number}/{total_trials} v1] {status} "
+                f"({result.passes} iters, ${result.cost_usd:.3f}, {int(round(result.wall_time_s))}s)",
+                flush=True,
             )
+            if trial_number % 5 == 0:
+                passed = sum(1 for entry in results if entry.converged)
+                failed = len(results) - passed
+                avg_cost = sum(entry.cost_usd for entry in results) / len(results)
+                avg_time = sum(entry.wall_time_s for entry in results) / len(results)
+                print(
+                    f"[tally {trial_number}/{total_trials}] {passed} passed, {failed} failed, "
+                    f"avg cost ${avg_cost:.3f}, avg time {int(round(avg_time))}s",
+                    flush=True,
+                )
+
+    for item in v2_group:
+        trial_number += 1
+        if show_progress:
+            print(f"[{trial_number}/{total_trials} v2] {item.raw_key} - running...", flush=True)
+        result = run_v2_trial(
+            item,
+            budgets_path=budgets_path,
+            max_iterations=max_iterations,
         )
+        results.append(result)
+        if show_progress:
+            status = "PASS" if result.converged else "FAIL"
+            print(
+                f"[{trial_number}/{total_trials} v2] {status} "
+                f"({result.passes} iters, ${result.cost_usd:.3f}, {int(round(result.wall_time_s))}s)",
+                flush=True,
+            )
+            if trial_number % 5 == 0:
+                passed = sum(1 for entry in results if entry.converged)
+                failed = len(results) - passed
+                avg_cost = sum(entry.cost_usd for entry in results) / len(results)
+                avg_time = sum(entry.wall_time_s for entry in results) / len(results)
+                print(
+                    f"[tally {trial_number}/{total_trials}] {passed} passed, {failed} failed, "
+                    f"avg cost ${avg_cost:.3f}, avg time {int(round(avg_time))}s",
+                    flush=True,
+                )
 
     return AbTestReport(
         count_requested=count,
@@ -329,6 +383,7 @@ def main(argv: list[str] | None = None) -> int:
         budgets_path=args.budgets,
         seed=args.seed,
         max_iterations=args.max_iterations,
+        show_progress=not args.json,
     )
     if args.json:
         print(json.dumps(report.to_dict(), indent=2, sort_keys=True))

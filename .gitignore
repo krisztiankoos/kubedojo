@@ -64,6 +64,10 @@ test_script.sh
 .pipeline/fact-ledgers/
 .pipeline/link-cache.json
 .pipeline/knowledge-cards/
+.pipeline/reviews/*.lock
+.pipeline/lab-reviews/
+.pipeline/lab-state.lock
+.pipeline/lab-state.yaml
 
 # Agent bridge runtime
 .bridge/
