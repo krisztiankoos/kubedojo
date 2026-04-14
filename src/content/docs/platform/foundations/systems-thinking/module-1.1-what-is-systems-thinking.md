@@ -116,7 +116,7 @@ flowchart LR
     end
 ```
 
-> 💡 **Did You Know?** The word "system" comes from Greek *systema*, meaning "organized whole." The ancient Greeks understood something we keep forgetting: the whole is fundamentally different from the sum of its parts. Aristotle wrote about this 2,400 years ago. We're still learning the same lesson.
+> **Did You Know?** The word "system" comes from Greek *systema*, meaning "organized whole." The ancient Greeks understood something we keep forgetting: the whole is fundamentally different from the sum of its parts. Aristotle wrote about this 2,400 years ago. We're still learning the same lesson.
 
 ### Emergence: Where System Behavior Lives
 
@@ -221,6 +221,8 @@ flowchart TD
     P --> S
     S --> M
 ```
+
+> **Stop and think**: Which level of the iceberg does your team spend most of its time in? What would need to change to move one level deeper?
 
 ### Each Level Explained
 
@@ -331,6 +333,8 @@ flowchart TD
 ```
 *You can't fix latency by looking at inflow or outflow alone. The STOCK determines latency. 5000 queued ÷ 800/sec = 6.25 seconds. The only ways to reduce latency: 1. Reduce inflow (rate limiting), 2. Increase outflow (more capacity), 3. Accept the backlog will drain eventually.*
 
+> **Stop and think**: Look at the bathtub model. Can you identify the "stocks" and "flows" in the most critical service you maintain?
+
 ### Delays: The Hidden Cause of Chaos
 
 Delays are everywhere in distributed systems:
@@ -368,7 +372,7 @@ sequenceDiagram
     Note over A, P: We now have too few pods! (Repeat)
 ```
 
-> 💡 **Did You Know?** The famous "thundering herd" problem is a delay-induced catastrophe. A cache expires. All requests hit the database simultaneously. The database slows down. Requests time out and retry. More load. More timeouts. More retries. The delay between cache miss and successful refill creates a feedback loop that amplifies the original problem exponentially.
+> **Did You Know?** The famous "thundering herd" problem is a delay-induced catastrophe. A cache expires. All requests hit the database simultaneously. The database slows down. Requests time out and retry. More load. More timeouts. More retries. The delay between cache miss and successful refill creates a feedback loop that amplifies the original problem exponentially.
 
 ---
 
