@@ -85,6 +85,8 @@ flowchart TD
 
 ### Node Provisioning Script for New Rack
 
+Unlike cloud environments, the vanilla Kubernetes Cluster Autoscaler does not support on-premises bare-metal node provisioning because it relies on cloud provider node pool APIs. This means bare-metal capacity expansion requires manual or scripted provisioning processes. Before running any automation, ensure that each bare-metal server has a unique hostname, MAC address, and `product_uuid`, as `kubeadm` will fail to register nodes if these are duplicated.
+
 This script automates the most error-prone part of rack expansion: waiting for each server to PXE boot, joining it to the cluster, and applying the correct topology labels. Labels for rack, hardware generation, and CPU model enable scheduling policies that account for heterogeneous hardware.
 
 ```bash
@@ -403,6 +405,8 @@ echo "  4. Update monitoring targets"
 echo "  5. Update PXE/DHCP reservations"
 ```
 
+When physically powering down decommissioned nodes, do not simply turn them off. While Graceful Node Shutdown is enabled by default in Kubernetes, it is not actually activated unless you have explicitly configured `shutdownGracePeriod` to a non-zero value in your kubelet configuration. Always use the `kubectl drain` process to safely evict workloads.
+
 When decommissioning in batches, remove 5 nodes at a time over 1-2 day phases. Monitor utilization overnight after each batch. Never exceed 80% cluster utilization during the process. After all nodes are removed, verify no orphaned PVs remain and update monitoring targets, alerting thresholds, and spare node counts.
 
 ---
@@ -453,6 +457,8 @@ timeline
 
 ## Capacity Planning with Hardware Generations
 
+When forecasting long-term growth across multiple hardware refresh cycles, remember that Kubernetes v1.35 has official large-cluster tested limits: a maximum of 5,000 nodes, 110 pods per node, 150,000 total pods, and 300,000 total containers. Your capacity plans must ensure all four constraints are met simultaneously.
+
 ### Monitoring Capacity Trends
 
 Create Prometheus recording rules that track CPU capacity and utilization broken down by hardware generation. The most valuable metric is `cluster:capacity_days_remaining`, which uses `deriv()` over a 30-day window to project when current capacity will be exhausted at the current growth rate. Alert when this drops below 60 days to trigger procurement.
@@ -460,6 +466,8 @@ Create Prometheus recording rules that track CPU capacity and utilization broken
 ---
 
 ## Did You Know?
+
+- **Kubernetes 1.35 is the last release to support containerd 1.7.** If your hardware refresh involves reinstalling the operating system and container runtime on new servers, ensure you install containerd 2.0+ (or another CRI v1 compliant runtime). The fallback compatibility for older runtimes will be completely removed in Kubernetes 1.36.
 
 - **Intel and AMD use different socket standards, so you cannot swap CPUs between vendors in the same server chassis.** A hardware refresh that switches from Intel to AMD (or vice versa) requires entirely new servers, not just new CPUs. This is why vendor choice in the initial purchase has long-term implications.
 
