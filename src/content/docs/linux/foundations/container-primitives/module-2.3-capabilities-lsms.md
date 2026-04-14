@@ -36,7 +36,7 @@ Understanding these helps you:
 - **Secure containers** — Drop unnecessary capabilities
 - **Debug permission errors** — Why can't my container do X?
 - **Implement least privilege** — Give only the access needed
-- **Understand Kubernetes security** — SecurityContext, PodSecurityPolicies, seccomp
+- **Understand Kubernetes security** — SecurityContext, Pod Security Admission, seccomp
 
 When your container fails with "operation not permitted" despite running as root, capabilities are usually the answer.
 
@@ -211,9 +211,12 @@ docker run --privileged nginx
 ```yaml
 apiVersion: v1
 kind: Pod
+metadata:
+  name: secure-app
 spec:
   containers:
   - name: app
+    image: nginx
     securityContext:
       capabilities:
         drop:
@@ -344,12 +347,15 @@ docker run --security-opt apparmor=unconfined nginx
 apiVersion: v1
 kind: Pod
 metadata:
-  annotations:
-    container.apparmor.security.beta.kubernetes.io/app: localhost/my-profile
+  name: secure-nginx
 spec:
   containers:
   - name: app
     image: nginx
+    securityContext:
+      appArmorProfile:
+        type: Localhost
+        localhostProfile: my-profile
 ```
 
 ---
@@ -385,10 +391,10 @@ Docker blocks ~44 syscalls by default:
     }
   ],
   "blocked": [
-    "kexec_load",        // Load new kernel
-    "reboot",            // Reboot system
-    "mount",             // Mount filesystems (by default)
-    "ptrace",            // Trace processes (often blocked)
+    "kexec_load",
+    "reboot",
+    "mount",
+    "ptrace",
     "...40+ others"
   ]
 }
@@ -423,12 +429,15 @@ docker run --security-opt seccomp=unconfined nginx
 ```yaml
 apiVersion: v1
 kind: Pod
+metadata:
+  name: secure-app
 spec:
   securityContext:
     seccompProfile:
       type: RuntimeDefault  # Use container runtime's default
   containers:
   - name: app
+    image: nginx
     securityContext:
       seccompProfile:
         type: Localhost
