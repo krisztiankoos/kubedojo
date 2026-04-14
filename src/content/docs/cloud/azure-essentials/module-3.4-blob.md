@@ -273,9 +273,41 @@ This JSON policy instructs Azure's background services to evaluate the `logs/` p
 
 ---
 
-## Securing Blob Storage: SAS Tokens vs Identity-Based Access
+## Data Protection and Compliance
 
-Choosing how to authorize access to blob storage defines your security posture. There are three primary methods, but they are not created equal.
+Enterprise data requires resilience against both accidental deletion and malicious alteration. Azure Blob Storage provides three core mechanisms to ensure data integrity:
+
+### 1. Soft Delete
+When enabled, soft delete retains deleted blobs or containers for a specified retention period (between 1 and 365 days) before permanently erasing them. During this window, you can restore the data. It acts as a direct safety net against accidental deletion by human error or buggy application code.
+
+### 2. Blob Versioning
+Versioning automatically maintains previous states of a blob each time it is modified or deleted. When a blob is overwritten, the previous data becomes a distinct, read-only version. This is critical for applications where users might accidentally overwrite files with corrupted data, allowing instant rollback to a known good state.
+
+### 3. Immutable Storage (WORM)
+Write-Once, Read-Many (WORM) policies ensure data cannot be modified or deleted by *anyone*---not even users with full administrative privileges or Microsoft support---for a user-specified interval. 
+*   **Time-based retention policies:** Lock data for a specific duration (e.g., 7 years for financial records).
+*   **Legal holds:** Lock data indefinitely until the hold is explicitly removed (used during litigation).
+
+```bash
+# Enable versioning on a storage account
+az storage account blob-service-properties update \
+  --account-name "$STORAGE_NAME" \
+  --resource-group myRG \
+  --enable-versioning true
+
+# Create a time-based immutability policy (e.g., retain for 365 days)
+az storage container immutability-policy create \
+  --account-name "$STORAGE_NAME" \
+  --container-name "financial-records" \
+  --resource-group myRG \
+  --period 365
+```
+
+---
+
+## Securing Blob Storage: Identity, Access, and Networks
+
+Choosing how to authorize access to blob storage defines your security posture. There are three primary methods for identity and authorization, alongside robust network controls.
 
 ### 1. Account Keys (Avoid in Production)
 
@@ -394,6 +426,34 @@ flowchart TD
     Temp -- YES --> SAS["Use SAS token with short expiry<br/>and minimum permissions"]
     Temp -- NO --> SP["Use Service Principal + RBAC<br/>(with certificate, not secret)"]
 ```
+
+### 4. Network Security and Private Endpoints
+
+While authorization controls *who* can access your data, network security controls *from where* they can access it. By default, storage accounts are accessible via public endpoints over the internet.
+
+To restrict network access, you have two primary mechanisms:
+1. **Storage Firewall (Service Endpoints):** You can restrict access to specific public IP ranges or specific Azure Virtual Network subnets. Traffic still flows over the Azure backbone, but the storage account rejects requests from unauthorized networks.
+2. **Private Endpoints (Azure Private Link):** This provides the highest level of network security. A Private Endpoint places a virtual network interface (NIC) inside your VNet and assigns it a private IP address. All traffic between your VNet and the storage account travels entirely on the Microsoft private backbone network, never traversing the public internet.
+
+```bash
+# Disable public network access entirely
+az storage account update \
+  --name "$STORAGE_NAME" \
+  --resource-group myRG \
+  --public-network-access Disabled
+
+# Create a Private Endpoint for the storage account
+az network private-endpoint create \
+  --name "pe-kubedojostorage" \
+  --resource-group myRG \
+  --vnet-name "myVNet" \
+  --subnet "mySubnet" \
+  --private-connection-resource-id "/subscriptions/<sub>/resourceGroups/myRG/providers/Microsoft.Storage/storageAccounts/$STORAGE_NAME" \
+  --group-id "blob" \
+  --connection-name "blob-private-connection"
+```
+
+> **Stop and think**: If you disable public network access and rely exclusively on a Private Endpoint, how will developers working from their local laptops access the storage account to upload test data? (Hint: They will need a VPN connection to the VNet, Azure Bastion, or a carefully configured Storage Firewall exception for their specific IP addresses.)
 
 ---
 
@@ -517,6 +577,14 @@ Standard Blob Storage utilizes a fundamentally flat namespace where directories 
 *[Maps to Learning Outcome: Implement storage account security with private endpoints, SAS tokens, and Entra ID-based RBAC access]*
 
 Hardcoding storage account keys provides the application with unlimited administrative access to every container in the account, maximizing the potential blast radius if the VM is ever breached. Furthermore, account keys lack automatic rotation mechanisms, placing a permanent and risky operational burden on the engineering team to manually manage, rotate, and distribute secrets. In stark contrast, assigning a Managed Identity with the "Storage Blob Data Contributor" role scoped explicitly to the target image container adheres perfectly to the principle of least privilege. The Azure platform automatically provisions and rotates the underlying cryptographic credentials in the background, entirely eliminating the catastrophic risk of hardcoded secrets leaking into source control or logs.
+</details>
+
+<details>
+<summary>7. A highly regulated financial application needs to ensure that end-of-year audit logs are preserved for exactly seven years. Furthermore, the security team dictates that this data must never traverse the public internet during ingestion. How should you architect the storage solution to meet these specific requirements?</summary>
+
+*[Maps to Learning Outcomes: Implement storage account security with private endpoints / Deploy immutable storage policies]*
+
+To satisfy the network security mandate, you must disable public network access on the storage account and configure an Azure Private Endpoint, which provisions a private IP address within your Virtual Network and ensures all ingestion traffic remains strictly on the Microsoft backbone. To fulfill the regulatory preservation requirement, you must apply a time-based immutable storage (WORM) policy to the container, locking it for seven years. Once this immutability policy is locked, the Azure platform enforces it at the lowest level, guaranteeing that no user, application, or even Microsoft administrator can modify or delete the audit logs until the retention period expires.
 </details>
 
 ---
