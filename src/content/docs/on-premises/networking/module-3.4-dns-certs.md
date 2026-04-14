@@ -228,7 +228,7 @@ The most straightforward approach for an air-gapped or internal network lacking 
 
 ```bash
 # Install cert-manager
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.2/cert-manager.yaml
 ```
 
 ```yml
@@ -558,7 +558,7 @@ Begin by spinning up an isolated local environment and installing the core cert-
 kind create cluster --name dns-lab
 
 # Install cert-manager
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.20.2/cert-manager.yaml
 kubectl wait --for=condition=Available deployment/cert-manager -n cert-manager --timeout=120s
 ```
 </details>
