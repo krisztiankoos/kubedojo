@@ -595,52 +595,52 @@ The output shows distinct chains: `INPUT` (incoming traffic), `FORWARD` (routed 
 Test your understanding:
 
 ### Question 1
-You ping a remote API server and get `ttl=52` in the response. What can you infer about the remote server's operating system, and roughly how many hops away is it?
+You are troubleshooting a slow API response from a partner's server. You run a ping and the response shows `ttl=52`. Your colleague suggests they are running Windows Server, but you disagree. Based on the TTL, what operating system are they likely running, and how many network hops away is the server?
 
 <details>
 <summary>Show Answer</summary>
 
-The TTL of 52 most likely indicates a **Linux server**, which typically starts with a default TTL of 64. As the packet traverses the internet, each router it passes through decrements the TTL by 1. Therefore, the packet crossed **12 router hops** to reach you (64 - 52 = 12). If the starting TTL were 128 (the Windows default), it would mean the packet took 76 hops, which is far too many for a typical internet routing path, making Linux the most reasonable conclusion.
+The TTL of 52 most likely indicates a Linux server, which typically starts with a default TTL of 64. As the packet traverses the internet, each router it passes through decrements the TTL by 1. Therefore, the packet crossed 12 router hops to reach you (64 - 52 = 12). If the starting TTL were 128 (the Windows default), it would mean the packet took 76 hops. Taking 76 hops is far too many for a typical internet routing path, making Linux the much more reasonable conclusion. This tells you that the partner's infrastructure is likely Linux-based.
 
 </details>
 
 ### Question 2
-You are troubleshooting an application that suddenly stopped working. You run `curl -v https://api.example.com/health` and see `< HTTP/2 503` in the output. What does this tell you about the state of the system, and which lines show your request versus the server's response?
+You are troubleshooting an application that suddenly stopped working after a new deployment. You run `curl -v https://api.example.com/health` and see `< HTTP/2 503` in the output. What does this tell you about the state of the system, and which lines show your request versus the server's response?
 
 <details>
 <summary>Show Answer</summary>
 
-The `503` status code means **Service Unavailable** — the server itself is up and actively responding to network traffic, but the application behind it (or the load balancer) cannot handle the request right now. Lines starting with `>` show **your outgoing request** (the headers and protocol curl sent over the wire). Lines starting with `<` show the **server's incoming response**. This verbose output is critical for debugging because it proves the network path is open, isolating the issue to the application layer.
+The `503` status code means "Service Unavailable", which tells you the server itself is up and actively responding to network traffic, but the application behind it (or the load balancer) cannot handle the request right now. In the verbose curl output, lines starting with `>` show your outgoing request, including the headers and protocol that curl sent over the wire. Lines starting with `<` show the server's incoming response. This verbose output is critical for debugging because it proves the network path is open and firewalls are allowing traffic. By seeing the 503 response, you can isolate the issue to the application layer rather than a network connectivity problem.
 
 </details>
 
 ### Question 3
-You are investigating why a microservice running on another host cannot reach your database. You run `sudo ss -tulpn` on the database server and see it is listening on `127.0.0.1:5432`. Can the remote microservice connect to this service? Why or why not?
+You are investigating why a new microservice running on a separate host cannot reach your primary database. You SSH into the database server, run `sudo ss -tulpn`, and see the database process is listening on `127.0.0.1:5432`. Can the remote microservice connect to this service? Why or why not, and how would you fix it?
 
 <details>
 <summary>Show Answer</summary>
 
-**No, a remote machine cannot connect.** The address `127.0.0.1` (localhost or loopback) strictly means the service only accepts connections originating from the exact same machine. For remote access to be possible, the service would need to be reconfigured to listen on `0.0.0.0:5432` (all available interfaces) or a specific external IP address. This is a deliberate, common security practice for databases like PostgreSQL, which bind to localhost by default to prevent accidental unauthorized remote access.
+No, the remote microservice cannot connect to the database in this state. The address `127.0.0.1` (localhost or loopback) strictly means the service only accepts connections originating from the exact same machine. This is a deliberate and common security practice for databases like PostgreSQL, which bind to localhost by default to prevent accidental unauthorized remote access. For remote access to be possible, the service configuration must be updated to listen on `0.0.0.0:5432` (all available interfaces) or a specific internal IP address on your private network. After changing the configuration, you would restart the database and verify the new listening address with `ss`.
 
 </details>
 
 ### Question 4
-A customer reports they cannot access your website, but it loads fine for you. You run `dig +short example.com` on your workstation and get no output, but when you run `dig +short example.com @8.8.8.8`, it immediately returns `93.184.216.34`. What is the underlying issue?
+A customer reports they cannot access your newly launched website, but it loads perfectly fine for you on your workstation. You run `dig +short example.com` on your workstation and get no output, but when you run `dig +short example.com @8.8.8.8`, it immediately returns the correct IP address `93.184.216.34`. What is the underlying issue causing this discrepancy?
 
 <details>
 <summary>Show Answer</summary>
 
-Your **local DNS resolver is failing or misconfigured**. The first command relies on your system's default DNS server (typically configured in `/etc/resolv.conf`), which is returning no answer. The second command explicitly bypasses your local resolver entirely by querying Google's public DNS directly, which proves the domain's external DNS configuration is actually healthy. To fix this, you must investigate your local DNS configuration, check your immediate network settings, or restart local caching services like `systemd-resolved`.
+The underlying issue is that your local DNS resolver is either failing, misconfigured, or holding onto a stale cached record. The first `dig` command relies on your system's default DNS server (typically configured in `/etc/resolv.conf`), which is returning an empty answer. The second command explicitly bypasses your local resolver entirely by querying Google's public DNS directly. Because Google's DNS returns the correct IP, this proves the domain's external DNS configuration is actually healthy and the problem is localized. To fix this on your end, you must investigate your local DNS configuration, check your network settings, or flush your local caching services.
 
 </details>
 
 ### Question 5
-You are setting up a new CI/CD pipeline and need to install `kubectl`. You write a step that curls the binary and immediately executes it. Your colleague reviews the pull request and blocks it, stating this is a major security risk. Why did they block it, and what should you add to the pipeline script to fix it?
+You are setting up a new CI/CD pipeline and need to install the `kubectl` CLI tool. You write a pipeline step that uses `curl` to download the binary and immediately executes it to interact with your cluster. Your senior colleague reviews the pull request and blocks it, stating this is a major security risk. Why did they block it, and what exact steps should you add to the pipeline script to fix it?
 
 <details>
 <summary>Show Answer</summary>
 
-Your colleague blocked the PR because downloading and executing a binary without verification leaves your pipeline highly vulnerable to supply chain attacks or corrupted downloads. If the remote server is compromised, hijacked via DNS, or the download is simply interrupted, your pipeline would execute malicious or broken code directly inside your infrastructure. To fix this, you must download the official `.sha256` checksum file along with the binary. Then, you should add a verification command like `sha256sum -c kubectl.sha256` to mathematically prove the binary exactly matches what the developers published before making it executable.
+Your colleague blocked the PR because downloading and executing a binary without verification leaves your automated pipeline highly vulnerable to supply chain attacks or corrupted downloads. If the remote server is compromised, hijacked via DNS, or the download is simply interrupted, your pipeline would execute malicious or broken code directly inside your infrastructure with high privileges. To fix this, you must download the official `.sha256` checksum file along with the binary before running it. Then, you must add a verification command like `sha256sum -c kubectl.sha256` to mathematically prove the binary exactly matches what the developers published. Only after this check passes should the pipeline make the file executable and run it.
 
 </details>
 
