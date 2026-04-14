@@ -670,6 +670,22 @@ aws events put-targets \
 
 ---
 
+## Lambda vs. Containers: When to Choose Which
+
+While Lambda is powerful, it is not the solution for every workload. Modern AWS architectures often use both Lambda and containers (ECS/EKS). Here is how to evaluate the tradeoffs:
+
+| Vector | AWS Lambda | Containers (ECS Fargate) |
+|--------|------------|--------------------------|
+| **Cost Model** | Pay per millisecond of execution. Zero cost when idle. Expensive for constant, high-throughput predictable load. | Pay per second for provisioned CPU/RAM while the task is running. Cheaper for steady, 24/7 workloads. |
+| **Latency** | Subject to cold starts (100ms - 5s). Excellent for bursty traffic where occasional latency spikes are acceptable. | No cold starts once running. Consistently low latency for every request. |
+| **Scaling** | Instant, automatic, per-request scaling. Scales to 1,000s of concurrent executions in seconds. | Slower, metric-based scaling (e.g., CPU utilization). Takes minutes to spin up new container tasks. |
+| **Operational Complexity**| Very low. No OS patching, no container orchestration, no instance scaling policies. Focus only on code. | Medium to High. Requires writing Dockerfiles, managing image registries, tuning task definitions, and configuring auto-scaling. |
+| **Execution Limits** | 15-minute maximum duration. Limited to 10 GB memory / ~6 vCPUs. | Unlimited duration. Up to 120 GB memory / 16 vCPUs (Fargate) or larger on EC2. |
+
+**Decision Framework:**
+- **Choose Lambda when:** Your traffic is highly variable or unpredictable, you are reacting to AWS events (S3, EventBridge), your executions take less than 15 minutes, or you want to minimize operational overhead.
+- **Choose Containers when:** You have a consistent, steady stream of requests 24/7 (which is cheaper on ECS), your process takes longer than 15 minutes, you need specialized hardware (GPUs), or you require strict sub-millisecond tail latency without the cost of provisioned concurrency.
+
 ## Did You Know?
 
 1.  **Lambda was announced at AWS re:Invent 2014 and initially supported only Node.js.** The launch demo was a function that resized images uploaded to S3 -- the exact exercise at the end of this module. Tim Wagner, the "father of Lambda," later said the hardest engineering problem was not running the code but making the billing work at millisecond granularity. AWS had to build entirely new metering infrastructure to charge in 1ms increments.
@@ -777,6 +793,9 @@ aws s3api create-bucket \
 
 echo "Input bucket: ${INPUT_BUCKET}"
 echo "Output bucket: ${OUTPUT_BUCKET}"
+
+# Verify buckets were created
+aws s3 ls | grep kubedojo-lambda
 ```
 </details>
 
@@ -878,6 +897,9 @@ def handler(event, context):
 PYTHON
 
 echo "Lambda function code created"
+
+# Verify file was created
+ls -l lambda_function.py
 ```
 </details>
 
@@ -891,7 +913,7 @@ cd /tmp/lambda-exercise
 
 # Create a layer with Pillow
 mkdir -p pillow-layer/python
-pip install Pillow -t pillow-layer/python/ --platform manylinux2014_x86_64 --only-binary=:all:
+pip install Pillow -t pillow-layer/python/ --platform manylinux2014_x86_64 --only-binary=:all: --python-version 3.12
 cd pillow-layer && zip -r ../pillow-layer.zip python/
 cd ..
 
@@ -904,6 +926,9 @@ LAYER_ARN=$(aws lambda publish-layer-version \
   --query 'LayerVersionArn' --output text)
 
 echo "Layer ARN: ${LAYER_ARN}"
+
+# Verify layer was published
+aws lambda list-layer-versions --layer-name pillow
 ```
 </details>
 
@@ -971,6 +996,12 @@ aws lambda create-function \
   --layers ${LAYER_ARN}
 
 echo "Function created: ${FUNCTION_NAME}"
+
+# Verify function state
+aws lambda get-function \
+  --function-name ${FUNCTION_NAME} \
+  --query 'Configuration.State' \
+  --output text
 ```
 </details>
 
@@ -1010,6 +1041,10 @@ aws s3api put-bucket-notification-configuration \
   }'
 
 echo "S3 trigger configured"
+
+# Verify S3 trigger
+aws s3api get-bucket-notification-configuration \
+  --bucket ${INPUT_BUCKET}
 ```
 </details>
 
@@ -1021,6 +1056,11 @@ Upload an image and verify the thumbnail is generated.
 <summary>Solution</summary>
 
 ```bash
+# Setup a virtual environment and install Pillow for testing
+python3 -m venv /tmp/lambda-exercise/venv
+source /tmp/lambda-exercise/venv/bin/activate
+pip install --quiet Pillow
+
 # Create a test image (a simple 1000x1000 red square)
 python3 -c "
 from PIL import Image
@@ -1049,6 +1089,8 @@ img = Image.open('/tmp/lambda-exercise/thumbnail.jpg')
 print(f'Thumbnail size: {img.size}')
 print(f'Format: {img.format}')
 "
+
+deactivate
 
 # Check Lambda logs
 LOG_STREAM=$(aws logs describe-log-streams \
