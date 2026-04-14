@@ -4,7 +4,6 @@ slug: prerequisites/kubernetes-basics/module-1.8-yaml-kubernetes
 sidebar:
   order: 9
 ---
-```
 
 # Module 1.8: YAML for Kubernetes
 
@@ -144,13 +143,13 @@ backend_pod:
 When the YAML parser processes this document, it resolves the alias and expands the data structure. The resulting output, if converted to JSON, demonstrates how the inherited labels are merged alongside the unique `name` field:
 
 ```json
-> {
->   "app": "web-tier",
->   "environment": "production",
->   "managed-by": "platform-team",
->   "name": "react-frontend"
-> }
-> ```
+{
+  "app": "web-tier",
+  "environment": "production",
+  "managed-by": "platform-team",
+  "name": "react-frontend"
+}
+```
 
 > **Pause and predict**: 
 > Look at the `frontend_pod` structure above. If you were to convert that YAML into JSON, what would the resulting JSON object look like for `frontend_pod.metadata`?
@@ -283,10 +282,6 @@ If you want to quickly see the entire structural skeleton of a complex object al
 ```bash
 kubectl explain deployment --recursive
 ```
-
-```bash
-> kubectl explain pod.spec.nodeSelector
-> ```
 
 > **Stop and think**: 
 > Use your terminal (or imagine using it). You need to add a "node selector" to ensure a Pod only runs on nodes with SSDs. What exact `kubectl explain` command would you run to find the documentation for the node selector field inside a Pod?
@@ -597,17 +592,6 @@ You should see an error similar to: `no matches for kind "Deployment" in version
 ### Task 2: The Type and Structure Failures
 Apply the file again using the client dry-run. You will hit several more errors. Fix them one by one, carefully reading the error messages. Use `kubectl explain deployment.spec` if you get stuck on the expected structure.
 
-```yaml
-      containers:
-      name: nginx
-    ```
-
-```yaml
-      containers:
-      - name: nginx
-        image: nginx:1.27
-    ```
-
 <details>
 <summary>Solution & Diagnosis 2</summary>
 
@@ -630,20 +614,6 @@ Apply the file again using the client dry-run. You will hit several more errors.
 
 ### Task 3: Adding a Service Safely
 Now that the Deployment schema validates successfully, append a Service object to the *bottom* of the same `dojo-app.yaml` file. The Service should expose port 80 and route traffic to your existing Pods. **Ensure you use the correct YAML document separator.**
-
-```yaml
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: web-app-svc
-spec:
-  selector:
-    app: web
-  ports:
-  - port: 80
-    targetPort: 80
-```
 
 <details>
 <summary>Solution 3</summary>
@@ -668,16 +638,6 @@ spec:
 ### Task 4: Adding a ConfigMap Dependency
 Next, add a third critical resource at the **very top** of the file (before the Deployment): a ConfigMap named `app-config` containing a single key `welcome-message` and the value `"Hello KubeDojo!"`.
 
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: app-config
-data:
-  welcome-message: "Hello KubeDojo!"
----
-```
-
 <details>
 <summary>Solution 4</summary>
 
@@ -699,56 +659,6 @@ Modify the Deployment from Task 2 so that the `nginx` container dynamically moun
 
 ```bash
 kubectl apply -f dojo-app.yaml --dry-run=server
-```
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: app-config
-data:
-  welcome-message: "Hello KubeDojo!"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: web-app
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: web
-  template:
-    metadata:
-      labels:
-        app: web
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.27
-        env:
-        - name: GREETING
-          valueFrom:
-            configMapKeyRef:
-              name: app-config
-              key: welcome-message
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: web-app-svc
-spec:
-  selector:
-    app: web
-  ports:
-  - port: 80
-    targetPort: 80
-```
-
-```text
-configmap/app-config created (server dry run)
-deployment.apps/web-app created (server dry run)
-service/web-app-svc created (server dry run)
 ```
 
 <details>
