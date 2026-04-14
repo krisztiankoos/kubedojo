@@ -398,7 +398,7 @@ kubectl get pods -n kube-system
 kubectl get namespaces
 
 # 4. Create something simple
-kubectl run hello --image=nginx --restart=Never
+kubectl run hello --image=nginx:1.35 --restart=Never
 kubectl get pods
 # You just created a Pod!
 
