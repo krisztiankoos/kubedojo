@@ -10,30 +10,31 @@ sidebar:
 
 After completing this module, you will be able to:
 
-- **Configure KEDA (Kubernetes Event-Driven Autoscaling) on AKS for scaling based on Azure service metrics**
-- **Implement AKS observability with Azure Monitor Container Insights, Managed Prometheus, and Managed Grafana**
-- **Deploy Azure Disk and Azure Files CSI drivers with storage classes optimized for performance and cost on AKS**
-- **Design AKS cost optimization strategies using Spot node pools, cluster autoscaler tuning, and right-sizing**
+- **Debug** event-driven autoscaling configurations using KEDA on AKS.
+- **Implement** AKS observability with Azure Monitor Container Insights, Managed Prometheus, and Managed Grafana.
+- **Compare** and evaluate Azure Disk and Azure Files CSI drivers with storage classes optimized for performance and cost on AKS.
+- **Design** AKS cost optimization strategies using Spot node pools, cluster autoscaler tuning, and workload right-sizing.
+- **Diagnose** performance bottlenecks related to I/O constraints in persistent volume claims.
 
 ---
 
 ## Why This Module Matters
 
-In November 2023, an online retailer running on AKS experienced a catastrophic failure during their Black Friday sale. Their order processing service used Azure Premium SSD disks for a write-ahead log. When traffic spiked to 15x normal levels, the disk IOPS ceiling was hit and writes started queuing. The application had no metrics on disk I/O latency---their observability stack only monitored CPU and memory. Without visibility into the real bottleneck, the on-call engineer scaled the deployment from 6 to 30 replicas, which made things dramatically worse: 30 pods now competed for the same disk's IOPS budget. The queue grew, timeouts cascaded, and the entire order pipeline froze for 90 minutes during peak sales hours. Post-incident analysis estimated $4.2 million in lost revenue. The fix was straightforward: migrate to Ultra Disks with provisioned IOPS, add disk I/O metrics to their Grafana dashboards, and implement KEDA-based scaling that responded to queue depth rather than CPU utilization.
+In November 2023, an online retailer running on AKS experienced a catastrophic failure during their Black Friday sale. Their order processing service used Azure Premium SSD disks for a write-ahead log. When traffic spiked to 15x normal levels, the disk IOPS ceiling was hit and writes started queuing. The application had no metrics on disk I/O latency—their observability stack only monitored CPU and memory. Without visibility into the real bottleneck, the on-call engineer scaled the deployment from 6 to 30 replicas, which made things dramatically worse: 30 pods now competed for the same disk's IOPS budget. The queue grew, timeouts cascaded, and the entire order pipeline froze for 90 minutes during peak sales hours. Post-incident analysis estimated $4.2 million in lost revenue.
 
-This story illustrates a pattern that repeats across organizations: storage, observability, and scaling are treated as afterthoughts during initial cluster setup, then become the root cause of the most painful production incidents. The three topics are deeply interconnected. Without proper observability, you cannot make informed scaling decisions. Without proper scaling, your storage layer gets overwhelmed. Without proper storage, your observability pipeline loses data during the exact moments you need it most.
+This story illustrates a pattern that repeats across organizations: storage, observability, and scaling are treated as afterthoughts during initial cluster setup, then become the root cause of the most painful production incidents. The three topics are deeply interconnected. Without proper observability, you cannot make informed scaling decisions. Without proper scaling, your storage layer gets overwhelmed. Without proper storage, your observability pipeline loses data during the exact moments you need it most. When systems fail, they rarely fail in isolation; a bottleneck in one subsystem masks the symptoms of another, leading responders down the wrong diagnostic path.
 
-In this module, you will learn how to choose between Azure Disks and Azure Files for different workload patterns, configure Container Insights with Managed Prometheus and Grafana for full-stack observability, and implement event-driven autoscaling with the KEDA add-on. By the end, you will have a cluster that monitors itself, scales based on real business signals, and stores data on the right tier for each workload.
+In this module, grounded in Kubernetes v1.35 best practices, you will learn how to choose between Azure Disks and Azure Files for different workload patterns, configure Container Insights with Managed Prometheus and Grafana for full-stack observability, and implement event-driven autoscaling with the KEDA add-on. The fix for the retailer was straightforward: migrate to Ultra Disks with provisioned IOPS, add disk I/O metrics to their Grafana dashboards, and implement KEDA-based scaling that responded to queue depth rather than CPU utilization. By the end of this module, you will have a cluster that monitors itself, scales based on real business signals, and stores data on the right tier for each workload.
 
 ---
 
 ## Azure Storage for Kubernetes: Disks vs Files
 
-AKS integrates with two primary Azure storage services for persistent volumes: Azure Disks and Azure Files. The choice between them depends on your access patterns, performance requirements, and cross-zone needs.
+In modern Kubernetes environments (v1.35+), out-of-tree Container Storage Interface (CSI) drivers are the absolute standard for handling persistent storage. AKS integrates natively with Azure's storage fabric via two primary drivers: `disk.csi.azure.com` for block storage and `file.csi.azure.com` for file-level storage. Understanding when to use which is the foundation of stateful workload reliability.
 
 ### Azure Disks: Block Storage for Single-Pod Workloads
 
-Azure Disks provide block-level storage that attaches to a single node at a time. This maps to `ReadWriteOnce` (RWO) access mode in Kubernetes---only one pod on one node can mount the disk for read-write access.
+Azure Disks provide high-performance block-level storage that attaches directly to a virtual machine. Because it is block storage, it is natively bound to a single node at any given time. In Kubernetes terms, this maps to the `ReadWriteOnce` (RWO) access mode—meaning only one pod on one specific node can mount the disk for read-write access. If a pod crashes and is rescheduled to a new node, the CSI driver must detach the disk from the old node and attach it to the new one.
 
 ```mermaid
 graph TD
@@ -45,7 +46,7 @@ graph TD
     end
 ```
 
-AKS uses CSI (Container Storage Interface) drivers for storage. The `disk.csi.azure.com` driver handles Azure Disks. You create a StorageClass that specifies the disk type, then reference it in PersistentVolumeClaims.
+When defining a StorageClass for Azure Disks, you map the `skuName` to the tier you need. 
 
 ```yaml
 # StorageClass for Premium SSD v2 with provisioned IOPS
@@ -62,8 +63,11 @@ parameters:
 reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
+```
 
----
+And then you can safely request the volume using a PersistentVolumeClaim (PVC):
+
+```yaml
 # PVC using the StorageClass
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -79,11 +83,11 @@ spec:
       storage: 256Gi
 ```
 
-The `volumeBindingMode: WaitForFirstConsumer` setting is critical for AKS clusters with availability zones. It delays disk creation until a pod actually needs it, ensuring the disk is created in the same zone as the node where the pod is scheduled. Without this, the disk might be created in Zone 1 while the pod gets scheduled to Zone 2, causing a permanent scheduling failure.
+The `volumeBindingMode: WaitForFirstConsumer` setting is critical for AKS clusters deployed across multiple availability zones. Because a managed disk is a physical resource located in a specific data center, it cannot cross availability zones. If the volume binding mode was set to `Immediate`, the control plane might create the disk in Zone 1. If the Kubernetes scheduler later places the pod on a node in Zone 2, the pod will be permanently stuck in `Pending` state because the disk cannot be attached. `WaitForFirstConsumer` delays the disk provisioning API call until the scheduler has chosen a node, ensuring the disk is created in the matching zone.
 
 ### Ultra Disks: When Premium SSD Is Not Enough
 
-Ultra Disks allow you to independently provision IOPS and throughput, decoupled from disk size. A 64 GB Ultra Disk can deliver 50,000 IOPS if you need it. This makes them ideal for databases like PostgreSQL, MySQL, and Cassandra that have high I/O requirements relative to their data size.
+For standard Premium SSDs, your IOPS and throughput caps are rigidly tied to the size of the disk you provision. If you need 10,000 IOPS, you must provision a massive disk, even if your database is only 50 GB. Ultra Disks and Premium SSD v2 solve this problem by decoupling storage capacity from performance metrics. You can provision a small disk while independently dialing the IOPS up to massive numbers, which is perfect for latency-sensitive databases.
 
 ```bash
 # Enable Ultra Disk support on a node pool
@@ -121,7 +125,9 @@ allowVolumeExpansion: true
 
 > **Pause and predict**: If you have a legacy CMS that writes user uploads to a local filesystem and you want to scale it to 3 replicas across different nodes, which Azure storage solution must you use and why?
 
-Azure Files provides SMB and NFS file shares that multiple pods across multiple nodes can mount simultaneously (`ReadWriteMany` / RWX). This is essential for workloads that need shared storage: CMS platforms, shared configuration files, machine learning training data, and legacy applications that expect a shared filesystem.
+Azure Files provides fully managed file shares in the cloud that are accessible via industry-standard SMB or NFS protocols. Because this is file-level storage, it maps to the `ReadWriteMany` (RWX) access mode in Kubernetes. This means multiple pods across entirely different nodes can mount the exact same volume concurrently. 
+
+This is an absolute necessity for workloads like legacy CMS platforms, machine learning training jobs where many GPUs need to read the same dataset, or shared configuration directories.
 
 ```mermaid
 graph TD
@@ -130,6 +136,8 @@ graph TD
         NFS["<b>NFS Protocol (Premium only)</b><br/>Linux only<br/>POSIX-compliant<br/>No authentication overhead<br/>Higher throughput<br/><br/>Use: high-performance shared storage, ML training data, media processing"]
     end
 ```
+
+When performance matters for Linux-based workloads, you should always prefer NFS over SMB to avoid the authentication and protocol overhead associated with Windows file sharing.
 
 ```yaml
 # StorageClass for Azure Files NFS (Premium tier)
@@ -147,8 +155,9 @@ mountOptions:
 reclaimPolicy: Retain
 volumeBindingMode: Immediate
 allowVolumeExpansion: true
+```
 
----
+```yaml
 # PVC for shared ML training data
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -166,7 +175,7 @@ spec:
 
 ### Shared Disks for High Availability
 
-Azure Shared Disks allow a single Premium SSD or Ultra Disk to be attached to multiple nodes simultaneously. This enables cluster-aware applications (like SQL Server Failover Cluster Instances or custom HA storage engines) to share a disk at the block level.
+In extremely specific edge cases, you may need multiple pods to write to the same block storage device concurrently. Azure Shared Disks allow a single Premium SSD or Ultra Disk to be attached to multiple nodes simultaneously. This is designed for cluster-aware applications, like SQL Server Failover Cluster Instances, that implement their own SCSI persistent reservation commands to coordinate writes.
 
 ```yaml
 # StorageClass for shared disks
@@ -183,7 +192,7 @@ reclaimPolicy: Retain
 volumeBindingMode: WaitForFirstConsumer
 ```
 
-**Warning**: Shared Disks do not provide a filesystem. The application must handle concurrent block-level access using a cluster filesystem (like GFS2) or its own coordination protocol. Do not mount a shared disk with ext4 or xfs from multiple nodes---you will corrupt your data.
+**Warning**: Shared Disks do not natively provide a managed filesystem. The application itself must coordinate concurrent block-level access. If you merely mount a shared disk using `ext4` or `xfs` from multiple Linux nodes, the kernel's in-memory caching will immediately corrupt your data. 
 
 ### The Storage Decision Matrix
 
@@ -201,9 +210,11 @@ volumeBindingMode: WaitForFirstConsumer
 
 ## Container Insights and Azure Monitor
 
-Container Insights is Azure's native observability solution for AKS. It collects logs, metrics, and performance data from your cluster and presents them in the Azure portal with pre-built dashboards and query capabilities.
+Observability is the nervous system of your cluster. Container Insights is Azure's first-party observability solution for AKS. It automatically deploys the Azure Monitor Agent (AMA) as a DaemonSet across your cluster to aggregate node metrics, pod metrics, container logs, and Kubernetes events into a central Log Analytics workspace. 
 
 ### Enabling Container Insights
+
+You can enable this integration at cluster creation or dynamically attach it to an existing environment:
 
 ```bash
 # Create a Log Analytics workspace
@@ -229,13 +240,11 @@ k get pods -n kube-system -l component=ama-logs
 
 ### What Container Insights Collects
 
-Container Insights deploys a monitoring agent (Azure Monitor Agent) as a DaemonSet on each node. This agent collects:
-
-- **Node metrics**: CPU, memory, disk I/O, network throughput per node
-- **Pod metrics**: CPU/memory requests vs actual usage, restart counts, OOM kills
-- **Container logs**: stdout/stderr from all containers (sent to Log Analytics)
-- **Kubernetes events**: Pod scheduling, image pulls, resource quota violations
-- **Inventory data**: Running pods, nodes, deployments, services
+Once the AMA is deployed, it immediately begins scraping extensive data streams:
+- **Node metrics**: Deep hardware utilization metrics like disk I/O, network throughput, and CPU load.
+- **Pod metrics**: Actual resource consumption contrasted against Kubernetes requested boundaries.
+- **Container logs**: Every line of `stdout` and `stderr` emitted by the container runtime.
+- **Inventory data**: A live map of running pods, healthy nodes, and active services.
 
 ```bash
 # Query container logs in Log Analytics
@@ -249,7 +258,7 @@ az monitor log-analytics query \
 
 > **Pause and predict**: You just deployed Container Insights on a busy cluster and your Log Analytics bill spiked by $500 in one day. What is the most likely culprit, and what configuration component will fix it?
 
-Container Insights can generate significant Log Analytics costs if you send every log line from every container. Use the ConfigMap to control what gets collected:
+Container Insights can become a massive billing liability if left in its default configuration. By default, it captures every single line of text from every container's standard output. If your ingress controllers or core system pods are extremely verbose, Log Analytics will ingest gigabytes of data every hour. To manage this, you must apply a custom ConfigMap to instruct the agent to drop high-noise logs.
 
 ```yaml
 # Save as container-insights-config.yaml
@@ -285,13 +294,13 @@ k apply -f container-insights-config.yaml
 
 ## Managed Prometheus and Grafana: Cloud-Native Monitoring
 
-While Container Insights works well for logs and basic metrics, production teams often need Prometheus for application-specific metrics and Grafana for custom dashboards. Azure offers fully managed versions of both, eliminating the operational burden of running your own Prometheus server and Grafana instance.
+Container Insights is fantastic for log aggregation and infrastructural health, but it struggles with application-specific custom metrics. 
 
 > **Stop and think**: If you rely strictly on Container Insights for everything, what happens when your application needs to expose a custom business metric like "active_user_sessions"? Why is Managed Prometheus a better fit for this?
 
-### Setting Up Managed Prometheus
+Prometheus operates on a "pull" model, actively scraping metrics endpoints natively exposed by your microservices. Azure provides a fully managed implementation of Prometheus, completely eliminating the operational burden of managing persistent volumes, remote write configurations, and Thanos/Cortex scaling for long-term retention. 
 
-Azure Monitor managed service for Prometheus stores metrics in an Azure Monitor workspace. AKS ships metrics using a Prometheus-compatible agent.
+### Setting Up Managed Prometheus
 
 ```bash
 # Create an Azure Monitor workspace (for Prometheus)
@@ -316,6 +325,8 @@ k get pods -n kube-system -l rsName=ama-metrics
 
 ### Setting Up Managed Grafana
 
+Grafana is the industry-standard visualization layer for Prometheus. Azure Managed Grafana natively integrates with Azure AD for robust RBAC and automatically discovers your Managed Prometheus workspaces.
+
 ```bash
 # Create a Managed Grafana instance
 az grafana create \
@@ -335,11 +346,9 @@ az monitor account update \
 az grafana show -g rg-aks-prod -n grafana-aks-prod --query "properties.endpoint" -o tsv
 ```
 
-Once linked, Managed Grafana automatically discovers the Prometheus data source. Azure provides pre-built dashboards for Kubernetes cluster monitoring, node performance, pod resource usage, and more.
-
 ### Custom Prometheus Metrics from Your Application
 
-Your application can expose custom Prometheus metrics, and the managed Prometheus agent will scrape them automatically if you annotate your pods correctly.
+Once your ecosystem is established, getting your custom metrics ingested is as simple as adding standard Prometheus annotations to your Pod specifications. The Managed Prometheus agent will automatically discover these endpoints and begin scraping.
 
 ```yaml
 apiVersion: apps/v1
@@ -378,6 +387,8 @@ spec:
 
 ### Creating Alert Rules
 
+Dashboards are meaningless if nobody is looking at them during an incident. Alerting ensures that operational boundaries trigger actionable notifications.
+
 ```bash
 # Create a Prometheus alert rule for high error rate
 az monitor metrics alert create \
@@ -391,7 +402,7 @@ az monitor metrics alert create \
   --evaluation-frequency 1m
 ```
 
-For more flexible alerting, use Prometheus-native alert rules through the Azure Monitor workspace:
+You can also codify complex Alertmanager-style configurations using native Kubernetes custom resources.
 
 ```yaml
 # PrometheusRuleGroup for custom alerts
@@ -421,9 +432,9 @@ spec:
 
 ## KEDA: Event-Driven Autoscaling
 
-The standard Kubernetes Horizontal Pod Autoscaler (HPA) scales based on CPU and memory utilization. This works for stateless web servers but fails spectacularly for event-driven workloads: message queue consumers, batch processors, and services that need to scale based on business metrics rather than infrastructure metrics.
+The standard Kubernetes Horizontal Pod Autoscaler (HPA) works brilliantly for web servers reacting to CPU load. However, it fails catastrophically for asynchronous or event-driven workers. If your messaging queue instantly receives a burst of 10,000 tasks, your consumer pods might process them very efficiently, keeping CPU usage extremely low. Because the CPU usage never spikes, the standard HPA will stubbornly refuse to scale out, resulting in a monumental processing backlog. 
 
-KEDA (Kubernetes Event-Driven Autoscaler) extends the HPA with over 60 scalers that can trigger scaling from external event sources: Azure Service Bus queue depth, Azure Event Hubs partition lag, PostgreSQL query results, Prometheus metrics, and many more.
+KEDA (Kubernetes Event-Driven Autoscaling) intercepts the metrics pipeline. It provides over 60 custom scalers that allow your deployments to scale dynamically based on external business metrics rather than lagging infrastructure indicators.
 
 ```mermaid
 graph LR
@@ -453,7 +464,7 @@ k get pods -n kube-system -l app.kubernetes.io/name=keda-operator
 
 ### Scaling Based on Azure Service Bus Queue Depth
 
-This is the most common KEDA pattern in Azure: scale your consumer pods based on how many messages are waiting in a queue.
+The most powerful pattern for KEDA on Azure is connecting it to Azure Service Bus. Instead of waiting for CPU to spike, KEDA constantly queries the queue API to determine exactly how many messages are waiting, then preemptively scales the deployment out. 
 
 ```yaml
 # ScaledObject: scale order-processor based on Service Bus queue depth
@@ -479,11 +490,11 @@ spec:
         name: servicebus-auth
 ```
 
-The `messageCount: "10"` means KEDA targets 1 pod for every 10 messages in the queue. If there are 250 messages, KEDA will scale to 25 replicas. When the queue drains to zero, KEDA scales the deployment down to 0 replicas, saving costs entirely.
+In this example, KEDA ensures there is 1 pod running for every 10 messages. A massive queue will instantly trigger a massive scale-out event. Even better, when the queue is entirely drained, KEDA will scale the deployment to 0, completely removing compute costs during idle periods. 
 
 ### KEDA Authentication with Workload Identity
 
-KEDA needs credentials to check the queue depth. Using Workload Identity (from Module 7.3), you can avoid storing connection strings:
+For KEDA to interrogate the Service Bus API, it needs secure authorization. Avoid storing connection strings in secrets; instead, utilize Workload Identity natively.
 
 ```yaml
 # TriggerAuthentication using Workload Identity
@@ -498,11 +509,9 @@ spec:
     identityId: "<CLIENT_ID_OF_MANAGED_IDENTITY>"
 ```
 
-The managed identity needs the "Azure Service Bus Data Receiver" role on the Service Bus namespace to check queue metrics.
-
 ### Scaling Based on Prometheus Metrics
 
-KEDA can also scale based on custom Prometheus metrics from your Azure Monitor workspace. This lets you scale on any business metric your application exposes.
+If you want to orchestrate scaling based on a specialized metric inside your codebase (e.g., requests per second processed, or active user sessions), KEDA can natively scale based on any query executed against your Prometheus server.
 
 ```yaml
 # Scale based on a custom Prometheus metric
@@ -540,16 +549,7 @@ spec:
 
 ### Combining KEDA with Cluster Autoscaler
 
-KEDA scales pods. The cluster autoscaler scales nodes. They work together beautifully:
-
-1. KEDA detects 500 messages in the queue and scales the deployment to 50 replicas
-2. The scheduler finds that existing nodes can only fit 30 of those pods
-3. 20 pods go to `Pending` state
-4. The cluster autoscaler detects pending pods and adds nodes to the VMSS
-5. New nodes register, and the scheduler places the remaining pods
-6. Messages get processed. Queue drains.
-7. KEDA scales pods down to 0
-8. Cluster autoscaler detects underutilized nodes and removes them after the cool-down period
+While KEDA rapidly orchestrates the scaling of Pods, the underlying hardware must expand to accommodate them. KEDA and the Azure Cluster Autoscaler work in perfect tandem to resolve this layer constraint. 
 
 ```mermaid
 sequenceDiagram
@@ -579,17 +579,11 @@ sequenceDiagram
 
 ## Cost Optimization: Spot Instances and Right-Sizing
 
-Compute costs dominate the typical Kubernetes bill. While auto-scaling ensures you only run the nodes you need, cost optimization ensures you pay the lowest possible price for those nodes and pack them as efficiently as possible.
+The flexibility of Kubernetes inevitably leads to spiraling cloud compute costs if discipline is not applied. While auto-scaling ensures you only pay for what you actively require, your node provisioning strategy ensures you pay the absolute lowest price for those compute resources.
 
 ### Spot Node Pools
 
-Azure Spot Virtual Machines offer unutilized Azure capacity at a deep discount—up to 90% off the pay-as-you-go rate. The trade-off is that Azure can evict these VMs at any time with only a 30-second warning if the capacity is needed for full-price customers.
-
-Spot VMs are perfect for fault-tolerant, interruptible workloads:
-- Batch processing and background jobs
-- Stateless web servers (if you run enough replicas across both Spot and regular nodes)
-- CI/CD build agents
-- Machine learning training jobs
+Azure Spot Virtual Machines offer the ability to consume unutilized Azure data center capacity at discounts approaching 90%. However, Azure can evict these machines with only a 30-second warning (`SIGTERM`) if a full-price customer demands the compute space.
 
 ```bash
 # Add a Spot node pool to an existing cluster
@@ -606,7 +600,7 @@ az aks nodepool add \
   --node-vm-size Standard_D4s_v5
 ```
 
-When you create a Spot node pool, AKS automatically adds the taint `kubernetes.azure.com/scalesetpriority=spot:NoSchedule`. This prevents normal pods from being scheduled on Spot nodes unless they explicitly tolerate the taint. 
+Because of their volatile nature, Spot nodes are deeply integrated with Kubernetes taints and tolerations. AKS will automatically taint Spot nodes so that normal critical workloads are completely shielded from them. You must explicitly configure your deployment to tolerate the `spot` designation.
 
 ```yaml
 # Pod configured to run on Spot nodes
@@ -636,18 +630,13 @@ spec:
 
 > **Stop and think**: If your entire web frontend is running on a Spot node pool and Azure experiences a sudden surge in demand for that VM size in your region, what happens to your application? How should you architect a production deployment to utilize Spot savings without risking downtime?
 
-To use Spot instances safely in production, employ a mixed strategy: run your baseline minimum replicas on regular (On-Demand) nodes, and use KEDA or HPA to scale out onto Spot nodes during traffic spikes.
+Never run primary database tiers or essential API gateways entirely on Spot hardware. The optimal approach is running your baseline required replicas on standard On-Demand instances, and using KEDA to burst onto Spot VMs specifically to process sudden traffic spikes. 
 
 ### Workload Right-Sizing
 
-Running workloads with CPU and memory requests that are vastly larger than their actual usage leads to "slack" capacity. The cluster autoscaler provisions new nodes because the *requested* resources exceed capacity, even if the nodes are physically sitting at 10% CPU utilization.
+The Cluster Autoscaler looks strictly at the requested resources of your Pods, not their actual usage. If you deploy a Pod requesting 4 CPU cores but it only consumes 0.1 cores, the autoscaler will aggressively spin up new expensive nodes to satisfy the massive request, leaving you paying for massive amounts of unused "slack" capacity.
 
-Right-sizing involves aligning your container requests with reality. 
-
-1. **Analyze Historical Usage**: Use Azure Monitor Container Insights or Grafana dashboards to compare `kube_pod_container_resource_requests` against actual `container_cpu_usage_seconds_total`.
-2. **Vertical Pod Autoscaler (VPA)**: Run the VPA in `Recommendation` mode. It analyzes pod metrics over time and suggests optimal CPU and memory requests without actively restarting your pods.
-3. **Set Requests = Limits for Memory**: To prevent unexpected Out-Of-Memory (OOM) kills during traffic spikes, a common best practice is to set memory requests equal to memory limits.
-4. **Allow CPU Throttling (Carefully)**: Unlike memory, CPU is a compressible resource. Setting CPU limits higher than requests allows a pod to burst during startup or brief spikes, though aggressive throttling can cause latency.
+To solve this, you must apply workload right-sizing logic. Establish robust memory requests equal to your limits to protect against Out-of-Memory (OOM) killings, while keeping your CPU requests honest to your baseline average usage.
 
 ```yaml
 # A well-sized container specification
@@ -665,11 +654,8 @@ resources:
 ## Did You Know?
 
 1. **Azure Disk IOPS scale with disk size on Premium SSD, but Ultra Disk decouples them.** A 256 GB Premium SSD v1 gets 1,100 IOPS. To get 5,000 IOPS you need a 1 TB disk, even if you only store 50 GB of data. Ultra Disk lets you provision 50,000 IOPS on a 64 GB disk. This decoupling can save thousands of dollars per month for I/O-intensive databases that do not need large storage volumes.
-
 2. **KEDA can scale to zero replicas, which the standard HPA cannot do.** The HPA requires a minimum of 1 replica. KEDA's ability to scale to zero is transformative for cost optimization on batch processing workloads. A cluster with 200 different queue consumers that are each idle 95% of the time can run zero pods for most of those consumers, only spinning them up when messages arrive. Combined with the cluster autoscaler, this means you can run a multi-tenant batch processing platform where idle tenants cost nothing.
-
 3. **Azure Managed Prometheus stores metrics for 18 months at no additional retention cost.** Self-hosted Prometheus typically requires careful capacity planning for long-term storage (using Thanos or Cortex). Azure Monitor workspace handles this natively, making it possible to query 18 months of historical metrics for capacity planning and trend analysis without managing any storage infrastructure.
-
 4. **The `nconnect` mount option for Azure Files NFS multiplies throughput by opening multiple TCP connections.** A single NFS connection typically tops out at 300-400 MB/s due to TCP window limitations. Setting `nconnect=4` in your StorageClass mount options opens 4 parallel TCP connections per mount, effectively quadrupling throughput. This is essential for ML training workloads that read large datasets from shared storage.
 
 ---
@@ -1126,4 +1112,6 @@ echo "az group delete --name rg-aks-prod --yes --no-wait"
 
 ## Next Module
 
-This is the final module in the AKS Deep Dive series. You now have the knowledge to architect, secure, network, observe, and scale production AKS clusters. For further learning, explore the [Platform Engineering Track](/platform/) to deepen your understanding of SRE practices, GitOps workflows, and DevSecOps pipelines that build on this AKS foundation.
+This is the final module in the AKS Deep Dive series. You now have the knowledge to architect, secure, network, observe, and scale production AKS clusters using industry-standard features from Kubernetes v1.35. 
+
+For further learning, explore the [Platform Engineering Track](/platform/) to deepen your understanding of continuous deployment configurations, advanced SRE resilience strategies, and cutting-edge DevSecOps pipelines that continue to build on this powerful infrastructure foundation.
