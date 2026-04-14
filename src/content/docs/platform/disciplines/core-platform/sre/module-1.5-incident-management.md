@@ -249,6 +249,8 @@ Confirming the incident is over:
 
 **Goal**: Confident closure, not premature declaration.
 
+> **Stop and think**: If the monitoring dashboard turns green but customer support tickets are still pouring in, is the incident resolved?
+
 ### Phase 5: Learning
 
 Post-incident improvement:
@@ -459,23 +461,19 @@ Even if nothing has changed, post an update. Silence breeds anxiety and speculat
 
 **Stakeholder Notification Tiers:**
 
-```
-Tier 1: Engineering (immediate)
-  └── On-call team, incident responders, relevant SMEs
-  └── Notified via: PagerDuty, incident Slack channel
+```mermaid
+graph TD
+    classDef tier fill:#2d3748,stroke:#cbd5e0,stroke-width:1px,color:#fff;
+    
+    T1["Tier 1: Engineering (immediate)<br/>• On-call team, incident responders, relevant SMEs<br/>• Notified via: PagerDuty, incident Slack channel"]:::tier
+    T2["Tier 2: Engineering Management (within 15 min for SEV-1)<br/>• Engineering managers, directors of affected services<br/>• Notified via: Slack, email"]:::tier
+    T3["Tier 3: Executives (within 30 min for SEV-1)<br/>• VP Engineering, CTO, CEO (for customer-facing SEV-1)<br/>• Notified via: SMS, phone call, email<br/>• They need: impact scope, ETA, whether customers are affected"]:::tier
+    T4["Tier 4: Customers (within 30-60 min for SEV-1)<br/>• Via status page, in-app banner, email for affected accounts<br/>• They need: what's broken, workarounds, when it will be fixed"]:::tier
 
-Tier 2: Engineering Management (within 15 min for SEV-1)
-  └── Engineering managers, directors of affected services
-  └── Notified via: Slack, email
-
-Tier 3: Executives (within 30 min for SEV-1)
-  └── VP Engineering, CTO, CEO (for customer-facing SEV-1)
-  └── Notified via: SMS, phone call, email
-  └── They need: impact scope, ETA, whether customers are affected
-
-Tier 4: Customers (within 30-60 min for SEV-1)
-  └── Via status page, in-app banner, email for affected accounts
-  └── They need: what's broken, workarounds, when it will be fixed
+    SEV1(("SEV-1<br/>Incident")) --> T1
+    SEV1 --> T2
+    SEV1 --> T3
+    SEV1 --> T4
 ```
 
 **Communication Templates:**
@@ -542,6 +540,8 @@ Customers remember how you communicated during an outage more than the outage it
 ## Runbooks and Playbooks
 
 Runbooks reduce time to resolution by documenting common procedures.
+
+> **Pause and predict**: Why is it important to have runbooks written *before* an incident occurs, rather than relying on the team's memory during the outage?
 
 ### Runbook Example
 
