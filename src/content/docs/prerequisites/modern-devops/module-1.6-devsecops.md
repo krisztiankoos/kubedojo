@@ -6,34 +6,33 @@ sidebar:
 ---
 > **Complexity**: `[MEDIUM]` - Essential security mindset
 >
-> **Time to Complete**: 35-40 minutes
+> **Time to Complete**: 60-75 minutes
 >
 > **Prerequisites**: CI/CD concepts (Module 3)
 
----
-
 ## What You'll Be Able to Do
 
-After this module, you will be able to:
-- **Explain** the "shift left" security principle and why it's cheaper to catch issues early
-- **Identify** the top Kubernetes security risks (misconfiguration, exposed dashboards, excessive RBAC)
-- **Describe** a secure CI/CD pipeline with image scanning, secret management, and policy enforcement
-- **Compare** DevSecOps tools (Trivy, OPA/Gatekeeper, Falco) and explain what each protects against
-- **Configure** Pod Security Standards (PSS) to restrict container privileges at the namespace level
-- **Set up** pre-commit scanning concepts to prevent secret leaks before they reach version control
-- **Write** a NetworkPolicy to explicitly control and restrict pod-to-pod traffic
-
----
+After completing this comprehensive module, you will be able to:
+- **Design** a comprehensive DevSecOps CI/CD pipeline that integrates automated security scanning without halting developer velocity.
+- **Diagnose** common Kubernetes workload misconfigurations that lead to container escapes and cluster compromise.
+- **Implement** Pod Security Standards (PSS) to systematically restrict container privileges at the namespace boundary.
+- **Evaluate** the difference between static analysis (SAST), software composition analysis (SCA), and dynamic analysis (DAST) in identifying vulnerabilities.
+- **Implement** a zero-trust network posture by designing default-deny Kubernetes NetworkPolicies.
+- **Compare** native and external secret management solutions to securely inject credentials into workloads.
 
 ## Why This Module Matters
 
-Security used to be an afterthought—a team that said "no" at the end of development. That doesn't work in cloud-native environments where you deploy multiple times per day. DevSecOps integrates security into every stage of the development lifecycle. For Kubernetes environments, where misconfiguration is the #1 security risk, this is critical.
+In 2019, a massive financial institution experienced one of the most devastating data breaches in modern history. An external attacker exploited a server-side request forgery (SSRF) vulnerability in a misconfigured Web Application Firewall (WAF). However, the initial breach was only the beginning. The compromised server had been assigned an overly permissive Identity and Access Management (IAM) role. The attacker leveraged this excessive privilege to list and download sensitive storage buckets containing over 100 million credit card applications. The resulting financial impact exceeded hundreds of millions of dollars in regulatory fines, legal settlements, and reputational damage. This incident was a stark reminder that boundary defenses are insufficient; security must be deeply integrated into the infrastructure and application configuration itself.
 
----
+In modern cloud-native and Kubernetes environments, the stakes are identically high, and the attack surface is significantly more complex. The abstraction layers that make Kubernetes powerful—Pods, Services, ServiceAccounts, and Controllers—also introduce myriad configuration points where a single oversight can lead to catastrophe. A developer casually adding `privileged: true` to a Pod specification to bypass a stubborn file permission issue inadvertently grants that container direct access to the host worker node's kernel capabilities. If an attacker breaches that container through a web vulnerability, they can execute a container escape, harvest the kubelet's credentials, and assume control over the entire cluster. 
 
-## What is DevSecOps?
+DevSecOps is the systemic answer to this challenge. It is the philosophy and practice of embedding security guardrails directly into the software development lifecycle, ensuring that misconfigurations and vulnerabilities are caught automatically, long before they are deployed to production. Security transforms from a reactive gateway at the end of the release cycle into a continuous, automated process that empowers developers to build secure systems by default.
 
-DevSecOps is **security integrated into DevOps**, not bolted on afterward.
+## The Paradigm Shift: What is DevSecOps?
+
+Historically, security testing was a localized, manual phase situated at the very end of the software delivery pipeline. Development teams would write code, QA teams would verify functionality, and only then would the security team perform audits, penetration tests, and vulnerability assessments. This traditional model inherently positioned security as a bottleneck. When the security team discovered a critical flaw just days before a scheduled release, the entire project would be thrown back to the development phase, causing massive friction, blown deadlines, and an adversarial relationship between developers and security professionals.
+
+DevSecOps dismantles this siloed approach. It mandates that security practices must be integrated into every single phase of the DevOps lifecycle—from initial planning and threat modeling, through coding and building, all the way to deployment and runtime monitoring. By automating security controls and distributing responsibility, DevSecOps ensures that software is secure by design.
 
 ```mermaid
 flowchart TD
@@ -56,13 +55,17 @@ flowchart TD
     end
 ```
 
----
+The core tenet underlying this transformation is the concept of "Shifting Left."
 
-## The Shift Left Philosophy
+### The Economics of Shifting Left
 
-"Shift Left" means finding security issues earlier:
+In a standard deployment timeline moving from left to right—from a developer's local workstation to a live production cluster—the cost and complexity of fixing a security vulnerability grow exponentially the further right it is discovered.
 
 > **Stop and think**: If a developer hardcodes a password in a feature branch, at what stage of the pipeline should it ideally be caught to minimize cost and risk?
+
+If a developer introduces a vulnerability (such as an outdated dependency or a hardcoded secret) and discovers it locally within minutes, the cost to fix it is near zero. They simply delete the secret, update the package, and proceed. If that same vulnerability is caught during a Pull Request review, it requires a context switch, a new commit, and another CI run—costing tens of dollars in engineering time. If the vulnerability makes it to a staging environment, it might require a coordinated effort between QA and development to reproduce and resolve, costing hundreds. 
+
+However, if that vulnerability reaches production and is discovered by a malicious actor, the cost is catastrophic. It encompasses incident response, system downtime, customer notifications, regulatory fines, and irreparable brand damage. Shifting left means moving the detection of these issues as far left as mathematically possible.
 
 ```mermaid
 flowchart LR
@@ -76,9 +79,9 @@ flowchart LR
     style F fill:#ff9999,stroke:#cc0000,stroke-width:3px;
 ```
 
----
+## Security Integration in the CI/CD Pipeline
 
-## Security in CI/CD Pipeline
+To operationalize the Shift Left philosophy, security tools must be integrated directly into the CI/CD pipeline. The goal is to provide fast, actionable feedback to developers without requiring them to become security experts. A modern DevSecOps pipeline utilizes multiple distinct layers of analysis, as each tool is specialized to catch different classes of vulnerabilities.
 
 ```mermaid
 flowchart TD
@@ -90,11 +93,33 @@ flowchart TD
     F -->|OWASP ZAP| G((Deploy))
 ```
 
----
+### 1. Pre-Commit and Secret Scanning
+The first line of defense exists before code ever leaves a developer's laptop. Pre-commit hooks execute lightweight scans specifically looking for high-entropy strings, API keys, AWS credentials, and private keys. Tools like `git-secrets` or `trufflehog` analyze the diff of the impending commit. If a secret is detected, the commit is outright rejected, preventing the sensitive data from ever entering the Git history. 
 
-## Container Security
+### 2. Static Application Security Testing (SAST)
+Once code is pushed to a repository, SAST tools parse the source code without executing it. They build an Abstract Syntax Tree (AST) to understand the logic and data flow, searching for well-known dangerous patterns such as SQL injection vulnerabilities, cross-site scripting (XSS) vectors, or the use of insecure cryptographic hashing algorithms (like MD5). Because SAST operates on raw source code, it provides developers with exact line numbers where flaws exist.
 
-### 1. Image Security
+### 3. Software Composition Analysis (SCA)
+Modern applications are rarely written from scratch; they assemble hundreds of open-source libraries. SCA tools map out the entire dependency tree (including transitive dependencies) and cross-reference them against databases of known vulnerabilities (CVEs). If your application imports a library with a known remote code execution flaw, the SCA tool will flag it and often suggest the minimum version required to patch the issue.
+
+### 4. Container Scanning
+Applications deploy inside containers, meaning the operating system packages shipped within the container image must also be scrutinized. Container scanners unpack the Docker image layers and inspect installed OS packages (like `glibc`, `openssl`, or `curl`) for vulnerabilities. 
+
+### 5. Infrastructure as Code (IaC) Configuration Scanning
+In Kubernetes, your infrastructure is defined by YAML manifests. Configuration scanners analyze these manifests to ensure they comply with security best practices. They will fail the pipeline if a Deployment attempts to run as the root user or if a Service is inadvertently exposed as a public LoadBalancer without authentication.
+
+### 6. Dynamic Application Security Testing (DAST)
+Finally, DAST tools operate in a fundamentally different manner. They treat the running application as a black box and actively interact with it over the network. DAST scanners simulate automated attacks, sending malformed HTTP requests, manipulating headers, and attempting injection attacks to observe how the application responds in its actual compiled, running state.
+
+## Hardening the Container Image Layer
+
+The container image is the foundational artifact of cloud-native deployments. A poorly constructed container image expands the attack surface significantly, providing an attacker with a rich toolkit of utilities to further their exploitation if they manage to breach the application layer.
+
+### 1. Image Security and Minimal Attack Surfaces
+
+Consider a standard development practice: using a full-featured base image like `ubuntu:latest`. While convenient because it contains every utility a developer might need (like `curl`, `wget`, `netcat`, and package managers), it is a security nightmare. If an attacker gains shell execution inside the container, they have immediate access to all these tools to download malicious payloads or map the internal network.
+
+Furthermore, running the main process as the root user inside the container means that if the kernel isolation boundaries are bypassed, the attacker has root access on the host node.
 
 ```dockerfile
 # BAD: Large attack surface, runs as root
@@ -111,7 +136,11 @@ USER appuser
 EXPOSE 8080
 ```
 
-### 2. Image Scanning
+The "GOOD" example demonstrates defense in depth. It uses an Alpine Linux base, which is drastically smaller and lacks many common attack utilities. It explicitly creates a dedicated, unprivileged user (`appuser`) and switches to it before executing the application. If this container is compromised, the attacker is trapped as an unprivileged user inside a barren operating system environment.
+
+### 2. Continuous Image Scanning
+
+Vulnerabilities are discovered daily. An image that was perfectly secure when built on Monday might have three critical CVEs reported against its packages by Friday. Container scanning must be a continuous process, executing not just during the CI build, but on a schedule against images stored in the registry.
 
 ```bash
 # Trivy - most popular open-source scanner
@@ -122,7 +151,9 @@ trivy image nginx:1.25
 # Total: 142 (UNKNOWN: 0, LOW: 89, MEDIUM: 45, HIGH: 7, CRITICAL: 1)
 ```
 
-### 3. Image Signing
+### 3. Image Signing and Provenance
+
+The Software Supply Chain is increasingly under attack. If an attacker breaches your container registry, they could replace a legitimate image with a malicious one bearing the exact same tag. When Kubernetes pulls the image, it executes the malicious payload. Image signing creates a cryptographic signature of the image digest. Kubernetes can be configured via Admission Controllers to verify this signature before allowing the Pod to start, ensuring the image has not been tampered with since it left the CI/CD pipeline.
 
 ```bash
 # Sign images to ensure they haven't been tampered with
@@ -133,11 +164,13 @@ cosign sign myregistry/myapp:v1.0
 cosign verify myregistry/myapp:v1.0
 ```
 
----
+## Securing the Kubernetes Workload Configuration
 
-## Kubernetes Security
+Even if your container image is pristine, the way you command Kubernetes to run that container can introduce catastrophic vulnerabilities. Kubernetes is designed for flexibility and interoperability, which means its default settings are often overly permissive.
 
-### Common Misconfigurations
+### Common Manifest Misconfigurations
+
+The Pod `securityContext` is the most critical block of YAML for workload security. It defines the privilege and access control settings for a Pod or Container.
 
 ```yaml
 # BAD: Overly permissive pod
@@ -185,9 +218,15 @@ spec:
         cpu: "500m"
 ```
 
-### Pod Security Standards
+In the "BAD" configuration, `privileged: true` disables essentially all kernel-level isolation mechanisms (like cgroups and namespaces) that keep the container contained. The container processes can see and manipulate the host node's hardware devices. Combined with mounting the host filesystem (`hostPath: /`), an attacker inside this Pod can easily chroot into the host node, gaining full command over the underlying EC2 instance or virtual machine.
 
-Modern Kubernetes (v1.25+) uses Pod Security Standards:
+The "GOOD" configuration explicitly enforces that the container must run as a non-root user. It prevents privilege escalation via `setuid` binaries. Crucially, it sets `readOnlyRootFilesystem: true`, meaning even if an attacker achieves remote code execution, they cannot write malicious scripts or binaries to the container's disk, severely hindering their ability to establish persistence. Finally, dropping all Linux capabilities ensures the process has only the absolute bare minimum kernel privileges required to run.
+
+### Enforcing Pod Security Standards (PSS)
+
+Relying on developers to perfectly craft `securityContext` blocks in every manifest is unrealistic. Kubernetes provides a native, cluster-level mechanism to enforce these rules dynamically: Pod Security Standards (PSS), implemented via the Pod Security Admission controller.
+
+PSS allows cluster administrators to apply labels to namespaces that dictate the minimum security posture allowed within that boundary.
 
 ```yaml
 # Enforce security standards at namespace level
@@ -201,17 +240,21 @@ metadata:
     pod-security.kubernetes.io/audit: restricted
 ```
 
+Kubernetes defines three standardized profiles:
+
 | Level | Description |
 |-------|-------------|
 | privileged | No restrictions (dangerous) |
 | baseline | Minimal restrictions, prevents known escalations |
 | restricted | Highly restrictive, follows best practices |
 
----
+By setting the `enforce: restricted` label, the Kubernetes API server will actively reject any API request attempting to create a Pod that violates the restricted profile (e.g., trying to run as root or mount a host path). The `warn` label sends a warning back to the user applying the manifest, while `audit` logs the violation for security monitoring.
 
-## Secret Management
+## Secret Management Architectures
 
-### The Problem
+A perennial challenge in declarative infrastructure is handling secrets (passwords, API tokens, TLS certificates). Because GitOps mandates that all cluster state should be declared in version control, teams often struggle with where to store the sensitive data that enables the applications to connect to databases or third-party APIs.
+
+### The Fundamental Problem
 
 ```yaml
 # NEVER DO THIS
@@ -223,7 +266,11 @@ data:
   DATABASE_PASSWORD: "supersecret123"  # In Git history forever!
 ```
 
-### Solutions
+Placing plain-text secrets in Git is a fatal error. Git history is immutable and distributed; once a secret is pushed, anyone who clones the repository has it forever. Even native Kubernetes `Secret` resources are dangerous to store in Git, as they only encode data in Base64—which is an encoding scheme, not encryption. Base64 can be decoded instantly by anyone.
+
+### Architectural Solutions
+
+There are three primary architectural patterns for solving the secret management problem in cloud-native environments.
 
 ```mermaid
 flowchart TD
@@ -245,7 +292,7 @@ flowchart TD
     Run --> R2[CSI Secret Store Driver]
 ```
 
-### Sealed Secrets Example
+**1. Kubernetes-Native (Asymmetric Encryption):** Tools like Bitnami Sealed Secrets solve the GitOps problem using asymmetric cryptography. The cluster operator deploys the Sealed Secrets controller, which generates a public/private key pair. Developers use the public key to encrypt their secrets locally via a CLI tool. The resulting encrypted artifact, a `SealedSecret`, is mathematically impossible to decrypt without the private key. Therefore, the `SealedSecret` can be safely committed to a public GitHub repository. When applied to the cluster, the controller uses the private key to decrypt it and dynamically create a standard Kubernetes `Secret` in memory.
 
 ```bash
 # Install sealed-secrets controller
@@ -257,11 +304,19 @@ kubeseal --format yaml < secret.yaml > sealed-secret.yaml
 # Only the cluster can decrypt it
 ```
 
----
+**2. External Secret Synchronization:** Tools like External Secrets Operator (ESO) allow organizations to store the actual secrets in enterprise-grade vaults (like AWS Secrets Manager or HashiCorp Vault). ESO runs in the cluster, authenticates to the external vault, fetches the secret data, and automatically synchronizes it into a native Kubernetes `Secret`.
 
-## Network Security
+**3. Runtime Injection:** For the highest security posture, secrets never touch the Kubernetes `Secret` API at all. The Secrets Store CSI Driver allows pods to mount secrets from external vaults directly into the container's in-memory filesystem as ephemeral volumes. When the pod terminates, the secret vanishes completely from the node.
+
+## Network Security and Microsegmentation
+
+By default, Kubernetes networks are entirely flat. Every pod in every namespace can communicate with every other pod without restriction. From an attacker's perspective, this is a dream scenario. If they manage to exploit a minor vulnerability in an internally facing analytics dashboard, they can freely map the network and open connections to the critical financial database pods located in a completely different namespace.
+
+To implement a Zero-Trust architecture, operators must utilize NetworkPolicies to enforce microsegmentation.
 
 > **Pause and predict**: If you apply a default-deny NetworkPolicy to a namespace, what happens to the existing pods that are currently communicating with each other?
+
+When a NetworkPolicy is applied, it immediately begins dropping traffic that is not explicitly permitted. Existing connections that violate the new policy will be severed, which is why NetworkPolicies must be implemented methodically, often starting with a dry-run or logging phase.
 
 ```yaml
 # Network Policy: Only allow specific traffic
@@ -295,11 +350,15 @@ spec:
       port: 5432
 ```
 
----
+This specific policy demonstrates extreme precision. It isolates any pod labeled `app: api`. It explicitly declares that the API pods may only receive incoming connections on port 8080, and only if those connections originate from a pod labeled `app: frontend`. Conversely, the API pods are restricted in what they can reach out to; their egress traffic is confined solely to port 5432 on pods labeled `app: database`. All other traffic attempting to reach or leave the API pods is silently dropped by the underlying Container Network Interface (CNI) plugin.
 
-## Security Scanning Tools
+## Infrastructure Configuration Scanning Tooling
 
-### KubeLinter (Configuration)
+Validating the endless parameters of Kubernetes YAML manifests requires automation. Several open-source tools dominate this ecosystem.
+
+### KubeLinter
+
+KubeLinter is a focused, fast static analysis tool created by StackRox (now Red Hat). It takes your YAML files and checks them against a built-in series of best practices. It's incredibly fast, making it ideal for immediate developer feedback in pre-commit hooks or fast CI pipelines.
 
 ```bash
 # Scan Kubernetes YAML for issues
@@ -311,7 +370,9 @@ kube-linter lint deployment.yaml
 # - container "app" is not set to runAsNonRoot
 ```
 
-### Kubescape (Comprehensive)
+### Kubescape
+
+Kubescape is a more comprehensive platform. While it can scan local YAML files, it excels at analyzing entire running clusters. It evaluates your actual running state against rigorous compliance frameworks established by government and security agencies, such as the NSA/CISA Kubernetes Hardening Guidance or the MITRE ATT&CK framework.
 
 ```bash
 # Full security scan against frameworks like NSA-CISA
@@ -324,7 +385,9 @@ kubescape scan framework nsa
 # - Image vulnerabilities
 ```
 
-### Trivy (Everything)
+### Trivy
+
+Trivy has evolved from a simple container image scanner into a massive, multi-purpose security platform. It can scan images for CVEs, scan IaC files (Terraform, Kubernetes YAML) for misconfigurations, scan repositories for hardcoded secrets, and even assess running clusters. Its versatility makes it a staple in modern DevSecOps pipelines.
 
 ```bash
 # Scan container image
@@ -337,9 +400,9 @@ trivy config .
 trivy k8s --report summary cluster
 ```
 
----
+## Runtime Security: Defending the Live Cluster
 
-## Runtime Security
+All the prevention in the world cannot stop zero-day exploits or compromised credentials. Runtime security assumes the cluster will eventually be breached and focuses on detecting anomalous behavior as it happens in real-time.
 
 ```mermaid
 flowchart TD
@@ -364,9 +427,17 @@ flowchart TD
     end
 ```
 
----
+The flagship project for runtime detection in cloud-native environments is Falco. Created by Sysdig and donated to the CNCF, Falco operates deep within the Linux kernel using eBPF (Extended Berkeley Packet Filter). eBPF allows Falco to safely execute sandbox programs inside the kernel to observe every single system call executed by every container, without modifying the kernel source code or risking a kernel panic.
 
-## RBAC Best Practices
+If a standard Nginx web server container suddenly spawns a `/bin/bash` process, or attempts to read the highly sensitive `/etc/shadow` file, or tries to overwrite a system binary in `/usr/bin`, Falco detects this abnormal system call instantly. It compares the behavior against its ruleset and generates a high-severity alert to security operations teams. This deep introspection makes it nearly impossible for an attacker to operate stealthily on a node.
+
+On the prevention side, Admission Controllers like OPA Gatekeeper or Kyverno intercept requests sent to the Kubernetes API server before they are persisted to the database (etcd). They evaluate the incoming JSON payload against complex logical policies and can definitively reject requests that violate organizational rules, acting as a programmable firewall for the cluster infrastructure itself.
+
+## Identity and Access Management (RBAC) Best Practices
+
+Role-Based Access Control (RBAC) determines who can do what within the Kubernetes cluster. The golden rule of RBAC is the Principle of Least Privilege: identities (whether human developers or machine service accounts) must be granted only the exact minimum permissions required to perform their intended function, and nothing more.
+
+Excessive permissions drastically expand the blast radius of a compromised credential.
 
 ```yaml
 # Principle of least privilege
@@ -383,7 +454,13 @@ subjects:
 roleRef:
   kind: ClusterRole
   name: cluster-admin    # Too much power!
+```
 
+Granting a developer (or a CI pipeline) `cluster-admin` privileges is catastrophic if their token is leaked. The attacker would have absolute authority to delete namespaces, read any secret, and deploy malicious DaemonSets across all nodes.
+
+Instead, permissions should be tightly scoped. Roles should limit access to a specific namespace, restrict the types of resources that can be manipulated, and restrict the specific actions (verbs) allowed.
+
+```yaml
 # GOOD: Namespace-scoped, minimal permissions
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -397,7 +474,10 @@ rules:
 - apiGroups: [""]
   resources: ["pods"]
   verbs: ["get", "list"]
----
+```
+
+```yaml
+# GOOD: RoleBinding applying the Role
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -411,14 +491,16 @@ roleRef:
   name: developer
 ```
 
+In the "GOOD" configuration, the developer has authority only within the `development` namespace. They are permitted to manage Deployments, but they can only passively view Pods. They cannot read Secrets, they cannot modify NetworkPolicies, and they have absolutely zero access to the `production` namespace.
+
 ---
 
 ## Did You Know?
 
-- **Over 90% of Kubernetes security incidents** are caused by misconfiguration, not zero-day exploits. The infamous 2018 Tesla breach happened simply because an administrative Kubernetes dashboard was left exposed to the internet without a password.
-- **The Capital One Breach (2019)** resulted in the theft of 100 million credit card applications due to an overly permissive IAM role, highlighting exactly why the principle of least privilege (like strict RBAC) is critical.
-- **The Codecov Supply Chain Attack (2021)** occurred when attackers modified a bash script to exfiltrate CI/CD environment variables, emphasizing why secret management and dependency scanning must be integrated into pipelines.
-- **Falco processes billions of events** at companies like Shopify. At that scale, it can detect a malicious anomaly—like a shell being unexpectedly spawned in a production container—within milliseconds.
+- **Over 90% of Kubernetes security incidents** are caused by misconfiguration, not zero-day exploits. The infamous 2018 Tesla breach happened simply because an administrative Kubernetes dashboard was left exposed to the internet without a password, allowing attackers to deploy cryptomining pods.
+- **The Capital One Breach (2019)** resulted in the theft of 100 million credit card applications due to an overly permissive IAM role, highlighting exactly why the principle of least privilege (like strict RBAC) is critical in cloud architectures.
+- **The Codecov Supply Chain Attack (2021)** occurred when sophisticated attackers managed to modify a simple bash script to exfiltrate CI/CD environment variables from customer environments, emphasizing why secret management and dependency scanning must be deeply integrated into automated pipelines.
+- **Falco processes billions of events** every day at hyper-scale companies like Shopify. At that immense scale of data ingestion, it can still detect a malicious anomaly—such as a reverse shell being unexpectedly spawned in a production container—within milliseconds.
 
 ---
 
@@ -426,12 +508,12 @@ roleRef:
 
 | Mistake | Why It Hurts | Solution |
 |---------|--------------|----------|
-| Secrets in Git | Permanent exposure | Use secret managers |
-| Running as root | Container escape risk | Always runAsNonRoot |
-| No network policies | Lateral movement | Default deny policies |
-| Latest tag | No vulnerability tracking | Pin specific versions |
-| No image scanning | Unknown vulnerabilities | Scan in CI/CD |
-| Cluster-admin everywhere | Blast radius | Least privilege RBAC |
+| Secrets in Git | Permanent, immutable exposure of credentials to anyone with read access. | Use specialized secret managers like Sealed Secrets or Vault. |
+| Running as root | Grants a compromised container elevated privileges, risking a full node escape. | Always enforce `runAsNonRoot: true` in Pod security contexts. |
+| No network policies | Creates a flat network, allowing unhindered lateral movement after a breach. | Implement default-deny policies, opening only explicit ingress/egress. |
+| Using the latest tag | Bypasses vulnerability tracking and guarantees unexpected breaking changes. | Pin specific, immutable version tags (e.g., `nginx:1.25.1-alpine`). |
+| No image scanning | Deploys known, publicly documented vulnerabilities directly into production. | Mandate automated image scanning as a blocking step in CI/CD. |
+| Cluster-admin everywhere | Maximizes the blast radius if an account token is compromised. | Enforce strict, namespace-bound Role-Based Access Control (least privilege). |
 
 ---
 
@@ -461,7 +543,7 @@ roleRef:
    Committing raw secrets to any version control system, even a private one, is fundamentally flawed because Git retains a permanent history of all changes. Once a secret is committed, anyone with read access to the repository—or anyone who gains access in the future—can retrieve the credentials from the commit history, even if the file is later deleted. A better alternative is to use a tool like Sealed Secrets, which uses asymmetric cryptography to encrypt the secret so that it can be safely committed to Git. Only the Kubernetes cluster holds the private key required to decrypt the SealedSecret back into a usable Kubernetes Secret object.
    </details>
 
-5. **Your organization wants to enforce a policy where no pods can run in the `production` namespace with privileged access or host-level mounts. How can you implement this natively in Kubernetes 1.25+ without installing third-party admission controllers?**
+5. **Your organization wants to enforce a policy where no pods can run in the `production` namespace with privileged access or host-level mounts. How can you implement this natively in Kubernetes v1.35 without installing third-party admission controllers?**
    <details>
    <summary>Answer</summary>
    You can achieve this natively by configuring Pod Security Standards (PSS) at the namespace level using specific labels. By applying the label `pod-security.kubernetes.io/enforce: restricted` to the `production` namespace, the Kubernetes built-in admission controller will automatically reject any Pod creation requests that violate the restricted profile. This profile explicitly forbids privileged containers, host network namespaces, and hostpath volumes, among other insecure configurations. This native approach requires no additional tooling and ensures that misconfigured pods are blocked before they are ever scheduled onto a node.
@@ -483,7 +565,7 @@ roleRef:
 
 ## Hands-On Exercise
 
-**Task**: Practice Kubernetes security scanning.
+**Task**: Practice Kubernetes security scanning and configuration hardening. In this exercise, you will create an inherently insecure workload, evaluate it against manual security best practices, and then construct a hardened, secure equivalent.
 
 ```bash
 # 1. Create an insecure deployment
@@ -576,54 +658,15 @@ diff insecure-deployment.yaml secure-deployment.yaml || true
 rm insecure-deployment.yaml secure-deployment.yaml
 ```
 
-**Success criteria**: Understand insecure vs secure configurations.
+**Success criteria**: Understand the granular differences between insecure vs secure configurations, specifically focusing on the `securityContext` settings. Ensure you can articulate why dropping capabilities and using read-only filesystems prevents runtime exploitation.
 
 ---
 
-## Summary
+## Next Steps
 
-**DevSecOps** integrates security into every stage:
+You've now completed the foundational knowledge required for securing cloud-native delivery systems! The combination of automated pipelines, GitOps, and integrated DevSecOps provides a robust, professional-grade platform. Now, it's time to dive into the core engine of cloud-native architectures: Kubernetes itself. We will begin by exploring the historical context and technical decisions that led to Kubernetes dominating the container orchestration space.
 
-**Key concepts**:
-- Shift Left: Find issues early
-- Security as code
-- Automated scanning
-- Least privilege
+**Next Module:** [Philosophy & Design](/prerequisites/philosophy-design/module-1.1-why-kubernetes-won/) - Discover the design principles that allowed Kubernetes to defeat Docker Swarm and Mesos in the container orchestration wars.
 
-**CI/CD security**:
-- SAST: Scan source code
-- SCA: Scan dependencies
-- Container scanning: Scan images
-- Config scanning: Scan Kubernetes YAML
-
-**Kubernetes security**:
-- Pod Security Standards
-- Network Policies
-- RBAC (least privilege)
-- Secret management
-
-**Tools**:
-- Trivy: Images and configs
-- KubeLinter/Kubescape: K8s configs
-- Falco: Runtime detection
-- Vault/Sealed Secrets: Secret management
-
-**Mindset**: Security is everyone's job, not just the security team's.
-
----
-
-## Track Complete!
-
-Congratulations! You've finished the **Modern DevOps Practices** prerequisite track. You now understand:
-
-1. Infrastructure as Code
-2. GitOps workflows
-3. CI/CD pipelines
-4. Observability fundamentals
-5. Platform Engineering concepts
-6. Security practices (DevSecOps)
-
-**Next Steps**:
-- [CKA Curriculum](/k8s/cka/part0-environment/module-0.1-cluster-setup/) - Administrator certification
-- [CKAD Curriculum](/k8s/ckad/part0-environment/module-0.1-ckad-overview/) - Developer certification
-- [Philosophy & Design](/prerequisites/philosophy-design/module-1.1-why-kubernetes-won/) - Why Kubernetes?
+- [CKA Curriculum](/k8s/cka/part0-environment/module-0.1-cluster-setup/)
+- [CKAD Curriculum](/k8s/ckad/part0-environment/module-0.1-ckad-overview/)
