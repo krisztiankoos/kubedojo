@@ -12,6 +12,8 @@ This section covers the infrastructure platforms that sit beneath Kubernetes (vS
 
 | Module | Description | Time |
 |--------|-------------|------|
-| [5.1 Private Cloud Platforms](module-5.1-private-cloud/) | VMware vSphere + Tanzu, OpenStack + Magnum, Harvester | 45 min |
-| [5.2 Multi-Cluster Control Planes](module-5.2-multi-cluster-control-planes/) | vCluster, Kamaji, shared vs dedicated control planes | 50 min |
-| [5.3 Cluster API on Bare Metal](module-5.3-cluster-api-bare-metal/) | CAPM3, CAPV, declarative lifecycle, GitOps-driven clusters | 50 min |
+| [Module 5.1: Private Cloud Platforms](module-5.1-private-cloud/) | VMware vSphere + Tanzu, OpenStack + Magnum, Harvester | 45 min |
+| [Module 5.2: Multi-Cluster Control Planes](module-5.2-multi-cluster-control-planes/) | vCluster, Kamaji, shared vs dedicated control planes | 50 min |
+| [Module 5.3: Cluster API on Bare Metal](module-5.3-cluster-api-bare-metal/) | CAPM3, CAPV, declarative lifecycle, GitOps-driven clusters | 50 min |
+| [Fleet Management](module-5.4-fleet-management/) | Managing multiple clusters at scale, policy distribution, and centralized observability | 45 min |
+| [Active-Active Multi-Site](module-5.5-active-active-multi-site/) | Disaster recovery, cross-cluster networking, global load balancing, and state replication | 60 min |
