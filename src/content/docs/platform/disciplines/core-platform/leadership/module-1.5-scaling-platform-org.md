@@ -749,7 +749,7 @@ Then the company decided to expand the platform to cover data infrastructure, ML
 <details>
 <summary>Show Answer</summary>
 
-The team has crossed the 8-12 person threshold, where informal coordination mechanisms typically break down. At this size, it is no longer possible for everyone to know what everyone else is doing simply by sitting in the same room or sharing a single Slack channel. Because informal communication is failing, engineers are making local decisions that conflict with others, leading to incidents and inconsistent support. To resolve this, the team must introduce explicit team charters, formal documentation, and regular cross-team coordination processes to replace reliance on informal knowledge sharing.
+The team has crossed the 8-12 person threshold, where informal coordination mechanisms typically break down. At this size, it is no longer possible for everyone to know what everyone else is doing simply by sitting in the same room or sharing a single Slack channel. Because informal communication is failing, engineers are making local decisions that conflict with others, leading to incidents and inconsistent support. To resolve this, the team must introduce explicit team charters, formal documentation, and regular cross-team coordination processes to replace reliance on informal knowledge sharing. By establishing these formal boundaries and practices, the team can scale its operations without sacrificing reliability or velocity.
 
 </details>
 
@@ -789,7 +789,7 @@ This proposal is likely a mistake because the team is underestimating the long-t
 <details>
 <summary>Show Answer</summary>
 
-This duplication occurred because the organization lacks explicit team charters and clear ownership boundaries. When teams do not have strictly defined domains, they naturally gravitate toward interesting problems that overlap with other teams' implicit responsibilities. To fix this, leadership must immediately define and document explicit boundaries for each team's scope. Furthermore, you must implement an RFC (Request for Comments) process or a regular cross-team architecture review so that all new capabilities are proposed, discussed, and assigned to the correct team before any engineering work begins.
+This duplication occurred because the organization lacks explicit team charters and clear ownership boundaries. When teams do not have strictly defined domains, they naturally gravitate toward interesting problems that overlap with other teams' implicit responsibilities. Because infrastructure and security domains frequently intersect—especially around secrets management—the absence of a clear boundary guaranteed overlapping work. To fix this, leadership must immediately define and document explicit boundaries for each team's scope. Furthermore, you must implement an RFC (Request for Comments) process or a regular cross-team architecture review so that all new capabilities are proposed, discussed, and assigned to the correct team before any engineering work begins.
 
 </details>
 
@@ -799,7 +799,7 @@ This duplication occurred because the organization lacks explicit team charters 
 <details>
 <summary>Show Answer</summary>
 
-This incident occurred because the platform team set their reliability targets lower than the targets of the applications depending on them. Platform SLOs differ from application SLOs because platform services are foundational dependencies; their blast radius affects multiple teams simultaneously. Therefore, a platform's SLO must be mathematically stricter (e.g., 99.95% or higher) than the tightest SLO of any application running on top of it. Additionally, platform SLOs measure the infrastructure's internal availability to developers (like deployment success rates or Kubernetes API uptime) rather than the end-user experience, ensuring that product teams always have the reliable foundation they need to meet their own customer commitments.
+This incident occurred because the platform team set their reliability targets lower than the targets of the applications depending on them. Platform SLOs differ from application SLOs because platform services are foundational dependencies; their blast radius affects multiple teams simultaneously. Therefore, a platform's SLO must be mathematically stricter (e.g., 99.95% or higher) than the tightest SLO of any application running on top of it. Additionally, platform SLOs measure the infrastructure's internal availability to developers (like deployment success rates or Kubernetes API uptime) rather than the end-user experience. Setting appropriately high reliability targets ensures that product teams always have the dependable foundation they need to meet their own customer commitments.
 
 </details>
 
@@ -809,7 +809,7 @@ This incident occurred because the platform team set their reliability targets l
 <details>
 <summary>Show Answer</summary>
 
-Relying on a project with a single corporate backer introduces severe risks regarding license changes and project abandonment. The backing company could unilaterally change the license (e.g., from an open-source license to a Business Source License or SSPL) to protect their commercial interests, potentially forcing your organization into unexpected licensing fees or complex migrations. Furthermore, if the startup pivots or is acquired, the project may be abruptly abandoned. To mitigate this, you must evaluate the project's governance model, looking for neutral foundation backing (like the CNCF or Apache) and a diverse maintainer base, and weigh the cost of potentially having to fork and maintain the code yourself if the corporate backer changes direction.
+Relying on a project with a single corporate backer introduces severe risks regarding license changes and project abandonment. The backing company could unilaterally change the license (e.g., from an open-source license to a Business Source License or SSPL) to protect their commercial interests, potentially forcing your organization into unexpected licensing fees or complex migrations. Furthermore, if the startup pivots or is acquired, the project may be abruptly abandoned, leaving your infrastructure stranded without security updates. To mitigate this, you must evaluate the project's governance model, looking for neutral foundation backing (like the CNCF or Apache) and a diverse maintainer base. You must also weigh the cost of potentially having to fork and maintain the code yourself if the corporate backer changes direction.
 
 </details>
 
@@ -819,7 +819,7 @@ Relying on a project with a single corporate backer introduces severe risks rega
 <details>
 <summary>Show Answer</summary>
 
-To defend the platform team's ROI, you must build a business case grounded in measurable impact rather than abstract activity. First, quantify direct savings by highlighting infrastructure cost optimizations the platform enforces, as well as the eliminated costs of duplicate licenses and redundant tools. Next, calculate productivity gains by demonstrating the reduction in onboarding time, the decrease in time-to-production for new services, and the hours saved by developers not having to firefight infrastructure incidents. Finally, format this argument as a clear financial equation: show how the $5 million investment directly enables millions more in recovered developer hours, avoided security breaches, and faster time-to-market, proving a net-positive return on investment.
+To defend the platform team's ROI, you must build a business case grounded in measurable impact rather than abstract activity. First, quantify direct savings by highlighting infrastructure cost optimizations the platform enforces, as well as the eliminated costs of duplicate licenses and redundant tools across the organization. Next, calculate productivity gains by demonstrating the reduction in onboarding time, the decrease in time-to-production for new services, and the hours saved by developers not having to firefight infrastructure incidents. You can also point to the avoidance of costly compliance and security incidents that a standardized platform prevents. Finally, format this argument as a clear financial equation: show how the $5 million investment directly enables millions more in recovered developer hours, avoided security breaches, and faster time-to-market, proving a net-positive return on investment.
 
 </details>
 
