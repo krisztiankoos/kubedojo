@@ -726,4 +726,3 @@ kubectl delete pod web-logger memory-hog --force --grace-period=0
 Now that you comprehensively understand the absolute atomic unit of execution in the Kubernetes ecosystem, you might be legitimately wondering: "If Pods are ephemeral and die when underlying nodes fail, how do I reliably keep my enterprise application running smoothly? How do I effortlessly scale from exactly 1 Pod to 1,000 Pods without ever writing 1,000 separate YAML files?" 
 
 The profound, architectural answer lies purely in higher-level, highly autonomous control loops. In **[Module 1.4: Deployments](/prerequisites/kubernetes-basics/module-1.4-deployments/)**, we will formally and deeply introduce the immensely powerful Kubernetes Deployment object—the algorithmic engine that tirelessly watches over your Pods, resurrects them when they inevitably die, and seamlessly enables zero-downtime rolling updates to your entire fleet.
----
