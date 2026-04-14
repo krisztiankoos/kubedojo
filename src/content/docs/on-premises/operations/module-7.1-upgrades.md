@@ -45,7 +45,7 @@ After completing this module, you will be able to:
 
 ## Kubernetes Version Skew Policy
 
-Before upgrading anything, you must understand what version combinations are supported. Kubernetes enforces strict version skew limits between components.
+Before upgrading anything, you must understand what version combinations are supported. Kubernetes enforces strict version skew limits between components. 
 
 ```mermaid
 flowchart LR
@@ -62,6 +62,7 @@ flowchart LR
 ```
 
 For example, if `kube-apiserver` is at **v1.35**:
+- In highly available (HA) control planes, all `kube-apiserver` instances must be within one minor version of each other.
 - `kube-controller-manager` and `kube-scheduler` can be at **v1.35** or **v1.34**.
 - `kubelet` and `kube-proxy` can be at **v1.35**, **v1.34**, **v1.33**, or **v1.32**.
 - `kubectl` can be at **v1.36**, **v1.35**, or **v1.34**.
@@ -85,11 +86,15 @@ kubectl get nodes -o custom-columns=\
 
 > **Pause and predict**: Before reading the upgrade steps, think about why the first control plane node uses `kubeadm upgrade apply` while subsequent control plane nodes use `kubeadm upgrade node`. What is different about the first node?
 
+> **Prerequisite**: Your bare-metal cluster must be running with either static control-plane/etcd pods or an external etcd cluster. `kubeadm upgrade` does not support other control plane topologies.
+
 ### Step 1: Upgrade the First Control Plane Node
 
 The first control plane upgrade is special: `kubeadm upgrade apply` upgrades the cluster-wide components (API server, controller manager, scheduler manifests) and etcd. Subsequent nodes only need to update their local kubelet and static pod manifests.
 
 > **Note**: For Kubernetes versions released after September 13, 2023, you must use the community-owned `pkgs.k8s.io` package repositories, which use per-minor URLs. Legacy apt/yum repos are frozen and no longer receive updates.
+
+> **Note**: If `kubeadm upgrade apply` fails partway through, it does not fully roll back automatically. However, the command is idempotent—you can fix the underlying issue and safely run `kubeadm upgrade apply` again.
 
 ```bash
 # Check available versions
@@ -324,6 +329,8 @@ mv /var/lib/etcd-restored /var/lib/etcd
 # Without this, the control plane containers will still run the newer images
 # Note: kubeadm cluster upgrades also create backups under /etc/kubernetes/tmp/kubeadm-backup-manifests-*
 cp /backup/manifests-pre-upgrade/* /etc/kubernetes/manifests/
+# Alternatively, use the automated backup:
+# cp /etc/kubernetes/tmp/kubeadm-backup-manifests-*/... /etc/kubernetes/manifests/
 ```
 
 > **Pause and predict**: You are about to upgrade your control plane. The etcd snapshot is your safety net. If you skip this step and the upgrade corrupts etcd's WAL format, what are your options for recovery?
@@ -443,14 +450,12 @@ flowchart TD
 ## Quiz
 
 ### Question 1
-You have a 30-node cluster running Kubernetes 1.32 (which is nearing end of life). You need to get to 1.35. What is the correct upgrade path, and how long should you expect it to take on bare metal?
+You have a 30-node cluster running Kubernetes 1.32. The security team notes that 1.32 is officially end-of-life and mandates an immediate upgrade to 1.35. What is the correct upgrade path, and how does the version skew policy affect your execution timeline on bare metal?
 
 <details>
 <summary>Answer</summary>
 
-**Upgrade path: 1.32 -> 1.33 -> 1.34 -> 1.35 (three sequential minor version upgrades).**
-
-kubeadm only supports upgrading one minor version at a time, so you cannot skip from 1.32 to 1.35 directly. The control plane must be upgraded sequentially through 1.33, 1.34, and 1.35. However, thanks to the kubelet's three-version skew policy, a 1.35 API server can still communicate with 1.32 kubelets. This means you have the flexibility to upgrade the control plane rapidly while rolling the worker node upgrades over a longer period. Always plan for extra time on bare metal to validate each step on a staging cluster first, anticipating 6-9 days of active work spread across 3-4 weeks.
+The correct upgrade path is 1.32 -> 1.33 -> 1.34 -> 1.35 (three sequential minor version upgrades). `kubeadm` does not support skipping minor versions during an upgrade step. Therefore, the control plane must be upgraded sequentially through 1.33, 1.34, and 1.35. However, thanks to the kubelet's three-version skew policy, a 1.35 API server can still communicate with 1.32 kubelets. This means you have the flexibility to upgrade the control plane rapidly through the intermediate versions while rolling the worker node upgrades over a longer period, reducing immediate disruption.
 </details>
 
 ### Question 2
@@ -459,7 +464,7 @@ During a worker upgrade cycle, you run `kubectl drain worker-12` but it hangs in
 <details>
 <summary>Answer</summary>
 
-The most common cause is a PodDisruptionBudget (PDB) blocking eviction. If a deployment has a PDB with `minAvailable` equal to its current healthy replica count, the drain command cannot evict the pod without violating the budget, so it waits indefinitely. You can resolve this by temporarily scaling up the deployment so that evicting one pod still leaves enough replicas to satisfy the PDB. Another cause is a standalone pod without a controller, which requires manual intervention to delete. Finally, pods with stuck finalizers will remain in a Terminating state forever; you must identify the finalizer and resolve the underlying issue (like a stuck volume unmount) before the drain can complete. Never use `--force` to bypass these checks unless you explicitly accept the risk of downtime.
+The most common cause of a hanging drain is a PodDisruptionBudget (PDB) blocking eviction. If a deployment has a PDB with `minAvailable` equal to its current healthy replica count, the drain command cannot evict the pod without violating the budget, so it waits indefinitely. You can resolve this safely by temporarily scaling up the deployment so that evicting one pod still leaves enough replicas to satisfy the PDB. Another potential cause is a standalone pod without a controller or a pod with stuck finalizers, which require manual intervention to delete or resolve. Never use `--force` to bypass these checks unless you explicitly accept the risk of application downtime.
 </details>
 
 ### Question 3
@@ -468,7 +473,7 @@ Your bare-metal cluster runs on three hardware generations: Dell R640, Dell R740
 <details>
 <summary>Answer</summary>
 
-Hardware-generation-specific failures usually stem from OS-level or kernel incompatibilities rather than Kubernetes itself. Older hardware like the R640 might be running an older OS image or kernel version that lacks support for features required by the new kubelet. For example, in Kubernetes 1.35, the kubelet strictly requires cgroups v2 and sets `FailCgroupV1=true` by default, which will cause it to crash if the node's OS still uses cgroups v1. You should inspect the kubelet logs via `journalctl -u kubelet` to identify the specific error, and verify the kernel and cgroup versions. To resolve this, you must rollback the kubelet on the R640 to the previous version, update the underlying OS to meet the new prerequisites, and then re-attempt the upgrade.
+Hardware-generation-specific failures usually stem from OS-level or kernel incompatibilities rather than Kubernetes itself. In Kubernetes 1.35, the kubelet strictly requires cgroups v2 and sets `FailCgroupV1=true` by default, which will cause it to crash if the older R640 node's OS still uses legacy cgroups v1. You should inspect the kubelet logs via `journalctl -u kubelet` to identify the specific error and verify the underlying kernel and cgroup versions. To resolve this safely, you must roll back the kubelet on the R640 to the previous version, update the underlying OS to meet the new cgroups v2 prerequisite, and then re-attempt the upgrade. This scenario highlights why staging environments must mirror production hardware generations.
 </details>
 
 ### Question 4
@@ -477,7 +482,7 @@ You have just upgraded your control plane from 1.34 to 1.35. Twenty minutes late
 <details>
 <summary>Answer</summary>
 
-Rolling back a control plane is complex because kubeadm does not have a built-in downgrade command, and etcd may have migrated its Write-Ahead Log to a new, incompatible format. You cannot simply downgrade the etcd binary; you must restore etcd from the snapshot you took immediately before the upgrade. First, stop the API server on all control plane nodes by moving their static pod manifests out of `/etc/kubernetes/manifests/` to prevent any further writes. Next, use `etcdctl snapshot restore` to recover the previous state, and downgrade the kubeadm, kubelet, and kubectl packages to the 1.34 version. Finally, restore the pre-upgrade static pod manifests from the `/etc/kubernetes/tmp/kubeadm-backup-manifests-*` directory or your manual backup, and restart the kubelet to bring the 1.34 control plane back online. Note that any cluster state changes made during those twenty minutes will be permanently lost.
+Rolling back a control plane is complex because `kubeadm` does not have a built-in downgrade command, and etcd may have migrated its Write-Ahead Log to a new, incompatible format. You cannot simply downgrade the etcd binary; you must restore etcd from the snapshot you took immediately before the upgrade. First, stop the API server on all control plane nodes by temporarily moving their static pod manifests out of `/etc/kubernetes/manifests/` to prevent any further writes. Next, use `etcdctl snapshot restore` to recover the previous state, downgrade the `kubeadm`, `kubelet`, and `kubectl` packages to the 1.34 version, and restore the pre-upgrade static pod manifests from the `/etc/kubernetes/tmp/kubeadm-backup-manifests-*` directory. Finally, restart the kubelet to bring the 1.34 control plane back online, keeping in mind that any cluster state changes made during those twenty minutes will be permanently lost.
 </details>
 
 ---
