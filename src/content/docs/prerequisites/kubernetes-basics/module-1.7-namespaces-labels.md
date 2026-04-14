@@ -403,6 +403,8 @@ spec:
     type: Container
 ```
 
+**Evaluation at Admission:** Kubernetes evaluates `LimitRange` and `ResourceQuota` policies strictly via Admission Controllers at the exact moment an object is created or updated. Existing workloads that are already running are completely ignored by newly applied policies and will not be retroactively modified or throttled.
+
 **The Interplay:** The `LimitRange` ensures every Pod has a defined size (either explicitly or by default injection). The `ResourceQuota` ensures the sum of all those sizes does not exceed the namespace's total budget. You should never implement a ResourceQuota without a LimitRange.
 
 > **Stop and think**: A namespace has a ResourceQuota of 4 CPU cores and a LimitRange default of 500m CPU. A developer deploys 7 Pods without specifying resources. What happens when they try to deploy an 8th? Walk through the math.
