@@ -36,7 +36,7 @@ After completing this module, you will be able to:
 ## What You'll Learn
 
 - The overarching architecture of Cluster API and the organizational structure of Kubernetes SIG Cluster Lifecycle.
-- The distinctions between Infrastructure Providers, Bootstrap Providers, and Control Plane Providers.
+- The distinctions between Infrastructure Providers, Bootstrap Providers, Control Plane Providers, and IPAM Providers.
 - The mechanics of CAPM3 (Metal3) and its integration with OpenStack Ironic for out-of-band hardware management.
 - Techniques for managing a BareMetalHost inventory and understanding its internal state machine.
 - Strategies for configuring MachineHealthCheck controllers to perform automatic node remediation without risking cascading failures.
@@ -58,6 +58,7 @@ Cluster API separates its operational logic into distinct provider categories:
 1. **Infrastructure Providers**: These controllers interact with underlying cloud or hardware APIs to provision computational resources, networks, and load balancers. Examples include Metal3 for bare metal, AWS (CAPA), and vSphere (CAPV).
 2. **Bootstrap Providers**: These controllers are responsible for turning a newly provisioned server into a Kubernetes node. They generate the necessary `cloud-init` or Ignition scripts containing the certificates and join commands. 
 3. **Control Plane Providers**: These controllers manage the complex lifecycle of the Kubernetes control plane, handling etcd quorum, certificate rotation, and safely rolling out minor version upgrades across control plane nodes.
+4. **IPAM Providers**: These controllers exist for IP address management, handling IP address allocations for nodes and abstracting IP management from infrastructure provisioners.
 
 The default and built-in implementation for both the bootstrap and control-plane roles is Kubeadm (officially known as CABPK for the bootstrap provider, and KubeadmControlPlane for the control plane provider).
 
@@ -99,11 +100,11 @@ flowchart TD
 
 The official command-line utility for initializing management clusters, upgrading providers, and moving resources between clusters is `clusterctl`. Because Cluster API heavily utilizes mutating and validating webhooks, `cert-manager` (specifically supporting the `cert-manager.io/v1` API) is a strict, required prerequisite. When running `clusterctl init`, the CLI will automatically detect if cert-manager is absent and install version v1.20.0 by default to ensure webhooks function correctly.
 
-As the project matures, API versions transition through standard Kubernetes deprecation cycles. The CAPI v1beta2 API was introduced and promoted to the official storage version in CAPI v1.11 (released in August 2025). Consequently, the older v1beta1 API will be completely unserved and removed from the API server in CAPI v1.14, targeting August 2026. The latest stable CAPI release as of April 2026 is v1.12.x (with v1.12.0 having shipped on January 27, 2026, followed by patch releases such as v1.12.2). The v1.13 minor release is scheduled for April 2026.
+As the project matures, API versions transition through standard Kubernetes deprecation cycles. The CAPI v1beta2 API was introduced and promoted to the official storage version in CAPI v1.11 (released in August 2025). Consequently, the older v1beta1 API will become unserved from the API server in CAPI v1.14 (targeting August 2026), and will be fully removed in v1.18. The latest stable CAPI release as of April 2026 is v1.12.x (with v1.12.0 having shipped on January 27, 2026, followed by patch releases such as v1.12.2). The v1.13 minor release is scheduled for April 2026.
 
-CAPI maintains a strict version support policy: only the two most recent minor releases are actively supported at any given time. Older releases become unsupported immediately upon the release of a new minor version. Within the v1.12 release, the management cluster can run Kubernetes v1.31.x through v1.34.x, while workload clusters can run Kubernetes v1.29.x through v1.34.x.
+CAPI maintains a strict version support policy: only the two most recent minor releases are actively supported at any given time. Older releases become unsupported immediately upon the release of a new minor version. Within the v1.12 release, the management cluster can run Kubernetes v1.31.x through v1.34.x, while workload clusters can run Kubernetes v1.29.x through v1.34.x (note that Kubernetes v1.32 and below are end-of-life and not recommended for production).
 
-One of the most significant operational improvements introduced in CAPI v1.12 is support for in-place updates and chained upgrades. Chained upgrades allow platform engineers to declare a target Kubernetes version that spans multiple minor releases; CAPI will automatically compute and execute the intermediate upgrade steps required to safely reach the destination without violating Kubeadm version skew policies. Additionally, ClusterClass—a mechanism for templating managed topologies—remains classified as an experimental feature in CAPI v1.12 and strictly requires the `ClusterTopology` feature gate to be enabled on the management cluster.
+One of the most significant operational improvements introduced in CAPI v1.12 is support for in-place updates and chained upgrades. Chained upgrades allow platform engineers to declare a target Kubernetes version that spans multiple minor releases; CAPI will automatically compute and execute the intermediate upgrade steps required to safely reach the destination without violating Kubeadm version skew policies. In-place updates allow modifying cluster resources without full node replacement. Additionally, ClusterClass—a mechanism for templating managed topologies—remains classified as an experimental feature in CAPI v1.12 and strictly requires the `ClusterTopology` feature gate to be enabled on the management cluster.
 
 ---
 
@@ -111,11 +112,11 @@ One of the most significant operational improvements introduced in CAPI v1.12 is
 
 Metal3 (pronounced "metal-cubed") serves as the Cluster API infrastructure provider for bare-metal servers. The project was initially accepted into the CNCF Sandbox in September 2020. Due to massive ecosystem adoption, Metal3.io subsequently became a CNCF Incubating project on August 27, 2025, supported by 57 active contributing organizations.
 
-The current release series for the Metal3 provider is CAPM3 v1.12.x, which is explicitly versioned to track the upstream CAPI release cycle. Like CAPI, CAPM3 strictly maintains support for only the two most recent minor releases.
+The current release series for the Metal3 provider is CAPM3 v1.12.x, which is explicitly versioned to track the upstream CAPI release cycle. Like CAPI, CAPM3 strictly maintains support for only the two most recent minor releases; older releases become unsupported immediately.
 
 ### The Bare Metal Operator and Ironic
 
-Metal3 does not reinvent hardware provisioning; instead, it leverages OpenStack Ironic as its underlying bare metal provisioning engine. Ironic runs seamlessly inside a container within the Metal3 deployment. The Bare Metal Operator (BMO) acts as the bridge between Kubernetes CRDs and Ironic's declarative API. The BMO operates on its own semantic versioning cycle, with BMO v0.12.x currently serving as the stable release.
+Metal3 does not reinvent hardware provisioning; instead, it leverages OpenStack Ironic as its underlying bare metal provisioning engine. Ironic runs seamlessly inside a container within the Metal3 deployment. The Bare Metal Operator (BMO) acts as the bridge between Kubernetes CRDs and Ironic's declarative API. The BMO operates on its own semantic versioning cycle, with BMO v0.12.x (v0.12.2) currently serving as the stable release, versioned independently from CAPM3 since capm3-v1.1.2.
 
 Ironic provides native out-of-band management support via both IPMI and Redfish protocols. Modern environments heavily favor Redfish, which offers advanced capabilities such as virtual media boot, BIOS settings configuration, and RAID management over a RESTful HTTPS API.
 
@@ -170,7 +171,7 @@ The BareMetalHost resource is governed by a rigorous state machine managed by th
 
 *Note on Ironic Versions:* Some unofficial community guides suggest that the minimum OpenStack Ironic API version required for Metal3 integration is 1.81 (which corresponds to the OpenStack 2023.1 'Antelope' release). However, administrators must exercise caution, as this specific version requirement is not corroborated by the authoritative Metal3 or Ironic documentation as of this writing. Always validate compatibility empirically before executing infrastructure upgrades.
 
-In addition to hardware provisioning, Metal3 ships an IP Address Manager (IPAM) component that manages static IP allocations for bare-metal nodes via CRDs (such as IPPool and IPClaim) under the API group `ipam.metal3.io/v1alpha1`.
+In addition to hardware provisioning, Metal3 ships an IP Address Manager (IPAM) component that manages static IP allocations for bare-metal nodes via CRDs (such as IPPool, IPClaim, and IPAddress) under the API group `ipam.metal3.io/v1alpha1`.
 
 For organizations evaluating alternatives, Tinkerbell offers its own Cluster API Provider (CAPT) as a different bare-metal infrastructure backend. Its latest tagged release is v0.6.4.
 
@@ -406,7 +407,7 @@ Because pruning in Flux deletes cluster definitions if they are removed from the
 
 - **The latest stable Cluster API release, v1.12.0, was shipped on January 27, 2026, and officially introduced chained upgrades.** This enables engineers to perform multi-version jumps by allowing the controller to calculate and execute intermediate upgrade steps securely.
 - **Metal3.io was officially accepted as a CNCF Incubating project on August 27, 2025.** At the time of incubation, the project boasted contributions from 57 active organizations, highlighting the massive industry demand for declarative bare-metal provisioning.
-- **The Cluster API v1beta1 API version will be completely unserved from the API server starting in CAPI v1.14, targeting August 2026.** All manifests must be migrated to the newer v1beta2 storage format before executing this platform upgrade.
+- **The Cluster API v1beta1 API version will be completely unserved from the API server starting in CAPI v1.14, targeting August 2026, and will be fully removed in v1.18.** All manifests must be migrated to the newer v1beta2 storage format before executing this platform upgrade.
 - **Metal3 uses OpenStack Ironic without requiring a full OpenStack deployment.** Ironic runs seamlessly inside a container, giving you bare-metal provisioning capabilities without Nova, Neutron, Keystone, or any other OpenStack service.
 - **Cluster API applies the Kubernetes controller pattern to infrastructure.** Just as a Deployment controller ensures the right number of pods exist, the MachineDeployment controller ensures the right number of nodes exist.
 - **CAPM3 can manage servers from any vendor**—Dell iDRAC, HPE iLO, Supermicro IPMI, Lenovo XClarity—as long as they support IPMI or Redfish. Redfish is replacing IPMI, which sends credentials in plaintext over UDP.
