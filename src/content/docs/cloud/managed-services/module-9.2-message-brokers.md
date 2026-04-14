@@ -99,6 +99,9 @@ When should you run your own broker (like RabbitMQ, Apache Kafka, or NATS) on Ku
 
 **Rule of Thumb:** Default to managed brokers to focus on your application logic. Only self-host if you have a specific requirement (e.g., AMQP protocol requirement, strict air-gapped compliance, or sustained throughput exceeding millions of messages per second where managed costs become prohibitive) AND you have the dedicated engineering bandwidth to operate distributed stateful systems.
 
+> **Stop and think**: Your company mandates that no customer PII (Personally Identifiable Information) can ever leave the physical boundary of your on-premises data center. Can you use AWS SQS for processing user registration events in this environment?
+> *Answer*: No. Managed cloud brokers like AWS SQS operate outside of your cluster on cloud provider infrastructure. Sending PII to SQS would violate the data locality mandate because the data leaves your physical data center. In this strict air-gapped or compliance-heavy scenario, you must use a self-hosted broker like RabbitMQ or NATS deployed directly within your local Kubernetes cluster.
+
 ### AWS SQS/SNS: The Workhorse
 
 SQS is the simplest managed queue -- no clusters, no partitions, no brokers. You create a queue and start sending messages.
