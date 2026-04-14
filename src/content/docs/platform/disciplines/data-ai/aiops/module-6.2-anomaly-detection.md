@@ -322,6 +322,8 @@ results = prophet_anomaly_detection(df, sensitivity=0.99)
 anomalies = results[results['anomaly']]
 ```
 
+> **Pause and predict**: Statistical methods like IQR work great for single metrics (univariate data). If you have a service with 50 interdependent metrics (CPU, memory, threads, latency across different endpoints), why would drawing simple statistical boundaries around each metric individually fail to catch complex anomalies?
+
 ## Machine Learning Approaches
 
 ### Isolation Forest
@@ -428,6 +430,8 @@ model.fit(sequences_train, sequences_train, epochs=50, batch_size=32)
 # Detect
 anomalies, scores = detect_anomalies(model, sequences_test)
 ```
+
+> **Stop and think**: If your adaptive model constantly updates its baseline to accept recent data as the "new normal", what happens if your application introduces a slow, persistent memory leak over three months? How can you prevent the model from learning to ignore the leak?
 
 ## Handling Concept Drift
 
@@ -576,7 +580,7 @@ flowchart TD
 <details>
 <summary>3. Six months ago, your anomaly detection model perfectly identified unusual latency spikes in your checkout service. Recently, after a series of successful feature launches and organic user growth, the model has started sending false alerts every afternoon during normal peak hours. What phenomenon is occurring, and how should your system adapt?</summary>
 
-**Answer**: Your anomaly detection system is experiencing "concept drift", which occurs when the fundamental definition of "normal" behavior changes over time due to system evolution or user growth. The model is still strictly evaluating traffic against the historical baseline from six months ago, failing to recognize that the recent feature launches have legitimately and permanently shifted the baseline latency and traffic volume upward. To resolve this, you must implement adaptive baseline techniques, such as sliding windows or periodic retraining (e.g., exponential decay), so the model continuously learns and accepts the new, heavier traffic patterns as the current normal state.
+**Answer**: Your anomaly detection system is experiencing "concept drift", which occurs when the fundamental definition of "normal" behavior changes over time due to system evolution or user growth. The model is still strictly evaluating traffic against the historical baseline from six months ago, failing to recognize that the recent feature launches have legitimately and permanently shifted the baseline latency and traffic volume upward. To resolve this, you must implement adaptive baseline techniques, such as sliding windows or periodic retraining (e.g., exponential decay), so the model continuously learns and accepts the new, heavier traffic patterns as the current normal state. By ensuring the model updates its definition of normal on a regular cadence, you will eliminate these false positives while retaining the ability to detect genuine, sudden deviations.
 </details>
 
 <details>
