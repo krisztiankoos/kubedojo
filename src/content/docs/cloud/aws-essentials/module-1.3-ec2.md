@@ -27,7 +27,7 @@ Amazon EC2 is not just virtual machines in the cloud; it is a programmable compu
 
 ## The Building Blocks of Compute
 
-To launch an EC2 instance, you must make a series of configuration choices that define its performance profile, cost, and lifecycle. Each choice has trade-offs. Understanding those trade-offs is what separates someone who "uses EC2" from someone who architects with it.
+To launch an EC2 instance, you must make a series of configuration choices that define its performance profile, cost, and lifecycle. Each choice has trade-offs. Understanding those trade-offs is what separates someone who "uses EC2" from someone who architect with it.
 
 ### Instance Types and Families
 
@@ -42,13 +42,13 @@ AWS offers hundreds of instance types optimized to fit different use cases. They
 
 An instance name like `m6i.xlarge` follows a consistent naming scheme:
 
-```text
-m    6    i    .    xlarge
-|    |    |         |
-|    |    |         +-- Size (nano, micro, small, medium, large, xlarge, 2xlarge...)
-|    |    +------------ Additional attribute (i = Intel, g = Graviton, a = AMD, d = local NVMe)
-|    +----------------- Generation (higher = newer, better price-performance)
-+---------------------- Family (m = general, c = compute, r = memory, t = burstable)
+```mermaid
+flowchart TD
+    ID["m6i.xlarge"]
+    ID --> F["m : Family<br/>(m = general, c = compute, r = memory, t = burstable)"]
+    ID --> G["6 : Generation<br/>(higher = newer, better price-performance)"]
+    ID --> A["i : Additional attribute<br/>(i = Intel, g = Graviton, a = AMD, d = local NVMe)"]
+    ID --> S["xlarge : Size<br/>(nano, micro, small, medium, large, xlarge, 2xlarge...)"]
 ```
 
 Understanding the naming convention lets you read any instance type at a glance, even ones you have never encountered before.
