@@ -847,6 +847,9 @@ bucket.delete()
 print("Done!")
 EOF
 
+# Install required dependency
+python3 -m pip install boto3
+
 # Run script to delete bucket and contents
 python3 empty_bucket.py $MY_BUCKET
 
