@@ -35,17 +35,15 @@ Before you create a single resource in Azure, you need to understand the identit
 
 Entra ID is **not** the same as on-premises Active Directory Domain Services (AD DS). This is one of the most persistent misconceptions in the Azure world. AD DS uses Kerberos and LDAP for authentication, organizes objects into Organizational Units (OUs) with Group Policy Objects (GPOs), and requires domain controllers running on Windows Server. Entra ID uses OAuth 2.0, OpenID Connect, and SAML for authentication, has a flat structure (no OUs, no GPOs), and is a fully managed cloud service.
 
-```text
-    On-Premises AD DS                     Microsoft Entra ID
-    ─────────────────                     ──────────────────
-    Kerberos / NTLM / LDAP               OAuth 2.0 / OIDC / SAML
-    Organizational Units (OUs)            Flat directory (no OUs)
-    Group Policy Objects (GPOs)           Conditional Access Policies
-    Domain Controllers (servers)          Fully managed SaaS
-    Forest / Domain / Trust model         Tenant model
-    On-prem network required              Internet-accessible
-    Supports LDAP queries                 Supports Microsoft Graph API
-```
+| On-Premises AD DS | Microsoft Entra ID |
+| :--- | :--- |
+| Kerberos / NTLM / LDAP | OAuth 2.0 / OIDC / SAML |
+| Organizational Units (OUs) | Flat directory (no OUs) |
+| Group Policy Objects (GPOs) | Conditional Access Policies |
+| Domain Controllers (servers) | Fully managed SaaS |
+| Forest / Domain / Trust model | Tenant model |
+| On-prem network required | Internet-accessible |
+| Supports LDAP queries | Supports Microsoft Graph API |
 
 If your organization has on-premises AD DS and wants to use the same identities in Azure, you use **Entra Connect** (formerly Azure AD Connect) to synchronize identities. This hybrid setup is extremely common in enterprises.
 
@@ -71,30 +69,25 @@ az rest --method GET --url "https://graph.microsoft.com/v1.0/organization" \
 
 Azure organizes resources in a four-level hierarchy. Understanding this hierarchy is essential because **access control and policy inheritance flow from top to bottom**.
 
-```text
-    ┌─────────────────────────────────────────────────────────┐
-    │                  Root Management Group                   │
-    │    (Created when first user opts into Mgmt Groups)       │
-    │                                                         │
-    │   ┌─────────────────────┐  ┌──────────────────────┐     │
-    │   │  MG: Production     │  │  MG: Non-Production  │     │
-    │   │                     │  │                      │     │
-    │   │ ┌─────────────────┐ │  │ ┌──────────────────┐ │     │
-    │   │ │ Sub: Prod-App1  │ │  │ │ Sub: Dev         │ │     │
-    │   │ │                 │ │  │ │                  │ │     │
-    │   │ │ ┌─────────────┐ │ │  │ │ ┌──────────────┐ │ │     │
-    │   │ │ │ RG: webapp  │ │ │  │ │ │ RG: sandbox  │ │ │     │
-    │   │ │ │  - App Svc  │ │ │  │ │ │  - VM        │ │ │     │
-    │   │ │ │  - SQL DB   │ │ │  │ │ │  - VNet      │ │ │     │
-    │   │ │ └─────────────┘ │ │  │ │ └──────────────┘ │ │     │
-    │   │ └─────────────────┘ │  │ └──────────────────┘ │     │
-    │   └─────────────────────┘  └──────────────────────┘     │
-    └─────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Root["Root Management Group<br><i>(Created when first user opts into Mgmt Groups)</i>"]
+    ProdMG["MG: Production"]
+    NonProdMG["MG: Non-Production"]
+    ProdSub["Sub: Prod-App1"]
+    DevSub["Sub: Dev"]
+    WebAppRG["<b>RG: webapp</b><br>- App Svc<br>- SQL DB"]
+    SandboxRG["<b>RG: sandbox</b><br>- VM<br>- VNet"]
 
-    Inheritance flows DOWN:
-    Policy assigned at MG: Production → applies to ALL subscriptions,
-    resource groups, and resources beneath it.
+    Root --> ProdMG
+    Root --> NonProdMG
+    ProdMG --> ProdSub
+    NonProdMG --> DevSub
+    ProdSub --> WebAppRG
+    DevSub --> SandboxRG
 ```
+
+*Inheritance flows DOWN: Policy assigned at MG: Production → applies to ALL subscriptions, resource groups, and resources beneath it.*
 
 | Level | Purpose | Key Facts |
 | :--- | :--- | :--- |
@@ -180,31 +173,12 @@ A **service principal** is the identity that an application uses to authenticate
 1. **App Registration**: A global definition of your application. Think of it as the blueprint. It lives in your home tenant and defines what permissions the app needs, what redirect URIs it uses, and what credentials it has.
 2. **Service Principal (Enterprise Application)**: A local instance of the app in a specific tenant. Think of it as an installation of the blueprint. When you grant an app access to resources, you are granting access to the service principal, not the app registration.
 
-```text
-    ┌──────────────────────────────────────────┐
-    │           App Registration               │
-    │        (Blueprint / Template)             │
-    │                                          │
-    │  - Application (client) ID               │
-    │  - Redirect URIs                         │
-    │  - API Permissions declared               │
-    │  - Client secrets / certificates         │
-    │                                          │
-    │  Lives in: Home tenant only              │
-    └──────────────────┬───────────────────────┘
-                       │
-                       │  Creates
-                       ▼
-    ┌──────────────────────────────────────────┐
-    │         Service Principal                │
-    │     (Enterprise Application)             │
-    │                                          │
-    │  - Object ID (unique per tenant)         │
-    │  - Role assignments (Azure RBAC)         │
-    │  - Consent grants (API permissions)      │
-    │                                          │
-    │  Lives in: Each tenant that uses the app │
-    └──────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    AppReg["<b>App Registration</b><br><i>(Blueprint / Template)</i><br><br>- Application (client) ID<br>- Redirect URIs<br>- API Permissions declared<br>- Client secrets / certificates<br><br><b>Lives in: Home tenant only</b>"]
+    SP["<b>Service Principal</b><br><i>(Enterprise Application)</i><br><br>- Object ID (unique per tenant)<br>- Role assignments (Azure RBAC)<br>- Consent grants (API permissions)<br><br><b>Lives in: Each tenant that uses the app</b>"]
+    
+    AppReg -->|Creates| SP
 ```
 
 ```bash
@@ -308,29 +282,16 @@ The four fundamental built-in roles:
 | **Reader** | View-only access | Can see resources but not change anything |
 | **User Access Administrator** | Can only manage role assignments | Can grant/revoke access but not modify resources |
 
-```text
-    ┌─────────────────────────────────────────────────────────────┐
-    │                     Entra ID Tenant                         │
-    │                                                             │
-    │  ┌───────────────────────────────────────────────────────┐  │
-    │  │         Entra ID Roles (Directory Scope)              │  │
-    │  │  Global Admin, User Admin, App Admin, etc.            │  │
-    │  │  Controls: Users, Groups, Apps, Policies              │  │
-    │  └───────────────────────────────────────────────────────┘  │
-    │                                                             │
-    │  ┌───────────────────────────────────────────────────────┐  │
-    │  │         Azure RBAC Roles (Resource Scope)             │  │
-    │  │  Owner, Contributor, Reader, custom roles             │  │
-    │  │  Controls: VMs, Storage, Networks, Databases          │  │
-    │  │                                                       │  │
-    │  │  Scope: Management Group → Subscription →             │  │
-    │  │         Resource Group → Resource                     │  │
-    │  └───────────────────────────────────────────────────────┘  │
-    └─────────────────────────────────────────────────────────────┘
-
-    KEY INSIGHT: Global Administrator does NOT automatically have
-    Azure RBAC access. They must "elevate" themselves first.
+```mermaid
+flowchart LR
+    subgraph Tenant ["Entra ID Tenant"]
+        direction LR
+        EntraRoles["<b>Entra ID Roles (Directory Scope)</b><br>Global Admin, User Admin, App Admin, etc.<br><br><i>Controls: Users, Groups, Apps, Policies</i>"]
+        RBACRoles["<b>Azure RBAC Roles (Resource Scope)</b><br>Owner, Contributor, Reader, custom roles<br><br><i>Controls: VMs, Storage, Networks, Databases</i><br><br>Scope: Management Group → Subscription → Resource Group → Resource"]
+    end
 ```
+
+*KEY INSIGHT: Global Administrator does NOT automatically have Azure RBAC access. They must "elevate" themselves first.*
 
 This is a critical detail: a **Global Administrator** in Entra ID does **not** automatically have Owner or Contributor access to Azure subscriptions. They can *elevate* themselves to get User Access Administrator at the root scope, but it is not automatic. Conversely, an **Owner** on an Azure subscription cannot create or manage Entra ID users.
 
@@ -396,20 +357,13 @@ An important distinction: **Actions** vs **DataActions**. Actions control *manag
 
 Conditional Access policies are the enforcement engine of Entra ID. They evaluate conditions (who, where, what device, what app) and make access decisions (allow, block, require MFA). Think of them as programmable if/then rules for authentication.
 
-```text
-    ┌──────────────────────────────────────────────────────────┐
-    │                 Conditional Access Policy                 │
-    ├──────────────┬───────────────────────────────────────────┤
-    │  Assignments │  Conditions              │  Controls      │
-    │  (WHO)       │  (WHERE/WHEN/HOW)        │  (THEN WHAT)   │
-    ├──────────────┼───────────────────────────┼────────────────┤
-    │ Users/Groups │ Sign-in risk (AI-based)   │ Block access   │
-    │ Apps         │ Device platform (iOS,etc) │ Require MFA    │
-    │ Roles        │ Location (IP ranges)      │ Require device │
-    │              │ Client app type           │ Session limits │
-    │              │ Device state              │ App controls   │
-    └──────────────┴───────────────────────────┴────────────────┘
-```
+| Assignments (WHO) | Conditions (WHERE/WHEN/HOW) | Controls (THEN WHAT) |
+| :--- | :--- | :--- |
+| Users/Groups | Sign-in risk (AI-based) | Block access |
+| Apps | Device platform (iOS, etc.) | Require MFA |
+| Roles | Location (IP ranges) | Require device |
+| | Client app type | Session limits |
+| | Device state | App controls |
 
 Common Conditional Access patterns:
 
