@@ -25,9 +25,9 @@ After completing this exhaustive and deeply technical module, you will be capabl
 
 ## Why This Module Matters
 
-In late 2022, the software company 37signals (creators of Basecamp and HEY) initiated a massive, highly publicized cloud exit that sent immediate shockwaves through the technology industry. Prior to the migration, they were spending a staggering $3.2 million annually on Amazon Web Services. It is a common misconception propagated by secondary sources that they *saved* $3.2 million per year; in reality, that was their total cloud expenditure. By strategically repatriating their workloads to owned bare-metal hardware, their actual projected savings were calculated at approximately $1.5 million per year in compute costs alone, culminating in an estimated total savings of roughly $10 million over a five-year horizon. 
+In late 2022, the software company 37signals (creators of Basecamp and HEY) initiated a massive, highly publicized cloud exit that sent immediate shockwaves through the technology industry. Prior to the migration, they were spending a staggering $3.2 million annually on Amazon Web Services. While secondary sources frequently cite $3.2 million as the annual *savings*, this is a conflicting claim. According to their official `basecamp.com/cloud-exit` portal, $3.2 million was their actual cloud baseline spend. By strategically repatriating their workloads to owned bare-metal hardware, their claimed savings are approximately $1.5 million per year in compute alone, culminating in a revised estimated total savings of roughly $10 million over a five-year horizon.
 
-This migration, chronicled meticulously on their `basecamp.com/cloud-exit` portal, took eight intensive months of dedicated engineering time. It was absolutely not a simple lift-and-shift of stateless containerized workloads. Every single AWS-managed service had to be systematically ripped out and replaced with a self-managed, robust equivalent. Managed relational databases (Amazon RDS) were replaced by highly available, self-managed PostgreSQL clusters. In-memory data stores (Amazon ElastiCache) were swapped for manually operated Redis Sentinel deployments. Managed routing (Application Load Balancers) was migrated to HAProxy and NGINX instances. Furthermore, proprietary observability (CloudWatch) had to be replaced with full Prometheus and Grafana stacks. The stateless compute portion of the migration was trivial; the truly punishing engineering work was untangling the complex web of managed services, proprietary load balancing algorithms, stateful block storage, dynamic secrets management, and dozens of cloud APIs quietly adopted by their developer teams over half a decade.
+This migration took eight intensive months of dedicated engineering time. It was absolutely not a simple lift-and-shift of stateless containerized workloads. Every single AWS-managed service had to be systematically ripped out and replaced with a self-managed, robust equivalent. Managed relational databases (Amazon RDS) were replaced by highly available, self-managed PostgreSQL clusters. In-memory data stores (Amazon ElastiCache) were swapped for manually operated Redis Sentinel deployments. Managed routing (Application Load Balancers) was migrated to HAProxy and NGINX instances. Furthermore, proprietary observability (CloudWatch) had to be replaced with full Prometheus and Grafana stacks. The stateless compute portion of the migration was trivial; the truly punishing engineering work was untangling the complex web of managed services, proprietary load balancing algorithms, stateful block storage, dynamic secrets management, and dozens of cloud APIs quietly adopted by their developer teams over half a decade.
 
 By early 2023, 37signals successfully completed the bulk of the migration, achieving the massive infrastructure cost reductions they hypothesized. However, achieving this required them to hire additional specialized systems engineers and spend months stabilizing their new self-managed database infrastructure. Cloud repatriation is a highly viable, economically compelling path at specific scales, but the execution requires deep, uncompromising systems engineering expertise and an organizational willingness to assume absolute responsibility for hardware failure.
 
@@ -54,19 +54,6 @@ Before you touch a single Kubernetes manifest, modify a DNS record, or open a te
 
 Here is the baseline, industry-standard decision matrix for evaluating a repatriation effort. If you fail to meet the required thresholds at any node, the migration is mathematically likely to fail or cost more than it saves.
 
-```text
-  Annual cloud spend > $1M?
-    No  ──► STAY (savings won't justify effort)
-    Yes ──► Workloads steady-state (not bursty)?
-              No  ──► STAY (on-prem can't burst)
-              Yes ──► < 10 managed services?
-                        No  ──► PARTIAL (move compute, keep managed)
-                        Yes ──► Can hire 2-4 infra engineers?
-                                  No  ──► STAY (can't operate on-prem)
-                                  Yes ──► PROCEED WITH PLANNING
-```
-
-*Visually represented as a flowchart:*
 ```mermaid
 flowchart TD
     Spend{Annual cloud spend > $1M?}
@@ -122,7 +109,7 @@ To execute full virtual machines natively inside Kubernetes pods—sharing the e
 
 Alternatively, if you require a commercial, heavily supported enterprise platform, **Red Hat OpenShift Virtualization** (formerly Container Native Virtualization) is generally available and offers a polished experience. The latest stable release is OpenShift Virtualization 4.21, providing profound VM-centric features integrated natively into the OpenShift dashboard.
 
-*An important distinction must be made regarding vendor claims in the virtualization space: While SUSE/Rancher's **Harvester HCI** (current stable v1.7.1) is an exceptionally powerful hyperconverged infrastructure solution built heavily upon underlying CNCF projects like KubeVirt and Longhorn, Harvester itself is a SUSE corporate project and is strictly not an official CNCF-hosted project, lacking any formal CNCF maturity level designation.*
+*An important distinction must be made regarding vendor claims in the virtualization space: Sources frequently conflate Harvester being 'built on CNCF projects' with it being a CNCF project itself. According to the official CNCF project landscape, SUSE/Rancher's Harvester HCI (current stable v1.7.1, released February 10, 2025) does not appear as a named project and does not have an official CNCF maturity level, despite utilizing CNCF projects like KubeVirt and Longhorn under the hood.*
 
 ---
 
@@ -132,15 +119,6 @@ When shifting workloads out of the public cloud, you abruptly lose the invisible
 
 On bare metal, you possess none of this automated luxury. You must manually announce your IP routes to your physical networking gear using established routing protocols.
 
-```text
-  CLOUD (AWS)                         ON-PREM (MetalLB)
-  Internet ──► ALB (managed) ──►     Internet ──► Border Router ──►
-               NodePort                            MetalLB Speaker
-               Pods                                (BGP announces IPs)
-                                                   Pods
-```
-
-*The architectural flow translated to Mermaid:*
 ```mermaid
 flowchart LR
     subgraph AWS [CLOUD AWS]
@@ -224,16 +202,6 @@ Migrating an application relies heavily on translating these annotations flawles
 
 Therefore, your migration sequence must stringently follow the data: you must migrate the storage first, keep it continuously synchronized with the source, and then rapidly cut over the applications to minimize downtime.
 
-```text
-  AWS (Source)                     On-Prem (Target)
-  ┌────────────────┐              ┌────────────────┐
-  │ EBS Volumes    │──rsync──────►│ Ceph RBD       │
-  │ EFS (NFS)      │──rsync──────►│ CephFS         │
-  │ S3 Buckets     │──rclone─────►│ Ceph RGW (S3)  │
-  └────────────────┘              └────────────────┘
-```
-
-*Visualizing the data flows and protocol choices:*
 ```mermaid
 flowchart LR
     subgraph Source [AWS Source]
@@ -329,16 +297,6 @@ If your organization prefers managed enterprise tooling over composing bash scri
 
 Proprietary cloud Identity and Access Management (IAM) systems invisibly embed themselves deep into your application architecture. This is especially prevalent when development teams utilize modern features like IRSA (IAM Roles for Service Accounts) in AWS, which injects temporary AWS STS tokens directly into running pods, allowing the application to authenticate to other AWS services like RDS or S3 natively.
 
-```text
-  AWS IAM               On-Prem (Keycloak)
-  IAM Users       ──►   Keycloak Users
-  IAM Groups      ──►   Keycloak Groups
-  IAM Roles       ──►   Keycloak Roles
-  IRSA (OIDC)     ──►   Keycloak OIDC + ServiceAccount
-  AWS SSO         ──►   Keycloak Identity Brokering
-```
-
-*The IAM mapping visualized:*
 ```mermaid
 flowchart LR
     AWS_IAM[AWS IAM] --> Keycloak[On-Prem Keycloak]
@@ -413,21 +371,6 @@ Microsoft's own architectural documentation explicitly ranks ExpressRoute as the
 
 A successful infrastructure repatriation takes multiple months of careful, deliberate sequencing. Attempting a "big bang" cutover—where you shut down the cloud and simultaneously power on the on-premises datacenter—is a guaranteed recipe for catastrophic, resume-generating downtime.
 
-```text
-  Month 1-2        Month 3-4        Month 5-6        Month 7-8
-  PREPARATION      DATA MIGRATION   APP MIGRATION    CUTOVER
-  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-  │ Provision │    │ rclone/   │    │ Deploy    │    │ DNS swap  │
-  │ hardware  │    │ rsync     │    │ apps      │    │ to on-prem│
-  │ Install K8s│    │ ongoing   │    │ Run both  │    │ Monitor   │
-  │ Set up     │    │ sync      │    │ in        │    │ Decommis- │
-  │ network    │    │           │    │ parallel  │    │ sion cloud│
-  │ Deploy     │    │ IAM       │    │ Shadow    │    │ (30 days) │
-  │ platform   │    │ migration │    │ traffic   │    │           │
-  └──────────┘    └──────────┘    └──────────┘    └──────────┘
-```
-
-*The phased timeline illustrated dynamically:*
 ```mermaid
 gantt
     title Phased Migration Timeline
@@ -455,19 +398,6 @@ gantt
 
 In systems engineering, hope is not a strategy. You must possess a clearly defined, thoroughly rehearsed rollback protocol. If the cutover initiates cascading failures, the decision to revert must be binary and pre-authorized.
 
-```text
-  Cutover complete. Error rate > 5%?
-    │
-   Yes ──► Fixable in 30 min?
-              Yes ──► Fix and monitor
-              No  ──► Data issue?
-                        Yes ──► IMMEDIATE ROLLBACK (DNS back to cloud)
-                        No  ──► Performance issue?
-                                  Yes ──► Split traffic 50/50, investigate
-                                  No  ──► ROLLBACK if unresolved in 2 hours
-```
-
-*The incident response tree:*
 ```mermaid
 flowchart TD
     Cutover[Cutover complete] --> Error{Error rate > 5%?}
@@ -673,9 +603,7 @@ Your large-scale organization has officially decided to aggressively migrate a d
 
 **This is a high-risk proposal that will likely fail or cause unacceptable delays.**
 
-**The reality of data gravity**: Migrating 200TB over a standard Site-to-Site VPN is impractical due to inconsistent public internet latency, unpredictable bandwidth contention, and IPsec overhead. A 1 Gbps VPN connection running at peak efficiency would take over 18 days to transfer 200TB, but real-world internet routing would likely extend this to months with frequent connection drops.
-
-**The recommended approach**: For large-scale data repatriation, dedicated connectivity is mandatory. You should provision AWS Direct Connect (or Azure ExpressRoute/Google Cloud Interconnect, depending on the source cloud). These services provide dedicated, private, high-bandwidth connections with consistent latency, ensuring predictable transfer windows and significantly reducing the risk of migration failure.
+The reality of data gravity dictates that migrating 200TB over a standard Site-to-Site VPN is highly impractical. This approach suffers from inconsistent public internet latency, unpredictable bandwidth contention, and significant IPsec protocol overhead. A 1 Gbps VPN connection running at theoretical peak efficiency would take over 18 days to transfer 200TB, but real-world internet routing would likely extend this timeframe to several months with frequent connection drops and corrupted transfers. For large-scale data repatriation, dedicated physical connectivity is absolutely mandatory. You must provision AWS Direct Connect (or Azure ExpressRoute/Google Cloud Interconnect, depending on the source cloud). These enterprise services provide dedicated, private, high-bandwidth connections with consistent latency, thereby ensuring predictable transfer windows and significantly reducing the risk of a catastrophic migration failure.
 </details>
 
 ---
