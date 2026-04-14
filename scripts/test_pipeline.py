@@ -893,7 +893,7 @@ class TestPipelineTransitions(unittest.TestCase):
 
     def _mock_review_approve(self, *args, **kwargs):
         """Mock review that approves (binary gate #223)."""
-        check_ids = ["LAB", "COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
+        check_ids = ["COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
         return True, json.dumps({
             "verdict": "APPROVE",
             "severity": "clean",
@@ -904,9 +904,9 @@ class TestPipelineTransitions(unittest.TestCase):
 
     def _mock_review_reject(self, *args, **kwargs):
         """Mock review that rejects with 1 fixable quiz issue."""
-        check_ids = ["LAB", "COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
+        check_ids = ["COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
         checks = [{"id": cid, "passed": True} for cid in check_ids]
-        checks[2] = {"id": "QUIZ", "passed": False,
+        checks[1] = {"id": "QUIZ", "passed": False,
                      "evidence": "Recall-based not scenario-based",
                      "edit_refs": [0]}
         return True, json.dumps({
@@ -1331,12 +1331,11 @@ class TestComputeSeverity(unittest.TestCase):
         sev = self.p.compute_severity("APPROVE", self.all_pass, [])
         self.assertEqual(sev, "clean")
 
-    def test_routes_correctly_with_seven_checks(self):
-        """Split-reviewer structural rubric has 7 checks (FACT removed)."""
-        self.assertEqual(len(self.p.CHECK_IDS), 7)
+    def test_routes_correctly_with_six_checks(self):
+        """Split-reviewer structural rubric has 6 checks after LAB decoupling."""
+        self.assertEqual(len(self.p.CHECK_IDS), 6)
         checks = [
-            {"id": "LAB", "passed": False, "edit_refs": [0]},
-            {"id": "COV", "passed": True},
+            {"id": "COV", "passed": False, "edit_refs": [0]},
             {"id": "QUIZ", "passed": True},
             {"id": "EXAM", "passed": True},
             {"id": "DEPTH", "passed": True},

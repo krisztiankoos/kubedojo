@@ -1029,56 +1029,50 @@ ledger is the source of truth. If the module contradicts the ledger, that is a
 structural failure (the writer ignored the ledger), not a factual failure.
 
 Your job is to grade the module on STRUCTURE only:
-- LAB: can a student execute the lab end-to-end?
 - COV: does it cover every Learning Outcome from the frontmatter?
 - QUIZ: do quiz questions require reasoning, not recall?
 - EXAM: does the depth match the certification target (skip if no cert in frontmatter)?
 - DEPTH: at least one practitioner-grade element (production gotcha, decision framework, war story)?
 - WHY: rationale for every major design decision?
 - PRES: every distinct concept/lab/diagram/quiz from the original is preserved (compression OK, deletion of unique value not OK)?
+Lab quality is evaluated by the separate `lab_pipeline.py` pipeline — do not
+grade hands-on sections here.
 
 DO NOT add a FACT check. DO NOT search the web for factual currency. DO NOT
 contradict the fact ledger.
 
 MANDATORY CHECKS — answer PASS or FAIL for each:
 
-1. LAB — Can a student reach the end state of every lab by following the
-   text exactly? Commands must include flags needed for non-interactive
-   execution (-y, -o json, --force where safe). Multi-step labs must
-   include checkpoint verifications the student can run to confirm state
-   before proceeding. If you cannot trace a path from start to end state,
-   fail LAB.
-
-2. COV — Does the content cover every Learning Outcome listed in the
+1. COV — Does the content cover every Learning Outcome listed in the
    module's frontmatter? A FAIL must list specific outcomes that have no
    corresponding content section.
 
-3. QUIZ — Does every quiz question require reasoning or scenario
+2. QUIZ — Does every quiz question require reasoning or scenario
    application (not fact recall)? "What port does etcd use?" is recall
    and fails. "Given a CrashLoopBackOff on a pod with a PVC, which of
    these four causes is ruled out by the events log?" is scenario and
    passes. Each question must have exactly one correct answer supported
    by the module's own text.
 
-4. EXAM — If the frontmatter declares a `certification:` target (CKA,
+3. EXAM — If the frontmatter declares a `certification:` target (CKA,
    CKAD, CKS, KCNA, KCSA), does the module depth match the published
    CNCF curriculum for that exam? Skip this check entirely if no
    certification is named in frontmatter. A FAIL must cite the specific
    curriculum domain the module fails to meet.
 
-5. DEPTH — Does the module include at least one practitioner-grade
+4. DEPTH — Does the module include at least one practitioner-grade
    element: a production gotcha, a decision framework, a war story, or a
    non-obvious failure mode? This is the anti-"Hello World" guardrail.
    A FAIL means the module reads like a surface tutorial with no
    operational nuance.
 
-6. WHY — Does every major design decision (architecture choice, resource
+5. WHY — Does every major design decision (architecture choice, resource
    selection, flag usage, tradeoff) have at least one sentence of
    rationale? "Do X then Y" with no motivation is a FAIL. You are NOT
    looking for rationale on every individual line — major design
    decisions only.
 
-7. PRES — Every distinct concept, lab, table, diagram, and quiz question
+6. PRES — Every distinct concept, lab, table, diagram, and quiz question
    from the ORIGINAL is present in the IMPROVED version, unless it
    contained a factual error or was explicit duplication. Compression
    and reorganization are ALLOWED. Deletion of unique value is NOT. A
@@ -1130,7 +1124,6 @@ OUTPUT JSON ONLY — no preamble, no postamble, no markdown fences:
   "verdict": "APPROVE" or "REJECT",
   "severity": "clean" or "targeted" or "severe",
   "checks": [
-    {{"id": "LAB", "passed": false, "evidence": "...", "edit_refs": [0, 1]}},
     {{"id": "COV", "passed": true}},
     {{"id": "QUIZ", "passed": true}},
     {{"id": "EXAM", "passed": true}},
@@ -1144,7 +1137,7 @@ OUTPUT JSON ONLY — no preamble, no postamble, no markdown fences:
   "feedback": "optional prose summary of qualitative notes that don't map to an edit"
 }}
 
-Every one of the 7 check IDs MUST appear in `checks`. Skipping EXAM when
+Every one of the 6 check IDs MUST appear in `checks`. Skipping EXAM when
 there is no `certification:` target is fine — return it as `passed: true`
 with evidence `"no certification target in frontmatter"`.
 
@@ -1164,7 +1157,7 @@ IMPROVED MODULE:
 {improved}
 """
 
-CHECK_IDS = ["LAB", "COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
+CHECK_IDS = ["COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
 
 
 def compute_severity(
