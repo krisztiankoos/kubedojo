@@ -256,12 +256,12 @@ graph TD
 ### 3.2 Implementing Guardrails
 
 ```yaml
-GUARDRAIL IMPLEMENTATION
-═══════════════════════════════════════════════════════════════
+# GUARDRAIL IMPLEMENTATION
+# ═══════════════════════════════════════════════════════════════
 
-PRE-COMMIT HOOKS
-─────────────────────────────────────────────────────────────
-Stop problems before they're committed.
+# PRE-COMMIT HOOKS
+# ─────────────────────────────────────────────────────────────
+# Stop problems before they're committed.
 
     # .pre-commit-config.yaml
     repos:
@@ -273,9 +273,9 @@ Stop problems before they're committed.
       hooks:
       - id: hadolint  # Lint Dockerfiles for security
 
-CI PIPELINE GATES
-─────────────────────────────────────────────────────────────
-Stop problems before they're merged.
+# CI PIPELINE GATES
+# ─────────────────────────────────────────────────────────────
+# Stop problems before they're merged.
 
     pipeline:
       - security-scan:
@@ -285,44 +285,44 @@ Stop problems before they're merged.
       - policy-check:
           policies: [no-root, resource-limits, no-privileged]
 
-ADMISSION CONTROLLERS
-─────────────────────────────────────────────────────────────
-Stop problems before they're deployed.
+# ADMISSION CONTROLLERS
+# ─────────────────────────────────────────────────────────────
+# Stop problems before they're deployed.
 
     # OPA Gatekeeper, Kyverno
-    Block at the Kubernetes API:
-    - Pods without security context
-    - Containers running as root
-    - Images from unauthorized registries
-    - Resources without limits
+    # Block at the Kubernetes API:
+    # - Pods without security context
+    # - Containers running as root
+    # - Images from unauthorized registries
+    # - Resources without limits
 ```
 
 ### 3.3 Kubernetes Pod Security Standards
 
 ```yaml
-POD SECURITY STANDARDS
-═══════════════════════════════════════════════════════════════
+# POD SECURITY STANDARDS
+# ═══════════════════════════════════════════════════════════════
 
-Kubernetes defines three security levels:
+# Kubernetes defines three security levels:
 
-PRIVILEGED (No restrictions)
-─────────────────────────────────────────────────────────────
-    For system-level workloads that need full access.
-    Use only when necessary.
+# PRIVILEGED (No restrictions)
+# ─────────────────────────────────────────────────────────────
+#     For system-level workloads that need full access.
+#     Use only when necessary.
 
-BASELINE (Minimal restrictions)
-─────────────────────────────────────────────────────────────
-    Prevents known privilege escalations.
-    Blocks: hostNetwork, hostPID, privileged containers
+# BASELINE (Minimal restrictions)
+# ─────────────────────────────────────────────────────────────
+#     Prevents known privilege escalations.
+#     Blocks: hostNetwork, hostPID, privileged containers
 
-RESTRICTED (Maximum security)
-─────────────────────────────────────────────────────────────
-    Enforces security best practices.
-    Requires: non-root, drop all capabilities,
-              read-only root filesystem
+# RESTRICTED (Maximum security)
+# ─────────────────────────────────────────────────────────────
+#     Enforces security best practices.
+#     Requires: non-root, drop all capabilities,
+#               read-only root filesystem
 
-APPLYING STANDARDS
-─────────────────────────────────────────────────────────────
+# APPLYING STANDARDS
+# ─────────────────────────────────────────────────────────────
 # Namespace-level enforcement
 apiVersion: v1
 kind: Namespace
@@ -391,32 +391,32 @@ PATTERN: Configuration as code
 ### 4.2 Secrets Management
 
 ```yaml
-SECRETS MANAGEMENT
-═══════════════════════════════════════════════════════════════
+# SECRETS MANAGEMENT
+# ═══════════════════════════════════════════════════════════════
 
-WRONG: Secrets in config files
-─────────────────────────────────────────────────────────────
+# WRONG: Secrets in config files
+# ─────────────────────────────────────────────────────────────
     # config.yaml (checked into git!)
-    database:
-      password: "super_secret_password"
+    # database:
+    #   password: "super_secret_password"
 
-    Problems:
-    - Visible to anyone with repo access
-    - In git history forever
-    - Same secret across environments
+    # Problems:
+    # - Visible to anyone with repo access
+    # - In git history forever
+    # - Same secret across environments
 
-RIGHT: External secrets management
-─────────────────────────────────────────────────────────────
+# RIGHT: External secrets management
+# ─────────────────────────────────────────────────────────────
     # config.yaml
-    database:
-      password: ${DATABASE_PASSWORD}  # From environment
+    # database:
+    #   password: ${DATABASE_PASSWORD}  # From environment
 
     # Even better: from secrets manager
-    database:
-      password_path: vault://secret/db/password
+    # database:
+    #   password_path: vault://secret/db/password
 
-KUBERNETES SECRETS
-─────────────────────────────────────────────────────────────
+# KUBERNETES SECRETS
+# ─────────────────────────────────────────────────────────────
     # Still not great: base64 encoded, not encrypted
     apiVersion: v1
     kind: Secret
@@ -482,36 +482,36 @@ flowchart TD
 ### 5.1 Secure Framework Patterns
 
 ```python
-SECURE FRAMEWORK PATTERNS
-═══════════════════════════════════════════════════════════════
+# SECURE FRAMEWORK PATTERNS
+# ═══════════════════════════════════════════════════════════════
 
-AUTO-ESCAPING (XSS Prevention)
-─────────────────────────────────────────────────────────────
+# AUTO-ESCAPING (XSS Prevention)
+# ─────────────────────────────────────────────────────────────
     # Django template - auto-escapes by default
-    {{ user_input }}  →  &lt;script&gt;...
+    # {{ user_input }}  →  &lt;script&gt;...
 
     # To allow HTML, must explicitly disable
-    {{ user_input|safe }}  # Developer knows they're taking risk
+    # {{ user_input|safe }}  # Developer knows they're taking risk
 
-PARAMETERIZED QUERIES (SQL Injection Prevention)
-─────────────────────────────────────────────────────────────
+# PARAMETERIZED QUERIES (SQL Injection Prevention)
+# ─────────────────────────────────────────────────────────────
     # ORM forces parameterization
     User.objects.filter(email=user_email)  # Safe
 
     # Raw SQL requires explicit params
-    cursor.execute("SELECT * FROM users WHERE email = %s", [email])
+    # cursor.execute("SELECT * FROM users WHERE email = %s", [email])
 
     # String formatting errors immediately
-    cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")
+    # cursor.execute(f"SELECT * FROM users WHERE email = '{email}'")
     # ^ Framework should warn or error
 
-CSRF PROTECTION
-─────────────────────────────────────────────────────────────
+# CSRF PROTECTION
+# ─────────────────────────────────────────────────────────────
     # Framework adds CSRF token to forms automatically
-    <form method="post">
-        {% csrf_token %}  <!-- Auto-injected -->
-        ...
-    </form>
+    # <form method="post">
+    #     {% csrf_token %}  <!-- Auto-injected -->
+    #     ...
+    # </form>
 
     # POST without valid token is rejected by default
 ```
@@ -519,11 +519,11 @@ CSRF PROTECTION
 ### 5.2 Secure API Patterns
 
 ```python
-SECURE API PATTERNS
-═══════════════════════════════════════════════════════════════
+# SECURE API PATTERNS
+# ═══════════════════════════════════════════════════════════════
 
-AUTHENTICATION REQUIRED BY DEFAULT
-─────────────────────────────────────────────────────────────
+# AUTHENTICATION REQUIRED BY DEFAULT
+# ─────────────────────────────────────────────────────────────
     # All routes require auth unless marked public
     @app.route('/api/users')
     @require_auth  # Applied globally
@@ -535,8 +535,8 @@ AUTHENTICATION REQUIRED BY DEFAULT
     def health_check():
         return 'OK'
 
-RATE LIMITING BY DEFAULT
-─────────────────────────────────────────────────────────────
+# RATE LIMITING BY DEFAULT
+# ─────────────────────────────────────────────────────────────
     # Default rate limit for all endpoints
     app.config['RATELIMIT_DEFAULT'] = "100/minute"
 
@@ -546,8 +546,8 @@ RATE LIMITING BY DEFAULT
     def expensive_operation():
         pass
 
-INPUT VALIDATION BY DEFAULT
-─────────────────────────────────────────────────────────────
+# INPUT VALIDATION BY DEFAULT
+# ─────────────────────────────────────────────────────────────
     # Pydantic, Marshmallow, etc.
     class UserInput(BaseModel):
         email: EmailStr        # Must be valid email
@@ -561,26 +561,26 @@ INPUT VALIDATION BY DEFAULT
 ### 5.3 Secure Deployment Patterns
 
 ```dockerfile
-SECURE DEPLOYMENT PATTERNS
-═══════════════════════════════════════════════════════════════
+# SECURE DEPLOYMENT PATTERNS
+# ═══════════════════════════════════════════════════════════════
 
-MINIMAL BASE IMAGES
-─────────────────────────────────────────────────────────────
+# MINIMAL BASE IMAGES
+# ─────────────────────────────────────────────────────────────
     # Bad: Full OS with unnecessary packages
-    FROM ubuntu:24.04
+    # FROM ubuntu:24.04
     # Contains: bash, curl, wget, apt, hundreds of packages
 
     # Better: Minimal base
-    FROM alpine:3.19
+    # FROM alpine:3.19
     # Contains: minimal shell, busybox utilities
 
     # Best: Distroless (no shell at all)
-    FROM gcr.io/distroless/static
+    # FROM gcr.io/distroless/static
     # Contains: only what your app needs
     # Attacker can't run shell commands if there's no shell
 
-NON-ROOT BY DEFAULT
-─────────────────────────────────────────────────────────────
+# NON-ROOT BY DEFAULT
+# ─────────────────────────────────────────────────────────────
     # Dockerfile
     FROM node:20-alpine
 
@@ -597,8 +597,8 @@ NON-ROOT BY DEFAULT
 ```
 
 ```yaml
-READ-ONLY FILESYSTEM
-─────────────────────────────────────────────────────────────
+# READ-ONLY FILESYSTEM
+# ─────────────────────────────────────────────────────────────
     # Kubernetes deployment
     spec:
       containers:
