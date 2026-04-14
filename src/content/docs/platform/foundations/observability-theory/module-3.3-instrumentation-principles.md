@@ -330,6 +330,8 @@ Without context, each service starts fresh. With context, you can:
 *Q: Did Service C's query relate to Service A's request?*
 *A: Yes! Same trace_id. Can reconstruct full flow.*
 
+> **Stop and think**: How would you correlate these logs if the user made three simultaneous requests? Without a trace ID, even user IDs aren't enough to isolate a single execution path.
+
 ### 3.2 What Context to Propagate
 
 **Standard (W3C Trace Context)**
@@ -432,6 +434,8 @@ flowchart TD
 - Full traces at 100% = 1TB/month = $$$$
 
 *Sampling is essential for traces at scale.*
+
+> **Pause and predict**: If you increase your log retention from 7 days to 30 days, how will it affect your query performance during an active incident?
 
 ### 4.3 Sampling Strategies
 
