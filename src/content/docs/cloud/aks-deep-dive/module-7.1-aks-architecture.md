@@ -61,7 +61,8 @@ az aks create \
   --name aks-prod-westeurope \
   --tier standard \
   --kubernetes-version 1.35.2 \
-  --location westeurope
+  --location westeurope \
+  --generate-ssh-keys
 
 # Check your cluster's current tier
 az aks show --resource-group rg-aks-prod --name aks-prod-westeurope \
@@ -86,7 +87,8 @@ az aks create \
   --node-vm-size Standard_D2s_v5 \
   --zones 1 2 3 \
   --mode System \
-  --max-pods 30
+  --max-pods 30 \
+  --generate-ssh-keys
 
 # Add a user pool for application workloads
 az aks nodepool add \
@@ -311,7 +313,8 @@ az aks nodepool update \
 az aks upgrade \
   --resource-group rg-aks-prod \
   --name aks-prod-westeurope \
-  --kubernetes-version 1.35.2
+  --kubernetes-version 1.35.2 \
+  --yes
 
 # Check upgrade progress
 az aks show --resource-group rg-aks-prod --name aks-prod-westeurope \
@@ -384,7 +387,8 @@ az aks create \
   --name aks-prod-westeurope \
   --enable-aad \
   --aad-admin-group-object-ids "$(az ad group show --group 'AKS-Admins' --query id -o tsv)" \
-  --enable-azure-rbac
+  --enable-azure-rbac \
+  --generate-ssh-keys
 
 # For existing clusters, enable Entra ID integration
 az aks update \
@@ -493,8 +497,9 @@ In this exercise, you will deploy a production-ready AKS cluster using Bicep (Az
 ### Prerequisites
 
 - Azure CLI installed and authenticated (`az login`)
-- An Azure subscription with Contributor access
+- An Azure subscription with Owner access (required for role assignments) and permissions to create Entra ID groups
 - Bicep CLI (bundled with Azure CLI 2.20+)
+- `kubectl` CLI installed (`az aks install-cli` or via package manager)
 
 ### Task 1: Create the Entra ID Groups
 
@@ -661,10 +666,10 @@ az aks get-credentials \
   --overwrite-existing
 
 # Verify connectivity (this will trigger Entra ID login)
-k get nodes -o wide
+kubectl get nodes -o wide
 
 # Verify node distribution across zones
-k get nodes -o custom-columns=NAME:.metadata.name,ZONE:.metadata.labels.'topology\.kubernetes\.io/zone',VERSION:.status.nodeInfo.kubeletVersion
+kubectl get nodes -o custom-columns=NAME:.metadata.name,ZONE:.metadata.labels.'topology\.kubernetes\.io/zone',VERSION:.status.nodeInfo.kubeletVersion
 ```
 
 </details>
@@ -678,7 +683,7 @@ Grant the developer group scoped access to a specific namespace.
 
 ```bash
 # Create the namespace
-k create namespace payments
+kubectl create namespace payments
 
 # Get the cluster resource ID
 CLUSTER_ID=$(az aks show -g rg-aks-prod -n aks-prod-westeurope --query id -o tsv)
