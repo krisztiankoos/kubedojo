@@ -818,7 +818,7 @@ pool:
 
 - **"Release It!"** by Michael Nygard - Chapters on stability patterns (circuit breakers, timeouts, bulkheads) are all about managing feedback loops in production.
 
-- **"How Complex Systems Fail"** by Richard Cook - 18 short points on why feedback loops in complex systems create surprising failures. Takes 10 minutes to read, provides lifetime of insight.
+- **"How Complex Systems Fail"** by Richard Cook - 18 short points on why feedback loops in complex systems create surprising failures. Takes 10 minutes to read, provides a lifetime of insight.
 
 - **"Control Theory for Engineers"** - Any introductory text. Understanding PID controllers will transform how you tune autoscalers.
 
