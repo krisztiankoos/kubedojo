@@ -96,7 +96,7 @@ This requires treating the internal platform with the exact same rigor, user res
   - **Voluntary Adoption Rate:** What percentage of teams voluntarily use the platform? Mandated adoption obscures whether the platform is actually good.
   - **Time-to-First-Commit:** How long does it take a new hire to deploy a "Hello World" app to production?
   - **Lead Time for Changes:** The time from a committed code change to that change running successfully in production. *(This is a core DORA metric. Note: Industry sources sometimes conflict on whether DORA officially tracks exactly 4 or 5 key metrics as 'Reliability' and 'Rework Rate' have been introduced in recent years, but Lead Time remains fundamental).*
-  - **Developer Net Promoter Score (eNPS):** Are developers satisfied with the tooling? Do they recommend it to peers? Are frustrated?
+  - **Developer Net Promoter Score (eNPS):** Are developers satisfied with the tooling? Do they recommend it to peers? Are they frustrated?
 - **The Feedback Loop:** Conducting rigorous user interviews, observing developers "in the wild" as they struggle with deployments, creating frictionless onboarding experiences, and continuously iterating based on specific developer pain points.
 
 > **Analogy:** Think of the platform team as the city planners and the product developers as the citizens. The city planners build paved roads, traffic lights, and public transport (the platform). They don't tell the citizens exactly where to drive or what their destination should be, but they make it incredibly easy and safe to get to the most popular destinations. If a citizen wants to off-road through the wilderness, they can, but they shouldn't expect the city to dispatch a free tow truck if they get stuck in the mud.
@@ -365,7 +365,7 @@ At this scale, your engineers can likely communicate effectively over a single s
 > 
 > Meanwhile, feature delivery for their core logistics product completely ground to a halt. Their direct competitors shipped faster, captured the market, and signed key enterprise contracts. The startup ultimately pivoted and laid off half the team to survive. 
 > 
-> The platform they built was beautiful, technically flawless, elegantly coded, and completely solved a scaling problem they simply didnt have yet. They died building the engine for a rocket ship while they were still trying to sell bicycles.
+> The platform they built was beautiful, technically flawless, elegantly coded, and completely solved a scaling problem they simply didn't have yet. They died building the engine for a rocket ship while they were still trying to sell bicycles.
 
 ### The "PaaS First" Philosophy
 
