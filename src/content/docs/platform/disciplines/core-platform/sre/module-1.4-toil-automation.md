@@ -222,14 +222,12 @@ toil_tracking:
 
 Start simple — a shared spreadsheet:
 
-```
 | Week | Category | Task | Time (hrs) | Automatable? |
 |------|----------|------|------------|--------------|
-| 1    | Users    | Password resets | 2 | Yes |
-| 1    | Deploy   | Manual deploy | 4 | Yes |
-| 1    | Incident | Service restart | 1 | Yes |
-| 1    | Meetings | Team sync | 3 | No |
-```
+| 1 | Users | Password resets | 2 | Yes |
+| 1 | Deploy | Manual deploy | 4 | Yes |
+| 1 | Incident | Service restart | 1 | Yes |
+| 1 | Meetings | Team sync | 3 | No |
 
 ---
 
@@ -241,30 +239,16 @@ Start simple — a shared spreadsheet:
 
 Not everything should be automated the same way:
 
-```
-Level 0: Manual
-   Every execution requires human action
-   Example: SSH in and restart service
-
-Level 1: Documented
-   Written procedure, still manual
-   Example: Runbook with exact commands
-
-Level 2: Semi-automated
-   Script exists, human triggers it
-   Example: ./restart_service.sh
-
-Level 3: Auto-triggered
-   System detects need, asks permission
-   Example: "Service unhealthy. Restart? [Y/n]"
-
-Level 4: Fully automated
-   System handles automatically
-   Example: Kubernetes self-healing
-
-Level 5: Self-optimizing
-   System learns and improves
-   Example: Auto-scaling based on patterns
+```mermaid
+flowchart TD
+    L0["<b>Level 0: Manual</b><br/>Every execution requires human action<br/><i>Example: SSH in and restart service</i>"]
+    L1["<b>Level 1: Documented</b><br/>Written procedure, still manual<br/><i>Example: Runbook with exact commands</i>"]
+    L2["<b>Level 2: Semi-automated</b><br/>Script exists, human triggers it<br/><i>Example: ./restart_service.sh</i>"]
+    L3["<b>Level 3: Auto-triggered</b><br/>System detects need, asks permission<br/><i>Example: 'Service unhealthy. Restart? [Y/n]'</i>"]
+    L4["<b>Level 4: Fully automated</b><br/>System handles automatically<br/><i>Example: Kubernetes self-healing</i>"]
+    L5["<b>Level 5: Self-optimizing</b><br/>System learns and improves<br/><i>Example: Auto-scaling based on patterns</i>"]
+    
+    L0 --> L1 --> L2 --> L3 --> L4 --> L5
 ```
 
 ### When to Automate
@@ -342,16 +326,15 @@ A team I worked with had a toil problem:
 - Team morale: terrible
 
 **The Toil Audit:**
-```
-Category          | Hours/week | % of Time
-------------------+------------+----------
-Manual deploys    | 40         | 28%
-Incident response | 35         | 24%
-User provisioning | 20         | 14%
-Log investigation | 15         | 10%
-Certificate mgmt  | 8          | 5%
-Total toil        | 118/145    | 81%
-```
+
+| Category | Hours/week | % of Time |
+|---|---|---|
+| Manual deploys | 40 | 28% |
+| Incident response | 35 | 24% |
+| User provisioning | 20 | 14% |
+| Log investigation | 15 | 10% |
+| Certificate mgmt | 8 | 5% |
+| Total toil | 118/145 | 81% |
 
 **The 90-Day Plan:**
 
@@ -547,7 +530,6 @@ Create a 30-day toil reduction plan.
 
 List all repetitive tasks from the past week:
 
-```markdown
 | Task | Time/occurrence | Frequency | Weekly Hours | Automatable? |
 |------|-----------------|-----------|--------------|--------------|
 | 1.   |                 |           |              |              |
@@ -558,25 +540,21 @@ List all repetitive tasks from the past week:
 
 Total weekly toil: ___ hours
 Percentage of work week (40h): ___%
-```
 
 ### Part 2: Prioritization (10 min)
 
 Score each task:
 
-```markdown
-| Task | Frequency Score | Time Score | Complexity Score | Total |
-|      | (1-5, 5=daily)  | (1-5, 5=long) | (1-5, 5=simple) |       |
-|------|-----------------|-------------|------------------|-------|
-| 1.   |                 |             |                  |       |
-| 2.   |                 |             |                  |       |
-| 3.   |                 |             |                  |       |
+| Task | Frequency Score (1-5, 5=daily) | Time Score (1-5, 5=long) | Complexity Score (1-5, 5=simple) | Total |
+|------|--------------------------------|--------------------------|----------------------------------|-------|
+| 1.   |                                |                          |                                  |       |
+| 2.   |                                |                          |                                  |       |
+| 3.   |                                |                          |                                  |       |
 
 Priority order (highest total first):
 1. _______________
 2. _______________
 3. _______________
-```
 
 ### Part 3: 30-Day Plan (15 min)
 
