@@ -27,10 +27,12 @@ log "   Target: $TARGET_DIR"
 # Create target directories
 mkdir -p "$TARGET_DIR/commands"
 mkdir -p "$TARGET_DIR/skills"
+mkdir -p "$TARGET_DIR/hooks"
 
 # Track changes
 COMMANDS_CHANGED=0
 SKILLS_CHANGED=0
+HOOKS_CHANGED=0
 
 # Deploy commands
 if [ -d "$SOURCE_DIR/commands" ]; then
@@ -71,8 +73,25 @@ if [ -d "$SOURCE_DIR/skills" ]; then
     done
 fi
 
+# Deploy hooks (shell scripts in hooks/)
+if [ -d "$SOURCE_DIR/hooks" ]; then
+    for file in "$SOURCE_DIR/hooks"/*.sh; do
+        if [ -f "$file" ]; then
+            filename=$(basename "$file")
+            target_file="$TARGET_DIR/hooks/$filename"
+
+            if [ ! -f "$target_file" ] || ! cmp -s "$file" "$target_file"; then
+                cp "$file" "$target_file"
+                chmod +x "$target_file"
+                log "   📄 hooks/$filename"
+                HOOKS_CHANGED=$((HOOKS_CHANGED + 1))
+            fi
+        fi
+    done
+fi
+
 # Summary
-TOTAL_CHANGED=$((COMMANDS_CHANGED + SKILLS_CHANGED))
+TOTAL_CHANGED=$((COMMANDS_CHANGED + SKILLS_CHANGED + HOOKS_CHANGED))
 if [ $TOTAL_CHANGED -gt 0 ]; then
     log "✅ Deployed $TOTAL_CHANGED extension(s)"
 else

@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from migrate_v1_to_v2 import migrate_v1_to_v2
+from v2_ab_test import run_ab_test
 from .control_plane import (
     DEFAULT_BUDGETS_PATH,
     DEFAULT_DB_PATH,
@@ -13,6 +15,7 @@ from .control_plane import (
 from .patch_worker import PatchWorker
 from .preflight import run_preflight
 from .review_worker import ReviewWorker
+from .write_worker import WriteWorker
 from .watchdog import sweep_once, watch_forever
 
 
@@ -102,6 +105,36 @@ def build_parser() -> argparse.ArgumentParser:
     patch_worker_loop = patch_worker_subparsers.add_parser("loop", help="Run the patch worker loop")
     patch_worker_loop.add_argument("--worker-id", default="patch-worker")
     patch_worker_loop.add_argument("--sleep-seconds", type=float, default=5.0)
+
+    write_worker = subparsers.add_parser("write-worker", help="Run the Week 4 write worker")
+    write_worker_subparsers = write_worker.add_subparsers(
+        dest="write_worker_command",
+        required=True,
+    )
+    write_worker_run = write_worker_subparsers.add_parser("run", help="Write one queued job")
+    write_worker_run.add_argument("--worker-id", default="write-worker")
+    write_worker_run.add_argument("--json", action="store_true")
+    write_worker_loop = write_worker_subparsers.add_parser("loop", help="Run the write worker loop")
+    write_worker_loop.add_argument("--worker-id", default="write-worker")
+    write_worker_loop.add_argument("--sleep-seconds", type=float, default=5.0)
+
+    migrate = subparsers.add_parser("migrate-v1", help="Migrate v1 state.yaml into v2.db")
+    migrate.add_argument(
+        "--state",
+        type=Path,
+        default=Path(".pipeline/state.yaml"),
+        help="Path to v1 .pipeline/state.yaml",
+    )
+    migrate.add_argument("--dry-run", action="store_true")
+    migrate.add_argument("--json", action="store_true")
+
+    ab_test = subparsers.add_parser("ab-test", help="Compare v1 and v2 on a sample of review modules")
+    ab_test.add_argument("--count", type=int, default=50)
+    ab_test.add_argument("--modules")
+    ab_test.add_argument("--state", type=Path, default=Path(".pipeline/state.yaml"))
+    ab_test.add_argument("--seed", type=int, default=239)
+    ab_test.add_argument("--max-iterations", type=int, default=24)
+    ab_test.add_argument("--json", action="store_true")
 
     preflight = subparsers.add_parser("preflight", help="Run deterministic pre-flight checks")
     preflight.add_argument("module_path", type=Path)
@@ -232,6 +265,58 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"{outcome.status}: {outcome.module_key}")
             return 0
         worker.loop_forever(sleep_seconds=args.sleep_seconds)
+        return 0
+
+    if args.command == "write-worker":
+        worker = WriteWorker(control_plane, worker_id=args.worker_id)
+        if args.write_worker_command == "run":
+            outcome = worker.run_once()
+            if args.json:
+                print(
+                    json.dumps(
+                        {
+                            "status": outcome.status,
+                            "module_key": outcome.module_key,
+                            "lease_id": outcome.lease_id,
+                            "details": outcome.details,
+                        },
+                        indent=2,
+                        sort_keys=True,
+                    )
+                )
+            elif outcome.status == "idle":
+                print("no write job available")
+            else:
+                print(f"{outcome.status}: {outcome.module_key}")
+            return 0
+        worker.loop_forever(sleep_seconds=args.sleep_seconds)
+        return 0
+
+    if args.command == "migrate-v1":
+        summary = migrate_v1_to_v2(
+            control_plane,
+            state_path=args.state,
+            dry_run=args.dry_run,
+        )
+        if args.json:
+            print(json.dumps(summary.to_dict(), indent=2, sort_keys=True))
+        else:
+            print(summary.render_text())
+        return 0
+
+    if args.command == "ab-test":
+        report = run_ab_test(
+            count=args.count,
+            modules_filter=args.modules,
+            state_path=args.state,
+            budgets_path=args.budgets,
+            seed=args.seed,
+            max_iterations=args.max_iterations,
+        )
+        if args.json:
+            print(json.dumps(report.to_dict(), indent=2, sort_keys=True))
+        else:
+            print(report.render_text())
         return 0
 
     if args.command == "preflight":
