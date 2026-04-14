@@ -211,6 +211,21 @@ gcloud dns record-sets transaction add "34.120.55.200,34.120.55.202" \
   --routing-policy-data="us-central1=34.120.55.200;europe-west1=34.120.55.202"
 ```
 
+### Failover Routing
+Failover routing directs traffic to a primary endpoint and automatically switches to a backup endpoint if the primary fails health checks.
+
+```bash
+# Add a failover routing policy
+gcloud dns record-sets transaction add "34.120.55.200,34.120.55.203" \
+  --name="app.example.com." \
+  --ttl=300 \
+  --type=A \
+  --zone=example-zone \
+  --routing-policy-type=FAILOVER \
+  --routing-policy-primary-data="34.120.55.200" \
+  --routing-policy-backup-data="34.120.55.203"
+```
+
 ---
 
 ## Private Zones: Internal DNS
@@ -265,7 +280,7 @@ gcloud dns record-sets transaction add "10.10.1.15" \
 gcloud dns record-sets transaction execute --zone=internal-zone
 
 # Verify resolution from within the VPC
-gcloud compute ssh vm-in-prod-vpc --zone=us-central1-a \
+gcloud compute ssh vm-in-prod-vpc --zone=us-central1-a --quiet \
   --command="dig db.internal.example.com +short"
 ```
 
@@ -282,6 +297,9 @@ gcloud dns managed-zones update internal-zone \
 gcloud dns managed-zones update internal-zone \
   --networks=projects/project-a/global/networks/vpc-a,projects/project-b/global/networks/vpc-b
 ```
+
+### Integration with Kubernetes (GKE)
+When you create a private DNS zone in a VPC, Google Kubernetes Engine (GKE) clusters in that VPC automatically inherit this resolution capability. By default, the cluster's DNS provider (like `kube-dns` or Cloud DNS for GKE) forwards queries for non-cluster domains to the VPC network's metadata server. This allows your Kubernetes pods to seamlessly resolve and connect to legacy VMs, Cloud SQL instances, and other GCP services using your private Cloud DNS records.
 
 ### Private Zone Resolution Order
 
@@ -558,7 +576,7 @@ export PROJECT_ID=$(gcloud config get-value project)
 export REGION=us-central1
 
 # Enable DNS API
-gcloud services enable dns.googleapis.com --project=$PROJECT_ID
+gcloud services enable dns.googleapis.com --project=$PROJECT_ID --quiet
 
 # Create a VPC for testing (skip if you already have one)
 gcloud compute networks create dns-test-vpc \
@@ -582,9 +600,11 @@ gcloud compute instances create dns-test-vm \
   --zone=${REGION}-a \
   --machine-type=e2-micro \
   --subnet=dns-test-subnet \
-  --no-address \
   --image-family=debian-12 \
   --image-project=debian-cloud
+
+# Verify VM is running
+gcloud compute instances describe dns-test-vm --zone=${REGION}-a --format="value(status)"
 ```
 </details>
 
@@ -688,8 +708,8 @@ gcloud dns record-sets transaction add "10.50.0.30" \
 gcloud dns record-sets transaction execute --zone=lab-private-zone
 
 # Test from the VM
-gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap \
-  --command="dig db.internal.lab.com +short && dig api.internal.lab.com +short"
+gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap --quiet \
+  --command="sudo apt-get update && sudo apt-get install -y dnsutils && dig db.internal.lab.com +short && dig api.internal.lab.com +short"
 ```
 </details>
 
@@ -706,7 +726,7 @@ gcloud dns policies create dns-logging \
   --enable-logging
 
 # Generate some DNS queries from the VM
-gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap \
+gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap --quiet \
   --command="dig db.internal.lab.com && dig www.google.com && dig api.internal.lab.com"
 
 # Wait a moment for logs to appear, then query them
@@ -741,7 +761,7 @@ gcloud dns record-sets transaction add "10.50.0.11" \
 gcloud dns record-sets transaction execute --zone=lab-private-zone
 
 # Verify the change
-gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap \
+gcloud compute ssh dns-test-vm --zone=${REGION}-a --tunnel-through-iap --quiet \
   --command="dig db.internal.lab.com +short"
 # Should return 10.50.0.11
 ```
