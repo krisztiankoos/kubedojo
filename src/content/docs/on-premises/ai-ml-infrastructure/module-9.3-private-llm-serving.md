@@ -14,7 +14,7 @@ This module covers the operational primitives for serving open-weights models (L
 
 ## Learning Outcomes
 
-* Deploy and configure vLLM and Text Generation Inference (TGI) as containerized workloads on bare-metal Kubernetes.
+* Deploy and configure vLLM as a containerized workload on bare-metal Kubernetes.
 * Configure continuous batching and PagedAttention to maximize GPU memory utilization and token throughput.
 * Compare and implement quantization formats (AWQ, GPTQ, FP8) to fit models into memory-constrained GPU environments.
 * Architect autoscaling inference workloads using KServe, Knative, and custom Prometheus metrics (e.g., KV cache usage, queue length).
