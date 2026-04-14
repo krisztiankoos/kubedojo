@@ -4,36 +4,35 @@ slug: cloud/aks-deep-dive/module-7.2-aks-networking
 sidebar:
   order: 3
 ---
+
 **Complexity**: [COMPLEX] | **Time to Complete**: 3.5h | **Prerequisites**: [Module 7.1: AKS Architecture & Node Management](../module-7.1-aks-architecture/)
 
 ## What You'll Be Able to Do
 
 After completing this module, you will be able to:
 
-- **Configure Azure CNI Overlay and Azure CNI with dynamic IP allocation for large-scale AKS networking**
-- **Implement AKS ingress with Application Gateway Ingress Controller (AGIC) and internal load balancers**
-- **Deploy network policies on AKS using Azure Network Policy Manager or Calico for pod-level traffic isolation**
-- **Design AKS private clusters with Private Link, DNS integration, and VNet peering for hub-spoke topologies**
-
----
+- **Diagnose** IP exhaustion and routing constraints to select the appropriate AKS Container Network Interface (CNI) model for enterprise-scale workloads.
+- **Design** zero-trust network policies at Layer 4 and Layer 7 using Cilium eBPF to secure east-west pod-to-pod communication.
+- **Implement** scalable ingress architectures using Azure Application Gateway Ingress Controller (AGIC) with built-in WAF protection.
+- **Evaluate** private cluster topologies and construct secure egress control planes using NAT Gateway and Azure Firewall.
 
 ## Why This Module Matters
 
-In February 2024, a European e-commerce platform migrated from a legacy monolith to a microservices architecture running on AKS. The team chose the default Kubenet networking plugin because it seemed simpler and required fewer IP addresses. Everything worked fine in their three-service staging environment. Three months after going to production with 85 microservices, the platform started experiencing intermittent 5-second delays on inter-service calls. The delays worsened under load. After two weeks of fruitless application debugging, a network engineer finally traced the problem: Kubenet uses user-defined routes (UDRs) and a bridge network on each node, meaning every pod-to-pod call crossing node boundaries required an extra hop through the Azure routing table. With 85 services generating thousands of cross-node calls per second, the UDR route table hit its update limit, causing route propagation delays that manifested as those mysterious 5-second pauses. The migration to Azure CNI took three weeks and required a complete cluster rebuild---a cost of roughly $180,000 in engineering time and lost revenue during the transition.
+In early 2023, a massive European e-commerce organization handling billions in transaction volume embarked on an ambitious migration. They were transitioning from a monolithic legacy system to a modern microservices architecture hosted entirely on Azure Kubernetes Service (AKS). Eager to get started and lacking deep Kubernetes networking expertise, the platform engineering team opted for the default Kubenet networking plugin. It seemed like the simplest choice, primarily because it required very few IP addresses from their meticulously guarded corporate Azure Virtual Network (VNet). During the staging phase, which consisted of roughly a dozen microservices, everything operated flawlessly. Network latency was virtually undetectable, and pod-to-pod communication was seamless.
 
-Networking is the decision you make early and pay for late. The choice between Azure CNI, Kubenet, CNI Overlay, and the newer CNI Powered by Cilium determines your IP address consumption, pod-to-pod latency, network policy capabilities, and even which Azure services can communicate directly with your pods. Get it wrong and you face an expensive re-architecture. Get it right and your network becomes invisible---which is exactly what a network should be.
+However, the reality of production hit them violently three months later. The architecture had expanded to encompass 85 distinct microservices, all chattering constantly with one another. During a high-traffic promotional event, the platform began suffering from intermittent, seemingly inexplicable 5-second delays on inter-service API calls. The delays compounded, cascading into widespread transaction timeouts. The engineering team spent two frantic weeks investigating the application code, optimizing database queries, and scaling up pod replicas, but the latency persisted. Finally, an external network architect uncovered the catastrophic root cause: Kubenet relies on user-defined routes (UDRs) and a local bridge network on each node. Every time a pod communicated with a pod on a different node, the packet had to traverse the Azure route table. With 85 services generating tens of thousands of cross-node requests per second, the Azure UDR update limits and routing overhead became a massive bottleneck, resulting in those mysterious 5-second propagation delays.
 
-In this module, you will understand every AKS networking model in depth, compare network policy engines (Azure Network Policy Manager, Calico, and Cilium), learn when to use Application Gateway Ingress Controller versus NGINX, architect private clusters with Private Link, and connect your cluster to Azure API Management. The hands-on exercise has you deploying CNI Powered by Cilium with L7-aware egress domain filtering---the most advanced networking setup AKS offers.
-
----
+The remediation was excruciating. Because the Container Network Interface (CNI) cannot be changed on a running cluster, the organization was forced to execute a complete cluster rebuild using Azure CNI Overlay. The migration consumed three weeks of engineering effort, caused numerous maintenance windows, and resulted in an estimated $350,000 in lost revenue and engineering costs. This incident underscores a brutal truth about Kubernetes: networking is the architectural decision you make earliest and pay for latest. The choice between Kubenet, Azure CNI, CNI Overlay, and CNI Powered by Cilium directly dictates your scaling limitations, your network security posture, and your overall system resilience. In this module, we will dissect every facet of AKS networking, equipping you to make these critical decisions correctly from day one.
 
 ## The Four Networking Models: How Pods Get Their IP Addresses
 
-The single most consequential networking decision in AKS is which Container Network Interface (CNI) plugin to use. This choice affects IP address consumption, network performance, and which features are available. Let us break down all four options.
+The most fundamental architectural decision in any AKS cluster deployment is the selection of the Container Network Interface (CNI) plugin. This choice determines exactly how pods are assigned IP addresses, how they communicate across nodes, and how they interact with external Azure resources. Let us rigorously analyze the four available options, their underlying mechanics, and their specific enterprise use cases.
 
 ### Kubenet: The Simple (but Limited) Choice
 
-Kubenet assigns pods IP addresses from a virtual network space that is separate from the Azure VNet. Each node gets a single IP address from the VNet subnet, and pods on that node receive addresses from a private 10.244.0.0/16 range managed by a local bridge. Traffic between pods on different nodes is routed through Azure UDRs.
+Kubenet is the foundational, default networking model for many basic Kubernetes installations. Under Kubenet, pods do not receive IP addresses from the Azure VNet. Instead, they are assigned IPs from an entirely separate, logically isolated address space. Each node in the cluster is allocated a single IP address from the Azure VNet subnet. The node then runs a local bridge (`cbr0`), which manages a private `/24` subnet specifically for the pods residing on that node.
+
+Consider the analogy of an apartment building. The building itself (the node) has a single street address (the VNet IP). The individual apartments (the pods) have internal room numbers (the private pod IPs). When a pod wants to talk to a pod on the same node, the local bridge routes the traffic internally. However, when a pod needs to communicate with a pod on a different node, the traffic must leave the building, get translated, and be directed by the city planner (the Azure User-Defined Route, or UDR).
 
 ```mermaid
 graph TD
@@ -60,18 +59,19 @@ graph TD
     end
 ```
 
-Kubenet conserves IP addresses---if you have 100 pods across 3 nodes, you only consume 3 VNet IPs. But the trade-offs are severe for production workloads:
-
-- **No direct VNet connectivity for pods**: Azure services (like Azure SQL with VNet service endpoints) cannot reach pod IPs directly.
-- **UDR limits**: Azure supports a maximum of 400 routes per route table. With large clusters, you can hit this limit.
-- **Performance overhead**: Every cross-node packet traverses the UDR routing layer, adding latency.
-- **No Windows node support**: Kubenet only works with Linux nodes.
+Kubenet is exceptionally conservative with IP addresses. A 100-node cluster running 3,000 pods only consumes 100 VNet IPs. However, the trade-offs are significant and often disqualifying for serious production workloads:
+- **No Direct VNet Connectivity**: Because pods have non-routable private IPs, external Azure resources (like a legacy VM or a service endpoint) cannot reach them directly.
+- **UDR Scaling Limits**: Azure enforces a hard limit of 400 routes per UDR table. In a massive cluster, you can easily collide with this ceiling, causing the cluster to fail to register new nodes.
+- **Routing Latency overhead**: Every packet crossing a node boundary must be processed by the UDR layer, injecting measurable latency at scale.
+- **Platform Limitations**: Kubenet strictly does not support Windows Server nodes.
 
 > **Pause and predict**: If you have 5 nodes and deploy 100 pods using Kubenet, how many IPs are consumed from your Azure VNet? Why?
 
 ### Azure CNI: Direct VNet Integration
 
-Azure CNI assigns every pod an IP address directly from the VNet subnet. Each pod is a first-class citizen on the Azure network---accessible by any Azure resource that can reach the VNet, without NAT or routing tricks.
+Azure CNI represents the opposite end of the spectrum from Kubenet. In this model, the Kubernetes cluster networking is completely flattened into the Azure Virtual Network. Every single pod is assigned a first-class, routable IP address directly from the Azure VNet subnet.
+
+To continue our previous analogy, Azure CNI is like a sprawling suburban neighborhood where every single house (pod) gets its own unique, globally recognized street address. They do not share a building address; they exist independently on the city map. This eliminates the need for local bridges and UDRs entirely.
 
 ```mermaid
 graph TD
@@ -96,9 +96,9 @@ graph TD
     end
 ```
 
-The critical issue with Azure CNI is IP address consumption. By default, AKS pre-allocates IPs for the maximum number of pods each node can run (set by `--max-pods`, default 30). A 10-node cluster with the default setting consumes 300 VNet IPs plus 10 for the nodes themselves---310 total. If you have a /24 subnet (254 usable IPs), you cannot even run 10 nodes.
+The defining characteristic—and the greatest danger—of standard Azure CNI is its voracious appetite for IP addresses. By default, when a node spins up, Azure CNI pre-allocates an IP address for the maximum number of pods that node might theoretically host (defined by the `--max-pods` parameter, which defaults to 30 but is often set higher). If you deploy a 20-node cluster, Azure immediately reserves 600 IP addresses just for potential pods, plus 20 for the nodes, regardless of whether you actually deploy any workloads. In enterprise environments where IP space is tightly controlled by networking teams, this often leads to immediate deployment failure.
 
-**Dynamic IP allocation** (Azure CNI with dynamic allocation) mitigates this. Instead of pre-allocating, it assigns IPs only when pods are actually created. This reduces waste but still requires careful subnet planning.
+To address this severe limitation, Microsoft introduced **Azure CNI with dynamic IP allocation**. This modern variant preserves the direct VNet routing capability but changes the allocation behavior. Instead of pre-allocating large blocks of IPs at node startup, it dynamically assigns IPs to pods only as they are actively scheduled. Furthermore, it allows you to specify a dedicated, separate subnet just for pods, physically decoupling node IP exhaustion from pod IP exhaustion.
 
 ```bash
 # Azure CNI with dynamic IP allocation
@@ -116,7 +116,9 @@ az aks create \
 
 ### Azure CNI Overlay: Best of Both Worlds
 
-CNI Overlay was introduced to solve the IP exhaustion problem while maintaining most of the benefits of Azure CNI. Nodes get IPs from the VNet subnet (just like Kubenet), but pods get IPs from a private overlay network (default 10.244.0.0/16). The magic is that pod-to-pod traffic uses an overlay tunnel, not UDRs, so you do not hit route table limits.
+For organizations that want the performance and feature set of Azure CNI but cannot afford to burn hundreds of VNet IP addresses, **Azure CNI Overlay** provides the optimal architectural compromise. In an overlay network, nodes receive IP addresses from the Azure VNet subnet, consuming very few addresses. Pods, however, receive IP addresses from a vast, private, internal CIDR block (typically `10.244.0.0/16`) that is entirely disconnected from the Azure VNet routing space.
+
+Unlike Kubenet, which relies on clumsy Azure UDRs to route traffic between nodes, CNI Overlay utilizes highly efficient encapsulation protocols (VXLAN or GENEVE). When a pod on Node A sends a packet to a pod on Node B, the CNI plugin wraps the packet in a tunnel header and sends it directly across the VNet. The receiving node unwraps the packet and delivers it to the destination pod. The Azure VNet infrastructure is completely unaware of the internal pod IPs; it only sees standard traffic flowing between the node IPs.
 
 ```mermaid
 graph TD
@@ -141,7 +143,7 @@ graph TD
     end
 ```
 
-The trade-off: pod IPs are not directly routable from the VNet. Azure services that rely on direct pod IP connectivity (like certain VNet service endpoint configurations) will not work. For most microservices architectures where external traffic enters through a load balancer or ingress controller, this is perfectly fine.
+The primary architectural trade-off is isolation. Because pod IPs are encapsulated, an external system (like a database on a peered VNet) cannot initiate a direct connection to a pod's IP address. You must rely entirely on Kubernetes Services, Ingress Controllers, and Load Balancers to bridge the gap between the overlay network and the external VNet. In modern microservices architectures, this is considered a best practice regardless, making CNI Overlay an excellent default choice.
 
 ```bash
 # Create an AKS cluster with CNI Overlay
@@ -158,7 +160,9 @@ az aks create \
 
 ### Azure CNI Powered by Cilium: The Future
 
-CNI Powered by Cilium replaces the traditional Azure CNI dataplane with Cilium's eBPF-based dataplane. This gives you all the benefits of CNI Overlay (efficient IP usage) plus Cilium's advanced features: eBPF-based packet processing (no iptables), L7 network policies, transparent encryption, and DNS-aware egress filtering.
+If CNI Overlay is the current standard, **Azure CNI Powered by Cilium** is the undisputed future of Kubernetes networking. This model retains the IP-conserving overlay architecture but radically alters the underlying networking dataplane. Traditional Kubernetes networking relies on `kube-proxy`, a component that uses Linux `iptables` to implement Service load balancing and Network Policies. `iptables` was designed as a firewall, not a high-performance routing engine. When `kube-proxy` processes a packet, it must evaluate that packet against a sequential list of rules. If you have 5,000 services, the kernel must traverse a massive list of rules for every connection, resulting in linear O(n) performance degradation.
+
+Cilium completely replaces `kube-proxy` and bypasses `iptables` entirely. It leverages **eBPF (Extended Berkeley Packet Filter)**, a revolutionary technology that allows compiled, sandboxed programs to run directly within the Linux kernel. Instead of sequential rule lists, Cilium uses highly optimized, hash-based eBPF maps to route traffic. These lookups occur in O(1) constant time, meaning the routing latency remains consistently ultra-low whether your cluster has 10 services or 100,000.
 
 ```mermaid
 graph TD
@@ -178,7 +182,7 @@ graph TD
     end
 ```
 
-This is the model Microsoft is actively investing in, and it is the recommended choice for new clusters as of 2026. The eBPF dataplane is not just faster---it fundamentally changes how packet processing scales. With iptables, adding more services linearly increases the number of rules every packet must traverse. With eBPF, lookups are hash-based and remain constant regardless of the number of services.
+Beyond raw performance, the eBPF dataplane grants Cilium unprecedented visibility into network flows, allowing for advanced observability, transparent encryption, and Layer 7 network policies that are simply impossible with standard `iptables`.
 
 ```bash
 # Create an AKS cluster with CNI Powered by Cilium
@@ -209,17 +213,15 @@ az aks create \
 | **Direct pod VNet routing** | No (UDR) | Yes | No | No |
 | **Recommended for new clusters** | No | Only if direct VNet routing needed | Good | Best |
 
----
-
 ## Network Policies: Controlling East-West Traffic
 
-By default, every pod in a Kubernetes cluster can communicate with every other pod. This flat network is convenient for development but a security nightmare in production. Network policies let you define rules that control which pods can talk to which other pods.
+By default, Kubernetes implements a flat network topology. Any pod in any namespace can initiate a network connection with any other pod. While this frictionless environment accelerates initial development, it presents a catastrophic blast radius in production. If an attacker compromises a vulnerable frontend web container, they can immediately pivot laterally and attack backend databases or internal administrative APIs.
 
-AKS supports three network policy engines, and the choice is made at cluster creation time---you cannot change it later without rebuilding the cluster.
+Network Policies implement zero-trust segmentation. They act as distributed firewalls, allowing you to explicitly define permitted ingress and egress traffic flows at the pod level using label selectors. AKS requires you to select your network policy engine during cluster creation; modifying this later necessitates a destructive rebuild.
 
 ### Azure Network Policy Manager (Azure NPM)
 
-Azure NPM implements Kubernetes NetworkPolicy resources using Azure-native constructs (iptables on Linux, HNS policies on Windows). It is the simplest option and supports all standard Kubernetes NetworkPolicy fields.
+Azure NPM is Microsoft's native implementation of the standard Kubernetes NetworkPolicy API. On Linux nodes, it orchestrates `iptables` rules to enforce policies. It is straightforward, universally compatible with basic API definitions, and suitable for simple segmentation requirements. However, it only operates at Layer 3 (IP addresses) and Layer 4 (Ports/Protocols).
 
 ```yaml
 # Block all ingress to pods in the database namespace
@@ -232,8 +234,9 @@ spec:
   podSelector: {}
   policyTypes:
     - Ingress
+```
 
----
+```yaml
 # Allow only the API namespace to reach the database
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -258,7 +261,7 @@ spec:
 
 ### Calico: The Ecosystem Standard
 
-Calico extends the standard Kubernetes NetworkPolicy with its own CRD-based policies that support additional features: global policies (apply across all namespaces), ordered policy evaluation, and CIDR-based rules for controlling traffic to external destinations.
+Calico is the most widely deployed third-party network policy engine in the Kubernetes ecosystem. While it fully supports standard Kubernetes policies, its true power lies in its proprietary Custom Resource Definitions (CRDs). Calico introduces GlobalNetworkPolicies, allowing administrators to enforce cluster-wide security rules (like "deny all egress to known malicious IP ranges") without having to duplicate policies across hundreds of individual namespaces.
 
 ```yaml
 # Calico GlobalNetworkPolicy: deny egress to the internet except DNS
@@ -291,7 +294,7 @@ spec:
 
 ### Cilium Network Policies: L7-Aware Security
 
-Cilium policies operate at both L3/L4 (like traditional network policies) and L7 (HTTP, gRPC, Kafka, DNS). This means you can write policies that allow a pod to make GET requests to a specific API path but deny POST requests. You can also filter DNS queries, allowing pods to resolve only specific domain names.
+Cilium elevates network security from the transport layer to the application layer. Standard Network Policies only comprehend IPs and ports. Cilium, powered by eBPF, understands HTTP paths, gRPC methods, and DNS queries. You can construct policies that allow a pod to execute an `HTTP GET` request to `/api/v1/read` while simultaneously blocking an `HTTP POST` to `/api/v1/write`. This granularity is crucial for securing modern, API-driven microservices.
 
 ```yaml
 # CiliumNetworkPolicy: allow HTTP GET to /api/v1/products only
@@ -317,6 +320,8 @@ spec:
               - method: GET
                 path: "/api/v1/products.*"
 ```
+
+Crucially, Cilium supports DNS-based egress filtering. In cloud environments, external services (like Stripe, GitHub, or AWS S3) frequently rotate their underlying IP addresses. A traditional Layer 3 policy attempting to whitelist external IPs will inevitably break when the remote provider updates their DNS records. Cilium resolves this by intercepting DNS queries locally, determining the returned IP address dynamically, and automatically updating the eBPF allowlist in real-time.
 
 ```yaml
 # CiliumNetworkPolicy: DNS-based egress filtering
@@ -351,19 +356,15 @@ spec:
               - matchPattern: "*.paypal.com"
 ```
 
-This DNS-aware policy is transformative for security. Instead of maintaining IP allowlists for external services (which change constantly), you specify domain names. Cilium intercepts DNS queries, resolves them, and dynamically creates IP-based rules. If Stripe changes their API server IP, your policy automatically adapts.
-
 > **Stop and think**: You need to ensure your backend pods can only download updates from `github.com`. How would implementing this differ between Azure NPM (standard NetworkPolicy) and Cilium Network Policies? Which approach is more resilient to infrastructure changes?
-
----
 
 ## Ingress: Getting Traffic Into Your Cluster
 
-AKS supports two primary ingress controllers as managed add-ons: Application Gateway Ingress Controller (AGIC) and the NGINX-based web application routing add-on.
+Routing external traffic into your Kubernetes cluster requires an Ingress Controller—a specialized reverse proxy that reads Kubernetes Ingress objects and dynamically configures routing rules. AKS offers two robust, managed add-ons for this purpose, drastically reducing the operational burden of managing external load balancers.
 
 ### Application Gateway Ingress Controller (AGIC)
 
-AGIC uses Azure Application Gateway (a layer-7 load balancer) as the ingress controller. The controller runs inside your cluster, watches for Kubernetes Ingress resources, and configures the Application Gateway accordingly.
+AGIC fundamentally changes the traditional ingress architecture. Instead of deploying an NGINX proxy pod inside the cluster, AGIC delegates the heavy lifting to an external Azure Application Gateway. The AGIC pod merely watches the Kubernetes API and translates Ingress resources into Azure ARM API calls, configuring the external gateway dynamically.
 
 ```mermaid
 graph TD
@@ -375,7 +376,7 @@ graph TD
     end
 ```
 
-AGIC shines when you need Web Application Firewall (WAF) protection, SSL offloading at scale, or native integration with Azure services like Azure Front Door. It does not run an in-cluster proxy---traffic goes directly from the Application Gateway to the backend pods (if using Azure CNI with direct pod routing) or through the node's IP.
+The primary driver for selecting AGIC is enterprise security. Azure Application Gateway integrates seamlessly with Azure Web Application Firewall (WAF), providing robust, continuously updated protection against OWASP Top 10 vulnerabilities like SQL injection and cross-site scripting (XSS). Because the traffic is inspected and terminated outside the cluster, malicious payloads are neutralized before they ever interact with your Kubernetes nodes.
 
 ```bash
 # Enable AGIC add-on with a new Application Gateway
@@ -389,7 +390,7 @@ az aks enable-addons \
 
 ### NGINX Ingress (Web Application Routing Add-on)
 
-The web application routing add-on deploys an NGINX-based ingress controller managed by AKS. It integrates with Azure DNS for automatic DNS record creation and Azure Key Vault for TLS certificate management.
+For architectures that do not mandate external WAF inspection, or where cost optimization is paramount, the Web Application Routing add-on deploys a highly optimized, fully managed instance of NGINX Ingress Controller directly into your cluster.
 
 ```bash
 # Enable the web application routing add-on
@@ -401,6 +402,8 @@ az aks enable-addons \
 # Verify the ingress controller is running
 kubectl get pods -n app-routing-system
 ```
+
+This add-on abstracts away the complexity of managing NGINX configurations and integrates beautifully with Azure Key Vault. Instead of manually handling Kubernetes TLS Secrets, you can bind your ingress directly to a Key Vault certificate URI. The add-on automatically fetches, rotates, and mounts the certificates for seamless SSL offloading.
 
 ```yaml
 # Ingress resource using the web application routing add-on
@@ -442,13 +445,11 @@ spec:
 | **Cost** | Application Gateway pricing (can be expensive) | Included in node cost |
 | **Best for** | Enterprise apps with WAF requirements | General-purpose microservices |
 
----
-
 ## Private Clusters and Private Link: Hiding the API Server
 
-By default, the AKS API server has a public endpoint. Anyone on the internet can attempt to reach it (authentication still blocks unauthorized access, but the endpoint is discoverable). For regulated industries and security-conscious organizations, this is unacceptable.
+Every Kubernetes cluster is controlled via its API server. By default, AKS provisions a publicly accessible IP address for this API server. While authentication (RBAC and Microsoft Entra ID) protects the endpoint from unauthorized commands, its mere exposure on the public internet is unacceptable for many heavily regulated industries, such as finance or healthcare.
 
-A private AKS cluster moves the API server behind an Azure Private Endpoint. The API server gets a private IP address in your VNet, and the public endpoint is disabled entirely.
+To achieve maximum isolation, you must deploy an AKS Private Cluster. When this feature is enabled, the API server is severed from the public internet entirely. Instead, Azure utilizes Private Link to inject a Private Endpoint directly into your VNet. The API server becomes just another internal IP address, accessible only to clients residing within the VNet or navigating through established VPN/ExpressRoute tunnels.
 
 ```mermaid
 graph LR
@@ -465,6 +466,8 @@ graph LR
     Agent --> PE
     Nodes --> PE
 ```
+
+Architecting around a private cluster introduces profound operational shifts. Your CI/CD pipelines (like GitHub Actions or Azure DevOps) can no longer execute `kubectl` commands using their standard, cloud-hosted runners, as those runners operate on the public internet and cannot resolve your private API server. You are forced to deploy self-hosted agents within your VNet. Furthermore, you must establish and maintain an Azure Private DNS Zone to ensure all internal clients correctly resolve the cluster's internal FQDN.
 
 ```bash
 # Create a private AKS cluster
@@ -483,11 +486,9 @@ az aks show -g rg-aks-prod -n aks-private \
   --query "apiServerAccessProfile" -o json
 ```
 
-The `--private-dns-zone system` option creates an Azure Private DNS Zone in the MC_ resource group. AKS nodes resolve the API server FQDN through this private zone, getting the private IP instead of a public one. For the developer workstations and CI/CD agents to access the cluster, they must be on the VNet (or peered VNet) and have DNS resolution configured to use the private zone.
-
 ### API Management Integration
 
-For clusters that need to expose APIs externally with enterprise-grade management, Azure API Management (APIM) sits in front of the cluster and provides rate limiting, authentication, request/response transformation, caching, and developer portal features.
+In mature enterprise topologies, exposing APIs directly to the internet via an Ingress Controller is often insufficient. Organizations require sophisticated rate limiting, JWT validation, caching, and developer portal generation. By deploying Azure API Management (APIM) directly into the VNet alongside your private AKS cluster, you establish a highly secure, feature-rich API gateway pattern. APIM functions as the front door, scrubbing and managing requests before routing them privately to the internal AKS Ingress.
 
 ```bash
 # Create API Management instance in the same VNet
@@ -510,15 +511,15 @@ az apim api import \
   --specification-url "http://payment-api.payments.svc.cluster.local:8080/openapi.json"
 ```
 
----
-
 ## Egress Control: Managing Outbound Traffic
 
-By default, AKS nodes use an Azure Load Balancer with outbound rules for internet access. Every node shares a pool of public IPs for outbound connections. For production clusters, you often need more control: which pods can reach the internet, which domains they can access, and what source IP they present.
+Ingress control manages how traffic enters the cluster, but managing how traffic *leaves* the cluster (egress) is equally critical for security and operational stability. By default, AKS nodes are provisioned with a standard Azure Load Balancer that dynamically allocates outbound SNAT (Source Network Address Translation) ports across a pool of shared Microsoft IP addresses.
+
+This default configuration introduces two distinct failure modes in production. First, if your pods frequently call external APIs (like web scraping or constant third-party webhook polling), you can easily exhaust your allotted SNAT ports, resulting in silently dropped connections and bizarre application timeouts. Second, if your partner APIs require IP whitelisting, you cannot provide them with a static, predictable IP address, as the default load balancer's IPs fluctuate.
 
 ### Azure NAT Gateway
 
-For predictable outbound IPs (important when whitelisting with external partners), attach a NAT Gateway to your AKS subnet:
+The definitive architectural solution for predictable, high-volume egress is the Azure NAT Gateway. By attaching a NAT Gateway to your AKS node subnet, you force all outbound traffic to flow through a dedicated, static Public IP address. This completely eliminates SNAT exhaustion—a single NAT Gateway IP provides up to 64,512 simultaneous connections—and gives you a reliable IP to share with external partners for whitelisting.
 
 ```bash
 # Create a NAT Gateway with a static public IP
@@ -544,7 +545,7 @@ az network vnet subnet update \
 
 ### Azure Firewall for Centralized Egress
 
-For enterprise environments, Azure Firewall or a third-party NVA provides centralized egress with FQDN filtering, threat intelligence, and logging:
+In highly regulated environments, simply controlling the source IP is inadequate. Security mandates often dictate that you must log, inspect, and explicitly authorize every outbound connection your cluster attempts to make. In a hub-and-spoke topology, you can enforce this by overriding the default route on the AKS subnet, forcing all internet-bound traffic to traverse a centralized Azure Firewall appliance.
 
 ```bash
 # Route all egress through Azure Firewall
@@ -561,19 +562,14 @@ az network route-table route create \
   --next-hop-ip-address 10.1.4.4  # Azure Firewall private IP
 ```
 
----
+Using Azure Firewall allows your security operations center (SOC) to implement sophisticated FQDN (Fully Qualified Domain Name) filtering, ensuring your cluster can only communicate with authorized endpoints and intercepting data exfiltration attempts.
 
 ## Did You Know?
 
 1. **Azure CNI Powered by Cilium replaces kube-proxy entirely.** In a traditional AKS cluster, kube-proxy maintains iptables rules on every node to implement Kubernetes Services. With Cilium, kube-proxy is not deployed at all. Cilium handles service routing using eBPF maps, which provide O(1) lookup performance compared to iptables' O(n) rule traversal. On clusters with over 5,000 services, this difference can reduce service routing latency by more than 60%.
-
 2. **The maximum number of pods per node in AKS is 250, regardless of CNI plugin.** This is an Azure VMSS limitation, not a Kubernetes one. However, most teams find that 110 (the default for Azure CNI) is optimal. Going higher means more IP addresses consumed per node (with Azure CNI) and more kubelet overhead for pod lifecycle management.
-
-3. **AKS Private Link costs nothing beyond the standard cluster pricing.** The Private Endpoint for the API server is included in the AKS service at no additional charge. However, the operational cost is significant---you need VPN or ExpressRoute connectivity for developer access, self-hosted CI/CD agents in the VNet, and proper DNS configuration. Many teams underestimate this operational overhead.
-
+3. **AKS Private Link costs nothing beyond the standard cluster pricing.** The Private Endpoint for the API server is included in the AKS service at no additional charge. However, the operational cost is significant—you need VPN or ExpressRoute connectivity for developer access, self-hosted CI/CD agents in the VNet, and proper DNS configuration. Many teams underestimate this operational overhead.
 4. **Cilium's eBPF-based network policies are enforced at the kernel level before the packet reaches the application.** This means a compromised application cannot bypass network policies by manipulating its own network stack. Traditional iptables-based policies operate in the same kernel namespace, but eBPF programs are loaded and verified by the kernel itself, providing a stronger isolation boundary.
-
----
 
 ## Common Mistakes
 
@@ -587,8 +583,6 @@ az network route-table route create \
 | Deploying AGIC without understanding Application Gateway pricing | AGIC seems like the "enterprise" choice | Application Gateway WAF v2 costs $325+/month base. Use web application routing add-on unless you specifically need WAF |
 | Not configuring egress control | Default load balancer outbound rules are "good enough" | Use NAT Gateway for static IPs. Use Azure Firewall for FQDN filtering. Pods should not have unrestricted internet access |
 | Ignoring DNS resolution in private clusters | kubectl works from the VNet but not from CI/CD agents | Ensure all clients can resolve the private DNS zone. Use conditional DNS forwarding or Azure Private DNS resolver |
-
----
 
 ## Quiz
 
@@ -633,8 +627,6 @@ The default Azure Load Balancer dynamically assigns outbound traffic to a pool o
 
 Azure prevents this change because the network policy engine is deeply and irreversibly embedded into the cluster's core networking dataplane at creation time. Azure NPM relies on iptables rules and native OS constructs, whereas Cilium requires completely replacing the kube-proxy component and injecting eBPF programs directly into the Linux kernel. Attempting to rip out one foundational networking stack and hot-swap it with another on a live cluster would cause catastrophic network failure and complete loss of pod-to-pod connectivity. The only supported path forward is a blue-green migration: you must build an entirely new AKS cluster with Cilium enabled from day one, and then carefully migrate your workloads over to the new environment.
 </details>
-
----
 
 ## Hands-On Exercise: CNI Powered by Cilium with L7 Egress Domain Filtering
 
@@ -792,8 +784,9 @@ spec:
     - {}
   egress:
     - {}
+```
 
----
+```yaml
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -923,8 +916,9 @@ spec:
         - ports:
             - port: "8080"
               protocol: TCP
+```
 
----
+```yaml
 # Update backend ingress to allow frontend traffic
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -998,8 +992,6 @@ kubectl exec -n kube-system -l k8s-app=cilium -- cilium monitor --type policy-ve
 - [ ] Frontend cannot reach the internet directly
 - [ ] Cilium policy verdict logs show allowed and denied connections
 
----
-
 ## Next Module
 
-[Module 7.3: AKS Workload Identity & Security](../module-7.3-aks-identity/) --- Learn how to eliminate hardcoded credentials entirely using Entra Workload Identity, federated identity credentials, and the Secrets Store CSI Driver with Azure Key Vault integration.
+[Module 7.3: AKS Workload Identity & Security](../module-7.3-aks-identity/) — Learn how to eliminate hardcoded credentials entirely using Entra Workload Identity, federated identity credentials, and the Secrets Store CSI Driver with Azure Key Vault integration.
