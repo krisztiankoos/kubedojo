@@ -582,7 +582,7 @@ You can bypass any client-side hook execution by appending the `--no-verify` (or
 </details>
 
 <details>
-<summary><strong>Question 3:</strong> You want to ensure that every new infrastructure engineer who clones your core microservices repository automatically has the team's standard `commit-msg` hook installed. Why is placing the hook file in the `.git/hooks` directory and pushing to the remote repository an utterly ineffective strategy?</summary>
+<summary><strong>Question 3:</strong> You want to ensure that every new infrastructure engineer who clones your core microservices repository automatically has the team's standard `commit-msg` hook installed. You place the hook file in the `.git/hooks` directory and push your branch to the remote repository. Why is this an utterly ineffective strategy?</summary>
 
 The entire `.git/` directory structure, including the nested `hooks/` subdirectory, is strictly local to your specific machine and is explicitly excluded from version control transfer. When another engineer runs `git clone`, Git generates a totally fresh, default `.git/` directory on their local workstation. It fundamentally does not download or sync the custom hooks you placed in your local `.git/hooks` folder. To solve this organizational challenge, you must either track the hooks in a standard repository folder and use a wrapper framework like `pre-commit`, or rely on configuring Git Template Directories across the team.
 
