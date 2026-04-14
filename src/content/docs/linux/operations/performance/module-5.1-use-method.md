@@ -431,7 +431,7 @@ resources:
 ## Quiz
 
 ### Question 1
-You are investigating a slow application and run the `uptime` and `lscpu` commands. 
+You are investigating a slow application and run the `uptime` and `nproc` commands. 
 
 ```bash
 $ nproc
