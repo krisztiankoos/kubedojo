@@ -318,6 +318,7 @@ flowchart LR
 flowchart LR
     SvcA1[Service A] -->|HTTP/gRPC| SvcB1[Service B]
     SvcB1 -->|Response| SvcA1
+    
 ```
 
 - **Use**: When you need immediate response
