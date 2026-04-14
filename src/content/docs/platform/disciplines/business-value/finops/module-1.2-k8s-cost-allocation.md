@@ -12,7 +12,7 @@ Before starting this module:
 - **Required**: [Module 1.1: FinOps Fundamentals](../module-1.1-finops-fundamentals/) — FinOps lifecycle, pricing models, tagging
 - **Required**: Kubernetes basics — Pods, Deployments, Namespaces, Services
 - **Required**: Understanding of resource requests and limits
-- **Recommended**: Access to a local Kubernetes cluster (kind or minikube)
+- **Recommended**: Access to a local Kubernetes cluster (v1.35+ via kind or minikube)
 - **Recommended**: `kubectl` familiarity
 
 ---
@@ -433,6 +433,8 @@ Pod requesting 1 GPU:
   Mem cost = (8/61) × $2,233/mo × 0.05 = $14.64/mo
   Total: ~$2,002/mo
 ```
+
+> **Pause and predict**: If a team requests a GPU but leaves it idle for 20 hours a day, how does this impact the cluster's overall cost efficiency compared to idle CPU resources? Because GPUs are incredibly expensive and typically account for the vast majority of a node's cost, idle GPUs create a disproportionately massive financial waste compared to idle CPUs.
 
 ---
 
