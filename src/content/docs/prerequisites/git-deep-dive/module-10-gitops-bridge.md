@@ -122,7 +122,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: myregistry.com/frontend:latest
+        image: myregistry.com/frontend:v1.2.0
         ports:
         - containerPort: 8080
 ```
@@ -533,4 +533,3 @@ If the output matches your expectations, your directory structure is mathematica
 
 ## Next Module
 [Philosophy and Design course](../../philosophy-design/) — Dive deeper into the architectural principles that govern robust, resilient platform engineering.
----
