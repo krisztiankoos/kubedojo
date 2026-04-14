@@ -465,13 +465,16 @@ Answer: Because the changes were bundled non-atomically, you cannot use a simple
 In this exercise, you will simulate a professional fork-and-pull workflow by creating atomic commits and navigating a PR review loop. 
 
 **Setup Instructions:**
-1. Create a new empty directory on your machine named `k8s-pr-lab` and initialize a git repository.
-2. We will simulate the `upstream` and `origin` remotes using local folders instead of GitHub to keep the exercise self-contained.
+We will simulate the `upstream` and `origin` remotes using local folders instead of GitHub to keep the exercise self-contained.
 
 ### Task 1: Setup the Simulated Remotes
-Execute the following commands to create the "server" repositories.
+Execute the following commands to create a workspace, the "server" repositories, and your local repository.
 
 ```bash
+# Create a workspace directory
+mkdir git-collab-workspace
+cd git-collab-workspace
+
 # Create the upstream central repository
 mkdir upstream.git
 cd upstream.git
@@ -485,12 +488,18 @@ git init --bare
 cd ..
 ```
 
-Now, link your working repository to these remotes.
+Now, create and link your working repository to these remotes.
 
 ```bash
+# Initialize working repository
+mkdir k8s-pr-lab
 cd k8s-pr-lab
+git init -b main
 git remote add origin ../origin.git
 git remote add upstream ../upstream.git
+
+# Verify remotes as a checkpoint
+git remote -v
 
 # Create an initial commit so branches exist
 echo "# Core Platform" > README.md
@@ -564,6 +573,9 @@ Imagine a reviewer requested that you increase the `replicas` to `3`. Instead of
 Modify `deployment.yaml` and change `replicas: 2` to `replicas: 3`.
 
 ```bash
+sed -i.bak 's/replicas: 2/replicas: 3/' deployment.yaml
+rm deployment.yaml.bak
+
 # Stage the change
 git add deployment.yaml
 
