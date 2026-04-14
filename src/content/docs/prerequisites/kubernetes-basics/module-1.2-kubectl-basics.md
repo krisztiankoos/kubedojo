@@ -254,6 +254,8 @@ kubectl get pods --show-labels
 kubectl get pod nginx -o yaml > pod.yaml
 ```
 
+> **Stop and think**: If you are waiting for a pod to transition from `Pending` to `Running`, is it better to repeatedly run `kubectl get pods` or use a specific flag? (Use the `-w` or `--watch` flag to stream status updates automatically instead of manually spamming the API server).
+
 ---
 
 ## Configuration and Context
@@ -273,6 +275,8 @@ kubectl config use-context my-cluster
 # Set default namespace for context
 kubectl config set-context --current --namespace=default
 ```
+
+> **Pause and predict**: If you switch your default namespace to `kube-system` using `kubectl config set-context`, what will a plain `kubectl get pods` command return? (It will return all the system pods, like CoreDNS and the API server, without needing the `-n kube-system` flag).
 
 ---
 
