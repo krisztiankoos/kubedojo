@@ -49,6 +49,8 @@ docker ps
 # If server fails, SSH somewhere else and repeat
 ```
 
+> **Stop and think**: What happens in this imperative model if the server suddenly reboots or experiences a kernel panic while you are asleep?
+
 You are the control loop. You observe, decide, and act.
 
 ### Declarative: Tell the System What You Want
@@ -78,6 +80,8 @@ spec:
 kubectl apply -f nginx-deployment.yaml
 # Done. Kubernetes handles the rest.
 ```
+
+> **Pause and predict**: If you run this exact same `kubectl apply` command a second time, what will Kubernetes do? 
 
 Kubernetes is the control loop. It observes, decides, and acts—continuously.
 
@@ -117,6 +121,8 @@ You: "It's hot now. Turn off the heater."
 You: "Cold again. Turn on the heater."
 [Repeat forever, or give up and suffer]
 ```
+
+> **Stop and think**: How much of your time is spent monitoring and adjusting the system in this manual model?
 
 You are the control loop.
 
