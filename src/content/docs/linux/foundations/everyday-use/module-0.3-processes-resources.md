@@ -531,7 +531,7 @@ You are writing a bash script to monitor a specific application and restart it i
 <details>
 <summary>Show Answer</summary>
 
-Your script should use `ps` (or `pgrep`). `ps` takes a single, instantaneous snapshot of the process table and exits, making it perfect for scripts to parse. `top` is an interactive, continuously updating dashboard designed for human eyes, which will block your script from continuing and flood the output with terminal escape characters. Using `ps` ensures your script gets exactly the data it needs in a single pass without hanging.
+Your script should use `ps` (or `pgrep`). The `ps` command takes a single, instantaneous snapshot of the process table and exits immediately, making its output perfect for automated scripts to parse. In contrast, `top` is an interactive, continuously updating dashboard designed for human eyes. If you use `top` in a script, it will block the script from continuing and flood your variables with terminal escape characters. Using `ps` ensures your automation gets exactly the data it needs in a single pass without hanging.
 
 </details>
 
@@ -553,7 +553,7 @@ You log into a production database server via SSH and start a critical database 
 <details>
 <summary>Show Answer</summary>
 
-Adding the `&` at the end of a command only runs it in the background of your current terminal session, allowing you to type other commands, but it still belongs to your session's process tree. When you closed your laptop, the SSH connection dropped, causing the server to send a SIGHUP (hangup) signal to your terminal session and all of its child processes, terminating the migration instantly. To prevent this, you must run the command with `nohup ./migrate-db.sh &` (or use a multiplexer like `tmux`), which instructs the process to ignore the SIGHUP signal and keep running after you disconnect.
+Adding the `&` at the end of a command only runs it in the background of your current terminal session, allowing you to type other commands. However, that background process still belongs to your session's process tree. When you closed your laptop, the SSH connection dropped, causing the server to send a SIGHUP (hangup) signal to your terminal session and all of its child processes. This SIGHUP signal terminated the migration script instantly. To prevent this, you must run the command with `nohup ./migrate-db.sh &` (or use a multiplexer like `tmux`), which instructs the process to ignore the hangup signal and keep running after you disconnect.
 
 </details>
 
@@ -564,7 +564,7 @@ An alerting system pages you at 2 AM because a Kubernetes worker node is entirel
 <details>
 <summary>Show Answer</summary>
 
-You need to drill down into the file system hierarchically to locate the space consumer because `df` only shows top-level partitions, not individual directories. Start broadly by running `du -sh /var/* 2>/dev/null | sort -rh | head -10` to find the largest directories within `/var`. Once you identify the largest directory (often `/var/log`), repeat the command on that specific sub-directory to narrow it down further. You continue this pattern of investigating the largest path until you isolate the specific massive file. Once found, you can safely truncate the runaway log file (e.g., `> /var/log/huge-file.log`) to instantly restore node health without breaking file handles.
+You need to drill down into the file system hierarchically because `df` only shows top-level partitions, not individual directories. Start broadly by running `du -sh /var/* 2>/dev/null | sort -rh | head -10` to find the largest directories within `/var`. Once you identify the largest directory (often `/var/log`), repeat the command on that specific sub-directory to narrow it down further. You continue this pattern of investigating the largest path until you isolate the specific massive file. Once found, you can safely truncate the runaway log file (e.g., `> /var/log/huge-file.log`) to instantly restore node health without breaking file handles.
 
 </details>
 
@@ -586,7 +586,7 @@ You run `top` on a Kubernetes node that is performing extremely poorly. The CPU 
 <details>
 <summary>Show Answer</summary>
 
-The root cause of the slowness is severe CPU Steal (`st`), which is sitting at 98.5%. This means the underlying cloud provider's hypervisor is taking almost all of the physical CPU cycles away from your virtual machine to serve other tenants on the same shared hardware (the "noisy neighbor" problem). You cannot fix this issue by killing processes on your Linux node because the constraint is external to your operating system. Your only resolutions are to wait for the hypervisor to allocate resources back, cordon and drain the node to move your pods elsewhere, or upgrade your instance type to one with dedicated CPU cores.
+The root cause of the slowness is severe CPU Steal (`st`), which is sitting at 98.5%. This metric indicates that the underlying cloud provider's hypervisor is taking almost all of the physical CPU cycles away from your virtual machine to serve other tenants on the same shared hardware. You cannot fix this "noisy neighbor" issue by killing processes on your Linux node because the constraint is external to your operating system. The node itself is starved of resources before it can even run your processes. Your only resolutions are to wait for the hypervisor to allocate resources back, cordon and drain the node to move your pods elsewhere, or upgrade your instance type.
 
 </details>
 
