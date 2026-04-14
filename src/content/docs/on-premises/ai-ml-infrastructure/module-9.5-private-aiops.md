@@ -512,42 +512,90 @@ Suggested Actions:
 ## Quiz
 
 <details>
-<summary>1. You are configuring Robusta to use a local LLM running in your cluster to ensure strict data privacy. The Robusta Helm chart requires a `chat_gpt_api_key`. What is the correct approach?</summary>
+<summary>1. You are configuring Robusta to use a local LLM running in your cluster to ensure strict data privacy. The Robusta Helm chart requires a `chat_gpt_api_key`. What is the correct approach?
+
+A. Omit the `chat_gpt_api_key` field entirely since the local Ollama instance does not require authentication.
+B. Provide a dummy string (e.g., `dummy-key`) to satisfy the Python client library initialization checks.
+C. Disable the OpenAI compatibility layer in Robusta and use the native Ollama integration.
+D. Generate a read-only Kubernetes secret and mount it into the Robusta runner pod to bypass the check.</summary>
+
 **Correct Answer: B.** The underlying Python OpenAI client library used by Robusta strictly requires an API key string to initialize its internal state. This requirement holds true even if the base URL is pointed to a local unauthenticated service like Ollama, which does not actually validate the key. Providing a dummy string (such as `dummy-key` or `ollama`) successfully satisfies the client library's initialization checks without compromising security. If you leave the field blank or omit it, the application will crash during startup before it even attempts to make an API call.
 </details>
 
 <details>
-<summary>2. Your team is implementing Predictive Horizontal Pod Autoscaling (PHPA) for a critical payment gateway service. Following a recent load test that generated massive artificial traffic spikes, you are concerned the model might over-scale during normal operations. Which operational guardrail is most critical to prevent the predictive scaler from crashing the cluster?</summary>
+<summary>2. Your team is implementing Predictive Horizontal Pod Autoscaling (PHPA) for a critical payment gateway service. Following a recent load test that generated massive artificial traffic spikes, you are concerned the model might over-scale during normal operations. Which operational guardrail is most critical to prevent the predictive scaler from crashing the cluster?
+
+A. Deploying a secondary KEDA metric server as a hot standby.
+B. Configuring the HPA to scale based on Memory utilization instead of CPU.
+C. Setting a strict `maxReplicas` limit capped at approximately 120% of known peak capacity.
+D. Using an exponential backoff algorithm for all scale-down events.</summary>
+
 **Correct Answer: C.** Predictive models can hallucinate or over-predict based on dirty historical data, such as a previous load test or a DDoS attack that the model misinterprets as a recurring seasonal trend. Implementing tight `maxReplicas` bounds is an essential operational guardrail in these scenarios. This hard limit prevents the predictive scaler from requesting an infinite number of pods, which would otherwise exhaust cluster resources and potentially crash critical control plane components. A common best practice is to cap this limit at approximately 120% of your known, legitimate peak capacity.
 </details>
 
 <details>
-<summary>3. When implementing PromQL-based anomaly detection using Z-scores (`expr: node:cpu_usage:z_score > 3`), you notice the alert is flapping continuously on a low-traffic development cluster. What is the most likely architectural flaw?</summary>
+<summary>3. When implementing PromQL-based anomaly detection using Z-scores (`expr: node:cpu_usage:z_score > 3`), you notice the alert is flapping continuously on a low-traffic development cluster. What is the most likely architectural flaw?
+
+A. The Prometheus node exporter is missing the `hostNetwork: true` configuration, causing erratic metric collection.
+B. The `avg_over_time` function is using a 1-week window, which is too short for capturing seasonal trends.
+C. The Alertmanager `group_wait` interval is too low, causing rapid refiring of identical alerts.
+D. The baseline traffic is so flat that the standard deviation is near zero, causing minor fluctuations to produce massive Z-scores.</summary>
+
 **Correct Answer: D.** In low-traffic environments, a metric's baseline is often perfectly flat for extended periods, causing its calculated standard deviation to approach zero. Because the Z-score formula divides the deviation from the mean by the standard deviation, any minor fluctuation (like a single background cron job) gets divided by this near-zero value. This mathematical quirk results in an artificially massive Z-score, which instantly triggers the anomaly alert despite no real problem existing. To prevent this flapping, you must add an absolute minimum rate threshold to the PromQL rule, ensuring the alert only evaluates when baseline traffic is actually present.
 </details>
 
 <details>
-<summary>4. Your platform team wants to reduce mean-time-to-recovery (MTTR) by allowing a local LLM to directly execute `kubectl` remediation commands, such as deleting failing pods or rolling back deployments via the Kubernetes API server. Why is this direct execution architecture considered a severe anti-pattern for production environments?</summary>
+<summary>4. Your platform team wants to reduce mean-time-to-recovery (MTTR) by allowing a local LLM to directly execute `kubectl` remediation commands, such as deleting failing pods or rolling back deployments via the Kubernetes API server. Why is this direct execution architecture considered a severe anti-pattern for production environments?
+
+A. Local LLMs typically lack the necessary VRAM to parse large Kubernetes Custom Resource Definitions (CRDs).
+B. LLMs hallucinate and lack determinism, risking destructive actions like deleting healthy resources or cordoning critical nodes if not manually verified.
+C. The Kubernetes API server cannot process webhook requests generated by a Python-based Robusta playbook.
+D. It violates the CNCF guidelines for standard incident response protocols in certified Kubernetes distributions.</summary>
+
 **Correct Answer: B.** LLMs fundamentally lack contextual situational awareness and absolute determinism when evaluating complex distributed systems. If granted direct write access to the Kubernetes API server, a hallucinated troubleshooting step could easily result in the deletion of healthy production resources or the cordoning of critical nodes. Because automated remediation can transform a localized failure into a cascading cluster-wide outage in seconds, enforcing human-in-the-loop verification is absolutely mandatory. While operators can technically configure tools like Robusta to execute these commands, doing so without strict RBAC limitations and explicit manual approval steps is a severe operational risk.
 </details>
 
 <details>
-<summary>5. You are running a 7B parameter local LLM for private AIOps on bare metal without GPUs. You notice that Robusta often fails to attach AI summaries to Slack alerts, and the Robusta logs show `HTTP 504 Gateway Timeout`. What is the primary cause?</summary>
+<summary>5. You are running a 7B parameter local LLM for private AIOps on bare metal without GPUs. You notice that Robusta often fails to attach AI summaries to Slack alerts, and the Robusta logs show `HTTP 504 Gateway Timeout`. What is the primary cause?
+
+A. Generating an RCA on a CPU node takes 30-60 seconds, which exceeds the standard webhook timeouts in Alertmanager or the HTTP client.
+B. The 7B parameter model is too small to understand the `CrashLoopBackOff` event and enters an infinite generation loop.
+C. The Ollama service requires a valid TLS certificate, and the HTTP request from Robusta is being rejected by the ingress controller.
+D. The Kubernetes API server rate-limits the Robusta runner when it attempts to fetch pod logs without a GPU attached.</summary>
+
 **Correct Answer: A.** Running LLM inference purely on standard CPUs is incredibly slow compared to utilizing dedicated GPU hardware. Generating a comprehensive RCA response for a complex alert might take 30 to 60 seconds of compute time on a CPU node. This extended latency easily exceeds the standard webhook timeout defaults—often configured to 10 or 15 seconds—within Alertmanager or the Robusta HTTP client. As a result, the client drops the connection with an `HTTP 504 Gateway Timeout` before the local model has finished generating and returning the text.
 </details>
 
 <details>
-<summary>6. Your organization is upgrading its bare-metal observability stack and migrating to Grafana Loki v3.7. You need to deploy a log shipping agent to all your Kubernetes nodes to forward container logs to the new Loki instance. What is the correct architectural approach for this deployment?</summary>
+<summary>6. Your organization is upgrading its bare-metal observability stack and migrating to Grafana Loki v3.7. You need to deploy a log shipping agent to all your Kubernetes nodes to forward container logs to the new Loki instance. What is the correct architectural approach for this deployment?
+
+A. Deploy Promtail using the legacy `grafana/helm-charts` repository to ensure backward compatibility.
+B. Deploy Grafana Alloy, as Promtail reached end-of-life on March 2, 2026, and its functionality was merged into Alloy.
+C. Configure Fluent Bit with the Loki output plugin, as Grafana no longer supports native log shipping agents for bare-metal clusters.
+D. Use the OpenTelemetry Collector exclusively, as Loki v3.7 has deprecated its native log ingestion API in favor of OTLP.</summary>
+
 **Correct Answer: B.** You must deploy Grafana Alloy as your log aggregation agent when moving to modern Loki architectures. The legacy Promtail agent officially reached end-of-life on March 2, 2026, meaning it no longer receives updates, bug fixes, or security patches. All of Promtail's core functionality was directly merged into Grafana Alloy, making it the definitive replacement for shipping logs to Loki v3.7 and beyond. Continuing to deploy Promtail introduces unnecessary technical debt and security risks into your observability pipeline.
 </details>
 
 <details>
-<summary>7. Your organization wants to use Grafana's machine learning anomaly detection feature, Sift, to automatically investigate log anomalies on an air-gapped bare-metal cluster running open-source Grafana v12.x. What prevents this?</summary>
+<summary>7. Your organization wants to use Grafana's machine learning anomaly detection feature, Sift, to automatically investigate log anomalies on an air-gapped bare-metal cluster running open-source Grafana v12.x. What prevents this?
+
+A. The Sift tool requires a dedicated GPU node pool with at least 40GB of VRAM, which is not available in most bare-metal environments.
+B. Grafana's machine learning capabilities, including Sift, are proprietary features exclusive to Grafana Cloud and Grafana Enterprise, and are not included in the open-source distribution.
+C. Open-source Grafana v12.x deprecated all internal anomaly detection engines in favor of external tools like OpenSearch.
+D. The Sift engine relies on the deprecated Promtail agent for log ingestion and is incompatible with Grafana Alloy.</summary>
+
 **Correct Answer: B.** Grafana's advanced machine learning capabilities, including the Sift automated anomaly investigation tool and timeseries forecasting, are proprietary features. They are exclusively licensed for use within Grafana Cloud and Grafana Enterprise deployments. These features are fundamentally absent from the open-source Grafana v12.x distribution that you would run on an air-gapped bare-metal cluster. Organizations requiring private, on-premises ML anomaly detection must instead integrate alternative open-source tools like OpenSearch or statistical PromQL rules.
 </details>
 
 <details>
-<summary>8. You are configuring an MLOps pipeline to feed model training data from your observability stack. You decide to orchestrate the pipeline with Argo Workflows and track model experiments. Which tool should you use for experiment tracking according to the LF AI & Data foundation?</summary>
+<summary>8. You are configuring an MLOps pipeline to feed model training data from your observability stack. You decide to orchestrate the pipeline with Argo Workflows and track model experiments. Which tool should you use for experiment tracking according to the LF AI & Data foundation?
+
+A. Kubeflow
+B. Argo CD
+C. MLflow
+D. Prometheus</summary>
+
 **Correct Answer: C.** MLflow is the industry standard tool specifically designed for machine learning experiment tracking, model registry, and lifecycle management. It is officially governed by the Linux Foundation AI & Data (LF AI & Data) rather than the CNCF, reflecting its specialized focus on data science workflows rather than general cloud-native infrastructure. By integrating MLflow with Argo Workflows, teams can effectively decouple the orchestration of training pipelines from the nuanced tracking of model hyperparameters and evaluation metrics. This creates a robust, standardized stack for managing predictive AIOps models.
 </details>
 
