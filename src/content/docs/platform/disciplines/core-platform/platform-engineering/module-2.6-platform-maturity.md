@@ -316,7 +316,7 @@ flowchart TD
 | **2** | Some automation; tickets for non-standard needs |
 | **3** | Self-service for standard cases; guardrails in place |
 | **4** | Comprehensive self-service; intelligent defaults |
-| **5** | Anticipatory provisioning; infrastructure appears before needed |
+| **5** | Anticipatory, predictive provisioning |
 
 ### Dimension 8: Capabilities
 
@@ -339,67 +339,67 @@ Rate your platform on each dimension (1-5):
 ```
 DIMENSION 1: INVESTMENT
 ─────────────────────────────────────────────────────────────────
-□ (1) No dedicated resources
-□ (2) Part-time or small team (1-3 FTE)
-□ (3) Dedicated team (4-10 FTE)
-□ (4) Multiple teams, PM, clear roadmap
-□ (5) Strategic investment, executive sponsor
+[ ] (1) No dedicated resources
+[ ] (2) Part-time or small team (1-3 FTE)
+[ ] (3) Dedicated team (4-10 FTE)
+[ ] (4) Multiple teams, PM, clear roadmap
+[ ] (5) Strategic investment, executive sponsor
 
 DIMENSION 2: ADOPTION
 ─────────────────────────────────────────────────────────────────
-□ (1) <25% of teams use platform capabilities
-□ (2) 25-50% adoption, significant shadow IT
-□ (3) 50-75% adoption for standard workloads
-□ (4) 75-90% adoption, exceptions documented
-□ (5) >90% adoption, platform is default
+[ ] (1) <25% of teams use platform capabilities
+[ ] (2) 25-50% adoption, significant shadow IT
+[ ] (3) 50-75% adoption for standard workloads
+[ ] (4) 75-90% adoption, exceptions documented
+[ ] (5) >90% adoption, platform is default
 
 DIMENSION 3: INTERFACES
 ─────────────────────────────────────────────────────────────────
-□ (1) Wiki/docs only, no tooling
-□ (2) Basic CLI or simple UI
-□ (3) Developer portal with catalog, templates
-□ (4) Integrated experience across tools
-□ (5) Intelligent, context-aware interfaces
+[ ] (1) Wiki/docs only, no tooling
+[ ] (2) Basic CLI or simple UI
+[ ] (3) Developer portal with catalog, templates
+[ ] (4) Integrated experience across tools
+[ ] (5) Intelligent, context-aware interfaces
 
 DIMENSION 4: OPERATIONS
 ─────────────────────────────────────────────────────────────────
-□ (1) Reactive, frequent outages, no SLOs
-□ (2) Some monitoring, informal SLOs
-□ (3) Comprehensive monitoring, SLOs tracked
-□ (4) Proactive, self-healing, SLOs managed
-□ (5) Predictive, problems prevented
+[ ] (1) Reactive, frequent outages, no SLOs
+[ ] (2) Some monitoring, informal SLOs
+[ ] (3) Comprehensive monitoring, SLOs tracked
+[ ] (4) Proactive, self-healing, SLOs managed
+[ ] (5) Predictive, problems prevented
 
 DIMENSION 5: MEASUREMENT
 ─────────────────────────────────────────────────────────────────
-□ (1) No metrics, anecdotal success
-□ (2) Basic operational metrics (uptime)
-□ (3) Comprehensive metrics, regular reporting
-□ (4) Business impact metrics, ROI clear
-□ (5) Predictive analytics, continuous optimization
+[ ] (1) No metrics, anecdotal success
+[ ] (2) Basic operational metrics (uptime)
+[ ] (3) Comprehensive metrics, regular reporting
+[ ] (4) Business impact metrics, ROI clear
+[ ] (5) Predictive analytics, continuous optimization
 
 DIMENSION 6: ORGANIZATION
 ─────────────────────────────────────────────────────────────────
-□ (1) Ad-hoc, no clear ownership
-□ (2) Named team, unclear mandate
-□ (3) Dedicated team, product mindset
-□ (4) Platform organization, specialized teams
-□ (5) Center of excellence, strategic influence
+[ ] (1) Ad-hoc, no clear ownership
+[ ] (2) Named team, unclear mandate
+[ ] (3) Dedicated team, product mindset
+[ ] (4) Platform organization, specialized teams
+[ ] (5) Center of excellence, strategic influence
 
 DIMENSION 7: PROVISIONING
 ─────────────────────────────────────────────────────────────────
-□ (1) All manual, ticket-based
-□ (2) Some automation, many manual steps
-□ (3) Self-service for 70%+ cases
-□ (4) Comprehensive self-service, guardrails
-□ (5) Anticipatory, predictive provisioning
+[ ] (1) All manual, ticket-based
+[ ] (2) Some automation, many manual steps
+[ ] (3) Self-service for 70%+ cases
+[ ] (4) Comprehensive self-service, guardrails
+[ ] (5) Anticipatory, predictive provisioning
 
 DIMENSION 8: CAPABILITIES
 ─────────────────────────────────────────────────────────────────
-□ (1) Basic CI/CD only
-□ (2) CI/CD + basic observability
-□ (3) Full lifecycle (dev to prod)
-□ (4) Complete platform capabilities
-□ (5) Comprehensive + emerging tech
+[ ] (1) Basic CI/CD only
+[ ] (2) CI/CD + basic observability
+[ ] (3) Full lifecycle (dev to prod)
+[ ] (4) Complete platform capabilities
+[ ] (5) Comprehensive + emerging tech
 ```
 
 ### Calculating Your Score
@@ -573,25 +573,27 @@ Overall: 2.3 → 3.75 (Strong Level 3, approaching Level 4)
 
 Knowing your current level is step one. Knowing how to move up is where organizations get stuck. Each transition has specific readiness signals, common blockers, and realistic timelines.
 
+> **Pause and predict**: What is typically the biggest organizational blocker when transitioning from a Level 2 (Operational) to a Level 3 (Scalable) platform?
+
 ### Transition Readiness Checklist
 
 **Provisional (Level 1) to Operational (Level 2)**
 
 Timeline expectation: 3-6 months
 
-```
+```text
 Readiness signals (you're ready to move when):
-  ✓ A dedicated platform owner or team exists (even 1-2 people)
-  ✓ At least one workflow is documented end-to-end
-  ✓ One golden path exists and a pilot team is using it
-  ✓ Basic CI/CD pipeline runs without manual intervention
-  ✓ You can answer "how do we deploy?" without naming a specific person
+  [x] A dedicated platform owner or team exists (even 1-2 people)
+  [x] At least one workflow is documented end-to-end
+  [x] One golden path exists and a pilot team is using it
+  [x] Basic CI/CD pipeline runs without manual intervention
+  [x] You can answer "how do we deploy?" without naming a specific person
 
 Common blockers at this transition:
-  ✗ No executive sponsor — platform work competes with feature work
-  ✗ Hero culture — "John is faster than any tool" resistance
-  ✗ Scope creep — trying to solve everything at once instead of one golden path
-  ✗ No time allocated — platform work treated as side project
+  [-] No executive sponsor — platform work competes with feature work
+  [-] Hero culture — "John is faster than any tool" resistance
+  [-] Scope creep — trying to solve everything at once instead of one golden path
+  [-] No time allocated — platform work treated as side project
 
 Key metrics indicating readiness:
   • At least 2 teams use the golden path for new services
@@ -603,20 +605,20 @@ Key metrics indicating readiness:
 
 Timeline expectation: 6-12 months
 
-```
+```text
 Readiness signals (you're ready to move when):
-  ✓ >60% of teams voluntarily use the platform for standard workloads
-  ✓ Developer portal exists with a service catalog
-  ✓ Self-service works for the 3 most common provisioning requests
-  ✓ Platform SLOs are defined and tracked monthly
-  ✓ Support ticket volume is stable or declining (not growing with adoption)
-  ✓ New developers can deploy on their first week
+  [x] >60% of teams voluntarily use the platform for standard workloads
+  [x] Developer portal exists with a service catalog
+  [x] Self-service works for the 3 most common provisioning requests
+  [x] Platform SLOs are defined and tracked monthly
+  [x] Support ticket volume is stable or declining (not growing with adoption)
+  [x] New developers can deploy on their first week
 
 Common blockers at this transition:
-  ✗ Golden paths only cover one stack — teams with different needs bypass the platform
-  ✗ No migration path for existing services — only new services can adopt
-  ✗ Platform team is still reactive — backlog grows faster than capacity
-  ✗ Measurement gap — nobody tracks adoption or satisfaction systematically
+  [-] Golden paths only cover one stack — teams with different needs bypass the platform
+  [-] No migration path for existing services — only new services can adopt
+  [-] Platform team is still reactive — backlog grows faster than capacity
+  [-] Measurement gap — nobody tracks adoption or satisfaction systematically
 
 Key metrics indicating readiness:
   • >80% of new services created via golden paths
@@ -629,20 +631,20 @@ Key metrics indicating readiness:
 
 Timeline expectation: 9-18 months
 
-```
+```text
 Readiness signals (you're ready to move when):
-  ✓ >80% of all teams (not just new services) use the platform voluntarily
-  ✓ Platform ROI is quantifiable — you can state cost savings or velocity gains
-  ✓ Security and compliance policies are enforced via guardrails, not tickets
-  ✓ Platform improvements are prioritized by measured developer impact
-  ✓ Executive sponsor actively advocates for platform investment
-  ✓ Platform team operates as a product team with a roadmap and release cycle
+  [x] >80% of all teams (not just new services) use the platform voluntarily
+  [x] Platform ROI is quantifiable — you can state cost savings or velocity gains
+  [x] Security and compliance policies are enforced via guardrails, not tickets
+  [x] Platform improvements are prioritized by measured developer impact
+  [x] Executive sponsor actively advocates for platform investment
+  [x] Platform team operates as a product team with a roadmap and release cycle
 
 Common blockers at this transition:
-  ✗ ROI is assumed, not measured — leadership patience runs out
-  ✗ Legacy services remain off-platform — creates two worlds to support
-  ✗ Guardrails feel like gates — developers see the platform as bureaucracy
-  ✗ Organization structure hasn't evolved — one small team can't manage a strategic asset
+  [-] ROI is assumed, not measured — leadership patience runs out
+  [-] Legacy services remain off-platform — creates two worlds to support
+  [-] Guardrails feel like gates — developers see the platform as bureaucracy
+  [-] Organization structure hasn't evolved — one small team can't manage a strategic asset
 
 Key metrics indicating readiness:
   • Platform ROI demonstrated in business terms (dollars saved, velocity gained)
@@ -668,13 +670,13 @@ flowchart LR
 
 ### Anti-Pattern 1: Maturity Theater
 
-```
-❌ MATURITY THEATER
+**[ANTI-PATTERN]: MATURITY THEATER**
 
 "We're Level 4!" (based on one dimension being strong)
 
-Actually:
-  Investment:    4  ← This one dimension inflates perception
+**Actually:**
+```yaml
+  Investment:    4  # This one dimension inflates perception
   Adoption:      2
   Interfaces:    2
   Operations:    2
@@ -684,60 +686,57 @@ Actually:
   Capabilities:  2
   ─────────────────
   Reality:       Level 2.1
-
-✓ FIX: Use the full assessment, be honest about gaps
 ```
+
+**[FIX]:** Use the full assessment, be honest about gaps
 
 ### Anti-Pattern 2: Skipping Levels
 
-```
-❌ SKIPPING LEVELS
+**[ANTI-PATTERN]: SKIPPING LEVELS**
 
 "Let's go straight to ML-driven platform optimization!"
 
-Timeline:  [Level 1] ─────────────────────────► [Level 5]
-                           ↑
-                           └── This doesn't work
-
-Problems:
-  - Foundations aren't solid
-  - Advanced features built on shaky base
-  - Teams can't use sophisticated capabilities
-
-✓ FIX: Sequential improvement with solid foundations
+```mermaid
+flowchart LR
+    L1["Level 1"] -- "This does not work" --> L5["Level 5"]
+    style L1 stroke:#333,stroke-width:2px
+    style L5 stroke:#f66,stroke-width:2px,stroke-dasharray: 5 5
 ```
+
+**Problems:**
+- Foundations aren't solid
+- Advanced features built on shaky base
+- Teams can't use sophisticated capabilities
+
+**[FIX]:** Sequential improvement with solid foundations
 
 ### Anti-Pattern 3: Metric Myopia
 
-```
-❌ METRIC MYOPIA
+**[ANTI-PATTERN]: METRIC MYOPIA**
 
 "Our Platform NPS is 45!"
 
-But:
-  - Only 30% of developers surveyed responded
-  - Heavy users are satisfied; non-users aren't asked
-  - Satisfaction doesn't mean productivity improved
+**But:**
+- Only 30% of developers surveyed responded
+- Heavy users are satisfied; non-users aren't asked
+- Satisfaction doesn't mean productivity improved
 
-✓ FIX: Multiple metrics, include business outcomes
-```
+**[FIX]:** Multiple metrics, include business outcomes
 
 ### Anti-Pattern 4: Dimension Imbalance
 
-```
-❌ DIMENSION IMBALANCE
+**[ANTI-PATTERN]: DIMENSION IMBALANCE**
 
-Your Platform Profile
-- Investment:   Level 4
-- Interfaces:   Level 4
+**Your Platform Profile:**
+- Investment: Level 4
+- Interfaces: Level 4
 - Capabilities: Level 4
-- Adoption:     Level 1
-- Measurement:  Level 1
+- Adoption: Level 1
+- Measurement: Level 1
 
-Problem: Beautiful platform nobody uses or measures
+**Problem:** Beautiful platform nobody uses or measures.
 
-✓ FIX: Balance investment across dimensions
-```
+**[FIX]:** Balance investment across dimensions
 
 ---
 
@@ -878,7 +877,7 @@ Test your understanding of platform maturity:
 <details>
 <summary>Show Answer</summary>
 
-Likely **Level 2** (Operational) despite high scores in Interfaces and Capabilities. The low adoption rate (20%) indicates that the overall platform maturity is severely constrained by its weakest critical dimension, which is developer usage. A platform that nobody uses cannot be considered mature, regardless of how technically sophisticated its tooling might be. This scenario is a classic example of the "Beautiful Platform Nobody Used" anti-pattern, meaning the organization should pause new feature development and focus heavily on adoption drivers like understanding blockers, providing clear migration paths, and actively celebrating early adopters.
+Despite the high scores in Interfaces and Capabilities, the overall maturity is likely Level 2 (Operational). The low adoption rate of 20% indicates that the platform's overall maturity is severely constrained by its weakest critical dimension, which is developer usage. A platform that nobody uses cannot be considered mature, regardless of how technically sophisticated its underlying tooling might be. This scenario is a classic example of the 'Beautiful Platform Nobody Used' anti-pattern. The organization must pause new feature development and focus heavily on adoption drivers like understanding developer blockers, providing clear migration paths, and actively supporting early adopters.
 </details>
 
 **Question 2**: StartupX just secured Series B funding and wants to aggressively mature their platform. The CTO suggests skipping basic self-service provisioning (Level 3) and going straight to building an AI-assisted predictive infrastructure engine (Level 5) to save time. What is the danger of this approach?
@@ -886,7 +885,7 @@ Likely **Level 2** (Operational) despite high scores in Interfaces and Capabilit
 <details>
 <summary>Show Answer</summary>
 
-Skipping levels creates highly fragile foundations that cannot sustain advanced capabilities. By attempting to build an AI-assisted predictive infrastructure engine (Level 5) before establishing reliable self-service provisioning (Level 3), the startup risks creating a complex system that lacks stable underlying data and processes. This approach inevitably leads to accumulating technical debt, high support burdens, and severe developer frustration when basic needs remain unmet while the team works on speculative advanced features. To ensure long-term success, organizations must build sequentially, proving value and stabilizing at each maturity stage before moving to the next.
+Skipping levels creates highly fragile foundations that cannot sustain advanced capabilities. By attempting to build an AI-assisted predictive infrastructure engine (Level 5) before establishing reliable self-service provisioning (Level 3), the startup risks creating a complex system that lacks stable underlying data and processes. This approach inevitably leads to accumulating technical debt, high support burdens, and severe developer frustration when basic needs remain unmet. To ensure long-term success, organizations must build sequentially, proving value and stabilizing at each maturity stage before moving to the next.
 </details>
 
 **Question 3**: During a quarterly review, the VP of Engineering points out that the platform's 'Deployment Frequency' (a lagging indicator) has increased, and suggests stopping tracking 'Portal Daily Active Users' (a leading indicator) to save on telemetry costs. Why should you push back on this suggestion?
@@ -894,7 +893,7 @@ Skipping levels creates highly fragile foundations that cannot sustain advanced 
 <details>
 <summary>Show Answer</summary>
 
-You should push back because tracking only lagging indicators like Deployment Frequency tells you what has already happened, but offers no insight into future trends. Leading indicators, such as Portal Daily Active Users, provide critical early warnings about developer engagement and platform adoption before a drop-off impacts the overall deployment frequency. If developers stop using the portal today, deployment frequency won't drop until weeks or months later, at which point the damage to productivity has already been done. Maintaining visibility into both types of metrics ensures you can proactively manage platform health and validate that your leading behaviors are effectively driving the desired lagging outcomes.
+You should push back because tracking only lagging indicators like Deployment Frequency tells you what has already happened, but offers no insight into future trends. Leading indicators, such as Portal Daily Active Users, provide critical early warnings about developer engagement and platform adoption before a drop-off impacts the overall deployment frequency. If developers stop using the portal today, deployment frequency will not drop until weeks or months later, at which point the damage to productivity has already been done. Maintaining visibility into both types of metrics ensures you can proactively manage platform health and validate that your leading behaviors are effectively driving the desired outcomes.
 </details>
 
 **Question 4**: Your platform team at RetailCorp has a dedicated budget, an experienced Product Manager, and 8 engineers (Level 4 Investment/Org). However, your recent assessment shows only 15% adoption (Level 2) and you have no clear ROI metrics (Level 2). Your manager wants to spend the next quarter building a new multi-cloud deployment capability. What should you recommend the team do instead?
@@ -902,7 +901,7 @@ You should push back because tracking only lagging indicators like Deployment Fr
 <details>
 <summary>Show Answer</summary>
 
-You should strongly recommend pausing the multi-cloud deployment initiative and instead refocus the team's efforts entirely on driving adoption and establishing solid metrics. This situation represents the "Dimension Imbalance" anti-pattern, where high investment in organization and capabilities is completely wasted if the platform isn't being utilized or measured. The team's next quarter should be spent embedding with engineering teams to uncover why the adoption is only 15%, creating smooth migration paths for existing workloads, and implementing a baseline ROI tracking model. Once you have balanced your dimensions and proven that the existing capabilities bring measurable value, you can then justify expanding into new areas like multi-cloud.
+You should strongly recommend pausing the multi-cloud deployment initiative and instead refocus the team's efforts entirely on driving adoption and establishing solid metrics. This situation represents the 'Dimension Imbalance' anti-pattern, where high investment in organization and capabilities is completely wasted if the platform is not being utilized or measured. The team's next quarter should be spent embedding with engineering teams to uncover why the adoption is only 15%, creating smooth migration paths for existing workloads, and implementing a baseline ROI tracking model. Once you have balanced your dimensions and proven that the existing capabilities bring measurable value, you can then justify expanding into new areas like multi-cloud.
 </details>
 
 **Question 5**: You are defending your platform team's budget for the next fiscal year. The CFO is frustrated that after 6 months of work (currently at Level 2 maturity), you cannot provide a clear dollar-value return on investment (ROI) for the platform. At what maturity level should the CFO expect to see clearly demonstrable ROI, and why is it difficult to provide at Level 2?
@@ -910,7 +909,7 @@ You should strongly recommend pausing the multi-cloud deployment initiative and 
 <details>
 <summary>Show Answer</summary>
 
-The CFO should expect to see clearly demonstrable ROI when the platform reaches **Level 4 (Managed)**, although early measurable value starts appearing at Level 3. At Level 2, platform capabilities are still basic, self-service is limited, and most importantly, adoption across the organization is likely inconsistent or fragmented. Because not enough teams are using the platform as their default path, the aggregate time saved or velocity gained cannot yet offset the heavy initial investment required to build the platform. It is critical to set expectations with leadership early on that the platform journey follows a "J-curve," where significant ROI requires reaching a critical mass of adoption and operational stability before the financial benefits become undeniable.
+The CFO should expect to see clearly demonstrable ROI when the platform reaches Level 4 (Managed), although early measurable value starts appearing at Level 3. At Level 2, platform capabilities are still basic, self-service is limited, and most importantly, adoption across the organization is likely inconsistent or fragmented. Because not enough teams are using the platform as their default path, the aggregate time saved or velocity gained cannot yet offset the heavy initial investment required to build the platform. It is critical to set expectations with leadership early on that the platform journey follows a 'J-curve,' where significant ROI requires reaching a critical mass of adoption and operational stability before the financial benefits become undeniable.
 </details>
 
 ---
@@ -975,12 +974,12 @@ Top 3 Weakest Dimensions:
    Why it's weak: _________________________________
 
 What's the constraint?
-□ Funding/resources
-□ Skills/knowledge
-□ Organizational support
-□ Technical debt
-□ Adoption resistance
-□ Other: _________________________________________
+[ ] Funding/resources
+[ ] Skills/knowledge
+[ ] Organizational support
+[ ] Technical debt
+[ ] Adoption resistance
+[ ] Other: _________________________________________
 ```
 
 ### Part 3: Create Improvement Plan (15 minutes)
