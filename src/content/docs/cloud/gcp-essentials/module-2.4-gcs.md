@@ -106,6 +106,18 @@ gcloud storage buckets create gs://my-static-global \
   --location=US
 ```
 
+### Turbo Replication
+
+For dual-region buckets used in disaster recovery, standard geo-replication is asynchronous and offers no hard guarantees on replication time. If a regional outage occurs immediately after an upload, the data might not yet be in the second region. **Turbo Replication** provides a 15-minute recovery point objective (RPO) guarantee, ensuring 100% of newly written objects are replicated across regions within 15 minutes.
+
+```bash
+# Create a dual-region bucket with Turbo Replication enabled
+gcloud storage buckets create gs://my-critical-dr-bucket \
+  --location=US \
+  --placement=us-central1,us-east1 \
+  --enable-turbo-replication
+```
+
 ---
 
 > **Stop and think**: If Autoclass automatically optimizes storage costs with zero retrieval fees, why wouldn't you enable it on every single bucket by default? What specific workload pattern or architectural requirement would make Autoclass a financial or operational mistake?
@@ -662,16 +674,33 @@ gcloud storage buckets describe gs://$BUCKET_NAME \
 echo "Confidential Report - Q4 2024" > /tmp/report.txt
 gcloud storage cp /tmp/report.txt gs://$BUCKET_NAME/reports/q4-2024.txt
 
-# Generate a signed URL valid for 15 minutes
-# Note: This requires either a service account key or impersonation
-gcloud storage sign-url gs://$BUCKET_NAME/reports/q4-2024.txt \
-  --duration=15m
+# Create a service account for URL signing
+gcloud iam service-accounts create url-signer --display-name "URL Signer"
+export SA_EMAIL="url-signer@$(gcloud config get-value project).iam.gserviceaccount.com"
 
-# The output will contain a URL that anyone can use to download
-# the file for the next 15 minutes without authentication
+# Grant the service account read access to the bucket
+gcloud storage buckets add-iam-policy-binding gs://$BUCKET_NAME \
+  --member="serviceAccount:${SA_EMAIL}" \
+  --role="roles/storage.objectViewer"
 
-# Test the signed URL (copy it from the output above)
-# curl "SIGNED_URL_HERE" -o downloaded-report.txt
+# Grant your user permission to impersonate the service account
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+  --member="user:$(gcloud config get-value account)" \
+  --role="roles/iam.serviceAccountTokenCreator"
+
+# Wait a moment for IAM propagation
+echo "Waiting for IAM to propagate..."
+sleep 60
+
+# Generate a signed URL valid for 15 minutes using impersonation
+SIGNED_URL=$(gcloud storage sign-url gs://$BUCKET_NAME/reports/q4-2024.txt \
+  --duration=15m \
+  --impersonate-service-account=${SA_EMAIL})
+
+echo "Generated URL: $SIGNED_URL"
+
+# Test the signed URL
+curl -s "$SIGNED_URL"
 ```
 </details>
 
@@ -682,10 +711,13 @@ gcloud storage sign-url gs://$BUCKET_NAME/reports/q4-2024.txt \
 
 ```bash
 # Delete all objects (including non-current versions)
-gcloud storage rm -r gs://$BUCKET_NAME/ --all-versions
+gcloud --quiet storage rm -r gs://$BUCKET_NAME/ --all-versions
 
 # Delete the bucket
-gcloud storage buckets delete gs://$BUCKET_NAME
+gcloud --quiet storage buckets delete gs://$BUCKET_NAME
+
+# Delete the service account
+gcloud --quiet iam service-accounts delete url-signer@$(gcloud config get-value project).iam.gserviceaccount.com
 
 echo "Cleanup complete."
 ```
