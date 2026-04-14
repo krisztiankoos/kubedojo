@@ -45,53 +45,9 @@ Consider a media streaming company that deployed a 60-node Kubernetes cluster co
 
 The traditional datacenter network (access → aggregation → core) was designed for north-south traffic (client → server). Kubernetes generates massive east-west traffic (pod → pod, pod → service, pod → storage). The aggregation layer inherently becomes a severe bottleneck.
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│          TRADITIONAL 3-TIER (avoid for K8s)                  │
-│                                                               │
-│                    ┌──────────┐                              │
-│                    │   Core   │ ← single bottleneck          │
-│                    └────┬─────┘                              │
-│               ┌─────────┼─────────┐                         │
-│          ┌────▼────┐         ┌────▼────┐                    │
-│          │  Aggr 1 │         │  Aggr 2 │ ← oversubscribed   │
-│          └────┬────┘         └────┬────┘                    │
-│        ┌──────┼──────┐     ┌──────┼──────┐                  │
-│     ┌──▼──┐ ┌──▼──┐ ┌──▼──┐ ┌──▼──┐ ┌──▼──┐              │
-│     │ToR 1│ │ToR 2│ │ToR 3│ │ToR 4│ │ToR 5│              │
-│     └─────┘ └─────┘ └─────┘ └─────┘ └─────┘              │
-│                                                               │
-│  Problem: East-west traffic between ToR 1 and ToR 5        │
-│  must traverse aggregation + core = high latency + overload │
-│                                                               │
-├─────────────────────────────────────────────────────────────┤
-│          SPINE-LEAF (recommended for K8s)                    │
-│                                                               │
-│     ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐                │
-│     │Spine │  │Spine │  │Spine │  │Spine │                │
-│     │  1   │  │  2   │  │  3   │  │  4   │                │
-│     └──┬───┘  └──┬───┘  └──┬───┘  └──┬───┘                │
-│        │ ╲       │ ╲       │ ╲       │ ╲                    │
-│        │  ╲      │  ╲      │  ╲      │  ╲                   │
-│     ┌──▼──┐╲  ┌──▼──┐╲  ┌──▼──┐╲  ┌──▼──┐                │
-│     │Leaf │ ╲ │Leaf │ ╲ │Leaf │ ╲ │Leaf │                │
-│     │  1  │  ╲│  2  │  ╲│  3  │  ╲│  4  │                │
-│     │(ToR)│   │(ToR)│   │(ToR)│   │(ToR)│                │
-│     └─────┘   └─────┘   └─────┘   └─────┘                │
-│                                                               │
-│  Every leaf connects to EVERY spine (full mesh)             │
-│  Any-to-any traffic: max 2 hops (leaf → spine → leaf)      │
-│  Equal-cost paths: ECMP load-balances across spines         │
-│  Add capacity: add more spines (horizontal scaling)         │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-A modernized visualization of this architecture flow:
-
 ```mermaid
 flowchart TD
-    subgraph Traditional 3-Tier
+    subgraph Traditional 3-Tier [Avoid for K8s]
     C[Core Switch] --> A1[Aggregation 1]
     C --> A2[Aggregation 2]
     A1 --> T1[ToR 1]
@@ -102,9 +58,13 @@ flowchart TD
     end
 ```
 
+**Problem:** East-west traffic between ToR 1 and ToR 5 must traverse both aggregation and core layers. This structural limitation guarantees high latency and aggregation overload during peak Kubernetes scaling events.
+
+### Spine-Leaf Architecture
+
 ```mermaid
 flowchart TD
-    subgraph Spine-Leaf Topology
+    subgraph Spine-Leaf Topology [Recommended for K8s]
     S1[Spine 1] --- L1[Leaf 1 ToR]
     S1 --- L2[Leaf 2 ToR]
     S1 --- L3[Leaf 3 ToR]
@@ -120,9 +80,13 @@ flowchart TD
     end
 ```
 
-> **Pause and predict**: Looking at the spine-leaf diagram above, count the number of hops a packet takes from a server in rack 1 to a server in rack 4. Now count the hops in the traditional 3-tier topology. Why does this difference matter for Kubernetes east-west traffic?
+**Benefits of Spine-Leaf:**
+- Every leaf connects to EVERY spine (full mesh).
+- Any-to-any traffic guarantees a maximum of 2 hops (leaf → spine → leaf).
+- Equal-cost paths allow ECMP to load-balance seamlessly across all spines.
+- Capacity can be added effortlessly by adding more spines (horizontal scaling).
 
-### Spine-Leaf Architecture
+> **Pause and predict**: Looking at the spine-leaf diagram above, count the number of hops a packet takes from a server in rack 1 to a server in rack 4. Now count the hops in the traditional 3-tier topology. Why does this difference matter for Kubernetes east-west traffic?
 
 Spine-leaf topology is an application of the Clos network architecture, originally described by Charles Clos in his 1953 Bell System Technical Journal paper 'A Study of Non-Blocking Switching Networks', vol. 32, pp. 406-424. The fundamental genius of a Clos network is that it provides a strictly non-blocking interconnect fabric. By structuring the network in a folded multi-stage array, every input can reach every output without contention, assuming sufficient interconnect links are provisioned. 
 
@@ -138,16 +102,12 @@ While many vendors suggest that the dominant server-to-ToR link speed in modern 
 | **Spine** | 100GbE | 32x 100G | Interconnect fabric |
 | **Border leaf** | 100GbE down, 400GbE up | 48x 100G + 8x 400G | WAN/internet uplinks |
 
-```text
-Leaf: 48 x 25GbE = 1,200 Gbps downlink
-      6 x 100GbE = 600 Gbps uplink
+**Example Calculation:**
+- Leaf Downlink: 48 x 25GbE = 1,200 Gbps
+- Leaf Uplink: 6 x 100GbE = 600 Gbps
+- Oversubscription ratio = 1,200 / 600 = **2:1**
 
-Oversubscription ratio = 1,200 / 600 = 2:1
-
-For Kubernetes east-west heavy workloads:
-  Target: 2:1 or better (3:1 acceptable for light workloads)
-  Avoid: 5:1+ (will cause drops under load)
-```
+For Kubernetes east-west heavy workloads, target **2:1 or better** (3:1 is acceptable for light workloads). Avoid **5:1+** as it will predictably cause packet drops under load.
 
 To support these massive backbone speeds, IEEE standards have continually evolved. 100 Gigabit Ethernet is standardized under IEEE 802.3ba-2010, ratified June 17, 2010. Pushing the boundary further, 800 Gigabit Ethernet is standardized under IEEE 802.3df-2024, approved February 16, 2024. Looking forward, the 1.6 Terabit Ethernet standard (IEEE 802.3dj) targeting 200 Gb/s per lane was originally slated for 2026 but is at risk of schedule slippage due to extreme signal integrity challenges.
 
@@ -173,52 +133,14 @@ EVPN-VXLAN integration (using EVPN as a control plane over a VXLAN data plane) i
 
 ### Recommended VLANs
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│              VLAN ARCHITECTURE                               │
-│                                                               │
-│  VLAN 10: Management                                        │
-│  ├── BMC/IPMI interfaces (out-of-band)                     │
-│  ├── Jump hosts, monitoring                                 │
-│  └── Subnet: 10.0.10.0/24                                  │
-│                                                               │
-│  VLAN 20: Kubernetes Node Network                           │
-│  ├── kubelet, API server, etcd communication                │
-│  ├── Pod-to-pod traffic (if using host networking CNI)      │
-│  └── Subnet: 10.0.20.0/22 (1,022 hosts)                   │
-│                                                               │
-│  VLAN 30: Storage Network                                   │
-│  ├── Ceph public + cluster networks                         │
-│  ├── NFS, iSCSI traffic                                     │
-│  └── Subnet: 10.0.30.0/24                                  │
-│  └── MTU: 9000 (jumbo frames for storage performance)      │
-│                                                               │
-│  VLAN 40: PXE / Provisioning                                │
-│  ├── DHCP for PXE boot                                      │
-│  ├── TFTP/HTTP for OS images                                │
-│  └── Subnet: 10.0.40.0/24                                  │
-│  └── Isolated: only accessible from provisioning server     │
-│                                                               │
-│  VLAN 50: External / Ingress                                │
-│  ├── Load balancer VIPs (MetalLB)                           │
-│  ├── External-facing services                               │
-│  └── Subnet: 10.0.50.0/24                                  │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-A modernized visualization of this segmentation:
-
 ```mermaid
 graph TD
     subgraph VLAN Architecture
-    V10[VLAN 10: Management<br>10.0.10.0/24] --- V10a[BMC/IPMI]
-    V10 --- V10b[Jump hosts]
-    V20[VLAN 20: K8s Node<br>10.0.20.0/22] --- V20a[kubelet, API, etcd]
-    V20 --- V20b[Pod-to-pod traffic]
-    V30[VLAN 30: Storage<br>10.0.30.0/24<br>MTU 9000] --- V30a[Ceph, NFS, iSCSI]
-    V40[VLAN 40: PXE<br>10.0.40.0/24<br>Isolated] --- V40a[DHCP, TFTP, HTTP]
-    V50[VLAN 50: External<br>10.0.50.0/24] --- V50a[Load balancer VIPs]
+    V10["VLAN 10: Management<br>10.0.10.0/24"] --- V10a["BMC/IPMI, Jump hosts"]
+    V20["VLAN 20: K8s Node<br>10.0.20.0/22"] --- V20a["kubelet, API, etcd, Pods"]
+    V30["VLAN 30: Storage<br>10.0.30.0/24 (MTU 9000)"] --- V30a["Ceph, NFS, iSCSI"]
+    V40["VLAN 40: PXE<br>10.0.40.0/24 (Isolated)"] --- V40a["DHCP, TFTP, HTTP"]
+    V50["VLAN 50: External<br>10.0.50.0/24"] --- V50a["Load balancer VIPs"]
     end
 ```
 
@@ -228,58 +150,40 @@ graph TD
 
 To guarantee high availability, physical server interfaces are grouped. Link Aggregation Control Protocol (LACP) is defined in IEEE 802.3ad, added to the IEEE 802.3 standard in March 2000, and later incorporated into IEEE 802.3-2018. 
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│              SERVER NIC CONFIGURATION                        │
-│                                                               │
-│  NIC 0 (25GbE) ─── Bond (LACP) ─── Trunk port             │
-│  NIC 1 (25GbE) ─── Bond (LACP) ─── (carries VLAN 20,30,50)│
-│                                                               │
-│  NIC 2 (1GbE)  ─── Management ──── Access port (VLAN 10)   │
-│                                                               │
-│  BMC NIC (1GbE) ── IPMI ────────── Access port (VLAN 10)   │
-│                                                               │
-│  Bond configuration (LACP/802.3ad):                         │
-│  ├── Active-active (doubles bandwidth: 50 Gbps)            │
-│  ├── Failover if one NIC or cable fails                    │
-│  └── Switch must support LACP (most enterprise switches do)│
-│                                                               │
-│  Linux bond setup:                                           │
-│  # /etc/netplan/01-bond.yaml (Ubuntu)                       │
-│  network:                                                    │
-│    version: 2                                                │
-│    bonds:                                                    │
-│      bond0:                                                  │
-│        interfaces: [eno1, eno2]                             │
-│        parameters:                                           │
-│          mode: 802.3ad                                       │
-│          lacp-rate: fast                                     │
-│          transmit-hash-policy: layer3+4                      │
-│    vlans:                                                    │
-│      vlan20:                                                 │
-│        id: 20                                                │
-│        link: bond0                                           │
-│        addresses: [10.0.20.10/22]                           │
-│      vlan30:                                                 │
-│        id: 30                                                │
-│        link: bond0                                           │
-│        addresses: [10.0.30.10/24]                           │
-│        mtu: 9000                                             │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-A modernized visualization of NIC assignment:
-
 ```mermaid
 flowchart LR
     subgraph Server NIC Configuration
-    N0[NIC 0: 25GbE] --> B[Bond LACP]
+    N0[NIC 0: 25GbE] --> B["Bond (LACP Active-Active 50Gbps)"]
     N1[NIC 1: 25GbE] --> B
-    B --> T[Trunk Port: VLAN 20, 30, 50]
-    N2[NIC 2: 1GbE] --> A1[Access Port: VLAN 10]
-    N3[BMC NIC: 1GbE] --> A2[Access Port: VLAN 10]
+    B --> T["Trunk Port: VLANs 20, 30, 50"]
+    N2[NIC 2: 1GbE] --> A1["Access Port: VLAN 10 (Mgmt)"]
+    N3[BMC NIC: 1GbE] --> A2["Access Port: VLAN 10 (IPMI)"]
     end
+```
+
+**Linux Bond Setup (Ubuntu netplan):**
+
+```yaml
+# /etc/netplan/01-bond.yaml
+network:
+  version: 2
+  bonds:
+    bond0:
+      interfaces: [eno1, eno2]
+      parameters:
+        mode: 802.3ad
+        lacp-rate: fast
+        transmit-hash-policy: layer3+4
+  vlans:
+    vlan20:
+      id: 20
+      link: bond0
+      addresses: [10.0.20.10/22]
+    vlan30:
+      id: 30
+      link: bond0
+      addresses: [10.0.30.10/24]
+      mtu: 9000
 ```
 
 ---
@@ -289,38 +193,6 @@ flowchart LR
 ### Why Jumbo Frames Matter
 
 Default Ethernet MTU is 1500 bytes. Kubernetes overlay networks (VXLAN, Geneve) add significant headers:
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│              MTU AND OVERLAY OVERHEAD                        │
-│                                                               │
-│  Standard MTU (1500 bytes):                                 │
-│  ┌──────┬──────────────────────────────┐                    │
-│  │ VXLAN│ Inner Ethernet │ IP │ TCP │ Payload              │
-│  │  50B │     14B        │20B │20B  │ 1396B                │
-│  └──────┴──────────────────────────────┘                    │
-│  Overhead: 104 bytes (7% of each packet wasted)             │
-│                                                               │
-│  Jumbo MTU (9000 bytes):                                    │
-│  ┌──────┬──────────────────────────────────────────────┐    │
-│  │ VXLAN│ Inner Ethernet │ IP │ TCP │  Payload (8896B)  │   │
-│  │  50B │     14B        │20B │20B  │                    │   │
-│  └──────┴──────────────────────────────────────────────┘    │
-│  Overhead: 104 bytes (1.2% of each packet wasted)           │
-│                                                               │
-│  With jumbo frames:                                          │
-│  ✓ 6x less header overhead per byte of data                │
-│  ✓ Fewer packets per data transfer (less CPU interrupt load)│
-│  ✓ Critical for storage traffic (Ceph, NFS)                │
-│                                                               │
-│  IMPORTANT: ALL devices in the path must support jumbo:     │
-│  Server NICs, bonds, VLANs, switches, routers               │
-│  One device with MTU 1500 = fragmentation = performance drop│
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-A modernized visualization of header overhead:
 
 ```mermaid
 flowchart LR
@@ -333,6 +205,16 @@ flowchart LR
     B1[VXLAN 50B] --- B2[Inner Ethernet 14B] --- B3[IP 20B] --- B4[TCP 20B] --- B5[Payload 8896B]
     end
 ```
+
+- **Standard MTU Overhead**: 104 bytes (7% of each packet wasted).
+- **Jumbo MTU Overhead**: 104 bytes (1.2% of each packet wasted).
+
+**With jumbo frames:**
+- 6x less header overhead per byte of data.
+- Fewer packets per data transfer resulting in less CPU interrupt load.
+- Absolutely critical for high-throughput storage traffic (Ceph, NFS).
+
+**IMPORTANT:** ALL devices in the path must support jumbo frames: Server NICs, bonds, VLANs, switches, and routers. A single device with an MTU of 1500 causes fragmentation and an instant performance drop.
 
 ### MTU Settings by Network
 
@@ -355,11 +237,9 @@ ping -c 4 -M do -s 8972 10.0.30.1
 
 # Check interface MTU
 ip link show bond0
-# ... mtu 9000 ...
 
-# Set MTU on Linux
+# Set MTU on Linux dynamically
 ip link set bond0 mtu 9000
-# Or permanently in netplan/interfaces config
 ```
 
 ---
@@ -399,59 +279,24 @@ Use of BGP as the sole routing protocol for large-scale datacenter fabrics is do
 
 ### L2 Domain Boundaries
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│           L2 vs L3 DESIGN                                    │
-│                                                               │
-│  SMALL CLUSTER (< 3 racks):                                │
-│  ┌──────────────────────────────────────┐                   │
-│  │          L2 Domain (one VLAN)        │                   │
-│  │  ┌────┐  ┌────┐  ┌────┐             │                   │
-│  │  │Rack│  │Rack│  │Rack│             │                   │
-│  │  │ A  │  │ B  │  │ C  │             │                   │
-│  │  └────┘  └────┘  └────┘             │                   │
-│  │  All nodes in same broadcast domain  │                   │
-│  │  Simple: ARP works, no routing needed│                   │
-│  └──────────────────────────────────────┘                   │
-│                                                               │
-│  LARGE CLUSTER (> 5 racks):                                 │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                  │
-│  │ L2: Rack │  │ L2: Rack │  │ L2: Rack │                  │
-│  │ A (VLAN  │  │ B (VLAN  │  │ C (VLAN  │                  │
-│  │ 20a)     │  │ 20b)     │  │ 20c)     │                  │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘                  │
-│       │              │              │                        │
-│       └──────── L3 Routing ─────────┘                       │
-│              (BGP between leaves)                            │
-│                                                               │
-│  Each rack gets its own /24 or /25 subnet                   │
-│  L3 routing between racks (no broadcast flooding)           │
-│  BGP advertises routes between leaf switches                │
-│  Scales to thousands of nodes                                │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-A modernized visualization of L2 vs L3 boundaries:
-
 ```mermaid
 graph TD
-    subgraph Small Cluster - L2 Domain
-    R1[Rack A] --- V[Single VLAN]
+    subgraph Small Cluster: Less than 3 Racks
+    R1[Rack A] --- V[Single L2 Domain / VLAN]
     R2[Rack B] --- V
     R3[Rack C] --- V
     end
-    subgraph Large Cluster - L3 Domain
-    L1[Rack A - VLAN 20a] --- BGP((BGP Routing))
-    L2[Rack B - VLAN 20b] --- BGP
-    L3[Rack C - VLAN 20c] --- BGP
+    subgraph Large Cluster: 5+ Racks
+    L1["Rack A (VLAN 20a)"] --- BGP((L3 Routing - BGP between leaves))
+    L2["Rack B (VLAN 20b)"] --- BGP
+    L3["Rack C (VLAN 20c)"] --- BGP
     end
 ```
 
 **Rule of thumb:**
-- < 200 nodes, < 3 racks: L2 (single broadcast domain) is fine
-- \> 200 nodes or > 5 racks: L3 routing between racks with BGP
-- Broadcast storms can propagate across all 8 racks if left as a massive flat L2 domain.
+- **< 200 nodes, < 3 racks:** L2 (single broadcast domain) is fine. Simple ARP works natively.
+- **> 200 nodes or > 5 racks:** L3 routing between racks with BGP. Each rack receives its own /24 or /25 subnet.
+- Broadcast storms can propagate across all racks if left as a massive flat L2 domain. L3 isolation limits failures to a single boundary.
 
 ---
 
@@ -465,53 +310,23 @@ By leveraging standard BGP capabilities, modern Container Network Interfaces can
 
 The diagram below shows Calico peering directly with the datacenter ToR switches via BGP. This eliminates the VXLAN encapsulation layer entirely -- pod IPs become first-class citizens in the datacenter routing table, meaning external systems can reach pods without NAT or proxy:
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│           CALICO BGP WITH DATACENTER FABRIC                  │
-│                                                               │
-│  Spine Switches                                              │
-│  ┌──────┐  ┌──────┐                                        │
-│  │Spine1│  │Spine2│  ← Route reflectors (optional)         │
-│  └──┬───┘  └──┬───┘                                        │
-│     │╲        │╲                                             │
-│  ┌──▼──┐   ┌──▼──┐                                         │
-│  │Leaf1│   │Leaf2│  ← BGP peers with Calico                │
-│  └──┬──┘   └──┬──┘                                         │
-│     │         │                                              │
-│  ┌──▼──────┐ ┌──▼──────┐                                    │
-│  │ Node 1  │ │ Node 2  │                                    │
-│  │         │ │         │                                    │
-│  │ Calico  │ │ Calico  │  ← Calico peers with leaf switch  │
-│  │ BGP     │ │ BGP     │                                    │
-│  │         │ │         │                                    │
-│  │ Pod     │ │ Pod     │  ← Pod IPs advertised via BGP     │
-│  │10.244.  │ │10.244.  │    to datacenter fabric            │
-│  │  1.0/24 │ │  2.0/24 │                                    │
-│  └─────────┘ └─────────┘                                    │
-│                                                               │
-│  Result: Pod IPs are routable on the datacenter network     │
-│  No overlay (VXLAN/Geneve) needed = no encapsulation overhead│
-│  External services can reach pods directly                  │
-│  Leaf switches have routes to pod CIDRs                     │
-│                                                               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-A modernized visualization of Calico BGP peering:
-
 ```mermaid
 flowchart TD
+    subgraph Calico BGP with Datacenter Fabric
     S1[Spine 1] --> L1[Leaf 1]
     S1 --> L2[Leaf 2]
     S2[Spine 2] --> L1
     S2 --> L2
-    L1 --> N1[Node 1<br>Calico BGP<br>10.244.1.0/24]
-    L2 --> N2[Node 2<br>Calico BGP<br>10.244.2.0/24]
+    L1 --> N1["Node 1<br>Calico BGP<br>Pod: 10.244.1.0/24"]
+    L2 --> N2["Node 2<br>Calico BGP<br>Pod: 10.244.2.0/24"]
     N1 -. BGP Peer .- L1
     N2 -. BGP Peer .- L2
+    end
 ```
 
-```text
+**Result:** Pod IPs are natively routable on the datacenter network. No overlay (VXLAN/Geneve) means zero encapsulation overhead. External services can communicate with pods directly because leaf switches possess precise routes to the pod CIDRs.
+
+```yaml
 # Calico BGPConfiguration
 apiVersion: projectcalico.org/v3
 kind: BGPConfiguration
@@ -592,21 +407,7 @@ Your leaf switch has 48x 25GbE downlink ports and 4x 100GbE uplink ports. What i
 <details>
 <summary>Answer</summary>
 
-**Oversubscription ratio: 3:1.**
-
-Calculation:
-- Total downlink: 48 x 25 Gbps = 1,200 Gbps
-- Total uplink: 4 x 100 Gbps = 400 Gbps
-- Ratio: 1,200 / 400 = 3:1
-
-**Is it acceptable?** For most Kubernetes workloads, 3:1 is acceptable. Standard microservices with moderate east-west traffic will not saturate the uplinks.
-
-However, for:
-- **Storage-heavy workloads** (Ceph, distributed databases): 3:1 may cause congestion during rebalancing. Target 2:1.
-- **ML/AI training** (GPU clusters with all-reduce): Very high east-west. Target 1:1 (non-blocking).
-- **Video transcoding**: High sustained bandwidth. Target 2:1.
-
-To improve: add 2 more 100GbE uplinks (6x 100G = 600 Gbps, ratio becomes 2:1).
+**Oversubscription ratio: 3:1.** To calculate this, divide the total downlink bandwidth (48 ports × 25 Gbps = 1,200 Gbps) by the total uplink bandwidth (4 ports × 100 Gbps = 400 Gbps), resulting in a 3:1 ratio. For most standard Kubernetes workloads, this 3:1 oversubscription ratio is perfectly acceptable because microservices typically generate moderate, bursty east-west traffic that will not saturate the uplinks. However, if your cluster handles storage-heavy workloads like Ceph or ML/AI training with continuous all-reduce operations, this ratio will inevitably cause congestion and packet drops. In such demanding scenarios, you must target a 2:1 or even 1:1 non-blocking ratio by adding more 100GbE uplinks to the leaf switch.
 </details>
 
 ### Question 2
@@ -615,21 +416,7 @@ Your team is deploying a new bare-metal Kubernetes cluster. The storage team ins
 <details>
 <summary>Answer</summary>
 
-**You should configure native routing (BGP).**
-
-**Native routing advantages on bare metal:**
-
-1. **No encapsulation overhead**: VXLAN adds 50 bytes per packet. On a 1500 MTU network, that is 3.3% overhead. With millions of packets per second, this adds up to measurable CPU load and bandwidth waste.
-
-2. **Pod IPs are routable**: External systems (load balancers, monitoring, databases) can reach pods directly without NAT or proxy. This simplifies debugging and architecture.
-
-3. **Existing datacenter fabric integration**: Your ToR switches already run BGP. Calico/Cilium can peer directly with them, making pod CIDRs part of the datacenter routing table.
-
-4. **Better performance**: No encap/decap CPU cost. Packet headers are standard IP — hardware offloading works (TSO, GRO, checksum offload).
-
-5. **Simpler debugging**: `tcpdump` shows real source/destination IPs, not VXLAN-wrapped packets.
-
-**When VXLAN is still needed**: Multi-tenant environments where tenants need overlapping IP ranges, or when the datacenter network team will not allow BGP peering with Kubernetes nodes.
+**You should configure native routing (BGP).** Implementing BGP natively eliminates encapsulation overhead, as VXLAN adds 50 bytes per packet which results in measurable CPU load and bandwidth waste at millions of packets per second. Because pod IPs become natively routable across the entire datacenter fabric, external systems such as load balancers or monitoring tools can reach the pods directly without NAT or proxies. This approach seamlessly integrates with your ToR switches that already utilize BGP, transforming your pod CIDRs into first-class citizens in the datacenter routing tables. Consequently, performance is vastly improved and network debugging is vastly simplified since network tools like `tcpdump` will reveal real source and destination IP addresses.
 </details>
 
 ### Question 3
@@ -638,22 +425,7 @@ You are designing the network for a 200-node Kubernetes cluster across 8 racks. 
 <details>
 <summary>Answer</summary>
 
-**L3 (routed) between racks.**
-
-At 200 nodes across 8 racks:
-- An L2 domain spanning 8 racks means ~200 nodes in one broadcast domain
-- ARP traffic scales with N^2 — 200 nodes = 40,000 potential ARP entries
-- Broadcast storms can propagate across all 8 racks
-- A spanning-tree reconvergence (if using STP) can cause seconds of network outage
-
-**L3 design:**
-- Each rack gets its own /25 subnet (126 hosts per rack)
-- Leaf switches route between subnets via BGP
-- No broadcast domain spans more than one rack
-- Adding more racks = adding more L3 routes, not expanding L2 domain
-- Calico/Cilium BGP peers with the leaf switches
-
-**L2 is fine for**: < 3 racks, < 100 nodes (small enough that broadcast is manageable).
+**L3 (routed) between racks is the correct choice for a cluster of this size.** If you were to span a single L2 domain across 8 racks, all 200 nodes would reside in a massive broadcast domain, causing ARP traffic to scale exponentially and waste network capacity. A single spanning-tree reconvergence event or bridging loop in this flat L2 topology could easily paralyze the entire cluster with a broadcast storm. By implementing an L3 design, each rack is assigned its own isolated /25 subnet, and BGP seamlessly routes traffic between the racks at the leaf switches. This strictly confines broadcast traffic to a single rack while allowing the network infrastructure to scale horizontally to thousands of nodes without introducing stability risks.
 </details>
 
 ### Question 4
@@ -662,27 +434,7 @@ A server's bonded interface shows 50 Gbps capacity (2x 25GbE LACP), but `iperf3`
 <details>
 <summary>Answer</summary>
 
-**LACP bond bandwidth is per-flow, not aggregate.**
-
-LACP (802.3ad) distributes traffic across links based on a hash of the packet header (source/destination IP and port). A single TCP connection (single flow) can only use one physical link — 25 Gbps maximum.
-
-The 50 Gbps aggregate bandwidth is only achievable with multiple concurrent flows. `iperf3` with a single connection tests single-flow performance.
-
-**To verify aggregate bandwidth:**
-```bash
-# Run iperf3 with multiple parallel flows
-iperf3 -c 10.0.20.20 -P 8  # 8 parallel connections
-# This should achieve close to 50 Gbps
-```
-
-**Hash policy also matters:**
-- `layer2`: Hash on MAC addresses (poor distribution for same-subnet traffic)
-- `layer3+4`: Hash on IP + port (much better distribution for K8s traffic)
-
-```bash
-# Set the bond hash policy
-ip link set bond0 type bond xmit_hash_policy layer3+4
-```
+**LACP (802.3ad) bond bandwidth is calculated per-flow, not as a single aggregate stream.** The protocol distributes traffic across physical links based on a hash of the packet header (such as source/destination IP and port), meaning a single TCP connection can only traverse one physical link at a time, maxing out at 25 Gbps. To actually achieve the 50 Gbps aggregate bandwidth, your workload must generate multiple concurrent connections that the hashing algorithm can distribute across both links. You can verify this behavior by running a tool like `iperf3` with the `-P` flag to simulate multiple parallel streams. Additionally, ensuring your Linux bond is configured with the `layer3+4` transmit hash policy will provide much better flow distribution for Kubernetes traffic compared to basic MAC address hashing.
 </details>
 
 ### Question 5
@@ -691,9 +443,7 @@ Your machine learning cluster relies on RoCE (RDMA over Converged Ethernet) for 
 <details>
 <summary>Answer</summary>
 
-**The design will fail because RoCE v1 is strictly a Layer-2 protocol.**
-
-It relies on MAC addresses and cannot be routed across the Layer-3 boundaries that separate the racks in a modern spine-leaf topology. To scale across multiple racks, you must implement **RoCE v2**, which encapsulates the RDMA transport in UDP/IP datagrams. This UDP encapsulation allows the datacenter's spine switches to route the RDMA traffic across standard L3 networks using ECMP (Equal-Cost Multi-Path) load balancing, freeing the cluster from the constraints of a single broadcast domain.
+**The design will fail because RoCE v1 is strictly a Layer-2 protocol that relies solely on MAC addresses.** It cannot be routed across the Layer-3 boundaries that separate the individual racks in your modern spine-leaf topology. To scale the RDMA traffic across multiple racks, you must implement RoCE v2, which encapsulates the RDMA transport in standard UDP/IP datagrams. This UDP encapsulation allows the datacenter's spine switches to route the RDMA traffic across standard L3 networks using ECMP load balancing. By upgrading to RoCE v2, you free the machine learning cluster from the constraints of a single broadcast domain.
 </details>
 
 ### Question 6
@@ -702,7 +452,7 @@ A new network engineer configures a Kubernetes cluster using a VXLAN overlay but
 <details>
 <summary>Answer</summary>
 
-The application layer will experience severe throughput degradation due to silent IP fragmentation. VXLAN adds 50 bytes of overhead to every packet. If the outer packet exceeds the 1500-byte MTU of the physical switches, the switch must either drop the packet or fragment it into smaller pieces. Fragmentation drastically increases CPU interrupt load on the receiving nodes, leading to high latency, dropped connections, and TCP retransmissions.
+**The application layer will experience severe throughput degradation and increased latency due to silent IP fragmentation.** Because VXLAN adds 50 bytes of overhead to every packet, the encapsulated frame will easily exceed the standard 1500-byte MTU of the physical switches if Jumbo frames are not configured. When this occurs, the switch or kernel must either drop the packet entirely or fragment it into smaller pieces. Fragmentation drastically increases the CPU interrupt load on the receiving nodes as they struggle to reassemble the packets. This overhead ultimately leads to dropped connections, TCP retransmissions, and plummeting application performance.
 </details>
 
 ### Question 7
@@ -711,7 +461,7 @@ Your organization wants to scale a bare-metal Kubernetes cluster to 500 nodes sp
 <details>
 <summary>Answer</summary>
 
-The design is highly susceptible to crippling broadcast storms and ARP flooding. In a flat L2 network, broadcast traffic must reach every single node. As the node count grows, the volume of ARP requests scales exponentially. A single spanning-tree reconvergence event or a bridging loop can cause a broadcast storm that paralyzes all 15 racks simultaneously.
+**This design is highly susceptible to crippling broadcast storms and ARP flooding across the datacenter.** In a flat L2 network, broadcast traffic such as ARP requests must be flooded to every single node residing within the VLAN. As the node count grows to 500, the volume of background broadcast traffic scales exponentially and can easily saturate the network links. Furthermore, a single spanning-tree reconvergence event or a bridging loop anywhere in the 15 racks could cause a broadcast storm that paralyzes the entire cluster simultaneously. To prevent this cascading failure, the network must be divided into L3 boundaries routed at the Top-of-Rack switches.
 </details>
 
 ---
