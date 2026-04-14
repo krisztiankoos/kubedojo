@@ -441,6 +441,8 @@ In most companies, the answer is no. Postmortems get filed in a wiki, maybe anno
 
 This is the learning distribution problem, and solving it is just as important as writing the postmortem in the first place.
 
+> **Stop and think**: If a critical incident happened on a different team in your organization yesterday, would you know about it today? How would that knowledge reach you?
+
 ### Strategies That Work
 
 **1. Postmortem Reading Clubs**
@@ -911,84 +913,4 @@ The most effective way to handle this is to redirect the focus from individuals 
 
 ### Scenario
 
-You've been asked to review and rewrite the following postmortem that was written by another team. It's full of blame, vague action items, and missing analysis. Your job is to transform it into a proper blameless postmortem with systemic focus.
-
-### The Original (Flawed) Postmortem
-
-```text
-POSTMORTEM: Service Outage, January 12
-
-Summary:
-On January 12, Kevin pushed a Helm chart update to production
-that had a typo in the values.yaml file. This caused all 24
-replicas of the order-service to crash. Kevin should have tested
-this in staging first but he skipped it because he was rushing to
-meet a deadline. The outage lasted 2 hours and affected all
-customers. Sarah from the platform team was on-call but she took
-20 minutes to respond to the page because she was at lunch. When
-she finally got to it, she didn't know how to roll back a Helm
-release because she's new and nobody trained her.
-
-Root Cause:
-Kevin's typo in values.yaml and Sarah's slow response.
-
-Action Items:
-1. Kevin needs to be more careful with YAML
-2. Sarah needs Helm training
-3. We should probably add some tests
-4. Don't rush deployments
-
-Lessons Learned:
-Test your code before deploying.
-```
-
-### Your Assignment
-
-Rewrite this postmortem using the template from Part 8. You must:
-
-1. **Remove all blame language** --- refer to roles and systems, not individuals
-2. **Build a plausible timeline** --- invent reasonable timestamps and sequence of events based on the narrative
-3. **Conduct a 5 Whys analysis** --- dig from the typo down to systemic causes
-4. **Draw a fishbone diagram** --- identify contributing factors across all categories
-5. **Write 6+ SMART action items** --- with owners (use role names), deadlines, and verification criteria
-6. **Add a "What Went Well" section** --- find at least 2 things that went right
-7. **Create a learning distribution plan** --- how will the org learn from this?
-
-### Success Criteria
-
-Your rewritten postmortem should:
-
-- [ ] Contain zero references to individuals by name in the root cause or contributing factors
-- [ ] Have a minute-by-minute timeline with at least 12 entries
-- [ ] Include a 5 Whys analysis that reaches a systemic root cause (not a person)
-- [ ] Include a fishbone diagram with at least 3 categories populated
-- [ ] Have 6+ action items that are all SMART
-- [ ] Include impact data (estimate user count, revenue, SLA violations)
-- [ ] Have a learning distribution plan with at least 3 specific activities
-- [ ] Pass the "substitution test" --- if different people had been involved, would the analysis change? It shouldn't.
-
-### Bonus Challenge
-
-After rewriting the postmortem, write a 5-sentence email to the original author explaining *why* you changed what you changed, without making them feel attacked. Practice the same blameless philosophy in your feedback that you're applying to the postmortem itself.
-
----
-
-## Summary
-
-Blameless postmortems are not about being soft on failure. They're about being *smart* about failure. When people feel safe reporting and analyzing mistakes, you get honest data. When you have honest data, you can fix the real problems. When you fix the real problems, the system gets stronger. When the system gets stronger, incidents decrease. When incidents decrease, everyone sleeps better.
-
-The alternative --- blame, punishment, and fear --- produces exactly one outcome: silence. And silence is the most dangerous failure mode of all, because you can't fix what you can't see.
-
-**Key takeaways**:
-
-1. Human error is a symptom, never the root cause. Always dig deeper.
-2. The 5 Whys technique is simple and powerful, but watch for single-thread bias.
-3. Fishbone diagrams capture the full landscape of contributing factors.
-4. Timelines must be built from automated sources first, human memory second.
-5. Action items must be SMART --- or they'll never get done.
-6. The postmortem isn't done when it's written. It's done when the learnings are distributed and the action items are complete.
-7. Measure your postmortem process. If the same incidents keep recurring, something in the process is broken.
-
----
-
-> **Next Module**: [Module 1.3: Effective On-Call](../module-1.3-oncall/) --- Design on-call rotations that don't burn out your team, build runbooks that actually help at 3 AM, and create escalation paths that work under pressure.
+You've been asked to review and rewrite the following post
