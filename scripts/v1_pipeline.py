@@ -4005,6 +4005,21 @@ def cmd_reset_stuck(args):
             ms["phase"] = "pending"
             was_stuck = True
 
+        # Stale phase=write with valid draft on disk — route to review.
+        # This catches modules left over from --write-only runs (before
+        # the phase="review" fix) or crashed pipelines that left state
+        # pointing at write even though the draft is complete.
+        if ms.get("phase") == "write":
+            has_legit_rewrite = bool(
+                ms.get("severity") in ("severe", "targeted") and ms.get("checks_failed")
+            )
+            module_path = find_module_path(key)
+            if not has_legit_rewrite and module_path is not None:
+                if _safe_read_len(module_path) >= 2000:
+                    ms["phase"] = "review"
+                    cleared_errors.append("stale phase=write (draft exists on disk)")
+                    was_stuck = True
+
         if was_stuck:
             reset_count += 1
             reset_events.append((key, cleared_errors, ms["phase"]))
