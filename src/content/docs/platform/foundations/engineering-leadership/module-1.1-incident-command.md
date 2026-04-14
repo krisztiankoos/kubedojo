@@ -113,7 +113,7 @@ The Incident Commander is the single point of authority during an incident. They
 
 The hardest part of being IC is **not touching the keyboard**. If the IC starts debugging, nobody is coordinating. This is the number one failure mode in incident management.
 
-> **Rule of thumb**: The moment you start typing commands into a terminal, you've stopped being the Incident Commander.
+> **Pause and predict**: If the Incident Commander is the most senior engineer on the team, and they see a command the Ops Lead is typing is slightly inefficient, should they intervene and take over the keyboard?
 
 ### Role 2: Communications Lead
 
@@ -371,6 +371,8 @@ flowchart TD
     Keep2 --> Final
 ```
 
+> **Stop and think**: Why is "Are customers affected RIGHT NOW?" the very first question in the triage flow? How does this change your response compared to finding a severe bug that hasn't triggered yet?
+
 **Critical mindset:** It is always better to over-classify and downgrade than to under-classify and scramble to catch up. Declaring a Sev-1 that turns out to be a Sev-3 wastes a few hours of people's time. Treating a Sev-1 as a Sev-3 can cost millions.
 
 ---
@@ -444,73 +446,47 @@ The same engineers. The same problem. The same root cause. But one team had a 14
 
 ### A Well-Managed Sev-1
 
-```text
-TIME     EVENT                                          WHO
-──────── ────────────────────────────────────────────── ──────────
-02:47    Alerts fire: DB write errors > 1000/min        Monitoring
-02:48    On-call engineer acks the page                 Sarah
-02:50    Sarah checks dashboards: primary DB disk I/O   Sarah
-         at 100%, replica lag climbing
-02:52    Sarah declares Sev-1 in #incidents              Sarah (IC)
-         Creates #incident-2026-03-24-db-outage
-         Pages Ops Lead (Alex) and Comms Lead (Jordan)
-02:55    Jordan posts initial status page update         Jordan
-02:56    Alex joins bridge call, begins diagnostics      Alex
-03:00    Jordan sends first Slack update to leadership   Jordan
-03:05    Alex reports: "Primary disk controller          Alex
-         degraded. I recommend failover to secondary."
-03:06    Sarah approves failover. "Do it."               Sarah
-03:08    Failover initiated                              Alex
-03:10    Jordan updates status page: failover in         Jordan
-         progress
-03:12    Writes recovering on secondary cluster          Alex
-03:15    Error rates back to baseline. Sarah asks        Sarah
-         team to monitor for 15 minutes.
-03:17    Jordan updates status page: "Mitigated.         Jordan
-         Monitoring."
-03:30    15 minutes clean. Sarah declares incident       Sarah
-         resolved.
-03:32    Jordan posts resolution notice on status page   Jordan
-03:35    Sarah schedules postmortem for Monday           Sarah
-         Total customer impact: ~20 minutes
-```
+| Time | Event | Who |
+|---|---|---|
+| 02:47 | Alerts fire: DB write errors > 1000/min | Monitoring |
+| 02:48 | On-call engineer acks the page | Sarah |
+| 02:50 | Sarah checks dashboards: primary DB disk I/O at 100%, replica lag climbing | Sarah |
+| 02:52 | Sarah declares Sev-1 in #incidents<br>Creates #incident-2026-03-24-db-outage<br>Pages Ops Lead (Alex) and Comms Lead (Jordan) | Sarah (IC) |
+| 02:55 | Jordan posts initial status page update | Jordan |
+| 02:56 | Alex joins bridge call, begins diagnostics | Alex |
+| 03:00 | Jordan sends first Slack update to leadership | Jordan |
+| 03:05 | Alex reports: "Primary disk controller degraded. I recommend failover to secondary." | Alex |
+| 03:06 | Sarah approves failover. "Do it." | Sarah |
+| 03:08 | Failover initiated | Alex |
+| 03:10 | Jordan updates status page: failover in progress | Jordan |
+| 03:12 | Writes recovering on secondary cluster | Alex |
+| 03:15 | Error rates back to baseline. Sarah asks team to monitor for 15 minutes. | Sarah |
+| 03:17 | Jordan updates status page: "Mitigated. Monitoring." | Jordan |
+| 03:30 | 15 minutes clean. Sarah declares incident resolved. | Sarah |
+| 03:32 | Jordan posts resolution notice on status page | Jordan |
+| 03:35 | Sarah schedules postmortem for Monday<br>Total customer impact: ~20 minutes | Sarah |
 
 ### A Poorly Managed Sev-1
 
-```text
-TIME     EVENT                                          WHO
-──────── ────────────────────────────────────────────── ──────────
-02:47    Alerts fire: DB write errors > 1000/min        Monitoring
-02:48    On-call engineer acks the page                 Mike
-02:50    Mike SSHs into primary DB. Starts reading logs. Mike
-03:00    Two more engineers get paged by escalation      Dev1, Dev2
-         policy. They also SSH into production.
-03:05    Dev1 restarts a background job that looks       Dev1
-         suspicious. No improvement.
-03:10    Nobody has updated the status page.
-         Customer support tickets piling up.
-03:15    VP of Engineering sees tweets about the         VP Eng
-         outage. Starts asking in #general "what's
-         happening?"
-03:20    Mike, Dev1, Dev2 are each investigating         Mike,
-         different theories. Nobody is coordinating.     Dev1, Dev2
-03:30    VP Eng joins the bridge call and starts         VP Eng
-         asking questions every 2 minutes. Nobody
-         can focus.
-03:45    Dev2, trying to help, restarts the primary     Dev2
-         DB node. This wipes the query cache.
-03:47    Read latency doubles. More alerts fire.         Monitoring
-04:00    A senior DBA is finally paged. She assesses     DBA
-         the situation in 5 minutes: disk controller
-         failing. Recommends failover.
-04:10    Nobody is sure who should approve the           (nobody)
-         failover. 10 minutes of discussion.
-04:20    Failover initiated.                             DBA
-04:25    Writes recovering.                              DBA
-04:40    Situation stabilizing.
-05:00    Error rates back to baseline.
-         Total customer impact: ~2 hours 13 minutes
-```
+| Time | Event | Who |
+|---|---|---|
+| 02:47 | Alerts fire: DB write errors > 1000/min | Monitoring |
+| 02:48 | On-call engineer acks the page | Mike |
+| 02:50 | Mike SSHs into primary DB. Starts reading logs. | Mike |
+| 03:00 | Two more engineers get paged by escalation policy. They also SSH into production. | Dev1, Dev2 |
+| 03:05 | Dev1 restarts a background job that looks suspicious. No improvement. | Dev1 |
+| 03:10 | Nobody has updated the status page.<br>Customer support tickets piling up. | (nobody) |
+| 03:15 | VP of Engineering sees tweets about the outage. Starts asking in #general "what's happening?" | VP Eng |
+| 03:20 | Mike, Dev1, Dev2 are each investigating different theories. Nobody is coordinating. | Mike, Dev1, Dev2 |
+| 03:30 | VP Eng joins the bridge call and starts asking questions every 2 minutes. Nobody can focus. | VP Eng |
+| 03:45 | Dev2, trying to help, restarts the primary DB node. This wipes the query cache. | Dev2 |
+| 03:47 | Read latency doubles. More alerts fire. | Monitoring |
+| 04:00 | A senior DBA is finally paged. She assesses the situation in 5 minutes: disk controller failing. Recommends failover. | DBA |
+| 04:10 | Nobody is sure who should approve the failover. 10 minutes of discussion. | (nobody) |
+| 04:20 | Failover initiated. | DBA |
+| 04:25 | Writes recovering. | DBA |
+| 04:40 | Situation stabilizing. | |
+| 05:00 | Error rates back to baseline.<br>Total customer impact: ~2 hours 13 minutes | |
 
 The difference between these two incidents is not technical skill. It is incident management.
 
@@ -586,9 +562,7 @@ You are the Incident Commander during a Sev-1. Your best database engineer says:
 <details>
 <summary>Show Answer</summary>
 
-**Order the failover.** Mitigation always comes before resolution. A 3-minute path to restoring service with a minor data loss (10 seconds of writes) is almost always preferable to a 20-minute path that might not work as expected. The "20 minutes" estimate is optimistic — root cause fixes during incidents frequently take 2-3x longer than estimated. After the failover restores service, the database engineer can then investigate and fix the root cause without time pressure.
-
-The 10-second write loss is a business decision — confirm with the IC (you) and, if appropriate, a business stakeholder. But in most cases, 10 seconds of lost writes is dramatically better than 20+ minutes of total write failure.
+**Order the failover.** Mitigation always comes before resolution, because stopping customer impact is the primary goal during an outage. A 3-minute path to restoring service with a minor data loss (10 seconds of writes) is almost always preferable to a 20-minute path that might not work as expected. The "20 minutes" estimate is optimistic, as root cause fixes during incidents frequently take 2-3x longer than estimated. After the failover restores service, the database engineer can then investigate and fix the root cause without time pressure. The 10-second write loss is a business decision, but in most cases, 10 seconds of lost writes is dramatically better than 20+ minutes of total write failure.
 </details>
 
 ### Question 3
@@ -597,7 +571,7 @@ During a Sev-2 incident, a VP joins the bridge call and starts asking detailed t
 <details>
 <summary>Show Answer</summary>
 
-**The IC should redirect the VP to the Comms Lead.** The IC says something like: "VP, I understand you need updates. Jordan is our Communications Lead and will provide you with updates every 30 minutes. I need to keep this bridge focused on the technical response." If the VP insists on staying, the IC should ask them to mute and listen without interrupting. The IC owns the incident and has the authority to manage the war room, regardless of organizational hierarchy. This is a core ICS principle: during an incident, the IC outranks everyone on operational decisions.
+**The IC should redirect the VP to the Comms Lead.** The IC says something like: "VP, I understand you need updates. Jordan is our Communications Lead and will provide you with updates every 30 minutes. I need to keep this bridge focused on the technical response." If the VP insists on staying, the IC should ask them to mute and listen without interrupting. The IC owns the incident and has the authority to manage the war room, regardless of organizational hierarchy. This is a core ICS principle because during an incident, the IC outranks everyone on operational decisions to maintain unity of command and focus.
 </details>
 
 ### Question 4
@@ -606,7 +580,7 @@ An engineer on your team notices elevated error rates on a service they own but 
 <details>
 <summary>Show Answer</summary>
 
-**The engineer failed to follow the over-classify principle.** It is always better to declare an incident and downgrade than to wait and escalate later. By the time the engineer realized the issue was real, two hours of customer impact had already occurred. The correct action was to declare a Sev-3 at minimum when the errors were first observed, set a watch on the metrics, and upgrade severity if the errors persisted or increased. Declaring an incident is cheap. Missing an incident is expensive.
+**The engineer failed to follow the over-classify principle.** It is always better to declare an incident and downgrade than to wait and escalate later, because missing an incident is far more expensive than over-reacting to a minor issue. By the time the engineer realized the issue was real, two hours of customer impact had already occurred. The correct action was to declare a Sev-3 at minimum when the errors were first observed, set a watch on the metrics, and upgrade severity if the errors persisted or increased. Declaring an incident is cheap, but ignoring warning signs destroys customer trust.
 </details>
 
 ### Question 5
@@ -615,7 +589,7 @@ Your team has resolved a Sev-1 incident. Error rates are back to zero and the fi
 <details>
 <summary>Show Answer</summary>
 
-**Not yet.** You need a stabilization period. Monitor clean metrics for at least 15-30 minutes before declaring resolved. Many incidents have a "bounce" where the fix appears to work but fails under load or when certain conditions recur. Additionally, before standing down: update the status page to "Monitoring," send a near-final update to stakeholders, and ensure someone is watching dashboards for the next 2-4 hours (either you or a handoff to another timezone). Only after the stabilization period should you declare resolved, post the final status page update, and schedule the postmortem.
+**Not yet.** You need a stabilization period to ensure the fix is permanent. Monitor clean metrics for at least 15-30 minutes before declaring resolved. Many incidents have a "bounce" where the fix appears to work but fails under load or when certain conditions recur. Additionally, before standing down, you must update the status page to "Monitoring," send a near-final update to stakeholders, and ensure someone is watching dashboards for the next 2-4 hours. Only after the stabilization period confirms the system is healthy should you declare resolved, post the final status page update, and schedule the postmortem.
 </details>
 
 ### Question 6
@@ -624,7 +598,7 @@ You are the IC for a Sev-1. Thirty minutes in, the Operations Lead tells you the
 <details>
 <summary>Show Answer</summary>
 
-**Escalate and expand.** Specifically: (1) Ask the Ops Lead who the subject matter experts are for the affected systems and page them immediately. Fresh eyes often see what exhausted eyes miss. (2) Ask: "Have we tried mitigating even if we don't know the cause?" — failover, rollback, feature flags, and traffic shifting don't require understanding root cause. (3) Consider whether the scope is broader than initially thought and whether you should upgrade severity. (4) If 30 minutes in you are still stuck on a Sev-1, escalate to senior leadership so they are aware and can authorize exceptional measures (like waking up someone on PTO who has critical knowledge). Do not let "we'll figure it out" drag on while customers suffer.
+**Escalate and expand.** First, ask the Ops Lead who the subject matter experts are for the affected systems and page them immediately, because fresh eyes often see what exhausted eyes miss. Second, ask if there are any mitigation strategies (like failovers or rollbacks) that can be applied even without understanding the root cause. Third, consider whether the scope is broader than initially thought and whether you should upgrade severity to pull in more resources. If 30 minutes in you are still stuck on a Sev-1, you must escalate to senior leadership so they are aware and can authorize exceptional measures. Do not let the team spin their wheels while customers suffer.
 </details>
 
 ---
