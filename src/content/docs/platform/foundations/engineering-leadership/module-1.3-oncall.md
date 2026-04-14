@@ -176,14 +176,14 @@ The secondary role is not just a safety net for missed pages. It serves three cr
 |----------|------------|-------|
 | **24 hours** | Too short | Constant handoffs destroy context. |
 | **3 days** | Awkward | Scheduling overlaps with weekends unpredictably. |
-| **1 week** | ✅ **Ideal** | Industry standard. Long enough for context, short enough to not burn out. Most teams use this. |
+| **1 week** | **Ideal** | Industry standard. Long enough for context, short enough to not burn out. Most teams use this. |
 | **2 weeks** | Too long | Only acceptable for low-page services (< 1 page/day average). Exhausting for high-volume. |
 
 **Minimum Team Size for Healthy Rotation:**
 - **4 people**: On-call every 4th week → MINIMUM viable (borderline)
 - **5 people**: On-call every 5th week → Acceptable
 - **6 people**: On-call every 6th week → Good
-- **8 people**: On-call every 8th week → ✅ Ideal
+- **8 people**: On-call every 8th week → **Ideal**
 
 > **Rule of Thumb**: No one should be on-call more than one week out of every four. Google's SRE practice targets a maximum of one week in every three to four.
 
@@ -695,12 +695,12 @@ After the cleanup: **average pages per shift dropped from 14/day to 1.8/day.** M
 
 Test your understanding of on-call best practices:
 
-**Question 1:** Your team receives an average of 8 pages per 12-hour on-call shift. According to Google's SRE guidance, what should you do?
+**Question 1:** You are the new engineering manager for a team that supports a critical payment gateway. Upon reviewing the operational metrics, you discover the team receives an average of 8 pages per 12-hour on-call shift. According to industry best practices, what immediate action should you take and why?
 
 <details>
 <summary>Show Answer</summary>
 
-Google's SRE book recommends a maximum of **2 events per 12-hour shift** to maintain high incident response quality. At 8 pages per shift, your team is receiving four times the recommended volume, which significantly impairs their ability to deeply investigate issues. You should **immediately prioritize alert noise reduction** by classifying recent alerts, adding hysteresis to threshold-based alerts, and deduplicating correlated events. This is not optional improvement work; at this high volume, alert fatigue is actively making your team less reliable and heavily increasing the risk of burnout.
+Google's SRE book recommends a maximum of **2 events per 12-hour shift** to maintain high incident response quality. At 8 pages per shift, your team is receiving four times the recommended volume, which significantly impairs their ability to deeply investigate issues. You should **immediately prioritize alert noise reduction** by classifying recent alerts, adding hysteresis to threshold-based alerts, and deduplicating correlated events. This is not optional improvement work; at this high volume, alert fatigue is actively making your team less reliable and heavily increasing the risk of burnout. When responders are constantly context-switching, they lose the deep focus required to actually solve the root causes of incidents.
 </details>
 
 **Question 2:** An alert fires at 2:30 AM for "disk usage at 73% on staging server (threshold: 70%)." What's wrong with this alert configuration?
@@ -708,15 +708,15 @@ Google's SRE book recommends a maximum of **2 events per 12-hour shift** to main
 <details>
 <summary>Show Answer</summary>
 
-There are multiple fundamental flaws with this alert configuration. First, it targets a staging environment, which should never generate after-hours pages because it does not directly impact customers or production integrity. Staging issues should be routed to non-paging notifications and addressed during normal business hours. Second, the threshold of 73% disk usage is far too tight and does not represent an immediate emergency requiring human intervention at 2:30 AM. A more appropriate approach would be a non-paging warning at 80%, with a critical page reserved for 90% or higher on production systems, configured with a sustained duration to filter out transient spikes.
+There are multiple fundamental flaws with this alert configuration. First, it targets a staging environment, which should never generate after-hours pages because it does not directly impact customers or production integrity. Staging issues should be routed to non-paging notifications and addressed during normal business hours. Second, the threshold of 73% disk usage is far too tight and does not represent an immediate emergency requiring human intervention at 2:30 AM. A more appropriate approach would be a non-paging warning at 80%, with a critical page reserved for 90% or higher on production systems, configured with a sustained duration to filter out transient spikes. Paging an engineer out of bed for a non-critical staging issue directly contributes to alert fatigue and resentment.
 </details>
 
-**Question 3:** Your team's signal-to-noise ratio (SNR) for on-call alerts is 35%. What does this mean, and how would you classify the health of your alerting system?
+**Question 3:** During a monthly operational review, you pull up the alerting dashboard and notice your team's signal-to-noise ratio (SNR) for on-call alerts has been hovering around 35% for the past quarter. What does this indicate about your team's operational health, and how should you address it?
 
 <details>
 <summary>Show Answer</summary>
 
-An SNR of 35% indicates that only 35% of the pages your team receives require actual human intervention to prevent or resolve user impact. The remaining 65% consists of false positives, duplicates, or informational alerts that train engineers to ignore their pagers over time. This state is classified as "Poor" and indicates a system where engineers are spending the vast majority of their emotional energy on noise rather than signal. To restore the health of the alerting system, you must dedicate immediate sprint capacity to alert hygiene, eliminating useless notifications until the SNR returns to the target of 70% or higher.
+An SNR of 35% indicates that only 35% of the pages your team receives require actual human intervention to prevent or resolve user impact. The remaining 65% consists of false positives, duplicates, or informational alerts that train engineers to ignore their pagers over time. This state is classified as "Poor" and indicates a system where engineers are spending the vast majority of their emotional energy on noise rather than signal. To restore the health of the alerting system, you must dedicate immediate sprint capacity to alert hygiene, eliminating useless notifications until the SNR returns to the target of 70% or higher. Ignoring this metric will inevitably lead to missed critical alerts, as responders become psychologically conditioned to assume every page is a false alarm.
 </details>
 
 **Question 4:** An engineer on your team has been on-call for three weeks in a row to cover for teammates who are on vacation. They tell you "it's fine, I don't mind." Should you take this at face value?
@@ -724,7 +724,7 @@ An SNR of 35% indicates that only 35% of the pages your team receives require ac
 <details>
 <summary>Show Answer</summary>
 
-**No.** You absolutely should not take this statement at face value. Engineers are culturally conditioned to push through exhaustion and minimize their own struggles, leading them to hide early symptoms of burnout. Three consecutive weeks of on-call introduces severe, compounding fatigue that disrupts sleep cycles and heavily degrades cognitive performance, regardless of the individual's stated willingness. As a manager or team lead, you must intervene by removing them from the rotation for the next several cycles and ensuring standard vacation coverage does not severely destabilize the remaining team members.
+**No.** You absolutely should not take this statement at face value. Engineers are culturally conditioned to push through exhaustion and minimize their own struggles, leading them to hide early symptoms of burnout. Three consecutive weeks of on-call introduces severe, compounding fatigue that disrupts sleep cycles and heavily degrades cognitive performance, regardless of the individual's stated willingness. As a manager or team lead, you must intervene by removing them from the rotation for the next several cycles and ensuring standard vacation coverage does not severely destabilize the remaining team members. Protecting your team members from their own hero complexes is a core responsibility of engineering leadership.
 </details>
 
 **Question 5:** You're writing a runbook for a critical alert. Your first instruction line says "Investigate the issue and determine root cause." What's wrong with this?
@@ -732,7 +732,7 @@ An SNR of 35% indicates that only 35% of the pages your team receives require ac
 <details>
 <summary>Show Answer</summary>
 
-The instruction "Investigate the issue and determine root cause" is entirely unhelpful because it describes the overarching goal rather than the specific actions required to achieve it. A responder reading a runbook at 3 AM is likely sleep-deprived and operating under immense cognitive load, making vague directives actively harmful to incident resolution times. A high-quality runbook must provide concrete, step-by-step diagnostic instructions tailored to the specific alert. It should immediately direct the engineer to the correct dashboard, provide exact CLI commands to copy and paste, and outline the specific rollback or mitigation procedures that resolve the problem 80% of the time.
+The instruction "Investigate the issue and determine root cause" is entirely unhelpful because it describes the overarching goal rather than the specific actions required to achieve it. A responder reading a runbook at 3 AM is likely sleep-deprived and operating under immense cognitive load, making vague directives actively harmful to incident resolution times. A high-quality runbook must provide concrete, step-by-step diagnostic instructions tailored to the specific alert. It should immediately direct the engineer to the correct dashboard, provide exact CLI commands to copy and paste, and outline the specific rollback or mitigation procedures that resolve the problem 80% of the time. This eliminates guesswork and minimizes the time required to restore service.
 </details>
 
 **Question 6:** Your company pays no on-call compensation. When you raise this with leadership, they say "on-call is part of the job description." How would you make a business case for on-call compensation?
@@ -740,7 +740,7 @@ The instruction "Investigate the issue and determine root cause" is entirely unh
 <details>
 <summary>Show Answer</summary>
 
-To effectively advocate for on-call compensation, you must translate the human cost of uncompensated labor into tangible financial risks that leadership understands. Begin by highlighting the extreme cost of engineer attrition; replacing a single senior engineer easily costs upwards of $100,000 in recruiting fees, ramp-up time, and lost institutional knowledge. Frame the lack of compensation as a competitive disadvantage, noting that the broader market standardizes on-call pay, meaning your best engineers will inevitably be poached by organizations that value their off-hours time. Finally, present a concrete proposal demonstrating that an annual budget of $30,000 for a rotation stipend is a fraction of the cost of replacing just one burned-out engineer, making it a highly effective insurance policy for team stability.
+To effectively advocate for on-call compensation, you must translate the human cost of uncompensated labor into tangible financial risks that leadership understands. Begin by highlighting the extreme cost of engineer attrition; replacing a single senior engineer easily costs upwards of $100,000 in recruiting fees, ramp-up time, and lost institutional knowledge. Frame the lack of compensation as a competitive disadvantage, noting that the broader market standardizes on-call pay, meaning your best engineers will inevitably be poached by organizations that value their off-hours time. Finally, present a concrete proposal demonstrating that an annual budget of $30,000 for a rotation stipend is a fraction of the cost of replacing just one burned-out engineer. This transforms the conversation from an emotional plea about fairness into a rational discussion about risk management and retention strategy.
 </details>
 
 ---
