@@ -125,20 +125,17 @@ You will see something like this (directories separated by colons):
 
 Here is how the shell uses it when you type a command:
 
-```
-You type: kubectl
-
-Shell searches $PATH directories left to right:
-
-  /usr/local/bin/kubectl  → does this exist? NO  → keep looking
-  /usr/bin/kubectl        → does this exist? NO  → keep looking
-  /bin/kubectl            → does this exist? NO  → keep looking
-  /usr/sbin/kubectl       → does this exist? NO  → keep looking
-  /sbin/kubectl           → does this exist? NO  → keep looking
-  /home/alice/bin/kubectl → does this exist? YES → RUN IT!
-
-If nothing found in any directory:
-  → "bash: kubectl: command not found"
+```mermaid
+flowchart TD
+    A["You type: kubectl"] --> B["Shell searches $PATH directories left to right"]
+    B --> C{"/usr/local/bin/kubectl<br/>exists?"}
+    C -- "NO" --> D{"/usr/bin/kubectl<br/>exists?"}
+    D -- "NO" --> E{"/bin/kubectl<br/>exists?"}
+    E -- "NO" --> F{"/usr/sbin/kubectl<br/>exists?"}
+    F -- "NO" --> G{"/sbin/kubectl<br/>exists?"}
+    G -- "NO" --> H{"/home/alice/bin/kubectl<br/>exists?"}
+    H -- "YES" --> I["RUN IT!"]
+    H -- "NO" --> J["bash: kubectl: command not found"]
 ```
 
 > **Pause and predict**: If you type `kubectl` and the shell searches through all directories in your `$PATH` but doesn't find it, what exact error message will it print?
@@ -520,7 +517,11 @@ ls -l myfile.txt
 ```bash
 # Change owner (requires sudo because you are giving away a file)
 sudo chown bob myfile.txt
+```
 
+> **Stop and think**: Why does Linux require you to use `sudo` to give a file you own to another user? What malicious thing could you do if you could arbitrarily assign ownership of large files to other users?
+
+```bash
 # Change group only
 sudo chgrp developers myfile.txt
 
