@@ -8,7 +8,7 @@ sidebar:
 >
 > **Time to Complete**: 60-75 minutes
 >
-> **Prerequisites**: Node.js 18+, Docker, basic TypeScript familiarity
+> **Prerequisites**: Node.js 22+, Yarn 4.x, Docker, basic TypeScript familiarity
 >
 > **CBA Domain**: Domain 1 - Backstage Developer Workflow (24% of exam)
 
@@ -51,40 +51,7 @@ After completing this module, you will be able to:
 
 When you create a new Backstage app, you are not just creating a single Node.js application; you are generating an entire monorepo designed to house dozens or hundreds of custom internal plugins. This architecture prevents dependency hell and ensures that your frontend, backend, and plugins are always versioned and built together.
 
-Here is the classical ASCII tree representation of the monorepo (often seen in terminal outputs):
-
-```text
-my-backstage-app/
-├── app-config.yaml                 # Base configuration
-├── app-config.local.yaml           # Local overrides (gitignored)
-├── app-config.production.yaml      # Production overrides
-├── catalog-info.yaml               # Self-registration in the catalog
-├── package.json                    # Root workspace config
-├── packages/
-│   ├── app/                        # Frontend React application
-│   │   ├── package.json
-│   │   ├── src/
-│   │   │   ├── App.tsx             # Plugin registration & routes
-│   │   │   └── components/
-│   │   └── public/
-│   └── backend/                    # Backend Express application
-│       ├── package.json
-│       ├── src/
-│       │   └── index.ts            # Backend startup & plugin wiring
-│       └── Dockerfile              # Production image build
-├── plugins/                        # Custom plugins live here
-│   ├── my-plugin/                  # Frontend plugin
-│   │   ├── package.json
-│   │   ├── src/
-│   │   └── dev/                    # Isolated dev setup
-│   └── my-plugin-backend/          # Corresponding backend plugin
-│       ├── package.json
-│       └── src/
-├── yarn.lock                       # Locked dependency tree
-└── tsconfig.json                   # Root TypeScript config
-```
-
-And here is the equivalent structure visualized using Mermaid for better accessibility:
+Here is the structure of the monorepo visualized using Mermaid for better accessibility:
 
 ```mermaid
 graph TD
@@ -319,7 +286,7 @@ Deploying Backstage efficiently requires a multi-stage Dockerfile. The generated
 
 ```dockerfile
 # Stage 1 - Build
-FROM node:18-bookworm-slim AS build
+FROM node:22-bookworm-slim AS build
 
 WORKDIR /app
 
@@ -329,7 +296,7 @@ COPY packages/backend/package.json packages/backend/
 COPY plugins/ plugins/
 
 # Install ALL dependencies (including devDependencies for build)
-RUN yarn install --frozen-lockfile
+RUN yarn install --immutable
 
 # Copy source and build
 COPY packages/backend/ packages/backend/
@@ -337,7 +304,7 @@ COPY app-config*.yaml ./
 RUN yarn workspace backend build
 
 # Stage 2 - Production
-FROM node:18-bookworm-slim
+FROM node:22-bookworm-slim
 
 WORKDIR /app
 
@@ -359,9 +326,9 @@ Optimizing container images is crucial for deployment speed and reducing the att
 | Technique | Impact | How |
 |-----------|--------|-----|
 | Multi-stage builds | High | Separate build and runtime stages |
-| `--frozen-lockfile` | Medium | Ensures reproducible installs |
+| `--immutable` | Medium | Ensures reproducible installs (Yarn 4.x) |
 | `.dockerignore` | Medium | Exclude `node_modules/`, `.git/`, `*.md` |
-| Slim base image | Medium | Use `node:18-bookworm-slim` not `node:18` |
+| Slim base image | Medium | Use `node:22-bookworm-slim` not `node:22` |
 | Non-root user | Security | `USER node` in final stage |
 
 Using the slim base image strips out unnecessary operating system utilities, while enforcing a non-root user prevents privilege escalation attacks if the container is compromised.
@@ -587,7 +554,7 @@ Beyond basic configurations, be aware of advanced platform integrations. For exa
 | Upgrading a single `@backstage/*` package | Version mismatch causes runtime errors | Use `backstage-cli versions:bump` to upgrade all together |
 | Committing `app-config.local.yaml` | Leaks developer tokens and credentials | Ensure `.gitignore` includes `app-config.local.yaml` |
 | Docker build context set to `packages/backend/` | Build fails because `yarn.lock` and workspace packages are not available | Set build context to repo root: `docker build -f packages/backend/Dockerfile .` |
-| Forgetting `--frozen-lockfile` in CI | Non-deterministic builds; CI installs different versions than local | Always use `yarn install --frozen-lockfile` in CI pipelines |
+| Forgetting `--immutable` in CI | Non-deterministic builds; CI installs different versions than local | Always use `yarn install --immutable` in CI pipelines |
 | Hardcoding secrets in `app-config.yaml` | Secrets pushed to git | Use `${ENV_VAR}` substitution and inject at runtime |
 
 ---
@@ -610,7 +577,7 @@ They must modify the `packages/app` directory, as it contains the frontend React
 They are ignoring the severe risk of version drift and dependency hell. The Yarn workspace monorepo fundamentally allows all plugins to be versioned, tested, and updated together using the `workspace:^` protocol. Moving plugins to entirely separate repositories means each plugin must independently manage its own `@backstage/core-plugin-api` version, leading to inevitable conflicts during platform upgrades. This fragmentation ultimately slows down development speed and drastically increases operational maintenance overhead.
 </details>
 
-**Q3: What happens if you run `docker build` with the build context set to `packages/backend/` instead of the repo root?**
+**Q3: A junior engineer runs `docker build -t cba-lab:latest -f packages/backend/Dockerfile packages/backend/` to build the backend image. The build immediately fails. Why does this happen, and what is the correct approach?**
 <details>
 <summary>Show Answer</summary>
 
@@ -662,8 +629,8 @@ Using the local filesystem for TechDocs is strongly discouraged for production b
 
 ### Prerequisites
 
-- Node.js 18+ installed (`node -v`)
-- Yarn installed (`npm install -g yarn`)
+- Node.js 22+ installed (`node -v`)
+- Yarn 4.x installed via corepack (`corepack enable`)
 - Docker installed (`docker --version`)
 
 ### Task 1: Scaffold the Application
@@ -783,7 +750,7 @@ cd .. && rm -rf cba-lab
 | TypeScript patterns | Interfaces for APIs, `createApiRef<T>` for DI, `async/await` everywhere |
 | Local development | `npx @backstage/create-app`, `yarn dev`, HMR for frontend |
 | Docker builds | Multi-stage from repo root, slim base image, non-root user |
-| Dependencies | Yarn workspaces, `workspace:^` protocol, `--frozen-lockfile` in CI |
+| Dependencies | Yarn workspaces, `workspace:^` protocol, `--immutable` in CI |
 | Backstage CLI | `versions:bump`, `versions:check`, `package build`, `new` |
 | Configuration | Layered YAML files, `${ENV_VAR}` substitution, `--config` flag ordering |
 
