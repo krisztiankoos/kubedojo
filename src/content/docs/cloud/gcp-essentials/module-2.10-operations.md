@@ -33,30 +33,44 @@ In this module, you will learn how Cloud Logging's architecture works (the log r
 
 Every log entry generated in GCP flows through the **Log Router**. The router evaluates each log entry against a set of rules (called "sinks") to determine where the log goes.
 
-```text
-  Log Sources                     Log Router                   Destinations
-  ───────────                     ──────────                   ────────────
-  ┌──────────────┐
-  │ Compute Engine│─────┐         ┌──────────────┐
-  └──────────────┘     │         │              │            ┌──────────────┐
-                        │         │  Inclusion   │───────────>│ Cloud Logging │
-  ┌──────────────┐     ├────────>│  Filters     │            │ (default)     │
-  │ Cloud Run    │─────┤         │              │            └──────────────┘
-  └──────────────┘     │         │  Exclusion   │
-                        │         │  Filters     │            ┌──────────────┐
-  ┌──────────────┐     │         │              │───────────>│ Cloud Storage │
-  │ GKE          │─────┤         │  Sinks       │            │ (long-term)   │
-  └──────────────┘     │         │              │            └──────────────┘
-                        │         │              │
-  ┌──────────────┐     │         │              │            ┌──────────────┐
-  │ Cloud Functions│────┘         │              │───────────>│ BigQuery      │
-  └──────────────┘               │              │            │ (analytics)   │
-                                  │              │            └──────────────┘
-  ┌──────────────┐               │              │
-  │ Cloud Audit   │──────────────>│              │            ┌──────────────┐
-  │ Logs          │               │              │───────────>│ Pub/Sub       │
-  └──────────────┘               └──────────────┘            │ (streaming)   │
-                                                              └──────────────┘
+```mermaid
+flowchart LR
+    %% Sources
+    CE[Compute Engine]
+    CR[Cloud Run]
+    GKE[GKE]
+    CF[Cloud Functions]
+    CAL[Cloud Audit Logs]
+
+    %% Router
+    Router((Log Router))
+
+    %% Operations
+    IF[Inclusion Filters]
+    EF[Exclusion Filters]
+    Sinks[Sinks]
+
+    %% Destinations
+    CL[Cloud Logging<br>_default_]
+    CS[Cloud Storage<br>_long-term_]
+    BQ[BigQuery<br>_analytics_]
+    PS[Pub/Sub<br>_streaming_]
+
+    %% Connections
+    CE --> Router
+    CR --> Router
+    GKE --> Router
+    CF --> Router
+    CAL --> Router
+
+    Router --> IF
+    Router --> EF
+    Router --> Sinks
+
+    IF --> CL
+    Sinks --> CS
+    Sinks --> BQ
+    Sinks --> PS
 ```
 
 ### Log Types
