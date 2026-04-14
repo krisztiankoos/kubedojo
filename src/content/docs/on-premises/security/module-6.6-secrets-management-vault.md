@@ -72,6 +72,8 @@ On bare metal, you have three options for unsealing:
 2.  **Transit Auto-unseal**: Vault automatically unseals itself by calling the Transit Secrets Engine of a *different*, centralized Vault cluster. This requires a hub-and-spoke Vault architecture.
 3.  **TPM / KMIP Auto-unseal**: Vault integrates with the bare metal host's Trusted Platform Module (TPM) or a hardware KMIP server to retrieve the unseal key.
 
+> **Stop and think**: If a node crashes and a new pod replaces it, what state will the Vault instance be in upon startup? It will be sealed, which is why Shamir's Secret Sharing is risky for highly dynamic Kubernetes environments without human operators on standby.
+
 :::caution[Pod Eviction and Shamir's Secret Sharing]
 If you run Vault inside Kubernetes using Shamir's Secret Sharing, any Pod eviction, node drain, or OOMKill will result in a newly scheduled Vault Pod that is **sealed**. This degrades cluster capacity until a human operator intervenes. Prefer Transit Auto-unseal for in-cluster Vault deployments.
 :::
@@ -94,7 +96,7 @@ For secrets that do not require rotation, Kubernetes v1.21 introduced Immutable 
 
 ### External Secrets Operator (ESO)
 
-External Secrets Operator 2.0 (ESO) is designed to synchronize secrets from external APIs (like Vault) and reconcile them with native Kubernetes `Secret` objects. It allows developers to consume secrets using standard Kubernetes paradigms while keeping the source of truth in Vault.
+External Secrets Operator 2.0 (ESO)—which officially supports Kubernetes v1.34–v1.35—is designed to synchronize secrets from external APIs (like Vault) and reconcile them with native Kubernetes `Secret` objects. It allows developers to consume secrets using standard Kubernetes paradigms while keeping the source of truth in Vault.
 
 > **Pause and predict**: If you use ESO, your secrets end up in etcd. How will you secure the etcd datastore at rest?
 
@@ -104,7 +106,9 @@ ESO utilizes two primary Custom Resource Definitions (CRDs):
 
 ## Kubernetes Authentication Method
 
-To avoid hardcoding tokens, Vault must cryptographically verify the identity of the Pod requesting the secret. Vault achieves this using the **Kubernetes Authentication Method** via Service Account Token Volume Projection. Since Kubernetes v1.22, short-lived, bound Service Account Tokens are projected by default.
+To avoid hardcoding tokens, Vault must cryptographically verify the identity of the Pod requesting the secret. Vault achieves this using the **Kubernetes Authentication Method** via Service Account Token Volume Projection. 
+
+Since Kubernetes v1.22, short-lived, bound Service Account Tokens are projected by default. Furthermore, as of Kubernetes v1.30 (stable), cleanup controls for legacy auto-generated tokens are active, meaning unused legacy tokens are tracked and potentially invalidated, reinforcing the use of short-lived tokens.
 
 1.  A Pod is created with a specific Kubernetes Service Account.
 2.  Kubernetes injects a short-lived, signed JSON Web Token (JWT) into the Pod. These tokens are pod-bound and time-bound.
@@ -119,6 +123,8 @@ If you use ESO, secrets end up in etcd. Because API data is written unencrypted 
 Kubernetes 1.27+ introduced KMS v2 (stable in 1.29+). Instead of using a local AES key in a file on the master nodes, the API server sends encryption and decryption requests via a local Unix domain socket to a KMS plugin. At-rest encryption is configured with kube-apiserver's `--encryption-provider-config` and controlled by an `EncryptionConfiguration` object.
 
 On bare metal, you deploy a Vault KMS Provider as a static pod on your control plane nodes. This provider translates KMS v2 gRPC calls into Vault Transit Engine API calls. Kubernetes requires etcd v3.x for control planes using the encryption guide.
+
+> **Pause and predict**: If Vault provides the decryption key for etcd, and Vault runs inside Kubernetes (which stores its state in etcd), what happens during a complete cluster cold start? The cluster will permanently hang due to a circular dependency.
 
 :::tip[The Circular Dependency]
 **Do not run the Vault cluster that provides etcd encryption inside the same Kubernetes cluster it is encrypting.**
@@ -145,7 +151,7 @@ Operating a bare metal cluster requires extensive internal TLS (etcd, webhook se
 In this lab, you will deploy a 3-node HA Vault cluster with Raft storage, configure Kubernetes authentication, and deploy the External Secrets Operator to sync a KV secret into a native Kubernetes Secret.
 
 ### Prerequisites
-*   A running Kubernetes cluster (e.g., `kind`, `k3s`, or a bare metal lab).
+*   A running Kubernetes cluster (e.g., `kind`, `k3s`, or a bare metal lab) running v1.35.
 *   `kubectl` configured to access the cluster.
 *   `helm` installed locally.
 
@@ -385,7 +391,7 @@ C) The entire Vault cluster seals itself to protect data integrity and requires 
 D) The External Secrets Operator caches the Master Key and automatically injects it into the rescheduled Pod.
 
 *Correct Answer: B*
-Why? The Raft quorum requires only a simple majority ((N/2)+1) to maintain consensus, meaning the two surviving nodes will successfully elect a new leader and continue serving read/write traffic. However, the newly scheduled Vault Pod boots in a sealed state because Shamir's Secret Sharing requires a human operator to provide the unseal keys manually. Until the threshold of unseal keys is provided to this specific new Pod, it cannot participate fully in the cluster or serve cryptographic requests, operating in a degraded capacity.
+Why? The Raft quorum requires only a simple majority ((N/2)+1) to maintain consensus, meaning the two surviving nodes will successfully elect a new leader and continue serving read/write traffic. However, the newly scheduled Vault Pod boots in a sealed state because Shamir's Secret Sharing requires a human operator to provide the unseal keys manually. Until the threshold of unseal keys is provided to this specific new Pod, it cannot participate fully in the cluster or serve cryptographic requests, operating in a degraded capacity. This situation highlights why Transit Auto-unseal is preferred for Kubernetes-based Vault deployments, as it avoids manual intervention during automated pod rescheduling.
 
 **2. A development team is migrating a legacy monolithic application to your bare metal Kubernetes environment. The application code cannot be modified and strictly requires its database credentials to be loaded natively as environment variables from a Kubernetes Secret. Given your organizational mandate to keep the master copy of all credentials in HashiCorp Vault, which secret delivery mechanism MUST you implement for this specific application?**
 A) Vault Agent Injector
