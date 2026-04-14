@@ -73,45 +73,38 @@ Within years, every team at Google would have SLOs. The framework would spread a
 
 This module teaches you to measure reliability objectively using SLIs (Service Level Indicators), set meaningful targets with SLOs (Service Level Objectives), and create a continuous improvement process. Without measurement, reliability is just hope. With measurement, it's engineering.
 
-```
-THE TRANSFORMATION: FROM ARGUMENTS TO DATA
-═══════════════════════════════════════════════════════════════════════════════
+### The Transformation: From Arguments to Data
 
-BEFORE SLOs (Politics)
-────────────────────────────────────────────────────────────────
+#### Before SLOs (Politics)
 
 Monday standup at a typical tech company:
 
-Product: "When is the new checkout feature shipping?"
-Engineering: "We can't ship until we fix these reliability issues."
-Product: "What issues? The site seems fine."
-Engineering: "Trust us, there are problems."
-Product: "But customers want this feature!"
-Engineering: "And they also want the site to not crash!"
-Manager: "Can we compromise and do both?"
-Everyone: *sighs*
+- **Product**: "When is the new checkout feature shipping?"
+- **Engineering**: "We can't ship until we fix these reliability issues."
+- **Product**: "What issues? The site seems fine."
+- **Engineering**: "Trust us, there are problems."
+- **Product**: "But customers want this feature!"
+- **Engineering**: "And they also want the site to not crash!"
+- **Manager**: "Can we compromise and do both?"
+- **Everyone**: *sighs*
 
-Result: Whoever argues loudest wins. Same conversation next week.
+**Result**: Whoever argues loudest wins. Same conversation next week.
 
-AFTER SLOs (Data)
-────────────────────────────────────────────────────────────────
+#### After SLOs (Data)
 
 Monday standup at a team with SLOs:
 
-Product: "When is the new checkout feature shipping?"
-Engineering: "Let me check the error budget... We're at 99.92% against a
-             99.9% SLO. We have 14 minutes of budget left this month."
-Product: "That's tight. What's using our budget?"
-Engineering: "The database migration last week cost us 18 minutes."
-Product: "If we ship the checkout feature, what's the risk?"
-Engineering: "Estimated 5-10 minutes if something goes wrong."
-Product: "So we'd likely burn the rest of the budget."
-Engineering: "Correct. We could wait for the new month, or ship with
-             a quick rollback ready."
-Product: "Let's wait. We need that budget for the holiday sale."
+- **Product**: "When is the new checkout feature shipping?"
+- **Engineering**: "Let me check the error budget... We're at 99.92% against a 99.9% SLO. We have 14 minutes of budget left this month."
+- **Product**: "That's tight. What's using our budget?"
+- **Engineering**: "The database migration last week cost us 18 minutes."
+- **Product**: "If we ship the checkout feature, what's the risk?"
+- **Engineering**: "Estimated 5-10 minutes if something goes wrong."
+- **Product**: "So we'd likely burn the rest of the budget."
+- **Engineering**: "Correct. We could wait for the new month, or ship with a quick rollback ready."
+- **Product**: "Let's wait. We need that budget for the holiday sale."
 
-Result: Data-driven decision. No argument. Aligned priorities.
-```
+**Result**: Data-driven decision. No argument. Aligned priorities.
 
 > **The Fitness Analogy**
 >
@@ -163,31 +156,25 @@ With SLOs:
 
 ### 1.3 SLOs Enable Trade-offs
 
-```
-SLO-BASED DECISION MAKING
-═══════════════════════════════════════════════════════════════
+### SLO-Based Decision Making
 
-Scenario: Team wants to ship new feature that adds risk
+**Scenario:** Team wants to ship a new feature that adds risk
 
-WITHOUT SLO:
-    Product: "Ship it!"
-    Engineering: "It might break things!"
-    Product: "But customers want it!"
-    Engineering: "But reliability!"
-    → Argument, politics, loudest voice wins
+**WITHOUT SLO:**
+- **Product:** "Ship it!"
+- **Engineering:** "It might break things!"
+- **Product:** "But customers want it!"
+- **Engineering:** "But reliability!"
+- **Result:** Argument, politics, loudest voice wins.
 
-WITH SLO:
-    Current reliability: 99.95%
-    SLO target: 99.9%
-    Error budget: 0.05% (21.6 minutes this month)
-    Budget used: 5 minutes
-    Budget remaining: 16.6 minutes
-
-    Decision: We have error budget. Ship it, but monitor closely.
-    If we were at 99.85%, decision would be: Fix reliability first.
-
-    → Data-driven decision, no argument needed
-```
+**WITH SLO:**
+- **Current reliability:** 99.95%
+- **SLO target:** 99.9%
+- **Error budget:** 0.05% (21.6 minutes this month)
+- **Budget used:** 5 minutes
+- **Budget remaining:** 16.6 minutes
+- **Decision:** We have error budget. Ship it, but monitor closely. If we were at 99.85%, the decision would be: Fix reliability first.
+- **Result:** Data-driven decision, no argument needed.
 
 > **Did You Know?**
 >
@@ -244,26 +231,23 @@ A good SLI is:
 | **Actionable** | You can do something about it | Not external dependencies |
 | **Proportional** | Worse SLI = worse experience | p99 latency, not mean |
 
-```
-GOOD vs BAD SLIs
-═══════════════════════════════════════════════════════════════
+### Good vs. Bad SLIs
 
-BAD: "Server CPU utilization"
-    - Not user-centric (users don't care about CPU)
-    - Not proportional (80% CPU might be fine)
+**BAD: "Server CPU utilization"**
+- Not user-centric (users don't care about CPU)
+- Not proportional (80% CPU might be fine)
 
-GOOD: "Request latency p99"
-    - User-centric (directly affects experience)
-    - Proportional (higher = worse)
+**GOOD: "Request latency p99"**
+- User-centric (directly affects experience)
+- Proportional (higher = worse)
 
-BAD: "Database is up"
-    - Binary (up/down)
-    - Doesn't capture degradation
+**BAD: "Database is up"**
+- Binary (up/down)
+- Doesn't capture degradation
 
-GOOD: "Percentage of queries completing in <100ms"
-    - Continuous (captures degradation)
-    - User-centric
-```
+**GOOD: "Percentage of queries completing in <100ms"**
+- Continuous (captures degradation)
+- User-centric
 
 > **Try This (3 minutes)**
 >
@@ -283,32 +267,25 @@ GOOD: "Percentage of queries completing in <100ms"
 
 **1. Start with user expectations, not technical capabilities**
 
-```
-WRONG: "Our system can do 99.99%, so that's our SLO"
-RIGHT: "Users expect checkout to work. What reliability do they need?"
-```
+- **WRONG:** "Our system can do 99.99%, so that's our SLO"
+- **RIGHT:** "Users expect checkout to work. What reliability do they need?"
 
 **2. Not everything needs the same SLO**
 
-```
-DIFFERENTIATED SLOs
-═══════════════════════════════════════════════════════════════
+### Differentiated SLOs
 
-Service              SLO        Rationale
-─────────────────────────────────────────────────────────────
-Payment processing   99.99%     Money is involved, high stakes
-Product search       99.9%      Important but degraded is okay
-Recommendations      99.0%      Nice to have, can hide if down
-Internal reporting   95.0%      Async, users can wait
-```
+| Service | SLO | Rationale |
+|---------|-----|-----------|
+| Payment processing | 99.99% | Money is involved, high stakes |
+| Product search | 99.9% | Important but degraded is okay |
+| Recommendations | 99.0% | Nice to have, can hide if down |
+| Internal reporting | 95.0% | Async, users can wait |
 
 **3. SLO should be achievable but challenging**
 
-```
-Too easy:    99% (you'll never improve)
-Too hard:    99.999% (you'll always fail, SLO becomes meaningless)
-Just right:  99.9% (achievable with effort, gives error budget)
-```
+- **Too easy:** 99% (you'll never improve)
+- **Too hard:** 99.999% (you'll always fail, SLO becomes meaningless)
+- **Just right:** 99.9% (achievable with effort, gives error budget)
 
 ### 3.2 The SLO Setting Process
 
@@ -371,54 +348,45 @@ flowchart TD
 
 ### 4.1 Calculating Error Budget
 
-```
-ERROR BUDGET CALCULATION
-═══════════════════════════════════════════════════════════════
+### Error Budget Calculation
 
-SLO: 99.9% availability
-Error budget: 100% - 99.9% = 0.1%
+**SLO:** 99.9% availability
+**Error budget:** 100% - 99.9% = 0.1%
 
-Monthly error budget:
+**Monthly error budget:**
 - Minutes in month: 30 days × 24 hours × 60 min = 43,200 minutes
 - Error budget: 43,200 × 0.001 = 43.2 minutes
 
-Weekly error budget:
+**Weekly error budget:**
 - Minutes in week: 7 × 24 × 60 = 10,080 minutes
 - Error budget: 10,080 × 0.001 = 10.08 minutes
 
-Budget burn rate:
+**Budget burn rate:**
 - Normal: ~1 minute per day
 - Incident: 10 minutes in 1 hour = 10x burn rate
-```
 
 ### 4.2 Error Budget Visualization
 
+### Error Budget Dashboard
+
+**Monthly Error Budget:** 43.2 minutes (SLO: 99.9%)
+**Total used:** 32 minutes | **Remaining:** 11.2 minutes
+**Status:** ⚠️ 26% remaining - Cautious releases
+
+```mermaid
+pie title Monthly Error Budget (43.2 min)
+  "Used (32 min)" : 74
+  "Remaining (11.2 min)" : 26
 ```
-ERROR BUDGET DASHBOARD
-═══════════════════════════════════════════════════════════════
 
-MONTHLY ERROR BUDGET: 43.2 minutes (SLO: 99.9%)
+#### Last 30 Days Trend
 
-Week 1:  [████████████████████░░░░░░░░░░░░░░░░░░] Used: 8 min
-Week 2:  [█████████████████████████░░░░░░░░░░░░░] Used: 15 min
-Week 3:  [██████████████████████████████░░░░░░░░] Used: 25 min (incident)
-Week 4:  [████████████████████████████████░░░░░░] Used: 32 min
-         ─────────────────────────────────────────
-         Total used: 32 minutes | Remaining: 11.2 minutes
-
-Status: ⚠️ 26% remaining - Cautious releases
-
-Last 30 days trend:
-         Budget ──────────────────────────────────
-    100% │ ●
-         │   ●●
-         │      ●●●
-         │          ●●
-         │             ●●●●●●
-     50% │─────────────────────────────────────── Warning
-         │                     ●●●●●●●●●●●●●●●●●●
-      0% │────────────────────────────────────────────────▶
-         Day 1                                      Day 30
+```mermaid
+xychart-beta
+  title "Error Budget Remaining (%)"
+  x-axis "Days" 1 --> 30
+  y-axis "Budget %" 0 --> 100
+  line [100, 98, 98, 98, 95, 95, 95, 95, 80, 80, 80, 80, 80, 80, 50, 50, 50, 50, 50, 50, 50, 50, 30, 30, 26, 26, 26, 26, 26, 26]
 ```
 
 ### 4.3 Error Budget Policies
@@ -446,6 +414,8 @@ Last 30 days trend:
 
 ---
 
+> **Pause and predict**: If a team misses their SLO for three consecutive months, what is the most likely consequence for their product roadmap?
+
 ## Part 5: Continuous Improvement
 
 ### 5.1 The Reliability Improvement Cycle
@@ -462,40 +432,38 @@ flowchart TD
 
 Every significant incident should have a **blameless postmortem**:
 
-```
-POSTMORTEM TEMPLATE
-═══════════════════════════════════════════════════════════════
+### Postmortem Template Example
 
-## Incident: Payment API Outage 2024-01-15
+#### Incident: Payment API Outage 2024-01-15
 
-### Summary
-- Duration: 23 minutes
-- Impact: 12,000 failed transactions
-- Error budget consumed: 23 minutes (53% of monthly)
+**Summary**
+- **Duration**: 23 minutes
+- **Impact**: 12,000 failed transactions
+- **Error budget consumed**: 23 minutes (53% of monthly)
 
-### Timeline
-- 14:32 - Deploy of version 2.3.1
-- 14:35 - Error rate spikes to 15%
-- 14:38 - Alert fires, on-call paged
-- 14:45 - Rollback initiated
-- 14:55 - Service recovered
+**Timeline**
+- **14:32** - Deploy of version 2.3.1
+- **14:35** - Error rate spikes to 15%
+- **14:38** - Alert fires, on-call paged
+- **14:45** - Rollback initiated
+- **14:55** - Service recovered
 
-### Contributing Factors
+**Contributing Factors**
 1. Database migration had incompatible schema change
 2. Canary deployment disabled for "quick fix"
 3. Integration tests didn't cover this code path
 
-### Action Items
+**Action Items**
+
 | Action | Owner | Due |
 |--------|-------|-----|
 | Re-enable canary deployments | Alice | 2024-01-16 |
 | Add integration test for schema | Bob | 2024-01-20 |
 | Review migration process | Team | 2024-01-22 |
 
-### Lessons Learned
+**Lessons Learned**
 - "Quick fixes" are rarely quick
 - Canary deployments exist for a reason
-```
 
 ### 5.3 Reliability Reviews
 
@@ -533,24 +501,24 @@ mindmap
       Implement quick-win reliability fixes
 ```
 
-```
-RELIABILITY INVESTMENT ALLOCATION
-═══════════════════════════════════════════════════════════════
+### Reliability Investment Allocation
 
-Investment allocation (example):
-    ┌─────────────────────────────────────────────────────┐
-    │         Engineering Time Allocation                 │
-    │                                                     │
-    │  Features    █████████████████████████  60%         │
-    │  Reliability ████████████             25%           │
-    │  Tech Debt   █████                    15%           │
-    │                                                     │
-    │  If SLO missed 2 consecutive months:               │
-    │                                                     │
-    │  Features    ████████████             30%           │
-    │  Reliability █████████████████████████  50%         │
-    │  Tech Debt   ████████                 20%           │
-    └─────────────────────────────────────────────────────┘
+When the error budget is healthy, teams spend the majority of their time shipping features.
+
+```mermaid
+pie title Engineering Time Allocation (Healthy SLO)
+  "Features" : 60
+  "Reliability" : 25
+  "Tech Debt" : 15
+```
+
+When the SLO is missed for consecutive months, the focus drastically shifts to reliability to recover the system's stability.
+
+```mermaid
+pie title Engineering Time Allocation (SLO Missed)
+  "Features" : 30
+  "Reliability" : 50
+  "Tech Debt" : 20
 ```
 
 > **War Story: The Team That Stopped Blaming**
@@ -563,108 +531,69 @@ Investment allocation (example):
 >
 > The insight: When people fear blame, they hide information. When they feel safe, they share what went wrong. Reliability improves when learning replaces blame.
 
-```
-WAR STORY: FROM BLAME CULTURE TO LEARNING CULTURE - THE TRANSFORMATION
-═══════════════════════════════════════════════════════════════════════════════
+### War Story: From Blame Culture to Learning Culture
 
-THE INCIDENT: March 15th - Production Database Outage
+**The Incident: March 15th - Production Database Outage**
 
-BEFORE (Blame Culture)
-────────────────────────────────────────────────────────────────
+#### BEFORE (Blame Culture)
 
-The "Post-Incident Review" (actually: public interrogation)
+The "Post-Incident Review" (actually: public interrogation).
+Meeting Room A, 15 attendees, tense silence.
 
-Meeting Room A, 15 attendees, tense silence
+- **Manager**: "The database was down for 47 minutes. Who did this?" *(Scans the room)*
+- **Junior Engineer**: *(Sweating)* "I... I ran the migration..."
+- **Manager**: "Did you test it first?"
+- **Junior Engineer**: "Yes, in staging, but—"
+- **Senior Engineer**: *(Interrupting)* "The staging database is completely different. Everyone knows that."
+- **Junior Engineer**: *(Wants to disappear)*
+- **Manager**: "Why wasn't there a review of this migration?"
+- **Team Lead**: "There was. I approved it. But I didn't see—"
+- **Manager**: "You didn't see what could go wrong? That's your job."
 
-Manager: "The database was down for 47 minutes. Who did this?"
-           *Scans the room*
+Meeting continues for 90 minutes. No one learns anything. Everyone learns to hide their mistakes.
 
-Junior Engineer: *Sweating* "I... I ran the migration..."
+**Result 6 months later:**
+- Same migration issues occur 3 more times.
+- Engineers deploy only on Fridays so incidents happen on weekends.
+- Junior engineers stop asking for help.
+- Senior engineers stop doing code reviews.
+- Incident reports are vague: "unknown cause".
+- MTTR increases because people are afraid to admit they know what's wrong.
 
-Manager: "Did you test it first?"
+#### AFTER (Learning Culture)
 
-Junior Engineer: "Yes, in staging, but—"
+New Director's first post-incident review.
+Same incident, same room, different approach.
 
-Senior Engineer: *Interrupting* "The staging database is completely
-                  different. Everyone knows that."
+- **Director**: "Let's understand what happened. Timeline first. Facts only."
 
-Junior Engineer: *Wants to disappear*
+*14:32 - Migration started*
+*14:34 - Lock escalation began*
+*14:35 - Application timeouts*
+*14:38 - Alert fired*
+*14:42 - On-call paged*
+*14:55 - Decision to rollback*
+*15:19 - Service restored*
 
-Manager: "Why wasn't there a review of this migration?"
+- **Director**: "47 minutes total. Now, what CONDITIONS allowed this to happen?"
+- **Engineer 1**: "The migration worked in staging but staging has 1% of production data."
+- **Director**: *(Writing on whiteboard)* "CONDITION: Staging doesn't represent production data volume. What else?"
+- **Engineer 2**: "There's no way to test migrations against prod-like data."
+- **Director**: "CONDITION: No production-representative test environment."
+- **Engineer 3**: "The locks weren't visible. We didn't know they were building up."
+- **Director**: "CONDITION: Lock monitoring gap. More?"
+- **Junior Engineer**: *(Tentatively)* "I... I actually asked about this in the PR, but it got approved anyway."
+- **Director**: "Wait, you asked? Show me."
 
-Team Lead: "There was. I approved it. But I didn't see—"
+*(Pulls up PR)*
+*PR Comment from Junior Engineer: "Will this lock the users table? That seems risky for a 10M row table."*
+*Reviewer Response: "Should be fine, staging worked."*
 
-Manager: "You didn't see what could go wrong? That's your job."
+- **Director**: "This is GOLD. The system failed to escalate a valid concern. CONDITION: Review process didn't require load testing for schema changes. The PERSON did the right thing. The SYSTEM let them down."
+- **Junior Engineer**: *(Visible relief)*
+- **Director**: "The question isn't 'who made a mistake.' The question is 'why was making this mistake so easy?' Our action items should make this mistake IMPOSSIBLE to repeat."
 
-Meeting continues for 90 minutes. No one learns anything.
-Everyone learns to hide their mistakes.
-
-Result 6 months later:
-- Same migration issues occur 3 more times
-- Engineers deploy only on Fridays so incidents happen on weekends
-- Junior engineers stop asking for help
-- Senior engineers stop doing code reviews
-- Incident reports are vague: "unknown cause"
-- MTTR increases because people are afraid to admit they know what's wrong
-
-AFTER (Learning Culture)
-────────────────────────────────────────────────────────────────
-
-New Director's first post-incident review
-
-Same incident, same room, different approach
-
-Director: "Let's understand what happened. Timeline first. Facts only."
-
-  14:32 - Migration started
-  14:34 - Lock escalation began
-  14:35 - Application timeouts
-  14:38 - Alert fired
-  14:42 - On-call paged
-  14:55 - Decision to rollback
-  15:19 - Service restored
-
-Director: "47 minutes total. Now, what CONDITIONS allowed this to happen?"
-
-Engineer 1: "The migration worked in staging but staging has 1% of
-            production data."
-
-Director: *Writing on whiteboard* "CONDITION: Staging doesn't represent
-          production data volume. What else?"
-
-Engineer 2: "There's no way to test migrations against prod-like data."
-
-Director: "CONDITION: No production-representative test environment."
-
-Engineer 3: "The locks weren't visible. We didn't know they were building up."
-
-Director: "CONDITION: Lock monitoring gap. More?"
-
-Junior Engineer: *Tentatively* "I... I actually asked about this in
-                  the PR, but it got approved anyway."
-
-Director: "Wait, you asked? Show me."
-
-*Pulls up PR*
-
-PR Comment from Junior Engineer: "Will this lock the users table?
-                                   That seems risky for a 10M row table."
-
-Reviewer Response: "Should be fine, staging worked."
-
-Director: "This is GOLD. The system failed to escalate a valid concern.
-          CONDITION: Review process didn't require load testing for
-          schema changes. The PERSON did the right thing. The SYSTEM
-          let them down."
-
-Junior Engineer: *Visible relief*
-
-Director: "The question isn't 'who made a mistake.' The question is
-          'why was making this mistake so easy?' Our action items
-          should make this mistake IMPOSSIBLE to repeat."
-
-ACTION ITEMS (with owners who volunteered)
-────────────────────────────────────────────────────────────────
+#### Action Items (with owners who volunteered)
 
 | # | Action | Owner | Due |
 |---|--------|-------|-----|
@@ -674,32 +603,28 @@ ACTION ITEMS (with owners who volunteered)
 | 4 | Document "concern escalation" for PRs | Director | Mar 18 |
 | 5 | Migration runbook with rollback steps | Junior Eng | Mar 20 |
 
-Note: Junior engineer was GIVEN an action item, not punished.
-This built confidence and ownership.
+*Note: The junior engineer was GIVEN an action item, not punished. This built confidence and ownership.*
 
-RESULTS 6 MONTHS LATER
-────────────────────────────────────────────────────────────────
+#### Results 6 Months Later
 
-Metric                          Before    After     Change
-───────────────────────────────────────────────────────────
-Incidents from same root cause    12        2       -83%
-Action item completion rate       34%      89%      +162%
-Postmortem participation          5 avg   12 avg    +140%
-Engineer satisfaction (survey)    3.2/5   4.4/5    +38%
-Mean time to acknowledge          12 min   4 min   -67%
-Voluntary incident reports        0        23       ∞
+| Metric | Before | After | Change |
+|--------|--------|-------|--------|
+| Incidents from same root cause | 12 | 2 | -83% |
+| Action item completion rate | 34% | 89% | +162% |
+| Postmortem participation | 5 avg | 12 avg | +140% |
+| Engineer satisfaction (survey) | 3.2/5 | 4.4/5 | +38% |
+| Mean time to acknowledge | 12 min | 4 min | -67% |
+| Voluntary incident reports | 0 | 23 | ∞ |
 
-THE TRANSFORMATION FORMULA
-────────────────────────────────────────────────────────────────
+#### The Transformation Formula
 
 1. Replace "Who?" with "What conditions?"
-2. Assume everyone tried their best
+2. Assume everyone tried their best.
 3. Ask "What would have prevented this?"
-4. Make action items about SYSTEMS, not PEOPLE
-5. Celebrate catching problems over hiding them
-6. Follow up on action items publicly
-7. Share postmortems widely (learning becomes culture)
-```
+4. Make action items about SYSTEMS, not PEOPLE.
+5. Celebrate catching problems over hiding them.
+6. Follow up on action items publicly.
+7. Share postmortems widely (learning becomes culture).
 
 ---
 
@@ -872,129 +797,115 @@ Analysis:
 
 ---
 
-## Key Takeaways
+## Key Takeaways: Measuring and Improving Reliability
 
-```
-MEASURING AND IMPROVING RELIABILITY - WHAT TO REMEMBER
-═══════════════════════════════════════════════════════════════════════════════
+### The Core Framework
 
-THE CORE FRAMEWORK
-────────────────────────────────────────────────────────────────
+**SLI → SLO → SLA (in order of strictness)**
 
-SLI → SLO → SLA (in order of strictness)
+- **SLI:** "We measured 99.85% availability" ← The fact
+- **SLO:** "We target 99.9% availability" ← The internal goal
+- **SLA:** "We promise 99.5% availability" ← The contract
 
-    SLI: "We measured 99.85% availability"    ← The fact
-    SLO: "We target 99.9% availability"       ← The internal goal
-    SLA: "We promise 99.5% availability"      ← The contract
+*(SLA ≤ current SLI < SLO. Give yourself a buffer between the promise and target.)*
 
-    SLA ≤ current SLI < SLO
-    (Give yourself buffer between promise and target)
+### The Error Budget Formula
 
-THE ERROR BUDGET FORMULA
-────────────────────────────────────────────────────────────────
+**Error Budget = 100% - SLO**
 
-Error Budget = 100% - SLO
+For a 99.9% SLO:
+- Budget = 100% - 99.9% = 0.1%
+- Monthly = 30 × 24 × 60 × 0.001 = 43.2 minutes
 
-For 99.9% SLO:
-    Budget = 100% - 99.9% = 0.1%
-    Monthly = 30 × 24 × 60 × 0.001 = 43.2 minutes
+- **Budget > 75%**: Ship fast
+- **Budget 50-75%**: Normal pace
+- **Budget 25-50%**: Slow down
+- **Budget < 25%**: Feature freeze
+- **Budget = 0%**: All hands on reliability
 
-    Budget > 75%: Ship fast
-    Budget 50-75%: Normal pace
-    Budget 25-50%: Slow down
-    Budget < 25%: Feature freeze
-    Budget = 0%: All hands on reliability
+### The Four Golden Signals
 
-THE FOUR GOLDEN SIGNALS
-────────────────────────────────────────────────────────────────
-
-1. LATENCY    - How long requests take
-2. TRAFFIC    - How much demand
-3. ERRORS     - Rate of failures
-4. SATURATION - How "full" the system is
+1. **LATENCY** - How long requests take
+2. **TRAFFIC** - How much demand
+3. **ERRORS** - Rate of failures
+4. **SATURATION** - How "full" the system is
 
 These four capture most user-visible problems.
 
-GOOD SLI CHARACTERISTICS
-────────────────────────────────────────────────────────────────
+### Good SLI Characteristics
 
-[ ] User-centric (what users experience, not system internals)
-[ ] Measurable (you can actually collect the data)
-[ ] Proportional (worse SLI = worse experience)
-[ ] Actionable (your team can influence it)
-[ ] Edge-measured (where users connect)
+- [x] **User-centric** (what users experience, not system internals)
+- [x] **Measurable** (you can actually collect the data)
+- [x] **Proportional** (worse SLI = worse experience)
+- [x] **Actionable** (your team can influence it)
+- [x] **Edge-measured** (where users connect)
 
-✗ "CPU is at 80%"         → Not user-centric
-✓ "p99 latency is 200ms"  → User-centric
+*Bad:* "CPU is at 80%" → Not user-centric
+*Good:* "p99 latency is 200ms" → User-centric
 
-THE RELIABILITY IMPROVEMENT CYCLE
-────────────────────────────────────────────────────────────────
+### The Reliability Improvement Cycle
 
-    MEASURE → ANALYZE → PRIORITIZE → IMPROVE → REPEAT
-        │         │          │           │
-        │         │          │           └── Fix the issue
-        │         │          └── What has most impact?
-        │         └── Why are we missing SLO?
-        └── Track SLIs and error budget
+```mermaid
+flowchart LR
+    Measure --> Analyze
+    Analyze --> Prioritize
+    Prioritize --> Improve
+    Improve --> Measure
+```
 
-BLAMELESS POSTMORTEMS
-────────────────────────────────────────────────────────────────
+- **Measure**: Track SLIs and error budget
+- **Analyze**: Why are we missing SLO?
+- **Prioritize**: What has the most impact?
+- **Improve**: Fix the issue
 
-NOT: "Who made this mistake?"
-YES: "What conditions allowed this to happen?"
+### Blameless Postmortems
 
-The question isn't WHO failed.
-The question is WHY the system made failure easy.
+**NOT:** "Who made this mistake?"
+**YES:** "What conditions allowed this to happen?"
 
-Key behaviors:
+The question isn't WHO failed. The question is WHY the system made failure easy.
+
+**Key behaviors:**
 1. Facts first, judgment later
 2. Assume good intent
 3. Fix systems, not people
 4. Follow up on action items
 5. Share learnings widely
 
-ERROR BUDGET POLICY EXAMPLE
-────────────────────────────────────────────────────────────────
+### Error Budget Policy Example
 
-| Budget | Color  | Policy                    |
-|--------|--------|---------------------------|
-| >75%   | Green  | Ship fast, experiment     |
-| 50-75% | Yellow | Normal pace, monitor      |
-| 25-50% | Orange | Only critical releases    |
-| <25%   | Red    | Feature freeze            |
-| 0%     | Black  | War room until recovery   |
+| Budget | Color | Policy |
+|--------|-------|--------|
+| >75% | Green | Ship fast, experiment |
+| 50-75% | Yellow | Normal pace, monitor |
+| 25-50% | Orange | Only critical releases |
+| <25% | Red | Feature freeze |
+| 0% | Black | War room until recovery |
 
-THE KEY INSIGHT
-────────────────────────────────────────────────────────────────
+### The Key Insight
 
 Error budgets resolve the eternal conflict:
 
-    BEFORE: "Move fast!" vs "Be reliable!" → Politics wins
-
-    AFTER:  Budget healthy? → Ship features
-            Budget depleted? → Fix reliability
+- **BEFORE:** "Move fast!" vs "Be reliable!" → Politics wins
+- **AFTER:** Budget healthy? → Ship features. Budget depleted? → Fix reliability.
 
 Data-driven decisions. No arguments needed.
 
-COMMON MISTAKES TO AVOID
-────────────────────────────────────────────────────────────────
+### Common Mistakes to Avoid
 
-🚩 Too many SLIs (>5 per service)
-🚩 SLO = current performance (no improvement room)
-🚩 Measuring internally instead of at edge
-🚩 Ignoring error budget in decisions
-🚩 Blaming individuals in postmortems
-🚩 Never reviewing/adjusting SLOs
-🚩 Consistently over-achieving (might be over-investing)
+- 🚩 **Too many SLIs** (>5 per service)
+- 🚩 **SLO = current performance** (no improvement room)
+- 🚩 **Measuring internally** instead of at edge
+- 🚩 **Ignoring error budget** in decisions
+- 🚩 **Blaming individuals** in postmortems
+- 🚩 **Never reviewing/adjusting SLOs**
+- 🚩 **Consistently over-achieving** (might be over-investing)
 
-THE BOTTOM LINE
-────────────────────────────────────────────────────────────────
+### The Bottom Line
 
 "Hope is not a strategy."
 
-Reliability without measurement is wishful thinking.
-With SLIs, SLOs, and error budgets, it's engineering.
-```
+Reliability without measurement is wishful thinking. With SLIs, SLOs, and error budgets, it's engineering.
 
 ---
 
