@@ -615,7 +615,7 @@ kubectl get pods -n stocks-lab -w
 
 ```bash
 # Count pending vs completed (stock levels)
-watch -n 1 'echo "Pending: $(kubectl get jobs -n stocks-lab --field-selector status.successful=0 --no-headers 2>/dev/null | wc -l | tr -d " ")"; echo "Completed: $(kubectl get jobs -n stocks-lab --field-selector status.successful=1 --no-headers 2>/dev/null | wc -l | tr -d " ")"'
+watch -n 1 'echo "Pending: $(kubectl get jobs -n stocks-lab --no-headers 2>/dev/null | grep -c "0/1"); echo "Completed: $(kubectl get jobs -n stocks-lab --no-headers 2>/dev/null | grep -c "1/1")"'
 ```
 
 **What to observe:**
@@ -721,4 +721,3 @@ For "cascading failures during traffic spikes," list interventions:
 ## Next Module
 
 [Module 1.4: Complexity and Emergent Behavior](../module-1.4-complexity-and-emergent-behavior/) - The Cynefin framework for decision-making, why complex systems fail unpredictably, and how to design for resilience in environments you can't fully understand.
----
