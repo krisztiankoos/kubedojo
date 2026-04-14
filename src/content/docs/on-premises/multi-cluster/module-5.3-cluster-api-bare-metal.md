@@ -226,7 +226,7 @@ metadata:
   namespace: clusters
 spec:
   replicas: 3
-  version: v1.34.0
+  version: v1.35.0
   machineTemplate:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -282,7 +282,7 @@ spec:
         cluster.x-k8s.io/cluster-name: production
     spec:
       clusterName: production
-      version: v1.34.0
+      version: v1.35.0
       bootstrap:
         configRef:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
@@ -447,9 +447,7 @@ Allocation breakdown:
 - Spare allocation: 3 nodes (representing 15% of total hardware).
 
 **Why maintaining 3 spares matters**:
-1. **MachineHealthCheck remediation**: When a production worker suffers a hardware failure, the MHC requires an `Available` BareMetalHost to provision as a replacement. Without spares, the replacement Machine remains stuck in `Pending` indefinitely.
-2. **Concurrent failures**: In the event of a localized power supply failure affecting two nodes, you require multiple spares to immediately restore full cluster capacity.
-3. **Dynamic Scaling**: If production requires temporary horizontal expansion to handle seasonal traffic bursts, the spares provide immediate capacity without impacting development environments.
+Maintaining a pool of unallocated spare servers is critical because the MachineHealthCheck relies on them for automatic remediation. When a production worker suffers a hardware failure, the MHC requires an `Available` BareMetalHost to provision as a replacement, and without spares, the replacement Machine remains stuck in `Pending` indefinitely. Furthermore, in the event of localized power supply failures affecting multiple nodes, you require multiple spares to immediately restore full cluster capacity. Finally, if production requires temporary horizontal expansion to handle seasonal traffic bursts, the spares provide immediate capacity without impacting development environments.
 
 ```yaml
 # Label spares for easy identification
@@ -472,7 +470,7 @@ Your production MachineHealthCheck is configured with `maxUnhealthy: 40%` coveri
 
 **The MachineHealthCheck will NOT remediate any nodes.** Because 5 out of 10 nodes represents 50% of the fleet, the condition explicitly exceeds the `maxUnhealthy: 40%` circuit breaker threshold.
 
-**This is the exact intended safeguard behavior.** The threshold prevents catastrophic cascading failures caused by infrastructure anomalies. A switch failure is an environmental network issue, not an underlying host degradation. Attempting to deprovision and reinstall the operating systems on half of your production fleet would severely worsen the outage. You must troubleshoot the infrastructure failure (such as an invalid image, network anomaly, or bad drive) and apply a fix. Once the network connectivity is restored, the nodes will organically return to a `Ready` state.
+This is the exact intended safeguard behavior designed to protect your cluster. The threshold prevents catastrophic cascading failures caused by infrastructure anomalies such as a network partition. A switch failure is an environmental network issue, not an underlying host degradation. Attempting to deprovision and reinstall the operating systems on half of your production fleet simultaneously would severely worsen the outage and overload the control plane. Instead, administrators must troubleshoot the infrastructure failure, and once network connectivity is restored, the nodes will organically return to a `Ready` state without requiring reprovisioning.
 
 **What you should do**:
 1. Check the management cluster for MachineHealthCheck events:
@@ -488,30 +486,25 @@ Your production MachineHealthCheck is configured with `maxUnhealthy: 40%` coveri
 </details>
 
 ### Question 3
-You merge a Git pull request to upgrade a production workload cluster from Kubernetes v1.33.0 to v1.34.0. Describe the sequence of actions initiated by the KubeadmControlPlane controller. Furthermore, what happens to the older v1.33.0 nodes if the first newly provisioned v1.34.0 control plane node fails to start?
+You merge a Git pull request to upgrade a production workload cluster from Kubernetes v1.34.0 to v1.35.0. Describe the sequence of actions initiated by the KubeadmControlPlane controller. Furthermore, what happens to the older v1.34.0 nodes if the first newly provisioned v1.35.0 control plane node fails to start?
 
 <details>
 <summary>Answer</summary>
 
 **Upgrade process execution:**
-1. CAPI provisions a fresh Machine running v1.34.0, leaving existing nodes untouched.
-2. The BareMetalHost is acquired, OS is imaged, and Kubeadm is executed to join the node to the existing cluster logic.
-3. The controller rigorously waits for the new node to broadcast a `Ready` condition and verifies that etcd quorum has expanded successfully.
-4. Only after validation succeeds does CAPI safely cordon, drain, and terminate one of the legacy v1.33.0 control plane nodes.
-5. This sequence loops iteratively for each replica.
-6. After all control plane nodes are successfully upgraded, the MachineDeployment orchestrates a similar rolling upgrade across all worker nodes.
+During the upgrade process, CAPI first provisions a fresh Machine running v1.35.0, leaving existing nodes untouched. The BareMetalHost is acquired, the operating system is imaged, and Kubeadm is executed to join the node to the existing cluster logic. The controller rigorously waits for the new node to broadcast a `Ready` condition and verifies that etcd quorum has expanded successfully. Only after validation succeeds does CAPI safely cordon, drain, and terminate one of the legacy v1.34.0 control plane nodes, looping iteratively for each replica.
 
 **If the new node fails to start:**
-The controller detects that the newly provisioned node has not reached a `Ready` state within the `nodeStartupTimeout` window. The rolling upgrade sequence immediately halts. No legacy nodes are evicted or deleted, ensuring the cluster remains functional and actively servicing workloads on the v1.33.0 infrastructure. Administrators must investigate the failure, resolve the provisioning blocker, and allow CAPI to resume.
+If the new node fails to start, the controller detects that the newly provisioned node has not reached a `Ready` state within the `nodeStartupTimeout` window. As a result, the rolling upgrade sequence immediately halts to prevent degradation. No legacy nodes are evicted or deleted, ensuring the cluster remains fully functional and actively servicing workloads on the v1.34.0 infrastructure. Administrators must then investigate the failure, resolve the provisioning blocker, and allow CAPI to resume the operation.
 
 ```bash
 # Monitor upgrade progress
 kubectl get machines -n clusters -l cluster.x-k8s.io/cluster-name=production
 # NAME              PHASE         VERSION
-# production-cp-1   Running       v1.33.0   (old, will be removed last)
-# production-cp-2   Running       v1.33.0
-# production-cp-3   Running       v1.33.0
-# production-cp-4   Provisioning  v1.34.0   (new, being created)
+# production-cp-1   Running       v1.34.0   (old, will be removed last)
+# production-cp-2   Running       v1.34.0
+# production-cp-3   Running       v1.34.0
+# production-cp-4   Provisioning  v1.35.0   (new, being created)
 ```
 </details>
 
@@ -523,7 +516,7 @@ A junior platform engineer accidentally executes a `git rm -r clusters/productio
 
 **The entire production cluster will be autonomously and irrevocably destroyed.**
 
-Flux pruning logic dictates that if a manifested resource is discovered within the live cluster but is absent from the authoritative Git tree, the resource must be deleted. While this is acceptable for stateless application Pods, deleting CAPI resources (such as `Cluster`, `KubeadmControlPlane`, and `MachineDeployment`) triggers immediate infrastructure deprovisioning cascades. The Bare Metal Operator will acquire the deletion signal, wipe the attached storage drives, and forcibly power off every physical server attached to that cluster. To prevent this, administrators must ensure `prune: false` is configured for CAPI Kustomizations.
+Flux pruning logic dictates that if a manifested resource is discovered within the live cluster but is absent from the authoritative Git tree, the resource must be deleted to match the desired state. While this is acceptable for stateless application Pods, deleting CAPI resources triggers immediate infrastructure deprovisioning cascades. The Bare Metal Operator will acquire the deletion signal, wipe the attached storage drives, and forcibly power off every physical server attached to that cluster. To prevent this catastrophic outcome, administrators must ensure `prune: false` is configured for CAPI Kustomizations, which protects the resources from being deleted if the manifests are accidentally removed.
 
 **With `prune: false`:**
 1. Engineer accidentally deletes files from git
@@ -540,14 +533,6 @@ metadata:
     kustomize.toolkit.fluxcd.io/prune: "disabled"
 ```
 </details>
-
-
-
-
-
-
-
-
 
 ---
 
@@ -570,7 +555,7 @@ clusterctl init --infrastructure docker
 # Generate and create a workload cluster
 clusterctl generate cluster dev-cluster \
   --infrastructure docker \
-  --kubernetes-version v1.33.0 \
+  --kubernetes-version v1.35.0 \
   --control-plane-machine-count 1 \
   --worker-machine-count 2 > dev-cluster.yaml
 kubectl apply -f dev-cluster.yaml
