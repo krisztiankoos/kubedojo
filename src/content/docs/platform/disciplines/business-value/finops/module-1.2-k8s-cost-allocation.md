@@ -376,24 +376,20 @@ Kubecost is a commercial product (with a free tier) built on top of OpenCost. It
 
 ### The Cost Allocation Pipeline
 
-```text
-Step 1: Collect Infrastructure Costs
-  └─ Cloud billing API → node costs per hour
+```mermaid
+flowchart TD
+    S1["Step 1: Collect Infrastructure Costs<br/>Cloud billing API → node costs per hour"]
+    S2["Step 2: Map Nodes to Resources<br/>Kubernetes API → pods per node, resource requests"]
+    S3["Step 3: Calculate Pod Costs<br/>Pod cost = (pod_requests / node_capacity) × node_cost"]
+    S4["Step 4: Aggregate by Dimension<br/>Sum pod costs by namespace, label, team, service"]
+    S5["Step 5: Add Shared Costs<br/>Distribute cluster overhead proportionally"]
+    S6["Step 6: Report<br/>Dashboards, reports, alerts, forecasts"]
 
-Step 2: Map Nodes to Resources
-  └─ Kubernetes API → pods per node, resource requests
-
-Step 3: Calculate Pod Costs
-  └─ Pod cost = (pod_requests / node_capacity) × node_cost
-
-Step 4: Aggregate by Dimension
-  └─ Sum pod costs by namespace, label, team, service
-
-Step 5: Add Shared Costs
-  └─ Distribute cluster overhead proportionally
-
-Step 6: Report
-  └─ Dashboards, reports, alerts, forecasts
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+    S5 --> S6
 ```
 
 ### Cost Allocation Formula
