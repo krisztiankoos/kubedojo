@@ -468,7 +468,7 @@ metadata:
   namespace: production
 spec:
   serviceAccountName: my-app
-  automountServiceAccountToken: true  # Only if needed!
+  automountServiceAccountToken: true  # Set to true because the app needs to read the ConfigMap via API
   containers:
   - name: app
     image: myapp:v1
@@ -498,7 +498,7 @@ sequenceDiagram
 
 - **TOTP codes change every 30 seconds** by design. The server and your phone share a secret; both compute HMAC(secret, time/30). Same algorithm, same result, no communication needed.
 
-- **Kubernetes defaulted to auto-mounting service account tokens** until v1.24. Now you have to explicitly request it, implementing least privilege by default.
+- **Kubernetes historically auto-generated long-lived secret tokens** for every ServiceAccount until v1.24. Modern versions (like v1.35) use the TokenRequest API to project short-lived, automatically rotating tokens directly into pods, dramatically reducing the risk of leaked credentials.
 
 - **Password complexity rules often backfire.** NIST's 2017 guidelines reversed decades of advice—they now recommend long passphrases over complex passwords, and explicitly discourage mandatory rotation. "Tr0ub4dor&3" is weaker than "correct horse battery staple" because the complex password is hard for humans but easy for computers to crack.
 
@@ -523,7 +523,7 @@ sequenceDiagram
    <details>
    <summary>Answer</summary>
 
-   In this scenario, the failure is in authorization, not authentication. Authentication answers "Who are you?"—the API gateway successfully verified the JWT, confirming the users' identities via Okta. Authorization answers "What can you do?"—the system failed to check if those authenticated users had the specific permissions required to access administrative endpoints. Because the two processes are distinct, a system must explicitly enforce authorization rules after successfully authenticating a user to prevent privilege escalation.
+   In this scenario, the failure is in authorization, not authentication. Authentication answers "Who are you?"—the API gateway successfully verified the JWT, confirming the users' identities via Okta. Authorization answers "What can you do?"—the system failed to check if those authenticated users had the specific permissions required to access administrative endpoints. Because the two processes are distinct, a system must explicitly enforce authorization rules after successfully authenticating a user to prevent privilege escalation. Without these checks, anyone with a valid Okta account could potentially perform administrative actions, violating the principle of least privilege.
    </details>
 
 2. **Scenario: An attacker manages to steal a database containing all user passwords for your application. If your application enforces MFA, why are the user accounts still secure? Explain how the different authentication factors work together.**
