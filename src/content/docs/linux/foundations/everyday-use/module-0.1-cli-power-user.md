@@ -141,6 +141,8 @@ mkdir -p project/{src,tests,docs}
 # Creates three subdirectories inside project/
 ```
 
+> **Pause and predict**: If you type `echo file_{1,2,3}.txt`, what exact string will the shell print to the screen before any files are created?
+
 > **Key insight:** The shell expands wildcards *before* the command sees them. When you type `ls *.txt`, the shell turns it into something like `ls notes.txt readme.txt todo.txt` and then runs `ls` with those three arguments. The `ls` command never sees the `*` at all.
 
 ---
@@ -441,6 +443,8 @@ find /home -type f -mtime +90
 find . -type f -amin -60
 ```
 
+> **Pause and predict**: If you want to find log files older than 30 days and immediately delete them, how could you combine the `-mtime` and `-delete` actions in a single `find` command?
+
 ### Find with Actions
 
 `find` can do things with the files it discovers, not just list them.
@@ -562,6 +566,8 @@ dpkg -l | grep "nginx"
 env | grep -i java
 ```
 
+> **Stop and think**: If you use `grep -v "INFO" app.log | grep -v "DEBUG"`, what kind of log levels are you attempting to isolate in the output?
+
 ---
 
 ## 7. The Power Combo: find + grep + Pipes
@@ -591,6 +597,8 @@ You might notice two ways to run commands on found files: `find . -name "*.log" 
 The `-exec ... \;` method runs the command *once for every single file*. If you find 10,000 files, Linux starts the `grep` process 10,000 times. This is completely safe regarding weird filenames, but it is extremely slow due to process overhead.
 
 The `xargs` method batches the files. It runs `grep "ERROR" file1 file2 file3 ...` up to the system's character limit, drastically reducing the number of processes started. It is blazing fast for massive directories. However, `xargs` can stumble if filenames contain spaces (unless you use the safer `find -print0 | xargs -0` variant). **Rule of thumb**: Use `-exec` for a few files or complex command strings, but switch to `xargs` when performance matters and you are parsing thousands of files.
+
+> **Pause and predict**: If you have 10,000 files to search and you use `find -exec grep ... \;`, how many separate `grep` processes will the Linux kernel have to start and stop?
 
 ### Scenario 3: Find Large Log Files Modified Today
 
