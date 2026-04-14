@@ -946,7 +946,7 @@ aws iam put-role-policy \
   --policy-document "{
     \"Version\": \"2012-10-17\",
     \"Statement\": [
-      {\"Effect\":\"Allow\",\"Action\":[\"s3:*\"],\"Resource\":\"arn:aws:s3:::cicd-lab-artifacts-${ACCOUNT_ID}/*\"},
+      {\"Effect\":\"Allow\",\"Action\":[\"s3:*\"],\"Resource\":[\"arn:aws:s3:::cicd-lab-artifacts-${ACCOUNT_ID}\",\"arn:aws:s3:::cicd-lab-artifacts-${ACCOUNT_ID}/*\"]},
       {\"Effect\":\"Allow\",\"Action\":[\"codebuild:StartBuild\",\"codebuild:BatchGetBuilds\"],\"Resource\":\"*\"},
       {\"Effect\":\"Allow\",\"Action\":[\"ecs:*\"],\"Resource\":\"*\"},
       {\"Effect\":\"Allow\",\"Action\":[\"iam:PassRole\"],\"Resource\":\"*\"},
