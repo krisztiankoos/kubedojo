@@ -159,7 +159,7 @@ The ecosystem recognizes the critical need for local development and provides se
 
 | Tool | Underlying Architecture | Primary Use Case | Pros | Cons |
 |---|---|---|---|---|
-| **minikube** | Virtual Machines (historically) or Containers | Traditional local development | Massive feature set, mature ecosystem, extensive add-on library. Excellent for beginners. | Can be heavily resource intensive. Slower startup times. Emulates a cluster rather than running pure upstream. |
+| **minikube** | Virtual Machines (historically) or Containers | Traditional local development | Massive feature set, mature ecosystem. VM mode uses fixed-size virtual disks, protecting host disk space. | Can be heavily resource intensive. Slower startup times. Emulates a cluster rather than running pure upstream. |
 | **kind** (Kubernetes IN Docker) | Docker Containers acting as Nodes | CI/CD pipelines, automated testing, rigorous local dev | Extremely fast, identical to pure upstream Kubernetes, highly customizable multi-node topologies. | Requires Docker daemon. Complex networking edge cases when exposing services to host. |
 | **k3d** | Docker Containers running k3s | Edge computing simulation, IoT | Minimal memory footprint, extraordinarily fast startup. | Uses k3s (a stripped-down, modified Kubernetes distribution), which may lack 100% parity with cloud providers. |
 | **Docker Desktop / Colima** | Integrated Hypervisor / Lightweight VM | Quick validation for Mac/Windows users | Zero configuration, GUI integration, easy volume mounting. | Inflexible, limited strictly to a single monolithic node, tightly coupled to the virtualization engine. |
@@ -320,6 +320,8 @@ Creating a default cluster is accomplished with a single declarative command. By
 kind create cluster --name dojo-basics
 ```
 
+To explicitly pin the Kubernetes version, which is critical for deterministic testing, append the `--image` flag (e.g., `kind create cluster --name dojo-basics --image kindest/node:v1.35.0`).
+
 When you execute this seemingly simple command, `kind` performs a complex orchestration sequence behind the scenes:
 1.  **Image Pull:** It pulls a massive Docker image (`kindest/node`) pre-packaged with the Kubernetes binaries, systemd, and containerd.
 2.  **Node Provisioning:** It starts a privileged Docker container mapping random host ports to the container's internal port 6443.
@@ -385,7 +387,7 @@ If you deploy a web application and want to view it in your browser, you cannot 
 
 While a single-node cluster is entirely sufficient for basic API testing and validating simple pod manifests, it completely fails to replicate the complex, distributed nature of real-world production systems. In any production environment, you will have multiple distinct worker nodes, and your pods will be scheduled dynamically across them based on resource availability and constraints. 
 
-To effectively practice advanced concepts like node affinity (forcing a pod to run on a specific node), pod anti-affinity (ensuring two replicas never run on the same physical hardware), taints, tolerations, and distributed network routing, you strictly require a multi-node cluster.
+To effectively practice advanced concepts like node affinity (forcing a pod to run on a specific node), pod anti-affinity (ensuring two replicas never run on the same physical hardware), taints, tolerations, distributed network routing, and simulating network degradation (e.g., injecting latency between distinct worker nodes using the Linux `tc` traffic control utility), you strictly require a multi-node cluster.
 
 The brilliance of `kind` is that it allows you to declaratively define the physical architecture of your local cluster using a simple YAML configuration file, mirroring how you deploy applications. Let us design a cluster architecture containing one dedicated control plane node and two dedicated worker nodes.
 
@@ -562,7 +564,7 @@ You must completely bypass the upgrade or downgrade process and create an entire
 
 <details>
 <summary><strong>[Tests LO4: Design a multi-node local cluster configuration]</strong> You are tasked with reproducing a complex production bug that only manifests when network latency between a web frontend pod and a backend database pod consistently exceeds 50ms. Which local cluster architecture would you design to test this hypothesis, and why?</summary>
-You must design and provision a multi-node cluster configuration utilizing `kind` with a minimum of two separate worker nodes. By explicitly scheduling the web application on worker node 1 and the database on worker node 2 using node selectors, you force the network traffic to traverse the virtualized network bridge between the distinct nodes. You can then utilize standard Linux traffic control utilities (`tc`) executing inside one of the worker node containers to artificially inject exactly 50ms of latency on its virtual network interface. This accurately and deterministically simulates the production network partition without requiring complex cloud infrastructure.
+You must design and provision a multi-node cluster configuration utilizing `kind` with a minimum of two separate worker nodes. By explicitly scheduling the web application on worker node 1 and the database on worker node 2 using node selectors, you force the network traffic to traverse the virtualized network bridge between the distinct nodes. You can then utilize the Linux `tc` (traffic control) utility executing inside one of the worker node containers to artificially inject exactly 50ms of latency on its virtual network interface. This accurately and deterministically simulates the production network partition without requiring complex cloud infrastructure.
 </details>
 
 <details>
@@ -582,7 +584,7 @@ The browser will immediately return a "Connection Refused" or "Site cannot be re
 
 <details>
 <summary><strong>[Tests LO3: Diagnose cluster failures]</strong> A junior engineer executes `kind create cluster`, but the command immediately fails, throwing an error stating "failed to pull image". The engineer verifies their internet connection is functioning perfectly. What is the most probable root cause, and how do you explicitly diagnose it?</summary>
-The most probable root cause is that the underlying Docker daemon is either not running, has crashed, or the executing user lacks the necessary permission to communicate with the Unix socket. `kind` relies entirely on the local Docker socket to communicate the instruction to pull the node images and bootstrap the containers. You diagnose this by running a simple daemon command like `docker ps`. If that command hangs indefinitely or returns an explicit "cannot connect to the Docker daemon" error, the issue is isolated to the host's container runtime setup, not the external network or the Kubernetes binary itself.
+The most probable root cause is exhausted host disk space. Because `kind` node images are enormous (often exceeding 1.5GB), accumulated images can silently fill your hard drive, causing Docker to fail when attempting to pull new images. You diagnose this by checking your system's available storage or looking for a "No space left on device" warning in the terminal. You resolve it by aggressively clearing unused images and volumes using `docker system prune -a --volumes` to restore at least 20GB of free space.
 </details>
 
 <details>
