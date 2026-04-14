@@ -321,18 +321,19 @@ cat /tmp/hidden.txt  # No such file
 
 ### Container Filesystem Isolation
 
-```
-Host filesystem:
-/
-├── etc/passwd  (host users)
-├── var/        (host data)
-└── ...
-
-Container mount namespace:
-/                     (overlay mount of image + container layer)
-├── etc/passwd        (container users - different file!)
-├── var/              (container data)
-└── ...
+```mermaid
+flowchart LR
+    subgraph "Host filesystem"
+        H_Root["/"] --> H_Etc["etc/passwd (host users)"]
+        H_Root --> H_Var["var/ (host data)"]
+        H_Root --> H_Dots["..."]
+    end
+    
+    subgraph "Container mount namespace"
+        C_Root["/ (overlay mount of image + container layer)"] --> C_Etc["etc/passwd (container users - different file!)"]
+        C_Root --> C_Var["var/ (container data)"]
+        C_Root --> C_Dots["..."]
+    end
 ```
 
 ---
@@ -368,12 +369,15 @@ Maps UIDs inside the namespace to different UIDs outside.
 
 ### Why User Namespaces Matter
 
-```
-Without user namespace:
-Container UID 0 (root) = Host UID 0 (root)  ← DANGEROUS!
-
-With user namespace:
-Container UID 0 (root) → Host UID 100000 (unprivileged)
+```mermaid
+flowchart LR
+    subgraph "Without user namespace"
+        C_Root1["Container UID 0 (root)"] -- "Equals (DANGEROUS!)" --> H_Root1["Host UID 0 (root)"]
+    end
+    
+    subgraph "With user namespace"
+        C_Root2["Container UID 0 (root)"] -- "Maps to" --> H_User["Host UID 100000 (unprivileged)"]
+    end
 ```
 
 ### Rootless Containers
@@ -391,15 +395,16 @@ podman run --rm alpine id
 
 ### Mapping Example
 
-```
-/etc/subuid: user:100000:65536
+`/etc/subuid: user:100000:65536`
+Meaning: user `user` can use UIDs `100000` to `165535`
 
-Meaning: user "user" can use UIDs 100000-165535
-
-Inside container:    Outside (host):
-UID 0           →    UID 100000
-UID 1           →    UID 100001
-UID 1000        →    UID 101000
+```mermaid
+flowchart LR
+    subgraph "UID Mapping"
+        C0["Inside: UID 0"] -->|"Maps to"| H100000["Outside (Host): UID 100000"]
+        C1["Inside: UID 1"] -->|"Maps to"| H100001["Outside (Host): UID 100001"]
+        C1000["Inside: UID 1000"] -->|"Maps to"| H101000["Outside (Host): UID 101000"]
+    end
 ```
 
 ---
@@ -407,6 +412,8 @@ UID 1000        →    UID 101000
 ## IPC Namespace
 
 Isolates inter-process communication: shared memory, semaphores, message queues.
+
+> **Stop and think**: If you run two containers in the same Kubernetes pod, what security implications arise from them sharing the same IPC namespace?
 
 ### Why It Matters
 
