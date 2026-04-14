@@ -287,6 +287,8 @@ k apply -f container-insights-config.yaml
 
 While Container Insights works well for logs and basic metrics, production teams often need Prometheus for application-specific metrics and Grafana for custom dashboards. Azure offers fully managed versions of both, eliminating the operational burden of running your own Prometheus server and Grafana instance.
 
+> **Stop and think**: If you rely strictly on Container Insights for everything, what happens when your application needs to expose a custom business metric like "active_user_sessions"? Why is Managed Prometheus a better fit for this?
+
 ### Setting Up Managed Prometheus
 
 Azure Monitor managed service for Prometheus stores metrics in an Azure Monitor workspace. AKS ships metrics using a Prometheus-compatible agent.
