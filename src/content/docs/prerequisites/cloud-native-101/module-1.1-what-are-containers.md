@@ -127,6 +127,11 @@ flowchart BT
 | Portability | VM image formats vary | Universal container images |
 | Density | ~10-20 VMs per server | ~100s of containers per server |
 
+### When to Use Which
+
+- **Use Virtual Machines when**: You need strict, hardware-level isolation, require a completely different operating system (e.g., Windows on a Linux host), or need a specific, custom kernel.
+- **Use Containers when**: You want to maximize server density, require fast startup times, and are deploying modern applications that can share the host OS.
+
 > **Stop and think**: You are tasked with migrating a 15-year-old monolithic application that requires a custom, heavily modified version of the Linux kernel to run properly. Would you choose to containerize this application or run it in a Virtual Machine? (Hint: Think about what containers share vs. what VMs provide).
 
 ---
@@ -409,6 +414,11 @@ Run a simple Alpine container that sleeps for an hour. Notice we run it in the b
 docker run -d --name isolation-test alpine sleep 3600
 ```
 
+Verify the container is running:
+```bash
+docker ps | grep isolation-test
+```
+
 **Step 2: View the process from inside the container**
 Execute a shell command inside the container to list processes.
 ```bash
@@ -422,6 +432,8 @@ Now, look for that exact same `sleep 3600` process on your actual host machine.
 ps aux | grep "sleep 3600"
 ```
 *Observe: The process exists on your host! But its PID is NOT 1. It will be a normal, large PID number assigned by your host operating system.*
+
+> **Note for Mac/Windows Users**: If you are using Docker Desktop, Docker runs a hidden Linux virtual machine in the background. You won't see this process on your native Mac/Windows host system because it is running inside that Linux VM. This step assumes a native Linux host.
 
 **Step 4: Prove Ephemerality (The Disappearing Data)**
 Create a file inside the running container:
