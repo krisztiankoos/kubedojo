@@ -245,6 +245,8 @@ Bad for: Databases, stateful workloads
 ----------------------------------------
 ```
 
+> **Stop and think**: If Spot instances are up to 90% cheaper, why wouldn't you run your primary database on them? The risk of unpredictable termination makes them unsuitable for stateful workloads without robust external replication and failover mechanisms.
+
 **When to use**: Fault-tolerant, stateless workloads — batch processing, CI/CD, dev/test, data processing, machine learning training.
 
 ### Pricing Model Comparison
