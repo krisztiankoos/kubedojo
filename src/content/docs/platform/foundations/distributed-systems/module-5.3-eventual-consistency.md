@@ -447,7 +447,7 @@ If Node A and Node B both increment a standard integer concurrently, a naive mer
    <details markdown="1">
    <summary>Answer</summary>
 
-   The Product Catalog should use Eventual Consistency, while the Payment Ledger requires Strong Consistency. For the catalog, high availability and low read latency are critical for user experience; if a user sees stale pricing or an old image for a few seconds, the business impact is minimal. Conversely, the payment ledger handles financial state, where correctness is absolutely critical. A stale read on a payment ledger could result in double-charging or shipping goods without confirmed payment, making the latency costs of strong consistency (quorum/consensus) an acceptable and necessary trade-off.
+   The Product Catalog should use Eventual Consistency, while the Payment Ledger requires Strong Consistency. For the catalog, high availability and low read latency are critical for user experience; if a user sees stale pricing or an old image for a few seconds, the business impact is minimal. Conversely, the payment ledger handles financial state, where correctness is absolutely critical. A stale read on a payment ledger could result in double-charging or shipping goods without confirmed payment. This makes the latency costs of strong consistency, such as waiting for quorum or consensus, an acceptable and necessary trade-off.
    </details>
 
 5. **Your database cluster has 5 nodes (N=5). You are deploying a new microservice that requires high availability for reads, but writes must be strictly strongly consistent. What read (R) and write (W) quorum values should you configure, and how does this affect system latency during a node failure?**
@@ -471,7 +471,7 @@ If Node A and Node B both increment a standard integer concurrently, a naive mer
    Systems prevent this using either Operational Transformation (OT) or Replicated Growable Array CRDTs. If using OT, when User A receives B's operation, the system algorithmically transforms the index of B's insert to account for the length of "Hello", shifting it so both strings are preserved. If using a CRDT, every inserted character is assigned a unique, immutable ID (comprising a timestamp and node ID) rather than relying on absolute indices. Because the edits are anchored to surrounding character IDs, they will sort deterministically across all clients, resulting in either "HelloWorld" or "WorldHello" consistently everywhere without data loss.
    </details>
 
-8. **A G-Counter CRDT has the following state across 3 nodes. Calculate the total count. Then Node B increments by 5 and syncs with Node A. What's Node A's new state?**
+8. **You are monitoring a distributed cache system that uses a G-Counter CRDT to track video page views across 3 regional nodes. The G-Counter has the following state across the nodes. Calculate the total count. Then, Node B handles 5 more page views locally and subsequently syncs with Node A. What is Node A's new state, and why does this prevent data loss?**
    ```text
    Node A: {A: 10, B: 3, C: 7}
    Node B: {A: 8,  B: 3, C: 5}
@@ -480,8 +480,7 @@ If Node A and Node B both increment a standard integer concurrently, a naive mer
    <details markdown="1">
    <summary>Answer</summary>
 
-   The true total count initially is the sum of the maximums of each component across all nodes: `max(10,8,10) + max(3,3,2) + max(7,5,7) = 10 + 3 + 7 = 20`. 
-   When Node B increments by 5, its local state becomes `{A: 8, B: 8, C: 5}`. When Node B syncs this new vector to Node A, the merge function takes the highest known value for each node key. Node A's state updates to `{A: max(10,8), B: max(3,8), C: max(7,5)}`, resulting in `{A: 10, B: 8, C: 7}`. The mathematical max function ensures increments are safely merged without duplication.
+   The true total count initially is the sum of the maximums of each component across all nodes: `max(10,8,10) + max(3,3,2) + max(7,5,7) = 10 + 3 + 7 = 20`. When Node B increments its local counter by 5, its state becomes `{A: 8, B: 8, C: 5}`. When Node B synchronizes this new vector to Node A, the merge function independently takes the highest known value for each node's key. Node A's state updates to `{A: max(10,8), B: max(3,8), C: max(7,5)}`, resulting in `{A: 10, B: 8, C: 7}`. This mathematical max function ensures increments are safely merged without duplication, preserving the operations from both regions.
    </details>
 
 ---
