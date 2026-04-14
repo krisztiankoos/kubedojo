@@ -56,9 +56,9 @@ Selecting the right engine dictates your container configuration, available metr
 | **Multi-GPU** | Tensor Parallelism (Ray/NCCL) | Tensor Parallelism (NCCL) | Limited/Basic |
 | **Metrics** | Prometheus endpoint built-in | Prometheus endpoint built-in | None native (requires exporters) |
 
-For bare-metal production, **vLLM** and **TGI** are the standard choices. vLLM (especially from v0.10.0 onwards) highlights advanced throughput features like chunked prefill, speculative decoding, and robust PagedAttention. Both engines natively support the OpenAI API format (e.g., TGI v1.4.0+ introduced an OpenAI-compatible Messages API, and vLLM provides fully compliant Chat and Completions endpoints), making them drop-in replacements for cloud APIs.
+For bare-metal production, **vLLM** and **TGI** are the standard choices. vLLM (v0.10.0) highlights continuous batching, chunked prefill, spec decoding, paged attention, and multi-LORA/quantization optimization features for high-throughput serving. Both engines natively support the OpenAI API format: Hugging Face TGI 1.4.0 introduces a Messages API with OpenAI-compatible chat semantics, while vLLM v0.6.0 OpenAI-compatible server docs list Completions and Chat APIs as supported OpenAI-style endpoints (with vLLM v0.18.2 adding explicit OpenAI-compatible support for the `/v1/responses` endpoint). This makes them drop-in replacements for cloud APIs.
 
-Commercial alternatives like **NVIDIA NIM LLM 1.14.0+** (which adds native tool calling, thinking budget controls, and observability) or the **NVIDIA Triton Inference Server** (which wraps both TRT-LLM and vLLM backends) are also commonly deployed via Helm or operators in enterprise Kubernetes environments.
+Commercial alternatives are also commonly deployed in enterprise Kubernetes environments. **NVIDIA NIM LLM 1.14.0** documentation advertises function/tool calling, thinking budget control, message roles, observability, and per-request metrics, including deployment options on Kubernetes (including operator/Helm) and multi-node deployment guidance. Alternatively, **NVIDIA Triton Inference Server** archives (e.g., 2590/2650) include both TRT-LLM and vLLM backend documentation, plus OpenAI API support and Kubernetes deployment guides.
 
 ### Multi-GPU Scaling: Tensor Parallelism vs. Pipeline Parallelism
 
@@ -83,14 +83,14 @@ Do not use `BitsAndBytes` (LLM.int8()) for production serving. It is designed fo
 
 ## Orchestrating with KServe
 
-Running raw Deployments of vLLM works, but managing autoscaling based on hardware metrics and routing traffic to specific model versions becomes complex. **KServe** (accepted as a CNCF incubating project in late 2025) is built around Kubernetes controllers and Custom Resource Definitions (CRDs) to standardize model serving.
+Running raw Deployments of vLLM works, but managing autoscaling based on hardware metrics and routing traffic to specific model versions becomes complex. **KServe** was accepted to CNCF at the incubating maturity level on September 29, 2025, and is built around Kubernetes controllers and CRDs for model serving. The CNCF KServe v0.15 release announcement confirms Kubernetes Gateway API support and security updates. Furthermore, the CNCF KServe incubating article states that the vLLM backend was significantly enhanced in v0.15 and that llm-d and LMCache integrations were part of the ecosystem direction.
 
-KServe relies on Knative Serving for scale-to-zero and request-based autoscaling, and integrates natively with Istio or the Kubernetes Gateway API (supported as of KServe v0.15). For Hugging Face models, KServe's LLM runtime defaults to the vLLM backend, exposing an OpenAI-compatible generative endpoint using a route-prefix style integration (e.g., under `/openai/v1/`).
+KServe relies on Knative Serving for scale-to-zero and request-based autoscaling. KServe supports a route-prefix style OpenAPI/HTTP integration for OpenAI-style endpoints in recent docs. KServe Hugging Face LLM runtime docs (v0.14) state that it defaults to vLLM for text generation/text2text generation and falls back to Hugging Face backend when unsupported. The runtime exposes OpenAI-compatible generative endpoints for Completion and Chat Completion, and KServe Hugging Face multi-node/multi-GPU docs show OpenAI route usage under `/openai/v1/`.
 
 > **Stop and think**: How do you autoscale a pod that deliberately consumes nearly 100% of its memory allocation upon startup?
 
 :::caution
-If you are deploying multi-node, multi-GPU Hugging Face vLLM workloads in KServe v0.15+, note that this functionality is limited to `RawDeployment` mode, which explicitly disables Knative's scale-to-zero autoscaling capabilities.
+KServe multi-node/multi-GPU Hugging Face vLLM serving in v0.15 is limited to RawDeployment mode and disables auto-scaling.
 :::
 
 ```mermaid
@@ -123,14 +123,14 @@ In this lab, we will deploy a 4-bit AWQ quantized Llama 3 8B model using vLLM on
 
 ### Prerequisites
 
-* A Kubernetes cluster (v1.35+ recommended, where Dynamic Resource Allocation for GPUs is fully stable, though traditional extended resources are still widely used). GPU scheduling via device plugins has been stable since v1.26.
-* The **NVIDIA GPU Operator** installed. This operator automates the deployment of essential components including the NVIDIA drivers, the Kubernetes device plugin, the NVIDIA Container Toolkit, GFD, and DCGM for exporting GPU telemetry.
+* A Kubernetes cluster (v1.35+ recommended). Kubernetes Dynamic Resource Allocation is marked stable in v1.35, while DRA-related subfeatures remain alpha/beta in v1.33–v1.34 with feature gates. Kubernetes documents GPU scheduling as a stable feature from v1.26.
+* The **NVIDIA GPU Operator** is documented to automate required GPU components including drivers, Kubernetes device plugin, NVIDIA Container Toolkit, GFD, and DCGM. Ensure this is installed.
 * At least one node with 1x NVIDIA GPU (T4, A10g, A100, etc.) having a minimum of 16GB VRAM.
 * `kubectl` configured.
 
 ### Step 1: Create the vLLM Deployment
 
-We will deploy vLLM, instructing it to download the `casperhansen/llama-3-8b-instruct-awq` model directly from the Hugging Face Hub. Note how the NVIDIA GPU is requested as an extended resource (`nvidia.com/gpu`).
+We will deploy vLLM, instructing it to download the `casperhansen/llama-3-8b-instruct-awq` model directly from the Hugging Face Hub. Note how NVIDIA GPUs in Kubernetes are expressed as an extended resource in Pod resource limits (for example `nvidia.com/gpu`).
 
 Create a file named `vllm-deployment.yaml`:
 
