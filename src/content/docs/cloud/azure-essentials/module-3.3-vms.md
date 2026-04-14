@@ -287,10 +287,11 @@ write_files:
 
 runcmd:
   - hostnamectl set-hostname $(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01&format=text")
-  - HOSTNAME=$(hostname)
-  - ZONE=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/zone?api-version=2021-02-01&format=text")
-  - sed -i "s/HOSTNAME_PLACEHOLDER/$HOSTNAME/" /var/www/html/index.html
-  - sed -i "s/ZONE_PLACEHOLDER/$ZONE/" /var/www/html/index.html
+  - |
+    HOSTNAME=$(hostname)
+    ZONE=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/zone?api-version=2021-02-01&format=text")
+    sed -i "s/HOSTNAME_PLACEHOLDER/$HOSTNAME/" /var/www/html/index.html
+    sed -i "s/ZONE_PLACEHOLDER/$ZONE/" /var/www/html/index.html
   - systemctl enable nginx
   - systemctl start nginx
 ```
@@ -710,10 +711,11 @@ write_files:
     content: "OK"
 
 runcmd:
-  - INSTANCE=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01&format=text")
-  - ZONE=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/zone?api-version=2021-02-01&format=text")
-  - sed -i "s/INSTANCE_ID/$INSTANCE/" /var/www/html/index.html
-  - sed -i "s/ZONE_ID/$ZONE/" /var/www/html/index.html
+  - |
+    INSTANCE=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/name?api-version=2021-02-01&format=text")
+    ZONE=$(curl -s -H Metadata:true "http://169.254.169.254/metadata/instance/compute/zone?api-version=2021-02-01&format=text")
+    sed -i "s/INSTANCE_ID/$INSTANCE/" /var/www/html/index.html
+    sed -i "s/ZONE_ID/$ZONE/" /var/www/html/index.html
   - systemctl enable nginx
   - systemctl restart nginx
 CLOUDINIT
