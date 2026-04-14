@@ -508,6 +508,7 @@ This approach relies on unstructured logging, which is fundamentally unsuited fo
 # 1. Deploy a sample application
 kubectl create deployment web --image=nginx:1.28 --replicas=3
 kubectl expose deployment web --port=80
+kubectl wait --for=condition=available deployment/web --timeout=90s
 ```
 </details>
 
@@ -517,7 +518,7 @@ kubectl expose deployment web --port=80
 ```bash
 # 2. View logs
 kubectl logs -l app=web --all-containers
-kubectl logs -l app=web -f  # Follow logs
+kubectl logs -l app=web -f  # Follow logs (Press Ctrl+C to exit)
 ```
 </details>
 
@@ -530,7 +531,10 @@ kubectl logs -l app=web -f  # Follow logs
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 kubectl patch deployment metrics-server -n kube-system --type=json \
   -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
-# Wait ~60 seconds, then:
+# Wait for metrics-server to become ready:
+kubectl rollout status deployment/metrics-server -n kube-system
+
+# Note: It may take an additional 30-60 seconds for metrics to propagate to the API.
 kubectl top pods
 kubectl top nodes
 ```
@@ -550,10 +554,12 @@ kubectl get events --sort-by='.lastTimestamp'
 </details>
 
 <details>
-<summary>Step 5: Inspect pod metadata and status.</summary>
+<summary>Step 5: Restore the application and inspect pod metadata.</summary>
 
 ```bash
-# 5. View pod status (basic metrics)
+# 5. Restore application and view pod status
+kubectl scale deployment web --replicas=1
+kubectl wait --for=condition=ready pod -l app=web --timeout=60s
 kubectl get pods -o wide
 kubectl describe pod -l app=web
 ```
@@ -564,8 +570,7 @@ kubectl describe pod -l app=web
 
 ```bash
 # 6. Generate some logs
-kubectl scale deployment web --replicas=1
-kubectl exec -it $(kubectl get pod -l app=web -o name | head -1) -- \
+kubectl exec $(kubectl get pod -l app=web -o name | head -1) -- \
   curl -s localhost > /dev/null
 
 # View nginx access logs
