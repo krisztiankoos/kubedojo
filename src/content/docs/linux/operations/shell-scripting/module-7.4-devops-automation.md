@@ -170,12 +170,17 @@ check_nodes() {
 
     echo ""
     echo "=== Node Conditions ==="
-    kubectl get nodes -o json | jq -r '
+    local issues=$(kubectl get nodes -o json | jq -r '
         .items[] |
-        "Node: \(.metadata.name)",
-        (.status.conditions[] | "  \(.type): \(.status)"),
-        ""
-    '
+        select(.status.conditions[] | select(.type != "Ready" and .status == "True")) |
+        "WARNING: \(.metadata.name) has issues"
+    ')
+    
+    if [[ -z "$issues" ]]; then
+        echo "All nodes reporting healthy conditions"
+    else
+        echo "$issues"
+    fi
 
     echo "=== Resource Usage ==="
     kubectl top nodes 2>/dev/null || echo "Metrics server not available"
@@ -289,7 +294,7 @@ resource_report() {
     echo ""
 
     echo "=== Pod Resources ==="
-    kubectl top pods $namespace 2>/dev/null | head -20 || echo "Metrics unavailable"
+    kubectl top pods $namespace 2>/dev/null | head -n 20 || echo "Metrics unavailable"
     echo ""
 
     echo "=== Deployments ==="
@@ -583,17 +588,21 @@ find_errors() {
     local pods=$(kubectl get pods $namespace -o name)
 
     for pod in $pods; do
-        local ns=""
-        if [[ "$namespace" == "--all-namespaces" ]]; then
-            ns=$(echo "$pod" | cut -d/ -f1)
-            pod=$(echo "$pod" | cut -d/ -f2)
+        local ns_args="$namespace"
+        local pod_name="$pod"
+        
+        # If querying all namespaces, extract the namespace from the pod string
+        if [[ "$namespace" == "--all-namespaces" || "$namespace" == "-A" ]]; then
+            local extracted_ns=$(echo "$pod" | cut -d/ -f2)
+            pod_name=$(echo "$pod" | cut -d/ -f3)
+            ns_args="-n $extracted_ns"
         fi
 
-        local errors=$(kubectl logs "$pod" ${ns:+-n $ns} --since="$since" 2>/dev/null | \
+        local errors=$(kubectl logs "$pod_name" $ns_args --since="$since" 2>/dev/null | \
             grep -iE "error|exception|fatal|panic" | head -5)
 
         if [[ -n "$errors" ]]; then
-            echo "=== $pod ==="
+            echo "=== $pod_name ==="
             echo "$errors"
             echo ""
         fi
@@ -688,6 +697,8 @@ Over time, clusters accumulate orphaned resources and completed batch jobs. Furt
 ### Namespace State Cleanup
 
 This script safely identifies and removes pods that have terminated but are lingering in the system state. Notice the critical inclusion of a `dry_run` safety toggle.
+
+> **Stop and think**: Why is it critical to include a dry-run feature in any script that executes destructive operations like `kubectl delete`? Without a dry-run mode, a small logic error could result in the unintended deletion of production workloads. A dry-run mode allows you to validate the script's targeting logic safely before execution.
 
 ```bash
 #!/bin/bash
@@ -799,22 +810,17 @@ Your incident response team needs a rapid way to extract the exact name strings 
 <details>
 <summary>Show Answer</summary>
 
-You have multiple native options:
+You have multiple native options for extracting this data natively, such as using `-o name` or extracting fields with `jsonpath`.
 
 ```bash
 # Using -o name
 kubectl get pods -n default -o name
-# pod/nginx-abc123
-# pod/redis-def456
 
 # Using jsonpath
 kubectl get pods -n default -o jsonpath='{.items[*].metadata.name}'
-# nginx-abc123 redis-def456
 
 # Using custom-columns
 kubectl get pods -n default -o custom-columns=':metadata.name' --no-headers
-# nginx-abc123
-# redis-def456
 ```
 
 Using `-o name` is syntactically the simplest, but note that it retains the `pod/` resource prefix. If your subsequent script expects raw identifiers, `jsonpath` or `custom-columns` with `--no-headers` provides cleaner string payloads. Extracting raw names natively avoids the performance penalty and fragility of piping output through `awk` or `cut`. Furthermore, relying solely on `kubectl` ensures the script remains portable across different environments that might lack external text processing utilities.
@@ -849,17 +855,7 @@ You need to write a script that analyzes container configurations across hundred
 <details>
 <summary>Show Answer</summary>
 
-**jsonpath** is a built-in feature of `kubectl`. It requires no external dependencies and is ideal for straightforward extraction of flat fields, utilizing simple bracket syntax:
-```bash
-kubectl get pods -o jsonpath='{.items[*].metadata.name}'
-```
-
-**jq**, conversely, is a powerful external binary dependency. It offers Turing-complete data transformation capabilities, enabling deep conditional queries, arithmetic manipulation, and restructuring of complex JSON payloads. 
-```bash
-kubectl get pods -o json | jq -r '.items[].metadata.name'
-```
-
-For advanced analytical reporting across deep configurations, `jq` is technically superior because it can process the entire JSON document as a data structure rather than just extracting string values. This allows your script to evaluate complex relationships and missing fields that simple path extraction cannot handle.
+`jsonpath` is a built-in feature of `kubectl`. It requires no external dependencies and is ideal for straightforward extraction of flat fields, utilizing simple bracket syntax. `jq`, conversely, is a powerful external binary dependency that offers Turing-complete data transformation capabilities, enabling deep conditional queries, arithmetic manipulation, and restructuring of complex JSON payloads. For advanced analytical reporting across deep configurations, `jq` is technically superior because it can process the entire JSON document as a data structure rather than just extracting string values. This allows your script to evaluate complex relationships and missing fields that simple path extraction cannot handle.
 
 </details>
 
@@ -869,29 +865,7 @@ A junior engineer writes a cleanup script containing the hardcoded command `kube
 <details>
 <summary>Show Answer</summary>
 
-You must abstract the target environment into a parameterized variable that accepts user input with a safe fallback:
-
-```bash
-#!/bin/bash
-namespace=${1:-default}
-
-kubectl get pods -n "$namespace"
-```
-
-For professional-grade tooling, parsing named flags provides better user experience and avoids positional argument confusion:
-```bash
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -n|--namespace) namespace=$2; shift 2 ;;
-        *) break ;;
-    esac
-done
-namespace=${namespace:-default}
-
-kubectl get pods -n "$namespace"
-```
-
-Hardcoding environment identifiers is a major anti-pattern in DevOps engineering because it binds the script to a single context, rendering it dangerous in all others. By parameterizing the namespace and requiring explicit user input (or providing safe, non-destructive defaults), you decouple the tool's logic from the environment it operates on. This ensures the script is portable and significantly reduces the blast radius of human error during execution.
+You must abstract the target environment into a parameterized variable that accepts user input with a safe fallback. For professional-grade tooling, parsing named flags provides better user experience and avoids positional argument confusion. Hardcoding environment identifiers is a major anti-pattern in DevOps engineering because it binds the script to a single context, rendering it dangerous in all others. By parameterizing the namespace and requiring explicit user input (or providing safe, non-destructive defaults), you decouple the tool's logic from the environment it operates on. This ensures the script is portable and significantly reduces the blast radius of human error during execution.
 
 </details>
 
@@ -901,7 +875,7 @@ You are tasked with engineering a script that aggressively patches node operatin
 <details>
 <summary>Show Answer</summary>
 
-The `set -euo pipefail` directive fundamentally alters how Bash handles errors. By default, Bash is highly permissive: if a command fails, or a variable is undefined, it attempts to march forward to the next line. In an OS patching script, if a command designed to calculate the target disk partition fails and returns empty data, the subsequent formatting command might accidentally wipe the root drive. `set -e` halts execution on any non-zero exit code, while `set -u` halts execution on unbound variables, preventing destructive actions based on empty data. Finally, `set -o pipefail` ensures that if any command in a piped sequence fails, the entire pipeline is marked as a failure, rather than masking errors behind the final command's success.
+The `set -euo pipefail` directive fundamentally alters how Bash handles errors. By default, Bash is highly permissive, meaning if a command fails, or a variable is undefined, it attempts to march forward to the next line. In an OS patching script, if a command designed to calculate the target disk partition fails and returns empty data, the subsequent formatting command might accidentally wipe the root drive. `set -e` halts execution on any non-zero exit code, while `set -u` halts execution on unbound variables, preventing destructive actions based on empty data. Finally, `set -o pipefail` ensures that if any command in a piped sequence fails, the entire pipeline is marked as a failure, rather than masking errors behind the final command's success.
 
 </details>
 
@@ -936,16 +910,26 @@ echo ""
 
 # Check node conditions
 echo "=== Node Issues ==="
-kubectl get nodes -o json | jq -r '
+issues=$(kubectl get nodes -o json | jq -r '
   .items[] |
   select(.status.conditions[] | select(.type != "Ready" and .status == "True")) |
   "WARNING: \(.metadata.name) has issues"
-' || echo "All nodes healthy"
+')
+if [[ -z "$issues" ]]; then
+    echo "All nodes healthy"
+else
+    echo "$issues"
+fi
 echo ""
 
 # Pods not running
 echo "=== Non-Running Pods ==="
-kubectl get pods --all-namespaces --field-selector='status.phase!=Running,status.phase!=Succeeded' 2>/dev/null || echo "All pods running"
+pods=$(kubectl get pods --all-namespaces --field-selector='status.phase!=Running,status.phase!=Succeeded' 2>/dev/null)
+if [[ -z "$pods" || "$pods" == *"No resources found"* ]]; then
+    echo "All pods running"
+else
+    echo "$pods"
+fi
 echo ""
 
 # Resource usage (if metrics available)
@@ -1053,13 +1037,13 @@ echo ""
 found=0
 for pod in $(kubectl get pods $namespace -o name); do
     # Get namespace if all namespaces
-    if [[ "$namespace" == "--all-namespaces" ]]; then
-        ns=$(echo "$pod" | cut -d'/' -f1)
-        pod_name=$(echo "$pod" | cut -d'/' -f2)
+    if [[ "$namespace" == "--all-namespaces" || "$namespace" == "-A" ]]; then
+        ns=$(echo "$pod" | cut -d'/' -f2)
+        pod_name=$(echo "$pod" | cut -d'/' -f3)
         ns_flag="-n $ns"
     else
         pod_name=$(basename "$pod")
-        ns_flag="-n $namespace"
+        ns_flag="$namespace"
     fi
 
     matches=$(kubectl logs "$pod_name" $ns_flag --since="$since" 2>/dev/null | \
@@ -1108,12 +1092,18 @@ kubectl get pods -n "$namespace" -o json | jq -r '
 
 echo ""
 echo "=== Containers without limits ==="
-kubectl get pods -n "$namespace" -o json | jq -r '
+limits_missing=$(kubectl get pods -n "$namespace" -o json | jq -r '
   .items[] |
   .spec.containers[] |
   select(.resources.limits == null or .resources.limits == {}) |
   .name
-' | sort -u || echo "All containers have limits"
+' | sort -u)
+
+if [[ -z "$limits_missing" ]]; then
+    echo "All containers have limits"
+else
+    echo "$limits_missing"
+fi
 
 echo ""
 echo "=== PVC Usage ==="
