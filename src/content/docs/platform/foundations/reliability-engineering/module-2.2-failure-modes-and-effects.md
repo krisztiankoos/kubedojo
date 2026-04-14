@@ -514,7 +514,7 @@ flowchart TD
 
 **Bulkhead Pattern**
 
-Named after ship compartments, bulkheads isolate failures to prevent them from spreading.
+Named after ship compartments, bulkheads isolates failures to prevent them from spreading.
 
 ```mermaid
 flowchart TD
@@ -564,35 +564,16 @@ Strategies to minimize impact:
 >
 > Then, on a random Tuesday, a developer added a new analytics query to the reporting service. The query was correct, but it ran a full table scan on a 50-million-row table. Without an index. Under normal load.
 >
-> ```text
-> THE BLAST RADIUS OF ONE BAD QUERY
-> ═════════════════════════════════════════════════════════════════════════════
->
-> 2:34 PM - Reporting query starts, begins acquiring row locks
->
-> 2:35 PM - User service tries to read users, waits for lock
->         - Connection pool starts filling
->
-> 2:36 PM - Checkout service needs user data
->         - Calls user service → timeout
->         - Checkout starts queueing
->
-> 2:37 PM - Every service waiting for database connections
->         - Connection pool exhausted across ALL services
->
-> 2:38 PM - Alerts fire: "User service unhealthy"
->                       "Checkout service unhealthy"
->                       "Inventory service unhealthy"
->         - Response: "Check database" → "Looks fine, CPU low"
->
-> 2:45 PM - Finally found: one query holding locks
->         - Killed the query
->
-> 2:50 PM - Services slowly recover as connection pools drain
->
-> Total downtime: 16 minutes
-> Root cause: One missing database index
-> Blast radius: ENTIRE platform
+> ```mermaid
+> timeline
+>     title The Blast Radius of One Bad Query
+>     2:34 PM : Reporting query starts : Begins acquiring row locks
+>     2:35 PM : User service tries to read users : Waits for lock : Connection pool starts filling
+>     2:36 PM : Checkout service needs user data : Calls user service → timeout : Checkout starts queueing
+>     2:37 PM : Every service waiting for database connections : Connection pool exhausted across ALL services
+>     2:38 PM : Alerts fire : User service unhealthy : Response is Check database → Looks fine, CPU low
+>     2:45 PM : Root cause found : One query holding locks : Killed the query
+>     2:50 PM : Recovery : Services slowly recover as connection pools drain
 > ```
 >
 > The fix: separate databases for separate services, with clear ownership. Reporting now has its own read replica. A reporting bug can't take down checkout. Each service's database failure is isolated to that service.
@@ -707,41 +688,16 @@ flowchart TD
 >
 > One day, a database query started taking 25 seconds instead of the usual 200ms. A missing WHERE clause caused a sequential scan. Not a bug—it still returned correct data. Just slowly.
 >
-> ```text
-> THE 30-SECOND TIMEOUT DEATH SPIRAL
-> ═════════════════════════════════════════════════════════════════════════════
->
-> Normal state:
->   Request → Database (200ms) → Response
->   Connection pool: 10 used / 100 available
->
-> Query becomes slow (25 seconds):
->   ─────────────────────────────────────────────────────────────────────────
->
->   Second 1:   New requests arrive, start waiting
->               Connections: 50/100
->
->   Second 10:  All connections waiting on slow queries
->               Connections: 100/100 (exhausted)
->
->   Second 15:  New requests can't get connections
->               Queue starts filling
->               Memory climbing
->
->   Second 20:  Queue full
->               OOM pressure building
->               GC thrashing
->
->   Second 25:  OOM killer strikes
->               Pod dies
->               Kubernetes restarts it
->
->   Second 30:  Pod comes back
->               Hits slow database
->               Connection pool fills immediately
->               Death spiral resumes
->
->   For 2 HOURS the platform oscillated between "starting up" and "crashing"
+> ```mermaid
+> timeline
+>     title The 30-Second Timeout Death Spiral
+>     Normal state : Request → Database (200ms) → Response : Connection pool 10/100
+>     Second 1 : Query becomes slow (25s) : New requests arrive, start waiting : Connections 50/100
+>     Second 10 : All connections waiting on slow queries : Connections 100/100 (exhausted)
+>     Second 15 : New requests can't get connections : Queue starts filling : Memory climbing
+>     Second 20 : Queue full : OOM pressure building : GC thrashing
+>     Second 25 : OOM killer strikes : Pod dies : Kubernetes restarts it
+>     Second 30 : Pod comes back : Hits slow database : Pool fills immediately : Death spiral resumes
 > ```
 >
 > The fix was embarrassingly simple: **reduce timeouts to 2 seconds**. A 25-second query now fails fast at 2 seconds, the circuit breaker opens, and the system degrades gracefully (returning cached data or an error) instead of collapsing.
