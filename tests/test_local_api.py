@@ -236,8 +236,17 @@ def test_route_request_serves_summary_and_module_endpoints(tmp_path: Path) -> No
     status_code, summary, content_type = local_api.route_request(repo_root, "/api/status/summary")
     assert status_code == 200
     assert content_type.startswith("application/json")
-    assert summary["zero_to_terminal"]["ready"]["english_production_bar"] is True
+    # Dashboard hot path skips ZTT and translation freshness for perf.
+    assert summary["zero_to_terminal"] is None
+    assert summary["translations"] is None
+    assert summary["translation_v2_pipeline"] is None
     assert "missing_modules" in summary
+    # New per-track rollup is present and covers the known tracks.
+    assert isinstance(summary.get("tracks"), list)
+    track_slugs = {t["slug"] for t in summary["tracks"]}
+    assert {"prerequisites", "k8s"} <= track_slugs
+    # V2 pipeline is enriched with per-track groupings.
+    assert isinstance(summary["v2_pipeline"].get("per_track"), list)
 
     status_code, missing_modules, _ = local_api.route_request(repo_root, "/api/missing-modules/status")
     assert status_code == 200
@@ -268,14 +277,24 @@ def test_route_request_supports_translation_section_and_missing_db(tmp_path: Pat
     repo_root = tmp_path
     _setup_repo(repo_root)
 
+    # Fast path (default): freshness is skipped.
     status_code, translation, _ = local_api.route_request(
         repo_root,
         "/api/translation/v2/status?section=prerequisites/zero-to-terminal",
     )
     assert status_code == 200
-    assert translation["freshness"]["section"] == "prerequisites/zero-to-terminal"
+    assert translation["freshness"] is None
     assert "pending/trans/review" in translation["queue"]["pending_review"]
     assert "pending/trans/write" in translation["queue"]["pending_write"]
+    assert isinstance(translation["queue"].get("per_track"), list)
+
+    # Opt in to the full freshness walk.
+    status_code, translation_full, _ = local_api.route_request(
+        repo_root,
+        "/api/translation/v2/status?section=prerequisites/zero-to-terminal&freshness=1",
+    )
+    assert status_code == 200
+    assert translation_full["freshness"]["section"] == "prerequisites/zero-to-terminal"
 
     status_code, v2, _ = local_api.route_request(repo_root, "/api/pipeline/v2/status")
     assert status_code == 200

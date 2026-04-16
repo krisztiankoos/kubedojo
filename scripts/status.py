@@ -88,6 +88,52 @@ def _iter_en_modules(docs_root: Path) -> list[Path]:
     )
 
 
+TRACK_ORDER = (
+    ("prerequisites", "Prerequisites"),
+    ("linux", "Linux"),
+    ("k8s", "Kubernetes"),
+    ("cloud", "Cloud"),
+    ("platform", "Platform Engineering"),
+    ("on-premises", "On-Premises"),
+    ("ai-ml-engineering", "AI/ML Engineering"),
+)
+TRACK_SLUGS = {slug for slug, _ in TRACK_ORDER}
+
+
+def _track_for_key(module_key: str) -> str:
+    """Classify a module path or key into a top-level track slug.
+
+    Accepts both full repo paths (src/content/docs/...) and internal v2 keys
+    that may have been normalized to the docs-relative form.
+    """
+    s = str(module_key or "").replace("\\", "/")
+    prefix = "src/content/docs/"
+    if prefix in s:
+        s = s.split(prefix, 1)[1]
+    s = s.lstrip("/")
+    top = s.split("/", 1)[0] if s else ""
+    return top if top in TRACK_SLUGS else "other"
+
+
+def _build_track_rollup(docs_root: Path) -> list[dict[str, Any]]:
+    counts: dict[str, int] = {slug: 0 for slug, _ in TRACK_ORDER}
+    counts["other"] = 0
+    for path in _iter_en_modules(docs_root):
+        rel = path.relative_to(docs_root).as_posix()
+        top = rel.split("/", 1)[0] if "/" in rel else rel
+        if top in counts:
+            counts[top] += 1
+        else:
+            counts["other"] += 1
+    rollup = [
+        {"slug": slug, "label": label, "module_count": counts[slug]}
+        for slug, label in TRACK_ORDER
+    ]
+    if counts["other"]:
+        rollup.append({"slug": "other", "label": "Other", "module_count": counts["other"]})
+    return rollup
+
+
 def _iter_uk_modules(docs_root: Path) -> list[Path]:
     uk_root = docs_root / "uk"
     if not uk_root.exists():
@@ -308,26 +354,123 @@ def _build_missing_modules_summary(repo_root: Path) -> dict[str, Any]:
     }
 
 
-def build_repo_status(repo_root: Path) -> dict[str, Any]:
+def _per_track_buckets() -> dict[str, dict[str, int]]:
+    buckets: dict[str, dict[str, int]] = {
+        slug: {
+            "pending_write": 0,
+            "pending_review": 0,
+            "pending_patch": 0,
+            "done": 0,
+            "dead_letter": 0,
+            "in_progress": 0,
+        }
+        for slug, _ in TRACK_ORDER
+    }
+    buckets["other"] = {
+        "pending_write": 0,
+        "pending_review": 0,
+        "pending_patch": 0,
+        "done": 0,
+        "dead_letter": 0,
+        "in_progress": 0,
+    }
+    return buckets
+
+
+def _enrich_v2_with_per_track(v2: dict[str, Any]) -> dict[str, Any]:
+    """Add per-track groupings to a v2 status report.
+
+    Buckets module keys in each queue list by top-level track.
+    """
+    buckets = _per_track_buckets()
+    track_modules: dict[str, dict[str, list[str]]] = {
+        slug: {"pending_write": [], "pending_review": [], "pending_patch": [], "dead_letter": []}
+        for slug in list(buckets)
+    }
+    for queue_name in ("pending_write", "pending_review", "pending_patch", "dead_letter"):
+        for module_key in v2.get(queue_name, []) or []:
+            track = _track_for_key(module_key)
+            buckets[track][queue_name] += 1
+            track_modules[track][queue_name].append(module_key)
+    counts = v2.get("counts", {}) or {}
+    enriched = dict(v2)
+    enriched["per_track"] = [
+        {
+            "slug": slug,
+            "counts": buckets[slug],
+            "modules": track_modules[slug],
+        }
+        for slug in [s for s, _ in TRACK_ORDER] + (["other"] if buckets["other"]["pending_write"] + buckets["other"]["pending_review"] + buckets["other"]["pending_patch"] + buckets["other"]["dead_letter"] else [])
+    ]
+    enriched["counts"] = counts
+    return enriched
+
+
+def _enrich_translation_v2_with_per_track(t2: dict[str, Any]) -> dict[str, Any]:
+    """Same per-track grouping for the translation v2 queue.
+
+    Translation v2 nests its queue data under ``queue``.
+    """
+    enriched = dict(t2)
+    queue = t2.get("queue") or {}
+    if not queue:
+        return enriched
+    buckets = _per_track_buckets()
+    track_modules: dict[str, dict[str, list[str]]] = {
+        slug: {"pending_write": [], "pending_review": [], "pending_patch": [], "dead_letter": []}
+        for slug in list(buckets)
+    }
+    for queue_name in ("pending_write", "pending_review", "pending_patch", "dead_letter"):
+        for module_key in queue.get(queue_name, []) or []:
+            track = _track_for_key(module_key)
+            buckets[track][queue_name] += 1
+            track_modules[track][queue_name].append(module_key)
+    enriched_queue = dict(queue)
+    enriched_queue["per_track"] = [
+        {
+            "slug": slug,
+            "counts": buckets[slug],
+            "modules": track_modules[slug],
+        }
+        for slug in [s for s, _ in TRACK_ORDER] + (["other"] if buckets["other"]["pending_write"] + buckets["other"]["pending_review"] + buckets["other"]["pending_patch"] + buckets["other"]["dead_letter"] else [])
+    ]
+    enriched["queue"] = enriched_queue
+    return enriched
+
+
+def build_repo_status(repo_root: Path, *, fast: bool = False) -> dict[str, Any]:
+    """Build the combined status payload.
+
+    ``fast=True`` skips the expensive git-per-file translation passes
+    (translation_summary, translation_v2 status, ZTT status) so the
+    dashboard hot path returns in milliseconds instead of ~2 minutes.
+    Callers that need those views fetch them via dedicated endpoints.
+    """
     docs_root = repo_root / "src" / "content" / "docs"
-    translations = _build_translation_summary(repo_root)
+    translations = None if fast else _build_translation_summary(repo_root)
     labs = _build_lab_summary(repo_root)
     missing_modules = _build_missing_modules_summary(repo_root)
-    ztt = build_ztt_status(repo_root)
+    ztt = None if fast else build_ztt_status(repo_root)
 
     v2_db = repo_root / ".pipeline" / "v2.db"
     v2 = build_v2_status_report(v2_db) if v2_db.exists() else None
     translation_v2_db = repo_root / ".pipeline" / "translation_v2.db"
     translation_v2 = (
-        build_translation_v2_status(repo_root, db_path=translation_v2_db)
-        if translation_v2_db.exists()
-        else None
+        None
+        if fast or not translation_v2_db.exists()
+        else build_translation_v2_status(repo_root, db_path=translation_v2_db)
     )
 
+    tracks = _build_track_rollup(docs_root)
+    if v2:
+        v2 = _enrich_v2_with_per_track(v2)
+    if translation_v2:
+        translation_v2 = _enrich_translation_v2_with_per_track(translation_v2)
     return {
         "repo_root": str(repo_root),
         "english_modules": len(_iter_en_modules(docs_root)),
         "uk_modules_present": len(_iter_uk_modules(docs_root)),
+        "tracks": tracks,
         "v2_pipeline": v2,
         "translation_v2_pipeline": translation_v2,
         "translations": translations,

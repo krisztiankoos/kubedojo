@@ -18,6 +18,8 @@ from pipeline_v2.cli import _build_status_report as build_v2_status_report
 from status import (
     _build_lab_summary,
     _build_missing_modules_summary,
+    _enrich_translation_v2_with_per_track,
+    _enrich_v2_with_per_track,
     _extract_frontmatter,
     _git_head_for_file,
     build_repo_status,
@@ -336,251 +338,984 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
   <title>KubeDojo Local Monitor</title>
   <style>
     :root {{
-      --bg: #0b1320;
-      --panel: #121c2b;
-      --panel-2: #18253a;
-      --text: #e8eef8;
-      --muted: #9db0c9;
-      --accent: #4db6ac;
-      --warn: #ffb74d;
-      --bad: #ef5350;
-      --good: #66bb6a;
-      --border: #25354f;
+      --bg: #0a0f1a;
+      --surface-0: #111827;
+      --surface-1: #1a2332;
+      --surface-2: #1f2b3d;
+      --text: #e5e7eb;
+      --text-secondary: #9ca3af;
+      --text-dim: #6b7280;
+      --accent: #38bdf8;
+      --accent-muted: rgba(56,189,248,0.12);
+      --teal: #2dd4bf;
+      --teal-muted: rgba(45,212,191,0.12);
+      --green: #4ade80;
+      --green-muted: rgba(74,222,128,0.12);
+      --amber: #fbbf24;
+      --amber-muted: rgba(251,191,36,0.10);
+      --red: #f87171;
+      --red-muted: rgba(248,113,113,0.10);
+      --border: rgba(255,255,255,0.06);
+      --border-subtle: rgba(255,255,255,0.03);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
     }}
-    * {{ box-sizing: border-box; }}
+    *, *::before, *::after {{ box-sizing: border-box; }}
     body {{
       margin: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      background: radial-gradient(circle at top, #15243d 0%, var(--bg) 45%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg);
       color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5;
     }}
-    .wrap {{ max-width: 1280px; margin: 0 auto; padding: 24px; }}
-    h1, h2 {{ margin: 0 0 12px; }}
-    p {{ color: var(--muted); line-height: 1.5; }}
-    .toolbar {{ display: flex; gap: 12px; align-items: center; margin-bottom: 24px; }}
-    button {{
-      background: var(--accent);
-      color: #081019;
-      border: 0;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-weight: 700;
-      cursor: pointer;
+    .mono {{ font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace; }}
+
+    .header {{
+      background: linear-gradient(180deg, rgba(17,24,39,0.95) 0%, rgba(10,15,26,0.98) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(12px);
     }}
-    .grid {{
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 14px;
-      margin-bottom: 24px;
-    }}
-    .card, .panel {{
-      background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
-    }}
-    .label {{ color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }}
-    .value {{ font-size: 28px; font-weight: 800; margin-top: 6px; }}
-    .good {{ color: var(--good); }}
-    .warn {{ color: var(--warn); }}
-    .bad {{ color: var(--bad); }}
-    .two-col {{
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
+    .header-inner {{
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 16px;
     }}
-    .queue-grid {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 12px;
+    .header-left {{ display: flex; align-items: center; gap: 14px; }}
+    .logo {{
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--teal));
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px; color: #0a0f1a; flex-shrink: 0;
     }}
-    .queue-box {{
-      background: rgba(0, 0, 0, 0.2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 8px;
+    .header-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }}
+    .header-sub {{ font-size: 12px; color: var(--text-dim); }}
+    .header-right {{ display: flex; align-items: center; gap: 12px; }}
+    .status-pill {{
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 20px;
+      font-size: 12px; font-weight: 500;
+      background: var(--green-muted); color: var(--green);
     }}
-    .queue-box h3 {{
-      margin: 0 0 8px;
-      font-size: 14px;
-      color: var(--accent);
+    .status-pill .dot {{
+      width: 6px; height: 6px; border-radius: 50%;
+      background: currentColor; animation: pulse 2s ease-in-out infinite;
     }}
-    .queue-box ul {{
-      margin: 0;
-      padding: 0;
-      list-style: none;
-      font-size: 11px;
-      max-height: 150px;
-      overflow-y: auto;
+    @keyframes pulse {{ 0%, 100% {{ opacity: 1; }} 50% {{ opacity: 0.4; }} }}
+    .refresh-btn {{
+      background: var(--surface-1); color: var(--text);
+      border: 1px solid var(--border); padding: 6px 14px;
+      border-radius: var(--radius-sm); font-size: 13px;
+      font-weight: 500; cursor: pointer; transition: all 0.15s;
+      display: flex; align-items: center; gap: 6px;
     }}
-    .queue-box li {{
-      padding: 2px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+    .refresh-btn:hover {{ background: var(--surface-2); border-color: rgba(255,255,255,0.12); }}
+    .refresh-btn.loading {{ opacity: 0.6; pointer-events: none; }}
+    .refresh-btn svg {{ transition: transform 0.3s; }}
+    .refresh-btn.loading svg {{ animation: spin 0.8s linear infinite; }}
+    @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
+    .last-updated {{ font-size: 11px; color: var(--text-dim); }}
+
+    .main {{ max-width: 1440px; margin: 0 auto; padding: 24px; }}
+
+    .metrics {{
+      display: grid; grid-template-columns: repeat(6, 1fr);
+      gap: 12px; margin-bottom: 24px;
     }}
-    .stack {{ display: grid; gap: 16px; }}
-    pre {{
-      background: rgba(8, 16, 25, 0.55);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      overflow: auto;
-      font-size: 12px;
-      line-height: 1.45;
+    .metric {{
+      background: var(--surface-0); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 16px;
+      position: relative; overflow: hidden;
     }}
-    .meta {{ color: var(--muted); font-size: 12px; }}
-    a {{ color: #8ed1c9; }}
+    .metric::before {{
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 2px; background: var(--border);
+    }}
+    .metric.good::before {{ background: var(--green); }}
+    .metric.warn::before {{ background: var(--amber); }}
+    .metric.bad::before {{ background: var(--red); }}
+    .metric.accent::before {{ background: var(--accent); }}
+    .metric-label {{
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 8px;
+    }}
+    .metric-value {{ font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }}
+    .metric-sub {{ font-size: 11px; color: var(--text-dim); margin-top: 6px; }}
+
+    .progress-track {{
+      height: 4px; background: rgba(255,255,255,0.06);
+      border-radius: 2px; margin-top: 10px; overflow: hidden;
+    }}
+    .progress-fill {{ height: 100%; border-radius: 2px; transition: width 0.6s ease; }}
+    .progress-fill.green {{ background: var(--green); }}
+    .progress-fill.amber {{ background: var(--amber); }}
+    .progress-fill.accent {{ background: var(--accent); }}
+
+    .sections {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
+    .section-full {{ grid-column: 1 / -1; }}
+
+    .panel {{
+      background: var(--surface-0); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }}
+    .panel-header {{
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }}
+    .panel-title {{
+      font-size: 13px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+    }}
+    .panel-icon {{
+      width: 18px; height: 18px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; flex-shrink: 0;
+    }}
+    .panel-badge {{
+      font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
+    }}
+    .panel-body {{ padding: 16px 18px; }}
+    .panel-body-flush {{ padding: 0; }}
+
+    .svc-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }}
+    .svc-item {{
+      padding: 14px 18px; border-right: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }}
+    .svc-item:last-child {{ border-right: 0; }}
+    .svc-dot {{ width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }}
+    .svc-dot.running {{ background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,0.4); }}
+    .svc-dot.stopped {{ background: var(--text-dim); }}
+    .svc-info {{ min-width: 0; }}
+    .svc-name {{ font-size: 13px; font-weight: 500; }}
+    .svc-detail {{ font-size: 11px; color: var(--text-dim); }}
+
+    .queue-cols {{ display: grid; grid-template-columns: 1fr 1fr; gap: 0; }}
+    .queue-col {{ border-right: 1px solid var(--border); }}
+    .queue-col:last-child {{ border-right: 0; }}
+    .queue-col-header {{
+      padding: 10px 14px; border-bottom: 1px solid var(--border-subtle);
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--text-dim);
+      display: flex; align-items: center; justify-content: space-between;
+    }}
+    .queue-count {{
+      font-size: 10px; padding: 1px 6px; border-radius: 8px;
+      background: rgba(255,255,255,0.06); color: var(--text-secondary);
+    }}
+    .queue-list {{ margin: 0; padding: 0; list-style: none; max-height: 180px; overflow-y: auto; }}
+    .queue-list::-webkit-scrollbar {{ width: 4px; }}
+    .queue-list::-webkit-scrollbar-track {{ background: transparent; }}
+    .queue-list::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.08); border-radius: 2px; }}
+    .queue-item {{
+      padding: 6px 14px; font-size: 12px; border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }}
+    .queue-item:last-child {{ border-bottom: 0; }}
+    .queue-empty {{ padding: 20px 14px; text-align: center; font-size: 12px; color: var(--text-dim); }}
+
+    .wt-summary {{
+      display: flex; gap: 16px; padding: 12px 18px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap;
+    }}
+    .wt-stat {{ display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }}
+    .wt-stat-val {{ font-weight: 600; color: var(--text); }}
+    .wt-table {{ width: 100%; border-collapse: collapse; }}
+    .wt-table th {{
+      text-align: left; padding: 8px 14px; font-size: 11px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-dim); border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.15);
+    }}
+    .wt-table td {{ padding: 5px 14px; font-size: 12px; border-bottom: 1px solid var(--border-subtle); }}
+    .wt-table tr:last-child td {{ border-bottom: 0; }}
+    .wt-path {{ color: var(--text-secondary); }}
+    .wt-badge {{
+      display: inline-block; padding: 1px 6px; border-radius: 4px;
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+    }}
+    .wt-badge.M {{ background: var(--amber-muted); color: var(--amber); }}
+    .wt-badge.A {{ background: var(--green-muted); color: var(--green); }}
+    .wt-badge.D {{ background: var(--red-muted); color: var(--red); }}
+    .wt-badge.U {{ background: var(--red-muted); color: var(--red); }}
+    .wt-badge.Q {{ background: var(--accent-muted); color: var(--accent); }}
+    .wt-cat {{
+      font-size: 10px; padding: 1px 6px; border-radius: 4px;
+      background: rgba(255,255,255,0.04); color: var(--text-dim);
+    }}
+    .wt-scroll {{ max-height: 260px; overflow-y: auto; }}
+    .wt-scroll::-webkit-scrollbar {{ width: 4px; }}
+    .wt-scroll::-webkit-scrollbar-track {{ background: transparent; }}
+    .wt-scroll::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.08); border-radius: 2px; }}
+
+    .tracks-table {{ width: 100%; border-collapse: collapse; }}
+    .tracks-table th {{
+      text-align: left; padding: 10px 18px; font-size: 11px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-dim); border-bottom: 1px solid var(--border);
+      background: rgba(0,0,0,0.15);
+    }}
+    .tracks-table th.num {{ text-align: right; }}
+    .tracks-table td {{
+      padding: 10px 18px; font-size: 13px;
+      border-bottom: 1px solid var(--border-subtle);
+    }}
+    .tracks-table tr:last-child td {{ border-bottom: 0; }}
+    .tracks-table tr:hover td {{ background: rgba(255,255,255,0.02); }}
+    .tracks-table td.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
+    .tracks-table td.name {{ font-weight: 600; }}
+    .tracks-table .dim {{ color: var(--text-dim); }}
+    .tracks-table .warn {{ color: var(--amber); font-weight: 600; }}
+    .tracks-table .bad {{ color: var(--red); font-weight: 600; }}
+    .tracks-table .good {{ color: var(--green); }}
+    .tracks-table .zero {{ color: var(--text-dim); }}
+
+    .queue-summary {{
+      padding: 14px 18px; border-bottom: 1px solid var(--border);
+      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 0; text-align: center;
+    }}
+    .queue-stat {{ border-right: 1px solid var(--border-subtle); padding: 2px 8px; }}
+    .queue-stat:last-child {{ border-right: 0; }}
+    .queue-stat-val {{ font-size: 20px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }}
+    .queue-stat-label {{
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--text-dim); margin-top: 6px;
+    }}
+    .queue-per-track {{ padding: 0; }}
+    .qpt-row {{
+      display: grid; grid-template-columns: 1fr auto;
+      padding: 8px 18px; border-bottom: 1px solid var(--border-subtle);
+      font-size: 12px; align-items: center; gap: 12px;
+    }}
+    .qpt-row:last-child {{ border-bottom: 0; }}
+    .qpt-name {{ color: var(--text-secondary); }}
+    .qpt-status {{ font-size: 11px; color: var(--text-dim); text-align: right; }}
+    .qpt-status .pill {{
+      display: inline-block; padding: 1px 7px; border-radius: 10px;
+      font-size: 10px; font-weight: 600; margin-left: 4px;
+    }}
+    .qpt-status .pill.w {{ background: var(--accent-muted); color: var(--accent); }}
+    .qpt-status .pill.r {{ background: var(--amber-muted); color: var(--amber); }}
+    .qpt-status .pill.p {{ background: var(--teal-muted); color: var(--teal); }}
+    .qpt-status .pill.d {{ background: var(--red-muted); color: var(--red); }}
+    .qpt-status.idle {{ color: var(--green); }}
+    .qpt-top {{
+      padding: 12px 18px; border-top: 1px solid var(--border);
+      background: rgba(0,0,0,0.12);
+    }}
+    .qpt-top-title {{
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--text-dim); margin-bottom: 8px;
+    }}
+    .qpt-top-list {{ margin: 0; padding: 0; list-style: none; }}
+    .qpt-top-list li {{
+      padding: 3px 0; font-size: 12px; color: var(--text-secondary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }}
+    .qpt-top-kind {{
+      display: inline-block; width: 14px; font-weight: 700;
+      font-size: 10px; text-transform: uppercase;
+    }}
+    .qpt-top-kind.w {{ color: var(--accent); }}
+    .qpt-top-kind.r {{ color: var(--amber); }}
+    .qpt-top-kind.p {{ color: var(--teal); }}
+    .qpt-top-kind.d {{ color: var(--red); }}
+
+    .ztt-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 0; }}
+    .ztt-section {{ padding: 14px 18px; border-right: 1px solid var(--border); }}
+    .ztt-section:last-child {{ border-right: 0; }}
+    .ztt-section-title {{
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--text-dim); margin-bottom: 10px;
+    }}
+    .ztt-row {{ display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; }}
+    .ztt-check {{
+      width: 16px; height: 16px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; flex-shrink: 0;
+    }}
+    .ztt-check.pass {{ background: var(--green-muted); color: var(--green); }}
+    .ztt-check.fail {{ background: var(--red-muted); color: var(--red); }}
+    .ztt-label {{ color: var(--text-secondary); }}
+    .ztt-val {{ margin-left: auto; font-weight: 600; font-size: 11px; }}
+
+    .missing-group {{ margin-bottom: 12px; }}
+    .missing-group:last-child {{ margin-bottom: 0; }}
+    .missing-group-title {{
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.04em; color: var(--text-dim); margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }}
+    .missing-list {{ margin: 0; padding: 0; list-style: none; }}
+    .missing-item {{
+      padding: 5px 10px; font-size: 12px; color: var(--text-secondary);
+      border-radius: var(--radius-xs); margin-bottom: 2px;
+    }}
+    .missing-item:hover {{ background: rgba(255,255,255,0.03); }}
+
+    .fb-header {{ display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }}
+    .fb-icon {{
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--accent-muted); color: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }}
+    .fb-title {{ font-size: 14px; font-weight: 600; }}
+    .fb-meta {{
+      font-size: 12px; color: var(--text-dim);
+      display: flex; gap: 12px; margin-top: 2px; flex-wrap: wrap;
+    }}
+    .fb-meta span {{ display: flex; align-items: center; gap: 4px; }}
+    .fb-comment {{
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 12px; margin-top: 12px;
+    }}
+    .fb-comment-header {{ font-size: 11px; color: var(--text-dim); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }}
+    .fb-comment-body {{
+      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+      max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+    }}
+
+    .clr-green {{ color: var(--green); }}
+    .clr-amber {{ color: var(--amber); }}
+    .clr-red {{ color: var(--red); }}
+    .clr-accent {{ color: var(--accent); }}
+    .empty-state {{ padding: 24px; text-align: center; color: var(--text-dim); font-size: 13px; }}
+    .skeleton {{
+      background: linear-gradient(90deg, var(--surface-1) 25%, var(--surface-2) 50%, var(--surface-1) 75%);
+      background-size: 200% 100%; animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-xs); height: 16px;
+    }}
+    @keyframes shimmer {{ 0% {{ background-position: -200% 0; }} 100% {{ background-position: 200% 0; }} }}
+
+    @media (max-width: 1200px) {{ .metrics {{ grid-template-columns: repeat(3, 1fr); }} }}
     @media (max-width: 960px) {{
-      .two-col {{ grid-template-columns: 1fr; }}
+      .sections {{ grid-template-columns: 1fr; }}
+      .metrics {{ grid-template-columns: repeat(2, 1fr); }}
+      .svc-grid {{ grid-template-columns: 1fr; }}
+      .svc-item {{ border-right: 0; border-bottom: 1px solid var(--border); }}
+      .svc-item:last-child {{ border-bottom: 0; }}
+      .queue-cols, .ztt-grid {{ grid-template-columns: 1fr; }}
+      .queue-col {{ border-right: 0; border-bottom: 1px solid var(--border); }}
+      .queue-col:last-child {{ border-bottom: 0; }}
+      .ztt-section {{ border-right: 0; border-bottom: 1px solid var(--border); }}
+      .ztt-section:last-child {{ border-bottom: 0; }}
+    }}
+    @media (max-width: 640px) {{
+      .metrics {{ grid-template-columns: 1fr; }}
+      .main {{ padding: 16px; }}
+      .header-inner {{ padding: 0 16px; flex-wrap: wrap; }}
     }}
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="toolbar">
-      <div>
-        <h1>KubeDojo Local Monitor</h1>
-        <p>Read-only dashboard over the deterministic local API. Refreshes repo status, worktree, missing-module queue, ZTT, and feedback issue #{issue_number}.</p>
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-left">
+        <div class="logo">K</div>
+        <div>
+          <div class="header-title">KubeDojo Local Monitor</div>
+          <div class="header-sub">Read-only operations console &middot; port 8768</div>
+        </div>
       </div>
-      <button id="refresh">Refresh</button>
+      <div class="header-right">
+        <span class="status-pill" id="conn-status"><span class="dot"></span> Connected</span>
+        <span class="last-updated" id="last-updated"></span>
+        <button class="refresh-btn" id="refresh">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
     </div>
-    <div class="grid" id="cards"></div>
-    <div class="two-col">
-      <div class="stack">
-        <section class="panel">
-          <h2>Queue Dashboard</h2>
-          <div class="queue-grid">
-            <div class="queue-box">
-              <h3>V2: Pending Review</h3>
-              <ul id="v2-review"></ul>
+  </header>
+
+  <div class="main">
+    <div class="metrics" id="metrics">
+      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:60%"></div></div>
+      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:80%"></div></div>
+      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:70%"></div></div>
+      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:50%"></div></div>
+      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:65%"></div></div>
+      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:75%"></div></div>
+    </div>
+
+    <div class="sections">
+      <div class="section-full">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">#</span>
+              Site by Track
             </div>
-            <div class="queue-box">
-              <h3>V2: Pending Write</h3>
-              <ul id="v2-write"></ul>
-            </div>
-            <div class="queue-box">
-              <h3>Trans: Pending Review</h3>
-              <ul id="trans-review"></ul>
-            </div>
-            <div class="queue-box">
-              <h3>Trans: Pending Write</h3>
-              <ul id="trans-write"></ul>
-            </div>
+            <span class="panel-badge" id="tracks-badge" style="background:var(--accent-muted);color:var(--accent);"></span>
           </div>
-        </section>
-        <section class="panel">
-          <h2>Queue Summary</h2>
-          <pre id="summary">Loading...</pre>
-        </section>
-        <section class="panel">
-          <h2>Missing Modules</h2>
-          <pre id="missing">Loading...</pre>
-        </section>
-        <section class="panel">
-          <h2>Worktree</h2>
-          <pre id="worktree">Loading...</pre>
-        </section>
-        <section class="panel">
-          <h2>Runtime Services</h2>
-          <pre id="services">Loading...</pre>
-        </section>
+          <div class="panel-body-flush">
+            <table class="tracks-table">
+              <thead>
+                <tr>
+                  <th>Track</th>
+                  <th class="num">Modules</th>
+                  <th class="num">V2 write</th>
+                  <th class="num">V2 review</th>
+                  <th class="num">V2 patch</th>
+                  <th class="num">V2 dead</th>
+                  <th class="num">T2 pend</th>
+                </tr>
+              </thead>
+              <tbody id="tracks-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <div class="stack">
-        <section class="panel">
-          <h2>Zero to Terminal</h2>
-          <pre id="ztt">Loading...</pre>
-        </section>
-        <section class="panel">
-          <h2>Feedback Issue #{issue_number}</h2>
-          <pre id="feedback">Loading...</pre>
-        </section>
+
+      <div class="section-full">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <span class="panel-icon" style="background:var(--green-muted);color:var(--green);">S</span>
+              Runtime Services
+            </div>
+            <span class="panel-badge" id="svc-badge" style="background:var(--green-muted);color:var(--green);"></span>
+          </div>
+          <div class="panel-body-flush">
+            <div class="svc-grid" id="services"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">P</span>
+            V2 Pipeline
+          </div>
+          <span class="panel-badge" id="v2-badge"></span>
+        </div>
+        <div class="panel-body-flush" id="v2-body"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--teal-muted);color:var(--teal);">T</span>
+            Translation V2
+          </div>
+          <span class="panel-badge" id="trans-badge"></span>
+        </div>
+        <div class="panel-body-flush" id="trans-body"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">G</span>
+            Git Worktree
+          </div>
+          <span class="panel-badge" id="wt-badge"></span>
+        </div>
+        <div class="panel-body-flush" id="worktree"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">M</span>
+            Missing Modules
+          </div>
+          <span class="panel-badge" id="missing-badge"></span>
+        </div>
+        <div class="panel-body" id="missing"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">F</span>
+            Feedback Issue #{issue_number}
+          </div>
+        </div>
+        <div class="panel-body" id="feedback"></div>
       </div>
     </div>
   </div>
+
   <script>
-    const issueNumber = {issue_number};
+    const ISSUE = {issue_number};
+    const $ = (sel) => document.querySelector(sel);
+
     async function fetchJson(url) {{
-      const response = await fetch(url);
-      if (!response.ok) {{
-        return {{ error: `HTTP ${{response.status}}`, url }};
-      }}
-      return response.json();
+      const r = await fetch(url);
+      if (!r.ok) return {{ error: `HTTP ${{r.status}}`, url }};
+      return r.json();
     }}
-    function statusClass(flag) {{
-      return flag ? 'good' : 'warn';
+
+    function esc(s) {{
+      const d = document.createElement('div');
+      d.textContent = String(s ?? '');
+      return d.innerHTML;
     }}
-    function renderCards(summary, worktree, feedback) {{
-      const v2 = summary.v2_pipeline || {{ counts: {{}}, convergence_rate: 0, total_modules: 0 }};
-      const t2 = summary.translation_v2_pipeline?.queue || {{ counts: {{}}, convergence_rate: 0, total_modules: 0 }};
-      const missing = summary.missing_modules || {{ active_exact: {{}}, deferred: {{}} }};
-      const ztt = summary.zero_to_terminal || {{ ready: {{}}, theory: {{}}, labs: {{}}, ukrainian: {{}} }};
+
+    function progressBar(pct, color) {{
+      const p = Math.max(0, Math.min(100, pct || 0));
+      return `<div class="progress-track"><div class="progress-fill ${{color}}" style="width:${{p}}%"></div></div>`;
+    }}
+
+    function renderMetrics(summary, worktree, feedback, t2FullQueue) {{
+      const v2 = summary.v2_pipeline || {{}};
+      const t2 = t2FullQueue || summary.translation_v2_pipeline?.queue || {{}};
+      const missing = summary.missing_modules || {{}};
+      const svc = summary.runtime_services || {{}};
+      const v2rate = v2.convergence_rate ?? 0;
+      const t2rate = t2.convergence_rate ?? 0;
+      const activeMissing = missing.active_exact?.missing ?? 0;
+
       const cards = [
-        ['English Modules', summary.english_modules ?? 0, ''],
-        ['V2 Convergence', `${{(v2.convergence_rate ?? 0).toFixed(1)}}%`, ''],
-        ['Translation V2', `${{(t2.convergence_rate ?? 0).toFixed(1)}}%`, ''],
-        ['Active Missing', missing.active_exact?.missing ?? 0, (missing.active_exact?.missing ?? 0) === 0 ? 'good' : 'warn'],
-        ['Deferred Missing', `${{missing.deferred?.missing_min ?? 0}}-${{missing.deferred?.missing_max ?? 0}}`, ''],
-        ['Runtime Services', `${{summary.runtime_services?.running ?? 0}} up`, (summary.runtime_services?.stopped ?? 0) === 0 ? 'good' : 'warn'],
-        ['Worktree Dirty', worktree.dirty ? 'YES' : 'NO', worktree.dirty ? 'warn' : 'good'],
-        ['ZTT English', ztt.ready?.english_production_bar ? 'READY' : 'NOT READY', ztt.ready?.english_production_bar ? 'good' : 'warn'],
-        ['ZTT Ukrainian', ztt.ready?.ukrainian_sync_clean ? 'CLEAN' : 'DRIFT', ztt.ready?.ukrainian_sync_clean ? 'good' : 'warn'],
-        ['Feedback Comments', feedback.comments_count ?? 0, ''],
-        ['Feedback Updated', feedback.updated_at || 'n/a', ''],
+        {{
+          label: 'English Modules',
+          value: summary.english_modules ?? 0,
+          cls: 'accent',
+          sub: `${{summary.tracks?.length ?? 0}} tracks`,
+        }},
+        {{
+          label: 'V2 Convergence',
+          value: `${{v2rate.toFixed(1)}}%`,
+          cls: v2rate >= 90 ? 'good' : v2rate >= 50 ? 'warn' : 'bad',
+          sub: `${{v2.total_modules ?? 0}} modules tracked`,
+          bar: {{ pct: v2rate, color: v2rate >= 90 ? 'green' : 'amber' }},
+        }},
+        {{
+          label: 'Translation V2',
+          value: `${{t2rate.toFixed(1)}}%`,
+          cls: t2rate >= 90 ? 'good' : t2rate >= 50 ? 'warn' : 'bad',
+          sub: `${{t2.total_modules ?? 0}} modules tracked`,
+          bar: {{ pct: t2rate, color: t2rate >= 90 ? 'green' : 'amber' }},
+        }},
+        {{
+          label: 'Active Missing',
+          value: activeMissing,
+          cls: activeMissing === 0 ? 'good' : 'warn',
+          sub: `${{missing.deferred?.missing_min ?? 0}}&ndash;${{missing.deferred?.missing_max ?? 0}} deferred`,
+        }},
+        {{
+          label: 'Services',
+          value: `${{svc.running ?? 0}}/${{(svc.running ?? 0) + (svc.stopped ?? 0)}}`,
+          cls: (svc.stopped ?? 0) === 0 ? 'good' : 'warn',
+          sub: (svc.stopped ?? 0) === 0 ? 'All running' : `${{svc.stopped}} stopped`,
+        }},
+        {{
+          label: 'Worktree',
+          value: worktree.dirty ? `${{worktree.counts?.total ?? 0}} files` : 'Clean',
+          cls: worktree.dirty ? 'warn' : 'good',
+          sub: worktree.branch ? `${{esc(worktree.branch)}}${{worktree.ahead ? ` +${{worktree.ahead}}` : ''}}` : '',
+        }},
       ];
-      const root = document.getElementById('cards');
-      root.innerHTML = cards.map(([label, value, cls]) => `
-        <div class="card">
-          <div class="label">${{label}}</div>
-          <div class="value ${{cls}}">${{value}}</div>
+
+      $('#metrics').innerHTML = cards.map(c => `
+        <div class="metric ${{c.cls}}">
+          <div class="metric-label">${{c.label}}</div>
+          <div class="metric-value">${{c.value}}</div>
+          ${{c.sub ? `<div class="metric-sub">${{c.sub}}</div>` : ''}}
+          ${{c.bar ? progressBar(c.bar.pct, c.bar.color) : ''}}
         </div>
       `).join('');
     }}
-    function pretty(obj) {{
-      return JSON.stringify(obj, null, 2);
-    }}
-    async function refresh() {{
-      const [summary, missing, services, worktree, ztt, feedback, v2Status, transStatus] = await Promise.all([
-        fetchJson('/api/status/summary'),
-        fetchJson('/api/missing-modules/status'),
-        fetchJson('/api/runtime/services'),
-        fetchJson('/api/git/worktree'),
-        fetchJson('/api/ztt/status'),
-        fetchJson(`/api/issue-watch/${{issueNumber}}`),
-        fetchJson('/api/pipeline/v2/status'),
-        fetchJson('/api/translation/v2/status'),
-      ]);
-      summary.missing_modules = missing;
-      summary.runtime_services = services;
-      renderCards(summary, worktree, feedback);
 
-      const renderList = (id, list) => {{
-        const el = document.getElementById(id);
-        if (!list || list.length === 0) {{
-          el.innerHTML = '<li class="meta">None</li>';
-        }} else {{
-          el.innerHTML = list.map(m => `<li>${{m}}</li>`).join('');
-        }}
+    function renderServices(data) {{
+      if (!data.services || data.services.length === 0) {{
+        $('#services').innerHTML = '<div class="empty-state">No services configured</div>';
+        return;
+      }}
+      const badge = $('#svc-badge');
+      badge.textContent = `${{data.running}} / ${{data.running + data.stopped}} running`;
+      badge.style.background = data.stopped === 0 ? 'var(--green-muted)' : 'var(--amber-muted)';
+      badge.style.color = data.stopped === 0 ? 'var(--green)' : 'var(--amber)';
+
+      $('#services').innerHTML = data.services.map(s => `
+        <div class="svc-item">
+          <span class="svc-dot ${{s.status}}"></span>
+          <div class="svc-info">
+            <div class="svc-name">${{esc(s.label)}}</div>
+            <div class="svc-detail mono">
+              ${{s.status === 'running' ? `PID ${{s.pid}}` : 'Stopped'}}${{s.port ? ` &middot; :${{s.port}}` : ''}}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }}
+
+    const TRACK_LABEL = {{
+      'prerequisites': 'Prerequisites',
+      'linux': 'Linux',
+      'k8s': 'Kubernetes',
+      'cloud': 'Cloud',
+      'platform': 'Platform Engineering',
+      'on-premises': 'On-Premises',
+      'ai-ml-engineering': 'AI/ML Engineering',
+      'other': 'Other',
+    }};
+
+    function shortenKey(key) {{
+      return String(key || '').replace(/^src\\/content\\/docs\\//, '').replace(/\\.md$/, '');
+    }}
+
+    function renderSiteTracks(summary, v2, t2Queue) {{
+      const tracks = summary.tracks || [];
+      const v2ByTrack = new Map(((v2 || {{}}).per_track || []).map(t => [t.slug, t.counts]));
+      const t2ByTrack = new Map(((t2Queue || {{}}).per_track || []).map(t => [t.slug, t.counts]));
+
+      const total = tracks.reduce((sum, t) => sum + (t.module_count || 0), 0);
+      const active = tracks.filter(t => t.module_count > 0).length;
+      $('#tracks-badge').textContent = `${{total}} modules · ${{active}} tracks`;
+
+      const cls = (n) => n > 0 ? '' : 'zero';
+      const rowFor = (t) => {{
+        const v = v2ByTrack.get(t.slug) || {{}};
+        const tr2 = t2ByTrack.get(t.slug) || {{}};
+        const t2Pend = (tr2.pending_write || 0) + (tr2.pending_review || 0);
+        const deadCls = (v.dead_letter || 0) > 0 ? 'bad' : 'zero';
+        const reviewCls = (v.pending_review || 0) > 0 ? 'warn' : 'zero';
+        return `<tr>
+          <td class="name">${{esc(t.label)}}</td>
+          <td class="num">${{t.module_count}}</td>
+          <td class="num ${{cls(v.pending_write || 0)}}">${{v.pending_write || 0}}</td>
+          <td class="num ${{reviewCls}}">${{v.pending_review || 0}}</td>
+          <td class="num ${{cls(v.pending_patch || 0)}}">${{v.pending_patch || 0}}</td>
+          <td class="num ${{deadCls}}">${{v.dead_letter || 0}}</td>
+          <td class="num ${{cls(t2Pend)}}">${{t2Pend}}</td>
+        </tr>`;
       }};
 
-      renderList('v2-review', v2Status.pending_review);
-      renderList('v2-write', v2Status.pending_write);
-      renderList('trans-review', transStatus.queue?.pending_review);
-      renderList('trans-write', transStatus.queue?.pending_write);
-
-      document.getElementById('summary').textContent = pretty({{
-        v2_pipeline: summary.v2_pipeline,
-        translation_v2_pipeline: summary.translation_v2_pipeline,
-        translations: summary.translations,
-        labs: summary.labs,
-      }});
-      document.getElementById('missing').textContent = pretty(summary.missing_modules);
-      document.getElementById('services').textContent = pretty(summary.runtime_services);
-      document.getElementById('worktree').textContent = pretty(worktree);
-      document.getElementById('ztt').textContent = pretty(ztt);
-      document.getElementById('feedback').textContent = pretty(feedback);
+      $('#tracks-body').innerHTML = tracks.map(rowFor).join('');
     }}
-    document.getElementById('refresh').addEventListener('click', refresh);
+
+    function renderPipelinePanel(bodyId, badgeId, data, label) {{
+      const el = $(bodyId);
+      const badge = $(badgeId);
+      if (!data || data.error) {{
+        badge.textContent = 'Unknown';
+        badge.style.background = 'var(--amber-muted)';
+        badge.style.color = 'var(--amber)';
+        el.innerHTML = `<div class="empty-state">${{data?.error ? esc(data.error) : 'No data'}}</div>`;
+        return;
+      }}
+      const counts = data.counts || {{}};
+      const totalPending = (counts.pending_write || 0) + (counts.pending_review || 0) + (counts.pending_patch || 0);
+      const dead = counts.dead_letter || 0;
+      if (totalPending === 0 && dead === 0) {{
+        badge.textContent = 'Idle';
+        badge.style.background = 'var(--green-muted)';
+        badge.style.color = 'var(--green)';
+      }} else {{
+        const parts = [];
+        if (totalPending) parts.push(`${{totalPending}} pending`);
+        if (dead) parts.push(`${{dead}} dead`);
+        badge.textContent = parts.join(' · ');
+        badge.style.background = dead ? 'var(--red-muted)' : 'var(--amber-muted)';
+        badge.style.color = dead ? 'var(--red)' : 'var(--amber)';
+      }}
+
+      const done = counts.done ?? 0;
+      const tracked = done + totalPending + dead + (counts.in_progress ?? 0);
+      const conv = tracked > 0 ? (done / tracked * 100) : (data.convergence_rate ?? 0);
+      let html = `
+        <div class="queue-summary">
+          <div class="queue-stat"><div class="queue-stat-val">${{done}}</div><div class="queue-stat-label">Done</div></div>
+          <div class="queue-stat"><div class="queue-stat-val">${{totalPending}}</div><div class="queue-stat-label">Pending</div></div>
+          <div class="queue-stat"><div class="queue-stat-val">${{dead}}</div><div class="queue-stat-label">Dead</div></div>
+          <div class="queue-stat"><div class="queue-stat-val">${{conv.toFixed(1)}}%</div><div class="queue-stat-label">Converged</div></div>
+        </div>`;
+
+      const perTrack = data.per_track || [];
+      const active = perTrack.filter(t => {{
+        const c = t.counts || {{}};
+        return (c.pending_write || 0) + (c.pending_review || 0) + (c.pending_patch || 0) + (c.dead_letter || 0) > 0;
+      }});
+      html += '<div class="queue-per-track">';
+      if (active.length === 0) {{
+        html += `<div class="empty-state">All tracks idle</div>`;
+      }} else {{
+        for (const t of active) {{
+          const c = t.counts || {{}};
+          const bits = [];
+          if (c.pending_write) bits.push(`<span class="pill w">${{c.pending_write}}W</span>`);
+          if (c.pending_review) bits.push(`<span class="pill r">${{c.pending_review}}R</span>`);
+          if (c.pending_patch) bits.push(`<span class="pill p">${{c.pending_patch}}P</span>`);
+          if (c.dead_letter) bits.push(`<span class="pill d">${{c.dead_letter}}D</span>`);
+          html += `<div class="qpt-row">
+            <span class="qpt-name">${{esc(TRACK_LABEL[t.slug] || t.slug)}}</span>
+            <span class="qpt-status">${{bits.join(' ')}}</span>
+          </div>`;
+        }}
+      }}
+      html += '</div>';
+
+      const topItems = [];
+      for (const t of perTrack) {{
+        if (!t.modules) continue;
+        for (const kind of ['dead_letter', 'pending_review', 'pending_write', 'pending_patch']) {{
+          for (const m of (t.modules[kind] || [])) {{
+            topItems.push({{kind, path: m}});
+          }}
+        }}
+      }}
+      const kindLabel = {{dead_letter: 'D', pending_review: 'R', pending_write: 'W', pending_patch: 'P'}};
+      if (topItems.length > 0) {{
+        const shown = topItems.slice(0, 6);
+        html += `<div class="qpt-top">
+          <div class="qpt-top-title">Top items (${{shown.length}} of ${{topItems.length}})</div>
+          <ul class="qpt-top-list mono">
+            ${{shown.map(i => `<li><span class="qpt-top-kind ${{kindLabel[i.kind].toLowerCase()}}">${{kindLabel[i.kind]}}</span> ${{esc(shortenKey(i.path))}}</li>`).join('')}}
+          </ul>
+        </div>`;
+      }}
+
+      el.innerHTML = html;
+    }}
+
+    function renderWorktree(data) {{
+      const el = $('#worktree');
+      if (data.error) {{
+        el.innerHTML = `<div class="empty-state clr-red">${{esc(data.error)}}</div>`;
+        return;
+      }}
+
+      const badge = $('#wt-badge');
+      if (!data.dirty) {{
+        badge.textContent = 'Clean';
+        badge.style.background = 'var(--green-muted)';
+        badge.style.color = 'var(--green)';
+        el.innerHTML = `
+          <div class="wt-summary">
+            <div class="wt-stat">Branch: <span class="wt-stat-val">${{esc(data.branch)}}</span></div>
+          </div>
+          <div class="empty-state">Working tree is clean</div>`;
+        return;
+      }}
+
+      badge.textContent = `${{data.counts.total}} changes`;
+      badge.style.background = 'var(--amber-muted)';
+      badge.style.color = 'var(--amber)';
+
+      const c = data.counts;
+      let summary = `
+        <div class="wt-summary">
+          <div class="wt-stat">Branch: <span class="wt-stat-val">${{esc(data.branch)}}</span></div>
+          ${{data.ahead ? `<div class="wt-stat">Ahead: <span class="wt-stat-val clr-green">+${{data.ahead}}</span></div>` : ''}}
+          ${{data.behind ? `<div class="wt-stat">Behind: <span class="wt-stat-val clr-red">-${{data.behind}}</span></div>` : ''}}
+          ${{c.staged ? `<div class="wt-stat">Staged: <span class="wt-stat-val clr-green">${{c.staged}}</span></div>` : ''}}
+          ${{c.unstaged ? `<div class="wt-stat">Unstaged: <span class="wt-stat-val clr-amber">${{c.unstaged}}</span></div>` : ''}}
+          ${{c.untracked ? `<div class="wt-stat">Untracked: <span class="wt-stat-val clr-accent">${{c.untracked}}</span></div>` : ''}}
+        </div>`;
+
+      const statusLabel = (entry) => {{
+        if (entry.untracked) return ['?', 'Q'];
+        if (entry.conflicted) return ['U', 'U'];
+        const s = entry.index_status !== ' ' && entry.index_status !== '?' ? entry.index_status : entry.worktree_status;
+        return [s, s];
+      }};
+
+      const entries = (data.entries || []).slice(0, 80);
+      let rows = entries.map(e => {{
+        const [label, cls] = statusLabel(e);
+        return `<tr>
+          <td><span class="wt-badge ${{cls}}">${{label}}</span></td>
+          <td class="wt-path mono">${{esc(e.path)}}</td>
+          <td><span class="wt-cat">${{e.category}}</span></td>
+        </tr>`;
+      }}).join('');
+
+      el.innerHTML = `${{summary}}
+        <div class="wt-scroll">
+          <table class="wt-table">
+            <thead><tr><th>Status</th><th>Path</th><th>Category</th></tr></thead>
+            <tbody>${{rows}}</tbody>
+          </table>
+        </div>
+        ${{data.entries.length > 80 ? `<div class="empty-state">Showing 80 of ${{data.entries.length}} entries</div>` : ''}}`;
+    }}
+
+    function renderZtt(data) {{
+      const el = $('#ztt');
+      const badge = $('#ztt-badge');
+
+      if (data.error) {{
+        el.innerHTML = `<div class="empty-state clr-red">${{esc(data.error)}}</div>`;
+        return;
+      }}
+
+      const ready = data.ready || {{}};
+      const allReady = ready.english_production_bar && ready.ukrainian_sync_clean;
+      badge.textContent = allReady ? 'Ready' : 'Needs Work';
+      badge.style.background = allReady ? 'var(--green-muted)' : 'var(--amber-muted)';
+      badge.style.color = allReady ? 'var(--green)' : 'var(--amber)';
+
+      const chk = (val) => val
+        ? '<span class="ztt-check pass">&#10003;</span>'
+        : '<span class="ztt-check fail">&#10007;</span>';
+
+      const theory = data.theory || {{}};
+      const labs = data.labs || {{}};
+      const uk = data.ukrainian || {{}};
+
+      el.innerHTML = `
+        <div class="ztt-grid">
+          <div class="ztt-section">
+            <div class="ztt-section-title">Readiness</div>
+            <div class="ztt-row">${{chk(ready.english_production_bar)}}<span class="ztt-label">English Production</span></div>
+            <div class="ztt-row">${{chk(ready.ukrainian_sync_clean)}}<span class="ztt-label">Ukrainian Sync</span></div>
+            <div class="ztt-section-title" style="margin-top:14px">Theory</div>
+            <div class="ztt-row">${{chk(theory.all_have_frontmatter)}}<span class="ztt-label">Frontmatter</span><span class="ztt-val">${{theory.module_count ?? 0}} modules</span></div>
+            <div class="ztt-row">${{chk(theory.all_have_labs)}}<span class="ztt-label">Labs Linked</span></div>
+            <div class="ztt-row">${{chk(theory.meets_line_threshold)}}<span class="ztt-label">Line Threshold</span></div>
+          </div>
+          <div class="ztt-section">
+            <div class="ztt-section-title">Labs</div>
+            <div class="ztt-row">${{chk(labs.all_exist)}}<span class="ztt-label">All Exist</span><span class="ztt-val">${{labs.total ?? 0}} labs</span></div>
+            <div class="ztt-row">${{chk(labs.all_executable)}}<span class="ztt-label">Executable</span></div>
+            <div class="ztt-row">${{chk(labs.all_have_solutions)}}<span class="ztt-label">Solutions</span></div>
+            <div class="ztt-section-title" style="margin-top:14px">Ukrainian</div>
+            <div class="ztt-row">${{chk(uk.all_synced)}}<span class="ztt-label">All Synced</span><span class="ztt-val">${{uk.synced ?? 0}}/${{uk.total ?? 0}}</span></div>
+            <div class="ztt-row">${{chk(uk.no_stale)}}<span class="ztt-label">No Stale</span></div>
+          </div>
+        </div>`;
+    }}
+
+    function renderMissing(data) {{
+      const el = $('#missing');
+      const badge = $('#missing-badge');
+
+      if (data.error) {{
+        el.innerHTML = `<div class="empty-state clr-red">${{esc(data.error)}}</div>`;
+        return;
+      }}
+
+      const active = data.active_exact || {{}};
+      const deferred = data.deferred || {{}};
+      const activeList = active.modules ?? [];
+      const deferredList = deferred.modules ?? [];
+      const total = activeList.length + deferredList.length;
+
+      badge.textContent = total === 0 ? 'Complete' : `${{total}} missing`;
+      badge.style.background = total === 0 ? 'var(--green-muted)' : 'var(--amber-muted)';
+      badge.style.color = total === 0 ? 'var(--green)' : 'var(--amber)';
+
+      if (total === 0) {{
+        el.innerHTML = '<div class="empty-state">All modules present</div>';
+        return;
+      }}
+
+      let html = '';
+      if (activeList.length) {{
+        html += `<div class="missing-group">
+          <div class="missing-group-title"><span class="wt-badge M">Active</span> ${{activeList.length}} missing</div>
+          <ul class="missing-list">${{activeList.map(m => `<li class="missing-item mono">${{esc(m)}}</li>`).join('')}}</ul>
+        </div>`;
+      }}
+      if (deferredList.length) {{
+        html += `<div class="missing-group">
+          <div class="missing-group-title"><span class="wt-badge Q">Deferred</span> ${{deferredList.length}} estimated</div>
+          <ul class="missing-list">${{deferredList.slice(0, 20).map(m => `<li class="missing-item mono">${{esc(m)}}</li>`).join('')}}</ul>
+          ${{deferredList.length > 20 ? `<div class="empty-state">+${{deferredList.length - 20}} more</div>` : ''}}
+        </div>`;
+      }}
+      el.innerHTML = html;
+    }}
+
+    function renderFeedback(data) {{
+      const el = $('#feedback');
+      if (data.error) {{
+        el.innerHTML = `<div class="empty-state">${{data.error === 'missing_issue_watch_state' ? 'Issue watcher not running or no data yet' : esc(data.error)}}</div>`;
+        return;
+      }}
+
+      let html = `
+        <div class="fb-header">
+          <div class="fb-icon">#</div>
+          <div>
+            <div class="fb-title">${{esc(data.title || `Issue #${{data.issue_number}}`)}}</div>
+            <div class="fb-meta">
+              <span><span class="wt-badge ${{data.state === 'open' ? 'A' : 'D'}}">${{data.state || 'unknown'}}</span></span>
+              <span>${{data.comments_count ?? 0}} comments</span>
+              ${{data.updated_at ? `<span>Updated ${{esc(data.updated_at)}}</span>` : ''}}
+            </div>
+          </div>
+        </div>`;
+
+      if (data.last_comment) {{
+        const c = data.last_comment;
+        const body = typeof c === 'object' ? (c.body || JSON.stringify(c, null, 2)) : String(c);
+        const author = typeof c === 'object' ? (c.author || c.user || '') : '';
+        html += `
+          <div class="fb-comment">
+            <div class="fb-comment-header">
+              ${{author ? `<strong>${{esc(author)}}</strong> &middot; ` : ''}}Latest comment
+            </div>
+            <div class="fb-comment-body mono">${{esc(body.substring(0, 800))}}</div>
+          </div>`;
+      }}
+      el.innerHTML = html;
+    }}
+
+    let refreshing = false;
+    async function refresh() {{
+      if (refreshing) return;
+      refreshing = true;
+      const btn = $('#refresh');
+      btn.classList.add('loading');
+
+      try {{
+        const [summary, missing, services, worktree, feedback, v2Status, transStatus] = await Promise.all([
+          fetchJson('/api/status/summary'),
+          fetchJson('/api/missing-modules/status'),
+          fetchJson('/api/runtime/services'),
+          fetchJson('/api/git/worktree'),
+          fetchJson(`/api/issue-watch/${{ISSUE}}`),
+          fetchJson('/api/pipeline/v2/status'),
+          fetchJson('/api/translation/v2/status'),
+        ]);
+
+        summary.missing_modules = missing;
+        summary.runtime_services = services;
+
+        const t2Queue = transStatus.queue || transStatus;
+        renderMetrics(summary, worktree, feedback, t2Queue);
+        renderServices(services);
+        renderSiteTracks(summary, v2Status, t2Queue);
+        renderPipelinePanel('#v2-body', '#v2-badge', v2Status, 'V2 Pipeline');
+        renderPipelinePanel('#trans-body', '#trans-badge', t2Queue, 'Translation V2');
+        renderWorktree(worktree);
+        renderMissing(missing);
+        renderFeedback(feedback);
+
+        const now = new Date();
+        $('#last-updated').textContent = `Updated ${{now.toLocaleTimeString()}}`;
+        const pill = $('#conn-status');
+        pill.innerHTML = '<span class="dot"></span> Connected';
+        pill.style.background = 'var(--green-muted)';
+        pill.style.color = 'var(--green)';
+      }} catch (err) {{
+        const pill = $('#conn-status');
+        pill.innerHTML = '<span class="dot"></span> Error';
+        pill.style.background = 'var(--red-muted)';
+        pill.style.color = 'var(--red)';
+        console.error('Dashboard refresh failed:', err);
+      }} finally {{
+        refreshing = false;
+        btn.classList.remove('loading');
+      }}
+    }}
+
+    $('#refresh').addEventListener('click', refresh);
     refresh();
     setInterval(refresh, 60000);
   </script>
@@ -598,7 +1333,10 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     if path == "/healthz":
         return 200, {"ok": True}, "application/json; charset=utf-8"
     if path == "/api/status/summary":
-        return 200, build_repo_status(repo_root), "application/json; charset=utf-8"
+        # Dashboard hot path: skip the git-per-file translation + ZTT passes
+        # (~2min total). Full versions served by /api/translation/v2/status
+        # and /api/ztt/status.
+        return 200, build_repo_status(repo_root, fast=True), "application/json; charset=utf-8"
     if path == "/api/missing-modules/status":
         return 200, _build_missing_modules_summary(repo_root), "application/json; charset=utf-8"
     if path == "/api/runtime/services":
@@ -607,18 +1345,25 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         db_path = repo_root / ".pipeline" / "v2.db"
         if not db_path.exists():
             return 404, {"error": "missing_db", "db_path": str(db_path)}, "application/json; charset=utf-8"
-        return 200, build_v2_status_report(db_path), "application/json; charset=utf-8"
+        return 200, _enrich_v2_with_per_track(build_v2_status_report(db_path)), "application/json; charset=utf-8"
     if path == "/api/translation/v2/status":
         section = query.get("section", [None])[0]
-        return (
-            200,
-            build_translation_status(
-                repo_root,
-                db_path=repo_root / ".pipeline" / "translation_v2.db",
-                section=section,
-            ),
-            "application/json; charset=utf-8",
-        )
+        # Dashboard hot path skips the git-per-file freshness walk; callers
+        # that need it can pass ?freshness=1.
+        want_freshness = query.get("freshness", ["0"])[0] not in ("0", "false", "")
+        db_path = repo_root / ".pipeline" / "translation_v2.db"
+        if want_freshness:
+            t2 = build_translation_status(repo_root, db_path=db_path, section=section)
+        else:
+            from translation_v2 import _build_translation_queue_status
+            t2 = {
+                "repo_root": str(repo_root),
+                "db_path": str(db_path),
+                "section": section,
+                "freshness": None,
+                "queue": _build_translation_queue_status(db_path) if db_path.exists() else None,
+            }
+        return 200, _enrich_translation_v2_with_per_track(t2), "application/json; charset=utf-8"
     if path == "/api/labs/status":
         return 200, _build_lab_summary(repo_root), "application/json; charset=utf-8"
     if path == "/api/ztt/status":
