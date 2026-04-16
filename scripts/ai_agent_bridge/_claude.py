@@ -28,7 +28,7 @@ from agent_runtime.errors import (
 from agent_runtime.runner import invoke as runtime_invoke
 
 from ._broker import _is_task_locked, _remove_pid_file, _write_pid_file
-from ._config import _PARENT_ENV, CLAUDE_CMD, REPO_ROOT
+from ._config import _PARENT_ENV, CLAUDE_CMD, CLAUDE_DEFAULT_MODEL, REPO_ROOT
 from ._db import get_db, get_session, set_session
 from ._messaging import acknowledge, send_message
 from ._prompts import build_claude_prompt
@@ -130,7 +130,7 @@ def _run_claude_sync_via_runtime(
             build_claude_prompt(msg),
             mode="read-only",
             cwd=REPO_ROOT,
-            model=None,  # Bridge uses Claude's default
+            model=msg.get("to_model") or CLAUDE_DEFAULT_MODEL,
             task_id=msg.get('task_id'),
             session_id=session_id_to_pass,
             tool_config=tool_config,
