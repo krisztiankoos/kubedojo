@@ -119,8 +119,16 @@ def _run_markdownlint(module_path: Path, *, cwd: Path) -> list[PreflightFinding]
             )
         ]
 
-    output = (result.stdout or result.stderr or "markdownlint failed").strip()
-    lines = [line for line in output.splitlines() if line.strip()] or [output]
+    output = "\n".join(part for part in (result.stdout, result.stderr) if part).strip() or "markdownlint failed"
+    lines = [line for line in output.splitlines() if line.strip()]
+    detail_lines = [
+        line for line in lines
+        if not line.startswith("markdownlint-cli2 ")
+        and not line.startswith("Finding:")
+        and not line.startswith("Linting:")
+        and not line.startswith("Summary:")
+    ]
+    lines = detail_lines or lines or [output]
     return [
         PreflightFinding(
             id="MARKDOWNLINT",
@@ -162,7 +170,7 @@ def _run_yamllint(content: str, *, cwd: Path) -> list[PreflightFinding]:
             PreflightFinding(
                 id="YAMLLINT",
                 passed=False,
-                severity="ERROR",
+                severity="WARNING",
                 evidence=str(exc),
                 fix_hint="Install yamllint so YAML snippets can be linted before review.",
             )
@@ -305,7 +313,8 @@ def _structural_regex_findings(content: str) -> list[PreflightFinding]:
 
 
 def _run_link_check(content: str, *, link_cache_path: Path) -> list[PreflightFinding]:
-    urls = sorted(set(re.findall(r"https?://[^\s)>\]\"']+", content)))
+    raw_urls = re.findall(r"https?://[^\s)>\]\"']+", content)
+    urls = sorted({url for url in (_normalize_external_url(item) for item in raw_urls) if url})
     if not urls:
         return [
             PreflightFinding(
@@ -353,6 +362,23 @@ def _resolve_link_statuses(
         return v1_pipeline._resolve_url_statuses(urls)
     finally:
         v1_pipeline.LINK_CACHE_FILE = original
+
+
+def _normalize_external_url(raw_url: str) -> str | None:
+    url = raw_url.rstrip("`.,:;!?")
+    if not url:
+        return None
+
+    match = re.match(r"^https?://([^/]+)", url, re.IGNORECASE)
+    if match is None:
+        return url
+
+    host = match.group(1).split(":", 1)[0].lower()
+    if host in {"localhost", "127.0.0.1", "0.0.0.0"}:
+        return None
+    if "your_public_ip" in host:
+        return None
+    return url
 
 
 def _is_valid_sidebar_order(value: Any) -> bool:

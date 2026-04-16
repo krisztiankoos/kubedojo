@@ -11,7 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from migrate_v1_to_v2 import migrate_v1_to_v2
 from pipeline_v2.control_plane import ControlPlane
-from pipeline_v2.review_worker import PRO_MODEL
+from pipeline_v2.review_worker import REVIEW_MODEL
+from pipeline_v2.write_worker import WRITE_MODEL
 
 
 def _write_budgets(path: Path) -> None:
@@ -20,7 +21,14 @@ def _write_budgets(path: Path) -> None:
         yaml.safe_dump(
             {
                 "models": {
-                    PRO_MODEL: {
+                    REVIEW_MODEL: {
+                        "max_concurrent": 2,
+                        "weekly_calls": 200,
+                        "hourly_calls": 50,
+                        "weekly_budget_usd": 40.0,
+                        "cooldown_after_rate_limit": 300,
+                    },
+                    WRITE_MODEL: {
                         "max_concurrent": 2,
                         "weekly_calls": 200,
                         "hourly_calls": 50,

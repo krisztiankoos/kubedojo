@@ -9,11 +9,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from dispatch import dispatch_codex
+from dispatch import dispatch_codex_patch
 
 from .control_plane import ControlPlane, Lease
 from .escalation import should_dead_letter_rewrite, should_escalate_patch
-from .review_worker import PRO_MODEL
+from .review_worker import REVIEW_MODEL
+from .write_worker import WRITE_MODEL
 
 
 PATCH_ESTIMATED_USD = 0.0150
@@ -40,7 +41,7 @@ class PatchWorker:
         control_plane: ControlPlane,
         *,
         worker_id: str = "patch-worker",
-        dispatch_fn: Callable[..., tuple[bool, str]] = dispatch_codex,
+        dispatch_fn: Callable[..., tuple[bool, str]] = dispatch_codex_patch,
     ):
         self.control_plane = control_plane
         self.worker_id = worker_id
@@ -142,7 +143,7 @@ class PatchWorker:
             self.control_plane.enqueue(
                 lease.module_key,
                 phase="review",
-                model=PRO_MODEL,
+                model=REVIEW_MODEL,
                 priority=lease.job_id,
             )
             details = {
@@ -313,7 +314,7 @@ class PatchWorker:
         self.control_plane.enqueue(
             lease.module_key,
             phase="write",
-            model=PRO_MODEL,
+            model=WRITE_MODEL,
             priority=0,
         )
         return PatchRunOutcome(

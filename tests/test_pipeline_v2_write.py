@@ -11,8 +11,8 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from pipeline_v2.control_plane import ControlPlane
-from pipeline_v2.review_worker import PRO_MODEL
-from pipeline_v2.write_worker import WriteWorker
+from pipeline_v2.review_worker import REVIEW_MODEL
+from pipeline_v2.write_worker import WRITE_MODEL, WriteWorker
 
 
 STUB_MODULE = """---
@@ -79,7 +79,14 @@ def _write_budgets(path: Path) -> None:
         yaml.safe_dump(
             {
                 "models": {
-                    PRO_MODEL: {
+                    WRITE_MODEL: {
+                        "max_concurrent": 2,
+                        "weekly_calls": 200,
+                        "hourly_calls": 50,
+                        "weekly_budget_usd": 40.0,
+                        "cooldown_after_rate_limit": 300,
+                    },
+                    REVIEW_MODEL: {
                         "max_concurrent": 2,
                         "weekly_calls": 200,
                         "hourly_calls": 50,
@@ -129,7 +136,7 @@ def test_initial_write_of_stub_module_enqueues_review(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path, STUB_MODULE)
     module_key = str(module_path.relative_to(tmp_path))
-    control_plane.enqueue(module_key, phase="write", model=PRO_MODEL)
+    control_plane.enqueue(module_key, phase="write", model=WRITE_MODEL)
     write_fn = Mock(return_value=FINAL_DRAFT)
     worker = WriteWorker(control_plane, write_fn=write_fn)
 
@@ -142,7 +149,7 @@ def test_initial_write_of_stub_module_enqueues_review(tmp_path):
         "SELECT phase, model, queue_state FROM jobs WHERE phase = 'review' AND queue_state = 'pending'",
     )
     assert len(queued_review) == 1
-    assert queued_review[0]["model"] == PRO_MODEL
+    assert queued_review[0]["model"] == REVIEW_MODEL
     assert write_fn.call_args.kwargs["rewrite"] is False
 
 
@@ -168,7 +175,7 @@ def test_severe_rewrite_preserves_existing_content_in_prompt_context(tmp_path):
             "reasons": ["integrity_failure"],
         },
     )
-    control_plane.enqueue(module_key, phase="write", model=PRO_MODEL)
+    control_plane.enqueue(module_key, phase="write", model=WRITE_MODEL)
     write_fn = Mock(return_value=FINAL_DRAFT)
     worker = WriteWorker(control_plane, write_fn=write_fn)
 
@@ -185,7 +192,7 @@ def test_empty_module_file_uses_initial_write_plan(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path, "", name="docs/module-1.2-empty.md")
     module_key = str(module_path.relative_to(tmp_path))
-    control_plane.enqueue(module_key, phase="write", model=PRO_MODEL)
+    control_plane.enqueue(module_key, phase="write", model=WRITE_MODEL)
     write_fn = Mock(return_value=FINAL_DRAFT)
     worker = WriteWorker(control_plane, write_fn=write_fn)
 
@@ -201,7 +208,7 @@ def test_write_failure_releases_lease_for_retry(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path, STUB_MODULE, name="docs/module-1.3-retry.md")
     module_key = str(module_path.relative_to(tmp_path))
-    control_plane.enqueue(module_key, phase="write", model=PRO_MODEL)
+    control_plane.enqueue(module_key, phase="write", model=WRITE_MODEL)
     worker = WriteWorker(control_plane, write_fn=Mock(return_value=None))
 
     outcome = worker.run_once()

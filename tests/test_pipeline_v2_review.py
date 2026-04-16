@@ -14,8 +14,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 from pipeline_v2.control_plane import ControlPlane
 from pipeline_v2.review_worker import (
     CHECK_PRE_MODEL,
-    FLASH_MODEL,
-    PRO_MODEL,
+    DEEP_CHECK_IDS,
+    REVIEW_MODEL,
     ReviewWorker,
 )
 
@@ -48,7 +48,7 @@ def _write_budgets(path: Path) -> None:
         yaml.safe_dump(
             {
                 "models": {
-                    PRO_MODEL: {
+                    REVIEW_MODEL: {
                         "max_concurrent": 2,
                         "weekly_calls": 200,
                         "hourly_calls": 50,
@@ -116,7 +116,13 @@ def _simple_response(check_id: str, *, passed: bool = True) -> str:
     )
 
 
-def _deep_response(*, cov: bool = True, depth: bool = True, why: bool = True) -> str:
+def _deep_response(
+    *,
+    cov: bool = True,
+    depth: bool = True,
+    why: bool = True,
+    fact_check: bool = True,
+) -> str:
     checks = [
         {
             "id": "COV",
@@ -138,6 +144,13 @@ def _deep_response(*, cov: bool = True, depth: bool = True, why: bool = True) ->
             "evidence": "why ok" if why else "missing rationale",
             "fix_hint": "" if why else "Explain the rationale for design choices",
             "line_range": [9, 10],
+        },
+        {
+            "id": "FACT_CHECK",
+            "passed": fact_check,
+            "evidence": "facts verified" if fact_check else "could not verify current facts",
+            "fix_hint": "" if fact_check else "Verify claims against current live sources",
+            "line_range": [11, 12],
         },
     ]
     return json.dumps(
@@ -161,7 +174,7 @@ def _fetch_rows(db_path: Path, sql: str, params: tuple = ()) -> list[sqlite3.Row
 def test_preflight_markdownlint_failure_skips_llm_and_enqueues_patch(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)
-    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=PRO_MODEL)
+    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=REVIEW_MODEL)
     dispatch = Mock()
     worker = ReviewWorker(control_plane, dispatch_fn=dispatch)
 
@@ -198,7 +211,7 @@ def test_preflight_markdownlint_failure_skips_llm_and_enqueues_patch(tmp_path):
 def test_preflight_pass_dispatches_llm_review(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)
-    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=PRO_MODEL)
+    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=REVIEW_MODEL)
     dispatch = Mock(
         side_effect=[
             (True, _simple_response("PRES")),
@@ -222,7 +235,7 @@ def test_preflight_pass_dispatches_llm_review(tmp_path):
 def test_malformed_json_retries_once_then_attempt_failed(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)
-    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=PRO_MODEL)
+    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=REVIEW_MODEL)
     dispatch = Mock(side_effect=[(True, "not json"), (True, "still not json")])
     worker = ReviewWorker(control_plane, dispatch_fn=dispatch)
 
@@ -243,7 +256,7 @@ def test_malformed_json_retries_once_then_attempt_failed(tmp_path):
 def test_approve_response_emits_check_passed_and_enqueues_check_pre(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)
-    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=PRO_MODEL)
+    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=REVIEW_MODEL)
     dispatch = Mock(
         side_effect=[
             (True, _simple_response("PRES")),
@@ -276,7 +289,7 @@ def test_approve_response_emits_check_passed_and_enqueues_check_pre(tmp_path):
 def test_reject_response_emits_check_failed_and_enqueues_patch(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)
-    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=PRO_MODEL)
+    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=REVIEW_MODEL)
     dispatch = Mock(
         side_effect=[
             (True, _simple_response("PRES", passed=False)),
@@ -306,10 +319,10 @@ def test_reject_response_emits_check_failed_and_enqueues_patch(tmp_path):
     assert queued[0]["queue_state"] == "pending"
 
 
-def test_flash_for_simple_checks_and_pro_for_deep_checks(tmp_path):
+def test_three_simple_dispatches_then_one_deep(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)
-    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=PRO_MODEL)
+    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=REVIEW_MODEL)
     dispatch = Mock(
         side_effect=[
             (True, _simple_response("PRES")),
@@ -327,13 +340,21 @@ def test_flash_for_simple_checks_and_pro_for_deep_checks(tmp_path):
         worker.run_once()
 
     models = [call.kwargs["model"] for call in dispatch.call_args_list]
-    assert models == [FLASH_MODEL, FLASH_MODEL, FLASH_MODEL, PRO_MODEL]
+    assert models == [REVIEW_MODEL] * 4
+    prompts = [call.args[0] for call in dispatch.call_args_list]
+    for check_id, prompt in zip(("PRES", "NO_EMOJI", "K8S_API"), prompts[:3]):
+        assert f"check_id={check_id}" in prompt or check_id in prompt
+    assert "COV" in prompts[3] and "FACT_CHECK" in prompts[3]
+
+
+def test_fact_check_is_deep_check():
+    assert "FACT_CHECK" in DEEP_CHECK_IDS
 
 
 def test_review_worker_completes_lease_and_records_usage(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)
-    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=PRO_MODEL)
+    control_plane.enqueue(str(module_path.relative_to(tmp_path)), phase="review", model=REVIEW_MODEL)
     dispatch = Mock(
         side_effect=[
             (True, _simple_response("PRES")),

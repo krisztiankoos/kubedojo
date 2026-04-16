@@ -6,22 +6,18 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from dispatch import dispatch_gemini
+from dispatch import dispatch_codex_review
 
 from .control_plane import ControlPlane, Lease
 from .preflight import PreflightFinding, run_preflight
 
 
-FLASH_MODEL = "gemini-3-flash-preview"
-PRO_MODEL = "gemini-3.1-pro-preview"
-PATCH_MODEL = "codex"
+REVIEW_MODEL = "gpt-5.3-codex-spark"
+PATCH_MODEL = "gpt-5.4"
 CHECK_PRE_MODEL = "deterministic"
 SIMPLE_CHECK_IDS = ("PRES", "NO_EMOJI", "K8S_API")
-DEEP_CHECK_IDS = ("COV", "DEPTH", "WHY")
-MODEL_ESTIMATED_USD = {
-    FLASH_MODEL: 0.0025,
-    PRO_MODEL: 0.0350,
-}
+DEEP_CHECK_IDS = ("COV", "DEPTH", "WHY", "FACT_CHECK")
+REVIEW_MODEL_ESTIMATED_USD = 0.0050
 
 
 @dataclass(frozen=True)
@@ -42,7 +38,7 @@ class ReviewWorker:
         control_plane: ControlPlane,
         *,
         worker_id: str = "review-worker",
-        dispatch_fn: Callable[..., tuple[bool, str]] = dispatch_gemini,
+        dispatch_fn: Callable[..., tuple[bool, str]] = dispatch_codex_review,
     ):
         self.control_plane = control_plane
         self.worker_id = worker_id
@@ -111,12 +107,28 @@ class ReviewWorker:
                 lease=lease,
             )
             failed_checks = [check for check in review_result["checks"] if not check["passed"]]
+            unverified_fact_claims = [
+                check for check in review_result["checks"]
+                if check["id"] == "FACT_CHECK"
+                and check.get("passed")
+                and str(check.get("evidence", "")).lstrip().lower().startswith("unverified:")
+            ]
             event_payload = {
                 "job_id": lease.job_id,
                 "verdict": review_result["verdict"],
                 "checks": review_result["checks"],
                 "feedback": review_result["feedback"],
             }
+            if unverified_fact_claims:
+                self.control_plane.emit_event(
+                    "fact_check_unverified",
+                    module_key=lease.module_key,
+                    lease_id=lease.lease_id,
+                    payload={
+                        "job_id": lease.job_id,
+                        "unverified_claims": unverified_fact_claims,
+                    },
+                )
             if failed_checks:
                 self.control_plane.emit_event(
                     "check_failed",
@@ -205,24 +217,25 @@ class ReviewWorker:
             result, calls_used = self._dispatch_with_retry(
                 self._simple_prompt(module_text, module_path, check_id),
                 expected_checks={check_id},
-                model=FLASH_MODEL,
+                model=REVIEW_MODEL,
             )
             aggregated_checks.extend(result["checks"])
             if result["feedback"]:
                 feedback_parts.append(result["feedback"])
             actual_calls += calls_used
-            actual_usd += MODEL_ESTIMATED_USD[FLASH_MODEL] * calls_used
+            actual_usd += REVIEW_MODEL_ESTIMATED_USD * calls_used
 
         deep_result, deep_calls_used = self._dispatch_with_retry(
             self._deep_prompt(module_text, module_path),
             expected_checks=set(DEEP_CHECK_IDS),
-            model=PRO_MODEL,
+            model=REVIEW_MODEL,
+            use_search=True,
         )
         aggregated_checks.extend(deep_result["checks"])
         if deep_result["feedback"]:
             feedback_parts.append(deep_result["feedback"])
         actual_calls += deep_calls_used
-        actual_usd += MODEL_ESTIMATED_USD[PRO_MODEL] * deep_calls_used
+        actual_usd += REVIEW_MODEL_ESTIMATED_USD * deep_calls_used
 
         checks_by_id = {check["id"]: check for check in aggregated_checks}
         ordered_checks = [
@@ -246,11 +259,14 @@ class ReviewWorker:
         *,
         expected_checks: set[str],
         model: str,
+        use_search: bool = False,
     ) -> tuple[dict[str, Any], int]:
         last_error: Exception | None = None
         calls_used = 0
         for attempt in range(2):
-            ok, output = self.dispatch_fn(prompt, model=model, review=False, timeout=900)
+            ok, output = self.dispatch_fn(
+                prompt, model=model, timeout=900, use_search=use_search
+            )
             calls_used += 1
             if not ok:
                 raise MalformedReviewerResponse(output.strip() or f"{model} dispatch failed")
@@ -270,7 +286,7 @@ class ReviewWorker:
         return module_path
 
     def _estimated_review_cost(self) -> float:
-        return round((3 * MODEL_ESTIMATED_USD[FLASH_MODEL]) + MODEL_ESTIMATED_USD[PRO_MODEL], 4)
+        return round((len(SIMPLE_CHECK_IDS) + 1) * REVIEW_MODEL_ESTIMATED_USD, 4)
 
     def _simple_prompt(self, module_text: str, module_path: Path, check_id: str) -> str:
         return f"""You are a strict KubeDojo review worker.
@@ -304,7 +320,8 @@ Return JSON only with this exact schema:
   "checks": [
     {{"id": "COV", "passed": true, "evidence": "...", "fix_hint": "...", "line_range": [1, 1]}},
     {{"id": "DEPTH", "passed": true, "evidence": "...", "fix_hint": "...", "line_range": [1, 1]}},
-    {{"id": "WHY", "passed": true, "evidence": "...", "fix_hint": "...", "line_range": [1, 1]}}
+    {{"id": "WHY", "passed": true, "evidence": "...", "fix_hint": "...", "line_range": [1, 1]}},
+    {{"id": "FACT_CHECK", "passed": true, "evidence": "...", "fix_hint": "...", "line_range": [1, 1]}}
   ],
   "feedback": "..."
 }}
@@ -313,6 +330,14 @@ Review ONLY these checks:
 - COV: every learning outcome is covered with concrete teaching content.
 - DEPTH: include practitioner-grade nuance such as tradeoffs, failure modes, or gotchas.
 - WHY: major design choices explain rationale, not just procedure.
+- FACT_CHECK: verify Kubernetes API versions, command syntax, and feature availability.
+  Three outcomes:
+    1. VERIFIED CORRECT — set passed=true, evidence="verified: <what you checked>".
+    2. DETECTED WRONG — set passed=false, evidence="wrong: <correct version/syntax/behavior>",
+       fix_hint="<concrete replacement>". Only fail when you have specific evidence the
+       claim is incorrect.
+    3. CANNOT VERIFY — set passed=true, evidence="unverified: <claim you could not confirm>".
+       Do NOT fail this check merely because a claim is obscure or hard to look up.
 
 Module path: {module_path}
 

@@ -12,7 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from pipeline_v2.control_plane import ControlPlane
 from pipeline_v2.patch_worker import PatchWorker
-from pipeline_v2.review_worker import PATCH_MODEL, PRO_MODEL
+from pipeline_v2.review_worker import PATCH_MODEL, REVIEW_MODEL
+from pipeline_v2.write_worker import WRITE_MODEL
 
 
 MODULE_TEXT = """---
@@ -51,7 +52,14 @@ def _write_budgets(path: Path) -> None:
                         "weekly_budget_usd": 40.0,
                         "cooldown_after_rate_limit": 300,
                     },
-                    PRO_MODEL: {
+                    REVIEW_MODEL: {
+                        "max_concurrent": 2,
+                        "weekly_calls": 200,
+                        "hourly_calls": 50,
+                        "weekly_budget_usd": 40.0,
+                        "cooldown_after_rate_limit": 300,
+                    },
+                    WRITE_MODEL: {
                         "max_concurrent": 2,
                         "weekly_calls": 200,
                         "hourly_calls": 50,
@@ -183,7 +191,7 @@ def test_patch_applies_all_edits_and_reenqueues_review(tmp_path):
         "SELECT phase, model, queue_state FROM jobs WHERE phase = 'review' AND queue_state = 'pending'",
     )
     assert len(queued_review) == 1
-    assert queued_review[0]["model"] == PRO_MODEL
+    assert queued_review[0]["model"] == REVIEW_MODEL
 
 
 def test_patch_uses_sliced_content_not_full_module(tmp_path):
@@ -361,7 +369,7 @@ def test_escalation_enqueues_write_job(tmp_path):
         "SELECT phase, model, queue_state FROM jobs WHERE phase = 'write' ORDER BY id DESC",
     )
     assert len(queued_write) == 1
-    assert queued_write[0]["model"] == PRO_MODEL
+    assert queued_write[0]["model"] == WRITE_MODEL
     assert queued_write[0]["queue_state"] == "pending"
 
 

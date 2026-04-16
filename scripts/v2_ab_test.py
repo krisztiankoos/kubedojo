@@ -18,17 +18,17 @@ import yaml
 from migrate_v1_to_v2 import DEFAULT_STATE_PATH
 from pipeline_v2.control_plane import DEFAULT_BUDGETS_PATH, ControlPlane
 from pipeline_v2.patch_worker import PATCH_ESTIMATED_USD, PatchWorker
-from pipeline_v2.review_worker import PRO_MODEL, ReviewWorker
-from pipeline_v2.write_worker import WRITE_ESTIMATED_USD, WriteWorker
+from pipeline_v2.review_worker import REVIEW_MODEL, ReviewWorker
+from pipeline_v2.write_worker import WRITE_ESTIMATED_USD, WRITE_MODEL, WriteWorker
 from v1_pipeline import find_module_path, review_audit_path_for_key
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_COUNT = 50
 MODEL_ESTIMATED_USD = {
-    "gemini-3.1-pro-preview": WRITE_ESTIMATED_USD,
-    "gemini-3-flash-preview": 0.0025,
-    "claude-sonnet-4-6": PATCH_ESTIMATED_USD,
+    WRITE_MODEL: WRITE_ESTIMATED_USD,
+    REVIEW_MODEL: 0.0050,
+    "gpt-5.4": PATCH_ESTIMATED_USD,
 }
 
 
@@ -304,7 +304,7 @@ def run_v2_trial(
             module_key=item.module_key,
             payload={"source": "ab_test", "synthetic": True, "phase": "write"},
         )
-        control_plane.enqueue(item.module_key, phase="review", model=PRO_MODEL)
+        control_plane.enqueue(item.module_key, phase="review", model=REVIEW_MODEL)
 
         review_worker = ReviewWorker(control_plane, worker_id="ab-review")
         patch_worker = PatchWorker(control_plane, worker_id="ab-patch")

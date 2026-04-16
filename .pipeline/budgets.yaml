@@ -6,6 +6,18 @@ models:
     max_concurrent: 2
     weekly_budget_usd: 40.0
     weekly_calls: 500
+  gpt-5.3-codex-spark:
+    cooldown_after_rate_limit: 600
+    hourly_calls: 50
+    max_concurrent: 2
+    weekly_budget_usd: 40.0
+    weekly_calls: 500
+  gpt-5.4:
+    cooldown_after_rate_limit: 600
+    hourly_calls: 30
+    max_concurrent: 1
+    weekly_budget_usd: 50.0
+    weekly_calls: 300
   gemini-3-flash-preview:
     cooldown_after_rate_limit: 300
     hourly_calls: 800

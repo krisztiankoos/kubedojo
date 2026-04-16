@@ -15,6 +15,7 @@ Usage:
 import argparse
 import json
 import os
+import signal
 import shutil
 import subprocess
 import sys
@@ -47,6 +48,8 @@ GEMINI_DEFAULT_MODEL = "gemini-3-flash-preview"
 GEMINI_FALLBACK_MODEL = "auto"
 CLAUDE_DEFAULT_MODEL = "claude-sonnet-4-6"
 CODEX_DEFAULT_MODEL = "codex"  # lets codex CLI pick the default model
+CODEX_REVIEW_DEFAULT_MODEL = "codex"
+CODEX_PATCH_DEFAULT_MODEL = "gpt-5.4"
 
 # ---------------------------------------------------------------------------
 # Rate limit detection + pacing
@@ -221,6 +224,7 @@ def dispatch_gemini(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
         proc = subprocess.Popen(
             cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, cwd=str(REPO_ROOT), env=_ENV,
+            start_new_session=True,
         )
 
         # Write stdin in a background thread to avoid deadlock on large prompts
@@ -355,10 +359,7 @@ def dispatch_claude(prompt: str, model: str = CLAUDE_DEFAULT_MODEL,
     t0 = time.time()
 
     try:
-        result = subprocess.run(
-            cmd, input=prompt, capture_output=True, text=True,
-            timeout=timeout, cwd=str(REPO_ROOT), env=_ENV,
-        )
+        result = _run_with_process_group(cmd, prompt, timeout, str(REPO_ROOT), _ENV)
         elapsed = time.time() - t0
         if result.returncode != 0:
             print(f"Claude error (exit {result.returncode}): {result.stderr[:500]}", file=sys.stderr)
@@ -402,10 +403,7 @@ def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
 
     t0 = time.time()
     try:
-        result = subprocess.run(
-            cmd, input=prompt, capture_output=True, text=True,
-            timeout=timeout, cwd=str(REPO_ROOT), env=_ENV,
-        )
+        result = _run_with_process_group(cmd, prompt, timeout, str(REPO_ROOT), _ENV)
         elapsed = time.time() - t0
         output = result.stdout.strip()
         stderr = result.stderr or ""
@@ -428,6 +426,87 @@ def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
     except subprocess.TimeoutExpired:
         _log("codex", model, prompt, "", False, time.time() - t0, "TIMEOUT")
         print(f"Codex timed out after {timeout}s", file=sys.stderr)
+        return False, "TIMEOUT"
+
+
+def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
+                          timeout: int = 900, use_search: bool = False) -> tuple[bool, str]:
+    """Call Codex review via `codex exec --sandbox read-only`.
+
+    ``use_search`` enables `--search` only for checks that need live web
+    verification (FACT_CHECK in the deep-review batch). Simple checks do
+    not need search and paying for it on every call wastes latency/budget.
+    """
+    cmd = [CODEX_CLI]
+    if use_search:
+        cmd.append("--search")
+    cmd.extend(["exec", "--skip-git-repo-check", "--sandbox", "read-only"])
+    if model and model != "codex":
+        cmd.extend(["-m", model])
+
+    t0 = time.time()
+    try:
+        result = _run_with_process_group(cmd, prompt, timeout, str(REPO_ROOT), _ENV)
+        elapsed = time.time() - t0
+        output = result.stdout.strip()
+        stderr = result.stderr or ""
+
+        if result.returncode != 0:
+            rate_limited = _is_rate_limited(output + "\n" + stderr)
+            tag = "RATE_LIMIT" if rate_limited else stderr[:500]
+            print(f"Codex review error (exit {result.returncode}): {tag}", file=sys.stderr)
+            _log("codex-review", model, prompt, output, False, elapsed, tag)
+            return False, output if output else stderr
+
+        _log("codex-review", model, prompt, output, True, elapsed)
+        return True, output
+
+    except FileNotFoundError:
+        _log("codex-review", model, prompt, "", False, time.time() - t0, "CLI not found")
+        print("codex CLI not found. Install: https://github.com/openai/codex", file=sys.stderr)
+        return False, ""
+    except subprocess.TimeoutExpired:
+        _log("codex-review", model, prompt, "", False, time.time() - t0, "TIMEOUT")
+        print(f"Codex review timed out after {timeout}s", file=sys.stderr)
+        return False, "TIMEOUT"
+
+
+def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
+                         timeout: int = 1200) -> tuple[bool, str]:
+    """Call Codex patch via `codex exec --sandbox read-only`.
+
+    Codex returns a JSON edit list. `patch_worker.py` applies the edits in
+    Python (`apply_review_edits` → `_atomic_write_text`), so Codex itself
+    needs no write or exec capability.
+    """
+    cmd = [CODEX_CLI, "exec", "--skip-git-repo-check", "--sandbox", "read-only"]
+    if model:
+        cmd.extend(["-m", model])
+
+    t0 = time.time()
+    try:
+        result = _run_with_process_group(cmd, prompt, timeout, str(REPO_ROOT), _ENV)
+        elapsed = time.time() - t0
+        output = result.stdout.strip()
+        stderr = result.stderr or ""
+
+        if result.returncode != 0:
+            rate_limited = _is_rate_limited(output + "\n" + stderr)
+            tag = "RATE_LIMIT" if rate_limited else stderr[:500]
+            print(f"Codex patch error (exit {result.returncode}): {tag}", file=sys.stderr)
+            _log("codex-patch", model, prompt, output, False, elapsed, tag)
+            return False, output if output else stderr
+
+        _log("codex-patch", model, prompt, output, True, elapsed)
+        return True, output
+
+    except FileNotFoundError:
+        _log("codex-patch", model, prompt, "", False, time.time() - t0, "CLI not found")
+        print("codex CLI not found. Install: https://github.com/openai/codex", file=sys.stderr)
+        return False, ""
+    except subprocess.TimeoutExpired:
+        _log("codex-patch", model, prompt, "", False, time.time() - t0, "TIMEOUT")
+        print(f"Codex patch timed out after {timeout}s", file=sys.stderr)
         return False, "TIMEOUT"
 
 
@@ -507,10 +586,7 @@ def _stream_with_timeout(proc, timeout: int, quiet: bool = False) -> tuple[list[
         def _kill():
             nonlocal timed_out
             timed_out = True
-            try:
-                proc.kill()
-            except OSError:
-                pass
+            _kill_process_tree(proc)
 
         timer = threading.Timer(timeout, _kill)
         timer.daemon = True
@@ -531,6 +607,52 @@ def _stream_with_timeout(proc, timeout: int, quiet: bool = False) -> tuple[list[
         timer.cancel()
 
     return output_lines, timed_out
+
+
+def _kill_process_tree(proc) -> None:
+    """Terminate a subprocess and any children left behind by CLI wrappers."""
+    try:
+        if getattr(proc, "pid", None):
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+                return
+            except ProcessLookupError:
+                return
+            except OSError:
+                pass
+        proc.kill()
+    except OSError:
+        pass
+
+
+def _run_with_process_group(cmd, prompt: str, timeout: int,
+                            cwd: str, env: dict) -> subprocess.CompletedProcess:
+    """Run ``cmd`` in its own session/process group so timeout cleanup reaches
+    any grandchildren spawned by CLI wrappers (e.g. codex → node subprocesses).
+
+    Raises ``subprocess.TimeoutExpired`` on timeout, after killing the whole
+    process group.
+    """
+    with subprocess.Popen(
+        cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=cwd,
+        env=env,
+        start_new_session=True,
+    ) as proc:
+        try:
+            stdout, stderr = proc.communicate(input=prompt, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            _kill_process_tree(proc)
+            try:
+                proc.communicate()
+            except (OSError, ValueError):
+                pass
+            raise
+        return subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
 
 
 def _split_content(content: str, limit: int = GH_CHAR_LIMIT) -> list[str]:

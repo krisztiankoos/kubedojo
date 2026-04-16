@@ -24,8 +24,9 @@ Rebuild as:
 2. **Budget-aware job queue** — per-model concurrency caps + weekly/hourly budget guards
 3. **Worker pools** — one per phase type, independently scalable
 4. **Targeted-patch-first loop** — full rewrite is the exception, not default
-5. **Model tiering** — Flash for simple, Pro for writes, Claude for bounded patches
+5. **Model assignment** — `gpt-5.3-codex-spark` for review (single-tier, both simple and deep checks), `gemini-3.1-pro-preview` for writes, `gpt-5.4` for bounded patches. The v1 Flash/Pro review split was collapsed after calibration data (2026-04-12) showed `gpt-5.3-codex-spark` dominating fact-grounding; per-review cost dropped from ~$0.0425 to ~$0.020 despite removing the cheap tier. `DOWNGRADE` kill-switch for the review queue now means "pause review dispatches until budget recovers," not "route to a next tier."
 6. **Structured everything** — JSON events, JSON reviewer feedback, JSON-validated LLM outputs
+7. **FACT_CHECK with narrow web verification** — the deep-review batch's `FACT_CHECK` check runs Codex with `--search` enabled to verify Kubernetes API versions, command syntax, and feature availability against live sources. Simple checks run without `--search` to avoid paying for web latency on pure prose/presentation checks. This is the only review-time web-grounding concession in v2; broader ledger-style grounding remains v3 scope (#217). FACT_CHECK has three outcomes: VERIFIED (passed=true, evidence "verified:..."), WRONG (passed=false, evidence "wrong:..." → routed to patch), UNVERIFIED (passed=true, evidence "unverified:..." → emitted as `fact_check_unverified` event for human visibility, never triggers a patch).
 
 ## Budget awareness (user's hard constraint)
 
@@ -178,7 +179,7 @@ Tables:
 
 If any model hits its hard weekly cap, config chooses policy:
 - `PAUSE_ALL` — halt all workers, surface to user (safest)
-- `DOWNGRADE` — route that phase to next tier (e.g., Pro → Flash for reviews)
+- `DOWNGRADE` — since the v1 Flash/Pro review split was collapsed, `DOWNGRADE` now means "pause dispatches on the capped model until its window resets"; there is no next tier to route to. For writes (Gemini Pro) a future downgrade path could route to `gemini-3-flash-preview`; not wired today.
 - `CLAUDE_ONLY_PAUSE` — Claude-bound patch worker pauses, other workers keep running (default for user's setup)
 
 ### HTTP 429 handling
@@ -274,15 +275,18 @@ Retries create new attempts. Never modified after write. This replaces:
    ├── markdownlint, yamllint, frontmatter schema, structural regex
    └── if fail: PATCH (structured fix, no LLM) or back to WRITE
 
-3. REVIEW (Gemini Flash for simple checks, Pro only for DEPTH/WHY)
+3. REVIEW (gpt-5.3-codex-spark, single-tier — simple + deep checks)
+   ├── simple checks (PRES, NO_EMOJI, K8S_API): no --search, one call per check
+   ├── deep checks (COV, DEPTH, WHY, FACT_CHECK): single batched call WITH --search
    └─> structured JSON: {failed_checks: [{id, line_range, evidence, fix_hint}]}
+       FACT_CHECK outcomes: verified | wrong | unverified (see Goal #7)
 
-4. PATCH (Claude Sonnet, targeted edits only)
+4. PATCH (gpt-5.4, targeted edits only, sandbox read-only)
    ├── receives structured failures, not the whole module
-   ├── returns bounded diffs (context-locked anchors)
+   ├── Codex returns JSON edit list; Python applies + atomic writes
    └── deterministic apply — if 100% apply, re-review; else escalate to severe
 
-5. REVIEW again (confirmation only, Flash tier)
+5. REVIEW again (confirmation only, same single-tier)
    └─> done or escalate
 ```
 
@@ -300,19 +304,19 @@ Automatic escalation from PATCH → severe rewrite when ANY of:
 
 After `>3 rewrite attempts`: module transitions to `needs_human_intervention` (work preserved, not lost).
 
-**Expected effect**: 1 write + 1-2 patches per module, 60% of review calls hit Flash not Pro. Cost drops ~70%. Convergence time drops ~5x.
+**Expected effect**: 1 write + 1-2 patches per module. Per-review cost ~$0.020 (4× `gpt-5.3-codex-spark` calls at $0.005/call). Convergence time expected to drop ~5x vs v1 once the write+patch loop is tuned.
 
-## Model tiering (cost/speed optimization)
+## Model assignment (post-2026-04 calibration)
 
-| Phase | Cheap (Flash) | Standard (Pro) | Expensive (Claude) |
-|-------|:---:|:---:|:---:|
-| Fact extraction | ✅ | — | — |
-| Check: structural | free (no LLM) | — | — |
-| Check: pedagogical | ✅ simple | ✅ DEPTH/WHY | — |
-| Write (initial draft) | — | ✅ | — |
-| Write (severe rewrite) | — | ✅ | — |
-| Patch (targeted edit) | — | — | ✅ |
-| Patch planning | ✅ | — | — |
+| Phase | Model | --search | Notes |
+|-------|-------|:--------:|-------|
+| CHECK_PRE (structural) | deterministic | — | markdownlint, yamllint, frontmatter, regex — no LLM |
+| REVIEW simple (PRES, NO_EMOJI, K8S_API) | `gpt-5.3-codex-spark` | no | one call per check; sandbox read-only |
+| REVIEW deep (COV, DEPTH, WHY, FACT_CHECK) | `gpt-5.3-codex-spark` | yes | single batched call; --search enables FACT_CHECK live verification only |
+| WRITE (initial + severe rewrite) | `gemini-3.1-pro-preview` | n/a | — |
+| PATCH (targeted edit) | `gpt-5.4` | no | sandbox read-only; returns JSON edit list |
+
+Rationale for collapsing the review tier: `gpt-5.3-codex-spark` scored 25/25 on fact-grounding in 2026-04-12 calibration, dominating both Flash and Pro. Running it uniformly on simple and deep checks is cheaper overall ($0.020 per review vs $0.0425 under the old split) and simpler to budget.
 
 Budget config per model lets the user shift expensive work under cap.
 

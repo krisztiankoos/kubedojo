@@ -9,9 +9,10 @@ from typing import Any, Callable
 from v1_pipeline import _extract_frontmatter_data, find_module_path, step_write
 
 from .control_plane import ControlPlane, Lease
-from .review_worker import PRO_MODEL
+from .review_worker import REVIEW_MODEL
 
 
+WRITE_MODEL = "gemini-3.1-pro-preview"
 WRITE_ESTIMATED_USD = 0.0350
 STUB_BODY_CHAR_THRESHOLD = 400
 STUB_MARKERS = ("todo", "tbd", "stub", "placeholder", "coming soon")
@@ -69,7 +70,7 @@ class WriteWorker:
             rewritten = self.write_fn(
                 module_path,
                 plan,
-                model=PRO_MODEL,
+                model=WRITE_MODEL,
                 rewrite=mode == "rewrite",
                 previous_output=current_content,
             )
@@ -86,7 +87,7 @@ class WriteWorker:
             self.control_plane.enqueue(
                 lease.module_key,
                 phase="review",
-                model=PRO_MODEL,
+                model=REVIEW_MODEL,
                 priority=lease.job_id,
             )
             details = {

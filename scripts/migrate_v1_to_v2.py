@@ -15,7 +15,8 @@ from pipeline_v2.control_plane import (
     ControlPlane,
     _record_event,
 )
-from pipeline_v2.review_worker import PRO_MODEL
+from pipeline_v2.review_worker import REVIEW_MODEL
+from pipeline_v2.write_worker import WRITE_MODEL
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -254,29 +255,29 @@ def _migrate_module(
                 conn,
                 module_key=module_key,
                 phase="review",
-                model=PRO_MODEL,
+                model=REVIEW_MODEL,
                 queue_state="pending",
                 priority=100,
                 idempotency_key=f"migrate-v1:{module_key}:review",
-                payload={**base_payload, "phase": "review", "model": PRO_MODEL},
+                payload={**base_payload, "phase": "review", "model": REVIEW_MODEL},
             )
         elif normalized_phase in {"pending", "audit"}:
             _insert_job(
                 conn,
                 module_key=module_key,
                 phase="write",
-                model=PRO_MODEL,
+                model=WRITE_MODEL,
                 queue_state="pending",
                 priority=100,
                 idempotency_key=f"migrate-v1:{module_key}:write",
-                payload={**base_payload, "phase": "write", "model": PRO_MODEL},
+                payload={**base_payload, "phase": "write", "model": WRITE_MODEL},
             )
         elif normalized_phase == "data_conflict":
             job_id = _insert_job(
                 conn,
                 module_key=module_key,
                 phase="write",
-                model=PRO_MODEL,
+                model=WRITE_MODEL,
                 queue_state="failed",
                 priority=100,
                 idempotency_key=f"migrate-v1:{module_key}:failed",
@@ -300,11 +301,11 @@ def _migrate_module(
                 conn,
                 module_key=module_key,
                 phase="write",
-                model=PRO_MODEL,
+                model=WRITE_MODEL,
                 queue_state="pending",
                 priority=100,
                 idempotency_key=f"migrate-v1:{module_key}:write",
-                payload={**base_payload, "phase": "write", "model": PRO_MODEL},
+                payload={**base_payload, "phase": "write", "model": WRITE_MODEL},
             )
 
         conn.commit()
