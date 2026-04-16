@@ -87,6 +87,25 @@ def build_parser() -> argparse.ArgumentParser:
     recover_dead_letters.add_argument("--dry-run", action="store_true")
     recover_dead_letters.add_argument("--json", action="store_true")
 
+    requeue_module = subparsers.add_parser(
+        "requeue-module",
+        help="Move a module from one non-terminal phase back into the queue",
+    )
+    requeue_module.add_argument("module_key")
+    requeue_module.add_argument(
+        "--from-phase",
+        required=True,
+        choices=("write", "review", "patch"),
+    )
+    requeue_module.add_argument(
+        "--to-phase",
+        required=True,
+        choices=("write", "review", "patch"),
+    )
+    requeue_module.add_argument("--priority", type=int, default=100)
+    requeue_module.add_argument("--dry-run", action="store_true")
+    requeue_module.add_argument("--json", action="store_true")
+
     budget = subparsers.add_parser("budget", help="Alias for show budget; also supports edits")
     budget.add_argument("--json", action="store_true")
     budget_subparsers = budget.add_subparsers(dest="budget_command")
@@ -220,6 +239,17 @@ def main(argv: list[str] | None = None) -> int:
             control_plane,
             modules=args.modules,
             phase=args.phase,
+            priority=args.priority,
+            dry_run=args.dry_run,
+            json_output=args.json,
+        )
+
+    if args.command == "requeue-module":
+        return _requeue_module(
+            control_plane,
+            module_key=args.module_key,
+            from_phase=args.from_phase,
+            to_phase=args.to_phase,
             priority=args.priority,
             dry_run=args.dry_run,
             json_output=args.json,
@@ -672,6 +702,97 @@ def _show_flapping(control_plane: ControlPlane, *, json_output: bool) -> int:
     print("Flapping modules")
     for row in rows:
         print(f"{row['module_key']}: {row['attempts']} attempts")
+    return 0
+
+
+def _requeue_module(
+    control_plane: ControlPlane,
+    *,
+    module_key: str,
+    from_phase: str,
+    to_phase: str,
+    priority: int,
+    dry_run: bool,
+    json_output: bool,
+) -> int:
+    conn = control_plane._connect()
+    try:
+        rows = conn.execute(
+            """
+            SELECT id, queue_state, lease_id
+            FROM jobs
+            WHERE module_key = ?
+              AND phase = ?
+              AND queue_state IN ('pending', 'leased')
+            ORDER BY id ASC
+            """,
+            (module_key, from_phase),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    result = {
+        "module_key": module_key,
+        "from_phase": from_phase,
+        "to_phase": to_phase,
+        "priority": priority,
+        "stale_job_ids": [int(row["id"]) for row in rows],
+        "stale_job_states": [str(row["queue_state"]) for row in rows],
+        "dry_run": dry_run,
+    }
+
+    if not dry_run and rows:
+        conn = control_plane._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            for row in rows:
+                lease_id = row["lease_id"]
+                if lease_id:
+                    conn.execute("DELETE FROM reservations WHERE lease_id = ?", (lease_id,))
+                    conn.execute("DELETE FROM active_leases WHERE lease_id = ?", (lease_id,))
+                conn.execute(
+                    """
+                    UPDATE jobs
+                    SET queue_state = 'failed',
+                        leased_by = NULL,
+                        lease_id = NULL,
+                        leased_at = NULL,
+                        lease_expires_at = NULL
+                    WHERE id = ?
+                    """,
+                    (int(row["id"]),),
+                )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
+        control_plane.emit_event(
+            "module_requeued",
+            module_key=module_key,
+            payload={
+                "from_phase": from_phase,
+                "to_phase": to_phase,
+                "stale_job_ids": result["stale_job_ids"],
+            },
+        )
+        job = control_plane.enqueue(
+            module_key,
+            phase=to_phase,
+            model=_model_for_phase(to_phase),
+            priority=priority,
+        )
+        result["job_id"] = job.job_id
+
+    if json_output:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return 0
+    print(
+        f"requeued {module_key} {from_phase}->{to_phase}"
+        + (" [dry-run]" if dry_run else "")
+    )
     return 0
 
 

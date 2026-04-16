@@ -179,7 +179,19 @@ kubectl describe node <node-name> | grep -A6 "Allocatable"
 
 ```bash
 # Create pod with huge request
-kubectl run big-pod --image=nginx --requests="memory=100Gi"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: big-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        memory: "100Gi"
+EOF
 
 # Check status
 kubectl get pod big-pod
@@ -354,7 +366,7 @@ Eviction Order (first to last):
 
 > **Did You Know?**
 >
-> Even if you only set limits, Kubernetes automatically sets requests to the same value. So `limits: {memory: 128Mi}` without requests makes it Guaranteed, not Burstable!
+> Limits-only pods are still **not** automatically Guaranteed in the general case. Guaranteed requires both CPU and memory requests and limits, with matching values for each container.
 
 ---
 
@@ -491,10 +503,24 @@ kubectl run new-pod --image=nginx -n development
 ### 7.3 Commands for Resource Setting
 
 ```bash
-# Create with resources
-kubectl run nginx --image=nginx \
-  --requests="cpu=100m,memory=128Mi" \
-  --limits="cpu=500m,memory=256Mi"
+# Create with resources using a manifest
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "256Mi"
+EOF
 
 # Update existing deployment
 kubectl set resources deployment/nginx \
@@ -563,10 +589,10 @@ k patch pod nginx --subresource resize --patch '
 }'
 
 # Verify the resize was applied
-k get pod nginx -o jsonpath='{.status.resize}'
-# Expected: "" (empty means resize completed)
-# If "InProgress": resize is being applied
-# If "Infeasible": node doesn't have enough resources
+k get pod nginx -o jsonpath='{.status.conditions[?(@.type=="PodResizePending")].status}'
+k get pod nginx -o jsonpath='{.status.conditions[?(@.type=="PodResizeInProgress")].status}'
+# Empty output means the condition is not currently set.
+# If either condition is True, the resize is still pending or in progress.
 ```
 
 ### 9.2 Resize Policy
@@ -654,9 +680,23 @@ spec:
 
 1. **Create pod with resources**:
 ```bash
-kubectl run resource-test --image=nginx \
-  --requests="cpu=100m,memory=128Mi" \
-  --limits="cpu=200m,memory=256Mi"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resource-test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "200m"
+        memory: "256Mi"
+EOF
 
 kubectl get pod resource-test -o jsonpath='{.status.qosClass}'
 # Burstable (because requests ≠ limits)
@@ -763,9 +803,23 @@ kubectl delete namespace limits-test
 
 ```bash
 # Create pod with resources
-kubectl run web --image=nginx \
-  --requests="cpu=100m,memory=128Mi" \
-  --limits="cpu=500m,memory=512Mi"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+EOF
 
 # Verify
 kubectl get pod web -o jsonpath='{.spec.containers[0].resources}'
@@ -802,7 +856,19 @@ spec:
 EOF
 
 # Burstable
-kubectl run qos-burstable --image=nginx --requests="cpu=100m"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: qos-burstable
+spec:
+  containers:
+  - name: app
+    image: nginx
+    resources:
+      requests:
+        cpu: "100m"
+EOF
 
 # BestEffort
 kubectl run qos-besteffort --image=nginx
@@ -889,12 +955,66 @@ EOF
 kubectl describe resourcequota compute-quota -n quota-test
 
 # Create pods (need resources because quota exists)
-kubectl run pod1 --image=nginx -n quota-test --requests="cpu=200m,memory=256Mi"
-kubectl run pod2 --image=nginx -n quota-test --requests="cpu=200m,memory=256Mi"
-kubectl run pod3 --image=nginx -n quota-test --requests="cpu=200m,memory=256Mi"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod1
+  namespace: quota-test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod2
+  namespace: quota-test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod3
+  namespace: quota-test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+EOF
 
 # Try to exceed
-kubectl run pod4 --image=nginx -n quota-test --requests="cpu=200m,memory=256Mi"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod4
+  namespace: quota-test
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "200m"
+        memory: "256Mi"
+EOF
 # Should fail: quota exceeded
 
 # Check quota usage
@@ -908,7 +1028,20 @@ kubectl delete namespace quota-test
 
 ```bash
 # Create pod with insufficient resources
-kubectl run pending-pod --image=nginx --requests="cpu=100,memory=100Gi"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "100"
+        memory: "100Gi"
+EOF
 
 # Check why it's pending
 kubectl get pod pending-pod
@@ -916,7 +1049,20 @@ kubectl describe pod pending-pod | grep -A5 "Events"
 
 # Fix by reducing requests
 kubectl delete pod pending-pod
-kubectl run pending-pod --image=nginx --requests="cpu=100m,memory=128Mi"
+cat << 'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pending-pod
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "128Mi"
+EOF
 
 # Verify running
 kubectl get pod pending-pod

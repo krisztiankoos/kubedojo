@@ -388,3 +388,50 @@ def test_recover_dead_letters_requeues_review_and_clears_module_level_dead_lette
     )
     assert show_rc == 0
     assert json.loads(capsys.readouterr().out) == []
+
+
+def test_requeue_module_supersedes_pending_patch_and_reenqueues_review(tmp_path, capsys):
+    control_plane = _make_control_plane(tmp_path)
+    module_key = "docs/module-manual-fix.md"
+    stale_job = control_plane.enqueue(
+        module_key,
+        phase="patch",
+        model="claude-sonnet-4-6",
+        priority=77,
+    )
+
+    before = _build_status_report(control_plane.db_path)
+    assert before["counts"]["pending_patch"] == 1
+
+    rc = pipeline_main(
+        [
+            "--db",
+            str(control_plane.db_path),
+            "--budgets",
+            str(control_plane.budgets_path),
+            "requeue-module",
+            module_key,
+            "--from-phase",
+            "patch",
+            "--to-phase",
+            "review",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert rc == 0
+    assert payload == {
+        "dry_run": False,
+        "from_phase": "patch",
+        "job_id": 2,
+        "module_key": module_key,
+        "priority": 100,
+        "stale_job_ids": [stale_job.job_id],
+        "stale_job_states": ["pending"],
+        "to_phase": "review",
+    }
+
+    after = _build_status_report(control_plane.db_path)
+    assert after["counts"]["pending_patch"] == 0
+    assert after["counts"]["pending_review"] == 1
