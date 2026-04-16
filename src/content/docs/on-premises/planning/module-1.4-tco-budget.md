@@ -269,6 +269,86 @@ Your effective power cost = IT power cost × PUE
 
 ---
 
+## 5-Year TCO Model
+
+The 3-year model is usually the easiest board-level comparison because cloud reserved-commit terms and common depreciation windows line up neatly. But many on-prem decisions only make sense when you model the extra two years explicitly.
+
+Years 4 and 5 are where teams either prove that a private platform has become efficient, or discover that deferred refreshes, support renewals, and capacity growth erased the apparent savings.
+
+### What Changes In Years 4 And 5
+
+| Cost area | 3-year assumption | 5-year adjustment |
+|---|---|---|
+| Servers | initial purchase only | decide whether to keep, expand, or refresh the fleet |
+| Maintenance | 3-5% of hardware per year | often rises after year 3 as vendor support ages |
+| Capacity growth | often ignored | add new nodes, racks, and network ports for realistic growth |
+| Storage | sized for current need | include retention growth, backup growth, or archival tiers |
+| Power and colo | steady-state estimate | increase for growth, density changes, or power repricing |
+| Staffing | fixed ratio | reflect whether automation improves the nodes-per-engineer ratio |
+| Opportunity cost | mostly qualitative | reassess whether the platform now accelerates or slows product work |
+
+### 5-Year Extension Template
+
+Use the same 100-node / 13-server scenario, then extend it with explicit refresh and growth assumptions:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                 5-YEAR EXTENSION MODEL                      │
+│                                                             │
+│  START FROM 3-YEAR TOTAL                $2,314,400         │
+│                                                             │
+│  YEAR 4 ADJUSTMENTS                                          │
+│  ───────────────────────────────────────                    │
+│  Maintenance uplift (7% aging hardware)   $24,100          │
+│  Capacity growth (2 new servers)          $30,000          │
+│  Extra colo + power + network              $9,500          │
+│  Staff stays flat due to automation         $0             │
+│  Year 4 OpEx subtotal                     $687,900         │
+│                                                             │
+│  YEAR 5 ADJUSTMENTS                                          │
+│  ───────────────────────────────────────                    │
+│  Partial hardware refresh fund            $90,000          │
+│  Maintenance on mixed old/new fleet       $28,000          │
+│  Extra storage expansion                  $24,000          │
+│  Colo + power repricing uplift            $12,000          │
+│  Year 5 OpEx subtotal                     $720,800         │
+│                                                             │
+│  5-YEAR TOTAL                                               │
+│  ───────────────────────────────────────                    │
+│  3-Year baseline                        $2,314,400         │
+│  Year 4 total                             $687,900         │
+│  Year 5 total                             $720,800         │
+│  ───────────────────────────────────────                    │
+│  TOTAL                                  $3,723,100         │
+│                                                             │
+│  Effective monthly average (5 years)      $62,052          │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### How To Use 5-Year Modeling Correctly
+
+- do not just multiply the 3-year OpEx by `5/3`; model refresh, growth, and repricing explicitly
+- decide whether year 4-5 economics assume sweating assets longer or refreshing earlier for performance and support stability
+- include at least one sensitivity branch:
+  - `staffing +20%`
+  - `power +25%`
+  - `cloud pricing -20%`
+  - `workload growth +30%`
+- show the board or budget owner both the optimistic and conservative paths, not a single "magic number"
+
+### Practical Interpretation
+
+The 5-year view often changes the conclusion:
+
+- **cloud still wins** when staffing remains flat but the on-prem fleet stays small enough that overhead never amortizes
+- **on-prem improves** when the team automates aggressively, extends hardware life safely, and spreads fixed staffing across more workload
+- **hybrid becomes sensible** when only a subset of predictable, steady-state workloads belong on owned hardware
+
+If your 3-year model barely favors on-prem, the 5-year model is where you discover whether that margin is real or imaginary.
+
+---
+
 ## Did You Know?
 
 - **Colocation pricing varies 3-4x by market.** A full rack in Northern Virginia (Ashburn) costs ~$800-1,200/month. The same rack in London costs ~$1,500-2,500/month. In Singapore, it can exceed $3,000/month. Location choice has a massive TCO impact.
@@ -381,7 +461,7 @@ Rule of thumb: if you need < 50 racks, colocation wins. If you need 200+ racks a
 
 ## Hands-On Exercise: Build a Complete TCO Model
 
-**Task**: Create a 3-year TCO model for your organization's on-premises Kubernetes deployment and compare to cloud.
+**Task**: Create both a 3-year and a 5-year TCO model for your organization's on-premises Kubernetes deployment and compare them to cloud.
 
 ### Steps
 
@@ -402,15 +482,23 @@ Rule of thumb: if you need < 50 racks, colocation wins. If you need 200+ racks a
    - Apply realistic discounts (RI/CUD: 30-60%)
    - Include data transfer, managed K8s fees, storage
 
-5. **Compare and document** the breakeven point
+5. **Extend the model to 5 years** with explicit assumptions for:
+   - hardware refresh or life extension
+   - maintenance uplift after year 3
+   - power / colo repricing
+   - workload growth and storage growth
+   - staffing change or automation gain
+
+6. **Compare and document** the breakeven point and how it changes between year 3 and year 5
 
 ### Success Criteria
 - [ ] All CapEx categories populated
 - [ ] All OpEx categories populated (including staffing)
 - [ ] Power calculated with PUE
 - [ ] Cloud comparison uses discounted pricing (not list)
-- [ ] Breakeven point identified
-- [ ] Sensitivity analysis: what if staffing costs +20%? What if cloud pricing -30%?
+- [ ] Both 3-year and 5-year models completed
+- [ ] Breakeven point identified and re-checked at year 5
+- [ ] Sensitivity analysis: what if staffing costs +20%? What if cloud pricing -30%? What if hardware refresh happens in year 4?
 
 ---
 
@@ -418,9 +506,10 @@ Rule of thumb: if you need < 50 racks, colocation wins. If you need 200+ racks a
 
 1. **Hardware is 20-30% of total cost** — staffing, facility, and operations dominate
 2. **PUE multiplies your power bill** — always ask for the facility's PUE
-3. **Automation determines your staffing ratio** — invest in Cluster API and GitOps early
-4. **Breakeven is typically 150-250 nodes** — below that, cloud is simpler and often cheaper
-5. **Get 3 quotes** — for colo, hardware, and support contracts. Never take the first offer.
+3. **A 5-year model is not just a longer spreadsheet** — refresh cycles, maintenance drift, and growth assumptions change the answer
+4. **Automation determines your staffing ratio** — invest in Cluster API and GitOps early
+5. **Breakeven is typically 150-250 nodes** — below that, cloud is simpler and often cheaper
+6. **Get 3 quotes** — for colo, hardware, and support contracts. Never take the first offer.
 
 ---
 

@@ -34,6 +34,20 @@ Rosetta Stone (cross-provider concepts)
 
 **Pick your provider** — you don't need all three. Learn the essentials for the cloud you use, then go deep on its managed Kubernetes offering.
 
+## Start Here If
+
+- you already understand basic Kubernetes workloads and want the provider context around them
+- your next questions are about VPCs, IAM, managed control planes, or production cloud networking
+- you need one real cloud path rather than vague multi-cloud familiarity
+
+## Do Not Start Here First If
+
+- you still need terminal, Git, container, or YAML confidence
+- you have never operated a basic cluster locally or in a learning environment
+- you are trying to learn "all cloud" before you can reason clearly about one provider
+
+If that is your situation, start with [Prerequisites](../prerequisites/) first and then come back here with stronger Kubernetes basics.
+
 ## Safest Default Route
 
 ```text
@@ -49,6 +63,19 @@ Architecture & Enterprise
 ```
 
 Do not try to learn all three providers at once unless you have a specific architecture reason. Most learners should go deep on one provider first.
+
+## Which Cloud Route Fits You?
+
+| If your goal is... | Start with... | Then move to... |
+|---|---|---|
+| become productive on the cloud your team already uses | the matching provider essentials section | that provider's managed Kubernetes path |
+| compare providers without drowning in details | [Hyperscaler Rosetta Stone](hyperscaler-rosetta-stone/) | one provider essentials path only |
+| support production Kubernetes on AWS | [AWS Essentials](aws-essentials/) | [EKS Deep Dive](eks-deep-dive/) |
+| support production Kubernetes on Google Cloud | [GCP Essentials](gcp-essentials/) | [GKE Deep Dive](gke-deep-dive/) |
+| support production Kubernetes on Azure | [Azure Essentials](azure-essentials/) | [AKS Deep Dive](aks-deep-dive/) |
+| reason about enterprise tradeoffs, hybrid design, and operating models | one provider path first | Architecture Patterns -> Advanced Operations -> Enterprise & Hybrid |
+
+The mistake to avoid is trying to use Architecture & Enterprise as your entry point. Those sections assume you already understand at least one provider's primitives.
 
 ---
 
@@ -95,10 +122,18 @@ Do not try to learn all three providers at once unless you have a specific archi
 - [Linux](../linux/) — recommended for networking and security modules
 - [Certifications](../k8s/) — recommended (CKA/CKAD give hands-on K8s experience before cloud-specific deep dives)
 
+## Common Failure Modes In Cloud
+
+- trying to learn all three providers before you can operate one of them well
+- jumping into enterprise and hybrid sections before a provider essentials path is solid
+- confusing provider familiarity with platform-engineering depth
+- treating managed-cloud convenience as proof that you understand the underlying operational tradeoffs
+
 ## Good Next Steps After Cloud
 
 - go to [Platform Engineering](../platform/) if you want SRE, GitOps, delivery automation, and platform design on top of cloud infrastructure
 - go to [On-Premises](../on-premises/) if you want to compare managed-cloud assumptions with private-infrastructure realities
+- go to [AI/ML Engineering](../ai-ml-engineering/) if your cloud path is mainly about serving, training, or operating ML workloads on managed platforms
 
 ## Choose Your Exit Ramp
 
@@ -107,9 +142,3 @@ Do not try to learn all three providers at once unless you have a specific archi
 | run internal platforms, improve delivery, and standardize operations | [Platform Engineering](../platform/) | cloud skill alone does not teach platform discipline |
 | evaluate private infrastructure, repatriation, or hybrid tradeoffs | [On-Premises](../on-premises/) | managed services hide many concerns that become explicit on private infrastructure |
 | support ML workloads and AI systems on cloud Kubernetes | [AI/ML Engineering](../ai-ml-engineering/) | the AI/ML track gives the application and model layer this track does not |
-
-## Common Failure Modes In Cloud
-
-- trying to learn all three providers before you can operate one of them well
-- jumping into enterprise/hybrid sections before a provider essentials path is solid
-- confusing provider familiarity with platform-engineering depth
