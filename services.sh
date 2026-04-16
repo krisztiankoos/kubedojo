@@ -28,8 +28,8 @@ SVC_PORT[dev]=4333
 SVC_LOG[dev]="$LOGS_DIR/dev.log"
 SVC_DESC[dev]="Astro Dev Server (hot reload)"
 
-SVC_CMD[api]="python3 scripts/local_api.py --host 0.0.0.0 --port 8767"
-SVC_PORT[api]=8767
+SVC_CMD[api]="python3 scripts/local_api.py --host 0.0.0.0 --port 8768"
+SVC_PORT[api]=8768
 SVC_LOG[api]="$LOGS_DIR/api.log"
 SVC_DESC[api]="Deterministic Local API"
 

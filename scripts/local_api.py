@@ -29,7 +29,7 @@ from ztt_status import build_status as build_ztt_status
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8767
+DEFAULT_PORT = 8768
 DOCS_ROOT = REPO_ROOT / "src" / "content" / "docs"
 GENERATED_PREFIXES = (
     ".astro/",
@@ -47,7 +47,7 @@ PIPELINE_PREFIXES = (
 DEFAULT_FEEDBACK_ISSUE = 248
 RUNTIME_SERVICES = (
     {"name": "dev", "pid_file": ".pids/dev.pid", "port": 4333, "label": "Astro Dev Server"},
-    {"name": "api", "pid_file": ".pids/api.pid", "port": 8767, "label": "Deterministic Local API"},
+    {"name": "api", "pid_file": ".pids/api.pid", "port": 8768, "label": "Deterministic Local API"},
     {"name": "feedback", "pid_file": ".pids/feedback.pid", "port": None, "label": "GitHub Issue Watcher"},
 )
 

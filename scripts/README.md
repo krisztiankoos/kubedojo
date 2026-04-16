@@ -66,7 +66,7 @@ Read-only deterministic local API for repo and pipeline state.
 
 ```bash
 python scripts/local_api.py
-python scripts/local_api.py --host 0.0.0.0 --port 8767
+python scripts/local_api.py --host 0.0.0.0 --port 8768
 ```
 
 **First endpoints:**
