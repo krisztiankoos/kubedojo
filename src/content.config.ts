@@ -28,7 +28,7 @@ export const collections = {
           url: z.string().url(),
           duration: z.string(),
           difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
-          environment: z.enum(['ubuntu', 'kubernetes']),
+          environment: z.enum(['ubuntu', 'kubernetes', 'centos']),
         }).optional(),
       }),
     }),
