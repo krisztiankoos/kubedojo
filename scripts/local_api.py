@@ -1151,9 +1151,13 @@ def build_pipeline_stuck(
         )
         """,
     )
+    # Only swallow the "pipeline_v2 not installed at all" case. A
+    # renamed/removed ``_current_dead_letter_rows`` helper is a real
+    # regression and must propagate as a 500 — silent false-negatives
+    # here would hide modules that need human triage.
     try:
         from pipeline_v2.cli import _current_dead_letter_rows
-    except ImportError:
+    except ModuleNotFoundError:
         _current_dead_letter_rows = None  # type: ignore[assignment]
     if _current_dead_letter_rows is not None and dead_events:
         dead_lettered = _current_dead_letter_rows(dead_events)
