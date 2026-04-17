@@ -3106,7 +3106,20 @@ def _recent_commits(repo_root: Path, limit: int = 5) -> list[dict[str, Any]]:
 
 
 def _pipeline_summary_safe(repo_root: Path) -> dict[str, Any] | None:
-    """Return pipeline v2 summary. None if DB absent; error dict if broken."""
+    """Return pipeline v2 summary. None if DB absent; error dict if broken.
+
+    Shape map from ``pipeline_v2.cli._build_status_report``:
+      - ``counts``: {pending_review, pending_write, pending_patch,
+                     in_progress, dead_letter, done}
+      - ``needs_human_count``: dead-letter count after resolution
+      - ``total_modules``, ``convergence_rate``, ``flapping_count``
+
+    ``queue_head`` collapses those into actionable buckets callers can
+    promote into briefing actions:
+      - ``ready`` = pending_review + pending_write + pending_patch
+      - ``in_progress`` = ``counts.in_progress``
+      - ``dead_letter`` = ``counts.dead_letter`` (a.k.a. needs-human)
+    """
     db_path = repo_root / ".pipeline" / "v2.db"
     if not db_path.exists():
         return None
@@ -3115,12 +3128,27 @@ def _pipeline_summary_safe(repo_root: Path) -> dict[str, Any] | None:
         report = build_v2_status_report(db_path)
     except Exception as exc:  # noqa: BLE001
         return {"error": f"{type(exc).__name__}: {exc}"}
-    # Keep compact — only head counts, not per-module listings.
-    summary = report.get("summary") if isinstance(report, dict) else None
-    queue = report.get("queue") if isinstance(report, dict) else None
+    if not isinstance(report, dict):
+        return {"error": "non_dict_report"}
+
+    counts = report.get("counts") or {}
+    ready = sum(
+        int(counts.get(k, 0))
+        for k in ("pending_review", "pending_write", "pending_patch")
+    )
+    queue_head = {
+        "ready": ready,
+        "in_progress": int(counts.get("in_progress", 0)),
+        "dead_letter": int(counts.get("dead_letter", 0)),
+    }
+    # Briefing is a cold-start hot path; keep the payload compact.
+    # Full ``counts`` / ``convergence_rate`` live on
+    # /api/pipeline/v2/status; here we expose only the actionable
+    # summary an agent needs before deciding what to do.
     return {
-        "summary": summary,
-        "queue_head": {k: v for k, v in (queue or {}).items() if k in ("in_flight", "ready", "blocked", "rejected")},
+        "total_modules": report.get("total_modules"),
+        "needs_human_count": report.get("needs_human_count"),
+        "queue_head": queue_head,
     }
 
 
@@ -3250,7 +3278,7 @@ def build_session_briefing(repo_root: Path) -> dict[str, Any]:
 
     if isinstance(pipeline, dict) and pipeline.get("queue_head"):
         queue_head = pipeline["queue_head"] or {}
-        ready = queue_head.get("ready") or 0
+        ready = int(queue_head.get("ready") or 0)
         if ready:
             actions_next.append(f"{ready} job(s) ready to pick up in pipeline v2")
             top_modules.append({
@@ -3258,6 +3286,17 @@ def build_session_briefing(repo_root: Path) -> dict[str, Any]:
                 "phase": None,
                 "reason": "ready_queue",
                 "endpoint": "/api/pipeline/v2/status",
+            })
+        dead_letter = int(queue_head.get("dead_letter") or 0)
+        if dead_letter:
+            actions_blocked.append(
+                f"{dead_letter} job(s) in dead-letter — needs human or re-enqueue"
+            )
+            top_modules.append({
+                "module_key": None,
+                "phase": None,
+                "reason": "pipeline_dead_letter",
+                "endpoint": "/api/pipeline/v2/stuck",
             })
 
     return {

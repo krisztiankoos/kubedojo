@@ -1607,6 +1607,36 @@ def test_briefing_has_actions_and_top_modules(tmp_path: Path) -> None:
     assert "active_lease" in reasons
 
 
+def test_briefing_top_modules_surfaces_pipeline_dead_letter(
+    tmp_path: Path,
+) -> None:
+    """Codex round-2 comment: briefing should surface pipeline
+    dead-letter count as a structured reason in top_modules, not
+    buried in pipelines.v2."""
+    _setup_repo(tmp_path)
+    _write(tmp_path / "STATUS.md", "# s\n\n## TODO\n\n- [ ] x\n")
+
+    # The v2 pipeline classifies a module as dead-letter when it has
+    # seen a ``module_dead_lettered`` event and no ``dead_letter_
+    # recovered`` since. Fixture a minimal job + event pair so
+    # ``_build_status_report`` returns ``counts.dead_letter == 1``.
+    conn = sqlite3.connect(tmp_path / ".pipeline/v2.db")
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state) VALUES (?, ?, ?)",
+        ("dead/one", "write", "failed"),
+    )
+    conn.execute(
+        "INSERT INTO events (module_key, type, payload_json, at) VALUES (?, ?, ?, ?)",
+        ("dead/one", "module_dead_lettered", "{}", 1),
+    )
+    conn.commit()
+    conn.close()
+
+    briefing = local_api.build_session_briefing(tmp_path)
+    reasons = {m.get("reason") for m in briefing["top_modules"]}
+    assert "pipeline_dead_letter" in reasons
+
+
 def test_briefing_top_modules_covers_critical_quality(tmp_path: Path) -> None:
     """Codex round-2 gap: top_modules was missing critical_quality
     and ready_queue categories. Rubric-critical rows must surface as
