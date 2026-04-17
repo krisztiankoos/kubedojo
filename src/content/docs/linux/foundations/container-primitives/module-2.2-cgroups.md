@@ -99,37 +99,38 @@ graph TD
 
 ### The Problem with v1
 
-cgroups v1 had separate hierarchies per controller:
+cgroups v1 had separate hierarchies per controller. Each controller had its own tree, leading to complex management, inconsistent process groupings, and no single place to see a process's resources.
 
+```mermaid
+graph LR
+    Root["/sys/fs/cgroup/"]
+    
+    Root --> CPU["cpu/ (CPU hierarchy)"]
+    Root --> Memory["memory/ (Memory hierarchy)"]
+    Root --> PIDs["pids/ (PIDs hierarchy)"]
+    
+    CPU --> CPUDocker["docker/"]
+    CPUDocker --> CPUCont["container1/"]
+    
+    Memory --> MemDocker["docker/"]
+    MemDocker --> MemCont["container1/"]
+    
+    PIDs --> PIDDocker["docker/"]
+    PIDDocker --> PIDCont["container1/"]
 ```
-# v1: Multiple hierarchies (messy)
-/sys/fs/cgroup/
-├── cpu/            ← CPU hierarchy
-│   └── docker/
-│       └── container1/
-├── memory/         ← Memory hierarchy
-│   └── docker/
-│       └── container1/
-└── pids/           ← PIDs hierarchy
-    └── docker/
-        └── container1/
-```
-
-Each controller had its own tree, leading to:
-- Complex management
-- Inconsistent process groupings
-- No single place to see a process's resources
 
 ### v2: Unified Hierarchy
 
-```
-# v2: Single hierarchy (clean)
-/sys/fs/cgroup/
-└── docker/
-    └── container1/
-        ├── cpu.max          ← CPU settings
-        ├── memory.max       ← Memory settings
-        └── pids.max         ← PIDs settings
+```mermaid
+graph LR
+    Root["/sys/fs/cgroup/"]
+    
+    Root --> Docker["docker/"]
+    Docker --> Container["container1/"]
+    
+    Container --> CPU["cpu.max (CPU settings)"]
+    Container --> Mem["memory.max (Memory settings)"]
+    Container --> PIDs["pids.max (PIDs settings)"]
 ```
 
 ### Check Your Version

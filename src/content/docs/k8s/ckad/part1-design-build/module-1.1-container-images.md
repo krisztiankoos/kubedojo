@@ -397,7 +397,7 @@ Modern deployments also guarantee provenance via digital signatures. The latest 
 
 ## Troubleshooting Image Issues
 
-> **What would happen if**: A pod references a private registry image but has no `imagePullSecrets`. The image exists and is correctly tagged. What error would you see, and how would you distinguish it from a simple typo in the image name?
+> **Pause and predict**: A pod references a private registry image but has no `imagePullSecrets`. The image exists and is correctly tagged. What error would you see, and how would you distinguish it from a simple typo in the image name?
 
 Diagnosing fetch failures is a mandatory skill for any operations engineer. An `ImagePullBackOff` state is merely a symptom; you must trace the underlying network or authentication cause.
 
@@ -491,17 +491,17 @@ k run myapp --image=nginx:latest
 
 <details>
    <summary>6. Your security team mandates that all container images deployed to production must have an attached SBOM and a Cosign signature. They want to verify these attachments dynamically before pulling the main image, but without altering the image's original cryptographic digest. How does the OCI Distribution Spec v1.1.1 enable your registry to satisfy this requirement?</summary>
-   It uses the Referrers API (`GET /v2/<name>/referrers/<digest>`), which allows the registry to link supplementary metadata (like signatures or attestations) directly to an image manifest as referring artifacts. This ensures the original image digest remains perfectly intact while still satisfying the security team's verification mandate.
+   It uses the Referrers API (`GET /v2/<name>/referrers/<digest>`), which allows the registry to link supplementary metadata (like signatures or attestations) directly to an image manifest as referring artifacts. This mechanism natively associates the Software Bill of Materials (SBOM) and Cosign signature with the target image. Because these referrers point *to* the image rather than modifying the image itself, the original cryptographic digest remains perfectly intact. This ensures strict compliance with the security team's mandate without invalidating previously verified image hashes.
 </details>
 
 <details>
    <summary>7. You are migrating a legacy deployment to a new multi-architecture Kubernetes cluster that contains both ARM64 and AMD64 nodes. When you deploy the application, you notice pods are scheduled on both node types and successfully pull the correct binaries without you needing to specify architecture-specific image tags. What underlying mechanism makes this seamless execution possible?</summary>
-   The container runtime fetches an OCI Image Index (media type `application/vnd.oci.image.index.v1+json`), functioning as a "fat manifest." The runtime automatically evaluates the host node's architecture against this index and seamlessly resolves to the specific nested manifest that matches the hardware, eliminating the need for explicit architectural tagging in the pod spec.
+   The container runtime initially fetches an OCI Image Index (media type `application/vnd.oci.image.index.v1+json`), often referred to as a "fat manifest." This index acts as a centralized directory containing pointers to multiple architecture-specific manifests. When the pod is scheduled, the kubelet instructs the container runtime to evaluate the physical host node's architecture (such as ARM64 or AMD64). The runtime then automatically selects and downloads only the precise nested manifest that matches the hardware, eliminating the need for explicit architectural tagging in the deployment specification.
 </details>
 
 <details>
    <summary>8. A vendor provides you with a proprietary software image that uses non-distributable OCI layer media types to enforce licensing restrictions. When attempting to sync this image to your private air-gapped registry, the CI pipeline throws synchronization errors and fails to transfer the layers. Based on the OCI Image Specification v1.1.0, why is this failure expected, and what should you tell the vendor?</summary>
-   The failure is expected because non-distributable layer media types were officially deprecated in OCI Image Spec v1.1.0 due to the exact friction and fragmentation you are experiencing. You should inform the vendor that their distribution model relies on deprecated standards that fail across restricted network boundaries, and they must provide fully distributable payloads instead.
+   The failure is completely expected because non-distributable layer media types were officially deprecated in the OCI Image Specification version 1.1.0. These media types historically caused severe friction and fragmentation across restricted network boundaries, as registry operations and CI pipelines fundamentally struggled to synchronize layers that were restricted from external replication. You must inform the vendor that their distribution model currently relies on deprecated, non-compliant standards that break standard mirror processes. They must update their build pipeline to provide fully distributable payloads to ensure compatibility with modern air-gapped registry synchronizations.
 </details>
 
 ## Hands-On Exercise

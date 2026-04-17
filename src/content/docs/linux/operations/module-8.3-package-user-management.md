@@ -10,6 +10,7 @@ lab:
   difficulty: intermediate
   environment: ubuntu
 ---
+
 > **Operations — LFCS** | Complexity: `[MEDIUM]` | Time: 40-50 min
 
 ## Prerequisites
@@ -143,6 +144,8 @@ apt list --installed
 # List installed packages matching a pattern
 apt list --installed 2>/dev/null | grep nginx
 ```
+
+> **Pause and predict**: If you use `apt remove` on a web server package, what happens to the configuration files you spent hours modifying? 
 
 #### Removing Packages
 
@@ -421,6 +424,8 @@ wc -l /etc/passwd
 # List only human users (UID >= 1000, excluding nobody)
 awk -F: '$3 >= 1000 && $3 < 65534 {print $1, $3}' /etc/passwd
 ```
+
+> **Stop and think**: Why is `/etc/passwd` globally readable, while `/etc/shadow` is tightly locked down? Consider what typical system commands might need to map UIDs to human-readable names.
 
 #### /etc/shadow — Password Hashes
 
@@ -736,6 +741,8 @@ Breaking down `alice ALL=(ALL:ALL) ALL`:
 | First `ALL` | On any host (relevant for shared sudoers via LDAP/NIS) |
 | `(ALL:ALL)` | Can run as any user:any group |
 | Last `ALL` | Can run any command |
+
+> **Stop and think**: Why might a system administrator prefer to use modular drop-in files in `/etc/sudoers.d/` rather than appending rules directly into the main `/etc/sudoers` file?
 
 #### /etc/sudoers.d/ — Drop-in Files
 

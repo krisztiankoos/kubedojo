@@ -319,6 +319,72 @@ spec:
 EOF
 ```
 
+### Automated Backups and Restore
+
+Snapshots stay inside the cluster; backups copy snapshot data to an external backupstore such as NFS or S3-compatible object storage. For Longhorn, use snapshots for short rollback windows and backups for node-loss or cluster-loss recovery.
+
+```bash
+# Example: point Longhorn at an S3-compatible target (for example, MinIO)
+kubectl -n longhorn-system create secret generic longhorn-backup-secret \
+  --from-literal=AWS_ACCESS_KEY_ID=longhorn-access-key \
+  --from-literal=AWS_SECRET_ACCESS_KEY=longhorn-secret-key \
+  --from-literal=AWS_ENDPOINTS=https://minio.storage.svc:9000
+
+# The trailing / on the backup target URL matters
+helm upgrade longhorn longhorn/longhorn \
+  --namespace longhorn-system \
+  --reuse-values \
+  --set defaultBackupStore.backupTarget=s3://longhorn-backups@us-east-1/ \
+  --set defaultBackupStore.backupTargetCredentialSecret=longhorn-backup-secret \
+  --set defaultBackupStore.pollInterval=300
+
+# Create a recurring backup policy
+kubectl apply -f - <<EOF
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: daily-backup
+  namespace: longhorn-system
+spec:
+  cron: "0 2 * * *"
+  task: backup
+  retain: 7
+  concurrency: 1
+  labels:
+    backup-tier: daily
+  parameters:
+    full-backup-interval: "6"
+EOF
+
+# Opt this PVC into label-driven recurring jobs
+kubectl -n default label pvc/longhorn-test recurring-job.longhorn.io/source=enabled
+kubectl -n default label pvc/longhorn-test recurring-job.longhorn.io/daily-backup=enabled
+```
+
+This policy keeps seven daily recovery points. `retain: 7` is the retention control Longhorn understands; do not add bucket lifecycle rules that delete backup objects behind Longhorn's back. `full-backup-interval: "6"` keeps delta chains from growing forever by forcing a fresh full backup after six incremental runs. If you want to verify the workflow during a lab session instead of waiting until 02:00, temporarily change the cron expression to `*/15 * * * *`, confirm backups are appearing, then switch back to the daily schedule.
+
+Validate the setup after the next backup window:
+
+```bash
+kubectl -n longhorn-system get setting backup-target
+kubectl -n longhorn-system get recurringjobs.longhorn.io daily-backup
+kubectl -n default get pvc longhorn-test --show-labels
+kubectl -n longhorn-system get backups.longhorn.io
+```
+
+A practical restore drill is:
+
+1. In the Longhorn UI, open `Backup`, select the latest backup for `longhorn-test`, and choose `Restore Latest Backup`.
+2. Restore it as `longhorn-test-restore`, then create a PVC/PV for the restored volume or attach it to a temporary validation pod.
+3. If you also want the schedule restored, enable `restore-volume-recurring-jobs` first with `kubectl -n longhorn-system edit settings.longhorn.io restore-volume-recurring-jobs`.
+
+Validate the restore:
+
+```bash
+kubectl -n longhorn-system get setting restore-volume-recurring-jobs
+kubectl -n longhorn-system get volumes.longhorn.io longhorn-test-restore
+```
+
 ---
 
 ## Comparison Table

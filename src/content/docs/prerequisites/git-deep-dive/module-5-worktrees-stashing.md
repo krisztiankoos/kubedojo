@@ -110,8 +110,6 @@ Before applying a stash, you often want to see exactly what changes it contains.
 git stash show -p stash@{1}
 ```
 
-> **Try it now:** Initialize a temporary git repository, create a file, commit it, modify the file, and stash the changes. Run `git stash list`, then run `git stash show -p stash@{0}` to see your stashed modifications in patch format.
-
 > **Stop and think**: You have 3 stashes. You apply `stash@{1}` and it works perfectly. What is the state of your stash stack now? Has anything changed?
 >
 > *Because you used `apply` instead of `pop`, the stash stack remains exactly the same. `stash@{1}` is still safely on the stack. The index numbers of your stashes do not change, ensuring you can still reference them or drop them manually later.*

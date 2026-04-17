@@ -10,6 +10,7 @@ lab:
   difficulty: "advanced"
   environment: "ubuntu"
 ---
+
 > **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 30-35 min
 
 ## Prerequisites

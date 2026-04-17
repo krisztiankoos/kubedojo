@@ -1,0 +1,334 @@
+---
+title: "Small-Team Private AI Platform"
+slug: ai-ml-engineering/mlops/module-1.12-small-team-private-ai-platform
+sidebar:
+  order: 613
+---
+> **AI/ML Engineering Track** | Complexity: `[MEDIUM]` | Time: 2-3
+---
+**Reading Time**: 2-3 hours
+**Prerequisites**: Experiment Tracking, ML Pipelines, Model Serving, Notebooks to Production for ML/LLMs, and the AI Infrastructure section
+---
+
+## What You'll Be Able to Do
+
+By the end of this module, you will:
+- design a realistic private AI platform for a small team without copying enterprise reference architectures blindly
+- choose which capabilities should be standardized first and which can remain lightweight
+- reason about storage, tracking, serving, access control, and collaboration as one system
+- avoid the common trap of building a platform that is more complicated than the team it is meant to support
+- define an evolution path from laptop-driven experimentation to a shared internal AI environment
+
+**Why this matters**: there is a painful middle ground between "everyone runs notebooks on their own machine" and "we need a full platform team and Kubeflow everywhere." Many small teams live in that middle ground for a long time. If they build too little, work is chaotic. If they build too much, the platform becomes the project instead of supporting the project.
+
+---
+
+## What a Small-Team Private AI Platform Actually Is
+
+A small-team private AI platform is not a miniature hyperscaler.
+
+It is a shared environment that gives a team enough structure to:
+- reproduce work
+- store and compare artifacts
+- serve internal models safely
+- control access
+- document how systems are supposed to work
+
+For most teams, this means standardizing a few core capabilities:
+- one place for code
+- one place for tracked experiments
+- one place for artifacts and models
+- one stable way to run training or evaluation jobs
+- one stable way to expose inference endpoints
+
+That is enough to create leverage.
+
+---
+
+## The Five Capabilities That Matter First
+
+### 1. Shared Source of Truth
+
+You need a clear home for:
+- source code
+- configs
+- infrastructure definitions
+- documentation
+
+Without this, the platform cannot be reasoned about.
+
+### 2. Experiment and Artifact Tracking
+
+If no one can answer:
+- which run produced this model?
+- what dataset or config was used?
+- what metrics justified keeping it?
+
+then the team does not yet have a platform. It has output sprawl.
+
+### 3. Repeatable Job Execution
+
+Training and evaluation should run in a way that does not depend on one developer laptop.
+
+This does not require giant orchestration on day one.
+It does require:
+- reproducible environments
+- named job entry points
+- predictable data and artifact paths
+
+### 4. Stable Model Serving
+
+The team needs a standard way to expose internal models or inference services.
+
+That standard should cover:
+- how services are started
+- how they are versioned
+- how they are updated
+- who can call them
+
+### 5. Access and Ownership Rules
+
+Small teams often postpone this because everyone trusts everyone.
+
+That works until:
+- a model is deleted
+- a secret leaks
+- no one knows who owns an endpoint
+- a broken experiment clobbers shared storage
+
+Ownership is not bureaucracy. It is how shared systems stay usable.
+
+---
+
+## What You Should Not Build Too Early
+
+This is the most important discipline for small teams.
+
+Do not begin with:
+- a giant internal platform portal
+- many workflow engines
+- multi-cluster complexity
+- elaborate tenancy models
+- premature abstraction layers
+
+Those choices can be right later.
+They are usually wrong first.
+
+A small-team platform should optimize for:
+- clarity
+- maintainability
+- low operator burden
+- fast recovery when something breaks
+
+That is different from optimizing for maximum theoretical scale.
+
+---
+
+## A Realistic Reference Shape
+
+A practical small-team private AI platform often looks like this:
+
+```text
+Git + Docs
+    |
+    v
+Experiment Tracking + Artifact Store
+    |
+    +--> Training / Evaluation Jobs
+    |
+    +--> Model Registry Conventions
+    |
+    v
+Internal Inference Services
+    |
+    v
+Consumers: notebooks, apps, APIs, internal tools
+```
+
+This does not have to be one vendor stack.
+It does have to be coherent.
+
+Examples of reasonable early choices:
+- Git hosting for source and docs
+- MLflow or equivalent tracking for runs and artifacts
+- object storage for model and dataset outputs
+- a small Kubernetes environment or disciplined job runner for repeatable execution
+- one or two inference patterns instead of five competing ones
+
+---
+
+## The Minimum Standard for Shared Training
+
+If training is still "run this notebook on Alice's workstation," the system has not crossed into platform territory.
+
+Shared training does not need perfection. It needs:
+- documented entry points
+- repeatable environments
+- explicit input data locations
+- clear output locations
+- some record of who ran what and why
+
+That can be simple:
+- containerized jobs
+- scripts launched from CI or a small job runner
+- standardized config files
+
+The key is that the team can rerun the work without reverse engineering someone's personal machine.
+
+---
+
+## The Minimum Standard for Shared Serving
+
+Serving should be standardized earlier than many teams expect.
+
+Otherwise, every model becomes:
+- a different process
+- a different endpoint pattern
+- a different auth story
+- a different deployment story
+
+For a small team, standardization usually means:
+- one preferred API pattern
+- one preferred model packaging approach
+- one preferred way to log requests and errors
+- one preferred rollback pattern
+
+The goal is not to solve every future case.
+The goal is to prevent platform fragmentation now.
+
+---
+
+## Platform Scope Boundaries
+
+A small-team private AI platform should answer these questions clearly:
+
+### What Is Self-Hosted?
+
+Examples:
+- inference service
+- experiment tracking
+- artifact storage
+- docs
+
+### What Is Managed or External?
+
+Examples:
+- some datasets
+- some model APIs
+- some CI or identity systems
+
+### What Is Intentionally Not Solved Yet?
+
+Examples:
+- full multi-tenancy
+- autoscaling for large demand spikes
+- enterprise governance depth
+- complex scheduler design
+
+This third category matters.
+If the team does not define what it is postponing, people keep assuming the platform is supposed to do more than it really does.
+
+---
+
+## The Three Failure Modes to Avoid
+
+### 1. Tool Accumulation Without a System
+
+The team adopts:
+- tracking here
+- serving there
+- notebooks somewhere else
+- artifacts in random storage
+
+Everything exists, but nothing fits together.
+
+### 2. Enterprise Imitation
+
+The team copies a reference architecture designed for:
+- many teams
+- strict governance
+- heavy throughput
+- dedicated platform operators
+
+Result:
+- high complexity
+- low adoption
+- nobody wants to maintain it
+
+### 3. No Ownership Model
+
+Everyone can change shared infrastructure, so eventually no one really owns it.
+
+Result:
+- brittle standards
+- low confidence
+- uncontrolled drift
+
+---
+
+## A Good Evolution Path
+
+The right platform for a small team usually grows in layers:
+
+### Layer 1: Shared Discipline
+
+- version control
+- project structure
+- common environments
+- run tracking
+
+### Layer 2: Shared Services
+
+- experiment tracking
+- artifact storage
+- simple internal model endpoints
+
+### Layer 3: Operational Hardening
+
+- monitoring
+- access control
+- backup and recovery
+- deployment standards
+
+### Layer 4: Platform Expansion
+
+- more automation
+- more workload isolation
+- larger serving infrastructure
+- stronger governance
+
+Skipping from Layer 1 to Layer 4 is where many small teams hurt themselves.
+
+---
+
+## When You Are Ready for Something Bigger
+
+You may need a more serious platform when:
+- multiple teams depend on the system
+- GPU scheduling becomes a real coordination problem
+- model serving throughput matters to revenue
+- compliance and audit requirements rise sharply
+- shared infrastructure is consuming too much manual operator time
+
+That is the handoff point toward heavier on-prem or enterprise platform architecture.
+
+This module is intentionally smaller in scope than those systems.
+It is about the platform a small team can actually sustain.
+
+---
+
+## Key Takeaways
+
+- a small-team private AI platform should standardize only the capabilities that create immediate shared leverage
+- experiment tracking, artifacts, repeatable execution, stable serving, and ownership rules matter before advanced platform abstractions
+- the best small-team platform is usually simpler than ambitious engineers first imagine
+- platform maturity should grow in layers instead of arriving as a giant architecture dump
+- the goal is not "enterprise in miniature"; the goal is a shared system the team can actually operate
+
+---
+
+## Next Modules
+
+- [Home AI Operations and Cost Model](../ai-infrastructure/module-1.5-home-ai-operations-cost-model/)
+- [ML Monitoring](./module-1.10-ml-monitoring/)
+- [Private MLOps Platform](../../on-premises/ai-ml-infrastructure/module-9.4-private-mlops-platform/)

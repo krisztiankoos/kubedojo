@@ -38,8 +38,8 @@ For the Certified Kubernetes Administrator (CKA) exam, mastering these volume co
 
 - The current stable Kubernetes release is v1.35, and while legacy in-tree plugins exist in older documentation, all major cloud provider volume plugins have completed their Container Storage Interface (CSI) migrations unconditionally.
 - A `serviceAccountToken` projected volume source defaults to a token expiration of 3600 seconds, ensuring that long-lived static tokens are no longer the default security risk.
-- *Note: Historical records indicate* generic ephemeral volumes reached stable status historically in Kubernetes release one-twenty-three, automatically creating a per-Pod PersistentVolumeClaim that is garbage collected when the pod is deleted.
-- *Note: Historical records indicate* CSI inline ephemeral volumes, which reached stable historically in release one-twenty-five, are completely exempt from storage resource usage limits enforced by the kubelet.
+- *Note: Historical records indicate* generic ephemeral volumes reached stable status historically in Kubernetes v1.23, automatically creating a per-Pod PersistentVolumeClaim that is garbage collected when the pod is deleted.
+- *Note: Historical records indicate* CSI inline ephemeral volumes, which reached stable historically in v1.25, are completely exempt from storage resource usage limits enforced by the kubelet.
 
 ## Section 1: The Container Storage Problem
 
@@ -104,7 +104,7 @@ Kubernetes offers numerous volume types to solve radically different architectur
 | persistentVolumeClaim | PV lifetime | Persistent data | Survives pod deletion |
 | image | Image lifetime | OCI image content as read-only volume | Read-only, pulled from registry |
 
-In modern architectures, Kubernetes has continuously expanded the types of ephemeral storage available. The `image` volume type allows mounting files directly from OCI images or artifacts as read-only volumes. No init containers or complex bootstrap scripts are needed. This is perfect for distributing ML models, massive config bundles, or static web assets. *Note: Historical sources indicate the image volume type (OCI artifact / container image as volume) reached beta in Kubernetes release one-thirty-three.*
+In modern architectures, Kubernetes has continuously expanded the types of ephemeral storage available. The `image` volume type allows mounting files directly from OCI images or artifacts as read-only volumes. No init containers or complex bootstrap scripts are needed. This is perfect for distributing ML models, massive config bundles, or static web assets. *Note: Historical sources indicate the image volume type (OCI artifact / container image as volume) reached beta in Kubernetes v1.33.*
 
 ```yaml
 volumes:
@@ -118,7 +118,7 @@ volumes:
 
 Historically, Kubernetes included storage drivers directly within its core codebase (known as "in-tree" plugins). As the storage ecosystem rapidly expanded, this tightly coupled architecture became impossible to maintain. To resolve this, Kubernetes introduced the Container Storage Interface (CSI), standardizing how storage vendors develop plugins independently.
 
-All major in-tree cloud volume plugin CSI migrations are complete and unconditional as of Kubernetes v1.35. If you attempt to use the old in-tree specifications, the kubelet will transparently translate them to their corresponding CSI drivers. Furthermore, older native volume types are obsolete. The `gcePersistentDisk` in-tree volume plugin is deprecated. The `gitRepo` volume type is deprecated. The `portworxVolume` in-tree volume type is deprecated. Finally, `flexVolume` is deprecated. *Note: Historical records suggest CSI volume plugin migration for vSphere (vsphereVolume) reached GA historically in release one-twenty-six and the feature gate was removed in release one-twenty-eight.* Modern clusters rely exclusively on CSI drivers for advanced storage operations.
+All major in-tree cloud volume plugin CSI migrations are complete and unconditional as of Kubernetes v1.35. If you attempt to use the old in-tree specifications, the kubelet will transparently translate them to their corresponding CSI drivers. Furthermore, older native volume types are obsolete. The `gcePersistentDisk` in-tree volume plugin is deprecated. The `gitRepo` volume type is deprecated. The `portworxVolume` in-tree volume type is deprecated. Finally, `flexVolume` is deprecated. *Note: Historical records suggest CSI volume plugin migration for vSphere (vsphereVolume) reached GA historically in v1.26 and the feature gate was removed in v1.28.* Modern clusters rely exclusively on CSI drivers for advanced storage operations.
 
 ## Section 4: Ephemeral Volumes In-Depth
 
@@ -206,9 +206,9 @@ If the pod exceeds this hard limit, the kubelet will actively evict the pod from
 
 ### Generic and CSI Ephemeral Volumes
 
-Beyond `emptyDir`, Kubernetes supports advanced ephemeral paradigms. Generic ephemeral volumes reached stable (GA) historically in release one-twenty-three. These generic ephemeral volumes automatically create a per-Pod PVC that is exclusively owned by the Pod and deleted when the Pod is deleted, bringing dynamic provisioning capabilities to temporary storage.
+Beyond `emptyDir`, Kubernetes supports advanced ephemeral paradigms. Generic ephemeral volumes reached stable (GA) historically in v1.23. These generic ephemeral volumes automatically create a per-Pod PVC that is exclusively owned by the Pod and deleted when the Pod is deleted, bringing dynamic provisioning capabilities to temporary storage.
 
-Additionally, CSI inline ephemeral volumes reached stable (GA) historically in release one-twenty-five. A unique characteristic of these volumes is that CSI ephemeral volumes are not subject to storage resource usage limits enforced by the kubelet, making them powerful but potentially risky if unmonitored. 
+Additionally, CSI inline ephemeral volumes reached stable (GA) historically in v1.25. A unique characteristic of these volumes is that CSI ephemeral volumes are not subject to storage resource usage limits enforced by the kubelet, making them powerful but potentially risky if unmonitored. 
 
 ## Section 5: hostPath Volumes
 
@@ -443,7 +443,7 @@ spec:
 
 The `serviceAccountToken` projected volume token expiration defaults to 3600 seconds (1 hour) with a minimum of 600 seconds (10 minutes). If the pod lives longer than the token's lifespan, the kubelet automatically rotates it in the background by securely updating the projected file. 
 
-Furthermore, Kubernetes is introducing advanced projection sources. *Note: Historical tracking suggests the `clusterTrustBundle` projected volume source is beta in Kubernetes release one-thirty-three and disabled by default. Similarly, the `podCertificate` projected volume source is beta in Kubernetes v1.35 and disabled by default.*
+Furthermore, Kubernetes is introducing advanced projection sources. *Note: Historical tracking suggests the `clusterTrustBundle` projected volume source is beta in Kubernetes v1.33 and disabled by default. Similarly, the `podCertificate` projected volume source is beta in Kubernetes v1.35 and disabled by default.*
 
 ### Projected Volume Use Cases
 
@@ -572,7 +572,7 @@ While incredibly useful, you must deeply understand a critical architectural lim
 
 While the volume types discussed above handle ephemeral storage exceptionally well, enterprise applications inevitably require robust, persistent data storage that outlives both the pod and the node it is running on. A PersistentVolume represents a piece of storage in the cluster that has been provisioned by an administrator or dynamically provisioned using a StorageClass. Kubernetes PersistentVolumes support four access modes: ReadWriteOnce, ReadOnlyMany, ReadWriteMany, and ReadWriteOncePod. 
 
-*Note: Historical documentation suggests the `ReadWriteOncePod` (RWOP) access mode reached GA historically in release one-twenty-nine, strictly preventing more than one pod from accessing a volume simultaneously across the entire cluster.* 
+*Note: Historical documentation suggests the `ReadWriteOncePod` (RWOP) access mode reached GA historically in v1.29, strictly preventing more than one pod from accessing a volume simultaneously across the entire cluster.* 
 
 Furthermore, a PersistentVolume passes through four lifecycle phases: Available, Bound, Released, Failed. Administrators also dictate what happens to the data when the claim is removed. PersistentVolume reclaim policies are Delete (default), Retain, and Recycle. Be aware that the Recycle reclaim policy is deprecated and only supported by NFS and HostPath volume types. Kubernetes also supports two volume modes for PersistentVolumes: Filesystem (default) and Block. When working with stateful persistence, PVC and PV deletion protection uses finalizers (`kubernetes.io/pvc-protection` and `kubernetes.io/pv-protection`) to actively prevent accidental deletion of volumes currently in use.
 
@@ -588,17 +588,17 @@ Modern Kubernetes clusters (v1.35+) provide advanced mechanisms to augment persi
 
 ### Expansion, Cloning, and Snapshots
 
-Volume expansion via `allowVolumeExpansion` only supports safely growing a volume, not shrinking it. *Note: Historical context indicates volume expansion via CSI requires Kubernetes release one-twenty-four or later.*
+Volume expansion via `allowVolumeExpansion` only supports safely growing a volume, not shrinking it. *Note: Historical context indicates volume expansion via CSI requires Kubernetes v1.24 or later.*
 
 Snapshotting relies heavily on external controllers. VolumeSnapshot objects use a stable v1 API (`snapshot.storage.k8s.io/v1`). However, VolumeSnapshot support is only available for clusters leveraging CSI drivers. A common misconception is who exactly manages this; the VolumeSnapshot controller (snapshot controller) is installed by the Kubernetes distribution or cluster administrator, not automatically by the CSI driver itself.
 
-PVC cloning (using a PVC as a volume data source) is only available for CSI drivers and only with dynamic provisioners. Furthermore, PVC cloning requires the source PVC and the clone to be in the exact same namespace, and PVC cloning requires the VolumeMode of both the source and destination to match perfectly. Once completed, PVC cloning produces a wholly independent copy of the source PVC; the source can be freely modified or deleted after cloning. Advanced use cases like the `CrossNamespaceVolumeDataSource` feature gate (cross-namespace PVC cloning) is alpha since release one-twenty-six and remains disabled by default in v1.35. Extending data sources even further, Volume Populators reached GA historically in release one-thirty-three.
+PVC cloning (using a PVC as a volume data source) is only available for CSI drivers and only with dynamic provisioners. Furthermore, PVC cloning requires the source PVC and the clone to be in the exact same namespace, and PVC cloning requires the VolumeMode of both the source and destination to match perfectly. Once completed, PVC cloning produces a wholly independent copy of the source PVC; the source can be freely modified or deleted after cloning. Advanced use cases like the `CrossNamespaceVolumeDataSource` feature gate (cross-namespace PVC cloning) is alpha since v1.26 and remains disabled by default in v1.35. Extending data sources even further, Volume Populators reached GA historically in v1.33.
 
 ### Attributes and Hardware Limits
 
 CSI drivers can dynamically adjust underlying volume capabilities. `VolumeAttributesClass` requires a CSI driver that implements the `ModifyVolume` API. `VolumeAttributesClass` parameters are immutable after creation, and a PVC's `volumeAttributesClassName` field is mutable, allowing seamless live updates to underlying storage IOPS and throughput without remounting. According to the `VolumeAttributesClass` concept page, it reached stable in Kubernetes v1.34; however, the v1.33 release blog credits it as reaching GA in v1.33. Due to this conflict, the exact minor version marking stability may vary depending on the authoritative source consulted. We maintain v1.35 as our primary focus.
 
-Finally, cluster operators must be acutely aware of hard attachment limits. Dynamic volume limits (scheduler awareness of per-node volume count caps) reached stable historically in release one-seventeen. Storage capacity tracking reached GA historically in release one-twenty-four, but storage capacity tracking requires `WaitForFirstConsumer` volume binding mode and `CSIDriver.StorageCapacity: true`.
+Finally, cluster operators must be acutely aware of hard attachment limits. Dynamic volume limits (scheduler awareness of per-node volume count caps) reached stable historically in v1.17. Storage capacity tracking reached GA historically in v1.24, but storage capacity tracking requires `WaitForFirstConsumer` volume binding mode and `CSIDriver.StorageCapacity: true`.
 
 Hardware constraints vary wildly by cloud provider:
 - The default per-node Amazon EBS volume attachment limit is roughly 39 volumes.
@@ -656,7 +656,7 @@ During a security audit, a DaemonSet for log collection is flagged. It mounts `h
 <details>
 <summary>Answer</summary>
 
-The auditor flagged it for three reasons: (1) mounting `/` gives the pod access to the **entire node filesystem**, including `/etc/shadow`, kubelet credentials, and other sensitive files -- far more than `/var/log`; (2) type `""` performs no validation, so the mount could follow symlinks or mount unexpected paths; (3) without `readOnly: true`, the container can **write** to the node filesystem, enabling container escape attacks. The fix: mount only the specific paths needed (`/var/log` and `/var/lib/docker/containers`), use type `Directory` for validation, and set `readOnly: true` on both volume mounts.
+The auditor correctly flagged this configuration due to three severe security violations. First, mounting `/` gives the pod unfiltered access to the **entire node filesystem**, exposing highly sensitive files like `/etc/shadow` and kubelet credentials. Second, using an empty string `""` for the type performs no validation, meaning the mount could traverse malicious symlinks or attach to unexpected paths. Third, omitting `readOnly: true` allows the container to freely **write** to the host filesystem, providing a trivial vector for container escape attacks and node takeover. To remediate this, the team must restrict the mount paths to exactly what is needed (`/var/log` and `/var/lib/docker/containers`), explicitly set the type to `Directory`, and enforce `readOnly: true` on all mounts.
 
 </details>
 

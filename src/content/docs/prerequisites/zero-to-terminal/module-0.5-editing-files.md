@@ -47,7 +47,7 @@ You need to be able to open a file, write in it, save it, and close it -- all fr
 
 "Can't I just use Notepad or TextEdit?"
 
-You can -- on your own computer. But remember from Module 0.1: almost every server runs Linux, and servers usually don't have a graphical interface. When you connect to a remote server (which you'll learn in Module 0.7), there's no mouse, no desktop, no Notepad. There's just the terminal.
+You can -- on your own computer. But remember from Module 0.1: many servers and cloud-native environments run Linux, and servers usually don't have a graphical interface. When you connect to a remote server (which you'll learn in Module 0.7), there's no mouse, no desktop, no Notepad. There's just the terminal.
 
 The terminal text editor is the chef's knife of computing. It's not the fanciest tool, but you'll use it everywhere.
 
@@ -68,7 +68,7 @@ We're starting with **nano** because:
 
 There's no shame in using nano. Many experienced engineers use it for quick edits. You'll learn vim later when you're ready for more power.
 
-> **Fun fact**: "How to exit vim" is one of the most searched programming questions on the internet. Over 2 million people have viewed that question on Stack Overflow. With nano, you'll never have that problem.
+> **Fun fact**: "How to exit vim" became a long-running programming joke because many beginners open vim, start typing, and then do not know the command to quit. With nano, the save and exit shortcuts are shown on screen from the start.
 
 ---
 
@@ -281,7 +281,7 @@ Now let's do something powerful: write a script. A script is just a text file th
 nano my-first-script.sh
 ```
 
-> **Stop and think**: This script starts with a strange line: `#!/bin/bash`. What do you think it does? It's called a "shebang" — it's the script's way of telling the computer "I'm written in bash, use the bash program to run me." Without it, the computer wouldn't know how to interpret the file. You'll see this line at the top of every shell script you encounter.
+> **Stop and think**: This script starts with a strange line: `#!/bin/bash`. What do you think it does? It's called a "shebang" — it's the script's way of telling the system "when this file is run directly, use bash to interpret it." If you instead run the file with an explicit command like `bash my-first-script.sh`, bash already knows how to interpret it even without a shebang. You will see shebangs at the top of many shell scripts because they make the intended interpreter explicit.
 
 Type the following exactly:
 
@@ -298,7 +298,7 @@ echo "Great job, chef! Your first script works!"
 
 Let's understand each line:
 
-- `#!/bin/bash` -- This is called a "shebang." It tells the computer "use the bash program to run this file." Every script needs this as the first line. (Yes, "shebang" is a real term.)
+- `#!/bin/bash` -- This is called a "shebang." It tells the system "use the bash program to run this file" when you execute it directly with `./my-first-script.sh`. In practice, you should include it in shell scripts you want to run directly, but a script can still be run without it if you invoke an interpreter explicitly, such as `bash my-first-script.sh`. (Yes, "shebang" is a real term.)
 - `echo` -- A command that prints text to the screen. Think of it as the kitchen yelling "Order up!"
 - `$(date)` -- Runs the `date` command and inserts the result. The `$()` syntax means "run this command and give me the output."
 - `$(whoami)` -- Runs `whoami`, which tells you your username.
@@ -367,7 +367,7 @@ When you're ready, vim will be there. For now, nano is your friend.
 |---------|-------------------|-------------------|
 | Pressing Ctrl+Z instead of Ctrl+X to exit | Ctrl+Z suspends nano (hides it) instead of closing it. The file stays open in the background | If you accidentally suspend, type `fg` to bring nano back. Then use Ctrl+X to exit properly |
 | Forgetting to save before exiting | Your changes are lost | Always Ctrl+O to save before Ctrl+X to exit. Or just press Ctrl+X and say Y when asked to save |
-| Not adding `#!/bin/bash` to scripts | The system doesn't know how to run the file | Always make the first line of a bash script `#!/bin/bash` |
+| Not adding `#!/bin/bash` to scripts you plan to run with `./script.sh` | Direct execution can fail because the system may not know which interpreter to use | If you want to run a bash script directly, start it with `#!/bin/bash`. If you run it as `bash script.sh`, bash is already chosen explicitly |
 | Forgetting `chmod +x` before running a script | You get "Permission denied" | Run `chmod +x filename.sh` to make the file executable |
 | Using `nano` when you meant to use `cat` | You accidentally open the file for editing when you just wanted to read it | Use `cat filename` to view a file without editing it |
 | Editing a file on a remote server thinking it is local | You might accidentally change production configuration instead of your local testing files, causing unexpected downtime | Always check your prompt (like `user@server`) or run `hostname` to confirm which machine you are currently editing files on |
@@ -392,7 +392,7 @@ When you're ready, vim will be there. For now, nano is your friend.
 3. **You download a script from a coworker that ends in `.sh`. You make it executable and try to run it, but your system throws an error saying it doesn't know how to execute the file. Upon opening it in nano, you see the first line is simply `echo "Starting backup"`. What crucial element is missing, and why does the system need it?**
    <details>
    <summary>Answer</summary>
-   The script is missing its "shebang" line (e.g., `#!/bin/bash`) at the very top of the file. Without this line, the operating system's program loader doesn't know which interpreter program should be used to read and execute the subsequent instructions. The shebang acts as a strict directive, telling the system whether to pass the file's contents to bash, python, node, or another interpreter. Because it was missing, the system attempted to guess or use a default execution method, which failed because the context wasn't explicitly defined.
+   The script is missing a shebang line such as `#!/bin/bash` at the very top of the file. When you execute a script directly with `./script.sh`, Linux uses that line to decide which interpreter should read the file. Without it, direct execution may fail because the file does not specify an interpreter. If you instead run the script with an explicit command such as `bash script.sh`, bash is already selected, so a shebang is not strictly required for that specific invocation.
    </details>
 
 4. **You've written a perfect script to automate your server backups, saved it as `backup.sh`, and typed `./backup.sh` to run it. Instead of your backup starting, the terminal sternly replies: `Permission denied`. Why did the system block your script, and how do you resolve this?**

@@ -136,26 +136,12 @@ spec:
 
 ### 1.3 How HPA Decides
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 HPA Decision Loop (every 15s)                │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  1. Read current metric values from metrics-server           │
-│                    │                                         │
-│                    ▼                                         │
-│  2. Calculate: desired = ceil(current * (actual / target))   │
-│     Example: 3 pods at 90% CPU, target 50%                  │
-│     desired = ceil(3 * (90/50)) = ceil(5.4) = 6 pods        │
-│                    │                                         │
-│                    ▼                                         │
-│  3. Clamp to min/max range                                   │
-│     min: 2, max: 10 → result: 6 (within range)             │
-│                    │                                         │
-│                    ▼                                         │
-│  4. Scale deployment to 6 replicas                           │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    Read["1. Read current metric values from metrics-server"] --> Calc["2. Calculate: desired = ceil(current * (actual / target))"]
+    Calc -->|"Example: 3 pods at 90% CPU, target 50%<br>desired = ceil(3 * 90/50) = 6"| Clamp["3. Clamp to min/max range"]
+    Clamp -->|"min: 2, max: 10 -> result: 6 (within range)"| Scale["4. Scale deployment to 6 replicas"]
+    Scale -.->|"Wait 15s (Decision Loop)"| Read
 ```
 
 **Scaling Velocity:** By default, HPA limits how quickly it scales to prevent instability (e.g., adding a maximum of 4 pods or 100% of current replicas per 15s). You can customize this velocity using the `behavior` field in the `autoscaling/v2` API.

@@ -57,32 +57,26 @@ For true stateful applications like PostgreSQL, MongoDB, or Kafka, ephemeral sto
 
 This requires network-attached persistent storage, which brings us to the core abstractions of Kubernetes storage orchestration: PersistentVolumes and PersistentVolumeClaims.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│              THE MEMORY ANALOGY: EPHEMERAL VS PERSISTENT                │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  EPHEMERAL STORAGE (Like Computer RAM)                                  │
-│  ──────────────────────────────────────                                 │
-│  1. Pod starts on Node Alpha.                                           │
-│  2. Pod writes transaction logs to `emptyDir` volume.                   │
-│  3. Node Alpha loses power (Pod is destroyed).                          │
-│  4. Orchestrator schedules new Pod on Node Bravo.                       │
-│  5. New Pod starts with a completely empty `emptyDir`.                  │
-│  RESULT: Catastrophic Data Loss.                                        │
-│                                                                         │
-│  PERSISTENT STORAGE (Like an External USB Hard Drive)                   │
-│  ────────────────────────────────────────────────────                   │
-│  1. Pod starts on Node Alpha.                                           │
-│  2. Pod writes transaction logs to a network PersistentVolume.          │
-│  3. Node Alpha loses power (Pod is destroyed).                          │
-│  4. Orchestrator securely detaches the PersistentVolume.                │
-│  5. Orchestrator schedules new Pod on Node Bravo.                       │
-│  6. Orchestrator attaches the exact same PersistentVolume to Node Bravo.│
-│  7. New Pod reads the transaction logs.                                 │
-│  RESULT: Zero Data Loss. Continuous Operations.                         │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Ephemeral["EPHEMERAL STORAGE (Like Computer RAM)"]
+        direction TB
+        E1["1. Pod starts on Node Alpha."] --> E2["2. Pod writes transaction logs to emptyDir volume."]
+        E2 --> E3["3. Node Alpha loses power (Pod is destroyed)."]
+        E3 --> E4["4. Orchestrator schedules new Pod on Node Bravo."]
+        E4 --> E5["5. New Pod starts with a completely empty emptyDir."]
+        E5 --> E6{{"RESULT: Catastrophic Data Loss."}}
+    end
+    subgraph Persistent["PERSISTENT STORAGE (Like an External USB Hard Drive)"]
+        direction TB
+        P1["1. Pod starts on Node Alpha."] --> P2["2. Pod writes transaction logs to a network PersistentVolume."]
+        P2 --> P3["3. Node Alpha loses power (Pod is destroyed)."]
+        P3 --> P4["4. Orchestrator securely detaches the PersistentVolume."]
+        P4 --> P5["5. Orchestrator schedules new Pod on Node Bravo."]
+        P5 --> P6["6. Orchestrator attaches the exact same PersistentVolume to Node Bravo."]
+        P6 --> P7["7. New Pod reads the transaction logs."]
+        P7 --> P8{{"RESULT: Zero Data Loss. Continuous Operations."}}
+    end
 ```
 
 > **Pause and predict**: We know that `emptyDir` is ephemeral and lost when a Pod is deleted. There is another volume type called `hostPath` which mounts a file or directory directly from the host node's underlying filesystem into the Pod. Based on your understanding of the Kubernetes scheduler, why is utilizing `hostPath` considered highly dangerous and generally prohibited for stateful applications in a multi-node cluster?
@@ -223,42 +217,38 @@ To permanently resolve this architectural flaw, the industry collaborative intro
 
 CSI is a standardized, universal specification designed to expose arbitrary block and file storage systems to containerized workloads. With CSI, the Kubernetes core control plane no longer knows absolutely anything about specific storage providers. It simply knows how to speak the standardized, highly structured CSI protocol over high-speed gRPC connections.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│              THE CSI ARCHITECTURE DIAGRAM                               │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  KUBERNETES CONTROL PLANE                STORAGE VENDOR CSI DRIVER      │
-│  ────────────────────────                ─────────────────────────      │
-│                                                                         │
-│  ┌──────────────────────┐                ┌─────────────────────────┐    │
-│  │ StatefulSet          │ ── creates ──▶ │ PersistentVolumeClaim   │    │
-│  └──────────────────────┘                └─────────────────────────┘    │
-│                                                       │                 │
-│                                                  triggers               │
-│                                                       ▼                 │
-│  ┌──────────────────────┐   gRPC Call    ┌─────────────────────────┐    │
-│  │ external-provisioner │ ─────────────▶ │ CSI Controller Plugin   │    │
-│  └──────────────────────┘ (CreateVolume) │ (Talks to Cloud API)    │    │
-│                                          └─────────────────────────┘    │
-│                                                       │                 │
-│                                                  provisions             │
-│                                                       ▼                 │
-│                                          [ PHYSICAL CLOUD HARD DRIVE ]  │
-│                                                                         │
-│  WORKER NODE (Kubelet)                                                  │
-│  ─────────────────────                                                  │
-│                                                                         │
-│  ┌──────────────────────┐   gRPC Call    ┌─────────────────────────┐    │
-│  │ Kubelet Volume Mgr   │ ─────────────▶ │ CSI Node Plugin         │    │
-│  └──────────────────────┘ (NodePublish)  │ (DaemonSet on Node)     │    │
-│                                          └─────────────────────────┘    │
-│                                                       │                 │
-│                                                     mounts              │
-│                                                       ▼                 │
-│                                          [ CONTAINER FILE SYSTEM ]      │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph ControlPlane["KUBERNETES CONTROL PLANE"]
+        direction TB
+        SS["StatefulSet"] -- "creates" --> PVC["PersistentVolumeClaim"]
+        PVC -. "triggers" .-> EP["external-provisioner"]
+    end
+
+    subgraph CSIDriver["STORAGE VENDOR CSI DRIVER"]
+        direction TB
+        CTRL["CSI Controller Plugin\n(Talks to Cloud API)"]
+    end
+
+    EP -- "gRPC Call\n(CreateVolume)" --> CTRL
+
+    CloudDisk[("PHYSICAL CLOUD HARD DRIVE")]
+    CTRL -. "provisions" .-> CloudDisk
+
+    subgraph Worker["WORKER NODE (Kubelet)"]
+        direction TB
+        KVM["Kubelet Volume Mgr"]
+    end
+
+    subgraph CSINode["STORAGE VENDOR CSI DRIVER"]
+        direction TB
+        NODE["CSI Node Plugin\n(DaemonSet on Node)"]
+    end
+
+    KVM -- "gRPC Call\n(NodePublish)" --> NODE
+    
+    ContainerFS[("CONTAINER FILE SYSTEM")]
+    NODE -. "mounts" .-> ContainerFS
 ```
 
 Storage vendors now engineer, compile, and distribute their CSI drivers completely independently of the Kubernetes release cycle. A standard CSI deployment within a cluster typically consists of two highly specialized components:
@@ -346,10 +336,10 @@ If the underlying storage backend does not support safe, API-driven force-detach
    Team Bravo's PersistentVolumeClaim will remain indefinitely trapped in the `Pending` state. Kubernetes enforces a strict, exclusive one-to-one binding relationship between a PersistentVolume and a PersistentVolumeClaim. Once Team Alpha's PVC successfully bound to the PV, that physical storage resource became completely dedicated to their claim, regardless of the PV's access mode capabilities or massive excess capacity. To successfully share the data, both teams must configure their respective Pods to mount Team Alpha's original PVC, provided the underlying PV physically supports a ReadOnlyMany or ReadWriteMany access mode to allow concurrent multi-node access.
    </details>
 
-7. **Explain why the Kubernetes community made the massive engineering effort to deprecate legacy in-tree volume plugins and aggressively force the entire ecosystem to migrate to the Container Storage Interface (CSI) architecture. What specific operational bottlenecks did CSI completely eliminate for both cluster administrators and storage hardware vendors?**
+7. **You are a platform architect auditing a legacy Kubernetes cluster inherited from an acquisition. You discover all stateful workloads rely on "in-tree" volume plugins for AWS EBS and vSphere. When you propose a massive migration project to transition entirely to the Container Storage Interface (CSI), the CTO pushes back, questioning the return on investment for such a disruptive change. Formulate a compelling technical argument for the migration, explaining the specific operational and security bottlenecks the CSI architecture eliminates.**
    <details>
    <summary>Answer</summary>
-   Legacy in-tree plugins required storage hardware vendors to compile their highly proprietary driver code directly into the core Kubernetes binary executables. This created massive, unsustainable operational bottlenecks: vendors could only release critical bug fixes or new features alongside official, slow-moving Kubernetes release cycles, and the Kubernetes core maintainers were burdened with reviewing millions of lines of third-party code. The CSI architecture decoupled storage entirely, establishing a standard gRPC API. This allows storage vendors to develop, release, and patch their drivers entirely independently as standard containerized deployments, enabling rapid innovation and significantly reducing the security attack surface of the core Kubernetes codebase.
+   Legacy in-tree plugins required storage hardware vendors to compile their highly proprietary driver code directly into the core Kubernetes binary executables. This created massive, unsustainable operational bottlenecks: vendors could only release critical bug fixes or new features alongside official, slow-moving Kubernetes release cycles, and the Kubernetes core maintainers were burdened with reviewing millions of lines of third-party code. The CSI architecture decoupled storage entirely, establishing a standard gRPC API for external communication. This allows storage vendors to develop, release, and patch their drivers entirely independently as standard containerized deployments. Ultimately, this enables rapid innovation, eliminates vendor lock-in to legacy upgrade paths, and significantly reduces the security attack surface of your core Kubernetes control plane.
    </details>
 
 ---

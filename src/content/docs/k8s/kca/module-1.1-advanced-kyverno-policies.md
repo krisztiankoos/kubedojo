@@ -128,6 +128,9 @@ Software supply chain security is a top priority in modern Kubernetes environmen
 
 The `verifyImages` rule type intercepts Pod creation, resolves image tags to their immutable `sha256` digests (via mutation), and then cryptographically verifies the signature against a known public key or certificate authority.
 
+> **Stop and think**: Why do image verification policies require a longer `webhookTimeoutSeconds` setting than standard validation policies?
+> *Analysis*: Standard validations occur locally in memory, whereas image verification requires external network calls to the OCI registry to fetch digests and signatures, which can easily exceed the default 10-second timeout.
+
 ### Cosign Signature Verification
 
 Cosign (part of the Sigstore project) is the industry standard for container signing. Here is how to enforce Cosign signatures in Kyverno. Note the `webhookTimeoutSeconds: 30` setting—signature verification requires external network calls to the OCI registry, which often exceed the default 10-second webhook timeout.
@@ -472,6 +475,9 @@ spec:
               name: shared-logs
               emptyDir: {}
 ```
+
+> **Pause and predict**: What happens if you apply a JSON patch with `op: replace` and `path: "/spec/containers/1/image"`, but the Pod only has a single container?
+> *Prediction*: The patch operation will fail entirely because the specified array index (`/1`) does not exist, causing the admission request to be rejected.
 
 ### JSON Patch: Remove and Replace
 
@@ -859,84 +865,84 @@ When troubleshooting Kyverno rules, examine this matrix before diving into contr
 
 Test your comprehension of advanced policy mechanics. Be prepared for scenarios identical to these on the certification exam.
 
-**Question 1**: What is the key limitation of CEL compared to JMESPath in Kyverno?
+**Question 1**: Your team wants to enforce a security standard where any Pod requesting a GPU automatically receives a specific toleration and node selector. A junior engineer drafts a Kyverno `mutate` policy using Common Expression Language (CEL) to apply these fields. Will this approach work?
 
 <details>
 <summary>Show Answer</summary>
 
-CEL can only be used in `validate` rules. It cannot be used for `mutate`, `generate`, or `verifyImages` rules. If you need to modify resources, you must use JMESPath.
+No, this approach will not work because Kyverno only supports CEL within `validate` rules. The native integration of CEL in the Kubernetes admission pipeline is designed strictly for evaluation and boolean logic, meaning it cannot alter the payload of an incoming request. To dynamically inject tolerations and node selectors, the engineer must rewrite the policy using either JMESPath projections or RFC 6902 JSON patches within a `mutate` rule block.
 
 </details>
 
-**Question 2**: In a `verifyImages` policy, what is the purpose of the `attestations` field?
+**Question 2**: During a security audit, you discover that developers are signing their container images with Cosign, but vulnerable packages are still making their way into production. You decide to integrate Trivy vulnerability scans into the CI pipeline. How can you configure Kyverno to actively block the deployment of signed images that contain critical vulnerabilities?
 
 <details>
 <summary>Show Answer</summary>
 
-The `attestations` field checks that an image carries specific in-toto attestations (such as vulnerability scan results, SBOM, or build provenance) in addition to a valid signature. You can define conditions on the attestation payload to enforce requirements like "zero critical vulnerabilities."
+You must configure the `verifyImages` rule to evaluate the image's `attestations` payload alongside its signature. While the base signature proves *who* built the image, an in-toto attestation contains the actual metadata from the Trivy vulnerability scan. By defining conditional checks on the attestation payload within the Kyverno policy, you can instruct the webhook to reject the Pod if the `severity == 'CRITICAL'` count is greater than zero, ensuring only secure images are admitted.
 
 </details>
 
-**Question 3**: How does a `CleanupPolicy` differ from a `validate` or `mutate` policy in terms of execution model?
+**Question 3**: A developer complains that their newly deployed debugging Pods are being deleted immediately upon creation, suspecting a strict Kyverno `CleanupPolicy` is responsible. However, when you inspect the API server logs, there are no admission webhooks intercepting the Pod creation. Why is the developer's assumption about the `CleanupPolicy` behavior flawed?
 
 <details>
 <summary>Show Answer</summary>
 
-CleanupPolicies run on a cron schedule (defined in the `schedule` field) and delete matching resources. They are not triggered by API admission webhooks. Validate and mutate policies run at admission time (and optionally during background scans).
+The developer's assumption is flawed because `CleanupPolicy` resources operate on an asynchronous cron schedule, not during the API server's synchronous admission phase. Unlike `validate` or `mutate` rules that intercept resources the moment they are applied, cleanup policies rely on a background controller sweeping the cluster at regular intervals (e.g., `*/15 * * * *`). If a Pod is being deleted instantly upon creation, it is almost certainly being rejected by an admission webhook or a different resource quota constraint, rather than a cron-driven cleanup policy.
 
 </details>
 
-**Question 4**: What does the JSON Patch path `"/spec/containers/-"` mean?
+**Question 4**: You are tasked with writing a Kyverno mutation policy to inject a logging sidecar container into every Deployment in the `payments` namespace. You know that different Deployments have varying numbers of primary containers. How do you construct the JSON Patch path to ensure the sidecar is always added without overwriting any existing containers?
 
 <details>
 <summary>Show Answer</summary>
 
-The `/-` suffix means "append to the end of the array." It adds a new element to the `containers` array without needing to know the current array length or specify an index.
+You must use the special `/-` suffix in the JSON Patch path, resulting in `path: "/spec/containers/-"`. In the RFC 6902 JSON Patch specification, the hyphen indicates an append operation targeting the very end of an array. Using this path guarantees that Kyverno will safely attach the logging sidecar after all existing containers, circumventing the need to know the exact length or index structure of the array beforehand.
 
 </details>
 
-**Question 5**: You write a ClusterPolicy targeting Pods. Without any annotations, which resource kinds will Kyverno auto-generate rules for?
+**Question 5**: You deploy a new Kyverno ClusterPolicy explicitly matching `kind: Pod` to enforce resource quotas. Later that day, an engineer reports they cannot deploy a new `CronJob` because it violates your quota rules, even though they never deployed a standalone Pod. Why did your policy block the `CronJob`?
 
 <details>
 <summary>Show Answer</summary>
 
-Kyverno auto-generates rules for: Deployment, DaemonSet, StatefulSet, ReplicaSet, Job, and CronJob. These are all the built-in Pod controllers. The annotation `pod-policies.kyverno.io/autogen-controllers` can restrict or disable this behavior.
+The policy blocked the `CronJob` due to Kyverno's Autogen feature, which automatically translates rules targeting Pods into equivalent rules for all standard workload controllers. By default, Kyverno assumes that if you want to restrict a Pod, you also want to restrict the Pod templates embedded inside Deployments, StatefulSets, DaemonSets, ReplicaSets, Jobs, and CronJobs. If you want the policy to apply *only* to bare Pods or specific controllers, you must explicitly restrict this behavior using the `pod-policies.kyverno.io/autogen-controllers` annotation.
 
 </details>
 
-**Question 6**: What is the difference between `background: true` with `validationFailureAction: Audit` vs `validationFailureAction: Enforce`?
+**Question 6**: Your organization mandates that all workloads must drop `CAP_NET_RAW` privileges. You deploy a Kyverno policy with `validationFailureAction: Enforce` and `background: true`. Your manager panics, fearing that Kyverno will immediately start terminating running production Pods that violate the new rule. Is your manager's fear justified?
 
 <details>
 <summary>Show Answer</summary>
 
-With `Audit`, background scans generate PolicyReport entries for non-compliant existing resources but do not block anything. With `Enforce`, background scans still generate reports (they cannot delete or block existing resources), but new admissions will be blocked. Background scans themselves never delete or modify resources -- they only report.
+No, your manager's fear is completely unjustified because Kyverno background scans are strictly non-destructive. Regardless of whether `validationFailureAction` is set to `Enforce` or `Audit`, the background controller will only generate and update `PolicyReport` objects to highlight non-compliant existing resources. The `Enforce` action only actively blocks new resources or updates during the API admission cycle, meaning existing production Pods will remain untouched until they are restarted or modified.
 
 </details>
 
-**Question 7**: In a policy context, how do you call the Kubernetes API to fetch information about the namespace where a Pod is being created?
+**Question 7**: You need to create a policy that blocks Pod creation if the target Namespace is missing a `billing-code` annotation. Since the Pod manifest itself does not contain Namespace annotations, how can Kyverno retrieve this data during the admission request to make a policy decision?
 
 <details>
 <summary>Show Answer</summary>
 
-Use the `apiCall` context variable with `urlPath: "/api/v1/namespaces/{{ request.namespace }}"`. You can then use `jmesPath` to extract specific fields from the API response. This call is made at admission time with Kyverno's service account credentials.
+Kyverno can retrieve this data by utilizing an `apiCall` within a `context` block to dynamically query the cluster state during the admission cycle. By defining a target `urlPath` (e.g., `/api/v1/namespaces/{{ request.namespace }}`), Kyverno uses its own service account credentials to fetch the live Namespace object. You can then use a `jmesPath` filter to extract the `billing-code` annotation and evaluate it within your `validate` rule's preconditions or deny conditions.
 
 </details>
 
-**Question 8**: A precondition block has `any` at the top level containing two conditions. When does the rule execute?
+**Question 8**: You write a Kyverno policy to enforce specific limits, but you only want it to apply if the resource is either labeled with `tier: frontend` OR if it is being deployed into the `dmz` namespace. You place these two logic checks inside a `preconditions` block under an `any` array. Under what exact circumstances will Kyverno skip evaluating the rule entirely?
 
 <details>
 <summary>Show Answer</summary>
 
-The rule executes when at least one of the two conditions is true. The `any` keyword means OR logic -- if any condition in the list evaluates to true, the precondition passes and the rule is evaluated. Use `all` for AND logic where every condition must be true.
+Kyverno will skip the rule entirely only when *neither* of the conditions in the `any` block are met. The `any` keyword functions as a logical OR operator, meaning the precondition succeeds—and the rule executes—if the resource has the `tier: frontend` label, is in the `dmz` namespace, or both. The webhook will immediately bypass the rule evaluation for any workload that lacks the label *and* is deployed to a completely different namespace.
 
 </details>
 
-**Question 9**: You need to remove the `hostNetwork: true` field from a Pod spec using mutation. Can you use strategic merge patch for this? Why or why not?
+**Question 9**: A legacy Helm chart deploys a DaemonSet with `hostNetwork: true`, which violates your cluster's security posture. You cannot modify the Helm chart directly. A peer suggests using a Kyverno strategic merge patch to mutate the incoming resource and remove the field. Why will this peer's suggestion fail to solve the problem?
 
 <details>
 <summary>Show Answer</summary>
 
-No. Strategic merge patches cannot remove fields -- they can only add or replace values. To remove a field, you must use a JSON Patch (RFC 6902) with `op: remove` and `path: "/spec/hostNetwork"`.
+The peer's suggestion will fail because strategic merge patches in Kubernetes are fundamentally additive overlays, meaning they cannot natively remove or delete existing fields. While they are great for adding sidecars or updating values, providing a null or empty value in a merge patch often leads to unpredictable behavior or schema validation errors. To explicitly strip the `hostNetwork: true` field from the incoming manifest, you must implement an RFC 6902 JSON Patch with an `op: remove` directive targeting the precise JSON path.
 
 </details>
 

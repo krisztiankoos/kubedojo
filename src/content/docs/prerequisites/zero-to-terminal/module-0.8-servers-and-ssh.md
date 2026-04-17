@@ -4,8 +4,8 @@ slug: prerequisites/zero-to-terminal/module-0.8-servers-and-ssh
 sidebar:
   order: 9
 lab:
-  id: "prereq-0.7-servers-ssh"
-  url: "https://killercoda.com/kubedojo/scenario/prereq-0.7-servers-ssh"
+  id: "prereq-0.8-servers-ssh"
+  url: "https://killercoda.com/kubedojo/scenario/prereq-0.8-servers-ssh"
   duration: "25 min"
   difficulty: "beginner"
   environment: "ubuntu"
@@ -345,11 +345,13 @@ You'll use SSH to connect to these servers, troubleshoot problems, check logs, a
 
 ## Did You Know?
 
-- **SSH was invented in 1995 by a Finnish researcher** named Tatu Ylonen, after a password-sniffing attack hit his university network. Before SSH, people used `telnet` to connect to remote computers, which sent everything (including passwords) in plain text that anyone on the network could read. SSH encrypted the connection, making it secure. It was such a good idea that it became a global standard almost overnight.
+- **SSH is standardized as a secure remote access protocol.** RFC 4251 defines SSH as a protocol for secure remote login and other secure network services over an insecure network. That is the big reason it replaced older remote-login tools such as `telnet` for shell access.
 
-- **Port 22 was assigned personally.** When Tatu Ylonen created SSH, he needed a port number. He emailed the organization that manages port numbers (IANA), and they simply assigned him port 22. He got it within a day. Today, port 22 is one of the most recognized port numbers in computing.
+- **Port 22 is the IANA-assigned default port for SSH.** That is why many examples use 22 unless an administrator deliberately changes it.
 
-- **The International Space Station uses SSH.** Astronauts and ground control use SSH to securely manage the station's computer systems. The same tool you're learning about in this module is used to manage computers in orbit around Earth.
+- **SSH is a general-purpose operations tool.** OpenSSH describes itself as software for remote login and remote command execution, which is why you will see SSH used on cloud VMs, internal Linux servers, lab machines, and similar systems.
+
+**References**: RFC 4251, RFC 4250, and the OpenSSH documentation.
 
 ---
 
@@ -449,11 +451,12 @@ exit
 
 ### On Linux:
 
-Most Linux systems have SSH enabled by default. If not:
+On Linux, SSH server defaults vary by distribution and image. For example, many desktop installs do not expose an SSH server until you install it, while server-oriented images often make it available during setup. On Debian or Ubuntu systems where OpenSSH Server is missing or not running, you can install and start it with:
 
 ```bash
-sudo apt install -y openssh-server # Debian/Ubuntu
-sudo systemctl start sshd          # Start the SSH service
+sudo apt update
+sudo apt install -y openssh-server
+sudo systemctl enable --now ssh
 ```
 
 Then:
@@ -506,7 +509,7 @@ exit
 
 It would look, feel, and work exactly like the localhost exercise. The only difference is the physical location of the computer.
 
-**Success criteria**: You must run `hostname` in your terminal *before* connecting via SSH and record the output. Then, successfully open the SSH connection and run `hostname` again *after* connecting to prove you are in a different environment. You must capture this output difference, run at least one other command to verify the file system, and then properly disconnect. This proves you understand how to verify which machine you are actively controlling.
+**Success criteria**: You must run `hostname` in your terminal *before* connecting via SSH and record the output. Then, successfully open the SSH connection and run `hostname` again *after* connecting. If you are using `ssh localhost`, the hostname will usually stay the same because you are connecting back into the same machine through SSH; the proof is that you established an SSH session, ran commands inside it, and then disconnected cleanly. If you are connecting to a different machine, `hostname` should change. In either case, run at least one other command to verify the file system and then disconnect properly.
 
 ---
 

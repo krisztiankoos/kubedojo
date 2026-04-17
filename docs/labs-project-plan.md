@@ -146,8 +146,8 @@
 | `prereq-0.3-first-commands` | 0.3 First Commands | Ubuntu | 20 min | Beginner |
 | `prereq-0.4-files-directories` | 0.4 Files and Directories | Ubuntu | 25 min | Beginner |
 | `prereq-0.5-editing-files` | 0.5 Editing Files | Ubuntu | 20 min | Beginner |
-| `prereq-0.7-servers-ssh` | 0.7 Servers and SSH | Ubuntu | 25 min | Beginner |
-| `prereq-0.8-packages` | 0.8 Software and Packages | Ubuntu | 20 min | Beginner |
+| `prereq-0.8-servers-ssh` | 0.8 Servers and SSH | Ubuntu | 25 min | Beginner |
+| `prereq-0.9-packages` | 0.9 Software and Packages | Ubuntu | 20 min | Beginner |
 
 **Acceptance Criteria** (per lab):
 - [ ] `index.json` with title, environment, steps defined

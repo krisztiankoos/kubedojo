@@ -108,7 +108,7 @@ Your computer organizes all files and directories into a **tree** structure. It 
 | `/home/yourname/` | **Your home directory** — your personal space | Your personal workstation in the kitchen |
 | `~` | **Shorthand for your home directory** | A nickname for your workstation |
 | `/etc/` | System configuration files | The restaurant's policy manual and recipe standards |
-| `/tmp/` | Temporary files (deleted on reboot) | The prep table — used during cooking, cleaned up after |
+| `/tmp/` | Temporary files that may be cleaned automatically depending on system policy | The prep table — used during cooking, sometimes cleaned up automatically |
 | `/var/log/` | Log files (records of what happened) | The order history book |
 
 > The `~` (tilde) character is a shortcut. Instead of typing `/home/yourname/`, you can just type `~`. Your terminal knows what you mean. It's like having a nickname — easier to use than the full thing.
@@ -407,7 +407,7 @@ Don't worry about changing permissions yet — just know how to read them. We'll
 
 > 1. **The `/` root directory is called "root" because the directory tree grows downward.** Just like a real tree, the root is at the top and branches extend below. Every single file on your computer is somewhere on a branch that connects back up to `/`.
 >
-> 2. **The `~` shortcut was chosen because of keyboard layout.** On the ADM-3A terminal (made in the 1970s, one of the first video terminals), the Home key was on the same key as the `~` symbol. So `~` became the shorthand for the home directory, and it stuck for over 50 years.
+> 2. **The `~` shortcut expands to your home directory in the shell.** You do not need to memorize the full path such as `/home/yourname/` or `/Users/yourname/`. The exact historical reason `~` was chosen is often told as trivia, but the useful fact is simply that shells treat it as shorthand for your home directory.
 >
 > 3. **Linux treats everything as a file — including your keyboard.** When you press a key, the kernel writes that keypress to a file-like interface. Programs read from that interface to know what you typed. This "everything is a file" philosophy is why Linux can be controlled entirely from the terminal — there's always a file to read or write.
 

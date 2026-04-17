@@ -77,42 +77,6 @@ The API routes traffic based on layer and protocol. **Standard** routes like `HT
 
 The resource hierarchy of Gateway API separates concerns. As of `v1.5.1`, resources like `v1.GatewayClass`, `v1.Gateway`, `v1.ListenerSet`, `v1.HTTPRoute`, `v1.GRPCRoute`, `v1.TLSRoute`, `v1.BackendTLSPolicy`, and `v1.ReferenceGrant` are at GA support level.
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│                   Gateway API Resource Model                    │
-│                                                                 │
-│   ┌─────────────────────────────────────────────────────────┐  │
-│   │                   GatewayClass                           │  │
-│   │   (Defines controller - like IngressClass)              │  │
-│   │   Created by: Infrastructure Provider                    │  │
-│   └─────────────────────────┬───────────────────────────────┘  │
-│                             │                                   │
-│                             ▼                                   │
-│   ┌─────────────────────────────────────────────────────────┐  │
-│   │                      Gateway                             │  │
-│   │   (Infrastructure - listeners, addresses)                │  │
-│   │   Created by: Cluster Operator                          │  │
-│   └─────────────────────────┬───────────────────────────────┘  │
-│                             │                                   │
-│               ┌─────────────┼─────────────┐                    │
-│               │             │             │                    │
-│               ▼             ▼             ▼                    │
-│         ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│         │HTTPRoute │  │TCPRoute  │  │GRPCRoute │             │
-│         │          │  │          │  │          │             │
-│         │ App team │  │ App team │  │ App team │             │
-│         └────┬─────┘  └────┬─────┘  └────┬─────┘             │
-│              │             │             │                    │
-│              ▼             ▼             ▼                    │
-│         ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│         │ Services │  │ Services │  │ Services │             │
-│         └──────────┘  └──────────┘  └──────────┘             │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-```
-
-The identical hierarchy represented as a modern Mermaid graph:
-
 ```mermaid
 graph TD
     GC["GatewayClass<br>(Defines controller - like IngressClass)<br>Created by: Infrastructure Provider"]
@@ -393,30 +357,6 @@ spec:
       weight: 10           # 10% to canary
 ```
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│                   Traffic Splitting                             │
-│                                                                 │
-│   Incoming Traffic (100%)                                      │
-│        │                                                        │
-│        ▼                                                        │
-│   ┌─────────────────────────────────────────────────────────┐  │
-│   │                    HTTPRoute                             │  │
-│   │                                                          │  │
-│   │   weight: 90          weight: 10                        │  │
-│   │      │                    │                              │  │
-│   │      ▼                    ▼                              │  │
-│   │  ┌────────┐          ┌────────┐                         │  │
-│   │  │ Stable │          │ Canary │                         │  │
-│   │  │  (90%) │          │  (10%) │                         │  │
-│   │  └────────┘          └────────┘                         │  │
-│   └─────────────────────────────────────────────────────────┘  │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-```
-
-The identical traffic split represented as a Mermaid flowchart:
-
 ```mermaid
 flowchart TD
     In["Incoming Traffic (100%)"]
@@ -564,7 +504,7 @@ spec:
 
 ## Part 7: Cross-Namespace Routing
 
-> **What would happen if**: An HTTPRoute in namespace `team-a` tries to reference a Service in namespace `team-b`, but no ReferenceGrant exists in `team-b`? Does the route silently fail, return an error, or route somewhere unexpected?
+> **Pause and predict**: An HTTPRoute in namespace `team-a` tries to reference a Service in namespace `team-b`, but no ReferenceGrant exists in `team-b`? Does the route silently fail, return an error, or route somewhere unexpected?
 
 ### 7.1 ReferenceGrant
 
@@ -646,28 +586,6 @@ spec:
 ## Part 9: Debugging Gateway API
 
 ### 9.1 Debugging Workflow
-
-```text
-Gateway API Issue?
-    │
-    ├── kubectl get gatewayclass (check controller)
-    │
-    ├── kubectl get gateway (check status)
-    │       │
-    │       └── Not Ready? → Check conditions
-    │
-    ├── kubectl get httproute (check if attached)
-    │       │
-    │       └── Not attached? → Check parentRefs
-    │
-    ├── kubectl describe httproute (check conditions)
-    │       │
-    │       └── Errors? → Fix configuration
-    │
-    └── Check backend services
-```
-
-The identical workflow represented as a Mermaid diagram:
 
 ```mermaid
 flowchart TD
@@ -756,7 +674,7 @@ k get httproute my-route -o jsonpath='{.status.parents[0].conditions}'
 4. **An app team creates an HTTPRoute that references a backend Service in a different namespace, but traffic returns 404. The HTTPRoute status shows "ResolvedRefs: False". What is missing and how do you fix it?**
    <details>
    <summary>Answer</summary>
-   A `ReferenceGrant` is missing in the target namespace. Gateway API requires explicit permission for cross-namespace references as a security measure. Create a ReferenceGrant in the backend Service's namespace that allows HTTPRoutes from the app team's namespace to reference Services. Without it, the gateway controller refuses to resolve the backend reference. This is a deliberate security feature -- unlike Ingress where any namespace could reference any Service, Gateway API enforces explicit trust boundaries between namespaces.
+   A `ReferenceGrant` is missing in the target namespace. Gateway API requires explicit permission for cross-namespace references as a robust security measure. Create a ReferenceGrant in the backend Service's namespace that explicitly allows HTTPRoutes from the app team's namespace to reference its local Services. Without it, the gateway controller refuses to resolve the backend reference, dropping the traffic. This is a deliberate zero-trust feature—unlike legacy Ingress where any namespace could easily reference any Service, Gateway API enforces strict boundaries between isolated namespaces.
    </details>
 
 5. **You need to route requests to API v2 only when the header `X-API-Version: 2` is present, otherwise default to v1. With Ingress, this required a controller-specific annotation. Write the Gateway API HTTPRoute rules and explain why this is more portable.**
@@ -768,13 +686,13 @@ k get httproute my-route -o jsonpath='{.status.parents[0].conditions}'
 6. **You have created a TCPRoute using the Gateway API CRDs you downloaded from the standard channel. The resource fails to apply to the cluster. What is the likely cause?**
    <details>
    <summary>Answer</summary>
-   TCPRoute and UDPRoute are considered alpha and only exist in the Experimental channel of the Gateway API. You must install the experimental CRDs instead of the standard CRDs to utilize these resource kinds. Mixing and matching channels incorrectly can also trigger `safe-upgrades.gateway.networking.k8s.io` VAP rule rejections.
+   TCPRoute and UDPRoute are considered alpha and only exist in the Experimental channel of the Gateway API. You must install the experimental CRDs instead of the standard CRDs to utilize these Layer 4 resource kinds. Mixing and matching channels incorrectly can also trigger `safe-upgrades.gateway.networking.k8s.io` VAP rule rejections. This explicit separation prevents cluster operators from accidentally relying on unstable APIs for critical production workloads. Always verify your target environment's channel before defining non-HTTP routing rules.
    </details>
 
 7. **A developer reports that their `TLSRoute` containing Common Expression Language (CEL) validation is being rejected by the cluster API server, throwing an error about unsupported fields. They are running Kubernetes v1.30. How do you resolve this?**
    <details>
    <summary>Answer</summary>
-   You must upgrade the Kubernetes cluster. The Gateway API v1.5.0 specification leverages CEL validation for `TLSRoute` resources, which introduces a hard dependency on Kubernetes v1.31 or higher. Upgrading the cluster to the current stable v1.35 will natively support these VAP validations.
+   You must upgrade the Kubernetes cluster to a modern supported version like v1.34 or v1.35. The Gateway API v1.5.0 specification leverages Common Expression Language (CEL) validation for `TLSRoute` resources, which introduces a hard dependency on Kubernetes v1.31 or higher. Older Kubernetes API servers lack the requisite native CEL parsing capabilities embedded in the updated Custom Resource Definitions. Consequently, the API server immediately rejects the manifest because it encounters unknown validation fields. Keeping your cluster aligned with the latest stable releases guarantees full compatibility with advanced Gateway API security policies.
    </details>
 
 ---

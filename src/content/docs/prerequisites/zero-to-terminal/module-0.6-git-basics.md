@@ -327,20 +327,20 @@ git log
 
 Output:
 ```text
-commit 8f9e0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f (HEAD -> main)
+commit 9f8e7d6c5b4a39281716151413121110abcdef12 (HEAD -> main)
 Author: Alex Chen <alex.chen@example.com>
 Date:   Wed Oct 12 10:45:12 2023 -0400
 
     chore: add environment label to namespace
 
-commit a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h
+commit a1b2c3d4e5f60718293a4b5c6d7e8f9012345678
 Author: Alex Chen <alex.chen@example.com>
 Date:   Wed Oct 12 10:15:30 2023 -0400
 
     feat: add production namespace definition
 ```
 
-Notice the long string of letters and numbers (e.g., `8f9e0a1b2...`). This is the Commit Hash (specifically, a SHA-1 hash). It is a mathematically generated unique identifier for that specific snapshot. It encompasses the file contents, the author, the date, and the previous commit's hash. You use this hash if you ever need to revert your project to that exact point in time.
+Notice the 40-character hexadecimal strings shown above. In most repositories, this is the commit hash generated with SHA-1. It is a mathematically generated unique identifier for that specific snapshot and reflects the file contents, author, date, and parent commit. You can use this hash to inspect or restore that exact point in history. Newer repositories can also be configured to use SHA-256, but the examples in this module use the common SHA-1 format.
 
 For a more compact view, which is especially useful when you are investigating a repository with thousands of commits over several years, use the `--oneline` flag:
 
@@ -350,7 +350,7 @@ git log --oneline
 
 Output:
 ```text
-8f9e0a1 chore: add environment label to namespace
+9f8e7d6 chore: add environment label to namespace
 a1b2c3d feat: add production namespace definition
 ```
 
@@ -499,8 +499,8 @@ You should run `git diff` to view the exact line-by-line changes. This command c
 </details>
 
 <details>
-<summary>4. You just joined a new project. You clone the repository, but when you run `git push`, the terminal asks for your username and email, and tells you to run `git config`. Why is this necessary?</summary>
-Git requires an author identity for every commit to ensure accountability and traceability in collaborative environments. Without configuring your `user.name` and `user.email`, Git refuses to create snapshots because it cannot attribute the changes to a specific person. This identity information is permanently baked into the cryptographic hash of the commit. In the event of an infrastructure outage, this attribution allows the team to immediately know who to contact for context regarding the change.
+<summary>4. You just joined a new project. You clone the repository and discover Git does not know your `user.name` and `user.email`, so it tells you to run `git config` before committing. Why is this necessary, and how is that different from the authentication prompts you might see during `git push`?</summary>
+Git requires an author identity when you create a commit, so `user.name` and `user.email` must be configured before `git commit` can record who authored the snapshot. That identity is stored in the commit metadata for accountability and traceability. By contrast, prompts during `git push` are usually remote authentication checks from the hosting service, such as an HTTPS credential helper, a personal access token, or SSH keys. In short: commit identity is local metadata for `git commit`; push-time authentication proves you are allowed to upload to the remote.
 </details>
 
 <details>

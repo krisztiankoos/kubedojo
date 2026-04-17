@@ -61,7 +61,7 @@ A DaemonSet ensures that **all (or some) nodes run a copy of a pod**. As nodes a
 
 This behavior is fundamentally different from a Deployment, which simply ensures a specific *number* of pods are running somewhere in the cluster, completely regardless of which nodes they land on.
 
-Here is the modern architectural representation:
+Here is the architectural representation:
 
 ```mermaid
 flowchart TD
@@ -84,29 +84,6 @@ flowchart TD
     style DS2 fill:#f9f,stroke:#333,stroke-width:2px
     style DS3 fill:#f9f,stroke:#333,stroke-width:2px
     style DS4 fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
-```
-
-For historical completeness, here is the classical representation:
-
-```text
-┌────────────────────────────────────────────────────────────────┐
-│                       DaemonSet                                 │
-│                                                                 │
-│   Node 1              Node 2              Node 3               │
-│   ┌─────────────┐     ┌─────────────┐     ┌─────────────┐      │
-│   │ ┌─────────┐ │     │ ┌─────────┐ │     │ ┌─────────┐ │      │
-│   │ │ DS Pod  │ │     │ │ DS Pod  │ │     │ │ DS Pod  │ │      │
-│   │ │(fluentd)│ │     │ │(fluentd)│ │     │ │(fluentd)│ │      │
-│   │ └─────────┘ │     │ └─────────┘ │     │ └─────────┘ │      │
-│   │             │     │             │     │             │      │
-│   │ [App Pods] │     │ [App Pods] │     │ [App Pods] │      │
-│   │             │     │             │     │             │      │
-│   └─────────────┘     └─────────────┘     └─────────────┘      │
-│                                                                 │
-│   When Node 4 joins → DaemonSet automatically creates pod      │
-│   When Node 2 leaves → Pod is terminated                       │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
 ```
 
 ### 1.2 Common DaemonSet Use Cases
@@ -335,28 +312,6 @@ flowchart TD
     style PVC2 fill:#f96,stroke:#333,stroke-width:2px
 ```
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│                       StatefulSet                               │
-│                                                                 │
-│   Unlike Deployments, pods have stable identities:             │
-│                                                                 │
-│   ┌───────────────┐  ┌───────────────┐  ┌───────────────┐      │
-│   │    web-0      │  │    web-1      │  │    web-2      │      │
-│   │  (always 0)   │  │  (always 1)   │  │  (always 2)   │      │
-│   │               │  │               │  │               │      │
-│   │ PVC: data-0   │  │ PVC: data-1   │  │ PVC: data-2   │      │
-│   │ DNS: web-0... │  │ DNS: web-1... │  │ DNS: web-2... │      │
-│   └───────────────┘  └───────────────┘  └───────────────┘      │
-│                                                                 │
-│   If web-1 dies and restarts:                                  │
-│   - Still named web-1 (not web-3)                              │
-│   - Reattaches to PVC data-1                                   │
-│   - Same DNS name: web-1.nginx.default.svc.cluster.local       │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-```
-
 ### 3.2 StatefulSet Use Cases
 
 - **StatefulSets**: When pods need stable identities and persistent storage (databases, distributed systems).
@@ -473,16 +428,23 @@ data-web-2
 
 ### 4.1 Ordered Creation and Deletion
 
-StatefulSets enforce strict ordering to prevent race conditions during distributed cluster formation.
+StatefulSets enforce strict ordering to prevent race conditions during distributed cluster formation. Each pod must wait for the previous pod in the sequence to be Running and Ready.
 
-```text
-Scaling Up (0 → 3):
-web-0 created and ready → web-1 created and ready → web-2 created
-
-Scaling Down (3 → 1):
-web-2 terminated → web-1 terminated → web-0 remains
-
-Each pod waits for previous to be Running and Ready
+```mermaid
+flowchart LR
+    subgraph ScaleUp [Scaling Up: 0 to 3]
+        direction LR
+        S0[web-0 ready] --> S1[web-1 ready] --> S2[web-2 created]
+    end
+    
+    subgraph ScaleDown [Scaling Down: 3 to 1]
+        direction LR
+        D2[web-2 terminated] --> D1[web-1 terminated] --> D0[web-0 remains]
+    end
+    
+    ScaleUp ~~~ ScaleDown
+    
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;
 ```
 
 ### 4.2 Pod Management Policy
@@ -584,25 +546,6 @@ flowchart TD
     style STS fill:#fbb,stroke:#333,stroke-width:2px
 ```
 
-```text
-┌────────────────────────────────────────────────────────────────┐
-│                   Choosing the Right Controller                 │
-│                                                                 │
-│   Does each pod need unique identity?                          │
-│         │                                                       │
-│         ├── No ──► Does each node need one pod?                │
-│         │                │                                      │
-│         │                ├── Yes ──► DaemonSet                 │
-│         │                │                                      │
-│         │                └── No ──► Deployment                 │
-│         │                                                       │
-│         └── Yes ──► Does it need persistent storage?           │
-│                          │                                      │
-│                          └── Yes/No ──► StatefulSet            │
-│                                                                 │
-└────────────────────────────────────────────────────────────────┘
-```
-
 > **War Story: The Database Disaster**
 >
 > A team deployed PostgreSQL using a Deployment with a PVC. It worked—until the pod was rescheduled. The new pod got a different IP, replication broke, and the standby couldn't find the primary. Switching to a StatefulSet with stable network identity fixed everything. Use the right tool!
@@ -699,43 +642,43 @@ nslookup nginx-headless
 1. **Your monitoring team needs exactly one log collector pod on every node, including nodes added later. A colleague suggests using a Deployment with `replicas` set to the node count and pod anti-affinity. Why would a DaemonSet be a better choice, and what happens when a new node joins the cluster?**
    <details>
    <summary>Answer</summary>
-   A DaemonSet is better because it automatically creates a pod on every new node that joins the cluster and removes pods from nodes that leave. With a Deployment and anti-affinity, you'd need to manually increase the replica count each time a node is added, and the anti-affinity only *prefers* spreading -- it doesn't guarantee one-per-node. Additionally, DaemonSets can tolerate taints that normal Deployments cannot, ensuring coverage on special-purpose nodes like GPU nodes or control plane nodes.
+   A DaemonSet is better because it automatically creates a pod on every new node that joins the cluster and removes pods from nodes that leave. With a Deployment and anti-affinity, you'd need to manually increase the replica count each time a node is added, and the anti-affinity only *prefers* spreading -- it doesn't guarantee one-per-node. Additionally, DaemonSets can tolerate taints that normal Deployments cannot, ensuring coverage on special-purpose nodes like GPU nodes or control plane nodes. This ensures that no node is ever left unmonitored or unprotected, regardless of how dynamic the cluster scaling behavior might be.
    </details>
 
 2. **You're deploying a 3-node PostgreSQL cluster with primary-standby replication. The standby nodes need to connect to the primary by a stable DNS name, and each node needs its own persistent volume that survives pod restarts. Which controller do you use, and what additional resource is required? What happens if `web-1` (a standby) crashes?**
    <details>
    <summary>Answer</summary>
-   Use a StatefulSet with a headless Service (`clusterIP: None`). The headless Service is required because it provides stable DNS names like `web-0.postgres.default.svc.cluster.local` for each pod. The `volumeClaimTemplates` field ensures each pod gets its own PVC (e.g., `data-web-0`, `data-web-1`). When `web-1` crashes, the StatefulSet controller recreates it with the exact same name `web-1` (not `web-3`), and it reattaches to its original PVC `data-web-1`, preserving all data. The standby configuration pointing to `web-0.postgres` continues to work because the DNS name is stable.
+   Use a StatefulSet with a headless Service (`clusterIP: None`). The headless Service is required because it provides stable DNS names like `web-0.postgres.default.svc.cluster.local` for each pod, allowing the standby nodes to reliably locate the primary. The `volumeClaimTemplates` field ensures each pod gets its own dedicated PVC (e.g., `data-web-0`, `data-web-1`) that persists independently of the pod lifecycle. When `web-1` crashes, the StatefulSet controller recreates it with the exact same name `web-1` (not `web-3`), and it safely reattaches to its original PVC `data-web-1`, preserving all replicated data. The standby configuration pointing to `web-0.postgres` continues to work flawlessly because the DNS name remains completely stable throughout the outage.
    </details>
 
 3. **You deleted a StatefulSet with `kubectl delete sts web`, but your storage costs haven't decreased. A colleague says the data should have been cleaned up automatically. What actually happened, and what must you do to reclaim the storage?**
    <details>
    <summary>Answer</summary>
-   PVCs created by a StatefulSet's `volumeClaimTemplates` are NOT automatically deleted when the StatefulSet is deleted. This is an intentional safety feature to prevent accidental data loss -- database data is precious. The PVCs (e.g., `data-web-0`, `data-web-1`, `data-web-2`) still exist and are bound to their PersistentVolumes, consuming storage. You must manually delete them with `kubectl delete pvc data-web-0 data-web-1 data-web-2`. Always audit PVCs after deleting StatefulSets to avoid ongoing storage costs.
+   PVCs created by a StatefulSet's `volumeClaimTemplates` are NOT automatically deleted when the StatefulSet is deleted. This is an intentional, critical safety feature designed by Kubernetes to prevent catastrophic accidental data loss -- because database state is often the most precious asset in a cluster. The PVCs (e.g., `data-web-0`, `data-web-1`, `data-web-2`) still exist and remain bound to their underlying PersistentVolumes, which continues to consume storage backend capacity. To fully reclaim the storage, you must explicitly and manually delete them using a command like `kubectl delete pvc data-web-0 data-web-1 data-web-2`. You should always meticulously audit your orphaned PVCs after decommissioning StatefulSets to avoid accumulating phantom storage costs.
    </details>
 
-4. **You need to scale a StatefulSet from 3 replicas to 5. In what order are the new pods created? Then you scale back down to 2. In what order are pods terminated, and why does this ordering matter for distributed databases?**
+4. **Your e-commerce site is expecting heavy traffic, so you need to scale a distributed database StatefulSet from 3 replicas to 5. In what specific order are the new pods created? Once the traffic spike subsides, you scale back down to 2. In what precise order are pods terminated, and why does this rigid ordering matter so much for distributed databases?**
    <details>
    <summary>Answer</summary>
-   Scaling up: `web-3` is created first and must become Running and Ready before `web-4` is created. Scaling down: `web-4` is terminated first, then `web-3`, then `web-2`. This reverse-ordinal ordering matters for distributed databases because higher-numbered replicas are typically the newest members of the cluster. Removing them first ensures the most established members (which may hold leadership roles or have the most data) are the last to be removed. For example, in a database cluster, `web-0` is often the primary, and removing it last prevents unnecessary leader elections during scale-down.
+   During the scale-up phase, `web-3` is created first and must achieve a Running and Ready state before `web-4` is even scheduled. When scaling down, `web-4` is terminated first, followed by `web-3`, and finally `web-2`. This strict reverse-ordinal ordering matters for distributed systems because higher-numbered replicas are typically the newest, least-authoritative members of the cluster. Removing the newest members first ensures the most established pods—which often hold critical leadership roles, primary shards, or the most complete data sets—are the last to be disrupted. For example, in a database cluster, `web-0` is frequently the elected primary, and ensuring it is removed last prevents chaotic, unnecessary leader elections during routine scale-down operations.
    </details>
 
-5. **You need to test a risky new configuration on just a single instance of your 5-replica StatefulSet without affecting the rest of the cluster. How can you accomplish this gracefully using native StatefulSet features?**
+5. **You need to test a risky new configuration on just a single instance of your 5-replica StatefulSet without affecting the rest of the production cluster. How can you accomplish this gracefully using native StatefulSet features?**
    <details>
    <summary>Answer</summary>
-   You can utilize the `partition` field within the `rollingUpdate` strategy. By setting `partition: 4`, only the pod with ordinal 4 (`web-4`) will be updated to the new configuration. The pods `web-0` through `web-3` will remain untouched. Once you have verified the configuration on `web-4`, you can gradually lower the partition number to roll the update out to the remaining pods.
+   You can utilize the `partition` field within the StatefulSet's `rollingUpdate` update strategy. By setting `partition: 4`, only the pod with ordinal 4 (the highest ordinal, `web-4`) will be updated to the new configuration or image version. The existing pods `web-0` through `web-3` will completely ignore the update and remain running the old configuration. Once you have verified the new configuration behaves correctly on `web-4` under real traffic, you can gradually lower the partition number to slowly roll the update out to the remaining pods. This native mechanism provides a built-in, highly controlled canary deployment strategy specifically tailored for stateful workloads.
    </details>
 
-6. **You have deployed a DaemonSet intended to run a security scanner on every node, but you notice it is completely absent from all three of your control plane nodes. What is the most likely cause, and how do you resolve it?**
+6. **You have deployed a DaemonSet intended to run a security scanner on every node, but during an audit you notice it is completely absent from all three of your control plane nodes. What is the most likely architectural cause, and how do you resolve it to ensure full coverage?**
    <details>
    <summary>Answer</summary>
-   The control plane nodes are likely tainted with `node-role.kubernetes.io/control-plane:NoSchedule` to prevent standard workloads from running on them. The DaemonSet controller respects taints by default. To force the DaemonSet to run on these nodes, you must add a matching `toleration` to the DaemonSet's pod template spec that explicitly tolerates the control plane taint.
+   The control plane nodes are almost certainly tainted with `node-role.kubernetes.io/control-plane:NoSchedule` to aggressively prevent standard user workloads from running on them and competing for critical resources. Even though DaemonSets are designed to run everywhere, the DaemonSet controller still respects these node taints by default. To force the DaemonSet to schedule its pods on these specific nodes, you must add a matching `toleration` to the DaemonSet's pod template spec. This toleration explicitly declares that the DaemonSet is authorized to ignore the control plane taint, allowing the scheduler to place the security scanner pod there and achieve 100% cluster coverage.
    </details>
 
-7. **A developer is confused why running `nslookup my-database` on a StatefulSet's headless service returns a list of IPs instead of a single load-balancer IP. What is happening fundamentally under the hood with CoreDNS?**
+7. **A developer is confused why running `nslookup my-database` on a StatefulSet's headless service returns a list of individual pod IPs instead of a single, load-balanced Virtual IP. What is happening fundamentally under the hood with CoreDNS, and why is this necessary for stateful applications?**
    <details>
    <summary>Answer</summary>
-   Because the service is defined with `clusterIP: None` (making it headless), Kubernetes does not allocate a virtual IP or configure kube-proxy iptables rules for it. Instead, CoreDNS directly monitors the Endpoints associated with the service's selector. It creates multiple standard A records—one for each underlying pod IP—and returns the full list of IPs to the client, allowing the client application to handle its own connection pooling or target specific pods directly.
+   Because the service is defined with `clusterIP: None` (making it explicitly headless), Kubernetes does not allocate a virtual IP or configure kube-proxy iptables rules to load-balance traffic for it. Instead, CoreDNS directly monitors the Endpoints associated with the service's selector and bypasses the proxy layer entirely. It creates multiple standard DNS A records—one for each underlying pod IP—and returns the full list of IPs directly to the client. This behavior is essential for stateful systems, as it allows the client application to handle its own connection pooling, discover peer nodes, or connect directly to a specific primary node rather than being arbitrarily load-balanced across replicas.
    </details>
 
 ---

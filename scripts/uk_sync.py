@@ -150,7 +150,7 @@ def _count_pattern(content: str, pattern: str) -> int:
     return len(re.findall(pattern, content, re.MULTILINE))
 
 
-def detect_sync(uk_path: Path) -> SyncReport | None:
+def detect_sync(uk_path: Path, *, strict_commit: bool = False) -> SyncReport | None:
     """Compare a UK file against its EN counterpart."""
     # Find EN equivalent
     rel = uk_path.relative_to(UK_ROOT)
@@ -174,7 +174,9 @@ def detect_sync(uk_path: Path) -> SyncReport | None:
     )
 
     # 1. Commit-based staleness check
-    if en_commit and uk_synced and en_commit != uk_synced:
+    commit_mismatch = bool(en_commit and uk_synced and en_commit != uk_synced)
+
+    if commit_mismatch:
         report.issues.append(SyncIssue(
             report.uk_path, report.en_path,
             "STALE_COMMIT", "WARNING",
@@ -266,7 +268,9 @@ def detect_sync(uk_path: Path) -> SyncReport | None:
     errors = [i for i in report.issues if i.severity == "ERROR"]
     commits_match = en_commit and uk_synced and en_commit == uk_synced
 
-    if commits_match:
+    if strict_commit and commit_mismatch:
+        report.status = "stale"
+    elif commits_match:
         report.status = "synced"
     elif errors:
         report.status = "stale"
@@ -284,7 +288,12 @@ def detect_sync(uk_path: Path) -> SyncReport | None:
 # ---------------------------------------------------------------------------
 
 
-def fix_module(uk_path: Path, report: SyncReport | None = None) -> bool:
+def fix_module(
+    uk_path: Path,
+    report: SyncReport | None = None,
+    *,
+    strict_commit: bool = False,
+) -> bool:
     """Fix a stale UK module by re-translating from EN."""
     rel = uk_path.relative_to(UK_ROOT)
     en_path = CONTENT_ROOT / rel
@@ -294,7 +303,7 @@ def fix_module(uk_path: Path, report: SyncReport | None = None) -> bool:
         return False
 
     if report is None:
-        report = detect_sync(uk_path)
+        report = detect_sync(uk_path, strict_commit=strict_commit)
 
     if report is None or report.status == "synced":
         print(f"  ✓ Already synced: {uk_path.name}")
@@ -709,7 +718,7 @@ def cmd_status(args):
     uk_files = _find_content_files(uk_dir, uk=True)
     stale_count = 0
     for uk_path in uk_files:
-        report = detect_sync(uk_path)
+        report = detect_sync(uk_path, strict_commit=args.strict_commit)
         if report and report.status != "synced":
             stale_count += 1
 
@@ -776,7 +785,7 @@ def cmd_detect(args):
     warnings_total = 0
 
     for uk_path in uk_files:
-        report = detect_sync(uk_path)
+        report = detect_sync(uk_path, strict_commit=args.strict_commit)
         if report is None:
             continue
 
@@ -849,7 +858,7 @@ def cmd_fix(args):
         print(f"File not found: {args.file}")
         sys.exit(1)
 
-    ok = fix_module(uk_path)
+    ok = fix_module(uk_path, strict_commit=args.strict_commit)
     sys.exit(0 if ok else 1)
 
 
@@ -868,13 +877,13 @@ def cmd_fix_section(args):
     failed = 0
 
     for uk_path in uk_files:
-        report = detect_sync(uk_path)
+        report = detect_sync(uk_path, strict_commit=args.strict_commit)
         if report is None or report.status == "synced":
             skipped += 1
             continue
 
         print(f"\n  Fixing: {uk_path.name} ({len(report.issues)} issues)")
-        ok = fix_module(uk_path, report)
+        ok = fix_module(uk_path, report, strict_commit=args.strict_commit)
         if ok:
             fixed += 1
         else:
@@ -978,7 +987,7 @@ def _expand_sections(sections: list[str]) -> list[str]:
     return expanded
 
 
-def _run_e2e_section(section: str) -> tuple[int, int, int]:
+def _run_e2e_section(section: str, *, strict_commit: bool = False) -> tuple[int, int, int]:
     """Run e2e on one section. Returns (fixed, translated, failed)."""
     print(f"\n{'='*60}")
     print(f"  UK Translation: {section}")
@@ -994,10 +1003,10 @@ def _run_e2e_section(section: str) -> tuple[int, int, int]:
     if uk_dir:
         uk_files = _find_content_files(uk_dir, uk=True)
         for uk_path in uk_files:
-            report = detect_sync(uk_path)
+            report = detect_sync(uk_path, strict_commit=strict_commit)
             if report and report.status != "synced":
                 print(f"\n  Re-translating stale: {uk_path.name}")
-                if fix_module(uk_path, report):
+                if fix_module(uk_path, report, strict_commit=strict_commit):
                     fixed += 1
                     consecutive_failures = 0
                 else:
@@ -1036,7 +1045,7 @@ def cmd_e2e(args):
     for section in sections:
         if not (CONTENT_ROOT / section).exists():
             continue
-        fixed, translated, failed = _run_e2e_section(section)
+        fixed, translated, failed = _run_e2e_section(section, strict_commit=args.strict_commit)
         total_fixed += fixed
         total_translated += translated
         total_failed += failed
@@ -1082,19 +1091,23 @@ examples:
     # status
     stp = subparsers.add_parser("status", help="Combined translation status report")
     stp.add_argument("--section", help="Limit to section (e.g., prerequisites, k8s/cka)")
+    stp.add_argument("--strict-commit", action="store_true", help="Treat en_commit mismatch as stale")
 
     # detect
     dp = subparsers.add_parser("detect", help="Detailed stale detection with section hashing")
     dp.add_argument("--section", help="Limit to section (e.g., k8s/cka)")
     dp.add_argument("--json", action="store_true", help="Output as JSON")
+    dp.add_argument("--strict-commit", action="store_true", help="Treat en_commit mismatch as stale")
 
     # fix
     fp = subparsers.add_parser("fix", help="Fix a single stale UK module")
     fp.add_argument("file", help="UK file path")
+    fp.add_argument("--strict-commit", action="store_true", help="Treat en_commit mismatch as stale")
 
     # fix-section
     fsp = subparsers.add_parser("fix-section", help="Fix all stale UK modules in a section")
     fsp.add_argument("section", help="Section path (e.g., k8s/cka)")
+    fsp.add_argument("--strict-commit", action="store_true", help="Treat en_commit mismatch as stale")
 
     # translate
     tp = subparsers.add_parser("translate", help="Create new UK translation from EN module")
@@ -1123,6 +1136,7 @@ examples:
 safe to re-run: skips synced files, skips existing UK files
 """, formatter_class=argparse.RawDescriptionHelpFormatter)
     ep.add_argument("sections", nargs="*", help="track aliases or section paths (default: all)")
+    ep.add_argument("--strict-commit", action="store_true", help="Treat en_commit mismatch as stale")
 
     args = parser.parse_args()
 

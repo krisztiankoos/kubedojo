@@ -94,7 +94,7 @@ More RAM = More counter space = More things open at once
 
 **When RAM fills up**, your computer gets slow. Just like a chef with no counter space has to keep putting things away and getting them back out, your computer starts "swapping" data back and forth to disk. This is painfully slow.
 
-In 2017, a GitLab engineer accidentally deleted a production database. The recovery was slow partly because backup processes were competing for RAM and disk I/O with production traffic — understanding these resources isn't academic, it's what prevents outages.
+In 2017, a GitLab engineer accidentally deleted a production database. GitLab's postmortem shows the recovery was complex and depended on the state of replicas and backups -- understanding how systems recover under failure is not academic, it's what prevents outages.
 
 > **Pause and predict**: You have 8 GB of RAM and you open a web browser with 30 tabs, a video editor, and a music player — all at once. What do you think happens? If you guessed "the computer gets painfully slow" — you're right. Each program needs counter space, and 30 browser tabs alone can eat 4-6 GB. The OS starts shuffling data between RAM and disk (swapping), and everything grinds to a crawl.
 
@@ -140,14 +140,16 @@ The OS:
 ```
 The three main operating systems:
 
-  Windows  → The most common (used by ~67% of desktop computers)
+  Windows  → The most common desktop OS (StatCounter: 60.8% worldwide, March 2026)
   macOS    → Apple's system (what runs on Macs)
-  Linux    → The open-source one (runs most of the world's servers)
+  Linux    → The open-source family used heavily in servers and cloud infrastructure
 ```
 
-Here's a fact that will matter a LOT in your Kubernetes journey: **almost every server in the world runs Linux.** Your laptop might run Windows or macOS, but the cloud? That's Linux territory. That's why we'll be learning Linux commands in the next modules.
+Here's the part that will matter a LOT in your Kubernetes journey: Linux is the default environment you'll see in most Kubernetes tutorials and many production clusters, but it is not the only option. The Kubernetes docs say worker nodes can run either Linux or Microsoft Windows, while the control plane stays on Linux. That's why we'll be learning Linux commands in the next modules.
 
-> **Stop and think**: Why do you think servers don't use Windows or macOS? Think about what servers need — they run 24/7, they don't need a graphical interface, they need to be stable and efficient. Linux is free, customizable, and uses fewer resources because it doesn't need to render a desktop. That's why even Microsoft runs Linux on most of its Azure cloud servers.
+> **Stop and think**: Why is Linux so common in cloud and Kubernetes environments, even though Windows servers exist? Servers usually prioritize automation, remote administration, predictable behavior, and low overhead. Linux fits that model well, which is why it shows up so often in cloud-native docs and labs.
+
+Checked April 15, 2026: [StatCounter Desktop OS Market Share Worldwide](https://gs.statcounter.com/os-market-share/desktop/worldwide/) and [Kubernetes Windows in Kubernetes](https://kubernetes.io/docs/concepts/windows/).
 
 ---
 
@@ -207,7 +209,7 @@ Kubernetes is a system that manages **thousands of these kitchens** (computers) 
 - What to do when a kitchen breaks down (move the orders to another kitchen)
 - How to add more kitchens when the restaurant gets busy
 
-You can't manage thousands of kitchens if you don't understand how *one* kitchen works. That's what this module gave you. Companies pay per GB of RAM and per CPU core in the cloud. AWS charges ~$0.05/hour for a server with 8 GB RAM. Misunderstanding these resources literally costs money.
+You can't manage thousands of kitchens if you don't understand how *one* kitchen works. That's what this module gave you. In the cloud, pricing depends on the instance type, operating system, region, and purchase model. For example, AWS listed a Linux `t2.large` instance with 8 GiB of RAM in `us-east-1` at `$0.0928/hour` on April 15, 2026. Misunderstanding these resources literally costs money. Source: [AWS EC2 T2 Instances](https://aws.amazon.com/ec2/instance-types/t2/).
 
 ---
 
@@ -263,10 +265,10 @@ You can't manage thousands of kitchens if you don't understand how *one* kitchen
    A bigger hard drive will not make their computer faster, because storage capacity does not affect processing speed. That would be like building a bigger pantry and expecting the chef to cook faster. They should first check their RAM and CPU usage to see if the system is overloaded with too many open programs. If their RAM is entirely full, the computer is likely "swapping" data back and forth to the slow disk, which causes the sluggishness. Upgrading the RAM or switching to an SSD (if they have an older HDD) would be more effective upgrades.
    </details>
 
-5. **Your team is deploying a new web application to the cloud and debating whether to use Windows or Linux servers. Based on what you know about operating systems, why will they almost certainly choose Linux?**
+5. **Your team is deploying a new web application to the cloud and debating whether to use Windows or Linux servers. Based on what you know about operating systems, why is Linux usually the default choice for Kubernetes-based workloads even though Kubernetes can also use Windows worker nodes?**
    <details>
    <summary>Answer</summary>
-   They will almost certainly choose Linux because it is optimized for server environments where stability and efficiency are critical. Unlike desktop operating systems, Linux can run perfectly without a graphical user interface, which means it consumes significantly less RAM and CPU overhead. This allows more hardware resources to be dedicated entirely to running the actual application instead of rendering screens. Furthermore, Linux is open-source and free, making it the cost-effective standard foundation for cloud infrastructure and platforms like Kubernetes. Its command-line focus also makes it far easier to automate at scale.
+   Linux is usually the default choice because most Kubernetes examples, container images, and operational tooling assume Linux, and Kubernetes control planes run on Linux. Windows worker nodes are supported, but teams typically use them only when an application depends on Windows-specific software or Windows containers. If the application has no Windows-only requirement, Linux is usually the simpler and more common platform to automate and operate at scale.
    </details>
 
 6. **You are running a database server for your company's e-commerce site, and during a major sale, the server crashes. The monitoring logs show that CPU utilization was at 20%, but memory usage hit 100% right before the crash. What caused the crash, and how should you fix it?**

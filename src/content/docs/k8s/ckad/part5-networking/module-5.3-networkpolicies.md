@@ -65,8 +65,8 @@ flowchart TD
 
     subgraph Policy ["Isolated Architecture (Pod B Selected)"]
         direction LR
-        A2[Pod A<br>frontend] -->|✓ allowed| B2[Pod B<br>backend]
-        C2[Pod C<br>other] -.->|X blocked| B2
+        A2[Pod A<br>frontend] -->|Allowed| B2[Pod B<br>backend]
+        C2[Pod C<br>other] -.->|Blocked| B2
         style Policy fill:none,stroke:#666,stroke-dasharray: 5 5
         style B2 stroke:#f00,stroke-width:2px
     end
@@ -470,49 +470,49 @@ k get pods -n kube-system | grep -E 'calico|cilium|weave'
 <summary>1. After applying a default-deny ingress NetworkPolicy to the `production` namespace, the backend pods can no longer receive traffic from the frontend pods in the same namespace. Both frontend and backend pods are correctly labeled. What do you need to create to restore communication while keeping the default deny in place?</summary>
 
 **Answer:** 
-Create an additional NetworkPolicy that explicitly allows ingress to the backend pods from the frontend pods. The default-deny policy selects all pods and provides no ingress rules, blocking everything. Since NetworkPolicies are additive, you add a new policy that selects the backend pods (`podSelector: matchLabels: tier: backend`) and allows ingress from frontend pods (`from: - podSelector: matchLabels: tier: frontend`). Both policies apply simultaneously — the deny policy blocks all traffic by default, and the allow policy opens the specific path needed. You don't need to modify or delete the deny policy.
+Create an additional NetworkPolicy that explicitly allows ingress to the backend pods from the frontend pods. The default-deny policy selects all pods and provides no ingress rules, blocking everything. Since NetworkPolicies are additive, you add a new policy that selects the backend pods (`podSelector: matchLabels: tier: backend`) and allows ingress from frontend pods (`from: - podSelector: matchLabels: tier: frontend`). Both policies apply simultaneously — the deny policy blocks all traffic by default, and the allow policy opens the specific path needed. You never need to modify or delete the underlying deny policy to restore targeted access.
 </details>
 
 <details>
 <summary>2. A developer creates a NetworkPolicy with this `from` rule and is confused about what it allows. The policy has one `from` item containing both `namespaceSelector: matchLabels: env: staging` and `podSelector: matchLabels: role: api`. Does this allow traffic from ALL pods in staging namespaces OR only `role: api` pods in staging namespaces?</summary>
 
 **Answer:** 
-When `namespaceSelector` and `podSelector` are in the SAME `from` list item (same YAML block, same indentation level under a single dash), they combine with AND logic. This allows traffic only from pods labeled `role: api` that are in namespaces labeled `env: staging`. If they were separate items (each under its own dash), it would be OR logic — allowing traffic from any pod in staging namespaces OR any `role: api` pod in the local namespace. This AND vs OR distinction is one of the most common sources of NetworkPolicy bugs, and it hinges entirely on YAML indentation.
+When `namespaceSelector` and `podSelector` are in the SAME `from` list item (same YAML block, same indentation level under a single dash), they combine with AND logic. This allows traffic only from pods labeled `role: api` that are simultaneously in namespaces labeled `env: staging`. If they were formatted as separate list items (each under its own dash), it would implement OR logic, allowing traffic from any pod in staging namespaces OR any `role: api` pod in the local namespace. This AND vs OR distinction is one of the most common sources of NetworkPolicy bugs, and it hinges entirely on YAML indentation. Always double-check your list items when combining selectors to ensure you are not accidentally opening up access to an entire namespace.
 </details>
 
 <details>
 <summary>3. You apply a default-deny egress NetworkPolicy to a namespace. Immediately, all pods lose the ability to connect to any Service by name, even Services within the same namespace. Connections by IP address still work. What is happening and how do you fix it?</summary>
 
 **Answer:** 
-DNS resolution is blocked. When pods connect to a Service by name (e.g., `http://my-service.svc.cluster.local`), they first make a DNS query to kube-dns (CoreDNS) on UDP port 53. The default-deny egress policy blocks all outgoing traffic, including DNS queries. Connections by IP bypass DNS so they still work. Fix by adding an egress NetworkPolicy that allows UDP port 53 to the kube-dns pods: allow egress to `namespaceSelector: {}` with `podSelector: matchLabels: k8s-app: kube-dns` on port 53 UDP. This is so common that you should always pair a default-deny egress policy with a DNS allow policy.
+Cluster DNS resolution has been completely blocked by the new default policy. When pods attempt to connect to a Service by name (e.g., `http://my-service.svc.cluster.local`), they must first make a DNS query to CoreDNS on UDP port 53. The default-deny egress policy drops all outgoing network packets indiscriminately, including these critical DNS queries. Because connections by IP address bypass DNS lookups, they continue to function normally. You must fix this by deploying an explicit egress NetworkPolicy that allows UDP port 53 to the `kube-system` CoreDNS pods. This issue is so ubiquitous that administrators should universally pair any default-deny egress policy with a corresponding DNS allow policy.
 </details>
 
 <details>
-<summary>4. Your cluster uses Flannel as the CNI plugin. You create a NetworkPolicy to isolate your database pods, but when you test, any pod can still connect to the database. The NetworkPolicy YAML is correct and `kubectl get netpol` shows it exists. What is wrong?</summary>
+<summary>4. Your cluster uses Flannel as the CNI plugin. You create a NetworkPolicy to isolate your database pods, but when you test, any pod can still connect to the database. The NetworkPolicy YAML is syntactically correct and `kubectl get netpol` shows it successfully created. What is wrong?</summary>
 
 **Answer:** 
-Flannel does not support NetworkPolicies. NetworkPolicies are a Kubernetes API concept, but enforcement is handled by the CNI plugin. If the CNI doesn't support them, the policies are stored in the API server (so `kubectl get netpol` shows them) but completely ignored at the network level. You need a CNI that supports NetworkPolicies — Calico, Cilium, or Weave are the most common choices. Some teams run Calico alongside Flannel specifically for NetworkPolicy support. This is a critical detail because everything looks correct from the Kubernetes API perspective, but no enforcement happens at the network layer.
+The Flannel CNI plugin does not natively support the enforcement of Kubernetes NetworkPolicies. NetworkPolicies are purely a declarative Kubernetes API concept; the actual firewalling and packet dropping must be handled entirely by the underlying CNI plugin. Because Flannel lacks this capability, the policies are successfully stored in the API server (making them visible via `kubectl`) but are completely ignored at the network data plane. To enforce these rules, you must migrate to a CNI that explicitly supports NetworkPolicies, such as Calico, Cilium, or Weave. In some environments, administrators run Calico alongside Flannel specifically to provide this missing policy enforcement layer.
 </details>
 
 <details>
 <summary>5. You create a NetworkPolicy that includes an empty `podSelector: {}` and an empty `ingress: []` block, but you completely forget to include the `policyTypes` array. What happens to the traffic in this namespace?</summary>
 
 **Answer:** 
-The API server will automatically infer the `policyTypes`. Because you included an `ingress` array (even an empty one), Kubernetes assumes this is an Ingress policy and adds `- Ingress` to the `policyTypes`. The end result is a default-deny ingress posture. However, because `egress` was not mentioned and `policyTypes` did not explicitly list `- Egress`, egress traffic remains fully permitted. Relying on this inference is dangerous; always specify `policyTypes` explicitly.
+The Kubernetes API server will automatically attempt to infer the `policyTypes` based on the populated fields. Because you included an `ingress` array in the specification (even an empty one), Kubernetes assumes this is an Ingress policy and silently injects `- Ingress` into the `policyTypes` list. The end result is a default-deny ingress posture applied to all pods in the namespace. However, because `egress` was not mentioned and `policyTypes` did not explicitly list `- Egress`, egress traffic remains fully permitted. Relying on this implicit behavior is a dangerous operational practice; always define your `policyTypes` explicitly to guarantee intent.
 </details>
 
 <details>
 <summary>6. Security mandates that your frontend pods must not communicate with a specific malicious IP block (e.g., `203.0.113.0/24`). You attempt to write a NetworkPolicy to explicitly deny this block, but you cannot find the syntax. How do you implement this?</summary>
 
 **Answer:** 
-You cannot write an explicit "deny" rule in Kubernetes NetworkPolicies because they are strictly additive (allow-only). To achieve this, you must shift your paradigm to a default-deny architecture. First, apply a default-deny egress policy to the frontend pods. Then, write an explicit allow egress rule using the `ipBlock` selector, setting the `cidr` to `0.0.0.0/0` (everywhere) and adding the malicious IP block under the `except` array.
+You cannot write an explicit "deny" rule in Kubernetes NetworkPolicies because the API is strictly additive (allow-only). To achieve the desired outcome, you must shift your mental model to a default-deny architecture. First, you must apply a default-deny egress policy to the targeted frontend pods to sever all outbound connections. Next, you write an explicit allow egress rule using the `ipBlock` selector, setting the main `cidr` to `0.0.0.0/0` (allowing all destinations) and adding the malicious IP block under the `except` array. Traffic destined for the excepted CIDR will be evaluated against the default-deny policy and subsequently dropped, effectively blocking the malicious subnet while allowing all other external egress.
 </details>
 
 <details>
 <summary>7. You are debugging a timeout between a web pod in namespace `alpha` and an API pod in namespace `beta`. You check the NetworkPolicy in `beta`, which explicitly allows traffic from `podSelector: matchLabels: app: web`. Yet, the traffic still drops. Why?</summary>
 
 **Answer:** 
-A `podSelector` used by itself inside an ingress rule only evaluates labels of pods residing in the *same* namespace as the NetworkPolicy. Because the web pod is in namespace `alpha` and the NetworkPolicy is in namespace `beta`, the policy ignores the web pod. To fix this, you must modify the rule to include a `namespaceSelector` pointing to namespace `alpha`, potentially combined with the `podSelector` using AND logic.
+A `podSelector` utilized by itself inside an ingress rule only evaluates the labels of pods residing in the *same* namespace as the NetworkPolicy itself. Because the web pod is located in namespace `alpha` and the NetworkPolicy is defined in namespace `beta`, the policy completely ignores the web pod during evaluation. To fix this cross-namespace communication block, you must modify the ingress rule to explicitly select the remote namespace. This is accomplished by adding a `namespaceSelector` pointing to namespace `alpha`, potentially combined with the `podSelector` using AND logic. Without the namespace selector, the policy acts as if the external source pod does not even exist.
 </details>
 
 ## Comprehensive Hands-On Exercise

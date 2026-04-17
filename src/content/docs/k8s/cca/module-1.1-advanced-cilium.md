@@ -451,6 +451,9 @@ spec:
 | iBGP | Internal BGP -- peering within the same ASN (less common in Cilium). |
 | `exportPodCIDR` | Tell peers how to reach pods on this node. |
 
+> **Pause and predict**: If you advertise the pod CIDR via BGP, what additional external networking equipment configuration is required for a client on the internet to reach those pods?
+> *Consider whether internal pod IPs are typically routable across the public internet.*
+
 ```bash
 # Check BGP peering status
 cilium bgp peers
@@ -559,6 +562,9 @@ CiliumEgressGatewayPolicy routes outbound traffic from selected pods through ded
 Why you need this: Many external firewalls, databases, and SaaS APIs allowlist traffic by source IP. Without an egress gateway, pod traffic exits from whatever node the pod resides on, resulting in shifting source IPs.
 
 Cilium Egress Gateway is GA (not beta) in Cilium version 1.19.x; it requires BPF masquerading and kube-proxy replacement to be enabled. **Crucially, Egress Gateway is incompatible with Cluster Mesh.** 
+
+> **Stop and think**: Why is Cilium Egress Gateway incompatible with Cluster Mesh?
+> *Answer: Egress gateways rely on strict SNAT and localized routing logic that conflicts with the cross-cluster identity synchronization and datapath behavior inherent to Cluster Mesh.*
 
 ```yaml
 apiVersion: cilium.io/v2

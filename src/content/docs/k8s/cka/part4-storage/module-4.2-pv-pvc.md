@@ -651,7 +651,7 @@ A team wants to restore a database from a snapshot using dynamic provisioning. T
 <details>
 <summary>Answer</summary>
 
-VolumeSnapshot and VolumeSnapshotContent are CRDs, and snapshot support is available only for out-of-tree CSI volume plugins. If the cluster is still utilizing a legacy in-tree volume plugin (or an external provisioner that lacks snapshot capabilities), the dynamic provisioner will fail to process the `dataSource` request. You must verify that the StorageClass and the backend rely exclusively on a CSI driver that implements the snapshotting API features.
+VolumeSnapshot and VolumeSnapshotContent are Custom Resource Definitions (CRDs), and snapshot support is exclusively available for out-of-tree CSI volume plugins. If the cluster is still utilizing a legacy in-tree volume plugin, or an external provisioner that lacks snapshot capabilities, the dynamic provisioner will silently fail to process the `dataSource` request. In-tree plugins have been systematically deprecated and removed in recent Kubernetes releases. You must verify that the StorageClass and the storage backend rely on a modern CSI driver that natively implements the snapshotting API features.
 
 </details>
 
@@ -661,7 +661,7 @@ An administrator attempts to reduce cluster storage costs by shrinking a dynamic
 <details>
 <summary>Answer</summary>
 
-Kubernetes emphatically does not support shrinking PVCs below their current size. The volume expansion feature, which has been stable since Kubernetes v1.24, strictly allows resizing the existing volume upwards. It seamlessly applies to filesystem-backed volumes (such as XFS, Ext3, and Ext4) without creating a new PV, but reducing capacity is fundamentally unsafe for the integrity of the underlying data and is explicitly blocked by the Kubernetes API.
+Kubernetes emphatically does not support shrinking PVCs below their current size. The volume expansion feature strictly allows resizing the existing volume upwards to accommodate growing data needs. It seamlessly applies to filesystem-backed volumes (such as XFS, Ext3, and Ext4) without creating a new PV, but reducing capacity is fundamentally unsafe for the integrity of the underlying data. Attempting to shrink a filesystem could easily truncate active files or corrupt database records, which is why it is explicitly blocked by the Kubernetes API. If you genuinely need a smaller volume, you must manually create a new PVC, migrate the data using a temporary utility Pod, and cleanly delete the oversized volume.
 
 </details>
 

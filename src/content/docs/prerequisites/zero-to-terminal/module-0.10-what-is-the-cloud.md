@@ -140,7 +140,7 @@ Cloud providers handle all of this. You focus on your actual business.
 
 ## The Big Three Cloud Providers
 
-Three companies dominate cloud computing. Think of them as the three biggest commercial kitchen chains in the world -- different branding, different menus, but the same fundamental concept.
+As of Q4 2025, industry trackers such as Synergy Research Group and Canalys continued to rank AWS, Microsoft Azure, and Google Cloud as the three largest public-cloud providers by revenue. Think of them as the three biggest commercial kitchen chains in the world -- different branding, different menus, but the same fundamental concept.
 
 > **Stop and think**: If a large enterprise already relies heavily on Microsoft Windows, Active Directory, and Office 365, which of the Big Three cloud providers do you think they would naturally gravitate towards, and why?
 
@@ -148,8 +148,8 @@ Three companies dominate cloud computing. Think of them as the three biggest com
 
 ```
 - The first major cloud provider (launched 2006)
-- The largest by market share (~31%)
-- The "original" -- most companies' first cloud
+- As of Q4 2025, Synergy Research Group and Canalys both still placed AWS first by public-cloud revenue
+- The "original" -- many companies' first cloud platform
 - Kitchen analogy: The biggest chain, the one everyone knows
 ```
 
@@ -157,7 +157,7 @@ Three companies dominate cloud computing. Think of them as the three biggest com
 
 ```
 - Launched 2010
-- Second largest (~25%)
+- Commonly ranked among the top cloud providers
 - Popular with companies already using Microsoft products
 - Kitchen analogy: The chain that integrates with your existing equipment
 ```
@@ -166,11 +166,13 @@ Three companies dominate cloud computing. Think of them as the three biggest com
 
 ```
 - Launched 2008 (public in 2011)
-- Third largest (~11%)
+- Commonly ranked among the top cloud providers
 - Known for data analytics and machine learning
 - Fun fact: Kubernetes was INVENTED at Google
 - Kitchen analogy: The chain with the fanciest kitchen technology
 ```
+
+> Market-share rankings change over time. As of Q4 2025, both Synergy Research Group and Canalys still placed AWS, Azure, and Google Cloud in the top three by revenue, but their exact shares differed by methodology, so treat these as dated snapshots rather than permanent facts.
 
 There are also smaller providers: DigitalOcean, Linode (now Akamai), Hetzner, OVH, and many more. They're like independent commercial kitchens -- smaller, sometimes cheaper, sometimes better for specific needs.
 
@@ -357,17 +359,17 @@ Platform Engineering
   → Building platforms that other developers use
 ```
 
-**You now know more about cloud computing than 90% of people.** The rest is details -- important details that you'll learn step by step, but details nonetheless. The hard part was building the mental model, and you've done that.
+**You now have a solid cloud-computing mental model.** The rest is details -- important details that you'll learn step by step, but details nonetheless. The hard part was building the mental model, and you've done that.
 
 ---
 
 ## Did You Know?
 
-- **AWS started as a side project.** Amazon built massive computing infrastructure to run their online store. Someone realized they could rent out the spare capacity to other companies. AWS launched in 2006 and now generates over $90 billion in annual revenue -- more than Amazon's retail profits. The side project became one of the most profitable businesses in history.
+- **AWS started as a side project.** Amazon built massive computing infrastructure to run their online store. Someone realized they could rent out that infrastructure to other companies. AWS launched in 2006 and grew into one of Amazon's most important businesses.
 
-- **Cloud data centers are enormous.** A single AWS data center campus in Virginia covers over 2 million square feet -- that's about 34 football fields. It contains hundreds of thousands of servers, uses enough electricity to power a small city, and is cooled by systems that move thousands of gallons of water per minute. There are hundreds of these facilities worldwide.
+- **Cloud data centers are enormous.** Cloud providers operate very large data center campuses with heavy power, cooling, and networking requirements. The exact size and capacity figures vary by site and change over time.
 
-- **Kubernetes means "helmsman" in Greek.** The people at Google who created it named it after the person who steers a ship. The K8s logo is a ship's wheel with seven spokes. The idea is that Kubernetes "steers" your containers through the cloud. The project was originally called "Project Seven" internally at Google (after the Star Trek character Seven of Nine -- yes, really).
+- **Kubernetes means "helmsman" in Greek.** The name fits the ship-wheel logo and the broader idea of steering large fleets of containers. You'll see that nautical theme throughout the Kubernetes ecosystem.
 
 ---
 
@@ -395,7 +397,7 @@ Platform Engineering
 2. **Your company is evaluating different cloud providers for a new project. The engineering director asks you to summarize the "Big Three" options available in the market. How would you identify the three major cloud providers and highlight one distinct characteristic of each to help with the decision?**
    <details>
    <summary>Answer</summary>
-   AWS (Amazon Web Services) is the largest and oldest major cloud provider, originally launched in 2006, and serves as the industry standard. Azure is Microsoft's cloud offering, and it is highly popular with large enterprises that are already deeply integrated with Microsoft products. GCP (Google Cloud Platform) is well-known for its powerful data analytics and machine learning capabilities, and it is famously the birthplace of Kubernetes. Knowing these providers helps you understand the landscape of modern infrastructure and choose the right ecosystem for your needs.
+   AWS (Amazon Web Services) was the first major hyperscale cloud platform and, as of Q4 2025, industry trackers such as Synergy Research Group and Canalys still placed it first by public-cloud revenue. Azure is Microsoft's cloud offering, and it is highly popular with large enterprises that are already deeply integrated with Microsoft products. GCP (Google Cloud Platform) is well-known for its strong data analytics and machine learning tooling, and it is famously the birthplace of Kubernetes. Knowing these providers helps you understand the landscape of modern infrastructure and choose the right ecosystem for your needs.
    </details>
 
 3. **Your team's application runs on a single cloud server, but it frequently crashes at 3 AM and requires an engineer to wake up and manually restart it on a new server. You suggest adopting Kubernetes to fix this issue. How does Kubernetes solve this specific problem for the team?**
@@ -426,15 +428,15 @@ Platform Engineering
 
 ## Hands-On Exercise: Explore Free Cloud Tiers
 
-The major cloud providers all offer free tiers so you can experiment without paying. Let's take a look at what's available.
+The major cloud providers all offer beginner/free-tier programs so you can experiment at low cost. As of April 2026, the exact offers, eligible services, regions, plans, and new-account rules still change over time, so treat the live provider documentation as the source of truth for current details.
 
-### Step 1: Visit the free tier pages
+### Step 1: Visit the current free-tier pages
 
 Open these pages in your browser:
 
-- **AWS Free Tier**: [https://aws.amazon.com/free](https://aws.amazon.com/free)
-- **Google Cloud Free Tier**: [https://cloud.google.com/free](https://cloud.google.com/free)
-- **Azure Free Tier**: [https://azure.microsoft.com/free](https://azure.microsoft.com/free)
+- **AWS Free Tier documentation**: [https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/billing-free-tier.html](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/billing-free-tier.html)
+- **Google Cloud Free Program documentation**: [https://cloud.google.com/free/docs/free-cloud-features](https://cloud.google.com/free/docs/free-cloud-features)
+- **Azure Free Account FAQ**: [https://azure.microsoft.com/en-us/free/free-account-faq/](https://azure.microsoft.com/en-us/free/free-account-faq/)
 
 ### Step 2: Look for these specific things
 
@@ -444,7 +446,7 @@ On each page, try to find:
 
 2. **Free storage**: How much free storage? (Look for "S3" on AWS, "Cloud Storage" on GCP, "Blob Storage" on Azure.)
 
-3. **Duration**: Is the free tier "12 months" or "always free"? Many services are free for 12 months after signup, then start charging. Some are always free within certain limits.
+3. **Eligibility and duration**: Which benefits are trial credit, which are 12-month offers, which are always-free, and what account-date, region, plan, or VM-family conditions apply?
 
 ### Step 3: Write down what you found
 
@@ -459,27 +461,24 @@ Write what you found. Something like:
 ```
 My Cloud Research Notes
 =======================
-Date: March 2026
+Date: <today's date>
 
 AWS Free Tier:
-- EC2: 750 hours/month of t2.micro for 12 months
-- S3: 5 GB storage for 12 months
-- ...
+- Compute: record the current EC2 offer, including whether your account creation date changes the eligible VM families
+- Storage: record the current S3 allowance and any time limits
 
 GCP Free Tier:
-- e2-micro instance: always free
-- 5 GB Cloud Storage: always free
-- ...
+- Compute: record the current Compute Engine offer, including any region restrictions
+- Storage: record the current Cloud Storage allowance and whether it is tied to trial credit or always-free usage
 
 Azure Free Tier:
-- 750 hours of B1S VM for 12 months
-- 5 GB Blob Storage for 12 months
-- ...
+- Compute: record the current VM or credit-based offer, including any signup or plan conditions
+- Storage: record the current Blob Storage allowance and whether it comes from credit, a limited-time offer, or an always-free limit
 
 Notes:
-- All three require a credit card to sign up (but won't charge for free tier)
-- GCP has the most "always free" services
-- AWS has the most services overall
+- These offers are time-sensitive and full of conditions
+- Some benefits depend on account age, region, plan, or eligible machine families
+- Always check the current limits, regions, and account eligibility rules
 ```
 
 Save and exit (`Ctrl + O`, Enter, `Ctrl + X`).

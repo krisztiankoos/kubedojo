@@ -96,26 +96,41 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.20
+        image: nginx:1.25
 ```
 
 ### Update Behavior
 
-```
-With replicas=4, maxSurge=1, maxUnavailable=1:
-
-Start:  [v1] [v1] [v1] [v1]     (4 running)
-Step 1: [v1] [v1] [v1] [--] [v2] (3 old, 1 new starting)
-Step 2: [v1] [v1] [--] [v2] [v2] (2 old, 2 new)
-Step 3: [v1] [--] [v2] [v2] [v2] (1 old, 3 new)
-Step 4: [v2] [v2] [v2] [v2]     (4 new, complete)
+```mermaid
+flowchart TB
+    subgraph Start ["Start (4 running)"]
+        direction LR
+        s1[v1] ~~~ s2[v1] ~~~ s3[v1] ~~~ s4[v1]
+    end
+    subgraph Step1 ["Step 1 (3 old, 1 new starting)"]
+        direction LR
+        a1[v1] ~~~ a2[v1] ~~~ a3[v1] ~~~ a4[--] ~~~ a5[v2]
+    end
+    subgraph Step2 ["Step 2 (2 old, 2 new)"]
+        direction LR
+        b1[v1] ~~~ b2[v1] ~~~ b3[--] ~~~ b4[v2] ~~~ b5[v2]
+    end
+    subgraph Step3 ["Step 3 (1 old, 3 new)"]
+        direction LR
+        c1[v1] ~~~ c2[--] ~~~ c3[v2] ~~~ c4[v2] ~~~ c5[v2]
+    end
+    subgraph Step4 ["Step 4 (4 new, complete)"]
+        direction LR
+        d1[v2] ~~~ d2[v2] ~~~ d3[v2] ~~~ d4[v2]
+    end
+    Start --> Step1 --> Step2 --> Step3 --> Step4
 ```
 
 ### Trigger Rolling Update
 
 ```bash
 # Update image
-k set image deploy/web-app nginx=nginx:1.21
+k set image deploy/web-app nginx=nginx:1.26
 
 # Watch rollout
 k rollout status deploy/web-app
@@ -151,15 +166,26 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: postgres:13
+        image: postgres:16
 ```
 
 ### Update Behavior
 
-```
-Start:  [v1] [v1] [v1]
-Step 1: [--] [--] [--]  (all old pods terminated)
-Step 2: [v2] [v2] [v2]  (all new pods created)
+```mermaid
+flowchart TB
+    subgraph Start ["Start"]
+        direction LR
+        s1[v1] ~~~ s2[v1] ~~~ s3[v1]
+    end
+    subgraph Step1 ["Step 1 (all old pods terminated)"]
+        direction LR
+        a1[--] ~~~ a2[--] ~~~ a3[--]
+    end
+    subgraph Step2 ["Step 2 (all new pods created)"]
+        direction LR
+        b1[v2] ~~~ b2[v2] ~~~ b3[v2]
+    end
+    Start --> Step1 --> Step2
 ```
 
 ### When to Use
@@ -431,7 +457,7 @@ rollingUpdate:
 
 ---
 
-> **What would happen if**: You deploy a new version using a rolling update, but you forgot to add a readiness probe. The new version takes 30 seconds to start accepting requests, but Kubernetes considers the pod "ready" immediately. What happens to user requests during those 30 seconds?
+> **Stop and think**: You deploy a new version using a rolling update, but you forgot to add a readiness probe. The new version takes 30 seconds to start accepting requests, but Kubernetes considers the pod "ready" immediately. What happens to user requests during those 30 seconds?
 
 ## Readiness Gates and Probes
 
@@ -493,7 +519,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.20
+        image: nginx:1.25
         readinessProbe:  # Important for zero-downtime
           httpGet:
             path: /
@@ -506,7 +532,7 @@ spec:
 
 ```bash
 # Create blue deployment
-k create deploy app-blue --image=nginx:1.20 --replicas=3
+k create deploy app-blue --image=nginx:1.25 --replicas=3
 k label deploy app-blue version=blue
 
 # Add version label to pod template
@@ -516,7 +542,7 @@ k patch deploy app-blue -p '{"spec":{"template":{"metadata":{"labels":{"version"
 k expose deploy app-blue --name=myapp --port=80 --selector=version=blue
 
 # Deploy green
-k create deploy app-green --image=nginx:1.21 --replicas=3
+k create deploy app-green --image=nginx:1.26 --replicas=3
 k patch deploy app-green -p '{"spec":{"template":{"metadata":{"labels":{"version":"green"}}}}}'
 
 # Switch to green
@@ -558,7 +584,7 @@ k patch svc myapp -p '{"spec":{"selector":{"version":"green"}}}'
 2. **You've deployed a blue/green setup: `app-blue` (v1) with 3 replicas is receiving all traffic via a Service. You deploy `app-green` (v2) with 3 replicas and switch the Service selector. Users immediately report errors. What's the fastest way to recover, and what should you have done before switching?**
    <details>
    <summary>Answer</summary>
-   Instant recovery: `kubectl patch svc myapp -p '{"spec":{"selector":{"version":"blue"}}}'` -- this switches traffic back to blue in seconds, which is the main advantage of blue/green. Before switching, you should have: (1) verified green pods are all Running and Ready; (2) tested green directly via port-forward or a temporary test Service; (3) run smoke tests against the green deployment. Blue/green's strength is instant rollback, but its weakness is that you don't catch issues until 100% of traffic hits the new version -- unlike canary, which exposes issues at a small percentage.
+   Instant recovery: `kubectl patch svc myapp -p '{"spec":{"selector":{"version":"blue"}}}'`. This switches traffic back to blue in seconds, which is the primary advantage of a blue/green strategy. Before switching, you should have verified the green pods were all Running and Ready. You also should have tested the green deployment directly via port-forward or a temporary test Service, running smoke tests against it. Blue/green's strength is instant rollback, but its weakness is that you do not catch live traffic issues until 100% of users hit the new version.
    </details>
 
 3. **Your SRE team wants to deploy a new recommendation engine version that might have performance issues under load. They want to expose it to only ~10% of real traffic first, monitor for 30 minutes, then gradually increase. Describe how you'd set this up using only Kubernetes-native resources (no Istio or service mesh).**
@@ -605,11 +631,11 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.20
+        image: nginx:1.25
 EOF
 
 # Update and watch (should see 5 pods max)
-k set image deploy/rolling-demo nginx=nginx:1.21
+k set image deploy/rolling-demo nginx=nginx:1.26
 k rollout status deploy/rolling-demo
 
 # Cleanup
@@ -639,7 +665,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.20
+        image: nginx:1.25
 EOF
 
 # Service pointing to blue
@@ -676,7 +702,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.21
+        image: nginx:1.26
 EOF
 
 # Switch to green
@@ -713,7 +739,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.20
+        image: nginx:1.25
 EOF
 
 # Canary deployment (1 replica = ~10%)
@@ -736,7 +762,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.21
+        image: nginx:1.26
 EOF
 
 # Service routes to both
@@ -773,13 +799,13 @@ k delete svc canary-svc
 
 ```bash
 # Create with specific rolling update settings
-k create deploy drill1 --image=nginx:1.20 --replicas=4
+k create deploy drill1 --image=nginx:1.25 --replicas=4
 
 # Patch strategy
 k patch deploy drill1 -p '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":1,"maxUnavailable":0}}}}'
 
 # Update and observe
-k set image deploy/drill1 nginx=nginx:1.21
+k set image deploy/drill1 nginx=nginx:1.26
 k rollout status deploy/drill1
 
 # Cleanup
@@ -809,11 +835,11 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.20
+        image: nginx:1.25
 EOF
 
 # Update (watch all pods terminate first)
-k set image deploy/drill2 nginx=nginx:1.21
+k set image deploy/drill2 nginx=nginx:1.26
 k rollout status deploy/drill2
 
 # Cleanup
@@ -824,13 +850,13 @@ k delete deploy drill2
 
 ```bash
 # Create blue
-k create deploy blue --image=nginx:1.20 --replicas=2
+k create deploy blue --image=nginx:1.25 --replicas=2
 
 # Service (k create deploy sets app=blue)
 k expose deploy blue --name=app --port=80 --selector=app=blue
 
 # Create green
-k create deploy green --image=nginx:1.21 --replicas=2
+k create deploy green --image=nginx:1.26 --replicas=2
 
 # Switch to green
 k patch svc app -p '{"spec":{"selector":{"app":"green"}}}'
@@ -847,8 +873,8 @@ k delete svc app
 
 ```bash
 # 10% canary
-k create deploy stable --image=nginx:1.20 --replicas=9
-k create deploy canary --image=nginx:1.21 --replicas=1
+k create deploy stable --image=nginx:1.25 --replicas=9
+k create deploy canary --image=nginx:1.26 --replicas=1
 
 # Add common label (must not overwrite the selector label 'app')
 k patch deploy stable -p '{"spec":{"template":{"metadata":{"labels":{"shared":"myapp"}}}}}'
@@ -889,7 +915,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.20
+        image: nginx:1.25
         readinessProbe:
           httpGet:
             path: /
@@ -900,7 +926,7 @@ EOF
 k expose deploy drill5 --port=80
 
 # Update (zero downtime)
-k set image deploy/drill5 nginx=nginx:1.21
+k set image deploy/drill5 nginx=nginx:1.26
 k rollout status deploy/drill5
 
 # Cleanup
@@ -914,13 +940,13 @@ k delete svc drill5
 
 ```bash
 # 1. Deploy stable version
-k create deploy prod --image=nginx:1.20 --replicas=5
+k create deploy prod --image=nginx:1.25 --replicas=5
 
 # 2. Expose service
 k expose deploy prod --name=production --port=80
 
 # 3. Create canary (10%)
-k create deploy canary --image=nginx:1.21 --replicas=1
+k create deploy canary --image=nginx:1.26 --replicas=1
 
 # 4. Point service to both
 k patch deploy prod -p '{"spec":{"template":{"metadata":{"labels":{"release":"production"}}}}}'

@@ -314,8 +314,8 @@ rpm -V openssh-server
 rpm -Va
 
 # Example output:
-# S.5....T.  c /etc/ssh/sshd_config    ← config was modified (expected)
-# ..5....T.    /usr/bin/ssh             ← binary changed (suspicious!)
+# S.5....T.  c /etc/ssh/sshd_config    <- config was modified (expected)
+# ..5....T.    /usr/bin/ssh             <- binary changed (suspicious!)
 ```
 
 > **Exam tip**: AIDE questions on the LFCS typically involve initializing a baseline and running a check. Remember the workflow: `aide --init`, move the database, then `aide --check`. On RPM systems, `rpm -V` is a quick way to verify individual packages.

@@ -45,7 +45,8 @@ If you are operating on-premises Kubernetes, you need to understand the physical
 - Cooling: hot aisle/cold aisle, kW per rack capacity
 - Out-of-band management: IPMI, BMC, iDRAC, iLO, Redfish
 - Cabling: structured cabling, fiber vs copper, cable management
-- Colocation vs owned datacenter considerations
+- Facility physical security controls and verification checklists
+- Colocation selection criteria, scoring, and SLA negotiation tied to availability targets
 
 ---
 
@@ -331,6 +332,140 @@ curl -k -u admin:password -X PATCH \
 │                                                               │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Physical Security Checklist
+
+Power and cooling get most of the engineering attention, but physical security is part of availability engineering too. A facility that is easy to enter, poorly monitored, or too loose with escorting vendors can turn a hardware incident into a security incident.
+
+### What To Verify In A Facility
+
+| Control | What good looks like | Why it matters |
+|---|---|---|
+| Perimeter access | badge + biometric or staffed access at entry | prevents casual entry and badge sharing |
+| Mantrap / controlled entry | single-person transition into secure area | reduces tailgating risk |
+| Rack locking | locked cages or locking racks with audited key access | protects against direct hardware tampering |
+| CCTV retention | camera coverage with retained footage and documented access | supports forensics after incidents |
+| Visitor and vendor escorting | escorts required outside pre-approved maintenance flows | reduces third-party access risk |
+| Media destruction process | documented disk handling and destruction workflow | avoids data leakage during decommission or RMA |
+| Asset inventory | rack position, serial, and owner recorded | lets you prove what hardware exists and where |
+| Incident logging | every physical access event is logged and reviewable | essential for regulated or shared environments |
+
+### Quick Facility Walkthrough Questions
+
+Before signing a colo contract or approving a private room, ask:
+
+- who can physically enter the cage or room without your team present?
+- how are emergency vendors or facilities engineers admitted after hours?
+- how long are camera feeds and access logs retained?
+- what happens if a drive fails and the vendor wants to take it away for RMA?
+- can you require locked cages, dual authorization, or named-access lists?
+
+If the answers are vague, the security posture is weak even if the marketing brochure says "enterprise grade."
+
+### Minimum On-Prem Physical Security Baseline
+
+- named-access list for your racks or cage
+- camera coverage for entry points and your physical footprint
+- documented disk handling and destruction policy
+- no shared BMC network with other tenants
+- locked racks or locked cage doors
+- ability to retrieve access logs after an incident
+
+### Facility Verification Checklist
+
+Use this during a site visit, annual review, or post-incident audit. Do not accept "yes, we do that" without evidence.
+
+| Verify | Evidence to request | Accept only if |
+|---|---|---|
+| Access control | sample access log export, named-access policy | every entry is attributable to a named person and logs can be retrieved on demand |
+| After-hours entry | written escalation and identity verification process | no unescorted after-hours access without a documented approval path |
+| Rack or cage locking | live demonstration of locks and key/card ownership | your hardware is separately lockable from neighboring tenants |
+| CCTV coverage | camera map and retention period | entry paths and your footprint are covered for at least 90 days |
+| Visitor handling | visitor register and escort procedure | visitors and vendors are time-bound, logged, and escorted |
+| Media handling | disk RMA and destruction workflow | failed drives stay under your control or are destroyed with certificate |
+| Management network isolation | network diagram for BMC/IPMI access | BMC traffic stays on a dedicated management network with tenant separation |
+| Incident evidence | sample incident report or security event workflow | the provider can correlate badge, camera, and ticket data during an investigation |
+
+A simple pass rule for production: reject the facility if any of the following are missing: auditable access logs, locked rack or cage access, documented media handling, or isolated management networking.
+
+---
+
+## Colocation Selection And SLA Framework
+
+Do not choose a facility on rack price alone. The wrong contract can be cheap on paper and expensive during outages.
+
+### Facility Selection Matrix
+
+| Area | What to evaluate | Red flag |
+|---|---|---|
+| Power | A+B feeds, contracted kW, generator test process, UPS maintenance window policy | only one real utility path or vague bypass procedures |
+| Cooling | stated per-rack density, containment design, hot-spot escalation process | no practical answer for high-density or GPU racks |
+| Network | carrier diversity, cross-connect lead time, remote hands for cabling | single carrier dependency or slow change lead times |
+| Operations | 24/7 staffed presence, remote hands SLA, incident escalation path | "best effort" support without timelines |
+| Security | access controls, visitor handling, audit logs, rack/cage options | shared access or poor access logging |
+| Contract | service credits, exit clauses, growth terms, renewal uplift | credits too small to matter or opaque repricing |
+
+Score each area from 1 to 5 during evaluation and weight the result instead of treating every row as equal:
+
+- Power: 30%
+- Cooling: 20%
+- Network: 20%
+- Operations: 15%
+- Security: 10%
+- Contract: 5%
+
+For a production Kubernetes platform, set hard gates before price comparison:
+
+- reject any site that scores below 4/5 in Power, Operations, or Security
+- reject any site that cannot document dual-feed design, 24/7 staffing, and named incident escalation contacts
+- compare total annual cost only after the site passes the technical gates above
+
+This prevents a cheap site with weak operations or weak physical controls from winning on spreadsheet price alone.
+
+### SLA Clauses That Actually Matter
+
+When negotiating the contract, push on these items explicitly:
+
+- **power availability**: what uptime target is committed, and what credits apply if A or B feed is unavailable?
+- **cooling availability**: does the SLA cover HVAC/cooling failure or only total-site outage?
+- **remote hands response**: what is the guaranteed response time for urgent after-hours work?
+- **planned maintenance notice**: how much notice is required for UPS, generator, or network maintenance?
+- **cross-connect delivery**: how quickly can new carrier or cage cross-connects be installed?
+- **incident communication**: how and when are customers updated during power/cooling/network incidents?
+- **exit and expansion terms**: what happens if you need one more rack, less power, or early termination?
+
+### Practical Negotiation Rule
+
+Tie the colo contract back to your target availability. If your platform target is `99.95%`, but the facility only offers weak credits and "commercially reasonable efforts" for remote hands, you do not actually have infrastructure aligned to that goal.
+
+The facility is part of the platform, not just the building around it.
+
+### Map SLA Terms To Availability Targets
+
+Start with your platform target, then ask whether the facility contract materially supports it:
+
+| Platform target | Annual downtime budget | Facility expectation |
+|---|---|---|
+| 99.9% | 8h 45m | acceptable for non-production or internal platforms; remote hands can be slower and credits are less critical |
+| 99.95% | 4h 23m | dual power, dual carriers, urgent remote hands within 30 minutes, cooling covered in SLA, incident updates every 30 minutes |
+| 99.99% | 52m 36s | concurrent maintainability, strong power and cooling credits, urgent remote hands within 15 minutes, clear maintenance exclusions, fast cross-connect delivery |
+
+If the facility promises only "commercially reasonable efforts," that is not aligned to a 99.95% or 99.99% platform target.
+
+### Example SLA Clauses To Take To Procurement
+
+Use wording like the following as a negotiation starting point with procurement and legal:
+
+- `Power event`: "Loss of either contracted redundant feed serving Customer Equipment for more than 5 consecutive minutes constitutes an SLA event."
+- `Cooling event`: "Rack inlet temperature above 27C for more than 15 consecutive minutes constitutes an SLA event."
+- `Remote hands`: "Urgent incidents are acknowledged within 15 minutes and a technician is at the rack within 30 minutes, 24x7."
+- `Incident communications`: "Provider sends initial customer notice within 15 minutes of a site-impacting event and status updates at least every 30 minutes until closure."
+- `Network handoff`: "Standard cross-connect orders are delivered within 5 business days; missed delivery dates earn fee credits."
+- `Service credits`: "Credits scale with duration and severity, including separate credits for power, cooling, and missed remote-hands response times."
+
+These clauses are not legal advice, but they give engineering, procurement, and legal teams concrete language to negotiate against instead of accepting generic availability promises.
 
 ---
 

@@ -246,12 +246,12 @@ Sign up for a free tier at one of these providers:
 
 - **Oracle Cloud** (most generous free tier -- always-free VMs): [cloud.oracle.com/free](https://cloud.oracle.com/free)
 - **Google Cloud** ($300 free credit for 90 days): [cloud.google.com/free](https://cloud.google.com/free)
-- **AWS** (750 hours/month of t2.micro for 12 months): [aws.amazon.com/free](https://aws.amazon.com/free)
+- **AWS** (free-tier VM eligibility depends on when your account was created: accounts created before **July 15, 2025** use the legacy 12-month EC2 free tier, while accounts created on or after **July 15, 2025** use AWS's newer free plan with different limits): [aws.amazon.com/free](https://aws.amazon.com/free)
 
 Create the smallest available Linux VM (Ubuntu is easiest for beginners). During setup:
 
 1. Choose **Ubuntu** as the operating system
-2. Pick the **smallest free instance** (e.g., t2.micro on AWS, e2-micro on GCP)
+2. Pick the **smallest currently free-eligible instance** for your provider. For AWS, verify what the console currently marks as free-tier eligible for your account cohort: older accounts usually see `t2.micro` or `t3.micro`, while newer accounts may see `t3.micro`, `t3.small`, `t4g.micro`, `t4g.small`, `c7i-flex.large`, or `m7i-flex.large` under the newer free plan.
 3. **Download the SSH key** when prompted -- you'll need this to connect
 4. Make sure the security group / firewall allows **port 22 (SSH)** and **port 80 (HTTP)**
 
@@ -383,7 +383,7 @@ exit
 
 - **The first website ever made is still online.** Tim Berners-Lee created it in 1991 at CERN. It was served from a NeXT computer with a handwritten note taped to it: "This machine is a server. DO NOT POWER IT DOWN!!" You can still visit it at [info.cern.ch](http://info.cern.ch). Your server setup today was more sophisticated than the one that launched the World Wide Web.
 
-- **nginx was created to solve a bet.** In 2002, Igor Sysoev set out to solve the "C10K problem" -- handling 10,000 simultaneous connections on a single server. At the time, Apache (the dominant web server) struggled with this. Sysoev spent two years writing nginx, and it didn't just solve C10K -- modern nginx can handle over a million concurrent connections. It now serves roughly 34% of all websites on the internet.
+- **nginx was created to solve a scaling problem.** In 2002, Igor Sysoev set out to address the "C10K problem" -- serving 10,000 simultaneous connections on a single server. At the time, Apache (the dominant web server) struggled with that model. Sysoev spent two years writing nginx, and nginx became known for its event-driven architecture and efficient worker-process design. The [official nginx site](https://nginx.org/en/) highlights its architecture and scalability features, and the [official NGINX engineering write-up](https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale) explains that nginx is built for high concurrency and, with appropriate tuning, can handle hundreds of thousands of simultaneous connections.
 
 - **Your website is served the same way Netflix is.** Seriously. Netflix, Airbnb, and Dropbox all use nginx as their web server. The difference between your setup and theirs is scale (they have thousands of servers) and configuration (they have teams of engineers tweaking settings). But the fundamental technology -- a process listening on port 80 and returning HTML -- is identical.
 
@@ -443,7 +443,7 @@ exit
 7. **You've just finished configuring your cloud server via SSH and want to prove the web server is functioning correctly before dealing with potential DNS or firewall issues. How do you use a terminal-based HTTP client to verify the output locally, and why is this step critical for isolating backend problems from network problems?**
    <details>
    <summary>Answer</summary>
-   You can use the command `curl http://localhost:8080` (or `curl http://YOUR_PUBLIC_IP`) directly from your terminal to simulate a basic browser request. This tool sends an HTTP GET request and prints the raw response body directly to your screen, bypassing any graphical rendering. You are looking to see if the terminal outputs the raw HTML code of your custom page, such as your `<h1>Hello, Internet!</h1>` tags. If it returns the expected HTML, you know the server is successfully processing requests and serving the correct file, proving the backend works even before a browser is involved.
+   You can use the command `curl http://localhost` directly from the cloud VM's terminal to simulate a basic browser request against nginx on its default HTTP port `80`. If you are testing from your own machine instead, use `curl http://YOUR_PUBLIC_IP`. Do **not** add `:8080` for the cloud-server path unless you deliberately changed nginx to listen there; `:8080` belongs to the earlier local Docker example in Option A, where you explicitly mapped host port `8080` to container port `80` with `-p 8080:80`. This tool sends an HTTP GET request and prints the raw response body directly to your screen, bypassing any graphical rendering. You are looking to see if the terminal outputs the raw HTML code of your custom page, such as your `<h1>Hello, Internet!</h1>` tags. If it returns the expected HTML, you know the server is successfully processing requests and serving the correct file, proving the backend works even before a browser is involved.
    </details>
 
 ---

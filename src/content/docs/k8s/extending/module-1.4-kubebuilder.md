@@ -565,16 +565,23 @@ func (r *WebAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 The `controllerutil.CreateOrUpdate` function is a powerful helper:
 
-```
-CreateOrUpdate(ctx, client, object, mutateFn)
-    │
-    ├── Try to Get the object
-    │       │
-    │       ├── Not Found → call mutateFn() → Create
-    │       │
-    │       └── Found → call mutateFn() → Update (if changed)
-    │
-    └── Returns: OperationResultCreated, OperationResultUpdated, or OperationResultNone
+```mermaid
+flowchart TD
+    Start["CreateOrUpdate(ctx, client, object, mutateFn)"]
+    Get{"Try to Get the object"}
+    Mutate1["call mutateFn()"]
+    Create["Create"]
+    Mutate2["call mutateFn()"]
+    Update["Update (if changed)"]
+    Ret["Returns: OperationResultCreated, OperationResultUpdated, or OperationResultNone"]
+
+    Start --> Get
+    Get -- Not Found --> Mutate1
+    Mutate1 --> Create
+    Get -- Found --> Mutate2
+    Mutate2 --> Update
+    Create --> Ret
+    Update --> Ret
 ```
 
 The `mutateFn` is called in both cases. It sets the desired state. If the object exists and the mutated version differs from the current version, an Update is issued. This is the idempotent, declarative pattern in action.

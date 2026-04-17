@@ -4,8 +4,8 @@ slug: prerequisites/zero-to-terminal/module-0.9-software-and-packages
 sidebar:
   order: 10
 lab:
-  id: "prereq-0.8-packages"
-  url: "https://killercoda.com/kubedojo/scenario/prereq-0.8-packages"
+  id: "prereq-0.9-packages"
+  url: "https://killercoda.com/kubedojo/scenario/prereq-0.9-packages"
   duration: "20 min"
   difficulty: "beginner"
   environment: "ubuntu"
@@ -14,7 +14,7 @@ lab:
 >
 > **Time to Complete**: 25-30 minutes
 >
-> **Prerequisites**: [Module 0.6: What is Networking?](/prerequisites/zero-to-terminal/module-0.7-what-is-networking/) — You should be comfortable with the terminal, files, and basic networking concepts.
+> **Prerequisites**: [Module 0.7: What is Networking?](/prerequisites/zero-to-terminal/module-0.7-what-is-networking/) — You should be comfortable with the terminal, files, and basic networking concepts.
 
 ---
 
@@ -173,8 +173,8 @@ Your computer has a safety system: regular users can't install software system-w
 But installing software requires writing files to system directories that regular users can't touch. So you use `sudo` to temporarily become the **superuser** (also called **root** — the all-powerful administrator account).
 
 ```bash
-$ apt install htop              # ❌ Permission denied
-$ sudo apt install htop         # ✅ Works! (asks for your password)
+$ apt install htop              # Error: permission denied
+$ sudo apt install htop         # Works (asks for your password)
 ```
 
 > **Pause and predict**: What exactly happens if you run `apt install tree` on a Linux system without `sudo`? Don't just guess—try running it and read the exact error message the system gives you.
@@ -188,7 +188,7 @@ When you type `sudo`, you'll be asked for your password. This is your user passw
 Homebrew (`brew`) is designed so that you usually **don't need `sudo`**. It installs packages into your user space, not system directories. This is one reason Homebrew is popular — less fiddling with permissions.
 
 ```bash
-$ brew install htop             # ✅ Works without sudo on macOS
+$ brew install htop             # Works without sudo on macOS
 ```
 
 ---

@@ -23,7 +23,7 @@ lab:
 After this module, you will be able to:
 - **Navigate** the file system using `pwd`, `ls`, and `cd` without getting lost
 - **Create** files and directories, and explain the difference between `cp` and `mv`
-- **Delete** files safely with `rm` and explain why there is no undo
+- **Delete** files safely with `rm` and explain why terminal deletions are immediate and usually unrecoverable for ordinary users
 - **Combine** commands using pipes (`|`) to filter and search output
 
 ---
@@ -44,7 +44,7 @@ Before we begin, you need to actually open a terminal.
 
 **macOS**: Press `Cmd + Space`, type "Terminal", press Enter. (Or find it in Applications > Utilities > Terminal.)
 
-**Windows**: Search for "PowerShell" in the Start menu. (Most commands below work in PowerShell. For full compatibility, install [Windows Terminal](https://aka.ms/terminal) and [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) -- but don't worry about that today.)
+**Windows**: Search for "PowerShell" in the Start menu. For this module, though, the command examples are written for a Unix-style shell on macOS, Linux, or Windows Subsystem for Linux (WSL). If you're using native PowerShell, expect some commands later in the module to differ.
 
 **Linux**: Press `Ctrl + Alt + T` on most systems, or search for "Terminal" in your applications.
 
@@ -57,6 +57,8 @@ username@computername ~ $
 That `$` (or `%` on some Macs) is the **prompt**. It means the terminal is waiting for you to type something. Think of it as the kitchen staff saying "Order, please!"
 
 ---
+
+> Note: From this point on, examples assume a Unix-style shell: Terminal on macOS, a Linux terminal, or WSL on Windows.
 
 ## Your File System: The Restaurant Floor Plan
 
@@ -335,7 +337,7 @@ The file is gone.
 
 This is the most important thing in this entire module:
 
-> **`rm` does not move files to a trash can. It deletes them permanently. There is no undo. There is no "Are you sure?" prompt. The file is gone.**
+> **`rm` does not move files to a trash can. It removes the file entry immediately, usually without an "Are you sure?" prompt or built-in undo. For everyday users, recovery is often difficult or impossible, although specialists may sometimes recover data before it is overwritten. If you need stronger assurance that data cannot be recovered, tools such as `shred` are used for that purpose.**
 
 **Real-World War Story:** In 1998, Pixar almost lost the entire movie *Toy Story 2*. An animator accidentally ran `rm -r *` at the root level of the project. Because there is no "Trash" in the terminal, the system immediately began permanently deleting character models, environments, and animations. They unplugged the server to stop it, but 90% of the film's files were already gone. They only survived because the technical director had a personal backup on her home computer! This illustrates the sheer unforgiving power of `rm`—it does exactly what you tell it to do, immediately, without asking if you're sure.
 
@@ -347,11 +349,13 @@ rm -r restaurant-copy
 
 The `-r` flag means "recursive" -- delete this folder and everything it contains. Be very careful with this.
 
-**The most dangerous command in computing** (DO NOT RUN THIS, just know it exists):
+**A classic dangerous example** (DO NOT RUN THIS, just know why people warn about it):
 
+```bash
+rm -rf /
 ```
-rm -rf /    ← NEVER DO THIS. Deletes everything on the computer. Everything.
-```
+
+On modern GNU/Linux systems, `rm` normally refuses to operate on `/` because of the default `--preserve-root` safety guard. Removing `/` requires explicitly disabling that protection with an unsafe flag such as `--no-preserve-root`.
 
 Rule of thumb: always double-check what you're deleting before pressing Enter.
 
@@ -384,7 +388,7 @@ Keep this handy until these become muscle memory:
 | `touch` | Creates an empty file | "Put a blank paper on the counter" |
 | `cp` | Copies a file | "Photocopy this recipe" |
 | `mv` | Moves or renames | "Move this to another shelf" or "relabel it" |
-| `rm` | Deletes permanently | "Shred this paper" (NO recycle bin!) |
+| `rm` | Deletes immediately | "Shred this paper" (no recycle bin by default) |
 | `clear` | Cleans the screen | "Wipe the whiteboard" |
 
 ---
@@ -460,7 +464,7 @@ You'll get more practice with pipes as the curriculum continues. For now, just r
 
 | Mistake | Why It's a Problem | What to Do Instead |
 |---------|-------------------|-------------------|
-| Using `rm` without checking first | Files are permanently deleted -- no undo | Run `ls` first to see what you're about to delete |
+| Using `rm` without checking first | Files are removed immediately, and recovery is usually not available to normal users | Run `ls` first to see what you're about to delete |
 | Forgetting `-r` when copying/removing folders | `cp folder newname` fails for directories | Use `cp -r folder newname` or `rm -r folder` |
 | Spaces in file names | `mkdir my folder` creates TWO folders: "my" and "folder" | Use quotes: `mkdir "my folder"` or dashes: `mkdir my-folder` |
 | Getting lost in the file system | You forget where you are and make files in the wrong place | Type `pwd` frequently. Use `cd ~` to go home when lost |
@@ -485,7 +489,7 @@ You'll get more practice with pipes as the curriculum continues. For now, just r
 3. **You are cleaning up old log files in your terminal and accidentally type `rm production-db.sql` instead of `rm production.log`. You immediately hit `Ctrl+Z` and look for the 'Undo' button or the Trash bin to recover your database backup. What happens next and why?**
    <details>
    <summary>Answer</summary>
-   You will not be able to recover the database backup file. When you delete a file using `rm` in the terminal, it does not get moved to a temporary Trash or Recycle Bin like it does in a graphical interface. Instead, the file is permanently and immediately removed from the file system. There is no built-in undo feature or confirmation prompt by default, which is why you must always double-check your commands before pressing Enter.
+   You usually cannot recover the database backup file through `Ctrl+Z`, an Undo button, or a Trash bin. When you delete a file using `rm` in the terminal, it does not get moved to a temporary Trash or Recycle Bin like it does in a graphical interface. Instead, `rm` removes the directory entry immediately. For normal users, that means the file is effectively gone, although forensic or undelete tools may sometimes recover data before it is overwritten. There is no built-in undo feature or confirmation prompt by default, which is why you must always double-check your commands before pressing Enter.
    </details>
 
 4. **You are starting a new web project and need to create a deep directory structure `app/frontend/components/buttons/` right away, but none of these folders exist yet. You try `mkdir app/frontend/components/buttons/` but the terminal throws an error. What command should you use instead and why did the first one fail?**

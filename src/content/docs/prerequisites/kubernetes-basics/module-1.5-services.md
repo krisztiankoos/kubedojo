@@ -116,6 +116,9 @@ Choosing the right Service type is critical for security and architecture.
 | **NodePort** | External (High Port) | Quick debugging, bare-metal clusters | Exposes high ports (30000+), hard for external clients to use. |
 | **LoadBalancer** | External (Standard Port) | Public-facing web apps in the Cloud | Costs money per Service, relies on an external cloud provider. |
 
+> **Pause and predict**: If you create a `LoadBalancer` Service, does it also consume a NodePort and a ClusterIP under the hood?
+> *(Answer: Yes. Kubernetes Service types build on each other like nesting dolls. A LoadBalancer routes external traffic to a NodePort, which in turn routes to a ClusterIP that distributes traffic to the Pods.)*
+
 ### ClusterIP (Default)
 
 Internal-only access within the cluster:

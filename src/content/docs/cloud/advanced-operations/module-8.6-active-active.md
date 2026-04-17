@@ -4,6 +4,7 @@ slug: cloud/advanced-operations/module-8.6-active-active
 sidebar:
   order: 7
 ---
+
 > **Complexity**: `[COMPLEX]`
 >
 > **Time to Complete**: 3 hours

@@ -135,22 +135,6 @@ az aks update \
 
 To help you choose the right authentication model, refer to this architectural decision tree:
 
-```text
-    Authentication Decision Tree:
-
-    Is the consumer an Azure resource (AKS, ACI, Container Apps, VM)?
-    ├── YES → Managed Identity + AcrPull role
-    │
-    └── NO → Is it a CI/CD pipeline?
-        ├── GitHub Actions → OIDC federated credential (no secrets)
-        ├── Azure DevOps → Service Connection (Workload Identity)
-        │
-        └── Other → Service Principal with certificate (not secret)
-                     Set minimum role (AcrPull for pull, AcrPush for push)
-```
-
-Visually, we can represent this authentication flow using the following architecture diagram:
-
 ```mermaid
 graph TD
     A[Is the consumer an Azure resource? <br/> AKS, ACI, Container Apps, VM]
@@ -259,26 +243,7 @@ When you design distributed systems, physics is your ultimate constraint. The sp
 
 Furthermore, cross-region bandwidth is not free. Pulling images across regional boundaries incurs heavy egress charges on your monthly Azure bill.
 
-Geo-replication solves this by allowing a single logical registry to exist physically in multiple Azure regions simultaneously.
-
-```text
-    ┌─────────────────────────────────────────────────────┐
-    │             ACR: kubedojoacr (Premium)               │
-    │                                                     │
-    │  ┌──────────────┐  ┌──────────────┐  ┌────────────┐│
-    │  │  East US 2   │  │  West Europe │  │  SE Asia   ││
-    │  │  (primary)   │  │  (replica)   │  │  (replica) ││
-    │  │              │  │              │  │            ││
-    │  │  Push here   │──│─ Sync ──────►│──│─ Sync ───►││
-    │  │  Pull here   │  │  Pull here   │  │  Pull here││
-    │  └──────────────┘  └──────────────┘  └────────────┘│
-    │                                                     │
-    │  Push: Write to primary, replicated automatically   │
-    │  Pull: Read from nearest replica                    │
-    └─────────────────────────────────────────────────────┘
-```
-
-Here is the architectural flow converted into a Mermaid diagram:
+Geo-replication solves this by allowing a single logical registry to exist physically in multiple Azure regions simultaneously. Here is the architectural flow:
 
 ```mermaid
 flowchart LR
@@ -453,39 +418,39 @@ By scheduling `acr purge`, you ensure that your registry remains lean and cost-e
 ## Quiz
 
 <details>
-<summary>1. What is the difference between an ACR admin account and a service principal for ACR authentication?</summary>
+<summary>1. You are designing an automated CI/CD pipeline using GitLab that pushes container images to ACR. A junior engineer suggests enabling the ACR admin account for the pipeline to use. Why should you reject this proposal and what should you implement instead?</summary>
 
-The admin account provides a single shared username/password with absolute, unfettered push, pull, and delete access to the entire registry. There is no granularity—anyone with the password has identical administrative access, resulting in zero auditability. Conversely, a service principal is a dedicated Azure identity bound to specific Role-Based Access Control (RBAC) definitions. You can cryptographically grant a service principal `AcrPull` (read-only) for specific scopes. Each service principal maintains its own lifecycle, can use certificate-based authentication, and can be independently audited or revoked without impacting other systems.
+You should reject the use of the admin account because it provides unfettered, full administrative access (push, pull, delete) to the entire registry using a single shared credential, which completely violates the principle of least privilege and destroys auditability. If that CI/CD pipeline is compromised, the attacker gains full control over your entire container registry. Instead, you should provision a dedicated Service Principal bound specifically to the `AcrPush` RBAC role. This approach ensures the pipeline only has the exact permissions required to upload images, allows for independent credential rotation, and provides clear audit trails in Azure Monitor without exposing other repositories to risk.
 </details>
 
 <details>
-<summary>2. How does ACR geo-replication reduce image pull latency for global deployments?</summary>
+<summary>2. Your company just expanded its e-commerce platform to serve users in both North America (East US) and Europe (West Europe). The application teams report that pods in the European AKS cluster are taking over 30 seconds to start during traffic spikes. You discover they are pulling images from a single Standard tier ACR in East US. How do you resolve this architectural bottleneck?</summary>
 
-When you configure geo-replication, ACR provisions read-only storage replicas of your registry across designated secondary Azure regions. When an image is pushed to the primary region, Azure asynchronously replicates those blob storage layers to the secondary regions over the Microsoft backbone. When a downstream client (such as an AKS cluster situated in West Europe) attempts to pull an image, Azure Traffic Manager intercepts the DNS resolution of your registry's login server and geographically routes the pull request to the local West Europe replica. This ensures the data travels the shortest physical distance, reducing massive 30-second transatlantic pulls into highly efficient 3-second local transfers.
+You must upgrade the Azure Container Registry from the Standard tier to the Premium tier to unlock the geo-replication feature. Once upgraded, you can provision a secondary read-only replica of the registry in the West Europe region. When developers push new images to East US, Azure will automatically and asynchronously sync the blob storage to the West Europe replica over the Microsoft backbone. Consequently, when the European AKS cluster scales out, Azure Traffic Manager will intercept the image pull request and route it locally, dropping pod startup times from 30+ seconds to just a few seconds and eliminating expensive cross-region bandwidth egress costs.
 </details>
 
 <details>
 <summary>3. You have an AKS cluster that needs to pull images from ACR. What is the most secure authentication method?</summary>
 
-You must utilize Managed Identities by executing `az aks update --attach-acr`. This operational command configures the AKS kubelet identity with a system-managed Service Principal and automatically assigns it the `AcrPull` RBAC role scoped explicitly to your registry. This architectural pattern represents the pinnacle of security because zero static credentials are ever generated, stored in Kubernetes secrets, or transmitted. The platform autonomously handles the lifecycle and rotation of the underlying tokens.
+You must utilize Managed Identities by executing `az aks update --attach-acr`. This operational command configures the AKS kubelet identity with a system-managed Service Principal and automatically assigns it the `AcrPull` RBAC role scoped explicitly to your registry. This architectural pattern represents the pinnacle of security because zero static credentials are ever generated, stored in Kubernetes secrets, or transmitted over the network. The Azure platform autonomously handles the lifecycle, secure exchange, and rotation of the underlying tokens, eliminating the risk of credential leakage entirely.
 </details>
 
 <details>
-<summary>4. What is the purpose of ACR Tasks base image triggers?</summary>
+<summary>4. Your microservices rely on a public Node.js Alpine base image. A critical zero-day vulnerability is announced in Alpine Linux, and the Node.js maintainers push a patched base image to Docker Hub. How can you ensure your microservices automatically inherit this security patch without relying on your central Jenkins CI pipeline?</summary>
 
-Base image triggers serve as an automated, serverless supply chain security mechanism. They dynamically monitor the upstream base images (such as a public `ubuntu:22.04` or `nginx:alpine` image) upon which your application Dockerfiles depend. If the maintainer of that upstream base image publishes a critical security patch, ACR Tasks instantaneously detects the delta and automatically spins up ephemeral compute to rebuild your application image, injecting the patched layers. This ensures your downstream deployments are immunized against zero-day vulnerabilities in base layers without requiring manual intervention from engineering teams.
+You should implement ACR Tasks and configure base image triggers for your application repositories. When enabled, ACR Tasks acts as a serverless supply chain security mechanism that continuously monitors the upstream base images (like `node:18-alpine`) declared in your Dockerfiles. The moment the patched base image is pushed to Docker Hub, ACR detects the change and instantaneously spins up ephemeral compute to rebuild your application images automatically. This guarantees your deployments are rapidly immunized against zero-day vulnerabilities in underlying layers, drastically reducing your exposure window without requiring any manual engineering intervention or tying up CI/CD build agents.
 </details>
 
 <details>
-<summary>5. Why should you avoid using the `:latest` tag in production Kubernetes deployments?</summary>
+<summary>5. A developer on your team configures their Kubernetes Deployment manifest to use the `webapp:latest` image tag. During a routine node upgrade, several pods are rescheduled, but they suddenly start failing crash loop backoffs. Explain the operational danger of this tagging strategy and how it caused the outage.</summary>
 
-Deploying the `:latest` tag introduces catastrophic non-determinism into production environments. The tag is highly mutable; it behaves as a floating pointer that arbitrary CI pipelines can randomly overwrite. If a Kubernetes node crashes and the scheduler reschedules a pod, the kubelet will execute an image pull and blindly fetch whatever payload currently holds the `:latest` tag. This means a node failure could spontaneously upgrade a pod to an untested application version. Furthermore, debugging becomes impossible because telemetry cannot accurately correlate errors to a specific immutable cryptographic hash, and rollback procedures are invalidated because the previous state of `:latest` is fundamentally lost.
+Deploying the `:latest` tag introduces catastrophic non-determinism into production environments because it acts as a highly mutable, floating pointer rather than a fixed artifact. During the node upgrade, when the kubelet rescheduled the pods, it reached out to the registry and blindly pulled whatever newly built image was currently tagged as `:latest`. The team likely pushed a breaking, untested change to `:latest` in the background, meaning the newly scheduled pods received a completely different application version than the pods running on the older nodes. To prevent this split-brain behavior and ensure reliable rollbacks, you must always use immutable semantic version tags (e.g., `v1.2.4`) or exact Git SHA commit hashes in your production manifests.
 </details>
 
 <details>
-<summary>6. What additional capabilities does ACR Premium provide over Standard, and when are they worth the extra cost?</summary>
+<summary>6. Your organization is migrating a highly regulated healthcare workload to Azure. The security compliance team dictates that the container registry must not be accessible via any public IP address and must encrypt all data at rest using keys managed by the organization, not Microsoft. Which ACR SKU must you choose and why?</summary>
 
-The Premium tier acts as the enterprise gateway, unlocking Geo-replication, Private Link (VNet integration), Content Trust (cryptographic image signing), and Customer-Managed Encryption Keys (CMK). The steep price increase is strategically justified when engineering a globally distributed architecture that demands sub-second scaling latency (via Geo-replication) or when operating in highly regulated compliance frameworks (like HIPAA or PCI-DSS) that strictly prohibit PaaS resources from exposing internet-routable public IP addresses (via Private Link).
+You are strictly required to choose the Premium SKU for your Azure Container Registry. While the Standard tier provides adequate storage and throughput for many workloads, it cannot satisfy strict network isolation or cryptographic compliance mandates. Only the Premium tier unlocks the Azure Private Link feature, which completely disables public internet access and projects the registry directly into your Virtual Network using a private IP address. Furthermore, the Premium tier is the only SKU that supports Customer-Managed Encryption Keys (CMK), allowing your security team to retain absolute cryptographic control over the underlying image blob storage.
 </details>
 
 <details>
@@ -497,7 +462,7 @@ The root cause of the latency is the physical limitation of transmitting massive
 <details>
 <summary>8. A security audit reveals that your development team has been using the `:latest` tag for all production deployments. Evaluate the risks associated with this practice and design a remediation strategy.</summary>
 
-The primary risk is a severe lack of operational determinism. Because `:latest` is continuously overwritten, horizontal pod autoscaling events may inadvertently deploy a mix of different application versions simultaneously, leading to split-brain application behavior and corrupted data schemas. To remediate this, you must implement a strict semantic versioning policy (e.g., `v1.2.4`) or inject the unique Git SHA commit hash directly into the image tag during the CI pipeline build phase. Additionally, you should execute an `az acr repository update --write-enabled false` command against specific production tags to render them cryptographically immutable, preventing any accidental overwrites.
+The primary risk is a severe lack of operational determinism. Because `:latest` is continuously overwritten, horizontal pod autoscaling events may inadvertently deploy a mix of different application versions simultaneously, leading to split-brain application behavior and corrupted data schemas. To remediate this, you must implement a strict semantic versioning policy (e.g., `v1.2.4`) or inject the unique Git SHA commit hash directly into the image tag during the CI pipeline build phase. Additionally, you should execute an `az acr repository update --write-enabled false` command against specific production tags to render them cryptographically immutable, preventing any accidental overwrites or malicious tampering by compromised pipelines.
 </details>
 
 ---

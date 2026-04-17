@@ -437,7 +437,7 @@ k get pod multi -o jsonpath='{range .status.containerStatuses[*]}{.name}{"\t"}{.
 2. **A microservice team deploys their API with a sidecar that ships logs to Elasticsearch. After deployment, `kubectl get pod api-pod` shows `1/2 Ready`. The main container is fine but the sidecar keeps crashing. What are the most likely causes, and does this affect the main application?**
    <details>
    <summary>Answer</summary>
-   The sidecar is likely crashing because: (1) its command exits immediately -- sidecar containers need a long-running process like `tail -F` or a proper log shipper daemon; (2) the Elasticsearch endpoint is unreachable and the shipper exits on connection failure; or (3) there's no shared volume, so the sidecar can't read the main container's logs. Check with `kubectl logs api-pod -c log-shipper`. While the main app continues running, the pod's Ready status stays `1/2`, which affects Service endpoints -- if readiness checks are configured, traffic may stop routing to this pod.
+   The sidecar is likely crashing because its process is exiting prematurely, which can happen if the command isn't a long-running daemon (like `tail -F`), if the Elasticsearch endpoint is unreachable, or if there is no shared volume preventing log access. You can diagnose the exact root cause by running `kubectl logs api-pod -c log-shipper` to view the crash output. Although the main application container continues to run perfectly fine, the overall pod Ready status will remain `1/2`. Because the pod is not fully ready, Kubernetes will stop routing Service traffic to it, essentially taking the pod out of rotation until the sidecar stabilizes.
    </details>
 
 3. **You're building an application that needs to: (1) clone a git repository before starting, (2) serve the repo content via nginx, and (3) have a background process that pulls git updates every 60 seconds. Which multi-container pattern(s) do you use, and how do the containers share the git data?**
@@ -455,13 +455,13 @@ k get pod multi -o jsonpath='{range .status.containerStatuses[*]}{.name}{"\t"}{.
 5. **You need to integrate an older legacy application that outputs proprietary telemetry data into a modern Prometheus monitoring stack. You cannot modify the legacy application's source code. Which multi-container pattern is best suited for this, and why?**
    <details>
    <summary>Answer</summary>
-   The Adapter pattern is the correct choice. The adapter pattern specifically translates data formats, protocols, or APIs between the main application container and external services. By deploying an adapter container alongside the legacy application, the adapter can read the proprietary telemetry and expose a `/metrics` endpoint in the standard Prometheus format, without requiring any changes to the legacy code.
+   The Adapter pattern is the correct choice for this scenario. This pattern is explicitly designed to translate disparate data formats, protocols, or APIs between a main application container and external monitoring services. By deploying an adapter container alongside the legacy application, it can ingest the proprietary telemetry locally. It then exposes a standard `/metrics` endpoint in the Prometheus format, entirely avoiding any risky modifications to the legacy source code.
    </details>
 
-6. **Your application requires a sidecar container to securely proxy requests to an external API (the Ambassador pattern). However, during pod termination, the sidecar shuts down before the main container finishes processing in-flight requests, causing errors. How does Kubernetes v1.29+ solve this?**
+6. **Your application requires a sidecar container to securely proxy requests to an external API (the Ambassador pattern). However, during pod termination, the sidecar shuts down before the main container finishes processing in-flight requests, causing errors. How does Kubernetes v1.33+ solve this?**
    <details>
    <summary>Answer</summary>
-   Starting with Kubernetes v1.29 (beta) and fully stable in v1.33, the native SidecarContainers feature allows sidecars to be defined under `spec.initContainers` with `restartPolicy: Always`. The kubelet deliberately postpones terminating these native sidecar containers until the main application containers have fully stopped, ensuring the proxy remains available for in-flight requests during a graceful shutdown.
+   Starting with Kubernetes v1.29 (beta) and fully stable in v1.33, the native SidecarContainers feature solves this race condition natively. By defining the sidecar under the `spec.initContainers` array with `restartPolicy: Always`, Kubernetes treats it as a true sidecar rather than a standard init container. When the pod receives a termination signal, the kubelet deliberately postpones terminating these native sidecar containers until the main application containers have completely shut down. This guaranteed shutdown order ensures the proxy remains fully available to handle and route all remaining in-flight requests during the pod's graceful termination phase.
    </details>
 
 7. **You added an ephemeral container to a running Pod to capture network packets, but you made a typo in the command. The ephemeral container immediately exits. You try to use `kubectl edit pod` to fix the typo in the ephemeral container's spec. What happens, and how do you resolve the situation?**
@@ -473,7 +473,7 @@ k get pod multi -o jsonpath='{range .status.containerStatuses[*]}{.name}{"\t"}{.
 8. **A pod's `restartPolicy` is set to `OnFailure`. An init container fails to download a required configuration file and exits with a non-zero status. What will the kubelet do in response to this failure?**
    <details>
    <summary>Answer</summary>
-   Because the pod's `restartPolicy` is not `Never`, the kubelet will repeatedly restart the failed init container until it succeeds. Init containers run sequentially, so the next init container or the main application containers will not start until this failing init container finally completes with a successful exit code.
+   Because the pod's overall `restartPolicy` is set to `OnFailure` (or `Always`), the kubelet will repeatedly restart the failed init container until it eventually succeeds. Kubernetes enforces a strict execution order where init containers must run sequentially and exit successfully before progressing. Therefore, the main application containers will remain blocked and will not start until this failing init container completes with a zero exit code. You would need to inspect the logs and fix the underlying issue (such as correcting the URL or fixing network permissions) so the container can break out of its crash loop.
    </details>
 
 ---

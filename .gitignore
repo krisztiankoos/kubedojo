@@ -65,10 +65,26 @@ test_script.sh
 .pipeline/link-cache.json
 .pipeline/knowledge-cards/
 .pipeline/reviews/*.lock
+.pipeline/reviews/*.md
 .pipeline/lab-reviews/
 .pipeline/lab-state.lock
 .pipeline/lab-state.yaml
+.pipeline/issue-watch/
+.pipeline/logs/
+.pipeline/on-prem-logs/
+.pipeline/*.db
+.pipeline/*.log
+.pipeline/*.json
+.pipeline/state.yaml
+.pipeline/state.lock
+.pipeline/ztt-pilot-*/
 
 # Agent bridge runtime
 .bridge/
 .agent/
+
+# Local Codex / agent runtime state
+.agents/
+.codex/
+.worktrees/
+batch_state/

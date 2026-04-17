@@ -89,8 +89,8 @@ In a Continuous Deployment workflow:
 >
 > <details>
 > <summary>Click for the answers</summary>
-> 1. **Continuous Integration (CI) only.** The artifact is successfully built, tested, and integrated, but the deployment process is entirely manual and disjointed from the automated pipeline.
-> 2. **Continuous Delivery.** The presence of the QA engineer's manual "Approve" click before the final production deployment distinguishes it from Continuous Deployment, which would flow all the way to production automatically without human intervention.
+> 1. **Continuous Integration (CI) only.** The artifact is successfully built, tested, and integrated, but the deployment process is entirely manual and disjointed from the automated pipeline. Because the deployment requires an Ops team member to manually pull and apply the image on a Friday evening, it completely lacks the automated deployment mechanisms required for Continuous Delivery. The CI phase has done its job by producing a verifiable artifact, but the pipeline stops there.
+> 2. **Continuous Delivery.** The presence of the QA engineer's manual "Approve" click before the final production deployment distinguishes it from Continuous Deployment, which would flow all the way to production automatically without human intervention. This strategy ensures the code is always in a deployable state while retaining business control over the actual release moment. This manual gate is the defining characteristic of Continuous Delivery, allowing for human validation without sacrificing automated promotion through lower environments.
 > </details>
 
 ## Anatomy of a Pipeline
@@ -237,7 +237,7 @@ The CI/CD tooling landscape is vast, confusing, and highly competitive. Choosing
 >
 > <details>
 > <summary>Click for the answer</summary>
-> **Tekton**. It is specifically designed from the ground up as a Kubernetes-native CI/CD framework. It uses Custom Resource Definitions (like Task, Pipeline, PipelineRun) to define workflows, and executes jobs natively as Kubernetes Pods. This perfectly leverages the cluster's autoscaling and ties directly into Kubernetes-native tooling, making it ideal for a strictly cloud-native startup.
+> **Tekton**. It is specifically designed from the ground up as a Kubernetes-native CI/CD framework. It uses Custom Resource Definitions (like Task, Pipeline, PipelineRun) to define workflows, and executes jobs natively as Kubernetes Pods. This perfectly leverages the cluster's autoscaling and ties directly into Kubernetes-native tooling, making it ideal for a strictly cloud-native startup. By storing pipeline definitions as standard Kubernetes manifests, the team can manage their entire CI/CD infrastructure using the exact same GitOps processes they use for their applications.
 > </details>
 
 ## Deployment Strategies via Pipelines

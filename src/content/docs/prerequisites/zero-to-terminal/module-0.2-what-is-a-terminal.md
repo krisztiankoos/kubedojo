@@ -116,16 +116,16 @@ You can save terminal commands in a file (called a **script** — think of it as
 
 ### 3. Remote Access
 
-Most servers (the powerful computers that run websites and apps) don't have screens, mice, or GUIs at all. They sit in data centers, and the only way to talk to them is through a terminal over the internet. If you want to work with servers — and in Kubernetes, you will — the terminal is your only option.
+Many servers are managed remotely without anyone sitting in front of a screen. In practice, engineers often use a terminal over SSH (Secure Shell), which OpenSSH describes as the basic remote login client, although cloud consoles and web admin tools also exist. If you want to work with servers — and in Kubernetes, you will — terminal access is a standard and important skill. ([OpenSSH manual](https://www.openssh.org/manual.html))
 
 ### 4. Scripting and Repeatability
 
-When you click through a GUI, there's no record of what you did. But when you type commands, you have a history. You can share those commands with a teammate. You can write them down. You can repeat them perfectly every time.
+When you click through a GUI, the steps can be harder to document and repeat unless the tool records them for you. But when you type commands, you usually have a shell history and can save the exact steps in a script. You can share those commands with a teammate, write them down, and rerun the same procedure consistently.
 
 > **Stop and think**: Imagine you need to set up 10 identical servers for a new application. With a GUI, you'd click through the same setup screens 10 times, hoping you don't miss a checkbox on server #7. With a terminal, you write the setup commands once, save them in a script, and run that script on all 10 servers. Which approach is more likely to give you 10 identical servers?
 
-**The Cost of the Missed Checkbox**
-In 2014, a major cloud provider experienced a massive outage because an engineer was manually configuring a fleet of servers using a GUI control panel. On server 42 of 50, they accidentally missed a single checkbox for a critical networking setting. That single human error caused a cascading failure resulting in four hours of downtime and affecting millions of customers. If they had used a terminal script to apply the configuration, the exact same settings would have been applied flawlessly to all 50 servers.
+**A Documented Operational Mistake**
+A real example of operational risk comes from AWS. In its official summary of the February 28, 2017 Amazon S3 disruption, AWS said an authorized team member entered one input incorrectly in an operational command, which removed more servers than intended and contributed to a major outage in `us-east-1`. AWS later added safeguards to the tool to reduce the chance of the same mistake happening again. The lesson here is not that terminals are bad or GUIs are bad. The lesson is that repeatable tooling, reviews, and safety checks matter when one action can affect many systems. ([AWS postmortem](https://aws.amazon.com/message/41926/))
 
 > **GUI vs Terminal — Honest Trade-offs**
 > We praise the terminal a lot here, but GUIs genuinely win in several areas. If you are looking at visual monitoring dashboards (like Grafana) to spot a sudden spike in traffic, editing complex architecture diagrams, or exploring a brand-new application for the very first time, a GUI is vastly superior. The rule of thumb: use GUIs for consuming visual information and initial exploration; use the terminal for text manipulation, automation, and precise execution.
@@ -138,7 +138,7 @@ In 2014, a major cloud provider experienced a massive outage because an engineer
 >
 > 2. **The word "terminal" comes from the physical device.** In the 1960s-70s, a "terminal" was an actual machine — a keyboard and a screen (or printer) connected to a mainframe computer. Today's terminal is a software program that simulates that old device. It's called a "terminal emulator" because it emulates (imitates) the original hardware.
 >
-> 3. **Most of the internet runs on terminal commands.** The servers powering Google, Netflix, Amazon, and nearly every website you visit are managed through terminals. System administrators (sysadmins) and engineers type commands to keep these services running 24/7.
+> 3. **A huge amount of internet infrastructure is operated with terminal-based tools and automation.** Many servers and cloud workloads are administered from shells, scripts, and remote management tools rather than local desktop apps. You do not need the terminal for every task, but it is a core skill for system administration, cloud work, and Kubernetes.
 
 ---
 
@@ -354,7 +354,7 @@ When you move from learning to working on real servers, the stakes get higher. H
 
 | Production Mistake | Real Consequence | How to Prevent It |
 |--------------------|------------------|-------------------|
-| Running a command on the wrong server because you didn't read the prompt | Deleted the production database instead of the staging database (This actually happened at GitLab in 2017, causing massive data loss). | Always double-check the `username@hostname` in your prompt before pressing Enter on a destructive command. |
+| Running a command on the wrong server because you didn't read the prompt | A mistake like this can hit production instead of staging. In GitLab's January 31, 2017 database outage, the company reported that an accidental removal of data from its primary database caused a major outage and some unrecoverable production data loss. ([GitLab postmortem](https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/)) | Always double-check the `username@hostname` in your prompt before pressing Enter on a destructive command. |
 | Copying and pasting multiple lines of commands from the internet directly into the terminal | The terminal might execute hidden malicious commands or run incomplete commands immediately. | Paste into a plain text editor first, review exactly what the commands do, and then copy them into your terminal. |
 | Running a script without testing it first | A small typo in an automated script takes down 50 servers simultaneously instead of just one. | Test scripts on a single, non-production server (a staging environment) before running them everywhere. |
 

@@ -211,6 +211,122 @@ Conversely, a **False Negative** occurs when malicious traffic slips through und
 
 ---
 
+## Part 7: Hands-On: Configuring WAF and Rate Limiting
+
+In this exercise, we will configure a Kubernetes Ingress resource to enforce rate limiting and enable a Web Application Firewall to block a basic SQL injection attack using standard NGINX Ingress Controller annotations.
+
+### Step 1: Deploy the Target Application
+
+First, deploy a simple web service that we will protect.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+      - name: webapp
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-svc
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: webapp
+```
+
+### Step 2: Configure Rate Limiting
+
+We will configure the Ingress resource to limit clients to 5 requests per second. NGINX Ingress uses the leaky bucket algorithm for its `limit-rps` annotations.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webapp-ingress-ratelimit
+  annotations:
+    nginx.ingress.kubernetes.io/limit-rps: "5"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: webapp.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: webapp-svc
+            port:
+              number: 80
+```
+
+> **Pause and predict**: If you run `curl` against `webapp.local` 10 times in one second, what HTTP status code will the 6th request return?
+
+### Step 3: Enable the WAF (OWASP Core Rule Set)
+
+Next, we enable the WAF engine (often ModSecurity or Coraza depending on your Ingress controller version) and configure it to block SQL injection using the OWASP Core Rule Set.
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webapp-ingress-waf
+  annotations:
+    nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+    nginx.ingress.kubernetes.io/modsecurity-snippet: |
+      SecRuleEngine On
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: secure.webapp.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: webapp-svc
+            port:
+              number: 80
+```
+
+### Step 4: Verify the Protection
+
+1. **Test Rate Limiting**:
+   ```bash
+   # Send 10 rapid requests
+   for i in {1..10}; do curl -s -o /dev/null -w "%{http_code}\n" http://webapp.local; done
+   ```
+   You should see `200` for the first 5 requests, followed by `503` (Service Unavailable), which is the default rate-limit rejection code for NGINX.
+
+2. **Test SQL Injection**:
+   ```bash
+   # Attempt a basic SQLi payload in the query string
+   curl -H "Host: secure.webapp.local" "http://localhost/?id=1' OR '1'='1"
+   ```
+   The WAF will inspect the query string, match the SQL injection signature against the OWASP Core Rule Set, and return a `403 Forbidden`.
+
+---
+
 ## Knowledge Check
 
 > **Note**: Test your understanding with these scenario-based questions.

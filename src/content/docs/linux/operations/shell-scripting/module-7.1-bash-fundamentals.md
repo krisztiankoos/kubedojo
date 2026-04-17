@@ -237,6 +237,8 @@ fi
 
 ### [[ ]] vs [ ]
 
+> **Stop and think**: Why is `[[ ]]` considered safer than `[ ]`? If `$name` is completely empty and unquoted in `[ $name = "John" ]`, what exact command does Bash try to run?
+
 ```bash
 # [[ ]] is Bash-specific but safer
 [[ "$name" = "John" ]]      # Works even if $name is empty

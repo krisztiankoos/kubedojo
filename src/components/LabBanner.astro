@@ -15,7 +15,7 @@ interface Props {
   url: string;
   duration: string;
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  environment: 'ubuntu' | 'kubernetes';
+  environment: 'ubuntu' | 'kubernetes' | 'centos';
 }
 
 const { id, url, duration, difficulty, environment } = Astro.props;
@@ -29,6 +29,7 @@ const difficultyColors: Record<string, { bg: string; text: string }> = {
 const envLabels: Record<string, { label: string; bg: string; text: string }> = {
   ubuntu: { label: 'Ubuntu', bg: '#E8FFF0', text: '#00A651' },
   kubernetes: { label: 'K8s Cluster', bg: '#EBF1FF', text: '#326CE5' },
+  centos: { label: 'CentOS/RHEL', bg: '#FDECEC', text: '#C62828' },
 };
 
 const diff = difficultyColors[difficulty] ?? difficultyColors.intermediate;

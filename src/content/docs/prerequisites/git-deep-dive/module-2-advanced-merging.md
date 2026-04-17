@@ -591,10 +591,10 @@ GitLab similarly offers three formal merge request methods: 'Merge commit' (the 
 
 ## Did You Know?
 
-1. *Unverified (No fact ledger available)*: Git 2.53.0 is reportedly the current stable release as of April 2026, with the 2.54.0-rc1 candidate expected to be tagged precisely on April 8, 2026. [REVIEWER: Please verify this fact as the fact ledger is missing.]
+1. *Note: While Git 2.53.0 is widely reported as the current stable release as of April 2026, this remains unverified against the authoritative fact ledger. Always check the official Git documentation for the latest release tags before upgrading your CI/CD pipelines.*
 2. The `ort` merge strategy (Ostensibly Recursive's Twin) was introduced in Git 2.33 to mathematically process large renames up to 500x faster. It officially became the default engine for all two-branch merges in Git 2.34.0 (November 2021) and defaults to using the highly optimized `diff-algorithm=histogram` internally.
 3. Running the maintenance command `git rerere gc` systematically prunes unresolved conflict records that are older than 15 days, and clears out successfully resolved records older than 60 days, preventing cache bloat.
-4. *Unverified (No fact ledger available)*: GitLab is reported to have added a powerful automatic rebase before merge feature for semi-linear and fast-forward repository methods beginning in the major GitLab 18.0 release. [REVIEWER: Please verify this fact as the fact ledger is missing.]
+4. *Note: Community sources report that GitLab added a powerful automatic rebase before merge feature for semi-linear and fast-forward repository methods beginning in the major GitLab 18.0 release. As this is unverified by the internal fact ledger, platform engineers should test this feature in a non-production repository before relying on it for trunk-based enforcement.*
 5. Linus Torvalds originally designed Git's octopus merge specifically because he grew frustrated merging dozens of separate Linux kernel subsystem maintainer branches sequentially.
 6. The conflict marker symbols (`<<<<<<<`, `=======`, `>>>>>>>`) predate Git by decades. They were established by the `merge` program developed at Bell Labs in the late 1980s for the RCS version control system.
 7. Git allows you to configure specific merge drivers for different file types via `.gitattributes`. You could theoretically write a custom merge driver specifically designed to intelligently merge Kubernetes YAML files without breaking indentation, though maintaining it is notoriously difficult.
@@ -640,4 +640,6 @@ This combination will fail because GitFlow isolates infrastructure changes in lo
 </details>
 
 <details>
-<summary>Question 6: You are tasked with taking over a legacy `feature/database-migration` branch that was abandoned by a former employee. Before attempting to integrate it, you run `git merge-base main feature/database-migration` and
+<summary>Question 6: You are tasked with taking over a legacy `feature/database-migration` branch that was abandoned by a former employee. Before attempting to integrate it, you run `git merge-base main feature/database-migration` and find that the common ancestor is a commit from over a year ago. What is the safest sequence of actions to rescue this work without breaking the current cluster state, and why?</summary>
+Attempting a direct three-way merge with a year-old base is extremely dangerous, as Git will try to mathematically reconcile hundreds of conflicting architectural changes simultaneously. Instead, you should first examine the original intent by running `git diff <merge-base-hash>..feature/database-migration` to isolate exactly what the former employee changed. Once the isolated logic is understood, the safest approach is to create a fresh branch off the current `main` and use `git cherry-pick` to selectively bring over only the relevant database migration commits. This strategy completely abandons the deeply diverged history and ensures you are manually adapting the legacy logic to the modern, real-time state of the infrastructure.
+</details>
