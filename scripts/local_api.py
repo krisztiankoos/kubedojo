@@ -2167,6 +2167,85 @@ def build_navigation_status(repo_root: Path) -> dict[str, Any]:
     }
 
 
+def _parse_site_health_output(output: str) -> dict[str, Any]:
+    errors_match = re.search(r"RESULTS:\s+(\d+)\s+errors,\s+(\d+)\s+warnings", output)
+    stats_match = re.search(
+        r"STATS:\s+(\d+)\s+files,\s+(\d+)\s+modules,\s+(\d+)\s+links checked",
+        output,
+    )
+    errors = int(errors_match.group(1)) if errors_match else None
+    warnings = int(errors_match.group(2)) if errors_match else None
+    stats = None
+    if stats_match:
+        stats = {
+            "files": int(stats_match.group(1)),
+            "modules": int(stats_match.group(2)),
+            "links_checked": int(stats_match.group(3)),
+        }
+    return {
+        "errors": errors,
+        "warnings": warnings,
+        "ok": errors == 0 if errors is not None else None,
+        "stats": stats,
+    }
+
+
+def build_delivery_status(repo_root: Path) -> dict[str, Any]:
+    """Delivery-facing readiness surface for build + health status.
+
+    Answers the operator question: is the published output roughly current, and
+    is the content tree structurally healthy, without requiring manual command
+    runs and log parsing.
+    """
+    docs_root = repo_root / "src" / "content" / "docs"
+    dist_root = repo_root / "dist"
+    docs_files = [p for p in docs_root.rglob("*.md") if p.is_file()]
+    newest_source = max((_path_mtime(p) for p in docs_files), default=0.0)
+    dist_files = [p for p in dist_root.rglob("*") if p.is_file()] if dist_root.exists() else []
+    newest_dist = max((_path_mtime(p) for p in dist_files), default=0.0)
+
+    build_state = {
+        "dist_exists": dist_root.exists(),
+        "dist_file_count": len(dist_files),
+        "newest_source_mtime": newest_source,
+        "newest_dist_mtime": newest_dist,
+        "up_to_date": bool(dist_files) and newest_dist >= newest_source,
+    }
+
+    health_cmd = [sys.executable, "scripts/check_site_health.py"]
+    try:
+        result = subprocess.run(
+            health_cmd,
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=30,
+        )
+        health = _parse_site_health_output(result.stdout)
+        health["exit_code"] = result.returncode
+        health["summary_line"] = next(
+            (line.strip() for line in result.stdout.splitlines() if line.startswith("RESULTS:")),
+            None,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        health = {
+            "ok": None,
+            "errors": None,
+            "warnings": None,
+            "stats": None,
+            "exit_code": None,
+            "summary_line": None,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+
+    return {
+        "generated_at": time.time(),
+        "build": build_state,
+        "site_health": health,
+    }
+
+
 def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     return f"""<!doctype html>
 <html lang="en">
@@ -3632,6 +3711,7 @@ def build_api_schema() -> dict[str, Any]:
             {"path": "/api/missing-modules/status", "desc": "Modules missing from nav/sidebar"},
             {"path": "/api/activity/recent", "desc": "Recent commits, pipeline events, bridge messages, watched issue"},
             {"path": "/api/navigation/status", "desc": "Top-level route coverage and candidate-stale index pages"},
+            {"path": "/api/delivery/status", "desc": "Build freshness and site-health status"},
             {"path": "/api/runtime/services", "desc": "Runtime services (pids, uptime, ports)"},
             {"path": "/api/pipeline/v2/status", "desc": "Pipeline v2 queue + per-track"},
             {
@@ -3700,6 +3780,8 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         return 200, build_recent_activity(repo_root), "application/json; charset=utf-8"
     if path == "/api/navigation/status":
         return 200, build_navigation_status(repo_root), "application/json; charset=utf-8"
+    if path == "/api/delivery/status":
+        return 200, build_delivery_status(repo_root), "application/json; charset=utf-8"
     if path == "/api/runtime/services":
         return 200, build_runtime_services_status(repo_root), "application/json; charset=utf-8"
     if path == "/api/pipeline/v2/status":
@@ -3865,6 +3947,7 @@ CACHE_POLICY: dict[str, tuple[float, Callable[[Path], tuple] | None]] = {
     "/api/missing-modules/status": (30.0, None),
     "/api/activity/recent": (5.0, _v_v2_db),
     "/api/navigation/status": (30.0, None),
+    "/api/delivery/status": (30.0, None),
     "/api/runtime/services": (2.0, None),
     "/api/pipeline/v2/status": (5.0, _v_v2_db),
     "/api/translation/v2/status": (5.0, _v_translation_db),

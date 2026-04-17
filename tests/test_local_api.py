@@ -332,6 +332,31 @@ def test_route_request_serves_recent_activity_and_navigation_status(tmp_path: Pa
     assert any(item["index"].endswith("src/content/docs/ai/index.md") for item in navigation["candidate_stale_indexes"])
 
 
+def test_route_request_serves_delivery_status(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    _init_repo(repo_root)
+    _write(repo_root / "src/content/docs/prerequisites/index.md", "---\ntitle: P\n---\n")
+    _write(repo_root / "dist/index.html", "built\n")
+    _write(
+        repo_root / "scripts/check_site_health.py",
+        "\n".join(
+            [
+                "#!/usr/bin/env python3",
+                "print('RESULTS: 0 errors, 3 warnings')",
+                "print('STATS:   10 files, 4 modules, 20 links checked')",
+            ]
+        ),
+    )
+
+    status_code, payload, _ = local_api.route_request(repo_root, "/api/delivery/status")
+    assert status_code == 200
+    assert payload["build"]["dist_exists"] is True
+    assert payload["build"]["dist_file_count"] >= 1
+    assert payload["site_health"]["ok"] is True
+    assert payload["site_health"]["warnings"] == 3
+    assert payload["site_health"]["stats"]["modules"] == 4
+
+
 def test_runtime_services_detects_stale_pid_and_discovers_unknown_workers(tmp_path: Path) -> None:
     repo_root = tmp_path
     pids_dir = repo_root / ".pids"
@@ -565,6 +590,7 @@ def test_api_schema_advertises_new_endpoints() -> None:
     assert "/api/git/worktree" in paths  # singular still there
     assert "/api/activity/recent" in paths
     assert "/api/navigation/status" in paths
+    assert "/api/delivery/status" in paths
     assert "conventions" in schema
     assert "errors" in schema["conventions"]
 
