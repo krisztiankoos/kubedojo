@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -59,6 +60,38 @@ RUNTIME_SERVICES = (
     {"name": "v2-patch-worker", "pid_file": ".pids/v2-patch-worker.pid", "port": None, "label": "V2 Patch Worker"},
 )
 RUNTIME_SERVICE_ORDER = tuple(svc["name"] for svc in RUNTIME_SERVICES)
+
+# Module keys are hierarchical slugs under src/content/docs, e.g.
+# "prerequisites/zero-to-terminal/module-0.1-alpha". Segments only allow
+# lowercase ascii, digits, dots, dashes, and underscores. NO "..", no "/"
+# at the edges, no absolute paths. The per-segment check rejects traversal
+# attempts like "..", ".", or leading-dot hidden names.
+_MODULE_KEY_SEGMENT_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+
+
+def _validate_module_key(repo_root: Path, raw: str) -> str | None:
+    """Normalize and validate a module-key slug.
+
+    Returns the normalized key (".md" suffix stripped) if safe, else None.
+    Rejects path-traversal patterns and anything that would resolve outside
+    src/content/docs.
+    """
+    if not raw:
+        return None
+    normalized = raw[:-3] if raw.endswith(".md") else raw
+    if not normalized or normalized.startswith("/") or normalized.endswith("/"):
+        return None
+    segments = normalized.split("/")
+    for segment in segments:
+        if segment in ("", ".", "..") or not _MODULE_KEY_SEGMENT_RE.match(segment):
+            return None
+    docs_root = (repo_root / "src" / "content" / "docs").resolve()
+    try:
+        candidate = (docs_root / f"{normalized}.md").resolve()
+        candidate.relative_to(docs_root)
+    except (OSError, ValueError):
+        return None
+    return normalized
 
 
 def _json_default(value: Any) -> Any:
@@ -299,8 +332,58 @@ def build_issue_watch_state(repo_root: Path, issue_number: int) -> dict[str, Any
     }
 
 
+def _process_age_seconds(pid: int) -> float | None:
+    """Return the process's elapsed running time in seconds, or None if unknown.
+
+    Uses POSIX `ps -o etime=` (portable across Linux and macOS). Parsing
+    handles the `[[DD-]HH:]MM:SS` format `ps` emits.
+    """
+    try:
+        result = subprocess.run(
+            ["ps", "-p", str(pid), "-o", "etime="],
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+    except (FileNotFoundError, OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    etime = result.stdout.strip()
+    if not etime:
+        return None
+    try:
+        days = 0
+        if "-" in etime:
+            days_str, etime = etime.split("-", 1)
+            days = int(days_str)
+        parts = etime.split(":")
+        if len(parts) == 3:
+            hours, minutes, seconds = (int(p) for p in parts)
+        elif len(parts) == 2:
+            hours = 0
+            minutes, seconds = (int(p) for p in parts)
+        else:
+            return None
+    except ValueError:
+        return None
+    return float(days * 86400 + hours * 3600 + minutes * 60 + seconds)
+
+
+# If a process's age exceeds the pid-file age by more than this many seconds,
+# treat the PID as reused (the real owner exited and a new process inherited
+# the PID). 60s absorbs normal pid-file write jitter.
+_PID_REUSE_SLACK_SECONDS = 60.0
+
+
 def _inspect_pid_file(pid_path: Path) -> dict[str, Any]:
-    """Read a pid file and probe the process. Returns pid, status, uptime, stale flag."""
+    """Read a pid file and probe the process. Returns pid, status, uptime, stale flag.
+
+    Detects PID reuse: if the live process started meaningfully before the
+    pid file was written, the pid file is treated as stale rather than
+    claiming a healthy service.
+    """
     pid: int | None = None
     status = "stopped"
     uptime_seconds: float | None = None
@@ -330,12 +413,24 @@ def _inspect_pid_file(pid_path: Path) -> dict[str, Any]:
     if pid is not None:
         try:
             os.kill(pid, 0)  # Signal 0 probes existence without delivering a signal.
-            status = "running"
-            if pid_file_mtime is not None:
-                uptime_seconds = max(0.0, time.time() - pid_file_mtime)
         except OSError:
             status = "stale"
             stale_pid_file = True
+        else:
+            proc_age = _process_age_seconds(pid)
+            if proc_age is not None and pid_file_mtime is not None:
+                pid_file_age = max(0.0, time.time() - pid_file_mtime)
+                if proc_age > pid_file_age + _PID_REUSE_SLACK_SECONDS:
+                    # Process existed long before the pid file was written -> reused PID.
+                    status = "stale"
+                    stale_pid_file = True
+                else:
+                    status = "running"
+                    uptime_seconds = proc_age
+            else:
+                status = "running"
+                if pid_file_mtime is not None:
+                    uptime_seconds = max(0.0, time.time() - pid_file_mtime)
     else:
         status = "stale"
         stale_pid_file = True
@@ -1524,14 +1619,20 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
             return 404, {"error": "missing_issue_watch_state", "issue_number": issue_number}, "application/json; charset=utf-8"
         return 200, payload, "application/json; charset=utf-8"
     if path.startswith("/api/module/") and path.endswith("/state"):
-        module_key = unquote(path[len("/api/module/") : -len("/state")]).strip("/")
-        if not module_key:
+        raw_key = unquote(path[len("/api/module/") : -len("/state")]).strip("/")
+        if not raw_key:
             return 400, {"error": "missing_module_key"}, "application/json; charset=utf-8"
+        module_key = _validate_module_key(repo_root, raw_key)
+        if module_key is None:
+            return 400, {"error": "invalid_module_key"}, "application/json; charset=utf-8"
         return 200, build_module_state(repo_root, module_key), "application/json; charset=utf-8"
     if path.startswith("/api/module/") and path.endswith("/orchestration/latest"):
-        module_key = unquote(path[len("/api/module/") : -len("/orchestration/latest")]).strip("/")
-        if not module_key:
+        raw_key = unquote(path[len("/api/module/") : -len("/orchestration/latest")]).strip("/")
+        if not raw_key:
             return 400, {"error": "missing_module_key"}, "application/json; charset=utf-8"
+        module_key = _validate_module_key(repo_root, raw_key)
+        if module_key is None:
+            return 400, {"error": "invalid_module_key"}, "application/json; charset=utf-8"
         return 200, build_module_orchestration_latest(repo_root, module_key), "application/json; charset=utf-8"
     return 404, {"error": "not_found", "path": path}, "application/json; charset=utf-8"
 
@@ -1539,7 +1640,26 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
 def make_handler(repo_root: Path) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
-            status_code, payload, content_type = route_request(repo_root, self.path)
+            try:
+                status_code, payload, content_type = route_request(repo_root, self.path)
+            except sqlite3.Error as exc:
+                status_code = 500
+                payload = {
+                    "error": "sqlite_error",
+                    "exception": type(exc).__name__,
+                    "message": str(exc),
+                    "path": self.path,
+                }
+                content_type = "application/json; charset=utf-8"
+            except Exception as exc:  # noqa: BLE001 - surface all read failures as JSON
+                status_code = 500
+                payload = {
+                    "error": "internal_error",
+                    "exception": type(exc).__name__,
+                    "message": str(exc),
+                    "path": self.path,
+                }
+                content_type = "application/json; charset=utf-8"
             if content_type.startswith("text/html"):
                 body = str(payload).encode("utf-8")
             else:

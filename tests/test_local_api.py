@@ -381,6 +381,126 @@ def test_route_request_serves_dashboard_and_issue_watch(tmp_path: Path) -> None:
     assert payload["comments_count"] == 1
 
 
+def test_module_endpoints_reject_path_traversal(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    _init_repo(repo_root)
+
+    hostile_keys = [
+        "../../../../etc/passwd",
+        "../../.agents/skills/platform-expert/SKILL",
+        "..%2F..%2Fetc%2Fpasswd",  # URL-encoded traversal
+        "foo/../bar",
+        ".hidden/module",
+        "foo//bar",  # empty middle segment
+        "UPPERCASE/module",  # uppercase not allowed in slugs
+        "foo/bar$baz",  # disallowed char
+    ]
+
+    for hostile in hostile_keys:
+        status_state, payload_state, _ = local_api.route_request(
+            repo_root, f"/api/module/{hostile}/state"
+        )
+        assert status_state == 400, (hostile, payload_state)
+        assert payload_state["error"] in {"invalid_module_key", "missing_module_key"}
+
+        status_orch, payload_orch, _ = local_api.route_request(
+            repo_root, f"/api/module/{hostile}/orchestration/latest"
+        )
+        assert status_orch == 400, (hostile, payload_orch)
+        assert payload_orch["error"] in {"invalid_module_key", "missing_module_key"}
+
+
+def test_module_endpoints_accept_legitimate_keys(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    _init_repo(repo_root)
+    # Legit slugs should pass validation and reach the handler even if the
+    # file doesn't exist (the handler reports english_exists: False).
+    status_code, payload, _ = local_api.route_request(
+        repo_root, "/api/module/prerequisites/zero-to-terminal/module-0.1-alpha/state"
+    )
+    assert status_code == 200
+    assert payload["english_exists"] is False
+
+
+def test_route_request_returns_json_error_on_sqlite_schema_drift(tmp_path: Path) -> None:
+    """If a v2 DB exists but has a broken schema, the handler must return a
+    JSON error envelope via do_GET, not raise into the HTTP server."""
+    repo_root = tmp_path
+    _init_repo(repo_root)
+    v2_db = repo_root / ".pipeline" / "v2.db"
+    v2_db.parent.mkdir(parents=True, exist_ok=True)
+    # Create a DB with a jobs table missing the queue_state column the reader needs.
+    conn = sqlite3.connect(v2_db)
+    try:
+        conn.execute("CREATE TABLE jobs (id INTEGER PRIMARY KEY)")
+        conn.execute("CREATE TABLE events (id INTEGER PRIMARY KEY)")
+        conn.commit()
+    finally:
+        conn.close()
+
+    # route_request will raise sqlite3.OperationalError on this broken schema.
+    # The handler must wrap that into a 500 JSON envelope.
+    import http.client
+    from threading import Thread
+
+    handler_cls = local_api.make_handler(repo_root)
+    server = local_api.ThreadingHTTPServer(("127.0.0.1", 0), handler_cls)
+    port = server.server_address[1]
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        conn_http = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn_http.request("GET", "/api/pipeline/v2/status")
+        resp = conn_http.getresponse()
+        body = resp.read().decode("utf-8")
+        assert resp.status == 500
+        payload = json.loads(body)
+        assert payload["error"] in {"sqlite_error", "internal_error"}
+        assert "path" in payload
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
+def test_pid_reuse_detection_marks_old_process_as_stale(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """If the live process started long before the pid file was written, the
+    pid file is treated as stale (PID was reused by an unrelated process)."""
+    import os as _os
+
+    pid_path = tmp_path / "reused.pid"
+    pid_path.write_text(f"{_os.getpid()}\n", encoding="utf-8")
+    # Stub process age to simulate a long-running process that predates the
+    # pid file by much more than the reuse slack.
+    monkeypatch.setattr(
+        local_api,
+        "_process_age_seconds",
+        lambda pid: local_api._PID_REUSE_SLACK_SECONDS + 3600.0,
+    )
+    probe = local_api._inspect_pid_file(pid_path)
+    assert probe["status"] == "stale"
+    assert probe["stale_pid_file"] is True
+
+
+def test_pid_fresh_process_reports_running(tmp_path: Path, monkeypatch) -> None:
+    import os as _os
+
+    pid_path = tmp_path / "fresh.pid"
+    pid_path.write_text(f"{_os.getpid()}\n", encoding="utf-8")
+    # Process age within the slack window -> should report running.
+    monkeypatch.setattr(local_api, "_process_age_seconds", lambda pid: 5.0)
+    probe = local_api._inspect_pid_file(pid_path)
+    assert probe["status"] == "running"
+    assert probe["stale_pid_file"] is False
+    assert probe["uptime_seconds"] == 5.0
+
+
+def test_pid_reuse_helper_handles_missing_process() -> None:
+    # Very high PID that's almost certainly not a live process.
+    assert local_api._process_age_seconds(999_999) is None
+
+
 def test_cli_starts_server_and_reports_host_port(tmp_path: Path) -> None:
     repo_root = tmp_path
     _init_repo(repo_root)
