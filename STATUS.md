@@ -4,7 +4,7 @@
 
 ## Current State
 
-**711 modules** across 8 published tracks. **115 Ukrainian translations** (~16% — certs + prereqs; AI/ML and AI not yet translated).
+**715 modules** across 8 published tracks. **115 Ukrainian translations** (~16% — certs + prereqs; AI/ML and AI not yet translated).
 
 **Website:** https://kube-dojo.github.io/ (Starlight/Astro, ~1,350 pages, ~30-40s build)
 
@@ -20,8 +20,9 @@
 | Certifications (CKA/CKAD/CKS/KCNA/KCSA/Extending + 12 learning paths) | 175 | Complete |
 | Platform Engineering | 209 | Complete |
 | On-Premises Kubernetes | 30 | Complete (needs Gemini review) |
-| AI/ML Engineering | 68 | Complete (Phase 4b — 8 new modules via v1 pipeline, #199) |
-| **Total** | **711** | **Complete** |
+| AI | 14 | Bridge track added; needs production-quality upgrades |
+| AI/ML Engineering | 79 | Complete (expanded beyond Phase 4b; needs ongoing quality upgrades) |
+| **Total** | **715** | **Complete** |
 
 ### Certifications Breakdown
 | Cert | Modules |

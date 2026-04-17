@@ -6,7 +6,7 @@ sidebar:
   label: "AI"
 ---
 
-> **AI Track** | 10 modules | 2 sections | ~14-20 hours
+> **AI Track** | 14 modules | 3 sections | ~22-32 hours
 
 ## Overview
 
@@ -53,12 +53,22 @@ The practical workflow layer:
 - workflow design
 - human-in-the-loop discipline
 
+### [AI Building](ai-building/) — 4 modules
+
+The bridge into system-building:
+- how AI features differ from chat use
+- models, APIs, context, and structured output
+- retrieval, tools, and safe capability boundaries
+- evaluation, iteration, and shipping a sane v1
+
 ## Recommended Route
 
 ```text
 AI Foundations
    |
 AI-Native Work
+   |
+AI Building
    |
 AI/ML Engineering (optional advanced path)
 ```
@@ -75,6 +85,7 @@ AI/ML Engineering (optional advanced path)
 - [What Is AI?](foundations/module-1.1-what-is-ai/)
 - [How to Verify AI Output](foundations/module-1.4-how-to-verify-ai-output/)
 - [Practical AI Tool Use](ai-native-work/module-1.1-practical-ai-tool-use/)
+- [From Chat To AI Systems](ai-building/module-1.1-from-chat-to-ai-systems/)
 
 ## After This Track
 

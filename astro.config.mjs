@@ -122,6 +122,7 @@ export default defineConfig({
             { label: 'AI Hub', link: '/ai/' },
             { label: 'AI Foundations', autogenerate: { directory: 'ai/foundations' }, collapsed: true },
             { label: 'AI-Native Work', autogenerate: { directory: 'ai/ai-native-work' }, collapsed: true },
+            { label: 'AI Building', autogenerate: { directory: 'ai/ai-building' }, collapsed: true },
           ],
         },
 

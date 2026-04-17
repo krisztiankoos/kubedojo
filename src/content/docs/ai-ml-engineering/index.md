@@ -13,7 +13,7 @@ A complete curriculum for engineers building AI and ML systems in production. Co
 
 This track is for engineers who need to understand AI/ML deeply enough to build, deploy, and operate it — not just call APIs.
 
-If your goal is AI literacy, safer AI use, or practical AI work habits rather than system building, start with the top-level [AI](../ai/) track first.
+If your goal is AI literacy, safer AI use, practical AI work habits, or a bridge from AI use into AI product thinking rather than system building, start with the top-level [AI](../ai/) track first.
 
 ## Do Not Start Here First If
 
@@ -23,7 +23,7 @@ If your goal is AI literacy, safer AI use, or practical AI work habits rather th
 
 In those cases, strengthen [Prerequisites](../prerequisites/) or the AI/ML [Prerequisites](prerequisites/) phase first.
 
-If you need a non-engineering front door first, use [AI Foundations](../ai/foundations/) and [AI-Native Work](../ai/ai-native-work/) before returning here.
+If you need a non-engineering front door first, use [AI Foundations](../ai/foundations/), [AI-Native Work](../ai/ai-native-work/), and [AI Building](../ai/ai-building/) before returning here.
 
 ## Start Here
 

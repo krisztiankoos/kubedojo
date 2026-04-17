@@ -33,4 +33,12 @@ By the end of this section, you should be able to:
 
 ## After This Section
 
-If your goal becomes building real AI systems, continue to [AI/ML Engineering](../../ai-ml-engineering/).
+If your goal becomes building real AI systems, do not jump straight into the full engineering track.
+
+Use [AI Building](../ai-building/) first to learn:
+- how AI features differ from plain chat use
+- where APIs, context, and structured output fit
+- when to use retrieval or tools
+- how to evaluate and ship a sane first version
+
+Then continue to [AI/ML Engineering](../../ai-ml-engineering/).
