@@ -4,6 +4,33 @@ template: splash
 sidebar:
   order: 2
 ---
+
+## 17 квітня 2026 — Новий top-level AI track
+
+### AI став окремим learner-facing треком
+
+Додано новий top-level `AI` track:
+- `AI Foundations`
+- `AI-Native Work`
+
+Він навмисно відокремлений від `AI/ML Engineering`:
+- `AI` — доступний вхідний шлях
+- `AI/ML Engineering` — просунутий builder track
+
+### Що це закриває
+
+Раніше в репозиторії був сильний AI/ML engineering шлях, але не було окремого beginner-friendly AI literacy маршруту.
+
+Новий track додає модулі про:
+- what AI is
+- what LLMs are
+- prompting basics
+- verification
+- privacy, safety, and trust
+- using AI for learning, writing, research, and coding
+- AI-native work habits, assistants, agents, and workflow design
+
+---
 ## 16 квітня 2026 — ZTT, AI/ML, підготовка до сертифікацій і маршрути навчання
 
 ### Zero to Terminal посилено
@@ -160,3 +187,26 @@ KubeDojo тепер повністю узгоджений з **Kubernetes 1.35**
 ## Грудень 2025 — Початковий випуск
 
 KubeDojo стартував із 311 модулями, що охоплюють усі 5 сертифікацій Kubestronaut, а також платформну інженерію, Linux та поглиблене вивчення IaC. Повну історію проєкту дивіться у [журналі комітів](https://github.com/kube-dojo/kube-dojo.github.io/commits/main).
+## April 17, 2026 — New Top-Level AI Track
+
+### AI Is Now a First-Class Learner Track
+
+New top-level `AI` track:
+- `AI Foundations`
+- `AI-Native Work`
+
+This track is separate from `AI/ML Engineering`:
+- `AI` is the accessible front door
+- `AI/ML Engineering` remains the advanced builder path
+
+### What It Covers
+
+- what AI is
+- what LLMs are
+- prompting basics
+- verification
+- privacy, safety, and trust
+- using AI for learning, writing, research, and coding
+- AI-native work habits, assistants, agents, and workflow design
+
+---

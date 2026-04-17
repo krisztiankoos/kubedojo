@@ -18,6 +18,8 @@ interface Props {
 
 const { t } = Astro.props;
 const p = t.prefix; // URL prefix: '' or '/uk'
+const aiHref = t.lang === 'uk' ? '/ai/' : `${p}/ai/`;
+const aimlHref = t.lang === 'uk' ? '/ai-ml-engineering/' : `${p}/ai-ml-engineering/`;
 ---
 <html lang={t.lang} dir={t.dir}>
 <head>
@@ -104,7 +106,7 @@ const p = t.prefix; // URL prefix: '' or '/uk'
     .track-icon { width: 2.75rem; height: 2.75rem; border-radius: 0.625rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1rem; }
     .t-fund .track-icon { background: var(--terminal-green-light); } .t-linux .track-icon { background: var(--warning-amber-light); }
     .t-cloud .track-icon { background: var(--deploy-purple-light); } .t-cert .track-icon { background: var(--kube-blue-light); }
-    .t-plat .track-icon { background: var(--pod-orange-light); } .t-prem .track-icon { background: var(--node-teal-light); } .t-ai .track-icon { background: #fff3e0; }
+    .t-plat .track-icon { background: var(--pod-orange-light); } .t-prem .track-icon { background: var(--node-teal-light); } .t-ai .track-icon { background: #fff3e0; } .t-aiml .track-icon { background: #ede7f6; }
     .track h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.375rem; }
     .track p { font-size: 0.8rem; color: var(--g500); margin-bottom: 1rem; line-height: 1.5; }
     .track-meta { font-size: 0.75rem; color: var(--g400); }
@@ -182,7 +184,7 @@ const p = t.prefix; // URL prefix: '' or '/uk'
     </div>
     <div class="hero-stats">
       <div><span class="stat-num">803</span><span class="stat-label">{t.statModules}</span></div>
-      <div><span class="stat-num">7</span><span class="stat-label">{t.statTracks}</span></div>
+      <div><span class="stat-num">8</span><span class="stat-label">{t.statTracks}</span></div>
       <div><span class="stat-num">207</span><span class="stat-label">{t.statCerts}</span></div>
       <div><span class="stat-num">312</span><span class="stat-label">{t.statTranslations}</span></div>
     </div>
@@ -198,9 +200,10 @@ const p = t.prefix; // URL prefix: '' or '/uk'
       <span class="th">certifications</span>    <span class="ts">207</span>       Ready<br/>
       <span class="th">platform</span>          <span class="ts">220</span>       Ready<br/>
       <span class="th">on-premises</span>       <span class="ts">59</span>        Ready<br/>
+      <span class="th">ai</span>                <span class="ts">10</span>        New<br/>
       <span class="th">ai-ml-engineering</span> <span class="ts">117</span>       Ready<br/><br/>
       <span class="tp">$</span> <span class="tc">kubectl get status ztt ai-ml certs</span><br/>
-      <span class="ts">&#10003;</span> <span class="to">ztt=ready  ai-ml=expanded  cert-prep=live</span>
+      <span class="ts">&#10003;</span> <span class="to">ztt=ready  ai=new  ai-ml=expanded  cert-prep=live</span>
     </div>
   </div>
 </div>
@@ -216,7 +219,8 @@ const p = t.prefix; // URL prefix: '' or '/uk'
     <a class="track t-cert" href={`${p}/k8s/`}><div class="track-icon">&#127942;</div><h3>{t.trackCertTitle}</h3><p>{t.trackCertDesc}</p><span class="track-meta">{t.trackCertMeta}</span></a>
     <a class="track t-plat" href={`${p}/platform/`}><div class="track-icon">&#128736;</div><h3>{t.trackPlatTitle}</h3><p>{t.trackPlatDesc}</p><span class="track-meta">{t.trackPlatMeta}</span></a>
     <a class="track t-prem" href={`${p}/on-premises/`}><div class="track-icon">&#127959;</div><h3>{t.trackPremTitle}</h3><p>{t.trackPremDesc}</p><span class="track-meta">{t.trackPremMeta}</span></a>
-    <a class="track t-ai" href={`${p}/ai-ml-engineering/`}><div class="track-icon">&#129302;</div><h3>{t.trackAiTitle}</h3><p>{t.trackAiDesc}</p><span class="track-meta">{t.trackAiMeta}</span></a>
+    <a class="track t-ai" href={aiHref}><div class="track-icon">&#129302;</div><h3>{t.trackAiTitle}</h3><p>{t.trackAiDesc}</p><span class="track-meta">{t.trackAiMeta}</span></a>
+    <a class="track t-aiml" href={aimlHref}><div class="track-icon">&#129504;</div><h3>{t.trackAimlTitle}</h3><p>{t.trackAimlDesc}</p><span class="track-meta">{t.trackAimlMeta}</span></a>
   </div>
 
   <h2 style="margin-top:3rem;">{t.pathTitle}</h2>

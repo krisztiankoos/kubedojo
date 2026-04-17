@@ -53,6 +53,35 @@ Major hub pages were refreshed so learners can move between tracks more intentio
 
 ---
 
+## April 17, 2026 — New Top-Level AI Track
+
+### AI Is Now a First-Class Learner Track
+
+A new top-level `AI` track now exists for learners who need AI literacy and practical AI working habits before advanced AI/ML engineering.
+
+Initial sections:
+- `AI Foundations`
+- `AI-Native Work`
+
+This track is intentionally separate from `AI/ML Engineering`:
+- `AI` is the accessible front door
+- `AI/ML Engineering` remains the advanced builder path
+
+### Why This Matters
+
+The repo already had strong AI/ML engineering depth, but it was missing a true beginner-friendly AI literacy path.
+
+The new track fills that gap with modules for:
+- what AI is
+- what LLMs are
+- prompting basics
+- verification
+- privacy, safety, and trust
+- using AI for learning, writing, research, and coding
+- AI-native work habits, assistants, agents, and workflow design
+
+---
+
 ## March 28, 2026 — Theme Overhaul + New Tracks
 
 ### Custom Design System
