@@ -379,6 +379,10 @@ def check_naming_consistency():
         rel = str(md.relative_to(DOCS_DIR))
         if rel.startswith("uk/"):
             continue
+        if rel.startswith("prerequisites/git-deep-dive/"):
+            # This subsection intentionally uses linear module-N naming
+            # because it is a single numbered Git course, not an X.Y tree.
+            continue
 
         name = md.stem
         if old_pattern.match(name) and not new_pattern.match(name):
