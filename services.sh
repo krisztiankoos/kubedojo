@@ -16,7 +16,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOGS_DIR="$PROJECT_ROOT/logs"
 PIDS_DIR="$PROJECT_ROOT/.pids"
-VENV="$PROJECT_ROOT/.venv/bin"
+VENV_BIN="$PROJECT_ROOT/.venv/bin"
 
 mkdir -p "$LOGS_DIR" "$PIDS_DIR"
 
@@ -28,12 +28,12 @@ SVC_PORT[dev]=4333
 SVC_LOG[dev]="$LOGS_DIR/dev.log"
 SVC_DESC[dev]="Astro Dev Server (hot reload)"
 
-SVC_CMD[api]="python3 scripts/local_api.py --host 0.0.0.0 --port 8768"
+SVC_CMD[api]="$VENV_BIN/python3 scripts/local_api.py --host 0.0.0.0 --port 8768"
 SVC_PORT[api]=8768
 SVC_LOG[api]="$LOGS_DIR/api.log"
 SVC_DESC[api]="Deterministic Local API"
 
-SVC_CMD[feedback]="python3 scripts/issue_watch.py loop 248 --interval-seconds 1800"
+SVC_CMD[feedback]="$VENV_BIN/python3 scripts/issue_watch.py loop 248 --interval-seconds 1800"
 SVC_PORT[feedback]="-"
 SVC_LOG[feedback]="$LOGS_DIR/feedback.log"
 SVC_DESC[feedback]="GitHub Issue Feedback Watcher (#248)"
@@ -42,9 +42,29 @@ ALL_SERVICES="dev api feedback"
 
 _pid_file() { echo "$PIDS_DIR/$1.pid"; }
 
+_is_numeric_port() {
+    [[ "$1" =~ ^[0-9]+$ ]]
+}
+
+_port_pid() {
+    local port="$1"
+    if ! _is_numeric_port "$port"; then
+        return 1
+    fi
+
+    local pid
+    pid=$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null | head -n1 || true)
+    if [[ -n "$pid" ]]; then
+        echo "$pid"
+        return 0
+    fi
+    return 1
+}
+
 _is_running() {
+    local name="$1"
     local pidfile
-    pidfile="$(_pid_file "$1")"
+    pidfile="$(_pid_file "$name")"
     if [[ -f "$pidfile" ]]; then
         local pid
         pid=$(cat "$pidfile")
@@ -52,6 +72,17 @@ _is_running() {
             return 0
         fi
         rm -f "$pidfile"
+    fi
+
+    local port
+    port="${SVC_PORT[$name]}"
+    if _is_numeric_port "$port"; then
+        local port_pid
+        port_pid=$(_port_pid "$port" || true)
+        if [[ -n "$port_pid" ]] && kill -0 "$port_pid" 2>/dev/null; then
+            echo "$port_pid" > "$pidfile"
+            return 0
+        fi
     fi
     return 1
 }
