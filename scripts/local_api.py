@@ -2025,6 +2025,148 @@ def build_runtime_services_status(repo_root: Path) -> dict[str, Any]:
     }
 
 
+def build_recent_activity(repo_root: Path) -> dict[str, Any]:
+    """Recent operator-relevant activity across git, pipeline, bridge, and watched issue.
+
+    Keeps the payload compact and deterministic so humans and agents can answer
+    "what changed recently?" without stitching together git log, queue reads,
+    bridge DB tails, and issue-watch files themselves.
+    """
+    commits = _recent_commits(repo_root, limit=10)
+
+    try:
+        pipeline = build_pipeline_events(repo_root, None, None, limit=15)
+    except Exception as exc:  # noqa: BLE001
+        pipeline = {"error": f"{type(exc).__name__}: {exc}", "events": []}
+
+    pipeline_events = []
+    if isinstance(pipeline, dict):
+        for event in (pipeline.get("events") or [])[:10]:
+            pipeline_events.append(
+                {
+                    "id": event.get("id"),
+                    "type": event.get("type"),
+                    "module_key": event.get("module_key"),
+                    "at": event.get("at"),
+                }
+            )
+
+    try:
+        bridge = build_bridge_messages(repo_root, None, limit=10)
+    except Exception as exc:  # noqa: BLE001
+        bridge = {"error": f"{type(exc).__name__}: {exc}", "messages": []}
+
+    bridge_messages = []
+    if isinstance(bridge, dict):
+        for msg in (bridge.get("messages") or [])[:8]:
+            bridge_messages.append(
+                {
+                    "id": msg.get("id"),
+                    "created_at": msg.get("created_at"),
+                    "from_agent": msg.get("from_agent"),
+                    "to_agent": msg.get("to_agent"),
+                    "kind": msg.get("kind"),
+                    "task_id": msg.get("task_id"),
+                }
+            )
+
+    issue = build_issue_watch_state(repo_root, DEFAULT_FEEDBACK_ISSUE)
+    watched_issue = None
+    if issue:
+        watched_issue = {
+            "number": issue.get("number") or DEFAULT_FEEDBACK_ISSUE,
+            "title": issue.get("title"),
+            "state": issue.get("state"),
+            "updated_at": issue.get("updated_at") or issue.get("updatedAt"),
+            "comments_count": issue.get("comments_count") or len(issue.get("comments") or []),
+            "latest_comment_preview": issue.get("latest_comment_preview"),
+            "url": issue.get("url") or issue.get("html_url"),
+        }
+
+    return {
+        "generated_at": time.time(),
+        "recent_commits": commits,
+        "pipeline_events": pipeline_events,
+        "bridge_messages": bridge_messages,
+        "watched_issue": watched_issue,
+    }
+
+
+def build_navigation_status(repo_root: Path) -> dict[str, Any]:
+    """Detect route/nav surfaces that still require manual inspection.
+
+    Signals:
+    - top-level English track directories and whether they have matching UK hubs
+    - candidate-stale index pages: any ``index.md`` older than content beneath it
+    """
+    docs_root = repo_root / "src" / "content" / "docs"
+    uk_root = docs_root / "uk"
+
+    top_level_tracks = []
+    missing_uk_top_level = []
+    for child in sorted(docs_root.iterdir(), key=lambda p: p.name):
+        if not child.is_dir():
+            continue
+        if child.name.startswith(".") or child.name in {"uk", "test"}:
+            continue
+        en_index = child / "index.md"
+        uk_index = uk_root / child.name / "index.md"
+        module_count = sum(
+            1
+            for path in child.rglob("*.md")
+            if path.name != "index.md"
+        )
+        item = {
+            "slug": child.name,
+            "english_index_exists": en_index.exists(),
+            "ukrainian_index_exists": uk_index.exists(),
+            "module_count": module_count,
+        }
+        top_level_tracks.append(item)
+        if en_index.exists() and not uk_index.exists():
+            missing_uk_top_level.append(child.name)
+
+    stale_indexes = []
+    for index_path in sorted(docs_root.rglob("index.md")):
+        if "/uk/" in index_path.as_posix():
+            continue
+        try:
+            index_mtime = index_path.stat().st_mtime
+        except OSError:
+            continue
+        subtree_files = [
+            path
+            for path in index_path.parent.rglob("*.md")
+            if path != index_path and "/uk/" not in path.as_posix()
+        ]
+        if not subtree_files:
+            continue
+        newest_child = max(subtree_files, key=lambda path: path.stat().st_mtime if path.exists() else 0.0)
+        try:
+            newest_child_mtime = newest_child.stat().st_mtime
+        except OSError:
+            continue
+        if newest_child_mtime <= index_mtime:
+            continue
+        stale_indexes.append(
+            {
+                "index": str(index_path.relative_to(repo_root)),
+                "newest_child": str(newest_child.relative_to(repo_root)),
+                "lag_seconds": int(newest_child_mtime - index_mtime),
+            }
+        )
+
+    stale_indexes.sort(key=lambda item: item["lag_seconds"], reverse=True)
+
+    return {
+        "generated_at": time.time(),
+        "top_level_tracks": top_level_tracks,
+        "missing_uk_top_level": missing_uk_top_level,
+        "candidate_stale_indexes": stale_indexes[:100],
+        "candidate_stale_count": len(stale_indexes),
+    }
+
+
 def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     return f"""<!doctype html>
 <html lang="en">
@@ -3488,6 +3630,8 @@ def build_api_schema() -> dict[str, Any]:
             },
             {"path": "/api/status/summary", "desc": "Repo status (fast)"},
             {"path": "/api/missing-modules/status", "desc": "Modules missing from nav/sidebar"},
+            {"path": "/api/activity/recent", "desc": "Recent commits, pipeline events, bridge messages, watched issue"},
+            {"path": "/api/navigation/status", "desc": "Top-level route coverage and candidate-stale index pages"},
             {"path": "/api/runtime/services", "desc": "Runtime services (pids, uptime, ports)"},
             {"path": "/api/pipeline/v2/status", "desc": "Pipeline v2 queue + per-track"},
             {
@@ -3552,6 +3696,10 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     if path == "/api/missing-modules/status":
         from status import _build_missing_modules_summary
         return 200, _build_missing_modules_summary(repo_root), "application/json; charset=utf-8"
+    if path == "/api/activity/recent":
+        return 200, build_recent_activity(repo_root), "application/json; charset=utf-8"
+    if path == "/api/navigation/status":
+        return 200, build_navigation_status(repo_root), "application/json; charset=utf-8"
     if path == "/api/runtime/services":
         return 200, build_runtime_services_status(repo_root), "application/json; charset=utf-8"
     if path == "/api/pipeline/v2/status":
@@ -3715,6 +3863,8 @@ CACHE_POLICY: dict[str, tuple[float, Callable[[Path], tuple] | None]] = {
     "/api/schema": (600.0, None),
     "/api/status/summary": (10.0, _v_v2_db),
     "/api/missing-modules/status": (30.0, None),
+    "/api/activity/recent": (5.0, _v_v2_db),
+    "/api/navigation/status": (30.0, None),
     "/api/runtime/services": (2.0, None),
     "/api/pipeline/v2/status": (5.0, _v_v2_db),
     "/api/translation/v2/status": (5.0, _v_translation_db),

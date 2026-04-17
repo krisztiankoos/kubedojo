@@ -282,6 +282,56 @@ def test_route_request_serves_summary_and_module_endpoints(tmp_path: Path) -> No
     assert latest["translation_v2"]["latest_event"]["type"] == "translation_verified"
 
 
+def test_route_request_serves_recent_activity_and_navigation_status(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    _init_repo(repo_root)
+
+    en_index = repo_root / "src/content/docs/ai/index.md"
+    module_path = repo_root / "src/content/docs/ai/foundations/module-1.1-what-is-ai.md"
+    _write(en_index, "---\ntitle: AI\n---\n")
+    _write(module_path, _module_frontmatter())
+    _git(repo_root, "add", ".")
+    _git(repo_root, "commit", "-m", "add ai track")
+
+    watch_path = repo_root / ".pipeline" / "issue-watch" / "248.json"
+    watch_path.parent.mkdir(parents=True, exist_ok=True)
+    watch_path.write_text(
+        json.dumps(
+            {
+                "number": 248,
+                "title": "Review batch",
+                "url": "https://example.test/issues/248",
+                "state": "OPEN",
+                "updatedAt": "2026-04-16T09:00:00Z",
+                "comments": [
+                    {
+                        "url": "https://example.test/issues/248#issuecomment-1",
+                        "createdAt": "2026-04-16T09:00:00Z",
+                        "author": {"login": "user1"},
+                        "body": "feedback",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status_code, recent, _ = local_api.route_request(repo_root, "/api/activity/recent")
+    assert status_code == 200
+    assert recent["recent_commits"]
+    assert recent["recent_commits"][0]["subject"] == "add ai track"
+    assert recent["watched_issue"]["number"] == 248
+
+    status_code, navigation, _ = local_api.route_request(repo_root, "/api/navigation/status")
+    assert status_code == 200
+    ai_track = next(item for item in navigation["top_level_tracks"] if item["slug"] == "ai")
+    assert ai_track["english_index_exists"] is True
+    assert ai_track["ukrainian_index_exists"] is False
+    assert "ai" in navigation["missing_uk_top_level"]
+    assert navigation["candidate_stale_count"] >= 1
+    assert any(item["index"].endswith("src/content/docs/ai/index.md") for item in navigation["candidate_stale_indexes"])
+
+
 def test_runtime_services_detects_stale_pid_and_discovers_unknown_workers(tmp_path: Path) -> None:
     repo_root = tmp_path
     pids_dir = repo_root / ".pids"
@@ -513,6 +563,8 @@ def test_api_schema_advertises_new_endpoints() -> None:
     assert "/api/schema" in paths
     assert "/api/git/worktrees" in paths
     assert "/api/git/worktree" in paths  # singular still there
+    assert "/api/activity/recent" in paths
+    assert "/api/navigation/status" in paths
     assert "conventions" in schema
     assert "errors" in schema["conventions"]
 
