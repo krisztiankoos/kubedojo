@@ -79,7 +79,8 @@ def _init_v2_db(path: Path) -> None:
               id INTEGER PRIMARY KEY,
               module_key TEXT NOT NULL,
               type TEXT NOT NULL,
-              payload_json TEXT DEFAULT '{}'
+              payload_json TEXT DEFAULT '{}',
+              at INTEGER NOT NULL DEFAULT 0
             );
             """
         )
@@ -88,8 +89,8 @@ def _init_v2_db(path: Path) -> None:
             ("prerequisites/zero-to-terminal/module-0.1-alpha", "review", "codex", "completed"),
         )
         conn.execute(
-            "INSERT INTO events (module_key, type, payload_json) VALUES (?, ?, ?)",
-            ("prerequisites/zero-to-terminal/module-0.1-alpha", "done", "{}"),
+            "INSERT INTO events (module_key, type, payload_json, at) VALUES (?, ?, ?, ?)",
+            ("prerequisites/zero-to-terminal/module-0.1-alpha", "done", "{}", 0),
         )
         conn.commit()
     finally:
