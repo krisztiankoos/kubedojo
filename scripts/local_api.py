@@ -109,14 +109,17 @@ def _load_json(text: str) -> Any:
 # Design notes (per reviewer feedback on issue #258):
 #   - Cache stores response BYTES, not payload dicts. ETag = weak hash of
 #     bytes. Reusing cached bytes makes ETag stable and 304 cheap.
-#   - Cache key = normalized (path, sorted-query). Avoids spurious misses.
-#   - Invalidation combines TTL + dependency versions. For sqlite deps we
-#     use (db_mtime, wal_mtime, PRAGMA data_version) because sqlite-WAL
-#     writes don't always touch the .db file mtime.
-#   - Each sqlite read uses its own read-only connection (threaded server).
+#   - Cache key = normalized (repo_root, path, sorted-query). Avoids
+#     cross-repo contamination when two repos share one process.
+#   - Invalidation combines TTL + per-endpoint dependency versions. For
+#     sqlite deps the version is ``PRAGMA data_version`` on a persistent
+#     per-path read-only connection (the documented/reliable usage — see
+#     _sqlite_version_key). The connection is also probed for inode/device
+#     changes so a replaced DB file is detected.
 #   - Background snapshots use fixed-*delay* (not fixed-interval): sleep
 #     runs AFTER the refresh completes, so an overrun does not cause
-#     overlapping runs. Single in-flight refresh per key, atomic swap.
+#     overlapping runs. A per-instance build lock enforces single-in-
+#     flight across refresh_blocking() and the daemon thread.
 
 
 _CACHE_LOCK = threading.Lock()
@@ -165,11 +168,15 @@ def _path_mtime(p: Path) -> float:
 # ``PRAGMA data_version`` returns a monotonic counter on a specific
 # connection that increments whenever ANOTHER connection commits a
 # write. So a single persistent connection, queried repeatedly, is a
-# reliable change signal — unlike the round-1 fresh-connection usage
-# that Codex flagged. The dict lock serializes sqlite per connection
-# (sqlite itself is single-writer; reads can concurrent on separate
-# connections, but we only keep one per db for bookkeeping).
-_SQLITE_VERSION_CONNECTIONS: dict[str, sqlite3.Connection] = {}
+# reliable change signal — unlike round-1's fresh-connection misuse.
+# The dict lock serializes access; sqlite itself is single-writer,
+# and we only keep one persistent reader per db for bookkeeping.
+#
+# We also cache ``(st_dev, st_ino)`` alongside each connection. If the
+# DB file is REPLACED (rename/copy rather than in-place modify) the
+# inode changes and we must drop the cached connection — otherwise it
+# stays attached to the old inode and keeps reporting the old version.
+_SQLITE_VERSION_CONNECTIONS: dict[str, tuple[sqlite3.Connection, tuple]] = {}
 _SQLITE_VERSION_LOCK = threading.Lock()
 
 
@@ -177,7 +184,7 @@ def _close_all_sqlite_version_connections() -> None:
     """Test helper: drop cached read-only connections (e.g. between
     tests that recreate DB files at the same path)."""
     with _SQLITE_VERSION_LOCK:
-        for conn in _SQLITE_VERSION_CONNECTIONS.values():
+        for conn, _ident in _SQLITE_VERSION_CONNECTIONS.values():
             try:
                 conn.close()
             except sqlite3.Error:
@@ -185,28 +192,48 @@ def _close_all_sqlite_version_connections() -> None:
         _SQLITE_VERSION_CONNECTIONS.clear()
 
 
+def _file_identity(path: Path) -> tuple:
+    """Return ``(st_dev, st_ino)`` or ``None`` fallback. Used to detect
+    whether a file at the same path is the *same* file or a replacement."""
+    try:
+        s = path.stat()
+    except OSError:
+        return (0, 0)
+    return (s.st_dev, s.st_ino)
+
+
 def _sqlite_version_key(db_path: Path) -> tuple:
     """Fingerprint a sqlite DB using ``PRAGMA data_version`` on a
     persistent read-only connection.
 
     Contract: two calls return the same key iff no other connection
-    has committed between them. This catches every form of write
-    (WAL append, WAL reuse after checkpoint, in-place DELETE/MEMORY
-    writes, rapid same-size writes inside one mtime granule) — none
-    of which ``(mtime, size)`` can distinguish.
-
-    Falls back to ``("absent", ...)`` when the file is missing and
-    ``("open_failed", mtime)`` if the read-only handle can't be
-    opened (e.g. permissions). Filesystem stats are only a degraded
-    signal; the authoritative signal is the pragma counter.
+    has committed between them *and* the file at ``db_path`` is the
+    same inode. If the file has been replaced (different inode), the
+    cached connection is dropped and reopened. This catches every
+    form of write (WAL append, WAL reuse after checkpoint, in-place
+    DELETE/MEMORY writes, rapid same-size writes inside one mtime
+    granule) plus DB replacement — none of which ``(mtime, size)``
+    alone can distinguish.
     """
     if not db_path.exists():
         return ("absent",)
 
     key = str(db_path.resolve())
+    identity = _file_identity(db_path)
     with _SQLITE_VERSION_LOCK:
-        conn = _SQLITE_VERSION_CONNECTIONS.get(key)
-        if conn is None:
+        cached = _SQLITE_VERSION_CONNECTIONS.get(key)
+        if cached is not None:
+            conn, cached_identity = cached
+            if cached_identity != identity:
+                # File was replaced (different inode). Close the stale
+                # handle and open a new one below.
+                try:
+                    conn.close()
+                except sqlite3.Error:
+                    pass
+                _SQLITE_VERSION_CONNECTIONS.pop(key, None)
+                cached = None
+        if cached is None:
             try:
                 conn = sqlite3.connect(
                     f"file:{db_path}?mode=ro",
@@ -216,14 +243,15 @@ def _sqlite_version_key(db_path: Path) -> tuple:
                 )
             except sqlite3.Error:
                 return ("open_failed", _path_mtime(db_path))
-            _SQLITE_VERSION_CONNECTIONS[key] = conn
+            _SQLITE_VERSION_CONNECTIONS[key] = (conn, identity)
+        else:
+            conn, _ = cached
 
         try:
             row = conn.execute("PRAGMA data_version").fetchone()
             data_version = int(row[0]) if row is not None else 0
         except sqlite3.Error:
-            # Connection poisoned (e.g. DB rotated out from under us).
-            # Drop it so the next call opens fresh.
+            # Connection poisoned — drop so the next call opens fresh.
             _SQLITE_VERSION_CONNECTIONS.pop(key, None)
             try:
                 conn.close()
@@ -231,7 +259,7 @@ def _sqlite_version_key(db_path: Path) -> tuple:
                 pass
             return ("error", _path_mtime(db_path))
 
-    return ("v", data_version)
+    return ("v", identity, data_version)
 
 
 def _normalized_cache_key(

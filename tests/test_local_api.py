@@ -735,6 +735,7 @@ def test_sqlite_version_key_detects_same_size_write(tmp_path: Path) -> None:
     conn.commit()
     conn.close()
     local_api._close_all_sqlite_version_connections()
+    size_before = db_path.stat().st_size
     v1 = local_api._sqlite_version_key(db_path)
 
     # In-place update: row count and stored int width are both unchanged.
@@ -742,9 +743,49 @@ def test_sqlite_version_key_detects_same_size_write(tmp_path: Path) -> None:
     conn.execute("UPDATE t SET x = 2")
     conn.commit()
     conn.close()
+    size_after = db_path.stat().st_size
     v2 = local_api._sqlite_version_key(db_path)
 
+    # The whole point of this test is the "same size" case; prove it.
+    assert size_before == size_after, (
+        f"test presumption broken: size changed {size_before}->{size_after}"
+    )
     assert v1 != v2, "in-place UPDATE must change the version key"
+
+
+def test_sqlite_version_key_detects_db_replacement(tmp_path: Path) -> None:
+    """Non-blocking polish from Codex round-3: if the DB file is
+    REPLACED (different inode) rather than modified in place, the
+    cached persistent connection would otherwise keep reporting the
+    old counter until TTL rebuilt the cache. The inode check drops
+    the stale handle so the first call after replacement gives a
+    fresh, correct key.
+    """
+    db_path = tmp_path / "rotated.db"
+    other = tmp_path / "other.db"
+
+    # DB A — one row, version V_a.
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE t (x INTEGER)")
+    conn.execute("INSERT INTO t VALUES (1)")
+    conn.commit()
+    conn.close()
+    local_api._close_all_sqlite_version_connections()
+    v_a = local_api._sqlite_version_key(db_path)
+
+    # DB B — different physical file, then rename over db_path.
+    conn = sqlite3.connect(other)
+    conn.execute("CREATE TABLE t (x INTEGER, y TEXT)")
+    conn.execute("INSERT INTO t VALUES (42, 'b')")
+    conn.execute("INSERT INTO t VALUES (43, 'bb')")
+    conn.commit()
+    conn.close()
+    # Rename replaces the inode at db_path without going through
+    # sqlite's own rewrite path.
+    other.replace(db_path)
+
+    v_b = local_api._sqlite_version_key(db_path)
+    assert v_a != v_b, "DB replacement must change the version key"
 
 
 def test_sqlite_version_key_stable_without_writes(tmp_path: Path) -> None:
