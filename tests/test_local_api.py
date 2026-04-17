@@ -73,6 +73,7 @@ def _init_v2_db(path: Path, *, module_key: str) -> None:
               module_key TEXT NOT NULL,
               phase TEXT NOT NULL,
               model TEXT,
+              priority INTEGER,
               queue_state TEXT NOT NULL,
               leased_by TEXT,
               lease_id TEXT,
@@ -87,6 +88,7 @@ def _init_v2_db(path: Path, *, module_key: str) -> None:
               id INTEGER PRIMARY KEY,
               module_key TEXT NOT NULL,
               type TEXT NOT NULL,
+              lease_id TEXT,
               payload_json TEXT DEFAULT '{}',
               at INTEGER
             );
@@ -971,6 +973,570 @@ def test_background_snapshot_reports_degraded_on_builder_error() -> None:
     assert data is None
     assert meta["freshness_state"] == "degraded"
     assert "RuntimeError: boom" in (meta["refresh_error"] or "")
+
+
+def test_pipeline_leases_lists_active_only(tmp_path: Path) -> None:
+    """Codex round-1 bug: we were using ms; the control-plane stores
+    Unix epoch SECONDS. Everything below is in seconds."""
+    module_key, _ = _setup_repo(tmp_path)
+    now_s = 1_700_000_000  # Realistic seconds-since-epoch value.
+
+    conn = sqlite3.connect(tmp_path / ".pipeline/v2.db")
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state, leased_by, lease_id, "
+        "leased_at, lease_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (module_key, "write", "leased", "codex", "lease-a", now_s - 1, now_s + 60),
+    )
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state, leased_by, lease_id, "
+        "leased_at, lease_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("other/module-stale", "write", "leased", "claude", "lease-b",
+         now_s - 10_000, now_s - 1),
+    )
+    conn.commit()
+    conn.close()
+
+    result = local_api.build_pipeline_leases(tmp_path, now_seconds=now_s)
+    assert result["exists"] is True
+    assert result["count"] == 1
+    assert result["active"][0]["lease_id"] == "lease-a"
+    assert result["active"][0]["seconds_to_expiry"] == 60
+
+
+def test_pipeline_leases_returns_empty_when_db_missing(tmp_path: Path) -> None:
+    result = local_api.build_pipeline_leases(tmp_path)
+    assert result["exists"] is False
+    assert result["count"] == 0
+    assert result["active"] == []
+
+
+def test_module_lease_reports_held_vs_free(tmp_path: Path) -> None:
+    module_key, _ = _setup_repo(tmp_path)
+    now_s = 1_700_000_000
+    r = local_api.build_module_lease(tmp_path, module_key, now_seconds=now_s)
+    assert r["held"] is False
+
+    conn = sqlite3.connect(tmp_path / ".pipeline/v2.db")
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state, leased_by, lease_id, "
+        "leased_at, lease_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (module_key, "review", "leased", "gemini", "lease-x", now_s - 1, now_s + 120),
+    )
+    conn.commit()
+    conn.close()
+    r = local_api.build_module_lease(tmp_path, module_key, now_seconds=now_s)
+    assert r["held"] is True
+    assert r["lease"]["leased_by"] == "gemini"
+    assert r["lease"]["seconds_to_expiry"] == 120
+
+
+def test_pipeline_events_filters_and_limits(tmp_path: Path) -> None:
+    module_key, _ = _setup_repo(tmp_path)
+    conn = sqlite3.connect(tmp_path / ".pipeline/v2.db")
+    for i in range(5):
+        conn.execute(
+            "INSERT INTO events (module_key, type, payload_json, at) VALUES (?, ?, ?, ?)",
+            (module_key, f"type_{i}", f'{{"i":{i}}}', 1000 + i),
+        )
+    conn.execute(
+        "INSERT INTO events (module_key, type, payload_json, at) VALUES (?, ?, ?, ?)",
+        ("other/module", "x", "{}", 9999),
+    )
+    conn.commit()
+    conn.close()
+
+    scoped = local_api.build_pipeline_events(tmp_path, module_key=module_key, since_seconds=None, limit=3)
+    assert scoped["count"] == 3
+    assert all(e["module_key"] == module_key for e in scoped["events"])
+    ids = [e["id"] for e in scoped["events"]]
+    assert ids == sorted(ids, reverse=True)
+    assert isinstance(scoped["events"][0]["payload_json"], dict)
+
+    windowed = local_api.build_pipeline_events(tmp_path, module_key=module_key, since_seconds=1002, limit=10)
+    ats = [e["at"] for e in windowed["events"]]
+    assert all(a >= 1002 for a in ats)
+
+
+def test_pipeline_stuck_catches_expired_and_silent_jobs_in_seconds(tmp_path: Path) -> None:
+    """Bug-fix regression: Codex caught the ms-vs-seconds mismatch.
+    Threshold is now honored in seconds against seconds-valued
+    timestamps from the real control-plane."""
+    module_key, _ = _setup_repo(tmp_path)
+    now_s = 10_000
+    conn = sqlite3.connect(tmp_path / ".pipeline/v2.db")
+    # Expired lease -> stuck_leased
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state, leased_by, lease_id, "
+        "leased_at, lease_expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        ("stuck/one", "write", "leased", "codex", "lex-1",
+         now_s - 1_000, now_s - 10),
+    )
+    # In-flight with no recent event for current attempt -> stuck_in_state
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state, leased_by, lease_id, leased_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        ("stuck/silent", "review", "running", "claude", "lex-silent", now_s - 10_000),
+    )
+    conn.execute(
+        "INSERT INTO events (module_key, type, lease_id, payload_json, at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        ("stuck/silent", "attempt_started", "lex-silent", "{}", now_s - 10_000),
+    )
+    # Fresh in-flight -> not stuck (has recent event for its lease)
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state, leased_by, lease_id, leased_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        ("fresh/one", "review", "running", "claude", "lex-fresh", now_s),
+    )
+    conn.execute(
+        "INSERT INTO events (module_key, type, lease_id, payload_json, at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        ("fresh/one", "attempt_started", "lex-fresh", "{}", now_s - 10),
+    )
+    conn.commit()
+    conn.close()
+
+    r = local_api.build_pipeline_stuck(tmp_path, threshold_seconds=60, now_seconds=now_s)
+    stuck_leased_keys = {j["module_key"] for j in r["stuck_leased"]}
+    stuck_in_state_keys = {j["module_key"] for j in r["stuck_in_state"]}
+    assert "stuck/one" in stuck_leased_keys
+    assert "stuck/silent" in stuck_in_state_keys
+    assert "fresh/one" not in stuck_in_state_keys
+
+
+def test_pipeline_stuck_correlates_events_by_lease_id(tmp_path: Path) -> None:
+    """Codex round-4 bug: correlating events by module_key alone let
+    a fresh event from an EARLIER lease mask a hung current lease."""
+    _setup_repo(tmp_path)
+    now_s = 10_000
+    conn = sqlite3.connect(tmp_path / ".pipeline/v2.db")
+    # Current (hung) lease: running, no event for THIS lease_id.
+    conn.execute(
+        "INSERT INTO jobs (module_key, phase, queue_state, leased_by, lease_id, leased_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        ("rolled/over", "write", "running", "claude", "current-lease", now_s - 10_000),
+    )
+    # Old event from a PREVIOUS lease for the same module — should NOT
+    # make the current attempt look healthy.
+    conn.execute(
+        "INSERT INTO events (module_key, type, lease_id, payload_json, at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        ("rolled/over", "attempt_started", "previous-lease", "{}", now_s - 1),
+    )
+    conn.commit()
+    conn.close()
+    r = local_api.build_pipeline_stuck(tmp_path, threshold_seconds=60, now_seconds=now_s)
+    assert any(j["module_key"] == "rolled/over" for j in r["stuck_in_state"])
+
+
+def test_reviews_index_and_single(tmp_path: Path) -> None:
+    reviews_dir = tmp_path / ".pipeline" / "reviews"
+    reviews_dir.mkdir(parents=True)
+    (reviews_dir / "cka__module-2.8-scheduler.md").write_text(
+        "# Review\n\n## 2026-01-01 — WRITE\n\n**Writer**: gemini\n",
+        encoding="utf-8",
+    )
+    (reviews_dir / "ztt__module-0.1.md").write_text("short", encoding="utf-8")
+
+    index = local_api.build_reviews_index(tmp_path)
+    assert index["exists"] is True
+    assert index["count"] == 2
+    keys = {r["module_key"] for r in index["reviews"]}
+    assert "cka/module-2.8-scheduler" in keys
+    assert "ztt/module-0.1" in keys
+
+    single = local_api.build_module_reviews(tmp_path, "cka/module-2.8-scheduler")
+    assert single is not None
+    assert "**Writer**: gemini" in single["body"]
+    assert single["truncated"] is False
+
+    # Truncation path. ``size`` is the actual on-disk size (per Codex
+    # round-4 polish: truncated responses must not lie about file
+    # size); ``max_bytes`` carries the cap applied.
+    big_content = "x" * 50_000
+    (reviews_dir / "big__one.md").write_text(big_content, encoding="utf-8")
+    trunc = local_api.build_module_reviews(tmp_path, "big/one", max_bytes=1000)
+    assert trunc is not None
+    assert trunc["truncated"] is True
+    assert trunc["size"] == 50_000
+    assert trunc["max_bytes"] == 1000
+    assert trunc["body_size"] == 1000
+
+
+def test_resolve_bridge_db_path_precedence(tmp_path: Path, monkeypatch) -> None:
+    """Codex round-1 bug: we hardcoded .bridge/messages.db but the
+    Python bridge default is .mcp/servers/message-broker/messages.db.
+    Resolution must honor $AB_DB_PATH first, then fall through."""
+    repo = tmp_path
+    monkeypatch.delenv("AB_DB_PATH", raising=False)
+    p = local_api._resolve_bridge_db_path(repo)
+    assert p == repo / ".bridge" / "messages.db"
+
+    mcp_path = repo / ".mcp" / "servers" / "message-broker" / "messages.db"
+    mcp_path.parent.mkdir(parents=True)
+    mcp_path.write_bytes(b"")
+    assert local_api._resolve_bridge_db_path(repo) == mcp_path
+
+    bridge_path = repo / ".bridge" / "messages.db"
+    bridge_path.parent.mkdir(parents=True)
+    bridge_path.write_bytes(b"")
+    assert local_api._resolve_bridge_db_path(repo) == bridge_path
+
+    override = tmp_path / "custom.db"
+    override.write_bytes(b"")
+    monkeypatch.setenv("AB_DB_PATH", str(override))
+    assert local_api._resolve_bridge_db_path(repo) == override
+
+
+def test_resolve_bridge_db_path_honors_nonexistent_override(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """Codex round-2 bug: $AB_DB_PATH must win even when the override
+    file doesn't yet exist. Previously we only used it when present,
+    silently reading the wrong DB on a fresh override."""
+    repo = tmp_path
+    bridge_path = repo / ".bridge" / "messages.db"
+    bridge_path.parent.mkdir(parents=True)
+    bridge_path.write_bytes(b"")
+    not_yet_created = tmp_path / "future.db"
+    monkeypatch.setenv("AB_DB_PATH", str(not_yet_created))
+    resolved = local_api._resolve_bridge_db_path(repo)
+    assert resolved == not_yet_created
+    assert not resolved.exists()
+
+
+def test_bridge_messages_filters_and_previews(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.delenv("AB_DB_PATH", raising=False)
+    db_path = tmp_path / ".bridge" / "messages.db"
+    db_path.parent.mkdir(parents=True)
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        """
+        CREATE TABLE messages (
+          id INTEGER PRIMARY KEY,
+          task_id TEXT, from_llm TEXT, to_llm TEXT, message_type TEXT,
+          content TEXT, data TEXT, timestamp TEXT, acknowledged INTEGER,
+          status TEXT
+        )
+        """
+    )
+    long_content = "y" * 800
+    for i, ts in enumerate(["2026-01-01T00:00:00Z", "2026-02-01T00:00:00Z", "2026-03-01T00:00:00Z"]):
+        conn.execute(
+            "INSERT INTO messages (task_id, from_llm, to_llm, message_type, content, timestamp, "
+            "acknowledged, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (f"t{i}", "claude", "codex", "review", long_content, ts, 0, "sent"),
+        )
+    conn.commit()
+    conn.close()
+
+    all_ = local_api.build_bridge_messages(tmp_path, since=None, limit=10)
+    assert all_["count"] == 3
+    # Long content trimmed to preview.
+    first = all_["messages"][0]
+    assert "content" not in first  # replaced by preview
+    assert first["content_full_length"] == 800
+    assert first["content_preview"].endswith("(truncated)")
+
+    since = local_api.build_bridge_messages(tmp_path, since="2026-02-01T00:00:00Z", limit=10)
+    assert since["count"] == 2
+
+
+def test_quality_scores_parses_audit_markdown(tmp_path: Path) -> None:
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """# Audit\n\n## All Scored Modules\n\n### Critical & High Priority\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| Alpha Beta | CKA | 55 | **1.3** | Critical | stub |\n"""
+        """| Gamma Module | CKAD | 500 | **3.7** | Good | ok |\n"""
+        """| Delta | KCNA | 74 | **1.7** | Critical | stub |\n""",
+        encoding="utf-8",
+    )
+    # Reset the cache so this test doesn't see a stale parse from
+    # another test's tmp_path.
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+
+    r = local_api.build_quality_scores(tmp_path)
+    assert r["exists"] is True
+    assert r["count"] == 3
+    assert r["critical_count"] == 2
+    scores = {m["module"]: m for m in r["modules"]}
+    assert scores["Alpha Beta"]["severity"] == "critical"
+    assert scores["Gamma Module"]["severity"] == "good"
+
+
+def test_module_state_includes_diagnostics(tmp_path: Path) -> None:
+    module_key, _ = _setup_repo(tmp_path)
+    state = local_api.build_module_state(tmp_path, module_key)
+    diagnostics = state.get("diagnostics")
+    assert isinstance(diagnostics, list)
+    # The fixture module has lab + fact_ledger + UK + frontmatter, so
+    # the only nits come from the UK state if it's not "synced". We
+    # don't assert an exact set — just that the field is present and a
+    # list of short strings.
+    for tag in diagnostics:
+        assert isinstance(tag, str) and tag
+        assert len(tag) < 80
+
+
+def test_module_state_flags_missing_lab_and_ledger(tmp_path: Path) -> None:
+    # Minimal repo: no lab, no fact ledger, no UK.
+    repo = tmp_path
+    _init_repo(repo)
+    _write(
+        repo / "src/content/docs/k8s/cka/module-X-stub.md",
+        "---\ntitle: stub\n---\nbody\n",
+    )
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", "init")
+    state = local_api.build_module_state(repo, "k8s/cka/module-X-stub")
+    diag = state["diagnostics"]
+    assert "no_lab" in diag
+    assert "no_fact_ledger" in diag
+    assert "uk_translation_missing" in diag
+
+
+def test_rubric_diagnostics_matches_by_track_and_number(tmp_path: Path) -> None:
+    """Codex round-4 bug: rubric matching compared raw slugs like
+    'module-2.8-scheduler-lifecycle-theory' to audit labels like
+    'CKA 2.8: Scheduler Lifecycle Theory' and never matched."""
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """## All Scored Modules\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | stub |\n""",
+        encoding="utf-8",
+    )
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+
+    # Build minimal EN file for the module under its real-world path.
+    en = (
+        tmp_path
+        / "src/content/docs/k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory.md"
+    )
+    _init_repo(tmp_path)
+    _write(en, "---\ntitle: Scheduler\n---\nbody\n")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-m", "init")
+    state = local_api.build_module_state(
+        tmp_path, "k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory"
+    )
+    assert "rubric_critical" in state["diagnostics"]
+
+
+def test_rubric_diagnostics_matches_non_numbered_entry(tmp_path: Path) -> None:
+    """Codex round-2 bug: audit entries like 'Platform: Systems Thinking'
+    (no module number) were never matched. Now resolved via name-token
+    overlap when ≥2 tokens are shared AND the track alias matches."""
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """## All Scored Modules\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| Platform: Systems Thinking | Platform Foundations | 820 | **4.6** | Excellent | gold |\n"""
+        """| Prerequisites: GitOps | Modern DevOps | 543 | **2.9** | Medium | overloaded |\n""",
+        encoding="utf-8",
+    )
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+
+    _init_repo(tmp_path)
+    en = tmp_path / "src/content/docs/platform/foundations/module-1-systems-thinking.md"
+    _write(en, "---\ntitle: Systems Thinking\n---\nbody\n")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-m", "init")
+    # Severity is "excellent" so no rubric_* tag is expected. But the
+    # match must have happened; verify by directly probing the helper.
+    quality = local_api.build_quality_scores(tmp_path)
+    sev = local_api._rubric_severity_for_module(
+        "platform/foundations/module-1-systems-thinking",
+        quality["modules"],
+    )
+    assert sev == "excellent"
+
+    # Prerequisites: GitOps → "needs_work" (3.5 > 2.9 >= 2.5). Not
+    # critical/poor, so no tag in diagnostics either; probe the helper.
+    sev2 = local_api._rubric_severity_for_module(
+        "prerequisites/modern-devops/module-5-gitops",
+        quality["modules"],
+    )
+    assert sev2 == "needs_work"
+
+
+def test_rubric_diagnostics_matches_via_label_prefix(tmp_path: Path) -> None:
+    """Codex round-3 bug: the Track column is often a SUBtrack
+    ('Workloads', 'AWS', 'Foundations'). The top-level track is in
+    the Module label prefix ('CKA:', 'Platform:', 'Prerequisites:').
+    The matcher must consult both."""
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """## All Scored Modules\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| CKA: Autoscaling | Workloads | 450 | **2.2** | Poor | dry |\n""",
+        encoding="utf-8",
+    )
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+    quality = local_api.build_quality_scores(tmp_path)
+    sev = local_api._rubric_severity_for_module(
+        "k8s/cka/part2-workloads-scheduling/module-6-autoscaling",
+        quality["modules"],
+    )
+    # Track col is "Workloads" (no CKA alias) but the label prefix
+    # carries "CKA:" — the matcher must see it.
+    assert sev == "poor"
+
+
+def test_rubric_diagnostics_cka_does_not_match_ckad(tmp_path: Path) -> None:
+    """Codex round-3 bug: raw substring ``'cka' in 'CKAD'`` is True,
+    letting a CKAD audit row attach to a CKA module path. Matcher
+    must use word boundaries."""
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """## All Scored Modules\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| CKAD 3.5: API Deprecations | CKAD | 433 | **2.4** | Poor | reference |\n""",
+        encoding="utf-8",
+    )
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+    quality = local_api.build_quality_scores(tmp_path)
+    sev = local_api._rubric_severity_for_module(
+        "k8s/cka/part3-services-networking/module-3.5-gateway-api",
+        quality["modules"],
+    )
+    assert sev is None  # CKA module must NOT pick up the CKAD row.
+
+    # And the CKAD path DOES match.
+    sev_ckad = local_api._rubric_severity_for_module(
+        "k8s/ckad/module-3.5-api-deprecations",
+        quality["modules"],
+    )
+    assert sev_ckad == "poor"
+
+
+def test_rubric_diagnostics_track_only_overlap_is_not_a_match(tmp_path: Path) -> None:
+    """Codex round-3 bug: overlap of ``{platform, sre}`` — both track
+    tokens — must NOT match. Matcher requires ≥ 1 NON-track token in
+    the overlap."""
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """## All Scored Modules\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| Platform: Site Reliability Engineering (SRE) | Platform | 400 | **2.2** | Poor | generic |\n""",
+        encoding="utf-8",
+    )
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+    quality = local_api.build_quality_scores(tmp_path)
+    # A platform module whose name just says "sre basics" shouldn't
+    # inherit the severity from a generic "Platform: ... SRE" row.
+    sev = local_api._rubric_severity_for_module(
+        "platform/foundations/module-1-sre-basics",
+        quality["modules"],
+    )
+    assert sev is None
+
+
+def test_rubric_diagnostics_unrecognized_track_never_matches(tmp_path: Path) -> None:
+    """Codex round-2 bug: when the path's track wasn't in the alias
+    table, matching silently became permissive and could attach a
+    random rubric row. Now unknown tracks always return None."""
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """## All Scored Modules\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | stub |\n""",
+        encoding="utf-8",
+    )
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+    quality = local_api.build_quality_scores(tmp_path)
+    # Path track "exotic" is not in _TRACK_ALIASES. Must not match
+    # ANY row, regardless of number overlap.
+    sev = local_api._rubric_severity_for_module(
+        "exotic/module-2.8-scheduler",
+        quality["modules"],
+    )
+    assert sev is None
+
+
+def test_rubric_diagnostics_no_false_match_for_different_track(tmp_path: Path) -> None:
+    """A module path like k8s/kcna/module-2.8-... must not pick up a
+    'CKA 2.8:' rubric entry (track disambiguation)."""
+    audit = tmp_path / "docs" / "quality-audit-results.md"
+    audit.parent.mkdir()
+    audit.write_text(
+        """## All Scored Modules\n\n"""
+        """| Module | Track | Lines | Score | Action | Issue |\n"""
+        """|---|---|---|---|---|---|\n"""
+        """| CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | stub |\n""",
+        encoding="utf-8",
+    )
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+
+    en = tmp_path / "src/content/docs/k8s/kcna/module-2.8-something-unrelated.md"
+    _init_repo(tmp_path)
+    _write(en, "---\ntitle: KCNA\n---\nbody\n")
+    _git(tmp_path, "add", ".")
+    _git(tmp_path, "commit", "-m", "init")
+    state = local_api.build_module_state(tmp_path, "k8s/kcna/module-2.8-something-unrelated")
+    assert "rubric_critical" not in state["diagnostics"]
+
+
+def test_query_sqlite_rows_propagates_schema_drift(tmp_path: Path) -> None:
+    """Bug-fix regression: 'no such column' must NOT silently return
+    empty — that was how the priority-column bug stayed hidden."""
+    db_path = tmp_path / "schema.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE jobs (id INTEGER, module_key TEXT)")
+    conn.commit()
+    conn.close()
+    import pytest as _pytest
+    with _pytest.raises(sqlite3.OperationalError) as exc_info:
+        local_api._query_sqlite_rows(db_path, "SELECT ghost_column FROM jobs")
+    assert "no such column" in str(exc_info.value)
+
+
+def test_query_sqlite_rows_tolerates_missing_table(tmp_path: Path) -> None:
+    db_path = tmp_path / "missing_table.db"
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE other (id INTEGER)")
+    conn.commit()
+    conn.close()
+    result = local_api._query_sqlite_rows(db_path, "SELECT * FROM does_not_exist")
+    assert result == []
+
+
+def test_schema_lists_phase_c_endpoints() -> None:
+    schema = local_api.build_api_schema()
+    paths = {e["path"] for e in schema["endpoints"]}
+    for expected in (
+        "/api/pipeline/leases",
+        "/api/pipeline/v2/events",
+        "/api/pipeline/v2/stuck",
+        "/api/reviews",
+        "/api/bridge/messages",
+        "/api/quality/scores",
+        "/api/module/{key}/lease",
+    ):
+        assert expected in paths, f"/api/schema missing {expected}"
 
 
 def test_cli_starts_server_and_reports_host_port(tmp_path: Path) -> None:

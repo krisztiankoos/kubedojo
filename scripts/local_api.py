@@ -726,7 +726,7 @@ def build_module_state(repo_root: Path, module_key: str) -> dict[str, Any]:
     lab_summary = _build_lab_summary(repo_root)
     lab_state = next((item for item in lab_summary["items"] if item["lab_id"] == lab_id), None) if lab_id else None
 
-    return {
+    state = {
         "module_key": normalized,
         "track": normalized.split("/", 1)[0] if "/" in normalized else normalized,
         "english_path": str(en_path),
@@ -745,6 +745,8 @@ def build_module_state(repo_root: Path, module_key: str) -> dict[str, Any]:
             "state": lab_state,
         },
     }
+    state["diagnostics"] = build_module_diagnostics(repo_root, normalized, state)
+    return state
 
 
 def build_module_orchestration_latest(repo_root: Path, module_key: str) -> dict[str, Any]:
@@ -754,6 +756,822 @@ def build_module_orchestration_latest(repo_root: Path, module_key: str) -> dict[
         "v2": _db_latest_for_module(repo_root / ".pipeline" / "v2.db", normalized),
         "translation_v2": _db_latest_for_module(repo_root / ".pipeline" / "translation_v2.db", normalized),
     }
+
+
+# ============================================================
+# Phase C: leases, diagnostics, quality, pipeline events/stuck,
+# reviews, bridge messages
+# ============================================================
+
+
+def _query_sqlite_rows(
+    db_path: Path,
+    sql: str,
+    params: tuple = (),
+    limit: int = 1000,
+) -> list[dict[str, Any]]:
+    """Run a read-only query and return rows as dicts. Empty list if
+    the DB is missing or the referenced table doesn't exist; every
+    other sqlite error propagates so the handler can surface it as a
+    500 (silently swallowing hides schema-drift bugs)."""
+    if not db_path.exists():
+        return []
+    conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=1.0)
+    conn.row_factory = sqlite3.Row
+    try:
+        cursor = conn.execute(sql, params)
+        return [dict(row) for row in cursor.fetchmany(limit)]
+    except sqlite3.OperationalError as exc:
+        # "no such table" is an expected "feature not yet provisioned"
+        # state (e.g. bridge DB absent before first message). Anything
+        # else — "no such column", type mismatch, etc. — is a bug the
+        # caller needs to see.
+        if "no such table" in str(exc):
+            return []
+        raise
+    finally:
+        conn.close()
+
+
+# Timestamps in .pipeline/v2.db are Unix epoch SECONDS (SQLite's
+# strftime('%s','now') — see scripts/pipeline_v2/control_plane.py). All
+# comparisons here must use the same unit.
+
+
+def build_pipeline_leases(repo_root: Path, *, now_seconds: int | None = None) -> dict[str, Any]:
+    """Active pipeline leases (from ``jobs`` table).
+
+    A lease is active when ``leased_by`` is set and ``lease_expires_at``
+    is in the future. Payload ordered by expiry so the most-at-risk
+    leases are first.
+    """
+    db_path = repo_root / ".pipeline" / "v2.db"
+    if not db_path.exists():
+        return {"db_path": str(db_path), "active": [], "count": 0, "exists": False}
+
+    now_seconds = now_seconds if now_seconds is not None else int(time.time())
+    rows = _query_sqlite_rows(
+        db_path,
+        """
+        SELECT module_key, phase, queue_state, model, priority,
+               leased_by, lease_id, leased_at, lease_expires_at
+        FROM jobs
+        WHERE leased_by IS NOT NULL
+          AND lease_expires_at IS NOT NULL
+          AND lease_expires_at > ?
+        ORDER BY lease_expires_at ASC
+        """,
+        (now_seconds,),
+    )
+    for row in rows:
+        exp = row.get("lease_expires_at")
+        if isinstance(exp, (int, float)):
+            row["seconds_to_expiry"] = max(0, int(exp) - now_seconds)
+    return {
+        "db_path": str(db_path),
+        "exists": True,
+        "count": len(rows),
+        "active": rows,
+        "queried_at_seconds": now_seconds,
+    }
+
+
+def build_module_lease(
+    repo_root: Path, module_key: str, *, now_seconds: int | None = None
+) -> dict[str, Any]:
+    """Lease state for one module. Returns ``{held: False}`` when no
+    active lease exists (vs 404 semantics, which would be ambiguous
+    between 'no lease' and 'no pipeline DB')."""
+    db_path = repo_root / ".pipeline" / "v2.db"
+    if not db_path.exists():
+        return {
+            "module_key": module_key,
+            "held": False,
+            "reason": "missing_db",
+            "db_path": str(db_path),
+        }
+    now_seconds = now_seconds if now_seconds is not None else int(time.time())
+    rows = _query_sqlite_rows(
+        db_path,
+        """
+        SELECT module_key, phase, queue_state, model, priority,
+               leased_by, lease_id, leased_at, lease_expires_at
+        FROM jobs
+        WHERE module_key = ?
+          AND leased_by IS NOT NULL
+          AND lease_expires_at IS NOT NULL
+          AND lease_expires_at > ?
+        ORDER BY lease_expires_at DESC
+        LIMIT 1
+        """,
+        (module_key, now_seconds),
+    )
+    if not rows:
+        return {"module_key": module_key, "held": False}
+    row = rows[0]
+    exp = row.get("lease_expires_at")
+    if isinstance(exp, (int, float)):
+        row["seconds_to_expiry"] = max(0, int(exp) - now_seconds)
+    return {"module_key": module_key, "held": True, "lease": row}
+
+
+# ---- pipeline events / stuck ----
+
+
+def build_pipeline_events(
+    repo_root: Path,
+    module_key: str | None,
+    since_seconds: int | None,
+    limit: int = 200,
+) -> dict[str, Any]:
+    """Timeline view of ``.pipeline/v2.db`` events.
+
+    Filter by ``module_key`` (optional) and ``since_seconds`` (optional,
+    inclusive Unix-epoch seconds to match the control-plane's time
+    unit). Newest-first, capped by ``limit`` (default 200, max 2000).
+    """
+    db_path = repo_root / ".pipeline" / "v2.db"
+    if not db_path.exists():
+        return {"db_path": str(db_path), "exists": False, "count": 0, "events": []}
+    capped = max(1, min(int(limit), 2000))
+    clauses: list[str] = []
+    params: list[Any] = []
+    if module_key:
+        clauses.append("module_key = ?")
+        params.append(module_key)
+    if since_seconds is not None:
+        clauses.append("at >= ?")
+        params.append(int(since_seconds))
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    rows = _query_sqlite_rows(
+        db_path,
+        f"""
+        SELECT id, type, module_key, lease_id, payload_json, at
+        FROM events
+        {where}
+        ORDER BY id DESC
+        LIMIT {capped}
+        """,
+        tuple(params),
+    )
+    for row in rows:
+        payload = row.get("payload_json")
+        if isinstance(payload, str):
+            row["payload_json"] = _load_json(payload)
+    return {
+        "db_path": str(db_path),
+        "exists": True,
+        "module_key": module_key,
+        "since_seconds": since_seconds,
+        "limit": capped,
+        "count": len(rows),
+        "events": rows,
+    }
+
+
+# Phases considered "in-flight" when computing stuck modules. A job
+# that's been sitting in one of these states longer than the threshold
+# is a candidate for human attention.
+_STUCK_IN_FLIGHT_STATES = ("leased", "running", "in_progress")
+_DEFAULT_STUCK_THRESHOLD_SECONDS = 3600  # 1 hour
+
+
+def build_pipeline_stuck(
+    repo_root: Path,
+    *,
+    threshold_seconds: int = _DEFAULT_STUCK_THRESHOLD_SECONDS,
+    now_seconds: int | None = None,
+) -> dict[str, Any]:
+    """Dead-letter view — jobs stuck at a phase longer than ``threshold_seconds``.
+
+    Two signals are surfaced:
+
+    - ``stuck_leased``: jobs whose lease has expired OR whose
+      ``leased_at`` is older than the threshold.
+    - ``stuck_in_state``: jobs in an in-flight ``queue_state`` with no
+      recent event *for the current attempt*. Events are correlated
+      to the job's current ``lease_id`` — a recent event from an
+      earlier lease for the same module must not mask a hung current
+      lease.
+    """
+    db_path = repo_root / ".pipeline" / "v2.db"
+    if not db_path.exists():
+        return {"db_path": str(db_path), "exists": False, "stuck_leased": [], "stuck_in_state": []}
+
+    now_seconds = now_seconds if now_seconds is not None else int(time.time())
+    cutoff = now_seconds - threshold_seconds
+
+    stuck_leased = _query_sqlite_rows(
+        db_path,
+        """
+        SELECT module_key, phase, queue_state, leased_by, lease_id,
+               leased_at, lease_expires_at
+        FROM jobs
+        WHERE leased_by IS NOT NULL
+          AND (
+              (lease_expires_at IS NOT NULL AND lease_expires_at < ?)
+              OR (leased_at IS NOT NULL AND leased_at < ?)
+          )
+        ORDER BY leased_at ASC
+        LIMIT 500
+        """,
+        (now_seconds, cutoff),
+    )
+
+    # Correlate events by lease_id (and fall back to module_key for
+    # jobs without a lease_id) so a fresh event from a previous
+    # attempt can't mask a hung current attempt.
+    stuck_in_state = _query_sqlite_rows(
+        db_path,
+        f"""
+        SELECT j.module_key, j.phase, j.queue_state, j.leased_by,
+               j.lease_id, j.leased_at,
+               (
+                   SELECT MAX(at) FROM events e
+                   WHERE (j.lease_id IS NOT NULL AND e.lease_id = j.lease_id)
+                      OR (j.lease_id IS NULL AND e.module_key = j.module_key)
+               ) AS last_event_at
+        FROM jobs j
+        WHERE j.queue_state IN ({','.join('?' for _ in _STUCK_IN_FLIGHT_STATES)})
+        ORDER BY j.leased_at ASC
+        LIMIT 500
+        """,
+        tuple(_STUCK_IN_FLIGHT_STATES),
+    )
+    # Keep only those whose last event for the current attempt is
+    # older than the threshold (NULL/0 counts as stuck — a running
+    # job that has emitted zero events is stuck by definition).
+    stuck_in_state = [
+        row for row in stuck_in_state
+        if (row.get("last_event_at") or 0) < cutoff
+    ]
+
+    return {
+        "db_path": str(db_path),
+        "exists": True,
+        "threshold_seconds": threshold_seconds,
+        "queried_at_seconds": now_seconds,
+        "stuck_leased_count": len(stuck_leased),
+        "stuck_leased": stuck_leased,
+        "stuck_in_state_count": len(stuck_in_state),
+        "stuck_in_state": stuck_in_state,
+    }
+
+
+# ---- reviews audit log ----
+
+
+_REVIEW_AUDIT_DIR = Path(".pipeline") / "reviews"
+
+
+def _review_filename_to_module_key(filename: str) -> str:
+    """Filenames use ``__`` as path separators. Strip trailing
+    ``.md`` / ``.lock``."""
+    name = filename
+    for suffix in (".md", ".lock"):
+        if name.endswith(suffix):
+            name = name[: -len(suffix)]
+    return name.replace("__", "/")
+
+
+def _module_key_to_review_filename(module_key: str) -> str:
+    return module_key.replace("/", "__") + ".md"
+
+
+def build_reviews_index(repo_root: Path) -> dict[str, Any]:
+    """List every review artifact with its module key and last-modified
+    timestamp. Callers fetch the body via ``/api/reviews?module=...``."""
+    reviews_dir = repo_root / _REVIEW_AUDIT_DIR
+    if not reviews_dir.is_dir():
+        return {"reviews_dir": str(reviews_dir), "exists": False, "count": 0, "reviews": []}
+    reviews: list[dict[str, Any]] = []
+    for path in sorted(reviews_dir.glob("*.md")):
+        try:
+            mtime = path.stat().st_mtime
+            size = path.stat().st_size
+        except OSError:
+            mtime, size = 0.0, 0
+        reviews.append({
+            "module_key": _review_filename_to_module_key(path.name),
+            "filename": path.name,
+            "size": size,
+            "mtime": mtime,
+        })
+    return {
+        "reviews_dir": str(reviews_dir),
+        "exists": True,
+        "count": len(reviews),
+        "reviews": reviews,
+    }
+
+
+def build_module_reviews(
+    repo_root: Path,
+    module_key: str,
+    *,
+    max_bytes: int = 200_000,
+) -> dict[str, Any] | None:
+    """Return the full review log for a module, capped at ``max_bytes``.
+
+    The log is a markdown file produced by the pipeline with one
+    section per review pass (writer, plan, duration, reviewer,
+    severity, etc.). We return it as a single ``body`` string so
+    agents can parse what they need without the API pretending to
+    understand every variation of the format.
+    """
+    reviews_dir = repo_root / _REVIEW_AUDIT_DIR
+    path = reviews_dir / _module_key_to_review_filename(module_key)
+    if not path.is_file():
+        return None
+    try:
+        stat = path.stat()
+        on_disk_size = stat.st_size
+        mtime = stat.st_mtime
+    except OSError:
+        on_disk_size, mtime = 0, 0.0
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return None
+    truncated = False
+    if len(raw) > max_bytes:
+        raw = raw[:max_bytes]
+        truncated = True
+    try:
+        body = raw.decode("utf-8", errors="replace")
+    except UnicodeDecodeError:
+        body = raw.decode("latin-1", errors="replace")
+    return {
+        "module_key": module_key,
+        "path": str(path),
+        "size": on_disk_size,
+        "body_size": len(body.encode("utf-8")),
+        "truncated": truncated,
+        "max_bytes": max_bytes if truncated else None,
+        "mtime": mtime,
+        "body": body,
+    }
+
+
+# ---- bridge messages ----
+
+
+def _resolve_bridge_db_path(repo_root: Path) -> Path:
+    """Locate ``messages.db`` the same way the bridge CLI does.
+
+    Precedence:
+      1. ``$AB_DB_PATH`` — unconditional. An explicit override must
+         win even if the file doesn't yet exist; the caller surfaces
+         ``exists=False`` when that happens. (Codex round-2 caught that
+         previously we only honored AB_DB_PATH when the file already
+         existed — quietly reading the wrong DB on a fresh override.)
+      2. ``.bridge/messages.db`` — set by the ``scripts/ab`` wrapper
+         and by the repo setup guide; the repo convention.
+      3. ``.mcp/servers/message-broker/messages.db`` — the upstream
+         Python default when no wrapper is used.
+    Within 2 and 3, the first existing file wins; if neither exists,
+    the convention path (2) is returned.
+    """
+    explicit = os.environ.get("AB_DB_PATH")
+    if explicit:
+        return Path(explicit)
+    candidates = [
+        repo_root / ".bridge" / "messages.db",
+        repo_root / ".mcp" / "servers" / "message-broker" / "messages.db",
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
+
+
+def build_bridge_messages(
+    repo_root: Path,
+    since: str | None = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Recent agent-bridge messages from the bridge DB.
+
+    Filter ``since`` is an ISO-8601 timestamp (string comparison is
+    safe — the bridge stores ISO-8601 UTC). ``limit`` caps at 500 rows
+    so a single call can't overwhelm a polling agent.
+    """
+    db_path = _resolve_bridge_db_path(repo_root)
+    if not db_path.exists():
+        return {"db_path": str(db_path), "exists": False, "count": 0, "messages": []}
+    capped = max(1, min(int(limit), 500))
+    if since:
+        rows = _query_sqlite_rows(
+            db_path,
+            f"""
+            SELECT id, task_id, from_llm, to_llm, message_type,
+                   content, timestamp, acknowledged, status
+            FROM messages
+            WHERE timestamp >= ?
+            ORDER BY id DESC
+            LIMIT {capped}
+            """,
+            (since,),
+            limit=capped,
+        )
+    else:
+        rows = _query_sqlite_rows(
+            db_path,
+            f"""
+            SELECT id, task_id, from_llm, to_llm, message_type,
+                   content, timestamp, acknowledged, status
+            FROM messages
+            ORDER BY id DESC
+            LIMIT {capped}
+            """,
+            limit=capped,
+        )
+    # Truncate message content to a readable preview so a burst of
+    # long messages doesn't blow up the response. Full content stays
+    # accessible via the bridge CLI.
+    for row in rows:
+        content = row.get("content")
+        if isinstance(content, str) and len(content) > 400:
+            row["content_preview"] = content[:400] + "… (truncated)"
+            row["content_full_length"] = len(content)
+            row.pop("content", None)
+    return {
+        "db_path": str(db_path),
+        "exists": True,
+        "since": since,
+        "limit": capped,
+        "count": len(rows),
+        "messages": rows,
+    }
+
+
+# ---- quality scores ----
+
+
+_QUALITY_AUDIT_CACHE: dict[str, dict[str, Any]] = {}
+_QUALITY_AUDIT_CACHE_LOCK = threading.Lock()
+
+
+# Matches rows like:
+#   | CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | ... |
+# Score is the first bold-number occurrence.
+_QUALITY_ROW_RE = re.compile(
+    r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*\*?\*?([0-9]+(?:\.[0-9]+)?)\*?\*?\s*\|"
+)
+
+
+def build_quality_scores(repo_root: Path) -> dict[str, Any]:
+    """Parse ``docs/quality-audit-results.md`` and expose per-module
+    rubric scores.
+
+    The file is markdown with multiple tables; we walk it row-by-row
+    extracting ``(module, track, lines, score)``. Cached by mtime.
+    """
+    audit_path = repo_root / "docs" / "quality-audit-results.md"
+    if not audit_path.exists():
+        return {"audit_path": str(audit_path), "exists": False, "modules": [], "count": 0}
+
+    try:
+        mtime = audit_path.stat().st_mtime
+    except OSError:
+        mtime = 0.0
+    key = str(audit_path.resolve())
+    with _QUALITY_AUDIT_CACHE_LOCK:
+        entry = _QUALITY_AUDIT_CACHE.get(key)
+        if entry is not None and entry["mtime"] == mtime:
+            return entry["data"]
+
+    try:
+        text = audit_path.read_text(encoding="utf-8")
+    except OSError:
+        return {"audit_path": str(audit_path), "exists": False, "modules": [], "count": 0}
+
+    modules: list[dict[str, Any]] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line.startswith("|"):
+            continue
+        # Skip table header / separator rows.
+        if "---" in line or line.startswith("| Module") or line.startswith("| Rating"):
+            continue
+        match = _QUALITY_ROW_RE.match(line)
+        if not match:
+            continue
+        module = match.group(1).strip()
+        track = match.group(2).strip()
+        lines_str = match.group(3).strip()
+        score = float(match.group(4))
+        try:
+            lines_count = int(lines_str) if lines_str.isdigit() else None
+        except ValueError:
+            lines_count = None
+        # Skip the score-distribution table (first col is "Excellent"/"Good"/etc).
+        if module in {"Excellent", "Good", "Needs Work", "Poor", "Critical"}:
+            continue
+        severity = "critical" if score < 2.0 else (
+            "poor" if score < 2.5 else (
+                "needs_work" if score < 3.5 else (
+                    "good" if score < 4.5 else "excellent"
+                )
+            )
+        )
+        modules.append({
+            "module": module,
+            "track": track,
+            "lines": lines_count,
+            "score": score,
+            "severity": severity,
+        })
+
+    scores = [m["score"] for m in modules]
+    avg = round(sum(scores) / len(scores), 2) if scores else None
+    critical = [m for m in modules if m["severity"] == "critical"]
+    poor = [m for m in modules if m["severity"] == "poor"]
+    data = {
+        "audit_path": str(audit_path),
+        "exists": True,
+        "mtime": mtime,
+        "count": len(modules),
+        "average": avg,
+        "min_score": min(scores) if scores else None,
+        "max_score": max(scores) if scores else None,
+        "critical": critical,
+        "critical_count": len(critical),
+        "poor_count": len(poor),
+        "modules": modules,
+    }
+    with _QUALITY_AUDIT_CACHE_LOCK:
+        _QUALITY_AUDIT_CACHE[key] = {"mtime": mtime, "data": data}
+    return data
+
+
+# ---- module diagnostics ----
+
+
+def build_module_diagnostics(
+    repo_root: Path,
+    module_key: str,
+    base_state: dict[str, Any],
+) -> list[str]:
+    """Compute a short list of actionable diagnostic tags for a module.
+
+    These are cheap signals that let an agent skip a discovery round:
+    if the module already has ``i18n_parity_fail`` set, there's no
+    need to re-check what's broken.
+    """
+    tags: list[str] = []
+    if not base_state.get("english_exists"):
+        tags.append("english_missing")
+        return tags  # Without EN content the rest is moot.
+
+    frontmatter = base_state.get("frontmatter") or {}
+    if not isinstance(frontmatter, dict) or not frontmatter:
+        tags.append("frontmatter_missing")
+    else:
+        if not frontmatter.get("title"):
+            tags.append("frontmatter_no_title")
+
+    lab = base_state.get("lab") or {}
+    if not lab.get("lab_id"):
+        tags.append("no_lab")
+
+    fact = base_state.get("fact_ledger") or {}
+    if not fact.get("exists"):
+        tags.append("no_fact_ledger")
+
+    if not base_state.get("ukrainian_exists"):
+        tags.append("uk_translation_missing")
+    else:
+        uk_state = base_state.get("ukrainian_state") or {}
+        # ``detect_module_state`` returns dict-like structures; flag any
+        # non-happy state so agents can drill in. ``synced`` is the
+        # happy path in translation_v2.
+        if isinstance(uk_state, dict):
+            status = uk_state.get("status") or uk_state.get("state")
+            happy = {"ok", "current", "fresh", "synced"}
+            if status and status not in happy:
+                tags.append(f"uk_state:{status}")
+
+    # Rubric severity from docs/quality-audit-results.md.
+    try:
+        quality = build_quality_scores(repo_root)
+    except Exception:  # noqa: BLE001
+        quality = {"modules": []}
+    # Map module path (e.g. "k8s/cka/part2-workloads-scheduling/
+    # module-2.8-scheduler-lifecycle-theory") to audit labels like
+    # "CKA 2.8: Scheduler Lifecycle Theory" using (track, number)
+    # extracted from the path. Substring matching alone fails because
+    # the audit uses human-readable names, not slugs.
+    sev = _rubric_severity_for_module(module_key, quality.get("modules", []))
+    if sev in ("critical", "poor"):
+        tags.append(f"rubric_{sev}")
+
+    return tags
+
+
+_MODULE_NUMBER_RE = re.compile(r"module-([0-9]+(?:\.[0-9]+)*)")
+# Used to strip ``module-X.Y-`` prefix from a slug to get a readable
+# name token set.
+_MODULE_NUMBER_PREFIX_RE = re.compile(r"^module-[0-9]+(?:\.[0-9]+)*-")
+_PART_PREFIX_RE = re.compile(r"^part[0-9]+-?")
+
+# Track slugs → strings likely to appear (case-insensitive) in the
+# audit doc's track column. Kept narrow so we don't false-match
+# (e.g. "cka" matching "kcna" substrings).
+_TRACK_ALIASES: dict[str, tuple[str, ...]] = {
+    "cka": ("cka",),
+    "ckad": ("ckad",),
+    "cks": ("cks",),
+    "kcna": ("kcna",),
+    "kcsa": ("kcsa",),
+    "prerequisites": (
+        "prerequisites", "k8s basics", "cloud native 101", "modern devops",
+        "zero to terminal", "philosophy", "design",
+    ),
+    "linux": ("linux",),
+    "cloud": ("cloud",),
+    "platform": ("platform", "toolkit", "sre", "gitops", "devsecops", "mlops", "aiops"),
+    "on-prem": ("on-prem", "on-premises"),
+    "on-premises": ("on-prem", "on-premises"),
+    "ai-ml-engineering": (
+        "ai/ml", "ai-ml", "ai/ml engineering", "mlops", "genai",
+        "advanced genai", "multimodal", "deep learning", "classical ml",
+    ),
+}
+
+# Tokens that are too generic to contribute to the name-overlap match
+# (e.g. "module", "part", "intro"). ``basics`` was removed in round-3:
+# it can be the only distinguishing token in short unnumbered labels.
+_NAME_TOKEN_STOPLIST = frozenset({
+    "module", "part", "the", "a", "an", "and", "of", "to", "for", "with",
+    "intro", "introduction", "overview",
+})
+
+
+# Labels typically look like ``<Track>[ <number>][:-] <Name>``.
+# Capture the leading track prefix so we can match even when the
+# audit ``Track`` column is a subtrack like "Workloads" or "AWS".
+_LABEL_TRACK_PREFIX_RE = re.compile(
+    r"^\s*(?P<track>[A-Za-z][A-Za-z/\- ]*?)\s*(?:[0-9]+(?:\.[0-9]+)*)?\s*[:\-]"
+)
+
+
+def _audit_row_track_tokens(row: dict[str, Any]) -> set[str]:
+    """Return every track-like string attached to an audit row.
+
+    Combines the ``Track`` column (typically a subtrack like
+    ``Workloads`` or ``AWS``) with the ``Track:`` prefix of the
+    ``Module`` label (``CKA 2.8: ...``, ``Platform: ...``).
+    """
+    out: set[str] = set()
+    track_col = str(row.get("track", "")).strip().lower()
+    if track_col:
+        out.add(track_col)
+    module_label = str(row.get("module", ""))
+    m = _LABEL_TRACK_PREFIX_RE.match(module_label)
+    if m:
+        out.add(m.group("track").strip().lower())
+    return out
+
+
+def _alias_matches(alias: str, candidates: set[str]) -> bool:
+    """Whole-word check so ``cka`` doesn't match ``ckad``."""
+    pattern = re.compile(r"\b" + re.escape(alias) + r"\b")
+    return any(pattern.search(c) for c in candidates)
+
+
+_CERT_TRACKS = frozenset({"cka", "ckad", "cks", "kcna", "kcsa"})
+
+
+def _track_word_set(track_slug: str | None, aliases: tuple[str, ...]) -> set[str]:
+    """Tokens that should NOT count as a non-track overlap signal.
+
+    Used to make the name-overlap match meaningful: an overlap of
+    ``{platform, sre}`` between a module path and a "Platform: SRE…"
+    label is vacuous when both are track tokens for this module.
+    """
+    out: set[str] = set()
+    if track_slug:
+        out |= _normalize_name_tokens(track_slug)
+    for alias in aliases:
+        out |= _normalize_name_tokens(alias)
+    # Cert paths share a ``k8s/`` parent segment that's structural,
+    # not semantic. Without this the label "CKA: k8s.io Navigation"
+    # matches any k8s/cka/* module via the vacuous ``{cka, k8s}``
+    # overlap.
+    if track_slug in _CERT_TRACKS:
+        out.add("k8s")
+    return out
+
+
+def _normalize_name_tokens(text: str) -> set[str]:
+    """Split a string into a lowercase-alphanumeric token set suitable
+    for overlap comparison. Drops pure numbers and stop-words."""
+    tokens = re.split(r"[^a-z0-9]+", text.lower())
+    return {
+        tok
+        for tok in tokens
+        if tok
+        and not tok.isdigit()
+        and tok not in _NAME_TOKEN_STOPLIST
+    }
+
+
+def _rubric_severity_for_module(
+    module_key: str, audit_modules: list[dict[str, Any]]
+) -> str | None:
+    """Best-effort match from a module path to an audit-doc entry.
+
+    Matching has three stages, each requiring a STRICT track match
+    when the module path has a recognized track — we never fall back
+    to "any track matches" (that was a round-2 false-positive source).
+
+    1. Numbered match. Extract ``(track, number)`` from the path.
+       Require the audit ``track`` column to match a track alias
+       AND the audit ``module`` label to contain the number with
+       word boundaries (so "2.8" doesn't match "12.8"). Accepts
+       labels like "CKA 2.8: ...", "... 2.8 - ...", "... 2.8) ...".
+
+    2. Name-overlap match. For audit rows that have no module
+       number (e.g. ``Platform: Systems Thinking``), compute the
+       overlap between the module path's name tokens and the
+       label's tokens. Require ≥ 2 shared tokens plus a track-
+       alias match. This covers the non-numbered rubric entries
+       that round-2 flagged.
+
+    3. Return None. Unknown track → no match, to avoid the
+       "any row wins" false positive.
+    """
+    segments = module_key.split("/")
+    last_raw = segments[-1]
+    last = last_raw.lower()
+    num_match = _MODULE_NUMBER_RE.search(last)
+    number = num_match.group(1) if num_match else None
+
+    # Detect the track from the path.
+    track_slug = None
+    for seg in segments:
+        key = seg.lower()
+        if key in _TRACK_ALIASES:
+            track_slug = key
+            break
+    aliases = _TRACK_ALIASES.get(track_slug, ()) if track_slug else ()
+
+    if not aliases:
+        # Unknown track → no match (round-2 caught "any row wins"
+        # false positives).
+        return None
+
+    # Track tokens for THIS module. Used both to filter audit rows
+    # (whole-word match to avoid cka/ckad collision) and to compute
+    # "non-track overlap" in stage 2.
+    track_word_set = _track_word_set(track_slug, aliases)
+
+    def _row_track_matches(row: dict[str, Any]) -> bool:
+        candidates = _audit_row_track_tokens(row)
+        return any(_alias_matches(alias, candidates) for alias in aliases)
+
+    # ----- stage 1: numbered match -----
+    if number:
+        number_re = re.compile(
+            r"(?:^|[\s(])" + re.escape(number) + r"(?=[\s:\-\)—.,])"
+        )
+        for entry in audit_modules:
+            label = str(entry.get("module", ""))
+            if not number_re.search(label):
+                continue
+            if _row_track_matches(entry):
+                return entry.get("severity")
+
+    # ----- stage 2: name-overlap match -----
+    name_slug = _MODULE_NUMBER_PREFIX_RE.sub("", last)
+    path_tokens = _normalize_name_tokens(name_slug)
+    for seg in segments[:-1]:
+        if _PART_PREFIX_RE.match(seg):
+            continue
+        path_tokens |= _normalize_name_tokens(seg)
+    if not path_tokens:
+        return None
+
+    best: tuple[int, str | None] = (0, None)
+    for entry in audit_modules:
+        if not _row_track_matches(entry):
+            continue
+        label_tokens = _normalize_name_tokens(str(entry.get("module", "")))
+        overlap = path_tokens & label_tokens
+        # Require ≥ 2 overlap AND at least one NON-track-alias token
+        # in the overlap; otherwise ``{platform, sre}`` alone would
+        # attach any "Platform: ... SRE ..." row to every platform
+        # module containing "sre".
+        if len(overlap) < 2:
+            continue
+        non_track = overlap - track_word_set
+        if not non_track:
+            continue
+        score = len(overlap) + len(non_track)
+        if score > best[0]:
+            best = (score, entry.get("severity"))
+    return best[1]
 
 
 def build_issue_watch_state(repo_root: Path, issue_number: int) -> dict[str, Any] | None:
@@ -2142,6 +2960,35 @@ def build_session_briefing(repo_root: Path) -> dict[str, Any]:
     if isinstance(pipeline, dict) and "error" in pipeline:
         alerts.append(f"pipeline v2 status unavailable: {pipeline['error']}")
 
+    # Phase C: surface stuck pipeline jobs and critical rubric scores so
+    # agents see high-signal issues without polling additional endpoints.
+    try:
+        stuck = build_pipeline_stuck(repo_root)
+    except Exception:  # noqa: BLE001
+        stuck = None
+    if isinstance(stuck, dict) and stuck.get("exists"):
+        leased = stuck.get("stuck_leased_count", 0)
+        in_state = stuck.get("stuck_in_state_count", 0)
+        if leased:
+            alerts.append(f"{leased} job(s) with expired/stale lease — worker may have crashed")
+        if in_state:
+            alerts.append(f"{in_state} job(s) stuck in-flight with no recent event")
+
+    try:
+        quality = build_quality_scores(repo_root)
+    except Exception:  # noqa: BLE001
+        quality = None
+    critical_quality: list[str] = []
+    if isinstance(quality, dict) and quality.get("exists"):
+        if quality.get("critical_count"):
+            alerts.append(
+                f"{quality['critical_count']} module(s) at critical rubric score (<2.0)"
+            )
+        critical_quality = [
+            f"{m['module']} [{m['track']}] score {m['score']}"
+            for m in (quality.get("critical") or [])[:5]
+        ]
+
     return {
         "snapshot": {
             "generated_at": time.time(),
@@ -2175,6 +3022,7 @@ def build_session_briefing(repo_root: Path) -> dict[str, Any]:
         "focus": status_md.get("focus", []),
         "blockers": status_md.get("blockers", []),
         "alerts": alerts,
+        "critical_quality": critical_quality,
         "next_reads": [
             {"rel": "schema", "endpoint": "/api/schema", "desc": "Full endpoint index"},
             {"rel": "status", "endpoint": "/api/status/summary", "desc": "Full repo status"},
@@ -2273,8 +3121,35 @@ def build_api_schema() -> dict[str, Any]:
             {"path": "/api/git/worktree", "desc": "Dirty entries in the PRIMARY repo only"},
             {"path": "/api/git/worktrees", "desc": "All attached worktrees (plural)"},
             {"path": "/api/issue-watch/{n}", "desc": "Single watched GH issue state"},
-            {"path": "/api/module/{key}/state", "desc": "Per-module EN+UK+lab+frontmatter"},
+            {"path": "/api/module/{key}/state", "desc": "Per-module EN+UK+lab+frontmatter+diagnostics"},
             {"path": "/api/module/{key}/orchestration/latest", "desc": "Per-module latest pipeline job+event"},
+            {"path": "/api/module/{key}/lease", "desc": "Current pipeline lease for one module"},
+            {"path": "/api/pipeline/leases", "desc": "Active pipeline leases (ordered by expiry)"},
+            {
+                "path": "/api/pipeline/v2/events",
+                "desc": "Pipeline v2 event timeline",
+                "query": [
+                    "module=...",
+                    "since_seconds=... (Unix epoch seconds; matches v2.db unit)",
+                    "limit=... (max 2000)",
+                ],
+            },
+            {
+                "path": "/api/pipeline/v2/stuck",
+                "desc": "Stuck/stalled jobs (expired leases + in-flight-with-stale-events)",
+                "query": ["threshold_seconds=... (default 3600)"],
+            },
+            {
+                "path": "/api/reviews",
+                "desc": "Review audit index (omit query) or single-module log (?module=...)",
+                "query": ["module=..."],
+            },
+            {
+                "path": "/api/bridge/messages",
+                "desc": ".bridge/messages.db tail",
+                "query": ["since=<ISO-8601>", "limit=... (max 500)"],
+            },
+            {"path": "/api/quality/scores", "desc": "Rubric scores from docs/quality-audit-results.md"},
             {"path": "/api/cache/stats", "desc": "Response-cache introspection"},
         ],
     }
@@ -2349,6 +3224,59 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         return 200, briefing, "application/json; charset=utf-8"
     if path == "/api/cache/stats":
         return 200, _cache_stats(), "application/json; charset=utf-8"
+    if path == "/api/pipeline/leases":
+        return 200, build_pipeline_leases(repo_root), "application/json; charset=utf-8"
+    if path == "/api/pipeline/v2/stuck":
+        try:
+            threshold = int(query.get("threshold_seconds", [str(_DEFAULT_STUCK_THRESHOLD_SECONDS)])[0])
+        except (TypeError, ValueError):
+            threshold = _DEFAULT_STUCK_THRESHOLD_SECONDS
+        threshold = max(60, min(threshold, 24 * 3600))
+        return 200, build_pipeline_stuck(repo_root, threshold_seconds=threshold), "application/json; charset=utf-8"
+    if path == "/api/pipeline/v2/events":
+        mk = query.get("module", [None])[0]
+        module_key: str | None = None
+        if mk:
+            module_key = _validate_module_key(repo_root, mk)
+            if module_key is None:
+                return 400, {"error": "invalid_module_key"}, "application/json; charset=utf-8"
+        try:
+            since_seconds = int(query.get("since_seconds", ["0"])[0]) or None
+        except (TypeError, ValueError):
+            since_seconds = None
+        try:
+            limit = int(query.get("limit", ["200"])[0])
+        except (TypeError, ValueError):
+            limit = 200
+        return 200, build_pipeline_events(repo_root, module_key, since_seconds, limit), "application/json; charset=utf-8"
+    if path == "/api/reviews":
+        mk = query.get("module", [None])[0]
+        if mk:
+            module_key = _validate_module_key(repo_root, mk)
+            if module_key is None:
+                return 400, {"error": "invalid_module_key"}, "application/json; charset=utf-8"
+            payload = build_module_reviews(repo_root, module_key)
+            if payload is None:
+                return 404, {"error": "review_not_found", "module_key": module_key}, "application/json; charset=utf-8"
+            return 200, payload, "application/json; charset=utf-8"
+        return 200, build_reviews_index(repo_root), "application/json; charset=utf-8"
+    if path == "/api/bridge/messages":
+        since = query.get("since", [None])[0]
+        try:
+            limit = int(query.get("limit", ["100"])[0])
+        except (TypeError, ValueError):
+            limit = 100
+        return 200, build_bridge_messages(repo_root, since, limit), "application/json; charset=utf-8"
+    if path == "/api/quality/scores":
+        return 200, build_quality_scores(repo_root), "application/json; charset=utf-8"
+    if path.startswith("/api/module/") and path.endswith("/lease"):
+        raw_key = unquote(path[len("/api/module/") : -len("/lease")]).strip("/")
+        if not raw_key:
+            return 400, {"error": "missing_module_key"}, "application/json; charset=utf-8"
+        module_key = _validate_module_key(repo_root, raw_key)
+        if module_key is None:
+            return 400, {"error": "invalid_module_key"}, "application/json; charset=utf-8"
+        return 200, build_module_lease(repo_root, module_key), "application/json; charset=utf-8"
     if path.startswith("/api/issue-watch/"):
         try:
             issue_number = int(path.split("/")[-1])
