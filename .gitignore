@@ -73,6 +73,8 @@ test_script.sh
 .pipeline/logs/
 .pipeline/on-prem-logs/
 .pipeline/*.db
+.pipeline/*.db-wal
+.pipeline/*.db-shm
 .pipeline/*.log
 .pipeline/*.json
 .pipeline/state.yaml
