@@ -501,6 +501,218 @@ def test_pid_reuse_helper_handles_missing_process() -> None:
     assert local_api._process_age_seconds(999_999) is None
 
 
+def test_api_schema_advertises_new_endpoints() -> None:
+    schema = local_api.build_api_schema()
+    assert schema["version"] == 1
+    paths = {e["path"] for e in schema["endpoints"]}
+    # Must advertise new endpoints so agents can discover them without
+    # reading this file.
+    assert "/api/briefing/session" in paths
+    assert "/api/schema" in paths
+    assert "/api/git/worktrees" in paths
+    assert "/api/git/worktree" in paths  # singular still there
+    assert "conventions" in schema
+    assert "errors" in schema["conventions"]
+
+
+def test_weak_etag_stable_for_identical_bytes() -> None:
+    a = local_api._weak_etag(b"hello world")
+    b = local_api._weak_etag(b"hello world")
+    c = local_api._weak_etag(b"hello worlds")
+    assert a == b
+    assert a != c
+    assert a.startswith('W/"sha256:')
+
+
+def test_match_etag_handles_list_weak_and_star() -> None:
+    etag = 'W/"sha256:abc123"'
+    assert local_api._match_etag(etag, etag) is True
+    assert local_api._match_etag("*", etag) is True
+    assert local_api._match_etag('W/"sha256:nope"', etag) is False
+    # Strong/weak equivalence for comparison.
+    assert local_api._match_etag('"sha256:abc123"', etag) is True
+    # Comma-separated list.
+    assert local_api._match_etag(f'"other", {etag}, "other2"', etag) is True
+    assert local_api._match_etag("", etag) is False
+
+
+def test_normalized_cache_key_is_order_invariant() -> None:
+    k1 = local_api._normalized_cache_key("/x", {"a": ["1"], "b": ["2"]})
+    k2 = local_api._normalized_cache_key("/x", {"b": ["2"], "a": ["1"]})
+    assert k1 == k2
+    assert local_api._normalized_cache_key("/x", {}) == "/x"
+
+
+def test_sqlite_version_key_changes_on_write(tmp_path: Path) -> None:
+    db_path = tmp_path / "test.db"
+    # Absent DB has an absent sentinel.
+    absent = local_api._sqlite_version_key(db_path)
+    assert absent[0] == "absent"
+    # Create + insert = new version key.
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE t (x INTEGER)")
+    conn.commit()
+    conn.close()
+    v1 = local_api._sqlite_version_key(db_path)
+    conn = sqlite3.connect(db_path)
+    conn.execute("INSERT INTO t VALUES (1)")
+    conn.commit()
+    conn.close()
+    v2 = local_api._sqlite_version_key(db_path)
+    assert v1 != v2
+    assert v1[0] != "absent"
+
+
+def test_cached_response_reuses_entry_until_version_bump(tmp_path: Path) -> None:
+    # Use a unique key so test isolation holds across tests.
+    key = f"/test/cache/{id(tmp_path)}"
+    calls = {"n": 0}
+
+    def builder():
+        calls["n"] += 1
+        return 200, {"hits": calls["n"]}, "application/json; charset=utf-8"
+
+    version_state = {"v": 1}
+
+    def version():
+        return ("v", version_state["v"])
+
+    code_a, body_a, _ct, etag_a = local_api.cached_response(
+        key, ttl_seconds=60, version_fn=version, builder=builder
+    )
+    assert code_a == 200
+    assert calls["n"] == 1
+
+    # Second call within TTL + same version -> cached.
+    code_b, body_b, _ct, etag_b = local_api.cached_response(
+        key, ttl_seconds=60, version_fn=version, builder=builder
+    )
+    assert calls["n"] == 1
+    assert body_b is body_a or body_b == body_a
+    assert etag_b == etag_a
+
+    # Version bump -> rebuild.
+    version_state["v"] = 2
+    code_c, body_c, _ct, etag_c = local_api.cached_response(
+        key, ttl_seconds=60, version_fn=version, builder=builder
+    )
+    assert calls["n"] == 2
+    assert etag_c != etag_a
+
+
+def test_cached_response_does_not_cache_errors(tmp_path: Path) -> None:
+    key = f"/test/errors/{id(tmp_path)}"
+    calls = {"n": 0}
+
+    def builder():
+        calls["n"] += 1
+        return 500, {"error": "boom"}, "application/json; charset=utf-8"
+
+    code, _body, _ct, _etag = local_api.cached_response(
+        key, ttl_seconds=60, version_fn=lambda: ("v",), builder=builder
+    )
+    assert code == 500
+    # Second call should also go through the builder (no poisoning).
+    local_api.cached_response(key, ttl_seconds=60, version_fn=lambda: ("v",), builder=builder)
+    assert calls["n"] == 2
+
+
+def test_build_worktrees_list_returns_primary(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    _init_repo(repo_root)
+    _write(repo_root / "README.md", "hi\n")
+    _git(repo_root, "add", ".")
+    _git(repo_root, "commit", "-m", "initial")
+    result = local_api.build_worktrees_list(repo_root)
+    assert result["ok"] is True
+    assert result["count"] >= 1
+    paths = [w["path"] for w in result["worktrees"]]
+    assert str(repo_root) in paths
+
+
+def test_session_briefing_serves_compact_snapshot(tmp_path: Path) -> None:
+    _setup_repo(tmp_path)
+    # Write a STATUS.md that the briefing will parse.
+    _write(
+        tmp_path / "STATUS.md",
+        "# status\n\n## TODO\n\n- [ ] finish alpha\n- [ ] finish beta\n\n"
+        "## Blockers\n\n- slow CI\n",
+    )
+    briefing = local_api.build_session_briefing(tmp_path)
+    assert set(briefing).issuperset(
+        {"snapshot", "workspace", "services", "pipelines", "focus", "blockers", "next_reads"}
+    )
+    assert briefing["focus"][:2] == ["finish alpha", "finish beta"]
+    assert briefing["blockers"] == ["slow CI"]
+
+    # Compact drops next_reads, links, and the worktrees list.
+    compact = local_api._compact_briefing(briefing)
+    assert "next_reads" not in compact
+    assert "links" not in compact
+    assert "worktrees" not in compact["workspace"]
+    assert compact["workspace"]["worktrees_total"] == briefing["workspace"]["worktrees_total"]
+
+
+def test_serve_request_sets_etag_and_matches_on_replay(tmp_path: Path) -> None:
+    _setup_repo(tmp_path)
+    _write(
+        tmp_path / "STATUS.md",
+        "# status\n\n## TODO\n\n- [ ] task one\n",
+    )
+    code1, body1, _ct1, etag1 = local_api.serve_request(tmp_path, "/api/schema")
+    assert code1 == 200
+    assert etag1.startswith('W/"sha256:')
+    # Replay should return the same bytes + same etag (cache hit).
+    code2, body2, _ct2, etag2 = local_api.serve_request(tmp_path, "/api/schema")
+    assert code2 == 200
+    assert etag2 == etag1
+    assert body1 == body2
+    # And If-None-Match match semantics should accept it.
+    assert local_api._match_etag(etag1, etag2)
+
+
+def test_background_snapshot_exposes_freshness_metadata() -> None:
+    calls = {"n": 0}
+
+    def builder():
+        calls["n"] += 1
+        return {"value": calls["n"]}
+
+    snap = local_api.BackgroundSnapshot(
+        key="test-snap-1",
+        interval_seconds=60.0,
+        builder=builder,
+    )
+    # Before any refresh runs.
+    data, meta = snap.get()
+    assert data is None
+    assert meta["freshness_state"] == "refreshing"
+
+    snap.refresh_blocking()
+    data, meta = snap.get()
+    assert data == {"value": 1}
+    assert meta["freshness_state"] == "fresh"
+    assert meta["refresh_error"] is None
+    assert meta["refresh_duration_ms"] is not None
+    assert meta["refresh_in_flight"] is False
+
+
+def test_background_snapshot_reports_degraded_on_builder_error() -> None:
+    def builder():
+        raise RuntimeError("boom")
+
+    snap = local_api.BackgroundSnapshot(
+        key="test-snap-2",
+        interval_seconds=60.0,
+        builder=builder,
+    )
+    snap.refresh_blocking()
+    data, meta = snap.get()
+    assert data is None
+    assert meta["freshness_state"] == "degraded"
+    assert "RuntimeError: boom" in (meta["refresh_error"] or "")
+
+
 def test_cli_starts_server_and_reports_host_port(tmp_path: Path) -> None:
     repo_root = tmp_path
     _init_repo(repo_root)
