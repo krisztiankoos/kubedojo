@@ -46,6 +46,26 @@ By the end of this section, you should be able to:
 - choose a sane local runtime for Apple Silicon or Linux
 - know when local inference is enough and when deeper AI/ML engineering is needed
 
+## What This Section Covers vs What It Hands Off
+
+This section covers:
+- learner-facing model hubs
+- model cards and practical model choice
+- quantization basics
+- local runtime choice
+- Apple Silicon and Linux local paths
+
+It does **not** try to duplicate the deeper engineering modules for:
+- reproducible CUDA/ROCm environment management
+- production inference architecture
+- serious model serving internals
+- fine-tuning workflows
+
+Those move to:
+- [AI/ML Engineering: Prerequisites](../../ai-ml-engineering/prerequisites/)
+- [AI/ML Engineering: AI Infrastructure](../../ai-ml-engineering/ai-infrastructure/)
+- [AI/ML Engineering: Advanced GenAI & Safety](../../ai-ml-engineering/advanced-genai/)
+
 ## Recommended Route
 
 ```text

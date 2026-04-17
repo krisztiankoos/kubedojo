@@ -15,6 +15,31 @@ This track is for engineers who need to understand AI/ML deeply enough to build,
 
 If your goal is AI literacy, safer AI use, practical AI work habits, or a bridge from AI use into AI product thinking rather than system building, start with the top-level [AI](../ai/) track first.
 
+## What This Track Does Not Repeat
+
+This track assumes you are now moving past AI literacy and bridge content.
+
+It does **not** try to reteach the top-level `AI` track’s main job:
+- beginner AI literacy
+- basic prompting habits
+- general-use trust and verification habits
+- introductory workflow discipline
+- lightweight practitioner bridge material
+
+Those live in:
+- [AI Foundations](../ai/foundations/)
+- [AI-Native Work](../ai/ai-native-work/)
+- [AI Building](../ai/ai-building/)
+- [Open Models & Local Inference](../ai/open-models-local-inference/)
+- [AI for Kubernetes & Platform Work](../ai/ai-for-kubernetes-platform-work/)
+
+This track starts where the work becomes engineering:
+- reproducible environments
+- local and remote runtimes as systems
+- framework implementation
+- model behavior in depth
+- deployment and operations
+
 ## Do Not Start Here First If
 
 - you still need basic terminal, Git, or software-installation confidence

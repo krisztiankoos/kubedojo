@@ -14,6 +14,11 @@ This section is about turning AI from a novelty into a disciplined working metho
 
 The focus is not on building models. It is on how to use AI tools, assistants, and agents without creating sloppy workflows, broken trust, or invisible mistakes.
 
+This section is deliberately different from [AI/ML Engineering: AI-Native Development](../../ai-ml-engineering/ai-native-development/).
+
+- `AI-Native Work` teaches operator habits, workflow discipline, and trust boundaries
+- `AI-Native Development` teaches engineering tooling, runtime control, coding agents, and implementation patterns
+
 ## Modules
 
 | Module | Topic |
@@ -42,3 +47,13 @@ Use [AI Building](../ai-building/) first to learn:
 - how to evaluate and ship a sane first version
 
 Then continue to [AI/ML Engineering](../../ai-ml-engineering/).
+
+## What This Section Does Not Repeat
+
+This section does **not** try to reteach:
+- local-model engineering setups
+- coding-agent runtime patterns
+- MCP implementation details
+- framework-level agent orchestration
+
+Those belong in [AI/ML Engineering: AI-Native Development](../../ai-ml-engineering/ai-native-development/) and [Frameworks & Agents](../../ai-ml-engineering/frameworks-agents/).

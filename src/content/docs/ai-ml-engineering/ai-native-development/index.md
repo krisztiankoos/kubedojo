@@ -41,6 +41,21 @@ If you want the shortest useful route:
 - [CLI AI Coding Agents](module-1.5-cli-ai-coding-agents/)
 - [Anthropic Agent SDK and Runtime Patterns](module-1.10-anthropic-agent-sdk-and-runtime-patterns/)
 
+## Boundary With The Top-Level AI Track
+
+This phase is easy to confuse with [AI-Native Work](../../ai/ai-native-work/), but they are not the same layer.
+
+- [AI-Native Work](../../ai/ai-native-work/) teaches how to use AI productively and responsibly in daily work
+- `AI-Native Development` teaches how engineers evaluate tools, run coding agents, control runtimes, and build implementation habits around them
+
+If you still mainly need:
+- better prompting judgment
+- workflow discipline
+- human-in-the-loop habits
+- safer use patterns
+
+go back to [AI-Native Work](../../ai/ai-native-work/) first.
+
 ## After This Phase
 
 - go to [Generative AI](../generative-ai/) if you want stronger model intuition

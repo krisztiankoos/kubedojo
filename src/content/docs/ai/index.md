@@ -103,6 +103,22 @@ AI/ML Engineering (optional advanced path)
 - it teaches how to use AI in disciplined workflows, not just how to type prompts
 - it gives a clean bridge into [AI/ML Engineering](../ai-ml-engineering/) without throwing beginners into deep infrastructure too early
 
+## Boundary Rules
+
+The safest way to avoid duplication is to keep the tracks answering different questions.
+
+| If the question is... | Stay in... | Do **not** jump to yet... |
+|---|---|---|
+| what AI is and how to use it safely | `AI Foundations` | deep model or infra phases |
+| how to work with AI without losing judgment | `AI-Native Work` | engineering tooling and framework phases |
+| how to turn AI use into a real product feature | `AI Building` | full MLOps or model-training depth |
+| how open models, runtimes, and local hardware choices work | `Open Models & Local Inference` | production infra unless you truly need it |
+| how AI fits into Kubernetes, YAML, triage, and operator work | `AI for Kubernetes & Platform Work` | platform-scale AI operations unless the work becomes system-building |
+
+In other words:
+- `AI` = literacy, disciplined use, and practical bridge work
+- `AI/ML Engineering` = implementation, deployment, operation, and model/system depth
+
 ## Good First Clicks
 
 - [What Is AI?](foundations/module-1.1-what-is-ai/)
