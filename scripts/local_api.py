@@ -1132,44 +1132,33 @@ def build_pipeline_stuck(
         if (row.get("last_event_at") or 0) < cutoff
     ]
 
-    # Dead-lettered modules: those with a module_dead_lettered event
-    # that has not been followed by a dead_letter_recovered event.
-    # Grouped per module so an operator sees one row per unresolved
-    # incident.
+    # Dead-lettered modules. We defer to ``pipeline_v2.cli.
+    # _current_dead_letter_rows`` for the reducer so this endpoint
+    # agrees with the pipeline's own needs_human_count. That helper
+    # sorts by ``(at, id)`` and compares recovery-event order against
+    # dead-letter-event order, so out-of-order ``at`` timestamps or
+    # ``(id)`` vs ``(at)`` skew don't cause this endpoint to
+    # disagree with the source of truth.
     dead_events = _query_sqlite_rows(
         db_path,
         """
-        SELECT module_key, type, payload_json, at
+        SELECT id, module_key, type, payload_json, at
         FROM events
         WHERE type IN (
             'module_dead_lettered',
             'needs_human_intervention',
             'dead_letter_recovered'
         )
-        ORDER BY id ASC
         """,
     )
-    # Walk chronologically; a recover_event cancels an earlier dead-
-    # letter for the same module.
-    dead_latest: dict[str, dict[str, Any]] = {}
-    for e in dead_events:
-        mk = str(e.get("module_key") or "")
-        if not mk:
-            continue
-        kind = str(e.get("type"))
-        if kind == "dead_letter_recovered":
-            dead_latest.pop(mk, None)
-        else:
-            dead_latest[mk] = {
-                "module_key": mk,
-                "type": kind,
-                "at": int(e.get("at") or 0),
-                "payload_json": _load_json(str(e.get("payload_json") or "{}")),
-            }
-    dead_lettered = sorted(
-        dead_latest.values(),
-        key=lambda r: r.get("at") or 0,
-    )
+    try:
+        from pipeline_v2.cli import _current_dead_letter_rows
+    except ImportError:
+        _current_dead_letter_rows = None  # type: ignore[assignment]
+    if _current_dead_letter_rows is not None and dead_events:
+        dead_lettered = _current_dead_letter_rows(dead_events)
+    else:
+        dead_lettered = []
 
     return {
         "db_path": str(db_path),

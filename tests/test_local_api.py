@@ -1135,6 +1135,46 @@ def test_pipeline_stuck_surfaces_unresolved_dead_letters(tmp_path: Path) -> None
     assert r["dead_lettered_count"] == len(r["dead_lettered"])
 
 
+def test_pipeline_stuck_dead_letter_honors_at_timestamp_not_just_id(
+    tmp_path: Path,
+) -> None:
+    """Codex round-4 bug: the reducer walked events in id-ASC order
+    (sqlite default). If events are inserted with out-of-order ``at``
+    timestamps (backfill, clock drift, multi-writer skew), a later-
+    id-but-earlier-at dead-letter could be wrongly cancelled by an
+    earlier-id-but-later-at recovery. Source of truth in
+    pipeline_v2.cli._current_dead_letter_rows sorts by (at, id); this
+    endpoint must agree.
+
+    Scenario: module was recovered at at=1 (id=1) then dead-lettered
+    AGAIN at at=10 (id=2). id-ordered walk would see recovery first,
+    then dead-letter → unresolved (correct). But the reverse order
+    (id=1 dead-letter at=10, id=2 recovery at=1) should NOT cancel
+    the dead-letter because the recovery is chronologically earlier.
+    """
+    _setup_repo(tmp_path)
+    conn = sqlite3.connect(tmp_path / ".pipeline/v2.db")
+    # id=1 is a dead-letter at at=10.
+    conn.execute(
+        "INSERT INTO events (id, module_key, type, payload_json, at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (1001, "backfilled/dead", "module_dead_lettered", "{}", 10),
+    )
+    # id=2 is a recovery at at=1 — EARLIER than the dead-letter.
+    # In a (at, id)-sorted walk the recovery happens first and the
+    # dead-letter remains unresolved.
+    conn.execute(
+        "INSERT INTO events (id, module_key, type, payload_json, at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (1002, "backfilled/dead", "dead_letter_recovered", "{}", 1),
+    )
+    conn.commit()
+    conn.close()
+    r = local_api.build_pipeline_stuck(tmp_path, threshold_seconds=60, now_seconds=100)
+    dead_keys = {row["module_key"] for row in r["dead_lettered"]}
+    assert "backfilled/dead" in dead_keys
+
+
 def test_pipeline_stuck_correlates_events_by_lease_id(tmp_path: Path) -> None:
     """Codex round-4 bug: correlating events by module_key alone let
     a fresh event from an EARLIER lease mask a hung current lease."""
