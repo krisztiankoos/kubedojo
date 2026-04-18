@@ -33,6 +33,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 from checks import structural
 from checks.structural import CheckResult
+from dispatch import GEMINI_WRITER_MODEL
 
 
 def sample_fact_ledger() -> dict:
@@ -718,7 +719,7 @@ class TestReviewAuditLog(unittest.TestCase):
             audit_path = p.append_review_audit(
                 self.module_path,
                 "WRITE",
-                writer="gemini-3.1-pro-preview",
+                writer=GEMINI_WRITER_MODEL,
                 mode="write",
                 duration=2.5,
                 plan="Initial write plan",
@@ -733,7 +734,7 @@ class TestReviewAuditLog(unittest.TestCase):
         self.assertIn("**Current severity**: targeted", content)
         self.assertIn("**Total passes**: 1", content)
         self.assertIn("`WRITE`", content)
-        self.assertIn("**Writer**: gemini-3.1-pro-preview", content)
+        self.assertIn(f"**Writer**: {GEMINI_WRITER_MODEL}", content)
 
     def test_second_append_prepends_and_preserves_existing_entries(self):
         import v1_pipeline as p
@@ -775,7 +776,7 @@ class TestReviewAuditLog(unittest.TestCase):
             p.append_review_audit(
                 self.module_path,
                 "WRITE",
-                writer="gemini-3.1-pro-preview",
+                writer=GEMINI_WRITER_MODEL,
                 mode="write",
                 duration=1,
                 plan="first",
