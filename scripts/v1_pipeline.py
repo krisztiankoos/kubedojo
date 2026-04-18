@@ -2990,7 +2990,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                 # binary-gate view, not the old [D1..D8] vector.
                 ms.pop("scores", None)
                 ms.pop("sum", None)
-                ms.pop("check_failures", None)
+                ms["check_failures"] = 0
                 # Circuit breaker is a CONSECUTIVE counter — reset it on
                 # any path that re-establishes a good state (APPROVE or
                 # 100% deterministic apply). Without this reset, one past
@@ -3280,7 +3280,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
         backup.unlink(missing_ok=True)  # remove backup on success
         print(f"  ✓ File written: {module_path}")
 
-        ms.pop("check_failures", None)
+        ms["check_failures"] = 0
         ms["phase"] = "score"
         save_state(state)
         warnings_count = len([

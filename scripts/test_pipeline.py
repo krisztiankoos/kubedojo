@@ -1539,6 +1539,72 @@ class TestPipelineTransitions(unittest.TestCase):
         self.assertEqual(state["modules"][module_key]["phase"], "done")
 
 
+    @patch("v1_pipeline.STATE_FILE")
+    @patch("v1_pipeline.CONTENT_ROOT")
+    @patch("subprocess.run")
+    def test_check_failures_tracks_consecutive_failures_only(
+        self, mock_subprocess, mock_root, mock_state,
+    ):
+        import v1_pipeline as p
+
+        mock_state.__class__ = type(self.state_file)
+        mock_root.resolve.return_value = Path(self.tmpdir).resolve()
+
+        key = "test/module-0.1-test"
+        state = {
+            "modules": {
+                key: {
+                    "phase": "check",
+                    "severity": "clean",
+                    "reviewer": "codex",
+                    "needs_independent_review": False,
+                    "passes": False,
+                    "errors": [],
+                }
+            }
+        }
+        failed_results = [CheckResult("QUIZ", False, "Missing scenario-based question")]
+        git_ok = subprocess.CompletedProcess(["git"], 0, "", "")
+
+        def prepare_check_phase():
+            self.module_path.with_suffix(".staging.md").write_text(GOOD_MODULE)
+            state["modules"][key]["phase"] = "check"
+
+        with patch.object(p, "STATE_FILE", self.state_file), \
+             patch.object(p, "CONTENT_ROOT", Path(self.tmpdir)), \
+             patch.object(p, "REVIEW_AUDIT_DIR", Path(self.tmpdir) / ".pipeline" / "reviews"), \
+             patch.object(p, "KNOWLEDGE_CARD_DIR", Path(self.tmpdir) / ".pipeline" / "knowledge-cards"), \
+             patch.object(p, "save_state"), \
+             patch.object(p, "ensure_fact_ledger", return_value=sample_fact_ledger()), \
+             patch.object(p, "_git_stage_and_commit", return_value=(git_ok, git_ok)), \
+             patch.object(p, "module_key_from_path", return_value=key), \
+             patch.object(
+                 p,
+                 "step_check",
+                 side_effect=[
+                     (True, []),
+                     (False, failed_results),
+                     (True, []),
+                     (False, failed_results),
+                 ],
+             ):
+            prepare_check_phase()
+            self.assertTrue(p.run_module(self.module_path, state))
+            self.assertEqual(state["modules"][key].get("check_failures"), 0)
+
+            prepare_check_phase()
+            self.assertFalse(p.run_module(self.module_path, state))
+            self.assertEqual(state["modules"][key].get("check_failures"), 1)
+
+            prepare_check_phase()
+            self.assertTrue(p.run_module(self.module_path, state))
+            self.assertEqual(state["modules"][key].get("check_failures"), 0)
+
+            prepare_check_phase()
+            self.assertFalse(p.run_module(self.module_path, state))
+            self.assertEqual(state["modules"][key].get("check_failures"), 1)
+
+
 # ---------------------------------------------------------------------------
 # Test: Binary quality gate — compute_severity unit tests (issue #223)
 # ---------------------------------------------------------------------------
