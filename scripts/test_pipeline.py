@@ -582,6 +582,85 @@ class TestStateManagement(unittest.TestCase):
         result = p.find_module_path("../../etc/passwd")
         self.assertIsNone(result)
 
+    def test_parallel_worker_state_merges_do_not_clobber_other_modules(self):
+        """Parallel run-section workers should save isolated module snapshots."""
+        import v1_pipeline as p
+
+        content_root = Path(self.tmpdir) / "docs"
+        module_a = content_root / "track" / "module-1.1-a.md"
+        module_b = content_root / "track" / "module-1.2-b.md"
+        module_a.parent.mkdir(parents=True, exist_ok=True)
+        module_a.write_text("---\ntitle: A\n---\n\nBody\n")
+        module_b.write_text("---\ntitle: B\n---\n\nBody\n")
+
+        shared_state = {"modules": {}}
+        observed_local_keys: dict[str, set[str]] = {}
+        results: dict[str, bool] = {}
+        failures: list[BaseException] = []
+        barrier = threading.Barrier(2)
+        previous_state_lock = p._PARALLEL_RUN_SECTION_STATE_LOCK
+        previous_git_lock = p._PARALLEL_RUN_SECTION_GIT_LOCK
+
+        def fake_run_module(module_path, state, max_retries=4, models=None,
+                            dry_run=False, refresh_fact_ledger=False,
+                            write_only=False):
+            key = p.module_key_from_path(module_path)
+            ms = p.get_module_state(state, key)
+            ms["errors"] = []
+            ms["phase"] = "review"
+            ms["passes"] = True
+            barrier.wait(timeout=5)
+            for counter in range(1, 6):
+                ms["counter"] = counter
+                p.save_state(state)
+            observed_local_keys[key] = set(state["modules"].keys())
+            return True
+
+        def run_worker(module_path: Path) -> None:
+            key = p.module_key_from_path(module_path)
+            try:
+                results[key] = p._run_module_in_parallel(
+                    module_path,
+                    shared_state,
+                    max_retries=2,
+                )
+            except BaseException as exc:  # pragma: no cover - surfaced below
+                failures.append(exc)
+
+        with patch.multiple(p, CONTENT_ROOT=content_root, STATE_FILE=self.state_file):
+            with patch("v1_pipeline.run_module", side_effect=fake_run_module):
+                p._PARALLEL_RUN_SECTION_STATE_LOCK = threading.Lock()
+                p._PARALLEL_RUN_SECTION_GIT_LOCK = threading.Lock()
+                try:
+                    threads = [
+                        threading.Thread(target=run_worker, args=(module_a,)),
+                        threading.Thread(target=run_worker, args=(module_b,)),
+                    ]
+                    for thread in threads:
+                        thread.start()
+                    for thread in threads:
+                        thread.join()
+                finally:
+                    p._PARALLEL_RUN_SECTION_STATE_LOCK = previous_state_lock
+                    p._PARALLEL_RUN_SECTION_GIT_LOCK = previous_git_lock
+
+        if failures:
+            raise failures[0]
+
+        key_a = "track/module-1.1-a"
+        key_b = "track/module-1.2-b"
+        self.assertEqual(observed_local_keys[key_a], {key_a})
+        self.assertEqual(observed_local_keys[key_b], {key_b})
+        self.assertTrue(results[key_a])
+        self.assertTrue(results[key_b])
+        self.assertEqual(shared_state["modules"][key_a]["counter"], 5)
+        self.assertEqual(shared_state["modules"][key_b]["counter"], 5)
+
+        loaded = yaml.safe_load(self.state_file.read_text())
+        self.assertEqual(set(loaded["modules"]), {key_a, key_b})
+        self.assertEqual(loaded["modules"][key_a]["counter"], 5)
+        self.assertEqual(loaded["modules"][key_b]["counter"], 5)
+
 
 # ---------------------------------------------------------------------------
 # Test: Review audit log
