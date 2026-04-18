@@ -63,6 +63,29 @@ def _module_frontmatter(*, lab_id: str | None = None) -> str:
     return "\n".join(lines)
 
 
+def _seed_quality_module(
+    repo: Path,
+    rel: str,
+    *,
+    title: str,
+    filler_lines: int = 40,
+    quiz: bool = False,
+    exercise: bool = False,
+    diagram: bool = False,
+) -> None:
+    path = repo / "src" / "content" / "docs" / f"{rel}.md"
+    lines = ["---", f'title: "{title}"']
+    lines.extend(["---", "", "## Overview", ""])
+    lines.extend(f"Line {i}" for i in range(filler_lines))
+    if diagram:
+        lines.extend(["", "```mermaid", "graph TD", "A-->B", "```"])
+    if quiz:
+        lines.extend(["", "## Quiz", "", "- Question"])
+    if exercise:
+        lines.extend(["", "## Hands-On Exercise", "", "1. Do thing"])
+    _write(path, "\n".join(lines) + "\n")
+
+
 def _init_v2_db(path: Path, *, module_key: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path)
@@ -1622,49 +1645,47 @@ def test_bridge_messages_filters_and_previews(tmp_path: Path, monkeypatch) -> No
     assert since["count"] == 2
 
 
-def test_quality_scores_parses_audit_markdown(tmp_path: Path) -> None:
+def test_quality_scores_use_current_modules_not_stale_audit_markdown(tmp_path: Path) -> None:
     audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
+    audit.parent.mkdir(parents=True)
     audit.write_text(
-        """# Audit\n\n## All Scored Modules\n\n### Critical & High Priority\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| Alpha Beta | CKA | 55 | **1.3** | Critical | stub |\n"""
-        """| Gamma Module | CKAD | 500 | **3.7** | Good | ok |\n"""
-        """| Delta | KCNA | 74 | **1.7** | Critical | stub |\n""",
+        "| Module | Track | Lines | Score | Action | Issue |\n"
+        "|---|---|---|---|---|---|\n"
+        "| CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | stale |\n",
         encoding="utf-8",
     )
-    # Reset the cache so this test doesn't see a stale parse from
-    # another test's tmp_path.
+    _seed_quality_module(
+        tmp_path,
+        "k8s/cka/module-2.8-scheduler-lifecycle-theory",
+        title="Module 2.8: Scheduler Lifecycle Theory",
+        filler_lines=320,
+        quiz=True,
+        exercise=True,
+        diagram=True,
+    )
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
 
     r = local_api.build_quality_scores(tmp_path)
     assert r["exists"] is True
-    assert r["count"] == 3
-    assert r["critical_count"] == 2
+    assert r["source"] == "heuristic"
+    assert r["count"] == 1
+    assert r["critical_count"] == 0
+    assert isinstance(r["generated_at"], float)
+    assert {"modules", "average", "critical", "critical_count", "count"} <= set(r)
     scores = {m["module"]: m for m in r["modules"]}
-    assert scores["Alpha Beta"]["severity"] == "critical"
-    assert scores["Alpha Beta"]["action"] == "Critical"
-    assert scores["Alpha Beta"]["primary_issue"] == "stub"
-    assert scores["Gamma Module"]["severity"] == "good"
+    assert "CKA 2.8: Scheduler Lifecycle Theory" in scores
+    assert scores["CKA 2.8: Scheduler Lifecycle Theory"]["severity"] == "excellent"
 
 
 def test_quality_upgrade_plan_groups_modules_below_target(tmp_path: Path) -> None:
     _init_repo(tmp_path)
-    _seed_module(tmp_path, "ai/foundations/module-1.1-what-is-ai")
-    _seed_module(tmp_path, "ai/foundations/module-1.2-llms")
-    _seed_module(tmp_path, "ai/ai-building/module-1.1-from-chat-to-ai-systems")
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir(parents=True, exist_ok=True)
-    audit.write_text(
-        """# Audit\n\n## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| What Is AI? | AI Foundations | 200 | **2.1** | Rewrite | too abstract |\n"""
-        """| LLMs Explained | AI Foundations | 220 | **4.4** | Polish | examples thin |\n"""
-        """| From Chat to AI Systems | AI Building | 260 | **4.8** | Strong | none |\n""",
-        encoding="utf-8",
+    _seed_quality_module(tmp_path, "ai/foundations/module-1.1-what-is-ai", title="What Is AI?", filler_lines=100, diagram=True)
+    _seed_quality_module(
+        tmp_path, "ai/foundations/module-1.2-llms", title="LLMs Explained", filler_lines=320, quiz=True, exercise=True, diagram=True
+    )
+    _seed_quality_module(
+        tmp_path, "ai/ai-building/module-1.1-from-chat-to-ai-systems", title="From Chat to AI Systems", filler_lines=320, quiz=True, exercise=True, diagram=True
     )
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
@@ -1679,25 +1700,15 @@ def test_quality_upgrade_plan_groups_modules_below_target(tmp_path: Path) -> Non
     assert plan["severity_counts"]["poor"] == 1
     assert plan["tracks"][0]["track"] == "AI Foundations"
     module = plan["tracks"][0]["modules"][0]
-    assert module["module"] == "What Is AI?"
+    assert module["module"] == "AI Foundations: What Is AI?"
     assert module["action"] == "Rewrite"
-    assert module["primary_issue"] == "too abstract"
+    assert "thin" in module["primary_issue"]
 
 
 def test_route_request_serves_quality_upgrade_plan_and_target_5_maps_to_issue_181(tmp_path: Path) -> None:
     _init_repo(tmp_path)
-    _seed_module(tmp_path, "ai/foundations/module-1.1-what-is-ai")
-    _seed_module(tmp_path, "ai/foundations/module-1.2-llms")
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir(parents=True, exist_ok=True)
-    audit.write_text(
-        """# Audit\n\n## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| What Is AI? | AI Foundations | 200 | **4.6** | Improve | add exercises |\n"""
-        """| LLMs Explained | AI Foundations | 220 | **3.9** | Rewrite | still dry |\n""",
-        encoding="utf-8",
-    )
+    _seed_quality_module(tmp_path, "ai/foundations/module-1.1-what-is-ai", title="What Is AI?", filler_lines=320, quiz=True, diagram=True)
+    _seed_quality_module(tmp_path, "ai/foundations/module-1.2-llms", title="LLMs Explained", filler_lines=240, quiz=True)
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
 
@@ -1710,7 +1721,7 @@ def test_route_request_serves_quality_upgrade_plan_and_target_5_maps_to_issue_18
     assert payload["target"] == 5.0
     assert payload["epic_issue"] == 181
     assert payload["needs_upgrade_count"] == 2
-    assert payload["top_worst"][0]["module"] == "LLMs Explained"
+    assert payload["top_worst"][0]["module"] == "AI Foundations: LLMs Explained"
 
 
 def test_route_request_rejects_invalid_quality_upgrade_target(tmp_path: Path) -> None:
@@ -1768,27 +1779,18 @@ def test_module_state_flags_missing_lab_and_ledger(tmp_path: Path) -> None:
 
 def test_rubric_diagnostics_matches_by_track_and_number(tmp_path: Path) -> None:
     """Codex round-4 bug: rubric matching compared raw slugs like
-    'module-2.8-scheduler-lifecycle-theory' to audit labels like
+    'module-2.8-scheduler-lifecycle-theory' to live labels like
     'CKA 2.8: Scheduler Lifecycle Theory' and never matched."""
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
-    audit.write_text(
-        """## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | stub |\n""",
-        encoding="utf-8",
+    _seed_quality_module(
+        tmp_path,
+        "k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory",
+        title="Module 2.8: Scheduler Lifecycle Theory",
+        filler_lines=30,
     )
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
 
-    # Build minimal EN file for the module under its real-world path.
-    en = (
-        tmp_path
-        / "src/content/docs/k8s/cka/part2-workloads-scheduling/module-2.8-scheduler-lifecycle-theory.md"
-    )
     _init_repo(tmp_path)
-    _write(en, "---\ntitle: Scheduler\n---\nbody\n")
     _git(tmp_path, "add", ".")
     _git(tmp_path, "commit", "-m", "init")
     state = local_api.build_module_state(
@@ -1798,25 +1800,19 @@ def test_rubric_diagnostics_matches_by_track_and_number(tmp_path: Path) -> None:
 
 
 def test_rubric_diagnostics_matches_non_numbered_entry(tmp_path: Path) -> None:
-    """Codex round-2 bug: audit entries like 'Platform: Systems Thinking'
+    """Codex round-2 bug: live entries like 'Platform: Systems Thinking'
     (no module number) were never matched. Now resolved via name-token
     overlap when ≥2 tokens are shared AND the track alias matches."""
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
-    audit.write_text(
-        """## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| Platform: Systems Thinking | Platform Foundations | 820 | **4.6** | Excellent | gold |\n"""
-        """| Prerequisites: GitOps | Modern DevOps | 543 | **2.9** | Medium | overloaded |\n""",
-        encoding="utf-8",
+    _seed_quality_module(
+        tmp_path, "platform/foundations/module-1-systems-thinking", title="Systems Thinking", filler_lines=320, quiz=True, exercise=True, diagram=True
+    )
+    _seed_quality_module(
+        tmp_path, "prerequisites/modern-devops/module-5-gitops", title="GitOps", filler_lines=180, quiz=True
     )
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
 
     _init_repo(tmp_path)
-    en = tmp_path / "src/content/docs/platform/foundations/module-1-systems-thinking.md"
-    _write(en, "---\ntitle: Systems Thinking\n---\nbody\n")
     _git(tmp_path, "add", ".")
     _git(tmp_path, "commit", "-m", "init")
     # Severity is "excellent" so no rubric_* tag is expected. But the
@@ -1842,14 +1838,8 @@ def test_rubric_diagnostics_matches_via_label_prefix(tmp_path: Path) -> None:
     ('Workloads', 'AWS', 'Foundations'). The top-level track is in
     the Module label prefix ('CKA:', 'Platform:', 'Prerequisites:').
     The matcher must consult both."""
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
-    audit.write_text(
-        """## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| CKA: Autoscaling | Workloads | 450 | **2.2** | Poor | dry |\n""",
-        encoding="utf-8",
+    _seed_quality_module(
+        tmp_path, "k8s/cka/part2-workloads-scheduling/module-6-autoscaling", title="Autoscaling", filler_lines=100, diagram=True
     )
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
@@ -1867,15 +1857,7 @@ def test_rubric_diagnostics_cka_does_not_match_ckad(tmp_path: Path) -> None:
     """Codex round-3 bug: raw substring ``'cka' in 'CKAD'`` is True,
     letting a CKAD audit row attach to a CKA module path. Matcher
     must use word boundaries."""
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
-    audit.write_text(
-        """## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| CKAD 3.5: API Deprecations | CKAD | 433 | **2.4** | Poor | reference |\n""",
-        encoding="utf-8",
-    )
+    _seed_quality_module(tmp_path, "k8s/ckad/module-3.5-api-deprecations", title="Module 3.5: API Deprecations", filler_lines=100, diagram=True)
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
     quality = local_api.build_quality_scores(tmp_path)
@@ -1897,14 +1879,8 @@ def test_rubric_diagnostics_track_only_overlap_is_not_a_match(tmp_path: Path) ->
     """Codex round-3 bug: overlap of ``{platform, sre}`` — both track
     tokens — must NOT match. Matcher requires ≥ 1 NON-track token in
     the overlap."""
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
-    audit.write_text(
-        """## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| Platform: Site Reliability Engineering (SRE) | Platform | 400 | **2.2** | Poor | generic |\n""",
-        encoding="utf-8",
+    _seed_quality_module(
+        tmp_path, "platform/sre/module-1-site-reliability-engineering-sre", title="Site Reliability Engineering (SRE)", filler_lines=100, diagram=True
     )
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
@@ -1922,15 +1898,7 @@ def test_rubric_diagnostics_unrecognized_track_never_matches(tmp_path: Path) -> 
     """Codex round-2 bug: when the path's track wasn't in the alias
     table, matching silently became permissive and could attach a
     random rubric row. Now unknown tracks always return None."""
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
-    audit.write_text(
-        """## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | stub |\n""",
-        encoding="utf-8",
-    )
+    _seed_quality_module(tmp_path, "k8s/cka/module-2.8-scheduler-lifecycle-theory", title="Module 2.8: Scheduler Lifecycle Theory", filler_lines=30)
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
     quality = local_api.build_quality_scores(tmp_path)
@@ -1946,21 +1914,12 @@ def test_rubric_diagnostics_unrecognized_track_never_matches(tmp_path: Path) -> 
 def test_rubric_diagnostics_no_false_match_for_different_track(tmp_path: Path) -> None:
     """A module path like k8s/kcna/module-2.8-... must not pick up a
     'CKA 2.8:' rubric entry (track disambiguation)."""
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir()
-    audit.write_text(
-        """## All Scored Modules\n\n"""
-        """| Module | Track | Lines | Score | Action | Issue |\n"""
-        """|---|---|---|---|---|---|\n"""
-        """| CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | stub |\n""",
-        encoding="utf-8",
-    )
+    _seed_quality_module(tmp_path, "k8s/cka/module-2.8-scheduler-lifecycle-theory", title="Module 2.8: Scheduler Lifecycle Theory", filler_lines=30)
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
 
-    en = tmp_path / "src/content/docs/k8s/kcna/module-2.8-something-unrelated.md"
+    _seed_quality_module(tmp_path, "k8s/kcna/module-2.8-something-unrelated", title="Module 2.8: Something Unrelated", filler_lines=240, quiz=True)
     _init_repo(tmp_path)
-    _write(en, "---\ntitle: KCNA\n---\nbody\n")
     _git(tmp_path, "add", ".")
     _git(tmp_path, "commit", "-m", "init")
     state = local_api.build_module_state(tmp_path, "k8s/kcna/module-2.8-something-unrelated")
@@ -2179,15 +2138,7 @@ def test_briefing_top_modules_covers_critical_quality(tmp_path: Path) -> None:
     drillable entries, not just stringified actions.next lines."""
     _setup_repo(tmp_path)
     _write(tmp_path / "STATUS.md", "# s\n\n## TODO\n\n- [ ] x\n")
-    audit = tmp_path / "docs" / "quality-audit-results.md"
-    audit.parent.mkdir(exist_ok=True)
-    audit.write_text(
-        "## All Scored Modules\n\n"
-        "| Module | Track | Lines | Score | Action | Issue |\n"
-        "|---|---|---|---|---|---|\n"
-        "| CKA 2.8: Bad Stub | CKA | 55 | **1.3** | Critical | stub |\n",
-        encoding="utf-8",
-    )
+    _seed_quality_module(tmp_path, "k8s/cka/module-2.8-bad-stub", title="Module 2.8: Bad Stub", filler_lines=30)
     with local_api._QUALITY_AUDIT_CACHE_LOCK:
         local_api._QUALITY_AUDIT_CACHE.clear()
     briefing = local_api.build_session_briefing(tmp_path)
@@ -2196,6 +2147,21 @@ def test_briefing_top_modules_covers_critical_quality(tmp_path: Path) -> None:
     # Critical rubric entries must point at the scores endpoint.
     cq = [m for m in briefing["top_modules"] if m.get("reason") == "critical_quality"]
     assert cq and cq[0]["endpoint"] == "/api/quality/scores"
+
+
+def test_quality_scores_live_repo_issue_303_modules_are_not_critical() -> None:
+    with local_api._QUALITY_AUDIT_CACHE_LOCK:
+        local_api._QUALITY_AUDIT_CACHE.clear()
+    quality = local_api.build_quality_scores(local_api.REPO_ROOT)
+    assert quality["source"] == "heuristic"
+    critical = {m["module"] for m in quality["critical"]}
+    for module in (
+        "CKA 2.8: Scheduler & Pod Lifecycle Theory",
+        "KCNA 3.6: Security Basics (Theory)",
+        "KCNA 3.7: Cloud Native Community & Collaboration",
+        "KCNA 4.3: Release Strategies (Theory)",
+    ):
+        assert module not in critical
 
 
 def test_compact_briefing_keeps_actions_and_top_modules(tmp_path: Path) -> None:
