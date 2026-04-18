@@ -921,6 +921,10 @@ include them in the module's `## Sources` section.
 
 SEED_SECTION_RE = re.compile(r"^##\s+`([^`]+)`\s*$")
 URL_RE = re.compile(r"https?://[^\s)]+")
+AUTHORITATIVE_SOURCES_HEADING_RE = re.compile(
+    r"^##\s+Authoritative Sources(?:\s+[—-].*)?\s*$",
+    re.MULTILINE,
+)
 
 
 def _format_fact_ledger_for_prompt(fact_ledger: dict | None) -> str:
@@ -1081,6 +1085,43 @@ def step_check_citations(
         "dead_urls": list(dict.fromkeys(dead_urls)),
     })
     return result
+
+
+def _compute_cite_check(content: str) -> dict:
+    """Deterministically validate inline citation usage for authoritative seeds."""
+    match = AUTHORITATIVE_SOURCES_HEADING_RE.search(content)
+    if match is None:
+        return {
+            "id": "CITE",
+            "passed": False,
+            "evidence": "Missing `## Authoritative Sources` section.",
+        }
+
+    after_heading = content[match.end():]
+    next_heading = re.search(r"^##\s+", after_heading, re.MULTILINE)
+    if next_heading is None:
+        sources_block = after_heading
+        body = content[:match.start()]
+    else:
+        sources_block = after_heading[:next_heading.start()]
+        body = content[:match.start()] + after_heading[next_heading.start():]
+
+    seed_urls = list(dict.fromkeys(URL_RE.findall(sources_block)))
+    missing_urls = [url for url in seed_urls if url not in body]
+    dead_urls = [
+        url for url, status in _resolve_url_statuses(seed_urls).items()
+        if status is None or status >= 400
+    ]
+    problems: list[str] = []
+    if missing_urls:
+        problems.append("Missing inline seed URLs:\n- " + "\n- ".join(missing_urls))
+    if dead_urls:
+        problems.append("Dead authoritative source URLs:\n- " + "\n- ".join(dead_urls))
+    return {
+        "id": "CITE",
+        "passed": not problems,
+        "evidence": "\n".join(problems) if problems else "All authoritative seed URLs are cited inline and reachable.",
+    }
 
 
 WRITE_PROMPT_TEMPLATE = """CRITICAL INSTRUCTION: Your response must be ONLY the raw markdown content of the improved module. Start your response with the --- frontmatter delimiter. No preamble, no explanation, no summary, no "I have improved..." — ONLY the markdown file content from first line to last.
@@ -1503,7 +1544,7 @@ IMPROVED MODULE:
 {improved}
 """
 
-CHECK_IDS = ["COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
+CHECK_IDS = ["COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES", "CITE"]
 DEFAULT_SEVERE_FAILED_CHECKS = 5
 
 
@@ -2600,10 +2641,15 @@ def step_review(module_path: Path, improved: str, model: str = MODELS["review"],
         print("  ❌ Failed to parse REVIEW output")
         print(f"  Raw: {output[:500]}")
         return None
+    cite_check = _compute_cite_check(improved)
     verdict = result.get("verdict", "REJECT")
-    checks = result.get("checks") or []
+    checks = [c for c in (result.get("checks") or []) if c.get("id") != "CITE"]
+    checks.append(cite_check)
     edits = result.get("edits") or []
     feedback = result.get("feedback", "")
+    if verdict == "APPROVE" and not cite_check["passed"]:
+        verdict = "REJECT"
+    result["verdict"] = verdict
 
     # Code as arbiter: override the reviewer's self-reported severity with
     # the computed value. Per Gemini pair-review critique A, trusting the
