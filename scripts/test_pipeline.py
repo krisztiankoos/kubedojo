@@ -2788,7 +2788,8 @@ class TestKnowledgeCards(unittest.TestCase):
         ## `ai/foundations/module-1.1-what-is-ai`
 
         - [NIST AI RMF](https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf) — definitional framing
-        - [IBM Deep Blue](https://www.ibm.com/history/deep-blue) — rule-based milestone
+        1. [IBM Deep Blue](https://www.ibm.com/history/deep-blue) — rule-based milestone
+        https://ai.google/responsibility/principles/ — current AI principles
 
         ## `ai/foundations/module-1.2-what-are-llms`
 
@@ -2809,7 +2810,29 @@ class TestKnowledgeCards(unittest.TestCase):
         self.assertIn("## Authoritative Sources — cite these inline", seen["prompt"])
         self.assertIn("https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf", seen["prompt"])
         self.assertIn("https://www.ibm.com/history/deep-blue", seen["prompt"])
+        self.assertIn("https://ai.google/responsibility/principles/", seen["prompt"])
         self.assertNotIn("https://arxiv.org/abs/1706.03762", seen["prompt"])
+
+    def test_seed_injection_reaches_rewrite_prompt(self):
+        """Rewrite prompts should include the authoritative sources block."""
+        import v1_pipeline as p
+
+        self._write_seed_file(textwrap.dedent("""\
+        # AI Foundations — Citation Seeds
+
+        ## `ai/foundations/module-1.1-what-is-ai`
+
+        - [NIST AI RMF](https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf) — definitional framing
+        """))
+        seen = {}
+
+        with patch.object(p, "REPO_ROOT", self.repo_root), \
+             patch.object(p, "dispatch_auto", side_effect=lambda prompt, model=None, timeout=None: (seen.__setitem__("prompt", prompt), (True, GOOD_MODULE))[1]), \
+             patch.object(p, "module_key_from_path", return_value="ai/foundations/module-1.1-what-is-ai"):
+            p.step_write(self.module_path, "Improve factual accuracy", rewrite=True)
+
+        self.assertIn("## Authoritative Sources — cite these inline", seen["prompt"])
+        self.assertIn("https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf", seen["prompt"])
 
     def test_seed_injection_no_seeds_file_is_noop(self):
         """Missing seed file should leave the WRITE prompt unchanged."""
@@ -2852,6 +2875,20 @@ class TestKnowledgeCards(unittest.TestCase):
             result = p.step_write(self.module_path, "Improve factual accuracy")
 
         self.assertIsNotNone(result)
+        self.assertNotIn("## Authoritative Sources — cite these inline", seen["prompt"])
+
+    def test_seed_injection_noop_for_root_level_module_key(self):
+        """Root-level module keys should skip seed lookup entirely."""
+        import v1_pipeline as p
+
+        seen = {}
+
+        with patch.object(p, "REPO_ROOT", self.repo_root), \
+             patch.object(p, "dispatch_auto", side_effect=lambda prompt, model=None, timeout=None: (seen.__setitem__("prompt", prompt), (True, GOOD_MODULE))[1]), \
+             patch.object(p, "module_key_from_path", return_value="module-0.1-test"), \
+             patch.object(Path, "exists", side_effect=AssertionError("seed lookup should be skipped")):
+            p.step_write(self.module_path, "Improve factual accuracy")
+
         self.assertNotIn("## Authoritative Sources — cite these inline", seen["prompt"])
 
 

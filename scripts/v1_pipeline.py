@@ -973,15 +973,19 @@ def _format_verified_claims_for_prompt(fact_ledger: dict | None) -> str:
     return VERIFIED_FACTS_BLOCK_TEMPLATE.format(claims_block="\n".join(lines))
 
 
-def _citation_seed_path(module_key: str) -> Path:
+def _citation_seed_path(module_key: str) -> Path | None:
     """Return the per-track citation seed file path for a module key."""
-    track = "-".join(module_key.split("/")[:-1])
+    track = "-".join(module_key.split("/")[:-1]).strip("-")
+    if not track:
+        return None
     return REPO_ROOT / "docs" / f"citation-seeds-{track}.md"
 
 
 def _format_authoritative_sources_for_prompt(module_key: str) -> str:
     """Build a prompt block from the matching module section in a seed file."""
     seed_path = _citation_seed_path(module_key)
+    if seed_path is None:
+        return ""
     if not seed_path.exists():
         return ""
 
@@ -997,7 +1001,11 @@ def _format_authoritative_sources_for_prompt(module_key: str) -> str:
         if current_key != module_key:
             continue
         line = raw_line.strip()
-        if line.startswith("- ") and "http" in line:
+        if "http" in line and (
+            line.startswith("- ")
+            or re.match(r"^\d+\.\s+", line)
+            or line.startswith("http")
+        ):
             lines.append(line)
 
     if not lines:
@@ -1070,6 +1078,8 @@ UNVERIFIED in the ledger, hedge explicitly in the module text and cite the
 authority context.
 
 {verified_facts_block}
+
+{authoritative_sources_block}
 
 KNOWLEDGE PACKET — MUST PRESERVE:
 The following technical assets are extracted from the original module. You MUST include ALL of them in your rewrite, placed in the appropriate sections. Do NOT omit, summarize, or simplify any of these.
@@ -1221,7 +1231,8 @@ def step_write(module_path: Path, plan: str, model: str = MODELS["write"],
         prompt = REWRITE_PROMPT_TEMPLATE.format(
             file_path=key, plan=plan, content=content, knowledge_packet=packet,
             knowledge_card=knowledge_card_text, fact_ledger=fact_ledger_text,
-            k8s_lifecycle=k8s_lifecycle, verified_facts_block=verified_facts_block)
+            k8s_lifecycle=k8s_lifecycle, verified_facts_block=verified_facts_block,
+            authoritative_sources_block=authoritative_sources_block)
     else:
         prompt = WRITE_PROMPT_TEMPLATE.format(
             plan=plan, content=content, knowledge_card=knowledge_card_text,
