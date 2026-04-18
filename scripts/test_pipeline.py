@@ -2892,6 +2892,127 @@ class TestKnowledgeCards(unittest.TestCase):
         self.assertNotIn("## Authoritative Sources — cite these inline", seen["prompt"])
 
 
+class TestCitationGate(unittest.TestCase):
+    """Test the seeded citation gate between WRITE and REVIEW."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp()
+        self.repo_root = Path(self.tmpdir)
+        self.content_root = self.repo_root / "src" / "content" / "docs"
+        self.content_root.mkdir(parents=True, exist_ok=True)
+        self.module_key = "ai/foundations/module-1.1-what-is-ai"
+        self.module_path = self.content_root / "ai" / "foundations" / "module-1.1-what-is-ai.md"
+        self.module_path.parent.mkdir(parents=True, exist_ok=True)
+        self.module_path.write_text(GOOD_MODULE)
+        self.state_file = self.repo_root / ".pipeline" / "state.yaml"
+        self.review_dir = self.repo_root / ".pipeline" / "reviews"
+        self.seed_path = self.repo_root / "docs" / "citation-seeds-ai-foundations.md"
+        self.seed_path.parent.mkdir(parents=True, exist_ok=True)
+        self.seed_path.write_text(
+            "## `ai/foundations/module-1.1-what-is-ai`\n"
+            "- [NIST](https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf)\n"
+            "- [IBM](https://www.ibm.com/history/deep-blue)\n"
+        )
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _patch_paths(self, p):
+        return patch.multiple(
+            p,
+            REPO_ROOT=self.repo_root,
+            CONTENT_ROOT=self.content_root,
+            STATE_FILE=self.state_file,
+            REVIEW_AUDIT_DIR=self.review_dir,
+            FACT_LEDGER_DIR=self.repo_root / ".pipeline" / "fact-ledgers",
+            KNOWLEDGE_CARD_DIR=self.repo_root / ".pipeline" / "knowledge-cards",
+        )
+
+    def _checker_result(self, *, passes=True, sources_count=3, issues=None, dead_urls=None):
+        entry = {"path": str(self.module_path), "passes": passes, "issues": issues or [], "sources_count": sources_count}
+        if dead_urls is not None:
+            entry["dead_urls"] = dead_urls
+        return subprocess.CompletedProcess(["python"], 0 if passes else 1, json.dumps({"passes": passes, "results": [entry]}), "")
+
+    def test_step_check_citations_passes_when_draft_meets_threshold(self):
+        import v1_pipeline as p
+
+        self.module_path.write_text(
+            "---\ntitle: Test\n---\n\n"
+            "See [NIST](https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf) and "
+            "[IBM](https://www.ibm.com/history/deep-blue).\n\n## Sources\n"
+            "- [NIST](https://nvlpubs.nist.gov/nistpubs/ai/nist.ai.100-1.pdf)\n"
+            "- [IBM](https://www.ibm.com/history/deep-blue)\n"
+            "- [Google](https://ai.google/responsibility/principles/)\n"
+        )
+
+        with self._patch_paths(p), \
+             patch("v1_pipeline.subprocess.run", return_value=self._checker_result()):
+            result = p.step_check_citations(self.module_path, self.seed_path)
+
+        self.assertTrue(result["passes"])
+        self.assertEqual(result["citation_count"], 3)
+        self.assertEqual(result["missing_seed_urls"], [])
+
+    def test_step_check_citations_rejects_below_threshold_and_loops_back(self):
+        import v1_pipeline as p
+
+        review_ok = {"verdict": "APPROVE", "checks": [{"id": cid, "passed": True} for cid in p.CHECK_IDS], "edits": [], "feedback": ""}
+        git_ok = subprocess.CompletedProcess(["git"], 0, "", "")
+        fail = {"passes": False, "citation_count": 1, "issues": ["needs_at_least_3_citations"], "missing_seed_urls": [], "dead_urls": []}
+        ok = {"passes": True, "citation_count": 3, "issues": [], "missing_seed_urls": [], "dead_urls": []}
+        state = {"modules": {}}
+
+        with self._patch_paths(p), \
+             patch.object(p, "step_write", return_value=GOOD_MODULE) as mock_write, \
+             patch.object(p, "step_check_citations", side_effect=[fail, ok]) as mock_citations, \
+             patch.object(p, "step_review", return_value=review_ok), \
+             patch.object(p, "ensure_fact_ledger", return_value=sample_fact_ledger()), \
+             patch.object(p, "step_content_aware_fact_ledger", return_value=None), \
+             patch.object(p, "step_check_integrity", return_value=(True, [])), \
+             patch.object(p, "step_check", return_value=(True, [])), \
+             patch.object(p, "_git_stage_and_commit", return_value=(git_ok, git_ok)):
+            result = p.run_module(self.module_path, state, max_retries=1)
+
+        self.assertTrue(result)
+        self.assertEqual(mock_write.call_count, 2)
+        self.assertEqual(mock_citations.call_count, 2)
+
+    def test_step_check_citations_aborts_after_three_failed_writes_preserves_state(self):
+        import v1_pipeline as p
+
+        original = {"phase": "pending", "errors": ["keep me"], "severity": "clean", "passes": False}
+        state = {"modules": {self.module_key: copy.deepcopy(original)}}
+        self.module_path.with_suffix(".staging.md").write_text("pre-run staging")
+        fail = {"passes": False, "citation_count": 1, "issues": ["needs_at_least_3_citations"], "missing_seed_urls": [], "dead_urls": []}
+
+        with self._patch_paths(p), \
+             patch.object(p, "step_write", return_value=GOOD_MODULE) as mock_write, \
+             patch.object(p, "step_check_citations", return_value=fail), \
+             patch.object(p, "ensure_fact_ledger", return_value=sample_fact_ledger()):
+            result = p.run_module(self.module_path, state, max_retries=2)
+
+        self.assertFalse(result)
+        self.assertEqual(mock_write.call_count, 3)
+        self.assertEqual(state["modules"][self.module_key], original)
+        self.assertEqual(self.module_path.with_suffix(".staging.md").read_text(), "pre-run staging")
+
+    def test_step_check_citations_rejects_on_dead_url(self):
+        import v1_pipeline as p
+
+        self.module_path.write_text("## Sources\n- [dead](https://dead.example)")
+        with self._patch_paths(p), \
+             patch("v1_pipeline.subprocess.run", return_value=self._checker_result(
+                 passes=False,
+                 issues=["dead_url: https://dead.example"],
+                 dead_urls=["https://dead.example"],
+             )):
+            result = p.step_check_citations(self.module_path, self.seed_path)
+
+        self.assertFalse(result["passes"])
+        self.assertIn("https://dead.example", result["dead_urls"])
+
+
 # ---------------------------------------------------------------------------
 # Test: Fact ledger + integrity gate + split-reviewer run flow
 # ---------------------------------------------------------------------------
