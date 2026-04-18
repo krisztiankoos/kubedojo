@@ -2656,6 +2656,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
     ms["errors"] = []
     review_fact_ledger = ms.get("fact_ledger")
     staging_path = module_path.with_suffix(".staging.md")
+    rewrite_baseline = module_path.read_text()
 
     print(f"\n{'='*60}")
     print(f"  PIPELINE: {key}{'  [DRY RUN]' if dry_run else ''}")
@@ -2837,13 +2838,16 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
         if ms["phase"] in ("write",):
             review_fact_ledger = ms.get("fact_ledger")
             writer_model = m["write_targeted"] if targeted_fix else m["write"]
+            # Severe rewrites must preserve assets from the stable on-disk
+            # baseline, not from the latest rejected in-memory draft.
+            write_source = rewrite_baseline if needs_rewrite else last_good
             write_started = datetime.now(UTC)
             try:
                 # knowledge_card is intentionally not passed to the writer:
                 # fact_ledger is the sole authoritative grounding source.
                 improved = step_write(module_path, plan, model=writer_model,
                                       rewrite=needs_rewrite,
-                                      previous_output=last_good,
+                                      previous_output=write_source,
                                       knowledge_card=None,
                                       fact_ledger=ms.get("fact_ledger"))
             except ClaudeUnavailableError as e:
