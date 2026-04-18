@@ -78,7 +78,9 @@ DATA_CONFLICT_CONFLICT_THRESHOLD = 3
 DATA_CONFLICT_UNVERIFIED_THRESHOLD = 5
 LEGACY_SCORE_PASS_THRESHOLD = 4
 _LINK_CACHE_LOCK = threading.Lock()
-_PARALLEL_RUN_SECTION_LOCK = None
+_PARALLEL_RUN_SECTION_STATE_LOCK = None
+_PARALLEL_RUN_SECTION_GIT_LOCK = None
+_PARALLEL_RUN_SECTION_CONTEXT = threading.local()
 INTEGRITY_WARNING_PREFIXES = (
     "LINK_DEAD:",
     "STALE_K8S_VERSION:",
@@ -197,30 +199,74 @@ def load_state() -> dict:
     return {"modules": {}}
 
 
-def _with_parallel_run_section_lock(func, /, *args, **kwargs):
-    """Serialize writes/commits during parallel run-section mode."""
-    lock = _PARALLEL_RUN_SECTION_LOCK
+def _with_parallel_state_lock(func, /, *args, **kwargs):
+    """Serialize shared state merges during parallel run-section mode."""
+    lock = _PARALLEL_RUN_SECTION_STATE_LOCK
     if lock is None:
         return func(*args, **kwargs)
     with lock:
         return func(*args, **kwargs)
 
 
+def _with_parallel_git_lock(func, /, *args, **kwargs):
+    """Serialize git add/commit during parallel run-section mode."""
+    lock = _PARALLEL_RUN_SECTION_GIT_LOCK
+    if lock is None:
+        return func(*args, **kwargs)
+    with lock:
+        return func(*args, **kwargs)
+
+
+def _write_state_file(state: dict) -> None:
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lock_file = STATE_FILE.with_suffix(".lock")
+    tmp_file = STATE_FILE.with_suffix(".tmp")
+    with open(lock_file, "w") as lf:
+        fcntl.flock(lf, fcntl.LOCK_EX)
+        try:
+            tmp_file.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False))
+            tmp_file.replace(STATE_FILE)  # atomic on POSIX
+        finally:
+            fcntl.flock(lf, fcntl.LOCK_UN)
+
+
+def _parallel_worker_state(shared_state: dict, module_key: str) -> dict:
+    """Return an isolated per-worker snapshot for one module."""
+    worker_state = {"modules": {}}
+    modules = shared_state.get("modules") or {}
+    if module_key in modules:
+        worker_state["modules"][module_key] = copy.deepcopy(modules[module_key])
+    return worker_state
+
+
+def _merge_parallel_worker_state(local_state: dict) -> None:
+    """Merge one worker-local module snapshot back into the shared state."""
+    ctx = getattr(_PARALLEL_RUN_SECTION_CONTEXT, "value", None)
+    if ctx is None or local_state is not ctx["local_state"]:
+        _write_state_file(local_state)
+        return
+
+    module_key = ctx["module_key"]
+
+    def _merge() -> None:
+        shared_modules = ctx["shared_state"].setdefault("modules", {})
+        worker_modules = local_state.get("modules", {})
+        if module_key in worker_modules:
+            shared_modules[module_key] = copy.deepcopy(worker_modules[module_key])
+        else:
+            shared_modules.pop(module_key, None)
+        _write_state_file(ctx["shared_state"])
+
+    _with_parallel_state_lock(_merge)
+
+
 def save_state(state: dict) -> None:
     """Save state with file locking + atomic write to prevent corruption."""
-    def _write() -> None:
-        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        lock_file = STATE_FILE.with_suffix(".lock")
-        tmp_file = STATE_FILE.with_suffix(".tmp")
-        with open(lock_file, "w") as lf:
-            fcntl.flock(lf, fcntl.LOCK_EX)
-            try:
-                tmp_file.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False))
-                tmp_file.replace(STATE_FILE)  # atomic on POSIX
-            finally:
-                fcntl.flock(lf, fcntl.LOCK_UN)
-
-    _with_parallel_run_section_lock(_write)
+    ctx = getattr(_PARALLEL_RUN_SECTION_CONTEXT, "value", None)
+    if ctx is not None and state is ctx["local_state"]:
+        _merge_parallel_worker_state(state)
+        return
+    _with_parallel_state_lock(_write_state_file, state)
 
 
 def _git_stage_and_commit(add_paths: list[str], commit_msg: str,
@@ -239,7 +285,7 @@ def _git_stage_and_commit(add_paths: list[str], commit_msg: str,
         commit_result = subprocess.run(["git", "commit", "-m", commit_msg], **kwargs)
         return add_result, commit_result
 
-    return _with_parallel_run_section_lock(_run)
+    return _with_parallel_git_lock(_run)
 
 
 def get_module_state(state: dict, module_key: str) -> dict:
@@ -253,6 +299,34 @@ def get_module_state(state: dict, module_key: str) -> dict:
         "fact_ledger": None,
         "fact_ledger_generated_at": None,
     })
+
+
+def _run_module_in_parallel(module_path: Path, shared_state: dict, max_retries: int = 4,
+                            models: dict | None = None, dry_run: bool = False,
+                            refresh_fact_ledger: bool = False,
+                            write_only: bool = False) -> bool:
+    """Run one module with an isolated worker-local state snapshot."""
+    module_key = module_key_from_path(module_path)
+    local_state = _parallel_worker_state(shared_state, module_key)
+    _PARALLEL_RUN_SECTION_CONTEXT.value = {
+        "local_state": local_state,
+        "module_key": module_key,
+        "shared_state": shared_state,
+    }
+    try:
+        ok = run_module(
+            module_path,
+            local_state,
+            max_retries=max_retries,
+            models=models,
+            dry_run=dry_run,
+            refresh_fact_ledger=refresh_fact_ledger,
+            write_only=write_only,
+        )
+        _merge_parallel_worker_state(local_state)
+        return ok
+    finally:
+        _PARALLEL_RUN_SECTION_CONTEXT.value = None
 
 
 def module_key_from_path(path: Path) -> str:
@@ -3417,21 +3491,23 @@ def cmd_run_section(args):
             else:
                 failed += 1
     else:
-        global _PARALLEL_RUN_SECTION_LOCK
-        previous_lock = _PARALLEL_RUN_SECTION_LOCK
-        _PARALLEL_RUN_SECTION_LOCK = threading.Lock()
+        global _PARALLEL_RUN_SECTION_STATE_LOCK, _PARALLEL_RUN_SECTION_GIT_LOCK
+        previous_state_lock = _PARALLEL_RUN_SECTION_STATE_LOCK
+        previous_git_lock = _PARALLEL_RUN_SECTION_GIT_LOCK
+        _PARALLEL_RUN_SECTION_STATE_LOCK = threading.Lock()
+        _PARALLEL_RUN_SECTION_GIT_LOCK = threading.Lock()
         try:
             with ThreadPoolExecutor(max_workers=workers) as executor:
                 futures = {
                     executor.submit(
-                        run_module,
+                        _run_module_in_parallel,
                         path,
                         state,
-                        2,
-                        models,
-                        dry_run,
-                        getattr(args, "refresh_fact_ledger", False),
-                        write_only,
+                        max_retries=2,
+                        models=models,
+                        dry_run=dry_run,
+                        refresh_fact_ledger=getattr(args, "refresh_fact_ledger", False),
+                        write_only=write_only,
                     ): path
                     for path in modules
                 }
@@ -3447,7 +3523,8 @@ def cmd_run_section(args):
                         print(f"  ❌ Exception processing {path}: {e}")
                         failed += 1
         finally:
-            _PARALLEL_RUN_SECTION_LOCK = previous_lock
+            _PARALLEL_RUN_SECTION_STATE_LOCK = previous_state_lock
+            _PARALLEL_RUN_SECTION_GIT_LOCK = previous_git_lock
 
     print(f"\n{'='*60}")
     if dry_run:
