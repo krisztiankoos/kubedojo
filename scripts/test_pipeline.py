@@ -1350,6 +1350,17 @@ class TestComputeSeverity(unittest.TestCase):
         sev = self.p.compute_severity("REJECT", self.all_pass, [])
         self.assertEqual(sev, "severe")
 
+    def test_malformed_review_payload_is_severe(self):
+        """Malformed review JSON must fail closed, never silently approve."""
+        self.assertEqual(self.p.compute_review_payload_severity(None), "severe")
+
+    def test_missing_checks_key_is_severe(self):
+        """APPROVE without `checks` is invalid review output → severe."""
+        self.assertEqual(
+            self.p.compute_review_payload_severity({"verdict": "APPROVE", "edits": []}),
+            "severe",
+        )
+
     def test_reject_five_failures_is_severe(self):
         """5+ failed checks → severe, always."""
         checks = [{"id": cid, "passed": False, "edit_refs": [i]} for i, cid in enumerate(self.p.CHECK_IDS[:5])]
