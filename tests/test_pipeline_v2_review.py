@@ -343,6 +343,47 @@ def test_review_worker_audit_dedupes_same_job(tmp_path):
     assert append_review.read_text(encoding="utf-8") == before
 
 
+def test_audit_preserves_v1_written_header_metadata(tmp_path):
+    """v2 appending must not overwrite v1's phase/reviewer/severity header fields."""
+    module_path = _write_module(tmp_path)
+    review_path = tmp_path / ".pipeline" / "reviews" / "docs__module-1.1-review-worker.md"
+    review_path.parent.mkdir(parents=True, exist_ok=True)
+    review_path.write_text(
+        "# Review Audit: docs/module-1.1-review-worker\n\n"
+        "**Path**: `docs/module-1.1-review-worker.md`\n"
+        "**First pass**: 2026-04-18T09:00:00Z\n"
+        "**Last pass**: 2026-04-18T09:00:00Z\n"
+        "**Total passes**: 1\n"
+        "**Current phase**: review\n"
+        "**Current reviewer**: codex-gpt-5.4\n"
+        "**Current severity**: medium\n\n"
+        "---\n\n"
+        "## 2026-04-18T09:00:00Z — `REVIEW` — `APPROVE`\n\n"
+        "**Reviewer**: codex-gpt-5.4\n**Attempt**: 1\n**Severity**: medium\n"
+        "**Checks**: 7/7 passed\n**Job Id**: v1-job-1\n**Lease Id**: v1-lease-1\n",
+        encoding="utf-8",
+    )
+    append_review_audit(
+        module_path, "REVIEW",
+        module_key="docs/module-1.1-review-worker",
+        reviewer="gpt-5.3-codex-spark", attempt=2, severity="none",
+        checks=json.loads(_deep_response())["checks"],
+        feedback="v2 added", verdict="APPROVE",
+        job_id="v2-job-1", lease_id="v2-lease-1",
+    )
+    after = review_path.read_text(encoding="utf-8")
+    # v1's header metadata must survive — NOT be replaced with "pending" / "-" / "-"
+    assert "**Current phase**: review" in after
+    assert "**Current reviewer**: codex-gpt-5.4" in after
+    assert "**Current severity**: medium" in after
+    # v2's new entry is prepended
+    assert after.index("v2-job-1") < after.index("v1-job-1")
+    # Duration field present in v2 entry
+    assert "**Duration**:" in after
+    # Both entries present
+    assert "v1-job-1" in after and "v2-job-1" in after
+
+
 def test_three_simple_dispatches_then_one_deep(tmp_path):
     control_plane = _make_control_plane(tmp_path)
     module_path = _write_module(tmp_path)

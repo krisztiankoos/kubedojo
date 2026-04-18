@@ -91,6 +91,19 @@ class ReviewWorker:
                     model=PATCH_MODEL,
                     priority=lease.job_id,
                 )
+                append_review_audit(
+                    module_path,
+                    "CHECK_FAIL",
+                    module_key=lease.module_key,
+                    reviewer="preflight",
+                    attempt=1,
+                    severity="high",
+                    checks=payload["checks"],
+                    feedback=payload["feedback"],
+                    verdict="REJECT",
+                    job_id=lease.job_id,
+                    lease_id=lease.lease_id,
+                )
                 self.control_plane.complete_lease(
                     lease.lease_id,
                     actual_calls=0,
