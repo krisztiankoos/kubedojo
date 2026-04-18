@@ -392,11 +392,13 @@ def test_translation_v2_freshness_rollup_is_per_track_not_global(tmp_path: Path)
     assert by_track["prerequisites"]["freshness"] == {
         "up_to_date_count": 1,
         "stale_count": 0,
+        "missing_count": 0,
         "dead_letter_count": 0,
     }
     assert by_track["linux"]["freshness"] == {
         "up_to_date_count": 0,
         "stale_count": 1,
+        "missing_count": 0,
         "dead_letter_count": 1,
     }
 
