@@ -1862,80 +1862,122 @@ _CITATION_STATUS_CACHE: dict[str, dict[str, Any]] = {}
 _CITATION_STATUS_CACHE_LOCK = threading.Lock()
 
 
-# Matches rows like:
-#   | CKA 2.8: Scheduler Lifecycle Theory | CKA | 55 | **1.3** | Critical | ... |
-# Score is the first bold-number occurrence.
-_QUALITY_ROW_RE = re.compile(
-    r"^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|\s*\*?\*?([0-9]+(?:\.[0-9]+)?)\*?\*?\s*\|"
-)
+_QUALITY_TITLE_RE = re.compile(r'^title:\s*["\']?(.*?)["\']?\s*$', re.MULTILINE)
+_QUALITY_TRACK_LABELS = {
+    "ai": "AI",
+    "ai-ml-engineering": "AI/ML Engineering",
+    "cloud": "Cloud",
+    "linux": "Linux",
+    "on-premises": "On-Premises",
+    "platform": "Platform",
+    "prerequisites": "Prerequisites",
+}
+
+
+def _quality_severity(score: float) -> str:
+    if score < 2.0:
+        return "critical"
+    if score < 2.5:
+        return "poor"
+    if score < 3.5:
+        return "needs_work"
+    if score < 4.5:
+        return "good"
+    return "excellent"
+
+
+def _quality_track_label(rel: Path) -> str:
+    parts = rel.parts
+    if len(parts) >= 2 and parts[0] == "k8s" and parts[1] in _CERT_TRACKS:
+        return parts[1].upper()
+    top = _QUALITY_TRACK_LABELS.get(parts[0], parts[0].replace("-", " ").title())
+    if len(parts) >= 2 and not parts[1].startswith(("module-", "part")):
+        return f"{top} {parts[1].replace('-', ' ').title()}"
+    return top
+
+
+def _quality_title_and_label(rel: Path, text: str) -> tuple[str, str]:
+    frontmatter = text[4:].split("\n---\n", 1)[0] if text.startswith("---\n") and "\n---\n" in text[4:] else ""
+    match = _QUALITY_TITLE_RE.search(frontmatter)
+    title = (match.group(1).strip() if match else "") or rel.stem.replace("-", " ").title()
+    title = re.sub(r"^Module\s+[0-9]+(?:\.[0-9]+)*:\s*", "", title).strip()
+    track = _quality_track_label(rel)
+    number_match = _MODULE_NUMBER_RE.search(rel.stem)
+    if track.lower() in _CERT_TRACKS and number_match:
+        return title, f"{track} {number_match.group(1)}: {title}"
+    return title, f"{track}: {title}"
 
 
 def build_quality_scores(repo_root: Path) -> dict[str, Any]:
-    """Parse ``docs/quality-audit-results.md`` and expose per-module
-    rubric scores.
+    """Build live heuristic quality scores from current EN module files.
 
-    The file is markdown with multiple tables; we walk it row-by-row
-    extracting ``(module, track, lines, score)``. Cached by mtime.
+    Signals stay intentionally cheap and debuggable: line count drives
+    the base score, then valid frontmatter/title, quiz/knowledge-check,
+    exercises/labs, and diagrams/mermaid add structure bonuses.
     """
-    audit_path = repo_root / "docs" / "quality-audit-results.md"
-    if not audit_path.exists():
-        return {"audit_path": str(audit_path), "exists": False, "modules": [], "count": 0}
+    docs_root = repo_root / "src" / "content" / "docs"
+    if not docs_root.exists():
+        return {"exists": False, "source": "heuristic", "generated_at": time.time(), "modules": [], "count": 0}
 
-    try:
-        mtime = audit_path.stat().st_mtime
-    except OSError:
-        mtime = 0.0
-    key = str(audit_path.resolve())
+    paths = sorted(
+        path
+        for path in docs_root.glob("**/module-*.md")
+        if ".staging." not in path.name and not path.relative_to(docs_root).as_posix().startswith("uk/")
+    )
+    sig = hashlib.sha1()
+    for path in paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        sig.update(path.relative_to(docs_root).as_posix().encode("utf-8"))
+        sig.update(f":{stat.st_mtime_ns}:{stat.st_size}".encode("utf-8"))
+    signature = sig.hexdigest()
+    key = str(docs_root.resolve())
     with _QUALITY_AUDIT_CACHE_LOCK:
         entry = _QUALITY_AUDIT_CACHE.get(key)
-        if entry is not None and entry["mtime"] == mtime:
+        if entry is not None and entry["signature"] == signature:
             return entry["data"]
 
-    try:
-        text = audit_path.read_text(encoding="utf-8")
-    except OSError:
-        return {"audit_path": str(audit_path), "exists": False, "modules": [], "count": 0}
-
     modules: list[dict[str, Any]] = []
-    for raw_line in text.splitlines():
-        line = raw_line.strip()
-        if not line.startswith("|"):
-            continue
-        # Skip table header / separator rows.
-        if "---" in line or line.startswith("| Module") or line.startswith("| Rating"):
-            continue
-        match = _QUALITY_ROW_RE.match(line)
-        if not match:
-            continue
-        module = match.group(1).strip()
-        track = match.group(2).strip()
-        lines_str = match.group(3).strip()
-        score = float(match.group(4))
-        cells = [c.strip() for c in line.strip("|").split("|")]
-        action = cells[4] if len(cells) >= 5 else None
-        primary_issue = cells[5] if len(cells) >= 6 else None
+    for path in paths:
         try:
-            lines_count = int(lines_str) if lines_str.isdigit() else None
-        except ValueError:
-            lines_count = None
-        # Skip the score-distribution table (first col is "Excellent"/"Good"/etc).
-        if module in {"Excellent", "Good", "Needs Work", "Poor", "Critical"}:
+            text = path.read_text(encoding="utf-8")
+        except OSError:
             continue
-        severity = "critical" if score < 2.0 else (
-            "poor" if score < 2.5 else (
-                "needs_work" if score < 3.5 else (
-                    "good" if score < 4.5 else "excellent"
-                )
-            )
-        )
+        lines_count = len(text.splitlines())
+        has_title = text.startswith("---\n") and bool(_QUALITY_TITLE_RE.search(text[4:].split("\n---\n", 1)[0]))
+        has_quiz = bool(re.search(r"^##+\s+(quiz|knowledge check)\b", text, re.IGNORECASE | re.MULTILINE))
+        has_exercise = bool(re.search(r"^##+\s+(exercise|hands-on|practice|lab)\b", text, re.IGNORECASE | re.MULTILINE))
+        has_diagram = "```mermaid" in text or "<details>" in text
+        base = 0.4 if lines_count < 60 else 0.9 if lines_count < 120 else 1.4 if lines_count < 220 else 1.8 if lines_count < 300 else 2.1
+        score = min(5.0, round(base + (0.6 if has_title else 0.0) + (0.8 if has_quiz else 0.0) + (0.8 if has_exercise else 0.0) + (0.7 if has_diagram else 0.0), 1))
+        severity = _quality_severity(score)
+        action = {
+            "critical": "Critical",
+            "poor": "Rewrite",
+            "needs_work": "Improve",
+            "good": "Polish",
+            "excellent": "Strong",
+        }[severity]
+        issues = []
+        if lines_count < 220:
+            issues.append("thin")
+        if not has_quiz:
+            issues.append("no quiz")
+        if not has_exercise:
+            issues.append("no exercise")
+        if not has_diagram:
+            issues.append("no diagram")
+        _, module = _quality_title_and_label(path.relative_to(docs_root), text)
         modules.append({
             "module": module,
-            "track": track,
+            "track": _quality_track_label(path.relative_to(docs_root)),
             "lines": lines_count,
             "score": score,
             "severity": severity,
             "action": action,
-            "primary_issue": primary_issue,
+            "primary_issue": ", ".join(issues[:2]) if issues else "balanced",
         })
 
     scores = [m["score"] for m in modules]
@@ -1943,9 +1985,11 @@ def build_quality_scores(repo_root: Path) -> dict[str, Any]:
     critical = [m for m in modules if m["severity"] == "critical"]
     poor = [m for m in modules if m["severity"] == "poor"]
     data = {
-        "audit_path": str(audit_path),
         "exists": True,
-        "mtime": mtime,
+        "source": "heuristic",
+        "generated_at": time.time(),
+        "signature": signature[:12],
+        "docs_root": str(docs_root),
         "count": len(modules),
         "average": avg,
         "min_score": min(scores) if scores else None,
@@ -1956,7 +2000,7 @@ def build_quality_scores(repo_root: Path) -> dict[str, Any]:
         "modules": modules,
     }
     with _QUALITY_AUDIT_CACHE_LOCK:
-        _QUALITY_AUDIT_CACHE[key] = {"mtime": mtime, "data": data}
+        _QUALITY_AUDIT_CACHE[key] = {"signature": signature, "data": data}
     return data
 
 
@@ -2023,7 +2067,7 @@ def build_quality_upgrade_plan(repo_root: Path, *, target: float = 4.0) -> dict[
     epic_issue = 181 if target >= 5.0 else 180
     return {
         "exists": bool(quality.get("exists")),
-        "audit_path": quality.get("audit_path"),
+        "source": quality.get("source"),
         "target": target,
         "epic_issue": epic_issue,
         "epic_issue_url": f"https://github.com/kube-dojo/kube-dojo.github.io/issues/{epic_issue}",
@@ -2036,8 +2080,7 @@ def build_quality_upgrade_plan(repo_root: Path, *, target: float = 4.0) -> dict[
         "tracks": track_groups,
         "top_worst": needs_upgrade[:10],
         "scope_note": (
-            "This plan is based on scored modules in docs/quality-audit-results.md; "
-            "unscored modules require future audit before precise upgrade planning."
+            "This plan is based on live heuristic scores from current English module content."
         ),
     }
 
@@ -2223,7 +2266,7 @@ def build_module_diagnostics(
                     next_action=f"GET /api/translation/v2/status (filter for {status})",
                 ))
 
-    # Rubric severity from docs/quality-audit-results.md.
+    # Rubric severity from live quality scores.
     try:
         quality = build_quality_scores(repo_root)
     except Exception:  # noqa: BLE001
@@ -2234,7 +2277,7 @@ def build_module_diagnostics(
             severity="critical" if sev == "critical" else "warn",
             code=f"rubric_{sev}",
             summary=f"Rubric score marks this module as {sev}",
-            source="docs/quality-audit-results.md",
+            source=f"quality_scores:{quality.get('source', 'unknown')}",
             next_action="GET /api/quality/scores",
         ))
 
@@ -5337,7 +5380,7 @@ def build_api_schema() -> dict[str, Any]:
                 "desc": ".bridge/messages.db tail",
                 "query": ["since=<ISO-8601>", "limit=... (max 500)"],
             },
-            {"path": "/api/quality/scores", "desc": "Rubric scores from docs/quality-audit-results.md"},
+            {"path": "/api/quality/scores", "desc": "Live heuristic rubric scores from current English module files"},
             {
                 "path": "/api/quality/upgrade-plan",
                 "desc": "Upgrade queue derived from rubric scores for #180 (4/5) or #181 (5/5)",
