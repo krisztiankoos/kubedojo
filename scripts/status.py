@@ -418,22 +418,43 @@ def _enrich_translation_v2_with_per_track(t2: dict[str, Any]) -> dict[str, Any]:
         return enriched
     buckets = _per_track_buckets()
     track_modules: dict[str, dict[str, list[str]]] = {
-        slug: {"pending_write": [], "pending_review": [], "pending_patch": [], "dead_letter": []}
+        slug: {"pending_write": [], "pending_review": [], "pending_patch": [], "done": [], "dead_letter": []}
         for slug in list(buckets)
     }
-    for queue_name in ("pending_write", "pending_review", "pending_patch", "dead_letter"):
+    for queue_name in ("pending_write", "pending_review", "pending_patch", "done", "dead_letter"):
         for module_key in queue.get(queue_name, []) or []:
             track = _track_for_key(module_key)
             buckets[track][queue_name] += 1
             track_modules[track][queue_name].append(module_key)
+    track_freshness: dict[str, dict[str, int] | None] = {slug: None for slug in buckets}
+    freshness = t2.get("freshness") or {}
+    if freshness:
+        for slug in track_freshness:
+            track_freshness[slug] = {
+                "up_to_date_count": 0,
+                "stale_count": 0,
+                "dead_letter_count": buckets[slug]["dead_letter"],
+            }
+        for item in freshness.get("modules", []) or []:
+            status = str(item.get("status", ""))
+            if status == "missing":
+                continue
+            track = _track_for_key(str(item.get("module_key", "")))
+            if track_freshness[track] is None:
+                continue
+            if status == "synced":
+                track_freshness[track]["up_to_date_count"] += 1
+            else:
+                track_freshness[track]["stale_count"] += 1
     enriched_queue = dict(queue)
     enriched_queue["per_track"] = [
         {
             "slug": slug,
             "counts": buckets[slug],
             "modules": track_modules[slug],
+            "freshness": track_freshness[slug],
         }
-        for slug in [s for s, _ in TRACK_ORDER] + (["other"] if buckets["other"]["pending_write"] + buckets["other"]["pending_review"] + buckets["other"]["pending_patch"] + buckets["other"]["dead_letter"] else [])
+        for slug in [s for s, _ in TRACK_ORDER] + (["other"] if any(buckets["other"].values()) else [])
     ]
     enriched["queue"] = enriched_queue
     return enriched
