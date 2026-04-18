@@ -43,6 +43,22 @@ Uncommitted in tree:
 - `src/content/docs/k8s/lfcs/module-1.4-storage-services-and-users-practice.md` — **worker WIP**, don't touch.
 - `docs/sessions/` — untracked session handoff docs.
 
+**PRs opened by Codex and reviewed by Claude this session:**
+- **PR #281** — fix(pipeline): serialize parallel worker state mutations (#235 top CRITICAL bug). +184/-28, 2 files. **Reviewed LGTM**, cannot formally approve (same GH identity). Merge after user spot-checks test_pipeline flake.
+- **PR #282** — feat(local-api): `/api/build/run` + `/api/build/status` endpoints (#277). +398/-0, 3 files. **Reviewed with gates**: ruff didn't actually run (wrong path), npm run build failed in worktree due to node_modules symlink quirk. Re-run from main checkout before merge.
+
+**Codex queue state (max 2 concurrent):**
+- `infra-278-pr1` (pin Gemini model) — running in background task `b5i561680`.
+- `infra-235-data-conflict` (HIGH: defer data_conflict check until after draft) — running in background task `b6n6me1ip`.
+- Queued for next invocation: `infra-276` (GH API endpoints), `infra-278-pr2` (per-track rubric), `infra-278-pr3` (second-reviewer sampling), `infra-279` (citation pipeline wiring), plus 12+ remaining #235 HIGH/MEDIUM bugs.
+
+**Service state at handoff:**
+- API: 127.0.0.1:8768, PID 82871, uptime 20 min
+- v2 patch/review/write workers: PIDs 87463 / 87941 / 88084, all 19 min uptime
+- dev server: unchanged (existing)
+- Pipeline convergence: 99.8%, 566 done, 1 pending_review (flapping on LFCS module-1.4, known issue being tracked in #235)
+- 0 stale pid files, 1 stopped (pipeline supervisor, intentional — workers are direct-run, no supervisor layer active)
+
 ## Current State
 
 **726 modules** across 8 published tracks. **115 Ukrainian translations** (~16% — certs + prereqs; AI/ML and AI not yet translated).
