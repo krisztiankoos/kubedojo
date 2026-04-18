@@ -1917,9 +1917,9 @@ class TestComputeSeverity(unittest.TestCase):
         sev = self.p.compute_severity("APPROVE", self.all_pass, [])
         self.assertEqual(sev, "clean")
 
-    def test_routes_correctly_with_six_checks(self):
-        """Split-reviewer structural rubric has 6 checks after LAB decoupling."""
-        self.assertEqual(len(self.p.CHECK_IDS), 6)
+    def test_routes_correctly_with_seven_checks(self):
+        """Split-reviewer structural rubric has 7 checks after adding CITE."""
+        self.assertEqual(len(self.p.CHECK_IDS), 7)
         checks = [
             {"id": "COV", "passed": False, "edit_refs": [0]},
             {"id": "QUIZ", "passed": True},
@@ -1927,6 +1927,7 @@ class TestComputeSeverity(unittest.TestCase):
             {"id": "DEPTH", "passed": True},
             {"id": "WHY", "passed": True},
             {"id": "PRES", "passed": True},
+            {"id": "CITE", "passed": True},
         ]
         edits = [{"type": "replace", "find": "x", "new": "y"}]
         self.assertEqual(self.p.compute_severity("REJECT", checks, edits), "targeted")

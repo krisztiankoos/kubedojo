@@ -913,8 +913,8 @@ them accurately in your content. Do not contradict them.
 
 AUTHORITATIVE_SOURCES_BLOCK_TEMPLATE = """## Authoritative Sources — cite these inline
 
-Use these sources directly in the draft. Cite them inline where relevant and
-include them in the module's `## Sources` section.
+Maintain the module's `## Authoritative Sources` section and cite these URLs
+inline where relevant in the body.
 
 {sources_block}
 """
@@ -923,7 +923,7 @@ SEED_SECTION_RE = re.compile(r"^##\s+`([^`]+)`\s*$")
 URL_RE = re.compile(r"https?://[^\s)]+")
 AUTHORITATIVE_SOURCES_HEADING_RE = re.compile(
     r"^##\s+Authoritative Sources(?:\s+[—-].*)?\s*$",
-    re.MULTILINE,
+    re.MULTILINE | re.IGNORECASE,
 )
 
 
@@ -1422,6 +1422,7 @@ Your job is to grade the module on STRUCTURE only:
 - DEPTH: at least one practitioner-grade element (production gotcha, decision framework, war story)?
 - WHY: rationale for every major design decision?
 - PRES: every distinct concept/lab/diagram/quiz from the original is preserved (compression OK, deletion of unique value not OK)?
+- CITE: every URL from `## Authoritative Sources` is cited inline in the body, with no dead links?
 Lab quality is evaluated by the separate `lab_pipeline.py` pipeline — do not
 grade hands-on sections here.
 
@@ -1466,6 +1467,10 @@ MANDATORY CHECKS — answer PASS or FAIL for each:
    FAIL must cite the specific missing item from the original. This
    check exists to prevent information loss during rewrites — it does
    NOT forbid tightening prose.
+
+7. CITE — Does every URL listed under `## Authoritative Sources` appear
+   inline in the module body, and are all cited URLs alive? A FAIL must
+   name each missing or dead URL.
 
 APPROVE REQUIRES every check `passed: true`. If even one check is
 `passed: false`, the verdict is REJECT.
@@ -1516,7 +1521,8 @@ OUTPUT JSON ONLY — no preamble, no postamble, no markdown fences:
     {{"id": "EXAM", "passed": true}},
     {{"id": "DEPTH", "passed": true}},
     {{"id": "WHY", "passed": true}},
-    {{"id": "PRES", "passed": true}}
+    {{"id": "PRES", "passed": true}},
+    {{"id": "CITE", "passed": true}}
   ],
   "edits": [
     {{"type": "replace", "find": "...", "new": "...", "reason": "..."}}
@@ -1524,7 +1530,7 @@ OUTPUT JSON ONLY — no preamble, no postamble, no markdown fences:
   "feedback": "optional prose summary of qualitative notes that don't map to an edit"
 }}
 
-Every one of the 6 check IDs MUST appear in `checks`. Skipping EXAM when
+Every one of the 7 check IDs MUST appear in `checks`. Skipping EXAM when
 there is no `certification:` target is fine — return it as `passed: true`
 with evidence `"no certification target in frontmatter"`.
 
