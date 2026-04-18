@@ -1250,10 +1250,21 @@ IMPROVED MODULE:
 CHECK_IDS = ["COV", "QUIZ", "EXAM", "DEPTH", "WHY", "PRES"]
 
 
+def _has_valid_review_checks(checks: object) -> bool:
+    """Return True when review `checks` has the expected binary-gate shape."""
+    return (
+        isinstance(checks, list)
+        and all(
+            isinstance(check, dict) and isinstance(check.get("passed"), bool)
+            for check in checks
+        )
+    )
+
+
 def compute_severity(
     verdict: str,
-    checks: list[dict],
-    edits: list[dict],
+    checks: object,
+    edits: object,
 ) -> str:
     """Compute the authoritative severity from reviewer output.
 
@@ -1273,6 +1284,10 @@ def compute_severity(
     `project_fact_grounding_calibration.md`; this function intentionally
     stays FACT-agnostic and only routes structural reviewer output.
     """
+    if not _has_valid_review_checks(checks):
+        # Fail closed: malformed review payloads must never enter the
+        # default-pass path, even if the reviewer claimed APPROVE.
+        return "severe"
     if verdict == "APPROVE":
         return "clean"
     failed = [c for c in checks if isinstance(c, dict) and not c.get("passed", True)]
@@ -1309,6 +1324,17 @@ def compute_severity(
         # need a rewrite for those sections. Escalate to severe.
         return "severe"
     return "targeted"
+
+
+def compute_review_payload_severity(review: dict | None) -> str:
+    """Compute severity from a possibly malformed review payload."""
+    if not isinstance(review, dict):
+        return "severe"
+    return compute_severity(
+        review.get("verdict", "REJECT"),
+        review.get("checks"),
+        review.get("edits"),
+    )
 
 
 INDEX_PROMPT_TEMPLATE = """CRITICAL INSTRUCTION: Your response must be ONLY the raw markdown content. Start with the --- frontmatter delimiter. No preamble, no explanation — ONLY the markdown file.
@@ -1447,14 +1473,7 @@ def _has_required_json_keys(obj: dict, required_keys: tuple[str, ...]) -> bool:
         if "verdict" not in obj:
             return False
         if "checks" in obj:
-            checks = obj.get("checks")
-            return (
-                isinstance(checks, list)
-                and all(
-                    isinstance(check, dict) and isinstance(check.get("passed"), bool)
-                    for check in checks
-                )
-            )
+            return _has_valid_review_checks(obj.get("checks"))
         return "scores" in obj
     return all(k in obj for k in required_keys)
 
@@ -2941,7 +2960,13 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                     continue
                 return False
 
-            if review.get("verdict") == "APPROVE":
+            review_verdict = review.get("verdict", "REJECT")
+            review_checks_raw = review.get("checks")
+            review_edits_raw = review.get("edits")
+            review_checks = review_checks_raw if isinstance(review_checks_raw, list) else []
+            review_severity = compute_review_payload_severity(review)
+
+            if review_verdict == "APPROVE" and review_severity == "clean":
                 # Binary gate: on APPROVE, the module's state records that
                 # every check passed. Per Gemini pair-review critique B, we
                 # ignore any `edits` returned alongside an APPROVE — an
@@ -2972,12 +2997,12 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                 save_state(state)
                 emit_audit(
                     "REVIEW",
-                    verdict=review.get("verdict", "APPROVE"),
+                    verdict=review_verdict,
                     reviewer=reviewer_model,
                     attempt=f"{attempt+1}/{max_retries+1}",
                     severity=ms["severity"],
                     duration=(datetime.now(UTC) - review_started).total_seconds(),
-                    checks=review.get("checks") or [],
+                    checks=review_checks,
                     feedback=review.get("feedback", ""),
                     reviewer_fallback_used=used_fallback_reviewer,
                 )
@@ -2990,14 +3015,12 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
                 # sets this field, but computing again here makes run_module
                 # robust to mocks and alternative reviewer code paths.
                 r_feedback = review.get("feedback", "")
-                r_checks = review.get("checks") or []
-                r_edits = review.get("edits") or []
+                r_checks = review_checks
+                r_edits = review_edits_raw if isinstance(review_edits_raw, list) else []
                 failed_checks = [c for c in r_checks if isinstance(c, dict) and not c.get("passed")]
                 failed_ids = [c.get("id", "?") for c in failed_checks]
-                r_valid = bool(r_checks)
-                r_severity = compute_severity(
-                    review.get("verdict", "REJECT"), r_checks, r_edits
-                )
+                r_valid = _has_valid_review_checks(review_checks_raw)
+                r_severity = review_severity
 
                 # Deterministic edit application — identical machinery as
                 # before (PR #221/222), but gated on severity instead of
