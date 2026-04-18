@@ -310,6 +310,24 @@ Continue to [Module 0.2: DNS in Kubernetes](/prerequisites/test/module-0.2-dns/)
 we explore how CoreDNS resolves Service names and how to debug DNS issues.
 """)
 
+DAMAGED_REWRITE_DRAFT = textwrap.dedent("""\
+---
+title: "Test Module — Damaged"
+slug: prerequisites/test/module-0.1-damaged
+sidebar:
+  order: 1
+---
+
+## Learning Outcomes
+
+- Recall that Kubernetes networking exists
+
+## Core Concepts
+
+This damaged rewrite dropped the code samples, tables, prompts, and quiz blocks
+that the baseline module contained.
+""")
+
 
 BAD_MODULE_NO_FRONTMATTER = "# No frontmatter\n\nSome content here."
 
@@ -1555,6 +1573,89 @@ class TestPipelineTransitions(unittest.TestCase):
                          "Severe rewrite must use the full writer, not the targeted-fix writer")
         self.assertFalse(state["modules"]["test/module-0.1-test"]["targeted_fix"],
                          "Stale targeted_fix must be cleared before rewrite routing")
+
+    @patch("v1_pipeline.STATE_FILE")
+    @patch("v1_pipeline.CONTENT_ROOT")
+    @patch("subprocess.run")
+    def test_rewrite_retry_uses_committed_baseline_for_knowledge_packet(
+        self, mock_subprocess, mock_root, mock_state,
+    ):
+        """Rewrite retries must preserve assets from the committed baseline."""
+        import v1_pipeline as p
+
+        mock_state.__class__ = type(self.state_file)
+        mock_root.resolve.return_value = Path(self.tmpdir).resolve()
+
+        state = {"modules": {}}
+        write_calls = []
+        baseline_packet = p.extract_knowledge_packet(GOOD_MODULE)
+        damaged_packet = p.extract_knowledge_packet(DAMAGED_REWRITE_DRAFT)
+        review_sequence = [
+            {
+                "verdict": "REJECT",
+                "checks": [
+                    {"id": "LAB", "passed": False, "evidence": "lab broken"},
+                    {"id": "COV", "passed": False, "evidence": "outcome 3 missing"},
+                    {"id": "QUIZ", "passed": False, "evidence": "recall-only"},
+                    {"id": "EXAM", "passed": True},
+                    {"id": "DEPTH", "passed": False, "evidence": "no gotchas"},
+                    {"id": "WHY", "passed": False, "evidence": "no rationale"},
+                    {"id": "PRES", "passed": False, "evidence": "missing unique value"},
+                ],
+                "edits": [],
+                "feedback": "Severely broken module.",
+            },
+            {
+                "verdict": "APPROVE",
+                "checks": [{"id": cid, "passed": True} for cid in p.CHECK_IDS],
+                "edits": [],
+                "feedback": "",
+            },
+        ]
+
+        def fake_step_write(module_path, plan, model=None, rewrite=False,
+                            previous_output=None, knowledge_card=None, fact_ledger=None):
+            write_calls.append({
+                "rewrite": rewrite,
+                "previous_output": previous_output,
+                "knowledge_packet": (
+                    p.extract_knowledge_packet(previous_output)
+                    if previous_output is not None else None
+                ),
+            })
+            if len(write_calls) == 1:
+                return DAMAGED_REWRITE_DRAFT
+            return GOOD_MODULE
+
+        with patch.object(p, "STATE_FILE", self.state_file), \
+             patch.object(p, "CONTENT_ROOT", Path(self.tmpdir)), \
+             patch.object(p, "save_state"), \
+             patch.object(p, "module_key_from_path", return_value="test/module-0.1-test"), \
+             patch.object(p, "step_write", side_effect=fake_step_write), \
+             patch.object(p, "step_review", side_effect=review_sequence), \
+             patch.object(p, "ensure_fact_ledger", return_value=sample_fact_ledger()), \
+             patch.object(p, "step_content_aware_fact_ledger", return_value=None), \
+             patch.object(p, "step_check_integrity", return_value=(True, [])), \
+             patch.object(p, "step_check", return_value=(True, [])):
+            p.run_module(self.module_path, state)
+
+        self.assertEqual(len(write_calls), 2, "Expected initial write plus rewrite retry")
+        self.assertNotEqual(
+            damaged_packet,
+            baseline_packet,
+            "Damaged draft must differ from the committed baseline packet",
+        )
+        self.assertTrue(write_calls[1]["rewrite"], "Second write should be full rewrite mode")
+        self.assertEqual(
+            write_calls[1]["previous_output"],
+            GOOD_MODULE,
+            "Rewrite retry should use the committed baseline, not the damaged draft",
+        )
+        self.assertEqual(
+            write_calls[1]["knowledge_packet"],
+            baseline_packet,
+            "Rewrite retry must rebuild the knowledge packet from the baseline",
+        )
 
     @patch("v1_pipeline.STATE_FILE")
     @patch("v1_pipeline.CONTENT_ROOT")
