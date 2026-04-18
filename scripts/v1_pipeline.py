@@ -4,7 +4,7 @@
 Processes each module through 8 quality dimensions to reach 33/40.
 Uses Gemini for writing/translating, deterministic Python checks as gates.
 
-Pipeline per module: WRITE/REWRITE → REVIEW → CHECK → SCORE → COMMIT
+Pipeline per module: WRITE/REWRITE → CITATION CHECK → REVIEW → CHECK → SCORE → COMMIT
 Pipeline per section: modules + INDEX rewrite (EN) + INDEX translate (UK)
 
 Features:
@@ -131,7 +131,7 @@ def _logged_print(*args, **kwargs):
         "PASS", "FAIL", "CIRCUIT", "E2E COMPLETE", "SECTION:", "PHASE 1",
         "SKIP:", "Resumed:", "passed,", "BREAKER",
         # Pipeline steps — so user sees what's happening
-        "PIPELINE:", "AUDIT:", "WRITE:", "REWRITE:", "REVIEW:", "CHECK:", "INDEX:",
+        "PIPELINE:", "AUDIT:", "WRITE:", "REWRITE:", "CITATION:", "REVIEW:", "CHECK:", "INDEX:",
         "FACT LEDGER:", "TRANSLATE:",
         # Key decisions and results
         "Verdict:", "Scores:", "REWRITE mode", "already passes",
@@ -920,6 +920,7 @@ include them in the module's `## Sources` section.
 """
 
 SEED_SECTION_RE = re.compile(r"^##\s+`([^`]+)`\s*$")
+URL_RE = re.compile(r"https?://[^\s)]+")
 
 
 def _format_fact_ledger_for_prompt(fact_ledger: dict | None) -> str:
@@ -981,14 +982,8 @@ def _citation_seed_path(module_key: str) -> Path | None:
     return REPO_ROOT / "docs" / f"citation-seeds-{track}.md"
 
 
-def _format_authoritative_sources_for_prompt(module_key: str) -> str:
-    """Build a prompt block from the matching module section in a seed file."""
-    seed_path = _citation_seed_path(module_key)
-    if seed_path is None:
-        return ""
-    if not seed_path.exists():
-        return ""
-
+def _matching_seed_lines(seed_path: Path, module_key: str) -> list[str]:
+    """Return the URL-bearing seed lines for one module section."""
     current_key: str | None = None
     lines: list[str] = []
     for raw_line in seed_path.read_text(encoding="utf-8").splitlines():
@@ -1007,12 +1002,85 @@ def _format_authoritative_sources_for_prompt(module_key: str) -> str:
             or line.startswith("http")
         ):
             lines.append(line)
+    return lines
+
+
+def _format_authoritative_sources_for_prompt(module_key: str) -> str:
+    """Build a prompt block from the matching module section in a seed file."""
+    seed_path = _citation_seed_path(module_key)
+    if seed_path is None or not seed_path.exists():
+        return ""
+    lines = _matching_seed_lines(seed_path, module_key)
 
     if not lines:
         return ""
     return AUTHORITATIVE_SOURCES_BLOCK_TEMPLATE.format(
         sources_block="\n".join(lines)
     )
+
+
+def step_check_citations(
+    draft_path: Path, seeds_path: Path, min_citations: int = 3,
+) -> dict:
+    """Run the deterministic citation checker and enforce seed coverage."""
+    result = {
+        "passes": False,
+        "citation_count": 0,
+        "issues": [],
+        "missing_seed_urls": [],
+        "dead_urls": [],
+    }
+    key = module_key_from_path(
+        draft_path.with_name(draft_path.name.replace(".staging.md", ".md"))
+    )
+    print(f"\n  CITATION: {key}")
+    try:
+        proc = subprocess.run(
+            [".venv/bin/python", "scripts/check_citations.py", str(draft_path), "--json"],
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=60,
+        )
+        payload = json.loads(proc.stdout or "{}")
+    except (OSError, subprocess.SubprocessError, json.JSONDecodeError) as exc:
+        result["issues"] = [f"citation_checker_failed: {exc}"]
+        return result
+
+    entry = ((payload.get("results") or [{}])[0]
+             if isinstance(payload, dict) else {})
+    issues = [str(issue) for issue in (entry.get("issues") or [])]
+    citation_count = entry.get("sources_count", entry.get("citation_count", 0))
+    draft_text = draft_path.read_text(encoding="utf-8")
+    seed_urls = []
+    if seeds_path.exists():
+        for line in _matching_seed_lines(seeds_path, key):
+            seed_urls.extend(URL_RE.findall(line))
+    missing_seed_urls = [url for url in dict.fromkeys(seed_urls) if url not in draft_text]
+    dead_urls = [str(url) for url in (entry.get("dead_urls") or [])]
+    dead_urls.extend(
+        issue.split(":", 1)[1].strip()
+        for issue in issues
+        if issue.lower().startswith("dead_url:")
+    )
+
+    if citation_count < min_citations:
+        issues.append(f"needs_at_least_{min_citations}_citations")
+    if missing_seed_urls:
+        issues.append("missing_seed_urls")
+    if dead_urls:
+        issues.append("dead_urls")
+
+    result.update({
+        "passes": bool(entry.get("passes")) and citation_count >= min_citations
+        and not missing_seed_urls and not dead_urls,
+        "citation_count": citation_count,
+        "issues": issues,
+        "missing_seed_urls": missing_seed_urls,
+        "dead_urls": list(dict.fromkeys(dead_urls)),
+    })
+    return result
 
 
 WRITE_PROMPT_TEMPLATE = """CRITICAL INSTRUCTION: Your response must be ONLY the raw markdown content of the improved module. Start your response with the --- frontmatter delimiter. No preamble, no explanation, no summary, no "I have improved..." — ONLY the markdown file content from first line to last.
@@ -3002,12 +3070,34 @@ def run_module(module_path: Path, state: dict, max_retries: int | None = None,
     max_retries = _resolve_max_retries(max_retries)
     m = models or MODELS
     key = module_key_from_path(module_path)
+    had_pre_run_state = key in (state.get("modules") or {})
+    pre_run_ms = copy.deepcopy((state.get("modules") or {}).get(key))
     ms = get_module_state(state, key)
     ms["errors"] = []
     review_fact_ledger = ms.get("fact_ledger")
     rubric_profile = load_rubric_profile_for_module(module_path)
     staging_path = module_path.with_suffix(".staging.md")
+    pre_run_staging = staging_path.read_text() if staging_path.exists() else None
     rewrite_baseline = module_path.read_text()
+    citation_seed_path = _citation_seed_path(key)
+    citation_gate_enabled = bool(
+        citation_seed_path
+        and citation_seed_path.exists()
+        and _matching_seed_lines(citation_seed_path, key)
+    )
+    citation_retry_limit = min(max_retries, 3)
+
+    def restore_pre_run_state() -> None:
+        modules = state.setdefault("modules", {})
+        if had_pre_run_state and pre_run_ms is not None:
+            modules[key] = copy.deepcopy(pre_run_ms)
+        else:
+            modules.pop(key, None)
+        if pre_run_staging is None:
+            staging_path.unlink(missing_ok=True)
+        else:
+            _atomic_write_text(staging_path, pre_run_staging)
+        save_state(state)
 
     print(f"\n{'='*60}")
     print(f"  PIPELINE: {key}{'  [DRY RUN]' if dry_run else ''}")
@@ -3143,7 +3233,7 @@ def run_module(module_path: Path, state: dict, max_retries: int | None = None,
             targeted_fix = ms.get("targeted_fix", False)
             mode = "targeted fix" if targeted_fix else "improve"
             print(f"  Loaded staged content ({len(improved)} chars) and saved {mode} plan")
-        elif ms["phase"] == "review":
+        elif ms["phase"] in ("review", "citation"):
             # On a fresh resume at phase=review, prefer the staging file if
             # present — it holds the most recent patched content from either
             # a deterministic edit apply or an in-memory LLM write that
@@ -3155,7 +3245,7 @@ def run_module(module_path: Path, state: dict, max_retries: int | None = None,
                 print(f"  Loaded staged content ({len(improved)} chars) for review (resume after deterministic apply or pre-CHECK crash)")
             else:
                 improved = module_path.read_text()
-                print(f"  Loaded on-disk content ({len(improved)} chars) for review")
+                print(f"  Loaded on-disk content ({len(improved)} chars) for {ms['phase']}")
             last_good = improved
             targeted_fix = False
         else:
@@ -3236,8 +3326,10 @@ def run_module(module_path: Path, state: dict, max_retries: int | None = None,
                     continue
                 return False
             last_good = improved
+            if citation_gate_enabled:
+                _atomic_write_text(staging_path, improved)
 
-            ms["phase"] = "review"
+            ms["phase"] = "citation" if citation_gate_enabled else "review"
             save_state(state)
             emit_audit(
                 "WRITE",
@@ -3268,6 +3360,54 @@ def run_module(module_path: Path, state: dict, max_retries: int | None = None,
                 except Exception:
                     pass  # non-critical
                 return True
+
+        if ms["phase"] == "citation":
+            citation = step_check_citations(staging_path, citation_seed_path)
+            if citation["passes"]:
+                ms["phase"] = "review"
+                save_state(state)
+            else:
+                reasons = []
+                if citation["citation_count"] < 3:
+                    reasons.append(
+                        f"- Add at least 3 inline citations and source links "
+                        f"(found {citation['citation_count']})."
+                    )
+                if citation["missing_seed_urls"]:
+                    reasons.append(
+                        "- Cite every required seed URL inline and in `## Sources`:\n  - "
+                        + "\n  - ".join(citation["missing_seed_urls"])
+                    )
+                if citation["dead_urls"]:
+                    reasons.append(
+                        "- Remove or replace dead citation URLs:\n  - "
+                        + "\n  - ".join(citation["dead_urls"])
+                    )
+                other_issues = [
+                    issue for issue in citation["issues"]
+                    if issue not in {"missing_seed_urls", "dead_urls", "needs_at_least_3_citations"}
+                ]
+                reasons.extend(f"- Resolve citation checker issue: {issue}" for issue in other_issues)
+                plan = (
+                    "CITATION GATE FAILED. Improve the current draft so it passes "
+                    "the deterministic citation gate before review.\n\n"
+                    "Fix all of the following:\n"
+                    + "\n".join(reasons)
+                )
+                needs_rewrite = False
+                targeted_fix = False
+                ms["plan"] = plan
+                ms["targeted_fix"] = False
+                ms["severity"] = None
+                ms["checks_failed"] = []
+                ms["phase"] = "write"
+                save_state(state)
+                if attempt < citation_retry_limit:
+                    print(f"  ↻ Citation gate failed, retrying WRITE ({attempt+1}/{citation_retry_limit})")
+                    continue
+                print("  ❌ Citation gate failed after 3 retries — restoring pre-run state")
+                restore_pre_run_state()
+                return False
 
         if ms["phase"] == "review":
             # Content-aware fact ledger: verify claims actually made in the
