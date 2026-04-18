@@ -79,6 +79,8 @@ DATA_CONFLICT_UNVERIFIED_THRESHOLD = 5
 LEGACY_SCORE_PASS_THRESHOLD = 4
 CONTENT_AWARE_FACT_LEDGER_MAX_CHARS = 40_000
 CONTENT_AWARE_FACT_LEDGER_OVERLAP_CHARS = 4_000
+MAX_RETRIES = 4
+REVIEW_REJECTED_ERROR_RE = re.compile(r"^Review rejected (\d+) times$")
 _LINK_CACHE_LOCK = threading.Lock()
 _PARALLEL_RUN_SECTION_STATE_LOCK = None
 _PARALLEL_RUN_SECTION_GIT_LOCK = None
@@ -303,11 +305,15 @@ def get_module_state(state: dict, module_key: str) -> dict:
     })
 
 
-def _run_module_in_parallel(module_path: Path, shared_state: dict, max_retries: int = 4,
+def _run_module_in_parallel(module_path: Path, shared_state: dict, max_retries: int | None = None,
                             models: dict | None = None, dry_run: bool = False,
                             refresh_fact_ledger: bool = False,
                             write_only: bool = False) -> bool:
-    """Run one module with an isolated worker-local state snapshot."""
+    """Run one module with an isolated worker-local state snapshot.
+
+    Uses the shared retry cap from `_resolve_max_retries` so parallel
+    workers follow the same policy as serial/reset-stuck modes (#235).
+    """
     module_key = module_key_from_path(module_path)
     local_state = _parallel_worker_state(shared_state, module_key)
     _PARALLEL_RUN_SECTION_CONTEXT.value = {
@@ -319,7 +325,7 @@ def _run_module_in_parallel(module_path: Path, shared_state: dict, max_retries: 
         ok = run_module(
             module_path,
             local_state,
-            max_retries=max_retries,
+            max_retries=_resolve_max_retries(max_retries),
             models=models,
             dry_run=dry_run,
             refresh_fact_ledger=refresh_fact_ledger,
@@ -2641,7 +2647,7 @@ def step_check(content: str, path: Path) -> tuple[bool, list]:
 # Full pipeline: run one module through all steps
 # ---------------------------------------------------------------------------
 
-def run_module(module_path: Path, state: dict, max_retries: int = 4,
+def run_module(module_path: Path, state: dict, max_retries: int | None = None,
                models: dict | None = None, dry_run: bool = False,
                refresh_fact_ledger: bool = False,
                write_only: bool = False) -> bool:
@@ -2650,6 +2656,7 @@ def run_module(module_path: Path, state: dict, max_retries: int = 4,
     If write_only=True, skip fact-ledger, review, and checks — just draft
     the content and save. Used for bulk content creation before review pass.
     """
+    max_retries = _resolve_max_retries(max_retries)
     m = models or MODELS
     key = module_key_from_path(module_path)
     ms = get_module_state(state, key)
@@ -3549,7 +3556,7 @@ def cmd_run(args):
         models["review"] = args.review_model
 
     state = load_state()
-    ok = run_module(
+    ok = _run_module_with_retry_policy(
         path,
         state,
         models=models,
@@ -3633,7 +3640,7 @@ def cmd_run_section(args):
         for i, path in enumerate(modules, 1):
             key = module_key_from_path(path)
             print(f"\n[{i}/{len(modules)}] {key}")
-            ok = run_module(
+            ok = _run_module_with_retry_policy(
                 path,
                 state,
                 models=models,
@@ -3658,7 +3665,6 @@ def cmd_run_section(args):
                         _run_module_in_parallel,
                         path,
                         state,
-                        max_retries=2,
                         models=models,
                         dry_run=dry_run,
                         refresh_fact_ledger=getattr(args, "refresh_fact_ledger", False),
@@ -4160,6 +4166,30 @@ def _apply_model_overrides(args) -> dict:
     return models
 
 
+def _resolve_max_retries(max_retries: int | None = None) -> int:
+    """Return the shared retry cap used across execution modes."""
+    return MAX_RETRIES if max_retries is None else max_retries
+
+
+def _run_module_with_retry_policy(module_path: Path, state: dict, **kwargs) -> bool:
+    """Run a module with the repo-wide retry cap."""
+    return run_module(
+        module_path,
+        state,
+        max_retries=_resolve_max_retries(),
+        **kwargs,
+    )
+
+
+def _is_resettable_review_rejection(error: object, max_retries: int | None = None) -> bool:
+    """Match historical rejection counters that should be reset under the current cap."""
+    match = REVIEW_REJECTED_ERROR_RE.match(str(error))
+    if not match:
+        return False
+    rejection_count = int(match.group(1))
+    return 1 <= rejection_count <= (_resolve_max_retries(max_retries) + 1)
+
+
 def cmd_resume(args):
     """Resume pipeline from where it stopped."""
     global _quiet
@@ -4185,7 +4215,7 @@ def cmd_resume(args):
     for key, ms in incomplete.items():
         path = find_module_path(key)
         if path and path.exists():
-            run_module(
+            _run_module_with_retry_policy(
                 path,
                 state,
                 models=models,
@@ -4233,10 +4263,10 @@ def cmd_reset_stuck(args):
         # Review rejected max times — match any count
         errors = ms.get("errors", [])
         rejected_errors = [
-            str(e) for e in errors if re.match(r"Review rejected \d+ times", str(e))
+            str(e) for e in errors if _is_resettable_review_rejection(e)
         ]
         if rejected_errors:
-            ms["errors"] = [e for e in errors if not re.match(r"Review rejected \d+ times", str(e))]
+            ms["errors"] = [e for e in errors if not _is_resettable_review_rejection(e)]
             cleared_errors.extend(rejected_errors)
             ms["phase"] = "pending"
             _clear_resume_metadata(ms, staging_path)
@@ -4406,7 +4436,7 @@ def cmd_e2e(args):
         for key, ms in incomplete.items():
             path = find_module_path(key)
             if path and path.exists():
-                ok = run_module(
+                ok = _run_module_with_retry_policy(
                     path,
                     state,
                     models=models,
@@ -4469,7 +4499,7 @@ def cmd_e2e(args):
                 continue
 
             print(f"\n[{i}/{len(modules)}] {key}")
-            ok = run_module(
+            ok = _run_module_with_retry_policy(
                 path,
                 state,
                 models=models,
