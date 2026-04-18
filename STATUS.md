@@ -2,7 +2,32 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-18, session 2)
+## Active Work (2026-04-19, fresh session starting)
+
+Previous session (session 4) wrapped cleanly. Main is at `8de44240` (merge of #321 — universal review protocol + verifier). Full handoff with next-step queue: [`docs/sessions/2026-04-19-session-4-pipeline-queue-plus-review-verifier.md`](./docs/sessions/2026-04-19-session-4-pipeline-queue-plus-review-verifier.md).
+
+**Queue for session 5** (ordered; pick one to start):
+1. #277 — `/api/build/run` + `/api/build/status` endpoints (~150 LOC, clear spec)
+2. #258 — Local API audit + cold-start cost (broad; dispatch for split plan first)
+3. #248 — Review Batch triage (probably closable)
+4. #319 — Remove AUDIT compat shims (~50 LOC, low priority)
+5. #311 — Finish factoring `append_review_audit` (~120 LOC)
+6. #313 — AI foundations 1.1/1.2/1.3 regen (needs user enqueue; see handoff)
+7. #315–#318 — Pipeline v2 follow-ups from the #239 audit split
+
+**Infra shipped in session 4** — skim before resuming delegations:
+- `docs/review-protocol.md` — canonical reviewer contract with mandatory FINDING format
+- `scripts/verify_review.py` — post-hoc grep-verification of reviewer quotes (pipe a review through it when findings look suspect)
+- `--review` flag on `ask-gemini`/`ask-codex`/`ask-claude` (bridge parity)
+- Gemini Pro is the default for `--review`; Flash only if explicitly requested
+
+**Side lane for user** (handoff has the exact commands):
+- Enqueue 7 critical-quality modules (<2.0 score) into pipeline v2
+- Triage 2 dead-letter translation modules (`distributed-systems/5.1`, `5.3`)
+
+---
+
+## Prior session archive (sessions 1–3 content below, kept for reference)
 
 Lead: Claude. Citation-first infra for automated pipeline (Gemini 3.1 Pro writes → Codex reviews/fact-checks/applies). Full handoff: [`docs/sessions/2026-04-18-lead-dev-citation-infra.md`](./docs/sessions/2026-04-18-lead-dev-citation-infra.md).
 
