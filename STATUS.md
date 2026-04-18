@@ -43,14 +43,37 @@ Uncommitted in tree:
 - `src/content/docs/k8s/lfcs/module-1.4-storage-services-and-users-practice.md` — **worker WIP**, don't touch.
 - `docs/sessions/` — untracked session handoff docs.
 
-**PRs opened by Codex and reviewed by Claude this session:**
-- **PR #281** — fix(pipeline): serialize parallel worker state mutations (#235 top CRITICAL bug). +184/-28, 2 files. **Reviewed LGTM**, cannot formally approve (same GH identity). Merge after user spot-checks test_pipeline flake.
-- **PR #282** — feat(local-api): `/api/build/run` + `/api/build/status` endpoints (#277). +398/-0, 3 files. **Reviewed with gates**: ruff didn't actually run (wrong path), npm run build failed in worktree due to node_modules symlink quirk. Re-run from main checkout before merge.
+**PRs opened by Codex, reviewed by Claude (role-swap convention). All OPEN, waiting for user merge:**
+
+#235 HIGH-severity bug fixes (14 of 14 closed):
+- #281 serialize parallel worker state mutations (CRITICAL)
+- #284 defer data_conflict check until after draft
+- #285 malformed review JSON fails closed
+- #287 _merge_fact_ledgers is pure and idempotent
+- #288 needs_independent_review revived for last-resort approvals
+- #289 content-aware ledger covers late sections (40k windowing)
+- #290 check_failures tracks consecutive, not lifetime
+- #291 last-attempt edit success triggers re-review, not reject
+- #292 write-only preserves draft for review (regression test lock-in)
+- #293 fresh restart clears stale resume metadata
+- #294 review fallback chain continues to last-resort
+- #295 severe rewrite clears stale targeted_fix, uses full rewrite model
+- #296 CHECK retries in-function, shields outer circuit breaker
+- #297 rewrite retries extract knowledge packet from baseline
+- #298 unify retry policy across serial/parallel/reset-stuck modes
+
+#277/#278 infra (pipeline v3 remaining + build API):
+- #282 feat: /api/build/run + /api/build/status (#277) — **note: re-run ruff + npm run build from main before merge**, worktree build-path bug was environmental
+- #283 refactor: pin Gemini writer model via single constant (#278 PR 1, narrow)
+- #286 refactor: pin Gemini constant across remaining workers (#278 PR 1b, full)
+
+#273 design:
+- #280 citation-aware module page design proposal
 
 **Codex queue state (max 2 concurrent):**
-- `infra-278-pr1` (pin Gemini model) — running in background task `b5i561680`.
-- `infra-235-data-conflict` (HIGH: defer data_conflict check until after draft) — running in background task `b6n6me1ip`.
-- Queued for next invocation: `infra-276` (GH API endpoints), `infra-278-pr2` (per-track rubric), `infra-278-pr3` (second-reviewer sampling), `infra-279` (citation pipeline wiring), plus 12+ remaining #235 HIGH/MEDIUM bugs.
+- `infra-276` (GH API endpoints — /api/gh/issues + /api/gh/prs) — running in background task `bfg1f3zn8`.
+- `infra-278-pr2` (per-track rubric profiles with default.yaml reproducing current behavior) — running in background task `bmvx43o2c`.
+- Queued for next invocation: `infra-278-pr3` (second-reviewer 10-20% sampling), `infra-279` (citation pipeline wiring), plus #235 MEDIUM-severity items.
 
 **Service state at handoff:**
 - API: 127.0.0.1:8768, PID 82871, uptime 20 min
