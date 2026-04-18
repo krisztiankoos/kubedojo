@@ -25,7 +25,7 @@ If the API is down, fall back to `STATUS.md` + `CLAUDE.md`.
 
 **Before opening a PR, verify EVERY item. If ANY check fails, fix it BEFORE submitting.**
 
-- [ ] `~/.local/bin/ruff check` clean on every Python file you changed
+- [ ] `.venv/bin/ruff check` clean on every Python file you changed
 - [ ] `.venv/bin/python scripts/test_pipeline.py` — 0 new failures (2 pre-existing `check_failures` tests + 1 `TestStatusFourStage` order flake are acceptable until their dedicated cleanup lands)
 - [ ] `npm run build` passes if you touched content under `src/content/docs/` or Astro config (skip for pure-Python-script changes)
 - [ ] No `sys.executable` anywhere — always `.venv/bin/python` explicitly
@@ -150,7 +150,7 @@ src/content/docs/              # All content (this is the source of truth)
 ├── linux/                     # Linux Deep Dive + Everyday Use
 ├── cloud/                     # Cloud tab (85 modules)
 ├── k8s/                       # Certifications tab (CKA/CKAD/CKS/KCNA/KCSA + specialty)
-├── platform/                  # Platform Engineering tab (199 modules)
+├── platform/                  # Platform Engineering tab (220 modules)
 └── uk/                        # Ukrainian translations (~40% coverage)
 
 scripts/
@@ -192,7 +192,7 @@ docs/                          # Internal project docs (pedagogy, rubrics, sessi
 
 **Key facts:**
 - Python: `.venv/` at repo root, Python 3.12+, use `.venv/bin/python` explicitly
-- Build: `npm run build` → `dist/` (~56s for 1,297 pages)
+- Build: `npm run build` → `dist/` (~56s for ~1,800 pages)
 - Dev: `npx astro dev` (default port 4321)
 - Local API: `http://127.0.0.1:8768` (started by `scripts/services-up`)
 - K8s version target for content: **1.35**

@@ -12,10 +12,12 @@ scripts/services-up >&2
 API="${KUBEDOJO_API:-http://127.0.0.1:8768}"
 BRIEFING_URL="${API}/api/briefing/session?compact=1"
 
+TMP="/tmp/kubedojo_briefing.$$"
+trap 'rm -f "$TMP"' EXIT
+
 for _ in 1 2 3 4 5; do
-  if curl -sf "$BRIEFING_URL" >/tmp/kubedojo_briefing.$$; then
-    cat /tmp/kubedojo_briefing.$$
-    rm -f /tmp/kubedojo_briefing.$$
+  if curl -sf "$BRIEFING_URL" >"$TMP"; then
+    cat "$TMP"
     exit 0
   fi
   sleep 1
