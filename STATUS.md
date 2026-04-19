@@ -2,7 +2,13 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-19, session 5 — citation truth + backfill design)
+## Active Work (2026-04-19, session 5 — citation pipeline landed + batch in flight)
+
+Final handoff (read this first): [`docs/sessions/2026-04-19-session-5-final.md`](./docs/sessions/2026-04-19-session-5-final.md). Pipeline is research-stage-production-grade; inject step just got a markdown-normalization fix (`9bc4a722`) whose confirmation is mid-run at handoff. A 65-module batch (ZTT+AI+prereqs research) is streaming via Monitor. 13 commits on main, nothing pushed.
+
+---
+
+## Prior session-5 handoff (first half of the day)
 
 Session 5 landed two things: the heuristic quality scorer now auto-fails modules with no `## Sources` section (reveal: 726/726 critical, old 4.71 avg was fabricated; commit `c1220cd0`), and the `## Sources` vs `## Authoritative Sources` contract drift between `check_citations.py` and `v1_pipeline.py` is unified (commit `1918d262`). Full handoff with the citation-backfill plan + next-session blockers: [`docs/sessions/2026-04-19-session-5-citation-backfill-design.md`](./docs/sessions/2026-04-19-session-5-citation-backfill-design.md).
 
