@@ -954,20 +954,72 @@ def _authorized_rewrites(seed: dict[str, Any]) -> dict[str, dict[str, str]]:
     return out
 
 
+_MD_NOISE_RE = re.compile(r"[`*_\\]")
+
+
+def _normalize_for_match(s: str) -> str:
+    """Strip markdown formatting noise that the research step drops when
+    paraphrasing claim_text. The module body keeps backticks around
+    `t2.large` etc.; the seed's claim_text strips them. We normalize
+    both sides before substring-checking."""
+    return re.sub(r"\s+", " ", _MD_NOISE_RE.sub("", s)).strip()
+
+
+def _find_claim_span_in_line(line: str, claim_text: str) -> tuple[int, int] | None:
+    """Find where `claim_text` lives inside `line` after normalization.
+    Returns (start, end) byte offsets IN THE ORIGINAL line, or None.
+
+    We walk the original line and accumulate a mapping from normalized
+    chars → original indices; then locate the normalized claim_text in
+    the normalized line and translate back."""
+    orig_norm_chars: list[str] = []
+    orig_indices: list[int] = []
+    for i, ch in enumerate(line):
+        if _MD_NOISE_RE.match(ch):
+            continue
+        if ch.isspace():
+            if orig_norm_chars and orig_norm_chars[-1] == " ":
+                continue
+            orig_norm_chars.append(" ")
+            orig_indices.append(i)
+        else:
+            orig_norm_chars.append(ch)
+            orig_indices.append(i)
+    normalized_line = "".join(orig_norm_chars).strip()
+    # Recompute indices after strip — if we stripped leading whitespace
+    # the indices list needs the same trim.
+    lead = len(normalized_line) and "".join(orig_norm_chars)[0] == " "
+    if lead:
+        orig_indices = orig_indices[1:]
+        orig_norm_chars = orig_norm_chars[1:]
+    normalized_claim = _normalize_for_match(claim_text)
+    if not normalized_claim:
+        return None
+    pos = "".join(orig_norm_chars).find(normalized_claim)
+    if pos < 0:
+        return None
+    end = pos + len(normalized_claim)
+    if end - 1 >= len(orig_indices) or pos >= len(orig_indices):
+        return None
+    return orig_indices[pos], orig_indices[end - 1] + 1
+
+
 def _authorized_replacement_lines(seed: dict[str, Any], body: str) -> set[str]:
     """Precompute the SET of replacement lines the orchestrator may
-    emit for this module — one per rewrite claim whose claim_text is
-    findable in the body. Used by the diff linter to verify changed
-    lines are authorized."""
+    emit — one per rewrite-disposition claim whose claim_text can be
+    located in the body after markdown normalization. Used by the
+    diff linter."""
     out: set[str] = set()
     for info in _authorized_rewrites(seed).values():
         claim_text = info["claim_text"]
         suggested = info["suggested_rewrite"]
-        # Find any line of the body that contains the claim_text, compute
-        # what the swapped line would look like, add to the authorized set.
         for line in body.splitlines():
-            if claim_text in line:
-                out.add(line.replace(claim_text, suggested, 1).strip())
+            span = _find_claim_span_in_line(line, claim_text)
+            if span is None:
+                continue
+            start, end = span
+            new_line = line[:start] + suggested + line[end:]
+            out.add(new_line.strip())
     return out
 
 
@@ -983,7 +1035,7 @@ def _validate_prose_rewrite(rw: dict[str, Any], body: str,
     if target not in body:
         return "target_line_not_in_body"
     claim_text = authorized[claim_id]["claim_text"]
-    if claim_text not in target:
+    if _find_claim_span_in_line(target, claim_text) is None:
         return "claim_text_not_in_target_line"
     return None
 
@@ -1013,7 +1065,17 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
         target = rw["target_line"]
         claim_text = authorized[claim_id]["claim_text"]
         suggested = authorized[claim_id]["suggested_rewrite"]
-        new_line = target.replace(claim_text, suggested, 1)
+        # Locate the claim span inside target_line via markdown-aware
+        # substring search — we may be swapping into `t2.large` backtick
+        # territory that the seed's claim_text dropped.
+        span = _find_claim_span_in_line(target, claim_text)
+        if span is None:
+            applied.append({"claim_id": rw.get("claim_id"), "kind": "prose_rewrite",
+                            "status": "rejected",
+                            "reason": "claim_text_span_not_findable"})
+            continue
+        start, end = span
+        new_line = target[:start] + suggested + target[end:]
         idx = new_body.find(target)
         if idx < 0:
             applied.append({"claim_id": rw.get("claim_id"), "kind": "prose_rewrite",
