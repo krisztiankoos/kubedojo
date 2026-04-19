@@ -23,7 +23,7 @@ mkdir -p "$LOGS_DIR" "$PIDS_DIR"
 # Service definitions
 declare -A SVC_CMD SVC_PORT SVC_LOG SVC_DESC
 
-SVC_CMD[dev]="npx astro dev --port 4333 --force"
+SVC_CMD[dev]="npx astro dev --port 4333"
 SVC_PORT[dev]=4333
 SVC_LOG[dev]="$LOGS_DIR/dev.log"
 SVC_DESC[dev]="Astro Dev Server (hot reload)"

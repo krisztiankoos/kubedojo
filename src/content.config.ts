@@ -1,5 +1,5 @@
 import { defineCollection } from 'astro:content';
-import { glob } from 'astro/loaders';
+import { glob, type LoaderContext } from 'astro/loaders';
 import { docsSchema } from '@astrojs/starlight/schema';
 import { z } from 'astro:content';
 
@@ -9,13 +9,44 @@ const docsPattern = [
   `!**/*.staging.{${docsExtensions.join(',')}}`,
 ];
 
+function isStagingDoc(path: string): boolean {
+  return path.includes('.staging.');
+}
+
+function withFilteredWatcher(context: LoaderContext): LoaderContext {
+  if (!context.watcher) return context;
+
+  const watcher = context.watcher;
+  return {
+    ...context,
+    watcher: {
+      add(...args) {
+        watcher.add(...args);
+        return watcher;
+      },
+      on(event, callback) {
+        if (event === 'add' || event === 'change' || event === 'unlink') {
+          return watcher.on(event, ((path: string) => {
+            if (isStagingDoc(path)) return;
+            return callback(path);
+          }) as typeof callback);
+        }
+        return watcher.on(event, callback);
+      },
+    } as typeof watcher,
+  };
+}
+
 const starlightDocsLoader = {
   name: 'starlight-docs-loader',
   load: (context) =>
     glob({
       base: new URL('content/docs/', context.config.srcDir),
       pattern: docsPattern,
-    }).load(context),
+      // The dev server already stores parsed frontmatter plus rendered output.
+      // Dropping raw source bodies reduces the content-layer memory footprint.
+      retainBody: false,
+    }).load(withFilteredWatcher(context)),
 };
 
 export const collections = {
