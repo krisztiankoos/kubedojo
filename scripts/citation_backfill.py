@@ -1359,7 +1359,12 @@ def run_inject(module_key: str, *, agent: str = "codex", dry_run: bool = False) 
             f"cited_dispositions_not_addressed: {sorted(missing_cited)[:5]}"
         )
 
-    module_path.write_text(new_body, encoding="utf-8")
+    # Only write to disk on a clean diff. A failed diff lint means
+    # Codex made an unauthorized prose change or skipped required
+    # actions — either way, leaving the original file untouched lets
+    # the batch wrapper move on without polluting other modules' diffs.
+    if not diff_issues:
+        module_path.write_text(new_body, encoding="utf-8")
 
     # Write a deferred-claims record so allowlist-expansion review has
     # the full list. Rewrites are applied in-place; no revision record
