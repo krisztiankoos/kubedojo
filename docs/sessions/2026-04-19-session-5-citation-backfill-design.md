@@ -187,6 +187,107 @@ be battle-hardened by the time it hits them.
 4. Only after fetcher is proven: design v2 `citation_worker` and
    v1 step functions; calibration on the 4 modules; scale to ZTT.
 
+---
+
+# Addendum: same-session continuation (2026-04-19 late)
+
+The user decided to keep going instead of handing off. Everything
+in the "next session" list above ALSO landed in this session. Real
+end-of-session state below.
+
+## What actually landed (commits)
+
+| SHA | What |
+|---|---|
+| `c1220cd0` | Scorer citation gate + Pyright cleanup (avg 4.71 → 1.50; 726/726 critical) |
+| `1918d262` | Unify `## Sources` header across v1 pipeline + tests |
+| `6bb8dd54` | Session 5 handoff doc (this file's first half) |
+| `df4f64bf` | `scripts/fetch_citation.py` + `docs/citation-trusted-domains.yaml` (20/20 dry-run) |
+| `dc34bf4b` | STATUS refresh |
+| `c0fcf450` | `scripts/citation_backfill.py` research step + seed schema + first ZTT 0.1 seed |
+| `786a09d3` | Disposition-aware research (supported / weak_anchor / unciteable) |
+| `bec88105` | Inject step + revision queue for unciteable claims |
+| `a769aede` | ZTT 0.2 + 0.11 seeds — scale validation |
+
+## Pipeline status
+
+| Stage | State |
+|---|---|
+| Fetcher (`fetch_citation.py`) | ✅ 20/20 allowlist tiers pass |
+| Research (Codex → structured JSON seed) | ✅ 3 modules calibrated |
+| Inject (Codex → mechanical edit plan → apply) | ✅ ZTT 0.1 staging passes `check_citations.py` |
+| Revision queue (unciteable claims) | ✅ file at `.pipeline/citation-revisions/` |
+| Diff linter (`_verify_diff_is_additive`) | ✅ unwraps both sides; false positives fixed |
+| **Verify step (Gate B — 2nd-LLM semantic check)** | ❌ NOT implemented |
+| **Merge workflow (staging.md → .md)** | ❌ NOT designed |
+| **v2 orchestration (queue / budget / worker)** | ❌ still v1_pipeline.py territory |
+
+## Calibration data (3 ZTT modules)
+
+Aggregate: 45 claims. 23 supported (51%). 2 weak_anchor (4%).
+**20 unciteable (44%)**. The pipeline refuses to polish fabrications
+with forced weak anchors — this is working as intended.
+
+Recurring patterns in `unciteable`:
+- GitLab 2017 postmortem (appears in 0.1 C001 and 0.2 C012); primary
+  source is on `about.gitlab.com` which isn't allowlisted. Candidate
+  for allowlist expansion.
+- Subjective/opinion-as-fact claims: "OrbStack is fastest",
+  "Docker Desktop is most popular", "Oracle has the most generous
+  free tier". These shouldn't be citations — they should be
+  softened or removed from the modules.
+- Legendary anecdotes without citable primary: CERN "DO NOT POWER
+  OFF" note. Could be added to allowlist (`home.cern`) or softened.
+- Specific-fact-in-the-wild claims: "30 browser tabs use 4-6 GB",
+  "AGC had 74 KB" (Codex caught the actual value is 72-76 KB —
+  detected an in-module factual error).
+
+## Real next-session starting point
+
+1. **Implement verify step (Gate B).** Second LLM reads each
+   supported/weak_anchor claim's cached page text (from
+   `.pipeline/citation-fetch-cache/`) and emits SUPPORTED |
+   UNSUPPORTED | INDETERMINATE per row. Codex ⇄ 2nd-LLM unanimity
+   on label = merge-eligible. Disagreement = drop that citation,
+   Codex retries. Implement as `citation_backfill.py verify
+   <module-key>`.
+
+2. **Decide on merge workflow.** Current output is `module.staging.md`
+   alongside `module.md`. Two options:
+   - A: auto-merge (rename staging → real, commit via worktree,
+     open PR). Fully autonomous.
+   - B: staging remains, human confirms (but user explicitly said
+     no humans in the loop — so A is the mandate).
+   Pick A; build the worktree + PR automation. Probably a new
+   `scripts/citation_backfill.py merge <module-key>` subcommand.
+
+3. **Scale research to ZTT 0.3–0.10.** 8 more modules. Sequential
+   or batched-3 via background dispatch. Each ~2–5 min.
+
+4. **Expand allowlist** for the GitLab/CERN gaps surfaced by
+   calibration. Commit as separate small change with rationale.
+
+5. **Then: AI track (23 modules), then remaining prereqs, then
+   cloud, then AI/ML, then linux, then on-prem, then platform,
+   then certs.** Per user ordering.
+
+## Open design questions for the user
+
+- Grounded-search API (still open from the original consult).
+  Current MVP uses Codex parametric knowledge + fetcher as reality
+  check. Hallucination rate on ZTT so far: 0 URLs rejected (Codex
+  was disciplined because the prompt told it to prefer unciteable
+  over guess). If this holds, we may not need Tavily.
+- Budget caps. Back-of-envelope: 726 modules × ~4 LLM calls
+  (research + inject + 2× verify) = 2,900 Codex/LLM calls. Still
+  within the 10× Codex budget window (expires 2026-05-17) but
+  cutting it finer than I'd like. `control_plane.budgets` should
+  enforce a weekly cap.
+- Disposition re-review. When a claim is `unciteable`, should the
+  content revision worker auto-soften/remove it, or just flag?
+  I'd lean "auto-soften with a reviewer pass" since humans are
+  out — but this needs its own design discussion.
+
 ## Open questions for the user
 
 - **Grounded search API:** Tavily ($) vs Google CSE ($) vs

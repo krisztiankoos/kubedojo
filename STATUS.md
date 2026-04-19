@@ -6,17 +6,23 @@
 
 Session 5 landed two things: the heuristic quality scorer now auto-fails modules with no `## Sources` section (reveal: 726/726 critical, old 4.71 avg was fabricated; commit `c1220cd0`), and the `## Sources` vs `## Authoritative Sources` contract drift between `check_citations.py` and `v1_pipeline.py` is unified (commit `1918d262`). Full handoff with the citation-backfill plan + next-session blockers: [`docs/sessions/2026-04-19-session-5-citation-backfill-design.md`](./docs/sessions/2026-04-19-session-5-citation-backfill-design.md).
 
-**Session 5 progress (landed this session, commits `c1220cd0`, `1918d262`, `6bb8dd54`, `df4f64bf`):**
+**Session 5 progress (landed this session, 9 commits from `c1220cd0` → `a769aede`):**
 1. ✅ Scorer truth-gate + Pyright cleanup (726/726 critical — real baseline).
 2. ✅ Sources-header contract unified across v1 pipeline + tests.
-3. ✅ `docs/citation-trusted-domains.yaml` — tiered allowlist (standards / upstream / vendor / incidents / general).
-4. ✅ `scripts/fetch_citation.py` — stdlib-only fetcher, browser UA, HTML→text, on-disk cache. Dry-run: 20/20 URLs across all tiers fetched clean; bot-protected domains (NIST, OWASP, Microsoft, Google, CISA, Anthropic) all returned full text. Off-allowlist correctly rejected.
+3. ✅ `docs/citation-trusted-domains.yaml` — tiered allowlist.
+4. ✅ `scripts/fetch_citation.py` — 20/20 dry-run pass; bot-protected domains (NIST, OWASP, Microsoft, Google, CISA, Anthropic) all returned text via browser UA.
+5. ✅ `scripts/citation_backfill.py research` — disposition-aware (supported/weak_anchor/unciteable). Honest flagging, no forced weak anchors.
+6. ✅ `scripts/citation_backfill.py inject` — structured edit plan, mechanical wrap application, diff linter verifies additive-only. `check_citations.py` passes on ZTT 0.1 staging.
+7. ✅ Revision queue — unciteable claims routed to `.pipeline/citation-revisions/` for future content-softening pass.
+8. ✅ Calibration on 3 ZTT modules: 45 claims, 51% supported, 44% unciteable. Pipeline refuses to polish fabrications.
 
 **Next session starts here:**
-1. Design the v2 citation phase + v1 step functions (research / inject / verify / diff-lint).
-2. Calibration on 4 modules: ZTT 0.1 (`what-is-a-computer`), Linux DNS, one CKS CVE-heavy, one cloud vendor-claim-heavy.
-3. Scale order confirmed by user: ZTT → AI → prereqs → cloud → AI/ML → linux → on-prem → platform → certs.
-4. Open choices still to resolve: grounded-search API (Tavily vs Google CSE vs SerpAPI vs local searxng); ledger storage (per-module JSON vs `.pipeline/citations.db`); per-module weekly budget cap in `control_plane.budgets`.
+1. Implement verify step (Gate B) — 2nd LLM semantic check against cached page text.
+2. Design the merge workflow: staging.md → main, auto-PR via worktree (user confirmed no humans in loop).
+3. Scale research to ZTT 0.3–0.10 (8 more modules).
+4. Expand allowlist for recurring unciteable patterns (GitLab, CERN) or write a revision-softening worker.
+5. Open design: grounded-search API (MVP skipped it — 0 hallucinations so far suggests maybe unneeded); weekly budget caps in `control_plane.budgets`.
+6. Scale order (user-confirmed): ZTT → AI → prereqs → cloud → AI/ML → linux → on-prem → platform → certs.
 
 **Prior queue (session 4, still valid but now lower priority than citation backfill):**
 1. #277 — `/api/build/run` + `/api/build/status` endpoints (~150 LOC, clear spec)
