@@ -518,6 +518,283 @@ def run_research(module_key: str, *, agent: str = "codex", dry_run: bool = False
     }
 
 
+# ---- inject step ---------------------------------------------------------
+
+
+INJECT_PROMPT_TEMPLATE = """You are the inject step of the KubeDojo citation
+backfill pipeline. Given the module body and the already-validated citation
+seed (with dispositions), produce a STRUCTURED EDIT PLAN the orchestrator
+will apply mechanically. Do NOT rewrite the module yourself.
+
+## Rules
+
+1. Only `supported` and `weak_anchor` claims produce inline insertions.
+   Unciteable claims are skipped (the module will go to a revision queue
+   after this step; your job is not to cite them).
+2. Each inline insertion must be a pure WRAP: take an existing phrase in
+   the module body and wrap it in `[phrase](url)`. The `original_phrase`
+   MUST appear verbatim in `target_line`. The `replace_with` MUST equal
+   `[original_phrase](url)`. No prose edits.
+3. `target_line` MUST be a verbatim single line from the module body
+   (copy the whole line so the orchestrator can locate it unambiguously).
+4. The `sources_section` is a full `## Sources` markdown block. It
+   becomes the last section in the module. Include:
+   - every URL used in inline insertions (supported + weak_anchor)
+   - every validated further_reading URL
+   - short human-readable titles
+   - do NOT list the same URL twice
+5. Do not touch Mermaid, code blocks, tables, frontmatter, or quiz
+   answers. If a claim's span_hint points at a code block or table row
+   that cannot be wrapped in a markdown link, SKIP the inline insertion
+   for that claim (still include the URL in sources_section).
+
+## Output schema
+
+Emit ONE JSON object. No preamble, no markdown fences.
+
+{schema_block}
+
+## Module to edit
+
+Module key: `{module_key}`
+
+```markdown
+{module_body}
+```
+
+## Seed (already-validated citations)
+
+```json
+{seed_json}
+```
+
+Return ONLY the JSON object.
+"""
+
+
+INJECT_SCHEMA_EXAMPLE = json.dumps(
+    {
+        "module_key": "<string>",
+        "inline_insertions": [
+            {
+                "claim_id": "C001",
+                "target_line": "<verbatim single line from module body>",
+                "original_phrase": "<substring of target_line to be wrapped>",
+                "replace_with": "[<original_phrase>](<url>)",
+            }
+        ],
+        "sources_section": "## Sources\n\n- [<title>](<url>) — <one-sentence annotation>\n- ...\n",
+        "skipped_claims": [
+            {"claim_id": "C002", "reason": "span_hint points at mermaid block; no wrapping target"}
+        ],
+    },
+    indent=2,
+)
+
+
+def build_inject_prompt(module_key: str, module_body: str, seed: dict[str, Any]) -> str:
+    # Trim seed to the fields the inject step cares about (keep bytes down).
+    compact_seed = {
+        "module_key": seed.get("module_key"),
+        "claims": [
+            {
+                "claim_id": c.get("claim_id"),
+                "claim_text": c.get("claim_text"),
+                "span_hint": c.get("span_hint"),
+                "disposition": c.get("disposition"),
+                "proposed_url": c.get("proposed_url"),
+            }
+            for c in (seed.get("claims") or [])
+        ],
+        "further_reading": seed.get("further_reading") or [],
+    }
+    return INJECT_PROMPT_TEMPLATE.format(
+        schema_block=INJECT_SCHEMA_EXAMPLE,
+        module_key=module_key,
+        module_body=module_body,
+        seed_json=json.dumps(compact_seed, indent=2, ensure_ascii=False),
+    )
+
+
+def _validate_inline_insertion(ins: dict[str, Any], body: str) -> str | None:
+    """Return a reason string if insertion is invalid, else None."""
+    for f in ("target_line", "original_phrase", "replace_with"):
+        if not ins.get(f):
+            return f"missing_{f}"
+    target = ins["target_line"]
+    phrase = ins["original_phrase"]
+    replace = ins["replace_with"]
+    # target_line must appear verbatim in the module body.
+    if target not in body:
+        return "target_line_not_in_body"
+    # phrase must appear in target_line.
+    if phrase not in target:
+        return "phrase_not_in_target_line"
+    # replace_with must wrap original_phrase in a link: [phrase](url)
+    expected_prefix = f"[{phrase}]("
+    if not (replace.startswith(expected_prefix) and replace.endswith(")")):
+        return "replace_with_not_pure_wrap"
+    url = replace[len(expected_prefix):-1]
+    if not url.startswith(("http://", "https://")):
+        return "replace_with_url_not_http"
+    if allowlist_tier(url) is None:
+        return "replace_with_url_off_allowlist"
+    return None
+
+
+def apply_inject_plan(body: str, plan: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+    """Apply inline insertions + append sources_section. Returns (new_body, applied)."""
+    new_body = body
+    applied: list[dict[str, Any]] = []
+    for ins in plan.get("inline_insertions") or []:
+        reason = _validate_inline_insertion(ins, new_body)
+        if reason:
+            applied.append({"claim_id": ins.get("claim_id"), "status": "rejected", "reason": reason})
+            continue
+        target = ins["target_line"]
+        phrase = ins["original_phrase"]
+        replace = ins["replace_with"]
+        # Replace the phrase WITHIN the target line only — first occurrence.
+        # We re-find the target line to preserve surrounding lines exactly.
+        idx = new_body.find(target)
+        if idx < 0:
+            applied.append({"claim_id": ins.get("claim_id"), "status": "rejected",
+                            "reason": "target_disappeared_after_prev_edits"})
+            continue
+        phrase_idx_in_target = target.find(phrase)
+        abs_phrase_idx = idx + phrase_idx_in_target
+        new_body = new_body[:abs_phrase_idx] + replace + new_body[abs_phrase_idx + len(phrase):]
+        applied.append({"claim_id": ins.get("claim_id"), "status": "applied"})
+
+    sources = (plan.get("sources_section") or "").strip()
+    if sources:
+        if not new_body.endswith("\n"):
+            new_body += "\n"
+        new_body += "\n" + sources + "\n"
+    return new_body, applied
+
+
+_INLINE_LINK_RE = re.compile(r"\[([^\]]+)\]\(https?://[^)]+\)")
+
+
+def _strip_sources_section(body: str) -> str:
+    """Drop a trailing `## Sources` block, if present."""
+    if "## Sources" not in body:
+        return body
+    pre, _, _ = body.rpartition("## Sources")
+    return pre.rstrip()
+
+
+def _verify_diff_is_additive(original: str, modified: str) -> list[str]:
+    """Sanity-check that `modified` differs from `original` only by
+    (a) new inline [phrase](url) wraps and (b) an appended Sources section.
+
+    Both sides are unwrapped to bare text before compare so pre-existing
+    inline links in the original are not flagged as prose changes. The
+    test is: strip-Sources(modified) unwrapped == original unwrapped.
+    """
+    issues: list[str] = []
+    modified_pre = _strip_sources_section(modified)
+    orig_unwrapped = _INLINE_LINK_RE.sub(r"\1", original).rstrip()
+    mod_unwrapped = _INLINE_LINK_RE.sub(r"\1", modified_pre).rstrip()
+    if mod_unwrapped != orig_unwrapped:
+        import difflib
+        d = list(difflib.unified_diff(
+            orig_unwrapped.splitlines(),
+            mod_unwrapped.splitlines(),
+            lineterm="", n=1,
+        ))
+        # Trim to the first few hunks so the issue message is useful.
+        sample = "\n".join(d[:40])
+        issues.append(f"prose_changed_outside_sources: {sample[:800]}")
+    return issues
+
+
+def run_inject(module_key: str, *, agent: str = "codex", dry_run: bool = False) -> dict[str, Any]:
+    module_path = resolve_module_path(module_key)
+    normalized_key = module_path.relative_to(DOCS_ROOT).with_suffix("").as_posix()
+    seed_path = seed_path_for(normalized_key)
+    if not seed_path.exists():
+        return {"module_key": normalized_key, "ok": False,
+                "error": "no_seed_file", "detail": f"run research first: {seed_path}"}
+    seed = json.loads(seed_path.read_text(encoding="utf-8"))
+    supported = [c for c in (seed.get("claims") or [])
+                 if c.get("disposition") in {"supported", "weak_anchor"}]
+    if not supported and not (seed.get("further_reading") or []):
+        return {"module_key": normalized_key, "ok": False,
+                "error": "nothing_to_cite",
+                "detail": "seed has no supported claims and no further_reading"}
+    unciteable = [c for c in (seed.get("claims") or []) if c.get("disposition") == "unciteable"]
+
+    module_body = module_path.read_text(encoding="utf-8")
+    prompt = build_inject_prompt(normalized_key, module_body, seed)
+
+    if dry_run:
+        return {"module_key": normalized_key, "dry_run": True,
+                "supported_count": len(supported), "unciteable_count": len(unciteable),
+                "prompt_bytes": len(prompt)}
+
+    task_id = f"citation-inject-{normalized_key.replace('/', '-')}-{_dt.datetime.now(_dt.UTC).strftime('%Y%m%dT%H%M%SZ')}"
+    if agent == "codex":
+        ok, raw = dispatch_codex(prompt, task_id=task_id)
+    elif agent == "gemini":
+        ok, raw = dispatch_gemini(prompt)
+    else:
+        raise ValueError(f"unknown agent: {agent}")
+    if not ok:
+        return {"module_key": normalized_key, "ok": False,
+                "error": "dispatch_failed", "detail": raw[-500:]}
+    try:
+        plan = parse_agent_response(raw)
+    except (ValueError, json.JSONDecodeError) as exc:
+        return {"module_key": normalized_key, "ok": False,
+                "error": "parse_failed", "detail": str(exc),
+                "raw_head": raw[:400], "raw_tail": raw[-400:]}
+
+    new_body, applied = apply_inject_plan(module_body, plan)
+    diff_issues = _verify_diff_is_additive(module_body, new_body)
+
+    staging_path = module_path.with_suffix(".staging.md")
+    staging_path.write_text(new_body, encoding="utf-8")
+
+    # Write a revision record if there are unciteable claims.
+    revision_record = None
+    if unciteable:
+        revision_path = REPO_ROOT / ".pipeline" / "citation-revisions" / f"{normalized_key.replace('/', '-')}.json"
+        revision_path.parent.mkdir(parents=True, exist_ok=True)
+        revision_record = {
+            "module_key": normalized_key,
+            "module_path": str(module_path.relative_to(REPO_ROOT)),
+            "recorded_at": _iso_utc_now(),
+            "unciteable_claims": [
+                {
+                    "claim_id": c.get("claim_id"),
+                    "claim_text": c.get("claim_text"),
+                    "span_hint": c.get("span_hint"),
+                    "rationale": c.get("rationale"),
+                }
+                for c in unciteable
+            ],
+        }
+        revision_path.write_text(
+            json.dumps(revision_record, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
+    return {
+        "module_key": normalized_key, "ok": len(diff_issues) == 0,
+        "staging_path": str(staging_path.relative_to(REPO_ROOT)),
+        "applied_count": sum(1 for a in applied if a.get("status") == "applied"),
+        "rejected_count": sum(1 for a in applied if a.get("status") == "rejected"),
+        "applied": applied,
+        "diff_issues": diff_issues,
+        "unciteable_count": len(unciteable),
+        "revision_record": (f".pipeline/citation-revisions/"
+                            f"{normalized_key.replace('/', '-')}.json")
+                            if revision_record else None,
+    }
+
+
 # ---- CLI -----------------------------------------------------------------
 
 
@@ -531,10 +808,21 @@ def main(argv: list[str] | None = None) -> int:
     rp.add_argument("--dry-run", action="store_true",
                     help="Print prompt + exit; no dispatch, no writes")
 
+    ip = subs.add_parser("inject", help="Apply already-validated seed to one module")
+    ip.add_argument("module_key", help="Module key under src/content/docs/")
+    ip.add_argument("--agent", default="codex", choices=["codex", "gemini"])
+    ip.add_argument("--dry-run", action="store_true",
+                    help="Print prompt + exit; no dispatch, no writes")
+
     args = parser.parse_args(argv)
 
     if args.command == "research":
         result = run_research(args.module_key, agent=args.agent, dry_run=args.dry_run)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return 0 if result.get("ok") or result.get("dry_run") else 1
+
+    if args.command == "inject":
+        result = run_inject(args.module_key, agent=args.agent, dry_run=args.dry_run)
         print(json.dumps(result, indent=2, ensure_ascii=False))
         return 0 if result.get("ok") or result.get("dry_run") else 1
 
