@@ -6,12 +6,17 @@
 
 Session 5 landed two things: the heuristic quality scorer now auto-fails modules with no `## Sources` section (reveal: 726/726 critical, old 4.71 avg was fabricated; commit `c1220cd0`), and the `## Sources` vs `## Authoritative Sources` contract drift between `check_citations.py` and `v1_pipeline.py` is unified (commit `1918d262`). Full handoff with the citation-backfill plan + next-session blockers: [`docs/sessions/2026-04-19-session-5-citation-backfill-design.md`](./docs/sessions/2026-04-19-session-5-citation-backfill-design.md).
 
+**Session 5 progress (landed this session, commits `c1220cd0`, `1918d262`, `6bb8dd54`, `df4f64bf`):**
+1. ✅ Scorer truth-gate + Pyright cleanup (726/726 critical — real baseline).
+2. ✅ Sources-header contract unified across v1 pipeline + tests.
+3. ✅ `docs/citation-trusted-domains.yaml` — tiered allowlist (standards / upstream / vendor / incidents / general).
+4. ✅ `scripts/fetch_citation.py` — stdlib-only fetcher, browser UA, HTML→text, on-disk cache. Dry-run: 20/20 URLs across all tiers fetched clean; bot-protected domains (NIST, OWASP, Microsoft, Google, CISA, Anthropic) all returned full text. Off-allowlist correctly rejected.
+
 **Next session starts here:**
-1. Write `scripts/fetch_citation.py` (proven URL fetcher + text extraction, ~150 LOC).
-2. Commit `docs/citation-trusted-domains.yaml` (tiered allowlist per Codex).
-3. Dry-run fetcher against 20 URLs across 4 allowlist tiers — prove CI can scrape k8s.io, NIST, OWASP, vendor docs without 403s.
-4. Then design v2 citation phase + v1 step functions; calibration on 4 modules (ZTT 0.1, Linux DNS, one CKS CVE-heavy, one cloud vendor-claim-heavy).
-5. Scale order confirmed by user: ZTT → AI → prereqs → cloud → AI/ML → linux → on-prem → platform → certs.
+1. Design the v2 citation phase + v1 step functions (research / inject / verify / diff-lint).
+2. Calibration on 4 modules: ZTT 0.1 (`what-is-a-computer`), Linux DNS, one CKS CVE-heavy, one cloud vendor-claim-heavy.
+3. Scale order confirmed by user: ZTT → AI → prereqs → cloud → AI/ML → linux → on-prem → platform → certs.
+4. Open choices still to resolve: grounded-search API (Tavily vs Google CSE vs SerpAPI vs local searxng); ledger storage (per-module JSON vs `.pipeline/citations.db`); per-module weekly budget cap in `control_plane.budgets`.
 
 **Prior queue (session 4, still valid but now lower priority than citation backfill):**
 1. #277 — `/api/build/run` + `/api/build/status` endpoints (~150 LOC, clear spec)
