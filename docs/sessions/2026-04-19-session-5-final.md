@@ -109,13 +109,44 @@ definitions in the research prompt.
 
 # Aggregate stats from the biking-time batch
 
-*(to be filled in after batch completes; see
-`/tmp/ztt_ai_prereq_batch.sh` output log)*
-
 Target set: 65 modules across remaining ZTT (7), AI (25), non-ZTT
-prereqs (33).
-As of handoff-write: 4 seeds present (ZTT 0.1, 0.2, 0.3, 0.4),
-61 pending.
+prereqs (33). Batch still in flight at handoff commit.
+Seeds present at handoff commit: 5 (ZTT 0.1, 0.2, 0.3, 0.4, 0.5).
+Counts will grow — `ls docs/citation-seeds/*.json | wc -l` is the
+ground truth.
+
+# Inject status after normalization fix (2026-04-19 post-biking)
+
+Ran inject on ZTT 0.1 with the `9bc4a722` markdown-normalization
+fix. Staging file:
+`src/content/docs/prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.staging.md`
+
+Results:
+- ✅ 5 inline wraps applied cleanly (GitLab postmortem, K8s Windows,
+  AWS pricing-calc, core memory, SSD, Harvard Mark II). Pure wraps,
+  prose untouched.
+- ✅ `## Sources` section appended — 10 entries with titles + annotations.
+- ✅ `check_citations.py` PASSES — "sources: 10".
+- ✅ Diff linter clean — no unauthorized prose changes flagged.
+- ❌ Prose rewrites STILL not landing. Soften claims (C002 "30 tabs
+  = 4-6 GB", C008 AGC comparison, C014 "debugging term ever since")
+  and salvage claims (C007 AWS $0.0928/hr dated price) are all
+  untouched in the staging. The normalization fix resolved
+  substring-matching inside markdown-decorated lines (inline wraps
+  now land), but something else is suppressing the `prose_rewrites`
+  emission or application.
+
+Next debugging step (for next session):
+- Read the Codex response for the most recent inject task-id out
+  of `.bridge/messages.db` (`SELECT content FROM messages WHERE
+  task_id LIKE 'citation-inject-prerequisites-zero-to-terminal-%'
+  ORDER BY id DESC LIMIT 1;`) to see whether Codex emitted
+  `prose_rewrites` at all in the v5 run.
+- If Codex DID emit them but orchestrator rejected: `applied` list
+  will show `status: rejected` with a `reason`. Chase that reason.
+- If Codex DIDN'T emit: revisit the inject prompt's MANDATORY
+  wording. The post-response coverage gate should have caught this
+  too — verify the gate is firing.
 
 # Known issues for next session
 

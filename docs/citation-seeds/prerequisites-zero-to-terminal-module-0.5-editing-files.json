@@ -1,0 +1,165 @@
+{
+  "module_key": "prerequisites/zero-to-terminal/module-0.5-editing-files",
+  "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.5-editing-files.md",
+  "research_run_id": "2026-04-19T09:14:48+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 1,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A junior engineer at a major tech company accidentally saved stray characters into `nginx.conf` on a production load balancer, taking down the site within minutes and costing thousands in revenue.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "suggested_rewrite": "Imagine editing a production config file directly, saving one stray character, and discovering moments later that the service no longer starts. That kind of mistake is exactly why engineers test config changes and avoid editing production blindly.",
+      "lesson_point_url": "https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/",
+      "rationale": "The module presents this as a real incident but gives no company, date, or source, so it is safer to frame it as an illustration while preserving the operational lesson."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "vim uses editing modes, so you must enter Insert mode before typing text normally.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Meet nano, comparison table",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Vim_(text_editor)",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a concrete behavior claim about Vim's modal interface."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "\"How to exit vim\" became a long-running programming joke because many beginners do not know the quit command.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Meet nano, fun fact callout",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "suggested_rewrite": "Beginners often find vim harder at first because even basic tasks like entering text and quitting depend on mode-specific commands.",
+      "lesson_point_url": "https://en.wikipedia.org/wiki/Vim_(text_editor)",
+      "rationale": "The teaching point is sound, but the culture-history claim is not worth anchoring as a sourced factual aside here."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "`#!/bin/bash` tells the system which interpreter to use when the script is run directly, but a script can still be run without a shebang if you invoke `bash` explicitly.",
+      "claim_class": "standard",
+      "span_hint": "section: Your First Script, shebang explanation",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Shebang_(Unix)",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a specific Unix execution-behavior claim that is worth citing once."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "New files are not executable by default, so `./my-first-script.sh` fails until you add execute permission with `chmod +x`, and that default is a security feature.",
+      "claim_class": "standard",
+      "span_hint": "section: Your First Script, Step 3: Make it executable",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Umask",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The module makes a concrete claim about default file permissions and why `chmod +x` is needed."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "vim is not installed by default on all minimal Linux distributions.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: A Note on vim",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "suggested_rewrite": "vim is incredibly powerful, but it has a steep learning curve because it works in modes.",
+      "lesson_point_url": null,
+      "rationale": "This distro-default assertion is broad, environment-dependent, and unnecessary to the lesson."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "nano was created as a free replacement for Pico.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, first bullet",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/GNU_nano",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a concrete historical claim about nano's origin."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Pico was the editor built into the Pine email client, with an initial release in 1989.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, first bullet",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Pico_(text_editor)",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a dated historical fact and should be anchored if retained."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The name `nano` derives from the SI prefix system, where nano is 1,000 times larger than pico.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, first bullet",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/GNU_nano",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a precise historical/etymology claim rather than generic teaching prose."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "`ed` is a line editor associated with early Unix work by Ken Thompson in 1969.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, second bullet",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Ed_(text_editor)",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The module gives dated origin details for a real tool and person."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "`ed` is the oldest surviving text editor still in use, and engineers in the 1970s wrote entire operating systems using it.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, second bullet",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "suggested_rewrite": "`ed` is a very old Unix line editor, and tools from that era were used in early Unix development.",
+      "lesson_point_url": null,
+      "rationale": "The superlative and the 'entire operating systems' phrasing overstate what is straightforward to verify."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://en.wikipedia.org/wiki/GNU_nano",
+      "title": "GNU nano",
+      "tier": "general",
+      "why_relevant": "Useful background on nano's history, shortcut model, and relationship to Pico."
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Shebang_(Unix)",
+      "title": "Shebang (Unix)",
+      "tier": "general",
+      "why_relevant": "Explains how interpreter directives work when scripts are executed directly."
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Chmod",
+      "title": "chmod",
+      "tier": "general",
+      "why_relevant": "Covers Unix execute permissions and why `chmod +x` changes whether a script can be run directly."
+    }
+  ],
+  "notes": "Quiz items, exercise steps, code blocks, and expected-output examples were excluded per the task rules. I also left out broad teaching prose that does not need kubernetes.io/docs-style inline citation density.",
+  "_schema_issues": [
+    "claim[0]:hard_cite_class_cannot_soften:war_story/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
+  ],
+  "rejected_urls": []
+}

@@ -1,0 +1,117 @@
+{
+  "module_key": "prerequisites/zero-to-terminal/module-0.4-files-and-directories",
+  "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.4-files-and-directories.md",
+  "research_run_id": "2026-04-19T09:11:31+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 1,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "On Linux, `/` is the root of the filesystem tree; `/home` holds user home directories; `/etc` stores host-specific configuration; `/tmp` is for temporary files; and `/var/log` stores log files.",
+      "claim_class": "standard",
+      "span_hint": "section: The Directory Tree / Key Locations table",
+      "disposition": "supported",
+      "proposed_url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html",
+      "proposed_tier": "upstream",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Linux Foundation's Filesystem Hierarchy Standard directly documents these conventional directory roles."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Linux is the operating system that Kubernetes runs on.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Everything is a File (Really!), opening parenthetical after 'Linux'",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "suggested_rewrite": "Here's something wild about Linux, the operating system most Kubernetes nodes run on:",
+      "lesson_point_url": null,
+      "rationale": "Kubernetes also supports Windows worker nodes, so the original wording is too absolute."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Linux is often described with an 'everything is a file' model, where devices and process information are exposed through file-like interfaces such as `/dev` and `/proc`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Everything is a File (Really!) plus Did You Know item 3",
+      "disposition": "weak_anchor",
+      "proposed_url": "https://en.wikipedia.org/wiki/Everything_is_a_file",
+      "proposed_tier": "general",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The allowlist lacks Linux man pages or kernel docs, but this source directly covers the Unix/Linux design idea while the exact path examples vary by system."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The default kubeconfig location for kubectl is `$HOME/.kube/config`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Matters in K8s, sentence about `~/.kube/config`",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
+      "proposed_tier": "standards",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Official Kubernetes docs state that kubectl looks for `config` in `$HOME/.kube` by default."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Kubernetes control-plane static Pod manifests are commonly stored in `/etc/kubernetes/manifests`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Matters in K8s, sentence about `/etc/kubernetes/manifests/`",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/",
+      "proposed_tier": "standards",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Official kubeadm implementation details say kubeadm writes control-plane static Pod manifests to `/etc/kubernetes/manifests`."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Pod and container troubleshooting on Kubernetes nodes often involves `/var/log/pods` and `/var/log/containers`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Matters in K8s, sentence about `/var/log/pods/` or `/var/log/containers/`",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/tutorials/cluster-management/kubelet-standalone/",
+      "proposed_tier": "standards",
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Official Kubernetes documentation lists both directories as places to look for monitoring and troubleshooting details."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "A developer once exposed production database credentials via a world-readable config file, letting an attacker read the file and dump the customer database.",
+      "claim_class": "security_claim",
+      "span_hint": "section: File Permissions Basics, War Story callout",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "suggested_rewrite": "For example, if a database configuration file containing production passwords were made world-readable, anyone who gained basic access to the server could read those credentials; keeping sensitive files restricted to the owner reduces that risk.",
+      "lesson_point_url": "https://csrc.nist.gov/glossary/term/least_privilege",
+      "rationale": "The passage is a concrete security anecdote without an attributable source, but the underlying least-privilege lesson is solid and citable."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html",
+      "title": "Filesystem Hierarchy Standard 3.0",
+      "tier": "upstream",
+      "why_relevant": "It explains the conventional roles of core Linux directories such as `/`, `/etc`, `/home`, `/tmp`, and `/var`."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
+      "title": "Organizing Cluster Access Using kubeconfig Files",
+      "tier": "standards",
+      "why_relevant": "It gives the authoritative explanation of kubeconfig files and the default `$HOME/.kube/config` location."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/logging/",
+      "title": "Logging Architecture",
+      "tier": "standards",
+      "why_relevant": "It provides official context for where Kubernetes node and pod logs live and how they are collected."
+    }
+  ],
+  "notes": "Quiz items, quiz answers, and hands-on exercise steps were excluded per pipeline rules. Seed focuses on prose claims that are specific enough to merit inline citations or rewrites.",
+  "_schema_issues": [
+    "claim[6]:hard_cite_class_cannot_soften:security_claim/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
+  ],
+  "rejected_urls": []
+}
