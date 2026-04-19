@@ -1,0 +1,367 @@
+[
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.md",
+    "candidate_count": 6,
+    "candidates": [
+      {
+        "line": 27,
+        "trigger": "every_single",
+        "match": "Every single",
+        "sentence": "Every single thing you'll learn in this curriculum -- Kubernetes, containers, cloud computing -- runs on computers",
+        "raw_line": "Every single thing you'll learn in this curriculum -- Kubernetes, containers, cloud computing -- runs on computers. But most people have never been told what's actually happening inside the box on their desk (or the slab in their pocket).",
+        "verdict": {
+          "verdict": "acceptable",
+          "reason": "The absolute phrasing is bounded to the curriculum context and is not a meaningful factual overclaim here.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 195,
+        "trigger": "every_single",
+        "match": "Every single",
+        "sentence": "Every single thing your computer does follows this pattern",
+        "raw_line": "Every single thing your computer does follows this pattern. Every. Single. Thing.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "It makes an absolute claim about all computer behavior when there are edge cases and abstractions not captured by one pattern.",
+          "suggested_rewrite": "Nearly everything your computer does follows this pattern."
+        }
+      },
+      {
+        "line": 235,
+        "trigger": "never",
+        "match": "Never",
+        "sentence": "| Never restarting the operating system | \"I just close my laptop lid, why is my computer glitching?\" | Restarting clears out the RAM completely and restarts background processes",
+        "raw_line": "| Never restarting the operating system | \"I just close my laptop lid, why is my computer glitching?\" | Restarting clears out the RAM completely and restarts background processes. Make it a habit to reboot at least once a week to clear temporary issues. |",
+        "verdict": {
+          "verdict": "error",
+          "reason": "dispatch_failed: timeout_after_900s"
+        }
+      },
+      {
+        "line": 236,
+        "trigger": "always",
+        "match": "always",
+        "sentence": "| Judging a CPU only by its clock speed | \"A 4 GHz CPU is always better than a 3 GHz one",
+        "raw_line": "| Judging a CPU only by its clock speed | \"A 4 GHz CPU is always better than a 3 GHz one.\" | Look at the number of cores as well. A 3 GHz CPU with 8 cores can handle many simultaneous tasks much better than a 4 GHz CPU with only 2 cores. |",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "Clock speed alone does not determine overall CPU performance, so the absolute claim is too broad.",
+          "suggested_rewrite": "A 4 GHz CPU is not always better than a 3 GHz one."
+        }
+      },
+      {
+        "line": 272,
+        "trigger": "100_percent",
+        "match": "100%",
+        "sentence": "The monitoring logs show that CPU utilization was at 20%, but memory usage hit 100% right before the crash",
+        "raw_line": "6. **You are running a database server for your company's e-commerce site, and during a major sale, the server crashes. The monitoring logs show that CPU utilization was at 20%, but memory usage hit 100% right before the crash. What caused the crash, and how should you fix it?**",
+        "verdict": {
+          "verdict": "acceptable",
+          "reason": "This is a specific reported metric from the scenario, not an absolute general claim.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 275,
+        "trigger": "100_percent",
+        "match": "100%",
+        "sentence": "When the server reached 100% memory usage, the operating system had no more \"counter space\" to process the sudden influx of customer orders and likely killed the database process to protect itself",
+        "raw_line": "   The crash was caused by the server running out of RAM (memory exhaustion) rather than a lack of processing power. When the server reached 100% memory usage, the operating system had no more \"counter space\" to process the sudden influx of customer orders and likely killed the database process to protect itself. To fix this, you need to either provision a server with more RAM to handle the peak load, or optimize the database queries to use less memory. The low CPU utilization indicates that upgrading the processor would not have prevented this outage.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "Hitting 100% memory usage can cause severe memory pressure, but it does not always mean the OS immediately kills the database process.",
+          "suggested_rewrite": "When the server reached 100% memory usage, the operating system likely had little or no RAM left to handle the sudden influx of customer orders and may have killed the database process to protect system stability."
+        }
+      }
+    ]
+  },
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal.md",
+    "candidate_count": 5,
+    "candidates": [
+      {
+        "line": 27,
+        "trigger": "every_single",
+        "match": "Every single",
+        "sentence": "Every single tool in modern software engineering — Kubernetes, Docker, cloud platforms, automation scripts — starts with one thing: **the terminal**",
+        "raw_line": "Every single tool in modern software engineering — Kubernetes, Docker, cloud platforms, automation scripts — starts with one thing: **the terminal**.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "It makes an absolute claim even though many modern tools can also be used through GUIs, APIs, or editors.",
+          "suggested_rewrite": "Many of the tools you'll use in modern software engineering — Kubernetes, Docker, cloud platforms, automation scripts — are easiest to learn and control from **the terminal**."
+        }
+      },
+      {
+        "line": 364,
+        "trigger": "always",
+        "match": "Always",
+        "sentence": "com/blog/postmortem-of-database-outage-of-january-31/)) | Always double-check the `username@hostname` in your prompt before pressing Enter on a destructive command",
+        "raw_line": "| Running a command on the wrong server because you didn't read the prompt | A mistake like this can hit production instead of staging. In [GitLab's January 31, 2017 database outage](https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/), the company reported that an accidental removal of data from its primary database caused a major outage and some unrecoverable production data loss. ([GitLab postmortem](https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/)) | Always double-check the `username@hostname` in your prompt before pressing Enter on a destructive command. |",
+        "verdict": {
+          "verdict": "not_a_claim",
+          "reason": "This is an imperative safety instruction, not a factual claim about the world.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 406,
+        "trigger": "immediately",
+        "match": "immediately",
+        "sentence": "Relying on a wall clock introduces significant human error, such as applying the wrong timezone conversion, rounding up to the nearest minute, or simply forgetting to write the time down immediately",
+        "raw_line": "The `date` command gives you the exact timestamp directly from the computer's system clock, which inherently includes accurate timezone and precise second-level information. Relying on a wall clock introduces significant human error, such as applying the wrong timezone conversion, rounding up to the nearest minute, or simply forgetting to write the time down immediately. In a terminal script, the timestamp is generated automatically, is machine-readable, and becomes part of an immutable permanent record. In production environments, precise, system-generated timelines are necessary to effectively diagnose incidents and track the exact sequence of events.",
+        "verdict": {
+          "verdict": "acceptable",
+          "reason": "It makes a general risk claim without using absolute language, and the examples are framed as possibilities rather than guarantees.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 419,
+        "trigger": "universal",
+        "match": "universally",
+        "sentence": "**Question 6**: A junior colleague argues that GUIs are universally better because they are more intuitive and visual",
+        "raw_line": "**Question 6**: A junior colleague argues that GUIs are universally better because they are more intuitive and visual. Describe three specific engineering scenarios where relying on a terminal is not just preferred, but absolutely necessary for success.",
+        "verdict": {
+          "verdict": "not_a_claim",
+          "reason": "This is a hypothetical prompt setup describing someone else's argument, not the module making a factual claim.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 424,
+        "trigger": "instantly",
+        "match": "instantly",
+        "sentence": "First, when you need to automate repetitive tasks, such as renaming 500 files or setting up daily backups; the terminal allows you to write a script that does this instantly and perfectly every time, which a GUI cannot easily replicate",
+        "raw_line": "First, when you need to automate repetitive tasks, such as renaming 500 files or setting up daily backups; the terminal allows you to write a script that does this instantly and perfectly every time, which a GUI cannot easily replicate. Second, when you are managing remote servers in data centers or the cloud, these machines typically do not have a graphical interface installed at all to save resources, making terminal access via SSH the only way to communicate with them. Third, when you need to share a complex workflow with a teammate; you can simply copy and paste terminal commands to guarantee they execute the exact same steps, whereas explaining GUI steps requires creating ambiguous screenshots or lengthy written click-paths. In all these scenarios, the terminal provides the automation, access, and precision that modern engineering strictly requires.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "It overclaims by saying scripts work instantly and perfectly every time, which ignores setup time and failure cases.",
+          "suggested_rewrite": "First, when you need to automate repetitive tasks, such as renaming 500 files or setting up daily backups; the terminal allows you to write a script that can handle this quickly and consistently, which a GUI cannot easily replicate"
+        }
+      }
+    ]
+  },
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.3-first-commands.md",
+    "candidate_count": 12,
+    "candidates": [
+      {
+        "line": 342,
+        "trigger": "instantly",
+        "match": "instantly",
+        "sentence": "The lesson for you: `rm` does exactly what you tell it to, instantly, with no \"Are you sure?\" — treat it with the same respect you'd give a real kitchen knife",
+        "raw_line": "**Real-World War Story:** In 1998, Pixar came close to losing the in-progress animation work for *Toy Story 2*. A command run against the wrong directory of the production servers began recursively deleting character models, sets, and animations. People watched files disappear in real time and literally pulled the server's power plug to stop it, but a large fraction of the work was already gone. Pixar recovered because one of the supervising technical directors — who had been working from home with a newborn — had been copying the project to a computer at her house. Even that copy was a couple of weeks old, so they still had to reconstruct work on top of it. The lesson for you: `rm` does exactly what you tell it to, instantly, with no \"Are you sure?\" — treat it with the same respect you'd give a real kitchen knife.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "It makes absolute claims about `rm` prompting and timing even though prompts, aliases, and failures can change that behavior.",
+          "suggested_rewrite": "The lesson for you: `rm` usually does exactly what you tell it to, immediately, and often with no \"Are you sure?\" prompt — treat it with the same respect you'd give a real kitchen knife."
+        }
+      },
+      {
+        "line": 360,
+        "trigger": "always",
+        "match": "always",
+        "sentence": "Rule of thumb: always double-check what you're deleting before pressing Enter",
+        "raw_line": "Rule of thumb: always double-check what you're deleting before pressing Enter.",
+        "verdict": {
+          "verdict": "not_a_claim",
+          "reason": "This is practical advice phrased as an imperative, not a factual overclaim.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 391,
+        "trigger": "immediately",
+        "match": "immediately",
+        "sentence": "| `rm` | Deletes immediately | \"Shred this paper\" (no recycle bin by default) |",
+        "raw_line": "| `rm` | Deletes immediately | \"Shred this paper\" (no recycle bin by default) |",
+        "verdict": {
+          "verdict": "acceptable",
+          "reason": "This is a bounded beginner-facing description of `rm`, and the nearby note already clarifies the common-case behavior.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 400,
+        "trigger": "instantly",
+        "match": "instantly",
+        "sentence": "- **A DevOps engineer** uses `mkdir -p` to instantly create identical deployment directory structures across 50 servers at once",
+        "raw_line": "- **A DevOps engineer** uses `mkdir -p` to instantly create identical deployment directory structures across 50 servers at once.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "The sentence overstates speed and implies `mkdir -p` alone creates directories across many servers simultaneously.",
+          "suggested_rewrite": "A DevOps engineer uses `mkdir -p` to quickly create matching deployment directory structures across many servers as part of an automated rollout."
+        }
+      },
+      {
+        "line": 419,
+        "trigger": "the_oldest",
+        "match": "the oldest",
+        "sentence": "- **`ls` is one of the oldest commands still in use",
+        "raw_line": "- **`ls` is one of the oldest commands still in use.** It dates back to 1961 in MIT's Compatible Time-Sharing System (CTSS), where it was called `LISTF`. The modern `ls` appeared in the first version of Unix in 1971. You're using a command that's over 50 years old.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "\"One of the oldest\" is a broad historical ranking that is hard to support without tighter scope.",
+          "suggested_rewrite": "`ls` is among the oldest command-line commands still widely used today."
+        }
+      },
+      {
+        "line": 480,
+        "trigger": "always",
+        "match": "always",
+        "sentence": "This is the #1 beginner mistake — always know where you are before creating or deleting anything",
+        "raw_line": "   You should have run `pwd` first to check where you were. `mkdir` creates the folder in your current working directory, and if you navigated somewhere unexpected earlier without realizing it, the folder ends up in the wrong place. This is the #1 beginner mistake — always know where you are before creating or deleting anything. Run `pwd`, verify you're in the right place, then proceed.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "It makes an unqualified ranking claim and uses absolute advice where exceptions exist.",
+          "suggested_rewrite": "This is a very common beginner mistake — make sure you know where you are before creating or deleting anything."
+        }
+      },
+      {
+        "line": 489,
+        "trigger": "immediately",
+        "match": "immediately",
+        "sentence": "You immediately hit `Ctrl+Z` and look for the 'Undo' button or the Trash bin to recover your database backup",
+        "raw_line": "3. **You are cleaning up old log files in your terminal and accidentally type `rm production-db.sql` instead of `rm production.log`. You immediately hit `Ctrl+Z` and look for the 'Undo' button or the Trash bin to recover your database backup. What happens next and why?**",
+        "verdict": {
+          "verdict": "not_a_claim",
+          "reason": "This is a hypothetical scenario setup describing user actions, not a factual assertion.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 492,
+        "trigger": "always",
+        "match": "always",
+        "sentence": "There is no built-in undo feature or confirmation prompt by default, which is why you must always double-check your commands before pressing Enter",
+        "raw_line": "   You usually cannot recover the database backup file through `Ctrl+Z`, an Undo button, or a Trash bin. When you delete a file using `rm` in the terminal, it does not get moved to a temporary Trash or Recycle Bin like it does in a graphical interface. Instead, `rm` removes the directory entry immediately. For normal users, that means the file is effectively gone, although forensic or undelete tools may sometimes recover data before it is overwritten. There is no built-in undo feature or confirmation prompt by default, which is why you must always double-check your commands before pressing Enter.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "The phrase \"must always\" overstates a general safety practice that is strong advice rather than a universal rule.",
+          "suggested_rewrite": "There is no built-in undo feature or confirmation prompt by default, which is why you should usually double-check your commands before pressing Enter."
+        }
+      },
+      {
+        "line": 492,
+        "trigger": "immediately",
+        "match": "immediately",
+        "sentence": "Instead, `rm` removes the directory entry immediately",
+        "raw_line": "   You usually cannot recover the database backup file through `Ctrl+Z`, an Undo button, or a Trash bin. When you delete a file using `rm` in the terminal, it does not get moved to a temporary Trash or Recycle Bin like it does in a graphical interface. Instead, `rm` removes the directory entry immediately. For normal users, that means the file is effectively gone, although forensic or undelete tools may sometimes recover data before it is overwritten. There is no built-in undo feature or confirmation prompt by default, which is why you must always double-check your commands before pressing Enter.",
+        "verdict": {
+          "verdict": "acceptable",
+          "reason": "This is a technically accurate description of the common `rm` behavior in the surrounding explanation.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 504,
+        "trigger": "universal",
+        "match": "universal",
+        "sentence": "The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated",
+        "raw_line": "   First, you use the `pwd` command to print your working directory, which tells you your exact current location in the file system so you can orient yourself. Then, you use the `cd ~` command to immediately jump back to your user's home directory. The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated. This combination quickly restores your context and puts you back in a safe, known location.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "\"Universal\" and \"always\" overclaim because tilde expansion depends on the shell and context.",
+          "suggested_rewrite": "The tilde (`~`) symbol is a standard shell shortcut that usually represents your home directory, regardless of how deep you are currently navigated."
+        }
+      },
+      {
+        "line": 504,
+        "trigger": "always",
+        "match": "always",
+        "sentence": "The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated",
+        "raw_line": "   First, you use the `pwd` command to print your working directory, which tells you your exact current location in the file system so you can orient yourself. Then, you use the `cd ~` command to immediately jump back to your user's home directory. The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated. This combination quickly restores your context and puts you back in a safe, known location.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "\"Universal\" and \"always\" overstate shell behavior because `~` works in most common shell contexts, not literally everywhere.",
+          "suggested_rewrite": "The tilde (`~`) symbol is a common shortcut that usually represents your home directory, no matter how deep you are currently navigated."
+        }
+      },
+      {
+        "line": 504,
+        "trigger": "immediately",
+        "match": "immediately",
+        "sentence": "Then, you use the `cd ~` command to immediately jump back to your user's home directory",
+        "raw_line": "   First, you use the `pwd` command to print your working directory, which tells you your exact current location in the file system so you can orient yourself. Then, you use the `cd ~` command to immediately jump back to your user's home directory. The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated. This combination quickly restores your context and puts you back in a safe, known location.",
+        "verdict": {
+          "verdict": "acceptable",
+          "reason": "This is a standard shell behavior, and \"immediately\" describes the action rather than making an implausible absolute claim.",
+          "suggested_rewrite": null
+        }
+      }
+    ]
+  },
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.4-files-and-directories.md",
+    "candidate_count": 2,
+    "candidates": [
+      {
+        "line": 408,
+        "trigger": "every_single",
+        "match": "Every single",
+        "sentence": "Every single file on your computer is somewhere on a branch that connects back up to `/`",
+        "raw_line": "> 1. **The `/` root directory is called \"root\" because the directory tree grows downward.** Just like a real tree, the root is at the top and branches extend below. Every single file on your computer is somewhere on a branch that connects back up to `/`.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "\"Every single\" makes an absolute filesystem claim that has edge cases outside the beginner view.",
+          "suggested_rewrite": "Almost every file you work with on your computer is somewhere on a branch that ultimately connects back up to `/`."
+        }
+      },
+      {
+        "line": 438,
+        "trigger": "always",
+        "match": "always",
+        "sentence": "The `~` acts as a dynamic shortcut that always resolves to the current user's home directory",
+        "raw_line": "The system will look in your user's home directory (e.g., `/home/yourname/.kube/config` on Linux or `/Users/yourname/.kube/config` on macOS). The `~` acts as a dynamic shortcut that always resolves to the current user's home directory. This is incredibly useful in documentation and scripts because it works flawlessly regardless of what your specific username is or which operating system you are using. By using `~`, developers can write a single command that works across everyone's personal machine without needing to be customized.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "`~` usually expands to the current user's home directory in shell contexts, but not in every tool or quoting/context combination.",
+          "suggested_rewrite": "The `~` acts as a dynamic shortcut that usually resolves to the current user's home directory in shell contexts."
+        }
+      }
+    ]
+  },
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.5-editing-files.md",
+    "candidate_count": 3,
+    "candidates": [
+      {
+        "line": 369,
+        "trigger": "always",
+        "match": "Always",
+        "sentence": "| Forgetting to save before exiting | Your changes are lost | Always Ctrl+O to save before Ctrl+X to exit",
+        "raw_line": "| Forgetting to save before exiting | Your changes are lost | Always Ctrl+O to save before Ctrl+X to exit. Or just press Ctrl+X and say Y when asked to save |",
+        "verdict": {
+          "verdict": "not_a_claim",
+          "reason": "This is an imperative instruction rather than a factual claim.",
+          "suggested_rewrite": null
+        }
+      },
+      {
+        "line": 389,
+        "trigger": "immediately",
+        "match": "immediately",
+        "sentence": "You do this by pressing Ctrl+O (Write Out) and hitting Enter to confirm the file name, which writes your changes to the disk immediately",
+        "raw_line": "   Your script changes are permanently lost because pressing 'N' tells nano to discard all modifications made since the last save. Unlike modern graphical editors with autosave or history features, terminal editors do exactly what you tell them in the moment. To prevent this, you should form the habit of manually saving your file before attempting to exit. You do this by pressing Ctrl+O (Write Out) and hitting Enter to confirm the file name, which writes your changes to the disk immediately. Once saved, the \"Modified\" indicator at the top disappears, and you can safely exit with Ctrl+X.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "\"Immediately\" overstates save timing because disk writes are usually prompt but not meaningfully instantaneous in every environment.",
+          "suggested_rewrite": "You do this by pressing Ctrl+O (Write Out) and hitting Enter to confirm the file name, which saves your changes to the disk."
+        }
+      },
+      {
+        "line": 407,
+        "trigger": "always",
+        "match": "always",
+        "sentence": "You must always address permission issues first because the system won't even attempt to read the syntax of a file it isn't allowed to execute",
+        "raw_line": "   The first issue was that your file lacked execute permissions, which is standard for newly created files as a security measure; this was correctly resolved using `chmod +x`. The second issue is that the script itself contains invalid instructions, most likely a malformed shebang on the first line (such as `#bin/bash` instead of `#!/bin/bash`). You must always address permission issues first because the system won't even attempt to read the syntax of a file it isn't allowed to execute. Once permissions are granted, the interpreter can read the file, encounter the bad syntax, and provide a helpful error message pointing directly to line 1. To fix the remaining issue, you should open the file in nano and correct the typo on the first line.",
+        "verdict": {
+          "verdict": "overstated",
+          "reason": "The sentence overgeneralizes a direct-execution case into an absolute rule that has exceptions.",
+          "suggested_rewrite": "In this situation, you should address the permission issue first because `./backup.sh` will not reach the script's syntax until the file is executable."
+        }
+      }
+    ]
+  }
+]

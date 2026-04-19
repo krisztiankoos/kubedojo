@@ -1,0 +1,27 @@
+[
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.5-editing-files.md",
+    "module_title": "Module 0.5: Editing Files",
+    "audience": "absolute_beginner",
+    "section_count": 20,
+    "flag_count": 2,
+    "findings": [
+      {
+        "excerpt": "| Not adding `#!/bin/bash` to scripts you plan to run with `./script.sh` | Direct execution can fail because the system may not know which interpreter to use |",
+        "verdict": "off_topic",
+        "reason": "This row focuses on shell scripting and execution logic rather than the mechanics of editing files.",
+        "suggested_action": "delete",
+        "section": "Common Mistakes",
+        "section_start_line": 364
+      },
+      {
+        "excerpt": "| Forgetting `chmod +x` before running a script | You get \"Permission denied\" |",
+        "verdict": "off_topic",
+        "reason": "This row discusses file system permissions and execution, which is a separate domain from editing file content.",
+        "suggested_action": "delete",
+        "section": "Common Mistakes",
+        "section_start_line": 364
+      }
+    ]
+  }
+]

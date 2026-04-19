@@ -1,0 +1,43 @@
+[
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.md",
+    "module_title": "Module 0.1: What is a Computer?",
+    "audience": "absolute_beginner",
+    "section_count": 15,
+    "flag_count": 4,
+    "findings": [
+      {
+        "excerpt": "You can't manage thousands of kitchens if you don't understand how *one* kitchen works. That's what this module gave you. In the cloud, pricing depends on the instance type, operating system, region, an",
+        "verdict": "off_topic",
+        "reason": "The paragraph abruptly shifts from the foundational kitchen analogy to detailed cloud billing variables and specific AWS instance types, which is out of scope for an absolute beginner hardware introduction.",
+        "suggested_action": "rewrite_to_fit",
+        "section": "Why This Matters for Kubernetes",
+        "section_start_line": 199
+      },
+      {
+        "excerpt": "Over-provisioning cloud servers | \"Let's just use the biggest server so it doesn't crash.\" | In the cloud, you pay for what you provision. A team might pay hundreds of dollars per month for a larger se",
+        "verdict": "off_topic",
+        "reason": "Introduces cloud infrastructure management and cost optimization which is a different domain from foundational hardware components.",
+        "suggested_action": "delete",
+        "section": "Common Mistakes",
+        "section_start_line": 226
+      },
+      {
+        "excerpt": "5. **Your team is deploying a new web application to the cloud and debating whether to use Windows or Linux servers. Based on what you know about operating systems, why is Linux usually the default choice",
+        "verdict": "off_topic",
+        "reason": "This question introduces advanced cloud infrastructure and Kubernetes concepts that jump far beyond the 'absolute_beginner' scope of an introductory computer hardware module.",
+        "suggested_action": "delete",
+        "section": "Quiz",
+        "section_start_line": 240
+      },
+      {
+        "excerpt": "6. **You are running a database server for your company's e-commerce site, and during a major sale, the server crashes. The monitoring logs show that CPU utilization was at 20%, but memory usage hit 100%",
+        "verdict": "off_topic",
+        "reason": "The scenario shifts from basic computer concepts to server-side infrastructure monitoring and database optimization, which is too advanced for this stage.",
+        "suggested_action": "delete",
+        "section": "Quiz",
+        "section_start_line": 240
+      }
+    ]
+  }
+]

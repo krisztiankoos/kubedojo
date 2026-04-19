@@ -405,7 +405,7 @@ Don't worry about changing permissions yet — just know how to read them. We'll
 
 ## Did You Know?
 
-> 1. **The `/` root directory is called "root" because the directory tree grows downward.** Just like a real tree, the root is at the top and branches extend below. Every single file on your computer is somewhere on a branch that connects back up to `/`.
+> 1. **The `/` root directory is called "root" because the directory tree grows downward.** Just like a real tree, the root is at the top and branches extend below. Almost every file you work with is somewhere on a branch that ultimately connects back up to `/`.
 >
 > 2. **The `~` shortcut expands to your home directory in the shell.** You do not need to memorize the full path such as `/home/yourname/` or `/Users/yourname/`. The exact historical reason `~` was chosen is often told as trivia, but the useful fact is simply that shells treat it as shorthand for your home directory.
 >
@@ -435,7 +435,7 @@ Don't worry about changing permissions yet — just know how to read them. We'll
 <details>
 <summary>Show Answer</summary>
 
-The system will look in your user's home directory (e.g., `/home/yourname/.kube/config` on Linux or `/Users/yourname/.kube/config` on macOS). The `~` acts as a dynamic shortcut that always resolves to the current user's home directory. This is incredibly useful in documentation and scripts because it works flawlessly regardless of what your specific username is or which operating system you are using. By using `~`, developers can write a single command that works across everyone's personal machine without needing to be customized.
+The system will look in your user's home directory (e.g., `/home/yourname/.kube/config` on Linux or `/Users/yourname/.kube/config` on macOS). The `~` acts as a dynamic shortcut that usually resolves to the current user's home directory in shell contexts. This is incredibly useful in documentation and scripts because it works flawlessly regardless of what your specific username is or which operating system you are using. By using `~`, developers can write a single command that works across everyone's personal machine without needing to be customized.
 
 </details>
 

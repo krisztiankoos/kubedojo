@@ -24,7 +24,7 @@ After this module, you will be able to:
 
 ## Why This Module Matters
 
-Every single tool in modern software engineering — Kubernetes, Docker, cloud platforms, automation scripts — starts with one thing: **the terminal**.
+Many of the tools you'll use in modern software engineering — Kubernetes, Docker, cloud platforms, automation scripts — are fastest to learn and control from **the terminal**.
 
 You might have heard people call it "the command line" or "the CLI" or "the shell." It sounds intimidating. It looks like something from a 1990s hacker movie. But here's the truth: it's just another way to talk to your computer, and you're going to learn it right now.
 
@@ -123,9 +123,6 @@ Many servers are managed remotely without anyone sitting in front of a screen. I
 When you click through a GUI, the steps can be harder to document and repeat unless the tool records them for you. But when you type commands, you usually have a shell history and can save the exact steps in a script. You can share those commands with a teammate, write them down, and rerun the same procedure consistently.
 
 > **Stop and think**: Imagine you need to set up 10 identical servers for a new application. With a GUI, you'd click through the same setup screens 10 times, hoping you don't miss a checkbox on server #7. With a terminal, you write the setup commands once, save them in a script, and run that script on all 10 servers. Which approach is more likely to give you 10 identical servers?
-
-**A Documented Operational Mistake**
-A real example of operational risk comes from AWS. In its official summary of the [February 28, 2017 Amazon S3 disruption](https://aws.amazon.com/message/41926/), AWS said an authorized team member entered one input incorrectly in an operational command, which removed more servers than intended and contributed to a major outage in `us-east-1`. AWS later added safeguards to the tool to reduce the chance of the same mistake happening again. The lesson here is not that terminals are bad or GUIs are bad. The lesson is that repeatable tooling, reviews, and safety checks matter when one action can affect many systems. ([AWS postmortem](https://aws.amazon.com/message/41926/))
 
 > **GUI vs Terminal — Honest Trade-offs**
 > We praise the terminal a lot here, but GUIs genuinely win in several areas. If you are looking at visual monitoring dashboards (like Grafana) to spot a sudden spike in traffic, editing complex architecture diagrams, or exploring a brand-new application for the very first time, a GUI is vastly superior. The rule of thumb: use GUIs for consuming visual information and initial exploration; use the terminal for text manipulation, automation, and precise execution.
@@ -355,16 +352,6 @@ Everyone makes these when starting out. That's completely normal.
 >
 > For the everyday beginner mistakes in this module, Ctrl+C will get you out.
 
-### Common Mistakes in Production
-
-When you move from learning to working on real servers, the stakes get higher. Here are mistakes that happen in the real world:
-
-| Production Mistake | Real Consequence | How to Prevent It |
-|--------------------|------------------|-------------------|
-| Running a command on the wrong server because you didn't read the prompt | A mistake like this can hit production instead of staging. In [GitLab's January 31, 2017 database outage](https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/), the company reported that an accidental removal of data from its primary database caused a major outage and some unrecoverable production data loss. ([GitLab postmortem](https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/)) | Always double-check the `username@hostname` in your prompt before pressing Enter on a destructive command. |
-| Copying and pasting multiple lines of commands from the internet directly into the terminal | The terminal might execute hidden malicious commands or run incomplete commands immediately. | Paste into a plain text editor first, review exactly what the commands do, and then copy them into your terminal. |
-| Running a script without testing it first | A small typo in an automated script takes down 50 servers simultaneously instead of just one. | Test scripts on a single, non-production server (a staging environment) before running them everywhere. |
-
 ---
 
 ## Quiz
@@ -421,7 +408,7 @@ Using the terminal is safer because it allows you to write a single, testable sc
 <details>
 <summary>Show Answer</summary>
 
-First, when you need to automate repetitive tasks, such as renaming 500 files or setting up daily backups; the terminal allows you to write a script that does this instantly and perfectly every time, which a GUI cannot easily replicate. Second, when you are managing remote servers in data centers or the cloud, these machines typically do not have a graphical interface installed at all to save resources, making terminal access via SSH the only way to communicate with them. Third, when you need to share a complex workflow with a teammate; you can simply copy and paste terminal commands to guarantee they execute the exact same steps, whereas explaining GUI steps requires creating ambiguous screenshots or lengthy written click-paths. In all these scenarios, the terminal provides the automation, access, and precision that modern engineering strictly requires.
+First, when you need to automate repetitive tasks, such as renaming 500 files or setting up daily backups; the terminal allows you to write a script that handles the job consistently each time, which a GUI cannot easily replicate. Second, when you are managing remote servers in data centers or the cloud, these machines typically do not have a graphical interface installed at all to save resources, making terminal access via SSH the only way to communicate with them. Third, when you need to share a complex workflow with a teammate; you can simply copy and paste terminal commands to guarantee they execute the exact same steps, whereas explaining GUI steps requires creating ambiguous screenshots or lengthy written click-paths. In all these scenarios, the terminal provides the automation, access, and precision that modern engineering strictly requires.
 
 </details>
 

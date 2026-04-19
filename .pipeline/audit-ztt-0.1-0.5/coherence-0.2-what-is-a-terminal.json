@@ -1,0 +1,27 @@
+[
+  {
+    "path": "src/content/docs/prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal.md",
+    "module_title": "Module 0.2: What is a Terminal?",
+    "audience": "absolute_beginner",
+    "section_count": 14,
+    "flag_count": 2,
+    "findings": [
+      {
+        "excerpt": "A Documented Operational Mistake\nA real example of operational risk comes from AWS. In its official summary of the February 28, 2017 Amazon S3 disruption (https://aws.amazon.com/message/41926/), AWS sai",
+        "verdict": "off_topic",
+        "reason": "This paragraph introduces a complex cloud infrastructure outage and operational risk management, which is a significant domain jump from basic terminal concepts for absolute beginners.",
+        "suggested_action": "delete",
+        "section": "Why Do Engineers Use Terminals?",
+        "section_start_line": 95
+      },
+      {
+        "excerpt": "### Common Mistakes in Production\n\nWhen you move from learning to working on real servers, the stakes get higher. Here are mistakes that happen in the real world:",
+        "verdict": "off_topic",
+        "reason": "The content jumps to production server management and database outage war stories which are out of scope for an absolute beginner learning 'What is a Terminal?'.",
+        "suggested_action": "delete",
+        "section": "Common Mistakes",
+        "section_start_line": 336
+      }
+    ]
+  }
+]

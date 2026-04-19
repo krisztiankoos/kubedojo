@@ -339,7 +339,7 @@ This is the most important thing in this entire module:
 
 > **`rm` does not move files to a trash can. It removes the file entry immediately, usually without an "Are you sure?" prompt or built-in undo. For everyday users, recovery is often difficult or impossible, although specialists may sometimes recover data before it is overwritten. If you need stronger assurance that data cannot be recovered, tools such as `shred` are used for that purpose.**
 
-**Real-World War Story:** In 1998, Pixar came close to losing the in-progress animation work for *Toy Story 2*. A command run against the wrong directory of the production servers began recursively deleting character models, sets, and animations. People watched files disappear in real time and literally pulled the server's power plug to stop it, but a large fraction of the work was already gone. Pixar recovered because one of the supervising technical directors — who had been working from home with a newborn — had been copying the project to a computer at her house. Even that copy was a couple of weeks old, so they still had to reconstruct work on top of it. The lesson for you: `rm` does exactly what you tell it to, instantly, with no "Are you sure?" — treat it with the same respect you'd give a real kitchen knife.
+**Real-World War Story:** In 1998, Pixar came close to losing the in-progress animation work for *Toy Story 2*. A command run against the wrong directory of the production servers began recursively deleting character models, sets, and animations. People watched files disappear in real time and literally pulled the server's power plug to stop it, but a large fraction of the work was already gone. Pixar recovered because one of the supervising technical directors — who had been working from home with a newborn — had been copying the project to a computer at her house. Even that copy was a couple of weeks old, so they still had to reconstruct work on top of it. The lesson for you: `rm` usually does exactly what you tell it to, immediately, and often with no "Are you sure?" prompt — treat it with the same respect you'd give a real kitchen knife.
 
 **To delete a folder and everything inside it:**
 
@@ -397,8 +397,8 @@ Keep this handy until these become muscle memory:
 
 You might be wondering if professionals really use these basic commands every day. Absolutely. Here is how they look in the real world:
 
-- **A DevOps engineer** uses `mkdir -p` to instantly create identical deployment directory structures across 50 servers at once.
-- **A Site Reliability Engineer (SRE)** uses `ls -lt | head` during a major site outage to instantly find the most recently changed configuration file that might have caused the crash.
+- **A DevOps engineer** uses `mkdir -p` to quickly create matching deployment directory structures across many servers as part of an automated rollout.
+- **A Site Reliability Engineer (SRE)** might use `ls -lt | head` during an incident to find the most recently changed configuration file that could be the cause of a crash.
 - **A Systems Administrator** uses `cd ~` and `pwd` constantly to re-orient themselves after jumping through dozens of different server environments.
 
 ### Honest Trade-Offs: When to Use the GUI
@@ -416,7 +416,7 @@ Use the terminal when you need precision, automation, or remote access. Use the 
 
 - **Command-line interfaces became common long before graphical mouse-and-windows interfaces became mainstream.** [Computers used text-only interfaces from the 1960s until the mid-1980s.](https://en.wikipedia.org/wiki/Command-line_interface) The graphical mouse-and-windows interface you're used to was [popularized by the Apple Macintosh in 1984](https://en.wikipedia.org/wiki/Classic_Mac_OS). When you use a terminal, you're using the original way humans talked to computers.
 
-- **`ls` is one of the oldest commands still in use.** It dates back to 1961 in MIT's Compatible Time-Sharing System (CTSS), where it was called `LISTF`. The modern `ls` appeared in the first version of Unix in 1971. You're using a command that's over 50 years old.
+- **`ls` is among the oldest commands still widely used today.** It traces back to the [Compatible Time-Sharing System (CTSS) at MIT in the early 1960s](https://en.wikipedia.org/wiki/Compatible_Time-Sharing_System), where a similar command was named `LISTF`. The modern `ls` appeared in the [first version of Unix around 1971](https://en.wikipedia.org/wiki/Ls). You're using a command with over 50 years of lineage.
 
 - **The `~` (tilde) for home directory comes from a keyboard accident.** On early terminals, [the Home key and the `~` key were on the same physical key](https://en.wikipedia.org/wiki/Tilde). The convention stuck, and many Unix-like shells now use `~` to mean "home."
 
@@ -477,7 +477,7 @@ You'll get more practice with pipes as the curriculum continues. For now, just r
 1. **You ran `mkdir projects` but the folder appeared in a completely unexpected location. What command should you have run BEFORE `mkdir`, and why?**
    <details>
    <summary>Answer</summary>
-   You should have run `pwd` first to check where you were. `mkdir` creates the folder in your current working directory, and if you navigated somewhere unexpected earlier without realizing it, the folder ends up in the wrong place. This is the #1 beginner mistake — always know where you are before creating or deleting anything. Run `pwd`, verify you're in the right place, then proceed.
+   You should have run `pwd` first to check where you were. `mkdir` creates the folder in your current working directory, and if you navigated somewhere unexpected earlier without realizing it, the folder ends up in the wrong place. This is a very common beginner mistake — make sure you know where you are before creating or deleting anything. Run `pwd`, verify you're in the right place, then proceed.
    </details>
 
 2. **You need to reorganize your project folder. You want to keep your original logo file in the 'assets' folder but also need a version of it in the 'public' folder. Later, you realize a config file is in the wrong directory and needs to be relocated without leaving a duplicate behind. Which commands do you use for each task and why?**
@@ -489,7 +489,7 @@ You'll get more practice with pipes as the curriculum continues. For now, just r
 3. **You are cleaning up old log files in your terminal and accidentally type `rm production-db.sql` instead of `rm production.log`. You immediately hit `Ctrl+Z` and look for the 'Undo' button or the Trash bin to recover your database backup. What happens next and why?**
    <details>
    <summary>Answer</summary>
-   You usually cannot recover the database backup file through `Ctrl+Z`, an Undo button, or a Trash bin. When you delete a file using `rm` in the terminal, it does not get moved to a temporary Trash or Recycle Bin like it does in a graphical interface. Instead, `rm` removes the directory entry immediately. For normal users, that means the file is effectively gone, although forensic or undelete tools may sometimes recover data before it is overwritten. There is no built-in undo feature or confirmation prompt by default, which is why you must always double-check your commands before pressing Enter.
+   You usually cannot recover the database backup file through `Ctrl+Z`, an Undo button, or a Trash bin. When you delete a file using `rm` in the terminal, it does not get moved to a temporary Trash or Recycle Bin like it does in a graphical interface. Instead, `rm` removes the directory entry immediately. For normal users, that means the file is effectively gone, although forensic or undelete tools may sometimes recover data before it is overwritten. There is no built-in undo feature or confirmation prompt by default, which is why you should double-check your commands before pressing Enter.
    </details>
 
 4. **You are starting a new web project and need to create a deep directory structure `app/frontend/components/buttons/` right away, but none of these folders exist yet. You try `mkdir app/frontend/components/buttons/` but the terminal throws an error. What command should you use instead and why did the first one fail?**
@@ -501,7 +501,7 @@ You'll get more practice with pipes as the curriculum continues. For now, just r
 5. **You've been navigating through deep server logs for an hour and suddenly realize you have no idea which directory you are currently in, and you need to get back to your main user folder to run a script. What two commands do you use to figure out your location and return to your main folder, and why?**
    <details>
    <summary>Answer</summary>
-   First, you use the `pwd` command to print your working directory, which tells you your exact current location in the file system so you can orient yourself. Then, you use the `cd ~` command to immediately jump back to your user's home directory. The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated. This combination quickly restores your context and puts you back in a safe, known location.
+   First, you use the `pwd` command to print your working directory, which tells you your exact current location in the file system so you can orient yourself. Then, you use the `cd ~` command to jump back to your user's home directory. The tilde (`~`) symbol is a standard shell shortcut that usually represents your home directory, regardless of how deep you are currently navigated. This combination quickly restores your context and puts you back in a safe, known location.
    </details>
 
 ---

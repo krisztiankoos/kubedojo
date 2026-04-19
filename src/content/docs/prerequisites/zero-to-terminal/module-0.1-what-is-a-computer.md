@@ -192,7 +192,7 @@ Let's trace what happens when you open a photo on your computer:
    → "Dish served!"
 ```
 
-Every single thing your computer does follows this pattern. Every. Single. Thing.
+Nearly everything your computer does follows this pattern. Every. Single. Thing.
 
 ---
 
@@ -207,7 +207,7 @@ Kubernetes is a system that manages **thousands of these kitchens** (computers) 
 - What to do when a kitchen breaks down (move the orders to another kitchen)
 - How to add more kitchens when the restaurant gets busy
 
-You can't manage thousands of kitchens if you don't understand how *one* kitchen works. That's what this module gave you. In the cloud, pricing depends on the instance type, operating system, region, and purchase model. For example, a small cloud VM can cost only a few cents per hour, but the exact price depends on the instance type, operating system, region, and purchase model. Misunderstanding these resources literally costs money. Source: [AWS EC2 T2 Instances](https://aws.amazon.com/ec2/instance-types/t2/).
+You can't manage thousands of kitchens if you don't understand how *one* kitchen works. That's what this module gave you. The four concepts you just learned — CPU, RAM, disk, and operating system — are the same building blocks whether you're looking at your own laptop or at thousands of servers in the cloud. Every later module builds on what you now know.
 
 ---
 
@@ -230,7 +230,6 @@ You can't manage thousands of kitchens if you don't understand how *one* kitchen
 | Confusing RAM and storage | "I have 256 GB of memory" -- you probably mean storage, not RAM | RAM = temporary counter space (8-32 GB typical). Storage = permanent pantry (256 GB - 2 TB typical) |
 | Thinking more storage = faster computer | A bigger pantry doesn't make the chef cook faster | Speed comes from CPU and RAM. Storage just means more room for files |
 | Ignoring RAM when computer is slow | Opening 47 browser tabs and wondering why things crawl | Check how much RAM is in use. Close what you don't need |
-| Over-provisioning cloud servers | "Let's just use the biggest server so it doesn't crash." | In the cloud, you pay for what you provision. A team might pay hundreds of dollars per month for a larger server than their application actually needs. Right-sizing can save substantial money over time. |
 | Assuming CPU speed solves internet lag | "My web pages load slowly, I need a better processor." | Internet speed depends on your network bandwidth and latency. Troubleshoot your router, Wi-Fi signal, or ISP connection first before blaming your computer hardware. |
 | Never restarting the operating system | "I just close my laptop lid, why is my computer glitching?" | Restarting clears out the RAM completely and restarts background processes. Make it a habit to reboot at least once a week to clear temporary issues. |
 | Judging a CPU only by its clock speed | "A 4 GHz CPU is always better than a 3 GHz one." | Look at the number of cores as well. A 3 GHz CPU with 8 cores can handle many simultaneous tasks much better than a 4 GHz CPU with only 2 cores. |
@@ -263,19 +262,7 @@ You can't manage thousands of kitchens if you don't understand how *one* kitchen
    A bigger hard drive will not make their computer faster, because storage capacity does not affect processing speed. That would be like building a bigger pantry and expecting the chef to cook faster. They should first check their RAM and CPU usage to see if the system is overloaded with too many open programs. If their RAM is entirely full, the computer is likely "swapping" data back and forth to the slow disk, which causes the sluggishness. Upgrading the RAM or switching to an SSD (if they have an older HDD) would be more effective upgrades.
    </details>
 
-5. **Your team is deploying a new web application to the cloud and debating whether to use Windows or Linux servers. Based on what you know about operating systems, why is Linux usually the default choice for Kubernetes-based workloads even though Kubernetes can also use Windows worker nodes?**
-   <details>
-   <summary>Answer</summary>
-   Linux is usually the default choice because most Kubernetes examples, container images, and operational tooling assume Linux, and Kubernetes control planes run on Linux. Windows worker nodes are supported, but teams typically use them only when an application depends on Windows-specific software or Windows containers. If the application has no Windows-only requirement, Linux is usually the simpler and more common platform to automate and operate at scale.
-   </details>
-
-6. **You are running a database server for your company's e-commerce site, and during a major sale, the server crashes. The monitoring logs show that CPU utilization was at 20%, but memory usage hit 100% right before the crash. What caused the crash, and how should you fix it?**
-   <details>
-   <summary>Answer</summary>
-   The crash was caused by the server running out of RAM (memory exhaustion) rather than a lack of processing power. When the server reached 100% memory usage, the operating system had no more "counter space" to process the sudden influx of customer orders and likely killed the database process to protect itself. To fix this, you need to either provision a server with more RAM to handle the peak load, or optimize the database queries to use less memory. The low CPU utilization indicates that upgrading the processor would not have prevented this outage.
-   </details>
-
-7. **Your colleague accidentally spills coffee on their laptop, completely destroying the motherboard, CPU, and RAM. However, a technician manages to extract the internal SSD and connect it to a new computer. Will your colleague be able to recover their files? Why or why not?**
+5. **Your colleague accidentally spills coffee on their laptop, completely destroying the motherboard, CPU, and RAM. However, a technician manages to extract the internal SSD and connect it to a new computer. Will your colleague be able to recover their files? Why or why not?**
    <details>
    <summary>Answer</summary>
    Yes, your colleague will almost certainly be able to recover their files. The SSD acts as the computer's "pantry," where data is stored permanently even when the power is off or other components fail. Because the CPU and RAM only handle active processing and temporary data, their destruction does not erase the information saved on the storage drive. As long as the physical SSD itself was not damaged by the spill or encrypted without a backup key, all documents, photos, and installed programs remain intact and readable.

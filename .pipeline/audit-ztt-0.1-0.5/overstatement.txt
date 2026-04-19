@@ -1,0 +1,61 @@
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.md — 6 candidates ===
+L27    [every_single      ]               Every single
+       > Every single thing you'll learn in this curriculum -- Kubernetes, containers, cloud computing -- runs on computers
+L195   [every_single      ]               Every single
+       > Every single thing your computer does follows this pattern
+L235   [never             ]               Never
+       > | Never restarting the operating system | "I just close my laptop lid, why is my computer glitching?" | Restarting clears out the RAM completely and restarts background processes
+L236   [always            ]               always
+       > | Judging a CPU only by its clock speed | "A 4 GHz CPU is always better than a 3 GHz one
+L272   [100_percent       ]               100%
+       > The monitoring logs show that CPU utilization was at 20%, but memory usage hit 100% right before the crash
+L275   [100_percent       ]               100%
+       > When the server reached 100% memory usage, the operating system had no more "counter space" to process the sudden influx of customer orders and likely killed the database process to protect itself
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal.md — 5 candidates ===
+L27    [every_single      ]               Every single
+       > Every single tool in modern software engineering — Kubernetes, Docker, cloud platforms, automation scripts — starts with one thing: **the terminal**
+L364   [always            ]               Always
+       > com/blog/postmortem-of-database-outage-of-january-31/)) | Always double-check the `username@hostname` in your prompt before pressing Enter on a destructive command
+L406   [immediately       ]               immediately
+       > Relying on a wall clock introduces significant human error, such as applying the wrong timezone conversion, rounding up to the nearest minute, or simply forgetting to write the time down immediately
+L419   [universal         ]               universally
+       > **Question 6**: A junior colleague argues that GUIs are universally better because they are more intuitive and visual
+L424   [instantly         ]               instantly
+       > First, when you need to automate repetitive tasks, such as renaming 500 files or setting up daily backups; the terminal allows you to write a script that does this instantly and perfectly every time, 
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.3-first-commands.md — 12 candidates ===
+L342   [instantly         ]               instantly
+       > The lesson for you: `rm` does exactly what you tell it to, instantly, with no "Are you sure?" — treat it with the same respect you'd give a real kitchen knife
+L360   [always            ]               always
+       > Rule of thumb: always double-check what you're deleting before pressing Enter
+L391   [immediately       ]               immediately
+       > | `rm` | Deletes immediately | "Shred this paper" (no recycle bin by default) |
+L400   [instantly         ]               instantly
+       > - **A DevOps engineer** uses `mkdir -p` to instantly create identical deployment directory structures across 50 servers at once
+L419   [the_oldest        ]               the oldest
+       > - **`ls` is one of the oldest commands still in use
+L480   [always            ]               always
+       > This is the #1 beginner mistake — always know where you are before creating or deleting anything
+L489   [immediately       ]               immediately
+       > You immediately hit `Ctrl+Z` and look for the 'Undo' button or the Trash bin to recover your database backup
+L492   [always            ]               always
+       > There is no built-in undo feature or confirmation prompt by default, which is why you must always double-check your commands before pressing Enter
+L492   [immediately       ]               immediately
+       > Instead, `rm` removes the directory entry immediately
+L504   [universal         ]               universal
+       > The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated
+L504   [always            ]               always
+       > The tilde (`~`) symbol is a universal shortcut that always represents your home directory, regardless of how deep you are currently navigated
+L504   [immediately       ]               immediately
+       > Then, you use the `cd ~` command to immediately jump back to your user's home directory
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.4-files-and-directories.md — 2 candidates ===
+L408   [every_single      ]               Every single
+       > Every single file on your computer is somewhere on a branch that connects back up to `/`
+L438   [always            ]               always
+       > The `~` acts as a dynamic shortcut that always resolves to the current user's home directory
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.5-editing-files.md — 3 candidates ===
+L369   [always            ]               Always
+       > | Forgetting to save before exiting | Your changes are lost | Always Ctrl+O to save before Ctrl+X to exit
+L389   [immediately       ]               immediately
+       > You do this by pressing Ctrl+O (Write Out) and hitting Enter to confirm the file name, which writes your changes to the disk immediately
+L407   [always            ]               always
+       > You must always address permission issues first because the system won't even attempt to read the syntax of a file it isn't allowed to execute

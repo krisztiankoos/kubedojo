@@ -1,0 +1,12 @@
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.md — 0 candidates ===
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal.md — 0 candidates ===
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.3-first-commands.md — 3 candidates ===
+L342   [dated_year,year_reference,war_story_pref]  
+       > **Real-World War Story:** In 1998, Pixar came close to losing the in-progress animation work for *Toy Story 2*. A command run against the wrong directory of the production servers began recursively deleting character models, sets, and anima
+L400   [named_incident                          ]  
+       > - **A DevOps engineer** uses `mkdir -p` to instantly create identical deployment directory structures across 50 servers at once.
+- **A Site Reliability Engineer (SRE)** uses `ls -lt | head` during a major site outage to instantly find the m
+L419   [year_reference,oldest_first_only        ]  
+       > - **`ls` is one of the oldest commands still in use.** It dates back to 1961 in MIT's Compatible Time-Sharing System (CTSS), where it was called `LISTF`. The modern `ls` appeared in the first version of Unix in 1971. You're using a command 
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.4-files-and-directories.md — 0 candidates ===
+=== src/content/docs/prerequisites/zero-to-terminal/module-0.5-editing-files.md — 0 candidates ===
