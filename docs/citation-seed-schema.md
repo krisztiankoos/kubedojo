@@ -39,20 +39,48 @@ already in flight).
   "claim_text": "verbatim or tightly-paraphrased sentence from the module",
   "claim_class": "war_story | incident | statistic | standard | vendor_capability | pricing | benchmark | security_claim",
   "span_hint": "line 74" or "section: RAM" or "paragraph after diagram 2",
-  "proposed_url": "https://...",
-  "proposed_tier": "standards | upstream | vendor | incidents | general",
-  "rationale": "why this URL supports this claim, 1 sentence"
+  "disposition": "supported | weak_anchor | unciteable",
+  "proposed_url": "https://..." | null,   // required for supported/weak_anchor; null for unciteable
+  "proposed_tier": "standards | upstream | vendor | incidents | general" | null,
+  "rationale": "why this URL supports this claim, 1 sentence (for supported/weak_anchor) OR why no URL can honestly back the claim (for unciteable)"
 }
 ```
+
+### Disposition rules (critical — calibrated 2026-04-19)
+
+The first calibration run on ZTT 0.1 showed Codex will force a weak
+anchor for EVERY claim if not told otherwise, masking the fact that
+some module claims are hallucinated fabrications that nothing can
+honestly cite. The three dispositions exist to surface that:
+
+- **`supported`** — the proposed URL's page content genuinely
+  discusses THIS SPECIFIC claim. A K8s Windows-support claim cited
+  to `kubernetes.io/docs/concepts/windows/` qualifies. A primary
+  source, not just a thematic anchor.
+- **`weak_anchor`** — the URL is a category-page or thematic-anchor
+  that touches the same topic but doesn't directly confirm the
+  specific number/event/claim. Acceptable when the claim is loose
+  ("browsers use memory"). NOT acceptable when the claim is
+  specific ("30 tabs use 4-6GB").
+- **`unciteable`** — NO honest URL on the allowlist backs this
+  claim; it likely originates from the module writer's parametric
+  knowledge, not evidence. Do NOT force a URL. Set `proposed_url`
+  and `proposed_tier` to null. The module will be flagged for
+  content revision — the claim should be softened, made generic,
+  or removed — instead of citation.
+
+Pattern: dated-specific prices, exact percentages at a single date,
+verbatim quotes without source, very specific incident details
+are high-probability `unciteable`.
 
 Rules:
 - `claim_id` is stable across research runs for the same module
   (use sha1 of `claim_text` truncated to 7 chars, prefixed `C`).
 - `claim_class` must match the taxonomy in
   `docs/citation-trusted-domains.yaml :: claim_class_priority`.
-- `proposed_tier` MUST be one of the allowlist tiers. If the URL's
-  host matches a different tier, the validator auto-corrects and
-  records a note.
+- `proposed_tier` MUST be one of the allowlist tiers when set. If
+  the URL's host matches a different tier, the validator
+  auto-corrects and records a note.
 - Teaching prose (analogies, connective tissue, instructor framing)
   must NOT produce claims. Zero-claim output is legitimate.
 

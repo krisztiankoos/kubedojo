@@ -1,121 +1,111 @@
 {
   "module_key": "prerequisites/zero-to-terminal/module-0.1-what-is-a-computer",
   "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.md",
-  "research_run_id": "2026-04-19T00:11:13+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-04-19T00:23:08+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 1,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "30 browser tabs alone can eat 4-6 GB, and once RAM is full the OS starts swapping to disk and everything becomes painfully slow.",
-      "claim_class": "benchmark",
-      "span_hint": "section: RAM: Your Counter Space; pause-and-predict callout",
-      "proposed_url": "https://developer.mozilla.org/en-US/docs/Web/Performance",
-      "proposed_tier": "general",
-      "rationale": "This is a numeric performance claim about browser memory usage and swap-related slowdown, so it needs a measurement-backed source."
+      "claim_text": "In 2017, a GitLab engineer accidentally deleted a production database, and the recovery depended on the state of replicas and backups.",
+      "claim_class": "incident",
+      "span_hint": "section: RAM: Your Counter Space, paragraph beginning 'In 2017, a GitLab engineer...'",
+      "disposition": "unciteable",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "rationale": "Allowlisted sources can verify the 2017 GitLab database deletion incident, but none on the allowlist directly support the specific postmortem-style claim about recovery depending on replicas and backups."
     },
     {
       "claim_id": "C002",
-      "claim_text": "In 2017, a GitLab engineer accidentally deleted a production database, and recovery depended on replicas and backups.",
-      "claim_class": "incident",
-      "span_hint": "section: RAM: Your Counter Space; paragraph after swapping explanation",
-      "proposed_url": "https://en.wikipedia.org/wiki/GitLab",
-      "proposed_tier": "general",
-      "rationale": "This is a concrete outage incident and recovery claim, so it requires an incident-style source."
+      "claim_text": "Thirty browser tabs alone can consume 4-6 GB of RAM.",
+      "claim_class": "statistic",
+      "span_hint": "section: RAM: Your Counter Space, blockquote beginning 'Pause and predict'",
+      "disposition": "unciteable",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "rationale": "Exact tab memory use varies too much by browser, site mix, extensions, and date, and no allowlisted source honestly backs this specific 4-6 GB figure."
     },
     {
       "claim_id": "C003",
-      "claim_text": "Windows was the most common desktop OS worldwide at 60.8% in March 2026.",
-      "claim_class": "statistic",
-      "span_hint": "section: The Operating System: Your Restaurant Manager; OS list block",
-      "proposed_url": "https://en.wikipedia.org/wiki/Usage_share_of_operating_systems",
-      "proposed_tier": "general",
-      "rationale": "This is a dated market-share statistic and must be cited with a source that tracks OS usage share."
+      "claim_text": "Kubernetes worker nodes can run either Linux or Microsoft Windows, while the control plane runs on Linux.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Operating System: Your Restaurant Manager, paragraph beginning 'Here's the part that will matter...'",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/windows/intro/",
+      "proposed_tier": "standards",
+      "rationale": "The Kubernetes documentation directly states that the control plane runs on Linux and worker nodes can run either Windows or Linux."
     },
     {
       "claim_id": "C004",
-      "claim_text": "Kubernetes worker nodes can run either Linux or Microsoft Windows, while the control plane stays on Linux.",
-      "claim_class": "standard",
-      "span_hint": "section: The Operating System: Your Restaurant Manager; paragraph after OS list block",
-      "proposed_url": "https://kubernetes.io/docs/concepts/windows/",
-      "proposed_tier": "standards",
-      "rationale": "This is a platform support statement tied to upstream Kubernetes documentation and should cite the official docs."
+      "claim_text": "AWS listed a Linux t2.large instance with 8 GiB of RAM in us-east-1 at $0.0928/hour on April 15, 2026.",
+      "claim_class": "pricing",
+      "span_hint": "section: Why This Matters for Kubernetes, final paragraph",
+      "disposition": "unciteable",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "rationale": "This is a dated-specific price snapshot, and the allowlist does not provide a reliable archived April 15, 2026 page to prove that exact historical listing."
     },
     {
       "claim_id": "C005",
-      "claim_text": "Cloud pricing depends on instance type, operating system, region, and purchase model; AWS listed a Linux t2.large with 8 GiB RAM in us-east-1 at $0.0928/hour on April 15, 2026.",
-      "claim_class": "pricing",
-      "span_hint": "section: Why This Matters for Kubernetes; final paragraph",
-      "proposed_url": "https://aws.amazon.com/ec2/instance-types/t2/",
-      "proposed_tier": "vendor",
-      "rationale": "This is a dated vendor pricing claim with specific SKU, region, OS, and hourly rate details."
+      "claim_text": "The Apollo Guidance Computer had 74 KB of memory, and a modern smartphone has millions of times more computing power than the computers used for the 1969 moon landing.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know?, bullet 1",
+      "disposition": "unciteable",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "rationale": "Allowlisted sources support AGC word counts or roughly 72-76 KB depending on conversion, not this exact '74 KB' wording, and they do not honestly support the 'millions of times more' comparison as written."
     },
     {
       "claim_id": "C006",
-      "claim_text": "A modern smartphone has more computing power than the computers NASA used for the 1969 moon landing, and the Apollo Guidance Computer had 74 KB of memory.",
+      "claim_text": "Early computers used magnetic-core memory made of tiny rings, each ring stored one bit, and a full megabyte would require over 8 million rings.",
       "claim_class": "statistic",
-      "span_hint": "section: Did You Know?; first bullet",
-      "proposed_url": "https://en.wikipedia.org/wiki/Apollo_Guidance_Computer",
+      "span_hint": "section: Did You Know?, bullet 2",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Magnetic-core_memory",
       "proposed_tier": "general",
-      "rationale": "This is a historical hardware-capacity comparison with a specific memory figure that needs sourcing."
+      "rationale": "The source directly explains magnetic-core rings and one-bit-per-core storage, which supports the stated ring-count arithmetic for a megabyte."
     },
     {
       "claim_id": "C007",
-      "claim_text": "Early computers used magnetic-core memory; each ring stored one bit, and a full megabyte would require over 8 million rings.",
-      "claim_class": "statistic",
-      "span_hint": "section: Did You Know?; second bullet",
-      "proposed_url": "https://en.wikipedia.org/wiki/Magnetic-core_memory",
+      "claim_text": "SSDs have no moving parts and are generally faster, quieter, and more resistant to physical shock than hard disk drives.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Did You Know?, bullet 3",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Solid-state_drive",
       "proposed_tier": "general",
-      "rationale": "This is a historical technology description with a concrete capacity calculation that should be cited."
+      "rationale": "The source directly compares SSDs with HDDs on moving parts, speed, noise, and shock resistance."
     },
     {
       "claim_id": "C008",
-      "claim_text": "SSDs have no moving parts and are therefore faster, quieter, and more durable than HDDs; dropping a laptop with an HDD may lose data while an SSD is less likely to.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Did You Know?; third bullet",
-      "proposed_url": "https://en.wikipedia.org/wiki/Solid-state_drive",
+      "claim_text": "In 1947, engineers working on the Harvard Mark II found a moth in the machine and logged it as an 'actual bug'.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know?, bullet 4",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Harvard_Mark_II",
       "proposed_tier": "general",
-      "rationale": "These are concrete storage-technology capability and durability claims that need a technical reference."
-    },
-    {
-      "claim_id": "C009",
-      "claim_text": "In 1947, engineers working on the Harvard Mark II found a moth in a relay, logged it as the first actual case of a bug being found, and the term debugging has been used ever since.",
-      "claim_class": "war_story",
-      "span_hint": "section: Did You Know?; fourth bullet",
-      "proposed_url": "https://en.wikipedia.org/wiki/Software_bug",
-      "proposed_tier": "general",
-      "rationale": "This is a named historical anecdote about the origin story of debugging and should be sourced."
-    },
-    {
-      "claim_id": "C010",
-      "claim_text": "A team might pay about $400/month for a 32 GB RAM cloud server when the application only uses 2 GB, and right-sizing can save thousands of dollars.",
-      "claim_class": "pricing",
-      "span_hint": "section: Common Mistakes; row: Over-provisioning cloud servers",
-      "proposed_url": "https://aws.amazon.com/ec2/pricing/on-demand/",
-      "proposed_tier": "vendor",
-      "rationale": "This is a concrete cloud-cost example with a dollar figure and savings implication, so it needs pricing support or should be softened."
+      "rationale": "The Harvard Mark II article directly covers the 1947 moth incident and the logbook note about an actual bug."
     }
   ],
   "further_reading": [
     {
-      "url": "https://en.wikipedia.org/wiki/Computer",
-      "title": "Computer",
-      "tier": "general",
-      "why_relevant": "Good broad refresher on the major parts of a computer and how they fit together."
-    },
-    {
-      "url": "https://en.wikipedia.org/wiki/Random-access_memory",
-      "title": "Random-access memory",
-      "tier": "general",
-      "why_relevant": "Useful follow-up for understanding volatile memory, capacity, and why swapping hurts performance."
-    },
-    {
-      "url": "https://kubernetes.io/docs/concepts/windows/",
-      "title": "Windows in Kubernetes",
+      "url": "https://kubernetes.io/docs/concepts/windows/intro/",
+      "title": "Windows containers in Kubernetes",
       "tier": "standards",
-      "why_relevant": "Connects the module's OS discussion to the Linux/Windows reality students will see in Kubernetes."
+      "why_relevant": "Primary Kubernetes documentation for the Linux control plane and mixed Linux/Windows worker-node model mentioned in the module."
+    },
+    {
+      "url": "https://aws.amazon.com/ec2/instance-types/t2/",
+      "title": "Amazon EC2 T2 Instances",
+      "tier": "vendor",
+      "why_relevant": "Concrete cloud instance page showing CPU, memory, region context, and pricing in one place."
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Apollo_Guidance_Computer",
+      "title": "Apollo Guidance Computer",
+      "tier": "general",
+      "why_relevant": "Useful background for the module's comparison between modern devices and moon-era computing hardware."
     }
   ],
-  "notes": "Excluded analogy-only prose, quiz/exercise content, and repeated claims inside quiz answers. StatCounter and the original GitLab postmortem host are outside the allowlist, so the proposed URLs for those claims are allowlisted anchor pages for follow-up sourcing.",
+  "notes": "Per task rules, I excluded claims that appear only inside code blocks, tables, quiz items, or exercise steps. That means the StatCounter desktop-share line in the OS code block and the Common Mistakes table were intentionally not emitted here.",
   "_schema_issues": [],
   "rejected_urls": []
 }

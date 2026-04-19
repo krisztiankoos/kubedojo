@@ -45,6 +45,7 @@ CLAIM_CLASSES = {
     "vendor_capability", "pricing", "benchmark", "security_claim",
 }
 TIER_NAMES = {"standards", "upstream", "vendor", "incidents", "general"}
+DISPOSITIONS = {"supported", "weak_anchor", "unciteable"}
 
 
 # ---- prompt --------------------------------------------------------------
@@ -76,6 +77,44 @@ only produce the JSON seed.
 If the module is purely pedagogical with zero hard claims, return an empty
 `claims` array and 2–3 Further Reading entries appropriate to the topic.
 This is a legitimate, expected output for intro modules.
+
+## CRITICAL: disposition per claim — do not force weak anchors
+
+Every claim gets a `disposition` field. This is the most important
+judgment you make. Do not lie; do not fill a slot with a URL that
+doesn't actually back the claim.
+
+- **`supported`** — the URL's page directly discusses THIS specific
+  claim. A K8s Windows-support statement cited to
+  `kubernetes.io/docs/concepts/windows/` qualifies. An exact paper
+  cited for the transformer architecture (arxiv.org/abs/1706.03762)
+  qualifies. This is a primary or near-primary source. Strong
+  support, not just thematic.
+
+- **`weak_anchor`** — the URL is a category-page or topic-anchor
+  on the allowlist that shares the same subject but does NOT
+  directly confirm the specific number/event/claim. Acceptable
+  ONLY when the claim itself is loose and generic ("browsers use
+  memory"). NOT acceptable when the claim is specific.
+
+- **`unciteable`** — NO URL on the allowlist honestly backs this
+  claim. Set `proposed_url` and `proposed_tier` to null. Explain in
+  `rationale` why nothing can back it. Examples that should be
+  `unciteable`:
+  - dated-specific prices ("$0.0928/hr on April 15 2026")
+  - exact percentages at a single date when no source is on
+    the allowlist
+  - specific incident details whose primary postmortem is hosted
+    off-allowlist (e.g., GitLab.com) and for which no neutral
+    secondary source on the allowlist covers THOSE specifics
+  - verbatim quotes from a named person without a cited interview
+  - any claim that was likely fabricated by an LLM and has no
+    real-world basis
+
+Bias toward `unciteable` when in doubt. A truthful flag is better
+than a forced weak anchor. The next step uses `unciteable` to route
+the module to a content revision queue (claim gets softened or
+removed), not a citation queue.
 
 ## Trusted-domain allowlist
 
@@ -132,9 +171,10 @@ def _format_schema_block() -> str:
                     "claim_text": "<verbatim-or-tight-paraphrase>",
                     "claim_class": "<one-of-enum>",
                     "span_hint": "<line N | section: X | paragraph after diagram 2>",
-                    "proposed_url": "https://...",
-                    "proposed_tier": "<one-of-enum>",
-                    "rationale": "<one sentence>",
+                    "disposition": "<supported | weak_anchor | unciteable>",
+                    "proposed_url": "https://... or null if unciteable",
+                    "proposed_tier": "<tier or null if unciteable>",
+                    "rationale": "<one sentence — why URL supports, or why nothing can>",
                 }
             ],
             "further_reading": [
@@ -303,9 +343,21 @@ def validate_seed(seed: dict[str, Any]) -> list[str]:
         if not isinstance(claim, dict):
             issues.append(f"claim[{i}]:not_dict")
             continue
-        for f in ("claim_text", "claim_class", "proposed_url", "proposed_tier"):
+        for f in ("claim_text", "claim_class", "disposition"):
             if f not in claim:
                 issues.append(f"claim[{i}]:missing_{f}")
+        disp = claim.get("disposition")
+        if disp and disp not in DISPOSITIONS:
+            issues.append(f"claim[{i}]:bad_disposition:{disp}")
+        # URL/tier required when cited; must be null when unciteable.
+        if disp in {"supported", "weak_anchor"}:
+            if not claim.get("proposed_url"):
+                issues.append(f"claim[{i}]:missing_proposed_url_for_{disp}")
+            if not claim.get("proposed_tier"):
+                issues.append(f"claim[{i}]:missing_proposed_tier_for_{disp}")
+        elif disp == "unciteable":
+            if claim.get("proposed_url"):
+                issues.append(f"claim[{i}]:unciteable_must_have_null_url")
         cc = claim.get("claim_class")
         if cc and cc not in CLAIM_CLASSES:
             issues.append(f"claim[{i}]:bad_class:{cc}")
@@ -327,6 +379,13 @@ def validate_urls(seed: dict[str, Any]) -> dict[str, Any]:
     rejected: list[dict[str, Any]] = list(seed.get("rejected_urls") or [])
     kept_claims: list[dict[str, Any]] = []
     for claim in seed.get("claims") or []:
+        disp = claim.get("disposition")
+        # Unciteable claims bypass URL validation — they carry null URL.
+        if disp == "unciteable":
+            claim["proposed_url"] = None
+            claim["proposed_tier"] = None
+            kept_claims.append(claim)
+            continue
         url = (claim.get("proposed_url") or "").strip()
         if not url:
             rejected.append({
