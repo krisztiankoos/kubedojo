@@ -94,6 +94,15 @@ tiers:
                               # for own-incident claims)
     - status.cloud.google.com
     - azure.status.microsoft
+    # Primary-source hosts surfaced by 2026-04-19 calibration (ZTT
+    # 0.1/0.2 both flagged GitLab 2017 as unciteable because the
+    # postmortem lives here). These are first-party incident reports,
+    # acceptable because the claim is ABOUT that vendor's own outage.
+    - about.gitlab.com
+    - home.cern               # CERN "DO NOT POWER OFF" note and
+                              # first-web-server history
+    - blog.cloudflare.com     # cloudflare post-mortems (primary for
+                              # their own outages)
 
   # Last-resort general educational references. Intentionally narrow.
   # Anything not covered above AND not here is rejected.
@@ -102,6 +111,8 @@ tiers:
     - en.wikipedia.org        # only for stable definitional anchors;
                               # reviewer must prefer primary sources when
                               # the same claim is covered upstream.
+    - gs.statcounter.com      # market-share statistics (OS usage etc.);
+                              # surfaces often in Fundamentals modules.
 
 # Claim-class → tier preference ordering. Research prompt consults this
 # when picking a URL for a given claim; the first tier that returns a

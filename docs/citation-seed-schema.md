@@ -39,39 +39,73 @@ already in flight).
   "claim_text": "verbatim or tightly-paraphrased sentence from the module",
   "claim_class": "war_story | incident | statistic | standard | vendor_capability | pricing | benchmark | security_claim",
   "span_hint": "line 74" or "section: RAM" or "paragraph after diagram 2",
-  "disposition": "supported | weak_anchor | unciteable",
-  "proposed_url": "https://..." | null,   // required for supported/weak_anchor; null for unciteable
+  "disposition": "supported | weak_anchor | needs_allowlist_expansion | soften_to_illustration | cannot_be_salvaged",
+  "proposed_url": "https://..." | null,   // required for supported/weak_anchor; optional for needs_allowlist_expansion (context); null for soften/salvage
   "proposed_tier": "standards | upstream | vendor | incidents | general" | null,
-  "rationale": "why this URL supports this claim, 1 sentence (for supported/weak_anchor) OR why no URL can honestly back the claim (for unciteable)"
+  "suggested_rewrite": "for soften_to_illustration and cannot_be_salvaged: the new sentence text",  // null for other dispositions
+  "lesson_point_url": "https://... for soften_to_illustration: URL citing the general principle the example teaches",  // null for others
+  "rationale": "why this URL supports this claim, or why no URL can, or why rewrite is needed"
 }
 ```
 
-### Disposition rules (critical — calibrated 2026-04-19)
+### Disposition rules (calibrated 2026-04-19, refined same-session)
 
-The first calibration run on ZTT 0.1 showed Codex will force a weak
-anchor for EVERY claim if not told otherwise, masking the fact that
-some module claims are hallucinated fabrications that nothing can
-honestly cite. The three dispositions exist to surface that:
+The first calibration on ZTT 0.1/0.2/0.11 revealed that lumping
+every non-citable claim into one bucket loses the signal. There are
+five distinct states a claim can be in, each with a different
+downstream action. Codex must pick exactly one:
 
 - **`supported`** — the proposed URL's page content genuinely
   discusses THIS SPECIFIC claim. A K8s Windows-support claim cited
-  to `kubernetes.io/docs/concepts/windows/` qualifies. A primary
-  source, not just a thematic anchor.
-- **`weak_anchor`** — the URL is a category-page or thematic-anchor
-  that touches the same topic but doesn't directly confirm the
-  specific number/event/claim. Acceptable when the claim is loose
-  ("browsers use memory"). NOT acceptable when the claim is
-  specific ("30 tabs use 4-6GB").
-- **`unciteable`** — NO honest URL on the allowlist backs this
-  claim; it likely originates from the module writer's parametric
-  knowledge, not evidence. Do NOT force a URL. Set `proposed_url`
-  and `proposed_tier` to null. The module will be flagged for
-  content revision — the claim should be softened, made generic,
-  or removed — instead of citation.
+  to `kubernetes.io/docs/concepts/windows/` qualifies. Primary or
+  near-primary source. Downstream: inline-wrap at the claim's span.
 
-Pattern: dated-specific prices, exact percentages at a single date,
-verbatim quotes without source, very specific incident details
-are high-probability `unciteable`.
+- **`weak_anchor`** — URL is a category/topic page touching the
+  same subject but doesn't directly confirm the specific
+  number/event. Acceptable for loose claims ("browsers use
+  memory"), unacceptable for specific ones ("30 tabs use 4-6GB").
+  Downstream: inline-wrap; flagged for a future semantic-verify
+  pass.
+
+- **`needs_allowlist_expansion`** — a REAL, verifiable claim whose
+  primary source is NOT on the allowlist. Downstream: NO inline
+  citation; module's claim stays unchanged for now; the claim goes
+  to a review list for allowlist expansion. Codex MAY include the
+  URL it would have used so the expansion review has context
+  (stored in `proposed_url`; `proposed_tier` is null because the
+  domain isn't tiered).
+  Example: GitLab 2017 outage — primary postmortem is
+  `about.gitlab.com`, which may or may not be on the current
+  allowlist.
+
+- **`soften_to_illustration`** — a grounded PEDAGOGICAL example
+  where a specific number or scenario is used to teach a real
+  principle. The number itself isn't citable (it's illustrative),
+  but the LESSON POINT is real and citable. Downstream: rewrite
+  the sentence with explicit framing ("for instance,", "imagine",
+  "a typical case would be"), AND add a citation for the general
+  principle the example teaches. Codex must supply both the
+  rewritten sentence AND the citation URL for the lesson point.
+  Example: "a team might pay $400/month for a 32GB server when
+  they only use 2GB" — specific number is fake, but
+  over-provisioning is a real documented phenomenon.
+
+- **`cannot_be_salvaged`** — false precision, verbatim quotes
+  with no source, or opinions stated as fact. Downstream: rewrite
+  the sentence to remove the false precision/opinion, preserving
+  the teaching intent. No citation needed. Set `proposed_url` and
+  `proposed_tier` to null.
+  Examples: "AWS listed t2.large at $0.0928/hr on April 15 2026"
+  (fake specificity); "OrbStack is the fastest, lightest option"
+  (subjective dressed as measurement).
+
+Pattern matching:
+- Dated-specific prices → `cannot_be_salvaged` (or `supported` if a
+  real current pricing page backs it).
+- Specific outage details → `supported` if on allowlist, else
+  `needs_allowlist_expansion`.
+- Illustrative numbers in teaching prose → `soften_to_illustration`.
+- Superlatives without benchmark → `cannot_be_salvaged`.
 
 Rules:
 - `claim_id` is stable across research runs for the same module
