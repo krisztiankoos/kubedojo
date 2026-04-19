@@ -130,7 +130,7 @@ When you connect to a server and type `ls`, that command runs **remotely** -- on
 
 Think of SSH as a **secure phone line to a remote kitchen**. You pick up the phone (open SSH), dial the number (connect to the server), and start giving orders (typing commands). The chef in the remote kitchen carries them out, and you hear the results through the phone.
 
-The "secure" part is important: everything you send over SSH is encrypted. Nobody can listen in on your conversation. It's like having a private, scrambled phone line.
+The "secure" part is important: SSH encrypts the session in transit, so people on the network cannot read the commands and output. It's like having a private, scrambled phone line.
 
 ### A Quick Word About Environment Variables
 
@@ -222,7 +222,7 @@ That's how you know you're connected to a different machine.
 
 ## Passwords vs. SSH Keys
 
-There are two ways to prove your identity to a remote server:
+Two common ways to prove your identity to a remote server are:
 
 ### Passwords
 
@@ -264,7 +264,7 @@ This is like having a physical key to the remote kitchen's door. You don't need 
 ssh-keygen -t ed25519
 ```
 
-This creates two files:
+[This creates two files:](https://github.com/github/docs/blob/main/content/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent.md)
 - `~/.ssh/id_ed25519` -- Your **private key** (the key). NEVER share this with anyone.
 - `~/.ssh/id_ed25519.pub` -- Your **public key** (the lock). You can share this freely.
 
@@ -345,11 +345,11 @@ You'll use SSH to connect to these servers, troubleshoot problems, check logs, a
 
 ## Did You Know?
 
-- **SSH is standardized as a secure remote access protocol.** RFC 4251 defines SSH as a protocol for secure remote login and other secure network services over an insecure network. That is the big reason it replaced older remote-login tools such as `telnet` for shell access.
+- **SSH is standardized as a secure remote access protocol.** [RFC 4251 defines SSH as a protocol for secure remote login and other secure network services over an insecure network.](https://www.rfc-editor.org/rfc/rfc4251) That is the big reason it [replaced older remote-login tools such as `telnet` for shell access.](https://en.wikipedia.org/wiki/Secure_Shell)
 
-- **Port 22 is the IANA-assigned default port for SSH.** That is why many examples use 22 unless an administrator deliberately changes it.
+- **[Port 22 is the IANA-assigned default port for SSH.](https://en.wikipedia.org/wiki/Secure_Shell)** That is why many examples use 22 unless an administrator deliberately changes it.
 
-- **SSH is a general-purpose operations tool.** OpenSSH describes itself as software for remote login and remote command execution, which is why you will see SSH used on cloud VMs, internal Linux servers, lab machines, and similar systems.
+- **SSH is a general-purpose operations tool.** [OpenSSH describes itself as software for remote login and remote command execution](https://github.com/openssh/openssh-portable), which is why you will see SSH used on cloud VMs, internal Linux servers, lab machines, and similar systems.
 
 **References**: RFC 4251, RFC 4250, and the OpenSSH documentation.
 
@@ -507,7 +507,7 @@ cat /etc/os-release    # Shows the server's operating system
 exit
 ```
 
-It would look, feel, and work exactly like the localhost exercise. The only difference is the physical location of the computer.
+It would look, feel, and work exactly like the localhost exercise. The main difference is the physical location of the computer.
 
 **Success criteria**: You must run `hostname` in your terminal *before* connecting via SSH and record the output. Then, successfully open the SSH connection and run `hostname` again *after* connecting. If you are using `ssh localhost`, the hostname will usually stay the same because you are connecting back into the same machine through SSH; the proof is that you established an SSH session, ran commands inside it, and then disconnected cleanly. If you are connecting to a different machine, `hostname` should change. In either case, run at least one other command to verify the file system and then disconnect properly.
 
@@ -520,3 +520,10 @@ It would look, feel, and work exactly like the localhost exercise. The only diff
 ---
 
 > **You just used a tool that senior engineers use every day. You belong here.**
+
+## Sources
+
+- [GitHub Docs Source: Generating a New SSH Key](https://github.com/github/docs/blob/main/content/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent.md) — Practical reference for generating an Ed25519 SSH key and the usual default key file locations.
+- [RFC 4251: The Secure Shell (SSH) Protocol Architecture](https://www.rfc-editor.org/rfc/rfc4251) — Standards document defining SSH as secure remote login and related secure network services over insecure networks.
+- [Secure Shell](https://en.wikipedia.org/wiki/Secure_Shell) — Background reference covering SSH history, its relationship to Telnet, and default port 22.
+- [Portable OpenSSH](https://github.com/openssh/openssh-portable) — Upstream OpenSSH project describing remote login, remote command execution, and related SSH operations.

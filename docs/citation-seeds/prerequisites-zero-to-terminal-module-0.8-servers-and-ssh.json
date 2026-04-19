@@ -1,0 +1,135 @@
+{
+  "module_key": "prerequisites/zero-to-terminal/module-0.8-servers-and-ssh",
+  "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.8-servers-and-ssh.md",
+  "research_run_id": "2026-04-19T22:36:04+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "SSH encrypts the session, but saying \"Nobody can listen in on your conversation\" overstates the guarantee.",
+      "claim_class": "security_claim",
+      "span_hint": "section: SSH: Your Secure Tunnel to Remote Kitchens",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The \"secure\" part is important: everything you send over SSH is encrypted. Nobody can listen in on your conversation.",
+      "suggested_rewrite": "The \"secure\" part is important: SSH encrypts the session in transit, so people on the network cannot read the commands and output.",
+      "lesson_point_url": null,
+      "rationale": "RFC 4251 supports confidentiality and integrity over an insecure network, but the original wording is too absolute beyond the in-transit threat model."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Passwords and SSH keys are common SSH authentication methods, but they are not the only ones.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Passwords vs. SSH Keys",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "There are two ways to prove your identity to a remote server:",
+      "suggested_rewrite": "Two common ways to prove your identity to a remote server are:",
+      "lesson_point_url": null,
+      "rationale": "OpenSSH and the SSH specs support additional authentication methods, so the exclusive phrasing is inaccurate."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Running `ssh-keygen -t ed25519` and accepting the default save location typically creates `~/.ssh/id_ed25519` and `~/.ssh/id_ed25519.pub`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Passwords vs. SSH Keys",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/github/docs/blob/main/content/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The GitHub docs source shows the default `id_ALGORITHM` save path and subsequent `~/.ssh/id_ed25519` usage for Ed25519 keys."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "RFC 4251 defines SSH as a protocol for secure remote login and other secure network services over an insecure network.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know?",
+      "disposition": "supported",
+      "proposed_url": "https://www.rfc-editor.org/rfc/rfc4251",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is stated directly in RFC 4251."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "SSH was designed as a replacement for older remote-login tools such as Telnet.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know?",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Secure_Shell",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The overview history on Secure Shell explicitly describes SSH as a replacement for Telnet and related insecure remote-shell tools."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Port 22 is the default assigned port for SSH.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know?",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Secure_Shell",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Secure Shell overview records port 22 as the protocol's assigned default port."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "OpenSSH is software for remote login, command execution, and related SSH operations.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/openssh/openssh-portable",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The OpenSSH upstream README directly describes the project as a complete SSH implementation for secure remote login and command execution."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "On Ubuntu systems where the SSH server component is missing, installing `openssh-server` is the documented way to enable SSH server functionality.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Hands-On Exercise: SSH to Localhost / On Linux",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://ubuntu.com/server/docs/how-to/security/openssh-server/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Ubuntu's primary documentation directly supports the package-install guidance, but the host is outside the current allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.rfc-editor.org/rfc/rfc4251",
+      "title": "RFC 4251: The Secure Shell (SSH) Protocol Architecture",
+      "tier": "standards",
+      "why_relevant": "This is the core standards document behind SSH's security model and protocol definition."
+    },
+    {
+      "url": "https://github.com/openssh/openssh-portable",
+      "title": "Portable OpenSSH",
+      "tier": "upstream",
+      "why_relevant": "This is the upstream OpenSSH project that most learners will encounter on Unix-like systems."
+    },
+    {
+      "url": "https://github.com/github/docs/blob/main/content/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent.md",
+      "title": "GitHub Docs Source: Generating a New SSH Key",
+      "tier": "upstream",
+      "why_relevant": "It gives a practical, beginner-friendly walkthrough of creating and using SSH keys."
+    }
+  ],
+  "notes": "Per schema, no claim entries were created for analogies, quiz prompts, exercise steps, code blocks, or the comparison table; the Kubernetes cluster-size example was treated as beginner-oriented illustrative framing rather than a citation-bearing hard claim.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
