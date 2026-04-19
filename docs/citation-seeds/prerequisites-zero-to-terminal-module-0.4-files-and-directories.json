@@ -1,117 +1,163 @@
 {
   "module_key": "prerequisites/zero-to-terminal/module-0.4-files-and-directories",
   "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.4-files-and-directories.md",
-  "research_run_id": "2026-04-19T09:10:36+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 1,
+  "research_run_id": "2026-04-19T14:14:23+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "On Linux, `/` is the root of the filesystem tree; `/home` holds user home directories; `/etc` stores host-specific configuration; `/tmp` is for temporary files; and `/var/log` stores log files.",
-      "claim_class": "standard",
-      "span_hint": "section: The Directory Tree / Key Locations table",
-      "disposition": "supported",
-      "proposed_url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html",
-      "proposed_tier": "upstream",
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The Linux Foundation's Filesystem Hierarchy Standard directly documents these conventional directory roles."
-    },
-    {
-      "claim_id": "C002",
       "claim_text": "Linux is the operating system that Kubernetes runs on.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Everything is a File (Really!), opening parenthetical after 'Linux'",
+      "span_hint": "section: What is a File? / subsection: Everything is a File (Really!)",
       "disposition": "cannot_be_salvaged",
       "proposed_url": null,
       "proposed_tier": null,
-      "suggested_rewrite": "Here's something wild about Linux, the operating system most Kubernetes nodes run on:",
+      "anchor_text": "Here's something wild about Linux (the operating system that Kubernetes runs on):",
+      "suggested_rewrite": "Here's something wild about Linux, the operating system used on most Kubernetes nodes:",
       "lesson_point_url": null,
-      "rationale": "Kubernetes also supports Windows worker nodes, so the original wording is too absolute."
+      "rationale": "Kubernetes also supports Windows nodes, so this sentence should not present Linux as the only supported node OS."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Linux exposes devices such as keyboards and disks through device files under `/dev`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What is a File? / subsection: Everything is a File (Really!)",
+      "disposition": "supported",
+      "proposed_url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/storage_administration_guide/ch-filesystem",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Red Hat's filesystem documentation directly explains that `/dev` contains character and block device nodes, including examples like keyboards and hard drives."
     },
     {
       "claim_id": "C003",
-      "claim_text": "Linux is often described with an 'everything is a file' model, where devices and process information are exposed through file-like interfaces such as `/dev` and `/proc`.",
+      "claim_text": "Linux exposes kernel and process state through file-like entries in `/proc/`.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Everything is a File (Really!) plus Did You Know item 3",
-      "disposition": "weak_anchor",
-      "proposed_url": "https://en.wikipedia.org/wiki/Everything_is_a_file",
-      "proposed_tier": "general",
+      "span_hint": "section: What is a File? / subsection: Everything is a File (Really!)",
+      "disposition": "supported",
+      "proposed_url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/4/html/reference_guide/ch-proc",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The allowlist lacks Linux man pages or kernel docs, but this source directly covers the Unix/Linux design idea while the exact path examples vary by system."
+      "rationale": "The Red Hat procfs reference directly describes `/proc/` as a hierarchy of special files representing kernel and process state."
     },
     {
       "claim_id": "C004",
-      "claim_text": "The default kubeconfig location for kubectl is `$HOME/.kube/config`.",
+      "claim_text": "In common Unix shells, `~` expands to the current user's home directory.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Why This Matters in K8s, sentence about `~/.kube/config`",
+      "span_hint": "section: The Directory Tree / Key Locations",
       "disposition": "supported",
-      "proposed_url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
-      "proposed_tier": "standards",
+      "proposed_url": "https://www.redhat.com/en/blog/navigating-linux-filesystem",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Official Kubernetes docs state that kubectl looks for `config` in `$HOME/.kube` by default."
+      "rationale": "The Red Hat navigation primer explicitly states that `~` represents the home directory of the currently logged-in user."
     },
     {
       "claim_id": "C005",
-      "claim_text": "Kubernetes control-plane static Pod manifests are commonly stored in `/etc/kubernetes/manifests`.",
+      "claim_text": "By default, kubectl uses `${HOME}/.kube/config` when no `--kubeconfig` flag or `KUBECONFIG` environment variable is set.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Why This Matters in K8s, sentence about `/etc/kubernetes/manifests/`",
+      "span_hint": "section: The Directory Tree / callout: Why This Matters in K8s",
       "disposition": "supported",
-      "proposed_url": "https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/",
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_config",
       "proposed_tier": "standards",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Official kubeadm implementation details say kubeadm writes control-plane static Pod manifests to `/etc/kubernetes/manifests`."
+      "rationale": "The kubectl reference directly documents `${HOME}/.kube/config` as the default kubeconfig location."
     },
     {
       "claim_id": "C006",
-      "claim_text": "Pod and container troubleshooting on Kubernetes nodes often involves `/var/log/pods` and `/var/log/containers`.",
+      "claim_text": "Kubernetes control-plane static Pod manifests are commonly stored in `/etc/kubernetes/manifests`, which kubelet watches.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Why This Matters in K8s, sentence about `/var/log/pods/` or `/var/log/containers/`",
+      "span_hint": "section: The Directory Tree / callout: Why This Matters in K8s",
       "disposition": "supported",
-      "proposed_url": "https://kubernetes.io/docs/tutorials/cluster-management/kubelet-standalone/",
+      "proposed_url": "https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/",
       "proposed_tier": "standards",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Official Kubernetes documentation lists both directories as places to look for monitoring and troubleshooting details."
+      "rationale": "The kubeadm implementation details page directly states that kubeadm writes control-plane static Pod manifests to `/etc/kubernetes/manifests` and that kubelet watches that directory."
     },
     {
       "claim_id": "C007",
-      "claim_text": "A developer once exposed production database credentials via a world-readable config file, letting an attacker read the file and dump the customer database.",
+      "claim_text": "Node-level Kubernetes troubleshooting often involves log directories such as `/var/log/pods/` and `/var/log/containers/`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Directory Tree / callout: Why This Matters in K8s",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/tutorials/cluster-management/kubelet-standalone/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes standalone kubelet tutorial explicitly lists `/var/log/containers` and `/var/log/pods` as directories to inspect for monitoring and troubleshooting."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "On macOS, user home directories live under `/Users/` rather than `/home/`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: On macOS",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Home_directory",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited overview directly lists macOS home directories under `/Users/`, which is the specific cross-platform difference the module mentions."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "`ls -l` permission strings encode file type plus owner, group, and other read/write/execute bits, and execute on a directory means you can access or enter that directory.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: File Permissions Basics",
+      "disposition": "supported",
+      "proposed_url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/configuring_basic_system_settings/managing-file-system-permissions_configuring-basic-system-settings",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Red Hat permissions guide directly explains the owner/group/other model and the meaning of read, write, and execute for both files and directories."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "A world-readable configuration file with production passwords can let an attacker with low-level access read credentials and escalate the incident.",
       "claim_class": "security_claim",
-      "span_hint": "section: File Permissions Basics, War Story callout",
+      "span_hint": "section: File Permissions Basics / callout: War Story",
       "disposition": "soften_to_illustration",
       "proposed_url": null,
       "proposed_tier": null,
-      "suggested_rewrite": "For example, if a database configuration file containing production passwords were made world-readable, anyone who gained basic access to the server could read those credentials; keeping sensitive files restricted to the owner reduces that risk.",
-      "lesson_point_url": "https://csrc.nist.gov/glossary/term/least_privilege",
-      "rationale": "The passage is a concrete security anecdote without an attributable source, but the underlying least-privilege lesson is solid and citable."
+      "anchor_text": "> **War Story**: A developer once set a database configuration file containing production passwords to world-readable (`-rw-rw-rw-`). An attacker who gained low-level access to the server was able to simply `cat` the configuration file, read the credentials, and dump the entire customer database. Proper permissions (`-rw-------`) would have stopped the attack dead in its tracks.",
+      "suggested_rewrite": "> **Example**: A world-readable configuration file containing secrets can let anyone with local access read those credentials. Restrictive permissions such as `-rw-------` are a common way to reduce that risk.",
+      "lesson_point_url": "https://owasp.org/www-community/controls/Least_Privilege_Principle",
+      "rationale": "This is a generic illustrative security scenario rather than a cited real incident, so it should be framed as an example and anchored to the least-privilege principle."
     }
   ],
   "further_reading": [
     {
-      "url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html",
-      "title": "Filesystem Hierarchy Standard 3.0",
-      "tier": "upstream",
-      "why_relevant": "It explains the conventional roles of core Linux directories such as `/`, `/etc`, `/home`, `/tmp`, and `/var`."
+      "url": "https://www.redhat.com/en/blog/navigating-linux-filesystem",
+      "title": "A beginner's guide to navigating the Linux filesystem",
+      "tier": "vendor",
+      "why_relevant": "It reinforces the path concepts used in this module, including `/`, `.`, `..`, and `~`."
     },
     {
-      "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
-      "title": "Organizing Cluster Access Using kubeconfig Files",
-      "tier": "standards",
-      "why_relevant": "It gives the authoritative explanation of kubeconfig files and the default `$HOME/.kube/config` location."
+      "url": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/8/html/configuring_basic_system_settings/managing-file-system-permissions_configuring-basic-system-settings",
+      "title": "Managing file system permissions",
+      "tier": "vendor",
+      "why_relevant": "It gives a fuller explanation of the permission bits introduced by `ls -l`."
     },
     {
       "url": "https://kubernetes.io/docs/concepts/cluster-administration/logging/",
       "title": "Logging Architecture",
       "tier": "standards",
-      "why_relevant": "It provides official context for where Kubernetes node and pod logs live and how they are collected."
+      "why_relevant": "It connects the filesystem skills in this module to real Kubernetes troubleshooting on cluster nodes."
     }
   ],
-  "notes": "Quiz items, quiz answers, and hands-on exercise steps were excluded per pipeline rules. Seed focuses on prose claims that are specific enough to merit inline citations or rewrites.",
+  "notes": "Quiz answers and hands-on exercise steps were excluded per task rules; repeated Linux file-philosophy material was consolidated into the `/dev` and `/proc` claims.",
   "_schema_issues": [
-    "claim[6]:hard_cite_class_cannot_soften:security_claim/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
+    "claim[9]:hard_cite_class_cannot_soften:security_claim/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
   ],
   "rejected_urls": []
 }

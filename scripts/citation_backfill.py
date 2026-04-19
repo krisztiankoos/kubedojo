@@ -967,17 +967,25 @@ def build_inject_prompt(module_key: str, module_body: str, seed: dict[str, Any])
     )
 
 
-def _validate_inline_insertion(ins: dict[str, Any], body: str) -> str | None:
-    """Return a reason string if insertion is invalid, else None."""
+def _safe_markdown_url(url: str) -> str:
+    """Percent-encode parens in URLs so Wikipedia-style disambiguator
+    paths (`Shebang_(Unix)`) don't break the `[phrase](url)` markdown
+    link syntax. CommonMark would otherwise close the link at the
+    first `)` inside the URL, leaving a stray `)` in the document."""
+    return url.replace("(", "%28").replace(")", "%29")
+
+
+def _validate_inline_insertion(ins: dict[str, Any]) -> str | None:
+    """Shape-only validation: required fields, phrase-in-target,
+    wrap format, URL allowlist. Existence of target_line in
+    current new_body is checked by the apply loop so it can retry
+    with the phrase-uniqueness fallback."""
     for f in ("target_line", "original_phrase", "replace_with"):
         if not ins.get(f):
             return f"missing_{f}"
     target = ins["target_line"]
     phrase = ins["original_phrase"]
     replace = ins["replace_with"]
-    # target_line must appear verbatim in the module body.
-    if target not in body:
-        return "target_line_not_in_body"
     # phrase must appear in target_line.
     if phrase not in target:
         return "phrase_not_in_target_line"
@@ -1057,7 +1065,7 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
     # works). If we ran rewrites first, a rewrite on the same line as
     # an inline's target_line would invalidate the inline's target.
     for ins in plan.get("inline_insertions") or []:
-        reason = _validate_inline_insertion(ins, new_body)
+        reason = _validate_inline_insertion(ins)
         if reason:
             applied.append({"claim_id": ins.get("claim_id"), "kind": "inline",
                             "status": "rejected", "reason": reason})
@@ -1065,17 +1073,40 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
         target = ins["target_line"]
         phrase = ins["original_phrase"]
         replace = ins["replace_with"]
+        # Percent-encode parens in the URL so Wikipedia-style disambiguator
+        # paths don't break the markdown link. Validation already confirmed
+        # the wrap shape; now we canonicalize the URL before insertion.
+        expected_prefix = f"[{phrase}]("
+        url_raw = replace[len(expected_prefix):-1]
+        replace = f"{expected_prefix}{_safe_markdown_url(url_raw)})"
         idx = new_body.find(target)
+        note: str | None = None
         if idx < 0:
-            applied.append({"claim_id": ins.get("claim_id"), "kind": "inline",
-                            "status": "rejected",
-                            "reason": "target_disappeared_after_prev_edits"})
-            continue
-        phrase_idx_in_target = target.find(phrase)
-        abs_phrase_idx = idx + phrase_idx_in_target
+            # Fallback: an earlier inline wrap on the same line may have
+            # mutated target_line. If `phrase` still appears uniquely in
+            # new_body, wrap it there directly.
+            occurrences = []
+            start = 0
+            while True:
+                k = new_body.find(phrase, start)
+                if k < 0:
+                    break
+                occurrences.append(k)
+                start = k + 1
+            if len(occurrences) != 1:
+                applied.append({"claim_id": ins.get("claim_id"), "kind": "inline",
+                                "status": "rejected",
+                                "reason": f"target_disappeared_phrase_has_{len(occurrences)}_matches"})
+                continue
+            abs_phrase_idx = occurrences[0]
+            note = "fallback_phrase_match"
+        else:
+            phrase_idx_in_target = target.find(phrase)
+            abs_phrase_idx = idx + phrase_idx_in_target
         new_body = new_body[:abs_phrase_idx] + replace + new_body[abs_phrase_idx + len(phrase):]
         applied.append({"claim_id": ins.get("claim_id"), "kind": "inline",
-                        "status": "applied"})
+                        "status": "applied",
+                        **({"note": note} if note else {})})
 
     # Prose rewrites SECOND. Authorized from seed; Codex does not
     # participate. Anchor substring is expected to still exist in
@@ -1097,10 +1128,57 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
 
     sources = (plan.get("sources_section") or "").strip()
     if sources:
+        sources = _sanitize_sources_section_urls(sources)
         if not new_body.endswith("\n"):
             new_body += "\n"
         new_body += "\n" + sources + "\n"
     return new_body, applied
+
+
+def _sanitize_sources_section_urls(text: str) -> str:
+    """Percent-encode parens inside markdown links so Wikipedia-style
+    URLs (e.g. `/wiki/Ed_(text_editor)`) don't produce broken markdown.
+    Walks the text once, balancing parens at each `](` to find the
+    URL's true end, then encodes."""
+    out: list[str] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        lb = text.find("](", i)
+        if lb < 0:
+            out.append(text[i:])
+            break
+        # Must be preceded by `[label]` — find the matching `[`.
+        lbr = text.rfind("[", i, lb)
+        if lbr < 0:
+            out.append(text[i:lb + 2])
+            i = lb + 2
+            continue
+        # Parse URL: balance-aware until we hit a `)` with depth 0.
+        url_start = lb + 2
+        depth = 0
+        j = url_start
+        while j < n:
+            ch = text[j]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                if depth == 0:
+                    break
+                depth -= 1
+            elif ch.isspace():
+                break
+            j += 1
+        if j >= n or text[j] != ")":
+            out.append(text[i:lb + 2])
+            i = lb + 2
+            continue
+        url = text[url_start:j]
+        label = text[lbr + 1:lb]
+        out.append(text[i:lbr])
+        out.append(f"[{label}]({_safe_markdown_url(url)})")
+        i = j + 1
+    return "".join(out)
 
 
 _INLINE_LINK_RE = re.compile(r"\[([^\]]+)\]\(https?://[^)]+\)")

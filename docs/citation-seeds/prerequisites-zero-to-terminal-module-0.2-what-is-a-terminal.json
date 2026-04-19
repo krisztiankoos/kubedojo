@@ -1,117 +1,148 @@
 {
-  "module_key": "prerequisites/zero-to-terminal/module-0.4-files-and-directories",
-  "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.4-files-and-directories.md",
-  "research_run_id": "2026-04-19T09:11:31+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 1,
+  "module_key": "prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal",
+  "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal.md",
+  "research_run_id": "2026-04-19T14:01:39+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "On Linux, `/` is the root of the filesystem tree; `/home` holds user home directories; `/etc` stores host-specific configuration; `/tmp` is for temporary files; and `/var/log` stores log files.",
+      "claim_text": "SSH (Secure Shell) is a protocol for secure remote login and other secure network services, and terminal access over SSH is a standard way to manage remote systems.",
       "claim_class": "standard",
-      "span_hint": "section: The Directory Tree / Key Locations table",
+      "span_hint": "section: Why Do Engineers Use Terminals? / 3. Remote Access",
       "disposition": "supported",
-      "proposed_url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html",
-      "proposed_tier": "upstream",
+      "proposed_url": "https://www.rfc-editor.org/info/rfc4251",
+      "proposed_tier": "standards",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Linux Foundation's Filesystem Hierarchy Standard directly documents these conventional directory roles."
+      "rationale": "RFC 4251 is the authoritative standards-track source for SSH as secure remote login."
     },
     {
       "claim_id": "C002",
-      "claim_text": "Linux is the operating system that Kubernetes runs on.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Everything is a File (Really!), opening parenthetical after 'Linux'",
-      "disposition": "cannot_be_salvaged",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "suggested_rewrite": "Here's something wild about Linux, the operating system most Kubernetes nodes run on:",
+      "claim_text": "In the February 28, 2017 Amazon S3 disruption in us-east-1, an authorized operator entered one input incorrectly, removing more servers than intended; AWS later added safeguards to reduce the chance of a repeat.",
+      "claim_class": "incident",
+      "span_hint": "section: Why Do Engineers Use Terminals? / A Documented Operational Mistake",
+      "disposition": "supported",
+      "proposed_url": "https://aws.amazon.com/message/41926/",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Kubernetes also supports Windows worker nodes, so the original wording is too absolute."
+      "rationale": "AWS's own postmortem directly documents the incorrect command input, the broader impact, and the follow-up safeguards."
     },
     {
       "claim_id": "C003",
-      "claim_text": "Linux is often described with an 'everything is a file' model, where devices and process information are exposed through file-like interfaces such as `/dev` and `/proc`.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Everything is a File (Really!) plus Did You Know item 3",
-      "disposition": "weak_anchor",
-      "proposed_url": "https://en.wikipedia.org/wiki/Everything_is_a_file",
-      "proposed_tier": "general",
-      "suggested_rewrite": null,
+      "claim_text": "The first computers had no screens at all.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know? / item 1",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The first computers had no screens at all.",
+      "suggested_rewrite": "Many early computers had no interactive screens at all.",
       "lesson_point_url": null,
-      "rationale": "The allowlist lacks Linux man pages or kernel docs, but this source directly covers the Unix/Linux design idea while the exact path examples vary by system."
+      "rationale": "The absolute phrasing is broader than the supporting history and should be narrowed to a more defensible historical statement."
     },
     {
       "claim_id": "C004",
-      "claim_text": "The default kubeconfig location for kubectl is `$HOME/.kube/config`.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Why This Matters in K8s, sentence about `~/.kube/config`",
+      "claim_text": "Early programmers used punched cards, literal cardboard cards with holes, to provide programs and data to computers.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know? / item 1",
       "disposition": "supported",
-      "proposed_url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
-      "proposed_tier": "standards",
+      "proposed_url": "https://en.wikipedia.org/wiki/Punched_card",
+      "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Official Kubernetes docs state that kubectl looks for `config` in `$HOME/.kube` by default."
+      "rationale": "The punched-card history page directly supports the description of cards with holes being used for computing input."
     },
     {
       "claim_id": "C005",
-      "claim_text": "Kubernetes control-plane static Pod manifests are commonly stored in `/etc/kubernetes/manifests`.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Why This Matters in K8s, sentence about `/etc/kubernetes/manifests/`",
+      "claim_text": "Graphical user interfaces emerged in 1970s systems and became mainstream in the 1980s with personal computers such as the Apple Macintosh.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know? / item 1",
       "disposition": "supported",
-      "proposed_url": "https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/",
-      "proposed_tier": "standards",
+      "proposed_url": "https://en.wikipedia.org/wiki/Graphical_user_interface",
+      "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Official kubeadm implementation details say kubeadm writes control-plane static Pod manifests to `/etc/kubernetes/manifests`."
+      "rationale": "The GUI history page covers 1970s Xerox-era development and the Macintosh-era popularization in the 1980s."
     },
     {
       "claim_id": "C006",
-      "claim_text": "Pod and container troubleshooting on Kubernetes nodes often involves `/var/log/pods` and `/var/log/containers`.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Why This Matters in K8s, sentence about `/var/log/pods/` or `/var/log/containers/`",
+      "claim_text": "In the 1960s-70s, a terminal was a separate hardware device connected to a larger computer, and today's terminal applications are called terminal emulators because they emulate those earlier terminals.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know? / item 2",
       "disposition": "supported",
-      "proposed_url": "https://kubernetes.io/docs/tutorials/cluster-management/kubelet-standalone/",
-      "proposed_tier": "standards",
+      "proposed_url": "https://en.wikipedia.org/wiki/Computer_terminal",
+      "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Official Kubernetes documentation lists both directories as places to look for monitoring and troubleshooting details."
+      "rationale": "The computer terminal history page describes hardware terminals and the later role of terminal emulators."
     },
     {
       "claim_id": "C007",
-      "claim_text": "A developer once exposed production database credentials via a world-readable config file, letting an attacker read the file and dump the customer database.",
-      "claim_class": "security_claim",
-      "span_hint": "section: File Permissions Basics, War Story callout",
-      "disposition": "soften_to_illustration",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "suggested_rewrite": "For example, if a database configuration file containing production passwords were made world-readable, anyone who gained basic access to the server could read those credentials; keeping sensitive files restricted to the owner reduces that risk.",
-      "lesson_point_url": "https://csrc.nist.gov/glossary/term/least_privilege",
-      "rationale": "The passage is a concrete security anecdote without an attributable source, but the underlying least-privilege lesson is solid and citable."
+      "claim_text": "Windows Terminal is Microsoft's terminal application for shells such as PowerShell, Command Prompt, and bash via WSL.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Opening Your Terminal / Windows / Option B",
+      "disposition": "supported",
+      "proposed_url": "https://learn.microsoft.com/en-us/windows/terminal/",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Microsoft's Windows Terminal overview directly describes the product and the shells it hosts."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Microsoft documents `wsl --install` as the one-command way to install WSL, with Ubuntu installed by default and a restart required.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Opening Your Terminal / Windows / Option C",
+      "disposition": "supported",
+      "proposed_url": "https://learn.microsoft.com/en-us/windows/wsl/install",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official WSL install guide matches the exact command and restart flow shown in the module."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "GitLab's January 31, 2017 outage involved accidental removal of data from the primary database, causing a major outage and some unrecoverable production data loss.",
+      "claim_class": "incident",
+      "span_hint": "section: Common Mistakes in Production / first table row",
+      "disposition": "supported",
+      "proposed_url": "https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/",
+      "proposed_tier": "incidents",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "GitLab's published postmortem directly states the accidental data removal, outage, and unrecoverable data loss."
     }
   ],
   "further_reading": [
     {
-      "url": "https://refspecs.linuxfoundation.org/FHS_3.0/fhs-3.0.html",
-      "title": "Filesystem Hierarchy Standard 3.0",
-      "tier": "upstream",
-      "why_relevant": "It explains the conventional roles of core Linux directories such as `/`, `/etc`, `/home`, `/tmp`, and `/var`."
+      "url": "https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Command_line",
+      "title": "Command line crash course",
+      "tier": "general",
+      "why_relevant": "It is a beginner-friendly follow-up that explains what the terminal is and how to use a few basic commands."
     },
     {
-      "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
-      "title": "Organizing Cluster Access Using kubeconfig Files",
+      "url": "https://www.rfc-editor.org/info/rfc4251",
+      "title": "RFC 4251: The Secure Shell (SSH) Protocol Architecture",
       "tier": "standards",
-      "why_relevant": "It gives the authoritative explanation of kubeconfig files and the default `$HOME/.kube/config` location."
+      "why_relevant": "It gives the authoritative definition of SSH, which is the standard remote-access protocol mentioned in the module."
     },
     {
-      "url": "https://kubernetes.io/docs/concepts/cluster-administration/logging/",
-      "title": "Logging Architecture",
-      "tier": "standards",
-      "why_relevant": "It provides official context for where Kubernetes node and pod logs live and how they are collected."
+      "url": "https://learn.microsoft.com/en-us/windows/wsl/install",
+      "title": "Install WSL",
+      "tier": "vendor",
+      "why_relevant": "It is the official next-step guide for Windows learners who want a Linux-compatible terminal environment."
     }
   ],
-  "notes": "Quiz items, quiz answers, and hands-on exercise steps were excluded per pipeline rules. Seed focuses on prose claims that are specific enough to merit inline citations or rewrites.",
-  "_schema_issues": [
-    "claim[6]:hard_cite_class_cannot_soften:security_claim/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
-  ],
+  "notes": "The module already contains inline links for OpenSSH, AWS, and GitLab; RFC 4251 can cover the SSH standards claim on an allowlisted host, while the main remaining citation work is the historical material in the Did You Know section and the Windows-specific setup claims.",
+  "_schema_issues": [],
   "rejected_urls": []
 }

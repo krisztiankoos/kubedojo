@@ -1,151 +1,161 @@
 {
   "module_key": "prerequisites/zero-to-terminal/module-0.3-first-commands",
   "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.3-first-commands.md",
-  "research_run_id": "2026-04-19T09:11:03+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 1,
+  "research_run_id": "2026-04-19T14:08:38+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "These 9 commands cover about 80% of everyday terminal work.",
+      "claim_text": "The module's 9 commands cover about 80% of everyday terminal work.",
       "claim_class": "statistic",
       "span_hint": "section: Why This Module Matters",
       "disposition": "soften_to_illustration",
       "proposed_url": null,
       "proposed_tier": null,
-      "suggested_rewrite": "By the end of this module, you'll know 9 core commands that cover many everyday terminal tasks.",
-      "lesson_point_url": "https://en.wikipedia.org/wiki/Command-line_interface",
-      "rationale": "The exact percentage reads like an unsupported statistic, but the broader teaching point that a small set of commands goes a long way is sound."
+      "anchor_text": "By the end of this module, you'll know the 9 commands that cover about 80% of everyday terminal work.",
+      "suggested_rewrite": "By the end of this module, you'll know 9 commands that cover a large share of everyday terminal work.",
+      "lesson_point_url": "https://en.wikipedia.org/wiki/Unix_shell",
+      "rationale": "The percentage is a teaching shorthand rather than a stable measurable statistic."
     },
     {
       "claim_id": "C002",
-      "claim_text": "`rm` removes files immediately, usually without an \"Are you sure?\" prompt or built-in undo, and tools such as `shred` are used when stronger recovery resistance is needed.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Command 8 / WARNING: There Is No Recycle Bin",
+      "claim_text": "`rm` removes files immediately rather than sending them to a trash can, recovery may still be possible until data is overwritten, and `shred` is used when stronger recovery resistance is needed.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Command 8: `rm` -- \"Throw Away\"",
       "disposition": "needs_allowlist_expansion",
-      "proposed_url": "https://www.gnu.org/software/coreutils/manual/coreutils.html",
+      "proposed_url": "https://www.gnu.org/s/coreutils/manual/html_node/rm-invocation.html",
       "proposed_tier": null,
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "GNU coreutils documentation directly covers `rm` prompting behavior, recoverability caveats, and `shred`, but `gnu.org` is off the current allowlist."
+      "rationale": "This is a concrete filesystem-recovery claim best backed by the GNU `rm`/`shred` manual, which is off the current allowlist."
     },
     {
       "claim_id": "C003",
-      "claim_text": "Deleted files may sometimes be recoverable before their data is overwritten.",
-      "claim_class": "security_claim",
-      "span_hint": "section: Command 8 / WARNING: There Is No Recycle Bin",
-      "disposition": "supported",
-      "proposed_url": "https://www.nist.gov/itl/ssd/software-quality-group/computer-forensics-tool-testing-program-cftt/cftt-technical/deleted",
-      "proposed_tier": "standards",
+      "claim_text": "Pixar nearly lost Toy Story 2 in 1998 after an accidental `rm -r -f *`, lost about 90% of the film files, and recovered because Galyn Susman had a home backup.",
+      "claim_class": "incident",
+      "span_hint": "section: Command 8: `rm` -- \"Throw Away\" (Real-World War Story)",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://thenextweb.com/media/2012/05/21/how-pixars-toy-story-2-was-deleted-twice-once-by-technology-and-again-for-its-own-good/",
+      "proposed_tier": null,
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "NIST directly documents deleted-file recovery as a real forensic capability."
+      "rationale": "This is a named production incident and should be cited to the detailed off-list source that recounts the event from Pixar staff."
     },
     {
       "claim_id": "C004",
-      "claim_text": "In 1998, Toy Story 2 was nearly wiped by an `rm` command, about 90% of the film's files were lost, and the project survived because a technical director had a backup at home.",
-      "claim_class": "war_story",
-      "span_hint": "section: Command 8 / Real-World War Story",
+      "claim_text": "Modern GNU/Linux `rm` normally refuses to operate recursively on `/` because `--preserve-root` is the default, and deleting `/` requires disabling that protection with `--no-preserve-root`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Command 8: `rm` -- \"Throw Away\" (classic dangerous example)",
       "disposition": "needs_allowlist_expansion",
-      "proposed_url": "https://video.disney.com/watch/the-movie-vanishes-4bb39d201a699a8833003b15",
+      "proposed_url": "https://www.gnu.org/software/coreutils/manual/coreutils.html",
       "proposed_tier": null,
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This named incident appears in an official Disney/Pixar video, but `video.disney.com` is not on the current allowlist."
+      "rationale": "This is versioned GNU Coreutils behavior and the authoritative source is the GNU manual, which is off-list."
     },
     {
       "claim_id": "C005",
-      "claim_text": "On modern GNU/Linux systems using GNU `rm`, `rm -rf /` is normally blocked by the default `--preserve-root` safety guard unless that protection is explicitly disabled.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Command 8 / dangerous example",
-      "disposition": "needs_allowlist_expansion",
-      "proposed_url": "https://www.gnu.org/software/coreutils/manual/html_node/rm-invocation.html",
+      "claim_text": "The terminal predates the mouse by decades.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know? (bullet 1)",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
       "proposed_tier": null,
-      "suggested_rewrite": null,
+      "anchor_text": "**The terminal predates the mouse by decades.**",
+      "suggested_rewrite": "**Command-line interfaces became common long before graphical mouse-and-windows interfaces became mainstream.**",
       "lesson_point_url": null,
-      "rationale": "The GNU `rm` manual directly documents `--preserve-root` as the default and `--no-preserve-root` as the override, but `gnu.org` is off-list."
+      "rationale": "As written, the comparison is historically misleading because mice were demonstrated in the 1960s even though GUI use became mainstream later."
     },
     {
       "claim_id": "C006",
-      "claim_text": "Command-line interfaces became common in the 1960s and remained the dominant way users interacted with software for decades.",
-      "claim_class": "statistic",
-      "span_hint": "section: Did You Know? / bullet 1",
+      "claim_text": "Computers used text-only interfaces from the 1960s until the mid-1980s.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know? (bullet 1)",
       "disposition": "supported",
       "proposed_url": "https://en.wikipedia.org/wiki/Command-line_interface",
       "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The cited history page directly places CLI emergence in the mid-1960s and describes it as the most common interface for roughly three decades."
+      "rationale": "The cited page directly discusses command-line interfaces emerging in the 1960s and remaining the dominant interface for nearly three decades."
     },
     {
       "claim_id": "C007",
-      "claim_text": "The Apple Macintosh, released in 1984, is credited with popularizing the graphical user interface.",
+      "claim_text": "The Apple Macintosh in 1984 popularized the graphical user interface.",
       "claim_class": "war_story",
-      "span_hint": "section: Did You Know? / bullet 1",
+      "span_hint": "section: Did You Know? (bullet 1)",
       "disposition": "supported",
       "proposed_url": "https://en.wikipedia.org/wiki/Classic_Mac_OS",
       "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The source directly states that the Macintosh system popularized the GUI concept and dates the original Macintosh release to 1984."
+      "rationale": "The cited page directly states that the Macintosh operating system is credited with popularizing the GUI and gives the 1984 release date."
     },
     {
       "claim_id": "C008",
-      "claim_text": "CTSS had a `listf` file-listing command in 1961.",
+      "claim_text": "`ls` traces back to CTSS as `LISTF` in 1961, the modern `ls` appeared in early Unix in 1971, and the command is now more than 50 years old.",
       "claim_class": "war_story",
-      "span_hint": "section: Did You Know? / bullet 2",
-      "disposition": "supported",
-      "proposed_url": "https://en.wikipedia.org/wiki/Compatible_Time-Sharing_System",
-      "proposed_tier": "general",
+      "span_hint": "section: Did You Know? (bullet 2)",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://tldp.org/LDP/LG/issue48/fischer.html",
+      "proposed_tier": null,
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The CTSS history page explicitly lists `listf` among the early console commands in the 1961 system."
+      "rationale": "The precise CTSS/LISTF lineage is verifiable, but the detailed historical source is off the current allowlist."
     },
     {
       "claim_id": "C009",
-      "claim_text": "The modern `ls` command appeared in the first version of Unix.",
+      "claim_text": "The use of `~` for the home directory derives from the Lear-Siegler ADM-3A terminal, where the tilde symbol and Home label were on the same key.",
       "claim_class": "war_story",
-      "span_hint": "section: Did You Know? / bullet 2",
-      "disposition": "supported",
-      "proposed_url": "https://en.wikipedia.org/wiki/Ls",
-      "proposed_tier": "general",
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The `ls` article directly states that an `ls` command appeared in the first version of AT&T Unix."
-    },
-    {
-      "claim_id": "C010",
-      "claim_text": "Unix home-directory shorthand with `~` traces back to the Lear-Siegler ADM-3A terminal, where the tilde key was labeled Home.",
-      "claim_class": "war_story",
-      "span_hint": "section: Did You Know? / bullet 3",
+      "span_hint": "section: Did You Know? (bullet 3)",
       "disposition": "supported",
       "proposed_url": "https://en.wikipedia.org/wiki/Tilde",
       "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The source directly explains the home-directory convention as deriving from the ADM-3A key labeling."
+      "rationale": "The cited page directly discusses the Unix home-directory shorthand and its ADM-3A origin."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Every terminal in the world uses `~` to mean home.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? (bullet 3)",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The convention stuck, and now every terminal in the world uses `~` to mean \"home.\"",
+      "suggested_rewrite": "The convention stuck, and many Unix-like shells now use `~` to mean \"home.\"",
+      "lesson_point_url": null,
+      "rationale": "The universal claim is too broad; the convention applies widely in Unix-like shells, not literally everywhere."
     }
   ],
   "further_reading": [
     {
-      "url": "https://en.wikipedia.org/wiki/Command-line_interface",
-      "title": "Command-line interface",
+      "url": "https://en.wikipedia.org/wiki/Unix_shell",
+      "title": "Unix shell",
       "tier": "general",
-      "why_relevant": "Provides beginner-friendly historical context for terminals, shells, and why command lines still matter."
-    },
-    {
-      "url": "https://www.nist.gov/itl/ssd/software-quality-group/computer-forensics-tool-testing-program-cftt/cftt-technical/deleted",
-      "title": "Deleted File Recovery",
-      "tier": "standards",
-      "why_relevant": "Grounds the module's warning that deletion and permanent erasure are not the same thing."
+      "why_relevant": "Good next-step overview of what a shell is and why commands, prompts, and working directories behave the way they do."
     },
     {
       "url": "https://en.wikipedia.org/wiki/Ls",
       "title": "ls",
       "tier": "general",
-      "why_relevant": "Gives historical and behavioral context for one of the core commands introduced in the module."
+      "why_relevant": "Expands the beginner `ls` examples into the command's history, common flags, and long-format output."
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/Pipeline_(Unix)",
+      "title": "Pipeline (Unix)",
+      "tier": "general",
+      "why_relevant": "Covers the pipe operator used in the module's bonus section and explains how commands pass output to one another."
     }
   ],
-  "notes": "Quiz items, exercise steps, code blocks, tables, and teaching analogies were intentionally excluded. Two off-allowlist domains surfaced for primary support: gnu.org for GNU coreutils command semantics and video.disney.com for the Toy Story 2 incident clip.",
+  "notes": "Quiz items, exercise steps, code blocks, and tables were intentionally excluded per seed rules. The role-based examples in \"When Pros Use These Commands\" were treated as pedagogical illustration rather than citation-requiring factual claims.",
   "_schema_issues": [
     "claim[0]:hard_cite_class_cannot_soften:statistic/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
   ],
