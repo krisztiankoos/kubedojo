@@ -38,7 +38,7 @@ from fetch_citation import allowlist_tier, fetch  # type: ignore[import-not-foun
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DOCS_ROOT = REPO_ROOT / "src" / "content" / "docs"
 SEED_DIR = REPO_ROOT / "docs" / "citation-seeds"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # v2: rewrite claims require verbatim anchor_text.
 
 CLAIM_CLASSES = {
     "war_story", "incident", "statistic", "standard",
@@ -311,6 +311,40 @@ Decision rules (strict):
 Bias toward honesty. A truthful disposition is better than a
 forced weak anchor.
 
+## CRITICAL: `anchor_text` for rewrite dispositions
+
+For EVERY `soften_to_illustration` or `cannot_be_salvaged` claim,
+you MUST supply an `anchor_text` field. The orchestrator uses it
+to do a deterministic substring swap: it finds `anchor_text` in
+the module body and replaces it with your `suggested_rewrite`.
+
+Rules (strict):
+1. `anchor_text` MUST be a VERBATIM substring of the module body.
+   Copy-paste from the module; do NOT paraphrase, do NOT drop
+   backticks, do NOT change case, do NOT fix typos. If the body
+   says "a Linux `t2.large` instance", the anchor must include
+   the backticks. If the body says "30 tabs", not "Thirty tabs".
+2. `anchor_text` MUST be on a single line. No newline characters.
+3. `anchor_text` SHOULD be the smallest substring that captures
+   the full claim — usually one sentence or one clause. Do NOT
+   include trailing period+space+next-sentence.
+4. `anchor_text` SHOULD appear in the body EXACTLY ONCE. If the
+   same phrasing appears twice, make the anchor longer to
+   disambiguate.
+5. `suggested_rewrite` replaces `anchor_text` verbatim. After the
+   swap, surrounding punctuation (commas, periods, spaces) will
+   still be there, so write `suggested_rewrite` as a clean phrase
+   that slots cleanly into the same position. If `anchor_text`
+   ends with a period, `suggested_rewrite` should end with one too.
+6. `claim_text` can still be a tight paraphrase (for humans to
+   read the seed). `anchor_text` is the machine-readable anchor.
+
+If you CANNOT locate a verbatim anchor (e.g., the claim is
+distributed across multiple lines), change the disposition: use
+`needs_allowlist_expansion` or drop the claim with a note in
+`rationale`. Never emit a rewrite-disposition claim without an
+anchor — the pipeline will fail the seed.
+
 ## Trusted-domain allowlist
 
 URLs you propose MUST resolve to hosts on this allowlist (tiered by claim
@@ -369,6 +403,7 @@ def _format_schema_block() -> str:
                     "disposition": "<one of 5 dispositions — see rules above>",
                     "proposed_url": "https://... (required for supported/weak_anchor/needs_allowlist_expansion; null for soften/salvage)",
                     "proposed_tier": "<tier, or null if off-allowlist or rewrite disposition>",
+                    "anchor_text": "<REQUIRED for soften_to_illustration and cannot_be_salvaged — a VERBATIM single-line substring of the module body that the orchestrator will substring-swap for suggested_rewrite. MUST appear exactly in the module body (no paraphrasing, keep backticks, asterisks, case). MUST NOT contain a newline. SHOULD appear in exactly one line. null otherwise.>",
                     "suggested_rewrite": "<rewritten sentence for soften/salvage; null otherwise>",
                     "lesson_point_url": "<allowlisted URL for lesson principle, soften only; null otherwise>",
                     "rationale": "<one sentence>",
@@ -566,6 +601,11 @@ def validate_seed(seed: dict[str, Any]) -> list[str]:
                 issues.append(f"claim[{i}]:{disp}_must_have_null_proposed_url")
             if not claim.get("suggested_rewrite"):
                 issues.append(f"claim[{i}]:missing_suggested_rewrite_for_{disp}")
+            anchor = claim.get("anchor_text")
+            if not anchor:
+                issues.append(f"claim[{i}]:missing_anchor_text_for_{disp}")
+            elif "\n" in str(anchor):
+                issues.append(f"claim[{i}]:anchor_text_contains_newline")
             if disp == "soften_to_illustration" and not claim.get("lesson_point_url"):
                 issues.append(f"claim[{i}]:missing_lesson_point_url_for_soften")
         cc = claim.get("claim_class")
@@ -588,6 +628,32 @@ def validate_seed(seed: dict[str, Any]) -> list[str]:
         for f in ("url", "tier"):
             if f not in link:
                 issues.append(f"further_reading[{i}]:missing_{f}")
+    return issues
+
+
+def validate_anchors_against_body(seed: dict[str, Any], body: str) -> list[str]:
+    """For each rewrite-disposition claim, check that anchor_text is a
+    verbatim substring of the module body (and ideally unique)."""
+    issues: list[str] = []
+    for i, claim in enumerate(seed.get("claims") or []):
+        if not isinstance(claim, dict):
+            continue
+        if claim.get("disposition") not in REWRITE_DISPOSITIONS:
+            continue
+        anchor = claim.get("anchor_text")
+        if not anchor:
+            continue  # missing-anchor issue already surfaced by validate_seed
+        anchor_s = str(anchor)
+        if anchor_s not in body:
+            issues.append(
+                f"claim[{i}]:anchor_text_not_in_body:{claim.get('claim_id')}"
+            )
+            continue
+        if body.count(anchor_s) > 1:
+            issues.append(
+                f"claim[{i}]:anchor_text_ambiguous_{body.count(anchor_s)}_matches:"
+                f"{claim.get('claim_id')}"
+            )
     return issues
 
 
@@ -752,6 +818,7 @@ def run_research(module_key: str, *, agent: str = "codex", dry_run: bool = False
             claim["claim_id"] = _stable_claim_id(str(claim["claim_text"]))
 
     schema_issues = validate_seed(seed)
+    schema_issues.extend(validate_anchors_against_body(seed, module_body))
     seed["_schema_issues"] = schema_issues
     seed = validate_urls(seed)
 
@@ -775,15 +842,23 @@ INJECT_PROMPT_TEMPLATE = """You are the inject step of the KubeDojo citation
 backfill pipeline. Given the module body and the already-validated citation
 seed (with dispositions), produce a STRUCTURED EDIT PLAN the orchestrator
 will apply mechanically. You do NOT rewrite the module freely — every edit
-is either an inline citation wrap or an authorized prose rewrite tied to a
-specific claim_id.
+is an inline citation wrap of an existing phrase, tied to a specific claim_id.
+
+## Division of responsibility
+
+Two kinds of edits land in the module:
+
+1. **Inline citation wraps** (YOUR JOB) — for every `supported` and
+   `weak_anchor` claim, emit one `inline_insertion` that wraps an
+   existing phrase in `[phrase](url)` using the seed's `proposed_url`.
+2. **Prose rewrites** (ORCHESTRATOR'S JOB, not yours) — for every
+   `soften_to_illustration` or `cannot_be_salvaged` claim, the
+   orchestrator will substring-swap the seed's `anchor_text` for the
+   seed's `suggested_rewrite` automatically. You must NOT emit
+   `prose_rewrites` entries. They are handled deterministically from
+   the seed; your participation would only introduce error.
 
 ## MANDATORY per-disposition actions
-
-For EACH claim in the seed, you MUST emit the action its disposition
-requires. A claim with a rewrite disposition that is not emitted as a
-`prose_rewrite` in your output is a BUG in your output — the pipeline
-will FAIL the module. Do not treat rewrites as optional.
 
 - `supported` | `weak_anchor` → REQUIRED: one `inline_insertion` (pure
   wrap of an existing phrase in `[phrase](url)`). The URL is the one
@@ -792,27 +867,15 @@ will FAIL the module. Do not treat rewrites as optional.
   in `sources_section` instead and record the skip in
   `skipped_claims` with reason `span_not_wrappable`.
 
-- `soften_to_illustration` → REQUIRED: one `prose_rewrite` entry.
-  You ONLY identify the `target_line` — the verbatim line from the
-  module body that contains the claim_text. The orchestrator does
-  the actual sentence swap using the seed's `suggested_rewrite` and
-  `claim_text`, so you do NOT need to construct the replacement
-  string. Just tell us which line to target.
-  If the seed has a `lesson_point_url`, add it to `sources_section`
-  as a Further Reading-style entry (do NOT try to inline-wrap inside
-  the rewritten sentence — that's brittle at scale).
-
-- `cannot_be_salvaged` → REQUIRED: one `prose_rewrite` entry. Same
-  shape as above — target_line only. Orchestrator handles the swap.
-  No citation added.
+- `soften_to_illustration` | `cannot_be_salvaged` → DO NOT EMIT a
+  `prose_rewrite`. The orchestrator handles these via the seed's
+  `anchor_text` + `suggested_rewrite`. If the seed has a
+  `lesson_point_url` (soften only), include it in `sources_section`
+  as a Further Reading-style entry.
 
 - `needs_allowlist_expansion` → DO NOTHING. Add the claim_id to
   `skipped_claims` with reason `awaiting_allowlist_review`. Do not
   edit the module; do not add a citation.
-
-Before returning your JSON, count: the number of rewrite-disposition
-claims in the seed must equal the number of entries in
-`prose_rewrites` OR appear in `skipped_claims`. If not, revise.
 
 ## Edit discipline
 
@@ -821,15 +884,10 @@ claims in the seed must equal the number of entries in
    boundaries are \\n. Copy once, don't edit.
 2. For `inline_insertion`: `original_phrase` must appear verbatim in
    `target_line`; `replace_with` must equal `[original_phrase](url)`.
-3. For `prose_rewrite`: just identify the `target_line` and the
-   `claim_id`. The orchestrator constructs the actual replacement by
-   finding the seed's `claim_text` inside target_line and swapping it
-   for the seed's `suggested_rewrite`. If `claim_text` does not appear
-   in `target_line` you picked the wrong line — revise.
-4. Never modify frontmatter, Mermaid blocks, code blocks, quiz answers,
+3. Never modify frontmatter, Mermaid blocks, code blocks, quiz answers,
    or exercise steps. If a claim's span_hint points into one of those,
    skip it (add to `skipped_claims` with a reason).
-5. `sources_section` is appended last. Include:
+4. `sources_section` is appended last. Include:
    - every URL used in inline_insertions
    - every validated `further_reading` URL from the seed
    - every `lesson_point_url` used by soften claims (as Further Reading
@@ -872,12 +930,6 @@ INJECT_SCHEMA_EXAMPLE = json.dumps(
                 "replace_with": "[<original_phrase>](<url>)",
             }
         ],
-        "prose_rewrites": [
-            {
-                "claim_id": "C002",
-                "target_line": "<verbatim single line from module body that contains claim_text>",
-            }
-        ],
         "sources_section": "## Sources\n\n- [<title>](<url>) — <one-sentence annotation>\n- ...\n",
         "skipped_claims": [
             {"claim_id": "C003", "reason": "awaiting_allowlist_review | span_in_code_block | ..."}
@@ -889,6 +941,9 @@ INJECT_SCHEMA_EXAMPLE = json.dumps(
 
 def build_inject_prompt(module_key: str, module_body: str, seed: dict[str, Any]) -> str:
     # Trim seed to the fields the inject step cares about (keep bytes down).
+    # Rewrite-disposition claims still included so Codex understands the
+    # module has them (for sources_section lesson_point_urls), but Codex
+    # is instructed NOT to emit prose_rewrites for them.
     compact_seed = {
         "module_key": seed.get("module_key"),
         "claims": [
@@ -898,7 +953,6 @@ def build_inject_prompt(module_key: str, module_body: str, seed: dict[str, Any])
                 "span_hint": c.get("span_hint"),
                 "disposition": c.get("disposition"),
                 "proposed_url": c.get("proposed_url"),
-                "suggested_rewrite": c.get("suggested_rewrite"),
                 "lesson_point_url": c.get("lesson_point_url"),
             }
             for c in (seed.get("claims") or [])
@@ -940,152 +994,68 @@ def _validate_inline_insertion(ins: dict[str, Any], body: str) -> str | None:
 
 
 def _authorized_rewrites(seed: dict[str, Any]) -> dict[str, dict[str, str]]:
-    """Map claim_id → {claim_text, suggested_rewrite} for each rewrite-
-    disposition claim in the seed. The orchestrator performs the actual
-    sentence swap; Codex only picks the target_line.
+    """Map claim_id → {anchor_text, suggested_rewrite} for each rewrite-
+    disposition claim in the seed. Schema v2: anchor_text is a verbatim
+    substring of the module body. The orchestrator substring-swaps
+    anchor_text for suggested_rewrite deterministically; Codex does not
+    participate in rewrites.
     """
     out: dict[str, dict[str, str]] = {}
     for c in seed.get("claims") or []:
-        if c.get("disposition") in REWRITE_DISPOSITIONS and c.get("suggested_rewrite") and c.get("claim_text"):
-            out[str(c.get("claim_id") or "")] = {
-                "claim_text": str(c["claim_text"]),
-                "suggested_rewrite": str(c["suggested_rewrite"]),
-            }
-    return out
-
-
-_MD_NOISE_RE = re.compile(r"[`*_\\]")
-
-
-def _normalize_for_match(s: str) -> str:
-    """Strip markdown formatting noise that the research step drops when
-    paraphrasing claim_text. The module body keeps backticks around
-    `t2.large` etc.; the seed's claim_text strips them. We normalize
-    both sides before substring-checking."""
-    return re.sub(r"\s+", " ", _MD_NOISE_RE.sub("", s)).strip()
-
-
-def _find_claim_span_in_line(line: str, claim_text: str) -> tuple[int, int] | None:
-    """Find where `claim_text` lives inside `line` after normalization.
-    Returns (start, end) byte offsets IN THE ORIGINAL line, or None.
-
-    We walk the original line and accumulate a mapping from normalized
-    chars → original indices; then locate the normalized claim_text in
-    the normalized line and translate back."""
-    orig_norm_chars: list[str] = []
-    orig_indices: list[int] = []
-    for i, ch in enumerate(line):
-        if _MD_NOISE_RE.match(ch):
+        if c.get("disposition") not in REWRITE_DISPOSITIONS:
             continue
-        if ch.isspace():
-            if orig_norm_chars and orig_norm_chars[-1] == " ":
-                continue
-            orig_norm_chars.append(" ")
-            orig_indices.append(i)
-        else:
-            orig_norm_chars.append(ch)
-            orig_indices.append(i)
-    normalized_line = "".join(orig_norm_chars).strip()
-    # Recompute indices after strip — if we stripped leading whitespace
-    # the indices list needs the same trim.
-    lead = len(normalized_line) and "".join(orig_norm_chars)[0] == " "
-    if lead:
-        orig_indices = orig_indices[1:]
-        orig_norm_chars = orig_norm_chars[1:]
-    normalized_claim = _normalize_for_match(claim_text)
-    if not normalized_claim:
-        return None
-    pos = "".join(orig_norm_chars).find(normalized_claim)
-    if pos < 0:
-        return None
-    end = pos + len(normalized_claim)
-    if end - 1 >= len(orig_indices) or pos >= len(orig_indices):
-        return None
-    return orig_indices[pos], orig_indices[end - 1] + 1
+        anchor = c.get("anchor_text")
+        suggested = c.get("suggested_rewrite")
+        if not anchor or not suggested:
+            continue
+        out[str(c.get("claim_id") or "")] = {
+            "anchor_text": str(anchor),
+            "suggested_rewrite": str(suggested),
+        }
+    return out
 
 
 def _authorized_replacement_lines(seed: dict[str, Any], body: str) -> set[str]:
-    """Precompute the SET of replacement lines the orchestrator may
-    emit — one per rewrite-disposition claim whose claim_text can be
-    located in the body after markdown normalization. Used by the
-    diff linter."""
+    """Precompute the SET of replacement lines that will exist after
+    orchestrator rewrites are applied. One per rewrite-disposition claim
+    whose anchor_text is found in the body. Used by the diff linter to
+    recognize authorized line changes.
+
+    The diff linter compares inline-link-unwrapped strings, so lines
+    with pre-existing links must be added in both wrapped and unwrapped
+    forms for the match to succeed when a rewrite lands on a line that
+    already carries a citation.
+    """
     out: set[str] = set()
     for info in _authorized_rewrites(seed).values():
-        claim_text = info["claim_text"]
+        anchor = info["anchor_text"]
         suggested = info["suggested_rewrite"]
         for line in body.splitlines():
-            span = _find_claim_span_in_line(line, claim_text)
-            if span is None:
-                continue
-            start, end = span
-            new_line = line[:start] + suggested + line[end:]
-            out.add(new_line.strip())
+            if anchor in line:
+                new_line = line.replace(anchor, suggested, 1)
+                out.add(new_line.strip())
+                out.add(_INLINE_LINK_RE.sub(r"\1", new_line).strip())
     return out
 
 
-def _validate_prose_rewrite(rw: dict[str, Any], body: str,
-                            authorized: dict[str, dict[str, str]]) -> str | None:
-    for f in ("claim_id", "target_line"):
-        if not rw.get(f):
-            return f"missing_{f}"
-    claim_id = str(rw["claim_id"])
-    if claim_id not in authorized:
-        return "rewrite_not_authorized_by_seed"
-    target = rw["target_line"]
-    if target not in body:
-        return "target_line_not_in_body"
-    claim_text = authorized[claim_id]["claim_text"]
-    if _find_claim_span_in_line(target, claim_text) is None:
-        return "claim_text_not_in_target_line"
-    return None
-
-
 def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
-    """Apply inline insertions + authorized prose rewrites + append sources_section.
+    """Apply authorized prose rewrites (orchestrator-driven) +
+    Codex-emitted inline insertions + append sources_section.
     Returns (new_body, applied).
 
-    Prose rewrites: Codex identifies the target_line; the orchestrator
-    constructs the replacement deterministically by substring-swapping
-    the seed's claim_text for the seed's suggested_rewrite inside that
-    line. Codex cannot inject arbitrary prose via this path.
+    Prose rewrites: orchestrator substring-swaps the seed's anchor_text
+    for the seed's suggested_rewrite. Codex's prose_rewrites entries
+    (if any) are ignored — the seed is the sole source of truth.
     """
     new_body = body
     applied: list[dict[str, Any]] = []
-    authorized = _authorized_rewrites(seed)
 
-    # Prose rewrites FIRST so inline_insertions applied afterwards can't
-    # accidentally target a phrase that's about to be rewritten.
-    for rw in plan.get("prose_rewrites") or []:
-        reason = _validate_prose_rewrite(rw, new_body, authorized)
-        if reason:
-            applied.append({"claim_id": rw.get("claim_id"), "kind": "prose_rewrite",
-                            "status": "rejected", "reason": reason})
-            continue
-        claim_id = str(rw["claim_id"])
-        target = rw["target_line"]
-        claim_text = authorized[claim_id]["claim_text"]
-        suggested = authorized[claim_id]["suggested_rewrite"]
-        # Locate the claim span inside target_line via markdown-aware
-        # substring search — we may be swapping into `t2.large` backtick
-        # territory that the seed's claim_text dropped.
-        span = _find_claim_span_in_line(target, claim_text)
-        if span is None:
-            applied.append({"claim_id": rw.get("claim_id"), "kind": "prose_rewrite",
-                            "status": "rejected",
-                            "reason": "claim_text_span_not_findable"})
-            continue
-        start, end = span
-        new_line = target[:start] + suggested + target[end:]
-        idx = new_body.find(target)
-        if idx < 0:
-            applied.append({"claim_id": rw.get("claim_id"), "kind": "prose_rewrite",
-                            "status": "rejected",
-                            "reason": "target_disappeared_after_prev_edits"})
-            continue
-        new_body = new_body[:idx] + new_line + new_body[idx + len(target):]
-        applied.append({"claim_id": rw.get("claim_id"), "kind": "prose_rewrite",
-                        "status": "applied"})
-
+    # Inline insertions FIRST so rewrites applied afterwards can still
+    # substring-match anchor_text against the body (inline wraps only
+    # add `[...](url)` around a sub-phrase; they don't mutate the
+    # anchor sentence text itself, so anchor substring matching still
+    # works). If we ran rewrites first, a rewrite on the same line as
+    # an inline's target_line would invalidate the inline's target.
     for ins in plan.get("inline_insertions") or []:
         reason = _validate_inline_insertion(ins, new_body)
         if reason:
@@ -1106,6 +1076,24 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
         new_body = new_body[:abs_phrase_idx] + replace + new_body[abs_phrase_idx + len(phrase):]
         applied.append({"claim_id": ins.get("claim_id"), "kind": "inline",
                         "status": "applied"})
+
+    # Prose rewrites SECOND. Authorized from seed; Codex does not
+    # participate. Anchor substring is expected to still exist in
+    # new_body — inline wraps above add `[…](url)` around sub-phrases
+    # without altering the anchor sentence text.
+    for claim_id, info in _authorized_rewrites(seed).items():
+        anchor = info["anchor_text"]
+        suggested = info["suggested_rewrite"]
+        if anchor not in new_body:
+            applied.append({"claim_id": claim_id, "kind": "prose_rewrite",
+                            "status": "rejected",
+                            "reason": "anchor_text_not_in_body"})
+            continue
+        count = new_body.count(anchor)
+        new_body = new_body.replace(anchor, suggested, 1)
+        applied.append({"claim_id": claim_id, "kind": "prose_rewrite",
+                        "status": "applied",
+                        **({"note": f"anchor_ambiguous_{count}_matches"} if count > 1 else {})})
 
     sources = (plan.get("sources_section") or "").strip()
     if sources:
@@ -1194,6 +1182,17 @@ def run_inject(module_key: str, *, agent: str = "codex", dry_run: bool = False) 
                 "detail": "seed has no cited, rewrite, or further_reading actions"}
 
     module_body = module_path.read_text(encoding="utf-8")
+
+    # Pre-dispatch: validate anchors exist in body. Fail fast before
+    # burning a Codex call on a broken seed.
+    anchor_issues = validate_anchors_against_body(seed, module_body)
+    if anchor_issues:
+        return {"module_key": normalized_key, "ok": False,
+                "error": "seed_anchor_validation_failed",
+                "detail": anchor_issues,
+                "fix": "re-run research to regenerate anchor_text "
+                       "(schema v2 required for rewrite claims)"}
+
     prompt = build_inject_prompt(normalized_key, module_body, seed)
 
     if dry_run:

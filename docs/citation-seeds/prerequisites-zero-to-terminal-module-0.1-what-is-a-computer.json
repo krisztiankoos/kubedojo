@@ -1,201 +1,165 @@
 {
   "module_key": "prerequisites/zero-to-terminal/module-0.1-what-is-a-computer",
   "module_path": "src/content/docs/prerequisites/zero-to-terminal/module-0.1-what-is-a-computer.md",
-  "research_run_id": "2026-04-19T09:05:39+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 1,
+  "research_run_id": "2026-04-19T13:35:14+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "In 2017, a GitLab engineer accidentally deleted a production database, and GitLab's postmortem describes a complex recovery that depended on replicas and backups.",
-      "claim_class": "war_story",
-      "span_hint": "section: RAM: Your Counter Space; paragraph after 'When RAM fills up'",
+      "claim_text": "GitLab's January 31, 2017 outage involved accidental removal of production database data, and recovery depended on backups and replica state.",
+      "claim_class": "incident",
+      "span_hint": "section: RAM: Your Counter Space",
       "disposition": "supported",
       "proposed_url": "https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/",
       "proposed_tier": "incidents",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This is a named real outage and should point to the primary postmortem."
+      "rationale": "GitLab's official postmortem documents the outage, accidental deletion, and the recovery constraints around backups and replicas."
     },
     {
       "claim_id": "C002",
-      "claim_text": "Thirty browser tabs alone can eat 4-6 GB of RAM.",
+      "claim_text": "Thirty browser tabs alone can consume 4-6 GB of RAM.",
       "claim_class": "statistic",
-      "span_hint": "section: RAM: Your Counter Space; pause-and-predict callout",
+      "span_hint": "section: RAM: Your Counter Space, pause-and-predict callout",
       "disposition": "soften_to_illustration",
       "proposed_url": null,
       "proposed_tier": null,
-      "suggested_rewrite": "If you open a browser with many tabs plus other heavy apps, a typical laptop can become painfully slow as the OS starts paging memory to disk.",
-      "lesson_point_url": "https://en.wikipedia.org/wiki/Memory_paging",
-      "rationale": "Per-tab browser memory use varies too much for a precise number here, but the paging/slowness lesson is valid."
+      "anchor_text": "Each program needs counter space, and 30 browser tabs alone can eat 4-6 GB.",
+      "suggested_rewrite": "Each program needs counter space, and a browser with many tabs open can easily use several gigabytes of RAM.",
+      "lesson_point_url": "https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/discard",
+      "rationale": "Exact tab memory usage varies widely by browser and page content, so this should be presented as an illustrative scenario rather than a fixed number."
     },
     {
       "claim_id": "C003",
-      "claim_text": "Windows is the most common desktop OS worldwide at 60.8% in March 2026.",
+      "claim_text": "Windows was the most common desktop operating system worldwide at 60.8% in March 2026.",
       "claim_class": "statistic",
-      "span_hint": "section: The Operating System; three main operating systems list",
+      "span_hint": "section: The Operating System: Your Restaurant Manager",
       "disposition": "supported",
       "proposed_url": "https://gs.statcounter.com/os-market-share/desktop/worldwide",
       "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This is a dated market-share statistic and the cited dashboard shows that figure for March 2026."
+      "rationale": "The StatCounter page directly shows Windows at 60.8% worldwide desktop OS share for March 2026."
     },
     {
       "claim_id": "C004",
-      "claim_text": "Linux is the default environment you'll see in most Kubernetes tutorials and many production clusters.",
+      "claim_text": "Kubernetes supports worker nodes running either Linux or Windows, but the control plane runs on Linux.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: The Operating System; paragraph before the stop-and-think callout",
-      "disposition": "soften_to_illustration",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "suggested_rewrite": "In Kubernetes learning materials and labs, you'll usually see Linux first, even though Kubernetes also supports Windows worker nodes.",
-      "lesson_point_url": "https://kubernetes.io/docs/concepts/windows/intro/",
-      "rationale": "The broad ecosystem-usage claim is directionally true but not tightly sourced from one allowlisted page."
-    },
-    {
-      "claim_id": "C005",
-      "claim_text": "Kubernetes worker nodes can run either Linux or Microsoft Windows, while the control plane stays on Linux.",
-      "claim_class": "standard",
-      "span_hint": "section: The Operating System; sentence beginning 'The Kubernetes docs say'",
+      "span_hint": "section: The Operating System: Your Restaurant Manager, paragraph after OS list",
       "disposition": "supported",
       "proposed_url": "https://kubernetes.io/docs/concepts/windows/intro/",
       "proposed_tier": "standards",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This is a versioned platform-capability statement directly covered by the Kubernetes documentation."
+      "rationale": "The Kubernetes documentation explicitly states that the control plane runs on Linux while worker nodes can run either Windows or Linux."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "AWS listed a Linux t2.large instance with 8 GiB of RAM in us-east-1 at $0.0928/hour on April 15, 2026.",
+      "claim_class": "pricing",
+      "span_hint": "section: Why This Matters for Kubernetes",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "For example, AWS listed a Linux `t2.large` instance with 8 GiB of RAM in `us-east-1` at `$0.0928/hour` on April 15, 2026.",
+      "suggested_rewrite": "For example, a small cloud VM can cost only a few cents per hour, but the exact price depends on the instance type, operating system, region, and purchase model.",
+      "lesson_point_url": null,
+      "rationale": "Exact dated cloud prices are unstable snapshots and should not appear as evergreen factual claims."
     },
     {
       "claim_id": "C006",
-      "claim_text": "In the cloud, pricing depends on instance type, operating system, region, and purchase model.",
-      "claim_class": "pricing",
-      "span_hint": "section: Why This Matters for Kubernetes; paragraph after the kitchen bullets",
-      "disposition": "supported",
-      "proposed_url": "https://docs.aws.amazon.com/pricing-calculator/latest/userguide/ec2-estimates.html",
-      "proposed_tier": "vendor",
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "AWS's EC2 estimate workflow explicitly varies cost by region, OS, instance choice, and payment option."
+      "claim_text": "A modern smartphone has more computing power than the Apollo-era computers used for the 1969 moon landing; the Apollo Guidance Computer had 74 KB of memory and a phone has millions of times more.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know?, phone bullet",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A modern smartphone has more computing power than the computers NASA used to land on the moon in 1969. The Apollo Guidance Computer had 74 KB of memory. Your phone has millions of times more.",
+      "suggested_rewrite": "A modern smartphone is dramatically more capable than the computers used in the Apollo era; for perspective, the Apollo Guidance Computer worked with only tens of kilobytes of memory.",
+      "lesson_point_url": "https://en.wikipedia.org/wiki/Apollo_Guidance_Computer",
+      "rationale": "The exact memory figure is a rounded composite and the multiplier comparison is too precise for evergreen teaching prose."
     },
     {
       "claim_id": "C007",
-      "claim_text": "AWS listed a Linux t2.large instance with 8 GiB of RAM in us-east-1 at $0.0928/hour on April 15, 2026.",
-      "claim_class": "pricing",
-      "span_hint": "section: Why This Matters for Kubernetes; sentence beginning 'For example, AWS listed'",
-      "disposition": "cannot_be_salvaged",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "suggested_rewrite": "For example, an 8 GiB cloud VM can cost on the order of cents per hour, depending on the region, operating system, and pricing model you choose.",
-      "lesson_point_url": null,
-      "rationale": "Exact dated cloud-price snapshots are unstable and the policy requires removing false precision rather than citing a moving pricing page."
-    },
-    {
-      "claim_id": "C008",
-      "claim_text": "A modern smartphone has more computing power than the computers NASA used to land on the moon in 1969; the Apollo Guidance Computer had 74 KB of memory; your phone has millions of times more.",
-      "claim_class": "benchmark",
-      "span_hint": "section: Did You Know?; first bullet",
-      "disposition": "soften_to_illustration",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "suggested_rewrite": "A modern smartphone has vastly more memory and processing capacity than the computers used during Apollo; the Apollo Guidance Computer had only a few dozen kilobytes of onboard memory.",
-      "lesson_point_url": "https://en.wikipedia.org/wiki/Apollo_Guidance_Computer",
-      "rationale": "The history point is real, but 'millions of times more' and 'more computing power' are too imprecise as written."
-    },
-    {
-      "claim_id": "C009",
-      "claim_text": "Early computers used magnetic-core memory, each ring stored one bit, and a full megabyte would require over 8 million rings.",
+      "claim_text": "Early computers used magnetic-core memory made of tiny rings, and each ring stored one bit.",
       "claim_class": "statistic",
-      "span_hint": "section: Did You Know?; second bullet",
+      "span_hint": "section: Did You Know?, RAM was once magnetic bullet",
       "disposition": "supported",
       "proposed_url": "https://en.wikipedia.org/wiki/Magnetic-core_memory",
       "proposed_tier": "general",
+      "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The cited page directly explains core-memory rings and one-bit-per-core storage."
+      "rationale": "The magnetic-core memory reference directly explains that core memory used ring-shaped cores and that each core stored one bit."
     },
     {
-      "claim_id": "C010",
-      "claim_text": "SSDs have no moving parts and are generally faster, quieter, and more shock-resistant than HDDs.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Did You Know?; third bullet, first three sentences",
-      "disposition": "supported",
-      "proposed_url": "https://en.wikipedia.org/wiki/Solid-state_drive",
-      "proposed_tier": "general",
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "These are direct hardware-behavior claims and the SSD reference discusses them explicitly."
-    },
-    {
-      "claim_id": "C011",
-      "claim_text": "Drop a laptop with an HDD and you might lose data; drop one with an SSD and you probably won't.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Did You Know?; third bullet, final two sentences",
-      "disposition": "cannot_be_salvaged",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "suggested_rewrite": "Because SSDs have no moving parts, they are generally more resistant to physical shock than HDDs, but neither storage type is immune to data loss.",
-      "lesson_point_url": null,
-      "rationale": "The current wording overpromises outcomes after a drop that depend on many device-specific factors."
-    },
-    {
-      "claim_id": "C012",
-      "claim_text": "In 1947, engineers working on the Harvard Mark II found a moth stuck in a relay and logged it as an actual bug.",
-      "claim_class": "war_story",
-      "span_hint": "section: Did You Know?; fourth bullet, first two sentences",
-      "disposition": "supported",
-      "proposed_url": "https://en.wikipedia.org/wiki/Harvard_Mark_II",
-      "proposed_tier": "general",
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "This is a named historical computing anecdote and the Harvard Mark II page directly covers it."
-    },
-    {
-      "claim_id": "C013",
-      "claim_text": "The term debugging has been used in computer science ever since the Harvard Mark II moth incident.",
-      "claim_class": "war_story",
-      "span_hint": "section: Did You Know?; fourth bullet, final sentence",
-      "disposition": "cannot_be_salvaged",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "suggested_rewrite": "The incident became a famous early computing anecdote.",
-      "lesson_point_url": null,
-      "rationale": "The moth story is real, but the wording wrongly implies that the incident originated or singularly established the term."
-    },
-    {
-      "claim_id": "C014",
-      "claim_text": "A team might pay $400/month for a 32 GB RAM server when their application only uses 2 GB, and right-sizing saves thousands of dollars.",
-      "claim_class": "pricing",
-      "span_hint": "section: Common Mistakes; row 'Over-provisioning cloud servers'",
+      "claim_id": "C008",
+      "claim_text": "A full megabyte of core memory would have needed over 8 million tiny rings.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know?, RAM was once magnetic bullet",
       "disposition": "soften_to_illustration",
       "proposed_url": null,
       "proposed_tier": null,
-      "suggested_rewrite": "In the cloud, an oversized server can easily cost far more than the application actually needs, and right-sizing can save a meaningful amount over time.",
-      "lesson_point_url": "https://docs.aws.amazon.com/whitepapers/latest/cost-optimization-right-sizing/tips-for-right-sizing-your-workloads.html",
-      "rationale": "The concrete dollar amounts are illustrative, but AWS does publish right-sizing guidance tied to underused CPU and memory."
+      "anchor_text": "A full megabyte would have needed over 8 million tiny rings.",
+      "suggested_rewrite": "A full megabyte of core memory would have needed millions of tiny rings.",
+      "lesson_point_url": "https://en.wikipedia.org/wiki/Magnetic-core_memory",
+      "rationale": "This is a back-of-the-envelope conversion and is better framed as an approximation than as a precise sourced historical figure."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "In 1947, operators on the Harvard Mark II found a moth in a relay and logged it as an \"actual bug.\"",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know?, first computer bug bullet",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Harvard_Mark_II",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Harvard Mark II reference directly covers the moth incident, date, and logged note."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "A team might pay $400/month for a 32GB RAM server when their application only uses 2GB, and right-sizing saves thousands of dollars.",
+      "claim_class": "pricing",
+      "span_hint": "section: Common Mistakes table, Over-provisioning cloud servers row",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A team might pay $400/month for a 32GB RAM server when their application only uses 2GB. Right-sizing saves thousands of dollars.",
+      "suggested_rewrite": "A team might pay hundreds of dollars per month for a larger server than their application actually needs. Right-sizing can save substantial money over time.",
+      "lesson_point_url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/select-the-correct-resource-type-size-and-number.html",
+      "rationale": "The exact monthly amount and savings vary by provider and workload, but the cost-optimization lesson is well supported."
     }
   ],
   "further_reading": [
     {
-      "url": "https://en.wikipedia.org/wiki/Memory_paging",
-      "title": "Memory paging",
+      "url": "https://en.wikipedia.org/wiki/Computer",
+      "title": "Computer",
       "tier": "general",
-      "why_relevant": "Useful background for the RAM-versus-disk slowdown described in the module."
+      "why_relevant": "A broad beginner-friendly overview of what a computer is and how its major parts fit together."
     },
     {
-      "url": "https://kubernetes.io/docs/concepts/windows/intro/",
-      "title": "Windows containers in Kubernetes",
-      "tier": "standards",
-      "why_relevant": "Explains the Linux control plane and Windows worker-node support that the module previews."
+      "url": "https://en.wikipedia.org/wiki/Operating_system",
+      "title": "Operating system",
+      "tier": "general",
+      "why_relevant": "Useful follow-up for the module's explanation of the OS as the part that coordinates hardware and programs."
     },
     {
-      "url": "https://docs.aws.amazon.com/pricing-calculator/latest/userguide/ec2-estimates.html",
-      "title": "Generating Amazon EC2 estimates",
-      "tier": "vendor",
-      "why_relevant": "Shows how instance type, RAM, OS, region, and payment options affect cloud cost."
+      "url": "https://en.wikipedia.org/wiki/Random-access_memory",
+      "title": "Random-access memory",
+      "tier": "general",
+      "why_relevant": "Gives additional background on RAM, including why it is temporary and why capacity affects performance."
     }
   ],
-  "notes": "Skipped quiz/exercise prose, analogies, and general teaching flow. Existing inline links were treated as evidence candidates, but the dated exact AWS price was still marked unsalvageable per policy.",
+  "notes": "Excluded analogies, quiz/exercise content, and generic how-to instructions. Focused on dated figures, real incidents, historical anecdotes, and concrete pricing/statistical claims that need support or softening.",
   "_schema_issues": [
-    "claim[1]:hard_cite_class_cannot_soften:statistic/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
+    "claim[1]:hard_cite_class_cannot_soften:statistic/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion",
+    "claim[5]:hard_cite_class_cannot_soften:statistic/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion",
+    "claim[7]:hard_cite_class_cannot_soften:statistic/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
   ],
   "rejected_urls": []
 }
