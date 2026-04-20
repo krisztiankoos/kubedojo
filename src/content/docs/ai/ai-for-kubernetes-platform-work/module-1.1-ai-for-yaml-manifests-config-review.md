@@ -195,3 +195,9 @@ Do not treat it as the source of truth.
 ## Next Module
 
 Continue to [AI for Kubernetes Troubleshooting and Triage](./module-1.2-ai-for-kubernetes-troubleshooting-and-triage/).
+
+## Sources
+
+- [Liveness, Readiness, and Startup Probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — Explains how readiness probes affect whether traffic is sent to Pods during rollout and steady-state operation.
+- [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) — Describes the Kubernetes securityContext fields used to set runtime user, group, and privilege-related controls.
+- [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — Covers resource requests and limits, including how requests influence scheduling decisions.

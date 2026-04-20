@@ -1,0 +1,70 @@
+{
+  "module_key": "ai/ai-for-kubernetes-platform-work/module-1.1-ai-for-yaml-manifests-config-review",
+  "module_path": "src/content/docs/ai/ai-for-kubernetes-platform-work/module-1.1-ai-for-yaml-manifests-config-review.md",
+  "research_run_id": "2026-04-20T05:51:04+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A Deployment with no readiness probe may route traffic to an unready Pod during rollout.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Example: Better Than “Looks Good”",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documentation states that readiness probes determine when a container is ready to accept traffic and that failed readiness removes the Pod from matching Service endpoints."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "A container runs as root by default if no securityContext is set.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Example: Better Than “Looks Good”",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The container runs as root by default because no securityContext is set.",
+      "suggested_rewrite": "This Deployment does not set a `securityContext`, so you should verify whether the image runs as root or as a non-root user by default.",
+      "lesson_point_url": null,
+      "rationale": "Whether a container runs as root depends on the image and runtime settings, so the original sentence overstates a condition that is not universally true."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "If resource limits are present but requests are omitted, scheduling predictability may be harmed.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Example: Better Than “Looks Good”",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Resource limits are present, but requests are omitted, which may harm scheduling predictability.",
+      "suggested_rewrite": "Resource limits are present, but you should verify whether requests are explicitly set or defaulted by policy, because that affects scheduling assumptions.",
+      "lesson_point_url": null,
+      "rationale": "Kubernetes can default an omitted request to the limit for a resource, so the original sentence is too absolute to support as written."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/",
+      "title": "Liveness, Readiness, and Startup Probes",
+      "tier": "standards",
+      "why_relevant": "Covers the rollout and traffic-routing behavior behind the module's readiness-probe review advice."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/",
+      "title": "Configure a Security Context for a Pod or Container",
+      "tier": "standards",
+      "why_relevant": "Explains how Kubernetes securityContext settings affect runtime identity and privilege controls."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "title": "Resource Management for Pods and Containers",
+      "tier": "standards",
+      "why_relevant": "Provides the canonical explanation of requests, limits, and how they influence scheduling and runtime behavior."
+    }
+  ],
+  "notes": "Most of the module is pedagogical guidance and does not need inline citation under the stated density rule; the citation-worthy items are concentrated in the Kubernetes-specific example block.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
