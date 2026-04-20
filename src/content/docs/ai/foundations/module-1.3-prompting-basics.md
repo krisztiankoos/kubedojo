@@ -138,3 +138,8 @@ It does not replace verification.
 ## Next Module
 
 Continue to [How to Verify AI Output](./module-1.4-how-to-verify-ai-output/).
+
+## Sources
+
+- [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165) — Foundational paper on in-context learning and how prompts and examples shape model behavior.
+- [Training Language Models to Follow Instructions with Human Feedback](https://arxiv.org/abs/2203.02155) — Background on instruction-following behavior and why task framing changes model responses.

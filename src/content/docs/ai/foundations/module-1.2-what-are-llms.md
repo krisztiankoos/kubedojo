@@ -33,11 +33,11 @@ By the end of this module, you should be able to:
 
 ## Start With The Simplest Honest Description
 
-An LLM is a model trained on large amounts of text to predict the next most likely token in a sequence.
+An LLM is a model [trained on large amounts of text to predict the next most likely token in a sequence](https://arxiv.org/abs/2005.14165).
 
 That sounds almost too simple.
 
-But at scale, this simple mechanism produces surprisingly capable behaviors:
+But at scale, this simple mechanism produces [surprisingly capable behaviors](https://en.wikipedia.org/wiki/Large_language_model):
 - explanation
 - rewriting
 - summarization
@@ -59,13 +59,13 @@ These three ideas explain most of the system behavior learners notice.
 
 Models do not read text exactly the way humans do.
 
-They process tokens, which may be:
+They process [tokens](https://en.wikipedia.org/wiki/Large_language_model), which may be:
 - whole words
 - pieces of words
 - punctuation
 - formatting markers
 
-This matters because limits are measured in tokens, not pages.
+This matters because [limits are measured in tokens, not pages](https://en.wikipedia.org/wiki/Context_window).
 
 If a model says it has a large context window, that means it can consider a larger token budget, not that it suddenly “understands” everything inside it.
 
@@ -183,7 +183,7 @@ They are normal consequences of how the systems work.
 
 ## LLMs Are Not Search Engines
 
-Search systems are built to retrieve known information.
+Search systems are built to [retrieve known information](https://developer.mozilla.org/en-US/docs/Glossary/search_engine).
 
 LLMs are built to generate language that fits the context and learned patterns.
 
@@ -350,3 +350,11 @@ That is what turns LLM use from novelty into disciplined practice.
 ## Next Module
 
 Continue to [Prompting Basics](./module-1.3-prompting-basics/).
+
+## Sources
+
+- [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165) — Canonical GPT-3 paper showing large autoregressive language models performing next-token prediction with broad downstream capabilities.
+- [Large language model](https://en.wikipedia.org/wiki/Large_language_model) — Overview of how LLMs tokenize text and what language tasks they commonly perform.
+- [Context window](https://en.wikipedia.org/wiki/Context_window) — Explains the amount of text a model can consider at once and why those limits are measured in tokens.
+- [Search engine](https://developer.mozilla.org/en-US/docs/Glossary/search_engine) — Concise definition of search engines as systems for retrieving relevant information in response to a query.
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762) — Foundational transformer paper that underpins most modern large language model architectures.

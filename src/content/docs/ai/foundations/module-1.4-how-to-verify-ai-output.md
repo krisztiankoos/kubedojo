@@ -140,3 +140,9 @@ The habit you want is simple:
 ## Next Module
 
 Continue to [Privacy, Safety, and Trust](./module-1.5-privacy-safety-and-trust/).
+
+## Sources
+
+- [NIST AI Risk Management Framework (AI RMF 1.0)](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10) — Provides a general framework for assessing AI risk, reliability, and appropriate governance before acting on model output.
+- [NIST Generative AI Profile](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence) — Extends the AI RMF with generative-AI-specific risks and practical guidance around evaluation, verification, and human oversight.
+- [OWASP LLM09:2025 Misinformation](https://genai.owasp.org/llmrisk/llm092025-misinformation/) — Explains why LLM misinformation and overreliance are operational risks, reinforcing the module's verification-first habit.

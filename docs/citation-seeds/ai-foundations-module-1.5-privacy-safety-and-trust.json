@@ -1,0 +1,30 @@
+{
+  "module_key": "ai/foundations/module-1.5-privacy-safety-and-trust",
+  "module_path": "src/content/docs/ai/foundations/module-1.5-privacy-safety-and-trust.md",
+  "research_run_id": "2026-04-20T00:07:06+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "title": "NIST AI Risk Management Framework",
+      "tier": "standards",
+      "why_relevant": "Provides a practical framework for thinking about AI risk, governance, and trustworthy use in real workflows."
+    },
+    {
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "title": "OWASP Top 10 for LLM Applications",
+      "tier": "standards",
+      "why_relevant": "Introduces common safety and security failure modes for LLM-based systems, including data leakage and over-trust."
+    },
+    {
+      "url": "https://oecd.ai/en/ai-principles",
+      "title": "OECD AI Principles",
+      "tier": "standards",
+      "why_relevant": "Gives a beginner-friendly reference for trustworthy AI principles, including transparency, accountability, and safety."
+    }
+  ],
+  "notes": "This module is primarily pedagogical and advisory. No hard factual claims requiring inline citation were identified under the seed rules.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

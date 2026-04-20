@@ -1,0 +1,30 @@
+{
+  "module_key": "ai/foundations/module-1.4-how-to-verify-ai-output",
+  "module_path": "src/content/docs/ai/foundations/module-1.4-how-to-verify-ai-output.md",
+  "research_run_id": "2026-04-20T00:06:07+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10",
+      "title": "NIST AI Risk Management Framework (AI RMF 1.0)",
+      "tier": "standards",
+      "why_relevant": "Provides a general framework for assessing AI risk, reliability, and appropriate governance before acting on model output."
+    },
+    {
+      "url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence",
+      "title": "NIST Generative AI Profile",
+      "tier": "standards",
+      "why_relevant": "Extends the AI RMF with generative-AI-specific risks and practical guidance around evaluation, verification, and human oversight."
+    },
+    {
+      "url": "https://genai.owasp.org/llmrisk/llm092025-misinformation/",
+      "title": "OWASP LLM09:2025 Misinformation",
+      "tier": "standards",
+      "why_relevant": "Explains why LLM misinformation and overreliance are operational risks, reinforcing the module's verification-first habit."
+    }
+  ],
+  "notes": "This module is primarily pedagogical and workflow-oriented. It contains no concrete external factual claims, named incidents, statistics, standards references in body text, or vendor/version assertions that require inline citations under the current rubric.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

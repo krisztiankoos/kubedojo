@@ -60,7 +60,7 @@ Before using an AI tool, ask:
 - is this output advisory or authoritative?
 - who is accountable if this is wrong?
 
-Trust should never be a single yes/no decision.
+Trust usually should not be treated as a single yes/no decision.
 
 A better question is:
 
@@ -131,3 +131,9 @@ The safest AI habit is not fear. It is deliberate boundaries.
 ## Next Module
 
 Continue to [Using AI for Learning, Writing, Research, and Coding](./module-1.6-using-ai-for-learning-writing-research-and-coding/).
+
+## Sources
+
+- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework) — Provides a practical framework for thinking about AI risk, governance, and trustworthy use in real workflows.
+- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — Introduces common safety and security failure modes for LLM-based systems, including data leakage and over-trust.
+- [OECD AI Principles](https://oecd.ai/en/ai-principles) — Gives a beginner-friendly reference for trustworthy AI principles, including transparency, accountability, and safety.

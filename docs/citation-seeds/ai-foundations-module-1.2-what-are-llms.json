@@ -1,0 +1,109 @@
+{
+  "module_key": "ai/foundations/module-1.2-what-are-llms",
+  "module_path": "src/content/docs/ai/foundations/module-1.2-what-are-llms.md",
+  "research_run_id": "2026-04-20T00:01:27+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "An LLM is trained on large amounts of text and used autoregressively to predict the next token in a sequence.",
+      "claim_class": "standard",
+      "span_hint": "section: Start With The Simplest Honest Description",
+      "disposition": "supported",
+      "proposed_url": "https://arxiv.org/abs/2005.14165",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is the module's core technical definition and should point to a canonical foundational paper."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Models process tokens rather than raw words, and tokens can correspond to whole words, subword pieces, punctuation, and formatting-related markers.",
+      "claim_class": "standard",
+      "span_hint": "section: Tokens, Context, and Prediction > Tokens",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Large_language_model",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The tokenization explanation is a factual mechanism claim that benefits from a compact foundational reference."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "A context window is the amount of text an LLM can consider at once, and it is measured in tokens.",
+      "claim_class": "standard",
+      "span_hint": "section: Tokens, Context, and Prediction > Tokens",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Context_window",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The module explicitly teaches context-window behavior as a token-budget concept, so that definition should be grounded."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "At scale, large language models can perform useful language tasks such as generation, summarization, translation, and related text-processing tasks.",
+      "claim_class": "standard",
+      "span_hint": "section: Start With The Simplest Honest Description",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Large_language_model",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The capability list is factual rather than purely rhetorical, so one broad foundational source is appropriate."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Search engines are retrieval systems that find and present relevant information in response to a query.",
+      "claim_class": "standard",
+      "span_hint": "section: LLMs Are Not Search Engines",
+      "disposition": "supported",
+      "proposed_url": "https://developer.mozilla.org/en-US/docs/Glossary/search_engine",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The retrieval-vs-generation distinction is load-bearing in this section, and the retrieval side should be cited directly."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/1706.03762",
+      "title": "Attention Is All You Need",
+      "tier": "standards",
+      "why_relevant": "This is the foundational transformer paper behind most modern LLM architectures."
+    },
+    {
+      "url": "https://arxiv.org/abs/2005.14165",
+      "title": "Language Models are Few-Shot Learners",
+      "tier": "standards",
+      "why_relevant": "This canonical paper helps learners connect next-token prediction to real downstream capabilities."
+    }
+  ],
+  "notes": "Seed kept intentionally sparse: most remaining module text is pedagogical framing, mental-model coaching, quiz material, or exercise guidance rather than citation-worthy hard claims.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://openai.com/blog/why-language-models-hallucinate/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    },
+    {
+      "url": "https://openai.com/academy/prompting/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    },
+    {
+      "url": "https://openai.com/blog/why-language-models-hallucinate/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

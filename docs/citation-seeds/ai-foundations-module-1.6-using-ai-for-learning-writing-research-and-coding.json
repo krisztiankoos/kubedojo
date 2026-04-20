@@ -1,0 +1,31 @@
+{
+  "module_key": "ai/foundations/module-1.6-using-ai-for-learning-writing-research-and-coding",
+  "module_path": "src/content/docs/ai/foundations/module-1.6-using-ai-for-learning-writing-research-and-coding.md",
+  "research_run_id": "2026-04-20T00:09:43+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence",
+      "title": "NIST AI RMF: Generative AI Profile",
+      "tier": "standards",
+      "why_relevant": "Useful for the module's emphasis on verification, responsibility, and trustworthy use of generative AI."
+    },
+    {
+      "url": "https://oecd.ai/en/generative-ai-issues",
+      "title": "OECD.AI: Generative AI Issues",
+      "tier": "standards",
+      "why_relevant": "Provides a beginner-friendly overview of common benefits, limitations, and risks that support the module's judgment-first framing."
+    }
+  ],
+  "notes": "The module is primarily pedagogical guidance and contains no hard factual claims that require inline citations under the stated rules: no statistics, incidents, standards-by-name, vendor/version capability claims, pricing, or named historical events.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://openai.com/academy/prompting/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

@@ -161,3 +161,8 @@ For learning, writing, research, and coding, the best pattern is:
 ## Next Section
 
 Continue to [AI-Native Work](../ai-native-work/).
+
+## Sources
+
+- [NIST AI RMF: Generative AI Profile](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence) — A practical framework for trustworthy generative AI use, with emphasis on verification, risk, and human responsibility.
+- [OECD.AI: Generative AI Issues](https://oecd.ai/en/generative-ai-issues) — A beginner-friendly overview of common generative AI benefits, limitations, and risks that reinforces judgment-first usage.
