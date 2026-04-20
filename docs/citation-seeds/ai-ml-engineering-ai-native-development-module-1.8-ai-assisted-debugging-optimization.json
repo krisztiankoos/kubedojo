@@ -1,0 +1,265 @@
+{
+  "module_key": "ai-ml-engineering/ai-native-development/module-1.8-ai-assisted-debugging-optimization",
+  "module_path": "src/content/docs/ai-ml-engineering/ai-native-development/module-1.8-ai-assisted-debugging-optimization.md",
+  "research_run_id": "2026-04-20T12:39:45+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Knight Capital's August 1, 2012 deployment triggered dormant router logic, sent millions of erroneous orders, and caused a loss of more than $460 million in about 45 minutes.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, opening paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://www.sec.gov/newsroom/press-releases/2013-222",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The SEC press release directly supports the timing, order volume, and loss figures, but sec.gov is off the allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "`kubectl debug` supports creating workload copies, adding ephemeral containers to running Pods, and creating node debug Pods in host namespaces.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cloud-Native Debugging with Kubernetes, first paragraph",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubectl reference lists those three supported debug actions explicitly."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Using `kubectl debug -f pod.yaml` to create an interactive debug session requires the `EphemeralContainers` feature to be enabled.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cloud-Native Debugging with Kubernetes, ephemeral-container paragraph",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubectl debug reference includes this exact example and notes that it requires EphemeralContainers."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Debugging Kubernetes nodes with `kubectl` requires a cluster server version of at least 1.2.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cloud-Native Debugging with Kubernetes, node-debug sentence",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/kubectl-node-debug/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The node-debug task page states that the Kubernetes server must be at or later than version 1.2."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Kubernetes v1.35 added structured, versioned JSON responses for z-pages such as `/statusz`, requested via Accept headers like `application/json;v=v1alpha1;g=config.k8s.io;as=Statusz`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cloud-Native Debugging with Kubernetes, z-pages paragraph",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/reference/instrumentation/zpages/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The z-pages reference documents the v1.35 structured response behavior and the required Accept header."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "`kubectl top` fetches metrics from Metrics Server, requires that component to be installed and running, and is meant as a low-overhead autoscaling signal rather than a full monitoring system.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Profiling Kubernetes Workloads, first two sentences",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubectl top reference says Metrics Server must be installed and frames the command as autoscaling-oriented rather than full monitoring."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Metrics Server is intended for built-in autoscaling use cases such as HPA and VPA, not as a general monitoring backend, and in its documented configuration it collects metrics every 15 seconds.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Profiling Kubernetes Workloads, metrics-server paragraph",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/kubernetes-sigs/metrics-server",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Metrics Server README states both its autoscaling-only scope and its 15-second collection interval."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "`kubectl top pod` metrics may be unavailable for a few minutes after Pod creation because of metrics pipeline delay.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Profiling Kubernetes Workloads, last sentence",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/kubectl_top_pod/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubectl top pod reference uses essentially this exact wording."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "OpenAI strict-mode function calling relies on structured outputs and enforces schema adherence for tool arguments.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Debugging AI Tooling Integrations, strict-mode sentence",
+      "disposition": "supported",
+      "proposed_url": "https://platform.openai.com/docs/guides/function-calling?api-mode=respon",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The OpenAI docs state that setting `strict: true` leverages structured outputs to enforce the schema."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "OpenAI announced in May 2025 that the Responses API gained remote MCP server support, image generation, Code Interpreter, and improved file search across GPT-4o, GPT-4.1, and o-series models.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Debugging AI Tooling Integrations, Responses API features paragraph",
+      "disposition": "supported",
+      "proposed_url": "https://openai.com/index/new-tools-and-features-in-the-responses-api/",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The OpenAI product announcement directly lists those May 2025 Responses API additions and model families."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "OpenAI hosts a public documentation MCP server at `https://developers.openai.com/mcp` that provides read-only access to developer docs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Debugging AI Tooling Integrations, MCP docs sentence",
+      "disposition": "supported",
+      "proposed_url": "https://platform.openai.com/docs/docs-mcp",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Docs MCP page gives that server URL and describes it as read-only documentation access."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "OpenAI web search in the Responses API supports non-reasoning and agentic modes, but is not available for `gpt-5` with minimal reasoning or for `gpt-4.1-nano`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Debugging AI Tooling Integrations, web-search sentence",
+      "disposition": "supported",
+      "proposed_url": "https://platform.openai.com/docs/guides/tools-web-search?api-mode=responses",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The web search guide documents both the mode taxonomy and these model limitations."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "The Morris Worm is presented with unsupported historical precision about primacy, damages, and reinfection behavior.",
+      "claim_class": "security_claim",
+      "span_hint": "section: War Stories and Lessons, Morris Worm paragraph",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The Morris Worm was the first major internet worm, causing millions in damages. It possessed a fundamental design flaw regarding its probability of reinfection.",
+      "suggested_rewrite": "The Morris Worm showed how an aggressively self-replicating network worm could overload systems across the early internet.",
+      "lesson_point_url": null,
+      "rationale": "The sentence mixes disputed historical framing with unsourced damage claims, so the safe fix is to keep the lesson and drop the false precision."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "The Grace Hopper anecdote incorrectly credits her with discovering the first literal computer bug and uses imprecise dating.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know?, bullet 1",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Rear Admiral Grace Hopper discovered the first literal computer bug—a moth trapped in a relay of the Harvard Mark II—on September 9 of the late nineteen-forties.",
+      "suggested_rewrite": "One famous early computing anecdote involved a moth found in a relay of the Harvard Mark II, helping popularize the language of \"bugs\" and \"debugging.\"",
+      "lesson_point_url": null,
+      "rationale": "The current wording overclaims Hopper's role and uses fuzzy dating for a specific historical anecdote."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "The Therac-25 bullet overstates the causal chain by reducing the accidents to a single race condition.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know?, bullet 2",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The Therac-25 radiation therapy machine delivered massive overdoses to patients between 1985 and 1987 due to a lethal race condition in its software.",
+      "suggested_rewrite": "The Therac-25 accidents between 1985 and 1987 showed how software defects and weak safety engineering in medical systems can lead to lethal overdoses.",
+      "lesson_point_url": null,
+      "rationale": "The historical record is more complex than a single race-condition explanation, so the statement should be narrowed to the supported lesson."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "Knight Capital lost about $460 million in roughly 45 minutes on August 1, 2012 after a software deployment triggered dormant trading logic.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know?, bullet 3",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://www.sec.gov/newsroom/press-releases/2013-222",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The SEC press release supports the incident details, but sec.gov is not currently on the allowlist."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "The Mars Climate Orbiter bullet overstates causality and includes an unsourced price figure.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know?, bullet 4",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The Mars Climate Orbiter, an interplanetary probe costing $125 million, was completely destroyed on September 23, 1999, solely due to a metric-to-imperial unit conversion error.",
+      "suggested_rewrite": "The Mars Climate Orbiter was lost in 1999 after a navigation failure involving incompatible English and metric units, becoming a classic lesson in interface contracts and verification.",
+      "lesson_point_url": null,
+      "rationale": "NASA supports the units-mismatch lesson, but the current sentence adds unsupported cost precision and an overly absolute causal claim."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/",
+      "title": "Debug Running Pods",
+      "tier": "standards",
+      "why_relevant": "Primary Kubernetes guidance for ephemeral containers, copied debug Pods, and node-level debugging workflows."
+    },
+    {
+      "url": "https://platform.openai.com/docs/guides/function-calling?api-mode=respon",
+      "title": "OpenAI Function Calling Guide",
+      "tier": "vendor",
+      "why_relevant": "Primary OpenAI reference for tool-calling flow, strict mode, and schema requirements."
+    },
+    {
+      "url": "https://github.com/kubernetes-sigs/metrics-server",
+      "title": "Metrics Server",
+      "tier": "upstream",
+      "why_relevant": "Explains the resource-metrics pipeline behind `kubectl top`, including scope and collection interval."
+    }
+  ],
+  "notes": "Excluded Mermaid diagrams, fenced code blocks, tables, and knowledge-check items per instructions. Historical prose in the 'Did You Know?' section was included.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://platform.openai.com/docs/guides/function-calling/how-do-i-ensure-the-model-calls-the-correct-function",
+      "reason": "http_404",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    },
+    {
+      "url": "https://platform.openai.com/docs/assistants",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

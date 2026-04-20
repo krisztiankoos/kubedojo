@@ -1,0 +1,174 @@
+{
+  "module_key": "platform/toolkits/cicd-delivery/gitops-deployments/module-2.2-argo-rollouts",
+  "module_path": "src/content/docs/platform/toolkits/cicd-delivery/gitops-deployments/module-2.2-argo-rollouts.md",
+  "research_run_id": "2026-04-20T14:23:09+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A streaming platform with 300 microservices and 40 million users saw p99 latency jump from 200ms to 3.2s, and Argo Rollouts automatically stopped the release before it caused $12 million in churn.",
+      "claim_class": "war_story",
+      "span_hint": "opening epigraph",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "*The release manager hit \"deploy\" and watched the metrics dashboard. Three hundred microservices. Forty million users. No room for error. Within 90 seconds, the p99 latency spiked from 200ms to 3.2 seconds. Customer complaints flooded the support queue. But something remarkable happened: no humans intervened. The Argo Rollouts analysis detected the latency anomaly at 10% traffic, automatically aborted the canary, and rolled back to stable. Total user impact: 4 million requests slightly degraded, zero failed transactions. The bad deploy that would have cost the streaming platform $12 million in subscriber churn was stopped by a YAML file and a Prometheus query. The release manager exhaled, then smiled: \"Progressive delivery just paid for itself.\"*",
+      "suggested_rewrite": "*Progressive delivery lets teams expose only a small slice of traffic to a new version, watch service metrics, and automatically abort a rollout when the canary regresses before the whole user base is affected.*",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with precise timings, scale, impact, and dollar figures."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Kubernetes Deployments use the RollingUpdate strategy by default.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters, sentence 1",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes Deployment documentation states that `.spec.strategy.type` defaults to `RollingUpdate`."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Native Kubernetes rolling updates do not natively control traffic flow, query external metrics, or automatically abort and roll back based on analysis.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "supported",
+      "proposed_url": "https://argoproj.github.io/rollouts/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Argo Rollouts overview explicitly lists these RollingUpdate limitations as motivation for Rollouts."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Argo Rollouts adds progressive delivery features such as canary deployments, blue-green deployments, metric-driven analysis, and automated promotion or rollback.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "supported",
+      "proposed_url": "https://argoproj.github.io/rollouts/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The project overview enumerates canary, blue-green, analysis, and automated rollout control as core Rollouts features."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Argo Rollouts originated from Intuit's frustration with Kubernetes Deployments and a need to deploy safely thousands of times per day.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Argo Rollouts was born from Intuit's frustration with Kubernetes Deployments**—they needed a way to safely deploy thousands of times per day",
+      "suggested_rewrite": "- **Argo Rollouts addresses gaps in standard Kubernetes rollout behavior**—it adds progressive delivery patterns and analysis-driven control for safer releases.",
+      "lesson_point_url": null,
+      "rationale": "This origin story and deployment-frequency figure are specific historical claims without a directly cited primary source in the allowlist."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Netflix pioneered automated canary analysis, and Kayenta directly inspired Argo Rollouts' analysis features.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Netflix pioneered automated canary analysis**—their Kayenta system inspired Argo Rollouts' analysis features",
+      "suggested_rewrite": "- **Automated canary analysis is an established practice**—Argo Rollouts can integrate with systems such as Kayenta.",
+      "lesson_point_url": null,
+      "rationale": "The module asserts a specific lineage and inspiration claim that is not directly backed by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Blue-green deployments can double resource usage.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet 4",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Blue-green deployments can double your resource usage**—you need capacity for both versions simultaneously",
+      "suggested_rewrite": "- **Blue-green deployments require extra capacity during promotion**—both versions can run at the same time until traffic switches and the old version scales down.",
+      "lesson_point_url": null,
+      "rationale": "The exact multiplier is stronger than the source material directly states, while the general capacity tradeoff is valid."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Argo Rollouts can integrate with ingress controllers and service meshes for traffic splitting, including NGINX, ALB, and Istio-style integrations.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What You'll Be Able to Do, bullet 3",
+      "disposition": "supported",
+      "proposed_url": "https://argoproj.github.io/rollouts/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Argo Rollouts overview lists ingress-controller and service-mesh traffic-shaping integrations among supported features."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "A production memory leak that took six hours to appear under 1% staging traffic would cause OOM kills within 15 minutes in production.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story, subsection: Friday, 6:47 PM - The Deploy",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The order-service team merged a \"small refactor\" that passed all unit tests and staging validation. The code had a memory leak—objects allocated in a hot path but never garbage collected. In staging with 1% production traffic, it took 6 hours to manifest. In production, the leak would compound to OOM kills within 15 minutes.",
+      "suggested_rewrite": "A memory leak can pass unit tests and light staging traffic, then surface quickly under production load, which is why progressive analysis should watch for resource-growth regressions before full promotion.",
+      "lesson_point_url": null,
+      "rationale": "This is a fabricated-seeming incident narrative with precise traffic, timing, and failure-mode details but no attributable source."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The team had a comparable prior incident eight months earlier.",
+      "claim_class": "incident",
+      "span_hint": "section: War Story, sentence before previous-incident timeline",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The team's previous incident, 8 months earlier, had played out like this:",
+      "suggested_rewrite": "A similar incident without progressive delivery can look like this:",
+      "lesson_point_url": null,
+      "rationale": "The sentence asserts a specific prior real incident and date relationship without any source."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "After that incident, the platform team implemented Argo Rollouts with automated analysis.",
+      "claim_class": "incident",
+      "span_hint": "section: War Story, sentence before rollout YAML",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "After that incident, the platform team implemented Argo Rollouts with automated analysis:",
+      "suggested_rewrite": "A team facing this failure mode can implement Argo Rollouts with automated analysis like this:",
+      "lesson_point_url": null,
+      "rationale": "This continues the same unsourced incident narrative and should be reframed as a general example."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://argoproj.github.io/rollouts/",
+      "title": "Argo Rollouts Overview",
+      "tier": "upstream",
+      "why_relevant": "Provides the project-level explanation of canary, blue-green, traffic shaping, and automated analysis."
+    },
+    {
+      "url": "https://argoproj.github.io/argo-rollouts/features/canary/",
+      "title": "Canary Deployment Strategy",
+      "tier": "upstream",
+      "why_relevant": "Documents canary steps, pauses, traffic weights, and background analysis behavior in detail."
+    },
+    {
+      "url": "https://argoproj.github.io/argo-rollouts/features/analysis/",
+      "title": "Analysis Overview",
+      "tier": "upstream",
+      "why_relevant": "Explains AnalysisTemplate, AnalysisRun, inline analysis, background analysis, and dry-run mode."
+    }
+  ],
+  "notes": "The module contains additional factual-looking incident numbers inside fenced ASCII timelines and cost tables. Per pipeline rules, fenced code blocks were not emitted as claim entries, but those blocks likely still need manual editorial cleanup because they present uncited real-world-seeming incident specifics.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

@@ -1,0 +1,200 @@
+{
+  "module_key": "ai-ml-engineering/deep-learning/module-1.7-transformers-from-scratch",
+  "module_path": "src/content/docs/ai-ml-engineering/deep-learning/module-1.7-transformers-from-scratch.md",
+  "research_run_id": "2026-04-20T13:53:36+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening anecdote places Seppo Linnainmaa in San Diego at a precise time in July 1969.",
+      "claim_class": "war_story",
+      "span_hint": "section: The Idea That Almost Died Twice",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**San Diego, California. July 1969. 3:47 PM.**",
+      "suggested_rewrite": "**Around 1970.**",
+      "lesson_point_url": null,
+      "rationale": "The fake-precise time-and-place staging is not supported and should be removed."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Seppo Linnainmaa introduced reverse-mode automatic differentiation in his 1970 MSc thesis.",
+      "claim_class": "war_story",
+      "span_hint": "section: The Idea That Almost Died Twice",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/Seppo_Linnainmaa",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The allowlisted page directly states that Linnainmaa received his MSc in 1970 and introduced reverse-mode automatic differentiation in that thesis."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Rumelhart, Hinton, and Williams published \"Learning representations by back-propagating errors\" in Nature in 1986.",
+      "claim_class": "war_story",
+      "span_hint": "section: The Idea That Almost Died Twice",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://www.nature.com/articles/323533a0",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The primary source is the Nature paper itself, but nature.com is off the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "AlexNet won the 2012 ImageNet competition with GPU-based training.",
+      "claim_class": "benchmark",
+      "span_hint": "section: The Idea That Almost Died Twice",
+      "disposition": "supported",
+      "proposed_url": "https://en.wikipedia.org/wiki/AlexNet",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The allowlisted AlexNet page directly states the 2012 win and that GPUs made the training practical."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "A verbatim Geoffrey Hinton quote is presented without a verifiable source.",
+      "claim_class": "war_story",
+      "span_hint": "section: The Idea That Almost Died Twice",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> \"Backpropagation is a beautiful algorithm. It's not deep learning's breakthrough—it's its foundation. Everything else is built on top of it.\"",
+      "suggested_rewrite": "> Backpropagation is foundational to modern deep learning.",
+      "lesson_point_url": null,
+      "rationale": "Exact quotations need a traceable source, and this one was not verified."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The quote is attributed to Geoffrey Hinton's 2024 Nobel acceptance speech without verification.",
+      "claim_class": "war_story",
+      "span_hint": "section: The Idea That Almost Died Twice",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> — Geoffrey Hinton, Nobel Prize acceptance speech, 2024",
+      "suggested_rewrite": ">",
+      "lesson_point_url": null,
+      "rationale": "The attribution is part of the unsupported quote claim and should be removed unless a transcript is sourced."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The naming-history paragraph makes several specific historical claims about Werbos, Rumelhart/Hinton/Williams, adjoint sensitivity analysis, and reverse-mode autodiff.",
+      "claim_class": "war_story",
+      "span_hint": "section: What You'll Be Able to Do / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> ** Did You Know?** The term \"backpropagation\" wasn't always the preferred name. Paul Werbos originally called it \"dynamic feedback\" in his 1974 PhD thesis. The name \"backpropagation\" (or \"back-propagation\") was popularized by Rumelhart, Hinton, and Williams in their famous 1986 Nature paper. In the control theory community, the same algorithm is known as \"adjoint sensitivity analysis.\" Meanwhile, in the automatic differentiation community, it's called \"reverse-mode automatic differentiation.\" All these names describe the same fundamental algorithm!",
+      "suggested_rewrite": "> ** Did You Know?** Closely related gradient-computation ideas have picked up different names in different communities, including backpropagation, reverse-mode automatic differentiation, and adjoint methods.",
+      "lesson_point_url": null,
+      "rationale": "The paragraph bundles several specific historical and terminology claims that would require multiple primary citations."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The sentence specifically claims GPT-5 learns with the same fundamental algorithm.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Heureka Moment: What You're About to Discover",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Every neural network, from a simple perceptron to gpt-5, learns using the same fundamental algorithm.",
+      "suggested_rewrite": "Modern neural networks learn from the same core idea: gradients from the chain rule drive parameter updates.",
+      "lesson_point_url": null,
+      "rationale": "The training details of a proprietary model like GPT-5 are not publicly documented at the level needed for a precise support claim."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "PyTorch autograd records operations in a DAG during the forward pass and propagates gradients backward with the chain rule.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Building an Autograd Engine from Scratch / Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://docs.pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official PyTorch tutorial directly supports this, but docs.pytorch.org is off the current allowlist."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Karpathy's micrograd implements reverse-mode autodiff over a dynamically built DAG in about 100 lines.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Building an Autograd Engine from Scratch / Did You Know",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/karpathy/micrograd",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The repository README explicitly says micrograd implements reverse-mode autodiff over a dynamically built DAG and is about 100 lines."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The module says Hinton won the 2024 Nobel Prize in Physics partly for the 1986 backprop work.",
+      "claim_class": "war_story",
+      "span_hint": "section: Gradient Checking / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Hinton later won the Nobel Prize in Physics (2024) partly for this work!",
+      "suggested_rewrite": "The 1986 paper later became one of the field's defining milestones.",
+      "lesson_point_url": null,
+      "rationale": "The Nobel citation recognizes broader foundational neural-network contributions, not this specific paper in the precise way stated here."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The vanishing-gradient sidebar compresses a long history into specific dates, causes, and breakthroughs.",
+      "claim_class": "war_story",
+      "span_hint": "section: Common Gradient Problems / Vanishing Gradients",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> **Did You Know?** The vanishing gradient problem plagued neural networks for nearly two decades! After the initial excitement of backpropagation in the 1980s, researchers found that networks deeper than 2-3 layers were nearly impossible to train. This \"AI Winter\" period lasted until ~2006 when Geoffrey Hinton showed that layer-by-layer pretraining could help. The real breakthrough came with ReLU activations (2010) and residual connections (2015), finally enabling the 100+ layer networks we use today.",
+      "suggested_rewrite": "> **Did You Know?** Vanishing gradients made deep networks hard to train for many years, and later advances such as better activations, pretraining, initialization, normalization, and residual connections made much deeper models practical.",
+      "lesson_point_url": null,
+      "rationale": "The paragraph mixes several contestable historical shortcuts and timeline claims into a single unsourced narrative."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Gradient checkpointing can reduce memory from O(n) to O(sqrt(n)) with sqrt(n) checkpoints.",
+      "claim_class": "statistic",
+      "span_hint": "section: Advanced Topics / Checkpointing for Memory Efficiency",
+      "disposition": "supported",
+      "proposed_url": "https://arxiv.org/abs/1604.06174",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited paper's abstract explicitly states the O(sqrt(n)) memory result for training an n-layer network."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/1502.05767",
+      "title": "Automatic Differentiation in Machine Learning: a Survey",
+      "tier": "standards",
+      "why_relevant": "A broad, authoritative overview of autodiff, reverse mode, and their relationship to backpropagation."
+    },
+    {
+      "url": "https://github.com/karpathy/micrograd",
+      "title": "karpathy/micrograd",
+      "tier": "upstream",
+      "why_relevant": "A compact educational implementation that matches the module's scalar autograd-engine walkthrough."
+    },
+    {
+      "url": "https://arxiv.org/abs/1604.06174",
+      "title": "Training Deep Nets with Sublinear Memory Cost",
+      "tier": "standards",
+      "why_relevant": "The canonical checkpointing reference for the memory-vs-compute tradeoff discussed in the advanced section."
+    }
+  ],
+  "notes": "Most equations, worked derivatives, code blocks, exercises, quiz items, and teaching analogies are pedagogical and do not need claim entries. Repeated historical claims were only flagged again when the later wording introduced new unsupported specifics.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

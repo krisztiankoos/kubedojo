@@ -1,0 +1,174 @@
+{
+  "module_key": "platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.2-tekton",
+  "module_path": "src/content/docs/platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.2-tekton.md",
+  "research_run_id": "2026-04-20T14:32:43+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A specific migration story claims hosted CI costs dropped from $340,000/year to $95,000/year after moving to Tekton, with 2,400 daily runs across five clusters and a resulting $12 million contract win.",
+      "claim_class": "war_story",
+      "span_hint": "opening paragraph",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The platform architect presented the migration proposal to the CTO with unexpected confidence. Their hosted CI service had been steadily increasing costs—$340,000 per year for a 90-person engineering team—and vendor lock-in was strangling their ability to customize pipelines. \"We can run the same workloads on our own Kubernetes clusters for a third of the cost,\" she explained, \"and we'll own our CI infrastructure like we own our application infrastructure.\" Eighteen months later, with Tekton powering 2,400 pipeline runs per day across five clusters, they'd reduced CI costs to **$95,000 per year** while gaining the ability to run pipelines on-premise for their government clients—a capability that won them a **$12 million contract**.",
+      "suggested_rewrite": "A platform team proposing Tekton might argue that running CI/CD on Kubernetes can reduce hosted CI spend, lower platform lock-in, and make it easier to support workloads that must run in specific environments such as on-premises clusters.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with precise business outcomes and numbers that cannot be honestly verified from the module."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Tekton is a Kubernetes-native CI/CD framework.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "proposed_url": "https://tekton.dev/docs/concepts/overview/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Tekton's overview explicitly describes Tekton as a cloud-native solution for building CI/CD pipelines on Kubernetes."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Because Tekton runs in your cluster, it gives full control, eliminates vendor lock-in, and scales like any Kubernetes workload.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Unlike hosted CI services, Tekton runs in your cluster—giving you full control, no vendor lock-in, and the ability to scale pipelines like any other Kubernetes workload.",
+      "suggested_rewrite": "Unlike hosted CI services, Tekton runs in your cluster, which can give teams more control and portability while letting pipelines use Kubernetes scheduling and scaling primitives.",
+      "lesson_point_url": null,
+      "rationale": "The official docs support in-cluster execution and scalability, but the absolutes 'full control' and 'no vendor lock-in' overstate what the source actually guarantees."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Tekton has its roots in Google's Knative Build project.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "proposed_url": "https://tekton.dev/blog/2022/10/26/tekton-graduation/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Tekton history post states that the project was initially called Knative Build and later Knative Pipeline."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Tekton is an incubating CNCF project.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "proposed_url": "https://tekton.dev/docs/concepts/overview/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The current Tekton overview states that Tekton is an incubating project at the Cloud Native Computing Foundation."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Tekton powers enterprise CI/CD at companies like IBM, Red Hat, and Google.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Tekton powers enterprise CI/CD at companies like IBM, Red Hat, and Google.",
+      "suggested_rewrite": "Tekton is used in commercial products and by teams building Kubernetes-native CI/CD systems.",
+      "lesson_point_url": null,
+      "rationale": "The exact named-company usage claim is not directly backed as written by a single primary source on the allowlist."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Tekton powers Google Cloud Build and OpenShift Pipelines.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Tekton powers Google Cloud Build and OpenShift Pipelines**—it's the foundation of major enterprise CI/CD offerings",
+      "suggested_rewrite": "- **Tekton underpins offerings such as OpenShift Pipelines**—it is part of the foundation for multiple enterprise CI/CD products",
+      "lesson_point_url": null,
+      "rationale": "OpenShift Pipelines is clearly Tekton-based, but the stronger Google Cloud Build foundation claim is not directly supported as written."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Tekton tasks run as Kubernetes pods, and each step runs as a container inside the pod.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "proposed_url": "https://tekton.dev/docs/concepts/concept-model/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The concept model explicitly says a task runs as a Kubernetes pod and each step becomes a running container in that pod."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The Tekton Catalog has 100+ reusable tasks.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **The Tekton Catalog has 100+ reusable tasks**—from Git clone to Kubernetes deploy, pre-built and maintained",
+      "suggested_rewrite": "- **The Tekton Catalog provides reusable tasks and pipelines**—including common building blocks maintained by the community",
+      "lesson_point_url": null,
+      "rationale": "The exact count is unstable and not directly backed by an authoritative allowlisted page that states this specific number."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "A specific Tekton workspace incident caused about $890,000 in losses.",
+      "claim_class": "war_story",
+      "span_hint": "section heading: War Story",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "## War Story: The $890,000 Workspace Disaster",
+      "suggested_rewrite": "## War Story: Workspace Mismanagement Under Load",
+      "lesson_point_url": null,
+      "rationale": "The heading asserts a precise, unattributed loss figure for a real-sounding incident and cannot be left as fact without a source."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "An e-commerce company migrated from CircleCI to Tekton, then suffered a Black Friday workspace/storage failure.",
+      "claim_class": "incident",
+      "span_hint": "section: War Story",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "An e-commerce company migrated from CircleCI to Tekton to reduce costs and gain multi-cloud capability. The migration seemed successful—pipelines ran faster, costs dropped initially, and teams loved the Kubernetes-native approach. Then Black Friday hit.",
+      "suggested_rewrite": "A team can migrate from a hosted CI system to Tekton for cost or portability reasons, only to discover during a peak event that poor workspace and storage hygiene can stall critical pipelines.",
+      "lesson_point_url": null,
+      "rationale": "This is a real-incident-style narrative with named technologies and a specific event context, but no attributable source is provided."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://tekton.dev/docs/concepts/overview/",
+      "title": "Tekton Overview",
+      "tier": "upstream",
+      "why_relevant": "Canonical overview of Tekton's components, Kubernetes-native model, portability, and scaling characteristics."
+    },
+    {
+      "url": "https://tekton.dev/docs/concepts/concept-model/",
+      "title": "Tekton Concept Model",
+      "tier": "upstream",
+      "why_relevant": "Defines steps, tasks, pipelines, TaskRuns, and PipelineRuns, including the pod-and-container execution model."
+    },
+    {
+      "url": "https://tekton.dev/docs/getting-started/triggers/",
+      "title": "Getting Started with Triggers",
+      "tier": "upstream",
+      "why_relevant": "Useful follow-on reading for the module's Trigger, EventListener, TriggerBinding, and TriggerTemplate sections."
+    }
+  ],
+  "notes": "Per instructions, code blocks, tables, quiz content, and hands-on exercise steps were not turned into claim entries even where some inline comments may merit a separate technical-accuracy cleanup.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

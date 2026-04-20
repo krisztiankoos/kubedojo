@@ -1,0 +1,200 @@
+{
+  "module_key": "platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.1-dagger",
+  "module_path": "src/content/docs/platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.1-dagger.md",
+  "research_run_id": "2026-04-20T16:22:38+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening anecdote claims a Dagger migration let a 45-person team catch 73% of issues before pushing and save $180,000 per year.",
+      "claim_class": "war_story",
+      "span_hint": "opening paragraph",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The senior engineer stared at the CI failure notification—the third one this hour. \"It works on my machine,\" came the familiar refrain from the developer who'd pushed the change. After 40 minutes of debugging Jenkins logs and another 20 minutes trying to reproduce the issue, she finally found the problem: a subtle difference in the environment variable handling between the CI runner and local development. \"If only we could run the exact same pipeline locally,\" she thought. Six months later, after migrating to Dagger, that wish became reality. Their CI pipeline became truly portable—developers ran the same pipeline on their laptops, catching 73% of issues before pushing. The company estimated the saved debugging time at **$180,000 per year** across their 45-person engineering team.",
+      "suggested_rewrite": "Teams often lose time to CI-only environment mismatches that are hard to reproduce locally. A portable pipeline approach aims to reduce that gap by letting developers run equivalent pipeline logic on their own machines before pushing changes.",
+      "lesson_point_url": null,
+      "rationale": "This is a composite war story with precise times, percentages, team size, and dollar savings but no attributable source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Dagger was founded by the creators of Docker, including Solomon Hykes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://dagger.io/blog/public-launch-announcement",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Dagger's launch post is the right primary source for this founding claim, but `dagger.io` is off the current allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The module says Dagger pipelines are 100% portable across laptops and multiple CI systems.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Dagger pipelines are 100% portable**—the same pipeline runs in GitHub Actions, GitLab CI, Jenkins, CircleCI, or your laptop",
+      "suggested_rewrite": "- **Dagger pipelines are designed to be portable**—the same pipeline code can run locally and across CI systems that invoke the Dagger CLI",
+      "lesson_point_url": null,
+      "rationale": "Upstream materials support local and CI portability, but this exact absolute claim and exhaustive provider list are broader than the allowlisted source directly states."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Dagger caches layers and can skip unchanged work, analogous to Docker layer caching.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://docs.dagger.io/reference/configuration/cache/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Dagger docs directly describe layer, volume, and function-call caching, but `docs.dagger.io` is off allowlist."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The module gives an acronym expansion for the name Dagger.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **The name \"Dagger\" comes from the CI acronym**—\"Devkit for Application Generation and Execution in Reproducible environments\"",
+      "suggested_rewrite": "- **The name \"Dagger\" is project branding**—what matters here is that it defines workflows as portable, programmable CI/CD logic",
+      "lesson_point_url": null,
+      "rationale": "I did not find a trustworthy primary source for this acronym expansion."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Dagger provides SDKs for Go, Python, and TypeScript and is designed to run the same pipeline logic locally and in CI.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What You'll Be Able to Do",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/dagger/dagger",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream README lists native SDKs including Go, Python, and TypeScript and says local and CI behavior are identical."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The module says Dagger works the same on a laptop, in GitHub Actions, and in any CI system.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Dagger is the \"Docker for CI/CD\"—portable pipelines that work the same on your laptop, in GitHub Actions, and in any CI system.",
+      "suggested_rewrite": "Dagger is a container-based workflow engine designed so the same pipeline logic can run locally and in CI.",
+      "lesson_point_url": null,
+      "rationale": "The product-comparison framing and the absolute \"any CI system\" wording are broader than the allowlisted source directly supports."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The fintech case study claims a 65-engineer startup had a 45-minute Jenkins pipeline with 8-12 runs per developer per day and no caching.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A fintech startup with 65 engineers had a Jenkins pipeline from 2018 that nobody wanted to touch. It took **45 minutes per run**, with 8-12 runs per developer per day. Each step installed dependencies from scratch—no caching. Debugging required pushing commits and waiting. Nobody knew why certain Jenkins plugins were installed or what would break if removed.",
+      "suggested_rewrite": "A common failure mode in older CI estates is a slow, brittle pipeline with weak caching, long feedback loops, and little confidence about which plugins or steps are still safe to change.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed case study with precise team size, year, runtime, and usage numbers."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The fintech case study says slow pipelines forced batching changes and a Friday deployment ban.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The pipeline was so slow that developers started batching changes, leading to larger PRs, harder code reviews, and more merge conflicts. Friday deployments were banned because the pipeline would inevitably fail late in the day.",
+      "suggested_rewrite": "When pipelines stay slow for long enough, teams often batch changes, which makes reviews and releases riskier.",
+      "lesson_point_url": null,
+      "rationale": "These operational effects are plausible but are presented as specific historical facts without attribution."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The lesson claims developers caught 73% of issues locally before pushing.",
+      "claim_class": "statistic",
+      "span_hint": "section: Lessons Learned",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "1. **Local-first changes everything**—developers run `dagger call test` before pushing, catching 73% of issues locally",
+      "suggested_rewrite": "1. **Local-first changes everything**—developers can run `dagger call test` before pushing and catch some issues locally",
+      "lesson_point_url": null,
+      "rationale": "The exact percentage is an unsupported statistic reused from the earlier anecdote."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The lesson claims a second pipeline run should be 10x faster than the first.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Lessons Learned",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "2. **Caching is exponential**—the second run of a pipeline should be 10x faster than the first",
+      "suggested_rewrite": "2. **Caching compounds**—subsequent pipeline runs can be dramatically faster than the first when inputs are reused",
+      "lesson_point_url": "https://github.com/dagger/dagger",
+      "rationale": "The upstream README documents automatic caching and incremental re-execution, but not this exact 10x performance multiplier."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The lesson claims sequential lint, test, and scan are 3x slower than running them in parallel.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Lessons Learned",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "3. **Parallelism isn't optional**—sequential lint + test + scan is 3x slower than parallel",
+      "suggested_rewrite": "3. **Parallelism matters**—running independent lint, test, and scan stages concurrently reduces wall-clock pipeline time",
+      "lesson_point_url": null,
+      "rationale": "The exact 3x factor is an uncited benchmark."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The lesson claims the same pipeline works on a laptop, GitHub Actions, GitLab, and anywhere else.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Lessons Learned",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "5. **Portability matters**—same pipeline works on laptop, GitHub Actions, GitLab, anywhere",
+      "suggested_rewrite": "5. **Portability matters**—the same pipeline logic can run locally and across different CI environments",
+      "lesson_point_url": null,
+      "rationale": "Dagger does document local/CI portability, but this exact provider list and absolute wording are broader than the allowlisted source directly states."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/dagger/dagger",
+      "title": "dagger/dagger",
+      "tier": "upstream",
+      "why_relevant": "Upstream README for Dagger's core model, SDK coverage, portability, caching, and observability claims."
+    },
+    {
+      "url": "https://github.com/dagger/dagger-for-github",
+      "title": "dagger/dagger-for-github",
+      "tier": "upstream",
+      "why_relevant": "Primary upstream source for the GitHub Actions integration shown in the module."
+    },
+    {
+      "url": "https://github.com/dagger/dagger/tree/main/sdk",
+      "title": "Dagger SDK Source Tree",
+      "tier": "upstream",
+      "why_relevant": "Useful for readers who want to inspect the generated SDKs and supported language implementations behind the Go, Python, and TypeScript examples."
+    }
+  ],
+  "notes": "Per prompt, I did not seed claims from code fences, tables, quiz answers, or exercise steps, even though those blocks contain additional unsourced numerics in the war-story section. Dagger's official docs and blog would support more product claims, but several of those sources are off the current allowlist.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

@@ -1,0 +1,174 @@
+{
+  "module_key": "platform/toolkits/cicd-delivery/gitops-deployments/module-2.4-helm-kustomize",
+  "module_path": "src/content/docs/platform/toolkits/cicd-delivery/gitops-deployments/module-2.4-helm-kustomize.md",
+  "research_run_id": "2026-04-20T16:32:18+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening story claims copy-pasted manifests caused long-running drift, then a Helm+Kustomize migration raised deployment frequency to 12 per day and saved $420,000 per year.",
+      "claim_class": "war_story",
+      "span_hint": "opening paragraph",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The DevOps lead scrolled through the pull request with growing horror. Someone had copy-pasted the production Kubernetes manifests to create a staging environment, changing \"prod\" to \"staging\" in 47 different places. When she checked the git history, she found that the same 15 YAML files had been duplicated across dev, staging, QA, and production—with drift between them causing mysterious bugs for months. \"This is why we can't deploy on Fridays,\" she muttered. Three weeks later, after migrating to Helm charts with Kustomize overlays, their deployment cadence went from once a week to **12 deployments per day**, and configuration drift incidents dropped to zero. The VP of Engineering later calculated the wasted developer hours: **$420,000 per year** in debugging time caused by copy-paste YAML.",
+      "suggested_rewrite": "Teams that duplicate Kubernetes manifests across environments often accumulate configuration drift, slower deployments, and costly debugging work. Helm charts and Kustomize overlays help reduce that duplication by separating reusable configuration from environment-specific differences.",
+      "lesson_point_url": null,
+      "rationale": "This is a quantified anecdote with named roles, time progression, and dollar impact but no attributable source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Helm v3 removed Tiller, whose Helm v2 server-side design created security and RBAC concerns, and Helm now renders client-side.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Did You Know?",
+      "disposition": "supported",
+      "proposed_url": "https://helm.sh/docs/v3/faq/changes_since_helm2/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Helm's official v3 FAQ directly documents Tiller's removal and the related security-model changes."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Kustomize is built into kubectl, and since Kubernetes 1.14 users can run `kubectl apply -k`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes documentation explicitly states that kubectl has supported Kustomize management since 1.14 and shows `kubectl apply -k`."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Kustomize was created by Google for internal use.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Kustomize was created by Google for internal use**—they needed a template-free way to customize configurations",
+      "suggested_rewrite": "- **Kustomize emerged from the Kubernetes ecosystem as a template-free way to customize configurations**",
+      "lesson_point_url": null,
+      "rationale": "Allowlisted upstream sources support Google's announcement and SIG-CLI involvement, but not the specific internal-use origin story as written."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Jsonnet has a smaller community than Helm or Kustomize, and most organizations choose one of those two tools.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: A Note on Jsonnet",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In practice, Jsonnet has a smaller community than Helm or Kustomize, and most organizations choose one of the two dominant tools.",
+      "suggested_rewrite": "In practice, teams usually standardize on one primary configuration approach rather than combining several manifest-generation tools.",
+      "lesson_point_url": null,
+      "rationale": "This is an ecosystem-adoption ranking claim without an allowlisted primary source backing the comparison."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Grafana Labs uses Jsonnet extensively for Kubernetes deployments, and Jsonnet is referenced in the CGOA exam.",
+      "claim_class": "standard",
+      "span_hint": "section: A Note on Jsonnet",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Grafana Labs uses Jsonnet extensively for their Kubernetes deployments, and you will find it referenced in the CGOA exam.",
+      "suggested_rewrite": "Jsonnet still shows up in real Kubernetes tooling conversations, so it is worth recognizing even if it is not the most common default choice.",
+      "lesson_point_url": null,
+      "rationale": "The sentence mixes a vendor-specific adoption claim with an exam-reference claim, and the exam-specific portion is not substantiated by an allowlisted source."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Tanka is described as a Kubernetes-specific library for Jsonnet, and Jsonnet is presented as a programming-language alternative to templates and patches.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: A Note on Jsonnet",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "However, if you encounter a project using Jsonnet (or its Kubernetes-specific library **Tanka**), understand that it solves the same problem -- reducing YAML duplication -- with a different paradigm: a full programming language for configuration rather than templates (Helm) or patches (Kustomize).",
+      "suggested_rewrite": "However, if you encounter a project using Jsonnet or a Jsonnet-based Kubernetes tool such as **Tanka**, understand that it tackles the same configuration-management problem with a different paradigm: generating manifests from code rather than relying on templates or patches.",
+      "lesson_point_url": null,
+      "rationale": "Grafana documents Tanka as a Jsonnet-powered Kubernetes utility, not a Kubernetes-specific library, so the sentence needs correction rather than citation."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The healthcare SaaS war story says a chart grew from 20 values to 847 lines of `values.yaml` with 50+ variables over three years.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The $1.8 Million Template Explosion",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A healthcare SaaS company had a Helm chart that started simple—20 values, clean templates. Over three years, it grew into a monster: **847 lines of values.yaml**, 50+ template variables, and conditional logic that would make a Turing machine weep.",
+      "suggested_rewrite": "A Helm chart can start simple and become difficult to reason about if too much environment-specific behavior and conditional logic accumulates in one place.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed incident narrative with exact counts and duration, so the specifics should be removed."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The same war story says the chart powered patient records across 23 hospitals.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The $1.8 Million Template Explosion",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The chart powered their core patient records system across 23 hospitals. Every deployment was a sweaty-palmed ordeal because nobody fully understood all the values.",
+      "suggested_rewrite": "When a critical application depends on an overly complex chart, deployments become risky because operators can no longer reason confidently about the rendered configuration.",
+      "lesson_point_url": null,
+      "rationale": "This is another unattributed real-world anecdote with a precise operational scope and no source."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "If `values.yaml` exceeds 100 lines, the chart is probably over-templated.",
+      "claim_class": "statistic",
+      "span_hint": "section: Lessons Learned",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**If values.yaml exceeds 100 lines, you're probably over-templating**",
+      "suggested_rewrite": "**If your values file grows large enough that it becomes hard to review and override safely, you're probably over-templating**",
+      "lesson_point_url": null,
+      "rationale": "The 100-line cutoff is an uncited heuristic rather than a sourced threshold."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "A `values.schema.json` file would have caught a missing required value during Helm validation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Lessons Learned",
+      "disposition": "supported",
+      "proposed_url": "https://helm.sh/docs/topics/charts/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Helm's chart documentation states that `values.schema.json` validates the final `.Values` object during install, upgrade, lint, and template operations."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://helm.sh/docs/topics/charts/",
+      "title": "Helm Charts",
+      "tier": "upstream",
+      "why_relevant": "Primary Helm reference for chart structure, dependencies, and `values.schema.json` validation."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "title": "Declarative Management of Kubernetes Objects Using Kustomize",
+      "tier": "standards",
+      "why_relevant": "Primary Kubernetes reference for base/overlay structure, patches, generators, and kubectl integration."
+    },
+    {
+      "url": "https://fluxcd.io/flux/components/helm/helmreleases/",
+      "title": "Flux HelmReleases",
+      "tier": "upstream",
+      "why_relevant": "Shows a supported pattern for combining Helm rendering with Kustomize-style post-render patches."
+    }
+  ],
+  "notes": "Per the schema instructions, fenced code blocks and exercise/quiz material were not converted into claim entries; only surrounding prose claims were seeded.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

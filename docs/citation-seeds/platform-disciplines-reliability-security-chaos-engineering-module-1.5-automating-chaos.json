@@ -1,0 +1,240 @@
+{
+  "module_key": "platform/disciplines/reliability-security/chaos-engineering/module-1.5-automating-chaos",
+  "module_path": "src/content/docs/platform/disciplines/reliability-security/chaos-engineering/module-1.5-automating-chaos.md",
+  "research_run_id": "2026-04-20T13:39:46+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The Facebook outage affected 3.5 billion users and cost an estimated $65 million in revenue.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "that affected 3.5 billion users and cost the company an estimated $65 million in revenue.",
+      "suggested_rewrite": "that disrupted Facebook, Instagram, and WhatsApp worldwide.",
+      "lesson_point_url": null,
+      "rationale": "The outage itself is real, but these precise impact and revenue figures are not backed by an allowlisted primary source here."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "On October 4, 2021, Facebook suffered a roughly six-hour global outage caused by a configuration change affecting its backbone routers/network.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraphs 1-2",
+      "disposition": "supported",
+      "proposed_url": "https://blog.cloudflare.com/october-2021-facebook-outage",
+      "proposed_tier": "incidents",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Cloudflare documents the outage timeline and links it to Facebook's published explanation about the configuration change affecting the internal backbone."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Meta said the outage also impacted internal tools and systems, complicating diagnosis and recovery.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://engineering.fb.com/2021/10/04/networking-traffic/outage/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The claim is real and primary-sourced, but the primary source is on an off-allowlist host."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Engineers could not access admin panels, SSH into servers, or even enter buildings because badge readers depended on Facebook's internal network.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Engineers couldn't access the admin panels, couldn't SSH into servers, couldn't even get into the buildings because the badge readers depended on Facebook's internal network.",
+      "suggested_rewrite": "Engineers lost access to important internal recovery tooling and faced unusually difficult network and physical access during the outage.",
+      "lesson_point_url": null,
+      "rationale": "The general recovery-access problem is real, but these exact operational details are not supported by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "A Game Day or automated chaos pipeline would have revealed or prevented key dependencies in the Facebook outage, and neither existed.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A single Game Day testing the scenario \"what if our internal tools are inaccessible during an outage\" would have revealed this dependency. An automated chaos pipeline testing backbone connectivity would have caught the configuration issue before it went live. Neither existed.",
+      "suggested_rewrite": "The outage illustrates why teams should drill recovery-path dependencies and validate risky network changes before deployment.",
+      "lesson_point_url": null,
+      "rationale": "These are speculative counterfactuals about a real incident, not directly supportable historical facts."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Netflix runs over 2,000 automated chaos experiments per week, auto-files tickets on regressions, and has reduced unplanned outages by 78%.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know?, blockquote 1",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Netflix runs over 2,000 automated chaos experiments per week** across their production infrastructure. These experiments run continuously, verifying that auto-scaling, failover, and circuit breakers work correctly. When an experiment reveals a regression (something that used to be resilient is no longer), it creates an automated ticket for the owning team. This continuous verification has reduced Netflix's unplanned outage rate by 78% since they started the program.",
+      "suggested_rewrite": "**Automated chaos testing can run continuously** to verify failover, scaling, and protection mechanisms and to surface resilience regressions earlier than occasional manual exercises.",
+      "lesson_point_url": null,
+      "rationale": "The named-company anecdote bundles multiple precise operational and outcome claims that are not supported by an allowlisted primary source here."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Gremlin reported that running chaos in CI/CD leads to 60% fewer severity-1 incidents than relying on manual Game Days.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know?, blockquote 2",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Gremlin (a commercial chaos engineering platform) reported** that organizations running chaos experiments in CI/CD pipelines experience 60% fewer severity-1 incidents than those running chaos only during manual Game Days. The key difference is frequency — automated chaos catches regressions within hours, while quarterly Game Days leave months of blind spots.",
+      "suggested_rewrite": "Frequent chaos testing in delivery pipelines can surface resilience regressions sooner than infrequent manual exercises, but the exact incident reduction depends on how teams measure and run the program.",
+      "lesson_point_url": null,
+      "rationale": "This precise vendor statistic is not backed here by an allowlisted primary source that actually carries the quoted comparison."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Game Days originated at Amazon in 2004 under Jesse Robbins, and the first exercise found 40% outdated runbooks, three missing runbooks, and produced a quoted lesson.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know?, blockquote 3",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**The concept of \"Game Days\" originated at Amazon in 2004** when Jesse Robbins (now known as the \"Master of Disaster\") started running failure simulations that tested not just technology but people and processes. The first Game Day revealed that 40% of runbooks were outdated and that three critical services had no runbooks at all. Robbins later said: \"The Game Day didn't break anything — it revealed things that were already broken.\"",
+      "suggested_rewrite": "**Game Days became popular through early large-scale reliability drills** that tested technology, people, and process together rather than infrastructure alone.",
+      "lesson_point_url": null,
+      "rationale": "The historical idea is real, but the exact year, first-exercise findings, and quotation are not safely supported here as written."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Google's DiRT program simulates region failures annually, and a 2019 exercise exposed 11 undocumented dependencies whose fixes prevented a multi-hour outage.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know?, blockquote 4",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Google's DiRT (Disaster Recovery Testing) program** runs annual company-wide exercises where entire regions are simulated as failed. In 2019, a DiRT exercise revealed that 11 internal services had undocumented dependencies on a specific metadata service. Fixing those dependencies before a real regional failure prevented what would have been a multi-hour cascading outage.",
+      "suggested_rewrite": "**Large organizations sometimes run recurring disaster-recovery exercises** to expose hidden dependencies before real emergencies.",
+      "lesson_point_url": null,
+      "rationale": "The broad idea is defensible, but the region-failure framing and the 2019/11-services anecdote are not supported here by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Industry-average incident reduction from chaos engineering is 40-60%.",
+      "claim_class": "statistic",
+      "span_hint": "section: Selling Chaos to Leadership, The Cost Argument",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- Expected incident reduction (industry average): 40-60%",
+      "suggested_rewrite": "- Expected incident reduction: meaningful if the program is well scoped, measured, and sustained over time",
+      "lesson_point_url": null,
+      "rationale": "This is a precise benchmark presented as industry-wide fact without a source that can honestly support it."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "SOC 2 Type II requires demonstrating operational resilience.",
+      "claim_class": "standard",
+      "span_hint": "section: Selling Chaos to Leadership, The Compliance Argument",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- SOC 2 Type II requires demonstrating operational resilience",
+      "suggested_rewrite": "- Some assurance frameworks examine whether availability-related controls operate effectively over time",
+      "lesson_point_url": null,
+      "rationale": "As written, this overstates a broad assurance framework into a single unqualified requirement."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "PCI DSS 4.0 requires testing security controls.",
+      "claim_class": "standard",
+      "span_hint": "section: Selling Chaos to Leadership, The Compliance Argument",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://blog.pcisecuritystandards.org/pci-dss-v4-0-roles-and-responsibilities-for-the-customized-approach",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Official PCI sources discuss documented testing and assessor validation, but the official domain is not on the current allowlist."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "FedRAMP requires disaster recovery testing.",
+      "claim_class": "standard",
+      "span_hint": "section: Selling Chaos to Leadership, The Compliance Argument",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://help.fedramp.gov/hc/en-us/articles/28895414289947-FedRAMP-Annual-Assessment-Guidance-Version-3-0",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Official FedRAMP guidance explicitly references contingency-plan functional testing, but the official domain is off-allowlist."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Game Days and chaos experiments provide audit evidence for all listed frameworks.",
+      "claim_class": "standard",
+      "span_hint": "section: Selling Chaos to Leadership, The Compliance Argument",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- Game Days and chaos experiments provide audit evidence for all of these",
+      "suggested_rewrite": "- Recovery drills and controlled resilience tests can support evidence collection when they are mapped to specific control requirements",
+      "lesson_point_url": null,
+      "rationale": "The universal 'for all of these' claim is too broad because evidence suitability depends on the exact framework control and audit scope."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Chaos Mesh's time-based experiment duration is not the same as condition-based safety; automatic aborts require separate workflow status checks.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Quiz, Question 2 answer",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://chaos-mesh.org/docs/next/status-check-in-workflow/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The product capability claim is real and documented by Chaos Mesh, but the product docs live on an off-allowlist domain."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "A healthy chaos program should have a 10-20% experiment failure rate.",
+      "claim_class": "statistic",
+      "span_hint": "section: Quiz, Question 4 answer",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A healthy chaos program should have an experiment failure rate of 10-20% — frequent enough to provide new insights, infrequent enough that the system is generally resilient.",
+      "suggested_rewrite": "A healthy chaos program should produce new findings often enough to stay useful, without causing frequent uncontrolled disruption.",
+      "lesson_point_url": null,
+      "rationale": "This exact benchmark is presented as a normative statistic without a source that can honestly back the number."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://blog.cloudflare.com/october-2021-facebook-outage",
+      "title": "Understanding how Facebook disappeared from the Internet",
+      "tier": "incidents",
+      "why_relevant": "Useful primary-adjacent incident analysis for the outage used in the module's opening example."
+    }
+  ],
+  "notes": "Excluded code blocks, tables, checklists, and quiz prompts per pipeline rules. The highest-risk prose issues are the opening Facebook anecdote, the entire Did You Know block, the compliance bullets, and the two uncited numeric benchmarks in the quiz/leadership sections.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=2371297",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    },
+    {
+      "url": "https://cacm.acm.org/practice/weathering-the-unexpected/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "module_key": "platform/toolkits/infrastructure-networking/iac-tools/module-7.1-terraform",
+  "module_path": "src/content/docs/platform/toolkits/infrastructure-networking/iac-tools/module-7.1-terraform.md",
+  "research_run_id": "2026-04-20T13:01:45+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "HashiCorp released Terraform in 2014.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "proposed_url": "https://www.hashicorp.com/blog/terraform-announcement",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official announcement is a primary source for Terraform's initial public release in July 2014."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Within five years, Terraform became the de facto standard for infrastructure as code, used by over 80% of organizations with IaC practices.",
+      "claim_class": "statistic",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Within five years, Terraform became the de facto standard for infrastructure as code, used by over 80% of organizations with IaC practices.",
+      "suggested_rewrite": "Over the following years, Terraform became a widely adopted infrastructure-as-code tool.",
+      "lesson_point_url": null,
+      "rationale": "The sentence combines interpretive language with a precise adoption statistic that is not backed by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Moved blocks are available in Terraform 1.1 and later.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Lifecycle Management / Moved Blocks (Terraform 1.1+)",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/hashicorp/terraform/releases/tag/v1.1.0",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Terraform v1.1.0 release notes explicitly introduce moved blocks for refactoring within modules."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Import blocks are available in Terraform 1.5 and later.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Lifecycle Management / Import Blocks (Terraform 1.5+)",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/hashicorp/terraform/releases/tag/v1.5.0",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Terraform v1.5.0 release notes introduce configuration-driven import blocks and generated configuration output."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The section is framed as a real war story without an attributable source.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Great State Migration",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "## War Story: The Great State Migration",
+      "suggested_rewrite": "## Example Scenario: Migrating Terraform State Layouts",
+      "lesson_point_url": null,
+      "rationale": "An unattributed anecdote should not be presented as a real war story in senior-track material."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The war story presents a specific company context without a source.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Great State Migration",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Company**: Enterprise software company",
+      "suggested_rewrite": "**Scenario**: A team migrating from workspace-based state to directory-based layouts",
+      "lesson_point_url": null,
+      "rationale": "This presents a concrete organizational backdrop as if it were a sourced case study, but no source is provided."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The migration involved 3 workspaces and 847 resources.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story / The Problem",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- 3 workspaces, 847 resources total",
+      "suggested_rewrite": "- Multiple workspaces and a large resource inventory",
+      "lesson_point_url": null,
+      "rationale": "This is fake-precise quantitative detail inside an unsourced anecdote."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Terraform was created by Mitchell Hashimoto, who wrote the first version in a week in 2014, and the name literally means \"to shape the earth.\"",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know? / Terraform Origin",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> **Terraform Origin**: Terraform was created by Mitchell Hashimoto, who wrote the first version in a week in 2014 while building HashiCorp's infrastructure. The name combines \"terra\" (earth) and \"form\" (shape), meaning \"to shape the earth.\"",
+      "suggested_rewrite": "> **Terraform Origin**: Terraform began as a HashiCorp project focused on cloud-agnostic infrastructure automation.",
+      "lesson_point_url": null,
+      "rationale": "Allowlisted sources support Terraform's 2014 origin generally, but not the one-week build claim or the stated name etymology as written."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The Terraform Registry hosts over 3,500 providers.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know? / Provider Ecosystem",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://registry.terraform.io/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official registry homepage carries the live provider count, but the registry host is not currently on the allowlist."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The registry includes community-contributed providers for examples such as Domino's Pizza ordering and Spotify playlists.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? / Provider Ecosystem",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "including community-contributed ones for everything from Domino's Pizza ordering to managing Spotify playlists.",
+      "suggested_rewrite": "including many community-contributed providers for niche and unconventional services.",
+      "lesson_point_url": "https://www.hashicorp.com/products/terraform",
+      "rationale": "The exact examples are illustrative rather than load-bearing; the lesson is that Terraform has a broad provider ecosystem."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The largest known Terraform state files manage over 100,000 resources.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know? / State File Scale",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> **State File Scale**: The largest known Terraform state files manage over 100,000 resources, though this requires careful state splitting and is not recommended.",
+      "suggested_rewrite": "> **State File Scale**: Very large Terraform estates often need state splitting and careful operational boundaries.",
+      "lesson_point_url": null,
+      "rationale": "The sentence uses an uncited superlative and a precise scale number that is not backed by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Terraform's dependency graph uses the same algorithm (topological sort) used in package managers like npm and pip to resolve dependencies.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? / Graph Visualization",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> **Graph Visualization**: Terraform's dependency graph uses the same algorithm (topological sort) used in package managers like npm and pip to resolve dependencies.",
+      "suggested_rewrite": "> **Graph Visualization**: Terraform builds a dependency graph to determine resource ordering and parallelism during operations.",
+      "lesson_point_url": null,
+      "rationale": "Allowlisted sources support Terraform's use of a dependency graph, but not the exact npm/pip comparison as written."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.hashicorp.com/blog/terraform-announcement",
+      "title": "HashiCorp Terraform Announcement",
+      "tier": "vendor",
+      "why_relevant": "Primary-source background on Terraform's original 2014 release and early goals."
+    },
+    {
+      "url": "https://github.com/hashicorp/terraform/releases/tag/v1.1.0",
+      "title": "Terraform v1.1.0 Release Notes",
+      "tier": "upstream",
+      "why_relevant": "Documents moved blocks and other refactoring-related language features."
+    },
+    {
+      "url": "https://github.com/hashicorp/terraform/releases/tag/v1.5.0",
+      "title": "Terraform v1.5.0 Release Notes",
+      "tier": "upstream",
+      "why_relevant": "Documents declarative import blocks and generated configuration support."
+    }
+  ],
+  "notes": "Excluded code blocks, tables, quiz items, and exercise steps per the seed rules. The main prose risks are the uncited adoption statistic, the composite war-story framing, and several unsupported Did You Know specifics.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

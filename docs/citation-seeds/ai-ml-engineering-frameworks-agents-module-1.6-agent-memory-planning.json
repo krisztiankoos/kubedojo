@@ -1,0 +1,161 @@
+{
+  "module_key": "ai-ml-engineering/frameworks-agents/module-1.6-agent-memory-planning",
+  "module_path": "src/content/docs/ai-ml-engineering/frameworks-agents/module-1.6-agent-memory-planning.md",
+  "research_run_id": "2026-04-20T09:23:51+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "In February 2024, Air Canada was held legally liable for chatbot-generated misinformation about a bereavement discount.",
+      "claim_class": "incident",
+      "span_hint": "line 28 | section: Why This Module Matters",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://www.canlii.org/en/bc/bccrt/doc/2024/2024bccrt149/2024bccrt149.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The incident is real and citable via the tribunal decision Moffatt v. Air Canada, 2024 BCCRT 149, but the primary legal source is off-allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "ReAct interleaves reasoning traces and task-specific actions, using external sources between steps.",
+      "claim_class": "standard",
+      "span_hint": "lines 598-599 | section: Planning Pattern 2",
+      "disposition": "supported",
+      "proposed_url": "https://arxiv.org/abs/2210.03629",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The ReAct paper directly describes interleaving reasoning traces with actions that gather information from external sources."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "ReWOO decouples reasoning from observation and can reduce token consumption by planning tool use upfront.",
+      "claim_class": "standard",
+      "span_hint": "line 600 | section: Planning Pattern 2",
+      "disposition": "supported",
+      "proposed_url": "https://arxiv.org/abs/2305.18323",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The ReWOO paper explicitly says the method detaches reasoning from observations and significantly reduces token consumption."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Tree of Thoughts explores multiple reasoning paths and self-evaluates them to choose better next steps.",
+      "claim_class": "standard",
+      "span_hint": "line 759 | section: Planning Pattern 3",
+      "disposition": "supported",
+      "proposed_url": "https://arxiv.org/abs/2305.10601",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The ToT paper directly states that the framework considers multiple reasoning paths and self-evaluates choices."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Multi-agent debate dramatically reduces factual error rates.",
+      "claim_class": "benchmark",
+      "span_hint": "line 1237 | section: Architecture 4: Debate",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "By pitting agents against one another and bringing in an impartial arbitrator agent, you dramatically reduce factual error rates.",
+      "suggested_rewrite": "By pitting agents against one another and bringing in an impartial arbitrator agent, you can sometimes surface disagreements and catch factual errors that a single-pass workflow might miss.",
+      "lesson_point_url": null,
+      "rationale": "This is a strong empirical performance claim without a cited benchmark or source matching the stated magnitude."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Kubernetes Jobs are `batch/v1` resources for one-off tasks that run to completion and stop.",
+      "claim_class": "standard",
+      "span_hint": "line 1635 | section: The Complete Autonomous Agent",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes Jobs documentation explicitly says Jobs are one-off tasks that run to completion and shows `apiVersion: batch/v1`."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Kubernetes lets you declare CPU and memory limits via `resources.limits` for Pods and containers.",
+      "claim_class": "standard",
+      "span_hint": "line 1635 | section: The Complete Autonomous Agent",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The resource management documentation directly documents `spec.containers[].resources.limits.cpu`, `spec.containers[].resources.limits.memory`, and pod-level equivalents."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "A simple stateless chatbot query might consume about 500 tokens.",
+      "claim_class": "statistic",
+      "span_hint": "line 1757 | section: The Token Multiplication Problem",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A simple query to a regular stateless chatbot (\"What's the weather?\") might consume ~500 tokens.",
+      "suggested_rewrite": "A simple query to a regular stateless chatbot can be relatively cheap in tokens.",
+      "lesson_point_url": null,
+      "rationale": "The ~500-token figure is illustrative and not tied to a stable primary source or reproducible benchmark."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "At premium model pricing, an autonomous agent can cost several times more per task than a simple stateless chat response.",
+      "claim_class": "pricing",
+      "span_hint": "line 1770 | section: The Token Multiplication Problem",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "At premium model pricing, an autonomous agent can cost several times more per task than a simple stateless chat response, so token use needs to be budgeted explicitly.",
+      "suggested_rewrite": "At metered token pricing, an autonomous agent can cost materially more per task than a simple stateless chat response, so token use needs to be budgeted explicitly.",
+      "lesson_point_url": "https://openai.com/api/pricing/",
+      "rationale": "The exact cost multiplier is workload- and vendor-dependent, but the general lesson that agentic workflows can increase metered inference cost is sound."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Voyager is a Minecraft agent that writes and reuses executable skills as it explores.",
+      "claim_class": "standard",
+      "span_hint": "line 1799 | section: Did You Know?",
+      "disposition": "supported",
+      "proposed_url": "https://arxiv.org/abs/2305.16291",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Voyager paper directly describes an embodied Minecraft agent with an ever-growing skill library of executable code."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2307.03172",
+      "title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "tier": "standards",
+      "why_relevant": "Useful background for the module’s memory section because it explains why longer context windows do not eliminate retrieval and memory design problems."
+    },
+    {
+      "url": "https://arxiv.org/abs/2305.18323",
+      "title": "ReWOO: Decoupling Reasoning from Observations for Efficient Augmented Language Models",
+      "tier": "standards",
+      "why_relevant": "Direct primary source for the module’s planning discussion on upfront tool planning and token-efficiency trade-offs."
+    },
+    {
+      "url": "https://arxiv.org/abs/2305.16291",
+      "title": "Voyager: An Open-Ended Embodied Agent with Large Language Models",
+      "tier": "standards",
+      "why_relevant": "Concrete example of a long-horizon agent architecture with reusable skills, relevant to memory, planning, and autonomous behavior."
+    }
+  ],
+  "notes": "Excluded code blocks, Mermaid diagrams, hands-on exercise steps, and Knowledge Check scenarios per schema. The Quality Metrics and Evaluation Metrics tables read as prescriptive targets rather than externally grounded benchmark facts; if the pipeline treats numeric targets as citation-bearing claims, review that section separately for editorial normalization.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

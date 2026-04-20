@@ -1,0 +1,187 @@
+{
+  "module_key": "ai-ml-engineering/mlops/module-1.1-ml-devops-foundations",
+  "module_path": "src/content/docs/ai-ml-engineering/mlops/module-1.1-ml-devops-foundations.md",
+  "research_run_id": "2026-04-20T11:03:20+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Knight Capital suffered a major automated trading incident on August 1, 2012.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, opening lines",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://www.sec.gov/newsroom/press-releases/2013-222",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "SEC enforcement materials document the August 1, 2012 Knight Capital incident, but sec.gov is off allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The module gives exact timing, throughput, loss, and corporate-outcome details for the Knight Capital incident.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "For exactly 45 minutes, their automated system executed trades at a massive rate of 40 orders per second—erroneously buying high and selling low. By 10:15 AM, the company had hemorrhaged $440 million. By the end of the week, Knight Capital had to be sold off in pieces to survive.",
+      "suggested_rewrite": "For roughly 45 minutes, the faulty rollout flooded the market with unintended orders and caused losses severe enough to threaten the firm's survival.",
+      "lesson_point_url": null,
+      "rationale": "This sentence mixes a real incident with unsupported or inaccurate precision, so the false specifics should be removed."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The root cause involved a partial deployment to one of eight SMARS servers, which left legacy Power Peg logic active behind a repurposed flag.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 3",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://www.sec.gov/Archives/edgar/data/1569391/000119312513401173/d613486dex101.htm",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The SEC order directly describes the one-of-eight-server deployment failure and legacy-code activation, but sec.gov is off allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Knight Capital had no automated deployment pipeline, no environment consistency checks, and no immediate automated rollback mechanism.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "There was no automated deployment pipeline, no environment consistency checks, and absolutely no mechanism for immediate automated rollback.",
+      "suggested_rewrite": "The incident exposed serious gaps in deployment controls, environment consistency checks, and incident response.",
+      "lesson_point_url": null,
+      "rationale": "The underlying control failures are real, but this sentence overstates them with absolutes that the primary materials do not directly support."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Sculley et al.'s 2015 paper argued that mature ML systems may be at most 5% ML code and at least 95% surrounding glue code.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Complexity Explosion, Did You Know callout",
+      "disposition": "needs_allowlist_expansion",
+      "proposed_url": "https://papers.nips.cc/paper_files/paper/2015/file/86df7dcfd896fcaf2674f757a2463eba-Paper.pdf",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The paper contains this exact 5%/95% observation, but the clean paper host is off allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "A 2019 McGill study found that only 6% of ML papers could be fully reproduced because of missing hyperparameters and unreported random seeds.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Three Pillars of ML Version Control, Did You Know callout",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Did You Know?** In a 2019 study, researchers at McGill University found that only 6% of machine learning papers could be fully reproduced due to missing hyperparameters and unreported random seeds.",
+      "suggested_rewrite": "**Did You Know?** Reproducing published ML results becomes much harder when papers omit key details such as hyperparameters, random seeds, data-processing steps, or environment settings.",
+      "lesson_point_url": null,
+      "rationale": "I could not verify this exact McGill-attributed 6% figure and causal explanation from an authoritative source."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "DVC keeps version information in Git while storing data and model artifacts outside Git, and it supports reproducible ML pipelines.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Data Version Control (DVC): Git for Your Data, paragraph under 'DVC: The Solution'",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/iterative/dvc",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The DVC README directly explains these core product capabilities."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Algorithmia's 2022 State of ML survey found that 55% of companies had never deployed a single ML model to production because of weak MLOps practices.",
+      "claim_class": "statistic",
+      "span_hint": "section: Testing Strategies for ML Code, Did You Know callout after Model Robustness",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Did You Know?** Algorithmia's 2022 State of ML survey found that 55% of companies have never deployed a single ML model to production due to a lack of robust MLOps practices. Testing pipelines build the organizational trust required to release.",
+      "suggested_rewrite": "**Did You Know?** Many organizations struggle to move ML models into production, which is one reason teams invest in repeatable testing, deployment, and monitoring practices.",
+      "lesson_point_url": null,
+      "rationale": "An off-list Algorithmia report contains a similar 55% figure, but the module's year/title are wrong and the causal attribution is overstated."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "GitHub secret scanning detected over 700,000 exposed secrets in public repositories in 2022.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Pre-commit Hooks, Did You Know callout after custom hook scripts",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Did You Know?** GitHub's secret scanning detected over 700,000 exposed secrets in public repositories in 2022 alone, underscoring the critical need for robust pre-commit security checks.",
+      "suggested_rewrite": "**Did You Know?** Public repositories regularly expose large numbers of leaked credentials, which is why automated secret scanning and pre-commit checks matter.",
+      "lesson_point_url": null,
+      "rationale": "Official GitHub materials publicly report different 2022 figures, so this exact number should not remain without a verified historical source."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Deployments replace failed Pods to maintain the desired number of replicas.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Kubernetes-Based Pipeline Execution, paragraph 2",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/architecture/self-healing/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documentation explicitly states that Deployments replace failed Pods to maintain replica count."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "A Kubernetes Job is intended for one-off tasks that run to completion and track successful termination.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Kubernetes-Based Pipeline Execution, paragraph 3",
+      "disposition": "supported",
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documentation directly defines Jobs this way."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Running experiment scripts in a Kubernetes Job guarantees exact hardware and environment parity with production and makes silent failures trivial to diagnose.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Kubernetes-Based Pipeline Execution, final sentence",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "By encapsulating deterministic experiment tracking scripts within a Kubernetes `Job`, you guarantee the pipeline executes with the exact hardware and environmental parity of production, making silent failures trivial to diagnose.",
+      "suggested_rewrite": "Running deterministic experiment or validation workloads as a Kubernetes `Job` can make them easier to reproduce in an environment that is closer to production, which often makes failures easier to diagnose.",
+      "lesson_point_url": null,
+      "rationale": "A Kubernetes Job can improve reproducibility, but Kubernetes alone does not guarantee exact production parity or make failures trivial to diagnose."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://docs.cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "title": "MLOps: Continuous delivery and automation pipelines in machine learning",
+      "tier": "vendor",
+      "why_relevant": "A strong high-level reference for ML pipeline maturity, automation, and production operating models."
+    },
+    {
+      "url": "https://github.com/iterative/dvc",
+      "title": "DVC: Data Versioning and ML Experiments",
+      "tier": "upstream",
+      "why_relevant": "Useful for the module's data-versioning and reproducibility sections because it explains DVC's core workflow and pipeline model."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "title": "Kubernetes Jobs",
+      "tier": "standards",
+      "why_relevant": "Directly relevant to the module's guidance on using Jobs instead of Deployments for run-to-completion ML workloads."
+    }
+  ],
+  "notes": "Excluded by policy: code blocks, Mermaid diagrams, quiz items, hands-on lab steps, and table rows unless a surrounding prose sentence made a load-bearing factual claim. The Knight Capital, Sculley, and Algorithmia items are real or plausibly real but their cleanest sources sit off allowlist or the module's wording is numerically/date inaccurate.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
