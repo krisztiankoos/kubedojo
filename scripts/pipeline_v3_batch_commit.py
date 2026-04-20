@@ -70,58 +70,58 @@ def main(argv: list[str] | None = None) -> int:
 
     log_path = Path(".pipeline/v3/batches") / f"{args.label}.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    log_f = log_path.open("a", encoding="utf-8")
 
     totals = {"n": len(keys), "done": 0, "clean": 0, "residuals": 0,
               "failed": 0, "committed": 0, "skipped_no_change": 0}
 
-    for i, key in enumerate(keys, 1):
-        t0 = time.time()
-        try:
-            rec = run_pipeline(key, skip_research=args.skip_research)
-            status = rec.get("status", "unknown")
-        except Exception as exc:  # noqa: BLE001
-            entry = {"i": i, "key": key, "status": "exception",
-                     "err": f"{type(exc).__name__}:{exc}",
-                     "elapsed_s": round(time.time() - t0, 1)}
+    with log_path.open("a", encoding="utf-8") as log_f:
+        for i, key in enumerate(keys, 1):
+            t0 = time.time()
+            try:
+                rec = run_pipeline(key, skip_research=args.skip_research)
+                status = rec.get("status", "unknown")
+            except Exception as exc:  # noqa: BLE001
+                entry = {"i": i, "key": key, "status": "exception",
+                         "err": f"{type(exc).__name__}:{exc}",
+                         "elapsed_s": round(time.time() - t0, 1)}
+                log_f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                log_f.flush()
+                totals["failed"] += 1
+                print(json.dumps(entry, ensure_ascii=False), flush=True)
+                continue
+
+            module_path = DOCS_ROOT / f"{key}.md"
+            commit_info: dict = {"committed": False, "reason": "unchecked"}
+            if status in COMMITTABLE and module_path.exists() and file_changed(module_path):
+                commit_info = commit_module(key, module_path, status)
+            elif status in COMMITTABLE:
+                commit_info = {"committed": False, "reason": "no_file_change"}
+                totals["skipped_no_change"] += 1
+            else:
+                commit_info = {"committed": False, "reason": f"status={status}"}
+
+            if commit_info.get("committed"):
+                totals["committed"] += 1
+
+            totals["done"] += 1
+            if status == "clean":
+                totals["clean"] += 1
+            elif status == "residuals_queued":
+                totals["residuals"] += 1
+            else:
+                totals["failed"] += 1
+
+            entry = {"i": i, "key": key, "status": status,
+                     "elapsed_s": round(time.time() - t0, 1),
+                     "commit": commit_info,
+                     "progress": f"{totals['done']}/{totals['n']}"}
             log_f.write(json.dumps(entry, ensure_ascii=False) + "\n")
             log_f.flush()
-            totals["failed"] += 1
             print(json.dumps(entry, ensure_ascii=False), flush=True)
-            continue
 
-        module_path = DOCS_ROOT / f"{key}.md"
-        commit_info: dict = {"committed": False, "reason": "unchecked"}
-        if status in COMMITTABLE and module_path.exists() and file_changed(module_path):
-            commit_info = commit_module(key, module_path, status)
-        elif status in COMMITTABLE:
-            commit_info = {"committed": False, "reason": "no_file_change"}
-            totals["skipped_no_change"] += 1
-        else:
-            commit_info = {"committed": False, "reason": f"status={status}"}
+        final = {"summary": totals, "label": args.label}
+        log_f.write(json.dumps(final, ensure_ascii=False) + "\n")
 
-        if commit_info.get("committed"):
-            totals["committed"] += 1
-
-        totals["done"] += 1
-        if status == "clean":
-            totals["clean"] += 1
-        elif status == "residuals_queued":
-            totals["residuals"] += 1
-        else:
-            totals["failed"] += 1
-
-        entry = {"i": i, "key": key, "status": status,
-                 "elapsed_s": round(time.time() - t0, 1),
-                 "commit": commit_info,
-                 "progress": f"{totals['done']}/{totals['n']}"}
-        log_f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-        log_f.flush()
-        print(json.dumps(entry, ensure_ascii=False), flush=True)
-
-    final = {"summary": totals, "label": args.label}
-    log_f.write(json.dumps(final, ensure_ascii=False) + "\n")
-    log_f.close()
     print("---", flush=True)
     print(json.dumps(final, ensure_ascii=False), flush=True)
     return 0

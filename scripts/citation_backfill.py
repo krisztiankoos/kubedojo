@@ -1538,36 +1538,40 @@ def _build_sources_section_from_seed(seed: dict[str, Any]) -> str:
     for claim in seed.get("claims") or []:
         disposition = claim.get("disposition")
         source_ids = [str(source_id) for source_id in claim.get("source_ids") or []]
-        for source_id in source_ids:
-            source = pool_by_id.get(source_id) or {}
-            add_entry(
-                str(source.get("url") or "").strip() or None,
-                str(source.get("title") or "").strip() or None,
-                str(source.get("scope_notes") or "").strip()
-                or str(claim.get("rationale") or "").strip()
-                or str(claim.get("claim_text") or "").strip(),
-            )
-        # Pool-less proposed_url is only safe for CITED dispositions.
-        # needs_allowlist_expansion URLs are deliberately off-allowlist
-        # (awaiting review) — never leak them into Sources. Rewrite
-        # dispositions (soften/cannot_be_salvaged) have proposed_url
-        # zeroed by validate_urls but the disposition check is the
-        # correct semantic guard.
-        if not source_ids and disposition in CITED_DISPOSITIONS:
-            add_entry(
-                claim.get("proposed_url"),
-                None,
-                str(claim.get("rationale") or "").strip()
-                or str(claim.get("claim_text") or "").strip(),
-            )
-        lesson_point_url = str(claim.get("lesson_point_url") or "").strip()
-        if lesson_point_url:
-            pool_source = pool_by_url.get(lesson_point_url) or {}
-            add_entry(
-                lesson_point_url,
-                str(pool_source.get("title") or "").strip() or None,
-                "General lesson point for an illustrative rewrite.",
-            )
+        # Pool sources are pre-validated but still disposition-scoped:
+        # source_ids on a needs_allowlist_expansion / cannot_be_salvaged
+        # claim indicate schema drift (model hallucination) and must
+        # not reach a rendered Sources block.
+        if disposition in CITED_DISPOSITIONS:
+            for source_id in source_ids:
+                source = pool_by_id.get(source_id) or {}
+                add_entry(
+                    str(source.get("url") or "").strip() or None,
+                    str(source.get("title") or "").strip() or None,
+                    str(source.get("scope_notes") or "").strip()
+                    or str(claim.get("rationale") or "").strip()
+                    or str(claim.get("claim_text") or "").strip(),
+                )
+            # Pool-less proposed_url fallback (still CITED-gated).
+            if not source_ids:
+                add_entry(
+                    claim.get("proposed_url"),
+                    None,
+                    str(claim.get("rationale") or "").strip()
+                    or str(claim.get("claim_text") or "").strip(),
+                )
+        # lesson_point_url is semantically the illustrative-rewrite source
+        # for soften_to_illustration ONLY. On any other disposition it is
+        # schema drift; refuse to surface it.
+        if disposition == "soften_to_illustration":
+            lesson_point_url = str(claim.get("lesson_point_url") or "").strip()
+            if lesson_point_url:
+                pool_source = pool_by_url.get(lesson_point_url) or {}
+                add_entry(
+                    lesson_point_url,
+                    str(pool_source.get("title") or "").strip() or None,
+                    "General lesson point for an illustrative rewrite.",
+                )
 
     for link in seed.get("further_reading") or []:
         add_entry(

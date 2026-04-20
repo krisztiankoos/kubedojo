@@ -383,6 +383,13 @@ def discover_section_sources(
                 "error": "parse_failed",
                 "detail": str(exc),
             }
+        if not isinstance(parsed, dict):
+            return {
+                "ok": False,
+                "section": section_key,
+                "error": "invalid_response_shape",
+                "detail": f"expected object, got {type(parsed).__name__}",
+            }
         sources = parsed.get("sources") or []
         if not isinstance(sources, list):
             return {

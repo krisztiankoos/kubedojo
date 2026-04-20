@@ -1,27 +1,24 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import shutil
 import sys
 from pathlib import Path
 
+# Import via sys.path (not isolated importlib.util loaders) so both
+# `citation_backfill` and `section_source_discovery` share a single
+# module instance. Otherwise the test helper creates a second copy of
+# citation_backfill, monkeypatches land on the test copy, and the
+# real copy — imported transitively via `from citation_backfill import
+# section_pool_path_for` in section_source_discovery — still writes to
+# docs/citation-pools/ for real. First seen when the discovery test
+# overwrote the live gitops-deployments pool file mid-PR #324.
+_SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
 
-def _load_module(name: str, relative_path: str):
-    module_path = Path(__file__).resolve().parent.parent / relative_path
-    spec = importlib.util.spec_from_file_location(name, module_path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-citation_backfill = _load_module("citation_backfill_test", "scripts/citation_backfill.py")
-section_source_discovery = _load_module(
-    "section_source_discovery_test",
-    "scripts/section_source_discovery.py",
-)
+import citation_backfill  # type: ignore[import-not-found]  # noqa: E402
+import section_source_discovery  # type: ignore[import-not-found]  # noqa: E402
 
 
 def _fake_fetch(url: str, *, refresh: bool = False, timeout: int = 20) -> dict:
@@ -151,6 +148,81 @@ def test_section_source_discovery_writes_pool_and_research_uses_source_ids(monke
         assert seed["claims"][0]["proposed_url"] is None
     finally:
         shutil.rmtree(tmp_root, ignore_errors=True)
+
+
+def test_build_sources_section_gates_non_cited_dispositions(monkeypatch) -> None:
+    """Pool source_ids, proposed_url, and lesson_point_url must only
+    surface in rendered Sources for their respective dispositions.
+
+    Addresses PR #324 Gemini-review Finding 1: the source_ids loop and
+    lesson_point_url emission were unconditional, so a model
+    hallucinating source_ids on a needs_allowlist_expansion claim (or
+    lesson_point_url on a cited claim) would leak into rendered output.
+    """
+    fake_pool = {
+        "section": "test",
+        "sources": [
+            {
+                "source_id": "S001",
+                "url": "https://kubernetes.io/docs/concepts/",
+                "title": "Kubernetes Concepts",
+                "tier": "standards",
+                "scope_notes": "Core concepts reference.",
+            },
+            {
+                "source_id": "S002",
+                "url": "https://kubernetes.io/docs/reference/",
+                "title": "Kubernetes Reference",
+                "tier": "standards",
+                "scope_notes": "API reference.",
+            },
+        ],
+    }
+    monkeypatch.setattr(citation_backfill, "load_section_pool", lambda _: fake_pool)
+
+    seed = {
+        "section_pool_ref": "docs/citation-pools/fake.json",
+        "claims": [
+            {
+                "claim_text": "Cited pool reference.",
+                "disposition": "supported",
+                "source_ids": ["S001"],
+                "rationale": "Pool source is correctly cited.",
+            },
+            {
+                "claim_text": "Hallucinated pool ref on allowlist-deferred claim.",
+                "disposition": "needs_allowlist_expansion",
+                "source_ids": ["S002"],  # model drift: must not surface
+                "rationale": "off-allowlist proposed_url awaiting review",
+            },
+            {
+                "claim_text": "Cannot-salvage claim with hallucinated lesson_point_url.",
+                "disposition": "cannot_be_salvaged",
+                "source_ids": [],
+                "lesson_point_url": "https://kubernetes.io/docs/reference/",  # drift
+                "rationale": "claim cannot be cited",
+            },
+            {
+                "claim_text": "Genuine soften claim with distinct lesson_point_url.",
+                "disposition": "soften_to_illustration",
+                "source_ids": [],
+                "lesson_point_url": "https://kubernetes.io/docs/tutorials/",
+                "rationale": "illustrative rewrite",
+            },
+        ],
+    }
+    rendered = citation_backfill._build_sources_section_from_seed(seed)
+
+    assert "kubernetes.io/docs/concepts/" in rendered, "supported pool source must render"
+    assert "kubernetes.io/docs/tutorials/" in rendered, "soften lesson_point_url must render"
+    assert rendered.count("kubernetes.io/docs/reference/") == 0, (
+        "hallucinated source_ids on needs_allowlist_expansion must NOT render; "
+        "hallucinated lesson_point_url on cannot_be_salvaged must NOT render"
+    )
+    bullet_count = sum(1 for line in rendered.splitlines() if line.startswith("- ["))
+    assert bullet_count == 2, (
+        f"expected 2 bullets (supported + soften), got {bullet_count}\n{rendered}"
+    )
 
 
 def test_build_research_prompt_omits_pool_block_by_default() -> None:
