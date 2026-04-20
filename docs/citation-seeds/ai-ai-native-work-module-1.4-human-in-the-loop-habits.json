@@ -1,0 +1,30 @@
+{
+  "module_key": "ai/ai-native-work/module-1.4-human-in-the-loop-habits",
+  "module_path": "src/content/docs/ai/ai-native-work/module-1.4-human-in-the-loop-habits.md",
+  "research_run_id": "2026-04-19T23:52:32+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook",
+      "title": "NIST AI RMF Playbook",
+      "tier": "standards",
+      "why_relevant": "Provides concrete risk-management and oversight practices teams can adapt when adding human review to AI workflows."
+    },
+    {
+      "url": "https://oecd.ai/en/dashboards/ai-principles/P6",
+      "title": "OECD AI Principle 1.2: Human-Centred Values and Fairness",
+      "tier": "standards",
+      "why_relevant": "Directly covers human agency and oversight as safeguards for trustworthy AI use."
+    },
+    {
+      "url": "https://oecd.ai/en/dashboards/ai-principles/P9",
+      "title": "OECD AI Principle 1.5: Accountability",
+      "tier": "standards",
+      "why_relevant": "Explains why traceability, role clarity, and accountability remain human responsibilities in AI systems."
+    }
+  ],
+  "notes": "No inline-citation seed entries were identified. The module is primarily pedagogical and normative, with no discrete statistics, incidents, vendor/version claims, standards references by name in the body, or other factual assertions that require inline sourcing under the stated rules.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

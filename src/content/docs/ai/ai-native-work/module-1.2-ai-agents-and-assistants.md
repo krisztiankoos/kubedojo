@@ -142,3 +142,8 @@ It is:
 ## Next Module
 
 Continue to [Designing AI Workflows](./module-1.3-designing-ai-workflows/).
+
+## Sources
+
+- [Building Effective AI Agents](https://www.anthropic.com/engineering/building-effective-agents) — Explains the distinction between workflows and agents, with emphasis on when added autonomy is worth the coordination cost.
+- [A Practical Guide to Building Agents](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/) — Provides practical guidance on choosing appropriate levels of autonomy and designing bounded agentic systems safely.

@@ -124,3 +124,9 @@ Bad AI workflows are mostly vague delegation dressed up as productivity.
 ## Next Module
 
 Continue to [Human-in-the-Loop Habits](./module-1.4-human-in-the-loop-habits/).
+
+## Sources
+
+- [A practical guide to building agents](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/) — Practical guidance on when agentic workflows are appropriate, how to structure them, and how to add guardrails and evaluation.
+- [NIST AI RMF Playbook](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook) — Concrete risk-management and verification practices that map well to workflow checkpoints, review gates, and human oversight.
+- [Advancing accountability in AI](https://oecd.ai/en/accountability/) — Explains why AI systems need explicit accountability, traceability, and lifecycle controls, aligning with the module's emphasis on ownership and verification.

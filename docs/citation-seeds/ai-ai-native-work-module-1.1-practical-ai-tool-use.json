@@ -1,0 +1,31 @@
+{
+  "module_key": "ai/ai-native-work/module-1.1-practical-ai-tool-use",
+  "module_path": "src/content/docs/ai/ai-native-work/module-1.1-practical-ai-tool-use.md",
+  "research_run_id": "2026-04-19T23:48:10+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10",
+      "title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+      "tier": "standards",
+      "why_relevant": "Useful background for deciding when AI use is low-risk versus when stronger controls and review are needed."
+    },
+    {
+      "url": "https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence",
+      "title": "Artificial Intelligence Risk Management Framework: Generative Artificial Intelligence Profile",
+      "tier": "standards",
+      "why_relevant": "Covers practical generative-AI risk patterns that map well to the module's guidance on verification, boundaries, and safe use."
+    }
+  ],
+  "notes": "No inline-citation seed entries were created because the module is primarily procedural guidance and pedagogical framing, with no specific dated facts, vendor-version claims, standards references by name, incidents, statistics, pricing, or security-event claims that require inline citation under the rubric.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://openai.com/academy/prompting/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

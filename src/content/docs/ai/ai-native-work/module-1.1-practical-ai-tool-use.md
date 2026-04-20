@@ -20,7 +20,7 @@ Different tools are good for different jobs:
 
 If you choose the wrong tool, the work feels worse in two ways:
 - you waste time fighting the interface instead of solving the problem
-- you trust output that the tool was never designed to produce well
+- you trust output that the tool was not really designed to produce well
 
 ## What You'll Learn
 
@@ -161,3 +161,8 @@ The goal is to use the simplest tool that gives useful leverage without giving u
 ## Next Module
 
 Continue to [AI Agents and Assistants](./module-1.2-ai-agents-and-assistants/).
+
+## Sources
+
+- [Artificial Intelligence Risk Management Framework (AI RMF 1.0)](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10) — Background on evaluating AI risk and deciding when stronger controls and human review are needed.
+- [Artificial Intelligence Risk Management Framework: Generative Artificial Intelligence Profile](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence) — Practical guidance on generative-AI risks, verification needs, and safe operational boundaries.

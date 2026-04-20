@@ -121,3 +121,9 @@ Humans still need to decide when the work is good enough, safe enough, and true 
 
 - return to [AI Foundations](../)
 - continue to [AI/ML Engineering](../../ai-ml-engineering/)
+
+## Sources
+
+- [NIST AI RMF Playbook](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook) — Provides concrete risk-management and oversight practices teams can adapt when adding human review to AI workflows.
+- [OECD AI Principle 1.2: Human-Centred Values and Fairness](https://oecd.ai/en/dashboards/ai-principles/P6) — Covers human agency and oversight as safeguards for trustworthy AI use.
+- [OECD AI Principle 1.5: Accountability](https://oecd.ai/en/dashboards/ai-principles/P9) — Explains why traceability, role clarity, and accountability remain human responsibilities in AI systems.

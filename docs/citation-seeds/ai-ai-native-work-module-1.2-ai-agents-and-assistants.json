@@ -1,0 +1,31 @@
+{
+  "module_key": "ai/ai-native-work/module-1.2-ai-agents-and-assistants",
+  "module_path": "src/content/docs/ai/ai-native-work/module-1.2-ai-agents-and-assistants.md",
+  "research_run_id": "2026-04-19T23:50:09+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "title": "Building Effective AI Agents",
+      "tier": "vendor",
+      "why_relevant": "Directly addresses the distinction between workflows and agents and when increased autonomy is worth the complexity."
+    },
+    {
+      "url": "https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/",
+      "title": "A Practical Guide to Building Agents",
+      "tier": "vendor",
+      "why_relevant": "Useful for the module's delegation ladder and for framing when agentic systems are appropriate versus simpler assistant patterns."
+    }
+  ],
+  "notes": "This module is primarily conceptual and pedagogical. It contains definitions, heuristics, and workflow advice, but no specific incidents, statistics, versioned vendor behavior, standards references by name, pricing, or other hard factual claims that require inline citations under the stated policy.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://www.oecd.org/en/publications/explanatory-memorandum-on-the-updated-oecd-definition-of-an-ai-system_623da898-en.html",
+      "reason": "off_allowlist",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}
