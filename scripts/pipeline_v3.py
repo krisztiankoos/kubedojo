@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import datetime as _dt
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -57,6 +58,62 @@ SUMMARY_PATH = V3_DIR / "summary.jsonl"
 
 def _iso_utc() -> str:
     return _dt.datetime.now(_dt.UTC).isoformat(timespec="seconds")
+
+
+def _sources_only_fallback(module_key: str, module_path: Path,
+                           inject_result: dict[str, Any]) -> dict[str, Any]:
+    """When full inject fails on diff-lint, write just a ## Sources section.
+
+    The full inject does three things: inline anchors, prose rewrites, and a
+    Sources section from further_reading. The diff-lint bails the WHOLE
+    inject on a single unauthorized prose change, losing even the Sources
+    section — so the module stays at the citation-gate cap of 1.5.
+
+    Fallback: if the seed has further_reading entries, skip inline + prose
+    and just append a Sources section from further_reading. Lifts the module
+    off the 1.5 cap without the risk of unauthorized prose rewrites.
+    """
+    result: dict[str, Any] = {"applied": False, "ok": False, "reason": None}
+    # Only fallback if the full inject tripped diff-lint. Real failures
+    # (dispatch error, parse error, nothing_to_do) should still abort.
+    if not inject_result.get("diff_issues"):
+        result["reason"] = "no_diff_issues_to_salvage"
+        return result
+    seed_path = seed_path_for(module_key)
+    if not seed_path.exists():
+        result["reason"] = "no_seed"
+        return result
+    seed = json.loads(seed_path.read_text(encoding="utf-8"))
+    fr = seed.get("further_reading") or []
+    if not fr:
+        result["reason"] = "no_further_reading"
+        return result
+    body = module_path.read_text(encoding="utf-8")
+    if re.search(r"^##+\s+sources\b", body, re.IGNORECASE | re.MULTILINE):
+        # Already has a Sources section — don't duplicate.
+        result["reason"] = "sources_section_already_present"
+        return result
+    lines = ["", "## Sources", ""]
+    for link in fr:
+        url = (link.get("url") or "").strip()
+        title = (link.get("title") or url).strip()
+        why = (link.get("why_relevant") or "").strip()
+        if not url:
+            continue
+        if why:
+            lines.append(f"- [{title}]({url}) — {why}")
+        else:
+            lines.append(f"- [{title}]({url})")
+    if len(lines) <= 3:
+        result["reason"] = "no_valid_further_reading"
+        return result
+    block = "\n".join(lines) + "\n"
+    new_body = body.rstrip() + "\n" + block
+    module_path.write_text(new_body, encoding="utf-8")
+    result["applied"] = True
+    result["ok"] = True
+    result["further_reading_count"] = len(fr)
+    return result
 
 
 def _prune_failed_cited_claims(module_key: str, verdict_path_rel: str | None) -> dict[str, Any]:
@@ -426,7 +483,10 @@ def run_pipeline(module_key: str, *, skip_research: bool = False,
     inj = run_inject(normalized_key, agent="codex")
     run_record["stages"]["inject"] = inj
     if not inj.get("ok"):
-        return _finalize(run_record, "inject_failed", flat_key)
+        fb = _sources_only_fallback(normalized_key, module_path, inj)
+        run_record["stages"]["inject_fallback"] = fb
+        if not fb.get("ok"):
+            return _finalize(run_record, "inject_failed", flat_key)
 
     # Stage 4: audit -------------------------------------------------------
     audit = _audit_all(module_path, gate_agent_text=gate_agent_text,
