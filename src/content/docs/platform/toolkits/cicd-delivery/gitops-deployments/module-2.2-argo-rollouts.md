@@ -8,7 +8,7 @@ sidebar:
 
 ---
 
-*The release manager hit "deploy" and watched the metrics dashboard. Three hundred microservices. Forty million users. No room for error. Within 90 seconds, the p99 latency spiked from 200ms to 3.2 seconds. Customer complaints flooded the support queue. But something remarkable happened: no humans intervened. The Argo Rollouts analysis detected the latency anomaly at 10% traffic, automatically aborted the canary, and rolled back to stable. Total user impact: 4 million requests slightly degraded, zero failed transactions. The bad deploy that would have cost the streaming platform $12 million in subscriber churn was stopped by a YAML file and a Prometheus query. The release manager exhaled, then smiled: "Progressive delivery just paid for itself."*
+*Progressive delivery lets teams expose only a small slice of traffic to a new version, watch service metrics, and automatically abort a rollout when the canary regresses before the whole user base is affected.*
 
 ---
 
@@ -26,22 +26,22 @@ After completing this module, you will be able to:
 
 - **Configure canary deployments with automated analysis using Prometheus metrics queries**
 - **Implement blue-green deployments with traffic management and automated promotion criteria**
-- **Integrate Argo Rollouts with service meshes and ingress controllers for traffic splitting**
+- **[Integrate Argo Rollouts with service meshes and ingress controllers for traffic splitting](https://argoproj.github.io/rollouts/)**
 - **Evaluate progressive delivery strategies and select appropriate rollout patterns for different risk profiles**
 
 
 ## Why This Module Matters
 
-Kubernetes Deployments use rolling updates by default—gradually replacing old pods with new ones. But rolling updates can't answer: "Is this new version actually better?" They blindly proceed until all pods are replaced.
+[Kubernetes Deployments use rolling updates by default](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)—gradually replacing old pods with new ones. But [rolling updates can't answer: "Is this new version actually better?" They blindly proceed until all pods are replaced.](https://argoproj.github.io/rollouts/)
 
-Argo Rollouts enables progressive delivery: canary deployments, blue-green switches, and automated rollbacks based on metrics. You can deploy to 10% of traffic, verify metrics look good, then automatically promote to 100%—or roll back if they don't.
+[Argo Rollouts enables progressive delivery: canary deployments, blue-green switches, and automated rollbacks based on metrics](https://argoproj.github.io/rollouts/). You can deploy to 10% of traffic, verify metrics look good, then automatically promote to 100%—or roll back if they don't.
 
 ## Did You Know?
 
-- **Argo Rollouts was born from Intuit's frustration with Kubernetes Deployments**—they needed a way to safely deploy thousands of times per day
+- **Argo Rollouts addresses gaps in standard Kubernetes rollout behavior**—it adds progressive delivery patterns and analysis-driven control for safer releases.
 - **The canary deployment pattern is named after canaries in coal mines**—miners brought canaries underground; if the canary died, the air was toxic
-- **Netflix pioneered automated canary analysis**—their Kayenta system inspired Argo Rollouts' analysis features
-- **Blue-green deployments can double your resource usage**—you need capacity for both versions simultaneously
+- **Automated canary analysis is an established practice**—Argo Rollouts can integrate with systems such as Kayenta.
+- **Blue-green deployments require extra capacity during promotion**—both versions can run at the same time until traffic switches and the old version scales down.
 
 ## Rollout Strategies
 
@@ -718,7 +718,7 @@ spec:
 | No analysis templates | Blind deployment, no safety | Always add success-rate and latency analysis |
 | Too aggressive steps | Problems hit many users | Start at 5-10%, pause longer at each step |
 | Ignoring canary metrics | Analysis passes but users suffer | Include business metrics, not just infrastructure |
-| No scaleDownDelay | Instant rollback impossible | Keep old version for 30-60 seconds minimum |
+| No scaleDownDelay | Fast rollback is harder once old pods are gone | Keep old version for 30-60 seconds minimum |
 | Same replica count | Canary gets equal load despite traffic | Scale canary based on traffic weight |
 | Manual promotion in prod | Human bottleneck, slow deployments | Use automated analysis for well-understood services |
 
@@ -736,11 +736,11 @@ spec:
 
 **Friday, 6:47 PM - The Deploy**
 
-The order-service team merged a "small refactor" that passed all unit tests and staging validation. The code had a memory leak—objects allocated in a hot path but never garbage collected. In staging with 1% production traffic, it took 6 hours to manifest. In production, the leak would compound to OOM kills within 15 minutes.
+A memory leak can pass unit tests and light staging traffic, then surface quickly under production load, which is why progressive analysis should watch for resource-growth regressions before full promotion.
 
 **Before Argo Rollouts (The Old World)**
 
-The team's previous incident, 8 months earlier, had played out like this:
+A similar incident without progressive delivery can look like this:
 
 ```
 PREVIOUS INCIDENT - WITHOUT PROGRESSIVE DELIVERY
@@ -763,7 +763,7 @@ Total incident cost: $1.2 million
 
 **With Argo Rollouts (The New World)**
 
-After that incident, the platform team implemented Argo Rollouts with automated analysis:
+A team facing this failure mode can implement Argo Rollouts with automated analysis like this:
 
 ```yaml
 # The rollout configuration that saved them
@@ -1004,7 +1004,7 @@ You're using a canary strategy with NGINX Ingress for traffic splitting. Your ca
    ```
    Without it, traffic routes to both services equally.
 
-3. **Session affinity**: If sticky sessions are enabled, returning users always hit the same version, skewing observed percentages.
+3. **Session affinity**: If sticky sessions are enabled, returning users often hit the same version, skewing observed percentages.
 
 4. **Health check traffic**: Kubernetes probes hit all pods equally, inflating canary traffic in metrics.
 
@@ -1408,3 +1408,10 @@ Continue to [Module 2.3: Flux](../module-2.3-flux/) where we'll explore the alte
 ---
 
 *"Ship fast, but ship safe. Progressive delivery lets you have both."*
+
+## Sources
+
+- [Kubernetes Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — Explains Deployment behavior, including the default rolling update strategy in Kubernetes.
+- [Argo Rollouts Overview](https://argoproj.github.io/rollouts/) — Summarizes canary and blue-green rollout patterns, traffic shaping, and automated analysis capabilities.
+- [Canary Deployment Strategy](https://argoproj.github.io/argo-rollouts/features/canary/) — Details canary steps, pause behavior, traffic weights, and rollout progression in Argo Rollouts.
+- [Analysis Overview](https://argoproj.github.io/argo-rollouts/features/analysis/) — Covers AnalysisTemplate, AnalysisRun, inline and background analysis, and dry-run behavior.
