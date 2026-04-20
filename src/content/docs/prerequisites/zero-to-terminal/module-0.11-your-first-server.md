@@ -43,7 +43,7 @@ Option A is faster and simpler. Option B is closer to what happens in the real w
 
 ## The Skills You've Built
 
-Before we start, let's take stock. Every single module you've completed plays a role here:
+Before we start, let's take stock. The modules you've completed play a role here:
 
 | Module | Skill | How You'll Use It |
 |--------|-------|-------------------|
@@ -84,7 +84,7 @@ You need a tool to run containers. Pick **any one** of these — they all work t
 | Tool | Best for | License |
 |------|----------|---------|
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | Most popular, biggest community | Free for personal/small business |
-| [OrbStack](https://orbstack.dev/) | macOS — fastest, lightest, best UX | Free for personal use |
+| [OrbStack](https://orbstack.dev/) | macOS option | Free for personal use |
 | [Podman Desktop](https://podman-desktop.io/) | No daemon, rootless by default | Free and open source |
 | [Rancher Desktop](https://rancherdesktop.io/) | Includes K8s built-in | Free and open source |
 
@@ -109,7 +109,7 @@ Verify Docker is working:
 docker --version
 ```
 
-You should see something like `Docker version 24.x.x` or newer. If you get "command not found," Docker isn't installed yet.
+You should see output that begins with `Docker version`. If you get "command not found," Docker isn't installed yet.
 
 ### Step 2: Run nginx
 
@@ -131,7 +131,7 @@ Let's break down every piece of that command (because understanding matters more
 | `--name my-website` | Give the container a friendly name |
 | `nginx` | Use the nginx image (Docker downloads it automatically) |
 
-Remember Module 0.6 on networking? Port 80 is the standard port for web traffic. We're mapping it to 8080 on your machine so it doesn't conflict with anything else.
+Remember Module 0.6 on networking? [Port 80 is the standard port for web traffic.](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Session?hl=en-US) We're mapping it to 8080 on your machine so it doesn't conflict with anything else.
 
 > **Connect the dots**: The `-p 8080:80` flag is Module 0.6 (ports) in action. Your browser sends a request to port 8080 on your machine. Docker forwards it to port 80 inside the container, where nginx is listening. The response travels back the same path. Every concept from these modules is working together right now.
 
@@ -209,7 +209,7 @@ docker cp ~/index.html my-website:/usr/share/nginx/html/index.html
 
 That command says: "Copy `index.html` from my home directory into the container named `my-website`, placing it at `/usr/share/nginx/html/index.html`."
 
-The path `/usr/share/nginx/html/` is where nginx looks for web pages to serve. This is just a directory -- exactly like the directories you worked with in Module 0.4.
+The path [`/usr/share/nginx/html/`](https://hub.docker.com/_/nginx) is where nginx looks for web pages to serve. This is just a directory -- exactly like the directories you worked with in Module 0.4.
 
 ### Step 6: See YOUR page
 
@@ -244,9 +244,9 @@ You'll need a free-tier account with a cloud provider. The instructions below us
 
 Sign up for a free tier at one of these providers:
 
-- **Oracle Cloud** (most generous free tier -- always-free VMs): [cloud.oracle.com/free](https://cloud.oracle.com/free)
-- **Google Cloud** ($300 free credit for 90 days): [cloud.google.com/free](https://cloud.google.com/free)
-- **AWS** (free-tier VM eligibility depends on when your account was created: accounts created before **July 15, 2025** use the legacy 12-month EC2 free tier, while accounts created on or after **July 15, 2025** use AWS's newer free plan with different limits): [aws.amazon.com/free](https://aws.amazon.com/free)
+- **Oracle Cloud** (free tier with [always-free VMs](https://www.oracle.com/cloud/free/faq/)): [cloud.oracle.com/free](https://cloud.oracle.com/free)
+- **Google Cloud** ([$300 free credit for 90 days](https://cloud.google.com/free/docs/gcp-free-tier)): [cloud.google.com/free](https://cloud.google.com/free)
+- **AWS** ([free-tier VM eligibility depends on when your account was created: accounts created before **July 15, 2025** use the legacy 12-month EC2 free tier, while accounts created on or after **July 15, 2025** use AWS's newer free plan with different limits](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-free-tier-usage.html)): [aws.amazon.com/free](https://aws.amazon.com/free)
 
 Create the smallest available Linux VM (Ubuntu is easiest for beginners). During setup:
 
@@ -381,11 +381,11 @@ exit
 
 ## Did You Know?
 
-- **The first website ever made is still online.** Tim Berners-Lee created it in 1991 at CERN. It was served from a NeXT computer with a handwritten note taped to it: "This machine is a server. DO NOT POWER IT DOWN!!" You can still visit it at [info.cern.ch](http://info.cern.ch). Your server setup today was more sophisticated than the one that launched the World Wide Web.
+- [**The first website ever made is still online.**](https://home.cern/tags/first-website) Tim Berners-Lee created the first website at CERN during the Web's earliest days. It was [served from a NeXT computer with a handwritten note taped to it: "This machine is a server. DO NOT POWER IT DOWN!!"](https://home.cern/science/computing/birth-web/short-history-web) You can still visit it at [info.cern.ch](http://info.cern.ch). Your server setup today was more sophisticated than the one that launched the World Wide Web.
 
 - **nginx was created to solve a scaling problem.** In 2002, Igor Sysoev set out to address the "C10K problem" -- serving 10,000 simultaneous connections on a single server. At the time, Apache (the dominant web server) struggled with that model. Sysoev spent two years writing nginx, and nginx became known for its event-driven architecture and efficient worker-process design. The [official nginx site](https://nginx.org/en/) highlights its architecture and scalability features, and the [official NGINX engineering write-up](https://blog.nginx.org/blog/inside-nginx-how-we-designed-for-performance-scale) explains that nginx is built for high concurrency and, with appropriate tuning, can handle hundreds of thousands of simultaneous connections.
 
-- **Your website is served the same way Netflix is.** Seriously. Netflix, Airbnb, and Dropbox all use nginx as their web server. The difference between your setup and theirs is scale (they have thousands of servers) and configuration (they have teams of engineers tweaking settings). But the fundamental technology -- a process listening on port 80 and returning HTML -- is identical.
+- **Large-scale websites use the same basic pattern.** A server process listens for HTTP requests and returns content, even though production systems add far more servers and configuration around it.
 
 ---
 
@@ -565,3 +565,15 @@ That's not beginner stuff. That's engineering.
 ---
 
 > *"The expert in anything was once a beginner."* -- Helen Hayes
+
+## Sources
+
+- [Docker Personal Subscription](https://www.docker.com/products/personal/) — Explains Docker Desktop availability for personal use and qualifying small businesses.
+- [A typical HTTP session](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Session?hl=en-US) — Gives a beginner-friendly explanation of how browsers, TCP, HTTP requests, and responses fit together.
+- [nginx Docker Official Image overview](https://hub.docker.com/_/nginx) — Shows how the official nginx container is run and where it serves content from by default.
+- [Oracle Cloud Free Tier FAQ](https://www.oracle.com/cloud/free/faq/) — Documents Oracle Cloud's always-free compute offerings.
+- [Google Cloud free tier](https://cloud.google.com/free/docs/gcp-free-tier) — Documents the current free-credit offer and baseline free-tier details.
+- [Amazon EC2 Free Tier](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-free-tier-usage.html) — Explains how EC2 free-tier eligibility and limits vary by account cohort.
+- [The first website](https://home.cern/tags/first-website) — Confirms that the original website remains available online through CERN's historical material.
+- [A short history of the Web](https://home.cern/science/computing/birth-web/short-history-web) — Summarizes the early Web and the original server machine at CERN.
+- [The birth of the Web](https://home.cern/science/computing/birth-web) — Connects this exercise to CERN's origin story for the Web.
