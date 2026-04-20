@@ -1,0 +1,31 @@
+{
+  "module_key": "ai/ai-building/module-1.2-models-apis-context-structured-output",
+  "module_path": "src/content/docs/ai/ai-building/module-1.2-models-apis-context-structured-output.md",
+  "research_run_id": "2026-04-19T23:23:20+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://openai.com/index/new-tools-and-features-in-the-responses-api/",
+      "title": "New Tools and Features in the Responses API",
+      "tier": "vendor",
+      "why_relevant": "Provides current API-level context for model/tool selection and how application design choices affect capabilities like tool use and workflow orchestration."
+    }
+  ],
+  "notes": "Module is predominantly pedagogical and uses generic, non-quantified examples. It does not make dated, vendor-specific, statistical, incident-based, or standards-based claims that require inline citations under the current citation-density rules.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://openai.com/academy/prompting/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    },
+    {
+      "url": "https://openai.com/index/introducing-structured-outputs-in-the-api/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

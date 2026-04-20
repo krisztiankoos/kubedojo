@@ -210,3 +210,8 @@ Pick one real feature idea and classify its parts:
 ## Next Module
 
 Continue to [Models, APIs, Context, and Structured Output](./module-1.2-models-apis-context-structured-output/).
+
+## Sources
+
+- [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) — Explains the difference between orchestrated workflows and more autonomous agents, matching this module's shift from chat use to system design.
+- [Function calling and other API updates](https://openai.com/index/function-calling-and-other-api-updates/) — Shows how model calls fit inside larger application workflows that invoke tools, APIs, and deterministic code.

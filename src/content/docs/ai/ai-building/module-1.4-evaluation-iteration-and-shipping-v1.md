@@ -97,7 +97,7 @@ A bad v1 is:
 - open-ended
 - hard to evaluate
 - trusted too much
-- impossible to debug
+- much harder to debug
 
 ## Signs You Are Ready To Ship
 
@@ -169,3 +169,9 @@ If you cannot do those five things clearly, the feature is not ready for v1.
 From here, continue to:
 - [AI/ML Engineering: AI-Native Development](../../ai-ml-engineering/ai-native-development/)
 - or [AI/ML Engineering: Generative AI](../../ai-ml-engineering/generative-ai/)
+
+## Sources
+
+- [OpenAI Evals](https://github.com/openai/evals) — Concrete examples and tooling for building repeatable eval sets and comparing changes over time.
+- [NIST AI RMF Playbook](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook) — Useful for turning evaluation and review steps into an explicit shipping and governance practice.
+- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — Relevant when moving from prompt iteration to shipping, because it highlights common security and reliability risks in LLM features.

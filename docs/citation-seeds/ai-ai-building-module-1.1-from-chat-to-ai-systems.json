@@ -1,0 +1,31 @@
+{
+  "module_key": "ai/ai-building/module-1.1-from-chat-to-ai-systems",
+  "module_path": "src/content/docs/ai/ai-building/module-1.1-from-chat-to-ai-systems.md",
+  "research_run_id": "2026-04-19T23:21:41+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "title": "Building effective agents",
+      "tier": "vendor",
+      "why_relevant": "Explains the difference between orchestrated workflows and more autonomous agents, which matches this module's shift from chat use to system design."
+    },
+    {
+      "url": "https://openai.com/index/function-calling-and-other-api-updates/",
+      "title": "Function calling and other API updates",
+      "tier": "vendor",
+      "why_relevant": "Shows how model calls fit inside larger application workflows that invoke tools, APIs, and deterministic code."
+    }
+  ],
+  "notes": "No inline citation claims were seeded. The module is primarily pedagogical framing, analogies, design guidance, exercises, and comparative tables without dated statistics, vendor/version assertions, named incidents, standards references, or other load-bearing factual specifics that require inline citation under the stated rules.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://openai.com/index/introducing-structured-outputs-in-the-api/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

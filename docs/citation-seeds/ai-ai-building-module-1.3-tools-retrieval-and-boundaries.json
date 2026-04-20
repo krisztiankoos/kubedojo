@@ -1,0 +1,30 @@
+{
+  "module_key": "ai/ai-building/module-1.3-tools-retrieval-and-boundaries",
+  "module_path": "src/content/docs/ai/ai-building/module-1.3-tools-retrieval-and-boundaries.md",
+  "research_run_id": "2026-04-19T23:24:28+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2005.11401",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "tier": "standards",
+      "why_relevant": "Provides the foundational retrieval pattern that underpins the module's distinction between adding knowledge and extending capability."
+    },
+    {
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "title": "Building Effective Agents",
+      "tier": "vendor",
+      "why_relevant": "Offers practical guidance on when to use tools, workflows, and human approvals instead of adding broad autonomy too early."
+    },
+    {
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "title": "OWASP Top 10 for Large Language Model Applications",
+      "tier": "standards",
+      "why_relevant": "Gives a concrete risk framework for tool boundaries, external access, and action-taking systems."
+    }
+  ],
+  "notes": "Module is primarily pedagogical and conceptual. It does not make specific historical, statistical, vendor-version, pricing, incident, or standards-bound claims that require inline citation under the seed rules.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

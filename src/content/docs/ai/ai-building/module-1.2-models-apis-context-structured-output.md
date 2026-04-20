@@ -190,3 +190,7 @@ Then answer:
 ## Next Module
 
 Continue to [Tools, Retrieval, and Boundaries](./module-1.3-tools-retrieval-and-boundaries/).
+
+## Sources
+
+- [New Tools and Features in the Responses API](https://openai.com/index/new-tools-and-features-in-the-responses-api/) — Provides current API-level context for model and tool selection, showing how application design choices shape capabilities like tool use and workflow orchestration.

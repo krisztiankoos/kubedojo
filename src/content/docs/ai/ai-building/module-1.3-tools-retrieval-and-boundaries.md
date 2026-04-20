@@ -188,3 +188,9 @@ Then compare:
 ## Next Module
 
 Continue to [Evaluation, Iteration, and Shipping v1](./module-1.4-evaluation-iteration-and-shipping-v1/).
+
+## Sources
+
+- [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) — Foundational paper on retrieval-augmented generation, relevant to the module's distinction between adding knowledge and extending capability.
+- [Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents) — Practical guidance on choosing tools, workflows, and human approvals instead of adding broad autonomy too early.
+- [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — Risk framework for tool boundaries, external access, and action-taking systems.

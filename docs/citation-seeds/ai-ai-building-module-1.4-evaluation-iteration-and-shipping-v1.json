@@ -1,0 +1,30 @@
+{
+  "module_key": "ai/ai-building/module-1.4-evaluation-iteration-and-shipping-v1",
+  "module_path": "src/content/docs/ai/ai-building/module-1.4-evaluation-iteration-and-shipping-v1.md",
+  "research_run_id": "2026-04-19T23:26:26+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://github.com/openai/evals",
+      "title": "OpenAI Evals",
+      "tier": "upstream",
+      "why_relevant": "Concrete examples and tooling for building repeatable eval sets and comparing changes over time."
+    },
+    {
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook",
+      "title": "NIST AI RMF Playbook",
+      "tier": "standards",
+      "why_relevant": "Useful for turning evaluation and review steps into an explicit shipping and governance practice."
+    },
+    {
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "title": "OWASP Top 10 for LLM Applications",
+      "tier": "standards",
+      "why_relevant": "Relevant when moving from prompt iteration to shipping, because it highlights common security and reliability risks in LLM features."
+    }
+  ],
+  "notes": "No inline citation candidates found. The module is predominantly pedagogical guidance and workflow advice; its numbers are instructional examples or exercise scaffolding rather than factual claims about real incidents, vendors, standards, or measured statistics.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
