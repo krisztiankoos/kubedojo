@@ -30,11 +30,11 @@ MLX gives Apple Silicon a serious learner path for:
 
 ## What MLX Is
 
-MLX is a machine learning framework from Apple’s ML research group, designed around Apple Silicon hardware.
+[MLX is a machine learning framework from Apple’s ML research group, designed around Apple Silicon hardware.](https://github.com/ml-explore/mlx)
 
 For learners, the important practical point is:
 
-> MLX gives Mac users a real local inference path that is not just an awkward imitation of someone else’s GPU stack
+> [MLX gives Mac users a real local inference path](https://github.com/ml-explore/mlx-lm) that is not just an awkward imitation of someone else’s GPU stack
 
 That makes it important pedagogically, not just technically.
 
@@ -152,3 +152,9 @@ If you do not have Apple Silicon:
 ## Next Module
 
 Continue to [Running Open Models on Linux Boxes](./module-1.5-running-open-models-on-linux-boxes/).
+
+## Sources
+
+- [MLX](https://github.com/ml-explore/mlx) — Primary upstream source describing MLX as Apple's array framework for machine learning on Apple Silicon.
+- [MLX LM](https://github.com/ml-explore/mlx-lm) — Upstream package showing practical large language model inference workflows built on MLX for Apple Silicon.
+- [MLX Examples](https://github.com/ml-explore/mlx-examples) — Upstream example collection demonstrating MLX across text, image, audio, and multimodal workloads.

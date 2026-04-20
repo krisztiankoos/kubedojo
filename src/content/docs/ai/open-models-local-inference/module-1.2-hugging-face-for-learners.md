@@ -44,21 +44,21 @@ That means you should not think:
 
 Think:
 
-> “Hugging Face is a major ecosystem for discovering, understanding, and using open models.”
+> “[Hugging Face is a major ecosystem for discovering, understanding, and using open models.](https://huggingface.co/docs/hub/index)”
 
 ## The Three Things Learners Confuse Most
 
 ### 1. Model repo
 
-This is the thing that contains model files, configs, tokenizer assets, and a model card.
+This is the thing that contains model files, configs, [tokenizer assets](https://huggingface.co/docs/transformers/main/main_classes/tokenizer), and a [model card](https://huggingface.co/docs/hub/en/models-uploading).
 
 ### 2. Library docs
 
-This is where you learn how to actually load or use the model with software such as Transformers.
+This is where you learn how to actually load or use the model with software such as [Transformers](https://huggingface.co/docs/transformers/main/en/index).
 
 ### 3. Community derivatives
 
-These are fine-tuned, quantized, merged, or repackaged versions.
+These are [fine-tuned, quantized, merged, or repackaged versions](https://huggingface.co/docs/hub/model-cards).
 
 These can be useful, but they are not automatically better than the original source model.
 
@@ -66,7 +66,7 @@ These can be useful, but they are not automatically better than the original sou
 
 When you open a model page, scan it in this order:
 
-1. model card summary
+1. [model card summary](https://huggingface.co/docs/hub/model-cards)
 2. intended use
 3. limitations
 4. license
@@ -172,3 +172,11 @@ Compare:
 ## Next Module
 
 Continue to [Quantization and Model Formats](./module-1.3-quantization-and-model-formats/).
+
+## Sources
+
+- [Hugging Face Hub Documentation](https://huggingface.co/docs/hub/index) — Explains how the Hub organizes models, datasets, Spaces, and repositories for learners.
+- [Uploading models](https://huggingface.co/docs/hub/en/models-uploading) — Shows what a Hugging Face model repository contains, including configuration and model card files.
+- [Tokenizer main classes](https://huggingface.co/docs/transformers/main/main_classes/tokenizer) — Documents tokenizer assets and related files used when preparing models for inference.
+- [Transformers Documentation](https://huggingface.co/docs/transformers/main/en/index) — Distinguishes the Transformers software library from model repositories and explains how models are loaded and used.
+- [Model Cards](https://huggingface.co/docs/hub/model-cards) — Describes the metadata and guidance model pages should include, such as intended use, limitations, and licensing.

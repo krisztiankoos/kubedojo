@@ -1,0 +1,109 @@
+{
+  "module_key": "ai/open-models-local-inference/module-1.2-hugging-face-for-learners",
+  "module_path": "src/content/docs/ai/open-models-local-inference/module-1.2-hugging-face-for-learners.md",
+  "research_run_id": "2026-04-20T00:16:59+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Hugging Face is a major ecosystem or hub for discovering, understanding, and using open models rather than a single model.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 35-39, 47 | section: What Hugging Face Actually Is",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/hub/index",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Hub overview describes Hugging Face as a central platform for sharing, exploring, and experimenting with open-source ML models and related resources."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "A model repo contains model files and configs, and typically includes a model card.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 53 | section: The Three Things Learners Confuse Most",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/hub/en/models-uploading",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Hugging Face's model-upload documentation says model repos can include checkpoints and configs and recommends adding a model card to the repo."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Tokenizer assets can be stored in a Hugging Face model repo.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 53 | section: The Three Things Learners Confuse Most",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/transformers/main/main_classes/tokenizer",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers tokenizer docs explicitly document pushing tokenizer files to the Model Hub."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Transformers is a library used to load and use models, distinct from a model repo.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 57 | section: The Three Things Learners Confuse Most",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/transformers/main/en/index",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers documentation identifies Transformers as a Hugging Face library for model definition, inference, and training."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Model cards cover intended use, limitations, and license information on Hugging Face model pages.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 69-74 | section: How To Read A Model Page",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/hub/model-cards",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The model card documentation says model cards should describe intended uses and limitations, and its metadata supports displaying license information."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Community derivatives can be fine-tuned, quantized, or merged versions derived from a base model.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 61-63, 108-112 | section: Community Derivatives",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/hub/model-cards",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Hugging Face's model card metadata docs explicitly describe derivative relationships such as fine-tunes, quantized models, adapters, and merges."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://huggingface.co/docs/hub/index",
+      "title": "Hugging Face Hub Documentation",
+      "tier": "vendor",
+      "why_relevant": "Gives learners the top-level mental model of the Hub and how models, datasets, Spaces, and repositories fit together."
+    },
+    {
+      "url": "https://huggingface.co/docs/hub/model-cards",
+      "title": "Model Cards",
+      "tier": "vendor",
+      "why_relevant": "Shows what information a good model page should contain, including intended use, limitations, and metadata."
+    },
+    {
+      "url": "https://huggingface.co/docs/transformers/main/en/index",
+      "title": "Transformers Documentation",
+      "tier": "vendor",
+      "why_relevant": "Helps learners distinguish the software library from a model repo and understand where loading and inference instructions live."
+    }
+  ],
+  "notes": "Most of the module is pedagogical guidance rather than source-dependent factual material; the seed focuses on the ecosystem-description and model-page structure claims that merit inline citations.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

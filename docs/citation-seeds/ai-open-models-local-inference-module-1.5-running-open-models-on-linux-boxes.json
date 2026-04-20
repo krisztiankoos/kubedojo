@@ -1,0 +1,96 @@
+{
+  "module_key": "ai/open-models-local-inference/module-1.5-running-open-models-on-linux-boxes",
+  "module_path": "src/content/docs/ai/open-models-local-inference/module-1.5-running-open-models-on-linux-boxes.md",
+  "research_run_id": "2026-04-20T00:32:27+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Linux is the most important learner path for moving from local experimentation toward serious control over AI systems.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Linux is still the most important learner path for people who want to move from local experimentation toward serious control over AI systems.",
+      "suggested_rewrite": "Linux remains a common learner path for people who want to move from local experimentation toward more direct control over AI systems.",
+      "lesson_point_url": null,
+      "rationale": "“Most important” is an uncited ranking claim with no defined comparison set or benchmark."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "A single-GPU workstation is often the best value Linux learner setup.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Three Common Learner Linux Paths",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "This is often the best value learner lane on Linux.",
+      "suggested_rewrite": "For many learners, this is a practical middle ground on Linux.",
+      "lesson_point_url": null,
+      "rationale": "“Best value” is a superlative without a cited cost/performance benchmark."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "On a Linux box with an NVIDIA GPU, CUDA becomes part of the runtime setup decision.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Where CUDA Actually Enters The Picture",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/transformers/en/installation",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Hugging Face’s Transformers install guide explicitly says GPU acceleration requires the appropriate CUDA drivers for PyTorch."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "GPU-backed Linux workflows add system-level dependencies beyond a basic Python environment, including drivers and runtime tooling.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Where CUDA Actually Enters The Picture",
+      "disposition": "soften_to_illustration",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "You do need to understand that GPU-backed Linux workflows usually stop being “just Python” and start depending on:",
+      "suggested_rewrite": "You do need to understand that GPU-backed Linux workflows often add system-level dependencies beyond a basic Python environment, for example:",
+      "lesson_point_url": "https://huggingface.co/docs/text-generation-inference/installation_nvidia",
+      "rationale": "The lesson is sound, but the original phrasing is too sweeping to support cleanly as written with a single source."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "CUDA is the most common way beginners encounter GPU-backed open-model work outside Apple Silicon.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Where CUDA Actually Enters The Picture",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "CUDA matters mostly in the Linux learner path because it is the most common way beginners encounter GPU-backed open-model work outside Apple Silicon.",
+      "suggested_rewrite": "On Linux, CUDA often enters the picture when learners use NVIDIA GPUs for local inference.",
+      "lesson_point_url": null,
+      "rationale": "“Most common” is a comparative ecosystem claim that is not grounded here in a cited market or usage source."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://huggingface.co/docs/transformers/en/installation",
+      "title": "Transformers Installation",
+      "tier": "vendor",
+      "why_relevant": "Shows the practical split between CPU-only installs and GPU-backed installs that require CUDA drivers."
+    },
+    {
+      "url": "https://huggingface.co/docs/text-generation-inference/installation_nvidia",
+      "title": "Using TGI with Nvidia GPUs",
+      "tier": "vendor",
+      "why_relevant": "Demonstrates the extra CUDA and container-tooling requirements that appear on Linux GPU serving paths."
+    },
+    {
+      "url": "https://huggingface.co/docs/hub/mlx",
+      "title": "Using MLX at Hugging Face",
+      "tier": "vendor",
+      "why_relevant": "Provides the Apple Silicon comparison point referenced in the module’s Linux-vs-Mac discussion."
+    }
+  ],
+  "notes": "Mostly pedagogical module; the main citation work is cleaning up uncited superlatives and grounding the CUDA/NVIDIA ecosystem statements.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

@@ -1,0 +1,57 @@
+{
+  "module_key": "ai/open-models-local-inference/module-1.4-mlx-on-apple-silicon",
+  "module_path": "src/content/docs/ai/open-models-local-inference/module-1.4-mlx-on-apple-silicon.md",
+  "research_run_id": "2026-04-20T00:27:10+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "MLX is a machine learning framework from Apple's machine learning research group, designed for Apple Silicon hardware.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What MLX Is",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/ml-explore/mlx",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The MLX repository README directly describes MLX as an array framework for machine learning on Apple silicon and says it is brought to users by Apple machine learning research."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "MLX provides Mac users with a practical local inference path for running open models on Apple Silicon.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What MLX Is | blockquote after introductory paragraph",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/ml-explore/mlx-lm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The MLX LM project directly documents text generation and fine-tuning of large language models on Apple silicon with MLX, which supports the module's local-inference claim."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/ml-explore/mlx",
+      "title": "MLX",
+      "tier": "upstream",
+      "why_relevant": "Primary upstream source for what MLX is, how it is designed, and which Apple Silicon features it targets."
+    },
+    {
+      "url": "https://github.com/ml-explore/mlx-lm",
+      "title": "MLX LM",
+      "tier": "upstream",
+      "why_relevant": "Shows the practical LLM inference workflow on Apple Silicon that learners would actually use."
+    },
+    {
+      "url": "https://github.com/ml-explore/mlx-examples",
+      "title": "MLX Examples",
+      "tier": "upstream",
+      "why_relevant": "Provides concrete examples across text, image, audio, and multimodal workloads for learners exploring MLX capabilities."
+    }
+  ],
+  "notes": "This module is mostly pedagogical and curriculum-framing prose; only the core MLX identity and local-inference capability claims clearly need inline citations.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

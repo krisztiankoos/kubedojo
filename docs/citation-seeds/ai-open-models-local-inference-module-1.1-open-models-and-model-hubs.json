@@ -1,0 +1,109 @@
+{
+  "module_key": "ai/open-models-local-inference/module-1.1-open-models-and-model-hubs",
+  "module_path": "src/content/docs/ai/open-models-local-inference/module-1.1-open-models-and-model-hubs.md",
+  "research_run_id": "2026-04-20T00:13:03+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Learners may encounter openly documented models that still require approval or terms before access.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Open Is Not One Thing",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/hub/en/models-gated",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Hugging Face documents gated models that have public model pages but still require access requests or approval before files can be downloaded."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Model cards on a model hub typically carry intended use, limitations, license metadata, and information about derivative relationships such as fine-tunes or quantized versions.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What A Model Hub Actually Does",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/hub/model-cards",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Hugging Face Model Cards documentation directly describes intended uses, limitations, license metadata, and base-model relationships including fine-tuned and quantized variants."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Gemma family: strong Google-backed open-model ecosystem, now including Gemma 4.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Examples Of Model Families You Will Encounter",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "strong Google-backed open-model ecosystem, now including Gemma 4",
+      "suggested_rewrite": "a Google-backed model family worth comparing alongside other open-model options",
+      "lesson_point_url": null,
+      "rationale": "Google's official Gemma documentation shows released Gemma families such as Gemma 3 and Gemma 3n, but not a supported 'Gemma 4' claim, so the version-specific statement should be removed."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Llama family: widely used reference point in open-model discussion.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Examples Of Model Families You Will Encounter",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "widely used reference point in open-model discussion",
+      "suggested_rewrite": "another model family to include in side-by-side comparisons",
+      "lesson_point_url": null,
+      "rationale": "This is a popularity judgment without a defined benchmark or source, so it should be rewritten as neutral instructional guidance."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Qwen family: strong multilingual and practical deployment interest.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Examples Of Model Families You Will Encounter",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "strong multilingual and practical deployment interest",
+      "suggested_rewrite": "a model family worth checking when multilingual support matters to your use case",
+      "lesson_point_url": null,
+      "rationale": "The line mixes a real capability area with an uncited qualitative judgment, so it should be reframed as comparison guidance rather than asserted as fact."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Mistral family: popular for efficient open-weight deployments.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Examples Of Model Families You Will Encounter",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "popular for efficient open-weight deployments",
+      "suggested_rewrite": "a model family worth checking when you care about smaller open-weight deployment options",
+      "lesson_point_url": null,
+      "rationale": "The bullet makes an unsupported popularity-and-efficiency judgment, so it should be rewritten to preserve the learning cue without the unbounded claim."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://huggingface.co/docs/hub/en/models-the-hub",
+      "title": "The Model Hub",
+      "tier": "vendor",
+      "why_relevant": "Gives a primary-source overview of what a modern model hub is for and how model repositories are organized."
+    },
+    {
+      "url": "https://huggingface.co/docs/hub/model-cards",
+      "title": "Model Cards",
+      "tier": "vendor",
+      "why_relevant": "Shows exactly what information responsible learners should look for before downloading or deploying a model."
+    },
+    {
+      "url": "https://huggingface.co/docs/hub/en/models-gated",
+      "title": "Gated Models",
+      "tier": "vendor",
+      "why_relevant": "Explains why some public model pages still require approval, license acknowledgment, or extra access conditions."
+    }
+  ],
+  "notes": "Most of the module is pedagogical framing. The citation-relevant material is concentrated in the model-hub mechanics and the named model-family examples, especially the incorrect Gemma 4 reference.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

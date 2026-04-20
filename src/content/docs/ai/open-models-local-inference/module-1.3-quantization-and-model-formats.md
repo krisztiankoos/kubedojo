@@ -31,7 +31,7 @@ This module fixes that.
 
 A full-precision model may simply not fit on the hardware you actually own.
 
-Quantization reduces the precision used to represent weights, which can:
+[Quantization reduces the precision used to represent weights](https://huggingface.co/docs/transformers/en/quantization/concept_guide), which can:
 - reduce memory requirements
 - make local inference feasible on smaller hardware
 - sometimes improve speed
@@ -48,7 +48,7 @@ At a beginner level, it is enough to understand:
 - **8-bit**: useful memory savings, often a practical compromise
 - **4-bit**: much smaller footprint, often the key to running larger models locally
 
-Different runtimes and libraries expose this in different ways, but the main decision is always the same:
+Different runtimes and libraries expose this in different ways, but the main decision is usually the same:
 
 How much quality and flexibility are you willing to trade for hardware fit?
 
@@ -67,7 +67,7 @@ Describes how weights are represented:
 
 Describes how the model is packaged for a runtime:
 - Hugging Face checkpoint formats
-- GGUF for llama.cpp-style workflows
+- [GGUF for llama.cpp-style workflows](https://huggingface.co/docs/transformers/gguf)
 - runtime-specific packaging in other ecosystems
 
 A model can be quantized **and** packaged in a particular format.
@@ -87,7 +87,7 @@ The exact file extension is less important than the decision it reflects:
 
 ## Why 4-Bit Became So Important
 
-4-bit quantization matters because it often turns “impossible on my machine” into “possible enough to learn with.”
+[4-bit quantization matters because it often turns “impossible on my machine” into “possible enough to learn with.”](https://huggingface.co/docs/transformers/en/main_classes/quantization)
 
 That is a huge difference for:
 - home labs
@@ -95,7 +95,7 @@ That is a huge difference for:
 - small desktops
 - local-first experimentation
 
-It is also why quantized open-model ecosystems grew so quickly.
+It is also why quantized model variants matter so much in local-inference workflows.
 
 ## What Quantization Does Not Solve
 
@@ -161,3 +161,10 @@ Take one open model and write down:
 ## Next Module
 
 Continue to [MLX on Apple Silicon](./module-1.4-mlx-on-apple-silicon/).
+
+## Sources
+
+- [Quantization concepts](https://huggingface.co/docs/transformers/en/quantization/concept_guide) — Explains how lower-precision weight representations change memory use, speed, and quality tradeoffs.
+- [GGUF](https://huggingface.co/docs/transformers/gguf) — Describes the GGUF file format and its role in llama.cpp-style local inference workflows.
+- [Transformers quantization](https://huggingface.co/docs/transformers/en/main_classes/quantization) — Documents practical lower-bit quantization support and loading options for running models on constrained hardware.
+- [QLoRA: Efficient Finetuning of Quantized LLMs](https://arxiv.org/abs/2305.14314) — Provides deeper background on why 4-bit quantization became important for practical work with larger models.

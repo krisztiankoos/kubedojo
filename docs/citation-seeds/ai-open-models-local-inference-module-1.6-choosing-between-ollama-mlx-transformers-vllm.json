@@ -1,0 +1,89 @@
+{
+  "module_key": "ai/open-models-local-inference/module-1.6-choosing-between-ollama-mlx-transformers-vllm",
+  "module_path": "src/content/docs/ai/open-models-local-inference/module-1.6-choosing-between-ollama-mlx-transformers-vllm.md",
+  "research_run_id": "2026-04-20T00:36:37+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Ollama provides simple local installation and exposes a local REST API for running and managing models.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Four Useful Runtime Roles > Ollama",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/ollama/ollama/blob/main/README.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Ollama README directly documents local installation paths and its REST API."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "MLX and MLX LM are designed for Apple Silicon and provide a native local path for running LLM workloads on Macs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Four Useful Runtime Roles > MLX",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/ml-explore/mlx-lm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The MLX LM project explicitly presents itself as a package for generating text and fine-tuning LLMs with MLX on Apple silicon."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Hugging Face Transformers supports direct model loading and pipeline-based inference, making it suitable for flexible experimentation and engineering workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Four Useful Runtime Roles > Hugging Face Transformers",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/transformers/en/quicktour",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers quickstart directly covers loading pretrained models and using pipelines for inference."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "vLLM is an inference and serving engine oriented toward high-throughput LLM serving patterns.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Four Useful Runtime Roles > vLLM",
+      "disposition": "supported",
+      "proposed_url": "https://github.com/vllm-project/vllm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The vLLM README directly describes it as a high-throughput inference and serving engine for LLMs."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/ollama/ollama/blob/main/README.md",
+      "title": "Ollama README",
+      "tier": "upstream",
+      "why_relevant": "Useful for understanding Ollama's install flow, CLI, and local API model."
+    },
+    {
+      "url": "https://github.com/ml-explore/mlx-lm",
+      "title": "MLX LM README",
+      "tier": "upstream",
+      "why_relevant": "Shows the Apple Silicon-focused MLX path for local LLM inference and related workflows."
+    },
+    {
+      "url": "https://huggingface.co/docs/transformers/en/quicktour",
+      "title": "Transformers Quickstart",
+      "tier": "vendor",
+      "why_relevant": "Covers the core abstractions that make Transformers useful for direct engineering experimentation."
+    },
+    {
+      "url": "https://github.com/vllm-project/vllm",
+      "title": "vLLM README",
+      "tier": "upstream",
+      "why_relevant": "Explains the serving-focused design and throughput-oriented features behind vLLM."
+    }
+  ],
+  "notes": "Most of the module is pedagogical guidance and repeated scenario framing. The main inline-citation needs are the four runtime capability mappings above; later stage/default examples mostly restate those same supported capabilities.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

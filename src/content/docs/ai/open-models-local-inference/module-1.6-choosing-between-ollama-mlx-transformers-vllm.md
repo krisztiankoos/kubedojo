@@ -37,7 +37,7 @@ Best for:
 - very fast local setup
 - simple experimentation
 - trying models quickly
-- approachable local APIs
+- [approachable local APIs](https://github.com/ollama/ollama/blob/main/README.md)
 
 Weak at:
 - teaching deeper runtime internals
@@ -46,7 +46,7 @@ Weak at:
 ### MLX
 
 Best for:
-- Apple Silicon local-first workflows
+- [Apple Silicon local-first workflows](https://github.com/ml-explore/mlx-lm)
 - Mac learners who want a serious native path
 
 Weak at:
@@ -56,7 +56,7 @@ Weak at:
 
 Best for:
 - engineering understanding
-- flexible loading and experimentation
+- [flexible loading and experimentation](https://huggingface.co/docs/transformers/en/quicktour)
 - direct access to the open-model software ecosystem
 
 Weak at:
@@ -66,7 +66,7 @@ Weak at:
 
 Best for:
 - more serious serving patterns
-- throughput-oriented inference
+- [throughput-oriented inference](https://github.com/vllm-project/vllm)
 - production-style serving concepts
 
 Weak at:
@@ -199,3 +199,10 @@ From here, continue to:
 - [AI/ML Engineering: AI-Native Development](../../ai-ml-engineering/ai-native-development/)
 - [AI/ML Engineering: Vector Search & RAG](../../ai-ml-engineering/vector-rag/)
 - [AI/ML Engineering: AI Infrastructure](../../ai-ml-engineering/ai-infrastructure/)
+
+## Sources
+
+- [Ollama README](https://github.com/ollama/ollama/blob/main/README.md) — Useful for understanding Ollama's install flow, CLI, and local API model.
+- [MLX LM README](https://github.com/ml-explore/mlx-lm) — Shows the Apple Silicon-focused MLX path for local LLM inference and related workflows.
+- [Transformers Quickstart](https://huggingface.co/docs/transformers/en/quicktour) — Covers the core abstractions that make Transformers useful for direct engineering experimentation.
+- [vLLM README](https://github.com/vllm-project/vllm) — Explains the serving-focused design and throughput-oriented features behind vLLM.

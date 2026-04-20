@@ -9,7 +9,7 @@ sidebar:
 
 ## Why This Module Matters
 
-Linux is still the most important learner path for people who want to move from local experimentation toward serious control over AI systems.
+Linux remains a common learner path for people who want to move from local experimentation toward more direct control over AI systems.
 
 But “Linux box” can mean very different things:
 - a CPU-only mini PC
@@ -62,7 +62,7 @@ Good for:
 - stronger experimentation
 - realistic local-first development
 
-This is often the best value learner lane on Linux.
+For many learners, this is a practical middle ground on Linux.
 
 For many learners, this also means:
 - NVIDIA GPU
@@ -120,17 +120,17 @@ These questions matter more than brand loyalty to a particular runtime.
 
 ## Where CUDA Actually Enters The Picture
 
-CUDA matters mostly in the Linux learner path because it is the most common way beginners encounter GPU-backed open-model work outside Apple Silicon.
+On Linux, CUDA often enters the picture when learners use NVIDIA GPUs for local inference.
 
 The practical rule is simple:
 
 - no GPU or unsupported GPU: stay CPU-first and learn the runtime model
-- NVIDIA GPU available: CUDA becomes part of the runtime decision
+- [NVIDIA GPU available: CUDA becomes part of the runtime decision](https://huggingface.co/docs/transformers/en/installation)
 - serious local serving or fine-tuning ambitions: CUDA awareness becomes essential
 
 You do not need to master CUDA internals in this section.
 
-You do need to understand that GPU-backed Linux workflows usually stop being “just Python” and start depending on:
+You do need to understand that GPU-backed Linux workflows often add system-level dependencies beyond a basic Python environment, for example:
 - driver compatibility
 - framework build compatibility
 - container/runtime choice
@@ -202,3 +202,9 @@ Write a short profile of your Linux box:
 ## Next Module
 
 Continue to [Choosing Between Ollama, MLX, Transformers, and vLLM](./module-1.6-choosing-between-ollama-mlx-transformers-vllm/).
+
+## Sources
+
+- [Transformers Installation](https://huggingface.co/docs/transformers/en/installation) — Shows the practical split between CPU-only installs and GPU-backed installs that require CUDA drivers.
+- [Using TGI with Nvidia GPUs](https://huggingface.co/docs/text-generation-inference/installation_nvidia) — Demonstrates the extra CUDA and container-tooling requirements that appear on Linux GPU serving paths.
+- [Using MLX at Hugging Face](https://huggingface.co/docs/hub/mlx) — Provides the Apple Silicon comparison point referenced in the module’s Linux-vs-Mac discussion.

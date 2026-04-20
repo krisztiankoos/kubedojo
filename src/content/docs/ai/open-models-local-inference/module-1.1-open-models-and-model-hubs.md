@@ -39,7 +39,7 @@ The first skill is understanding what you are actually looking at:
 In practice, learners encounter several different situations:
 - open weights with a permissive license
 - open weights with usage restrictions
-- openly documented models that still require approval or terms
+- [openly documented models that still require approval or terms](https://huggingface.co/docs/hub/en/models-gated)
 - open-source tooling around models that are not themselves fully open
 
 This matters because “open” is not the same as:
@@ -55,7 +55,7 @@ A model hub is not just a download page.
 It is usually the place where you find:
 - model files
 - tokenizer files
-- model cards
+- [model cards](https://huggingface.co/docs/hub/model-cards)
 - example usage
 - licenses
 - community derivatives
@@ -92,10 +92,10 @@ These questions prevent a common beginner mistake:
 
 ## Examples Of Model Families You Will Encounter
 
-- **Gemma family**: strong Google-backed open-model ecosystem, now including Gemma 4
-- **Llama family**: widely used reference point in open-model discussion
-- **Qwen family**: strong multilingual and practical deployment interest
-- **Mistral family**: popular for efficient open-weight deployments
+- **Gemma family**: a Google-backed model family worth comparing alongside other open-model options
+- **Llama family**: another model family to include in side-by-side comparisons
+- **Qwen family**: a model family worth checking when multilingual support matters to your use case
+- **Mistral family**: a model family worth checking when you care about smaller open-weight deployment options
 
 The lesson is not to worship one family.
 
@@ -169,3 +169,9 @@ Pick three open models from a hub and compare:
 ## Next Module
 
 Continue to [Hugging Face for Learners](./module-1.2-hugging-face-for-learners/).
+
+## Sources
+
+- [Gated Models](https://huggingface.co/docs/hub/en/models-gated) — Explains how public model pages can still require approval, access requests, or license acknowledgment.
+- [Model Cards](https://huggingface.co/docs/hub/model-cards) — Describes the documentation fields learners should inspect, including intended use, limitations, and licensing context.
+- [The Model Hub](https://huggingface.co/docs/hub/en/models-the-hub) — Provides a primary-source overview of what a model hub contains and how repositories are organized.

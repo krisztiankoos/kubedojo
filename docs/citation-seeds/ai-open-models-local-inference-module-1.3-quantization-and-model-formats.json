@@ -1,0 +1,83 @@
+{
+  "module_key": "ai/open-models-local-inference/module-1.3-quantization-and-model-formats",
+  "module_path": "src/content/docs/ai/open-models-local-inference/module-1.3-quantization-and-model-formats.md",
+  "research_run_id": "2026-04-20T00:22:18+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Quantization represents model weights with lower-precision data types, reducing memory/computational cost while introducing efficiency-versus-quality tradeoffs.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Start With The Problem Quantization Solves",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/transformers/en/quantization/concept_guide",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Hugging Face quantization concept guide directly explains lower-precision representation, smaller memory footprint, faster inference, and the accuracy tradeoff."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "GGUF is a model file format used for inference with GGML/llama.cpp-style workflows and supports quantized model storage for local inference.",
+      "claim_class": "vendor_capability",
+      "span_hint": "sections: Quantization Is Not The Same As File Format; Why GGUF Matters",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/transformers/gguf",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The GGUF documentation directly describes GGUF as an inference-oriented format for GGML and notes support for many quantized data types."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "4-bit quantization is often what makes larger models feasible to load and run on smaller local hardware.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Why 4-Bit Became So Important",
+      "disposition": "supported",
+      "proposed_url": "https://huggingface.co/docs/transformers/en/main_classes/quantization",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers quantization docs explicitly tie 4-bit and 8-bit quantization to loading larger models that otherwise would not fit in memory."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Quantized open-model ecosystems grew quickly because 4-bit quantization made local use practical.",
+      "claim_class": "statistic",
+      "span_hint": "section: Why 4-Bit Became So Important",
+      "disposition": "cannot_be_salvaged",
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "It is also why quantized open-model ecosystems grew so quickly.",
+      "suggested_rewrite": "It is also why quantized model variants matter so much in local-inference workflows.",
+      "lesson_point_url": null,
+      "rationale": "This is a broad causal ecosystem-history claim without a bounded primary source and is not necessary to preserve the teaching point."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://huggingface.co/docs/transformers/en/quantization/concept_guide",
+      "title": "Quantization concepts",
+      "tier": "vendor",
+      "why_relevant": "Good primary background on what quantization changes in memory, speed, and accuracy terms."
+    },
+    {
+      "url": "https://huggingface.co/docs/transformers/gguf",
+      "title": "GGUF",
+      "tier": "vendor",
+      "why_relevant": "Explains what GGUF is, what it stores, and how it relates to quantized local inference workflows."
+    },
+    {
+      "url": "https://arxiv.org/abs/2305.14314",
+      "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+      "tier": "standards",
+      "why_relevant": "Useful deeper reading on why 4-bit quantization became important for making larger models practical on constrained hardware."
+    }
+  ],
+  "notes": "Most remaining content is pedagogical framing, learner guidance, quiz material, or exercises and does not need inline citations at kubernetes.io/docs-style density.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
