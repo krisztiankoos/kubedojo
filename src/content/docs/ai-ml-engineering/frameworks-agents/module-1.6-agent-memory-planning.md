@@ -37,7 +37,7 @@ Without execution budgets and circuit breakers, a misbehaving agent can hammer i
 
 ### The Memory Problem
 
-Think of an AI agent without memory like a brilliant amnesiac doctor. They can diagnose any condition flawlessly in the moment, but if you come back tomorrow, they'll have no idea who you are, what they diagnosed, or what treatment they recommended. You'd have to explain your entire medical history from scratch every single visit. Memory systems fix this by giving agents the equivalent of medical records, contextual notes, and institutional knowledge.
+Think of an AI agent without memory like a brilliant amnesiac doctor. They can diagnose any condition flawlessly in the moment, but if you come back tomorrow, they'll have no idea who you are, what they diagnosed, or what treatment they recommended. You'd usually have to explain your medical history from scratch at each visit. Memory systems fix this by giving agents the equivalent of medical records, contextual notes, and institutional knowledge.
 
 Consider this conversation:
 
@@ -595,9 +595,9 @@ Provide a concise summary of what was accomplished and any issues."""
 
 ### Planning Pattern 2: ReWOO (Reason Without Observation)
 
-The standard ReAct (Reason and Act) framework revolutionized early agent design by forcing the LLM to 'think' out loud before taking an action. However, ReAct is strictly synchronous and sequential. The model must halt, wait for the network to return a tool's output, ingest that output, and then generate its next thought. This synchronous blocking is deeply inefficient. 
+The standard [ReAct (Reason and Act) framework](https://arxiv.org/abs/2210.03629) revolutionized early agent design by forcing the LLM to 'think' out loud before taking an action. However, ReAct is strictly synchronous and sequential. The model must halt, wait for the network to return a tool's output, ingest that output, and then generate its next thought. This synchronous blocking is deeply inefficient. 
 
-The ReWOO framework elegantly solves this by recognizing that many complex workflows utilize deterministic, predictable tool chains. By decoupling reasoning from observation, ReWOO-style systems can plan tool use upfront and then perform a final synthesis step after tool execution, which can reduce token use and sometimes reduce latency.
+The ReWOO framework elegantly solves this by recognizing that many complex workflows utilize deterministic, predictable tool chains. [By decoupling reasoning from observation, ReWOO-style systems can plan tool use upfront](https://arxiv.org/abs/2305.18323) and then perform a final synthesis step after tool execution, which can reduce token use and sometimes reduce latency.
 
 ```mermaid
 sequenceDiagram
@@ -756,7 +756,7 @@ Based on this evidence, provide your final answer:"""
 
 ### Planning Pattern 3: Tree of Thought (ToT)
 
-The most advanced pattern. It explores multiple reasoning paths simultaneously, continuously evaluating and pruning weak branches until the optimal path is locked in. This mimics deep, deliberative human thinking and is highly effective for complex, multi-variable logic puzzles, though it is the most computationally expensive planning algorithm available.
+The most advanced pattern. It [explores multiple reasoning paths simultaneously, continuously evaluating and pruning weak branches](https://arxiv.org/abs/2305.10601) until the optimal path is locked in. This mimics deep, deliberative human thinking and is highly effective for complex, multi-variable logic puzzles, though it is the most computationally expensive planning algorithm available.
 
 ```mermaid
 graph TD
@@ -1234,7 +1234,7 @@ flowchart TD
 
 ### Architecture 4: Debate
 
-Multiple agents inherently arguing distinct paths exposes logical hallucinations and establishes empirical ground truth. By pitting agents against one another and bringing in an impartial arbitrator agent, you dramatically reduce factual error rates.
+Multiple agents inherently arguing distinct paths exposes logical hallucinations and establishes empirical ground truth. By pitting agents against one another and bringing in an impartial arbitrator agent, you can sometimes surface disagreements and catch factual errors that a single-pass workflow might miss.
 
 ```python
 @dataclass
@@ -1632,7 +1632,7 @@ Your solution:"""
 
 ### The Complete Autonomous Agent
 
-Deploying this within a Kubernetes cluster (targeting v1.35 or higher using standard `batch/v1` Jobs) yields a robust, resilient background worker that leverages every tool discussed so far. We utilize Kubernetes Jobs instead of standard Deployments because agent tasks are inherently finite and batch-oriented. You want the pod to terminate successfully once the task is complete, freeing up cluster resources. Furthermore, by defining strict `resources.limits` for CPU and memory, and wrapping the execution in a timeout mechanism, we provide a container-level safety net against infinite loops that the application-level constraints might miss.
+Deploying this within a Kubernetes cluster (targeting v1.35 or higher using standard [`batch/v1` Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/)) yields a robust, resilient background worker that leverages every tool discussed so far. We utilize Kubernetes Jobs instead of standard Deployments because agent tasks are inherently finite and batch-oriented. You want the pod to terminate successfully once the task is complete, freeing up cluster resources. Furthermore, by defining strict [`resources.limits` for CPU and memory](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/), and wrapping the execution in a timeout mechanism, we provide a container-level safety net against infinite loops that the application-level constraints might miss.
 
 ```python
 from dataclasses import dataclass, field
@@ -1754,7 +1754,7 @@ Assistant:"""
 
 ### The Token Multiplication Problem
 
-A simple query to a regular stateless chatbot ("What's the weather?") might consume ~500 tokens. Handing that exact same objective to an autonomous agent scales the execution cost drastically:
+A simple query to a regular stateless chatbot can be relatively cheap in tokens. Handing that exact same objective to an autonomous agent scales the execution cost drastically:
 
 ```mermaid
 pie title Token Consumption Breakdown
@@ -1767,7 +1767,7 @@ pie title Token Consumption Breakdown
     "Memory storage" : 200
 ```
 
-At premium model pricing, an autonomous agent can cost several times more per task than a simple stateless chat response, so token use needs to be budgeted explicitly. Token usage must be treated as a primary constraint parameter when designing production agents.
+At metered token pricing, an autonomous agent can cost materially more per task than a simple stateless chat response, so token use needs to be budgeted explicitly. Token usage must be treated as a primary constraint parameter when designing production agents.
 
 ### The Latency Tax
 
@@ -1796,11 +1796,6 @@ For user-facing agents, long waits need visible progress indicators or asynchron
 ---
 
 ### Did You Know?
-1. Researchers introduced "Voyager," a Minecraft agent that writes and reuses executable skills autonomously as it explores.
-2. Teams often underestimate agent token consumption because reflection loops and verbose tool outputs add hidden cost.
-3. Many agent failures cluster around a small set of recurring issues, including tool selection, context management, looping behavior, formatting, and hallucinations.
-4. Large model providers use extensive automated evaluations before release to catch logic and safety regressions that human testing alone can miss.
-
 ---
 
 ## Production Horror Stories
@@ -2277,7 +2272,7 @@ Reasoning paths scoring below the baseline threshold are usually pruned from the
 </details>
 
 <details>
-<summary><strong>Scenario 6:</strong> A developer deploys a standard ReAct agent to extract unstructured data from 10,000 PDF invoices using a highly predictable text-extraction toolchain, but the API token costs are astronomical. They switch the architecture to a ReWOO (Reason Without Observation) pattern, and the costs immediately drop by 60 percent. Why did this specific architectural change resolve the token explosion in this scenario?</summary>
+<summary><strong>Scenario 6:</strong> A developer deploys a standard ReAct agent to extract unstructured data from 10,000 PDF invoices using a highly predictable text-extraction toolchain, but the API token costs are astronomical. They switch the architecture to a ReWOO (Reason Without Observation) pattern, and the costs drop by 60 percent. Why did this specific architectural change resolve the token explosion in this scenario?</summary>
 
 In this scenario, ReWOO drastically reduces the sheer number of expensive LLM reasoning calls by generating the entire tool execution plan upfront, long before observing any intermediate network results. In deep contrast, standard ReAct typically requires the LLM to recursively process accumulated context, formulate a thought, and generate an action payload after each tool result. Because the text-extraction toolchain is highly predictable, ReWOO can batch the execution layer, meaning the LLM only ever needs to be invoked twice overall (once to plan, once to solve), slashing token consumption by 60 percent compared to ReAct's continuous looping.
 </details>
@@ -2289,3 +2284,14 @@ In this scenario, ReWOO drastically reduces the sheer number of expensive LLM re
 Now that you have implemented scalable memory architectures and contained the chaos of runaway planning algorithms, it's time to secure these pipelines for real-world enterprise traffic.
 
 Move on to **[Module 1.7: Multi-Agent Systems](./module-1.7-multi-agent-systems)** to master coordination patterns, observability tracing, RBAC-compliant tool execution, and fail-safe human-in-the-loop (HITL) checkpoints.
+
+## Sources
+
+- [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629) — Primary source for the ReAct pattern discussed in the planning section.
+- [ReWOO: Decoupling Reasoning from Observations for Efficient Augmented Language Models](https://arxiv.org/abs/2305.18323) — Primary source for planning tool use upfront and reducing repeated reasoning overhead.
+- [Tree of Thoughts: Deliberate Problem Solving with Large Language Models](https://arxiv.org/abs/2305.10601) — Primary source for multi-branch reasoning with evaluation and pruning.
+- [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) — Kubernetes documentation for one-off batch workloads that run to completion.
+- [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — Kubernetes documentation for declaring CPU and memory requests and limits.
+- [Voyager: An Open-Ended Embodied Agent with Large Language Models](https://arxiv.org/abs/2305.16291) — Primary source for the Voyager example in the module's autonomous-agent discussion.
+- [Lost in the Middle: How Language Models Use Long Contexts](https://arxiv.org/abs/2307.03172) — Further reading on why larger context windows do not eliminate retrieval and memory design problems.
+- [OpenAI API Pricing](https://openai.com/api/pricing/) — Further reading for illustrative cost comparisons in the production economics section.
