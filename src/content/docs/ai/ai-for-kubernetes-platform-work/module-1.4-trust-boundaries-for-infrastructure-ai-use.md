@@ -168,3 +168,9 @@ That is the difference between disciplined augmentation and reckless delegation.
 ## Next Module
 
 Continue to [AI/ML Engineering](../../ai-ml-engineering/) if you want to build and operate deeper AI systems.
+
+## Sources
+
+- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework) — Provides a primary framework for assigning controls, oversight, and accountability around AI-assisted decisions.
+- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — Covers common failure modes and security risks that matter when AI is used near sensitive infrastructure workflows.
+- [Kubernetes Admission Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/) — Useful background for the module's idea that high-risk actions should be constrained by explicit safeguards rather than improvised model behavior.

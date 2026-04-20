@@ -1,0 +1,30 @@
+{
+  "module_key": "ai/ai-for-kubernetes-platform-work/module-1.4-trust-boundaries-for-infrastructure-ai-use",
+  "module_path": "src/content/docs/ai/ai-for-kubernetes-platform-work/module-1.4-trust-boundaries-for-infrastructure-ai-use.md",
+  "research_run_id": "2026-04-19T23:46:44+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "title": "NIST AI Risk Management Framework",
+      "tier": "standards",
+      "why_relevant": "Provides a primary framework for assigning controls, oversight, and accountability around AI-assisted decisions."
+    },
+    {
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "title": "OWASP Top 10 for LLM Applications",
+      "tier": "standards",
+      "why_relevant": "Covers common failure modes and security risks that matter when AI is used near sensitive infrastructure workflows."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/",
+      "title": "Kubernetes Admission Controllers",
+      "tier": "standards",
+      "why_relevant": "Useful background for the module's idea that high-risk actions should be constrained by explicit safeguards rather than improvised model behavior."
+    }
+  ],
+  "notes": "No inline-citation candidates identified. The module is primarily pedagogical guidance about trust boundaries, human review, and workflow design, without specific incidents, statistics, standards claims by name, versioned vendor behavior, or dated factual assertions.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

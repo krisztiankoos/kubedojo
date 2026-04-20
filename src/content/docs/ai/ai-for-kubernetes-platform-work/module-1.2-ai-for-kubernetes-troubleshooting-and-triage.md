@@ -191,3 +191,9 @@ It becomes harmful when it:
 ## Next Module
 
 Continue to [AI for Platform and SRE Workflows](./module-1.3-ai-for-platform-and-sre-workflows/).
+
+## Sources
+
+- [Monitoring, Logging, and Debugging](https://kubernetes.io/docs/tasks/debug/) — Official Kubernetes guidance on collecting evidence and debugging workloads or clusters.
+- [Troubleshooting Applications](https://kubernetes.io/docs/tasks/debug/debug-application/) — Covers practical Kubernetes troubleshooting workflows that support an evidence-first triage process.
+- [kubectl debug Reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/) — Reference for `kubectl debug`, useful as follow-on reading for hands-on debugging after triage.

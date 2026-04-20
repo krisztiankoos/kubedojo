@@ -1,0 +1,30 @@
+{
+  "module_key": "ai/ai-for-kubernetes-platform-work/module-1.2-ai-for-kubernetes-troubleshooting-and-triage",
+  "module_path": "src/content/docs/ai/ai-for-kubernetes-platform-work/module-1.2-ai-for-kubernetes-troubleshooting-and-triage.md",
+  "research_run_id": "2026-04-19T23:30:31+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 2,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/",
+      "title": "Monitoring, Logging, and Debugging",
+      "tier": "standards",
+      "why_relevant": "Provides the official Kubernetes entry point for gathering evidence and debugging applications or clusters."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/",
+      "title": "Troubleshooting Applications",
+      "tier": "standards",
+      "why_relevant": "Covers common Kubernetes troubleshooting workflows that align with the module's evidence-first triage approach."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/",
+      "title": "kubectl debug Reference",
+      "tier": "standards",
+      "why_relevant": "Useful follow-on reading for practitioners who want concrete debugging mechanisms after learning the triage structure."
+    }
+  ],
+  "notes": "No inline citation candidates detected. The module is primarily procedural and pedagogical, and it avoids specific incidents, statistics, standards-by-name, versioned vendor behavior, pricing, and security-event claims that would require inline sourcing.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
