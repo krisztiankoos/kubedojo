@@ -13,14 +13,14 @@ sidebar:
 
 ## Why This Module Matters
 
-In late 2024, a leading European financial analytics firm known as QuantLogix attempted to fine-tune a massive 70-billion parameter language model to parse complex, multi-lingual regulatory documents.
-The engineering team was strictly constrained by an on-premise infrastructure budget utilizing a cluster of 8x H100 GPUs.
+Teams adapting very large language models to specialized regulatory text can run into adaptation limits that standard LoRA does not always handle well.
+The team was also working under tight GPU and infrastructure constraints.
 They initially relied on standard Low-Rank Adaptation (LoRA) to execute the task.
 The team expected a straightforward fine-tuning process to align the open-weight model with strict European financial syntax and proprietary analytical frameworks.
 However, they soon discovered that the model systematically failed to adapt its stylistic tone while maintaining factual accuracy across lengthy context windows.
 The standard LoRA-tuned model exhibited severe catastrophic forgetting of the base model's intricate reasoning capabilities.
 It frequently hallucinated basic arithmetic when pushed into niche financial domains that deviated slightly from the training set.
-This structural failure led to a botched beta deployment that ultimately cost the firm $2.3 million in delayed enterprise contracts, wasted computational cycles, and severe reputational damage among their exclusive early-access clients.
+The result was a failed pilot that wasted compute and delayed downstream business goals.
 
 The core engineering team spent weeks running isolated diagnostics across their neural architecture to identify the exact root cause of this high-profile failure.
 They eventually realized that standard LoRA's mathematical foundation—specifically its permanently coupled update of weight magnitude and weight direction—was fundamentally unsuited for tasks requiring massive shifts in representational direction.
@@ -28,7 +28,7 @@ When the model attempted to learn the highly specific, rigid syntax of regulator
 This destabilized the delicate activation ranges established during the model's initial, multi-million dollar pre-training phase.
 By migrating their entire continuous training pipeline to Weight-Decomposed Low-Rank Adaptation (DoRA), the team successfully decoupled these vector updates and fully restored training stability.
 
-The newly deployed DoRA-tuned model achieved absolute parity with full fine-tuning evaluation benchmarks while consuming only 12 percent of the VRAM required for a full parameter update.
+DoRA is designed to narrow the gap to full fine-tuning while preserving PEFT-style efficiency, but the exact quality and memory trade-offs depend on the model, task, rank, and implementation.
 This single architectural shift saved the core project, stabilized their production inference engine, and established a new internal standard for Parameter-Efficient Fine-Tuning (PEFT) across their multinational organization.
 As standard LoRA reveals its inherent limitations in complex reasoning, highly specific domain adaptation, and long-context generation tasks, modern PEFT techniques like DoRA and PiSSA (Principal Singular Values and Singular Vectors Adaptation) have emerged to bridge the critical performance gap.
 Understanding how to correctly leverage these advanced decomposition strategies is no longer optional for AI engineers dealing with modern frontier models.
@@ -48,7 +48,7 @@ After completing this comprehensive module, you will be able to:
 
 To truly appreciate the architectural elegance and operational superiority of DoRA and PiSSA, we must first deeply dissect the mathematical and practical limitations of standard LoRA.
 Standard LoRA operates on the principle of updating a frozen, pre-trained weight matrix by adding a low-rank decomposition matrix during the forward pass.
-If we define the pre-trained weight matrix as $W_0 \in \mathbb{R}^{d \times k}$, LoRA injects an update matrix defined mathematically as $\Delta W = BA$.
+If we define the pre-trained weight matrix as $W_0 \in \mathbb{R}^{d \times k}$, [LoRA injects an update matrix defined mathematically as $\Delta W = BA$](https://arxiv.org/abs/2106.09685).
 In this equation, $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$, and the chosen rank $r$ is significantly smaller than both spatial dimensions $d$ and $k$.
 While this specific mathematical approach is highly efficient in terms of memory footprint and total trainable parameter count, standard LoRA forces a strict, unavoidable correlation between the magnitude and the direction of the resulting weight updates.
 
@@ -85,7 +85,7 @@ This cascade of activation failures precisely explains why heavily LoRA-tuned mo
 Weight-Decomposed Low-Rank Adaptation, commonly abbreviated as DoRA, solves the magnitude-direction coupling problem gracefully.
 It takes profound mathematical inspiration from a classic deep learning technique known as weight normalization.
 DoRA fundamentally restructures the adaptation architecture by explicitly decomposing the pre-trained weight matrix into two distinct, independently manageable components.
-These components are a scalar magnitude vector ($m$) and a structural directional matrix ($V$).
+These components are [a scalar magnitude vector ($m$) and a structural directional matrix ($V$)](https://arxiv.org/abs/2402.09353).
 
 Mathematically, any dense weight matrix $W$ can be flawlessly decomposed and represented via the following elegant equation:
 $W = m \frac{V}{\|V\|_c}$
@@ -99,7 +99,7 @@ In the practical DoRA architecture, the initial pre-trained base weights $W_0$ a
 During the fine-tuning optimization process, the magnitude vector $m$ is defined as a highly efficient, fully trainable parameter set.
 Because it is a simple one-dimensional vector rather than a massive two-dimensional matrix, it adds a trivially small number of parameters to the overall model footprint.
 This preserves PEFT's core advantages while solving the fundamental coupling flaw.
-The directional matrix $V$, however, is far too massive to train directly without immediately losing the compute efficiency that teams require.
+The directional matrix $V$, however, is typically far too massive to train directly without quickly eroding the compute efficiency that teams usually require.
 Therefore, DoRA updates the directional matrix using a low-rank mechanism that is mathematically nearly identical to standard LoRA:
 $V' = W_0 + BA$
 
@@ -188,8 +188,8 @@ dora_model.print_trainable_parameters()
 
 In the Python implementation script above, initializing the base model with `load_in_4bit=True` demonstrates a very common, highly effective production workflow.
 The base model is aggressively quantized via the `bitsandbytes` library to fit comfortably within the strict VRAM constraints of consumer or edge-grade hardware deployments.
-DoRA is natively and fully compatible with these Quantized Low-Rank Adaptation (QLoRA) precision workflows, offering massive flexibility for budget-constrained teams.
-The most critical addition to the script is the `use_dora=True` parameter passed explicitly to the configuration object.
+PEFT documents DoRA use with bitsandbytes-quantized weights, but compatibility still depends on the surrounding training stack.
+The most critical addition to the script is the [`use_dora=True` parameter](https://huggingface.co/docs/peft/developer_guides/lora) passed explicitly to the configuration object.
 When you execute the script and print the trainable parameters, you will visually notice a slight, mathematically calculated increase compared to a standard LoRA run initialized with the exact same rank and target modules.
 This explicit delta represents the newly added magnitude vectors ($m$), which strategically add exactly one parameter for every output dimension of the targeted linear layers.
 This minimal parameter overhead is a microscopic price to pay for the massive, empirical boost in representational expressiveness.
@@ -214,13 +214,13 @@ SVD is a foundational theorem of linear algebra that factorizes any given real m
 $W = U \Sigma V^T$
 
 In this specific decomposition, the matrix $U$ contains the left singular vectors, the matrix $V^T$ contains the right singular vectors, and $\Sigma$ is a vital diagonal matrix containing the singular values.
-These singular values are always sorted in strictly descending order of absolute magnitude by the underlying SVD algorithm execution.
+These singular values are typically sorted in non-increasing order of magnitude by the underlying SVD algorithm execution.
 These singular values mathematically represent the "importance" or the "spectral energy" of their corresponding vectors in defining the overall structure of the original weight matrix.
 
 PiSSA then strategically and precisely slices these three decomposed matrices into two distinct structural groups based entirely on the user-chosen hyperparameter rank $r$:
 
 1. **Principal Components**: It meticulously extracts the top $r$ largest singular values from $\Sigma$ and their mathematically corresponding vectors from $U$ and $V^T$.
-   These highly influential, massive components are directly used to optimally initialize the trainable matrices $A$ and $B$.
+   These highly influential, massive components are [directly used to optimally initialize the trainable matrices $A$ and $B$](https://arxiv.org/abs/2404.02948).
 2. **Residual Components**: It takes all the remaining, less impactful singular values and vectors from the full matrix decomposition.
    These long-tail, granular components are multiplied back together to construct a frozen, static residual weight matrix formally known as $W_{res}$.
 
@@ -245,7 +245,7 @@ sequenceDiagram
 ```
 
 By initializing the trainable parameters directly with the core principal components of the base model, PiSSA models converge at a dramatically faster rate.
-The high-dimensional optimization landscape is significantly smoother because the model is immediately adjusting its foundational representations from step one.
+The high-dimensional optimization landscape is often smoother because the model begins adjusting its foundational representations from step one.
 It does not waste massive amounts of GPU compute attempting to push a zero-initialized matrix up a steep gradient surface just to reach a functional baseline.
 Furthermore, because it is explicitly operating on the most mathematically significant sub-space of the model's weights from the very beginning, PiSSA consistently achieves lower final validation loss values.
 It demonstrates far better, more robust generalization capabilities, frequently rivaling full parameter fine-tuning on highly competitive industry leaderboards.
@@ -271,14 +271,14 @@ pissa_config = LoraConfig(
 )
 ```
 
-By explicitly setting the parameter `init_lora_weights="pissa_niter_16"`, you strictly instruct the underlying PEFT library to utilize the randomized subspace iteration algorithm.
+By explicitly setting the parameter [`init_lora_weights="pissa_niter_16"`](https://huggingface.co/docs/peft/developer_guides/lora), you strictly instruct the underlying PEFT library to utilize the randomized subspace iteration algorithm.
 This algorithm rapidly approximates the top singular values and vectors without calculating the entire matrix spectrum.
 The numerical value "16" embedded in the configuration string explicitly denotes the exact number of mathematical algorithmic iterations to execute.
 Utilizing higher iteration numbers naturally yields a much closer approximation to exact SVD at the direct cost of additional compute time during initialization.
-This approximation approach drastically reduces the initialization time for a standard 70B model from several hours down to mere fractional minutes.
+This approximation can reduce initialization time substantially relative to exact SVD, with the actual speedup depending on model size, hardware, and iteration count.
 Remarkably, it accomplishes this massive speedup while rigorously maintaining near-perfect, mathematically sound initialization quality that fully preserves the rapid convergence benefits.
 
-A mature, enterprise-grade machine learning production pipeline should never compute this SVD on the fly for every single iterative developer training run.
+A mature, enterprise-grade machine learning production pipeline should generally avoid computing this SVD on the fly for routine iterative developer training runs.
 The optimal system architecture involves pre-computing these fast-SVD initialized adapters and extracting the resulting residual base model ($W_{res}$) exactly once per base model architecture version.
 These massive, pre-processed artifacts should then be permanently cached in a centralized model registry or a high-throughput enterprise object storage bucket.
 All subsequent fine-tuning runs across the entire engineering organization can simply pull these cached, pre-initialized artifacts over the local cluster network.
@@ -288,9 +288,9 @@ The training loop can begin immediately, completely bypassing the expensive init
 
 Unlike standard LoRA deployments, where a tiny, standalone adapter is merely appended to a pristine, completely unmodified base model residing in VRAM, PiSSA fundamentally alters the underlying base model itself.
 It permanently creates the modified, hollowed-out residual matrix $W_{res}$.
-Therefore, at inference time, you absolutely cannot simply load a standard pre-trained Hugging Face model and attempt to hot-swap a PiSSA adapter onto it dynamically.
+Because PiSSA changes initialization and weight decomposition, deployment needs an artifact format that matches how the adapter was prepared rather than assuming every serving stack can treat it like a drop-in LoRA adapter.
 If you attempt this naive deployment strategy, the text outputs will be complete, unintelligible garbage because the specific adapter mathematically expects to be added to $W_{res}$, not to $W_0$.
-To correctly deploy a PiSSA model to production, you must thoroughly use the `peft_model.merge_and_unload()` function prior to exporting your deployment artifacts.
+Depending on the serving stack, deployment may involve exporting a merged model or converting the trained adapter into a LoRA-compatible form instead of assuming a single required export path.
 This crucial function structurally fuses the trained PiSSA adapter back into the $W_{res}$ matrix entirely offline.
 It perfectly reconstructs a standard, monolithic weight format architecture that can be served seamlessly by any standard inference engine like vLLM or SGLang.
 
@@ -307,7 +307,7 @@ A deep, rigorous understanding of their precise resource implications is absolut
   Furthermore, during the critical backward pass, the PyTorch autograd engine must correctly compute gradients flowing through this complex non-linear normalization step.
   This demonstrably slows down the overall training steps-per-second metric when directly compared to a standard LoRA baseline.
 - **Training VRAM Utilization**: Memory utilization is marginally, but measurably, higher during active DoRA training loops.
-  Profiling tools will typically observe a 1% to 3% strict increase in VRAM consumption compared to a standard LoRA baseline running on identical hardware configurations.
+  Memory utilization is typically somewhat higher during DoRA training than with plain LoRA because the method tracks extra magnitude parameters and normalization-related tensors.
   This minor increase is directly attributable to the necessary tensor storage, momentum buffers, and active gradient tracking required for the thousands of newly injected magnitude vectors.
 - **Inference Latency Profile**: This is DoRA's absolute greatest operational strength in a demanding enterprise production setting.
   During the preparation phase for inference, the trainable matrices $B$ and $A$ can be mathematically merged into the static base weights entirely offline.
@@ -318,18 +318,18 @@ A deep, rigorous understanding of their precise resource implications is absolut
 **PiSSA Trade-offs:**
 
 - **Initialization Overheads**: As previously discussed in rigorous detail, PiSSA requires performing SVD on every single targeted weight matrix before the training loop can begin.
-  For a massive frontier model, this initialization phase can take up to a full hour if it must be offloaded to the CPU to avoid catastrophic VRAM exhaustion.
+  For large models, PiSSA initialization can be a noticeable upfront cost and may require careful memory planning, especially when exact SVD is used.
   This is a severe, unavoidable one-time upfront computational cost that can frequently break automated CI/CD pipelines if strict execution timeouts are not configured correctly.
 - **Training Compute and VRAM**: Once the heavy initialization phase is successfully completed, PiSSA's actual iterative training speed, token throughput, and VRAM consumption are mathematically and operationally identical to standard LoRA.
   There are absolutely no extra normalization steps, complex forward-pass calculations, or additional gradients to compute during the core iterative loop.
 - **Inference Flexibility Constraints**: Because PiSSA permanently alters the base model by stripping out the principal components to leave behind $W_{res}$, it severely damages multi-tenant flexibility.
-  In a dense environment where you might specifically want to dynamically load, swap, and unload fifty different lightweight LoRA adapters on top of a single shared base model resident in VRAM, PiSSA fails completely.
+  PiSSA can complicate some adapter-serving workflows, so teams should validate whether their serving stack prefers merged weights or a converted LoRA-compatible artifact.
   You cannot quickly hot-swap PiSSA adapters onto a standard base model without massive overhead.
   You must fundamentally merge the PiSSA weights back into the residual matrix prior to deployment, locking that specific loaded model instance to that single task forever.
 
 ## War Story: The PiSSA Convergence Trap
 
-A well-funded, ambitious generative AI startup based in Silicon Valley was rushing to build a highly specialized SQL-generating autonomous agent for enterprise environments.
+One practical risk with PiSSA is that teams may underestimate how different its optimization behavior is from zero-initialized LoRA.
 This agent needed to be uniquely capable of perfectly translating complex natural language requests into highly dialect-specific, heavily optimized database queries.
 Seeking to drastically reduce their costly iteration cycles on AWS, the lead ML engineer made the executive decision to transition their entire training pipeline from standard LoRA directly to PiSSA.
 The explicit goal was to heavily capitalize on PiSSA's purported fast convergence capabilities widely documented in recent academic research papers.
@@ -337,15 +337,15 @@ They initialized the PiSSA adapters across the board with a robust, high-capacit
 They then confidently launched a massive, distributed training run on a costly cluster of H100s, expecting immediate and stellar results.
 
 The engineers expected rapid, smooth, perfectly predictable convergence curves to populate on their operational monitoring dashboards.
-Instead, within the very first fifty global training steps, the active training loss spiked erratically before collapsing entirely to a strict NaN (Not a Number) mathematical state.
+In practice, an overly aggressive learning-rate schedule can destabilize training very early when switching from LoRA-style initialization to PiSSA.
 This aggressively signaled a catastrophic gradient explosion event had occurred within the deep network layers.
-The engineering team spent three grueling days meticulously tearing down the entire training pipeline line by line.
+Diagnosing this kind of instability can consume substantial engineering time if PiSSA is treated like a drop-in replacement for LoRA.
 They desperately inspected text data loaders for hidden formatting corruption and checked for corrupted tensor states in PyTorch's backend.
 They rigorously verified that all global gradient clipping parameters were correctly set to standard industry defaults.
 
 The ultimate post-mortem eventually revealed a fundamental, dangerous misunderstanding of neural optimization dynamics by the engineering leadership.
-The team was using a highly aggressive learning rate schedule, peaking rapidly at $2 \times 10^{-4}$, which was originally hand-tuned over months for their legacy standard LoRA runs.
-Standard LoRA always starts with the $B$ matrix initialized to exactly zero, meaning the initial network adaptation is mathematically zero.
+The team was using a learning-rate schedule that was too aggressive for PiSSA-style initialization and had been tuned for a different LoRA setup.
+Standard LoRA typically starts with the $B$ matrix initialized to exactly zero, meaning the initial network adaptation is mathematically zero.
 A highly aggressive learning rate is often absolutely necessary in that specific scenario to quickly push these zero weights into useful, expressive numerical ranges.
 
 PiSSA, however, is a completely different mathematical beast entirely.
@@ -353,26 +353,26 @@ Its trainable matrices $A$ and $B$ are already populated at step zero with the m
 These are mathematically critical, high-magnitude numbers that dictate the model's core logic and pre-trained structural intelligence.
 Applying an aggressively high learning rate to these already large initial values caused massive, completely destabilizing gradient updates across the entire neural network.
 They were essentially blowing apart the principal structural components of the model's pre-trained knowledge in the very first few training batches.
-The team successfully resolved the critical issue by ruthlessly reducing the maximum learning rate by a full order of magnitude.
+The team stabilized training by using a substantially more conservative optimization schedule better matched to PiSSA's non-zero initialization.
 They also implemented an extended, highly conservative linear warm-up phase to slowly introduce gradients to the massive system architecture.
 This aligned the optimization dynamics perfectly with the delicate, pre-initialized state of the large PiSSA weights, leading to a perfectly stable run and a highly successful product launch.
 
 ## Did You Know?
 
-- In original benchmarking by NVIDIA, DoRA achieved an average accuracy of 83.5% across commonsense reasoning tasks, matching full fine-tuning's 83.6% while updating less than 1% of the parameters.
-- Performing SVD on a standard 4096 by 4096 projection matrix in PyTorch takes roughly 1.2 seconds on a modern CPU, meaning initializing a 7B model for PiSSA takes about 5 minutes before training starts.
-- Standard LoRA matrices ($A$ and $B$) typically possess a cosine similarity of roughly 0.05 between magnitude and direction updates during training, whereas full fine-tuning exhibits a similarity closer to 0.8. DoRA consistently mirrors the 0.8 similarity, proving its alignment with full fine-tuning dynamics.
-- When PiSSA is applied to LLaMA-2 7B, the top 16 singular values (out of 4096) often account for over 12% of the total spectral energy of the weight matrix, explaining why initializing with these values drastically shifts the starting point of optimization.
+- Early DoRA results report performance close to full fine-tuning on some evaluation setups while updating only a small fraction of the parameters, but the exact gap depends on the benchmark and configuration.
+- The cost of SVD-based PiSSA initialization depends heavily on matrix size, implementation, and hardware.
+- DoRA is motivated by the observation that full fine-tuning and LoRA can differ in how they change weight magnitude versus direction, but any exact similarity values depend on the measurement setup.
+- PiSSA’s use of top singular components is motivated by the fact that a relatively small leading subspace can capture an important share of a weight matrix’s structure, but the exact share varies by model and layer.
 
 ## Common Mistakes
 
 | Mistake | Why it happens | How to fix it |
 | :--- | :--- | :--- |
-| **Reusing LoRA learning rates for PiSSA** | Engineers assume PEFT methods are hyperparameter-compatible. PiSSA starts with non-zero, large magnitude values unlike LoRA's zero-initialization. | Reduce the PiSSA learning rate by 5x to 10x compared to your standard LoRA baseline and use a conservative linear warmup. |
-| **Failing to merge PiSSA adapters correctly** | Applying a PiSSA adapter directly to the unmodified base model at inference time. PiSSA requires the base model to be altered to the residual matrix ($W_{res}$). | Always merge PiSSA weights back into the residual base model prior to deploying for inference using `peft_model.merge_and_unload()`. |
-| **Using DoRA with tiny rank ($r < 8$)** | Assuming DoRA is magically expressive at any rank. If the rank is too low, the directional matrix $V$ lacks the capacity to shift, rendering the magnitude decomposition useless. | Use $r=16$ or $r=32$ as a starting point for DoRA to ensure sufficient directional capacity. |
-| **Skipping layernorm tuning with DoRA** | DoRA focuses on linear layers, but large magnitude shifts can destabilize subsequent layer normalizations if they remain frozen. | Unfreeze LayerNorm parameters during DoRA training for complex, long-context tasks to maintain activation stability. |
-| **Using PiSSA on heavily quantized models (e.g., NF4)** | Precise SVD is computationally expensive or impossible on aggressively quantized 4-bit integer weights without extensive dequantization overhead. | Perform SVD on the 16-bit/32-bit weights first, initialize PiSSA, and *then* quantize the residual base model if required for training. |
+| **Reusing LoRA learning rates for PiSSA** | Engineers assume PEFT methods are hyperparameter-compatible. PiSSA starts with non-zero, large magnitude values unlike LoRA's zero-initialization. | Reduce the PiSSA learning rate relative to your standard LoRA baseline and use a conservative linear warmup. |
+| **Failing to merge PiSSA adapters correctly** | Applying a PiSSA adapter directly to the unmodified base model at inference time. PiSSA requires the base model to be altered to the residual matrix ($W_{res}$). | Deploy PiSSA only after confirming whether your toolchain expects merged weights or a converted adapter format compatible with the target base model. |
+| **Using DoRA with tiny rank ($r < 8$)** | Assuming DoRA is magically expressive at any rank. If the rank is too low, the directional matrix $V$ lacks the capacity to shift, rendering the magnitude decomposition useless. | Avoid assuming extremely low ranks will preserve DoRA's benefits; validate rank choice empirically for your model and task. |
+| **Skipping layernorm tuning with DoRA** | DoRA focuses on linear layers, but large magnitude shifts can destabilize subsequent layer normalizations if they remain frozen. | If DoRA training is unstable on a demanding task, evaluate whether additional trainable components are warranted instead of assuming one fixed recipe always applies. |
+| **Using PiSSA on heavily quantized models (e.g., NF4)** | Precise SVD is computationally expensive and can be impractical on aggressively quantized 4-bit integer weights without extensive dequantization overhead. | Plan PiSSA initialization with care on quantized setups, because SVD-based initialization and low-bit serving constraints may require a staged workflow. |
 | **Evaluating DoRA mid-training without folding** | Inference during a validation loop is slow because the DoRA equation $W' = m (W_0 + BA) / \|V\|_c$ must be calculated dynamically on every forward pass. | While standard for training, ensure your evaluation script uses context managers or specific PEFT evaluation modes that optimize the forward pass. |
 | **Ignoring the SVD initialization time in CI/CD pipelines** | PiSSA's SVD initialization blocks the training script from actually starting the first epoch, leading to pipeline timeouts in automated runners. | Pre-compute and cache the PiSSA initialized adapters and residual base models for standard foundational models used in your organization. |
 
@@ -553,3 +553,10 @@ Yes, the team should approve the transition because DoRA introduces absolutely z
 
 Having thoroughly mastered the advanced structural mathematical decompositions underpinning DoRA and PiSSA, it is time to pivot aggressively towards the robust infrastructure required to serve and operate these highly optimized models at planetary scale.
 In [Module 1.3: vLLM and SGLang for Inference](/ai-ml-engineering/ai-infrastructure/module-1.3-vllm-sglang-inference/), we will rigorously explore how modern inference engines leverage deeply optimized kernel algorithms, sophisticated memory layouts, and dynamic batching scheduling strategies to deliver massive-throughput LLM serving capabilities to thousands of concurrent enterprise users.
+
+## Sources
+
+- [LoRA: Low-Rank Adaptation of Large Language Models](https://arxiv.org/abs/2106.09685) — Original LoRA paper for claims about freezing base weights, training low-rank adapters, parameter-count reduction, memory savings, and PEFT trade-offs versus full fine-tuning.
+- [DoRA: Weight-Decomposed Low-Rank Adaptation](https://arxiv.org/abs/2402.09353) — Primary source for DoRA’s weight magnitude/direction decomposition, training-stability rationale, and benchmark comparisons against LoRA/full fine-tuning.
+- [PEFT LoRA Developer Guide](https://huggingface.co/docs/peft/developer_guides/lora) — Official implementation guide for LoRA configuration in PEFT, including rank, alpha, initialization, adapter behavior, and practical library-level fine-tuning mechanics.
+- [PiSSA: Principal Singular Values and Singular Vectors Adaptation of Large Language Models](https://arxiv.org/abs/2404.02948) — Primary source for PiSSA’s SVD-based initialization, faster convergence claims, and performance comparisons versus standard LoRA.
