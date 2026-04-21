@@ -33,27 +33,27 @@ After completing this module, you will be able to:
 
 **When GitHub Is Too Much and Too Little**
 
-The security officer's face went pale as she reviewed the audit findings. A defense contractor's classified automation scripts had been stored on a developer's personal GitHub account for three years. No malicious intent—the engineer just needed version control and GitHub was what he knew. The resulting security incident cost the company $2.3 million in investigation costs, remediation, and lost contract opportunities. The fix? A Git server that could run inside their air-gapped network.
+Audit findings showed that sensitive automation scripts had been stored outside the organization's approved environment. That kind of setup creates serious security and compliance risk, and it is one reason teams adopt an internal Git server for controlled networks.
 
-Three thousand miles away, a semiconductor fab faced a different problem. Their equipment automation team needed version control, but their entire edge compute infrastructure ran on Raspberry Pi 4s with 4GB RAM each. The IT team tried GitLab Omnibus—it demanded 8GB RAM minimum just to start. The licensing quote for GitHub Enterprise Server came back at $180,000 annually. For a Git server. To store shell scripts.
+Other teams face a different constraint: they need version control on very small hardware and cannot justify a heavyweight platform or enterprise licensing just to store internal scripts.
 
 Meanwhile, a startup's platform team was drowning in tool sprawl. GitHub for code, Jenkins for CI, Artifactory for packages, separate LDAP integration for each. Every vendor wanted enterprise pricing. The engineering budget was already stretched thin, and they just needed... a Git server that worked.
 
-Gitea exists because not everyone needs an enterprise platform. Sometimes you need a Git server that's small, fast, self-contained, and just works—a single binary that runs on anything from a $35 Raspberry Pi to a massive Kubernetes cluster. GitHub's features with none of GitHub's baggage.
+Gitea exists because not everyone needs an enterprise platform. Sometimes you need a Git server that's small, fast, self-contained, and just works—[a single binary](https://github.com/go-gitea/gitea/blob/main/README.md) that runs on anything from a $35 Raspberry Pi to a massive Kubernetes cluster. GitHub's features with none of GitHub's baggage.
 
-Forgejo is Gitea's community fork—same codebase, different governance. When Gitea's parent company started making decisions the community disagreed with, Forgejo emerged as the "truly open" alternative. They're 95% identical today, but the philosophical differences matter if you're choosing for the long term.
+Forgejo is Gitea's community fork—same codebase, different governance. When Gitea's parent company started making decisions the community disagreed with, Forgejo emerged as the "truly open" alternative. The projects remained closely related after the fork, but governance and roadmap differences still matter if you're choosing for the long term.
 
 ---
 
 ## Did You Know?
 
-- **Gitea runs in ~100MB of RAM** - GitLab requires 4GB minimum. A hobbyist in Germany runs 15 separate Gitea instances on a single 4GB VPS—one per open source project—spending less on hosting than a single GitLab license would cost. The entire setup costs him €5/month.
+- **Gitea is much lighter than a full GitLab deployment** - That makes it attractive for hobby, lab, and small-team self-hosting on modest infrastructure.
 
 - **Forgejo was born from a governance crisis** - In October 2022, Gitea's maintainers transferred the project to a for-profit company without community consultation. Within weeks, Forgejo forked under Codeberg e.V., a German non-profit. The split highlighted a fundamental question: who owns open source projects when maintainers commercialize?
 
-- **Codeberg.org runs entirely on Forgejo** - Over 100,000 users and 150,000+ repositories run on Codeberg's Forgejo instance, proving the platform scales far beyond "toy project" status. It's become the de facto home for developers who want a GitHub alternative without corporate ownership.
+- **Codeberg.org runs on Forgejo** - That makes it a useful real-world example that Forgejo can power a substantial public forge.
 
-- **The Gitea/Gogs lineage traces back to GitHub itself** - Gogs (Go Git Service) was created in 2014 as a "self-hosted GitHub clone." When Gogs development slowed, Gitea forked in 2016. When Gitea commercialized, Forgejo forked in 2022. Each fork happened because communities wanted faster, more open development than the parent project offered.
+- **The Gitea/Gogs lineage traces back to GitHub itself** - Gogs was an earlier self-hosted Git service from which Gitea later forked. When Gogs development slowed, [Gitea forked in 2016](https://github.com/go-gitea/gitea/blob/main/README.md). When Gitea commercialized, Forgejo forked in 2022. Each fork happened because communities wanted faster, more open development than the parent project offered.
 
 ---
 
@@ -740,27 +740,27 @@ jobs:
 **Date**: Q3 2023
 **Stakes**: $340 million production line expansion
 
-The fab's automation team maintained 2,400 equipment scripts controlling everything from wafer handling to chemical vapor deposition. For years, these scripts lived in shared network folders with names like `etch_recipe_FINAL_v3_REALLY_FINAL.sh`. No version control. No audit trail. No rollback capability.
+The automation team maintained many equipment-control scripts in shared folders with inconsistent naming. Without version control, they also lacked a clean audit trail and reliable rollback path.
 
 Then came the audit.
 
-The FDA (semiconductor fabs fall under pharmaceutical-grade regulations) demanded complete traceability for every script modification. Who changed what, when, and why? The answer was "we don't know"—and that answer was about to cost them their expansion approval.
+A compliance audit demanded traceability for script changes, and the team could not answer basic questions about who changed what and when.
 
 **Requirements for the fix**:
-- Completely air-gapped (ITAR compliance—no internet, ever)
-- Run on existing Raspberry Pi 4 infrastructure (4GB RAM each)
+- Operate in a fully isolated network
+- Run on existing low-resource hardware
 - Sync between clean rooms that can't be physically connected
 - Support 50 engineers across 3 shifts
 - Zero recurring licensing costs (capex budget was exhausted)
-- Deployed in 6 weeks before the re-audit
+- Be deployable on a short compliance deadline
 
 ### Why Not GitLab?
 
-The IT team's first call was to GitLab sales. The quote came back: $127,000 annually for a self-managed license, plus $45,000 in professional services for the air-gapped deployment.
+The team ruled out a heavier enterprise platform because licensing and deployment overhead did not fit the budget or the timeline.
 
 "We tried GitLab Omnibus on a test VM anyway. It wanted 8GB RAM minimum just to start. Our entire edge compute budget was 16GB across 4 Pis. GitLab was dead before we started."
 
-GitHub Enterprise Server? $21 per user per month, minimum 500 users. That's $126,000/year for a Git server to store shell scripts.
+Per-seat enterprise Git hosting can be hard to justify when the immediate need is basic internal version control for scripts and automation.
 
 ### The Solution
 
@@ -873,15 +873,15 @@ sha256sum *.bundle > checksums.sha256
 | Hardware cost | N/A | $0 (existing Pis) | $0 additional |
 | Memory used | N/A | 98MB average | - |
 
-**Total first-year value**: The $340 million expansion proceeded on schedule. The alternatives—either paying for enterprise Git licensing or failing the re-audit—would have delayed production by 6+ months.
+**Outcome**: The deployment reduced audit risk and avoided buying a heavier platform for a narrow internal use case.
 
 ### Lessons Learned
 
-1. **SQLite is fine for small teams** - 50 users, no performance issues, zero maintenance
+1. **SQLite can be workable for small deployments** - validate concurrency, backup, and maintenance requirements against your own workload.
 2. **Offline mode is essential** - Setting `OFFLINE_MODE = true` prevents all external calls, critical for air-gapped compliance
 3. **Git bundles solve sync** - Native Git feature that works everywhere, no special tooling needed
-4. **Raspberry Pi handles it** - CPU barely touched 10%, RAM comfortable at 98MB
-5. **The audit trail saved them** - Every commit signed, every change traceable, every rollback documented
+4. **Small hardware can be enough** - lightweight Git hosting is often viable on modest systems when the workload is limited.
+5. **Version control improves traceability** - it gives teams a clearer record of changes, authorship, and rollback history.
 
 ---
 
@@ -1103,7 +1103,7 @@ How do Gitea Actions compare to GitHub Actions?
 <details>
 <summary>Show Answer</summary>
 
-**Nearly 100% syntax compatible**
+**Mostly syntax compatible**
 
 Gitea Actions uses the same workflow syntax as GitHub Actions. Most workflows can be copied from `.github/workflows/` to `.gitea/workflows/` with minimal changes. The main differences are:
 - Self-hosted runners only (no GitHub-hosted)
@@ -1231,4 +1231,11 @@ Choose GitLab when:
 
 ---
 
-*"Sometimes the best tool is the simplest one that solves your problem. Gitea proves that a Git server doesn't need 4GB of RAM to be useful."*
+*"Sometimes the best tool is the simplest one that solves your problem. Gitea illustrates the appeal of a lightweight self-hosted Git service."*
+
+## Sources
+
+- [github.com: README.md](https://github.com/go-gitea/gitea/blob/main/README.md) — The upstream README directly states that Gitea is written in Go, was forked from Gogs in November 2016, and builds to a `gitea` binary.
+- [go-gitea/gitea](https://github.com/go-gitea/gitea) — Primary upstream repository for Gitea's feature scope, packaging model, and project lineage.
+- [Gitea Releases](https://github.com/go-gitea/gitea/releases) — Useful for verifying the standalone binary release model and current artifact packaging.
+- [Forgejo](https://en.wikipedia.org/wiki/Forgejo) — Helpful secondary background on the Gitea-to-Forgejo split when readers want context beyond the module.
