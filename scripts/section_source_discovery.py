@@ -126,9 +126,16 @@ def normalize_section_key(section_path: str) -> str:
 def list_section_modules(section_path: str) -> list[Path]:
     section_key = normalize_section_key(section_path)
     section_dir = DOCS_ROOT / section_key
+    # Exclude `.staging.md` — v1_pipeline write-phase artifacts,
+    # gitignored, not real curriculum modules. Without this filter
+    # the section pipeline wastes ~15 min per staging file running
+    # a full research/verify/inject dispatch on a throwaway draft
+    # (observed on ai-ml-engineering/advanced-genai where the
+    # 1.4/1.5/1.8 staging copies were processed alongside their
+    # canonical siblings).
     return sorted(
         path for path in section_dir.glob("module-*.md")
-        if path.is_file()
+        if path.is_file() and not path.name.endswith(".staging.md")
     )
 
 
