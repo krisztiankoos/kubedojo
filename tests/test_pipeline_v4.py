@@ -277,6 +277,80 @@ def test_stage_3_retry_budget_exhausted(monkeypatch: pytest.MonkeyPatch, tmp_pat
     assert result.stage_reached == "RUBRIC_RECHECK"
 
 
+def test_skip_stage_2_when_only_stage_4_gaps(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """If Stage 1 surfaces only gaps that expand_module can't handle
+    (no_citations / no_diagram), skip Stage 2 entirely and go to
+    Stage 4. Otherwise we waste the whole retry budget on no-op
+    expansions and fail rubric_stage_3_unmet without ever running
+    citation_v3."""
+    _patch_roots(monkeypatch, tmp_path)
+    _write_module(tmp_path)
+    monkeypatch.setattr(
+        pipeline_v4.rubric_gaps,
+        "gaps_for_module",
+        lambda module_key: {"score": 1.5, "gaps": ["no_citations"], "target_loc": 600},
+    )
+
+    def _unexpected_expand(*args, **kwargs):
+        raise AssertionError("expand_module should not run when gaps are stage-4-only")
+
+    monkeypatch.setattr(pipeline_v4.expand_module, "expand_module", _unexpected_expand)
+    _patch_rescore_sequence(monkeypatch, [{"score": 3.8, "gaps": []}])
+    citation_calls = _patch_citation_ok(monkeypatch)
+
+    result = pipeline_v4.run_pipeline_v4(MODULE_KEY)
+
+    assert citation_calls == [MODULE_KEY]
+    assert result.retry_count == 0
+    assert result.outcome == "clean"
+    stages = [event["stage"] for event in result.events]
+    assert "EXPAND" not in stages
+    assert "RUBRIC_RECHECK" not in stages
+    assert "CITATION_V3" in stages
+
+
+def test_break_to_stage_4_when_retry_gaps_become_stage_4_only(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """After Stage 2 fills the expandable gaps, if the rescore's
+    remaining gaps are only no_citations / no_diagram, proceed to
+    Stage 4 instead of retrying Stage 2."""
+    _patch_roots(monkeypatch, tmp_path)
+    _write_module(tmp_path)
+    monkeypatch.setattr(
+        pipeline_v4.rubric_gaps,
+        "gaps_for_module",
+        lambda module_key: {
+            "score": 1.5,
+            "gaps": ["no_quiz", "no_citations"],
+            "target_loc": 600,
+        },
+    )
+    expand_calls: list[list[str]] = []
+
+    def _expand(module_key: str, gaps: list[str], target_loc: int = 600, dry_run: bool = False):
+        expand_calls.append(list(gaps))
+        return _expand_result(gaps_filled=["no_quiz"])
+
+    monkeypatch.setattr(pipeline_v4.expand_module, "expand_module", _expand)
+    _patch_rescore_sequence(
+        monkeypatch,
+        [
+            {"score": 3.7, "gaps": ["no_citations"]},
+            {"score": 3.9, "gaps": []},
+        ],
+    )
+    _patch_citation_ok(monkeypatch)
+
+    result = pipeline_v4.run_pipeline_v4(MODULE_KEY)
+
+    assert len(expand_calls) == 1, "should not retry after no_citations-only rescore"
+    assert result.retry_count == 0
+    assert result.outcome == "clean"
+
+
 def test_generated_loc_threshold_trip(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _patch_roots(monkeypatch, tmp_path)
     generated_text = "\n".join(

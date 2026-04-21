@@ -323,7 +323,20 @@ def _run_pipeline_v4(
         )
 
         stable_before_citation = result.score_before >= 4.0 and not result.gaps_before
-        if not stable_before_citation:
+        # Skip Stage 2 entirely when none of the starting gaps are things
+        # expand_module can handle (e.g. only no_citations / no_diagram).
+        # Retry-looping through no-op expansions wastes the whole budget
+        # and then fails at rubric_stage_3_unmet before ever reaching
+        # Stage 4, where no_citations would actually get filled.
+        stage_2_applicable = expand_module.can_expand(result.gaps_before)
+
+        if stable_before_citation:
+            result.gaps_after = []
+            result.score_after = result.score_before
+        elif not stage_2_applicable:
+            result.gaps_after = list(result.gaps_before)
+            result.score_after = result.score_before
+        else:
             attempt = 0
             current_gaps = list(result.gaps_before)
             while True:
@@ -372,6 +385,11 @@ def _run_pipeline_v4(
                 )
                 if score_after_expand >= 4.0:
                     break
+                # If the only remaining gaps are Stage-4 territory
+                # (no_citations / no_diagram), further Stage 2 retries
+                # can't move the needle. Fall through to Stage 4.
+                if not expand_module.can_expand(gaps_after_expand):
+                    break
                 if result.retry_count >= max_rubric_retries:
                     return _fail_result(
                         result,
@@ -382,9 +400,6 @@ def _run_pipeline_v4(
                 result.retry_count += 1
                 attempt += 1
                 current_gaps = gaps_after_expand
-        else:
-            result.gaps_after = []
-            result.score_after = result.score_before
 
         score_before_citation = result.score_after if result.score_after is not None else result.score_before
 

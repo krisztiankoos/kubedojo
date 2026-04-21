@@ -523,6 +523,15 @@ _HANDLERS = {
 }
 
 
+def can_expand(gaps: list[str]) -> bool:
+    """True if at least one gap is handled by Stage 2 expansion.
+
+    False means the pipeline should skip Stage 2 and proceed to Stage 4 —
+    e.g. only no_citations or no_diagram gaps remain. Used by pipeline_v4
+    to avoid burning retry budget on guaranteed-no-op expansions."""
+    return any(gap in _HANDLERS for gap in gaps)
+
+
 def expand_module(
     module_key: str,
     gaps: list[str],
