@@ -256,7 +256,7 @@ def _generated_loc_ratio(module_path: Path) -> float:
 
 
 def _invoke_citation_pipeline(module_key: str) -> dict[str, Any]:
-    cmd = [".venv/bin/python", "scripts/pipeline_v3.py", _normalize_module_key(module_key)]
+    cmd = [sys.executable, "scripts/pipeline_v3.py", _normalize_module_key(module_key)]
     completed = subprocess.run(
         cmd,
         cwd=REPO_ROOT,

@@ -613,3 +613,30 @@ def test_cli_emits_json(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys:
     payload = json.loads(capsys.readouterr().out)
     assert payload["module_key"] == MODULE_KEY
     assert payload["outcome"] == "skipped_already_stable"
+
+
+def test_invoke_citation_pipeline_uses_sys_executable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Regression: Stage 4 must launch pipeline_v3 with sys.executable, not a
+    hardcoded .venv/bin/python. When pipeline_v4 runs from a worktree without
+    its own .venv, the hardcoded path raised FileNotFoundError and killed
+    Stage 4 before citation_v3 could execute."""
+    captured: dict[str, object] = {}
+
+    class _Completed:
+        returncode = 0
+        stdout = "{}"
+        stderr = ""
+
+    def _fake_run(cmd: list[str], **kwargs: object) -> _Completed:
+        captured["cmd"] = cmd
+        captured["cwd"] = kwargs.get("cwd")
+        return _Completed()
+
+    monkeypatch.setattr(pipeline_v4.subprocess, "run", _fake_run)
+
+    pipeline_v4._invoke_citation_pipeline(MODULE_KEY)
+
+    cmd = captured["cmd"]
+    assert isinstance(cmd, list) and cmd, "subprocess.run called with no command"
+    assert cmd[0] == sys.executable, f"expected sys.executable, got {cmd[0]!r}"
+    assert cmd[1].endswith("pipeline_v3.py")
