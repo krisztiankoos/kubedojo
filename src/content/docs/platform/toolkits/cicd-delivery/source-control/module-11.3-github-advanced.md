@@ -25,7 +25,7 @@ After completing this module, you will be able to:
 
 - **Configure GitHub Actions with reusable workflows, matrix strategies, and self-hosted runners on Kubernetes**
 - **Implement GitHub Advanced Security features including CodeQL, secret scanning, and dependency review**
-- **Deploy GitHub's OIDC integration for secure, credential-free access to cloud resources from CI/CD**
+- **[Deploy GitHub's OIDC integration for secure, credential-free access to cloud resources from CI/CD](https://docs.github.com/en/actions/concepts/security/openid-connect)**
 - **Optimize GitHub Actions performance with caching strategies, concurrency controls, and artifact management**
 
 
@@ -48,15 +48,15 @@ This module covers the features that transform GitHub from a Git host into a sec
 - **Actions at Scale** - Reusable workflows, self-hosted runners, caching that actually works
 - **Enterprise Features** - SAML SSO, audit logs, IP allow lists, EMU (Enterprise Managed Users)
 
-The difference between "using GitHub" and "using GitHub properly" is millions of dollars in prevented incidents.
+The difference between basic Git hosting and well-governed platform use can be the difference between routine delivery and a costly security incident.
 
 ---
 
 ## Did You Know?
 
-- **CodeQL came from a $500M acquisition** — In 2019, GitHub bought Semmle, the company behind CodeQL, for an undisclosed sum (estimated $400-500M). Semmle had spent 13 years developing semantic code analysis, originally for finding bugs in safety-critical systems. GitHub made it free for public repos overnight, instantly becoming the world's largest free SAST provider.
+- **CodeQL came from a $500M acquisition** — In 2019, GitHub bought Semmle, the company behind CodeQL, for an undisclosed sum (estimated $400-500M). Semmle had spent 13 years developing semantic code analysis, originally for finding bugs in safety-critical systems. GitHub made it free for public repos soon after, quickly becoming one of the world's largest free SAST providers.
 
-- **Secret scanning prevented a cryptocurrency exchange hack** — In 2023, a developer at a major crypto exchange accidentally committed an AWS key with access to hot wallets containing $14M in assets. GitHub's partner program notified AWS within 30 seconds. AWS auto-revoked the key 47 seconds before automated scanners on the dark web detected the commit. The exchange never knew how close they came.
+- **Secret scanning prevented a cryptocurrency exchange hack** — In 2023, a developer at a major crypto exchange accidentally committed an AWS key with access to hot wallets containing $14M in assets. GitHub's partner program notified AWS within 30 seconds. AWS auto-revoked the key 47 seconds before automated scanners on the dark web detected the commit. The exchange may never have known how close they came.
 
 - **Copilot's "46% of code" stat has a dark side** — While GitHub reports that 46% of code at adopting companies is AI-generated, a 2024 Stanford study found that developers using Copilot were 40% more likely to introduce security vulnerabilities. GitHub responded by adding security-focused prompts, reducing vulnerable suggestions by 65%—but the lesson stands: AI-generated code needs AI-powered review.
 
@@ -64,7 +64,7 @@ The difference between "using GitHub" and "using GitHub properly" is millions of
 
 ---
 
-## GitHub Advanced Security (GHAS)
+## [GitHub Advanced Security (GHAS)](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security)
 
 ### What's Included
 
@@ -117,7 +117,7 @@ PRICING:
 • GitHub Enterprise Cloud required for private repos
 ```
 
-### CodeQL: Query Your Code Like a Database
+### [CodeQL: Query Your Code Like a Database](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql)
 
 ```yaml
 # .github/workflows/codeql.yml
@@ -196,7 +196,7 @@ where
 select str, "Potential hardcoded secret detected"
 ```
 
-### Secret Scanning with Push Protection
+### [Secret Scanning with Push Protection](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security)
 
 ```yaml
 # Enable in repo settings or via API
@@ -616,7 +616,7 @@ EMU (Enterprise Managed Users):
 • Username format: @shortcode_username
 ```
 
-### Audit Log Streaming
+### [Audit Log Streaming](https://docs.github.com/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise)
 
 ```bash
 # Stream audit logs to your SIEM
@@ -646,7 +646,7 @@ curl -H "Authorization: Bearer $GITHUB_TOKEN" \
 }
 ```
 
-### IP Allow Lists
+### [IP Allow Lists](https://docs.github.com/en/enterprise-cloud%40latest/organizations/keeping-your-organization-secure/managing-allowed-ip-addresses-for-your-organization)
 
 ```bash
 # Restrict access to specific IPs
@@ -719,15 +719,15 @@ POST /repos/{owner}/{repo}/rulesets
 
 ### The Situation
 
-A Series C fintech with 150 developers, 400 repositories, and a $180M acquisition offer was two weeks from closing. Due diligence required a security audit. The acquiring company's security team ran a comprehensive secrets scan and found:
+A late-stage security review can reveal years of weak secret-handling practices across many repositories, creating urgent remediation work during a high-stakes transaction. The acquiring company's security team ran a comprehensive secrets scan and found:
 
-- 847 AWS access keys (217 still active)
-- 234 database connection strings (89 production systems)
-- 156 API keys to third-party services
-- 89 SSH private keys (including jump servers)
-- 23 customer PII files in test fixtures (GDPR violation territory)
+- Numerous cloud credentials, including active keys, were still present in repository history
+- Many database connection strings were found, including credentials tied to production systems
+- Third-party service API keys were present in repository history
+- SSH private keys were found, including keys that could have enabled privileged infrastructure access
+- Customer data appeared in test fixtures, creating privacy and compliance risk
 
-All committed to Git history, some dating back 4 years. Total exposure window: 1,460+ days.
+Some of the exposed material had been sitting in Git history for years, extending the remediation burden well beyond the original commit.
 
 ### The Discovery Process
 
@@ -844,9 +844,9 @@ jobs:
 
 | Metric | Before | After |
 |--------|--------|-------|
-| Active secrets in repos | 337 | 0 |
-| Time to detect new secret | Never | < 1 minute |
-| Secret commits blocked/month | 0 | ~50 |
+| Active secrets in repos | Numerous active secrets were present | Active secrets were eliminated after rotation and cleanup |
+| Time to detect new secret | Inconsistent or manual | Much faster with automated scanning and prevention |
+| Secret commits blocked/month | 0 | Repeated secret leaks were blocked after prevention controls were enabled |
 | Security audit finding | Critical | Pass |
 | Acquisition | At risk | Completed |
 
@@ -859,16 +859,16 @@ jobs:
 | Third-party security firm verification | $120,000 |
 | Legal review and GDPR compliance | $67,000 |
 | Developer time diverted from product | $30,000 |
-| **Total Remediation** | **$340,000** |
-| **Acquisition Price Reduction** | **$15,000,000** |
+| **Total Remediation** | **Remediation required substantial unplanned spending across engineering, security, and legal work** |
+| **Acquisition Impact** | **The security findings materially affected deal negotiations** |
 
-The acquiring company reduced their offer by $15M, citing "material cybersecurity deficiencies" that indicated systemic issues with the engineering culture. The CTO was asked to resign as a condition of closing.
+The security findings materially damaged trust in the company's engineering and security practices during the transaction.
 
-**Post-Acquisition ROI:** The $49/developer/month for GHAS ($88,200/year for 150 developers) would have prevented a $15.34M loss. ROI: 173x.
+**Post-Acquisition ROI:** Investing in repository security controls early is usually far cheaper than emergency remediation during an audit, acquisition, or breach response.
 
 ### Lessons Learned
 
-1. **History matters** - Git never forgets; you need to rotate, not just delete
+1. **History matters** - Git history usually persists, so you need to rotate, not just delete
 2. **Push protection is essential** - Detection without prevention is just alerting
 3. **Partner program helps** - Many providers auto-revoke when GitHub notifies them
 4. **Cultural change required** - Developers needed training on secret management
@@ -885,14 +885,14 @@ GITHUB ADVANCED SECURITY vs ALTERNATIVES
                     GHAS        Snyk        SonarQube    Semgrep
 ─────────────────────────────────────────────────────────────────
 SECRET SCANNING
-Patterns            200+        100+        Limited      100+
-Push protection     ✓           ✗           ✗            ✓
-Partner revocation  ✓           ✗           ✗            ✗
+Patterns            Varies by product and current rule set; verify exact coverage in each vendor's latest documentation
+Push protection     Secret-prevention approaches differ by platform; verify current capabilities directly in vendor docs
+Partner revocation  Provider-notification and revocation workflows vary by platform and provider integration
 Custom patterns     ✓           ✓           ✓            ✓
 
 CODE SCANNING
 Query language      CodeQL      Proprietary  Java-based  Custom
-Languages          10+         10+          25+          20+
+Languages           Language coverage varies substantially by product and should be checked against current vendor documentation
 Custom rules       ✓           $           ✓            ✓
 PR integration     Native      Plugin       Plugin       Native
 
@@ -904,7 +904,7 @@ License check      ✓           ✓           ✓            ✗
 PRICING (per user/month, approx)
 ─────────────────────────────────────────────────────────────────
 Public repos       FREE        FREE        FREE         FREE
-Private repos      $49*        $25-99      $0-500/mo    $0-50
+Private repos      Pricing models differ by vendor, plan, repository size, and included features; verify current pricing directly
 
 * Requires GitHub Enterprise Cloud
 
@@ -1076,7 +1076,7 @@ GHAS includes:
 - Push protection to block secrets
 - Dependency review for license/vulnerability checking
 
-It's free for public repositories and requires Enterprise Cloud for private repos.
+Key code-scanning, secret-scanning, and dependency-review features are available for public repositories on GitHub.com, while private repositories require the relevant paid GitHub security product on GitHub Team or GitHub Enterprise Cloud.
 </details>
 
 ### Question 2
@@ -1107,9 +1107,9 @@ What's the difference between Copilot Individual, Business, and Enterprise?
 <details>
 <summary>Show Answer</summary>
 
-- **Individual ($10/mo)**: Code completion and chat in IDE
-- **Business ($19/mo)**: + Policy management, file exclusions, audit logs, no training on your code
-- **Enterprise ($39/mo)**: + Chat on github.com, PR summaries, knowledge bases, fine-tuning
+- **Individual plans**: GitHub offers personal Copilot plans for individual developers, but the exact plan names, pricing, and included limits should be checked against current GitHub pricing.
+- **Business**: Adds centralized administration and governance features for organizations, such as policy controls and content-governance options.
+- **Enterprise**: Adds enterprise-focused GitHub.com features and broader administrative controls, but the exact feature set should be checked against current GitHub documentation.
 
 Enterprise adds organization-specific AI features like learning from your documentation.
 </details>
@@ -1129,7 +1129,7 @@ Use reusable workflows for complete CI/CD processes; use composite actions for c
 </details>
 
 ### Question 6
-What is EMU (Enterprise Managed Users)?
+What is [EMU (Enterprise Managed Users)](https://docs.github.com/en/enterprise-cloud%40latest/admin/concepts/identity-and-access-management/enterprise-managed-users)?
 
 <details>
 <summary>Show Answer</summary>
@@ -1139,7 +1139,7 @@ What is EMU (Enterprise Managed Users)?
 EMU users:
 - Can only access your enterprise (no personal GitHub)
 - Are provisioned/deprovisioned via SCIM
-- Have usernames like `@shortcode_username`
+- Have usernames derived from the IdP identifier and suffixed with the enterprise shortcode, for example `@mona-cat_octo`
 - Cannot fork to personal accounts
 - Are fully controlled by administrators
 
@@ -1171,7 +1171,7 @@ How does GitHub's partner program help with secret scanning?
 
 **Partners automatically revoke exposed credentials**
 
-When GitHub detects a secret (like an AWS key or Stripe API key), it notifies the service provider. Many partners automatically revoke the credential before it can be exploited. This "secret scanning partner program" includes AWS, Azure, GCP, Stripe, Twilio, and 100+ others.
+When GitHub detects certain supported secrets, it can notify participating service providers, and some providers can quarantine, revoke, or otherwise respond to the exposed credential.
 </details>
 
 ---
@@ -1185,7 +1185,7 @@ When GitHub detects a secret (like an AWS key or Stripe API key), it notifies th
 5. **Reusable workflows reduce duplication** - Centralize CI/CD logic
 6. **Self-hosted runners need ARC** - Auto-scaling is essential at scale
 7. **Dependabot needs action** - Auto-merge or assign owners
-8. **Rulesets beat branch protection** - More flexible, org-wide
+8. **[Rulesets beat branch protection](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets)** - More flexible, org-wide
 9. **Audit logs are required** - Stream to SIEM for compliance
 10. **EMU for maximum control** - When personal accounts aren't acceptable
 
@@ -1210,3 +1210,14 @@ When GitHub detects a secret (like an AWS key or Stripe API key), it notifies th
 ---
 
 *"GitHub isn't competing with GitLab on features anymore—it's redefining what a development platform can be. The question isn't whether to use these features, but how quickly you can adopt them."*
+
+## Sources
+
+- [About GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) — Backs GitHub Advanced Security feature-set claims, including GitHub Code Security and GitHub Secret Protection positioning.
+- [docs.github.com: about code scanning with codeql](https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning-with-codeql) — The official CodeQL overview directly states that CodeQL treats code like data and contrasts it with traditional static analyzers.
+- [OpenID Connect](https://docs.github.com/en/actions/concepts/security/openid-connect) — Backs GitHub Actions OIDC claims for short-lived federated authentication from workflows to cloud providers without long-lived secrets.
+- [docs.github.com: streaming the audit log for your enterprise](https://docs.github.com/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise) — The official audit-log-streaming docs enumerate these supported destinations.
+- [docs.github.com: managing allowed ip addresses for your organization](https://docs.github.com/en/enterprise-cloud%40latest/organizations/keeping-your-organization-secure/managing-allowed-ip-addresses-for-your-organization) — The official IP allow-list docs explicitly describe protection across web, API, and Git access paths.
+- [docs.github.com: enterprise managed users](https://docs.github.com/en/enterprise-cloud%40latest/admin/concepts/identity-and-access-management/enterprise-managed-users) — The EMU docs directly describe IdP-controlled lifecycle/authentication and the outside-collaboration restriction.
+- [docs.github.com: about rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets) — The official rulesets docs explicitly describe org-level scope and advantages over branch protection.
+- [Use Actions Runner Controller](https://docs.github.com/en/actions/tutorials/use-actions-runner-controller) — Explains GitHub's Kubernetes-based approach to self-hosted runner scale sets and ARC operations.
