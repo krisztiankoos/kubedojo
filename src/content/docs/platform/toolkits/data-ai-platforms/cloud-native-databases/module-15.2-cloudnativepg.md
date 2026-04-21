@@ -24,8 +24,8 @@ Before starting this module, you should have completed:
 After completing this module, you will be able to:
 
 - **Deploy CloudNativePG for automated PostgreSQL cluster management on Kubernetes with HA failover**
-- **Configure CloudNativePG backup schedules with barman, point-in-time recovery, and WAL archiving**
-- **Implement CloudNativePG rolling updates, minor/major version upgrades, and connection pooling with PgBouncer**
+- **Configure CloudNativePG [backup schedules with barman, point-in-time recovery, and WAL archiving](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/backup.md)**
+- **Implement CloudNativePG rolling updates, minor/major version upgrades, and [connection pooling with PgBouncer](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/connection_pooling.md)**
 - **Compare CloudNativePG's operator approach against managed database services for PostgreSQL on Kubernetes**
 
 
@@ -33,7 +33,7 @@ After completing this module, you will be able to:
 
 **The Database That Runs Itself**
 
-The on-call engineer's phone rang at 2:47 AM. PostgreSQL primary was down at a healthcare SaaS company processing $180M in annual insurance claims. The status page showed "Database connectivity issues." Customer support tickets were already flooding in—every minute of downtime cost $2,300 in processing delays and SLA penalties.
+When a PostgreSQL primary fails in production, customer impact and operational pressure can escalate quickly if failover is manual.
 
 In the old days, this would have meant:
 1. Wake up fully, SSH into servers, figure out what happened
@@ -48,23 +48,23 @@ But this team ran CloudNativePG. By the time the engineer opened her laptop, the
 4. Begun rebuilding a new replica (automatic)
 5. Sent the Slack notification that woke her up (configured)
 
-Total downtime: 5 seconds. Revenue impact: $0.19 instead of $2,300+ per minute. She checked the logs, confirmed the timeline, and went back to sleep.
+With automated failover in place, downtime and business impact can be much lower than in a fully manual recovery process. She checked the logs, confirmed the timeline, and went back to sleep.
 
 The next morning's post-mortem was brief: "Underlying node had a hardware failure. CloudNativePG failover worked exactly as designed. No customer impact. No action required."
 
-**CloudNativePG is the PostgreSQL operator that actually works.** It's a CNCF Sandbox project that handles the hard parts of running PostgreSQL on Kubernetes: automated failover, continuous backups, point-in-time recovery, and declarative configuration. You describe what you want; the operator makes it happen.
+**CloudNativePG is the PostgreSQL operator that actually works.** It's a [CNCF Sandbox project](https://www.cncf.io/projects/cloudnativepg/) that handles the hard parts of running PostgreSQL on Kubernetes: automated failover, continuous backups, point-in-time recovery, and declarative configuration. You describe what you want; the operator makes it happen.
 
 ---
 
 ## Did You Know?
 
-- **CloudNativePG's founders saved the PostgreSQL replication ecosystem** — Gabriele Bartolini and Marco Nenciarini were the core team at 2ndQuadrant who built pglogical, Barman, and contributed critical improvements to pg_basebackup. When EDB acquired 2ndQuadrant in 2020, they worried enterprise interests would compromise open source. They left to build CloudNativePG as a CNCF project, ensuring the most important PostgreSQL-on-Kubernetes operator would remain community-governed forever.
+- **CloudNativePG was created by engineers with deep PostgreSQL and backup-tooling experience** — The project later entered CNCF as a community project focused on Kubernetes-native PostgreSQL operations.
 
-- **It won the CNCF acceptance over operators with 10x the users** — When CloudNativePG applied to the CNCF Sandbox in 2022, Zalando's operator had 3,000+ GitHub stars and ran Zalando's €10B e-commerce platform. CloudNativePG had 500 stars. The CNCF Technical Oversight Committee chose CloudNativePG anyway, citing "superior architecture, no external dependencies, and better alignment with Kubernetes principles."
+- **CloudNativePG and other PostgreSQL operators make different architectural tradeoffs** — Evaluate current project maturity, architecture, and operational model from primary sources rather than unsourced popularity comparisons.
 
-- **A single design decision eliminated 73% of PostgreSQL Kubernetes incidents** — Most PostgreSQL operator failures trace to external dependencies: etcd splits, HAProxy misrouting, Patroni bugs. CloudNativePG eliminated all three by using native Kubernetes leader election and Service endpoints. A 2023 survey of 200 companies found CloudNativePG users reported 73% fewer database incidents than users of dependency-heavy operators.
+- **Reducing external dependencies can remove some operational failure modes** — CloudNativePG's Kubernetes-native design avoids several moving parts that other PostgreSQL stacks may choose to add.
 
-- **Point-in-time recovery saved a fintech $4.2M in regulatory fines** — In 2023, a European fintech accidentally deleted 2 hours of transaction records during a migration. GDPR requires 6-year data retention. Traditional backup would have lost the data permanently. CloudNativePG's continuous WAL archiving let them recover to 30 seconds before the deletion. The €3.8M ($4.2M) GDPR fine that would have resulted: avoided.
+- **Point-in-time recovery can materially reduce the impact of operator or migration mistakes** — Continuous WAL archiving lets teams restore to a timestamp close to the error instead of relying only on older full backups.
 
 ---
 
@@ -505,7 +505,7 @@ kubectl cnpg status my-postgres
 
 ### The Incident
 
-A Series C fintech processing $47M in daily transactions was deploying a new categorization feature. The migration script had been tested in staging, but staging had 1% of production data—500,000 rows vs. 50 million in production.
+A production migration can behave very differently from staging when the real data set is much larger and the write pattern is more demanding.
 
 **13:42** - Developer runs migration: `ALTER TABLE transactions ADD COLUMN category VARCHAR(50)` — completes in 3 seconds (metadata-only change).
 
@@ -513,7 +513,7 @@ A Series C fintech processing $47M in daily transactions was deploying a new cat
 
 **13:44** - Database CPU hits 100%. All 200 connection slots exhausted. The UPDATE was scanning 50 million rows with a table-level lock. Payment API starts returning 503 errors.
 
-**13:45** - PagerDuty goes off. Payments are failing at $32,000/minute in processing volume. Customer support gets 47 tickets in 2 minutes.
+As the migration impacts availability, the team is forced into an urgent recovery decision under growing customer and business pressure.
 
 **13:46** - Panicked developer kills the migration. But the damage is done—27 million rows have `category` populated, 23 million don't. Application logic expecting either all-or-nothing breaks spectacularly.
 
@@ -621,7 +621,7 @@ Alternative without PITR: 14 hours (last night's backup)
 | Last night's backup | 14 hours | 23K transactions to reconcile | $890,000 |
 | **PITR (chosen)** | **1 minute** | **127 transactions to reconcile** | **$12,000** |
 
-The CTO later calculated the ROI: CloudNativePG costs $0 in licensing. The platform team spent 40 hours setting it up ($8,000 in engineer time). That $8,000 investment prevented a $4.2M disaster—a 525x return.
+The operational value of tested backup and recovery can far exceed the time it takes to set it up.
 
 ### Post-Incident Improvements
 
@@ -685,13 +685,13 @@ KubeDB:          Multi-database shops (also MySQL, MongoDB, etc.)
 
 | Mistake | Why It's Bad | Better Approach |
 |---------|--------------|-----------------|
-| No backup configured | Data loss is permanent | Always configure barmanObjectStore |
-| Single replica | No failover, no HA | Minimum 3 instances for production |
+| No backup configured | Data loss is permanent | Usually configure barmanObjectStore or another supported backup method |
+| Single replica | No failover, no HA | Use multiple instances in production so the cluster can fail over and keep replicas available |
 | No resource limits | Pod can be OOM killed | Set appropriate requests/limits |
 | Storage too small | Cluster stops when full | Monitor usage, auto-expand or alert |
 | No affinity rules | All pods on same node | Spread across zones with topologyKey |
 | Missing monitoring | Can't see problems | Enable PodMonitor, set up alerts |
-| Direct pod access | Bypasses failover | Always use Services (cluster-rw, cluster-ro) |
+| Direct pod access | Bypasses failover | Usually use Services (cluster-rw, cluster-ro) |
 | No PITR testing | Backups may not work | Regular restore drills |
 
 ---
@@ -855,7 +855,7 @@ What happens when a CloudNativePG primary fails?
 **Automatic failover sequence:**
 1. Operator detects failure (typically 3-5 seconds)
 2. Healthiest replica is promoted to primary
-3. Kubernetes Service endpoints are updated immediately
+3. Kubernetes Service endpoints are updated shortly after failover
 4. Other replicas start following the new primary
 5. Old primary pod is rebuilt as a replica
 
@@ -930,7 +930,7 @@ With 3 instances:
 - 1 primary for writes
 - 2 replicas for failover and read scaling
 - Can survive 1 node failure while maintaining HA
-- Synchronous replication to at least 1 replica ensures no data loss
+- If you configure synchronous replication appropriately, you can reduce or eliminate acknowledged-transaction loss during failover
 
 Single-instance clusters have no failover capability. Two instances can't provide true HA (losing primary means no failover).
 </details>
@@ -940,15 +940,15 @@ Single-instance clusters have no failover capability. Two instances can't provid
 ## Key Takeaways
 
 1. **CNCF Sandbox project** — Community-vetted, growing adoption
-2. **No external dependencies** — No etcd, Patroni, or HAProxy required
-3. **Automatic failover** — Typically 5-10 seconds, no manual intervention
+2. **No external dependencies** — [No etcd, Patroni, or HAProxy required](https://github.com/cloudnative-pg/cloudnative-pg)
+3. **Automatic failover** — CloudNativePG can promote a new primary automatically, reducing the amount of manual intervention during primary failure
 4. **Built-in backups** — Continuous WAL archiving to S3/GCS/Azure
 5. **Point-in-time recovery** — Restore to any second in retention window
 6. **Declarative configuration** — All settings in Kubernetes CRDs
 7. **Native PostgreSQL** — Standard streaming replication, standard tools
-8. **Three Services** — rw (primary), ro (replicas), r (any)
+8. **Three Services** — [rw (primary), ro (replicas), r (any)](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/architecture.md)
 9. **Rolling updates** — Version upgrades with zero downtime
-10. **Production-ready** — Used by enterprises, banks, fintechs
+10. **Production-ready** — Designed for production PostgreSQL operations on Kubernetes, but validate fit against your own reliability and compliance requirements
 
 ---
 
@@ -971,3 +971,13 @@ Single-instance clusters have no failover capability. Two instances can't provid
 ---
 
 *"The best database operator is one you forget is there. CloudNativePG handles the hard parts of PostgreSQL on Kubernetes so you can focus on your application."*
+
+## Sources
+
+- [cncf.io: cloudnativepg](https://www.cncf.io/projects/cloudnativepg/) — The CNCF project page directly states CloudNativePG's Sandbox maturity level and acceptance date.
+- [github.com: cloudnative pg](https://github.com/cloudnative-pg/cloudnative-pg) — The upstream README directly describes the no-external-HA design and these operator-managed lifecycle actions.
+- [github.com: architecture.md](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/architecture.md) — The architecture documentation explicitly lists the service types and says the `-rw` service is updated on failover.
+- [github.com: connection pooling.md](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/connection_pooling.md) — The connection-pooling documentation directly states native PgBouncer support via the `Pooler` custom resource.
+- [github.com: backup.md](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/backup.md) — The backup documentation directly covers Barman/object-store backups, WAL archiving, and PITR.
+- [github.com: monitoring.md](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/monitoring.md) — The monitoring documentation directly covers PodMonitor-based monitoring and the deprecation status of `.spec.monitoring.enablePodMonitor`.
+- [CloudNativePG Service management](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/service_management.md) — Explains the `rw`, `ro`, and `r` service model that applications should use to survive failovers cleanly.
