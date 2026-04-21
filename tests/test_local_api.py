@@ -1717,6 +1717,8 @@ def test_quality_scores_use_current_modules_not_stale_audit_markdown(tmp_path: P
     scores = {m["module"]: m for m in r["modules"]}
     assert "CKA 2.8: Scheduler Lifecycle Theory" in scores
     assert scores["CKA 2.8: Scheduler Lifecycle Theory"]["severity"] == "excellent"
+    assert all(isinstance(entry.get("path"), str) for entry in r["modules"])
+    assert scores["CKA 2.8: Scheduler Lifecycle Theory"]["path"] == "k8s/cka/module-2.8-scheduler-lifecycle-theory.md"
 
 
 def test_quality_upgrade_plan_groups_modules_below_target(tmp_path: Path) -> None:
@@ -2203,6 +2205,9 @@ def test_quality_scores_live_repo_no_citations_force_critical() -> None:
     quality = local_api.build_quality_scores(local_api.REPO_ROOT)
     assert quality["source"] == "heuristic"
     by_module = {m["module"]: m for m in quality["modules"]}
+    assert all(isinstance(entry.get("path"), str) for entry in quality["modules"])
+    by_path = {m["path"]: m for m in quality["modules"]}
+    assert "ai/foundations/module-1.1-what-is-ai.md" in by_path
     # Spot-check: a module we know lacks a Sources section is critical
     # with 'no citations' leading the primary_issue.
     sample = "CKA 2.8: Scheduler & Pod Lifecycle Theory"

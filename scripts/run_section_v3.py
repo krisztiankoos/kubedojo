@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import subprocess
 import sys
 import time
@@ -49,18 +48,6 @@ from section_source_discovery import (  # type: ignore  # noqa: E402
 COMMITTABLE = {"clean", "residuals_queued"}
 DOCS_ROOT = REPO_ROOT / "src" / "content" / "docs"
 QUALITY_SCORES_URL = "http://127.0.0.1:8768/api/quality/scores"
-_QUALITY_TITLE_RE = re.compile(r'^title:\s*["\']?(.*?)["\']?\s*$', re.MULTILINE)
-_MODULE_NUMBER_RE = re.compile(r"module-([0-9]+(?:\.[0-9]+)*)")
-_CERT_TRACKS = frozenset({"cka", "ckad", "cks", "kcna", "kcsa"})
-_QUALITY_TRACK_LABELS = {
-    "ai": "AI",
-    "ai-ml-engineering": "AI/ML Engineering",
-    "cloud": "Cloud",
-    "linux": "Linux",
-    "on-premises": "On-Premises",
-    "platform": "Platform",
-    "prerequisites": "Prerequisites",
-}
 _QUALITY_ISSUE_CACHE: dict[str, str] | None = None
 _QUALITY_ISSUE_CACHE_LOADED = False
 
@@ -120,38 +107,6 @@ def _uncited_modules(section_key: str) -> list[str]:
     return [key for key in _section_module_keys(section_key) if not _module_has_sources(key)]
 
 
-def _quality_track_label(rel: Path) -> str:
-    parts = rel.parts
-    if not parts:
-        return ""
-    first = parts[0]
-    if len(parts) >= 2 and first == "k8s" and parts[1] in _CERT_TRACKS:
-        return parts[1].upper()
-    top = _QUALITY_TRACK_LABELS.get(first, first.replace("-", " ").title())
-    if len(parts) >= 2 and not parts[1].startswith(("module-", "part")):
-        return f"{top} {parts[1].replace('-', ' ').title()}"
-    return top
-
-
-def _module_quality_label(module_key: str) -> str:
-    rel = Path(f"{module_key}.md")
-    module_path = DOCS_ROOT / rel
-    title = rel.stem.replace("-", " ").title()
-    if module_path.exists():
-        text = module_path.read_text(encoding="utf-8", errors="replace")
-        if text.startswith("---\n") and "\n---\n" in text[4:]:
-            frontmatter = text[4:].split("\n---\n", 1)[0]
-            match = _QUALITY_TITLE_RE.search(frontmatter)
-            if match:
-                title = match.group(1).strip() or title
-    title = re.sub(r"^Module\s+[0-9]+(?:\.[0-9]+)*:\s*", "", title).strip()
-    track = _quality_track_label(rel)
-    number_match = _MODULE_NUMBER_RE.search(rel.stem)
-    if track.lower() in _CERT_TRACKS and number_match:
-        return f"{track} {number_match.group(1)}: {title}"
-    return f"{track}: {title}"
-
-
 def _iter_quality_score_entries(payload: object) -> list[dict]:
     if not isinstance(payload, dict):
         return []
@@ -162,9 +117,11 @@ def _iter_quality_score_entries(payload: object) -> list[dict]:
         for entry in modules:
             if not isinstance(entry, dict):
                 continue
+            path = entry.get("path")
             module = entry.get("module")
-            if isinstance(module, str) and module not in seen:
-                seen.add(module)
+            key = path if isinstance(path, str) else module if isinstance(module, str) else None
+            if key is not None and key not in seen:
+                seen.add(key)
                 entries.append(entry)
     for key, value in payload.items():
         if key == "modules" or not isinstance(value, list):
@@ -172,9 +129,11 @@ def _iter_quality_score_entries(payload: object) -> list[dict]:
         for entry in value:
             if not isinstance(entry, dict):
                 continue
+            path = entry.get("path")
             module = entry.get("module")
-            if isinstance(module, str) and module not in seen:
-                seen.add(module)
+            dedupe_key = path if isinstance(path, str) else module if isinstance(module, str) else None
+            if dedupe_key is not None and dedupe_key not in seen:
+                seen.add(dedupe_key)
                 entries.append(entry)
     return entries
 
@@ -197,10 +156,10 @@ def _load_quality_issue_map(timeout_s: float = 5.0) -> dict[str, str] | None:
         return None
     issues: dict[str, str] = {}
     for entry in _iter_quality_score_entries(payload):
-        module = entry.get("module")
+        path = entry.get("path")
         issue = entry.get("primary_issue")
-        if isinstance(module, str):
-            issues[module] = issue if isinstance(issue, str) else ""
+        if isinstance(path, str):
+            issues[path] = issue if isinstance(issue, str) else ""
     _QUALITY_ISSUE_CACHE = issues
     _QUALITY_ISSUE_CACHE_LOADED = True
     return issues
@@ -211,14 +170,14 @@ def _content_stable_modules(
     *,
     log_skips: bool,
 ) -> list[str]:
-    issues_by_label = _load_quality_issue_map()
-    if issues_by_label is None:
+    issues_by_path = _load_quality_issue_map()
+    if issues_by_path is None:
         return module_keys
 
     kept: list[str] = []
     for module_key in module_keys:
-        label = _module_quality_label(module_key)
-        if label not in issues_by_label:
+        module_path = f"{module_key}.md"
+        if module_path not in issues_by_path:
             print(
                 f"warning: {module_key} missing from /api/quality/scores; content-stable gate failing open",
                 file=sys.stderr,
@@ -226,7 +185,7 @@ def _content_stable_modules(
             )
             kept.append(module_key)
             continue
-        issue = issues_by_label[label]
+        issue = issues_by_path[module_path]
         if issue == "no citations":
             kept.append(module_key)
             continue

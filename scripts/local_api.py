@@ -2021,8 +2021,10 @@ def build_quality_scores(repo_root: Path) -> dict[str, Any]:
         if not has_diagram:
             issues.append("no diagram")
         _, module = _quality_title_and_label(path.relative_to(docs_root), text)
+        rel_path = path.relative_to(docs_root).as_posix()
         modules.append({
             "module": module,
+            "path": rel_path,
             "track": _quality_track_label(path.relative_to(docs_root)),
             "lines": lines_count,
             "score": score,

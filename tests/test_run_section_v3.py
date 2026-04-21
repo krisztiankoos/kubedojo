@@ -32,9 +32,10 @@ def _seed_module(repo_root: Path, module_key: str, *, title: str) -> None:
     )
 
 
-def _quality_payload(module_label: str, primary_issue: str) -> dict:
+def _quality_payload(module_path: str, primary_issue: str, *, module_label: str = "Scorer Label") -> dict:
     entry = {
         "module": module_label,
+        "path": module_path,
         "primary_issue": primary_issue,
         "score": 1.5,
         "track": "AI Foundations",
@@ -64,7 +65,7 @@ def test_content_stable_gate_passes_exact_no_citations(tmp_path: Path, monkeypat
     module_key = "ai/foundations/module-1.1-what-is-ai"
     _seed_module(tmp_path, module_key, title="What Is AI?")
     _configure_docs_root(monkeypatch, tmp_path)
-    _stub_scores_fetch(monkeypatch, _quality_payload("AI Foundations: What Is AI?", "no citations"))
+    _stub_scores_fetch(monkeypatch, _quality_payload(f"{module_key}.md", "no citations"))
 
     kept = run_section_v3._content_stable_modules([module_key], log_skips=True)
     assert kept == [module_key]
@@ -80,7 +81,7 @@ def test_content_stable_gate_skips_non_exact_primary_issues(
     module_key = "ai/foundations/module-1.1-what-is-ai"
     _seed_module(tmp_path, module_key, title="What Is AI?")
     _configure_docs_root(monkeypatch, tmp_path)
-    _stub_scores_fetch(monkeypatch, _quality_payload("AI Foundations: What Is AI?", primary_issue))
+    _stub_scores_fetch(monkeypatch, _quality_payload(f"{module_key}.md", primary_issue))
 
     kept = run_section_v3._content_stable_modules([module_key], log_skips=True)
     assert kept == []
@@ -92,12 +93,29 @@ def test_content_stable_gate_unknown_module_fails_open(tmp_path: Path, monkeypat
     module_key = "ai/foundations/module-1.1-what-is-ai"
     _seed_module(tmp_path, module_key, title="What Is AI?")
     _configure_docs_root(monkeypatch, tmp_path)
-    _stub_scores_fetch(monkeypatch, _quality_payload("AI Foundations: Different Module", "no citations"))
+    _stub_scores_fetch(monkeypatch, _quality_payload("ai/foundations/module-1.9-different-module.md", "no citations"))
 
     kept = run_section_v3._content_stable_modules([module_key], log_skips=True)
     assert kept == [module_key]
     err = capsys.readouterr().err
     assert "missing from /api/quality/scores" in err
+
+
+def test_content_stable_gate_uses_path_when_scorer_label_changes(tmp_path: Path, monkeypatch) -> None:
+    module_key = "ai/foundations/module-1.1-what-is-ai"
+    _seed_module(tmp_path, module_key, title="What Is AI?")
+    _configure_docs_root(monkeypatch, tmp_path)
+    _stub_scores_fetch(
+        monkeypatch,
+        _quality_payload(
+            f"{module_key}.md",
+            "no citations",
+            module_label="Renamed Track: Completely Different Display Label",
+        ),
+    )
+
+    kept = run_section_v3._content_stable_modules([module_key], log_skips=True)
+    assert kept == [module_key]
 
 
 def test_content_stable_gate_api_unreachable_fails_open(tmp_path: Path, monkeypatch, capsys) -> None:
