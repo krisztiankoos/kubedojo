@@ -55,6 +55,7 @@ for candidate in (REPO_ROOT, SCRIPTS_DIR):
 
 import local_api  # noqa: E402
 import pipeline_v4  # noqa: E402
+import rubric_gaps  # noqa: E402
 
 DB_PATH = REPO_ROOT / ".pipeline" / "v2.db"
 DEFAULT_LEASE_SECONDS = 1800
@@ -219,6 +220,7 @@ def select_candidates(
     limit: int | None = None,
     min_score: float | None = None,
     max_score: float = DEFAULT_MAX_SCORE,
+    skip_citation: bool = False,
     quality_fetch: Callable[[Path], dict[str, Any]] | None = None,
 ) -> list[ModuleCandidate]:
     """Pull candidates from local_api quality scores and filter by
@@ -250,6 +252,9 @@ def select_candidates(
             continue
         module_key = path[:-3] if path.endswith(".md") else path
         primary_issue = entry.get("primary_issue") or ""
+        gaps = rubric_gaps.parse_primary_issue(str(primary_issue))
+        if skip_citation and gaps and not pipeline_v4.expand_module.can_expand(gaps):
+            continue
         candidates.append(
             ModuleCandidate(
                 module_key=module_key,
@@ -371,6 +376,7 @@ def run_batch(
         limit=limit,
         min_score=min_score,
         max_score=max_score,
+        skip_citation=skip_citation,
         quality_fetch=quality_fetch,
     )
     _emit = emit or (lambda payload: print(json.dumps(payload, ensure_ascii=False), flush=True))

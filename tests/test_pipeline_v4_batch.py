@@ -143,6 +143,27 @@ def test_select_candidates_applies_limit_and_min_score(
     assert [c.module_key for c in cands] == ["ai/b", "ai/c"]
 
 
+def test_select_candidates_skip_citation_filters_stage4_only_modules(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _patch_db(monkeypatch, tmp_path)
+    payload = _quality_payload(
+        [
+            {"path": "k8s/kcna/a.md", "score": 1.5, "primary_issue": "no citations"},
+            {"path": "k8s/kcna/b.md", "score": 1.5, "primary_issue": "no citations, no exercise"},
+            {"path": "k8s/kcna/c.md", "score": 1.5, "primary_issue": "no diagram"},
+        ]
+    )
+
+    cands = pipeline_v4_batch.select_candidates(
+        track="k8s/kcna",
+        skip_citation=True,
+        quality_fetch=lambda root: payload,
+    )
+
+    assert [c.module_key for c in cands] == ["k8s/kcna/b"]
+
+
 def _canned_result(
     module_key: str,
     *,

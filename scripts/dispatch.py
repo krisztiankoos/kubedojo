@@ -244,7 +244,7 @@ def dispatch_gemini(prompt: str, model: str | None = None,
         stdin_thread.start()
         stderr_thread.start()
 
-        quiet = os.environ.get("KUBEDOJO_QUIET", "") == "1"
+        quiet = _gemini_quiet_mode_enabled()
         output_lines, timed_out = _stream_with_timeout(proc, timeout, quiet=quiet)
         proc.wait()
         stdin_thread.join(timeout=5)
@@ -600,6 +600,14 @@ def _stream_with_timeout(proc, timeout: int, quiet: bool = False) -> tuple[list[
         timer.cancel()
 
     return output_lines, timed_out
+
+
+def _gemini_quiet_mode_enabled() -> bool:
+    """Suppress Gemini stdout streaming during pipeline runs by default."""
+    return (
+        os.environ.get("KUBEDOJO_QUIET", "") == "1"
+        or os.environ.get("KUBEDOJO_PIPELINE", "") == "1"
+    )
 
 
 def _kill_process_tree(proc) -> None:
