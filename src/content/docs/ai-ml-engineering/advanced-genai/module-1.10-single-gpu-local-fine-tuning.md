@@ -127,7 +127,7 @@ A failed local tuning run is not waste if it teaches you that:
 
 ## Why PEFT Is the Default Here
 
-On a single GPU, parameter-efficient methods are usually the practical path.
+On a single GPU, [parameter-efficient methods are usually the practical path](https://arxiv.org/abs/2106.09685).
 
 Why:
 - lower VRAM pressure
@@ -207,7 +207,7 @@ Single-GPU tuning often lives next to quantization decisions.
 
 That creates a common confusion:
 - quantization makes local work feasible
-- quantization also changes performance and compatibility expectations
+- [quantization also changes performance and compatibility expectations](https://arxiv.org/abs/2305.14314)
 
 The right learner mindset is:
 - use quantization to fit the workflow into real hardware
@@ -279,3 +279,10 @@ Often the better move is architectural, not stubborn.
 - [Modern PEFT: DoRA and PiSSA](./module-1.9-modern-peft-dora-pissa/)
 - [Notebooks to Production for ML/LLMs](../mlops/module-1.11-notebooks-to-production-for-ml-llms/)
 - [Multi-GPU and Home-Lab Fine-Tuning](./module-1.11-multi-gpu-home-lab-fine-tuning/)
+
+## Sources
+
+- [LoRA: Low-Rank Adaptation of Large Language Models](https://arxiv.org/abs/2106.09685) — Original LoRA paper for claims about freezing base weights, training low-rank adapters, parameter-count reduction, memory savings, and PEFT trade-offs versus full fine-tuning.
+- [PEFT LoRA Developer Guide](https://huggingface.co/docs/peft/developer_guides/lora) — Official implementation guide for LoRA configuration in PEFT, including rank, alpha, initialization, adapter behavior, and practical library-level fine-tuning mechanics.
+- [QLoRA: Efficient Finetuning of Quantized LLMs](https://arxiv.org/abs/2305.14314) — Primary source for 4-bit fine-tuning, NF4, double quantization, paged optimizers, and realistic single-GPU fine-tuning claims under constrained VRAM.
+- [Transformers bitsandbytes Quantization Guide](https://huggingface.co/docs/transformers/en/quantization/bitsandbytes) — Official source for practical 8-bit and 4-bit quantization, QLoRA-related setup, device mapping, nested quantization, and hardware compatibility constraints relevant to local tuning.

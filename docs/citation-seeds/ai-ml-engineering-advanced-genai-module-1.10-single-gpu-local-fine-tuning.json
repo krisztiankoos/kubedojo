@@ -1,0 +1,66 @@
+{
+  "module_key": "ai-ml-engineering/advanced-genai/module-1.10-single-gpu-local-fine-tuning",
+  "module_path": "src/content/docs/ai-ml-engineering/advanced-genai/module-1.10-single-gpu-local-fine-tuning.md",
+  "research_run_id": "2026-04-21T00:45:21+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/ai-ml-engineering-advanced-genai.json",
+  "claims": [
+    {
+      "claim_id": "C002",
+      "claim_text": "On a single GPU, parameter-efficient methods are usually the practical path because they reduce trainable parameters and memory pressure relative to full fine-tuning.",
+      "claim_class": "standard",
+      "span_hint": "section: Why PEFT Is the Default Here (lines 130-136)",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The LoRA paper and Hugging Face PEFT LoRA guide explicitly describe reduced trainable-parameter count, lower memory use, and practical LoRA-based fine-tuning workflows."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Quantization can make local single-GPU fine-tuning feasible, but it changes performance and compatibility expectations.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Quantization and Local Reality (lines 208-215)",
+      "disposition": "supported",
+      "source_ids": [
+        "S002",
+        "S006"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "QLoRA and the Transformers bitsandbytes guide directly cover 4-bit constrained-VRAM fine-tuning, hardware compatibility constraints, and quantization-related quality/performance considerations."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2305.14314",
+      "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+      "tier": "standards",
+      "why_relevant": "Best primary source for what makes realistic single-GPU fine-tuning possible under tight VRAM budgets."
+    },
+    {
+      "url": "https://huggingface.co/docs/peft/developer_guides/lora",
+      "title": "PEFT LoRA Developer Guide",
+      "tier": "vendor",
+      "why_relevant": "Covers the practical LoRA configuration choices and adapter mechanics learners will use in real local tuning workflows."
+    },
+    {
+      "url": "https://huggingface.co/docs/transformers/en/quantization/bitsandbytes",
+      "title": "Transformers bitsandbytes Quantization Guide",
+      "tier": "vendor",
+      "why_relevant": "Useful for the concrete 4-bit and nested-quantization trade-offs that shape single-GPU local experiments."
+    }
+  ],
+  "notes": "This module is mostly pedagogical. Most remaining sentences are workflow advice, framing, or examples rather than hard factual claims that need inline citations.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
