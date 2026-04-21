@@ -40,10 +40,10 @@ Built on the Ray distributed computing framework, Ray Serve lets you compose mod
 
 ## Did You Know?
 
-- Ray powers ML infrastructure at **OpenAI, Uber, Amazon, and Spotify**
-- Ray can scale to **10,000+ nodes** in a single cluster
-- Ray Serve can handle **millions of requests per second** across a cluster
-- The name "Ray" comes from the rays of light spreading out—representing distributed computation
+- Ray is used by multiple organizations for distributed ML workloads.
+- Ray is designed to scale from a single machine to large multi-node clusters.
+- Ray Serve is designed for high-throughput serving across a cluster.
+- Ray is a distributed computing framework for scaling AI and Python workloads.
 - Ray was created at UC Berkeley's RISELab (same lab that created Spark)
 - Ray Serve supports **fractional GPU allocation**—run 4 models on 1 GPU
 
@@ -378,7 +378,7 @@ class AutoscaledModel:
 
 | Parameter | Effect |
 |-----------|--------|
-| `min_replicas` | Minimum instances (always running) |
+| `min_replicas` | Minimum instances (kept running under normal operation) |
 | `max_replicas` | Maximum instances |
 | `target_num_ongoing_requests_per_replica` | Target queue depth per replica |
 | `upscale_delay_s` | Seconds before scaling up |
@@ -421,9 +421,9 @@ class SmallModel2:
 - You need flexible autoscaling
 
 **Consider alternatives when:**
-- You need lowest possible latency (Triton)
-- You're in a KNative environment (KServe)
-- You need enterprise ML governance (Seldon)
+- You need a serving stack optimized specifically for low-latency inference
+- You're already standardized on Knative-based serving
+- You need governance features that match your organization's requirements
 
 ---
 
@@ -460,9 +460,9 @@ spec:
 
 Key metrics:
 - `ray_serve_deployment_replica_healthy`
-- `ray_serve_num_ongoing_requests`
-- `ray_serve_request_latency_ms`
-- `ray_node_gpu_utilization`
+- `ray_serve_autoscaling_total_requests`
+- `ray_serve_deployment_processing_latency_ms`
+- Cluster GPU utilization metrics from your Ray and Kubernetes observability stack
 
 ### Grafana Dashboard
 
@@ -484,7 +484,7 @@ sum(ray_serve_num_ongoing_requests) by (deployment)
 
 ## War Story: The Multi-Model Nightmare
 
-A legal tech startup was building an AI document analysis platform. They needed:
+Consider an AI document-analysis platform that needs:
 - OCR model for scanned documents
 - Entity extraction model (NER)
 - Summarization model (LLM)
@@ -562,10 +562,10 @@ class Pipeline:
 ```
 
 **The Results**:
-- GPUs needed: 6 (down from 12)
-- GPU utilization: ~75%
-- Latency: 40% lower (parallel execution)
-- Cost: 50% reduction
+- GPUs needed: fewer, because smaller models can share accelerators more efficiently
+- GPU utilization: higher, because idle accelerator time is reduced
+- Latency: lower when independent stages can run in parallel
+- Cost: lower when replicas and GPU shares are packed more efficiently
 
 The key insight: Ray Serve's composition and fractional GPU allocation let them pack models efficiently while maintaining independent scaling.
 
@@ -575,7 +575,7 @@ The key insight: Ray Serve's composition and fractional GPU allocation let them 
 
 | Mistake | Problem | Solution |
 |---------|---------|----------|
-| Not setting resource requests | OOM or GPU contention | Always specify `num_gpus`, `num_cpus` |
+| Not setting resource requests | OOM or GPU contention | Specify appropriate `num_gpus` and `num_cpus` values |
 | Blocking in async handlers | Poor throughput | Use `async`/`await` properly |
 | Too many replicas | Wasted resources | Start small, use autoscaling |
 | Ignoring warmup time | Slow first requests | Use `@serve.deployment(health_check_period_s=...)` |
@@ -857,12 +857,12 @@ RayCluster just manages the Ray runtime. RayService also deploys and manages Ser
 2. **Model composition is Python-native** - bind deployments, call with `.remote()`
 3. **Fractional GPUs maximize utilization** - run 4 models on 1 GPU
 4. **Autoscaling is built-in** - based on queue depth
-5. **KubeRay simplifies Kubernetes deployment** - CRDs for clusters and services
+5. **[KubeRay simplifies Kubernetes deployment](https://github.com/ray-project/kuberay)** - CRDs for clusters and services
 6. **Dashboard provides visibility** - real-time cluster and deployment metrics
 7. **Async handlers improve throughput** - use `async`/`await` properly
-8. **Resource requests are important** - always specify CPU/GPU needs
+8. **Resource requests are important** - specify CPU needs, and GPU needs when applicable
 9. **Great for ML pipelines** - RAG, multi-model, preprocessing chains
-10. **Production-proven at scale** - used by OpenAI, Uber, Amazon
+10. **Production-proven at scale** - used by multiple large organizations
 
 ---
 
@@ -878,3 +878,9 @@ RayCluster just manages the Ray runtime. RayService also deploys and manages Ser
 ## Next Module
 
 Continue to [Module 9.6: LangChain & LlamaIndex](../module-9.6-langchain-llamaindex/) to learn about building LLM applications with frameworks for RAG, agents, and chains.
+
+## Sources
+
+- [github.com: kuberay](https://github.com/ray-project/kuberay) — The KubeRay upstream README explicitly describes the operator and its RayCluster, RayJob, and RayService CRDs.
+- [ray-project/ray](https://github.com/ray-project/ray) — Upstream repository and README for Ray Core and the Ray library ecosystem, including Serve.
+- [Schedule GPUs](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/) — Useful background for the Kubernetes GPU scheduling primitives that Ray/KubeRay deployments rely on.
