@@ -175,10 +175,10 @@ def test_stage_3_retry(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         "gaps_for_module",
         lambda module_key: {"score": 2.0, "gaps": ["thin", "no_quiz"], "target_loc": 600},
     )
-    expand_calls: list[int] = []
+    expand_calls: list[list[str]] = []
 
     def _expand(module_key: str, gaps: list[str], target_loc: int = 600, dry_run: bool = False):
-        expand_calls.append(len(expand_calls))
+        expand_calls.append(list(gaps))
         return _expand_result(gaps_filled=gaps, loc_after=600)
 
     monkeypatch.setattr(pipeline_v4.expand_module, "expand_module", _expand)
@@ -194,9 +194,49 @@ def test_stage_3_retry(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 
     result = pipeline_v4.run_pipeline_v4(MODULE_KEY)
 
-    assert len(expand_calls) == 2
+    assert expand_calls == [["thin", "no_quiz"], ["thin"]]
     assert result.retry_count == 1
     assert result.outcome == "clean"
+
+
+def test_stage_3_retry_uses_newly_surfaced_gap(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Dogfood scenario: rescore surfaces a gap that wasn't in the original list.
+
+    Attempt 0 fills the original gaps (thin, no_quiz). Stage 3 rescore
+    drops those but surfaces no_exercise — a gap that was shadowed by the
+    original compound issue. The retry must act on [no_exercise], not on
+    the stale original list.
+    """
+    _patch_roots(monkeypatch, tmp_path)
+    _write_module(tmp_path)
+    monkeypatch.setattr(
+        pipeline_v4.rubric_gaps,
+        "gaps_for_module",
+        lambda module_key: {"score": 2.0, "gaps": ["thin", "no_quiz"], "target_loc": 600},
+    )
+    expand_calls: list[list[str]] = []
+
+    def _expand(module_key: str, gaps: list[str], target_loc: int = 600, dry_run: bool = False):
+        expand_calls.append(list(gaps))
+        return _expand_result(gaps_filled=gaps, loc_after=600)
+
+    monkeypatch.setattr(pipeline_v4.expand_module, "expand_module", _expand)
+    _patch_rescore_sequence(
+        monkeypatch,
+        [
+            {"score": 3.9, "gaps": ["no_exercise"]},
+            {"score": 4.3, "gaps": []},
+            {"score": 4.3, "gaps": []},
+        ],
+    )
+    _patch_citation_ok(monkeypatch)
+
+    result = pipeline_v4.run_pipeline_v4(MODULE_KEY)
+
+    assert expand_calls == [["thin", "no_quiz"], ["no_exercise"]]
+    assert result.retry_count == 1
+    assert result.outcome == "clean"
+    assert result.gaps_before == ["thin", "no_quiz"]
 
 
 def test_stage_3_retry_budget_exhausted(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

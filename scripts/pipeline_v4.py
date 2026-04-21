@@ -325,16 +325,17 @@ def _run_pipeline_v4(
         stable_before_citation = result.score_before >= 4.0 and not result.gaps_before
         if not stable_before_citation:
             attempt = 0
+            current_gaps = list(result.gaps_before)
             while True:
                 _stage_start(
                     result,
                     STAGE_EXPAND,
-                    {"attempt": attempt, "gaps": result.gaps_before, "target_loc": target_loc},
+                    {"attempt": attempt, "gaps": current_gaps, "target_loc": target_loc},
                     dry_run=dry_run,
                 )
                 expand_result = expand_module.expand_module(
                     normalized_key,
-                    result.gaps_before,
+                    current_gaps,
                     target_loc=target_loc,
                     dry_run=dry_run,
                 )
@@ -380,6 +381,7 @@ def _run_pipeline_v4(
                     )
                 result.retry_count += 1
                 attempt += 1
+                current_gaps = gaps_after_expand
         else:
             result.gaps_after = []
             result.score_after = result.score_before
