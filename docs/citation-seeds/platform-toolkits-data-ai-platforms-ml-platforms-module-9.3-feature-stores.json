@@ -1,0 +1,201 @@
+{
+  "module_key": "platform/toolkits/data-ai-platforms/ml-platforms/module-9.3-feature-stores",
+  "module_path": "src/content/docs/platform/toolkits/data-ai-platforms/ml-platforms/module-9.3-feature-stores.md",
+  "research_run_id": "2026-04-21T07:20:20+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-toolkits-data-ai-platforms-ml-platforms.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The module says data scientists spend 80% of their time on feature engineering.",
+      "claim_class": "statistic",
+      "span_hint": "section: Overview",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Data scientists spend 80% of their time on feature engineering, then those features sit in notebooks, unused by others.",
+      "suggested_rewrite": "Feature engineering and feature reuse consume a large share of practical ML work, and without shared tooling many useful features remain trapped in one-off notebooks.",
+      "lesson_point_url": null,
+      "rationale": "The exact 80% figure is presented as fact but no allowlisted primary source was found that directly supports this wording."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Feature stores centralize feature definitions, support reuse and discovery, and help keep training and serving aligned.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Overview",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/feast-dev/feast/blob/master/docs/getting-started/quickstart.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Feast's quickstart explicitly describes a centralized catalog, feature discovery/reuse, and support for training-serving consistency."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The module calls Feast the leading open-source feature store.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Overview",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "This module covers Feast, the leading open-source feature store, on Kubernetes.",
+      "suggested_rewrite": "This module covers Feast, an open-source feature store, in a Kubernetes-oriented deployment context.",
+      "lesson_point_url": null,
+      "rationale": "The superlative leading is not backed by an authoritative benchmark or market source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Feast supports point-in-time-correct historical retrieval and low-latency online serving to help reduce training-serving skew.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What You'll Be Able to Do",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/feast-dev/feast",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Feast repository overview directly describes point-in-time-correct training retrieval and low-latency online serving."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The Michelangelo/Zipline/Feathr paragraph makes specific historical and quantitative claims about company feature stores.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> 💡 **Did You Know?** Uber built Michelangelo (their ML platform) in 2017 and discovered that 60% of engineer time was spent on features. They created a feature store, and that 60% dropped to 15%. Other companies noticed: Airbnb built Zipline, LinkedIn built Feathr, and the pattern became a standard. Feast emerged as the open-source solution that anyone could use.",
+      "suggested_rewrite": "> 💡 **Did You Know?** Teams building production ML systems often introduce feature stores to reduce duplicated feature work, improve feature sharing, and support both training and serving. Open-source tools now let smaller teams adopt similar patterns without building everything in-house.",
+      "lesson_point_url": null,
+      "rationale": "The paragraph bundles real company history with unsupported precise percentages and broad trend claims, so the false specifics should be removed rather than weakly cited."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Feast feature services group and version the features used by a model.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Defining Features | paragraph after Feature Services code block",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/feast-dev/feast/blob/master/docs/getting-started/faq.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Feast's FAQ says each model version corresponds to a feature service, which directly supports the model-feature grouping claim."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The training-serving skew callout claims feature stores guarantee identical feature computation and implies many production incidents.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Key Concepts | paragraph after table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> 💡 **Did You Know?** The training-serving skew problem was so common that it got its own name. Models trained on batch-computed features would fail in production where features were computed differently. Feature stores guarantee that the exact same feature computation runs in both places—solving a problem that caused countless production incidents.",
+      "suggested_rewrite": "> 💡 **Did You Know?** Training-serving skew happens when features are computed differently in model development and production. Feature stores help reduce that risk by centralizing feature definitions and supporting point-in-time-correct retrieval for training alongside online serving for inference.",
+      "lesson_point_url": null,
+      "rationale": "The central principle is real, but the wording overstates guarantees and adds uncited scale claims about incidents."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Feast automatically performs point-in-time-correct historical feature retrieval.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Feature Store Patterns | Point-in-Time Joins",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/feast-dev/feast/blob/master/docs/reference/offline-stores/overview.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The offline store reference explicitly says `get_historical_features` performs a point-in-time-correct join."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The module ties on-demand features to a specific Feast version and claims only two prior options.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Feature Freshness | callout after diagram",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Before Feast 0.20, you had two choices: materialize everything (slow) or compute outside Feast (training-serving skew).",
+      "suggested_rewrite": "Without on-demand features, teams often either materialize more data than they want or compute transformations outside the feature store.",
+      "lesson_point_url": null,
+      "rationale": "The exact version boundary and exhaustive two-choice framing were not directly supported by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Feast on-demand transformations run during both historical retrieval and online serving.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Feature Freshness | callout after diagram",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/feast-dev/feast/blob/master/docs/getting-started/faq.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Feast's FAQ directly states that on-demand transformations run for `get_historical_features` and `get_online_features`."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The war story gives exact training and production accuracy numbers for an unattributed incident.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Time-Traveling Feature",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "*A fraud detection model had 99% accuracy in training but 60% in production. The team couldn't figure out why.*",
+      "suggested_rewrite": "*A fraud detection model can look excellent in training and then underperform badly in production when its training data includes leaked future information.*",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed anecdote with fake-precise outcome numbers, so the numbers should be removed."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The lesson implies that not using a feature store means future-data leakage is likely.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: War Story: The Time-Traveling Feature | final lesson",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Lesson**: Point-in-time correctness isn't optional. If you're not using a feature store for training data, you're probably leaking future information.",
+      "suggested_rewrite": "**Lesson**: Point-in-time correctness isn't optional. If your training pipeline does not use point-in-time-correct feature retrieval, you risk leaking future information.",
+      "lesson_point_url": null,
+      "rationale": "The real issue is point-in-time correctness, not feature-store usage as an absolute prerequisite."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/feast-dev/feast/blob/master/docs/getting-started/quickstart.md",
+      "title": "Feast Quickstart",
+      "tier": "upstream",
+      "why_relevant": "Covers core Feast concepts including online and offline stores, training-serving skew, feature services, and on-demand transformations."
+    },
+    {
+      "url": "https://github.com/feast-dev/feast/blob/master/docs/reference/offline-stores/overview.md",
+      "title": "Feast Offline Store Overview",
+      "tier": "upstream",
+      "why_relevant": "Gives the clearest primary-source explanation of point-in-time-correct historical retrieval and materialization semantics."
+    }
+  ],
+  "notes": "Shared section-pool entries S001-S003 were not applicable to this module's feature-store claims, so no pool sources were used. Local API cold-start failed (`api: FAILED to start — see logs/api.log`), so the section pool was read directly from the repository file.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://cacm.acm.org/research/principles-and-practices-of-real-time-feature-computing-platforms-for-ml/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}

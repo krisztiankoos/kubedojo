@@ -572,7 +572,7 @@ ARCHITECTURE:
 | Mistake | Problem | Solution |
 |---------|---------|----------|
 | No TTL on features | Stale data served | Set appropriate ttl |
-| Ignoring point-in-time | Data leakage in training | Always use get_historical_features |
+| Ignoring point-in-time | Data leakage in training | Usually use get_historical_features |
 | Too many feature views | Query complexity | Group related features |
 | No feature documentation | Features undiscoverable | Use tags and descriptions |
 | Skipping materialization | Online store empty | Schedule regular materialization |
@@ -588,7 +588,7 @@ ARCHITECTURE:
 1. Training data included `is_fraud` label
 2. Feature `transactions_after_fraud_report` was computed for all data
 3. In training, this used future knowledge (transactions AFTER fraud was reported)
-4. In production, this feature was always 0 (no future data)
+4. In production, this feature was typically 0 at prediction time (no future data)
 
 **The fix**:
 ```python
@@ -858,3 +858,8 @@ These tools form the foundation of a modern MLOps platform on Kubernetes.
 ---
 
 *"Features are the fuel of machine learning. A feature store is the gas station that keeps your models running—consistent, fresh, and available whenever you need them."*
+
+## Sources
+
+- [Feast Quickstart](https://github.com/feast-dev/feast/blob/master/docs/getting-started/quickstart.md) — Covers core Feast concepts including online and offline stores, training-serving skew, feature services, and on-demand transformations.
+- [Feast Offline Store Overview](https://github.com/feast-dev/feast/blob/master/docs/reference/offline-stores/overview.md) — Gives the clearest primary-source explanation of point-in-time-correct historical retrieval and materialization semantics.
