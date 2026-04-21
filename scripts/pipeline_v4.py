@@ -1,0 +1,533 @@
+#!/usr/bin/env python3
+"""Pipeline v4 Stage-1-to-5 orchestrator.
+
+Stages:
+    1. RUBRIC_SCAN
+    2. EXPAND
+    3. RUBRIC_RECHECK
+    4. CITATION_V3
+    5. FINAL_RECHECK
+
+TODO:
+    Stage 4 uses a first-pass approximation for "citation anchors inside
+    generated prose" by comparing generated-block LOC to total module LOC.
+    A follow-up should inspect pipeline_v3's actual anchor plan instead of
+    using this coarse proxy.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime as dt
+import json
+import subprocess
+import sys
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS_DIR = REPO_ROOT / "scripts"
+for candidate in (REPO_ROOT, SCRIPTS_DIR):
+    candidate_str = str(candidate)
+    if candidate_str not in sys.path:
+        sys.path.insert(0, candidate_str)
+
+import expand_module  # noqa: E402
+import local_api  # noqa: E402
+import rubric_gaps  # noqa: E402
+
+DOCS_ROOT = REPO_ROOT / "src" / "content" / "docs"
+PIPELINE_V4_DIR = REPO_ROOT / ".pipeline" / "v4"
+RUNS_DIR = PIPELINE_V4_DIR / "runs"
+GENERATED_BLOCK_PREFIX = "<!-- v4:generated"
+GENERATED_BLOCK_SUFFIX = "<!-- /v4:generated -->"
+
+STAGE_RUBRIC_SCAN = "RUBRIC_SCAN"
+STAGE_EXPAND = "EXPAND"
+STAGE_RUBRIC_RECHECK = "RUBRIC_RECHECK"
+STAGE_CITATION_V3 = "CITATION_V3"
+STAGE_FINAL_RECHECK = "FINAL_RECHECK"
+STAGE_DONE = "DONE"
+
+OUTCOME_CLEAN = "clean"
+OUTCOME_SKIPPED = "skipped_already_stable"
+OUTCOME_NEEDS_HUMAN = "needs_human"
+OUTCOME_FAILED = "failed"
+
+
+@dataclass
+class PipelineV4Result:
+    module_key: str
+    started_at: str
+    finished_at: str
+    stage_reached: str
+    outcome: str
+    reason: str
+    score_before: float
+    score_after: float | None
+    gaps_before: list[str]
+    gaps_after: list[str]
+    retry_count: int
+    citation_v3_exit: int | None
+    events: list[dict[str, Any]] = field(default_factory=list)
+
+
+class PipelineV4Error(RuntimeError):
+    """Raised when pipeline v4 cannot complete due to a local orchestration error."""
+
+
+def _iso_utc() -> str:
+    return dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
+
+
+def _normalize_module_key(module_key: str) -> str:
+    return module_key[:-3] if module_key.endswith(".md") else module_key
+
+
+def _module_path(module_key: str) -> Path:
+    return DOCS_ROOT / f"{_normalize_module_key(module_key)}.md"
+
+
+def _module_flat_key(module_key: str) -> str:
+    return _normalize_module_key(module_key).replace("/", "__")
+
+
+def _tail_lines(text: str, limit: int = 50) -> list[str]:
+    if not text:
+        return []
+    return text.splitlines()[-limit:]
+
+
+def _stderr_log(message: str) -> None:
+    print(message, file=sys.stderr)
+
+
+def _append_event(
+    result: PipelineV4Result,
+    stage: str,
+    event: str,
+    detail: dict[str, Any],
+    *,
+    dry_run: bool,
+) -> dict[str, Any]:
+    record = {
+        "ts": _iso_utc(),
+        "stage": stage,
+        "event": event,
+        "detail": detail,
+    }
+    result.events.append(record)
+    if not dry_run:
+        RUNS_DIR.mkdir(parents=True, exist_ok=True)
+        run_path = RUNS_DIR / f"{_module_flat_key(result.module_key)}.jsonl"
+        with run_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    return record
+
+
+def _stage_start(
+    result: PipelineV4Result,
+    stage: str,
+    detail: dict[str, Any] | None = None,
+    *,
+    dry_run: bool,
+) -> None:
+    result.stage_reached = stage
+    payload = {} if detail is None else detail
+    _stderr_log(f"[pipeline_v4] {stage} start {json.dumps(payload, ensure_ascii=False)}")
+    _append_event(result, stage, "start", payload, dry_run=dry_run)
+
+
+def _stage_finish(
+    result: PipelineV4Result,
+    stage: str,
+    detail: dict[str, Any] | None = None,
+    *,
+    dry_run: bool,
+) -> None:
+    payload = {} if detail is None else detail
+    _stderr_log(f"[pipeline_v4] {stage} finish {json.dumps(payload, ensure_ascii=False)}")
+    _append_event(result, stage, "finish", payload, dry_run=dry_run)
+
+
+def _result_with_finish(result: PipelineV4Result) -> PipelineV4Result:
+    result.finished_at = _iso_utc()
+    return result
+
+
+def _fail_result(
+    result: PipelineV4Result,
+    *,
+    outcome: str,
+    reason: str,
+    score_after: float | None = None,
+) -> PipelineV4Result:
+    result.outcome = outcome
+    result.reason = reason
+    if score_after is not None:
+        result.score_after = score_after
+    return _result_with_finish(result)
+
+
+def _lookup_quality_entry(payload: dict[str, Any], module_key: str) -> dict[str, Any]:
+    normalized = _normalize_module_key(module_key)
+    modules = payload.get("modules")
+    if not isinstance(modules, list):
+        raise PipelineV4Error("local_api.build_quality_scores() returned no modules list")
+    for entry in modules:
+        if not isinstance(entry, dict):
+            continue
+        path = entry.get("path")
+        entry_key = path[:-3] if isinstance(path, str) and path.endswith(".md") else path
+        if entry_key == normalized:
+            return entry
+    raise PipelineV4Error(f"module not found in quality scores: {normalized}")
+
+
+def _rescore_module(module_key: str) -> dict[str, Any]:
+    entry = _lookup_quality_entry(local_api.build_quality_scores(REPO_ROOT), module_key)
+    raw_score = entry.get("score")
+    try:
+        score = float(raw_score)
+    except (TypeError, ValueError) as exc:
+        raise PipelineV4Error(f"invalid score for {module_key}: {raw_score!r}") from exc
+    primary_issue = entry.get("primary_issue")
+    primary_issue_text = primary_issue.strip() if isinstance(primary_issue, str) else ""
+    return {
+        "score": score,
+        "gaps": rubric_gaps.parse_primary_issue(primary_issue_text),
+        "primary_issue": primary_issue_text,
+        "entry": entry,
+    }
+
+
+def _stage_1_gap_scan(module_key: str) -> dict[str, Any]:
+    try:
+        item = rubric_gaps.gaps_for_module(module_key)
+    except rubric_gaps.QualityScoresError:
+        item = None
+    if item is not None:
+        return item
+
+    entry = _lookup_quality_entry(local_api.build_quality_scores(REPO_ROOT), module_key)
+    path = entry.get("path")
+    if not isinstance(path, str) or not path:
+        raise PipelineV4Error(f"quality scores entry missing path for {module_key}")
+    raw_score = entry.get("score")
+    try:
+        score = float(raw_score)
+    except (TypeError, ValueError) as exc:
+        raise PipelineV4Error(f"invalid score for {module_key}: {raw_score!r}") from exc
+    primary_issue = entry.get("primary_issue")
+    primary_issue_text = primary_issue.strip() if isinstance(primary_issue, str) else ""
+    return {
+        "module_key": _normalize_module_key(module_key),
+        "path": path,
+        "module": entry.get("module"),
+        "score": score,
+        "severity": entry.get("severity"),
+        "primary_issue": primary_issue_text,
+        "gaps": rubric_gaps.parse_primary_issue(primary_issue_text),
+        "target_loc": rubric_gaps.target_loc_for_path(path),
+    }
+
+
+def _generated_loc_ratio(module_path: Path) -> float:
+    text = module_path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    if not lines:
+        return 0.0
+
+    generated_loc = 0
+    inside_generated = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith(GENERATED_BLOCK_PREFIX):
+            inside_generated = True
+            continue
+        if stripped == GENERATED_BLOCK_SUFFIX:
+            inside_generated = False
+            continue
+        if inside_generated:
+            generated_loc += 1
+
+    return generated_loc / len(lines)
+
+
+def _invoke_citation_pipeline(module_key: str) -> dict[str, Any]:
+    cmd = [".venv/bin/python", "scripts/pipeline_v3.py", _normalize_module_key(module_key)]
+    completed = subprocess.run(
+        cmd,
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return {
+        "exit_code": completed.returncode,
+        "stdout_tail": _tail_lines(completed.stdout),
+        "stderr_tail": _tail_lines(completed.stderr),
+    }
+
+
+def _new_result(module_key: str) -> PipelineV4Result:
+    started_at = _iso_utc()
+    return PipelineV4Result(
+        module_key=_normalize_module_key(module_key),
+        started_at=started_at,
+        finished_at=started_at,
+        stage_reached=STAGE_RUBRIC_SCAN,
+        outcome=OUTCOME_FAILED,
+        reason="",
+        score_before=0.0,
+        score_after=None,
+        gaps_before=[],
+        gaps_after=[],
+        retry_count=0,
+        citation_v3_exit=None,
+        events=[],
+    )
+
+
+def _run_pipeline_v4(
+    module_key: str,
+    *,
+    max_rubric_retries: int = 2,
+    generated_loc_threshold: float = 0.5,
+    dry_run: bool = False,
+    skip_citation: bool = False,
+) -> PipelineV4Result:
+    result = _new_result(module_key)
+    normalized_key = result.module_key
+    module_path = _module_path(normalized_key)
+
+    try:
+        if not module_path.exists():
+            raise PipelineV4Error(f"module file not found: {module_path}")
+
+        _stage_start(result, STAGE_RUBRIC_SCAN, {"module_key": normalized_key}, dry_run=dry_run)
+        stage1 = _stage_1_gap_scan(normalized_key)
+        result.score_before = float(stage1.get("score"))
+        result.gaps_before = list(stage1.get("gaps") or [])
+        target_loc = int(stage1.get("target_loc") or rubric_gaps.target_loc_for_path(f"{normalized_key}.md"))
+        _stage_finish(
+            result,
+            STAGE_RUBRIC_SCAN,
+            {
+                "score": result.score_before,
+                "gaps": result.gaps_before,
+                "target_loc": target_loc,
+            },
+            dry_run=dry_run,
+        )
+
+        stable_before_citation = result.score_before >= 4.0 and not result.gaps_before
+        if not stable_before_citation:
+            attempt = 0
+            while True:
+                _stage_start(
+                    result,
+                    STAGE_EXPAND,
+                    {"attempt": attempt, "gaps": result.gaps_before, "target_loc": target_loc},
+                    dry_run=dry_run,
+                )
+                expand_result = expand_module.expand_module(
+                    normalized_key,
+                    result.gaps_before,
+                    target_loc=target_loc,
+                    dry_run=dry_run,
+                )
+                _stage_finish(
+                    result,
+                    STAGE_EXPAND,
+                    {
+                        "attempt": attempt,
+                        "gaps_filled": expand_result.gaps_filled,
+                        "gaps_failed": expand_result.gaps_failed,
+                        "loc_before": expand_result.loc_before,
+                        "loc_after": expand_result.loc_after,
+                        "provenance_blocks_added": expand_result.provenance_blocks_added,
+                    },
+                    dry_run=dry_run,
+                )
+
+                _stage_start(result, STAGE_RUBRIC_RECHECK, {"attempt": attempt}, dry_run=dry_run)
+                rescored = _rescore_module(normalized_key)
+                score_after_expand = float(rescored["score"])
+                gaps_after_expand = list(rescored["gaps"])
+                result.score_after = score_after_expand
+                result.gaps_after = gaps_after_expand
+                _stage_finish(
+                    result,
+                    STAGE_RUBRIC_RECHECK,
+                    {
+                        "attempt": attempt,
+                        "score": score_after_expand,
+                        "gaps": gaps_after_expand,
+                        "retry_count": result.retry_count,
+                    },
+                    dry_run=dry_run,
+                )
+                if score_after_expand >= 4.0:
+                    break
+                if result.retry_count >= max_rubric_retries:
+                    return _fail_result(
+                        result,
+                        outcome=OUTCOME_NEEDS_HUMAN,
+                        reason="rubric_stage_3_unmet",
+                        score_after=score_after_expand,
+                    )
+                result.retry_count += 1
+                attempt += 1
+        else:
+            result.gaps_after = []
+            result.score_after = result.score_before
+
+        score_before_citation = result.score_after if result.score_after is not None else result.score_before
+
+        if dry_run or skip_citation:
+            skip_reason = "dry_run" if dry_run else "skip_citation"
+            _stage_start(result, STAGE_CITATION_V3, {"reason": skip_reason}, dry_run=dry_run)
+            _stage_finish(
+                result,
+                STAGE_CITATION_V3,
+                {"skipped": True, "reason": skip_reason},
+                dry_run=dry_run,
+            )
+            result.stage_reached = STAGE_DONE
+            result.outcome = OUTCOME_SKIPPED if stable_before_citation else OUTCOME_CLEAN
+            result.reason = ""
+            return _result_with_finish(result)
+
+        _stage_start(result, STAGE_CITATION_V3, {}, dry_run=dry_run)
+        generated_ratio = _generated_loc_ratio(module_path)
+        if generated_ratio > generated_loc_threshold:
+            _stage_finish(
+                result,
+                STAGE_CITATION_V3,
+                {
+                    "generated_loc_ratio": round(generated_ratio, 4),
+                    "generated_loc_threshold": generated_loc_threshold,
+                    "skipped": True,
+                },
+                dry_run=dry_run,
+            )
+            return _fail_result(
+                result,
+                outcome=OUTCOME_NEEDS_HUMAN,
+                reason="too_much_generated_prose",
+                score_after=score_before_citation,
+            )
+
+        citation_result = _invoke_citation_pipeline(normalized_key)
+        result.citation_v3_exit = int(citation_result["exit_code"])
+        _stage_finish(
+            result,
+            STAGE_CITATION_V3,
+            {
+                "generated_loc_ratio": round(generated_ratio, 4),
+                "exit_code": result.citation_v3_exit,
+                "stdout_tail": citation_result["stdout_tail"],
+                "stderr_tail": citation_result["stderr_tail"],
+            },
+            dry_run=dry_run,
+        )
+        if result.citation_v3_exit != 0:
+            return _fail_result(
+                result,
+                outcome=OUTCOME_FAILED,
+                reason="citation_v3_failed",
+                score_after=score_before_citation,
+            )
+
+        _stage_start(
+            result,
+            STAGE_FINAL_RECHECK,
+            {"score_before_citation": score_before_citation},
+            dry_run=dry_run,
+        )
+        final_rescore = _rescore_module(normalized_key)
+        final_score = float(final_rescore["score"])
+        final_gaps = list(final_rescore["gaps"])
+        result.score_after = final_score
+        result.gaps_after = final_gaps
+        _stage_finish(
+            result,
+            STAGE_FINAL_RECHECK,
+            {
+                "score_after": final_score,
+                "gaps": final_gaps,
+                "delta_from_pre_citation": round(final_score - score_before_citation, 4),
+            },
+            dry_run=dry_run,
+        )
+        if final_score < score_before_citation - 0.2:
+            return _fail_result(
+                result,
+                outcome=OUTCOME_FAILED,
+                reason="final_rescore_regressed",
+                score_after=final_score,
+            )
+
+        result.stage_reached = STAGE_DONE
+        result.outcome = OUTCOME_SKIPPED if stable_before_citation else OUTCOME_CLEAN
+        result.reason = ""
+        return _result_with_finish(result)
+    except Exception as exc:
+        if isinstance(exc, PipelineV4Error):
+            return _fail_result(result, outcome=OUTCOME_FAILED, reason=str(exc), score_after=result.score_after)
+        return _fail_result(
+            result,
+            outcome=OUTCOME_FAILED,
+            reason=f"{type(exc).__name__}: {exc}",
+            score_after=result.score_after,
+        )
+
+
+def run_pipeline_v4(
+    module_key: str,
+    *,
+    max_rubric_retries: int = 2,
+    generated_loc_threshold: float = 0.5,
+    dry_run: bool = False,
+) -> PipelineV4Result:
+    return _run_pipeline_v4(
+        module_key,
+        max_rubric_retries=max_rubric_retries,
+        generated_loc_threshold=generated_loc_threshold,
+        dry_run=dry_run,
+        skip_citation=False,
+    )
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("module_key", help="Module key without the .md suffix.")
+    parser.add_argument("--dry-run", action="store_true", help="Run without writing stage logs or invoking citation_v3.")
+    parser.add_argument("--skip-citation", action="store_true", help="Stop after Stages 1-3.")
+    parser.add_argument("--max-rubric-retries", type=int, default=2, help="Retry budget after the initial Stage-2 attempt.")
+    parser.add_argument(
+        "--generated-loc-threshold",
+        type=float,
+        default=0.5,
+        help="Maximum generated LOC ratio allowed before citation_v3 is skipped.",
+    )
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
+    result = _run_pipeline_v4(
+        args.module_key,
+        max_rubric_retries=args.max_rubric_retries,
+        generated_loc_threshold=args.generated_loc_threshold,
+        dry_run=args.dry_run,
+        skip_citation=args.skip_citation,
+    )
+    print(json.dumps(asdict(result), ensure_ascii=False))
+    return 0 if result.outcome in {OUTCOME_CLEAN, OUTCOME_SKIPPED} else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
