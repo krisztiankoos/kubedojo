@@ -33,21 +33,21 @@ After completing this module, you will be able to:
 
 **The $4.2 Million Phone Call That Never Came**
 
-The on-call engineer at a major e-commerce platform checked her phone nervously. AWS had just posted to their status page: us-east-1 regional outage. Her company processed $47,000 per minute during peak hours.
+A regional cloud outage can turn a manually operated failover plan into an expensive, high-stress incident for a high-volume platform.
 
 Last year, this exact scenario had been catastrophic:
 
 | 2022 Aurora PostgreSQL Outage | Impact |
 |-------------------------------|--------|
-| Detection time | 8 minutes |
-| Manual failover coordination | 23 minutes |
-| DNS propagation to DR site | 15 minutes |
-| Cache warming in us-west-2 | 12 minutes |
-| **Total downtime** | **58 minutes** |
-| **Revenue lost** | **$2,726,000** |
-| **SLA credits issued** | **$340,000** |
-| **Customer churn (90 days)** | **$1,134,000** |
-| **Post-incident engineering** | **120 hours ($18,000)** |
+| Detection time | Several minutes passed before humans recognized the problem |
+| Manual failover coordination | Manual failover added substantial operational delay |
+| DNS propagation to DR site | DNS cutover added more recovery delay |
+| Cache warming in us-west-2 | Recovery also required warm-up time in the failover region |
+| **Total downtime** | **Nearly an hour of disruption** |
+| **Revenue lost** | **Substantial revenue was at risk during the outage** |
+| **SLA credits issued** | **Customer remediation costs followed the outage** |
+| **Customer churn (90 days)** | **Some longer-tail customer impact followed the incident** |
+| **Post-incident engineering** | **Significant follow-up engineering work was required** |
 
 Tonight was different. Six months ago, they'd migrated to CockroachDB.
 
@@ -55,21 +55,21 @@ The engineer watched the dashboard. Traffic automatically shifted to us-west-2 a
 
 She went back to sleep.
 
-**CockroachDB handled the outage in 4.7 seconds—automatic leader election, zero human intervention, zero data loss, zero customer impact.**
+**CockroachDB is designed so leadership can move automatically after failures, reducing or avoiding manual failover work when quorum is preserved.**
 
-This is what CockroachDB was built for: a distributed SQL database that treats datacenter failures as routine events, not emergencies. Named after the famously resilient insect, it uses the same Raft consensus algorithm that powers etcd and Kubernetes itself.
+This is what CockroachDB was built for: a distributed SQL database that treats datacenter failures as routine events, not emergencies. Named after the famously resilient insect, it uses [the same Raft consensus algorithm that powers etcd and Kubernetes itself](https://github.com/etcd-io/raft).
 
 ---
 
 ## Did You Know?
 
-- **DoorDash's migration to CockroachDB saved an estimated $8M annually** — They moved 100+ microservices from Aurora PostgreSQL to CockroachDB for multi-region active-active. Their "entire business offline" blast radius shrank to "single region latency increase"—a 15-minute outage became a 50ms slowdown.
+- **DoorDash has described moving important workloads from Aurora Postgres to CockroachDB** — The defensible lesson here is about reducing single-database blast radius and improving resilience, not a precise annual savings number.
 
-- **Cockroach Labs raised $633M on the promise of database resilience** — Their Series F valued the company at $5B. The pitch: every major database outage costs enterprises millions, and CockroachDB makes regional failures a non-event. The 2021 Facebook outage ($60M revenue lost in 6 hours) proved the point.
+- **Cockroach Labs has raised significant funding around the argument that resilience matters** — Major outages can be extremely expensive for large businesses, but precise fundraising and outage-loss figures need direct sourcing.
 
-- **One fintech cut their DR costs from $2.1M/year to $340K** — Traditional disaster recovery meant maintaining a warm standby cluster that sat idle 99.99% of the time. CockroachDB's active-active architecture eliminated the need—all nodes serve traffic, all nodes are the DR site.
+- **Some teams use active-active database designs to reduce the cost and complexity of warm-standby disaster recovery** — Exact savings depend on the workload, topology, and licensing model.
 
-- **GDPR compliance fines avoided: €847M in a single case study** — A European bank used `REGIONAL BY ROW` to guarantee EU customer data never leaves EU datacenters, even in a globally distributed cluster. Without this, they faced potential GDPR penalties of up to 4% of global revenue.
+- **Features like `REGIONAL BY ROW` can help support data-locality and residency requirements** — Compliance outcomes still depend on the full system design and legal review, not just one database feature.
 
 ---
 
@@ -436,8 +436,8 @@ Storage:
 ### The Setup
 
 A fast-growing e-commerce company was preparing for Black Friday 2023. Previous years had been nightmares:
-- 2021: Aurora PostgreSQL maxed out at 10K TPS, site went read-only for 2 hours
-- 2022: Manual failover during peak load, 45 minutes of degraded service, $1.2M in lost sales
+- Earlier peak events exposed scaling limits in the prior Aurora PostgreSQL design.
+- A previous peak-season incident still required manual failover and caused customer-visible degradation.
 
 For 2023, they migrated to CockroachDB six months before Black Friday.
 
@@ -511,49 +511,49 @@ Peak capacity: 150K TPS (tested)
 
 **12:45 PM EST - The Test**
 - Traffic: 98,000 TPS (peak)
-- us-east-1a availability zone experiences network issues
-- 3 CockroachDB nodes in that AZ become temporarily unreachable
+- A peak-period availability-zone network issue briefly disrupted part of the deployment
+- Several CockroachDB nodes in the affected zone became temporarily unreachable
 
 **What happened:**
 1. Raft leaders in us-east-1a couldn't reach followers
-2. Within 5 seconds, new leaders elected in us-east-1b and us-east-1c
-3. Write latency increased from 15ms to 80ms for affected ranges
-4. Zero failed transactions (clients retried automatically)
-5. Zero data loss
+2. New leaders were elected automatically on surviving replicas after the failure
+3. Write latency increased noticeably for the affected ranges during failover
+4. Application retries can hide some failover turbulence, but exact transaction outcomes need real evidence
+5. Whether data loss occurs depends on quorum, replication, and the exact failure mode
 
 **12:52 PM EST - Recovery**
 - us-east-1a network recovered
 - Nodes rejoined cluster
-- Raft replication caught up within 30 seconds
+- Replication caught up shortly after the affected nodes returned
 - Latency returned to normal
 
 ### The Numbers
 
 | Metric | 2022 (Aurora) | 2023 (CockroachDB) |
 |--------|---------------|-------------------|
-| Peak TPS | 12,000 | 98,000 |
-| Downtime | 45 minutes | 0 |
-| Failed transactions | 15,000+ | 0 |
-| Data loss | None (lucky) | None (by design) |
-| Lost revenue | $1.2M | $0 |
-| On-call pages | 47 | 3 (informational) |
+| Peak TPS | Lower peak throughput | Higher peak throughput after the migration |
+| Downtime | Customer-visible outage occurred | Much lower disruption was the goal of the new design |
+| Failed transactions | Many transactions failed under load | Transaction impact was materially lower in the newer design |
+| Data loss | No data loss was reported in this anecdote | The design goal was to preserve committed data during failures |
+| Lost revenue | Significant revenue was at risk during the outage | Lower disruption reduced business impact |
+| On-call pages | Heavy pager load | Far fewer human interventions were needed |
 
 ### Financial Impact: Black Friday 2023 vs 2022
 
 | Category | 2022 (Aurora) | 2023 (CockroachDB) | Impact |
 |----------|---------------|-------------------|--------|
-| **Direct revenue loss** | $1,200,000 | $0 | +$1,200,000 |
-| **SLA credits issued** | $180,000 | $0 | +$180,000 |
-| **Customer churn (30 days)** | $340,000 | $0 | +$340,000 |
-| **Brand damage (est.)** | $500,000 | $0 | +$500,000 |
-| **Engineering overtime** | $45,000 | $0 | +$45,000 |
-| **Post-mortem & fixes** | $120,000 | $0 | +$120,000 |
-| **CockroachDB license cost** | $0 | $96,000/year | -$96,000 |
-| **Migration investment** | $0 | $280,000 (one-time) | -$280,000 |
-| **Net Impact (Year 1)** | | | **+$2,009,000** |
-| **Net Impact (Ongoing)** | | | **+$2,289,000/year** |
+| **Direct revenue loss** | Significant outage cost | Reduced outage cost | Improvement depends on real incident frequency |
+| **SLA credits issued** | Customer remediation cost | Reduced remediation cost | Improvement depends on actual contracts and incidents |
+| **Customer churn (30 days)** | Some longer-tail business impact | Lower disruption can reduce follow-on impact | Effect size depends on real customer behavior |
+| **Brand damage (est.)** | Reputational cost was possible | Lower disruption can reduce reputational risk | This effect is hard to quantify precisely |
+| **Engineering overtime** | Extra staffing cost | Lower incident load can reduce overtime | Savings depend on team structure and incident history |
+| **Post-mortem & fixes** | Follow-up engineering cost | Lower disruption can reduce follow-up work | Savings depend on the actual incident profile |
+| **CockroachDB license cost** | $0 | Recurring platform cost | Ongoing cost depends on edition, scale, and contract |
+| **Migration investment** | $0 | One-time migration cost | Migration cost depends heavily on scope and staffing |
+| **Net Impact (Year 1)** | | | **Business value depends on actual outage rates and migration costs** |
+| **Net Impact (Ongoing)** | | | **Ongoing value depends on steady-state operating costs and avoided incidents** |
 
-The CFO's comment in the board meeting: "The CockroachDB migration paid for itself in a single Black Friday. Actually, it paid for itself 7 times over. And next year there's no migration cost—it's pure upside."
+A resilience migration can have a strong business case, but it should be argued with a real postmortem and a finance model rather than an invented boardroom quote.
 
 ### Lessons Learned
 
@@ -616,10 +616,10 @@ YugabyteDB:   Open source alternative to CockroachDB, also PostgreSQL
 | Single-region deployment | No region failure survival | Deploy across 3+ regions/AZs |
 | Not using locality | All traffic goes everywhere | Configure locality for data placement |
 | Ignoring hot spots | Single range gets overloaded | Pre-split hot tables, use UUIDs |
-| No connection pooling | Connection overhead at scale | Use PgBouncer or connection pool |
+| No connection pooling | Connection overhead at scale | Use a connection-pooling layer appropriate for your stack |
 | Default isolation | Serializable has overhead | Consider READ COMMITTED for read-heavy |
 | No backup strategy | CockroachDB isn't a backup | Configure BACKUP to cloud storage |
-| Undersized nodes | CPU/memory bottlenecks | 8+ cores, 32GB+ RAM per node |
+| Undersized nodes | CPU/memory bottlenecks | Size nodes from workload measurements and current vendor guidance |
 | Missing monitoring | Can't see problems coming | Prometheus + Grafana + alerting |
 
 ---
@@ -938,7 +938,7 @@ When a node fails:
 
 ## Key Takeaways
 
-1. **Distributed SQL** — CockroachDB is a true distributed database with automatic sharding and rebalancing
+1. **Distributed SQL** — [CockroachDB is a true distributed database with automatic sharding and rebalancing](https://github.com/cockroachdb/cockroach)
 2. **Survives failures** — Designed for regional outages, not just node failures
 3. **PostgreSQL compatible** — Use existing PostgreSQL drivers and tools
 4. **Raft consensus** — Each range runs its own Raft group for strong consistency
@@ -969,4 +969,11 @@ When a node fails:
 
 ---
 
-*"The best disaster recovery is a system that doesn't consider disasters special. CockroachDB treats node failures, network partitions, and even regional outages as normal events to handle automatically."*
+CockroachDB is designed to handle routine failures automatically when the cluster still has the quorum and topology it needs.
+
+## Sources
+
+- [github.com: raft](https://github.com/etcd-io/raft) — The etcd Raft library README explicitly describes Raft and lists CockroachDB, etcd, and Kubernetes among systems it powers.
+- [github.com: cockroach](https://github.com/cockroachdb/cockroach) — The CockroachDB upstream repository README states these high-level capabilities directly.
+- [CockroachDB Kubernetes Operator](https://github.com/cockroachdb/cockroach-operator) — Useful for Kubernetes deployment details and operator-managed cluster behavior.
+- [In Search of an Understandable Consensus Algorithm](https://www.usenix.org/conference/atc14/technical-sessions/presentation/ongaro) — Primary reference for Raft, the consensus algorithm discussed in the module.
