@@ -34,11 +34,11 @@ You can create Services and write NetworkPolicies all day, but when something br
 
 > **War Story: The Silent MTU Drop**
 >
-> A platform team migrated a cluster from Flannel with `host-gw` to Flannel with `vxlan` encapsulation. Everything seemed fine -- small health-check probes succeeded, pod-to-pod pings worked, and Services resolved correctly. But every few minutes, a critical batch job would hang and eventually time out.
+> A common migration failure mode is that a switch from routed networking to overlay encapsulation appears healthy for small probes but causes larger application transfers to stall or time out.
 >
-> After two days of fruitless debugging (restarting pods, checking DNS, blaming the application), a junior engineer ran `tcpdump` on a node and noticed something peculiar: TCP SYN packets crossed nodes fine, but the large data payloads were being silently dropped. The culprit? VXLAN adds a 50-byte header, reducing the effective MTU from 1500 to 1450. The CNI was configured for MTU 1500, so any packet close to the limit was too large for the tunnel, and the `Don't Fragment` bit caused the kernel to drop it silently instead of fragmenting.
+> One common cause is an MTU mismatch: overlay encapsulation reduces the effective packet size, so larger payloads can be dropped when the pod MTU is left too high for the tunnel.
 >
-> The fix was a one-line config change (`"MTU": 1450`), but finding it required understanding the actual data path -- where packets enter the kernel, how they get encapsulated, and where they exit. That is exactly what this module teaches.
+> The fix is to set the CNI MTU to match the encapsulation overhead and then verify the data path end to end. That is exactly what this module teaches.
 
 ---
 
@@ -55,13 +55,13 @@ By the end of this module, you'll be able to:
 
 ## Did You Know?
 
-- **kube-proxy does not proxy anything** (despite its name). In iptables mode, it simply programs DNAT rules in the kernel. Actual packet forwarding is handled entirely by the Linux networking stack -- kube-proxy never sees the data packets themselves.
+- **kube-proxy does not proxy anything** (despite its name). [In iptables mode, it simply programs DNAT rules in the kernel.](https://kubernetes.io/docs/reference/networking/virtual-ips) Actual packet forwarding is handled entirely by the Linux networking stack -- kube-proxy never sees the data packets themselves.
 
-- **A single Service with 1000 backends generates ~8000 iptables rules** in iptables mode. This is why large clusters (5000+ Services) often switch to IPVS mode or eBPF-based solutions like Cilium, which can handle hundreds of thousands of backends without linear rule scanning.
+- **Large Services can create many iptables rules** in iptables mode. At larger scales, operators often evaluate newer datapaths such as nftables or eBPF-based implementations to reduce rule churn and lookup overhead.
 
 - **Kubernetes requires a flat network**: every pod must be able to reach every other pod without NAT. This single design decision (documented in the Kubernetes networking model) is what makes the entire Service abstraction possible -- and it is the reason CNI plugins exist.
 
-- **CoreDNS handles roughly 10,000-50,000 queries per second** in a typical production cluster. A single misconfigured `ndots` value can multiply that by 5x, because each lookup triggers search-domain expansion (e.g., `api.example.com` becomes 5 separate DNS queries before the final one succeeds).
+- **CoreDNS can handle high query volumes, but search-domain expansion can multiply lookups**. A poorly chosen `ndots` setting can cause several DNS queries before the final absolute name is tried.
 
 ---
 
@@ -196,7 +196,7 @@ When a pod calls its own Service (e.g., a pod behind `web-svc` curls `web-svc`),
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Most CNI plugins enable hairpin mode by default. If you see intermittent failures where a pod sometimes cannot reach its own Service, hairpin is the likely suspect. Check with:
+If a pod cannot reach its own Service, inspect hairpin settings on the node and the relevant bridge or veth interfaces. Check with:
 
 ```bash
 # Check hairpin mode on a veth interface
@@ -257,11 +257,11 @@ Different CNI plugins take different approaches. Here is a comparison relevant t
 
 | Feature | Calico | Flannel | Cilium |
 |---------|--------|---------|--------|
-| **Data plane** | iptables or eBPF | VXLAN or host-gw | eBPF |
-| **Default routing** | BGP (no encap) | VXLAN overlay | eBPF direct routing |
-| **Network Policies** | Yes (native) | No (needs add-on) | Yes (L3-L7) |
-| **Can replace kube-proxy** | Yes (eBPF mode) | No | Yes (kube-proxy replacement) |
-| **MTU concern** | None (no encap) | Yes (-50 bytes for VXLAN) | Depends on config |
+| **Data plane** | Standard Linux or eBPF data planes, depending on mode | Backend-dependent overlay or routed data plane | eBPF-based dataplane |
+| **Typical routing options** | BGP, VXLAN, or other modes depending on installation | Overlay or host-gw backends, depending on configuration | Native routing or overlay, depending on configuration |
+| **Network Policies** | Supported | Requires an additional policy-capable component | Supported, with extended L7 options in some deployments |
+| **Can replace kube-proxy** | Depends on the selected data plane | No | Supported in kube-proxy-replacement mode |
+| **MTU concern** | Overlay modes require MTU planning | Overlay backends require MTU planning | Depends on routing and encapsulation mode |
 | **Troubleshooting tool** | `calicoctl node status` | Check VXLAN interface | `cilium status` |
 
 ### 2.2.1 Overlay vs Native Routing Trade-offs
@@ -285,9 +285,9 @@ k logs -n kube-system -l k8s-app=kube-proxy | head -20
 
 | Mode | How It Works | Performance | When to Use |
 |------|-------------|-------------|-------------|
-| **iptables** | DNAT rules per Service/Endpoint | O(n) rule evaluation | Default, fine for < 5000 Services |
-| **IPVS** | Virtual server with real backends | O(1) lookup via hash table | Large clusters (5000+ Services) |
-| **nftables** | Next-gen replacement for iptables | Better than iptables | K8s 1.31+ recommended path |
+| **iptables** | Rules per Service and endpoint | Performance depends on rule-set size | Common default on Linux |
+| **IPVS** | IPVS virtual servers and backends | Legacy Linux alternative | Older clusters that already depend on it |
+| **nftables** | nftables rules in the kernel | Better scalability than iptables in many cases | Modern Linux clusters that support it |
 
 ---
 
@@ -357,7 +357,7 @@ DNS is the glue that makes Service names work. When a pod calls `curl web-servic
 
 ### 3.2 The ndots Trap
 
-The `ndots:5` default in Kubernetes means any name with fewer than 5 dots is treated as a relative name. This triggers search domain expansion:
+Kubernetes pods commonly inherit a DNS search list and `ndots:5`, so short external names may be expanded through the cluster search domains before the absolute name is tried:
 
 ```bash
 # Querying "api.example.com" (2 dots, < 5) generates these lookups:
@@ -522,7 +522,7 @@ conntrack -C
 conntrack -D -d 10.96.0.50 -p tcp --dport 80
 ```
 
-**When conntrack bites you**: If a pod is deleted and recreated with the same IP (rare but possible), conntrack may still have entries pointing to the old connection state. Symptoms include connections that hang or reset for no apparent reason, but only to specific pods.
+**When conntrack bites you**: After a backend changes, stale conntrack state can cause confusing transient failures until the affected flows age out or are explicitly cleared.
 
 ### 4.4 Cross-Node Drop Checklist
 
@@ -557,10 +557,10 @@ When packets are dropped between nodes, work through this list:
 | Mistake | Problem | Solution |
 |---------|---------|----------|
 | Debugging DNS when the issue is kube-proxy | Wasted time on wrong layer | Follow the three-layer model: DNS first, then Service, then CNI |
-| Ignoring MTU after switching CNI modes | Large packets silently dropped | Always set MTU = physical MTU minus encap overhead (50 for VXLAN) |
+| Ignoring MTU after switching CNI modes | Large packets silently dropped | Always account for encapsulation overhead when setting MTU |
 | Not checking conntrack | Stale NAT entries cause intermittent failures | Use `conntrack -L` to inspect state when connections hang |
 | Forgetting `externalTrafficPolicy` | Client source IP lost, or no backends on node | Understand `Cluster` (SNAT, all backends) vs `Local` (preserves IP, local only) |
-| Setting `ndots` too high | DNS query amplification, slow lookups | Use `ndots: 2` for pods calling external services, or use trailing dots |
+| Setting `ndots` too high | DNS query amplification, slow lookups | Consider lowering `ndots` for pods that mostly call external names, or use trailing dots |
 | Testing from outside the cluster for ClusterIP | Connection timeout | ClusterIP only works inside the cluster; use NodePort/port-forward for external tests |
 | Running tcpdump on wrong interface | Captures show nothing | Use `tcpdump -i any` to capture on all interfaces, then narrow down |
 | Blaming the application before checking the network | Hours wasted debugging app code | Always verify network connectivity first with simple tools (`wget`, `curl`) |
@@ -822,3 +822,11 @@ k delete svc trace-svc
 ## Next Module
 
 [Module 3.3: DNS in Kubernetes](../module-3.3-dns/) - Deep-dive into CoreDNS configuration, custom DNS policies, and advanced troubleshooting.
+
+## Sources
+
+- [Virtual IPs and Service Proxies](https://kubernetes.io/docs/reference/networking/virtual-ips) — Backs kube-proxy responsibilities, Service ClusterIP implementation, EndpointSlice watching, and data-path claims about packet rewriting in kube-proxy-managed service networking.
+- [Virtual IPs and Service Proxies](https://kubernetes.io/docs/reference/networking/virtual-ips/) — Canonical reference for kube-proxy behavior, Service VIPs, traffic policies, and Linux proxy modes.
+- [Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/) — Explains the Kubernetes network model and the pod, service, and node IP responsibilities behind the cluster data path.
+- [DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/) — Covers Service DNS records, pod resolver configuration, search domains, and the DNS behavior discussed in the module.
+- [Using Source IP](https://kubernetes.io/docs/tutorials/services/source-ip/) — Shows how source NAT and `externalTrafficPolicy` affect NodePort and LoadBalancer traffic in practice.
