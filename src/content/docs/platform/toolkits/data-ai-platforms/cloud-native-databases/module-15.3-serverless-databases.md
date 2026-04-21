@@ -33,20 +33,20 @@ After completing this module, you will be able to:
 
 **"Can I Get a Copy of Production?"**
 
-The incident post-mortem was brutal. A Series C e-commerce company had deployed a schema migration that looked perfect in staging. The `ALTER TABLE orders ADD INDEX idx_customer_date(customer_id, created_at)` ran in 3 seconds on staging's 500,000 rows. On production's 47 million rows, it locked the table for 23 minutes during Black Friday traffic.
+The incident post-mortem was brutal. A Series C e-commerce company had deployed a schema migration that looked perfect in staging. A schema change that looks fine on a small staging dataset can behave very differently on production-sized data, including taking much longer and causing disruptive locking.
 
-Lost revenue: $1.2 million. Customer complaints: 3,400. Engineer who deployed it: in tears.
+A failed migration during peak traffic can create serious business impact and a painful incident for the team handling it.
 
 "Why didn't we test on production-sized data?" the CTO demanded.
 
 The database lead explained the economics: Production was 500GB. Creating a copy meant:
-1. **Dump and restore**: 4 hours to export, 6 hours to import, $800/month storage per copy
-2. **Anonymized subset**: 3 weeks of engineering to build, $180K opportunity cost
-3. **Just test on staging**: Staging has 1% of production data—exactly what caused this disaster
+1. **Dump and restore**: can take hours and add meaningful storage and transfer cost per copy
+2. **Anonymized subset**: can require substantial engineering time to build and maintain
+3. **Just test on staging**: a much smaller staging dataset can hide problems that only appear at production scale
 
 Then the VP of Engineering shared a link to Neon: "What if we could branch the database like Git?"
 
-Two weeks later, the same team ran the same migration on a Neon branch containing the full 500GB. Time to create the branch: 2 seconds. Cost: only the changed data. The migration showed its true colors: 23 minutes, unacceptable for production. They rewrote it as a background job with concurrent index creation.
+With database branching, teams can test schema changes against production-like data earlier and catch migration problems before they reach production.
 
 **Serverless databases with branching aren't just convenient—they fundamentally change how teams develop.** Preview environments get real data. Schema migrations get tested at scale. Developers stop guessing and start knowing.
 
@@ -54,13 +54,13 @@ Two weeks later, the same team ran the same migration on a Neon branch containin
 
 ## Did You Know?
 
-- **Neon raised $104M to solve the "$6,000 database copy" problem** — In 2023, Neon disclosed that enterprise customers were spending $4,000-$8,000/month just to maintain development database copies. One company had 47 RDS instances for testing—all copies of production. Neon's copy-on-write branching reduced one customer's development database costs from $72,000/year to $3,600/year—a 95% reduction.
+- **Neon positions branching as a way to avoid paying for multiple full development copies of a production database** — copy-on-write branching can reduce development and test costs because teams store changes instead of cloning an entire database for every environment.
 
-- **PlanetScale handles 4+ million queries per second for GitHub** — When GitHub migrated from MySQL to PlanetScale, they needed to maintain performance while adding horizontal scaling. The migration happened with zero downtime over 18 months, shard by shard. Today, every `git push`, `git clone`, and issue comment hits PlanetScale.
+- **PlanetScale and Vitess are used for very high-scale MySQL workloads** — teams adopt them when they need database branching, safer schema changes, and horizontal sharding beyond a single MySQL instance.
 
-- **A startup's CFO accidentally deleted production—and restored it in 90 seconds** — In 2023, a Neon customer's CFO (new to databases) ran `DROP TABLE orders` on what they thought was staging. Neon's point-in-time branching let them create a new branch from 60 seconds ago, verify the data was intact, and switch production to the new branch. Total data loss: 90 seconds of orders (3 transactions, $47). Traditional recovery would have taken hours and lost everything since the last backup.
+- **Point-in-time recovery and branching can reduce recovery time after operator mistakes** — when supported by the platform, teams can restore to an earlier state or bring up a recovery branch much faster than a traditional backup restore.
 
-- **Vercel chose Neon over building their own database** — When Vercel launched their managed database in 2023, they evaluated building internally, partnering with AWS, or white-labeling Neon. Internal builds would take 2 years. AWS Aurora Serverless had cold starts measured in seconds. Neon's architecture matched Vercel's serverless model so well that Guillermo Rauch said "it feels like Neon was built for Vercel."
+- **Neon integrates well with preview-style deployment workflows** — serverless Postgres plus branch-based environments can be a good fit for rapid iteration and ephemeral environments.
 
 ---
 
@@ -264,7 +264,7 @@ jobs:
           api_key: ${{ secrets.NEON_API_KEY }}
 ```
 
-### Neon Architecture
+### [Neon Architecture](https://github.com/neondatabase/neon)
 
 ```
 NEON ARCHITECTURE
@@ -318,7 +318,7 @@ Key Innovation: Separated compute from storage
 
 ---
 
-## PlanetScale: Serverless MySQL with Vitess
+## PlanetScale: Serverless MySQL with [Vitess](https://github.com/vitessio/vitess)
 
 ### Getting Started
 
@@ -342,7 +342,7 @@ pscale connect my-app feature/new-schema --port 3306
 mysql -h 127.0.0.1 -P 3306 -u root
 ```
 
-### Deploy Requests (Schema Changes)
+### [Deploy Requests (Schema Changes)](https://github.com/planetscale/cli)
 
 ```bash
 # Create a deploy request (like a PR for your schema)
@@ -468,7 +468,7 @@ Extensions           ✓ (most)         ✗ (MySQL plugins)
 Stored procedures    ✓                ✓
 
 SERVERLESS FEATURES
-Scale to zero        ✓✓               ✓ (Hobby plan)
+Scale to zero        ✓✓               Plan-dependent / verify current docs
 Auto-scaling         ✓                ✓
 Branching            ✓✓ (instant)     ✓ (branches)
 Point-in-time        ✓ (7-30 days)    ✓ (depends on plan)
@@ -487,8 +487,8 @@ Global regions       Limited          ✓✓
 Sharding             ✗                ✓✓ (Vitess)
 
 PRICING (Hobby/Free)
-Free tier            ✓ (generous)     ✓ (limited)
-Compute pricing      Per compute hour Per row read/write
+Free tier            Check current plans      Paid plans only for PlanetScale
+Compute pricing      Usage-based        Usage-based (check current pricing)
 Storage pricing      Per GB           Per GB
 
 BEST FOR:
@@ -506,12 +506,12 @@ PlanetScale: MySQL apps, high-scale, schema management workflow
 ### The Problem
 
 A B2B SaaS company had a familiar problem:
-- Production database: 200GB
-- Staging: Copy from 3 months ago, 50GB (trimmed)
-- Local dev: 1GB seed data
-- PR previews: SQLite mocks
+- Production database: production-sized relational dataset
+- Staging: stale, trimmed copy
+- Local dev: small seed dataset
+- PR previews: mocked or simplified database setup
 
-Bugs kept slipping through because the environments didn't match production. A query that ran in 5ms on dev took 30 seconds on production (different data distribution). UI that worked on staging broke on production (missing data relationships).
+Bugs kept slipping through because the environments didn't match production. Queries that looked fine on small datasets behaved very differently against production-shaped data, and data mismatches surfaced UI bugs late.
 
 ### The Before
 
@@ -632,23 +632,23 @@ jobs:
 
 | Metric | Before | After |
 |--------|--------|-------|
-| PR preview data | Mocked | Real (200GB) |
-| Time to create env | 4 hours | 30 seconds |
-| Bugs found in staging | 40% | 85% |
-| Production incidents | 12/month | 3/month |
+| PR preview data | Mocked | Production-like data |
+| Time to create env | Hours or manual setup | Faster branch-based setup |
+| Bugs found in staging | Fewer | More |
+| Production incidents | More frequent | Less frequent |
 | Developer satisfaction | 😐 | 😊 |
 
 **Financial Impact (Annual):**
 
 | Category | Before | After | Savings |
 |----------|--------|-------|---------|
-| Database infrastructure | $16,800/yr | $3,000/yr | $13,800 |
-| Production incidents (9 fewer × $8K avg) | $96,000/yr | $24,000/yr | $72,000 |
-| Developer time finding bugs | $120,000/yr | $45,000/yr | $75,000 |
-| Environment setup time | $36,000/yr | $1,800/yr | $34,200 |
-| **Total Annual Savings** | | | **$195,000** |
+| Database infrastructure | Higher | Lower | Meaningful savings |
+| Production incidents | Higher impact | Lower impact | Reduced incident cost |
+| Developer time finding bugs | Higher | Lower | Time savings |
+| Environment setup time | Higher | Lower | Time savings |
+| **Total Annual Savings** | | | **Meaningful savings** |
 
-The engineering manager summarized it: "We spent $3,000/year on Neon and saved $195,000 in bug fixes and infrastructure. More importantly, our developers actually enjoy testing now because they know the results mean something."
+The engineering manager summarized it: "Using branch-based preview databases reduced avoidable environment and defect costs, and the team trusted test results more."
 
 ---
 
@@ -662,7 +662,7 @@ The engineering manager summarized it: "We spent $3,000/year on Neon and saved $
 | Long-running transactions | Block scale-to-zero | Keep transactions short |
 | Ignoring cold starts | First query can be slow | Use connection pooling, keep-alive |
 | Treating like traditional DB | Missing the benefits | Embrace branching workflow |
-| Not testing migrations on branch | Same mistake that causes incidents | Always test schema changes on branch with full data |
+| Not testing migrations on branch | Same mistake that causes incidents | Test schema changes on branch against representative production-like data |
 | Skipping deploy request review | Schema changes bypass team review | Require approval for production deploys (PlanetScale) |
 
 ---
@@ -938,3 +938,10 @@ Serverless databases: The proxy layer handles pooling automatically. Thousands o
 ---
 
 *"The best database for development is one that mirrors production exactly. Serverless branching makes that economically possible for the first time."*
+
+## Sources
+
+- [github.com: neon](https://github.com/neondatabase/neon) — The Neon upstream repository explicitly describes Neon as serverless Postgres with separated storage and compute.
+- [github.com: cli](https://github.com/planetscale/cli) — The official CLI repository explicitly states that `pscale` brings branches and deploy requests to the command line.
+- [github.com: vitess](https://github.com/vitessio/vitess) — The upstream Vitess repository directly describes Vitess as a MySQL horizontal-scaling system with sharding.
+- [Neon CLI](https://github.com/neondatabase/neonctl) — Shows the supported CLI workflow for projects, branches, auth, and connection strings.
