@@ -161,7 +161,7 @@ def test_select_candidates_skip_citation_filters_stage4_only_modules(
         quality_fetch=lambda root: payload,
     )
 
-    assert [c.module_key for c in cands] == ["k8s/kcna/b"]
+    assert cands == []
 
 
 def _canned_result(

@@ -253,6 +253,8 @@ def select_candidates(
         module_key = path[:-3] if path.endswith(".md") else path
         primary_issue = entry.get("primary_issue") or ""
         gaps = rubric_gaps.parse_primary_issue(str(primary_issue))
+        if skip_citation and "no_citations" in gaps:
+            continue
         if skip_citation and gaps and not pipeline_v4.expand_module.can_expand(gaps):
             continue
         candidates.append(
