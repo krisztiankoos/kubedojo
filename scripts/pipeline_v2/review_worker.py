@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from dispatch import dispatch_codex_review
-from pipeline_common.review_audit import append_review_audit
+from scripts.dispatch import dispatch_codex_review
+from scripts.pipeline_common.review_audit import append_review_audit
 
 from .control_plane import ControlPlane, Lease
 from .preflight import PreflightFinding, run_preflight

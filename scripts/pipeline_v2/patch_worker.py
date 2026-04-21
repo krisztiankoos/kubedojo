@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from dispatch import dispatch_codex_patch
+from scripts.dispatch import dispatch_codex_patch
 
 from .control_plane import ControlPlane, Lease
 from .escalation import should_dead_letter_rewrite, should_escalate_patch

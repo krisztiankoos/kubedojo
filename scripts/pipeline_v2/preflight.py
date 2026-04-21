@@ -8,8 +8,8 @@ from typing import Any
 
 import yaml
 
-import v1_pipeline
-from checks.structural import check_k8s_versions, check_leaked_secrets
+import scripts.v1_pipeline as v1_pipeline
+from scripts.checks.structural import check_k8s_versions, check_leaked_secrets
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

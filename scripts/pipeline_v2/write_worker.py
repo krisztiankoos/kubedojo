@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from dispatch import GEMINI_WRITER_MODEL
-from v1_pipeline import _extract_frontmatter_data, find_module_path, step_write
+from scripts.dispatch import GEMINI_WRITER_MODEL
+from scripts.v1_pipeline import _extract_frontmatter_data, find_module_path, step_write
 
 from .control_plane import ControlPlane, Lease
 from .review_worker import REVIEW_MODEL

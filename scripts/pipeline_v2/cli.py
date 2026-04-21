@@ -6,8 +6,8 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from migrate_v1_to_v2 import migrate_v1_to_v2
-from v2_ab_test import run_ab_test
+from scripts.migrate_v1_to_v2 import migrate_v1_to_v2
+from scripts.v2_ab_test import run_ab_test
 from .control_plane import (
     DEFAULT_BUDGETS_PATH,
     DEFAULT_DB_PATH,
