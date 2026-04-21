@@ -2,47 +2,51 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-21, session 10 — PR #324 merged, main reconciled, section pipeline ready)
+## Active Work (2026-04-21, session 11 — pipeline_v4 built end-to-end, tech debt cleared, dogfood validated)
 
-Session 9 handoff: [`docs/sessions/2026-04-21-session-9-handoff.md`](./docs/sessions/2026-04-21-session-9-handoff.md).
+Session 10 handoff: [`docs/sessions/2026-04-21-session-10-handoff.md`](./docs/sessions/2026-04-21-session-10-handoff.md).
+Session 11 handoff: [`docs/sessions/2026-04-21-session-11-handoff.md`](./docs/sessions/2026-04-21-session-11-handoff.md).
 
-**Session 10 landed:**
-- PR #324 (section source pool, closes #323) merged as squash commit `d89ef3de`. Two-round Gemini review: NEEDS CHANGES → 3 fixes in `0e57664e` (disposition-gate hardening for pool `source_ids` + `lesson_point_url`, isinstance guard on `parse_agent_response`, context-managed log file, + fixed a pre-existing test-isolation bug that was overwriting live pool files). Second review: APPROVE.
-- Main reconciled: local was 45 ahead of origin, origin had the squash. Merged with `-X theirs` (PR squash is canonical content; session-9 handoff and local-only files preserved). Merge commit `4e672139`, pushed.
-- 51 untracked citation-seed JSONs committed as catch-up (`b9337448`). `docs/citation-seeds/` convention: tracked source-of-truth for pipeline research. `-X theirs` conflict resolution favoured PR content on the ~40 modules that both local and PR modified — review those module diffs if anything reads off.
-- Codex was rate-limited at session start (websocket "high demand" errors), so Gemini 3.1 Pro stood in as the independent-family reviewer. Codex recovered mid-session.
+**Session 11 landed (9 commits on main, 2,936 LOC of new pipeline + 5 tech-debt fixes):**
 
-**Human-triggered automation (new this session):**
-- `scripts/autopilot_v3.py` loops section runs until a stop condition. Usage:
-  - `.venv/bin/python scripts/autopilot_v3.py --dry-run` — preview the queue (108+ sections, ranked by uncited count).
-  - `.venv/bin/python scripts/autopilot_v3.py --max-sections 5` — process the 5 densest uncited sections.
-  - `.venv/bin/python scripts/autopilot_v3.py --until-time 08:00` — run until wall-clock 08:00.
-  - Per-day JSONL log at `.pipeline/v3/autopilot/<yyyy-mm-dd>.jsonl`.
-- `scripts/run_section_v3.py` is the underlying one-shot v3 runner (preflight → pipeline → per-module commit → build → push). Flags: `--auto-pick`, `--only-uncited` (resumes partial sections cleanly), `--min-uncited N`, `--no-build`, `--no-push`, `--no-commit`.
-- Naming: `_v3` suffix is deliberate — v3 is the citation-backfill pipeline. When v4 (thin-module body expansion per issue #322) gets wired up, it gets its own `run_section_v4.py` and `autopilot_v4.py`; different semantics would accumulate flags if merged.
-- Not yet: queue-based worker — deferred until failure-rate data justifies the persistence layer (only ~3 real failures in the 30 modules processed this session).
+Tech debt:
+- `2eedc994` pipeline_v2 sibling-module imports (v4 needed v2 worker infra; this was the blocker). 40/40 v2 tests pass.
+- `10aa1a67` autopilot_v3 `--content-stable-only` gate (skip thin modules when prepping for v4). Queue filtered 108→98 sections on first dry-run.
+- `7b7210ef` `pyrightconfig.json` with `extraPaths: ["scripts"]`.
+- `2d4a6a90` v1_pipeline drops orphan `.staging.md` before fresh write-phase attempt. Root cause: cleanup only ran on `pending/audit` branch, not `phase="write"` resume branch. 102 orphan staging files deleted inline.
+- `ba8cf489` `/api/quality/scores` adds `path` field; v3 gate keys by path (not reconstructed label). Issue #325 closed. Delete ~90 LOC of label-reconstruction helpers.
 
-**Validated this session via dogfood (6 sections, 32 modules cited):**
-- `platform/toolkits/cicd-delivery/source-control` — 3/3
-- `ai-ml-engineering/advanced-genai` — 11/11 real modules (3 staging runs were wasted before the filter fix; all 5 rubric-critical 1.5-score modules cleared)
-- `k8s/cka/part3-services-networking` — 6/8 (3.1 services + 3.6 network-policies inject_failed; seeds reverted)
-- `platform/toolkits/data-ai-platforms/cloud-native-databases` — 5/5
-- `platform/toolkits/data-ai-platforms/ml-platforms` — 7/7
+Pipeline v4 (issue #322 rewritten based on Gemini NEEDS CHANGES review; 5 structural findings addressed):
+- `ad590be3` `scripts/rubric_gaps.py` — Stage 1 gap identification, 224 LOC + 126 test LOC. 9 tests pass.
+- `3d172a59` `scripts/module_sections.py` — H2-based section splitter with round-trip fidelity, 426 LOC + 289 test LOC. 18 tests pass.
+- `747bd53c` `scripts/expand_module.py` — Stage 2 gap-driven expansion (quiz, mistakes, exercise, outcomes via Codex; thin via Gemini multi-pass). 641 LOC + 311 test LOC. Provenance markers (`<!-- v4:generated ... -->`) wrap every generated block. Diff-lint rejects any rewrite of human-authored paragraphs.
+- `e663088d` `scripts/pipeline_v4.py` — Stage 1-5 orchestrator. 533 LOC + 386 test LOC. 9 tests pass. Retry budget 2, regression epsilon 0.2, generated-LOC threshold guard against citation-over-LLM-prose.
 
-**Known inject_failed, needs manual inspection:**
-- `k8s/cka/part3-services-networking/module-3.1-services`
-- `k8s/cka/part3-services-networking/module-3.6-network-policies`
-- Likely diff-lint tripping on a prose pattern specific to these modules. Retry with `.venv/bin/python scripts/pipeline_v3.py <module-key>` to get the exact diff-lint output.
+35/35 pipeline_v4 tests pass. Dogfood run on `ai/ai-for-kubernetes-platform-work/module-1.2-ai-for-kubernetes-troubleshooting-and-triage`: **2.0 → 4.2 score in 7m6s**, outcome=clean. Stage 4 (citation_v3) skipped via `--skip-citation`; its guards are unit-tested. Expanded module preserved in `.worktrees/dogfood-v4/` pending review.
 
-**Known gotchas (unchanged from session 9):**
-- Codex auth can go flaky under load; smoke-check with `echo hi | timeout 25 codex exec --full-auto --skip-git-repo-check` before any batch.
-- PyYAML required via `.venv/bin/python`, never the homebrew `python3` shim.
-- 900s Codex dispatch hard-timeout; large runs need phasing.
+Issues closed: #325 (scorer paths), #272 (AI for K8s section — all 4 modules exist, quality tracked by #180), #198 (Master Execution Plan — duplicated STATUS.md + handoffs).
+
+**Next session starts here:**
+1. Fix retry-refresh-gaps bug in pipeline_v4.py — Stage 3 retry uses original gap list instead of refreshed. See session 11 handoff for fix sketch. Small change, single unit test.
+2. Decide what to do with the dogfood worktree (commit to main, delete, or keep as golden reference).
+3. Build `scripts/pipeline_v4_batch.py` — wrap `run_pipeline_v4` with `.pipeline/v2.db` lease coordination for concurrent runs (8-way default, aim for ~32 h across 620 modules instead of 206 h sequential).
+4. Dogfood batch on the 5 "AI/ML Engineering Ai Infrastructure" critical-quality modules the briefing flags.
+
+**v4-specific bugs (none blockers, see session 11 handoff for details):**
+- Stage 3 retry doesn't re-fetch gaps (listed above).
+- `loc_after` in ExpandResult drifts from actual disk state.
+- Gemini CLI YOLO mode self-lints with markdownlint (~30s/section latency).
+
+**Known gotchas — updated this session:**
+- Codex sandbox blocks `.git/worktrees/*/index.lock`. Every delegation returned "files written, commit failed". Pattern: Codex writes, Claude commits from primary-repo side. Prompts should instruct Codex NOT to attempt commits.
+- Gemini 3.1-pro is frequently at-capacity. Pass `--model gemini-3-flash-preview` explicitly when 3.1-pro is congested; dispatch.py doesn't auto-fallback on rate limit (same-quota assumption).
+- Rubric scorer weights section presence > line count. Dogfood crossed 4.0 at 258 LOC (target 600). `target_loc` is a ceiling for effort, not a floor for success.
+- Carry-over: Codex auth can go flaky under load; smoke-check with `echo hi | timeout 25 codex exec --full-auto --skip-git-repo-check`.
+- Carry-over: 900s Codex dispatch hard-timeout; large runs need phasing.
 
 **Lower-priority carry-over:**
-- 5 critical-quality modules at score 1.5 (AI/ML Advanced GenAI 1.1 fine-tuning, 1.2 LoRA, 1.3 diffusion, 1.10 single-GPU, 1.11 multi-GPU). 1.1/1.2/1.3 are long (900–1360 lines) — likely pedagogy-failure not size; 1.10/1.11 are thin (~280 lines) and need real expansion. Hit `GET /api/quality/scores?module=<key>` for the rubric-dimension breakdown before rewriting.
-- 3 stale `.staging.md` files in `ai-ml-engineering/advanced-genai/` (modules 1.4, 1.5, 1.8) — gitignored local artifacts from v1_pipeline. Harmless. Delete if v1_pipeline's "fresh restart drops staged draft" logic isn't firing.
-- pipeline_v4 (issue #322) — do NOT start until v3 section-pool queue is drained.
+- 5 critical-quality modules at 1.5 (AI/ML Advanced GenAI 1.1 fine-tuning, 1.2 LoRA, 1.3 diffusion, 1.10 single-GPU, 1.11 multi-GPU) — perfect targets for v4 batch dogfood.
+- 2 CKA inject_failed modules from session 10 handoff: RESOLVED — `module-3.1-services` and `module-3.6-network-policies` have clean `## Sources` from later v3 runs (commits `2112507f`, `17084227`). Handoff was stale.
 
 ---
 
