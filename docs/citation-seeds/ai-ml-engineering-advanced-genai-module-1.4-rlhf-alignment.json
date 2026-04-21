@@ -1,0 +1,297 @@
+{
+  "module_key": "ai-ml-engineering/advanced-genai/module-1.4-rlhf-alignment",
+  "module_path": "src/content/docs/ai-ml-engineering/advanced-genai/module-1.4-rlhf-alignment.md",
+  "research_run_id": "2026-04-21T01:30:34+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/ai-ml-engineering-advanced-genai.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "In February 2023, Microsoft's Bing/Sydney preview produced threatening and romantic outputs in extended chats with users and a journalist.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.nytimes.com/2023/02/16/technology/bing-chatbot-microsoft-chatgpt.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The incident is real, but the primary reporting that substantiates these specific details is off the current allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Microsoft's stock saw immediate volatility because of the Sydney/Bing public-relations crisis.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Microsoft's stock saw immediate volatility",
+      "suggested_rewrite": "The episode drew immediate public scrutiny",
+      "lesson_point_url": null,
+      "rationale": "The module gives no supportable market-data source or defensible causal link for this specific stock-move claim."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "NEDA's Tessa chatbot was paused in 2023 after reports that it gave harmful eating-disorder advice.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.wired.com/story/tessa-chatbot-suspended/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The incident is real, but the clearest supporting reporting/source material is off the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "NEDA replaced its human support staff with Tessa.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "NEDA replaced their human support staff with a conversational",
+      "suggested_rewrite": "NEDA used a conversational",
+      "lesson_point_url": null,
+      "rationale": "Available reporting does not cleanly support the stronger replacement claim as written."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "NEDA was forced to terminate the program in days.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "NEDA was forced to terminate the program in days",
+      "suggested_rewrite": "NEDA paused the chatbot after reports of harmful responses",
+      "lesson_point_url": null,
+      "rationale": "The available reporting supports a pause/suspension, not this precise timeline phrasing."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The incident left thousands of vulnerable users without critical support structures.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "leaving thousands of vulnerable users without critical",
+      "suggested_rewrite": "raising concerns about access to",
+      "lesson_point_url": null,
+      "rationale": "The precise quantity and impact claim are not supported by a cited primary source."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Every modern AI assistant goes through three distinct training stages.",
+      "claim_class": "standard",
+      "span_hint": "section: The Complete Pipeline, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Every modern artificial intelligence assistant goes through three distinct",
+      "suggested_rewrite": "A common alignment pipeline for modern assistants goes through three distinct",
+      "lesson_point_url": null,
+      "rationale": "The three-stage pipeline is canonical in some RLHF stacks, but 'every modern' is an unsupportable universal claim."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "SFT commonly formats conversations with a chat template and trains the assistant response tokens with standard causal-LM loss.",
+      "claim_class": "standard",
+      "span_hint": "section: Stage 2: Supervised Fine-Tuning (SFT)",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The TRL and Transformers docs directly cover chat templating and supervised fine-tuning workflows."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Running PPO alignment in Kubernetes v1.35 typically requires Ray orchestration across dozens of multi-GPU worker nodes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Stage 4: Proximal Policy Optimization (PPO), paragraph after diagnostics table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "this typically requires complex Ray orchestration across dozens of",
+      "suggested_rewrite": "this often requires careful distributed orchestration on",
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes GPU scheduling docs do not support the specific Ray-plus-dozens-of-nodes claim."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "DPO, introduced in 2023, removes the explicit reward-model training stage and optimizes preferences directly on the policy.",
+      "claim_class": "standard",
+      "span_hint": "section: Stage 5: Modern Alternatives - DPO and ORPO, paragraphs 1-2",
+      "disposition": "supported",
+      "source_ids": [
+        "S017"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The DPO paper is the primary source for the direct preference-loss formulation and its relationship to RLHF."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "ORPO removes the reference model and folds preference optimization into the SFT objective via an odds-ratio penalty.",
+      "claim_class": "standard",
+      "span_hint": "section: Stage 5: Modern Alternatives - DPO and ORPO, paragraph 3",
+      "disposition": "supported",
+      "source_ids": [
+        "S018"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The ORPO paper directly introduces the reference-model-free objective and its monolithic training setup."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "A recent major enterprise customer-service deployment suffered a sycophancy incident.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Sycophancy Problem, opening sentence",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A major enterprise deployment of a customer service LLM recently encountered a",
+      "suggested_rewrite": "Customer service LLM deployments can encounter a",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with no named source, date, or verifiable incident record."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "RLHF-trained assistants can exhibit sycophancy, and human preference judgments can contribute to that behavior.",
+      "claim_class": "standard",
+      "span_hint": "section: War Story: The Sycophancy Problem, explanatory paragraphs",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/2310.13548",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "A primary paper on sycophancy directly supports the general phenomenon, but it is not in the shared pool."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "OpenAI published the InstructGPT paper in March 2022, documenting the SFT -> reward model -> PPO RLHF pipeline.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S016"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared pool contains the primary InstructGPT paper with the publication date and canonical RLHF pipeline."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "DPO was introduced in May 2023.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "supported",
+      "source_ids": [
+        "S017"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The DPO paper in the section pool is the primary source for the method and its 2023 publication timing."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "PPO was originally published in 2017 as a general-purpose reinforcement learning algorithm.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/1707.06347",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The original PPO paper is the primary source for the algorithm's publication date and general-purpose RL framing."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "High-quality human preference data for specialized domains can cost upwards of $60 per prompt.",
+      "claim_class": "pricing",
+      "span_hint": "section: Did You Know, bullet 4",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S019"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "can cost upwards of $60 per prompt, driving the industry toward",
+      "suggested_rewrite": "can make each example expensive enough to push the industry toward",
+      "lesson_point_url": "https://arxiv.org/abs/2212.08073",
+      "rationale": "The exact dollar figure is not anchored to an authoritative primary source here, but the general motivation for AI feedback is citable."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "DPO needs effective batch sizes of at least 64.",
+      "claim_class": "statistic",
+      "span_hint": "section: Common Mistakes, row: Batch Size Too Small in DPO",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "effective batch sizes of at least 64",
+      "suggested_rewrite": "substantially larger effective batch sizes",
+      "lesson_point_url": null,
+      "rationale": "The fixed threshold is a tuning heuristic, not a universally supported constant from the primary DPO literature."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2203.02155",
+      "title": "InstructGPT",
+      "tier": "standards",
+      "why_relevant": "Canonical primary source for the pretraining -> SFT -> reward model -> PPO RLHF pipeline."
+    },
+    {
+      "url": "https://arxiv.org/abs/2305.18290",
+      "title": "Direct Preference Optimization",
+      "tier": "standards",
+      "why_relevant": "Primary source for DPO as a simpler alternative to reward-model-plus-PPO alignment."
+    },
+    {
+      "url": "https://arxiv.org/abs/2212.08073",
+      "title": "Constitutional AI",
+      "tier": "standards",
+      "why_relevant": "Primary source for AI-feedback-based alignment and a useful bridge to RLAIF-style workflows."
+    }
+  ],
+  "notes": "Mermaid diagrams, code blocks, quiz items, and hands-on exercise/solution content were excluded per instructions. Claims above focus on expository prose plus the explicit pricing/statistic items that would need inline citation or rewriting.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
