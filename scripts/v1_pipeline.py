@@ -3331,6 +3331,10 @@ def run_module(module_path: Path, state: dict, max_retries: int | None = None,
 
     for attempt in range(max_retries + 1):
         if ms["phase"] in ("write",):
+            # Any resume content needed for this attempt was loaded above.
+            # Drop the sibling staging file now so a fresh write attempt
+            # cannot inherit or strand an orphaned draft on disk.
+            staging_path.unlink(missing_ok=True)
             review_fact_ledger = ms.get("fact_ledger")
             writer_model = m["write_targeted"] if targeted_fix else m["write"]
             # Severe rewrites must preserve assets from the stable on-disk
