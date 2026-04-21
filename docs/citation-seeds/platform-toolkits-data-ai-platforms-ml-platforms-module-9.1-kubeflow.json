@@ -1,0 +1,172 @@
+{
+  "module_key": "platform/toolkits/data-ai-platforms/ml-platforms/module-9.1-kubeflow",
+  "module_path": "src/content/docs/platform/toolkits/data-ai-platforms/ml-platforms/module-9.1-kubeflow.md",
+  "research_run_id": "2026-04-21T07:03:13+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-toolkits-data-ai-platforms-ml-platforms.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Kubeflow is a collection of Kubernetes-native projects that can be used independently or as a full platform, including components such as Pipelines, Notebooks, KServe, Katib, and Trainer.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 11 | section: Overview; lines 83-91 | section: Core Components",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/kubeflow/kubeflow",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubeflow repository overview explicitly describes Kubeflow as a foundation of multiple projects and lists the major component projects."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Kubeflow started at Google in 2017 as TensorFlow-on-Kubernetes work, its name combines Kubernetes and TensorFlow, and it later expanded beyond TensorFlow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 42 | section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> 💡 **Did You Know?** Kubeflow started at Google in 2017 as a way to run TensorFlow on Kubernetes. The name combines \"Kube\" (Kubernetes) and \"Flow\" (TensorFlow). It quickly evolved beyond TensorFlow to support any ML framework—PyTorch, XGBoost, scikit-learn—because the real problem was never the framework but the infrastructure.",
+      "suggested_rewrite": "> 💡 **Did You Know?** Kubeflow began with TensorFlow-oriented Kubernetes tooling and later expanded into a broader collection of Kubernetes-native ML and AI projects.",
+      "lesson_point_url": null,
+      "rationale": "This single line bundles several historical specifics and etymology details that are not cleanly backed by one allowlisted source in its current form."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Kubeflow Pipelines was inspired by Airflow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 93 | section: Core Components",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Kubeflow Pipelines was inspired by Airflow but designed specifically for ML.",
+      "suggested_rewrite": "Kubeflow Pipelines is designed specifically for ML workflows.",
+      "lesson_point_url": null,
+      "rationale": "I did not find a clean allowlisted primary source for the Airflow-origin claim, so the unsupported provenance detail should be removed."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Kubeflow Pipelines compiles workflows to IR YAML, runs components as containerized tasks, tracks runs and artifacts, and supports caching.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 33 | section: What You'll Be Able to Do; lines 136-167 and 255-290 | section: Kubeflow Pipelines",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubeflow-pipelines.readthedocs.io/en/sdk-2.14.2/source/overview.html",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The KFP overview explicitly covers IR YAML compilation, containerized component execution, artifact handling, run/experiment management, and caching."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The same Kubeflow Pipelines v2 YAML can run on Kubeflow, Vertex AI Pipelines, or Amazon SageMaker Pipelines.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 292 | section: Kubeflow Pipelines",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The same pipeline YAML can run on Kubeflow, Vertex AI Pipelines (Google Cloud), or Amazon SageMaker Pipelines.",
+      "suggested_rewrite": "Kubeflow Pipelines v2 compiles pipelines to an intermediate representation (IR) YAML, which is intended to make pipeline definitions more portable.",
+      "lesson_point_url": null,
+      "rationale": "The allowlisted KFP overview names KFP-conformant backends such as the open source KFP backend, Vertex AI Pipelines, and KFP local, but not Amazon SageMaker Pipelines."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Katib supports automated machine learning features including hyperparameter tuning, early stopping, and neural architecture search.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 89-90 | section: Core Components; section: Hyperparameter Tuning with Katib",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/kubeflow/katib",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Katib repository overview explicitly states support for hyperparameter tuning, early stopping, and neural architecture search."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Kubeflow training operators automatically coordinate distributed workers and set environment variables like WORLD_SIZE, RANK, and MASTER_ADDR.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 588 | section: Training Operators",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> 💡 **Did You Know?** The Training Operators (TFJob, PyTorchJob, MPIJob) handle the hardest part of distributed training: coordinating workers. They set environment variables like `WORLD_SIZE`, `RANK`, and `MASTER_ADDR` automatically. Before these operators, teams spent weeks writing custom scripts to manage distributed training on Kubernetes.",
+      "suggested_rewrite": "> 💡 **Did You Know?** Kubeflow's training operators automate much of the coordination required to launch distributed training jobs on Kubernetes.",
+      "lesson_point_url": null,
+      "rationale": "The current wording overcommits on exact environment-variable behavior across operators and adds an unsourced anecdotal payoff sentence."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "A specific team's Kubeflow pipeline took 10 hours to run.",
+      "claim_class": "war_story",
+      "span_hint": "line 607 | section: War Story: The 10-Hour Pipeline",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "*A team built a beautiful Kubeflow pipeline: load data, preprocess, train, evaluate, deploy. Each step was a separate container. The pipeline took 10 hours to run.*",
+      "suggested_rewrite": "*A multi-step ML pipeline can look clean on paper yet run slowly in practice when data movement and startup overhead dominate execution time.*",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with fake-precise runtime details, so the specifics should be removed while keeping the lesson."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Each pipeline step downloaded a 100GB dataset from S3.",
+      "claim_class": "war_story",
+      "span_hint": "line 610 | section: War Story: The 10-Hour Pipeline",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "1. Each step downloaded the full dataset from S3 (100GB)",
+      "suggested_rewrite": "1. Each step re-fetched a large dataset from object storage instead of reusing intermediate artifacts",
+      "lesson_point_url": null,
+      "rationale": "The numeric dataset size is part of the same unattributed anecdote and must be collapsed to a general operational lesson."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The pipeline improved from 10 hours to 45 minutes, and 90% of the time had been data transfer.",
+      "claim_class": "war_story",
+      "span_hint": "line 636 | section: War Story: The 10-Hour Pipeline",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Result**: Pipeline went from 10 hours to 45 minutes. 90% of time was data transfer, not computation.",
+      "suggested_rewrite": "**Result**: Reducing repeated downloads and enabling caching can dramatically shorten end-to-end runtime when data transfer, not compute, is the bottleneck.",
+      "lesson_point_url": null,
+      "rationale": "These outcome numbers are unsupported war-story specifics and must be replaced with a non-fabricated takeaway."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/kubeflow/kubeflow",
+      "title": "Kubeflow Project Overview",
+      "tier": "upstream",
+      "why_relevant": "Gives the current top-level view of Kubeflow's component ecosystem and reference-platform model."
+    },
+    {
+      "url": "https://kubeflow-pipelines.readthedocs.io/en/sdk-2.14.2/source/overview.html",
+      "title": "Kubeflow Pipelines Overview",
+      "tier": "upstream",
+      "why_relevant": "Covers the KFP execution model, IR YAML compilation, artifacts, experiments, and caching."
+    },
+    {
+      "url": "https://github.com/kubeflow/manifests",
+      "title": "Kubeflow Manifests",
+      "tier": "upstream",
+      "why_relevant": "Shows how the full Kubeflow platform is assembled and installed, including multi-component and multi-tenancy aspects."
+    }
+  ],
+  "notes": "Skipped quiz items, hands-on exercise steps, and code-block-only content per the instructions. The shared section pool did not include Kubeflow-specific sources, so all usable support came from newly identified URLs.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

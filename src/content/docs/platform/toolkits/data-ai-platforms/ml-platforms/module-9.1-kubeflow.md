@@ -8,7 +8,7 @@ sidebar:
 
 ## Overview
 
-Kubeflow brings machine learning workflows to Kubernetes. It's not a single tool but a platform—pipelines, notebooks, model serving, and experiment tracking all running on K8s. This module covers Kubeflow's architecture and core components for production ML.
+Kubeflow brings machine learning workflows to Kubernetes. It's not a single tool but a [platform—pipelines, notebooks, model serving, and experiment tracking](https://github.com/kubeflow/kubeflow) all running on K8s. This module covers Kubeflow's architecture and core components for production ML.
 
 **What You'll Learn**:
 - Kubeflow architecture and components
@@ -30,7 +30,7 @@ Kubeflow brings machine learning workflows to Kubernetes. It's not a single tool
 After completing this module, you will be able to:
 
 - **Deploy Kubeflow on Kubernetes and configure ML pipelines for end-to-end model training workflows**
-- **Implement Kubeflow Pipelines with experiment tracking, artifact management, and hyperparameter tuning**
+- **Implement [Kubeflow Pipelines with experiment tracking, artifact management](https://kubeflow-pipelines.readthedocs.io/en/sdk-2.14.2/source/overview.html), and hyperparameter tuning**
 - **Configure Kubeflow's multi-tenancy with profile isolation and resource quotas for data science teams**
 - **Evaluate Kubeflow's integrated ML platform against composing individual tools (MLflow, Ray, Argo)**
 
@@ -39,7 +39,7 @@ After completing this module, you will be able to:
 
 ML teams struggle with the gap between experimentation and production. Data scientists work in notebooks; production needs containers, scaling, and monitoring. Kubeflow bridges this gap by providing a Kubernetes-native platform for the entire ML lifecycle.
 
-> 💡 **Did You Know?** Kubeflow started at Google in 2017 as a way to run TensorFlow on Kubernetes. The name combines "Kube" (Kubernetes) and "Flow" (TensorFlow). It quickly evolved beyond TensorFlow to support any ML framework—PyTorch, XGBoost, scikit-learn—because the real problem was never the framework but the infrastructure.
+> 💡 **Did You Know?** Kubeflow began with TensorFlow-oriented Kubernetes tooling and later expanded into a broader collection of Kubernetes-native ML and AI projects.
 
 ---
 
@@ -90,7 +90,7 @@ KUBEFLOW PLATFORM ARCHITECTURE
 | **Katib** | Hyperparameter tuning | AutoML, optimization |
 | **Training Operators** | Distributed training | TF, PyTorch, MPI jobs |
 
-> 💡 **Did You Know?** Kubeflow Pipelines was inspired by Airflow but designed specifically for ML. Unlike Airflow (which passes small data between tasks), Kubeflow Pipelines uses artifacts—large files like datasets and models—stored in object storage. This solved the "my model is too big to pass between steps" problem that plagued early ML automation.
+> 💡 **Did You Know?** Kubeflow Pipelines is designed specifically for ML workflows. Unlike Airflow (which passes small data between tasks), Kubeflow Pipelines uses artifacts—large files like datasets and models—stored in object storage. This solved the "my model is too big to pass between steps" problem that plagued early ML automation.
 
 ---
 
@@ -289,7 +289,7 @@ def conditional_pipeline(accuracy_threshold: float = 0.9):
         deploy_model(model=train_task.outputs["output_model"])
 ```
 
-> 💡 **Did You Know?** Kubeflow Pipelines v2 uses a new intermediate representation (IR) that's cloud-agnostic. The same pipeline YAML can run on Kubeflow, Vertex AI Pipelines (Google Cloud), or Amazon SageMaker Pipelines. Write once, run anywhere—the Docker promise finally coming to ML workflows.
+> 💡 **Did You Know?** Kubeflow Pipelines v2 uses a new intermediate representation (IR) that's cloud-agnostic. Kubeflow Pipelines v2 compiles pipelines to an intermediate representation (IR) YAML, which is intended to make pipeline definitions more portable. Write once, run anywhere—the Docker promise finally coming to ML workflows.
 
 ---
 
@@ -422,7 +422,7 @@ spec:
 
 ---
 
-## Hyperparameter Tuning with Katib
+## [Hyperparameter Tuning with Katib](https://github.com/kubeflow/katib)
 
 ### Experiment Definition
 
@@ -585,7 +585,7 @@ spec:
                 nvidia.com/gpu: 1
 ```
 
-> 💡 **Did You Know?** The Training Operators (TFJob, PyTorchJob, MPIJob) handle the hardest part of distributed training: coordinating workers. They set environment variables like `WORLD_SIZE`, `RANK`, and `MASTER_ADDR` automatically. Before these operators, teams spent weeks writing custom scripts to manage distributed training on Kubernetes.
+> 💡 **Did You Know?** Kubeflow's training operators automate much of the coordination required to launch distributed training jobs on Kubernetes.
 
 ---
 
@@ -594,7 +594,7 @@ spec:
 | Mistake | Problem | Solution |
 |---------|---------|----------|
 | Installing full Kubeflow for simple needs | Resource waste, complexity | Start with just Pipelines |
-| Not setting resource limits | OOM kills, node starvation | Always set requests/limits |
+| Not setting resource limits | OOM kills, node starvation | Set appropriate requests/limits |
 | Ignoring artifact storage | Pipeline data lost | Configure S3/GCS properly |
 | Skipping namespace isolation | Security, resource conflicts | Use Kubeflow profiles |
 | No GPU node taints | GPU pods scheduled anywhere | Taint GPU nodes |
@@ -604,10 +604,10 @@ spec:
 
 ## War Story: The 10-Hour Pipeline
 
-*A team built a beautiful Kubeflow pipeline: load data, preprocess, train, evaluate, deploy. Each step was a separate container. The pipeline took 10 hours to run.*
+*A multi-step ML pipeline can look clean on paper yet run slowly in practice when data movement and startup overhead dominate execution time.*
 
 **What went wrong**:
-1. Each step downloaded the full dataset from S3 (100GB)
+1. Each step re-fetched a large dataset from object storage instead of reusing intermediate artifacts
 2. Containers started from scratch every time
 3. No caching of intermediate results
 4. GPU was idle during data preprocessing
@@ -633,7 +633,7 @@ load_task = load_data()
 load_task.set_caching_options(True)  # Cache if inputs unchanged
 ```
 
-**Result**: Pipeline went from 10 hours to 45 minutes. 90% of time was data transfer, not computation.
+**Result**: Reducing repeated downloads and enabling caching can dramatically shorten end-to-end runtime when data transfer, not compute, is the bottleneck.
 
 ---
 
@@ -817,3 +817,10 @@ Continue to [Module 9.2: MLflow](../module-9.2-mlflow/) to learn about experimen
 ---
 
 *"Kubeflow isn't about making ML easy—it's about making ML reproducible. The difference between a notebook demo and production is infrastructure, and Kubeflow provides that infrastructure."*
+
+## Sources
+
+- [github.com: kubeflow](https://github.com/kubeflow/kubeflow) — The Kubeflow repository overview explicitly describes Kubeflow as a foundation of multiple projects and lists the major component projects.
+- [kubeflow-pipelines.readthedocs.io: overview.html](https://kubeflow-pipelines.readthedocs.io/en/sdk-2.14.2/source/overview.html) — The KFP overview explicitly covers IR YAML compilation, containerized component execution, artifact handling, run/experiment management, and caching.
+- [github.com: katib](https://github.com/kubeflow/katib) — The Katib repository overview explicitly states support for hyperparameter tuning, early stopping, and neural architecture search.
+- [Kubeflow Manifests](https://github.com/kubeflow/manifests) — Shows how the full Kubeflow platform is assembled and installed, including multi-component and multi-tenancy aspects.
