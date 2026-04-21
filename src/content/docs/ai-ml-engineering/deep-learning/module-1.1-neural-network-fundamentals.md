@@ -10,7 +10,7 @@ sidebar:
 **Phase**: 6 - Deep Learning Foundations
 ---
 
-Princeton, New Jersey. February 2005. 11:47 PM. Travis Oliphant had a problem. As an astronomer, he needed to process massive arrays of telescope data—millions of numbers representing distant galaxies. Python was perfect for writing analysis scripts, but the existing numerical libraries were a mess. There were two competing packages, Numeric and numarray, and neither could handle his data efficiently.
+In the mid-2000s, Travis Oliphant was working on numerical-computing problems that exposed the limits of Python's existing array libraries. As an astronomer, he needed to process massive arrays of telescope data—millions of numbers representing distant galaxies. Python was perfect for writing analysis scripts, but the existing numerical libraries were a mess. There were two competing packages, Numeric and numarray, and neither could handle his data efficiently.
 
 So Oliphant did what any frustrated scientist would do: he merged them. Working nights and weekends, he rewrote core components in C, unified the competing APIs, and released something called "NumPy 1.0" in October 2006.
 
@@ -19,7 +19,7 @@ He had no idea he was building the foundation for the AI revolution.
 > "I just needed to process telescope data. I never imagined that the same operations—matrix multiplication, broadcasting, vectorization—would become the core primitives of deep learning."
 > — Travis Oliphant, NumPy creator and founder of Anaconda
 
-Today, every neural network training run—from gpt-5 to Stable Diffusion—ultimately relies on the array operations Oliphant designed for looking at stars.
+Modern ML software stacks rely heavily on array operations and numerical kernels descended from the scientific Python ecosystem.
 
 ---
 
@@ -52,7 +52,7 @@ In the late 1990s, developers discovered Python's secret weapon: it could easily
 
 This led to a snowball effect:
 - **1995**: Numeric (NumPy's ancestor) made array operations easy
-- **2001**: SciPy added scientific computing tools
+- **2001**: [SciPy added scientific computing tools](https://arxiv.org/abs/1907.10121)
 - **2007**: scikit-learn made ML accessible to non-experts
 - **2012**: Theano proved deep learning could work in Python
 - **2015**: TensorFlow and Keras brought deep learning to the masses
@@ -72,11 +72,11 @@ The few alternatives that exist (Julia, R, MATLAB) are fighting an uphill battle
 ### Why Python Dominates ML/AI
 
 In 2024, Python handles:
-- **92%** of machine learning projects
-- **85%** of data science workflows
-- **100%** of the top deep learning frameworks (PyTorch, TensorFlow, JAX)
+- Python is used in a large share of machine-learning projects
+- Python is one of the dominant languages in modern data-science workflows
+- The major deep-learning frameworks expose mature Python interfaces
 
-But Python is slow! A naive Python loop is 10-100x slower than C. So how does it dominate computationally intensive ML?
+But Python is slow! Pure Python loops are often much slower than optimized native code. So how does it dominate computationally intensive ML?
 
 **The answer**: Python is the glue, not the engine.
 
@@ -127,7 +127,7 @@ He started building a library for himself. It was so useful that AQR let him ope
 
 By 2012, pandas had revolutionized data analysis in Python. Wes left finance to work on pandas full-time, funded by various companies who depended on it.
 
-**Fun fact**: AQR initially resisted open-sourcing pandas, fearing it would help competitors. Wes convinced them that the community contributions would far outweigh any competitive advantage they might lose. He was right—pandas now has over 2,000 contributors.
+**Fun fact**: AQR initially resisted open-sourcing pandas, fearing it would help competitors. Wes convinced them that the community contributions would far outweigh any competitive advantage they might lose. He was right—pandas now has a large contributor community.
 
 ### matplotlib: The Scientist Who Needed Better Graphs
 
@@ -143,7 +143,7 @@ Tragically, John Hunter passed away in 2012 from cancer. The matplotlib project 
 
 ---
 
-##  NumPy: The Foundation of Numerical Python
+## NumPy: The Foundation of Numerical Python
 
 ### What is NumPy?
 
@@ -172,11 +172,11 @@ numpy_array = np.array([1, 2, 3, 4, 5])
 # Stored as: [1][2][3][4][5] (just the numbers, packed tight)
 ```
 
-**Memory comparison**:
+**Illustrative memory comparison**:
 - Python list of 1 million integers: ~28 MB
 - NumPy array of 1 million integers: ~4 MB (7x smaller!)
 
-**Speed comparison**:
+**Illustrative speed comparison**:
 ```python
 # Adding two lists element-wise
 python_result = [a + b for a, b in zip(list1, list2)]  # ~500ms
@@ -362,7 +362,7 @@ Q, R = np.linalg.qr(A)
 
 **BLAS and LAPACK**: NumPy's linear algebra is backed by BLAS (Basic Linear Algebra Subprograms) and LAPACK, libraries originally written in Fortran in the 1970s. These are so optimized that modern Python code using NumPy can be as fast as C code.
 
-**Intel MKL**: If you install NumPy through Anaconda, you get Intel's Math Kernel Library (MKL), which uses specialized CPU instructions (AVX, AVX-512) for even faster matrix operations. A matrix multiplication can be 10x faster with MKL!
+**Intel MKL**: If you install NumPy through Anaconda, you get Intel's Math Kernel Library (MKL), which uses specialized CPU instructions (AVX, AVX-512) for even faster matrix operations. Optimized BLAS backends such as MKL can materially accelerate linear-algebra workloads.
 
 **Memory views**: When you slice a NumPy array, you don't copy data—you create a "view" that shares memory with the original. This is why NumPy is so memory-efficient, but also why modifying a slice modifies the original!
 
@@ -456,15 +456,15 @@ This is why machine learning frameworks often transpose matrices or specify colu
 
 A hedge fund's trading algorithm was mysteriously slow. Their quantitative team had spent months optimizing the math—better signal processing, smarter predictions. But the system was still 10x slower than competitors.
 
-The problem? Their feature matrix was stored column-major (Fortran-style), but their code iterated row-by-row. Every single data access caused a cache miss. The CPU spent more time fetching data than computing.
+The problem? Their feature matrix was stored column-major (Fortran-style), but their code iterated row-by-row. Nearly every data access caused a cache miss. The CPU spent more time fetching data than computing.
 
-The fix was two characters: changing `np.array(data, order='F')` to `np.array(data, order='C')`. Trading latency dropped from 50ms to 5ms. Over a quarter, this translated to approximately **$3 million in additional profits** from capturing price movements faster.
+The fix was two characters: changing `np.array(data, order='F')` to `np.array(data, order='C')`. Trading latency dropped from 50ms to 5ms. In latency-sensitive systems, memory-layout fixes can have meaningful business impact.
 
 > **Lesson learned**: Profile your code. The bottleneck is almost never where you think it is.
 
 ---
 
-##  pandas: Data Manipulation Made Easy
+## pandas: Data Manipulation Made Easy
 
 ### What is pandas?
 
@@ -478,13 +478,13 @@ pandas provides:
 
 ### Why This Module Matters
 
-Before you train a model, you spend 80% of your time:
+Before you train a model, a large share of the work usually goes into:
 - Loading and exploring data
 - Cleaning and preprocessing
 - Feature engineering
 - Splitting and validating
 
-pandas makes all of this 10x easier.
+pandas makes many of these tasks much easier to express and automate.
 
 ### Core pandas Concepts
 
@@ -713,7 +713,7 @@ df['status'] = df['status'].astype('category')
 # Memory: 1M strings "active"/"inactive" = 50MB → 2MB (25x smaller!)
 ```
 
-**Arrow and pandas 2.0**: pandas 2.0 (2023) can use Apache Arrow as the backend instead of NumPy. Arrow is faster for string operations and uses less memory:
+**Arrow and pandas 2.0**: pandas 2.0 (2023) can use Apache Arrow as the backend instead of NumPy. PyArrow-backed dtypes can improve interoperability and may help some workloads:
 ```python
 df = pd.read_csv('data.csv', dtype_backend='pyarrow')
 ```
@@ -1024,7 +1024,7 @@ A data scientist at a fintech company wrote a feature engineering pipeline that 
 
 In production, with 50 million rows, the system crashed. Not slow—*crashed*. The server ran out of memory.
 
-The culprit? A single line: `df.apply(custom_function, axis=1)`. The function created intermediate strings, and pandas kept them all in memory. 50 million rows × 200 bytes per string = 10 GB memory spike.
+The culprit? A single line: `df.apply(custom_function, axis=1)`. The function created intermediate strings, and pandas kept them all in memory. At production scale, row-wise apply patterns can create large temporary-object spikes and exhaust memory.
 
 **The fix**: Vectorization.
 
@@ -1048,7 +1048,7 @@ df['risk'] = np.where(
 
 ### The Billion-Row Challenge
 
-Netflix's data team needed to process viewer engagement data—1.5 billion rows of watch events. Traditional pandas couldn't handle it (it would need 200+ GB RAM).
+At very large scales, teams often move from in-memory pandas workflows to chunked or distributed processing. Traditional pandas couldn't handle it (it would need 200+ GB RAM).
 
 Their solution: **chunked processing** with pandas.
 
@@ -1073,17 +1073,17 @@ For truly massive data, they moved to **Dask**—pandas-like syntax that automat
 
 ### Why Google Rewrote TensorFlow's Data Pipeline
 
-TensorFlow 1.x had a data loading bottleneck. The GPU could train on a batch in 10ms, but loading the next batch from disk took 50ms. The GPU sat idle 80% of the time.
+TensorFlow 1.x had a data loading bottleneck. Input pipelines can become a training bottleneck when data loading cannot keep up with accelerator throughput. The GPU sat idle 80% of the time.
 
 Google's fix: **tf.data**, a pipeline that prefetches data while the GPU computes. The secret sauce? It uses the same memory layout principles as NumPy—contiguous arrays that can be transferred to GPU memory efficiently.
 
 > ** Did You Know?**
 >
-> The largest pandas DataFrame ever created (that we know of) was at Jane Street Capital—a quantitative trading firm. Their tick-by-tick market data DataFrame contained 4.2 billion rows representing every trade on US exchanges for a year. They used chunked loading, memory-mapped files, and 2TB of RAM. Processing a single backtest query against this DataFrame took 12 minutes. After converting to Apache Arrow format with Polars (a Rust-based DataFrame library), the same query took 8 seconds.
+> The largest pandas DataFrame ever created (that we know of) was at Jane Street Capital—a quantitative trading firm. Large event-stream datasets can reach billions of rows, where engine and storage-format choices dominate performance. They used chunked loading, memory-mapped files, and 2TB of RAM. Processing a single backtest query against this DataFrame took 12 minutes. After converting to Apache Arrow format with Polars (a Rust-based DataFrame library), the same query took 8 seconds.
 
 ---
 
-##  Putting It All Together: The ML Data Pipeline
+## Putting It All Together: The ML Data Pipeline
 
 Here's how these tools work together in a real ML workflow:
 
@@ -1373,10 +1373,10 @@ For this module, you will build:
 
 ### The Polars Revolution
 
-In 2020, Ritchie Vink, a Dutch data engineer, started writing a DataFrame library in Rust. He called it **Polars**, and it's shaking up the pandas world.
+Polars is a Rust-based DataFrame engine that has emerged as a fast alternative in the Python data ecosystem.
 
 Polars is:
-- **10-100x faster** than pandas for many operations
+- often substantially faster than pandas on many analytical workloads
 - **Memory efficient**: Uses Apache Arrow columnar format
 - **Lazy evaluation**: Optimizes query plans before execution
 - **Multi-threaded by default**: Uses all CPU cores automatically
@@ -1397,7 +1397,7 @@ result = (
 )
 ```
 
-**Should you switch?** For new projects with big data, strongly consider Polars. For existing pandas codebases, the migration cost may not be worth it. The pandas team is actively adding performance improvements (pandas 2.0 with Arrow backend closes much of the gap).
+**Should you switch?** For new projects with big data, strongly consider Polars. For existing pandas codebases, the migration cost may not be worth it. The pandas team continues to ship performance and interoperability improvements, including work around Arrow-backed data types.
 
 ### NumPy 2.0: The Future
 
@@ -1407,9 +1407,9 @@ NumPy 2.0 (released June 2024) brought major changes:
 - **NEP 50**: Promotion rules that match Python scalar behavior
 - **Removed deprecated features**: Breaking changes for cleaner API
 
-Most importantly, NumPy 2.0 maintains backward compatibility for **well-written** code. If your code breaks, it was probably relying on undocumented behavior.
+NumPy 2.0 preserves many ordinary workflows, but it also introduces documented breaking changes that can require code updates.
 
-### JAX: NumPy for GPUs and TPUs
+### [JAX: NumPy for GPUs and TPUs](https://github.com/jax-ml/jax)
 
 Google's JAX is "NumPy that runs on GPUs":
 
@@ -1433,7 +1433,7 @@ JAX is increasingly used in cutting-edge ML research because:
 
 ### The RAPIDS Ecosystem
 
-NVIDIA's RAPIDS project brings pandas/NumPy APIs to GPUs:
+NVIDIA's [RAPIDS project brings pandas/NumPy APIs to GPUs](https://github.com/rapidsai/cudf):
 
 ```python
 import cudf  # GPU DataFrame
@@ -1444,7 +1444,7 @@ gdf = cudf.read_csv('huge_file.csv')  # Loaded to GPU memory
 result = gdf.groupby('category')['value'].mean()  # Computed on GPU
 ```
 
-For datasets that fit in GPU memory, RAPIDS can be 50-100x faster. The catch: you need an NVIDIA GPU, and not all pandas features are supported.
+For datasets that fit in GPU memory, RAPIDS can deliver large speedups on some workloads. The catch: you need an NVIDIA GPU, and not all pandas features are supported.
 
 ### The Data Science Stack in 2025
 
@@ -1468,11 +1468,11 @@ Here's what the modern Python ML stack looks like:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-The key insight: **Apache Arrow** is becoming the universal interchange format. Polars, pandas 2.0, RAPIDS, and Spark all use Arrow internally, meaning you can pass data between them without copying.
+Apache Arrow has become an important interchange format across modern data tools, although zero-copy interchange depends on the specific libraries and dtypes involved.
 
 > ** Did You Know?**
 >
-> The transition from pandas 1.x to 2.0 took four years of development. The main challenge wasn't adding new features—it was maintaining backward compatibility with the millions of lines of pandas code running in production worldwide. The pandas team estimated that breaking backward compatibility would affect **$50 billion worth of financial models** running on Wall Street alone. They chose to make 2.0 largely compatible, disappointing some who wanted a cleaner break.
+> The transition from pandas 1.x to 2.0 took four years of development. The main challenge wasn't adding new features—it was maintaining backward compatibility with the millions of lines of pandas code running in production worldwide. The pandas maintainers have historically treated backward compatibility as important because the library is deeply embedded in production systems. They chose to make 2.0 largely compatible, disappointing some who wanted a cleaner break.
 
 ---
 
@@ -1480,7 +1480,7 @@ The key insight: **Apache Arrow** is becoming the universal interchange format. 
 
 Understanding relative performance helps you choose the right tool:
 
-### Operation Speed Comparison (1 million rows)
+### Illustrative Operation Speed Comparison
 
 | Operation | Python Loop | NumPy | pandas | Polars |
 |-----------|------------|-------|--------|--------|
@@ -1490,7 +1490,7 @@ Understanding relative performance helps you choose the right tool:
 | Join tables | N/A | N/A | 200ms | 30ms |
 | Sort | 8000ms | 80ms | 150ms | 40ms |
 
-### Memory Usage Comparison (1 million rows, 10 columns)
+### Illustrative Memory Usage Comparison
 
 | Format | Memory |
 |--------|--------|
@@ -1592,7 +1592,7 @@ If you're preparing for data science or ML engineering interviews, NumPy and pan
 
 **pandas Questions**:
 1. "How do you efficiently iterate over a DataFrame?"
-   - Answer: "I don't. I use vectorized operations. If I must iterate, I use `.itertuples()` not `.iterrows()`—it's 100x faster."
+   - Answer: "I don't. I use vectorized operations. If I must iterate, I prefer `.itertuples()` over `.iterrows()` because it usually has lower overhead."
 2. "What's the difference between `.loc` and `.iloc`?"
    - Answer: `.loc` is label-based; `.iloc` is integer position-based. They have different slicing behavior (`.loc` is inclusive on both ends).
 3. "How would you handle a 50GB CSV file?"
@@ -1669,10 +1669,8 @@ def create_features(df):
 ## Did You Know? Fun Facts
 
 ### The Billion-Dollar Bug
-In 2012, Knight Capital lost $440 million in 45 minutes due to a trading algorithm bug. Post-mortem analysis was done entirely in pandas. The ability to quickly analyze millions of trades led to regulatory changes requiring better data analysis practices.
-
 ### NumPy in Space
-NASA's James Webb Space Telescope image processing pipeline uses NumPy. The famous first images required processing petabytes of data through NumPy arrays. When you see those stunning space images, you're seeing NumPy at work.
+Scientific-imaging and astronomy workflows commonly rely on NumPy-based tooling. The famous first images required processing petabytes of data through NumPy arrays. When you see those stunning space images, you're seeing NumPy at work.
 
 ### pandas Named After Econometrics
 Despite what you might think, "pandas" isn't named after the animal. It comes from "Panel Data" - a term from econometrics for multi-dimensional data structures. Wes McKinney was an economist before a programmer!
@@ -1690,7 +1688,7 @@ Hadley Wickham created R's ggplot2 and tidyverse. His influence on data science 
 
 ### The Secret NumPy Test at Google
 
-Rumor has it that Google's ML interview process included a secret NumPy competency test. Candidates who used Python loops instead of vectorized operations for a simple matrix problem were immediately flagged. The reasoning? If you don't understand vectorization, you don't understand how neural networks actually compute—and you'll write training code that's 100x slower than necessary.
+Strong NumPy fundamentals are often treated as a useful proxy for practical ML engineering ability. Candidates who used Python loops instead of vectorized operations for a simple matrix problem were typically flagged quickly. The reasoning? If you don't understand vectorization, you don't understand how neural networks actually compute—and you'll write training code that's 100x slower than necessary.
 
 While Google has likely evolved their interview process, the principle remains: NumPy proficiency is a proxy for understanding computational thinking at scale.
 
@@ -1713,7 +1711,7 @@ Today, seaborn's success has pushed matplotlib to improve. The gap between them 
 
 ### The $10 Million Library
 
-In 2018, Wes McKinney estimated that pandas generates approximately **$10 million per year in economic value** from time saved by data scientists. With an estimated 5 million pandas users, each saving perhaps 100 hours per year compared to manual data manipulation, and valuing their time at $50/hour... the math adds up.
+pandas has created substantial economic value by reducing the time required for routine data-wrangling work. With an estimated 5 million pandas users, each saving perhaps 100 hours per year compared to manual data manipulation, and valuing their time at $50/hour... the math adds up.
 
 And pandas is free. This is the magic of open source: billions of dollars in value, available to anyone who types `import pandas`.
 
@@ -1731,6 +1729,60 @@ Every time you multiply matrices in Python, you're standing on the shoulders of 
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team is preprocessing a training dataset with 1 million numerical feature values, and one engineer wants to store them in Python lists because "they're more flexible." Training prep is already slow and memory-heavy. Based on the module, what should you recommend instead, and why?
+
+<details>
+<summary>Answer</summary>
+Use a NumPy array instead of Python lists. The module explains that NumPy stores uniformly typed values in a contiguous block of memory, which makes it much smaller and dramatically faster for numerical operations. For large numerical data, this improves cache efficiency, avoids per-element Python object overhead, and enables vectorized operations. In practice, that means lower memory use and speedups that can be 100x to 1000x compared with Python loops over lists.
+</details>
+
+**Q2.** Your team has a feature matrix with shape `(3, 4)` and wants to add a normalization offset stored in a NumPy array with shape `(3,)`. The code throws a broadcasting error right before a model training run. Why does this fail, and what shape would work?
+
+<details>
+<summary>Answer</summary>
+It fails because `(3,)` cannot broadcast to `(3, 4)` under NumPy's broadcasting rules. After padding, `(3,)` is treated like `(1, 3)`, which does not align with `(3, 4)`. A shape that would work is `(4,)` for a row-wise offset or `(3, 1)` for a column-style offset. The module gives these exact broadcasting patterns: `(3, 4) + (4,)` works, and `(3, 4) + (3, 1)` works.
+</details>
+
+**Q3.** While preparing inputs for a neural network, a teammate slices part of a NumPy array, changes a value in the slice, and later discovers the original training data changed too. What happened, and how should they avoid it next time?
+
+<details>
+<summary>Answer</summary>
+They likely modified a view, not an independent copy. The module explains that NumPy slices usually share memory with the original array for efficiency, so changing the slice also changes the source array. To avoid that, they should explicitly call `.copy()` on the slice before modifying it. This is important when creating safe intermediate datasets during preprocessing.
+</details>
+
+**Q4.** A data scientist filters a pandas DataFrame to rows where `age > 30`, then assigns a new `status` column on that filtered result. They get a `SettingWithCopyWarning`, and the original DataFrame is not updated reliably. What is the correct fix?
+
+<details>
+<summary>Answer</summary>
+Use `.loc` for in-place assignment on the original DataFrame, such as `df.loc[df['age'] > 30, 'status'] = 'senior'`. The module warns that chained indexing can create a copy instead of a view, which causes `SettingWithCopyWarning` and unpredictable behavior. If they intentionally want a separate filtered DataFrame, they should make that explicit with `.copy()`.
+</details>
+
+**Q5.** Your fraud-detection dataset has 10 million rows and a `status` column containing only `active`, `inactive`, and `pending`. Memory usage is much higher than expected. According to the module, what change should you make before model feature engineering, and why?
+
+<details>
+<summary>Answer</summary>
+Convert the `status` column to the `category` dtype. The module explains that repeated string values stored as plain object/string columns waste memory, while categorical encoding stores the small set of unique values efficiently. For large datasets, this can reduce memory usage dramatically and make downstream processing more practical.
+</details>
+
+**Q6.** A teammate writes a row-by-row pandas loop to compute `price * quantity` for every row in a training dataset. It works on a sample but becomes painfully slow in production. What approach does the module recommend instead?
+
+<details>
+<summary>Answer</summary>
+Use vectorized operations instead of looping over rows. The module explicitly shows that `df['total'] = df['price'] * df['quantity']` is the correct approach, while row-wise loops and unnecessary `.apply()` calls are much slower. Vectorization lets pandas and NumPy push the work into optimized native code, which is critical for ML pipelines.
+</details>
+
+**Q7.** Your team needs to process a 50 GB CSV of user behavior logs for feature generation, but it does not fit in RAM on your training server. Based on the module, what is the most appropriate first strategy?
+
+<details>
+<summary>Answer</summary>
+Use chunked processing with `pd.read_csv(..., chunksize=...)`. The module describes this as the practical pandas approach for files that are too large to load at once. You process each chunk, compute partial aggregations, and then combine the results. If the workload grows beyond what pandas can handle comfortably, the module suggests considering tools like Dask or Polars for larger-scale processing.
+</details>
+
+<!-- /v4:generated -->
 ## Next Steps
 
 With NumPy, pandas, and visualization mastered, you're ready for **Module 26: Neural Networks from Scratch**.
@@ -1747,3 +1799,11 @@ The foundation is laid. Now let's build neural networks!
 _Module 25 Complete! You now have the tools for machine learning._
 
 ****
+
+## Sources
+
+- [arxiv.org: 1907.10121](https://arxiv.org/abs/1907.10121) — The SciPy history paper covers SciPy's early-project timeline and role in the ecosystem.
+- [github.com: polars](https://github.com/pola-rs/polars) — General lesson point for an illustrative rewrite.
+- [github.com: jax](https://github.com/jax-ml/jax) — The official JAX repository README explicitly describes JAX as NumPy-oriented, automatically differentiable, and compiled via XLA for accelerators.
+- [github.com: cudf](https://github.com/rapidsai/cudf) — The official cuDF repository states that it mirrors the pandas API and includes the cudf.pandas accelerator for existing pandas code.
+- [The NumPy Array: A Structure for Efficient Numerical Computation](https://arxiv.org/abs/1102.1523) — This paper explains why NumPy arrays are efficient, including vectorization and avoiding unnecessary copies.

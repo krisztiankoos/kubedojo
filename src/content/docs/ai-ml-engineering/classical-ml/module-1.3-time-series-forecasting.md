@@ -7,26 +7,26 @@ sidebar:
 > **AI/ML Engineering Track** | Complexity: `[COMPLEX]` | Time: 6-8
 ## The Intern Who Beat the Team
 
-**Seattle. August 12, 2020. 10:15 AM.**
+**Illustrative AutoML comparison.**
 
-Sarah Chen was three weeks into her data science internship when she made the senior engineers uncomfortable.
+A junior practitioner can sometimes surface an AutoML result that challenges a carefully hand-built baseline.
 
-The team had spent six months building a churn prediction model. Feature engineering alone took three engineers two months. Hyperparameter tuning consumed another month. The final model achieved 0.847 AUC—a number the team celebrated with champagne.
+A team had invested substantial time in a hand-built churn model before comparing it with an AutoML baseline.
 
 Sarah asked a naive question: "Could I try AutoGluon on the same data?"
 
 The senior engineers exchanged knowing glances. "Sure, but don't expect it to beat a model built by experienced engineers."
 
-Four hours later, Sarah walked into the standup meeting. Her AutoGluon model achieved 0.863 AUC—almost two percentage points higher than the hand-crafted solution. The room went silent.
+A short AutoML run can sometimes produce a stronger baseline than a manually tuned model, depending on the dataset and evaluation setup.
 
 "How is that possible?" asked the team lead.
 
-"It tried 15 different algorithms, ensembled the top 7, and did multi-layer stacking," Sarah replied, reading from AutoGluon's leaderboard. "It also found a feature interaction our model missed."
+"It evaluated multiple model families, combined strong candidates, and surfaced patterns the manual workflow had not captured," the teammate explained.
 
-The team's six months of work had been outperformed by an intern with four hours and an AutoML library.
+The operational lesson is that AutoML can provide a fast, credible baseline before a team commits to more manual modeling work.
 
 > "AutoML doesn't make data scientists obsolete—it makes their time more valuable. Now you can spend six months on problems that actually need human creativity."
-> — Nick Erickson, Lead Developer of AutoGluon, NeurIPS Workshop 2020
+> — Common AutoML perspective
 
 This module teaches you how to use AutoML tools effectively—and why they're not magic, but a powerful force multiplier for any ML practitioner.
 
@@ -73,7 +73,7 @@ Data → [AutoML System] → Best Model
        TIME: Minutes to Hours
 ```
 
-**Did You Know?** In the 2019 AutoML Challenge, AutoGluon achieved top-3 results on 39 out of 39 datasets, often beating solutions that took ML experts weeks to develop. The total computation time? About 4 hours per dataset with no human intervention!
+**Did You Know?** AutoML systems have reported strong benchmark and competition results under fixed compute budgets, but the exact ranking and runtime depend on the benchmark and configuration.
 
 ---
 
@@ -150,7 +150,7 @@ AUTOML FRAMEWORK COMPARISON:
 
 ### AutoGluon Deep Dive
 
-AutoGluon (by Amazon) consistently wins ML competitions:
+AutoGluon (from Amazon) has reported strong results on tabular benchmarks and competitions:
 
 ```
 AUTOGLUON ARCHITECTURE:
@@ -198,7 +198,7 @@ Ensemble:
   - Multi-layer stacking
 ```
 
-**Did You Know?** AutoGluon's "multi-layer stacking" is unique. Instead of just averaging model predictions, it trains a second layer of models on the first layer's predictions, then a third layer, and so on. This recursive ensembling often improves accuracy by 1-3% - which can mean millions in revenue for businesses!
+**Did You Know?** AutoGluon uses stacked ensembles that train later models on earlier model predictions. This can improve accuracy, but the exact gain depends on the dataset, time budget, and evaluation setup.
 
 ---
 
@@ -261,7 +261,7 @@ Think of hyperparameter optimization like tuning a guitar. Each hyperparameter i
 
 Traditional approach: try every combination. With 10 hyperparameters and 5 values each, that's 5^10 = 9.7 million combinations. Even at 1 minute per trial, that's 18 years.
 
-Smart approach: use Bayesian optimization, which learns from each trial. "High learning rate made things worse? Let's try lower values." It finds good configurations in 50-100 trials instead of millions.
+Smart approach: use Bayesian optimization, which learns from each trial. "High learning rate made things worse? Let's try lower values." It can often find good configurations in far fewer trials than exhaustive search.
 
 ```
 HYPERPARAMETER SEARCH SPACE:
@@ -407,7 +407,7 @@ Aggregation: sum, mean, count, max, min, std, mode
 Transform: year, month, weekday, cum_sum, diff
 ```
 
-**Did You Know?** In the 2015 KDD Cup, a team used Featuretools to generate over 1,000 features automatically. They finished in the top 10% of the competition with minimal manual feature engineering. The winning insight: more features (properly regularized) often beats carefully hand-crafted few features.
+**Did You Know?** Automated feature engineering can generate large numbers of relational features quickly, but those features still need regularization, validation, and task-specific judgment to be useful.
 
 ---
 
@@ -546,7 +546,7 @@ TIMELINE:
          from HERE
 ```
 
-**Did You Know?** Uber's feature store "Michelangelo" serves over 10 million feature vector lookups per second. They estimate that having a centralized feature store reduced their ML feature development time by 50% and virtually eliminated training-serving skew issues that previously caused silent model degradation.
+**Did You Know?** Feature stores centralize feature definitions, can support online and offline retrieval, and help reduce training-serving inconsistencies.
 
 ---
 
@@ -885,7 +885,7 @@ AUTOML BEST PRACTICES:
    - Business metrics impact?
 ```
 
-**Did You Know?** Google's AutoML Tables (now part of Vertex AI) automatically applies over 100 different data preprocessing and feature engineering transformations. When tested on the OpenML benchmark suite, it achieved state-of-the-art results on 60% of datasets - often surpassing manually tuned models!
+**Did You Know?** AutoML systems typically include built-in preprocessing and feature handling for tabular data, but the exact transformations and benchmark outcomes depend on the product and evaluation setup.
 
 ---
 
@@ -934,21 +934,21 @@ WHEN TO USE WHAT:
 
 ---
 
-##  Production War Stories: AutoML and Feature Store Lessons
+## Production War Stories: AutoML and Feature Store Lessons
 
-### The $12 Million Feature Leak
+### A Costly Feature Leak
 
-**Singapore. March 2022. Fintech startup CredFlow.**
+**Illustrative fintech scenario.**
 
-The data science team was celebrating. Their credit scoring model, built with AutoGluon in just two days, achieved 0.94 AUC—far better than their previous hand-built model at 0.78. The model went into production, and loan approvals skyrocketed.
+A team can sometimes see a large offline-metric jump from an AutoML run, but that does not guarantee the features are valid for production decisions.
 
-Three months later, the collections team noticed something disturbing: default rates had tripled. Loans approved by the new model were failing at unprecedented rates.
+After deployment, a model can fail badly if it learned from leaked or otherwise invalid features.
 
-**The forensic analysis revealed the horror**: One feature—`days_until_first_payment`—had an importance score of 0.42. This feature was calculated from a field populated *after* the loan was already approved. Customers with short payment windows (who'd been approved quickly) showed different patterns than those with longer windows.
+**The forensic analysis revealed the issue**: a highly ranked feature depended on information that was not actually available at prediction time, which created data leakage.
 
 The AutoML system had found a perfect predictor: a feature that leaked the outcome. It's like trying to predict who will win a race by looking at the finish photo—technically accurate, but useless for making predictions before the race.
 
-**Financial impact**: $12.3 million in bad loans before detection. The CRO was fired. The startup nearly collapsed.
+**Financial impact**: data leakage can cause severe financial and organizational damage before a team detects it.
 
 **The fix implemented**:
 ```python
@@ -968,15 +968,15 @@ def validate_feature_timing(feature_name, feature_timestamp, prediction_timestam
 
 **Lesson**: AutoML will find ANY signal, including signals from the future. Point-in-time validation isn't optional—it's essential.
 
-> **Did You Know?** A 2023 survey of ML practitioners found that 43% had experienced data leakage in production models. The median time to detect leakage was 47 days. Feature stores with built-in point-in-time correctness reduce leakage incidents by 87%.
+> **Did You Know?** Data leakage is common in production ML, can take time to detect, and point-in-time-correct feature retrieval helps reduce that risk.
 
 ---
 
 ### The Feature Store That Saved Black Friday
 
-**Seattle. November 2021. Major e-commerce retailer.**
+**Illustrative retail scenario.**
 
-Black Friday was approaching. The ML platform team was nervous. Last year, their recommendation system had crashed under load, costing an estimated $8 million in lost sales. The problem? The feature computation pipeline couldn't keep up with 50,000 requests per second.
+A high-traffic retail system can fail if feature computation becomes the latency bottleneck during peak demand.
 
 This year, they'd implemented Feast as their feature store. The architecture was different:
 
@@ -996,26 +996,26 @@ Request → Redis lookup (1ms) → Model → Response
           └── 5ms total latency
 ```
 
-On Black Friday, traffic hit 72,000 requests per second. The system didn't flinch. Latency stayed under 10ms. Revenue increased 34% year-over-year.
+With precomputed online features, a recommendation stack can handle much higher traffic with lower latency than on-demand feature computation.
 
 **The key insight**: Feature computation is the bottleneck, not model inference. Pre-computing features and serving from an online store changed everything.
 
-**Financial impact**: Black Friday revenue increased by $47 million. Feature store implementation cost: $300K.
+**Financial impact**: improving feature serving can materially affect both revenue and operating cost, especially during peak traffic.
 
 ---
 
 ### The AutoML Model That Discriminated
 
-**Chicago. June 2023. Insurance company HealthFirst.**
+**Illustrative insurance scenario.**
 
-The compliance team flagged an anomaly: claim denials were 23% higher for customers in certain ZIP codes—ZIP codes that happened to correlate strongly with minority populations.
+The compliance team found that model decisions were uneven across location-based groups, raising a fairness concern.
 
-Investigation revealed the AutoML system had discovered a highly predictive feature: `zip_code_health_score`, which was derived from historical claim data. The problem? Historical claim data reflected decades of discriminatory practices. The model wasn't being racist on purpose—it was faithfully learning patterns that encoded institutional racism.
+Investigation suggested that the model had learned from proxy signals tied to historically biased outcomes, so the issue was not just accuracy but fairness.
 
 **The team's response**:
 
-1. **Removed proxy features**: ZIP code, neighborhood, and any feature that correlated >0.3 with protected demographics
-2. **Added fairness constraints**: Ensured prediction rates were within 5% across demographic groups
+1. **Removed proxy features**: location-based and other features that acted as strong proxies for protected characteristics
+2. **Added fairness constraints**: introduced explicit checks so model behavior would be reviewed against agreed fairness criteria across groups
 3. **Implemented explainability**: Required human review for any denial with unusual feature weights
 
 ```python
@@ -1038,7 +1038,7 @@ predictor = TabularPredictor(
 )
 ```
 
-**Regulatory outcome**: The company avoided a discrimination lawsuit by self-reporting and fixing the issue. Estimated savings: $15-20 million in legal fees and settlements.
+**Regulatory outcome**: addressing fairness issues early can reduce legal and regulatory risk.
 
 **Lesson**: AutoML optimizes what you tell it to optimize. If you only optimize for accuracy, it will happily learn discriminatory patterns. Fairness must be an explicit constraint.
 
@@ -1046,7 +1046,7 @@ predictor = TabularPredictor(
 
 ---
 
-##  Common Mistakes and How to Avoid Them
+## Common Mistakes and How to Avoid Them
 
 ### Mistake 1: Trusting AutoML Feature Importance Blindly
 
@@ -1098,7 +1098,7 @@ predictor = TabularPredictor(label='target').fit(train_data)
 # 3 days later: still running, $2,000 in cloud costs
 ```
 
-**Problem**: AutoML will happily run forever, trying more and more models. Without time limits, you waste compute and money.
+**Problem**: AutoML can keep exploring additional models and configurations unless you bound the run. Without explicit time limits, training can take longer and cost more than expected.
 
 **Right**:
 ```python
@@ -1202,7 +1202,7 @@ text_model = AutoGluon.fit(text_data)    # Works but suboptimal
 time_series = AutoGluon.fit(ts_data)      # Works but suboptimal
 ```
 
-**Problem**: AutoML excels at tabular data. For images, text, and time series, specialized approaches usually win.
+**Problem**: AutoML is often strongest on tabular data, while other modalities frequently benefit from more specialized methods.
 
 **Right**:
 ```
@@ -1221,32 +1221,32 @@ Audio        │  Poor     │ Whisper, wav2vec
 
 ---
 
-##  Economics of AutoML and Feature Stores
+## Economics of AutoML and Feature Stores
 
 ### AutoML ROI Calculation
 
 | Scenario | Manual ML | AutoML | Savings |
 |----------|-----------|--------|---------|
 | **Initial Model Development** | | | |
-| Data scientist time | 4 weeks ($40K) | 1 week ($10K) | $30K |
-| Compute costs | $500 | $200 | $300 |
-| Time to production | 6 weeks | 2 weeks | 4 weeks faster |
+| Data scientist time | Multiple weeks for a manual first model | About a week for a bounded AutoML baseline | Meaningful time savings |
+| Compute costs | Higher from longer manual experimentation | Lower for a short bounded AutoML run | Modest compute savings |
+| Time to production | Several weeks | Roughly days to a couple of weeks | Faster delivery |
 | **Ongoing Maintenance** | | | |
-| Monthly retraining time | 2 days ($4K) | 4 hours ($500) | $3.5K/month |
-| Model iteration cost | $10K per iteration | $2K per iteration | $8K/iteration |
+| Monthly retraining time | Days of manual work | Hours for a more automated workflow | Lower recurring effort |
+| Model iteration cost | Higher per iteration | Lower per iteration | Lower iteration cost |
 | **Annual Savings** | | | |
-| Initial + 12 months maintenance | $88K | $16K | **$72K/year** |
+| Initial + 12 months maintenance | Higher manual cost profile | Lower with more automation | **Potential annual savings** |
 
 ### Feature Store ROI Calculation
 
 | Metric | Without Feature Store | With Feature Store |
 |--------|----------------------|-------------------|
-| Feature development time | 2 weeks per feature | 2 days per feature (10x faster with reuse) |
-| Feature duplication | 5x average (same feature built 5 times) | 1x (single source of truth) |
-| Training-serving skew incidents | 3 per quarter | 0.1 per quarter (30x reduction) |
-| Revenue lost to skew | $500K/year | $17K/year |
-| Engineer time on debugging | 20% | 5% |
-| **Total Annual Impact** | | **$800K-1.2M savings** |
+| Feature development time | Often measured in weeks | Often faster with reuse |
+| Feature duplication | Multiple teams may rebuild similar features | Shared definitions reduce duplication |
+| Training-serving skew incidents | Can happen repeatedly | Can be reduced with shared feature definitions |
+| Revenue lost to skew | Can be material | Can be reduced when skew is reduced |
+| Engineer time on debugging | Significant | Lower with shared infrastructure |
+| **Total Annual Impact** | | **Potential operational savings** |
 
 ### Cost of NOT Using These Tools
 
@@ -1273,18 +1273,18 @@ REAL COSTS OF MANUAL ML:
 └────────────────────────────────────────────────────────────┘
 ```
 
-> **Did You Know?** According to a 2023 MLOps survey, companies using feature stores report 73% faster time-to-production for new ML models. The median ROI for feature store implementations is 340% over 3 years, with payback periods under 9 months.
+> **Did You Know?** Teams often adopt feature stores to speed up model delivery and reduce operational rework, but the exact ROI depends heavily on the organization and workload.
 
 ---
 
-##  Interview Preparation: AutoML & Feature Stores
+## Interview Preparation: AutoML & Feature Stores
 
 ### Q1: "When would you use AutoML vs. hand-crafted models?"
 
 **Strong Answer**:
 "I use AutoML in three main scenarios. First, for establishing baselines quickly—before investing weeks in manual model development, I run AutoML to understand what's achievable. If AutoML gets 0.75 AUC, I know my hand-crafted model should aim for at least 0.78 to justify the extra effort.
 
-Second, for tabular data problems with clear evaluation metrics—this is AutoML's sweet spot. In my experience, AutoGluon matches or beats hand-crafted gradient boosting models 80% of the time with a fraction of the effort.
+Second, for tabular data problems with clear evaluation metrics—this is a strong use case for AutoML, which can often provide a competitive baseline with far less manual effort.
 
 Third, when the ML isn't the core differentiator—if we're building a feature where ML is a small component, I'd rather spend engineering time on the product, not model tuning.
 
@@ -1310,11 +1310,11 @@ In the first layer, AutoGluon trains diverse base models—gradient boosting (Li
 
 These first-layer predictions become features for the second layer, which trains new models to combine them. Think of it as learning 'when to trust which model.' If LightGBM is great on numerical features but weak on categoricals, while CatBoost is the opposite, the second layer learns to weight them appropriately based on the input.
 
-AutoGluon can stack multiple layers—typically 2-3 work best before diminishing returns.
+AutoGluon can stack multiple layers, but the useful depth depends on the dataset, models, and time budget.
 
 The key insight is that this outperforms simple ensembling because it learns non-linear combinations of model predictions. A weighted average says 'LightGBM gets 40% weight.' Multi-layer stacking says 'LightGBM gets 80% weight when feature X is high, but only 20% when feature Y is low.'
 
-In practice, I've seen multi-layer stacking improve AUC by 1-3% over simple ensembles—which can translate to millions in revenue for high-stakes predictions."
+In practice, stacked ensembles can outperform simpler combinations, but the size of that gain depends on the task, dataset, and evaluation setup."
 
 ### Q4: "What's the difference between online and offline feature stores?"
 
@@ -1416,7 +1416,7 @@ This architecture handles 10K RPS with 15ms end-to-end latency while maintaining
 
 ---
 
-##  Hands-On Exercises
+## Hands-On Exercises
 
 ### Exercise 1: AutoML Baseline Challenge
 
@@ -1506,7 +1506,7 @@ print("=" * 50)
 print(predictor.leaderboard())
 ```
 
-**Expected Learning**: AutoGluon typically achieves 1-3% higher AUC than a basic Random Forest, demonstrating the value of automated algorithm selection and ensembling.
+**Expected Learning**: AutoML can outperform a basic manually specified baseline, showing the value of automated model selection and ensembling.
 
 ---
 
@@ -1905,15 +1905,15 @@ if __name__ == "__main__":
 
 ---
 
-##  Key Takeaways
+## Key Takeaways
 
 1. **AutoML is a force multiplier, not a replacement** — It doesn't replace ML engineers; it amplifies their productivity by automating tedious parts (algorithm selection, hyperparameter tuning) so they can focus on harder problems.
 
-2. **AutoGluon wins on tabular data** — For structured data problems, AutoGluon's multi-layer stacking consistently achieves state-of-the-art results. Start here before hand-crafting models.
+2. **AutoGluon is a strong tabular baseline** — For structured data problems, its stacking approach often performs well and is worth testing before investing in heavier manual tuning.
 
-3. **Feature stores solve training-serving skew** — By using the same feature definitions for training and serving, you eliminate a major source of production ML failures.
+3. **Feature stores help reduce training-serving skew** — By using the same feature definitions for training and serving, they reduce a major source of production ML failures.
 
-4. **Point-in-time correctness is non-negotiable** — Data leakage from future information is the silent killer of ML models. Feature stores with timestamp-aware joins prevent this.
+4. **Point-in-time correctness is essential** — Future information can leak into ML training data, and timestamp-aware joins help reduce that risk.
 
 5. **Feature reuse compounds over time** — Every feature you add to the store can be used by multiple models. After a year, you have a powerful feature library that accelerates all new projects.
 
@@ -1925,11 +1925,11 @@ if __name__ == "__main__":
 
 9. **AutoML presets matter** — 'best_quality' for maximum accuracy, 'optimize_for_deployment' for production serving. Choose based on your constraints.
 
-10. **The economics are compelling** — Feature stores and AutoML typically deliver 300%+ ROI through faster development, reduced errors, and engineer time savings.
+10. **The economics can be compelling** — feature stores and AutoML can reduce repetitive work, shorten iteration cycles, and lower some categories of operational error.
 
 ---
 
-##  Further Reading
+## Further Reading
 
 ### Tools
 - **AutoGluon**: https://auto.gluon.ai/ - Amazon's state-of-the-art AutoML framework, excels at tabular data
@@ -1945,6 +1945,74 @@ if __name__ == "__main__":
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team has a new tabular churn dataset and only one afternoon to produce a credible baseline before leadership decides whether to fund a larger ML effort. A senior engineer suggests spending two weeks hand-tuning gradient boosting models first. What is the better first step, and why?
+
+<details>
+<summary>Answer</summary>
+Run a quick AutoML baseline first, such as AutoGluon with a bounded `time_limit` and a faster preset like `medium_quality` or `good_quality`.
+
+This matches the module's recommended workflow: start simple, get a baseline in 30-60 minutes, and use that result to judge whether more manual effort is justified. AutoML is especially strong for tabular data and time-constrained projects.
+</details>
+
+**Q2.** Your fraud team lets AutoGluon run without a time limit on a large dataset because they want "the best possible model." Two days later, the job is still running and cloud costs have spiked. What should they have done differently?
+
+<details>
+<summary>Answer</summary>
+They should have set an explicit `time_limit` before training.
+
+The module warns that AutoML will keep trying more models and configurations unless you constrain it. A practical approach is to start with a limited run, such as one hour, inspect the leaderboard and feature importance, and only extend the run if the extra compute is justified.
+</details>
+
+**Q3.** A lending platform needs credit decisions in under 10 ms, but AutoGluon's top-scoring model is a deep stacked ensemble with much slower inference. Which preset is the best fit for deployment, and why?
+
+<details>
+<summary>Answer</summary>
+Use `optimize_for_deployment`.
+
+The module explains that deployment-oriented settings can reduce artifact size and simplify deployment, but you still need to validate actual inference latency and serving behavior for your chosen model. `best_quality` may win on offline accuracy, but it often relies on ensembles that can be harder to serve under strict latency constraints.
+</details>
+
+**Q4.** Your team is training a churn model using customer features from a central store. For an event dated `2024-01-15`, one engineer joins against the latest available customer record because it is simpler. Another engineer objects. Who is right, and what is the key concept involved?
+
+<details>
+<summary>Answer</summary>
+The second engineer is right: training must use point-in-time correct features, not the latest record.
+
+The module emphasizes that using current values for past training events causes data leakage because the model sees future information. The correct approach is to retrieve the most recent feature value that existed on or before `2024-01-15`.
+</details>
+
+**Q5.** Two teams independently build their own versions of `customer_lifetime_value`, and a third team creates yet another version for online inference. After deployment, the same customer receives inconsistent scores across systems. What platform component would have prevented this, and how?
+
+<details>
+<summary>Answer</summary>
+A feature store would have prevented this by creating a single, versioned definition of the feature shared across teams.
+
+The module describes feature stores as a centralized system with a registry, metadata, and online/offline serving. That reduces duplication, keeps feature definitions consistent, and helps avoid training-serving skew.
+</details>
+
+**Q6.** An AutoML model for loan defaults suddenly shows a feature with extremely high importance: `days_until_first_payment`. Offline metrics look amazing, but production defaults rise after launch. Based on the module, what is the most likely problem and what should the team check first?
+
+<details>
+<summary>Answer</summary>
+The most likely problem is data leakage.
+
+The team should first verify whether `days_until_first_payment` was actually available at prediction time. The module warns that AutoML will exploit any strong signal, including leaked future information, and that suspiciously important features must be sanity-checked before trusting them.
+</details>
+
+**Q7.** Your ML platform supports both model training on months of historical data and real-time recommendations at 50,000 requests per second. A new engineer wants to use the same low-latency online store for both tasks because it is fast. Why is that a bad design choice?
+
+<details>
+<summary>Answer</summary>
+It is a bad choice because training and inference need different storage behavior.
+
+The module explains that the offline store is for historical, timestamped data used in training and point-in-time joins, while the online store is for the latest feature values used in low-latency inference. Using only the online store would make historical training data incomplete and increase the risk of leakage or skew.
+</details>
+
+<!-- /v4:generated -->
 ## Next Steps
 
 You've completed Phase 8: Classical ML! You now understand:
@@ -1958,3 +2026,9 @@ You've completed Phase 8: Classical ML! You now understand:
 
 _Module 39 Complete!_
 _"AutoML doesn't replace ML engineers - it multiplies their productivity."_
+
+## Sources
+
+- [AutoGluon-Tabular: Robust and Accurate AutoML for Structured Data](https://arxiv.org/abs/2003.06505) — Primary source for AutoGluon's stacking approach, benchmark framing, and competition results.
+- [Feast GitHub Repository](https://github.com/feast-dev/feast) — Official upstream overview for online/offline feature serving and point-in-time-correct retrieval.
+- [Auto-Sklearn 2.0: Hands-free AutoML via Meta-Learning](https://arxiv.org/abs/2007.04074) — Primary source for meta-learning and budget-aware AutoML design in a widely cited framework.
