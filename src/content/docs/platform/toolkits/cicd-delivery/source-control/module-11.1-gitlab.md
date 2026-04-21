@@ -39,7 +39,7 @@ One day, an auditor asks: "Show me the complete path from code change to product
 
 You spend three days stitching together screenshots from seven different tools.
 
-GitLab exists because fragmented toolchains create operational overhead. It's not just a Git host—it's an integrated platform where source code, CI/CD, container registry, security scanning, and deployment all live together. When everything's in one place, that audit question becomes a single link.
+GitLab exists because fragmented toolchains create operational overhead. It's not just a Git host—it's [an integrated platform where source code, CI/CD, container registry, security scanning, and deployment all live together](https://about.gitlab.com/press/releases/2020-11-19-gitlab-completes-integration-of-fuzzing-solutions.html). When everything's in one place, that audit question becomes a single link.
 
 Is GitLab right for everyone? No. It's heavyweight, opinionated, and complex. But if you're tired of managing the integration layer between a dozen tools, GitLab offers a genuinely different approach.
 
@@ -780,14 +780,14 @@ WHEN TO CHOOSE GITHUB:
 
 ## War Story: The Great Migration
 
-**Company**: E-commerce platform, 150 engineers
+**Company**: Example e-commerce platform migration
 **Challenge**: Migrate from Jenkins + GitHub + Harbor + Snyk to GitLab
 
 **The Situation**:
 
 The team managed:
-- 300 repos on GitHub
-- Jenkins with 2000 jobs
+- A large number of repositories on GitHub
+- A large Jenkins job estate
 - Harbor for container images
 - Snyk for security scanning
 - Separate LDAP groups per tool
@@ -799,27 +799,27 @@ Every new service required:
 4. Add to Snyk monitoring
 5. Set up deployment config
 
-Time to onboard new service: 2-3 days
-Audit preparation time: 1 week per audit
+Time to onboard new service: multiple manual coordination steps across tools
+Audit preparation time: substantial manual evidence gathering
 
 **The Migration**:
 
 ```
-PHASE 1: PARALLEL OPERATION (Month 1-2)
+PHASE 1: PARALLEL OPERATION
 ─────────────────────────────────────────────────────────────────
 • Deploy GitLab on Kubernetes
 • Mirror GitHub repos to GitLab (read-only)
-• Pilot: Convert 5 services to GitLab CI
+• Pilot: Convert a small set of services to GitLab CI
 • Document CI/CD translation patterns
 
-PHASE 2: GRADUAL MIGRATION (Month 3-4)
+PHASE 2: GRADUAL MIGRATION
 ─────────────────────────────────────────────────────────────────
 • Team-by-team migration
 • Convert Jenkins jobs to GitLab CI
 • Enable security scanning on migrated repos
 • Disable Jenkins jobs as services move
 
-PHASE 3: CUTOVER (Month 5)
+PHASE 3: CUTOVER
 ─────────────────────────────────────────────────────────────────
 • Stop GitHub mirroring
 • Redirect GitHub URLs
@@ -832,18 +832,18 @@ PHASE 3: CUTOVER (Month 5)
 
 | Metric | Before | After |
 |--------|--------|-------|
-| New service onboarding | 2-3 days | 15 minutes |
-| Tools to maintain | 5 | 1 |
-| Audit preparation | 1 week | 2 hours |
-| Monthly tooling cost | $12,000 | $8,500 |
-| Security scan coverage | 60% | 100% |
+| New service onboarding | Multi-step manual setup | Much faster after consolidation |
+| Tools to maintain | Several separate systems | Fewer systems after consolidation |
+| Audit preparation | Lengthy manual collection | Faster with fewer systems to trace |
+| Monthly tooling cost | Multiple overlapping subscriptions | Consolidated platform spend |
+| Security scan coverage | Partial coverage | Broader standardized coverage |
 
 **Key Lessons**:
 
 1. **Jenkins translation is hardest**: Groovy pipelines don't map cleanly to YAML
 2. **Train developers early**: GitLab CI has different mental model
 3. **Don't migrate everything**: Some repos were archived instead
-4. **Security scanning catches things**: Found 12 critical vulns in first week
+4. **Security scanning catches things**: Early scans often surface issues that were previously missed
 
 ---
 
@@ -856,7 +856,7 @@ PHASE 3: CUTOVER (Month 5)
 | Monolithic pipelines | Slow, hard to debug | Parent-child pipelines, includes |
 | Ignoring security dashboard | Vulnerabilities accumulate | Weekly triage, block MRs on critical |
 | Single Gitaly node | Data loss risk, bottleneck | Praefect with 3+ Gitaly nodes |
-| No backup strategy | Disaster recovery impossible | Automated backups to object storage |
+| No backup strategy | Disaster recovery becomes extremely difficult | Automated backups to object storage |
 | Everyone is admin | Security nightmare | Group-based RBAC, least privilege |
 | No runner tagging | Jobs run on wrong runners | Tag runners by capability |
 
@@ -1018,8 +1018,8 @@ Settings allow:
 - Database replication: PostgreSQL streaming replication
 
 **RPO/RTO**:
-- Geo: RPO ~minutes, RTO ~minutes (failover)
-- Backups: RPO ~hours, RTO ~hours (restore)
+- Geo: recovery objectives depend on topology, replication health, and failover readiness
+- Backups: restore-based recovery is usually slower and depends on backup freshness and restore procedures
 </details>
 
 ---
@@ -1278,10 +1278,10 @@ git push origin main
 ## Key Takeaways
 
 1. **GitLab is a platform, not just Git hosting** — CI/CD, registry, security, all integrated
-2. **Self-hosting is an option** — Unlike GitHub, you can run it on-prem or air-gapped
+2. **Self-hosting is an option** — GitLab offers self-managed deployment options for teams that need more infrastructure control
 3. **Security scanning is built-in** — SAST, DAST, container scanning without extra tools
 4. **Pipelines are powerful but complex** — Parent-child, dynamic generation, DAGs
-5. **Resource requirements are significant** — Plan for 4GB+ RAM minimum, more for production
+5. **Resource requirements are significant** — Plan for meaningful CPU, memory, and storage needs, especially in production
 6. **Runners need careful planning** — Autoscaling, tagging, security isolation
 7. **Migration from other tools is work** — Jenkins conversion especially painful
 8. **Praefect enables HA Git storage** — Required for production high availability
@@ -1292,16 +1292,27 @@ git push origin main
 
 ## Did You Know?
 
-> **GitLab's Origin**: GitLab was started by Dmitriy Zaporozhets in Ukraine in 2011 as an open-source GitHub alternative. The company is now one of the largest all-remote companies in the world with 2000+ employees across 65+ countries.
+> **GitLab's Origin**: [GitLab was started by Dmitriy Zaporozhets in Ukraine in 2011](https://about.gitlab.com/blog/gitlab-inc-takes-the-devops-platform-public/) as an open-source GitHub alternative. The company is now [one of the largest all-remote companies in the world with 2000+ employees across 65+ countries](https://about.gitlab.com/company/team/).
 
-> **Monthly Releases**: GitLab follows a strict monthly release cadence. Version numbers are year.month (e.g., 16.5 = 2023, month 5). This predictable schedule helps enterprises plan upgrades.
+> **Monthly Releases**: GitLab follows a monthly release cadence, which helps teams plan upgrades and feature adoption.
 
-> **Handbook-First**: GitLab's employee handbook is public and over 2000 pages. This "handbook-first" culture means almost everything about how the company operates is documented publicly at handbook.gitlab.com.
+> **Handbook-First**: [GitLab's employee handbook is public and over 2000 pages. This "handbook-first" culture](https://about.gitlab.com/blog/2020/12/22/building-a-handbook-first-remote-learning-culture/) means almost everything about how the company operates is documented publicly at handbook.gitlab.com.
 
-> **Meltano Spinoff**: GitLab spun off Meltano, an open-source DataOps platform, as a separate company. It started as an internal GitLab project for data pipeline management.
+> **Meltano Spinoff**: [GitLab spun off Meltano, an open-source DataOps platform, as a separate company. It started as an internal GitLab project](https://about.gitlab.com/press/releases/2021-06-30-meltano-spins-out-of-gitlab-raises-seed-funding-led-by-gv/) for data pipeline management.
 
 ---
 
 ## Next Module
 
 Continue to [Module 11.2: Gitea & Forgejo](../module-11.2-gitea-forgejo/) to learn about lightweight, self-hosted Git alternatives that run in a fraction of GitLab's resources.
+
+## Sources
+
+- [about.gitlab.com: 2020 11 19 gitlab completes integration of fuzzing solutions.html](https://about.gitlab.com/press/releases/2020-11-19-gitlab-completes-integration-of-fuzzing-solutions.html) — The GitLab press release directly describes GitLab as a single application across the DevOps lifecycle with a single data store, UI, and permission model.
+- [about.gitlab.com: gitlab inc takes the devops platform public](https://about.gitlab.com/blog/gitlab-inc-takes-the-devops-platform-public/) — The founder's letter on GitLab's site directly states that Dmitriy Zaporozhets created GitLab in Ukraine in 2011.
+- [about.gitlab.com: team](https://about.gitlab.com/company/team/) — GitLab's team page directly states that the company considers itself the world's largest all-remote organization and has more than 65 countries represented, with headcount above 2000.
+- [about.gitlab.com: building a handbook first remote learning culture](https://about.gitlab.com/blog/2020/12/22/building-a-handbook-first-remote-learning-culture/) — GitLab's handbook-first blog post explicitly says the handbook is public and describes it as over 8,000 pages.
+- [about.gitlab.com: 2021 06 30 meltano spins out of gitlab raises seed funding led by gv](https://about.gitlab.com/press/releases/2021-06-30-meltano-spins-out-of-gitlab-raises-seed-funding-led-by-gv/) — GitLab's press release directly states that Meltano spun out of GitLab and began as a tool for GitLab's internal data and analytics team.
+- [Install GitLab](https://about.gitlab.com/install/) — Useful for understanding GitLab Self-Managed deployment options, including cloud-native and Kubernetes paths.
+- [GitLab Secure](https://about.gitlab.com/stages-devops-lifecycle/secure/) — Provides GitLab's public overview of integrated application security capabilities discussed throughout the module.
+- [About GitLab](https://about.gitlab.com/company/) — Good high-level context for GitLab's history, platform positioning, and public company background.
