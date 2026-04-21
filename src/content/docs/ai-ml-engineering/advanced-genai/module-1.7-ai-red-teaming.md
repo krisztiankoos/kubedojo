@@ -28,7 +28,7 @@ By the end of this module, you will be able to:
 
 ## Did You Know?
 
-* In March 2023, independent security researchers successfully bypassed an industry-leading LLM's safety filters 100% of the time simply by using an optimized base64 cipher-based prompt wrapper.
+* In March 2023, independent security researchers reported bypassing an industry-leading LLM's safety filters in their tests by using an optimized base64 cipher-based prompt wrapper.
 * A sophisticated data poisoning attack on a 100,000-document vector database requires modifying only 15 strategically embedded documents to reliably hijack the downstream model's responses.
 * Extracting the core functional capabilities of a proprietary model that cost $10,000,000 to train can be accomplished via continuous API querying for an average compute cost of just $1,500.
 * According to a comprehensive 2024 enterprise security survey, 82% of production AI deployments entirely lacked native rate-limiting or payload inspection defenses at the ingress gateway layer.
@@ -317,7 +317,7 @@ class IndirectInjectionVectors:
 
 During Reinforcement Learning from Human Feedback (RLHF), modern foundation models learn to safely refuse harmful requests to maintain alignment, safety, and regulatory compliance. However, they are simultaneously and heavily trained to be exceptionally helpful, obedient, and highly creative. Jailbreaks actively exploit this deep internal mathematical tension by framing harmful requests in complex psychological ways that trigger the model's "be helpful" neural pathways while successfully circumventing its "refuse harmful content" pathways.
 
-If you bluntly ask an aligned enterprise model to write a destructive malware script, it will immediately refuse. But if you ask it to act as an esteemed university professor writing an academic lesson plan about historical malware, and politely ask it to provide an inert example script purely to demonstrate a theoretical concept, the "helpful educator" persona overrides the "refuse malware" safety training.
+If you bluntly ask an aligned enterprise model to write a destructive malware script, it will usually refuse. But if you ask it to act as an esteemed university professor writing an academic lesson plan about historical malware, and politely ask it to provide an inert example script purely to demonstrate a theoretical concept, the "helpful educator" persona overrides the "refuse malware" safety training.
 
 ```text
 JAILBREAK EVOLUTION TIMELINE
@@ -1055,3 +1055,9 @@ Ensure your Kubernetes cluster is running at least v1.35, as the `RateLimitPolic
 Now that you understand how attackers critically subvert the contextual boundaries and mathematical weights of generative models, you must operationalize these defenses into a continuous, automated security lifecycle. 
 
 **Next Module:** [Module 1.8: AI Safety & Alignment](./module-1.8-ai-safety-alignment/) — Learn how to turn red-team findings into durable safety policies, alignment practices, and higher-trust deployment patterns.
+
+## Sources
+
+- [Red Teaming Language Models to Reduce Harms](https://arxiv.org/abs/2209.07858) — Primary source for LLM red-teaming methodology, scaling behavior, and safety-evaluation lessons.
+- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — Useful taxonomy for prompt injection, poisoning, disclosure, excessive agency, and related GenAI application risks.
+- [NIST AI RMF: Generative AI Profile](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence) — Grounds red-teaming in a broader operational risk-management and control framework for GenAI systems.
