@@ -1192,8 +1192,10 @@ def build_git_cleanup_report(repo_root: Path) -> dict[str, Any]:
     reasons: dict[str, list[str]] = {}
     for b in prunable:
         r_ = []
-        if b in merged: r_.append("merged")
-        if b in gone: r_.append("upstream-gone")
+        if b in merged:
+            r_.append("merged")
+        if b in gone:
+            r_.append("upstream-gone")
         reasons[b] = r_
 
     wt_list = build_worktrees_list(repo_root).get("worktrees", [])
