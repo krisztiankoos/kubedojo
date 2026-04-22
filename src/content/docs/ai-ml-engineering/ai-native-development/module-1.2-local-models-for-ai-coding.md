@@ -116,7 +116,7 @@ Plus:
 
 **The Personality**: Local models are **self-sufficient coding assistants** - they live on your machine, not in the cloud.
 
-Think of local models like having a reference library in your home versus using the public library downtown. The public library (API models) has more books, expert librarians, and the latest publications—but you have to drive there, pay parking, and work within their hours. Your home library (local models) has fewer books, but it's always available, completely private, and costs nothing after the initial purchase.
+Think of local models like having a reference library in your home versus using the public library downtown. The public library (API models) has more books, expert librarians, and the latest publications—but you have to drive there, pay parking, and work within their hours. Your home library (local models) has fewer books, but it's usually available, stays private on your machine, and costs little to nothing after the initial purchase.
 
 **Three types of AI model deployment**:
 
@@ -151,7 +151,7 @@ Think of local models like having a reference library in your home versus using 
 
 ---
 
-##  Local vs API: When to Use Each
+## Local vs API: When to Use Each
 
 ### Use Local Models When:
 
@@ -244,7 +244,7 @@ Think of the hybrid approach like a restaurant kitchen. You don't fly in a Miche
 
 ---
 
-##  The Local Model Landscape (2025)
+## The Local Model Landscape (2025)
 
 ### Category 1: **Best for Coding Quality** ⭐⭐⭐
 
@@ -274,16 +274,6 @@ ollama pull deepseek-r1:14b
 
 **Best for**: Complex algorithms, code review, refactoring
 **Benchmarks**: Beats GPT-3.5-Turbo, rivals gpt-5 on HumanEval
-
-> ** Did You Know? The DeepSeek Story**
->
-> DeepSeek is a Chinese AI company that shocked Silicon Valley in 2024-2025. While American AI labs spent billions on massive GPU clusters, DeepSeek's small team in Hangzhou achieved comparable results with a fraction of the compute budget.
->
-> Their secret? **Engineering efficiency over brute force**. DeepSeek R1 (their reasoning model) was trained with novel techniques that reduced compute costs by 90% compared to OpenAI's o1.
->
-> The result: A model you can run locally that competes with $200/month API subscriptions. DeepSeek proved that AI progress isn't just about throwing money at problems - clever engineering matters more.
->
-> **Fun fact**: When DeepSeek R1 was released in January 2025, Nvidia's stock dropped 17% ($600B in market cap) in one day. Investors realized the AI hardware arms race might be less important than they thought.
 
 ---
 
@@ -627,6 +617,60 @@ ollama list
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team is building an internal tool with proprietary source code, and several developers need to keep working during a long flight with no Wi-Fi. They also want to reduce monthly AI spend. Which approach fits this situation best: API-only, local-only, or a hybrid setup, and why?
+
+<details>
+<summary>Answer</summary>
+A hybrid setup is the best fit, with local models handling most day-to-day work. The module recommends local models when privacy matters, offline work is needed, and cost is a concern, because code stays on the machine, works without internet, and costs $0 after download. A hybrid setup is even better because the team can use local models for routine coding tasks and switch to an API model only for the small number of tasks that need stronger reasoning.
+</details>
+
+**Q2.** You are helping a developer with a 16GB MacBook choose an Ollama setup for daily coding and occasional heavier refactoring. They want one model for fast everyday work and another for higher-quality results when needed. Which two models should you recommend?
+
+<details>
+<summary>Answer</summary>
+Recommend `qwen2.5-coder:7b` for the daily driver and `deepseek-coder-v2:16b` for heavier work. The module explicitly recommends this pairing for a MacBook with 16GB RAM because Qwen 7B is fast and efficient for routine tasks, while DeepSeek 16B provides better quality for complex coding and refactoring.
+</details>
+
+**Q3.** A teammate with an 8GB laptop says local models are “too weak” after using a 7B model to design a complicated authentication architecture. What is the most appropriate fix based on the module?
+
+<details>
+<summary>Answer</summary>
+The fix is to match the model to the task complexity instead of assuming all local models are bad. The module says 7B models are good for many tasks but not great for complex reasoning. For that scenario, the teammate should either switch to a stronger local model like `deepseek-coder-v2:16b` if their hardware allows it, or use an API model such as Gemini Flash for the architecture work while keeping local models for simpler implementation and test generation.
+</details>
+
+**Q4.** Your VS Code setup uses Continue.dev with Ollama, but Continue reports “model not found” even though you already edited `config.json`. What should you check first, and what is the likely fix?
+
+<details>
+<summary>Answer</summary>
+Check whether Ollama is actually running by using `ollama list`. The module says this is the first diagnosis step. If it errors or shows nothing because the service is not running, start Ollama with `ollama serve` on macOS/Linux, or `sudo systemctl start ollama` on Linux. The Continue config should also point to `http://localhost:11434` as the `apiBase`.
+</details>
+
+**Q5.** A developer on your team downloaded `deepseek-coder-v2:236b` onto a 16GB MacBook because they assumed “bigger is always better.” The laptop becomes unresponsive and starts swapping heavily. What caused the problem, and what should they do instead?
+
+<details>
+<summary>Answer</summary>
+The problem is that the 236B model is far too large for a 16GB machine. The module explains that this size needs massive RAM or a GPU and can freeze a smaller system. The developer should remove it with `ollama rm deepseek-coder-v2:236b` and use an appropriately sized model such as `deepseek-coder-v2:16b`, which is the recommended high-quality option for a 16GB MacBook.
+</details>
+
+**Q6.** You want Aider to use a local model by default for routine coding so you do not have to pass `--model` every time. What configuration should you add, and what benefit does it provide?
+
+<details>
+<summary>Answer</summary>
+Create `~/.aider.conf.yml` and set the default model to a local Ollama model such as `ollama/qwen2.5-coder:7b`. The module’s example also enables helpful options like auto-commits, diffs, and prettier output. This lets you run `aider` without repeating the model flag each time, which makes the local workflow faster and more consistent.
+</details>
+
+**Q7.** Your team is implementing a new feature and wants to minimize cost without sacrificing quality. They need help with architecture, writing the actual classes, generating unit tests, and then doing a moderate refactor for error handling. How should they split those tasks between API and local models?
+
+<details>
+<summary>Answer</summary>
+Use an API model for the architecture step, then local models for implementation and tests, and choose local or API for the refactor based on how complex it is. The module’s recommended pattern is “use local for iteration, API for innovation.” That means architecture design should go to a stronger API model because it needs deeper reasoning, while implementing classes and generating tests are repetitive tasks that local models handle well at zero cost. A moderate refactor can go to a stronger local model like DeepSeek 16B unless it turns into a truly complex design problem.
+</details>
+
+<!-- /v4:generated -->
 ## Hands-On: Using Local Models with Aider
 
 ### What is Aider?
@@ -863,7 +907,7 @@ Switch models based on task complexity!
 
 ---
 
-##  Cost Optimization: Hybrid Strategy
+## Cost Optimization: Hybrid Strategy
 
 ### The 80/20 Rule
 
@@ -1381,3 +1425,9 @@ _Last updated: 2025-11-22_
 _Module status:  Complete_
 _Cost impact: $200-500/year savings potential_
 _Tools: Ollama, Aider, Continue.dev_
+
+## Sources
+
+- [Ollama README](https://github.com/ollama/ollama) — Primary upstream entry point for installing Ollama and understanding how local model runtimes work.
+- [Aider README](https://github.com/Aider-AI/aider) — Primary upstream reference for using Aider with cloud and local models.
+- [DeepSeek-R1 model card](https://huggingface.co/deepseek-ai/DeepSeek-R1) — Useful primary source for current open reasoning-model capabilities and distilled local variants.

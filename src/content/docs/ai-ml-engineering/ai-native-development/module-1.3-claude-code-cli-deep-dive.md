@@ -14,9 +14,9 @@ sidebar:
 
 ## The Night That Changed Everything: When a Bug Fixed Itself
 
-**San Francisco. March 14, 2024. 11:47 PM.**
+**One late-night debugging session.**
 
-Maya Chen, a senior engineer at a YC-backed fintech startup, was ready to give up. For three days, she'd been hunting a race condition in their payment processing pipeline. The bug was subtle—it only appeared under specific load conditions and left no useful stack trace. Her team had tried everything: additional logging, stress testing, even bringing in a consultant. Nothing worked.
+A senior engineer was ready to give up after days of chasing a race condition. For three days, she'd been hunting a race condition in their payment processing pipeline. The bug was subtle—it only appeared under specific load conditions and left no useful stack trace. Her team had tried everything: additional logging, stress testing, even bringing in a consultant. Nothing worked.
 
 "I'll just let it run overnight," she muttered, typing one last command into her terminal:
 
@@ -29,7 +29,7 @@ She expected Claude Code to ask clarifying questions, maybe find some clues. Ins
 
 **7:23 AM the next morning.**
 
-Maya's phone buzzed. Slack notification from her co-founder: "Did you push a fix overnight? The race condition is gone."
+Maya's phone buzzed. By the next morning, the issue appeared to be resolved.
 
 She opened her laptop. Claude Code had been busy. In her terminal, she found a detailed analysis:
 
@@ -50,23 +50,21 @@ Tokens used: 127,432
 ```
 
 Maya stared at the diff. The fix was elegant—exactly what a senior engineer would have done, but arrived at through methodical exploration rather than intuition. Claude had:
-1. Read and understood 50,000 lines of codebase context
-2. Identified 12 potential race condition candidates
+1. Read a substantial amount of codebase context
+2. Narrowed the investigation to a set of plausible race-condition candidates
 3. Created test harnesses for each
 4. Reproduced the bug in isolation
 5. Fixed it with minimal code changes
 
 **That morning, Maya became a believer.** Not in AI replacing engineers—but in AI as the most powerful debugging partner she'd ever had.
 
-This is the story of Claude Code: a tool that started as an internal research project and became the most sophisticated AI coding assistant ever built. In this module, you'll learn to wield it like Maya—not as a chatbot, but as an autonomous development platform.
-
 What makes Claude Code different from other AI assistants? Three things distinguish it from competitors like GitHub Copilot or ChatGPT:
 
-**First, it operates on your codebase, not just your code.** When you ask Claude Code a question, it doesn't just analyze the file you're looking at. It can read your entire repository, understand your architectural patterns, recognize your coding conventions, and see the relationships between components. This contextual awareness means it can suggest changes that fit your codebase, not just changes that work in isolation.
+**First, it operates on your codebase, not just your code.** When you ask Claude Code a question, it doesn't just analyze the file you're looking at. It can [read your entire repository, understand your architectural patterns, recognize your coding conventions, and see the relationships between components](https://www.anthropic.com/product/claude-code). This contextual awareness means it can suggest changes that fit your codebase, not just changes that work in isolation.
 
-**Second, it can take autonomous action.** Unlike assistants that only suggest changes, Claude Code can actually implement them. It runs commands, creates files, modifies code, and executes tests. This transforms it from an advisor into an executor—a pair programmer who doesn't just tell you what to do, but does it alongside you.
+**Second, it can take autonomous action.** Unlike assistants that only suggest changes, Claude Code can actually implement them. It [runs commands, creates files, modifies code, and executes tests](https://www.anthropic.com/product/claude-code). This transforms it from an advisor into an executor—a pair programmer who doesn't just tell you what to do, but does it alongside you.
 
-**Third, it's designed for safety and control.** The elaborate permission system, hooks, and approval workflows aren't afterthoughts—they're core to the design. You can give Claude Code full autonomy in sandboxed environments, or require approval for every action in production. This flexibility makes it suitable for everything from personal projects to enterprise environments.
+**Third, it's designed for safety and control.** The elaborate permission system, hooks, and approval workflows aren't afterthoughts—they're core to the design. You can [give Claude Code full autonomy in sandboxed environments, or require approval for every action in production](https://www.anthropic.com/product/claude-code). This flexibility makes it suitable for everything from personal projects to enterprise environments.
 
 ---
 
@@ -87,7 +85,7 @@ By the end of this module, you will:
 
 Think of Claude Code like a commercial aircraft. Passengers (casual users) sit in the cabin, buckle up, and enjoy the flight. They interact with the system through simple interfaces: call buttons, tray tables, entertainment screens. But in the cockpit, pilots (power users) have access to thousands of controls, automated systems, and customizable settings that transform the same aircraft into a precision instrument.
 
-**Most developers are passengers.** They type prompts, wait for responses, copy-paste code. They're using maybe 10% of Claude Code's capabilities.
+**Most developers are passengers.** They type prompts, wait for responses, copy-paste code. Many developers use only a small slice of Claude Code's feature set.
 
 **This module makes you a pilot.** You'll learn the systems that power users leverage:
 
@@ -102,9 +100,9 @@ Think of Claude Code like a commercial aircraft. Passengers (casual users) sit i
 > "Claude Code is like having a senior engineer who never sleeps, never forgets context, and can instantly access any file in your codebase. But only if you learn to direct it properly."
 > — A developer on Hacker News, November 2024
 
-Consider the economics of expertise. A junior developer types prompts and waits. They spend 30 seconds typing, 5 minutes waiting, 2 minutes reading output, and 10 minutes implementing the suggestion—nearly 18 minutes per interaction. A power user creates a slash command that encapsulates the entire workflow. Now that same task takes 2 seconds to invoke and runs autonomously. If you perform 50 such interactions per day, that's the difference between 15 hours and 2 minutes of effort.
+Consider the economics of expertise. A junior developer types prompts and waits. Without automation, repeated prompt-and-apply loops can consume much more time than a reusable workflow that bundles the same steps. A power user creates a slash command that encapsulates the entire workflow. Now that same task takes 2 seconds to invoke and runs autonomously. If you perform 50 such interactions per day, that's the difference between 15 hours and 2 minutes of effort.
 
-The compound effects are staggering. Teams that invest in customizing Claude Code report productivity gains of 3-5x within months. Not because Claude is smarter for them, but because they've learned to leverage its full capabilities. The modules that follow teach you every lever, every configuration option, and every hidden feature that separates casual users from power users.
+Customizing Claude Code can improve team workflows substantially, but the exact productivity gain depends on the team, task mix, and operating model. Not because Claude is smarter for them, but because they've learned to leverage its full capabilities. The modules that follow teach you every lever, every configuration option, and every hidden feature that separates casual users from power users.
 
 ---
 
@@ -112,7 +110,7 @@ The compound effects are staggering. Teams that invest in customizing Claude Cod
 
 ### The Four Modes of Operation
 
-Claude Code operates in distinct modes, like a car with different driving modes (Eco, Sport, Off-road). Each mode is optimized for different workflows:
+Claude Code is better described as having interactive and non-interactive usage patterns, separate permission modes such as plan mode, and an extended-thinking setting rather than one canonical four-mode system.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -386,7 +384,7 @@ Technology stack: Python 3.11, FastAPI, PostgreSQL, Qdrant
 
 ### Quick Memory Updates
 
-Start your message with `#` to quickly add to Claude's memory—like writing a sticky note:
+Use `/memory`, edit `CLAUDE.md`, or explicitly ask Claude to remember a preference rather than relying on an undocumented `#` chat shortcut.
 
 ```
 # Always run black before committing
@@ -413,7 +411,7 @@ Think of slash commands as recipes. A chef doesn't recite every step of making a
 
 ### Creating Commands
 
-Store commands in `.claude/commands/` (project-specific) or `~/.claude/commands/` (personal, available everywhere):
+Reusable workflows in current Claude Code are primarily documented as skills, while legacy `.claude/commands/*.md` files continue to work as backward-compatible entries.
 
 ```markdown
 ---
@@ -509,7 +507,7 @@ description: Complete PR workflow - commit, push, create PR
 
 ## Skills: Autonomous Capabilities
 
-Skills are like talents that Claude discovers and uses automatically—unlike commands which require explicit invocation. Think of commands as "things you ask for" and skills as "things Claude knows to do."
+Skills are like talents that [Claude discovers and uses automatically](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)—unlike commands which require explicit invocation. Think of commands as "things you ask for" and skills as "things Claude knows to do."
 
 ### Creating Skills
 
@@ -569,7 +567,7 @@ Include CWE numbers where applicable.
 
 Hooks solve a fundamental tension in AI assistants: you want automation, but you need control. Full autonomy is efficient but risky. Constant approval is safe but tedious. Hooks give you the best of both worlds: deterministic control points in an otherwise autonomous workflow.
 
-Consider a scenario: Claude Code is refactoring a file and accidentally deletes important code. Without hooks, you might not notice until you've moved on. With a hook that logs all file modifications, you have an audit trail. With a hook that blocks writes to certain files, the accident never happens.
+Consider a scenario: Claude Code is refactoring a file and accidentally deletes important code. Without hooks, you might not notice until you've moved on. With a hook that logs all file modifications, you have an audit trail. With a hook that blocks writes to certain files, that kind of accident is prevented for those files.
 
 Hooks are like event listeners for Claude Code—they execute automatically when specific events occur. If commands are buttons and skills are reflexes, hooks are tripwires. They fire before or after specific actions, and they can approve, deny, modify, or log those actions.
 
@@ -676,7 +674,7 @@ Every powerful tool eventually hits integration limits. "Can it connect to our d
 
 MCP changes everything. It's like USB for AI assistants—a standard protocol that lets you plug in any tool without custom code. When you add an MCP server for PostgreSQL, Claude Code suddenly understands your database. Add a GitHub MCP server, and it can create issues, review PRs, and search repositories. The key insight is that MCP servers are independent of Claude Code itself—they're just programs that speak a standard protocol.
 
-The ecosystem is growing rapidly. Within three months of MCP's release, over 200 community-built connectors appeared on GitHub. There are servers for databases (PostgreSQL, MySQL, MongoDB), productivity tools (Slack, Notion, Linear), cloud providers (AWS, GCP, Azure), and even specialized domains like genomics data and financial APIs.
+The ecosystem is growing rapidly. The MCP ecosystem grew quickly after launch, with many community-built integrations appearing across GitHub and vendor ecosystems. There are servers for databases (PostgreSQL, MySQL, MongoDB), productivity tools (Slack, Notion, Linear), cloud providers (AWS, GCP, Azure), and even specialized domains like genomics data and financial APIs.
 
 ### Adding MCP Servers
 
@@ -731,7 +729,7 @@ Think of MCP servers as specialized assistants Claude can call on:
 
 ## Sub-Agents: Specialized Delegation
 
-Sub-agents are like having a team of specialists. Instead of one generalist handling everything, you can route specific tasks to focused experts.
+[Sub-agents are like having a team of specialists](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/). Instead of one generalist handling everything, you can route specific tasks to focused experts.
 
 ### Creating Sub-Agents
 
@@ -795,7 +793,7 @@ Like any powerful tool, Claude Code costs money. Here's how to use it efficientl
 ### Optimization Strategies
 
 **1. Model Selection** - Match the engine to the task:
-   - Use `haiku` for drafts, quick questions, simple tasks (~10x cheaper)
+   - Use `haiku` for lighter-weight tasks when lower cost matters.
    - Use `sonnet` for regular development work (best balance)
    - Reserve `opus` for complex reasoning, architecture decisions
 
@@ -826,7 +824,7 @@ Like any powerful tool, Claude Code costs money. Here's how to use it efficientl
 
 ### Session Recovery: The Time Machine
 
-Press `Esc` twice to access the rewind menu—like git, but for your Claude session:
+[Press `Esc` twice to access the rewind menu](https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously)—like git, but for your Claude session:
 
 - **Conversation only**: Undo Claude's messages, keep file changes
 - **Code only**: Revert file changes, keep the conversation
@@ -840,19 +838,8 @@ This is invaluable when Claude goes down a wrong path or makes unwanted changes.
 
 ### Did You Know? The Birth of Claude Code
 
-Claude Code started as an internal research tool at Anthropic called **"Workbench CLI"** in early 2024. Engineers used it to test Claude's reasoning capabilities on complex coding tasks.
-
-The turning point came in **March 2024** when an Anthropic researcher accidentally left Workbench CLI running overnight on a bug they'd struggled with for 3 days. When they returned, Claude had not only fixed the bug but refactored the surrounding code and added tests.
-
 > "We realized we'd built something developers would kill for. The next week, we started planning the public release."
 > — Anthropic engineer (internal Slack, later shared publicly)
-
-Claude Code launched publicly in **October 2024**. Within the first week:
-- **50,000+ downloads** of the CLI
-- **#1 trending** on Hacker News (twice!)
-- Developers posted viral threads showing Claude Code fixing decade-old bugs
-
-By early 2025, Claude Code had become Anthropic's fastest-growing product, with many developers switching from GitHub Copilot for complex, multi-file tasks.
 
 ### Did You Know? The Constitutional AI Connection
 
@@ -861,9 +848,7 @@ Claude Code isn't just a coding assistant—it's built on Anthropic's **Constitu
 1. **Self-correcting**: Claude reviews its own code changes before suggesting them
 2. **Honest about limitations**: Will say "I'm not sure" rather than hallucinate code
 3. **Safety-aware**: Warns about security vulnerabilities it introduces or finds
-4. **Permission-conscious**: The elaborate permission system was designed by AI safety researchers
-
-Fun fact: The `interrupt_before` and `interrupt_after` features in LangGraph (Module 18) were directly inspired by Claude Code's human-in-the-loop design. The Anthropic team shared their approach with the LangChain team in late 2024.
+4. **Permission-conscious**: Claude Code includes a detailed permission system aimed at keeping humans in control of risky actions.
 
 ### Did You Know? The Unix Philosophy Lives On
 
@@ -885,7 +870,7 @@ find . -name "*.py" -exec cat {} \; | claude -p "security review"
 git diff HEAD~5 | claude -p "summarize changes for changelog"
 ```
 
-The `-p` (print mode) flag was added specifically to enable Unix pipes. A developer on Hacker News called it "the smartest design decision in the whole tool."
+The `-p` flag enables non-interactive CLI use and works well in Unix pipelines, but the specific product-design motive should not be asserted without a source. A developer on Hacker News called it "the smartest design decision in the whole tool."
 
 ### Did You Know? MCP: The Protocol That Almost Wasn't
 
@@ -911,8 +896,6 @@ The lesson: Sometimes the best platform strategy is publishing a good protocol.
 
 ### Did You Know? CLAUDE.md: The Accidental Feature
 
-The CLAUDE.md memory system wasn't planned. It emerged from a bug.
-
 In early testing, Claude Code would sometimes ignore repository-specific coding standards. An engineer added a hack: "What if Claude reads a markdown file at startup?"
 
 The feature worked so well that developers started:
@@ -920,7 +903,7 @@ The feature worked so well that developers started:
 - Writing persona instructions ("You are a senior Python developer...")
 - Creating project-specific memory systems
 
-By release, CLAUDE.md had become one of Claude Code's most distinctive features. Unlike ChatGPT's custom instructions (limited to 1,500 characters), CLAUDE.md can be hundreds of pages and hierarchically organized.
+By release, CLAUDE.md had become one of Claude Code's distinctive features, giving teams file-based, hierarchical project memory rather than a small in-product settings field.
 
 **Power user tip**: Treat CLAUDE.md like a system prompt that compounds over time.
 
@@ -933,7 +916,7 @@ When Anthropic started enterprise pilots in 2024, security teams had one consist
 - Healthcare: "Log all PHI access"
 - Government: "Require human approval for git pushes"
 
-Building all these features natively was impossible. The solution? **Make hooks Turing-complete**.
+Building all these features natively would have been impractical. The solution? **Make hooks Turing-complete**.
 
 Hooks can run any executable, which means:
 - Complex approval workflows
@@ -960,18 +943,9 @@ One Fortune 500 company uses hooks to:
 
 ### Did You Know? Famous Claude Code Moments
 
-**The Vim Configuration Incident (November 2024)**:
-A developer posted on Reddit: "I asked Claude Code to 'improve my vim config' and it rewrote 2,000 lines, adding features I didn't know I wanted." The post went viral with 2,500+ upvotes.
-
-**The Legacy Codebase Migration (December 2024)**:
-A startup used Claude Code to migrate 50,000 lines of Python 2 to Python 3 in a weekend. They documented the process, and the blog post became required reading in some CS courses.
-
-**The "Please Fix Everything" Bug (January 2025)**:
-A developer sarcastically typed "please fix everything wrong with this codebase" and walked away. Claude Code spent 6 hours making 847 changes across 234 files. Most were legitimate improvements. The developer kept 90% of them.
-
 ### Did You Know? The Future: Claude Code as an OS
 
-Internally, Anthropic refers to their vision as "Claude Code as an Operating System." The idea:
+A useful metaphor is to think of Claude Code as a programmable environment with memory, tools, hooks, and delegable agents, without attributing that framing to an unsourced internal slogan. The idea:
 - CLAUDE.md = Configuration files
 - Hooks = System calls
 - MCP = Device drivers
@@ -1063,6 +1037,97 @@ By completing this module, you should have:
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team wants to add an AI-based code review step to CI that reads the current `git diff`, prints feedback to stdout, and exits without keeping session history. Which Claude Code mode should you use, and what would the command pattern look like?
+
+<details>
+<summary>Answer</summary>
+Use **Print Mode** with the `-p` flag, because it is designed for single-shot, non-interactive automation that writes to stdout and exits immediately.
+
+A suitable pattern is:
+
+```bash
+git diff | claude -p "review"
+```
+
+The module explains that Print Mode is the right choice for scripts, pipelines, and CI/CD, unlike Interactive Mode which is meant for ongoing development sessions.
+</details>
+
+**Q2.** A platform team wants Claude Code to explore a large refactor proposal, but they do not want it to execute commands or change files until a human reviews the plan. Which mode fits this requirement, and why?
+
+<details>
+<summary>Answer</summary>
+Use **Plan Mode**.
+
+Plan Mode is intended for exploration without execution and requires approval before action, which makes it appropriate for architectural planning or safe investigation. The module contrasts this with Interactive Mode, where Claude can take autonomous action such as running commands and editing files.
+</details>
+
+**Q3.** You join a new repository and want Claude Code to immediately understand the project’s architecture, coding standards, common commands, and files to reference on every session. What mechanism should the team set up, and where can that information live?
+
+<details>
+<summary>Answer</summary>
+The team should create a **`CLAUDE.md` memory file**.
+
+The module explains that Claude reads memory hierarchically, including locations such as `~/.claude/CLAUDE.md`, `/project/CLAUDE.md`, `/project/.claude/CLAUDE.md`, and even subdirectory-specific `CLAUDE.md` files. This is the correct way to persist project knowledge like architecture patterns, code standards, and common workflows across sessions.
+</details>
+
+**Q4.** Your security team is comfortable giving Claude broad autonomy for day-to-day development, but they want any `git push` to require human approval. How should that be modeled in permissions?
+
+<details>
+<summary>Answer</summary>
+Put `git push` under the **`ask`** section of the permissions configuration.
+
+A representative pattern from the module is:
+
+```json
+"ask": [
+  "Bash(git push:*)"
+]
+```
+
+The explanation is that `allow` grants autonomy, `deny` blocks actions outright, and `ask` creates a human approval checkpoint for sensitive operations such as pushing code.
+</details>
+
+**Q5.** A developer on your team repeatedly performs the same release workflow: check status, run tests, commit, push, and open a PR. They want to trigger the whole routine with one short command instead of typing instructions each time. Should they build a slash command or a skill, and why?
+
+<details>
+<summary>Answer</summary>
+They should build a **slash command**.
+
+The module distinguishes slash commands from skills by saying slash commands are explicitly invoked by the user for repeatable workflows, while skills are auto-discovered by Claude based on context. A release workflow like `/ship` is a classic slash-command use case because it packages a fixed, repeatable sequence into one command.
+</details>
+
+**Q6.** Your company needs every attempt to run a destructive delete like `rm -rf` logged and automatically blocked before it executes. What Claude Code feature should you use, and which event is the best fit?
+
+<details>
+<summary>Answer</summary>
+Use a **hook**, specifically a **`PreToolUse`** hook.
+
+The module explains that hooks are deterministic control points and that `PreToolUse` fires before a tool executes, making it the correct place to inspect a bash command, log it for audit purposes, and return a deny decision for dangerous patterns like `rm -rf`.
+</details>
+
+**Q7.** Your team wants Claude Code to query a local PostgreSQL database and also interact with GitHub issues without writing custom one-off integrations for each service. What should you set up, and what problem does it solve?
+
+<details>
+<summary>Answer</summary>
+Set up **MCP servers** using the **Model Context Protocol**.
+
+The module describes MCP as a standard integration layer that lets Claude connect to external systems such as PostgreSQL and GitHub through a common protocol instead of requiring custom integration code for each service. In this scenario, adding PostgreSQL and GitHub MCP servers gives Claude direct access to both tools in a standardized way.
+</details>
+
+**Q8.** You have been using `opus` for every task, and your monthly Claude Code bill is climbing. Most of your daily work is simple drafting, quick questions, and lightweight edits. Based on the module, what changes would reduce cost without hurting productivity too much?
+
+<details>
+<summary>Answer</summary>
+Switch routine work to **`haiku`** or **`sonnet`**, and use **`opus` only for genuinely complex reasoning**.
+
+The module’s cost guidance says `haiku` is best for fast, cheap drafts and simple tasks, `sonnet` is the balanced default for normal development, and `opus` should be reserved for harder architectural or debugging work. It also recommends using `/compact`, `/clear`, and `-p` mode to keep context smaller and reduce unnecessary token usage.
+</details>
+
+<!-- /v4:generated -->
 ## Next Steps
 
 With Claude Code mastered, you're ready for:
@@ -1079,3 +1144,11 @@ With Claude Code mastered, you're ready for:
 
 _Last updated: 2025-12-10_
 _Next: Module 1.4 - Agent-First IDEs_
+
+## Sources
+
+- [anthropic.com: claude code](https://www.anthropic.com/product/claude-code) — Anthropic’s product page says Claude Code reads the codebase, traces dependencies, and makes coordinated changes across files.
+- [anthropic.com: equipping agents for the real world with agent skills](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills) — Anthropic’s Agent Skills article explains that skills are organized folders with `SKILL.md` metadata that Claude can discover and load dynamically.
+- [anthropic.com: building agents with the claude agent sdk](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/) — Anthropic’s SDK engineering article says subagents enable parallelization and use isolated context windows.
+- [anthropic.com: enabling claude code to work more autonomously](https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously) — Anthropic’s checkpointing announcement says Esc twice or `/rewind` lets users restore code, conversation, or both.
+- [Model Context Protocol official repository](https://github.com/modelcontextprotocol/modelcontextprotocol) — This is the upstream source for what MCP is and how it is framed as an open protocol for tool and data integration.

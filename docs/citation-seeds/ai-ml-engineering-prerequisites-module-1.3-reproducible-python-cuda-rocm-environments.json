@@ -1,0 +1,112 @@
+{
+  "module_key": "ai-ml-engineering/prerequisites/module-1.3-reproducible-python-cuda-rocm-environments",
+  "module_path": "src/content/docs/ai-ml-engineering/prerequisites/module-1.3-reproducible-python-cuda-rocm-environments.md",
+  "research_run_id": "2026-04-22T07:37:47+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "CUDA is NVIDIA's GPU compute platform.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: CUDA and ROCm > CUDA",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://github.com/NVIDIA/cuda-python",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official NVIDIA cuda-python repository directly describes CUDA as NVIDIA's platform and runtime surface for Python access."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "CUDA compatibility depends on using a driver/toolkit combination that NVIDIA documents as compatible.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: CUDA and ROCm > CUDA",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://docs.nvidia.com/deploy/cuda-compatibility/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "NVIDIA's CUDA Compatibility guide is the primary source for this claim, but docs.nvidia.com is outside the current allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "ROCm is AMD's GPU compute software stack.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: CUDA and ROCm > ROCm",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://github.com/ROCm/ROCm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official ROCm repository README directly defines ROCm as AMD's open-source stack for GPU computation."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "ROCm official support varies by GPU architecture and operating system combination.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: CUDA and ROCm > ROCm",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://github.com/ROCm/ROCm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official ROCm repository points to a compatibility matrix covering ROCm versions, OS kernels, and GPU architectures, which directly supports the compatibility warning."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Framework builds differ by compute target, with distinct CPU-only, CUDA, and ROCm paths.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Compatibility Checklist That Ages Well | Failure 2: Driver and Framework Mismatch",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://github.com/pytorch/pytorch",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official PyTorch repository documents separate CPU-only, CUDA, and ROCm build paths, which supports the module's framework-build compatibility guidance."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/NVIDIA/cuda-python",
+      "title": "NVIDIA cuda-python",
+      "tier": "upstream",
+      "why_relevant": "Useful for understanding CUDA's platform/runtime surface from the Python side of local AI environments."
+    },
+    {
+      "url": "https://github.com/ROCm/ROCm",
+      "title": "ROCm Official Repository",
+      "tier": "upstream",
+      "why_relevant": "Useful for ROCm overview, supported hardware and OS guidance, and links to the official compatibility matrix."
+    },
+    {
+      "url": "https://github.com/pytorch/pytorch",
+      "title": "PyTorch Official Repository",
+      "tier": "upstream",
+      "why_relevant": "Useful for seeing how a major framework distinguishes CPU, CUDA, and ROCm installation and build paths."
+    }
+  ],
+  "notes": "No claim entries were created for analogies, checklist questions, quiz/exercise content, code blocks, or the pedagogical comparison table.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

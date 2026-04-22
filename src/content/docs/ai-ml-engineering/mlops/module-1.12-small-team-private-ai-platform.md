@@ -327,8 +327,151 @@ It is about the platform a small team can actually sustain.
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team has six ML engineers, and each person trains models from their own laptop with slightly different environments. A teammate asks whether you should introduce a full workflow platform with multiple orchestrators right away. What is the better first step for a small-team private AI platform, and why?
+
+<details>
+<summary>Answer</summary>
+The better first step is to standardize repeatable job execution with documented entry points, reproducible environments, and predictable data and artifact paths rather than introducing a large orchestration stack immediately.
+
+The module stresses that small teams should not start with giant internal platforms, many workflow engines, or premature complexity. What matters first is making training and evaluation rerunnable without depending on one developer's laptop. That creates shared leverage without turning the platform itself into the main project.
+</details>
+
+**Q2.** Your team has Git repos, an object storage bucket, a notebook server, and two different model-serving approaches, but no one can confidently explain which run produced the current model in production. A manager says, "We already have all the tools, so we already have a platform." Based on the module, what is the real problem?
+
+<details>
+<summary>Answer</summary>
+The real problem is tool accumulation without a coherent system.
+
+The module explains that if the team cannot answer which run produced a model, what dataset or config was used, and what metrics justified keeping it, then it does not yet have a real platform. It has output sprawl. A small-team platform needs experiment tracking and artifact tracking connected into a shared operating model, not just a pile of disconnected tools.
+</details>
+
+**Q3.** A startup team wants to build an internal AI platform and begins designing a portal, multi-cluster deployment model, and complex tenancy rules before they have standardized training or serving. What would the module say they are optimizing for incorrectly, and what should they optimize for instead?
+
+<details>
+<summary>Answer</summary>
+They are optimizing too early for enterprise-scale complexity instead of small-team sustainability.
+
+The module says small teams should avoid building giant portals, multi-cluster complexity, elaborate tenancy, and premature abstraction layers first. They should optimize for clarity, maintainability, low operator burden, and fast recovery when something breaks. Those qualities matter more than maximum theoretical scale at this stage.
+</details>
+
+**Q4.** Your team has started exposing internal models, but every service uses a different API style, a different packaging method, and a different auth approach. Incidents are getting harder to debug. What should be standardized first in serving, according to the module?
+
+<details>
+<summary>Answer</summary>
+The team should standardize on one preferred API pattern, one preferred model packaging approach, one preferred way to log requests and errors, and one preferred rollback pattern.
+
+The module argues that serving should be standardized earlier than many teams expect. Without that, every model becomes a separate deployment story and auth story, which causes fragmentation. The goal is not to solve every possible future use case, but to prevent platform drift and make services predictable to operate.
+</details>
+
+**Q5.** A small internal AI team says access control can wait because "everyone trusts everyone." A month later, a shared model is deleted and no one is sure who owned the endpoint or the storage path. Which platform capability did they neglect, and why does the module treat it as essential rather than bureaucratic?
+
+<details>
+<summary>Answer</summary>
+They neglected access and ownership rules.
+
+The module treats ownership as essential because shared systems break down quickly without it. Access and ownership rules help prevent deleted models, leaked secrets, broken experiments overwriting shared storage, and confusion over who is responsible for endpoints. In a small-team platform, ownership is how the system remains usable and trustworthy.
+</details>
+
+**Q6.** Your team has solid Git usage and shared project structure, but now wants to jump straight to advanced workload isolation, stronger governance, and large serving infrastructure. According to the module's evolution path, what mistake are they making?
+
+<details>
+<summary>Answer</summary>
+They are trying to skip from early maturity layers to platform expansion too quickly.
+
+The module recommends growing in layers: first shared discipline, then shared services, then operational hardening, and only later broader platform expansion. Jumping from Layer 1 directly toward Layer 4 usually creates unnecessary complexity for a small team. The platform should evolve in proportion to actual operational needs.
+</details>
+
+**Q7.** A team lead asks whether it is time to invest in a much heavier private AI platform. Right now, one team uses the system, GPU use is manageable, and serving traffic is modest, but compliance requirements are about to increase and more teams may depend on the platform next quarter. Which signals from the module suggest that a bigger platform may soon be justified?
+
+<details>
+<summary>Answer</summary>
+The strongest signals are rising compliance and audit requirements and multiple teams starting to depend on the system.
+
+The module says a more serious platform becomes appropriate when multiple teams depend on it, GPU scheduling becomes a real coordination problem, serving throughput matters to revenue, compliance requirements rise sharply, or manual operator time becomes too high. In this scenario, the growth in compliance burden and cross-team dependency are the clearest indicators that the team may be approaching that handoff point.
+</details>
+
+<!-- /v4:generated -->
+<!-- v4:generated type=no_exercise model=codex turn=1 -->
+## Hands-On Exercise
+
+
+Goal: build a minimal private AI platform for a small team that standardizes shared code, experiment tracking, artifact storage, repeatable training, one internal inference pattern, and explicit ownership rules without introducing enterprise-scale complexity.
+
+- [ ] Create a `private-ai-platform/` workspace with `docs/`, `ml/`, `serving/`, `ops/`, and `artifacts/` directories. Add `docs/platform-scope.md` that clearly lists what is self-hosted, what is external, and what is intentionally not solved yet.
+  Verification commands:
+  ```bash
+  tree -L 2 private-ai-platform
+  grep -E "Self-hosted|External|Not solved yet" private-ai-platform/docs/platform-scope.md
+  ```
+
+- [ ] Add a `docker-compose.yml` that runs a small shared stack with `mlflow`, `minio`, and one internal inference API, all bound to `127.0.0.1` ports. Keep service names, ports, and environment variables documented in `.env.example`.
+  Verification commands:
+  ```bash
+  docker compose -f private-ai-platform/docker-compose.yml config >/dev/null
+  docker compose -f private-ai-platform/docker-compose.yml up -d
+  docker compose -f private-ai-platform/docker-compose.yml ps
+  ```
+
+- [ ] Configure experiment tracking and artifact storage so the team has one default MLflow experiment and one shared artifact location. Record the tracking URI, artifact bucket name, and credential-handling rules in `docs/platform-scope.md` or `README.md`.
+  Verification commands:
+  ```bash
+  curl -sf http://127.0.0.1:5000/ >/dev/null && echo "MLflow reachable"
+  grep -E "MLFLOW_TRACKING_URI|MLFLOW_S3_ENDPOINT_URL|ARTIFACT_BUCKET" private-ai-platform/.env.example
+  ```
+
+- [ ] Implement one repeatable training entry point, such as `ops/run-train.sh`, that launches `ml/train.py` with fixed input and output conventions. The run should log at least one parameter, one metric, and one artifact, and write a small run summary file to `artifacts/last-run.json`.
+  Verification commands:
+  ```bash
+  bash private-ai-platform/ops/run-train.sh
+  test -f private-ai-platform/artifacts/last-run.json
+  cat private-ai-platform/artifacts/last-run.json
+  ```
+
+- [ ] Implement one standardized internal inference service in `serving/` with a `/health` endpoint and one `/predict` endpoint. Document the request shape, response shape, versioning rule, and rollback approach in `docs/serving-standard.md`.
+  Verification commands:
+  ```bash
+  curl -sf http://127.0.0.1:8000/health
+  curl -s -X POST http://127.0.0.1:8000/predict \
+    -H 'Content-Type: application/json' \
+    -d '{"text":"small team private ai platform"}'
+  ```
+
+- [ ] Define ownership and access rules in `docs/ownership.md` and `docs/access-matrix.md`. Include who owns tracking, storage, and serving; who can deploy; who can rotate secrets; and what to do when a model or artifact is accidentally deleted.
+  Verification commands:
+  ```bash
+  grep -E "Owner|Deploy|Secrets|Backup|Restore|Rollback" private-ai-platform/docs/ownership.md
+  grep -E "read|write|admin" private-ai-platform/docs/access-matrix.md
+  ```
+
+- [ ] Add `docs/roadmap.md` with a phased evolution plan that separates what the team standardizes now from what is deliberately deferred. Explicitly defer at least three items such as multi-cluster deployment, complex tenancy, or a platform portal.
+  Verification commands:
+  ```bash
+  grep -E "Now|Next|Later" private-ai-platform/docs/roadmap.md
+  grep -E "multi-cluster|tenancy|portal" private-ai-platform/docs/roadmap.md
+  ```
+
+Success criteria:
+- The platform workspace has a clear structure and a documented scope boundary.
+- `docker compose` starts the shared services successfully on local `127.0.0.1` endpoints.
+- A training run can be executed from a script without relying on a notebook session.
+- At least one run produces a saved summary artifact and tracked metadata.
+- The inference service responds to health checks and prediction requests using one consistent API pattern.
+- Ownership, access, rollback, and recovery expectations are documented for the team.
+- Deferred platform features are explicitly listed so the design stays small-team focused.
+
+<!-- /v4:generated -->
 ## Next Modules
 
 - [Home AI Operations and Cost Model](../ai-infrastructure/module-1.5-home-ai-operations-cost-model/)
 - [ML Monitoring](./module-1.10-ml-monitoring/)
 - [Private MLOps Platform](../../on-premises/ai-ml-infrastructure/module-9.4-private-mlops-platform/)
+
+## Sources
+
+- [MLflow](https://github.com/mlflow/mlflow) — Useful background for the module's illustrative tracking-and-artifact example stack.
+- [Kubernetes Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) — Relevant to the module's recommendation to make training and evaluation execution repeatable outside individual laptops.
+- [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — Supports the module's emphasis on access control and ownership rules for shared platform components.

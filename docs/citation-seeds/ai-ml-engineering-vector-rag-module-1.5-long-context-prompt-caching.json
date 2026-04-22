@@ -1,0 +1,443 @@
+{
+  "module_key": "ai-ml-engineering/vector-rag/module-1.5-long-context-prompt-caching",
+  "module_path": "src/content/docs/ai-ml-engineering/vector-rag/module-1.5-long-context-prompt-caching.md",
+  "research_run_id": "2026-04-22T09:36:33+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The named QuantStream Solutions incident is presented as a real late-2025 event.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In late 2025, a major fintech analytics firm, QuantStream Solutions, attempted to replace their complex, multi-stage RAG pipeline with a single, massive-context LLM call.",
+      "suggested_rewrite": "Some teams have tried replacing multi-stage RAG pipelines with a single massive-context LLM call, only to discover new latency, cost, and retrieval problems.",
+      "lesson_point_url": null,
+      "rationale": "This is a named real-world anecdote with no attributable source and must be collapsed into a general lesson."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Putting a dynamic user query before a massive static prefix invalidates prefix-based prompt caching.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Because they dynamically injected the user's short query at the *beginning* of the prompt before the massive block of historical data, they completely invalidated the prompt cache on every single request.",
+      "suggested_rewrite": "If you place a dynamic user query before a large static prefix, you invalidate prefix-based prompt caching for later requests.",
+      "lesson_point_url": null,
+      "rationale": "The underlying principle is real, but the sentence is embedded in a fabricated incident and should be rewritten without false specifics."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The module claims the fictional incident ran up more than $120,000 in 72 hours.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Within seventy-two hours, their API usage bill exceeded $120,000, wiping out their entire quarterly infrastructure budget.",
+      "suggested_rewrite": "Within days, an architecture that defeats prompt caching can drive API costs high enough to overwhelm an infrastructure budget.",
+      "lesson_point_url": null,
+      "rationale": "This is unsupported false precision attached to a named anecdote."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The module presents a specific hallucination failure in the fictional QuantStream story.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Furthermore, users began reporting that the model was hallucinating financial metrics from 2018 when asked about 2024, a classic symptom of attention degradation in unoptimized massive contexts.",
+      "suggested_rewrite": "Users can also see retrieval quality degrade in very long prompts, especially when relevant evidence is poorly positioned or swamped by irrelevant context.",
+      "lesson_point_url": null,
+      "rationale": "The operational lesson is fine, but the dated failure report is part of an unsourced anecdote."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Standard transformer self-attention scales quadratically with sequence length.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Quadratic Bottleneck of Attention",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://arxiv.org/pdf/2009.06732",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited survey explicitly states that standard self-attention has quadratic time and memory cost with sequence length."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The exact 15,625x memory figure is presented as a factual quantity rather than a derivation from the quadratic rule.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Quadratic Bottleneck of Attention",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "If computing attention for 8,000 tokens takes $X$ amount of memory, computing it for 1,000,000 tokens does not take $125X$; it theoretically requires $15,625X$ memory due to the quadratic curve.",
+      "suggested_rewrite": "If computing attention for 8,000 tokens takes $X$ memory, scaling to 1,000,000 tokens increases the attention cost with the square of the sequence-length ratio rather than linearly.",
+      "lesson_point_url": null,
+      "rationale": "The exact numeric ratio is a derived teaching calculation, not a directly sourced constant on the cited pages."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "RingAttention distributes long sequences across devices and overlaps communication with blockwise attention computation.",
+      "claim_class": "standard",
+      "span_hint": "section: Overcoming the Limits, item 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://arxiv.org/abs/2310.01889",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Ring Attention paper abstract directly describes blockwise computation across multiple devices with overlapped communication."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "KV caching stores previously computed key/value tensors so generation can reuse them instead of recomputing prior-token attention state.",
+      "claim_class": "standard",
+      "span_hint": "section: Overcoming the Limits, item 2",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://huggingface.co/docs/transformers/en/cache_explanation",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Hugging Face caching documentation directly explains KV caches and their purpose during autoregressive generation."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "YaRN is a RoPE-scaling method for extending context length beyond the sequence lengths seen in training.",
+      "claim_class": "standard",
+      "span_hint": "section: Overcoming the Limits, item 3",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://arxiv.org/abs/2309.00071",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The YaRN paper abstract explicitly describes extending context windows for RoPE-based models beyond their original training length."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The module states too broadly that long-context retrieval follows a U-shaped pattern across almost all massive-context models.",
+      "claim_class": "benchmark",
+      "span_hint": "section: The U-Shaped Attention Curve",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Empirical testing across almost all massive-context models reveals a U-shaped performance curve regarding information retrieval:",
+      "suggested_rewrite": "Long-context evaluations often reveal a U-shaped retrieval pattern regarding information retrieval:",
+      "lesson_point_url": "https://arxiv.org/abs/2307.03172",
+      "rationale": "The cited paper supports the beginning/end versus middle pattern, but not the stronger claim about almost all models."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Prompt caching depends on exact prefix matches and works best when static content comes first and dynamic content comes last.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Strict Rules of Prefix Matching",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OpenAI's prompt-caching guide explicitly requires exact prefix matches and recommends static-first, dynamic-last prompt structure."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The module specifies provider-side storage internals as NVMe or specialized RAM clusters.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: How Prefix Caching Works, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Instead of discarding these massive multi-gigabyte tensors when the request finishes, the provider stores them in a high-speed memory layer (often NVMe or specialized RAM clusters), keyed by the exact hash of the token sequence.",
+      "suggested_rewrite": "Instead of discarding these tensors when the request finishes, a provider can retain cached prompt state and reuse it when a later request matches the required prefix.",
+      "lesson_point_url": null,
+      "rationale": "The provider-internal hardware description is too specific for the available public documentation."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "A later request that matches a cached prefix can skip recomputing that prefix and reuse cached state, reducing latency and cost.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: How Prefix Caching Works, paragraph 3",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The OpenAI guide directly says matching cached prefixes are reused and that this lowers latency and cost."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "The module says partial prefix matching is mathematically impossible without recalculation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Strict Rules of Prefix Matching, paragraph after diagram",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The physical realities of storing massive tensors dictate this: a single differing token alters the relational attention mechanics for all subsequent tokens, making partial prefix matching mathematically impossible without recalculation.",
+      "suggested_rewrite": "Because prompt caches are keyed to exact matching prefixes, changing an earlier token generally forces the provider to recompute the affected prefix rather than reuse the existing cache entry.",
+      "lesson_point_url": null,
+      "rationale": "The exact-match rule is documented, but the stronger mathematical-impossibility claim overreaches the public source material."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "The scenario uses exact token prices as if they were factual current rates.",
+      "claim_class": "pricing",
+      "span_hint": "section: Scenario Calculation, Pricing bullet",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "*   **Pricing**: Base input ($C_{input}$) is $3.00 / 1M tokens. Cache read ($C_{cache}$) is $0.30 / 1M tokens. Embedding cost ($C_{embed}$) is $0.02 / 1M tokens.",
+      "suggested_rewrite": "*   **Pricing**: For example, if base input tokens are much more expensive than cache reads and embeddings are relatively cheap, the economics can still favor RAG for narrow retrieval workloads.",
+      "lesson_point_url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "rationale": "These are illustrative economics and should be framed as an example, not as uncited live pricing."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "The verdict presents exact monthly totals from the illustrative scenario as if they were authoritative figures.",
+      "claim_class": "pricing",
+      "span_hint": "section: Scenario Calculation, final verdict",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**The Verdict**: In high-frequency, narrow-retrieval scenarios, Vector RAG is overwhelmingly cheaper ($175 vs $3,015).",
+      "suggested_rewrite": "**The Verdict**: In high-frequency, narrow-retrieval scenarios, Vector RAG can be much cheaper than bulk long-context loading, depending on your model pricing, cache behavior, and database costs.",
+      "lesson_point_url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "rationale": "The qualitative lesson is sound, but the exact totals are only illustrative without pinned dated pricing."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "The module estimates that 50 gigabytes of text is roughly 15 to 20 billion tokens.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Case for Traditional RAG, item Infinite Corpus",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "50 gigabytes of text is roughly 15 to 20 billion tokens.",
+      "suggested_rewrite": "50 gigabytes of text is far beyond current context windows, so you need retrieval or another filtering layer before inference.",
+      "lesson_point_url": null,
+      "rationale": "The precise token conversion is unstated, model-dependent, and not backed by an authoritative cited source."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "The latency comparison gives exact TTFT numbers for 2M-token cache hits and 2k-token RAG prompts.",
+      "claim_class": "benchmark",
+      "span_hint": "section: The Case for Traditional RAG, item Latency",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Latency**: Even with a 100% cache hit, loading 2 million tokens of KV state from memory into the GPU SRAM takes time. A 2-million token cache hit might have a TTFT of 400ms-800ms. A 2000-token RAG context might have a TTFT of 15ms. If you are building a real-time voice assistant, 800ms is unacceptable.",
+      "suggested_rewrite": "- **Latency**: Even with a cache hit, very large contexts still take noticeable time to load and serve, while much smaller RAG contexts can return substantially faster. For latency-sensitive interfaces such as voice, that gap can be decisive.",
+      "lesson_point_url": "https://openai.com/index/gpt-4-1/",
+      "rationale": "The general latency trade-off is real, but the specific numbers are benchmark-style teaching figures without a matching authoritative passage."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "The warm-up section claims an uncached global prefix takes 15 seconds to process.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Cache Warm-up Strategies",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "If you have a global prefix (e.g., your company's master documentation) that takes 15 seconds to process uncached, you do not want your first user of the day to experience a 15-second TTFT.",
+      "suggested_rewrite": "If you have a large global prefix that is slow when uncached, you do not want your first user of the day to pay that full latency penalty.",
+      "lesson_point_url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "rationale": "The latency lesson is valid, but the 15-second figure is illustrative rather than sourced for this exact context."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "The module ties this warm-up pattern specifically to Kubernetes v1.35+, even though CronJob support predates that version.",
+      "claim_class": "standard",
+      "span_hint": "section: Cache Warm-up Strategies",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "For a Kubernetes-native organization running clusters on v1.35+, this is a simple `CronJob` resource mapping to a Python script that pings the LLM API.",
+      "suggested_rewrite": "In Kubernetes, this kind of periodic warm-up can be implemented with a `CronJob` that calls a small script or service endpoint.",
+      "lesson_point_url": null,
+      "rationale": "The version threshold is inaccurate noise; the durable point is simply that Kubernetes has a CronJob resource for scheduled tasks."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "The module sets an 80% cache-hit threshold as an operational fact.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Measuring and Monitoring, final paragraph",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "If your cache hit ratio drops below 80% on a system designed for massive static context, it immediately signals a regression in how your application concatenates strings.",
+      "suggested_rewrite": "If a system built around large static prefixes suddenly shows a materially lower cache hit rate than expected, treat it as a likely regression in prompt construction.",
+      "lesson_point_url": null,
+      "rationale": "The need to monitor cache metrics is documented, but the exact 80% threshold is a local heuristic, not a universal source-backed cutoff."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "The healthcare-startup timestamp story is presented as a real incident with exact counts and costs.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Stories from the Edge of Context, item The \"Innocent\" Timestamp",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**The \"Innocent\" Timestamp**: A healthcare startup loaded 500 patient histories into a massive context window to look for cross-patient epidemiological trends. Their system prompt started with: `Report generated on: {current_date_time}. Analyze the following records...` Because the time changed down to the second on every execution, the prefix hash changed. They paid full price for 800,000 tokens on 5,000 consecutive queries before noticing the billing spike. Moving the timestamp to the bottom of the prompt reduced their daily API cost from $1,200 to $18.",
+      "suggested_rewrite": "**The \"Innocent\" Timestamp**: Putting a changing timestamp at the top of a large prompt can invalidate prefix caching and dramatically increase cost. Moving that dynamic field to the end preserves cacheability.",
+      "lesson_point_url": null,
+      "rationale": "This is an unsupported named-style war story with fake-precise operational numbers and must be rewritten as a general lesson."
+    },
+    {
+      "claim_id": "C023",
+      "claim_text": "The formatter-induced global outage story is presented as a real incident with exact impact figures.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Stories from the Edge of Context, item The Formatter's Folly",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**The Formatter's Folly**: A data engineering team used an automated code formatter (like `black` or `prettier`) on their backend pipeline. The formatter silently converted tabs to spaces in the string literal that held their massive system prompt. Because the API gateway hashes the exact bytes of the string, the change from `\\t` to `    ` invalidated the cache for their entire global user base, causing an immediate 800% latency spike during peak hours. Immutable prefixes must be loaded from locked files, never dynamically formatted in application code.",
+      "suggested_rewrite": "**The Formatter's Folly**: Even small formatting changes in a supposedly static prompt can invalidate prompt caches. Treat large reusable prefixes as immutable artifacts rather than dynamically reformatted strings.",
+      "lesson_point_url": null,
+      "rationale": "This is another unsourced operational anecdote with false precision and named incident styling."
+    },
+    {
+      "claim_id": "C024",
+      "claim_text": "The module says the shift from 128k to 1M contexts required a specific architectural transition from flash attention to distributed RingAttention.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, Fact 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Fact 1:** The jump from 128k to 1M token context windows required a fundamental shift in memory management, moving from standard flash attention to distributed RingAttention algorithms across multiple GPU clusters to handle the quadratic memory explosion.",
+      "suggested_rewrite": "- **Fact 1:** Reaching million-token-scale context windows has required major advances in memory management and distributed attention algorithms such as RingAttention.",
+      "lesson_point_url": null,
+      "rationale": "The exact industry-wide causal story is too specific, but the broader architectural point can be preserved without overclaiming."
+    },
+    {
+      "claim_id": "C025",
+      "claim_text": "The module gives an exact compute estimate of roughly 3000 petaFLOPs and claims a 99% cache hit cuts provider compute by more than two orders of magnitude.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, Fact 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Fact 2:** Processing 1 million tokens without caching requires approximately 3000 PetaFLOPs of compute, whereas a 99 percent cache hit reduces the required compute on the provider side by over two orders of magnitude, which is why they pass the savings to you.",
+      "suggested_rewrite": "- **Fact 2:** Processing a million-token prompt without caching is computationally expensive, while high cache-hit rates can reduce the repeated work enough to materially lower latency and cost.",
+      "lesson_point_url": null,
+      "rationale": "Both numerical claims are too exact for the public sources available here."
+    },
+    {
+      "claim_id": "C026",
+      "claim_text": "The module claims lab-tested RoPE scaling beyond 10M tokens and says accuracy degrades significantly past 2M without specialized fine-tuning.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, Fact 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Fact 3:** The theoretical limit of Rotary Position Embedding (RoPE) scaling currently tested in lab environments exceeds 10 million tokens, though empirical testing shows retrieval accuracy degrades significantly past 2 million without highly specialized, domain-specific fine-tuning.",
+      "suggested_rewrite": "- **Fact 3:** RoPE-scaling methods can extend context length substantially, but retrieval quality still degrades as contexts grow unless the model and workload are handled carefully.",
+      "lesson_point_url": null,
+      "rationale": "The exact tested limits and degradation thresholds are not backed here by a matching authoritative source."
+    },
+    {
+      "claim_id": "C027",
+      "claim_text": "The module gives exact TTFT benchmark numbers for a fully cached 2M-token prefix versus an uncached run.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Did You Know, Fact 4",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Fact 4:** In benchmark testing, accessing a fully cached 2-million token prefix can yield a Time To First Token (TTFT) of under 400 milliseconds, compared to over 25 seconds for an uncached processing run of the exact same size.",
+      "suggested_rewrite": "- **Fact 4:** In practice, a cached massive prefix can be dramatically faster than recomputing the same long context from scratch, but it is still not instantaneous.",
+      "lesson_point_url": "https://openai.com/index/gpt-4-1/",
+      "rationale": "The general benchmark lesson is sound, but these exact TTFT figures are not supported by a matching primary source on the allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "title": "OpenAI Prompt Caching Guide",
+      "tier": "vendor",
+      "why_relevant": "Primary documentation for exact-prefix matching, cache retention, and prompt-structuring guidance."
+    },
+    {
+      "url": "https://arxiv.org/abs/2307.03172",
+      "title": "Lost in the Middle: How Language Models Use Long Contexts",
+      "tier": "standards",
+      "why_relevant": "Primary paper on beginning-versus-middle-versus-end retrieval behavior in long contexts."
+    },
+    {
+      "url": "https://arxiv.org/abs/2310.01889",
+      "title": "Ring Attention with Blockwise Transformers for Near-Infinite Context",
+      "tier": "standards",
+      "why_relevant": "Primary source for one of the distributed-attention techniques referenced in the module."
+    }
+  ],
+  "notes": "Excluded Mermaid diagrams, code blocks, tables, exercises, and quiz items per the task rules. Repeated numeric or anecdotal claims in narrative prose were kept when they would need their own inline citation or rewrite at injection time.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://platform.claude.com/docs/en/build-with-claude/prompt-caching",
+      "reason": "lesson_point_off_allowlist",
+      "at_step": "research_validation",
+      "claim_id": "C021"
+    }
+  ]
+}

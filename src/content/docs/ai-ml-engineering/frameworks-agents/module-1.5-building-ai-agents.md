@@ -14,9 +14,9 @@ sidebar:
 
 ## Why This Module Matters
 
-In early 2024, Air Canada was forced by a civil tribunal to honor a non-existent bereavement fare policy that had been hallucinated by their custom-built customer service chatbot. The immediate financial impact of the single ticket was negligible, but the secondary costs were catastrophic. The airline suffered a severe public relations crisis, incurred millions of dollars in emergency engineering costs to tear down and rebuild their automated systems, and faced a temporary halt to their digital transformation initiatives. They had deployed a raw Large Language Model without a robust, data-grounding framework to anchor the model's responses to actual, verified corporate policies. This disaster highlighted a critical enterprise truth: deploying LLMs without a structured retrieval and agentic framework is an unacceptable technical and financial risk.
+In early 2024, Air Canada was forced by a civil tribunal to honor a non-existent bereavement fare policy that had been hallucinated by their custom-built customer service chatbot. Although the tribunal award itself was modest, the incident showed that customer-facing LLM systems can create legal, operational, and reputational risk when they are not grounded in current policy data.
 
-A year prior, in December 2022, Jerry Liu was staring at his laptop in a cramped WeWork office, surrounded by takeout containers. He had just quit his job as a data platform engineer at Uber. While everyone else was rushing to build thin wrappers around massive language models, Jerry recognized the exact problem that would later ensnare Air Canada. He tested early LLMs against Uber's financial reports and watched them hallucinate numbers and invent executives. The models knew the internet, but they knew absolutely nothing about proprietary corporate data. Over the next few days, Jerry wrote the initial version of what would become LlamaIndex—a system explicitly designed to index private documents so models could actually retrieve and use them reliably.
+In late 2022, developers building with early LLMs quickly ran into a recurring problem: models could reason fluently about public information but could not reliably answer questions grounded in private company data without retrieval and indexing systems.
 
 The lesson here is foundational for modern AI engineering: models are commoditized compute, but your proprietary data is your competitive moat. Every enterprise has access to the same foundational models via APIs. The only differentiator is how effectively an organization can connect those models to their internal knowledge bases and orchestrate them to take meaningful action. In this module, you will explore the ecosystem of frameworks that have emerged to solve this problem, learning how to select, deploy, and scale the right framework for the right architectural challenge, avoiding the catastrophic failures of early adopters.
 
@@ -79,7 +79,7 @@ graph TD
 
 ### What is LlamaIndex?
 
-LlamaIndex is a strict data framework for building LLM applications. While other frameworks focus heavily on how agents chain thoughts together, LlamaIndex focuses on a completely different trinity of operations:
+[LlamaIndex is a strict data framework for building LLM applications](https://github.com/run-llama/llama_index). While other frameworks focus heavily on how agents chain thoughts together, LlamaIndex focuses on a completely different trinity of operations:
 
 1. **Data Ingestion**: Standardizing connections to vastly different data sources.
 2. **Data Indexing**: Structuring the ingested data mathematically and hierarchically for ultra-efficient retrieval.
@@ -118,7 +118,7 @@ flowchart LR
 
 #### 1. Data Connectors (Loaders)
 
-LlamaIndex maintains a massive registry of data connectors. These act as universal adapters, normalizing heterogeneous data into a standard Document object. Whether the data is locked in a PostgreSQL database, a live webpage, or a massive PDF, the loader handles the extraction seamlessly.
+LlamaIndex maintains a massive registry of data connectors. These act as flexible adapters, normalizing many heterogeneous data sources into a standard Document object. Whether the data is locked in a PostgreSQL database, a live webpage, or a massive PDF, the loader handles the extraction seamlessly.
 
 ```python
 from llama_index.core import SimpleDirectoryReader
@@ -406,7 +406,7 @@ executor = AgentExecutor(agent=agent, tools=[search_tool])
 
 ### What is CrewAI?
 
-CrewAI is a framework specifically engineered for orchestrating role-playing AI agents. Unlike LangGraph, which forces you to think in terms of state machines, cyclic graphs, and mathematical nodes, CrewAI's abstraction is modeled entirely on human team dynamics. You construct teams by defining roles, responsibilities, and collaborative goals.
+[CrewAI is a framework specifically engineered for orchestrating role-playing AI agents](https://github.com/crewaiinc/crewai). Unlike LangGraph, which forces you to think in terms of state machines, cyclic graphs, and mathematical nodes, CrewAI's abstraction is modeled entirely on human team dynamics. You construct teams by defining roles, responsibilities, and collaborative goals.
 
 ### Core Concepts
 
@@ -500,7 +500,7 @@ When deciding how to orchestrate your agents, evaluate the strictness of your re
 
 ### What is AutoGen?
 
-Originating from Microsoft Research, AutoGen focuses heavily on conversational multi-agent systems. Instead of executing rigid pipelines or passing JSON objects between nodes, AutoGen agents communicate natively through raw chat interfaces. They debate, correct each other, and dynamically decide when a task is finished based on conversation history.
+[Originating from Microsoft Research, AutoGen focuses heavily on conversational multi-agent systems](https://github.com/microsoft/autogen). Instead of executing rigid pipelines or passing JSON objects between nodes, AutoGen agents communicate natively through raw chat interfaces. They debate, correct each other, and dynamically decide when a task is finished based on conversation history.
 
 ### Core Concept
 
@@ -573,7 +573,7 @@ Beyond the major players, specialized frameworks dominate specific architectural
 
 ### Semantic Kernel (Microsoft)
 
-Semantic Kernel is tailored for enterprise environments deeply entrenched in the Microsoft ecosystem. It brings robust support for Azure, .NET, and strictly typed languages, bypassing the fragility of Python scripts in enterprise Windows shops.
+Semantic Kernel is tailored for enterprise environments deeply entrenched in the Microsoft ecosystem. It brings [robust support for Azure, .NET, and strictly typed languages](https://github.com/microsoft/semantic-kernel), bypassing the fragility of Python scripts in enterprise Windows shops.
 
 ```python
 import semantic_kernel as sk
@@ -597,7 +597,7 @@ result = await kernel.invoke(summarize, input="Long text here...")
 
 ### Haystack
 
-Popular among European enterprises, Haystack focuses heavily on pure search pipelines, optimizing for scale and strict document retrieval accuracy above generative creativity. It enforces a strict pipeline architecture.
+Haystack focuses on search-oriented pipelines with explicit control over retrieval, routing, memory, and generation in production applications.
 
 ```python
 from haystack import Pipeline
@@ -623,7 +623,7 @@ result = pipeline.run({"query": "What is the capital of France?"})
 
 ### DSPy (Stanford)
 
-DSPy fundamentally reimagines how LLM pipelines are built. Instead of hand-writing string prompts, developers define the signatures (inputs and outputs), and DSPy acts as a compiler, automatically optimizing the prompts mathematically for the specific model and dataset.
+DSPy fundamentally reimagines how LLM pipelines are built. [Instead of hand-writing string prompts, developers define the signatures (inputs and outputs), and DSPy acts as a compiler](https://github.com/stanfordnlp/dspy), automatically optimizing the prompts mathematically for the specific model and dataset.
 
 ```python
 import dspy
@@ -687,12 +687,12 @@ Enterprise adoption proves that framework usage is highly specialized by domain.
 
 | Company | Framework | Scale | Use Case |
 |---------|-----------|-------|----------|
-| **Notion** | LlamaIndex | 30M+ users | Document Q&A |
-| **Replit** | LangGraph | 40M+ users | AI code assistant |
-| **Klarna** | LangChain | 2.3M conv/mo | Customer service |
-| **Stripe** | Custom + LlamaIndex | Billions $/yr | Fraud detection |
-| **Shopify** | Custom | 4.5M merchants | Product descriptions |
-| **Netflix** | Custom + embeddings | 260M users | Recommendations |
+| Example knowledge platform | retrieval-focused framework | large user base | document-centric Q&A |
+| Example developer platform | graph-based orchestration | large user base | AI coding assistance |
+| Example customer-service deployment | framework-based orchestration | high conversation volume | customer service |
+| Example payments company | custom stack plus retrieval tooling | large business scale | fraud and risk workflows |
+| Example commerce platform | custom stack | large merchant base | product-content generation |
+| Example streaming platform | custom recommendation stack | large user base | recommendations |
 
 ### Enterprise Adoption Patterns
 
@@ -700,11 +700,11 @@ A recent engineering survey of Fortune 500 companies using AI frameworks reveale
 
 | Framework | Fortune 500 Adoption | Surprise Factor |
 |-----------|---------------------|-----------------|
-| LangChain | 48% | Expected |
-| LlamaIndex | 38% | Higher than expected |
-| Custom built | 31% | They build their own! |
-| CrewAI | 12% | Fast for a new framework |
-| AutoGen | 8% | Mostly research teams |
+| LangChain | widely used | Expected |
+| LlamaIndex | meaningfully used | Higher than expected |
+| Custom built | still common | They build their own! |
+| CrewAI | emerging | Fast for a new framework |
+| AutoGen | more niche | Mostly research teams |
 
 ## Engineering Best Practices
 
@@ -758,17 +758,17 @@ for framework in frameworks:
 
 ## Did You Know?
 
-1. **The LlamaIndex Origin**: Jerry Liu created LlamaIndex in November 2022, writing the initial commits mere days after ChatGPT launched. By March 2023, the repository had 15,000 GitHub stars, leading to an $8.5 million seed round, followed by a $19 million Series A in April 2024.
-2. **The CrewAI Viral Moment**: Brazilian developer João Moura built CrewAI over a single weekend in December 2023 out of sheer frustration with LangChain's boilerplate. After posting it on Twitter on January 4, 2024, it accumulated 10,000 GitHub stars by January 7, securing a $2 million pre-seed round shortly after.
-3. **The DSPy Compiler**: Developed by Omar Khattab at Stanford, DSPy's automated prompt optimization paper demonstrated a 25% better accuracy rate on the GSM8K math dataset while simultaneously achieving a 40% reduction in token usage compared to manually hand-crafted prompts.
-4. **The Framework Half-Life**: Out of 48 prominent AI frameworks that boasted over 1,000 GitHub stars in January 2024, 12 were completely abandoned within six months. The calculated average "half-life" of an AI framework in the current ecosystem is merely 14 months, making abstraction layers critical for enterprise survival.
+1. **The LlamaIndex Origin**: LlamaIndex emerged in late 2022 and quickly became one of the prominent open-source frameworks for retrieval-oriented LLM applications.
+2. **The CrewAI Viral Moment**: CrewAI rose quickly in early 2024 as developers looked for simpler multi-agent abstractions than lower-level orchestration frameworks.
+3. **The DSPy Compiler**: DSPy reframes prompt engineering as programming with declarative signatures and compiler-style optimization.
+4. **The Framework Half-Life**: The agent-framework ecosystem changes quickly enough that abstraction layers and migration planning matter.
 
 ## Common Mistakes
 
 | Mistake | Why It Happens | How to Fix It |
 |---------|---------------|---------------|
-| **Defaulting to LangChain for simple RAG** | Engineers assume the most popular framework is best for every use case, leading to massive over-engineering. | Use LlamaIndex for pure document retrieval; it offers significantly better data ingestion defaults. |
-| **Ignoring document chunking strategy** | Developers use default loaders without considering context window limits, causing truncation errors. | Customize `SimpleDirectoryReader` chunk sizes and overlap to fit your specific LLM token limits. |
+| **Defaulting to LangChain for simple RAG** | Engineers assume the most popular framework is best for every use case, leading to over-engineering. | Start with a retrieval-focused framework or even a simpler custom baseline when document retrieval is the main requirement. |
+| **Ignoring document chunking strategy** | Developers use default ingestion paths without considering context window limits, causing truncation errors. | Tune your chunking and retrieval settings to fit your model and dataset. |
 | **Hardcoding API keys in agent scripts** | Rapid prototyping habits leak into production, exposing secrets in logs or git history. | Utilize Kubernetes Secrets, properly mounted as environment variables in your Pod definitions. |
 | **Over-complicating sequential tasks** | Using LangGraph's complex state machines for simple linear workflows creates debugging nightmares. | Use CrewAI's `Process.sequential` to define straightforward, role-based handoffs with zero boilerplate. |
 | **Over-prompting single agents** | Assigning too many distinct responsibilities to one agent confuses the model's attention mechanism. | Enforce the Single Responsibility Principle: split complex agents into multiple, hyper-focused sub-agents. |
@@ -903,7 +903,7 @@ kubectl get secret ai-secrets -n ai-agents
 
 ### Task 5: Deploying to Kubernetes v1.35
 
-Create a file named `job.yaml` targeting the batch API. Using a Job is appropriate for finite AI execution tasks, whereas Deployments should be reserved for always-on API servers.
+Create a file named `job.yaml` targeting the batch API. Using a Job is usually appropriate for finite AI execution tasks, whereas Deployments are typically better suited to always-on API servers.
 
 ```yaml
 # Tested on Kubernetes v1.35
@@ -1043,3 +1043,15 @@ With your foundational framework knowledge complete, you are fully equipped for 
 _Module 1.5 Complete!_
 
 _Next: Module 20 - Advanced Agentic AI_
+
+## Sources
+
+- [github.com: llama index](https://github.com/run-llama/llama_index) — The official LlamaIndex repository README describes LlamaIndex as a data framework and explicitly lists connectors, indices/graphs, and retrieval/query interfaces.
+- [github.com: crewai](https://github.com/crewaiinc/crewai) — The official CrewAI repository describes the project as orchestrating role-playing autonomous AI agents and documents the hierarchical process with a manager.
+- [github.com: autogen](https://github.com/microsoft/autogen) — The official AutoGen repository says the project was pioneered in Microsoft Research and documents AgentChat support for group-chat patterns.
+- [github.com: semantic kernel](https://github.com/microsoft/semantic-kernel) — The official Semantic Kernel repository README describes the framework this way and lists its supported runtimes and model integrations.
+- [github.com: dspy](https://github.com/stanfordnlp/dspy) — The official DSPy repository README explicitly presents DSPy as programming, not prompting, and describes its declarative modular approach.
+- [kubernetes.io: distribute credentials secure](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/) — The Kubernetes task documentation explicitly covers using Secrets and exposing them to containers as environment variables.
+- [kubernetes.io: manage resources containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — The Kubernetes resource-management documentation covers requests/limits and explains OOM-related behavior under memory pressure.
+- [LangGraph Repository](https://github.com/langchain-ai/langgraph) — Useful counterpart to the module's orchestration discussion because it documents stateful, long-running graph-based agents.
+- [AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation](https://arxiv.org/abs/2308.08155) — Primary paper for the conversational multi-agent model discussed in the AutoGen section.

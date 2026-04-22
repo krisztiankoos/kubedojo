@@ -1,0 +1,31 @@
+{
+  "module_key": "ai-ml-engineering/mlops/module-1.12-small-team-private-ai-platform",
+  "module_path": "src/content/docs/ai-ml-engineering/mlops/module-1.12-small-team-private-ai-platform.md",
+  "research_run_id": "2026-04-22T04:23:27+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://github.com/mlflow/mlflow",
+      "title": "MLflow",
+      "tier": "upstream",
+      "why_relevant": "Useful background for the module's illustrative tracking-and-artifact example stack."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "title": "Kubernetes Jobs",
+      "tier": "standards",
+      "why_relevant": "Relevant to the module's recommendation to make training and evaluation execution repeatable outside individual laptops."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "title": "Using RBAC Authorization",
+      "tier": "standards",
+      "why_relevant": "Supports the module's emphasis on access control and ownership rules for shared platform components."
+    }
+  ],
+  "notes": "No inline citation seeds were generated because the body is almost entirely conceptual guidance and operating heuristics. The named tools in the example stack are illustrative examples rather than load-bearing vendor/version claims, and quiz plus exercise content was excluded per policy.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

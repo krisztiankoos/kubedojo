@@ -9,11 +9,11 @@ sidebar:
 
 ## Why This Module Matters
 
-In May 2016, a fatal crash involving a semi-autonomous vehicle operating on a major highway highlighted a catastrophic limitation in early computer vision systems. The vehicle's cameras detected a white tractor-trailer crossing the road against a brightly lit sky, but the system processed the visual data as a series of independent, static frames. Without a coherent temporal model to link the movement of the object across consecutive frames, the system failed to recognize the obstruction as a solid, moving barrier and did not apply the brakes. This incident tragically demonstrated that analyzing the world one frame at a time is fundamentally insufficient for understanding dynamic environments.
+In May 2016, a fatal crash involving a semi-autonomous vehicle operating on a major highway highlighted a catastrophic limitation in early computer vision systems. The vehicle's cameras detected a white tractor-trailer crossing the road against a brightly lit sky, but the system failed to recognize the obstruction and did not brake, underscoring how brittle perception systems can be in complex real-world conditions. This incident tragically demonstrated that analyzing the world one frame at a time is fundamentally insufficient for understanding dynamic environments.
 
-Today, enterprise engineering teams face similar, if less lethal, challenges when applying legacy computer vision to massive video datasets. A major global logistics firm recently deployed a naive frame-by-frame video AI system across their fulfillment centers to detect workplace safety violations. Because the system analyzed frames independently without any temporal context, a worker safely and slowly lowering a heavy box was repeatedly flagged as a falling object hazard. Meanwhile, actual dangerous continuous motions, such as a forklift slowly tipping over several seconds, were completely ignored because no single frame looked anomalous in isolation. The company wasted millions of dollars on false alarms and blind spots before completely redesigning their pipeline from the ground up.
+Today, enterprise engineering teams face similar, if less lethal, challenges when applying legacy computer vision to massive video datasets. Teams that analyze safety video frame by frame often encounter false alarms and missed events until they add temporal context to the pipeline.
 
-Video is the final frontier of multimodal artificial intelligence. While images capture a single static moment, video captures time, motion, narrative, and causality. Understanding and generating video requires systems to reason about sequences, predict future states, and maintain strict object permanence. The financial impact of mastering this domain is staggering, spanning from reducing manual content moderation costs by millions of dollars annually to enabling entirely new forms of generative interactive media.
+Video is the final frontier of multimodal artificial intelligence. While images capture a single static moment, video captures time, motion, narrative, and causality. Understanding and generating video requires systems to reason about sequences, predict future states, and maintain strict object permanence. The financial impact of mastering this domain can be substantial, from lowering moderation workload at scale to enabling new forms of generative interactive media.
 
 ## What You Will Be Able to Do
 
@@ -67,7 +67,7 @@ graph TD
 
 ## Part 2: Frame Extraction and Sampling Foundations
 
-Continuous video must be discretized into frames before neural networks can process the data. However, extracting every single frame is computationally disastrous. Intelligent frame extraction is the cornerstone of efficient video AI.
+Continuous video must be discretized into frames before neural networks can process the data. However, extracting every single frame is usually computationally expensive. Intelligent frame extraction is the cornerstone of efficient video AI.
 
 ### The Baseline Extraction Function
 
@@ -346,12 +346,12 @@ If video understanding is akin to reading a book, video generation is akin to wr
 
 | Model | Company | Type | Access |
 |-------|---------|------|--------|
-| Sora | OpenAI | Text-to-Video | Limited preview |
-| Runway Gen-2/3 | Runway | Text/Image-to-Video | API & Web |
-| Pika | Pika Labs | Text-to-Video | Web |
-| Stable Video | Stability AI | Image-to-Video | Open source |
-| Kling | Kuaishou | Text-to-Video | Limited |
-| Dream Machine | Luma AI | Text-to-Video | Web |
+| Sora | OpenAI | Text-to-Video | Access and rollout have changed since the original preview; check current product docs |
+| Runway | Runway | Text/Image-to-Video | Model names and access depend on the current product generation and plan |
+| Pika | Pika Labs | Video generation | Availability and feature tiers change quickly; check current product docs |
+| [Stable Video](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt) | Stability AI | Image-to-Video | Open source |
+| Kling | Kuaishou | Video generation | Access and regional availability change frequently; check current product docs |
+| Dream Machine | Luma AI | Video generation | Web and API features vary by current model and plan |
 
 ### Diffusion Over Space and Time
 
@@ -368,7 +368,7 @@ flowchart TD
     Model --> Video[Generated Video]
 ```
 
-Advanced implementations, such as the conceptual architecture of OpenAI's Sora, utilize Spacetime Patches fed into a Diffusion Transformer (DiT).
+Advanced implementations, such as the conceptual architecture of OpenAI's Sora, utilize [Spacetime Patches](https://openai.com/index/video-generation-models-as-world-simulators/) fed into a Diffusion Transformer (DiT).
 
 ```mermaid
 flowchart LR
@@ -757,10 +757,10 @@ class VideoStreamProcessor:
 
 ## Did You Know? Technical Milestones
 
-1. The monumental OpenAI Sora model was revealed to the public on February 15, 2024, demonstrating previously thought impossible physics simulations and temporal stability across complex long-form generations.
+1. OpenAI published the Sora technical report on February 15, 2024, showing a text-to-video model that can generate minute-long videos while also documenting important limitations in physics and long-range consistency.
 2. The foundational Lucas-Kanade optical flow algorithm was published in 1981, yet remains deeply embedded in modern preprocessing stacks specifically for tracking lightweight pixel movement.
-3. The computational scale of global media is vast; every single minute, over 500 hours of high-definition video are uploaded to YouTube, forcing the absolute limits of automated moderation pipelines.
-4. Google decisively changed the landscape of contextual processing when they demonstrated Gemini 1.5 Pro natively ingesting and interrogating an entire 45-minute video entirely within a single context window.
+3. The scale of modern media platforms is vast; hundreds of hours of video are uploaded to YouTube every minute, which makes automated moderation a necessity at large scale.
+4. Google decisively changed the landscape of contextual processing when they demonstrated Gemini 1.5 Pro natively ingesting and interrogating [an entire 45-minute video](https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/1-5-pro) entirely within a single context window.
 
 ## Common Pitfalls in Video AI Code
 
@@ -883,13 +883,13 @@ Video infrastructure scales expensively. Knowing when to build versus when to bu
 
 | Service | Video Understanding | Video Generation | Notes |
 |---------|---------------------|------------------|-------|
-| gpt-5 (Vision) | ~$0.10/minute of video* | N/A | *At 10 frames/min |
-| Google Gemini 1.5 | ~$0.05/minute of video | N/A | Native video input |
-| Claude 3 Opus | ~$0.15/minute of video* | N/A | *At 10 frames/min |
-| Runway Gen-3 | N/A | $0.05/second | ~$3/minute of output |
-| Pika | N/A | ~$0.50/5-second clip | Subscription model |
-| Local (faster-whisper) | ~$0.002/minute | N/A | GPU amortized |
-| Local (SVD) | N/A | ~$0.01/second | GPU amortized |
+| gpt-5 (Vision) | Usage-based | N/A | Estimate cost from current OpenAI pricing and your frame-sampling policy |
+| Google Gemini 1.5 | Usage-based | N/A | Native video support exists, but costs depend on the current model and billing plan |
+| Claude 3 Opus | Usage-based | N/A | Estimate cost from current Anthropic pricing and your frame-sampling policy |
+| Runway Gen-3 | N/A | Subscription/credit-based | Generation pricing varies by model, plan, and output settings |
+| Pika | N/A | Subscription/credit-based | Generation pricing varies by plan and feature tier |
+| Local (faster-whisper) | Hardware-dependent | N/A | Actual cost depends on GPU utilization, throughput, and amortization assumptions |
+| Local (SVD) | N/A | Hardware-dependent | Actual cost depends on GPU type, batch size, and amortization assumptions |
 
 ### Break-Even Analysis: Video Understanding
 
@@ -944,13 +944,13 @@ The resulting sequence will be unusable due to severe temporal flickering, objec
 <details>
 <summary>Scenario 5: Your Kubernetes data processing cluster executes a batch job designed to analyze long-form theatrical content. However, the worker pods consistently crash with OutOfMemory errors just seconds into execution, even with high resource limits. The logs show the crash occurring during the frame extraction step. What is the fundamental design error?</summary>
 
-The fundamental design error is that the extraction script attempts to load the entire uncompressed video stream into a continuous array resident in memory simultaneously. A feature-length film contains hundreds of thousands of frames that will instantly overwhelm any standard RAM allocation. The script must be redesigned to utilize hierarchical chunking or python generator functions, ensuring frames are loaded, processed, summarized, and released sequentially to maintain a strict, minimal memory boundary.
+The fundamental design error is that the extraction script attempts to load the entire uncompressed video stream into a continuous array resident in memory simultaneously. A feature-length film contains hundreds of thousands of frames that can quickly overwhelm typical RAM allocations. The script must be redesigned to utilize hierarchical chunking or python generator functions, ensuring frames are loaded, processed, summarized, and released sequentially to maintain a strict, minimal memory boundary.
 </details>
 
 <details>
 <summary>Scenario 6: A media moderation platform uniformly extracts one frame every sixty seconds from user-uploaded content to detect policy violations. A user successfully uploads a video containing a highly explicit three-second clip hidden precisely in the middle of a five-minute file. Why did the system fail to flag this, and how must the architecture change?</summary>
 
-The system failed because uniform sparse sampling guarantees critical blind spots; a brief three-second event will almost certainly slip entirely unnoticed between the sixty-second extraction windows. To secure the platform, the architecture must transition to an adaptive motion-based sampling logic or utilize an aggressive scene boundary detection algorithm. Any sudden deviation or structural cut in the video should immediately trigger a dense extraction of local keyframes to guarantee no rapid, high-impact events are ignored.
+The system failed because uniform sparse sampling guarantees critical blind spots; a brief three-second event will almost certainly slip entirely unnoticed between the sixty-second extraction windows. To secure the platform, the architecture must transition to an adaptive motion-based sampling logic or utilize an aggressive scene boundary detection algorithm. A sudden deviation or structural cut in the video should typically trigger a dense extraction of local keyframes so rapid, high-impact events are less likely to be ignored.
 </details>
 
 ## Hands-On Exercise: Deploying an Adaptive Extraction Pipeline
@@ -1057,3 +1057,8 @@ kubectl exec video-analyzer -- python /tmp/adaptive_sampler.py
 ---
 
 **What's Next?** You have conquered the temporal axis of multimodal networks. Proceed to [Phase 6 - Deep Learning Foundations](/ai-ml-engineering/deep-learning/module-1.1-foundations), where we peel back the abstraction layer to dissect the raw calculus and tensor math powering the attention layers you just deployed.
+
+## Sources
+
+- [Video understanding on Vertex AI](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/video-understanding) — Practical documentation for prompting Gemini models with video inputs and understanding current supported workflows.
+- [ViViT: A Video Vision Transformer](https://arxiv.org/abs/2103.15691) — Canonical paper for transformer-based video understanding, directly relevant to the module's temporal-modeling section.

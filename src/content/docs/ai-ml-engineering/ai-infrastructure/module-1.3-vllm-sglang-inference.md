@@ -7,11 +7,11 @@ sidebar:
 
 ## Why This Module Matters
 
-In late 2023, a rapidly growing AI native startup offering an AI coding assistant experienced a catastrophic service degradation during a product launch. As user concurrency spiked from a baseline of 500 simultaneous requests to over 8,000, their legacy inference infrastructure—relying on naive Hugging Face Transformers static batching—collapsed. The system began dropping requests, and Time to First Token (TTFT) degraded from 200 milliseconds to over 30 seconds. The startup was burning through a massive cloud budget, paying for thousands of A100 GPUs, yet utilizing less than 15% of the actual GPU memory bandwidth due to fragmented key-value (KV) caches and inefficient batching. 
+AI products can suffer severe service degradation during launches when concurrency spikes expose inefficient batching and KV-cache management, causing dropped requests, long TTFT, and poor GPU utilization. 
 
-The financial impact was severe. The company lost an estimated $2.5 million in potential recurring revenue within a single week due to user churn and negative social media sentiment. Their engineering team scrambled to mitigate the issue by over-provisioning hardware, which temporarily stopped the bleeding but pushed their daily infrastructure costs to unsustainable levels. The root cause was not a lack of raw compute power, but a fundamental misunderstanding of LLM memory management and inference bottlenecks. The system was memory-bound, spending the majority of its time moving data rather than computing matrix multiplications.
+When inference bottlenecks are misunderstood, teams can lose users, overspend on hardware, and still fail to fix the real problem if the workload is memory-bound rather than compute-bound.
 
-To survive, the company completely overhauled its serving stack over a grueling two-week sprint, migrating to vLLM. By implementing PagedAttention and continuous batching, they increased their serving throughput by 14x on the exact same hardware footprint. This migration not only saved the company from bankruptcy by slashing their cloud bill by 85%, but it also restored sub-second latency for their users. Understanding modern inference engines like vLLM and sglang is no longer an optional optimization; it is the fundamental requirement for deploying generative AI models economically and reliably at scale.
+Moving from naive batching to a modern inference engine can materially improve throughput and latency while reducing serving cost, but the exact gains depend on the workload, model, and hardware.
 
 ## Learning Outcomes
 
@@ -19,7 +19,7 @@ By the end of this module, you will be able to:
 *   **Evaluate** the architectural differences between static batching and continuous batching in the context of LLM inference throughput.
 *   **Diagnose** memory fragmentation issues in naive LLM serving implementations and explain how PagedAttention resolves them.
 *   **Design** a high-throughput inference architecture using vLLM or sglang for models like Llama 4 or DeepSeek V3, balancing latency and throughput requirements.
-*   **Implement** advanced inference optimizations including prefix caching, chunked prefill, and speculative decoding to maximize hardware utilization.
+*   **Implement** advanced inference optimizations including prefix caching, [chunked prefill, and speculative decoding](https://github.com/vllm-project/vllm) to maximize hardware utilization.
 *   **Compare** the performance profiles of vLLM and sglang specifically for structured output generation and complex prompting workflows.
 
 ## The Anatomy of LLM Inference: Prefill and Decode
@@ -54,13 +54,13 @@ sequenceDiagram
     Inference Engine-->>User: Complete Response
 ```
 
-When serving multiple users, naive implementations process requests sequentially or use static batching, where requests are grouped together and padded to the length of the longest request in the batch. This results in massive GPU memory waste due to padding and internal fragmentation, limiting the maximum batch size. Since the decode phase is memory-bandwidth bound, the only way to increase overall throughput is to increase the batch size, which allows the GPU to process multiple tokens while loading the KV cache once. 
+When serving multiple users, naive implementations process requests sequentially or use static batching, where requests are grouped together and padded to the length of the longest request in the batch. This results in massive GPU memory waste due to padding and internal fragmentation, limiting the maximum batch size. Since the decode phase is memory-bandwidth bound, one of the main ways to increase overall throughput is to increase the batch size, which allows the GPU to process multiple tokens while loading the KV cache once. 
 
 > **Stop and think**: If a model requires 20GB of weights to load into memory, and an A100 GPU has 80GB of memory, how do you maximize the use of the remaining 60GB? What happens if your batch size is too small?
 
 ## PagedAttention: The Core of vLLM
 
-The breakthrough that enabled vLLM to dominate the open-source inference landscape was **PagedAttention**. Inspired by virtual memory and paging in traditional operating systems, PagedAttention eliminates the need to allocate contiguous blocks of memory for the KV cache.
+The breakthrough that enabled vLLM to dominate the open-source inference landscape was **PagedAttention**. [Inspired by virtual memory and paging in traditional operating systems, PagedAttention eliminates the need to allocate contiguous blocks of memory for the KV cache.](https://arxiv.org/abs/2309.06180)
 
 In traditional attention mechanisms, the KV cache for a sequence is stored in a contiguous tensor. Because the final length of the generated text is unknown at the start, the system must over-allocate memory based on the maximum possible generation length. This leads to internal fragmentation (allocated but unused memory) and external fragmentation (small gaps between allocations). Research showed that in naive systems, up to 60-80% of KV cache memory was wasted.
 
@@ -115,13 +115,13 @@ Because blocks are allocated on demand, PagedAttention virtually eliminates memo
 
 Static batching waits for all requests in a batch to complete before starting the next batch. If Request A finishes in 10 tokens, but Request B takes 500 tokens, the compute resources allocated for Request A sit idle for 490 iterations. 
 
-vLLM utilizes **Continuous Batching** (also known as in-flight batching or iteration-level scheduling). The scheduler operates at the token iteration level. As soon as Request A emits its final token (e.g., `<EOS>`), it is immediately evicted from the batch. The scheduler then pulls a new request from the queue and inserts it into the active batch for the very next token generation step.
+[vLLM utilizes **Continuous Batching** (also known as in-flight batching or iteration-level scheduling)](https://github.com/vllm-project/vllm). The scheduler operates at the token iteration level. As soon as Request A emits its final token (e.g., `<EOS>`), it is immediately evicted from the batch. The scheduler then pulls a new request from the queue and inserts it into the active batch for the very next token generation step.
 
-This means the batch size is dynamically adjusted every single iteration, keeping GPU utilization consistently high. The inference engine is constantly churning, mixing prefill operations for new requests with decode operations for existing requests.
+This means the batch size can be dynamically adjusted at each iteration, which usually keeps GPU utilization high. The inference engine is constantly churning, mixing prefill operations for new requests with decode operations for existing requests.
 
 ### Implementing vLLM in Production
 
-Deploying vLLM is straightforward due to its OpenAI-compatible server. Here is an example of how a platform engineering team might deploy a Llama 4 model using vLLM in a Kubernetes environment.
+Deploying vLLM is straightforward due to its [OpenAI-compatible server](https://github.com/vllm-project/vllm). Here is an example of how a platform engineering team might deploy a Llama 4 model using vLLM in a Kubernetes environment.
 
 ```yaml
 apiVersion: apps/v1
@@ -160,7 +160,7 @@ spec:
         - containerPort: 8000
 ```
 
-Notice the `--tensor-parallel-size` argument. For large models like a 70B parameter model, a single GPU does not have enough VRAM to hold the weights and the KV cache. vLLM natively supports Megatron-LM style Tensor Parallelism, splitting the model's matrices across multiple GPUs on the same node, allowing them to compute attention and feed-forward layers synchronously. The `--max-model-len 8192` flag bounds the maximum context window, limiting the KV cache memory pre-allocated per sequence and preventing out-of-memory errors on massive prompts.
+Notice the `--tensor-parallel-size` argument. For large models like a 70B parameter model, a single GPU does not have enough VRAM to hold the weights and the KV cache. [vLLM natively supports Megatron-LM style Tensor Parallelism](https://github.com/vllm-project/vllm/blob/main/docs/serving/parallelism_scaling.md), splitting the model's matrices across multiple GPUs on the same node, allowing them to compute attention and feed-forward layers synchronously. The `--max-model-len 8192` flag bounds the maximum context window, limiting the KV cache memory pre-allocated per sequence and preventing out-of-memory errors on massive prompts.
 
 ## Advanced Optimizations: Prefix Caching and Chunked Prefill
 
@@ -219,9 +219,9 @@ python3 -m vllm.entrypoints.openai.api_server \
 
 While vLLM pioneered PagedAttention, **sglang** (developed by researchers at LMSYS/Berkeley) introduced **RadixAttention**. sglang is built for complex prompting workflows: agentic loops, few-shot prompting, and heavily structured JSON generation.
 
-In vLLM, prefix caching is a reactive optimization based on block hashing. RadixAttention in sglang maintains the KV cache as a Radix Tree. This means it proactively manages prefixes across all active and recently finished requests. It is significantly more efficient at sharing KV caches for highly complex, branching prompt structures (e.g., Tree of Thoughts, or multiple agents sharing a context).
+In vLLM, prefix caching is a reactive optimization based on block hashing. [RadixAttention in sglang maintains the KV cache as a Radix Tree. This means it proactively manages prefixes across all active and recently finished requests.](https://arxiv.org/abs/2312.07104) It is significantly more efficient at sharing KV caches for highly complex, branching prompt structures (e.g., Tree of Thoughts, or multiple agents sharing a context).
 
-Furthermore, sglang excels at constrained decoding (e.g., forcing the LLM to output valid JSON matching a specific schema). Traditional engines process the output token by token, running a regex or grammar parser on CPU to mask out invalid tokens at every step, causing massive overhead. sglang utilizes a compressed finite state machine (FSM) compiled in advance, allowing it to jump ahead. If the schema requires the string `"user_id": "`, sglang will not generate those tokens individually; it will forcefully append them to the sequence, bypassing the model's forward pass entirely for the structural scaffolding.
+Furthermore, [sglang excels at constrained decoding (e.g., forcing the LLM to output valid JSON matching a specific schema)](https://github.com/sgl-project/sglang). Traditional engines process the output token by token, running a regex or grammar parser on CPU to mask out invalid tokens at every step, causing massive overhead. sglang utilizes a compressed finite state machine (FSM) compiled in advance, allowing it to jump ahead. For structured outputs, sglang can reduce decoding overhead by compiling constraints ahead of time instead of relying on prompt wording alone.
 
 ### Throughput vs. Latency Tradeoffs
 
@@ -230,15 +230,15 @@ When deploying these systems, platform engineers must tune parameters based on t
 | Metric | Goal | Configuration Action | Tradeoff |
 | :--- | :--- | :--- | :--- |
 | **Max Throughput** (e.g., Batch offline data processing) | Process highest volume of data per hour. | Increase maximum batch size (`--max-num-seqs`). Allocate maximum VRAM to KV Cache. | Increases TTFT and Inter-Token Latency. Individual requests take longer, but total volume is higher. |
-| **Lowest TTFT** (e.g., Chatbot responsiveness) | Start generating text instantly. | Prioritize prefill operations. Reduce maximum batch size. | Lowers overall system throughput. Hardware is underutilized. |
+| **Lowest TTFT** (e.g., Chatbot responsiveness) | Start generating text as quickly as possible. | Prioritize prefill operations. Reduce maximum batch size. | Lowers overall system throughput. Hardware is underutilized. |
 | **Smooth Decoding** (e.g., Reading streaming text) | Prevent stutters during generation. | Enable Chunked Prefill. Set strict latency SLAs in the scheduler. | Slightly delays TTFT for long-context requests to protect decoding requests. |
 
 ## Did You Know?
 
 *   Before PagedAttention, memory fragmentation in LLM inference could lead to up to **80%** of GPU memory being allocated but completely unusable.
 *   By implementing continuous batching and PagedAttention, vLLM achieved up to **24x** higher throughput compared to Hugging Face Transformers upon its initial release.
-*   The Radix Tree structure used in sglang's RadixAttention allows for exact prefix matching in **O(L)** time, where L is the length of the sequence, making it highly efficient for branching agentic workflows.
-*   Speculative decoding, an advanced feature in modern engines, uses a tiny "draft" model to predict tokens and a large "target" model to verify them, sometimes increasing generation speed by **2.5x** without modifying the target model's weights.
+*   The Radix Tree structure used in sglang's RadixAttention allows for [exact prefix matching in **O(L)** time](https://en.wikipedia.org/wiki/Radix_tree), where L is the length of the sequence, making it highly efficient for branching agentic workflows.
+*   Speculative decoding, an advanced feature in modern engines, uses a tiny "draft" model to predict tokens and a large "target" model to verify them, [sometimes increasing generation speed by **2.5x** without modifying the target model's weights](https://arxiv.org/abs/2302.01318).
 
 ## Common Mistakes
 
@@ -250,7 +250,7 @@ When deploying these systems, platform engineers must tune parameters based on t
 | **Not using Prefix Caching for Chatbots.** | Forgetting to enable automatic prefix caching when a massive system prompt is prepended to every single user query. | Enable `--enable-prefix-caching`. Ensure the system prompt is completely identical across requests. |
 | **Spikes in inter-token latency.** | Large prefill requests are blocking the decode operations of active batch requests. | Enable Chunked Prefill to distribute the prefill compute across multiple iterations. |
 | **Using generic inference for strict JSON.** | Forcing JSON via prompts alone, leading to high token usage and occasional formatting errors. | Use engines like sglang or vLLM's guided decoding with JSON schema constraints to enforce structure at the logits level. |
-| **Failing to monitor KV Cache usage.** | Treating the inference engine as a black box. If the KV cache is consistently 100% full, requests will queue up indefinitely. | Monitor Prometheus metrics exported by vLLM (e.g., `vllm:gpu_cache_usage_perc`). Scale out replicas when it hits >85%. |
+| **Failing to monitor KV Cache usage.** | Treating the inference engine as a black box. If the KV cache is consistently 100% full, requests will start queueing and latency will keep rising until capacity is added or demand drops. | Monitor Prometheus metrics exported by vLLM (for example, KV-cache usage) and scale out before sustained cache saturation starts causing queueing. |
 
 ## Quiz
 
@@ -281,7 +281,7 @@ You would prioritize sglang. Its RadixAttention mechanism uses a Radix Tree to p
 
 <details>
 <summary>6. A data engineering team is using your vLLM cluster overnight to summarize 50,000 historical customer support tickets, while a small team of night-shift agents uses the same cluster for live chat assistance. The data engineers complain that their job takes too long, but when you increase the `--max-num-seqs` parameter to process more tickets simultaneously, the night-shift agents report the chat interface has become unusable. What fundamental tradeoff is causing this conflict, and how does the batch size configuration directly impact both workloads?</summary>
-This conflict illustrates the fundamental architectural tension between optimizing for total throughput versus individual request latency. By increasing the maximum sequence limit, you are allowing the scheduler to pack a massive number of offline batch requests into the GPU simultaneously. While this dramatically increases the total tokens processed per second (throughput) by keeping the GPU's compute units fully saturated, it forces every single request—including the live chat queries—to wait much longer in the queue and during the decode phase for their turn to compute. To serve the interactive UI effectively, you must artificially restrict the batch size, which ensures low Time to First Token (TTFT) and smooth generation for the agents, but forces the data engineers to process fewer tickets concurrently.
+This conflict illustrates the fundamental architectural tension between optimizing for total throughput versus individual request latency. By increasing the maximum sequence limit, you are allowing the scheduler to pack a massive number of offline batch requests into the GPU simultaneously. While this dramatically increases the total tokens processed per second (throughput) by keeping the GPU's compute units highly saturated, it usually forces most requests—including the live chat queries—to wait longer in the queue and during the decode phase for their turn to compute. To serve the interactive UI effectively, you must artificially restrict the batch size, which ensures low Time to First Token (TTFT) and smooth generation for the agents, but forces the data engineers to process fewer tickets concurrently.
 </details>
 
 ## Hands-On Exercise: Deploying and Profiling vLLM
@@ -388,3 +388,10 @@ curl -s http://localhost:8000/metrics | grep vllm:gpu_cache_usage_perc
 ## Next Module
 
 Now that you understand how to maximize single-node throughput using vLLM and sglang, the next challenge is managing state and routing across a distributed cluster of these engines. In the next module, **Module 6.4: Multi-Node Inference and Semantic Routing**, we will explore how to use tools like Ray Serve and Lorax to route incoming requests to specific GPUs based on cached prefixes and LoRA adapter states, ensuring high availability and optimal cluster-wide utilization.
+
+## Sources
+
+- [Efficient Memory Management for Large Language Model Serving with PagedAttention](https://arxiv.org/abs/2309.06180) — Primary paper for PagedAttention, KV-cache waste, and the original vLLM throughput claims.
+- [Efficiently Programming Large Language Models using SGLang](https://arxiv.org/abs/2312.07104) — Primary paper for RadixAttention, SGLang's runtime model, and structured-generation acceleration.
+- [vLLM Parallelism and Scaling](https://github.com/vllm-project/vllm/blob/main/docs/serving/parallelism_scaling.md) — Official repo documentation for tensor parallelism and practical multi-GPU deployment choices.
+- [Accelerating Large Language Model Decoding with Speculative Sampling](https://arxiv.org/abs/2302.01318) — Primary source for the draft-and-verify decoding pattern and its reported speedups.

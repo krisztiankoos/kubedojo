@@ -896,7 +896,7 @@ validate_no_leakage(X_train, y_train, feature_names)
 
 A team deployed a LightGBM fraud detection model with 99.9% accuracy. Executives celebrated. Then they looked at the confusion matrix.
 
-The dataset was 99.9% legitimate transactions. The model had learned to predict "not fraud" for everything. It was 99.9% accurate and 100% useless.
+The dataset was 99.9% legitimate transactions. The model had learned to predict "not fraud" for everything. It was 99.9% accurate and effectively useless.
 
 ```python
 #  What they did
@@ -1454,7 +1454,7 @@ Test your understanding with these review questions:
 
 6. **Hyperparameter tuning has diminishing returns** - Most gains come from: (1) good feature engineering, (2) using early stopping, (3) handling class imbalance correctly. Spending days tuning hyperparameters rarely beats a day of better feature work.
 
-7. **Data leakage is the #1 cause of production failures** - Always ask: "Would I have this feature at prediction time?" Test for leakage by checking if any single feature predicts the target suspiciously well.
+7. **Data leakage is one of the most common causes of production failures** - Ask: "Would I have this feature at prediction time?" Test for leakage by checking if any single feature predicts the target suspiciously well.
 
 8. **Use the right metrics for your problem** - Accuracy is useless for imbalanced data. Use AUC-ROC for ranking, precision-recall AUC for rare events, and always check the confusion matrix.
 
@@ -1747,3 +1747,9 @@ You've mastered the workhorse of production ML! Next, learn how to prepare data 
 _Module 37 Complete! You now understand tabular ML!_
 
 _"The best model is the one that ships to production." - Practical ML wisdom_
+
+## Sources
+
+- [XGBoost: A Scalable Tree Boosting System](https://arxiv.org/abs/1603.02754) — Primary paper for XGBoost's core algorithmic and systems contributions.
+- [LightGBM Advanced Topics](https://lightgbm.readthedocs.io/en/v4.5.0/Advanced-Topics.html) — Official docs covering LightGBM's handling of missing values and categorical features.
+- [A Unified Approach to Interpreting Model Predictions](https://arxiv.org/abs/1705.07874) — Primary SHAP paper connecting Shapley-value ideas to model explanations.

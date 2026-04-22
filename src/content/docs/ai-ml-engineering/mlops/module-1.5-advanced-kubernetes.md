@@ -9,17 +9,17 @@ sidebar:
 
 **Stockholm, Sweden. December 2019. 2:37 AM.**
 
-The alert was the kind that makes your stomach drop: "Recommendation Service: 0 predictions served in last 5 minutes." Not slow. Not degraded. Zero. Complete silence from the system that personalizes music for 380 million users.
+An alert showing zero predictions served can signal a severe outage in a production recommendation system.
 
 Emma Björklund, the on-call engineer, pulled up the Kubernetes dashboard from her laptop while her coffee went cold. Everything looked green. Pods were running. Health checks were passing. CPU usage was normal. But somehow, no predictions were flowing.
 
-The root cause took four hours to find: a routine Kubernetes upgrade had changed how GPU memory was allocated to containers. Their TensorFlow Serving pods were silently crashing during model loading—the 50GB recommendation models couldn't fit in the new memory configuration—but Kubernetes kept restarting them. Each pod would start, attempt to load the model, fail, and restart. An infinite loop of failure that looked healthy from the outside.
+A Kubernetes or runtime change can break model-serving workloads in ways that look healthy at the orchestration layer while inference keeps failing underneath. Each pod would start, attempt to load the model, fail, and restart. An infinite loop of failure that looked healthy from the outside.
 
-**Josh Wills**, then Head of Data Engineering at Spotify (famous for his Twitter bio "I turn coffee and data into products"), led the post-mortem the next week. His team's conclusion would reshape how Spotify approached ML infrastructure: *"We had great ML models and great Kubernetes skills, but we didn't have a great ML-on-Kubernetes platform. The gap between 'running a container' and 'running ML at scale' is a chasm, not a crack."*
+A common lesson from production ML incidents is that strong models and solid Kubernetes fundamentals still do not replace a purpose-built ML platform layer.
 
-The solution wasn't more Kubernetes expertise or better models. It was a dedicated ML platform layer—tools specifically designed for the unique challenges of running machine learning in production. Six months later, Spotify had migrated their recommendation infrastructure to Kubeflow. The same incident that took four hours to diagnose could now be detected in seconds and auto-remediated in minutes. The models weren't smarter—the platform was.
+The broader lesson is that a dedicated ML platform layer can make production incidents easier to detect, diagnose, and recover from than plain container orchestration alone.
 
-This module teaches you the tools that bridge that chasm: Kubeflow, KServe, Ray, and Triton. These aren't just abstractions over Kubernetes—they're the accumulated wisdom of Google, Netflix, Uber, Spotify, Bloomberg, and hundreds of other companies who learned the hard way that ML in production requires more than containers and deployments.
+This module teaches you the tools that bridge that chasm: Kubeflow, KServe, Ray, and Triton. These tools reflect patterns that emerged as teams learned that production ML needs more than containers and deployments alone.
 
 Think of it like this: Kubernetes is the operating system for your cluster. But you wouldn't write applications directly against syscalls—you'd use frameworks, libraries, and runtimes that handle the complexity for you. The tools in this module are those frameworks for ML. They handle the orchestration, serving, distributed computing, and optimization that would otherwise require thousands of lines of custom code.
 
@@ -28,10 +28,10 @@ Think of it like this: Kubernetes is the operating system for your cluster. But 
 ## What You'll Be Able to Do
 
 By the end of this module, you will:
-- Master Kubeflow for end-to-end ML workflows that scale to thousands of experiments
-- Implement KServe for serverless model serving with automatic scaling and canary deployments
-- Deploy Ray clusters on Kubernetes for distributed training across hundreds of GPUs
-- Use NVIDIA Triton Inference Server for high-performance, multi-model inference with 10x throughput improvements
+- Master Kubeflow for end-to-end ML workflows and large-scale experimentation
+- Implement [KServe for serverless model serving with automatic scaling and canary deployments](https://github.com/kserve/kserve)
+- Deploy Ray clusters on Kubernetes for distributed training across many GPUs
+- Use NVIDIA Triton Inference Server for high-performance, multi-model inference with significantly better throughput in the right workloads
 - Understand the decision matrix for choosing between tools based on your specific requirements
 
 ---
@@ -50,13 +50,13 @@ Consider what a typical ML workflow needs:
 
 **Model serving**: Getting predictions from models is fundamentally different from serving web applications. You need batching (processing multiple requests together is drastically more efficient on GPUs). You need versioning (serving model v1 and v2 simultaneously for A/B testing). You need scaling that understands inference latency, not just CPU utilization. Kubernetes Deployments aren't designed for this.
 
-**Distributed computing**: Modern neural networks often require more memory than a single GPU provides. Training GPT-3 required hundreds of GPUs working together, synchronized perfectly. Kubernetes can schedule pods across nodes, but it knows nothing about gradient synchronization or model parallelism.
+**Distributed computing**: Modern neural networks often require more memory than a single GPU provides. Modern large models often require multi-GPU or multi-node training with careful coordination between workers. Kubernetes can schedule pods across nodes, but it knows nothing about gradient synchronization or model parallelism.
 
 **AutoML and hyperparameter optimization**: Running thousands of experiments with different configurations, tracking which ones succeed, pruning unpromising ones early—this is a specialized orchestration problem that standard Kubernetes schedulers can't handle.
 
 These concerns don't fit neatly into Kubernetes primitives. That's why the ML community built a platform layer that sits on top of Kubernetes and speaks the language of ML engineering.
 
-**Did You Know?** The term "ML Platform" emerged around 2017-2018, as companies like Google, Uber, and Netflix all realized they were building similar internal systems. **D. Sculley**, the lead author of Google's famous "Hidden Technical Debt in Machine Learning Systems" paper, noted that by 2015, Google was spending more engineering effort on ML infrastructure than on model development. *"Models were maybe 5% of the code,"* he wrote. *"The other 95% was everything needed to actually run those models in production."* This realization—that ML infrastructure is harder than ML models—drove the creation of the tools we'll explore in this module.
+Work on ML technical debt helped popularize the idea that production ML systems require substantial supporting infrastructure beyond model code alone.
 
 The ML platform layer handles concerns specific to machine learning that Kubernetes alone can't address. It tracks artifacts like datasets, model checkpoints, and evaluation metrics. It coordinates distributed training across multiple machines. It manages model versioning and A/B testing. It optimizes GPU inference through techniques like batching and TensorRT compilation.
 
@@ -72,29 +72,29 @@ Imagine two companies, both building fraud detection systems. Company A has a br
 
 Company B uses Kubeflow. Their data scientist, also named Marcus, develops models in a Kubeflow notebook that's automatically versioned and connected to their artifact store. When a model is ready, he adds it to a pipeline that runs automatically whenever new training data arrives. The pipeline tracks every input and output. The model is deployed with a single click, with automatic rollback if quality degrades. When the model needs updating, the entire history is available: exact data, exact code, exact hyperparameters.
 
-Which company do you want to be when fraud losses hit $10 million?
+Which company do you want to be when model mistakes start costing real money?
 
 Before Kubeflow, ML teams typically lived in Company A's world. Jupyter notebooks sat on laptops, unversioned and unreproducible. Training scripts ran on whatever machine had a free GPU. Deployment was "SSH into a server and hope nothing breaks." There was no systematic way to answer basic questions: "Which dataset trained this model? What hyperparameters were used? What version of the feature engineering code?"
 
 Kubeflow's vision is to make ML development as rigorous as software engineering, with version control, CI/CD, and reproducible builds—but adapted for ML's unique needs. Just as software engineering evolved from "writing code" to "engineering software systems," ML engineering is evolving from "training models" to "building ML systems."
 
-**Did You Know?** Kubeflow was born in 2017 from an unexpected source: Google's frustration with their own internal ML platform. Google had built TFX (TensorFlow Extended), a powerful system for running ML pipelines. But TFX was so tightly coupled to Google's internal infrastructure that it was nearly impossible for external companies to use. **Jeremy Lewi**, a Google engineer, was tasked with making TFX portable. After months of effort, he realized the coupling was too deep—a new approach was needed. He and his team started fresh, building something designed from the ground up to be portable across any Kubernetes cluster. *"We realized 80% of what ML engineers were doing was infrastructure work, not ML work,"* Jeremy later explained. *"Kubeflow was our attempt to flip that ratio."* By 2023, Kubeflow had over 10,000 GitHub stars and was deployed by Spotify, Bloomberg, and Uber. It had become the de facto standard for open-source ML platforms.
+Kubeflow emerged to make ML workflows more portable and repeatable on Kubernetes, and it grew into a widely used open-source ML platform.
 
 ### Kubeflow's Architecture: A Complete ML Platform
 
-Kubeflow isn't a single tool—it's a collection of components that work together to cover the entire ML lifecycle. Understanding these components helps you know which parts you need:
+Kubeflow isn't a single tool—it's [a collection of components that work together to cover the entire ML lifecycle](https://github.com/kubeflow/kubeflow). Understanding these components helps you know which parts you need:
 
 **Kubeflow Pipelines** is the orchestration engine. It lets you define multi-step ML workflows as Python code, where each step is a container. Pipelines handles scheduling, artifact passing between steps, failure recovery, and caching. When you hear "Kubeflow," people often mean Kubeflow Pipelines specifically.
 
-**Kubeflow Notebooks** provides managed Jupyter notebooks running in Kubernetes. Unlike running Jupyter on your laptop, these notebooks have access to cluster resources—GPU nodes, distributed storage, and production data. They're also tied into the Kubeflow ecosystem, making it easy to turn experimental code into production pipelines.
+**Kubeflow Notebooks** provides [managed Jupyter notebooks running in Kubernetes](https://github.com/kubeflow/notebooks). Unlike running Jupyter on your laptop, these notebooks have access to cluster resources—GPU nodes, distributed storage, and production data. They're also tied into the Kubeflow ecosystem, making it easy to turn experimental code into production pipelines.
 
-**Katib** is Kubeflow's AutoML component, specializing in hyperparameter optimization. Instead of manually trying different learning rates and batch sizes, you define a search space and objective, and Katib runs experiments automatically, using algorithms like Bayesian optimization to find good configurations faster.
+**Katib** is Kubeflow's AutoML component, specializing in hyperparameter optimization. Instead of manually trying different learning rates and batch sizes, you define a search space and objective, and Katib runs experiments automatically, [using algorithms like Bayesian optimization](https://github.com/kubeflow/katib) to find good configurations faster.
 
-**Training Operators** handle distributed training for major frameworks. TensorFlow Training Operator, PyTorch Training Operator, and others understand how to set up distributed training jobs—creating the right number of workers, configuring communication, and handling failures.
+**Training Operators** [handle distributed training for major frameworks](https://github.com/kubeflow/trainer). TensorFlow Training Operator, PyTorch Training Operator, and others understand how to set up distributed training jobs—creating the right number of workers, configuring communication, and handling failures.
 
 **KServe** (formerly KFServing) provides serverless model serving. It's powerful enough that it's often used independently of the rest of Kubeflow. We'll cover it in detail in its own section.
 
-**Central Dashboard** is the UI that ties everything together, letting you monitor pipelines, manage notebooks, and track experiments from a single interface.
+**Central Dashboard** is [the UI that ties everything together, letting you monitor pipelines, manage notebooks, and track experiments from a single interface](https://github.com/kubeflow/dashboard).
 
 Think of Kubeflow like a kitchen in a professional restaurant. Kubeflow Pipelines is the head chef, orchestrating the entire meal preparation. Notebooks are where the sous chefs experiment with new dishes. Katib is like having a panel of food critics giving feedback on different flavor combinations. Training Operators are the specialized equipment—the commercial ovens and blast chillers that handle tasks beyond normal kitchen tools. KServe is the waitstaff, delivering the finished dishes to customers. And the Dashboard is the window into the kitchen where you can see everything happening at once.
 
@@ -102,7 +102,7 @@ Think of Kubeflow like a kitchen in a professional restaurant. Kubeflow Pipeline
 
 The heart of Kubeflow is its pipeline system. A pipeline is a directed acyclic graph (DAG) where each node is a containerized step, and edges represent data dependencies between steps.
 
-**Did You Know?** Kubeflow Pipelines was inspired by Apache Airflow, the workflow orchestration tool used by companies like Airbnb and Netflix. But there's a crucial difference. **Ajay Gopinathan**, a Kubeflow contributor at Google, explained the design decision: *"Airflow is great for data pipelines—moving data from A to B, running SQL queries, triggering services. But ML needs first-class artifact tracking. You can't reproduce an experiment if you don't know which exact dataset and which exact model checkpoint were used."* This insight led to Kubeflow's artifact-centric design. Every step in a Kubeflow pipeline explicitly declares its inputs (artifacts it needs) and outputs (artifacts it produces). The system tracks all of them, creating a complete lineage graph of how any artifact was created.
+Kubeflow Pipelines is designed for ML workflows where artifact passing, metadata, and reproducibility matter alongside orchestration.
 
 Here's what a real-world ML pipeline looks like in Kubeflow. Notice how each step is a self-contained component with typed inputs and outputs:
 
@@ -385,11 +385,11 @@ Each step has subtle complexities. Your autoscaler might scale based on CPU, but
 
 KServe does all of this with a single YAML file. It's the inference equivalent of Kubernetes for containers—it abstracts away the complexity and lets you focus on the model itself.
 
-**Did You Know?** KServe was originally called KFServing (Kubeflow Serving), reflecting its origins as part of the Kubeflow project. It was renamed in 2021 to reflect its independence. **Dan Sun**, KServe's lead maintainer from Bloomberg, explained the change: *"We realized KFServing had outgrown Kubeflow. Companies were adopting it without the rest of Kubeflow. The rename acknowledged that reality."* Bloomberg now serves thousands of models through KServe, from small scikit-learn classifiers to large transformer models. The renaming also reflected a broader truth about the ML ecosystem: while the tools can work together, they're also valuable independently.
+**Did You Know?** KServe was originally called KFServing (Kubeflow Serving), reflecting its origins as part of the Kubeflow project. It was renamed in 2021 to reflect its independence. KServe grew into a standalone serving project that organizations can adopt independently of the rest of Kubeflow. The renaming also reflected a broader truth about the ML ecosystem: while the tools can work together, they're also valuable independently.
 
 ### How KServe Works: The InferenceService
 
-KServe introduces a custom Kubernetes resource called InferenceService. Instead of writing Deployments, Services, and autoscalers, you declare what model you want to serve and how, and KServe handles the rest:
+KServe introduces [a custom Kubernetes resource called InferenceService](https://github.com/kserve/kserve). Instead of writing Deployments, Services, and autoscalers, you declare what model you want to serve and how, and KServe handles the rest:
 
 ```yaml
 apiVersion: serving.kserve.io/v1beta1
@@ -419,7 +419,7 @@ This single YAML file accomplishes what would require hundreds of lines of confi
 
 **Multi-framework support**: KServe natively supports scikit-learn, TensorFlow, PyTorch, XGBoost, LightGBM, ONNX, and Hugging Face models. The `sklearn:` field in our example tells KServe to use its scikit-learn server. For a PyTorch model, you'd use `pytorch:`. Each framework has a pre-built serving container optimized for that framework.
 
-**Model storage integration**: The `storageUri` field supports S3, Google Cloud Storage, Azure Blob Storage, and PVCs. KServe automatically downloads the model from storage when the pod starts. You never have to worry about model shipping—just push to your model registry and update the URI.
+**Model storage integration**: The `storageUri` field supports S3, Google Cloud Storage, Azure Blob Storage, and PVCs. KServe automatically downloads the model from storage when the pod starts. You usually do not have to worry much about model shipping—just push to your model registry and update the URI.
 
 **Intelligent autoscaling**: KServe uses Knative Serving under the hood, which provides much smarter autoscaling than standard Kubernetes HPA. The `scaleMetric: concurrency` option scales based on concurrent requests, not CPU. This is crucial for inference—GPU-heavy models often show low CPU utilization even under high load. Scaling on concurrency ensures you add replicas when requests are queuing, not when CPU spikes.
 
@@ -461,7 +461,7 @@ spec:
       storageUri: "s3://models/fraud-explainer"
 ```
 
-When a request arrives, it flows through transformer → predictor → transformer (for postprocessing) → explainer (if explanation is requested). KServe handles the routing automatically.
+When a request arrives, [it flows through transformer → predictor → transformer (for postprocessing) → explainer (if explanation is requested). KServe handles the routing automatically](https://github.com/kserve/kserve).
 
 ### Canary Deployments: Safe Model Rollouts
 
@@ -471,7 +471,7 @@ Deploying a new model version is risky. The model that performed beautifully on 
 
 Think of it like testing a new recipe at a restaurant. Instead of changing the entire menu immediately, you offer the new dish as a special to a few tables and watch how they react. If customers love it, you add it to the regular menu. If they don't, you tweak the recipe without having ruined dinner for everyone.
 
-KServe makes canary deployments trivial:
+KServe makes [canary deployments](https://github.com/kserve/kserve) trivial:
 
 ```yaml
 apiVersion: serving.kserve.io/v1beta1
@@ -486,9 +486,9 @@ spec:
       storageUri: "gs://models/recommendation/v4"
 ```
 
-With this configuration, 10% of traffic goes to v4 (the canary) and 90% stays on the previous version. You monitor metrics like latency, error rate, and business KPIs for both versions. If v4 performs better, you gradually increase traffic: 10% → 25% → 50% → 100%. If v4 has problems, you set `canaryTrafficPercent: 0` and roll back instantly.
+With this configuration, 10% of traffic goes to v4 (the canary) and 90% stays on the previous version. You monitor metrics like latency, error rate, and business KPIs for both versions. If v4 performs better, you gradually increase traffic: 10% → 25% → 50% → 100%. If v4 has problems, you set `canaryTrafficPercent: 0` and roll back quickly.
 
-The beauty of this approach is that your blast radius is limited. If the new model is catastrophically broken, only 10% of users are affected. Compare this to a traditional deployment where 100% of users suddenly hit a broken model.
+The beauty of this approach is that your blast radius is limited. If the new model is catastrophically broken, only 10% of users are affected. Compare this to a traditional deployment where most users can suddenly hit a broken model.
 
 ---
 
@@ -502,7 +502,7 @@ Traditional distributed computing frameworks like Apache Spark are designed for 
 
 Ray is designed specifically for the communication patterns that ML needs. It provides primitives for remote functions, actors (stateful objects), and data objects that can be shared across processes. Building on these primitives, it offers Ray Train for distributed training, Ray Tune for hyperparameter search, and Ray Serve for serving.
 
-**Did You Know?** Ray was created at UC Berkeley's RISELab by **Robert Nishihara** and **Philipp Moritz**, who were PhD students at the time. The name "Ray" refers to rays of light spreading out from a source—symbolizing how tasks fan out across a cluster. Their key insight was that ML workloads have different needs than traditional data processing: *"Existing systems like Spark were great for data processing, but terrible for ML. Training a neural network isn't MapReduce—it needs tight communication between workers. Spark's shuffle-based model added too much latency."* Ray's architecture—with its shared-memory object store and low-latency task scheduling—was designed from scratch for ML communication patterns. OpenAI uses Ray to coordinate training across thousands of GPUs, and it's used by companies like Uber, Amazon, and LinkedIn.
+Ray originated in academic work on distributed systems for AI workloads and was designed around low-latency distributed execution patterns that fit machine learning better than traditional data-processing frameworks.
 
 ### Ray's Architecture: How It Works
 
@@ -553,7 +553,7 @@ spec:
             cloud.google.com/gke-accelerator: nvidia-tesla-a100
 ```
 
-The cluster starts with 4 GPU workers but can autoscale up to 16 based on demand. When you submit a job that requires more workers than are available, the autoscaler spins up additional workers. When jobs finish and workers become idle, it scales back down to save costs.
+The cluster starts with 4 GPU workers but [can autoscale up to 16 based on demand](https://github.com/ray-project/kuberay). When you submit a job that requires more workers than are available, the autoscaler spins up additional workers. When jobs finish and workers become idle, it scales back down to save costs.
 
 ### Ray Train: Distributed Training Without the Pain
 
@@ -687,7 +687,7 @@ print(f"Best config: {analysis.best_config}")
 print(f"Best accuracy: {analysis.best_result['accuracy']:.2f}%")
 ```
 
-The ASHA scheduler is particularly powerful. It runs many configurations with a small budget initially (few epochs), evaluates which ones look promising, and kills the rest. It then gives more budget to the survivors and repeats. This approach can find good configurations 10-100x faster than running all configurations to completion.
+The ASHA scheduler is particularly powerful. It runs many configurations with a small budget initially (few epochs), evaluates which ones look promising, and kills the rest. It then gives more budget to the survivors and repeats. This approach can dramatically cut the compute needed to find strong configurations compared with running every trial to completion.
 
 ---
 
@@ -707,7 +707,7 @@ This is catastrophically inefficient. GPUs are designed for parallel processing�
 
 The solution is batching: collecting multiple requests, processing them together, and returning the results. Matrix multiplication scales beautifully with batch size. Processing 32 requests takes almost the same time as processing 1 request, because the GPU can parallelize across the batch dimension.
 
-**Did You Know?** **Deepu Talla**, VP of Autonomous Vehicles at NVIDIA, revealed that NVIDIA's early self-driving car prototypes spent only 10% of GPU time on actual inference—the rest was waiting for data. This insight was embarrassing but illuminating: *"We had these incredibly powerful GPUs sitting mostly idle. The bottleneck wasn't compute—it was how we fed data to the compute."* That insight led to Triton's dynamic batching feature. Instead of processing requests immediately, Triton waits a configurable amount of time (microseconds to milliseconds) to collect a batch, then processes them together. With dynamic batching, Triton can achieve 10x higher throughput than naive serving. For high-traffic production systems, this is the difference between needing 10 GPUs and needing 100.
+A common inference bottleneck is not raw GPU compute but how efficiently requests are batched and fed into the accelerator. That insight led to Triton's dynamic batching feature. Instead of processing requests immediately, Triton waits a configurable amount of time (microseconds to milliseconds) to collect a batch, then processes them together. With dynamic batching, Triton can achieve 10x higher throughput than naive serving. For high-traffic production systems, this is the difference between needing 10 GPUs and needing 100.
 
 ### How Triton Works
 
@@ -717,7 +717,7 @@ Triton Inference Server is NVIDIA's production inference platform. It's designed
 
 **Concurrent model execution**: You can run multiple instances of a model on the same GPU, or spread instances across multiple GPUs. Triton handles request routing to maximize throughput.
 
-**Multi-framework support**: Triton supports TensorFlow, PyTorch, ONNX, TensorRT, and custom backends. You can serve different models using different frameworks from the same server.
+**Multi-framework support**: [Triton supports TensorFlow, PyTorch, ONNX, TensorRT, and custom backends](https://github.com/triton-inference-server/server/blob/main/docs/README.md). You can serve different models using different frameworks from the same server.
 
 **Model ensembles**: Triton can chain models together. A text classification pipeline might have: tokenizer → encoder → classifier. Each stage can be a separate model with its own optimization. Triton handles routing between stages and batches across the entire pipeline.
 
@@ -828,7 +828,7 @@ Choosing between these tools isn't always obvious. Here's a framework for thinki
 
 **Add KServe** when you need intelligent autoscaling, canary deployments, or scale-to-zero. KServe's value is in its serverless semantics—you think about models, not pods.
 
-**Add Triton** when throughput matters. If you're processing more than 1000 requests per second per model, Triton's dynamic batching can dramatically reduce the hardware you need. It's the difference between needing 10 GPUs and needing 100.
+**Add Triton** when throughput matters. At high request volumes, Triton's dynamic batching can materially reduce the hardware needed for a serving workload.
 
 **Add Kubeflow Pipelines** when you need orchestrated workflows with artifact tracking. If you're running experiments and need to know which data, code, and hyperparameters produced each model, Kubeflow Pipelines is the answer.
 
@@ -899,7 +899,7 @@ compiler.Compiler().compile(math_pipeline, "pipeline.yaml")
 print("Pipeline compiled to pipeline.yaml")
 ```
 
-The `compiler.Compiler().compile()` step only requires the `kfp` SDK—no running Kubeflow instance is needed. The output `pipeline.yaml` is an Argo Workflows manifest. In a real environment with Kubeflow deployed, you would upload this file to the Kubeflow Pipelines UI (Pipelines → Upload pipeline) to visualize the DAG and run it against your cluster.
+The `compiler.Compiler().compile()` step only requires the `kfp` SDK—no running Kubeflow instance is needed. The output `pipeline.yaml` is a compiled Kubeflow Pipelines specification that can be uploaded to a Kubeflow Pipelines UI. In a real environment with Kubeflow deployed, you would upload this file to the Kubeflow Pipelines UI (Pipelines → Upload pipeline) to visualize the DAG and run it against your cluster.
 
 ### Exercise 3: Deploy a Ray Cluster
 
@@ -1034,9 +1034,9 @@ The `kubectl exec` approach connects directly to the Ray head pod without requir
 
 ##  Did You Know?
 
-**The 80/20 Rule of MLOps**: Multiple studies have confirmed what **Jeremy Lewi** observed at Google: roughly 80% of ML engineering effort goes into infrastructure, not models. Kubeflow's goal is to flip this ratio by making infrastructure disappear into declarative configuration.
+A large share of production ML work goes into data, infrastructure, deployment, and monitoring rather than model code alone.
 
-**Kubernetes Was Never Designed for ML**: When Google donated Kubernetes to open source in 2014, GPUs weren't even in the picture. GPU support was added later, and ML-specific concerns like artifact tracking, distributed training, and model serving had to be built as extensions. The tools in this module are those extensions.
+Kubernetes predates today's ML-on-Kubernetes stack, and many ML-specific needs such as artifact handling, distributed training workflows, and specialized serving layers are addressed by tools built on top of it.
 
 **The $440 Million Lesson**: Knight Capital's 2012 trading disaster (where a software deployment error caused $440 million in losses in 45 minutes) is studied in ML platform engineering. The parallel is clear: deploying a broken model to production can be just as catastrophic as deploying broken trading code. Canary deployments and gradual rollouts aren't just nice-to-haves—they're risk management.
 
@@ -1054,4 +1054,17 @@ You now understand the advanced Kubernetes tools for ML at scale! These platform
 
 *Remember Spotify's silent recommendations: the gap between "running a container" and "running ML at scale" is a platform, not just more containers. The platform is what makes the difference between 4 hours to diagnose an incident and 4 seconds.*
 
-*"The best ML model is worthless if it can't serve predictions reliably at scale. The ML platform layer is what makes reliability possible."* — Lessons from the ML trenches
+Reliable prediction serving at scale depends on the surrounding platform, not just the model itself.
+
+## Sources
+
+- [github.com: pipelines](https://github.com/kubeflow/pipelines) — General lesson point for an illustrative rewrite.
+- [github.com: kserve](https://github.com/kserve/kserve) — The KServe project README directly describes autoscaling, scale-to-zero, and canary rollouts.
+- [github.com: kuberay](https://github.com/ray-project/kuberay) — General lesson point for an illustrative rewrite.
+- [github.com: README.md](https://github.com/triton-inference-server/server/blob/main/docs/README.md) — General lesson point for an illustrative rewrite.
+- [github.com: kubeflow](https://github.com/kubeflow/kubeflow) — General lesson point for an illustrative rewrite.
+- [github.com: notebooks](https://github.com/kubeflow/notebooks) — The Kubeflow Notebooks repository README directly documents these capabilities.
+- [github.com: katib](https://github.com/kubeflow/katib) — The Katib repository README states that Katib provides hyperparameter tuning and AutoML capabilities.
+- [github.com: trainer](https://github.com/kubeflow/trainer) — Kubeflow's trainer project explicitly describes distributed AI model training on Kubernetes.
+- [github.com: dashboard](https://github.com/kubeflow/dashboard) — The Dashboard repository README identifies it as Kubeflow's web-based hub.
+- [Ray: A Distributed Framework for Emerging AI Applications](https://www.usenix.org/conference/osdi18/presentation/moritz) — Primary architectural source for Ray's distributed scheduler and object-store design.

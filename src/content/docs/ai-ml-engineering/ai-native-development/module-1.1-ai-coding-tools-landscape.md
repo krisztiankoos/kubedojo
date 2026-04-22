@@ -24,9 +24,9 @@ By the end of this module, you will:
 - Complete your first AI-assisted coding project
 - Understand the limitations and ethical considerations
 
-**Why this matters**: AI coding assistants are the most significant productivity tool since IDEs were invented. Developers who master them are 3-10x more productive. Those who don't are being left behind.
+**Why this matters**: AI coding assistants are the most significant productivity tool since IDEs were invented. Developers who use them well can see substantial productivity gains, though the exact gain varies by task and team. Those who don't are being left behind.
 
-**2025 Update**: The landscape has evolved dramatically! Terminal/CLI coding agents (OpenAI Codex CLI, Gemini CLI) are now the most powerful category. FREE tiers have improved significantly (Gemini CLI is excellent!). This module now covers **13 major tools** with verified 2025 pricing.
+**2025 Update**: The landscape has evolved dramatically! Terminal/CLI coding agents (OpenAI Codex CLI, Gemini CLI) are now the most powerful category. FREE tiers have improved significantly (Gemini CLI is excellent!). This module surveys a broad set of major AI coding tools, but pricing and plan details should be checked against current vendor pages.
 
 ---
 
@@ -63,17 +63,17 @@ Hour 2: Run tests AI generated, fix one edge case
 Result: 2 hours for production-ready auth, energized
 ```
 
-**The difference**: 8 hours of grinding vs 2 hours of directing. 75% time saved.
+**The difference**: less time spent typing and more time spent directing, reviewing, and integrating AI-generated work.
 
 ---
 
 ## Did You Know? The Hidden Impact of AI Coding
 
 **Real data from GitHub (2024)**:
-- **55% of professional developers** use AI coding assistants daily
-- **40% of new code** at companies using Copilot is AI-generated
+- Many professional developers now use AI coding assistants regularly.
+- Organizations using AI coding tools often report that a meaningful share of new code is AI-assisted.
 - **87% faster** task completion for developers who use AI effectively
-- **#1 skill gap**: Knowing HOW to direct AI, not IF to use it
+- A major skill shift is learning how to direct and verify AI effectively, not whether to try it at all.
 
 **But here's the paradox**: Developers now write MORE code in less time, but spend MORE time on design and architecture. The bottleneck shifted from typing to thinking.
 
@@ -116,19 +116,19 @@ The best developers in 2025 aren't those who can write the most code. They're th
 - GitHub Copilot launches
 - AI suggests next lines as you type
 - Like smart autocomplete on steroids
-- **Impact**: 30-50% faster coding for boilerplate
+- **Impact**: noticeably faster work on boilerplate and repetitive code.
 
 **Wave 2: Chat + Code (2023-2024)**
 - ChatGPT for coding, Claude, Gemini
 - Conversational AI that explains and codes
 - Can handle complex multi-step tasks
-- **Impact**: 2-5x faster for new features, debugging
+- **Impact**: often much faster for new features, debugging, and exploratory implementation.
 
 **Wave 3: Agentic AI (2024-2025)** ← We are here
 - AI that can read your entire codebase
 - Takes multi-step autonomous actions
 - Edits multiple files, runs commands, tests code
-- **Impact**: 5-10x faster for refactoring, migrations, complex tasks
+- **Impact**: can dramatically speed up refactoring, migrations, and other multi-step tasks.
 
 **You'll learn to use all three waves together.**
 
@@ -168,7 +168,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - Generating unit tests
 - Boilerplate code (getters, setters, CRUD operations)
 
-**Pricing**: $10/month individual, $19/month business (free for students, open source maintainers)
+**Pricing**: [$10/month individual, $19/month business (free for students, open source maintainers)](https://docs.github.com/en/copilot/get-started/plans)
 
 **Real-world example**: You write `def calculate_fibonacci(n):` and Copilot suggests the entire implementation in 0.5 seconds.
 
@@ -195,7 +195,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - Developers who want on-device AI
 - Teams wanting to train on proprietary codebases
 
-**Pricing**: Free tier, $12/month Pro, custom Enterprise pricing
+**Pricing**: Tabnine offers paid plans, but current packaging and pricing should be checked on the vendor site.
 
 **Real-world example**: Finance company trains Tabnine on their internal trading system code - AI learns company-specific patterns without code leaving their network.
 
@@ -222,13 +222,13 @@ The landscape has exploded with options. Here's your decision matrix:
 - Developers wanting to try AI coding without payment
 - Teams on tight budgets
 
-**Pricing**: Free for individuals, $12/user/month for teams
+**Pricing**: Codeium positioned itself around a free individual tier, but current plan names and prices should be checked on the vendor site.
 
 **Real-world example**: Bootcamp students use Codeium to learn faster without spending $10/month - generates React components while they learn the patterns.
 
 ---
 
-##  Category 2: AI-First IDEs
+## Category 2: AI-First IDEs
 
 **The Personality**: These are **AI-native workshops** - built from ground up for AI-driven development.
 
@@ -275,8 +275,8 @@ The landscape has exploded with options. Here's your decision matrix:
 - **Annual plans**: 20% discount
 
 **Recent Changes (2025)**:
-- June 2025: Replaced request caps with usage credit pool system
-- August 2025: Auto (agentic coding) now contributes to monthly usage
+- Cursor's pricing and usage model has changed over time.
+- Usage accounting for Cursor's agentic features has changed over time.
 - Hybrid model: flat monthly fee + included usage credits + optional overages
 
 **Real-world example**: "Refactor this Express app to use TypeScript and add input validation to all endpoints" - Cursor edits 15 files, adds types, validation, tests in 5 minutes.
@@ -304,7 +304,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - Teams evaluating AI-first IDEs
 - Students learning agentic AI coding
 
-**Pricing**: Free tier (limited usage), $10/month Pro
+**Pricing**: Windsurf offers a free tier and paid plans, but the current prices should be checked on the vendor site.
 
 **Real-world example**: Student uses Windsurf free tier to build entire Flask API with authentication, database, and tests - would cost $5+ in Cursor API fees.
 
@@ -318,7 +318,7 @@ The landscape has exploded with options. Here's your decision matrix:
 
 #### 6. **OpenAI Codex CLI** ⭐ NEW 2025 (Game-Changing!)
 
-**What it is**: Official OpenAI terminal coding agent (launched October 2025)
+**What it is**: Official OpenAI coding agent available through the CLI, IDE extensions, web, and app.
 
 **The Good**:
 - **INCLUDED with ChatGPT Plus/Pro** ($20/month) - NO additional API costs!
@@ -326,7 +326,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - IDE extensions available (VSCode, Cursor, Windsurf)
 - Uses GPT-5.1-Codex-Max (most advanced OpenAI coding model)
 - Works across millions of tokens (project-scale refactors)
-- 95% of OpenAI engineers use it weekly
+- [95% of OpenAI engineers use it weekly](https://openai.com/index/gpt-5-1-codex-max/)
 - ReAct loop for complex multi-step tasks
 - Available in CLI, IDE extensions, and web
 
@@ -341,14 +341,14 @@ The landscape has exploded with options. Here's your decision matrix:
 - Multi-step autonomous coding tasks
 - Terminal-first workflows
 
-**Pricing**: **INCLUDED** with ChatGPT Plus ($20/month), Pro ($200/month), Business, Edu, Enterprise - No additional API costs!
+**Pricing**: **INCLUDED** with [ChatGPT Plus ($20/month), Pro ($200/month), Business, Edu, Enterprise](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan) - No additional API costs!
 
 **Real-world impact**:
 - Used by Duolingo, Vanta, Cisco, Rakuten
 - Engineers ship **70% more PRs** after adopting Codex
 - "Migrate entire Python 2 codebase to Python 3 across 200 files" - Codex CLI works autonomously for hours
 
-**This is huge!** OpenAI Codex CLI is the ONLY major coding tool included in a chat subscription. ChatGPT Plus now gives you both unlimited web chat AND a powerful terminal coding agent!
+**This is huge!** OpenAI Codex CLI is one of the few major coding tools included in a chat subscription. ChatGPT Plus now gives you both unlimited web chat AND a powerful terminal coding agent!
 
 ---
 
@@ -360,7 +360,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - **FREE tier** with generous limits (just login with Google account!)
 - Gemini 2.5 Pro with **1 million token** context window (largest available!)
 - 60 requests/minute, 1,000 requests/day on free tier
-- Open source (70,000+ GitHub stars, 2,800+ community PRs)
+- Open source, with a large and active GitHub community.
 - ReAct loop with tool use
 - MCP server support
 - Integrated with Gemini Code Assist (Agent Mode in VS Code)
@@ -378,7 +378,7 @@ The landscape has exploded with options. Here's your decision matrix:
 - Students and learners
 
 **Pricing**:
-- **Free**: Gemini Code Assist license (2.5 Pro, 1M context, 60 req/min, 1K req/day)
+- **Free**: [Gemini Code Assist license (2.5 Pro, 1M context, 60 req/min, 1K req/day)](https://github.com/google-gemini/gemini-cli)
 - **Standard**: Paid tier for higher limits
 - **Enterprise**: Enterprise features and support
 
@@ -426,7 +426,7 @@ The landscape has exploded with options. Here's your decision matrix:
 
 **The Good**:
 - Autonomous coding agent (can work for minutes unsupervised)
-- Can create files, run commands, read output
+- [Can create files, run commands, read output](https://github.com/cline/cline/blob/main/README.md)
 - Works with Claude, gpt-5, local models
 - Browser automation capabilities
 - Integrated with VS Code but CLI-like power
@@ -449,7 +449,7 @@ The landscape has exploded with options. Here's your decision matrix:
 
 #### 9b. **Goose** by Block (Square)  (Full Automation Champion)
 
-**What it is**: Open-source AI agent for full software development automation from Block (formerly Square)
+**What it is**: Open-source AI agent for software development automation.
 
 **The Good**:
 - **Fully autonomous** - can work for extended periods without human intervention
@@ -486,7 +486,7 @@ The landscape has exploded with options. Here's your decision matrix:
 **What it is**: Natural language interface to your computer's code interpreter
 
 **The Good**:
-- **Runs code locally** in Python, JavaScript, shell, and more
+- **[Runs code locally](https://github.com/openinterpreter/open-interpreter)** in Python, JavaScript, shell, and more
 - Direct computer control (files, applications, terminal)
 - Works with Ollama for local LLMs
 - Streaming output (see results as they happen)
@@ -513,11 +513,11 @@ The landscape has exploded with options. Here's your decision matrix:
 
 ---
 
-##  MCP-Enabled Tools: The 2025 Game Changer
+## MCP-Enabled Tools: The 2025 Game Changer
 
 ### What is MCP (Model Context Protocol)?
 
-**MCP** is Anthropic's open standard for connecting AI assistants to external tools and data sources. Think of it as "USB for AI" - a universal way for AI tools to plug into your development environment.
+**MCP** is Anthropic's open standard for connecting AI assistants to external tools and data sources. Think of it as "USB for AI" - a common way for AI tools to plug into your development environment.
 
 **Why MCP matters**:
 -  **File system access**: AI can read/write project files
@@ -656,11 +656,11 @@ interpreter.chat("Create a bar chart of monthly sales")
 
 **November 2024**: Anthropic announced MCP (Model Context Protocol) as an open standard. Within 3 months:
 
-- **500+ MCP servers** were created by the community
-- **All major AI coding tools** added MCP support
+- A large ecosystem of community MCP servers emerged quickly after the protocol was introduced.
+- MCP support spread quickly across the AI tooling ecosystem.
 - **Enterprise adoption** exploded (companies can now connect AI to internal systems safely)
 
-**The insight that led to MCP**: Anthropic engineers noticed that 80% of AI coding tool limitations came from **context access**, not model capability. An AI that can't read your database schema will always give generic advice. MCP solves this.
+**The insight that led to MCP**: A major limitation of many AI coding tools is access to the right context, not just raw model quality. An AI that can't read your database schema will always give generic advice. MCP solves this.
 
 **Why this matters for Kaizen**: Your Lean DevOps platform can expose internal APIs via MCP servers. AI agents can then:
 - Query your metrics database
@@ -724,7 +724,7 @@ Primary: Open Interpreter
 
 **The Not-So-Good**:
 - ️ Requires Claude API key (pay-per-use)
-- ️ **NOT included with Claude Pro subscription** ($20/month web chat subscription does NOT give you API access!)
+- Claude Code access and Anthropic API billing should be checked against Anthropic's current plan documentation, because subscription and API entitlements are distinct and have changed over time.
 - ️ Standard API pricing (can add up with heavy use)
 - ️ Terminal-only (no GUI)
 
@@ -740,7 +740,7 @@ Primary: Open Interpreter
   - Sonnet 4.5: $3/M input tokens, $15/M output tokens
   - Opus 4.1: More expensive (check current pricing)
   - Haiku 3.5: Cheapest option
-- **~$3-5 for this entire Neural Dojo curriculum**
+- Actual Claude Code cost depends on model choice, context size, and how heavily you use the tool.
 - **️ IMPORTANT**: Claude Pro ($20/month) subscription only gives you web chat access, NOT API access for Claude Code CLI!
 
 **Real-world example**: "Read this GitHub issue, write code to fix it, run tests, commit with descriptive message, open PR" - Claude Code handles entire workflow.
@@ -782,7 +782,7 @@ Primary: Open Interpreter
 
 ---
 
-##  Category 5: General AI for Coding
+## Category 5: General AI for Coding
 
 **The Personality**: These are **versatile mentors** - not specialized for code, but excellent at it.
 
@@ -812,7 +812,7 @@ Primary: Open Interpreter
 - Code review outside your editor
 - Algorithm design
 
-**Pricing**: Free tier or $20/month Plus ($200/month Pro for O1 access)
+**Pricing**: Free, Plus, and Pro plans are available; check OpenAI's current pricing page for exact plan features.
 
 **Real-world example**: Stuck on a complex algorithm, paste it into ChatGPT: "Explain this binary tree traversal and suggest optimizations" - get detailed explanation with visualizations, complexity analysis, and 3 alternative approaches.
 
@@ -825,7 +825,7 @@ Primary: Open Interpreter
 **The Good**:
 - Free tier available (generous limits)
 - Integrated with Google Workspace
-- Long context window (2M tokens in Pro!)
+- Long-context capabilities are a major part of Gemini's positioning, but the exact limits depend on Google's current plan offerings.
 - Code execution capabilities
 - Multimodal (can analyze images, diagrams, screenshots)
 - Google Search integration
@@ -841,7 +841,7 @@ Primary: Open Interpreter
 - Multimodal tasks (analyzing architecture diagrams)
 - Free tier users
 
-**Pricing**: Free tier, $20/month for Advanced
+**Pricing**: Google offers free and paid Gemini consumer plans, but the current plan names and prices should be checked on Google's site.
 
 **Website**: https://gemini.google.com/
 
@@ -851,7 +851,7 @@ Primary: Open Interpreter
 
 ## CRITICAL: Subscriptions vs API Access (Read This Carefully!)
 
-### The #1 Confusion in AI Coding (90% of Beginners Get This Wrong!)
+### A Common Confusion in AI Coding
 
 **Question**: "I have ChatGPT Plus. Can I use it with Aider.ai?"
 **Answer**: **NO**  (Except: OpenAI Codex CLI IS included!)
@@ -873,9 +873,9 @@ Primary: Open Interpreter
 
 | Product | Price | What You Get | Can Use With Coding Tools? |
 |---------|-------|--------------|---------------------------|
-| **ChatGPT Plus** | $20/mo | Unlimited web chat + **Codex CLI** |  No (except Codex CLI) |
-| **Claude Pro** | $20/mo | 5× more web chat usage |  No - web only |
-| **Gemini Advanced** | $20/mo | Web chat + Google Workspace |  No - web only |
+| **ChatGPT Plus** | $20/mo | Paid ChatGPT access with Codex availability governed by current plan limits |  No (except where an included OpenAI coding tool is explicitly provided) |
+| **Claude Pro** | $20/mo | Paid Claude app access; current Claude Code and API entitlements should be checked in Anthropic's latest plan docs |  Not the same thing as standalone API billing |
+| **Google's Gemini consumer plan** |  | Consumer Gemini access with feature limits and integrations defined by Google's current plan docs |  Separate from API credentials used by external coding tools |
 
 **What subscriptions give you**:
 - Unlimited access to web chat interface
@@ -1564,7 +1564,7 @@ You: "Create user validation function
 AI: [Generates function + comprehensive tests]
 ```
 
-**Benefit**: Catch AI mistakes immediately, ensure correctness, documentation
+**Benefit**: Catch AI mistakes earlier, improve correctness, documentation
 
 ---
 
@@ -1892,7 +1892,61 @@ AI: [Generates implementation + comprehensive tests]
 
 ---
 
-##  AI Coding Patterns (Master These!)
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team needs to refactor a legacy Express app into TypeScript, add input validation to every endpoint, and update tests across more than a dozen files. One developer suggests GitHub Copilot because it is fast, while another suggests Cursor. Based on the module, which tool is the better fit, and why?
+
+<details>
+<summary>Answer</summary>
+Cursor is the better fit because this is a multi-file, agentic refactoring task. The module describes Copilot as strongest for fast inline autocomplete and boilerplate within a limited context, while Cursor can read the whole project, edit multiple files, explain its reasoning, and handle complex refactors. This scenario matches Cursor's strengths far better than line-by-line autocomplete.
+</details>
+
+**Q2.** You already pay for Claude Pro and want to use Claude Code CLI to work through a large codebase from your terminal. A teammate says your subscription should cover it. What should you actually expect, and what do you need to do?
+
+<details>
+<summary>Answer</summary>
+Claude Pro does not include Claude Code CLI access. The module makes a strong distinction between chat subscriptions and API access: Claude Pro is for the web chat experience, while Claude Code CLI requires a separate Anthropic API key with pay-per-use billing. The correct next step is to get API access from Anthropic rather than assuming the web subscription covers terminal tooling.
+</details>
+
+**Q3.** A student on a tight budget wants an AI setup for learning that costs as close to zero as possible. They need autocomplete, help with long-context code analysis, and basic chat assistance. Using the module's recommendations, what stack should they choose?
+
+<details>
+<summary>Answer</summary>
+The best fit is the module's free-tier stack: Gemini CLI for long-context analysis, Codeium for free autocomplete, ChatGPT Free for ad-hoc help, and VS Code as the editor. This combination matches the student's budget constraints and still provides a capable setup for learning AI-assisted development without paying monthly subscription fees.
+</details>
+
+**Q4.** Your AI assistant generates a user authentication feature in one pass, including database queries and password handling. The code looks clean and passes a basic smoke test. What should you do before accepting it, and why?
+
+<details>
+<summary>Answer</summary>
+You should review it carefully for security issues and request or run comprehensive tests before accepting it. The module warns that AI is weak on security-critical code and can introduce problems like SQL injection, insecure password hashing, missing input validation, or subtle logic flaws. "Trust, but verify" is the correct approach here, especially for authentication code.
+</details>
+
+**Q5.** Your team is building an internal platform and wants AI tools to query a PostgreSQL schema, read project files, and trigger approved workflows through a consistent interface. One engineer proposes custom one-off integrations for every tool. Based on the module, what concept would simplify this, and why does it matter?
+
+<details>
+<summary>Answer</summary>
+MCP, the Model Context Protocol, would simplify this. The module describes MCP as a universal way for AI tools to connect to filesystems, databases, APIs, and custom tools through a common interface. It matters because it reduces tool-specific integration work and lets multiple AI coding tools interact with the same internal systems consistently.
+</details>
+
+**Q6.** You ask an AI tool, "Build a complete user management system with CRUD, auth, role-based access, email verification, password reset, session management, and audit logging," and it returns 500 lines of code you do not fully understand. According to the module, what was the mistake, and what workflow would have been better?
+
+<details>
+<summary>Answer</summary>
+The mistake was asking for too much at once and then treating the output as trustworthy despite not understanding it. The module recommends iterating in small steps instead: start with the user model, then CRUD, then password hashing, then auth, and so on. That workflow makes the code easier to review, easier to test, and much safer to integrate.
+</details>
+
+**Q7.** A developer on your team wants the fastest possible help for repetitive boilerplate during everyday coding, not long-running autonomous tasks or project-wide refactors. They mostly stay inside their existing IDE and want suggestions in under a second. Which category of tools best fits this scenario, and why?
+
+<details>
+<summary>Answer</summary>
+An autocomplete-first tool such as GitHub Copilot, Tabnine, or Codeium is the best fit. The module explains that these tools are optimized for fast inline suggestions, boilerplate generation, and completing patterns as you type. They are ideal when the goal is speed inside the IDE rather than agentic multi-step work across the codebase.
+</details>
+
+<!-- /v4:generated -->
+## AI Coding Patterns (Master These!)
 
 ### Pattern 1: The Specification Pattern
 
@@ -2224,7 +2278,7 @@ AI coding assistants in 2025 still can't:
 - **Understand your product vision** (you define requirements)
 - **Make architectural decisions** (you choose patterns)
 - **Debug complex distributed systems** (needs human intuition)
-- **Write perfectly secure code** (always verify auth, crypto, validation)
+- Write security-critical code safely without review (always verify auth, crypto, validation)
 - **Replace code review** (AI code still needs human review)
 - **Understand business context** (unique to your company)
 - **Replace you** (AI amplifies developers, doesn't replace them)
@@ -2641,3 +2695,13 @@ _Last updated: 2025-11-22 (Fact-Checked for 2025 - All Pricing Verified)_
 _Module status:  Complete + Fact-Checked_
 _Tools covered: 13 (Added: OpenAI Codex CLI, Gemini CLI)_
 _Critical addition: Subscriptions vs API Access section_
+
+## Sources
+
+- [docs.github.com: plans](https://docs.github.com/en/copilot/get-started/plans) — GitHub's plans page directly documents Copilot pricing and eligibility for free access.
+- [help.openai.com: 11369540 using codex with your chatgpt plan](https://help.openai.com/en/articles/11369540-using-codex-with-your-chatgpt-plan) — OpenAI's Codex plan article directly documents plan inclusion and supported surfaces.
+- [openai.com: gpt 5 1 codex max](https://openai.com/index/gpt-5-1-codex-max/) — OpenAI's GPT-5.1-Codex-Max launch page directly states these capability and internal-usage claims.
+- [github.com: gemini cli](https://github.com/google-gemini/gemini-cli) — The official GitHub repository README lists the free-tier limits, context window, open-source status, and MCP support.
+- [github.com: README.md](https://github.com/cline/cline/blob/main/README.md) — The official Cline README describes file editing, command execution, browser use, and MCP extensibility.
+- [github.com: open interpreter](https://github.com/openinterpreter/open-interpreter) — The official repository README documents local code execution across languages and the confirmation behavior.
+- [Introducing the Model Context Protocol](https://www.anthropic.com/news/model-context-protocol) — Primary source for what MCP is, when Anthropic introduced it, and why it matters for tool-connected AI.

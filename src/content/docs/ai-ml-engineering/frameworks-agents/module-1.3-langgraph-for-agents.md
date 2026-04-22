@@ -1388,6 +1388,74 @@ The key insight: generate many reasoning attempts, verify each with a formal pro
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team runs an internal helpdesk bot for finance staff. It keeps getting multi-step reimbursement calculations wrong when employees describe expenses in plain English, even though the questions are simple arithmetic. What is the first prompt change you should try before redesigning the system, and why?
+
+<details>
+<summary>Answer</summary>
+Add a zero-shot Chain-of-Thought trigger such as "Let's think step by step."
+
+The module explains that this often improves multi-step reasoning because it forces the model to generate intermediate steps before the final answer. Those reasoning steps become part of the context, which acts like external working memory and reduces the model's tendency to jump straight to a wrong answer.
+</details>
+
+**Q2.** Your product team wants a claims-review assistant to explain decisions in a very specific format: identify facts, apply policy rules, and then give a conclusion. A generic "think step by step" prompt produces inconsistent structures across responses. Which approach fits best?
+
+<details>
+<summary>Answer</summary>
+Use few-shot Chain-of-Thought prompting.
+
+The module says few-shot CoT is better when you need format consistency, domain-specific reasoning patterns, and more control over how the model thinks. By showing a few examples of fact identification, policy application, and conclusion writing, you teach the model the exact reasoning structure you want it to follow.
+</details>
+
+**Q3.** Your team is building an agent that answers questions like, "What is France's population divided by 3?" The model can reason, but it also needs to fetch current facts and then calculate with them. Should you use plain CoT or ReAct, and why?
+
+<details>
+<summary>Answer</summary>
+Use ReAct.
+
+The module explains that ReAct is for cases where the model must alternate between reasoning and actions. Here, the agent needs to look up France's population, observe the result, then perform a calculation. Plain CoT only reasons from the initial prompt, while ReAct adds a Thought → Action → Observation loop that grounds the answer in real tool results.
+</details>
+
+**Q4.** A compliance team says an AI output must be highly reliable because a wrong recommendation could trigger an expensive manual review. The task is a reasoning-heavy one, not simple recall. What technique from the module would improve robustness without changing the underlying model?
+
+<details>
+<summary>Answer</summary>
+Use self-consistency.
+
+The module recommends sampling multiple reasoning paths and selecting the most common final answer. This works because correct reasoning often converges on the same answer, while mistakes tend to vary across runs. For a high-stakes reasoning task, that majority-vote approach gives a more reliable result than trusting a single chain of thought.
+</details>
+
+**Q5.** Your team adds CoT prompting to every request in a customer support bot, including simple questions like "What is the capital of France?" Latency and token costs increase, but quality does not. According to the module, what went wrong?
+
+<details>
+<summary>Answer</summary>
+They used CoT on a task where it is usually unnecessary and can hurt efficiency.
+
+The module says CoT helps most on multi-step reasoning, calculations, deduction, and debugging. It can hurt on simple factual recall because it adds unnecessary steps, wastes tokens, and slows responses without adding useful reasoning.
+</details>
+
+**Q6.** An engineering manager notices that your LLM often produces convincing step-by-step math explanations, but sometimes the arithmetic inside those steps is still wrong. What should you change in the agent design?
+
+<details>
+<summary>Answer</summary>
+Use tools for the arithmetic, such as a calculator in a ReAct loop or a program-aided approach like PAL.
+
+The module is explicit that CoT does not solve arithmetic precision problems. LLMs still make mistakes with calculations, so the safer design is to let the model reason about what to compute, then hand the actual math to a tool that executes it correctly.
+</details>
+
+**Q7.** A prompt engineer changes your reasoning trigger from "Let's think step by step" to "Be very careful and make sure you're right." Accuracy drops on logic questions. Based on the module, why might that happen, and what wording is safer?
+
+<details>
+<summary>Answer</summary>
+That change likely hurt performance because the module says anxiety-like prompts such as "be careful" or "make sure you're right" can lead to overthinking and worse results.
+
+A safer wording is a neutral, process-focused trigger like "Let's think step by step." The module notes that this phrasing consistently performs well because it encourages structured reasoning without adding pressure.
+</details>
+
+<!-- /v4:generated -->
 ## Further Reading
 
 ### Papers
@@ -1413,3 +1481,10 @@ After completing this module, you'll be ready for:
 
 _Last updated: 2025-11-25_
 _Status:  In Progress_
+
+## Sources
+
+- [Chain-of-Thought Prompting Elicits Reasoning in Large Language Models](https://arxiv.org/abs/2201.11903) — Foundational paper for few-shot chain-of-thought prompting.
+- [Large Language Models are Zero-Shot Reasoners](https://arxiv.org/abs/2205.11916) — Primary source for the "Let's think step by step" zero-shot result.
+- [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629) — Primary source for interleaving thought with tool use.
+- [Self-Consistency Improves Chain of Thought Reasoning in Language Models](https://arxiv.org/abs/2203.11171) — Primary source for sampling multiple reasoning paths and majority-style aggregation.

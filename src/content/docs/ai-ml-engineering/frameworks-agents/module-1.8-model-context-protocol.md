@@ -34,9 +34,9 @@ While functional, this approach was highly brittle. As use cases grew more compl
 
 The industry responded with native "Function Calling" (or Tool Calling) APIs. Model providers fine-tuned their networks to output structured JSON matching a predefined JSON Schema. However, this introduced a new systemic problem: **The Integration N-to-M Problem**.
 
-If you had *N* different AI tools (Cursor, Claude Desktop, a custom LangGraph agent) and *M* different data sources (GitHub, PostgreSQL, Jira, local filesystem), you had to write custom integration code for every single combination. If a new model API emerged, the entire ecosystem had to adapt. 
+If you had *N* different AI tools (Cursor, Claude Desktop, a custom LangGraph agent) and *M* different data sources (GitHub, PostgreSQL, Jira, local filesystem), you often had to write custom integration code for nearly every combination. If a new model API emerged, the entire ecosystem had to adapt. 
 
-The Model Context Protocol was introduced as the universal translator. It dictates exactly how an AI client should ask a server what capabilities it has, how it should request data, and how it should command the server to take action. By adopting MCP, you write a server for your data source *once*, and any MCP-compliant AI client can instantly understand and utilize it without any custom configuration.
+The Model Context Protocol was introduced as a standardized translator between AI clients and servers. It dictates exactly how an AI client should ask a server what capabilities it has, how it should request data, and how it should command the server to take action. By adopting MCP, you write a server for your data source *once*, and any MCP-compliant AI client can instantly understand and utilize it without any custom configuration.
 
 > **Stop and think**: If an organization has 15 different internal microservices and uses 3 different AI coding assistants across its engineering teams, how many distinct integration points would be required without a standard protocol like MCP? How does MCP change this calculation?
 
@@ -557,3 +557,10 @@ Now that you understand how to securely connect an agent to external tools and d
 
 [Continue to Module 1.3: LangGraph for Agents &rarr;](/ai-ml-engineering/frameworks-agents/module-1.3-langgraph-for-agents/)
 ---
+
+## Sources
+
+- [Model Context Protocol specification repository](https://github.com/modelcontextprotocol/modelcontextprotocol) — This is the official spec and documentation repository for MCP primitives, lifecycle, transports, and schema.
+- [Introducing the Model Context Protocol](https://www.anthropic.com/news/model-context-protocol) — This is the public launch post that explains why MCP was created and what problem it targets.
+- [RFC 9728: OAuth 2.0 Protected Resource Metadata](https://www.rfc-editor.org/rfc/rfc9728.html) — This RFC underpins MCP's authorization-server discovery model for protected HTTP transports.
+- [ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/pdf/2210.03629) — This paper provides the primary reference for the ReAct technique named in the module's historical framing.

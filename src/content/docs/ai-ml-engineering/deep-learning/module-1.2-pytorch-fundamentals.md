@@ -214,7 +214,7 @@ Layer 4: Objects (faces, cars)
 
 ### Matrix Formulation
 
-In a production environment, we absolutely never use standard Python `for` loops to iterate over individual neurons. Modern hardware processing units (especially NVIDIA GPUs) are heavily optimized to perform massive, simultaneous matrix multiplications. We vectorize the operations mathematically to process entire batches of data concurrently.
+In a production environment, we almost never use standard Python `for` loops to iterate over individual neurons. Modern hardware processing units (especially NVIDIA GPUs) are heavily optimized to perform massive, simultaneous matrix multiplications. We vectorize the operations mathematically to process entire batches of data concurrently.
 
 ```python
 # Single sample
@@ -327,7 +327,7 @@ J = (1/m) * Σ(y - ŷ)²
 
 Forward propagation gives us a structural answer. The chosen loss function objectively tells us how wrong the answer is. **Backpropagation** is the miraculous mathematical engine that tells us exactly *who to blame* for the error.
 
-Backpropagation iteratively computes the gradient of the loss function with respect to every single numerical parameter in the entire network. It calculates precisely how a microscopic, fractional change in one specific weight embedded deep inside a hidden layer would ultimately impact the final output error. 
+Backpropagation iteratively computes the gradient of the loss function with respect to the network's learnable numerical parameters. It calculates precisely how a microscopic, fractional change in one specific weight embedded deep inside a hidden layer would ultimately impact the final output error. 
 
 ### The Chain Rule
 
@@ -560,7 +560,7 @@ def train(X, Y, layer_dims, learning_rate=0.01, num_iterations=1000):
 
 ## Practical Application: MNIST Digit Recognition
 
-To empirically prove that our ground-up network architecture works, we will train it on MNIST, the universally acknowledged "Hello World" dataset of machine learning consisting of handwritten numerical digits.
+To empirically prove that our ground-up network architecture works, we will train it on MNIST, the widely regarded "Hello World" dataset of machine learning consisting of handwritten numerical digits.
 
 ### MNIST Trivia
 Before jumping into the code, it is worth understanding the legacy of this dataset. MNIST stands for Modified National Institute of Standards and Technology. AI pioneer Yann LeCun created the dataset in 1998 to rigorous test early Convolutional Neural Networks designed to automatically read bank checks. The dataset is an eclectic mix of high school students' and Census Bureau employees' handwriting. The raw images were size-normalized and explicitly anti-aliased into a 28x28 pixel bounding box, guaranteeing that the mathematical center of mass of the digit is perfectly aligned in the grid.
@@ -631,7 +631,7 @@ If you attempt to write the theoretical math directly into a Python script, it w
 
 ### Weight Initialization
 
-Initializing all matrix weights purely to zero instantly destroys the network's ability to learn. Because every neuron starts identically, they all calculate the exact same gradients during backpropagation, remaining identical forever. We utilize He Initialization specifically for ReLU networks to maintain statistical variance across deep layers.
+Initializing all matrix weights purely to zero typically destroys the network's ability to learn useful distinct features. Because every neuron starts identically, they all calculate the exact same gradients during backpropagation, remaining identical forever. We utilize He Initialization specifically for ReLU networks to maintain statistical variance across deep layers.
 
 ```python
 # BAD: All zeros (all neurons learn the same thing)
@@ -687,7 +687,7 @@ def softmax(z):
 
 ### Visualizing the Training Progress
 
-Visual diagnostics are the fastest way to assess training health. Always plot your loss curves over time.
+Visual diagnostics are often one of the fastest ways to assess training health. Always plot your loss curves over time.
 
 ```python
 plt.plot(costs)
@@ -802,12 +802,12 @@ Experiment with:
 
 1. **Conda Support Dropped:** The PyTorch 2.11 release fully drops official Conda publishing, a systemic decision formally announced back in the 2.6 release. Official installation guidance strictly recommends standard `pip` as the primary binary package manager across Linux, macOS, and Windows.
 2. **Ecosystem Fragmentation:** The PyTorch package ecosystem maintains highly asynchronous versioning. While PyTorch itself sits at 2.11.0, the Torchvision library (vital for image manipulation) tracks stable release v0.26. Torchaudio is currently at v2.10.0, and Torchtext sits at v0.18.0.
-3. **Universal Function Approximators:** A single neural network hidden layer theoretically has the mathematical power to map and approximate ANY continuous function in existence, according to the Universal Approximation Theorem rigorously proven by George Cybenko in 1989.
+3. **Universal Function Approximators:** A single neural network hidden layer theoretically has the mathematical power to approximate a wide range of continuous functions on bounded domains, according to the Universal Approximation Theorem rigorously proven by George Cybenko in 1989.
    **So why go deep?**
    - Deep networks are exponentially more efficient.
    - A function that needs 2^n neurons in a shallow network might need only n layers.
 4. **The Lottery Ticket Hypothesis:** A revolutionary 2019 MIT paper by Jonathan Frankle and Michael Carlin demonstrated that massive deep neural networks contain tiny, sparsely connected subnetworks (the "winning tickets") that can independently match the exact accuracy of the giant model. We intentionally over-parameterize networks just to drastically improve the mathematical odds of randomly initializing one of these winning tickets!
-5. **The Vanishing Gradient Problem:** For decades, training deep networks was nearly impossible because gradients would shrink exponentially as they propagated backward. The historical solutions that unlocked deep architectures included ReLU activations (2010), Batch Normalization (2015), and Skip Connections via ResNet (2015).
+5. **The Vanishing Gradient Problem:** For decades, training deep networks was often very difficult because gradients could shrink exponentially as they propagated backward. The historical solutions that unlocked deep architectures included ReLU activations (2010), Batch Normalization (2015), and Skip Connections via ResNet (2015).
 
 ## Common Mistakes
 
@@ -850,7 +850,7 @@ The exact shape of W1 must be (128, 784). In matrix multiplication `W1 @ X`, the
 <details>
 <summary>5. Scenario: Your engineering team is maintaining a legacy computer vision neural network written entirely in pure NumPy matrix operations. The model architecture needs to be updated weekly to include new dynamic branching, varying batch sizes, and experimental nested layers. However, every time an architectural change is made, a senior engineer has to spend three grueling days manually deriving and coding the calculus chain rule equations. How does migrating the codebase to PyTorch's "Autograd" module structurally eliminate this developmental bottleneck?</summary>
 
-The Autograd engine completely eliminates the painful necessity to manually derive, verify, and hardcode the backpropagation chain rule equations for every newly invented architecture. It dynamically and autonomously builds a highly detailed computational graph during the forward pass in real time, securely tracking every mathematical operation in memory. When `.backward()` is executed, Autograd automatically calculates the exact, analytical gradients for all registered parameters instantly, making rapid architectural prototyping and complex dynamic deep learning structurally possible and totally error-free.
+The Autograd engine completely eliminates the painful necessity to manually derive, verify, and hardcode the backpropagation chain rule equations for every newly invented architecture. It dynamically and autonomously builds a highly detailed computational graph during the forward pass in real time, securely tracking every mathematical operation in memory. When `.backward()` is executed, Autograd automatically calculates analytical gradients for registered parameters, making rapid architectural prototyping and complex dynamic deep learning structurally possible and far less error-prone.
 </details>
 
 <details>
@@ -1011,3 +1011,9 @@ To deepen your mathematical foundations and physical intuition before advancing,
 With the rigorous mathematical foundations securely locked in and fully verified against PyTorch's underlying C++ execution engine, you are completely ready to tackle [Module 1.3: Training Neural Networks](./module-1.3-training-neural-networks).
 
 In the subsequent module, we will stop building flat tensors manually and begin leveraging PyTorch's high-level `torch.nn` module, training loops, and optimization tooling to build and train models at practical scale. You have learned the mathematical foundations; now it is time to turn them into working systems.
+
+## Sources
+
+- [PyTorch 2.11.0 Release Notes](https://github.com/pytorch/pytorch/releases/tag/v2.11.0) — This is the cleanest allowlisted source for the module's version-specific PyTorch packaging and CUDA claims.
+- [ImageNet Classification with Deep Convolutional Neural Networks](https://cacm.acm.org/research/imagenet-classification-with-deep-convolutional-neural-networks/) — This is the classic AlexNet paper and directly supports several of the historical and benchmark claims in the module.
+- [Delving Deep into Rectifiers](https://arxiv.org/abs/1502.01852) — This paper is directly relevant to the module's discussion of ReLU networks and He initialization.

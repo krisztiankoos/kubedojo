@@ -7,16 +7,16 @@ sidebar:
 > **AI/ML Engineering Track** | Complexity: `[COMPLEX]` | Time: 5-6
 ---
 
-Seattle. December 24, 2023. 4:17 PM. Sarah Park was already late to her family's holiday dinner when her phone buzzed with a PagerDuty alert. The e-commerce recommendation system she'd built had just crashed—on the busiest shopping day of the year. 
+A production recommendation system can fail at the worst possible time, which is why ML teams need automated checks before deployments reach users. 
 
-The root cause was embarrassingly simple: a well-meaning teammate had deployed a "small improvement" to the model. They'd retrained it on last month's data, saw that accuracy looked good in their Jupyter notebook, and pushed it to production. What they didn't notice was that the new model was 3x slower than the old one. Under holiday traffic, inference latency caused cascading timeouts across the platform.
+A teammate retrained the model, checked offline accuracy, and deployed it without noticing that the new model was materially slower under production load.
 
-"But it worked when I tested it!" her teammate protested. That sentence haunts every ML engineer who's heard it. Of course it worked in testing. Everything works in testing. Testing isn't production. Testing doesn't have 50,000 concurrent users. Testing doesn't have the weird edge cases that real traffic surfaces within minutes. The fix took four hours. Sarah missed her family dinner. The company lost an estimated $2 million in sales. All because they had no automated checks between a developer's laptop and production.
+Testing environments rarely capture the concurrency, latency, and edge-case behavior of production traffic, so teams need automated checks before a model can move safely from a developer laptop to production.
 
 > "Traditional software can break in predictable ways: it compiles or it doesn't, tests pass or they don't. ML models break in subtle ways: they pass tests but give bad predictions, or good predictions but slowly, or fast predictions on training data but slow on production data. CI/CD for ML needs to catch all of it."
-> — Sarah Park, speaking at MLConf 2024
+> Generalized from common production ML failure modes.
 
-This module teaches you how to build the safety nets Sarah wished she'd had. By the end, you'll have CI/CD pipelines that catch bugs before production, validate models before deployment, and automatically retrain when data changes.
+This module teaches you how to build the safety nets ML teams need before model changes reach production. By the end, you'll have CI/CD pipelines that catch bugs before production, validate models before deployment, and automatically retrain when data changes.
 
 ---
 
@@ -107,7 +107,7 @@ CM  (Continuous Monitoring) ← NEW FOR ML!
 
 ## GitHub Actions for ML
 
-GitHub Actions has become the dominant CI/CD platform for ML projects, and for good reason. It's free for public repositories, integrates seamlessly with GitHub, and supports the complex workflows that ML requires.
+GitHub Actions is a common CI/CD option for ML projects because it is built into GitHub and supports hosted runners, schedules, and matrix workflows.
 
 Think of GitHub Actions like a programmable robot assistant that watches your repository. When you push code, create a pull request, or on a schedule, the robot wakes up and follows the instructions you've given it. 
 
@@ -200,7 +200,7 @@ jobs:
 
 ### Caching for ML Workflows
 
-Because ML repositories pull heavy dependencies (like PyTorch or Hugging Face transformers) and massive model artifacts, caching is not optional—it is a strict requirement to keep CI times under 15 minutes.
+Because ML repositories often pull heavy dependencies and large model artifacts, caching is usually important for keeping CI runtimes practical.
 
 ```yaml
 # Cache dependencies (saves 2-5 minutes)
@@ -771,7 +771,7 @@ class ValidationPipeline:
 
 ## Portable CI/CD with Dagger
 
-Here's a frustrating reality of CI/CD: your pipeline YAML is vendor-locked. A GitHub Actions workflow doesn't run on GitLab CI. A GitLab pipeline doesn't run on Jenkins. Dagger solves this problem by allowing you to write your pipeline in Python/Go/TypeScript. 
+Many CI systems use their own workflow definitions, which makes pipeline logic harder to move between platforms without adaptation. Dagger solves this problem by allowing you to [write your pipeline in Python/Go/TypeScript](https://github.com/dagger/dagger). 
 
 ```mermaid
 flowchart TD
@@ -1049,10 +1049,10 @@ jobs:
 
 ## Did You Know?
 
-1. **Google's TFX (TensorFlow Extended) paper in 2017** was the first public description of a complete ML pipeline. It introduced the concept of "pipeline components" that are now standard: data validation, data transformation, training, model analysis, and serving. Every modern MLOps tool traces its lineage to TFX concepts.
-2. **GitHub Actions provides 2,000 free minutes per month** for private repos and unlimited minutes for public repos. A typical ML test suite takes 5-15 minutes, meaning you can comfortably run 130-400 automated pipeline checks per month absolutely free.
-3. **Uber's Michelangelo platform processes over 1.5 million predictions per second** in production. Their foundational 2017 architecture whitepaper introduced continuous training systems that instantly swap models if metric drift violates historical bounds.
-4. **Dagger was created by Solomon Hykes (creator of Docker) in 2022**. His insight was that CI/CD pipelines suffer the exact same fragmentation and environment inconsistency that plagued applications before containerization, driving his choice to push CI into containers themselves.
+1. **TFX is a well-known example of a production ML pipeline framework.** It uses a component-based architecture for tasks such as data validation, transformation, training, evaluation, and serving.
+2. **GitHub Actions includes free usage tiers** and standard GitHub-hosted runners are free for public repositories. The exact minutes available for private repositories depend on your GitHub plan, runner type, and how heavy your workflows are.
+3. **Uber's Michelangelo is a well-known example of an internal ML platform at production scale.** It is often discussed as an example of why mature ML organizations invest in training, deployment, monitoring, and safety systems.
+4. **Dagger emerged in the early 2020s as a portable, container-based CI/CD tool.** Its appeal is that the same pipeline logic can run more consistently across local machines and CI environments.
 
 ---
 
@@ -1091,9 +1091,9 @@ git commit -m "Training data v3 - added October examples"
 
 ### The Model That Passed All Tests (But Was Wrong)
 
-**New York. March 2024.** A fintech startup had a robust CI/CD pipeline with 94% test coverage. Their credit scoring model passed every automated check: unit tests, data validation, accuracy threshold, latency check.
+A model can pass conventional CI checks and still ship harmful behavior if the pipeline only verifies aggregate metrics and basic regression tests.
 
-One month after deployment, they discovered the model was systematically rejecting applicants with certain ZIP codes. The model had learned geographic biases from historical data—and none of their tests caught it.
+Teams sometimes discover after deployment that a model performs acceptably overall while still harming specific subgroups or proxy features they never tested explicitly.
 
 **What went wrong?** Their tests validated accuracy but not fairness. The model performed well on aggregate metrics while discriminating against specific groups.
 
@@ -1102,9 +1102,9 @@ One month after deployment, they discovered the model was systematically rejecti
 2. Slice-based evaluation: accuracy per demographic group
 3. "Failure mode" test suite: adversarial examples designed to catch biases
 
-### The $100,000 GPU Bill
+### The Surprise GPU Bill
 
-**Seattle. August 2023.** A startup's CI/CD pipeline had a bug: every PR triggered a full model training job on expensive GPU instances. For two weeks, nobody noticed. When the AWS bill arrived, the CTO nearly had a heart attack.
+A misconfigured CI pipeline can accidentally trigger expensive retraining jobs on every pull request, especially when GPU stages are not gated by path filters, caching, or budget alerts.
 
 **What went wrong?**
 1. No cost alerts or budgets
@@ -1295,3 +1295,11 @@ The Data Quality testing suite failed. Continuous Training relies entirely on th
 You now have a firm grasp of the complex ecosystem defining CI/CD for Machine Learning, from continuous retraining methodologies to data validation and deployment gates. You know why ML testing requires statistical boundary checking rather than simple pass/fail assertions.
 
 **Up Next**: [Module 46 - Kubernetes Fundamentals for ML](./module-1.4-kubernetes-for-ml) — Learn how to package these validated models and deploy them resiliently using production-grade orchestration on v1.35 clusters!
+
+## Sources
+
+- [github.com: cache](https://github.com/actions/cache) — General lesson point for an illustrative rewrite.
+- [github.com: dagger](https://github.com/dagger/dagger) — Dagger's upstream README states that it runs locally and in CI and provides native SDKs including Go, Python, and TypeScript.
+- [MLOps: Continuous delivery and automation pipelines in machine learning](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) — Strong vendor reference for CI, CD, CT, validation, and automation patterns in production ML systems.
+- [GitHub Actions](https://github.com/features/actions) — Useful for the module's GitHub Actions sections because it covers hosted runners, event triggers, and matrix workflows.
+- [Continuous Training for Production ML in the TensorFlow Extended (TFX) Platform](https://www.usenix.org/conference/opml19/presentation/baylor) — A concise primary paper on continuous training for production ML and the operational reasons CT exists.

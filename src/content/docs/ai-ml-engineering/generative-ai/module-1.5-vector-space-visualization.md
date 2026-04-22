@@ -11,7 +11,7 @@ sidebar:
 
 In November 2018, a leading global fashion retailer deployed a highly anticipated feature for the holiday shopping season: an updated search engine for their catalog. Historically, the retailer relied strictly on exact keyword matching, utilizing traditional inverted indices and TF-IDF scoring. If a user searched for "crimson winter coat," the system would strictly scan the relational database for the exact strings "crimson," "winter," and "coat." While highly predictable and easily debuggable, this rigid approach entirely ignored the implicit semantic intent of the user's query. When users began searching for "burgundy cold weather jacket," the keyword-based system returned zero results, despite the warehouse being fully stocked with thousands of perfectly matching items that happened to use slightly different product descriptions.
 
-The financial impact was immediate and devastating. Internal monitoring dashboards triggered critical alerts as the "null search result" rate spiked by twenty-two percent globally within a matter of hours. Customers, assuming the items were simply out of stock or unavailable, immediately abandoned their shopping carts and migrated to competitor websites. Over a grueling three-day holiday weekend period, the retailer estimated a direct, unrecoverable revenue loss of twelve million dollars. The root cause was not a catastrophic software bug, a network switch failure, or a database outage, but a fundamental, architectural limitation of the core search mechanism itself. The legacy system did not understand meaning; it only understood strict, mechanical character arrays.
+The financial impact was immediate and devastating. Internal monitoring dashboards triggered critical alerts as the "null search result" rate spiked by twenty-two percent globally within a matter of hours. Customers, assuming the items were simply out of stock or unavailable, often abandoned their shopping carts and migrated to competitor websites. Over a grueling three-day holiday weekend period, the retailer estimated a direct, unrecoverable revenue loss of twelve million dollars. The root cause was not a catastrophic software bug, a network switch failure, or a database outage, but a fundamental, architectural limitation of the core search mechanism itself. The legacy system did not understand meaning; it only understood strict, mechanical character arrays.
 
 This failure forced the engineering team to overhaul their approach and implement true semantic search using continuous vector spaces. By converting both their product catalog and user queries into high-dimensional embeddings, they enabled mathematical comparisons of meaning that transcend basic vocabulary. The system could now mathematically prove that "burgundy" and "crimson" occupied the exact same coordinate region in semantic space, automatically returning relevant results regardless of exact wording. This module explores the exact mathematical techniques that engineering teams use to visualize, manipulate, and query meaning through sophisticated mathematics. You will learn to treat abstract concepts as geometric coordinates, allowing you to perform arithmetic on ideas and build scalable search systems that genuinely understand human intent.
 
@@ -262,7 +262,7 @@ king - man = [royalty + male + power + ...] - [male + human + adult + ...]
 What word is [royalty + power + female]?  → "queen"!
 ```
 
-This remarkable mathematical phenomenon is absolutely not limited to human gender or historical royalty dynamics. It mathematically applies universally across nearly all complex domains accurately learned by the foundational model during its extensive pre-training corpus exposure.
+This remarkable mathematical phenomenon is absolutely not limited to human gender or historical royalty dynamics. It often applies across many complex domains that were learned well by the foundational model during its extensive pre-training corpus exposure.
 
 ```python
 Paris - France + Italy ≈ Rome
@@ -776,7 +776,7 @@ The complex engineering decision between relying on exhaustive brute force scann
 ## Did You Know?
 
 1. On January 16, 2013, researcher Tomas Mikolov and his team published the foundational Word2Vec paper, fundamentally shifting how modern researchers approached NLP representation.
-2. In October 2019, Google search integrated massive BERT embeddings into their primary algorithm, instantly improving query comprehension and semantic matching for over 10 percent of all global searches.
+2. In October 2019, Google search integrated massive BERT embeddings into their primary algorithm, helping improve query comprehension and semantic matching for over 10 percent of all global searches.
 3. The Pinecone managed vector database startup achieved a staggering enterprise valuation of 750 million dollars in April 2023, signaling a massive corporate shift toward dedicated semantic infrastructure.
 4. An unoptimized exact brute force search over 1 billion 768-dimensional vectors requires the hardware to stream approximately 3 terabytes of physical memory bandwidth per single user query.
 
@@ -948,13 +948,6 @@ spec:
 Apply it using `kubectl apply -f qdrant-deployment.yaml` to spin up the stateful database instance inside your cluster. We assert that this manifest passes static validation for v1.35 and deploys smoothly.
 </details>
 
-**Success Checklist**:
-- [ ] Virtual environment created successfully and isolated tightly from the underlying host.
-- [ ] Embedding generation array logically runs without dangerous warnings or sudden memory errors.
-- [ ] Vector arithmetic functions correctly and reliably returns 'queen' as the mathematically top result.
-- [ ] FAISS index algorithm successfully builds in volatile memory and retrieves accurate semantic neighbors.
-- [ ] Ensure all cluster deployments explicitly target K8s version v1.35 or higher to maintain strict compatibility.
-
 ## Knowledge Check
 
 Please carefully test your architectural understanding of continuous vector spaces and highly scalable semantic indexing using the scenarios below.
@@ -981,7 +974,7 @@ The resulting multi-dimensional coordinates will mathematically approximate the 
 
 <details>
 <summary>Question 5: A client complains that broadly searching for "Apple" returns detailed fruit recipes rather than large tech company articles. How can a hybrid search architecture resolve this complaint?</summary>
-Hybrid search structurally resolves this by smartly combining semantic similarity with deterministic metadata filters. By allowing the client to append a strict metadata filter (e.g., `category="technology"` or `date > 2024`), the system reranks the semantic results immediately. It cleanly blends the continuous vector proximity score with the strict boolean constraint to guarantee absolute relevance.
+Hybrid search structurally resolves this by smartly combining semantic similarity with deterministic metadata filters. By allowing the client to append a strict metadata filter (e.g., `category="technology"` or `date > 2024`), the system reranks the semantic results more precisely. It cleanly blends the continuous vector proximity score with the strict boolean constraint to guarantee absolute relevance.
 </details>
 
 <details>
@@ -1009,3 +1002,9 @@ Generating high-dimensional embeddings sequentially vastly underutilizes the mas
 **Next module**: [Module 1.6: Reasoning Models](./module-1.6-reasoning-models)
 
 You have successfully mastered the complex mathematical principles of deep semantic meaning and high-dimensional coordinate visualization. In the upcoming module, you will thoroughly examine how highly modern, reasoning-focused architectures meticulously plan extensive multi-step solutions, identify exactly when they massively outperform standard generative models, and analyze exactly how to deploy them effectively and securely in mission-critical production systems.
+
+## Sources
+
+- [Efficient Estimation of Word Representations in Vector Space](https://arxiv.org/abs/1301.3781) — Foundational word-embedding paper that underpins the module's discussion of vector-space semantics.
+- [Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs](https://arxiv.org/abs/1603.09320) — Primary source for HNSW, the ANN indexing approach referenced in the production search sections.
+- [FAISS](https://github.com/facebookresearch/faiss) — Practical upstream implementation of dense-vector similarity search and ANN indexing used throughout the module.

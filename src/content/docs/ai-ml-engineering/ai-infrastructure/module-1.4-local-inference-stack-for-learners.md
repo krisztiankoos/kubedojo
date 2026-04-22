@@ -31,7 +31,7 @@ That is true and misleading.
 
 They optimize for different things:
 - **Ollama** optimizes for ease
-- **`llama.cpp`** optimizes for broad local portability and efficient GGUF execution
+- **`llama.cpp`** optimizes for [broad local portability and efficient GGUF execution](https://github.com/ggml-org/llama.cpp)
 - **vLLM** optimizes for throughput and serving behavior
 - **sglang** optimizes for advanced serving workflows and structured generation patterns
 
@@ -64,7 +64,7 @@ Use when:
 Typical tools:
 - Ollama
 - `llama.cpp` wrappers
-- simple OpenAI-compatible local endpoints
+- simple [OpenAI-compatible local endpoints](https://github.com/ggml-org/llama.cpp)
 
 ### Tier 3: Serving Engine
 
@@ -89,7 +89,7 @@ Ollama is often the easiest local starting point.
 Strengths:
 - quick setup
 - low mental overhead
-- convenient model pulling
+- [convenient model pulling](https://github.com/ollama/ollama/blob/main/docs/api.md)
 - easy for coding tools and simple local apps
 - good fit for learners validating whether local models are useful to them
 
@@ -134,7 +134,7 @@ Use `llama.cpp` when:
 vLLM is not mainly a "run one model on your laptop because it is cool" tool.
 
 It matters because it teaches:
-- continuous batching
+- [continuous batching](https://github.com/vllm-project/vllm/blob/main/README.md)
 - KV cache behavior
 - throughput-oriented design
 - API-compatible serving patterns
@@ -165,7 +165,7 @@ That distinction matters. This module is about learner-scale decisions, not full
 
 sglang becomes more interesting when you care about:
 - complex serving workflows
-- structured outputs
+- [structured outputs](https://github.com/sgl-project/sglang)
 - advanced orchestration patterns
 - research-facing or agent-heavy execution styles
 
@@ -200,7 +200,7 @@ Many arguments about local inference tools are really hardware arguments in disg
 Examples:
 - on modest laptops, convenience and quantization matter more than serving sophistication
 - on a single-GPU desktop, local API serving becomes much more realistic
-- on a home server, always-on local services become viable
+- on a home server, always-on local services can become viable
 
 The same tool can feel excellent or terrible depending on:
 - VRAM
@@ -322,8 +322,189 @@ For serious production private serving, you should graduate into the on-prem and
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team wants to try a local coding assistant on a modest laptop this afternoon. Only one person will use it, and the main goal is to see whether local models are useful before investing more time. Which tool is the best first choice, and why?
+
+<details>
+<summary>Answer</summary>
+Ollama is the best first choice. The scenario is single-user, fast setup, and local experimentation, which matches Ollama's strengths: quick setup, low mental overhead, and convenience. The module warns against choosing a throughput-oriented stack when the real need is simply getting started.
+</details>
+
+**Q2.** You are mentoring a learner who wants to understand how quantized local model execution works on a CPU-heavy machine, rather than just clicking "run" in a wrapper. Which option fits best?
+
+<details>
+<summary>Answer</summary>
+`llama.cpp` fits best. The module recommends it when the goal is local-first control, understanding quantized local model execution, and supporting strong CPU or mixed CPU/GPU paths. It has more knobs than a convenience wrapper, but that is part of why it is useful for learning the runtime more directly.
+</details>
+
+**Q3.** A developer on your workstation is making repeated API-style calls from multiple local apps and wants to learn concepts like batching and KV cache behavior. They are considering replacing their simple runner. What should they move to first?
+
+<details>
+<summary>Answer</summary>
+They should move to vLLM. The module positions vLLM as the right tool when throughput, repeated API traffic, batching, and serving behavior actually matter. This is the point where a serving engine becomes useful instead of being premature complexity.
+</details>
+
+**Q4.** A learner installs sglang on day one because they heard it is advanced and "future-proof," but their real workload is just prompt testing by one person. What is the better recommendation?
+
+<details>
+<summary>Answer</summary>
+The better recommendation is to start with a simple local runner such as Ollama or possibly `llama.cpp`. The module explicitly says most learners should begin in Tier 1 and only touch Tier 3 later. Starting with sglang here adds complexity without solving a real problem.
+</details>
+
+**Q5.** Your home server can stay on all day, and you want local applications to call the same model through a stable interface with more predictable API behavior. Why might a simple runner no longer be enough?
+
+<details>
+<summary>Answer</summary>
+A simple runner may no longer be enough because the need has shifted from one-off local use to a service-oriented setup. The module says stable API semantics, repeated local app calls, and more explicit runtime behavior push you toward local service or serving-engine choices such as vLLM or similar local endpoints.
+</details>
+
+**Q6.** Two learners argue online about which inference tool is "best," but one is on a thermally limited laptop and the other has a single-GPU desktop. Based on the module, what is the flaw in their debate?
+
+<details>
+<summary>Answer</summary>
+The flaw is that they are treating the tool choice as independent from the hardware. The module says many tool arguments are really hardware arguments in disguise. VRAM, RAM, storage speed, thermals, model size, and quantization strategy all change which tool feels effective.
+</details>
+
+**Q7.** Your team is drafting an internal design for a private enterprise LLM platform and wants to use this learner module as the full architecture blueprint. Why is that a mistake?
+
+<details>
+<summary>Answer</summary>
+It is a mistake because this module is intentionally scoped to learner-scale decisions, not production private serving architecture. The module describes itself as a bridge for local inference choices and says serious production-scale private serving belongs in deeper on-prem and platform material, such as Private LLM Serving.
+</details>
+
+<!-- /v4:generated -->
+<!-- v4:generated type=no_exercise model=codex turn=1 -->
+## Hands-On Exercise
+
+
+Goal: build a learner-scale local inference stack on one machine, run a small model locally, expose it through a local interface, and decide whether a simple runner is enough or whether a serving engine is justified.
+
+- [ ] Inventory the machine and classify the workload.
+  Write down:
+  - whether the machine is a laptop, workstation, or home server
+  - available RAM and, if present, GPU VRAM
+  - whether the workload is single-user prompt testing, local app integration, or repeated API calls
+
+  Verification commands:
+  ```bash
+  uname -a
+  free -h
+  nvidia-smi
+  ```
+
+- [ ] Choose an initial stack before installing anything.
+  Use this rule:
+  - choose Ollama for fastest setup and single-user experimentation
+  - choose `llama.cpp` for more direct control and GGUF-based local execution
+  - note that vLLM and sglang are not the default unless repeated API traffic or throughput is already a real need
+
+  Verification commands:
+  ```bash
+  printf 'Chosen stack: %s\nReason: %s\n' 'ollama or llama.cpp' 'single-user, local-first, or throughput-oriented'
+  ```
+
+- [ ] Install one learner-friendly local runner.
+  Pick one path:
+  - install Ollama and prepare one small model
+  - or build/download `llama.cpp` and obtain one GGUF model that fits the machine
+
+  Verification commands:
+  ```bash
+  ollama --version
+  ```
+  ```bash
+  ./llama-cli --help
+  ```
+
+- [ ] Run a first local inference with a short prompt.
+  Use a small model that is realistic for the machine rather than the largest available model.
+
+  Verification commands:
+  ```bash
+  ollama run llama3.2:3b "Explain in three sentences when a learner should prefer a local runner over a serving engine."
+  ```
+  ```bash
+  ./llama-cli -m /path/to/model.gguf -p "Explain in three sentences when a learner should prefer a local runner over a serving engine."
+  ```
+
+- [ ] Measure basic responsiveness for a single-user workflow.
+  Capture how long one short response takes and decide whether the experience is acceptable for prompt testing or coding assistance.
+
+  Verification commands:
+  ```bash
+  time ollama run llama3.2:3b "Give me five Linux troubleshooting commands for checking memory pressure."
+  ```
+  ```bash
+  time ./llama-cli -m /path/to/model.gguf -p "Give me five Linux troubleshooting commands for checking memory pressure."
+  ```
+
+- [ ] Expose the model through a local API or service interface.
+  If using Ollama, use its local HTTP API. If using `llama.cpp`, use its local server mode if available in the installed build.
+
+  Verification commands:
+  ```bash
+  curl http://127.0.0.1:11434/api/tags
+  ```
+  ```bash
+  curl http://127.0.0.1:11434/api/generate -d '{"model":"llama3.2:3b","prompt":"Return valid JSON with keys tool and workload.","stream":false}'
+  ```
+  ```bash
+  ./llama-server -m /path/to/model.gguf --host 127.0.0.1 --port 8080
+  ```
+  ```bash
+  curl http://127.0.0.1:8080/health
+  ```
+
+- [ ] Test one repeated-call scenario to see whether a simple runner is still enough.
+  Send several short requests and observe whether latency, memory use, or system responsiveness becomes a problem.
+
+  Verification commands:
+  ```bash
+  for i in 1 2 3; do
+    curl http://127.0.0.1:11434/api/generate -d "{\"model\":\"llama3.2:3b\",\"prompt\":\"Request $i: summarize why hardware matters for local inference.\",\"stream\":false}" >/dev/null
+  done
+  ```
+  ```bash
+  nvidia-smi
+  free -h
+  ```
+
+- [ ] Decide whether to stay with the local runner or graduate to vLLM or sglang.
+  Stay with the runner if:
+  - one user is enough
+  - setup simplicity matters most
+  - the local API already supports the intended app
+  Move toward vLLM or sglang if:
+  - repeated API calls are central
+  - batching or throughput matters
+  - more stable serving behavior is now a real requirement
+
+  Verification commands:
+  ```bash
+  printf 'Decision: %s\nReason: %s\n' 'stay with local runner or evaluate vLLM/sglang next' 'based on workload, hardware, and observed latency'
+  ```
+
+Success criteria:
+- the machine has been classified by hardware and learner workload
+- one local inference runner has been installed and used successfully
+- at least one model response has been generated locally
+- a local API or service endpoint has been queried successfully
+- repeated requests have been tested at least once
+- a clear written decision exists for staying with a simple runner or moving to vLLM or sglang next
+
+<!-- /v4:generated -->
 ## Next Modules
 
 - [Home-Scale RAG Systems](../vector-rag/module-1.6-home-scale-rag-systems/)
 - [Single-GPU Local Fine-Tuning](../advanced-genai/module-1.10-single-gpu-local-fine-tuning/)
 - [Private LLM Serving](../../on-premises/ai-ml-infrastructure/module-9.3-private-llm-serving/)
+
+## Sources
+
+- [github.com: api.md](https://github.com/ollama/ollama/blob/main/docs/api.md) — The upstream API reference explicitly documents model pull endpoints and the REST API for running and managing local models.
+- [github.com: llama.cpp](https://github.com/ggml-org/llama.cpp) — The upstream README states that `llama.cpp` targets a wide range of hardware and that models must be stored in GGUF format.
+- [github.com: README.md](https://github.com/vllm-project/vllm/blob/main/README.md) — The upstream README explicitly lists serving throughput, continuous batching, prefix caching, and an OpenAI-compatible API server.
+- [github.com: sglang](https://github.com/sgl-project/sglang) — The upstream README describes SGLang as a high-performance serving framework and lists structured outputs plus OpenAI API compatibility among its core features.

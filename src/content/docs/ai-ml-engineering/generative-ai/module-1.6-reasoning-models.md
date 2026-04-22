@@ -151,7 +151,7 @@ Prompting reasoning models is fundamentally about setting clear, unambiguous goa
 
 ## Section 5: Cost, Latency, and Troubleshooting
 
-The most significant engineering challenge when adopting reasoning models is managing variable costs and unpredictable latency. When querying a standard model, latency is generally a function of the input length and the generated output length. You receive the first token within milliseconds, allowing you to stream the response to the user immediately.
+The most significant engineering challenge when adopting reasoning models is managing variable costs and unpredictable latency. When querying a standard model, latency is generally a function of the input length and the generated output length. You often receive the first token quickly, allowing you to start streaming the response to the user almost immediately.
 
 With reasoning models, the "time to first token" is massive. The model might spend thirty seconds generating thousands of hidden tokens before it outputs the first visible character. Since API providers charge for these hidden reasoning tokens at the same rate as visible output tokens, a single query can easily cost dollars rather than fractions of a cent.
 
@@ -219,7 +219,7 @@ def analyze_reasoning_efficiency(response_metadata: dict) -> float:
 <details>
 <summary>Question 1: You deploy a customer service bot backed exclusively by a reasoning model. Users immediately complain that it takes up to forty seconds to answer basic questions like "What are your business hours?". What architectural flaw causes this, and how should it be fixed?</summary>
 <br>
-The architectural flaw is the lack of a semantic router. Reasoning models inherently possess a massive "time-to-first-token" latency because they generate internal chains of thought regardless of the query's simplicity. Passing trivial FAQ questions to a reasoning model forces the system to perform unnecessary computation. To fix this, implement a cascade architecture where a fast, standard model classifies the intent first. If it is a simple question, the standard model answers immediately; only complex queries are routed to the reasoning model.
+The architectural flaw is the lack of a semantic router. Reasoning models inherently possess a massive "time-to-first-token" latency because they generate internal chains of thought regardless of the query's simplicity. Passing trivial FAQ questions to a reasoning model forces the system to perform unnecessary computation. To fix this, implement a cascade architecture where a fast, standard model classifies the intent first. If it is a simple question, the standard model usually answers quickly; only more complex queries are routed to the reasoning model.
 </details>
 
 <details>
@@ -393,3 +393,9 @@ python3 semantic_router.py
 ## Next Module
 
 Now that you understand the mechanics, latency profiles, and cost implications of System 2 thinking, it is time to deploy these models into autonomous workflows. In the next module, **Module 2.7: Multi-Agent Orchestration Patterns**, we will explore how to build robust supervisor frameworks where reasoning models manage fleets of standard models to execute massive, repository-scale refactoring tasks without timing out your infrastructure.
+
+## Sources
+
+- [Thinking, Fast and Slow](https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow) — Useful background for the System 1/System 2 analogy used throughout the module.
+- [Learning to reason with LLMs](https://openai.com/index/learning-to-reason-with-llms/) — Primary OpenAI release explaining train-time vs test-time compute and the behavior of reasoning models.
+- [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning](https://arxiv.org/abs/2501.12948) — Primary paper for one of the major reasoning-model families referenced in the module.

@@ -17,7 +17,7 @@ By the end of this module, you will be equipped to:
 
 ## Why This Module Matters
 
-In the early days of generative AI rollout, users of large language models noticed a deeply concerning anomaly: the most advanced neural networks on the planet could not perform basic elementary school arithmetic. When users asked a model to add two numbers, it would frequently fail, not because it lacked reasoning capabilities, but because it could not actually "see" the numbers correctly. This was not an AI problem; it was a tokenization problem. 
+Early language-model deployments often struggled with arithmetic on larger numbers, and tokenization can be one contributing factor. 
 
 ```text
 User: What is 378 + 456?
@@ -29,7 +29,7 @@ GPT-3: 8346 (WRONG! Answer is 8356)
 
 The model was splitting "3789" into the fragments "37" and "89". The model had to reconstruct what numbers these tokens represented, perform arithmetic on the abstract concepts, and then tokenize the result back out. It was akin to asking a human to perform complex addition by only looking at the syllables of the numbers spoken aloud. 
 
-The business impact of this silent failure was massive. Financial institutions integrating these early models for automated report generation and quantitative analysis faced severe data integrity risks. Companies spent millions in engineering hours building verification layers and fallback heuristics simply because they misunderstood how the model interpreted raw text. Tokenization is not merely an implementation detail or a preprocessing step; it is the fundamental perceptual layer of a Large Language Model. If you do not understand how your data is tokenized, you cannot guarantee the security, reliability, or cost-efficiency of your generative AI applications.
+Poorly understood tokenization can create data-quality, reliability, and cost risks, so production systems often add validation and fallback logic. Tokenization is not merely an implementation detail or a preprocessing step; it is the fundamental perceptual layer of a Large Language Model. If you do not understand how your data is tokenized, you cannot guarantee the security, reliability, or cost-efficiency of your generative AI applications.
 
 ---
 
@@ -53,7 +53,7 @@ Historically, natural language processing struggled with a dichotomy:
 - **Character-level processing**: The vocabulary is small (just ASCII or UTF-8 bytes), but sequences become incredibly long, destroying context window efficiency.
 - **Word-level processing**: Sequences are short, but the vocabulary must be infinitely large to account for every typo, conjugation, and neologism. 
 
-Subword tokenization strikes the perfect balance. It keeps the vocabulary manageable (typically 30,000 to 100,000 tokens) while keeping sequence lengths efficient. Common words remain single tokens, while rare words are broken down into recognizable chunks.
+Subword tokenization strikes the perfect balance. It keeps the vocabulary manageable, often in the tens of thousands of tokens, while keeping sequence lengths efficient. Common words remain single tokens, while rare words are broken down into recognizable chunks.
 
 Here is how English text typically tokenizes:
 ```python
@@ -113,7 +113,7 @@ Different models use different algorithms to define their vocabulary. You must k
 
 ### 1. Byte-Pair Encoding (BPE)
 
-BPE is the standard for models like GPT-4, Claude, and Llama 3. It begins with individual characters and iteratively merges the most frequently occurring pairs in the training corpus.
+BPE-style tokenization is widely used in modern language models. It begins with individual characters and iteratively merges the most frequently occurring pairs in the training corpus.
 
 **Step 1**: Start with character-level splits.
 ```text
@@ -164,7 +164,7 @@ SentencePiece is the modern standard for heavily multilingual models. Its key in
 
 ### Did You Know? Google Translate's "Big Bang" Moment (2016)
 
-Google Translate switched from phrase-based statistical translation to Neural Machine Translation (NMT) practically overnight. The breakthrough was not just the neural network; it was the tokenizer. Previous systems used word-level tokenization, requiring a combined vocabulary of over 220,000 tokens for English and Chinese, causing memory constraints to explode. By utilizing WordPiece tokenization, they reduced the vocabulary to just 32,000 tokens while handling all languages gracefully. 
+Google's neural-translation work showed that subword vocabularies can replace very large word-level vocabularies and handle multilingual text more gracefully. 
 
 ```text
 English: "unbelievable" → ["un", "##believ", "##able"]
@@ -184,8 +184,8 @@ Observe the following pricing structures:
 
 | Model | Input (per 1M tokens) | Output (per 1M tokens) |
 |-------|----------------------|------------------------|
-| gpt-5 | $2.50 | $10.00 |
-| gpt-5 | $10.00 | $30.00 |
+| gpt-5 | See current pricing page | See current pricing page |
+| Example premium model | See current pricing page | See current pricing page |
 | Claude 3.5 Sonnet | $3.00 | $15.00 |
 | Claude 3 Opus | $15.00 | $75.00 |
 
@@ -306,7 +306,7 @@ estimated_tokens = len(text) / 4
 
 ## Section 4: Multilingual Execution and Edge Disasters
 
-Tokenizers are heavily biased toward the language of their training data. Since most web scraping yields English text, English compresses beautifully. Other languages suffer a token penalty.
+Tokenizers are heavily biased toward the language of their training data. Token counts can vary substantially across languages, so multilingual prompts should be measured with the target model's tokenizer rather than estimated from English examples.
 
 ```python
 "Hello" (English) → 1 token
@@ -321,7 +321,7 @@ Tokenizers are heavily biased toward the language of their training data. Since 
 
 ### Did You Know? The Unicode Consortium's 30-Year War
 
-Before we could tokenize text, we had to encode it. In the 1980s, sending an email from Japan to America would turn into garbled nonsense. Different systems interpreted the same bytes completely differently.
+Before we could tokenize text, we had to encode it. Before Unicode encodings were standardized, text often became garbled when systems disagreed about character encoding.
 
 ```text
 Original (Japanese): こんにちは
@@ -329,7 +329,7 @@ Sent through ASCII system: ‚±‚ñ‚É‚¿‚Í
 Received in Europe (Latin-1): ã"ã‚"ã«ã¡ã¯
 ```
 
-UTF-8 solved this by assigning unique, backward-compatible byte representations to every character. Modern tokenizers operate on these UTF-8 bytes.
+UTF-8 standardized byte encodings for Unicode text, and some modern tokenizers operate partly at the byte level.
 
 ```text
 'A' → 1 byte (0x41) - same as ASCII!
@@ -340,7 +340,7 @@ UTF-8 solved this by assigning unique, backward-compatible byte representations 
 
 ### Did You Know? The "SolidGoldMagikarp" Incident: When Tokens Go Rogue
 
-In February 2023, researchers discovered "glitch tokens" that caused GPT-3 to behave erratically. If a user provided a specific string, the model would output hostile or nonsensical data.
+Researchers in 2023 documented unusual prompt strings that triggered anomalous behavior in some language models. If a user provided a specific string, the model would output hostile or nonsensical data.
 
 ```text
 User: What is " SolidGoldMagikarp"?
@@ -350,7 +350,7 @@ GPT-3: I can't believe you would ask me something like that.
        [proceeds to act offended and refuse to engage]
 ```
 
-The tokenizer was trained on a massive web corpus that included Reddit usernames and Twitch chat logs. These strings appeared frequently enough to become single tokens, but they never appeared in the model's actual linguistic training data with proper context. The model encountered a token it recognized via the tokenizer but had never learned to handle semantically. 
+Some anomalous tokens appear to come from frequent strings in web-scale corpora, but the precise cause depends on the tokenizer and training pipeline. 
 
 ---
 
@@ -452,11 +452,11 @@ timeline
 
 | Mistake | Why it happens | How to fix |
 |---------|----------------|------------|
-| Hardcoding character limits instead of token limits | English characters map cleanly to tokens, but code, JSON, and multilingual text do not. 10,000 characters of JSON might equal 4,000 tokens. | Always use a dedicated tokenizer library (like `tiktoken`) to evaluate payload size before API submission. |
-| Leaving pretty-printed JSON in API payloads | Spaces and newlines are often treated as distinct tokens. Indented JSON wastes up to 40% of the token payload. | Minify all JSON structures (`json.dumps(data, separators=(',', ':'))`) before injecting them into the prompt. |
+| Hardcoding character limits instead of token limits | Character counts do not map cleanly to token counts, especially for code, JSON, and multilingual text. | Always use a dedicated tokenizer library (like `tiktoken`) to evaluate payload size before API submission. |
+| Leaving pretty-printed JSON in API payloads | Spaces and newlines often add avoidable tokens, so pretty-printed JSON is usually more expensive than minified JSON. | Minify all JSON structures (`json.dumps(data, separators=(',', ':'))`) before injecting them into the prompt. |
 | Using the wrong tokenizer for the target model | A Llama 3 tokenizer will output a vastly different token count than an OpenAI tokenizer for the exact same text sequence. | Match the tokenizer strictly to the specific model family you are querying. |
 | Ignoring the token cost of system messages | System prompts are prepended to every single request in stateless API calls. A verbose system prompt acts as a multiplier on your bill. | Refactor system prompts to be ruthlessly concise. Use batch processing to share system prompts across multiple user queries where possible. |
-| Failing to budget for non-English token penalties | BPE algorithms trained primarily on English data will heavily fragment Cyrillic, Arabic, or logographic scripts, costing 2x to 5x more per semantic word. | Apply a multiplier to budget estimations when dealing with global audiences, or switch to models utilizing SentencePiece. |
+| Failing to budget for non-English token penalties | Token counts can rise substantially for some languages and scripts, depending on the tokenizer and model family. | Apply a multiplier to budget estimations when dealing with global audiences, or switch to models utilizing SentencePiece. |
 | Assuming a token boundary aligns with a word boundary | Because subword tokenization merges characters iteratively, a single word like "unbelievable" might be split into three distinct tokens. | Never attempt to perform string manipulation or exact word matching on raw token ID arrays. |
 | Blindly appending conversation history | Naively pushing the entire `messages` array back to the model on every turn will rapidly exhaust the context window and exponentially increase costs. | Implement a sliding window or rolling summarization buffer to cap the active token state. |
 
@@ -471,7 +471,7 @@ Stack traces consist of code, file paths, and dense punctuation. Code requires s
 
 <details>
 <summary><strong>Question 2: You want to ensure your RAG application never drops a request due to a `context_length_exceeded` error. You implement a truncation function that cuts the string at 100,000 characters. Why is this a dangerous architectural decision?</strong></summary>
-Characters do not maintain a 1:1 ratio with tokens. A payload of 100,000 characters could easily exceed the model's token limit if the text contains dense JSON, numerical arrays, or non-English characters. Truncation must always be performed mathematically using the model's native tokenizer library to count exact token IDs.
+Characters do not maintain a 1:1 ratio with tokens. A payload of 100,000 characters could easily exceed the model's token limit if the text contains dense JSON, numerical arrays, or non-English characters. Truncation should usually be performed using the model's native tokenizer library to count token IDs accurately.
 </details>
 
 <details>
@@ -643,3 +643,10 @@ print(f"Final Prompt Tokens: {count_tokens(safe_prompt)}")
 
 **Next Module**: Text Generation & Sampling Strategies
 You have mastered how text is broken down for the model to digest. Next, we will explore exactly how the model builds responses back up, token by token. Prepare to dive deep into autoregressive generation, temperature scaling, and how top-p sampling dictates the creative boundaries of an LLM.
+
+## Sources
+
+- [Neural Machine Translation of Rare Words with Subword Units](https://arxiv.org/abs/1508.07909) — Classic paper explaining why subword tokenization and BPE-style segmentation matter.
+- [SentencePiece](https://arxiv.org/abs/1808.06226) — Primary reference for raw-text subword tokenization and whitespace-as-symbol handling.
+- [Transformers Tokenizer Summary](https://huggingface.co/docs/transformers/tokenizer_summary) — Concise reference comparing BPE, WordPiece, and SentencePiece behavior.
+- [OpenAI API Pricing](https://openai.com/api/pricing/) — Current official pricing page for validating any cost examples in the module.

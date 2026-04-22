@@ -1,0 +1,571 @@
+{
+  "module_key": "ai-ml-engineering/ai-native-development/module-1.4-agent-first-ides",
+  "module_path": "src/content/docs/ai-ml-engineering/ai-native-development/module-1.4-agent-first-ides.md",
+  "research_run_id": "2026-04-21T23:50:45+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening Sarah Chen / Antigravity / 47-minute OAuth story is a specific war story with named person, timestamp, and quantified outcome.",
+      "claim_class": "war_story",
+      "span_hint": "opening paragraphs",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "She typed a single sentence: \"Add user authentication with OAuth, including Google and GitHub providers, proper session management, and security headers.\" Then she watched. Three AI agents appeared in a sidebar—one analyzing her existing routes, one scaffolding the OAuth flow, one writing tests. In 47 minutes, what would have taken her team a full sprint was done. Working code. Passing tests. Clean architecture.",
+      "suggested_rewrite": "In an agent-first IDE, a prompt like this can be split across planning, implementation, and testing steps, and a capable tool may complete a substantial amount of work quickly. The exact speed and code quality still depend on the task, codebase, and how closely you review the result.",
+      "lesson_point_url": null,
+      "rationale": "This is a fake-precise anecdote with no attributable primary source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The attributed Dario Amodei quote about managing code-writing agents is presented as verbatim.",
+      "claim_class": "war_story",
+      "span_hint": "opening quote block",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "\"The shift from autocomplete to autonomous agents is the biggest change in software development since the invention of the IDE itself. We're not writing code anymore—we're managing code-writing agents.\"",
+      "suggested_rewrite": "Many people now describe the shift as moving from line-by-line coding toward supervising increasingly capable coding agents.",
+      "lesson_point_url": null,
+      "rationale": "The module presents a verbatim quote without a verifiable primary interview, transcript, or event source."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The module says the term \"vibe coding\" emerged in early 2025 and that some developers report 10x productivity gains.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Agent-First Revolution / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The term \"vibe coding\" emerged in early 2025 to describe the practice of describing what you want in natural language and letting AI agents figure out the implementation. Some developers report 10x productivity gains, while others warn about losing touch with their codebase.",
+      "suggested_rewrite": "The term \"vibe coding\" is commonly used for describing intent in natural language and letting AI generate much of the implementation. Reported productivity gains vary widely, and many developers worry about losing familiarity with their codebase.",
+      "lesson_point_url": null,
+      "rationale": "The exact timing and 10x figure are not supported by an allowlisted primary source here."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Antigravity forks VS Code and centers the UI on an Agent Manager / Mission Control that can dispatch multiple agents in parallel, including five simultaneous agents in the codelab explanation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Google Antigravity / Overview and Multi-Agent Manager",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://codelabs.developers.google.com/getting-started-google-antigravity",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Google codelab documents these capabilities, but that host is outside the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Antigravity's artifacts system produces plans, diffs, screenshots, recordings, and related outputs to address the trust gap.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Google Antigravity / Artifacts System",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://codelabs.developers.google.com/getting-started-google-antigravity",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The product codelab directly describes artifacts, screenshots, browser recordings, and the trust-gap rationale."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Antigravity agents can control the browser through a browser extension or browser sub-agent.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Google Antigravity / Browser Integration",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://codelabs.developers.google.com/getting-started-google-antigravity",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official codelab explains browser control and the required browser extension/sub-agent workflow."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Antigravity offers Planning and Fast modes for different task types.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Google Antigravity / Planning Modes",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://codelabs.developers.google.com/getting-started-google-antigravity",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official codelab documents both modes and their intended use cases, but the host is off-allowlist."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The Antigravity comparison table claims support for Claude Sonnet/Opus and OpenAI models.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Google Antigravity / Overview table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Claude Sonnet/Opus, OpenAI",
+      "suggested_rewrite": "Multiple selectable models may be available, but the exact lineup changes over time.",
+      "lesson_point_url": null,
+      "rationale": "The accessible official text I found confirms model selection but not this exact third-party model list."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Google hired Windsurf's founding leadership and licensed certain technology for about $2.4 billion in July 2025.",
+      "claim_class": "war_story",
+      "span_hint": "section: Google Antigravity / Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://www.cnbc.com/2025/07/11/google-windsurf-ceo-varun-mohan-latest-ai-talent-deal-.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This appears to be a real reported event, but the available primary reporting is outside the current allowlist."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The module says developers found references to \"Cascade\" inside Antigravity's codebase.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Google Antigravity / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Developers examining Antigravity's codebase have found references to \"Cascade,\" Windsurf's proprietary agentic system.",
+      "suggested_rewrite": "Antigravity and Windsurf surface similar agent-first ideas, but without a published technical teardown you should not claim shared internal implementation details.",
+      "lesson_point_url": null,
+      "rationale": "No verifiable primary source was found for this internal-codebase assertion."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Windsurf offers a free tier and a Pro plan priced at $15/month.",
+      "claim_class": "pricing",
+      "span_hint": "section: Windsurf / Overview table",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://windsurf.com/redirect/windsurf/learn-pricing",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official pricing page supports this, but the Windsurf domain is not on the current allowlist."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Windsurf's editor centers on Cascade with context awareness, terminal command generation, and browser capabilities.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Windsurf / Overview and Cascade System",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://windsurf.com/editor",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official editor page documents Cascade, contextual awareness, terminal command workflows, and related features."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Windsurf persists context across conversations through memories and rules.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Windsurf / The Power of Flows",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://docs.windsurf.com/windsurf/cascade/memories",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official docs describe persisted context via memories and rules, but the host is off-allowlist."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "The module claims Windsurf maintains an internal session graph that tracks dependencies across interactions.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Windsurf / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Windsurf's Flows system maintains an internal \"session graph\" that tracks dependencies between your interactions. If you ask about file A, then file B, then ask a question that relates to both, Cascade can synthesize information from both prior contexts—something impossible with stateless chat interfaces.",
+      "suggested_rewrite": "Windsurf documents persistent memories and rules that help Cascade carry context across conversations, but it does not publicly document the exact internal data structures used to do that.",
+      "lesson_point_url": null,
+      "rationale": "This is an undocumented implementation-detail claim rather than a published product fact."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "Cline is an open-source agentic coding tool with an Apache 2.0 license.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cline / Overview",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://github.com/cline/cline",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official GitHub repository states that Cline is open source and Apache 2.0 licensed."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "Cline works in VS Code, supports multiple providers and local models, uses MCP, can use the browser, and requests human approval for file changes and terminal commands.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cline / Key Features",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://github.com/cline/cline",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "These capabilities are explicitly described in the project's official GitHub README."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "The table says Cline has \"4M+ developers\".",
+      "claim_class": "statistic",
+      "span_hint": "section: Cline / Overview table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "4M+ developers",
+      "suggested_rewrite": "a large and active developer community",
+      "lesson_point_url": null,
+      "rationale": "No allowlisted primary source was found for this exact user-count figure."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "The module says Cline started as Claude Dev and later rebranded.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cline / Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This appears historically real, but the clearest source is the old marketplace listing, which is off-allowlist."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "Cursor Composer existed in 2024 as a multi-file editing capability.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: From Autocomplete to Autonomy timeline and Cursor / Composer Mode",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://www.cursor.com/changelog/composer-beta-",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Cursor's official changelog documents Composer beta in July 2024, but the domain is off-allowlist."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "Cursor indexes the codebase to improve understanding and retrieval of relevant context.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cursor / Philosophy and Codebase Understanding",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://docs.cursor.com/chat/codebase",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Cursor's official docs explicitly describe codebase indexing, but the host is outside the allowlist."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "Cursor's Pro plan costs $20/month.",
+      "claim_class": "pricing",
+      "span_hint": "section: Cursor / Overview table",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://cursor.com/pricing",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Cursor's official pricing page supports this, but the domain is not on the allowlist."
+    },
+    {
+      "claim_id": "C023",
+      "claim_text": "The module says Cursor is limited to a single task at a time and has no multi-agent capability.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cursor / Limitations",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Single task at a time (no multi-agent)",
+      "suggested_rewrite": "More review-oriented and diff-centric than a mission-control-style IDE, though Cursor also offers agent workflows and parallel subagents.",
+      "lesson_point_url": null,
+      "rationale": "Cursor publicly announced a multi-agent interface in October 2025, so this limitation is no longer reliable as written."
+    },
+    {
+      "claim_id": "C024",
+      "claim_text": "The module says Cursor has no browser control.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cursor / Limitations",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "No browser control",
+      "suggested_rewrite": "The product emphasis here is codebase-aware editing and agent workflows rather than browser-led validation.",
+      "lesson_point_url": null,
+      "rationale": "This absolute product-capability statement is too brittle without a current primary source."
+    },
+    {
+      "claim_id": "C025",
+      "claim_text": "The module says Cursor maintains a learned \"project fingerprint\" of the codebase.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Cursor / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Cursor maintains a \"project fingerprint\"—a learned representation of your codebase's patterns, naming conventions, and architectural choices. This fingerprint is used to bias code generation toward your specific style. Developers report that after using Cursor on a project for a few days, suggestions feel \"like they were written by a team member,\" not a generic AI.",
+      "suggested_rewrite": "Cursor documents codebase indexing and context-aware generation, but it does not publicly document the exact internal representation used to adapt to a project's style.",
+      "lesson_point_url": null,
+      "rationale": "This is an undocumented internal-mechanism claim plus an unsourced user-report generalization."
+    },
+    {
+      "claim_id": "C026",
+      "claim_text": "The module says three of the four major agent IDEs had implemented some form of autonomy dial by late 2025.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Convergence Trend / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "By late 2025, three of the four major agent IDEs (Antigravity, Windsurf, and Cline) had implemented some form of \"autonomy dial\"—a setting that lets developers control how independently the AI acts. This suggests the industry is converging on user-controlled autonomy rather than fixed approaches.",
+      "suggested_rewrite": "Many agent IDEs expose settings that let developers choose how much autonomy to give the assistant, suggesting a broader shift toward adjustable human oversight.",
+      "lesson_point_url": null,
+      "rationale": "The exact count and time-bound market claim are not backed here by citable primary evidence."
+    },
+    {
+      "claim_id": "C027",
+      "claim_text": "The module says IntelliSense was introduced in 1996 with Visual Basic 5.0.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Pre-AI Era / Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://news.microsoft.com/1996/10/28/microsoft-introduces-visual-basic-5-0-control-creation-edition/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Microsoft's historical press materials are the natural primary source, but that host is off-allowlist."
+    },
+    {
+      "claim_id": "C028",
+      "claim_text": "Research from 2012 found that source code is more predictable than English text.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Statistical Era",
+      "disposition": "supported",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": "https://cacm.acm.org/research/on-the-naturalness-of-software/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The ACM article on 'On the Naturalness of Software' directly discusses code predictability relative to natural language."
+    },
+    {
+      "claim_id": "C029",
+      "claim_text": "The module says GitHub Copilot launched in June 2021 and reframed code generation as autocomplete.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Copilot Revolution",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S014"
+      ],
+      "proposed_url": "https://github.blog/news-insights/product-news/introducing-github-copilot-ai-pair-programmer/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "GitHub's product announcement is the correct source, but github.blog is not on the current allowlist."
+    },
+    {
+      "claim_id": "C030",
+      "claim_text": "The module says GitHub Copilot generated over 35% of new code for users in its first year.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Copilot Revolution / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In its first year, GitHub Copilot generated over 35% of new code for users who had it enabled.",
+      "suggested_rewrite": "Very early on, GitHub reported that AI-assisted coding was already contributing a substantial share of newly written code in some environments.",
+      "lesson_point_url": null,
+      "rationale": "The exact percentage and timeframe need a precise primary source and are not safe to state as-is here."
+    },
+    {
+      "claim_id": "C031",
+      "claim_text": "The Marcus/Austin junior-developer story is a specific named, dated productivity anecdote with quantified outcomes.",
+      "claim_class": "war_story",
+      "span_hint": "section: Production War Stories / The Junior Developer and the 100x Project",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Austin, Texas. January 2025.** Marcus had been coding for 18 months when his company gave everyone access to Windsurf. His first week, he completed what his tech lead estimated was \"3-4 weeks of work\"—a complete admin dashboard with CRUD operations, authentication, and reporting.",
+      "suggested_rewrite": "Less-experienced developers can sometimes ship much faster with agentic tools, but that speed can hide gaps in understanding if they are not forced to explain and debug what was built.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed composite-style anecdote with false precision."
+    },
+    {
+      "claim_id": "C032",
+      "claim_text": "The module cites a 2025 Stack Overflow survey saying 67% of developers using agent IDEs completed tasks faster and 43% found debugging harder.",
+      "claim_class": "statistic",
+      "span_hint": "section: Production War Stories / Did You Know after Marcus story",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A 2025 survey by Stack Overflow found that 67% of developers using agent IDEs reported completing tasks faster, but 43% also reported increased difficulty debugging code they hadn't personally written.",
+      "suggested_rewrite": "Surveys consistently show a tradeoff: many developers report faster task completion with AI coding tools, while a substantial minority say debugging unfamiliar AI-written code is difficult.",
+      "lesson_point_url": null,
+      "rationale": "The exact percentages do not match the allowlist-accessible primary survey materials I found."
+    },
+    {
+      "claim_id": "C033",
+      "claim_text": "The startup due-diligence story is a specific named-city anecdote with a three-month build, ten-person-team comparison, and six-week refactor.",
+      "claim_class": "war_story",
+      "span_hint": "section: Production War Stories / The Startup That Bet Everything on Agents",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**San Francisco. March 2025.** A four-person startup decided to go \"all-in\" on agent-first development. They used Antigravity for everything: backend, frontend, infrastructure, testing. In three months, they built a product that would have taken a 10-person team a year.",
+      "suggested_rewrite": "A small team can prototype unusually quickly with agentic tools, but investors or senior reviewers may still find inconsistent patterns, weak abstractions, and missing edge cases if the team never established architectural constraints.",
+      "lesson_point_url": null,
+      "rationale": "This is a vivid but uncited war story with several fake-precise quantitative details."
+    },
+    {
+      "claim_id": "C034",
+      "claim_text": "The fintech credential-exposure story is a specific dated security incident with an exact exposure duration.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Production War Stories / The Security Incident Nobody Saw Coming",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Three weeks later, a routine security scan flagged that credentials had been committed to git (the `.gitignore` was configured incorrectly). The credentials had been exposed in the repository for 19 days.",
+      "suggested_rewrite": "If an agent creates local environment files or test credentials and your ignore rules are wrong, sensitive data can be committed and remain exposed until a later security review catches it.",
+      "lesson_point_url": null,
+      "rationale": "This is a precise security-incident claim without a citable source."
+    },
+    {
+      "claim_id": "C035",
+      "claim_text": "The Stanford and Berkeley course-policy examples are presented as real institutional experiments with opposite outcomes.",
+      "claim_class": "war_story",
+      "span_hint": "section: Philosophy Debate / education paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Stanford's CS department experimented with allowing unrestricted AI tool use in introductory programming courses, finding that students learned concepts faster but struggled more in advanced courses that required deep debugging skills. Berkeley took the opposite approach, banning AI tools in foundational courses but encouraging them in capstone projects.",
+      "suggested_rewrite": "Educational institutions are still experimenting with where AI tools belong in programming curricula, especially in the tension between faster short-term progress and deeper debugging skill development.",
+      "lesson_point_url": null,
+      "rationale": "These are concrete institutional claims with outcomes attached, but no citable primary sources were found."
+    },
+    {
+      "claim_id": "C036",
+      "claim_text": "The productivity-multiplier table gives exact ranges like 5-10x for boilerplate and 0.5-1x for architecture.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Productivity Multiplier table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Internal data from companies using agent-first IDEs suggests:",
+      "suggested_rewrite": "Reported productivity gains vary sharply by task type: teams usually see the biggest wins on repetitive implementation work and much smaller gains on architectural decision-making.",
+      "lesson_point_url": null,
+      "rationale": "The exact multiplier ranges are unattributed internal-data claims and should not remain as precise figures."
+    },
+    {
+      "claim_id": "C037",
+      "claim_text": "The Stripe engineering-team study claims 23% more story points per sprint and 18% more time in code review.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Productivity Multiplier / Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A 2025 study by Stripe's engineering team found that developers using Cursor (an early agent IDE) completed 23% more story points per sprint, but spent 18% more time in code review.",
+      "suggested_rewrite": "Some teams report net productivity gains from AI coding tools even after accounting for heavier review overhead, but the exact impact depends on workflow and governance.",
+      "lesson_point_url": null,
+      "rationale": "I did not find a citable primary source for this specific study and its exact percentages."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://cloud.google.com/blog/products/ai-machine-learning/gemini-3-is-available-for-enterprise?linkId=17778299",
+      "title": "Gemini 3 is available for enterprise",
+      "tier": "vendor",
+      "why_relevant": "This is Google's primary announcement tying Gemini 3 to Antigravity and the broader agentic-coding push."
+    },
+    {
+      "url": "https://github.com/cline/cline",
+      "title": "Cline GitHub Repository",
+      "tier": "upstream",
+      "why_relevant": "This is the primary source for Cline's licensing, provider support, browser use, MCP support, and approval model."
+    }
+  ],
+  "notes": "Most concrete Antigravity, Windsurf, and Cursor product claims appear real but currently require allowlist expansion because the clearest primary sources are on excluded official product-doc domains. The opening anecdotes, war stories, benchmark percentages, and institutional case studies should be rewritten rather than force-cited.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://cacm.acm.org/research/on-the-naturalness-of-software/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}

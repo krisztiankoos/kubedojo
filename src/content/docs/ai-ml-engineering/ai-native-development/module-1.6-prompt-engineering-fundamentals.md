@@ -174,8 +174,6 @@ The shift from "train a model" to "prompt a model" is like the shift from writin
 
 ## Did You Know? Prompt Engineering Salaries Skyrocketed
 
-**In 2023, "Prompt Engineer" became one of the highest-paid entry-level tech jobs.**
-
 **The Salary Boom**:
 - **2020**: Job didn't exist
 - **2021**: First postings appear ($80K-$120K)
@@ -1029,3 +1027,9 @@ In Module 3, you'll learn:
 _Last updated: 2026-04-12_
 _Module status: Complete_
 _Next: Create code examples and deliverable templates_
+
+## Sources
+
+- [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165) — Foundational paper for GPT-3 and few-shot prompting as an alternative to fine-tuning.
+- [OWASP LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) — Primary security reference for prompt-injection threat models and terminology.
+- [The Prompt Report](https://arxiv.org/abs/2406.06608) — Broad survey of prompting techniques that complements the module's conceptual overview.

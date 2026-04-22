@@ -1,0 +1,216 @@
+{
+  "module_key": "ai-ml-engineering/multimodal-ai/module-1.4-multimodal-first-design",
+  "module_path": "src/content/docs/ai-ml-engineering/multimodal-ai/module-1.4-multimodal-first-design.md",
+  "research_run_id": "2026-04-22T07:00:05+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The module opens with a specific late-2024 telehealth deployment failure, including a named domain, a 4.5-second latency figure, a 48-hour rollback, and a $12.5 million loss.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In late 2024, a major telehealth provider attempted to deploy an automated triage assistant using a composite multimodal system. The system chained a Speech-to-Text (STT) model, a Large Language Model (LLM), and a Text-to-Speech (TTS) model. During a critical surge in emergency calls, the compounding latency of these three separate network hops pushed the system's response time above 4.5 seconds. Patients, assuming the line was dead or the bot was broken, repeatedly spoke over the delayed responses. This created a cascading failure of interrupted context windows and hallucinated triage recommendations, leading to a complete system rollback within forty-eight hours and a reported $12.5 million loss in development and deployment costs.",
+      "suggested_rewrite": "Composite STT -> LLM -> TTS voice systems can accumulate enough latency that callers speak over delayed responses, corrupt context, and force an expensive rollback in safety-critical deployments.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with fake-precise operational and financial details, so the specifics should be removed rather than softened."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Multimodal models can learn a joint embedding space spanning text, images, and audio for cross-modal reasoning.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Native Multimodal Paradigm",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/2305.05665",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "ImageBind explicitly presents a joint embedding space across multiple modalities, directly supporting the shared-space concept used here."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Vision Transformers process images as sequences of patches.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Modality-Specific Encoders, item 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/2010.11929",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The ViT paper directly describes applying a transformer to sequences of image patches."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Video transformers can encode video as spatio-temporal tokens rather than treating frames independently.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Modality-Specific Encoders, item 4",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/2103.15691",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "ViViT explicitly states that it extracts spatio-temporal tokens from input video, which supports the module's description of native video encoding."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Human conversational gap averages around 200 milliseconds.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Problem with REST APIs for Real-Time",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Human conversational gap averages around 200 milliseconds.",
+      "suggested_rewrite": "Human conversational turn-taking typically happens on the order of a few hundred milliseconds.",
+      "lesson_point_url": null,
+      "rationale": "The exact 200 ms figure is presented as a hard statistic without a directly grounded source in the module, so the precise number should be removed."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Realtime multimodal apps typically rely on bidirectional transports such as WebSockets or WebRTC instead of one-shot HTTP request/response.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: WebSockets and WebRTC",
+      "disposition": "weak_anchor",
+      "source_ids": [],
+      "proposed_url": "https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/index.html",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "MDN directly documents WebSockets as two-way interactive communication and serves as a reasonable topical anchor for this transport-level claim."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "When a user interrupts a speaking realtime model, the unplayed portion of the model's last audio response should be truncated from conversation state so the model does not assume the user heard it.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Full-Duplex and Interruptibility",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://platform.openai.com/docs/guides/realtime-model-capabilities",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OpenAI's Realtime guide directly explains interruption-driven truncation, but the primary source is on an off-allowlist host."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The module claims that one minute of uncompressed 1080p video contains over 3.5 billion pixels.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A single minute of uncompressed 1080p video contains over 3.5 billion pixels, requiring aggressive spatiotemporal compression techniques before native models can project it into a shared latent space.",
+      "suggested_rewrite": "A single minute of uncompressed 1080p video contains billions of pixels, so practical multimodal systems need aggressive spatiotemporal compression before feeding video into model context.",
+      "lesson_point_url": null,
+      "rationale": "This is a back-of-envelope numeric claim presented as a hard fact, and the teaching point works without the precise figure."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The module claims that native multimodal models retain up to 85 percent of paralinguistic acoustic features lost by STT.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Native multimodal models retain up to 85 percent of paralinguistic acoustic features (like pitch, tempo, and breathiness), which are completely discarded by traditional Speech-to-Text transcribers.",
+      "suggested_rewrite": "Native audio models can preserve prosodic and other nonverbal cues that plain text transcription drops.",
+      "lesson_point_url": null,
+      "rationale": "The 85 percent figure is unsupported and overly precise, but the underlying lesson about lost prosodic information is sound."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The module claims that in 2025 more than 60 percent of enterprise customer-service deployments shifted to realtime voice agents.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet 4",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In 2025, over 60 percent of enterprise customer service deployments shifted from text-based chatbots to real-time voice agents powered by native multimodal architectures.",
+      "suggested_rewrite": "By the mid-2020s, many enterprise customer-service teams were piloting or deploying real-time voice agents alongside text chatbots.",
+      "lesson_point_url": null,
+      "rationale": "This is an unsupported market-share statistic and should be rewritten as a qualitative trend."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The module says emotional audio tone can cause native audio models to override polite text instructions.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Common Mistakes, row 'Assuming text prompts always override audio context.'",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In native models, an angry or urgent audio tone can sometimes cause the model to bypass polite text instructions.",
+      "suggested_rewrite": "In practice, emotional audio cues can materially influence how a native audio model interprets an exchange, so you should test how tone interacts with your text instructions.",
+      "lesson_point_url": null,
+      "rationale": "The strong override claim is too specific for the available source, but the broader lesson that native audio models respond to non-verbal cues is supportable."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Some realtime APIs require raw PCM audio with specific constraints such as 16-bit PCM at 24 kHz mono.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Common Mistakes, row 'Sending incompatible audio formats.'",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://platform.openai.com/docs/api-reference/realtime-beta-client-events/input_audio_buffer/clear?api-mode=responses",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OpenAI's Realtime API reference states the exact PCM16, 24 kHz, mono requirement, but the canonical primary source is on an off-allowlist host."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2305.05665",
+      "title": "ImageBind: One Embedding Space To Bind Them All",
+      "tier": "standards",
+      "why_relevant": "Grounds the shared-embedding idea behind native multimodal reasoning across text, image, and audio."
+    },
+    {
+      "url": "https://arxiv.org/abs/2103.15691",
+      "title": "ViViT: A Video Vision Transformer",
+      "tier": "standards",
+      "why_relevant": "Provides a concrete reference for spatio-temporal tokenization in transformer-based video models."
+    }
+  ],
+  "notes": "Excluded quizzes, exercise steps, code blocks, Mermaid diagrams, and purely pedagogical analogies. Repeated truncation guidance was consolidated into one citation target.",
+  "_schema_issues": [
+    "claim[7]:needs_allowlist_expansion_but_url_is_already_allowlisted",
+    "claim[13]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": [
+    {
+      "url": "https://openai.com/blog/introducing-gpt-realtime/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    },
+    {
+      "url": "https://openai.com/blog/introducing-gpt-realtime/",
+      "reason": "lesson_point_http_403",
+      "at_step": "research_validation",
+      "claim_id": "C013"
+    },
+    {
+      "url": "https://openai.com/blog/introducing-gpt-realtime/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

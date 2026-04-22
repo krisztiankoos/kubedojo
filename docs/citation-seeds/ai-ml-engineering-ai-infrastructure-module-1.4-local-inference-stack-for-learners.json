@@ -1,0 +1,108 @@
+{
+  "module_key": "ai-ml-engineering/ai-infrastructure/module-1.4-local-inference-stack-for-learners",
+  "module_path": "src/content/docs/ai-ml-engineering/ai-infrastructure/module-1.4-local-inference-stack-for-learners.md",
+  "research_run_id": "2026-04-21T22:44:38+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Ollama supports pulling models locally and exposes a REST API for running and managing models.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Ollama: Best for Fast Entry",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/ollama/ollama/blob/main/docs/api.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream API reference explicitly documents model pull endpoints and the REST API for running and managing local models."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "`llama.cpp` is built for broad hardware portability and uses the GGUF format for local model execution.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: `llama.cpp`: Best for Portability and Direct Control",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/ggml-org/llama.cpp",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream README states that `llama.cpp` targets a wide range of hardware and that models must be stored in GGUF format."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "`llama.cpp` includes `llama-server`, a lightweight OpenAI-compatible HTTP server for local serving.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Tier 2: Local Service",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/ggml-org/llama.cpp",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream README directly documents `llama-server` as a lightweight OpenAI-compatible HTTP server."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "vLLM is a serving-oriented inference engine with high-throughput features such as continuous batching, prefix caching, and an OpenAI-compatible API server.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: vLLM: Best for Learning Real Serving Dynamics",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/vllm-project/vllm/blob/main/README.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream README explicitly lists serving throughput, continuous batching, prefix caching, and an OpenAI-compatible API server."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "SGLang is a high-performance serving framework that includes structured outputs and OpenAI-compatible APIs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: sglang: Best for Advanced Workflow-Oriented Serving",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/sgl-project/sglang",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream README describes SGLang as a high-performance serving framework and lists structured outputs plus OpenAI API compatibility among its core features."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/ollama/ollama/blob/main/docs/api.md",
+      "title": "Ollama API Reference",
+      "tier": "upstream",
+      "why_relevant": "Covers local model pulling, generation, and service endpoints for learner-scale setups."
+    },
+    {
+      "url": "https://github.com/ggml-org/llama.cpp",
+      "title": "llama.cpp README",
+      "tier": "upstream",
+      "why_relevant": "Documents GGUF workflows, hardware backends, CLI usage, and the built-in local server."
+    },
+    {
+      "url": "https://github.com/vllm-project/vllm/blob/main/README.md",
+      "title": "vLLM README",
+      "tier": "upstream",
+      "why_relevant": "Summarizes the serving-oriented features that distinguish vLLM from simple local runners."
+    },
+    {
+      "url": "https://github.com/sgl-project/sglang",
+      "title": "SGLang README",
+      "tier": "upstream",
+      "why_relevant": "Explains the advanced serving features, structured outputs, and API compatibility discussed in the module."
+    }
+  ],
+  "notes": "Excluded quiz items, exercise steps, analogies, and non-load-bearing pedagogical advice. Seeded only the upstream-verifiable tool capability claims that would benefit from inline citations.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

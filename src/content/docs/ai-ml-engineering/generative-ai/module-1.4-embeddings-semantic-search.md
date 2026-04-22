@@ -18,9 +18,9 @@ sidebar:
 
 **January 2013, Google Building 43, Mountain View, California**
 
-Tomáš Mikolov was frustrated. The Czech-born researcher had spent months trying to make Google's speech recognition faster. His approach was simple: strip down the neural network architecture to its absolute minimum—just one hidden layer instead of the complex deep networks everyone else was using.
+In 2013, Tomas Mikolov and collaborators at Google published influential work on learning efficient word vectors with comparatively simple neural architectures.
 
-His colleagues at Google were skeptical. "You can't get good results with such a simple model," they said. But Mikolov was stubborn. He trained his simplified model on billions of words of text, optimizing purely for speed.
+At the time, the result was striking because it showed that relatively simple architectures could learn useful word representations efficiently. But Mikolov was stubborn. He trained his simplified model on billions of words of text, optimizing purely for speed.
 
 Then, on a cold January afternoon, he decided to examine the hidden layer weights—the internal numbers the network had learned. What he saw made him freeze.
 
@@ -32,7 +32,7 @@ He tried another. "Paris" minus "France" plus "Italy" equals... "Rome."
 
 Mikolov stared at his screen. The neural network hadn't just learned word associations. It had somehow learned the *geometry of concepts*. You could do math on meaning.
 
-He published his findings in a paper called "Efficient Estimation of Word Representations in Vector Space." It has since been cited over 40,000 times, making it one of the most influential machine learning papers ever written. The technique he accidentally discovered—word embeddings—became the foundation of modern NLP, powering everything from Google Search to ChatGPT.
+He published early word-vector results in the 2013 paper "Efficient Estimation of Word Representations in Vector Space," and that line of work became highly influential in later NLP systems.
 
 That simplified model? It became known as **Word2Vec**. And the numbers in that hidden layer—those magical coordinates that captured meaning—we call them **embeddings**.
 
@@ -125,11 +125,11 @@ Embeddings are vectors in high-dimensional space:
 
 | Model | Dimensions | Use Case |
 |-------|-----------|----------|
-| **OpenAI text-embedding-3-small** | 1536 | General purpose, cost-effective |
-| **OpenAI text-embedding-3-large** | 3072 | Higher quality, more expensive |
-| **Anthropic (Voyage)** | 1024 | Optimized for retrieval |
-| **Sentence-BERT** | 384-768 | Open-source, local deployment |
-| **Word2Vec** | 100-300 | Historical, word-level only |
+| **OpenAI text-embedding-3-small** | [1536](https://platform.openai.com/docs/guides/embeddings) | General purpose, cost-effective |
+| **OpenAI text-embedding-3-large** | [3072](https://platform.openai.com/docs/guides/embeddings) | Higher quality, more expensive |
+| **Voyage AI** | 1024 | Retrieval-focused embedding models |
+| **Sentence-transformer models** | Commonly a few hundred to around a thousand dimensions | Open-source, local deployment |
+| **Word2Vec** | Commonly a few hundred dimensions | Historical, word-level only |
 
 **Why so many dimensions?**
 
@@ -173,7 +173,7 @@ Input Text → Tokenization → Neural Network → Embedding Vector
 
 ### Contrastive Learning (How Models Learn Embeddings)
 
-Embedding models are trained using **contrastive learning**:
+Many modern retrieval and sentence-embedding models are trained with contrastive objectives:
 
 **Training objective**: Similar texts should have close embeddings, different texts should have distant embeddings.
 
@@ -191,7 +191,7 @@ text_3 = "Python is a programming language"
 ```
 
 **Training process**:
-1. Generate millions of (positive, negative) pairs from web data
+1. Generate large numbers of training pairs from available data
 2. For each pair, compute embeddings
 3. Adjust neural network weights to:
    - Minimize distance between positive pairs
@@ -200,13 +200,9 @@ text_3 = "Python is a programming language"
 
 **Result**: The model learns to encode meaning into vectors!
 
-> **Did You Know?**
->
-> The contrastive learning approach has become so effective that modern embedding models can understand nuances that even humans sometimes miss. In 2023, researchers at Google discovered that their embedding model had learned to distinguish between different types of irony—sarcastic statements clustered separately from genuine statements, even when the words were nearly identical. The model had learned the "shape" of irony from patterns in billions of text examples. This emergent ability wasn't explicitly programmed; it arose naturally from the training process, suggesting that meaning has a geometric structure that neural networks can discover.
-
 **The Scale of Training:**
 
-Modern embedding models are trained on staggering amounts of data. OpenAI's text-embedding-3 models are trained on hundreds of billions of tokens—equivalent to reading every book in the Library of Congress thousands of times. This massive scale is what allows them to understand that "automobile" and "car" are synonyms, or that "bank" has different meanings in financial and river contexts. The training compute for these models can cost millions of dollars, but the resulting embeddings are available to anyone for fractions of a cent per thousand tokens.
+Modern embedding models are trained on very large corpora, and current API pricing makes inference inexpensive for many applications.
 
 ---
 
@@ -315,7 +311,7 @@ First 5 values: [0.0234, -0.4123, 0.8765, 0.1543, -0.6234]
 
 ### Option 2: Anthropic (Voyage AI Integration)
 
-Anthropic partners with Voyage AI for embeddings:
+Anthropic's embeddings guidance points readers to Voyage AI as one example provider:
 
 ```python
 import voyageai
@@ -490,7 +486,7 @@ For text, **direction matters more than magnitude**. Two texts about the same to
 
 ## Did You Know?
 
-Cosine similarity is used everywhere in recommender systems! When Netflix recommends movies, it's comparing the embedding of movies you've watched to embeddings of all other movies, then recommending the ones with highest cosine similarity!
+Cosine similarity is widely used in retrieval and recommendation systems, but this module should not attribute a specific Netflix production design without a source.
 
 ---
 
@@ -809,7 +805,7 @@ emb_2 = get_voyage_embedding("text")  # 1024 dims
 similarity = cosine_similarity(emb_1, emb_2)  # ERROR or nonsense!
 ```
 
-**Solution**: Always use the same model for all embeddings in a system!
+**Solution**: In practice, use the same model for all embeddings in a system!
 
 ### Pitfall 4: Not Caching Embeddings
 
@@ -1018,15 +1014,15 @@ for path, score in results:
 ### The E-commerce Search Disaster
 
 **Company**: Major online retailer (anonymized)
-**Challenge**: Holiday season search failures costing $50,000/hour in lost sales
+**Challenge**: Holiday-season search failures were materially hurting revenue.
 
 The problem was subtle. During Black Friday, customers searching for "warm winter jacket" weren't finding the company's best-selling "insulated parka" or "thermal coat" products. The keyword-based search system only matched exact terms.
 
 **The disaster unfolds**:
-- Search conversion rate dropped 40% on Black Friday
+- Search conversion dropped sharply during peak traffic.
 - Customer support flooded with "I can't find [product]" complaints
 - Engineering scrambled to add synonyms manually
-- By Cyber Monday, they'd manually mapped 500 synonym pairs—and still missed countless combinations
+- The team tried manually maintaining synonym mappings, but the approach did not scale.
 
 **The embedding solution**:
 The team implemented semantic search over the following month:
@@ -1044,35 +1040,35 @@ def semantic_search(query, top_k=20):
 ```
 
 **Results**:
-- Search conversion rate increased 35%
+- Better retrieval can improve search conversion.
 - Zero synonym maintenance required
 - "Warm winter jacket" now matches "insulated parka" automatically
-- Estimated annual revenue increase: $4.2M
+- Better retrieval can produce meaningful revenue gains when search is business-critical.
 
 ### The Legal Discovery Breakthrough
 
 **Company**: Law firm handling complex litigation
-**Challenge**: Find relevant documents in 2 million case files
+**Challenge**: Find relevant documents in a very large legal corpus.
 
-Traditional approach: Teams of paralegals reading documents for weeks, billing $150/hour.
+Traditional discovery often relies on substantial human review labor.
 
 **The embedding approach**:
-1. Embed all 2 million documents (one-time cost: ~$200 in API calls)
+1. Embed the document corpus once, then reuse those vectors for retrieval.
 2. Lawyer describes what they're looking for in plain English
 3. System returns the 100 most semantically similar documents
 4. Paralegals review only the filtered results
 
 **The numbers**:
-- Before: 6 weeks, 8 paralegals, ~$180,000 in billable hours
-- After: 2 days, 2 paralegals, ~$5,000 in labor + $200 in API costs
-- Total savings per case: ~$175,000
-- ROI: 87,400%
+- Before: the process required substantial time and manual review labor.
+- After: the review workflow was dramatically shorter and required much less manual effort.
+- For document-heavy review workflows, better retrieval can materially reduce review cost.
+- The return on improved legal retrieval can be very large when review labor dominates cost.
 
 **Key insight**: Embeddings are particularly powerful for search over unstructured text where you can't predict what words people will use.
 
 ### The Customer Support Resolution
 
-**Company**: SaaS platform with 10,000 support tickets/month
+**Company**: SaaS platform with a high support-ticket volume
 **Challenge**: Route tickets to the right team and suggest relevant knowledge base articles
 
 The old system used rules: "If ticket contains 'billing', route to Finance." This failed spectacularly when customers wrote things like "I was charged twice" (no keyword "billing") or "my payment didn't go through" (routed to Payments team when it should be Finance).
@@ -1084,10 +1080,10 @@ The old system used rules: "If ticket contains 'billing', route to Finance." Thi
 4. Suggest knowledge base articles with highest semantic similarity
 
 **Results**:
-- Correct routing: 67% → 94%
-- First-response time: 4 hours → 45 minutes (right team gets it immediately)
-- Customer satisfaction: +28 NPS points
-- Support team capacity effectively increased 40%
+- Better semantic matching can improve ticket routing accuracy.
+- Routing tickets to the right team earlier can reduce response time.
+- Better routing and article suggestions can improve the customer experience.
+- Better triage can let support teams handle more work with the same staffing.
 
 ---
 
@@ -1137,7 +1133,7 @@ This is essentially free. Even at 100x the scale, you're looking at $13/month.
 | Quality | Need absolute best | "Good enough" works |
 | Ops burden | None | Significant |
 
-**Break-even analysis**: At OpenAI's pricing, self-hosting only makes sense above ~100M tokens/month (about $2,000/month in API costs). Below that, the operational overhead of running GPU infrastructure exceeds the API savings.
+**Break-even analysis**: Whether self-hosting is worth it depends on workload size, latency targets, privacy requirements, and the real operating cost of your infrastructure.
 
 ---
 
@@ -1206,7 +1202,7 @@ This is essentially free. Even at 100x the scale, you're looking at $13/month.
 
 5. **Chunk long documents** - Models have token limits. Overlap chunks to maintain context across boundaries.
 
-6. **Same model, always** - Never compare embeddings from different models. They live in different spaces.
+6. **Use the same model when possible** - In most cases, do not compare embeddings from different models. They live in different spaces.
 
 7. **Start simple, iterate** - Basic semantic search often outperforms complex systems. Add re-ranking and filtering only when needed.
 
@@ -1236,7 +1232,7 @@ vector("king") - vector("man") + vector("woman") ≈ vector("queen")
 
 The paper "Efficient Estimation of Word Representations in Vector Space" has been cited over **40,000 times** - making it one of the most influential ML papers ever. Mikolov later moved to Facebook AI, then left to work on AI safety.
 
-**Fun fact**: The famous king/queen example was discovered by accident when a researcher was debugging the model and tried random arithmetic operations!
+**Fun fact**: The king/queen analogy became one of the most famous demonstrations of vector arithmetic in word embeddings.
 
 ### The "Linguistic Regularity" Discovery
 
@@ -1261,13 +1257,13 @@ Word2Vec had a fatal flaw: it only embedded **single words**. How do you embed "
 
 **2018**: Google's BERT solved this by embedding entire sentences. But BERT was slow - generating one embedding required a full transformer forward pass.
 
-**2019**: Nils Reimers (a German researcher) created **Sentence-BERT** while doing his PhD. His insight: train BERT to produce embeddings that are fast to compare. The paper was rejected from the main NeurIPS conference but accepted to EMNLP.
+In 2019, Nils Reimers and Iryna Gurevych introduced Sentence-BERT, which adapted BERT into a more practical sentence-embedding approach.
 
 **The impact**:
 - Sentence-BERT made semantic search practical
 - Reimers founded Hugging Face's sentence-transformers library
 - Now used by: Google, Amazon, Microsoft, and virtually every AI startup
-- Downloads: 100M+ per month on Hugging Face
+- Sentence-transformer models are widely used across the NLP ecosystem.
 
 **The lesson**: A PhD student's "rejected" paper became the foundation of the entire embedding industry!
 
@@ -1280,7 +1276,7 @@ In **December 2022**, OpenAI released text-embedding-ada-002 - and shocked the i
 - Quality: Good but not great
 
 **After (ada-002)**:
-- Price: **$0.0001** per 1,000 tokens (2000x cheaper!)
+- Price: dramatically lower than earlier OpenAI embedding offerings of the time.
 - Quality: Significantly better
 
 **What happened?** OpenAI had achieved a massive efficiency breakthrough. They never disclosed the details, but the pricing made embeddings essentially free for most applications.
@@ -1289,7 +1285,7 @@ In **December 2022**, OpenAI released text-embedding-ada-002 - and shocked the i
 - Startups pivoted overnight from open-source to OpenAI
 - Self-hosted embedding servers were abandoned
 - Cohere, Google, and others scrambled to match pricing
-- By 2024, all major providers offer embeddings at <$0.0005 per 1K tokens
+- Embedding prices fell sharply across the market after major vendors intensified competition.
 
 ### The Netflix Recommendation Engine
 
@@ -1303,21 +1299,21 @@ recommendations = nearest_neighbors(user_embedding, all_movie_embeddings)
 ```
 
 **The numbers**:
-- Netflix generates **$1B+ per year** in value from their recommendation system
-- Embeddings replaced their old system in 2019
-- 80% of content watched comes from recommendations
+- Recommendation systems can create large business value for streaming platforms.
+- Modern recommendation systems often use embedding-based representations.
+- Recommendations account for a large share of viewing on many streaming platforms.
 
 **Amazon, Spotify, TikTok** - they all use similar embedding-based recommendation systems. The algorithm that powers your social media feed is essentially: *find content with embeddings similar to what you've engaged with.*
 
 ### Why Embeddings Beat Keyword Search
 
-The fundamental limitation of keyword search is the "vocabulary mismatch" problem. Users don't use the same words as document authors. A study by Microsoft Research found that in enterprise search, the exact query terms appeared in relevant documents only 23% of the time. The remaining 77% required understanding synonyms, related concepts, or paraphrased ideas.
+A core limitation of keyword search is vocabulary mismatch: users and document authors often describe the same concept with different words.
 
-Embeddings solve this naturally. When a user searches for "laptop won't turn on," an embedding-based system understands this is semantically similar to "computer not booting," "PC power issues," and "notebook startup failure"—even though they share few words in common. This semantic understanding is why embedding-based search typically outperforms keyword search by 30-60% on relevance metrics.
+Embeddings solve this naturally. When a user searches for "laptop won't turn on," an embedding-based system understands this is semantically similar to "computer not booting," "PC power issues," and "notebook startup failure"—even though they share few words in common. Embedding-based retrieval often improves recall for synonym-heavy or paraphrased queries, but the size of the gain depends on the dataset and evaluation setup.
 
 ### The Benchmark Wars
 
-In **2022**, the MTEB (Massive Text Embedding Benchmark) was released, ranking embedding models on 56 diverse tasks.
+In 2022, the MTEB (Massive Text Embedding Benchmark) was introduced as a broad evaluation suite for text-embedding models.
 
 **The competition got intense**:
 - **OpenAI** released ada-002, claimed #1 spot
@@ -1328,7 +1324,7 @@ In **2022**, the MTEB (Massive Text Embedding Benchmark) was released, ranking e
 **Current state (2024)**:
 - Best commercial: OpenAI text-embedding-3-large, Voyage AI voyage-large-2
 - Best open-source: e5-large-v2, bge-large-en-v1.5
-- Open source is now within 2-3% of commercial models!
+- Open-source embedding models have narrowed the gap with commercial offerings on several benchmarks.
 
 ### The Surprising Economics
 
@@ -1477,7 +1473,7 @@ Blindly splitting by token count frequently cuts text in the middle of sentences
 - Measured using cosine similarity (direction, not distance)
 - Applied to search, clustering, recommendations, classification, duplicates
 - OpenAI, Voyage, and open-source options available
-- Always use the same model for all embeddings in a system
+- In practice, use the same model for all embeddings in a system
 
 **Key formulas**:
 ```
@@ -1511,3 +1507,11 @@ You'll learn:
 - Building semantic search from scratch
 - Vector databases and indexing at scale
 - The geometry of meaning!
+
+## Sources
+
+- [platform.openai.com: embeddings](https://platform.openai.com/docs/guides/embeddings) — OpenAI's embeddings guide states that text-embedding-3-small defaults to 1536 dimensions.
+- [Efficient Estimation of Word Representations in Vector Space](https://arxiv.org/abs/1301.3781) — The original 2013 Word2Vec paper anchors the historical beginning of efficient neural word-vector learning.
+- [Distributed Representations of Words and Phrases and their Compositionality](https://arxiv.org/abs/1310.4546) — This paper covers the analogy-style compositional behavior that made embeddings famous.
+- [Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks](https://arxiv.org/abs/1908.10084) — It is the canonical paper for practical sentence embeddings and semantic similarity with BERT-derived encoders.
+- [MTEB: Massive Text Embedding Benchmark](https://arxiv.org/abs/2210.07316) — It provides the benchmark context needed for discussing how embedding models are evaluated across tasks.

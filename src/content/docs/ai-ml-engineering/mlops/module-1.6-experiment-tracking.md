@@ -7,21 +7,21 @@ sidebar:
 > **AI/ML Engineering Track** | Complexity: `[MEDIUM]` | Time: 5-6
 ## The Model That Vanished: A Cautionary Tale
 
-**San Francisco. March 2021. 9:47 PM.**
+**A late-night production incident.**
 
-Sarah Chen stared at her laptop in disbelief. The production sentiment classifier—the one powering their customer support automation—had been returning random predictions for the past two hours. The model that had achieved 94.2% accuracy in testing was now performing worse than a coin flip.
+Sarah Chen stared at her laptop in disbelief. A production sentiment classifier had started returning unreliable predictions, even though the team believed they had deployed a well-performing model.
 
-The investigation took three days. The model in production had been deployed from a Google Drive folder called "final_models_v3_USE_THIS_ONE." There were seventeen similar folders. The model file was called `sentiment_model_FINAL_real_this_one.pkl`. It had been uploaded by someone who had left the company six months ago.
+The investigation exposed a familiar failure mode: the team had no reliable record of which artifact had been deployed, who produced it, or how it related to earlier runs.
 
 But which training run produced this model? Nobody knew. The training script existed in four different versions across three team members' laptops. The dataset could have been any of twelve different versions—the file was just called `training_data.csv` with no version information. The hyperparameters? Lost in a Jupyter notebook that had been overwritten countless times.
 
-After three days, Sarah's team gave up trying to reproduce the model. They started from scratch, retraining on what they hoped was the right dataset with what they thought were reasonable hyperparameters. They achieved 91.8% accuracy—worse than the original, but at least they could explain where it came from.
+After failing to reconstruct the original setup, the team had to retrain from scratch and accept a model they could at least trace and explain.
 
-**Matei Zaharia**, creator of Apache Spark and later MLflow, saw this pattern repeated across hundreds of companies he consulted for: *"Every ML team hits the same wall. They build amazing models, but they can't reproduce them six months later. They can't explain to their CEO which dataset trained the production model. They can't answer why this week's model is worse than last month's. It's like building software without version control—but somehow, ML teams accepted this chaos as normal."*
+Practitioners have repeatedly pointed to the same underlying problem: teams can train strong models, yet still struggle to reproduce them later or explain exactly how a production model was created.
 
-In 2018, Zaharia's team at Databricks released MLflow, an open-source platform designed to solve exactly this problem. Within two years, it had become the most popular MLOps tool in the world.
+Tools like MLflow emerged to make experiment history, model lineage, and reproducibility easier to manage.
 
-This module teaches you how to prevent Sarah's nightmare. You'll learn MLflow and Weights & Biases—the two dominant experiment tracking platforms—and understand how to build systems where every model's lineage is tracked, every experiment is reproducible, and no model ever mysteriously vanishes.
+This module teaches you how to prevent that kind of failure. You'll learn MLflow and Weights & Biases—two widely used experiment tracking tools—and how to build systems where model lineage and experiment metadata are recorded consistently.
 
 ---
 
@@ -36,7 +36,7 @@ By the end of this module, you will:
 
 ---
 
-##  The Experiment Tracking Problem
+## The Experiment Tracking Problem
 
 ### Why Experiment Tracking Matters
 
@@ -53,11 +53,11 @@ Think of it like a kitchen. Git can track your recipe (the code), but it can't t
 
 Without proper tracking, ML development degrades into chaos. Teams create folder structures that look like archaeological sites: `model_final.pt`, `model_final_v2.pt`, `model_final_ACTUALLY_FINAL.pt`, `model_best_USE_THIS.pt`. When the inevitable question comes—"Can we reproduce the model we shipped six months ago?"—the answer is usually a panicked silence.
 
-**Did You Know?** A landmark 2019 study by **Joelle Pineau** at McGill University (now co-managing director of Meta AI) found that only 15% of ML papers could be reproduced from their published descriptions. The problem wasn't fraud—it was missing details. Hyperparameters weren't reported. Dataset preprocessing wasn't documented. Random seeds weren't recorded. Pineau's team proposed the "ML Reproducibility Checklist," now required by major ML conferences. *"Reproducibility isn't a nice-to-have,"* she wrote. *"It's the foundation of science. If we can't reproduce it, we can't build on it."*
+**Did You Know?** Reproducibility initiatives in ML have highlighted a recurring problem: papers often omit details such as preprocessing steps, hyperparameters, and random seeds, which makes results hard to reproduce.
 
 ### The Hidden Cost of Poor Tracking
 
-Google's internal research revealed something startling: ML teams spend 40% of their time on what they call "ML debt"—debugging, versioning, and reproducing experiments. That's nearly half of an ML engineer's time spent not on building models, but on archaeology—digging through old experiments to figure out what was done before.
+Poor experiment tracking creates a persistent maintenance burden: teams lose time reconstructing old runs, environments, and decisions instead of building new models. That's nearly half of an ML engineer's time spent not on building models, but on archaeology—digging through old experiments to figure out what was done before.
 
 This cost compounds. Every time a team member leaves, institutional knowledge walks out the door. Every time a model needs updating, engineers must reconstruct the original training environment. Every time a stakeholder asks "why is this model behaving this way?", the answer requires hours of forensic investigation.
 
@@ -85,7 +85,7 @@ MLflow is actually four tools in one, each solving a different part of the ML li
 
 **MLflow Projects** packages code in a reproducible format. Instead of sending a colleague a Python script and hoping it works on their machine, you package the code with its dependencies and entry points. Anyone can run the same experiment by pointing MLflow at the project.
 
-**MLflow Models** provides a standard format for saving models. Different frameworks (PyTorch, TensorFlow, scikit-learn) save models differently. MLflow Models provides a unified format that any deployment tool can understand. It's like PDF for ML models—a universal format that works everywhere.
+**MLflow Models** provides a standard format for saving models. Different frameworks (PyTorch, TensorFlow, scikit-learn) save models differently. MLflow Models provides a unified format that any deployment tool can understand. It's like PDF for ML models—a broadly compatible format that works in many environments.
 
 **MLflow Model Registry** provides versioning and lifecycle management for production models. It's the bridge between experimentation and deployment, letting you stage models, approve them for production, and roll back when things go wrong.
 
@@ -169,11 +169,11 @@ trainer = Trainer(model, train_loader, val_loader)
 trainer.train(epochs=10)
 ```
 
-Autologging works with all major frameworks: scikit-learn, PyTorch, TensorFlow, XGBoost, LightGBM, Hugging Face Transformers, and FastAI. It's a one-line addition that captures 90% of what you'd want to track.
+Autologging supports several major ML libraries and can capture much of the common training metadata with minimal code changes.
 
-Think of autologging like a security camera that automatically records. You don't have to remember to press "record"—it's always on, capturing everything important. You only add manual logging for custom metrics or domain-specific parameters that the framework doesn't know about.
+Think of autologging like a security camera that automatically records. You don't have to remember to press "record"—for supported libraries, it's often on by default, capturing most of the important details. You only add manual logging for custom metrics or domain-specific parameters that the framework doesn't know about.
 
-**Did You Know?** MLflow was released as open source on the same day it was announced, in June 2018. This was intentional. **Matei Zaharia** had learned from Spark's success that open-source-first builds community trust. Within two years, MLflow had over 10,000 GitHub stars and contributions from Facebook, Microsoft, and hundreds of other organizations. Today, it's governed by the Linux Foundation and used at scale by companies like Uber, Microsoft, and Facebook.
+**Did You Know?** Open-source ML tooling can spread quickly because teams can inspect it, adopt it across different environments, and contribute improvements back to a shared ecosystem.
 
 ### The Model Registry: From Experiment to Production
 
@@ -221,7 +221,7 @@ client.transition_model_version_stage(
 )
 ```
 
-The Registry provides four stages: None (just registered), Staging (under testing), Production (serving live traffic), and Archived (retired). Models flow through these stages as they're validated and deployed.
+The Registry provides four stages: [None (just registered), Staging (under testing), Production (serving live traffic), and Archived (retired)](https://github.com/mlflow/mlflow/issues/10336). Models flow through these stages as they're validated and deployed.
 
 This might seem like bureaucracy, but it prevents disasters. When Sarah's team had the model in a "USE_THIS_ONE" folder, there was no process, no audit trail, no way to know what was actually in production. With the Registry, there's exactly one "Production" version of each model, and you can see exactly when it was promoted and by whom.
 
@@ -258,11 +258,11 @@ Weights & Biases (W&B) takes a different approach than MLflow. While MLflow emph
 
 **Lukas Biewald**, W&B's founder, came to ML from a different angle. He had previously founded CrowdFlower (now Figure Eight), a data labeling platform. He saw firsthand how data quality affects model quality. When he started W&B in 2017, his vision was a platform where teams could see their experiments in real-time, collaborate on interpreting results, and share insights instantly.
 
-*"The problem with most tracking tools is that they're write-only,"* Biewald explained. *"You log metrics, but then you need custom scripts to actually look at them. We wanted something where you log and immediately see beautiful, interactive charts. The visualization should be instant, not an afterthought."*
+W&B emphasizes fast visualization so teams can inspect metrics immediately instead of building custom plotting workflows after training.
 
 The name "Weights & Biases" comes from the fundamental parameters in neural networks—but it's also a nod to the scientific process: we all have biases, and tracking helps us account for them.
 
-**Did You Know?** W&B raised $200 million in Series C funding in 2022 at a $1 billion valuation. Their customer list includes OpenAI (who uses W&B extensively for GPT training), NVIDIA, Toyota Research, and Samsung. The company bet early on building the best visualization and collaboration features, and it paid off: many researchers use W&B specifically for its interactive charts and easy sharing.
+**Did You Know?** W&B became popular by focusing on fast experiment visualization, easy sharing, and collaboration features for research teams.
 
 ### Basic W&B Logging
 
@@ -324,7 +324,7 @@ wandb.log_artifact(artifact)
 wandb.finish()
 ```
 
-The moment you call `wandb.log()`, the metric appears in the W&B dashboard. If you're training on a remote server, you can watch the training curves update in real-time from your laptop. Multiple team members can watch the same run, discuss it in the built-in commenting system, and compare it to previous runs.
+The moment you call `wandb.log()`, the metric appears in the W&B dashboard. If you're training on a remote server, you can watch the training curves update in real-time from your laptop. Multiple team members can compare runs side by side in the dashboard.
 
 ### W&B Sweeps: Hyperparameter Optimization
 
@@ -441,7 +441,7 @@ Both MLflow and W&B are excellent tools, but they emphasize different things:
 - You need to self-host for security or compliance reasons
 - Model serving and deployment are important
 - You want full control over your infrastructure
-- Cost is a constraint (MLflow is free forever)
+- You prefer an open-source, self-hosted tool
 
 **W&B** is SaaS-first with superior visualization and collaboration. It's the right choice when:
 - You want best-in-class experiment visualization
@@ -575,21 +575,21 @@ The step-level metrics let you diagnose training dynamics. The epoch-level metri
 
 ### Understanding Where You Are
 
-**Google's MLOps team**, led by **Fei-Fei Li** and **Cassie Kozyrkov**, published an influential maturity model in 2021. It describes five levels of ML infrastructure sophistication:
+Industry maturity models often frame MLOps as a progression from manual experimentation toward stronger automation in training, deployment, and monitoring.
 
 **Level 0: No MLOps** - This is Sarah's team from our opening story. Models live in notebooks. Deployment is manual. There's no version control for models, no experiment tracking, no reproducibility. Surprisingly, a 2021 survey found that 60% of organizations were still at this level.
 
-**Level 1: DevOps but not MLOps** - Teams have version control for code and basic CI/CD. But ML-specific concerns—experiment tracking, model versioning, dataset versioning—are still manual. The model is deployed like any other application, with no ML-specific monitoring.
+Early-stage teams often have source control and CI/CD for code but still manage experiments, data versions, and model versions manually.
 
 **Level 2: Automated Training** - This is where MLflow and W&B come in. Experiments are tracked. Models are versioned. There are automated training pipelines. But deployment is still manual—someone has to look at the metrics and decide to deploy.
 
-**Level 3: Automated Deployment** - CI/CD for models. Automated testing for both data and models. A/B testing and canary deployments for safe rollouts. But monitoring is still reactive—you don't know the model is degrading until someone complains.
+More mature teams automate model delivery, validation, and safer rollout patterns such as staged releases.
 
-**Level 4: Full MLOps** - The holy grail. Continuous training triggered by data drift. Automated retraining when performance degrades. Model monitoring with automatic alerts. Feature stores for consistent feature engineering. The system is self-maintaining.
+At the most advanced end of the spectrum, teams combine automated retraining triggers, monitoring, alerts, and consistent feature management.
 
 Most organizations should aim for Level 2 as a first milestone. It's achievable with a small team, provides massive benefits, and creates the foundation for higher levels.
 
-**Did You Know?** Google estimated that only 5% of organizations have achieved Level 3 or higher. The journey from Level 0 to Level 4 typically takes 2-4 years for a well-funded team. But even reaching Level 2—automated tracking and reproducibility—transforms ML from an art into an engineering discipline.
+**Did You Know?** Even partial improvements in tracking, versioning, and reproducibility can materially reduce operational friction before a team reaches highly automated MLOps.
 
 ---
 
@@ -633,7 +633,7 @@ volumes:
   postgres_data:
 ```
 
-The PostgreSQL backend gives you proper ACID guarantees for experiment metadata. S3 (or compatible storage like MinIO) gives you scalable artifact storage. In production, you'd also add authentication (MLflow supports OIDC) and run behind a load balancer.
+In production, teams typically back MLflow with a database, external artifact storage, and an authentication layer.
 
 ### Configuring Clients
 
@@ -661,7 +661,7 @@ Every team member, every training server, and every notebook can point to the sa
 
 ---
 
-##  Hands-On Exercises
+## Hands-On Exercises
 
 ### Exercise 1: Set Up Local MLflow Tracking
 
@@ -751,7 +751,7 @@ production_model = mlflow.pyfunc.load_model("models:/DemoClassifier/Production")
 
 ---
 
-##  Further Reading
+## Further Reading
 
 ### Documentation
 - [MLflow Documentation](https://mlflow.org/docs/latest/) - Comprehensive API reference
@@ -766,32 +766,86 @@ production_model = mlflow.pyfunc.load_model("models:/DemoClassifier/Production")
 
 ---
 
-##  Key Takeaways
+## Key Takeaways
 
 1. **Experiment tracking is not optional** - Without it, ML development degrades into chaos. Every serious ML team uses some form of tracking. The question is whether you use a proper system or a folder called "final_models_USE_THIS_v3."
 
-2. **MLflow is the open-source standard** - Four components (Tracking, Projects, Models, Registry) covering the full ML lifecycle. Self-hostable and free. Used by Microsoft, Facebook, and thousands of companies.
+2. **MLflow is a widely used open-source platform** - It provides experiment tracking, model packaging, and model management workflows that many teams use in self-hosted environments.
 
-3. **W&B excels at visualization and collaboration** - Real-time dashboards, interactive tables, built-in hyperparameter sweeps. The best experience for teams who want to see their experiments instantly.
+3. **W&B excels at visualization and collaboration** - Real-time dashboards, interactive tables, built-in hyperparameter sweeps. A strong experience for teams who want to see their experiments quickly.
 
 4. **The Model Registry bridges experimentation and production** - Staging, Production, Archived—clear lifecycle stages with audit trails. No more "which model.pkl is actually in production?"
 
 5. **Organization scales with discipline** - Consistent naming, strategic tagging, and thoughtful metric logging make the difference between 50 experiments and 5000.
 
-6. **Start at Level 2** - Most organizations are at Level 0 (no MLOps). Getting to Level 2 (automated tracking and reproducibility) is achievable and transformative. Then build toward Level 3 and 4.
+6. **Build automation incrementally** - Start with reliable tracking and reproducibility, then add stronger validation, deployment automation, and monitoring over time.
 
 ---
 
-##  Did You Know?
+## Did You Know?
 
-**The Hidden Tax of Poor Reproducibility**: A 2020 study by **Pete Warden** (former Google TensorFlow team) estimated that poor reproducibility costs the average ML team 20% of their engineering time. Over a year, for a 10-person team, that's equivalent to losing 2 full-time engineers to "archaeology"—digging through old experiments trying to figure out what was done.
+**The Hidden Tax of Poor Reproducibility**: Poor reproducibility drains engineering time because teams have to reconstruct old experiments instead of extending reliable, well-documented work.
 
-**The Experiment Explosion**: Modern ML research generates experiments at an unprecedented rate. DeepMind's AlphaFold project ran over 100,000 experiments. OpenAI's GPT-3 involved thousands of ablation studies. Without tracking, this scale of experimentation would be impossible to manage.
+**The Experiment Explosion**: Large modern ML projects can generate enormous numbers of runs, which makes systematic experiment tracking essential.
 
 **Why "Weights & Biases"?**: Beyond the neural network terminology, the name reflects a philosophy. "Biases" in ML have a specific meaning (the b in y = Wx + b), but they also refer to cognitive biases in researchers. The platform helps you see your data objectively, revealing biases you might not notice otherwise.
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team retrained a customer support classifier three months after launch, but the new results are worse and nobody can explain why. The old run was trained by a teammate who left, and all you have is a notebook plus a file named `model_final_v3.pkl`. What specific pieces of information should have been tracked to make the original model reproducible, and which MLflow logging calls would have captured them?
+
+<details>
+<summary>Answer</summary>
+They should have tracked the dataset version, hyperparameters, preprocessing context, random seed, evaluation metrics, and the model artifact itself. In MLflow, that means logging items such as `dataset_version` and `random_seed` with `mlflow.log_param()`, logging outcomes like accuracy and F1 with `mlflow.log_metric()`, and storing the trained model with `mlflow.sklearn.log_model()`. Artifacts such as a confusion matrix or feature importance report should also have been saved with `mlflow.log_artifact()`. The module’s core point is that Git alone tracks code, not the full experimental state needed to reproduce a model later.
+</details>
+
+**Q2.** An NLP researcher on your team is iterating quickly in PyTorch and keeps forgetting to manually log optimizer settings, loss curves, and checkpoints. She wants the fewest possible code changes while still capturing most training metadata. What is the best feature to use, and what kinds of information will it record automatically?
+
+<details>
+<summary>Answer</summary>
+She should use MLflow autologging, such as `mlflow.pytorch.autolog()`. According to the module, autologging automatically captures items like model architecture, optimizer settings, loss curves, validation metrics, model checkpoints, and training time. This is the right choice because it reduces manual logging overhead while still recording the majority of useful experiment metadata.
+</details>
+
+**Q3.** Your company has a fraud-detection model that passed offline evaluation, but compliance requires a documented promotion path before anything serves live traffic. You want one clear source of truth for which version is in testing and which version is actually live. How should you use the MLflow Model Registry lifecycle to manage this safely?
+
+<details>
+<summary>Answer</summary>
+You should register the model after training, then move it through the registry stages from `None` to `Staging`, and only later to `Production` after testing succeeds. The module explains that the Registry provides lifecycle states such as None, Staging, Production, and Archived, with an audit trail for promotions. This avoids the “which file is live?” problem because serving systems can load `models:/ModelName/Production` instead of depending on ambiguous folder names.
+</details>
+
+**Q4.** A distributed training job is running overnight on a remote GPU server, and product managers want to watch validation accuracy evolve in real time from their laptops. The team also wants built-in dashboards without writing custom visualization scripts. Which platform is the better fit for this workflow, and why?
+
+<details>
+<summary>Answer</summary>
+Weights & Biases is the better fit because the module highlights its real-time visualization and collaboration strengths. With `wandb.log()`, metrics appear immediately in the dashboard, so teammates can monitor training live and compare runs without building custom plotting tools. This matches W&B’s SaaS-first philosophy of instant charts, shared dashboards, and collaborative experiment analysis.
+</details>
+
+**Q5.** You need to search over learning rate, batch size, hidden size, and dropout for a text classifier, but you do not want to waste compute finishing clearly bad runs. Which W&B capability should you use, and how does it avoid wasting resources?
+
+<details>
+<summary>Answer</summary>
+You should use W&B Sweeps. The module explains that Sweeps can define a search space and use methods like Bayesian optimization to choose promising hyperparameter configurations instead of sampling blindly. It also supports early termination with Hyperband, which stops poorly performing runs early and shifts compute toward better candidates.
+</details>
+
+**Q6.** Six months from now, your platform team wants to answer a query like: “Show all production-candidate transformer runs from the NLP team trained on dataset v3.2 using A100 GPUs.” What experiment organization practice from the module makes this possible?
+
+<details>
+<summary>Answer</summary>
+A disciplined tagging strategy makes that possible. The module recommends tagging runs with structured metadata such as team, owner, dataset version, model family, model base, GPU type, business use case, and status flags like `production_candidate`. With consistent tags, runs become searchable and comparable instead of disappearing into vague experiment names and folder structures.
+</details>
+
+**Q7.** Your organization already uses Git and CI/CD for application code, but model experiments, dataset provenance, and model versions are still managed manually in notebooks and shared folders. Training is repeatable only through individual tribal knowledge. According to the module’s maturity model, what level are you at now, and what is the next practical milestone?
+
+<details>
+<summary>Answer</summary>
+You are at Level 1: DevOps but not MLOps. The module describes this level as having version control and basic CI/CD for code, while ML-specific concerns like experiment tracking and model versioning remain manual. The next practical milestone is Level 2, where experiments are tracked, models are versioned, and automated training pipelines provide reproducibility.
+</details>
+
+<!-- /v4:generated -->
 ## ⏭️ Next Steps
 
 You now understand experiment tracking and model registry—the foundation of reproducible ML!
@@ -805,3 +859,11 @@ You now understand experiment tracking and model registry—the foundation of re
 *Remember Sarah's vanishing model: without tracking, you're just one departure away from losing everything you've built. With tracking, every model tells its own story.*
 
 *"What gets measured gets managed. What gets tracked gets reproduced. What gets reproduced gets improved."* — The MLOps Manifesto
+
+## Sources
+
+- [github.com: 10336](https://github.com/mlflow/mlflow/issues/10336) — The MLflow RFC on stage deprecation explicitly lists the four fixed stages and their lifecycle role.
+- [MLOps: Continuous Delivery and Automation Pipelines in Machine Learning](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) — Primary vendor guidance on ML-specific CI/CD/CT patterns and maturity concepts.
+- [The MLflow Project Joins Linux Foundation](https://www.linuxfoundation.org/press/press-release/the-mlflow-project-joins-linux-foundation) — Useful background on MLflow's goals, open-source governance, and lifecycle focus.
+- [MLflow GitHub Repository](https://github.com/mlflow/mlflow) — Canonical upstream entry point for the project, releases, and current repository state.
+- [ICLR Reproducibility Challenge 2019](https://github.com/reproducibility-challenge/iclr_2019) — Relevant context for the reproducibility concerns discussed in the module.

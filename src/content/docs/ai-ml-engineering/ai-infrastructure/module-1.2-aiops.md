@@ -848,7 +848,7 @@ This generates an AI-informed report suggesting exact YAML adjustments for your 
 <details>
 <summary><strong>Question 3: Scenario</strong> - A Level 4 automated runbook restarts a database during a traffic spike, which immediately corrupts the index and causes a prolonged outage. What critical safety guardrail was missing from the AIOps architecture?</summary>
 
-**Answer**: The system lacked context-aware risk checks and rollback capability. A Level 4 automation should never execute a state-mutating operation (like a database restart) without verifying whether the issue is load-based versus crash-based. Furthermore, no auto-remediation should execute unless an automated rollback function is verified and available.
+**Answer**: The system lacked context-aware risk checks and rollback capability. A Level 4 automation generally should not execute a state-mutating operation (like a database restart) without verifying whether the issue is load-based versus crash-based. Furthermore, no auto-remediation should execute unless an automated rollback function is verified and available.
 </details>
 
 <details>
@@ -892,3 +892,9 @@ Learn the fascinating history behind the statistical models and algorithms you'v
 
 _Module 1.2 Complete! You now understand AIOps and AI-powered log analysis!_  
 _"The best alert is the one that tells you exactly what's wrong and how to fix it."_
+
+## Sources
+
+- [OpenTelemetry Specification Status Summary](https://opentelemetry.io/docs/specs/status/) — Useful for verifying which telemetry signals are stable enough to treat as production-grade inputs to an AIOps stack.
+- [CNCF Announces Prometheus Graduation](https://www.cncf.io/announcements/2018/08/09/prometheus-graduates/) — Provides historical context on Prometheus as a core metrics foundation in modern observability pipelines.
+- [What Is Amazon DevOps Guru?](https://docs.aws.amazon.com/devops-guru/latest/userguide/welcome.html) — Gives a concrete example of a managed AIOps-style service and the kinds of ML-backed operational insights vendors actually document.
