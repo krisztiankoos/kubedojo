@@ -50,13 +50,13 @@ That determines whether your current hardware is enough, whether you need upgrad
 For modern local AI work, **GPU memory** usually becomes the first hard wall.
 
 VRAM affects:
-- model size you can load
+- [model size you can load](https://huggingface.co/docs/transformers/en/quantization/bitsandbytes)
 - quantization options you can use
-- batch size
-- sequence length
+- [batch size](https://huggingface.co/docs/transformers/main/en/perf_train_gpu_one)
+- [sequence length](https://huggingface.co/docs/trl/reducing_memory_usage)
 - whether fine-tuning is realistic at all
 
-CPU power matters, but if the model does not fit into available VRAM, the experience degrades immediately or the workload becomes impossible.
+CPU power matters, but if the model does not fit into available VRAM, the experience usually degrades quickly or the workload may no longer be practical.
 
 ### 2. System RAM Is the Second Wall
 
@@ -68,7 +68,7 @@ RAM matters for:
 - CPU inference
 - moving artifacts between tools
 
-If VRAM is too small, frameworks often spill work back into system memory. A machine with strong GPU specs but insufficient RAM becomes unstable fast.
+If VRAM is too small, frameworks often [spill work back into system memory](https://huggingface.co/docs/transformers/en/quantization/bitsandbytes). A machine with strong GPU specs but insufficient RAM becomes unstable fast.
 
 ### 3. Fast Storage Is a Productivity Multiplier
 
@@ -154,15 +154,15 @@ Use these rules instead:
 
 ### RAM
 
-- `16 GB` is workable for light learning, but restrictive
-- `32 GB` is a realistic floor for comfortable local AI work
-- `64 GB` becomes attractive once you run local databases, heavier notebooks, and multiple services together
+- Lower-memory systems can work for light learning, but they become restrictive quickly
+- A moderate amount of RAM gives much more headroom for comfortable local AI work
+- Higher RAM capacity becomes attractive once you run local databases, heavier notebooks, and multiple services together
 
 ### VRAM
 
 - low VRAM: enough for small quantized models and experimentation
 - mid-range VRAM: comfortable for local inference and serious learning
-- high VRAM on one card: where single-machine fine-tuning starts becoming practical
+- high VRAM on one card: where [single-machine fine-tuning starts becoming practical](https://arxiv.org/abs/2305.14314)
 
 Treat VRAM as capacity planning, not marketing.
 
@@ -322,8 +322,151 @@ That sequence prevents emotional hardware decisions.
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team already has a modern laptop with 16 GB of RAM, and for the next four months you mainly plan to do API-based coding, Python environments, Git workflows, and a few small local notebook experiments. A teammate wants to immediately buy the biggest GPU available "so the setup feels serious." Based on this module, what is the better decision?
+
+<details>
+<summary>Answer</summary>
+Keep using the current machine first and delay the GPU purchase until repeated real tasks show a clear bottleneck.
+
+The module recommends starting from the workload, not prestige. For API-first work, light notebooks, and basic local experiments, almost any modern machine is viable. Buying a large GPU before understanding the next 3 to 6 months of work is a common beginner mistake that wastes money.
+</details>
+
+**Q2.** You install a quantized local LLM on a desktop with a decent CPU, but the model barely runs and performance becomes unstable once you increase context length. You also notice the workload spilling into system memory. Which hardware constraint is most likely the first real problem?
+
+<details>
+<summary>Answer</summary>
+VRAM is the first likely problem.
+
+The module explains that GPU memory is usually the first hard limit for local AI work because it controls whether a model fits at all, along with quantization options, batch size, and sequence length. When VRAM is too small, frameworks often spill work into system RAM, which makes the system slower and less stable.
+</details>
+
+**Q3.** Your group is choosing between a thin laptop and a single-GPU desktop for local inference, embeddings, and first experiments with LoRA-style fine-tuning. Everyone travels rarely, but jobs may run for hours at a time. Which option fits the module's guidance best, and why?
+
+<details>
+<summary>Answer</summary>
+The single-GPU desktop is the better fit.
+
+The module describes the single-GPU desktop as the best long-term learner value for serious local AI work because it handles sustained load better, offers cleaner upgrades, provides better thermal management, and expands storage more easily. A laptop is fine for portability, but thermal limits and limited upgrade space become real constraints for longer AI workloads.
+</details>
+
+**Q4.** You built a workstation around a strong GPU, but kept only 16 GB of system RAM because the GPU specs looked more impressive. During dataset preprocessing, embeddings, browser-heavy notebook sessions, and local vector DB use, the machine becomes unreliable. What sizing mistake did you make?
+
+<details>
+<summary>Answer</summary>
+You underestimated system RAM.
+
+The module says RAM is the second wall after VRAM and matters for preprocessing, notebooks, embeddings, vector stores, CPU inference, and moving artifacts between tools. It also gives 32 GB as a realistic floor for comfortable local AI work, while 16 GB is described as workable but restrictive.
+</details>
+
+**Q5.** A learner wants to build a three-node home cluster before they have ever run local inference, containerized a service, or managed a vector store on one machine. They argue that "real AI infrastructure" means multiple nodes from day one. According to the module, what is the better path?
+
+<details>
+<summary>Answer</summary>
+Start with one healthy machine and exhaust the single-machine lessons first.
+
+The module explicitly warns that building a home cluster too early is usually the wrong move. A single machine already teaches environment management, model loading, vector stores, serving basics, container basics, and fine-tuning constraints. Adding cluster complexity too soon creates operations overhead that distracts from the actual learning goal.
+</details>
+
+**Q6.** Your workstation technically has enough compute for local jobs, but long installs, checkpoint writes, and model loads feel painfully slow. The GPU and RAM look acceptable on paper. Which missing design choice is most likely hurting daily productivity?
+
+<details>
+<summary>Answer</summary>
+Fast SSD or NVMe storage is the missing piece.
+
+The module calls fast storage a productivity multiplier because AI workflows constantly read and write model weights, checkpoints, datasets, cached packages, and container layers. Slow storage turns installs, loads, and checkpoint operations into constant friction even when other specs look adequate.
+</details>
+
+**Q7.** You only need large compute a few times per month for short experiments, and your apartment makes heat, noise, and power draw a serious issue. You could either upgrade the home machine aggressively or rent larger hardware only when needed. Which choice aligns better with the module's decision framework?
+
+<details>
+<summary>Answer</summary>
+Short-term cloud use is the better choice.
+
+The module says cloud is smarter when you need short bursts of larger compute, when experiments are occasional rather than continuous, and when local heat, noise, and power are unacceptable. The decision framework also recommends asking whether a targeted upgrade solves the bottleneck and, if not, whether short-term cloud use is cheaper than rebuilding locally.
+</details>
+
+<!-- /v4:generated -->
+<!-- v4:generated type=no_exercise model=codex turn=1 -->
+## Hands-On Exercise
+
+
+Goal: audit the machine you already have, identify the real bottleneck for home AI work, and choose the next upgrade or cloud decision based on evidence instead of guesswork.
+
+- [ ] Identify the workstation type you are using right now: laptop-first, single-GPU desktop, or small always-on box. Write down your primary use for the next 3 to 6 months in one sentence, such as `API-first coding`, `local inference`, `RAG experiments`, or `small fine-tuning`.
+
+- [ ] Record your CPU, RAM, GPU, and storage facts from the machine itself. Run the commands for your platform and save the results in a notes file.
+
+```bash
+# Linux
+uname -a
+lscpu
+free -h
+df -h
+lsblk -o NAME,SIZE,TYPE,MOUNTPOINT
+lspci | grep -Ei 'vga|3d|display'
+nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv
+
+# macOS
+uname -a
+sysctl -n machdep.cpu.brand_string
+sysctl -n hw.memsize
+df -h
+system_profiler SPDisplaysDataType
+system_profiler SPNVMeDataType
+```
+
+- [ ] Convert the raw numbers into a simple inventory: total system RAM, total GPU VRAM, free fast storage, and whether the machine can run long jobs without becoming noisy or hot. If you cannot confirm thermals directly, note that as an open risk.
+
+- [ ] Classify the machine against the module’s sizing rules. Mark whether your setup is currently in one of these bands:
+  - RAM: `16 GB workable`, `32 GB comfortable floor`, `64 GB strong for multi-service local work`
+  - VRAM: `small-model experimentation`, `comfortable local inference`, or `single-card fine-tuning candidate`
+  - Storage: `enough for now` or `likely to fill quickly`
+
+- [ ] Match one real workload to one expected bottleneck. Use examples like:
+  - `small local coding model -> VRAM first`
+  - `notebooks + browser + embeddings -> RAM first`
+  - `model downloads + checkpoints + datasets -> storage first`
+  - `long inference sessions -> thermals/noise first`
+
+- [ ] Verify whether your current machine is already sufficient for the next stage of learning. Use these commands to confirm free memory and available storage before deciding to upgrade.
+
+```bash
+# Linux
+free -h
+df -h .
+uptime
+
+# macOS
+vm_stat
+df -h .
+uptime
+```
+
+- [ ] Write a one-paragraph decision using this format: `Keep current machine`, `Make one targeted upgrade`, or `Use cloud for burst workloads`. Base the decision on the first repeated bottleneck, not on hardware prestige.
+
+- [ ] Define one concrete next action. Examples: `add RAM to 32 GB`, `add NVMe storage`, `improve cooling before buying a GPU`, or `stay on current laptop and use cloud only for larger experiments`.
+
+Success criteria:
+- You can state your workstation type and your next 3 to 6 months of AI workload clearly.
+- You have recorded actual RAM, VRAM, storage, and basic system details from the machine.
+- You can name the first likely bottleneck for your intended workload.
+- You have chosen one rational next step: keep, upgrade, or use cloud.
+- Your decision is based on measured constraints, not on buying the largest component available.
+
+<!-- /v4:generated -->
 ## Next Modules
 
 - [Reproducible Python, CUDA, and ROCm Environments](./module-1.3-reproducible-python-cuda-rocm-environments/)
 - [Notebooks, Scripts, and Project Layouts](./module-1.4-notebooks-scripts-project-layouts/)
 - [Local Models for AI Coding](../ai-native-development/module-1.2-local-models-for-ai-coding/)
+
+## Sources
+
+- [huggingface.co: bitsandbytes](https://huggingface.co/docs/transformers/en/quantization/bitsandbytes) — The Transformers bitsandbytes documentation explicitly says quantization reduces memory requirements and makes large models easier to fit on limited hardware.
+- [huggingface.co: perf train gpu one](https://huggingface.co/docs/transformers/main/en/perf_train_gpu_one) — The official Transformers GPU training guide states that batch size affects memory usage and that the feasible batch size depends on the GPU.
+- [huggingface.co: reducing memory usage](https://huggingface.co/docs/trl/reducing_memory_usage) — The TRL memory guide explains that large max_length values can spike memory usage and lead to OOM errors.
+- [arxiv.org: 2305.14314](https://arxiv.org/abs/2305.14314) — The QLoRA paper shows that quantized LoRA-style fine-tuning can reduce memory use enough to make single-GPU fine-tuning feasible.

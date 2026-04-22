@@ -214,7 +214,7 @@ which python3
 # Output: /usr/local/bin/python3 or /opt/homebrew/bin/python3
 ```
 
-**Why it matters**: System Python is often outdated (3.9 on macOS, 3.8 on some Linux) and shouldn't be modified. Always use `python3`.
+**Why it matters**: System Python is often outdated (3.9 on macOS, 3.8 on some Linux) and shouldn't be modified. Use `python3` for the commands in this module.
 
 **Mistake #2: Multiple Python versions causing confusion**
 ```bash
@@ -397,7 +397,7 @@ which python
 # Shows: /Users/you/projects/ai-ml-lab/venv/bin/python (RIGHT!)
 ```
 
-**Fix**: Always run `source venv/bin/activate` when starting work.
+**Fix**: Usually run `source venv/bin/activate` when starting work.
 
 **Mistake #2: Installing packages globally**
 ```bash
@@ -778,7 +778,7 @@ python test_openai_api.py
 
 ## Module 0 Complete Checklist
 
-Use this to verify you're 100% ready:
+Use this to verify you're ready:
 
 ### Environment Setup
 - [ ] Python 3.12+ installed and verified (`python3 --version`)
@@ -1177,7 +1177,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**Prevention**: ALWAYS see `(venv)` before running `pip install`!
+**Prevention**: Make sure you see `(venv)` before running `pip install`!
 
 ---
 
@@ -1584,6 +1584,64 @@ python -m pip install anthropic
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your teammate says they already have ChatGPT Plus, so they skip creating an OpenAI or Anthropic API account and start writing Python code that calls an LLM. When the code asks for an API key, they insist their subscription should be enough. What should you tell them to do, and why?
+
+<details>
+<summary>Answer</summary>
+They need a separate API account, not just a web subscription. The module explains that ChatGPT Plus and Claude Pro are for browser use, while API access is pay-per-use and intended for programmatic requests from code. For this curriculum, they should create an OpenAI API account or an Anthropic API account, generate an API key, and store it securely in a `.env` file.
+</details>
+
+**Q2.** You open a new AI project on macOS and run `python --version`, which shows an older system Python. You also see `python3.12` is installed. You want to avoid version confusion for the rest of the curriculum. What is the safest next step?
+
+<details>
+<summary>Answer</summary>
+Use Python 3.12 explicitly, because the module requires Python 3.12+ and warns that system Python on macOS is often outdated. Create the environment with `python3.12 -m venv venv`, then activate it and verify that `which python` points into `venv/bin/python`. That avoids accidentally using the old system interpreter.
+</details>
+
+**Q3.** Your team has two Python projects on the same laptop. One needs `pandas 1.5`, another needs `pandas 2.0`. A teammate wants to install everything globally “to keep it simple.” Based on the module, what setup should you use instead, and what problem does it prevent?
+
+<details>
+<summary>Answer</summary>
+Each project should use its own virtual environment. The module explains that venv isolates dependencies so one project can use one package version while another project uses a different version without conflicts. This prevents dependency hell, where global installs cause projects to break because they need incompatible package versions.
+</details>
+
+**Q4.** You add `ANTHROPIC_API_KEY = sk-ant-...` to a `.env` file, but your test script still prints “API key not found.” The file exists, and the key itself is valid. What are the two most likely mistakes described in the module?
+
+<details>
+<summary>Answer</summary>
+The two most likely issues are:
+1. The `.env` syntax is wrong because there are spaces around `=`, which the module says can break loading.
+2. The script forgot to call `load_dotenv()` before reading `os.getenv("ANTHROPIC_API_KEY")`.
+
+The correct pattern is no spaces around `=`, plus `from dotenv import load_dotenv` and `load_dotenv()` before accessing the variable.
+</details>
+
+**Q5.** A developer hardcodes an Anthropic key directly in `main.py`, commits it to GitHub, and the key stops working the next day. What probably happened, and what should they do differently from now on?
+
+<details>
+<summary>Answer</summary>
+The key was likely exposed and then revoked automatically after being detected in the repository. The module warns that leaked keys are often found quickly and can lead to unauthorized usage or billing problems. They should revoke the old key, generate a new one, store it in `.env`, make sure `.env` is ignored by git, and load it with environment variables instead of hardcoding it in source code.
+</details>
+
+**Q6.** Your first Claude API script works, but a reviewer notices you never set `max_tokens`. The script is going to be used repeatedly in later modules. Why is that risky, and what best practice from the module should you apply?
+
+<details>
+<summary>Answer</summary>
+It is risky because leaving out `max_tokens` can allow unexpectedly large responses, which can increase costs if a bug or bad prompt causes runaway output. The module recommends always setting `max_tokens` as a safety limit. Adding a reasonable cap keeps usage predictable and helps prevent unnecessary API spend.
+</details>
+
+**Q7.** Your code works on your laptop, but on another machine it fails with missing packages and different behavior. You need a setup that makes the environment reproducible across systems. According to the module, what should you do before sharing the project?
+
+<details>
+<summary>Answer</summary>
+Lock the dependency versions and document the Python version. The module recommends creating a `requirements.txt` with exact versions using `pip freeze > requirements.txt`, then recreating a venv on the other machine and installing from that file. It also stresses using the same Python version, since environment differences often come from mismatched interpreters or package versions.
+</details>
+
+<!-- /v4:generated -->
 ## Next Steps
 
 **You're now ready for Module 1: Foundations of AI-Driven Development**
@@ -1603,3 +1661,8 @@ The environment you've just configured is your launchpad. Every AI application y
 
 _Last updated: 2025-11-22 (Enhanced with Quality Patterns)_
 _Module status:  Complete_
+
+## Sources
+
+- [CPython venv docs](https://github.com/python/cpython/blob/3.12/Doc/library/venv.rst) — Primary reference for how Python virtual environments work and what isolation they provide.
+- [Anthropic Pricing](https://www.anthropic.com/pricing) — Useful for checking current Claude API costs instead of relying on stale course estimates.

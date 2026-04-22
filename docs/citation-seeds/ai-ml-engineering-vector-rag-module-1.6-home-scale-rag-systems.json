@@ -1,0 +1,31 @@
+{
+  "module_key": "ai-ml-engineering/vector-rag/module-1.6-home-scale-rag-systems",
+  "module_path": "src/content/docs/ai-ml-engineering/vector-rag/module-1.6-home-scale-rag-systems.md",
+  "research_run_id": "2026-04-22T09:44:06+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2005.11401",
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+      "tier": "standards",
+      "why_relevant": "Foundational RAG paper covering the retrieve-then-generate pattern that this module adapts to smaller local systems."
+    },
+    {
+      "url": "https://arxiv.org/abs/1908.10084",
+      "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks",
+      "tier": "standards",
+      "why_relevant": "Useful background for the embedding-based semantic search choices discussed in the module."
+    },
+    {
+      "url": "https://github.com/facebookresearch/faiss",
+      "title": "Faiss",
+      "tier": "upstream",
+      "why_relevant": "Practical upstream reference for lightweight local dense-vector indexing, which fits the module's home-scale design focus."
+    }
+  ],
+  "notes": "No inline citation seeds were emitted. The module is almost entirely pedagogical design guidance, heuristics, and scenario framing rather than discrete verifiable claims about incidents, standards, statistics, vendor/version behavior, or dated pricing.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

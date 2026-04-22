@@ -1,0 +1,367 @@
+{
+  "module_key": "ai-ml-engineering/multimodal-ai/module-1.3-video-ai",
+  "module_path": "src/content/docs/ai-ml-engineering/multimodal-ai/module-1.3-video-ai.md",
+  "research_run_id": "2026-04-22T06:22:20+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A May 2016 fatal crash in Florida involved a Tesla operating with partial automation and a tractor-semitrailer crossing the highway.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://www.ntsb.gov/investigations/Pages/HWY16FH018.aspx",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The incident is real and the NTSB page supports the date and collision context, but ntsb.gov is off-allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The module attributes the 2016 crash to a frame-by-frame perception pipeline lacking temporal modeling.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "but the system processed the visual data as a series of independent, static frames. Without a coherent temporal model to link the movement of the object across consecutive frames, the system failed to recognize the obstruction as a solid, moving barrier and did not apply the brakes.",
+      "suggested_rewrite": "but the system failed to recognize the obstruction and did not brake, underscoring how brittle perception systems can be in complex real-world conditions.",
+      "lesson_point_url": null,
+      "rationale": "The cited investigations do not support this precise temporal-model explanation for the crash."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "A global logistics firm recently lost millions after deploying frame-by-frame safety monitoring in fulfillment centers.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A major global logistics firm recently deployed a naive frame-by-frame video AI system across their fulfillment centers to detect workplace safety violations. Because the system analyzed frames independently without any temporal context, a worker safely and slowly lowering a heavy box was repeatedly flagged as a falling object hazard. Meanwhile, actual dangerous continuous motions, such as a forklift slowly tipping over several seconds, were completely ignored because no single frame looked anomalous in isolation. The company wasted millions of dollars on false alarms and blind spots before completely redesigning their pipeline from the ground up.",
+      "suggested_rewrite": "Teams that analyze safety video frame by frame often encounter false alarms and missed events until they add temporal context to the pipeline.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with named operational context and large financial impact but no verifiable source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The module claims video AI can reduce moderation costs by millions of dollars annually.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Why This Module Matters, paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The financial impact of mastering this domain is staggering, spanning from reducing manual content moderation costs by millions of dollars annually to enabling entirely new forms of generative interactive media.",
+      "suggested_rewrite": "The financial impact of mastering this domain can be substantial, from lowering moderation workload at scale to enabling new forms of generative interactive media.",
+      "lesson_point_url": null,
+      "rationale": "The sentence makes a large unscoped monetary claim without an attributable study or operator."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "OpenAI's Sora technical report describes a transformer-based video model that operates on spacetime patches.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4 > Diffusion Over Space and Time",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://openai.com/index/video-generation-models-as-world-simulators/",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OpenAI's technical report explicitly says Sora uses a transformer architecture over spacetime patches of video latent codes."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The table lists Sora as an OpenAI text-to-video system in limited preview.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4 > The Video Generation Landscape table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Sora | OpenAI | Text-to-Video | Limited preview |",
+      "suggested_rewrite": "| Sora | OpenAI | Text-to-Video | Access and rollout have changed since the original preview; check current product docs |",
+      "lesson_point_url": null,
+      "rationale": "The access state is time-sensitive and this row is already stale."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The table lists Runway Gen-2/3 as text/image-to-video models with API and web access.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4 > The Video Generation Landscape table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Runway Gen-2/3 | Runway | Text/Image-to-Video | API & Web |",
+      "suggested_rewrite": "| Runway | Runway | Text/Image-to-Video | Model names and access depend on the current product generation and plan |",
+      "lesson_point_url": null,
+      "rationale": "The row hard-codes legacy model families and an access pattern that changes over time."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The table lists Pika as a web-based text-to-video system.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4 > The Video Generation Landscape table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Pika | Pika Labs | Text-to-Video | Web |",
+      "suggested_rewrite": "| Pika | Pika Labs | Video generation | Availability and feature tiers change quickly; check current product docs |",
+      "lesson_point_url": null,
+      "rationale": "The row makes a time-sensitive vendor capability claim without stable sourcing."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Stable Video Diffusion is an image-to-video model available as an open model artifact.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4 > The Video Generation Landscape table",
+      "disposition": "supported",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Hugging Face model card directly identifies Stable Video Diffusion as an image-to-video model and exposes the downloadable model artifact."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The table lists Kling as a text-to-video system with limited access.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4 > The Video Generation Landscape table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Kling | Kuaishou | Text-to-Video | Limited |",
+      "suggested_rewrite": "| Kling | Kuaishou | Video generation | Access and regional availability change frequently; check current product docs |",
+      "lesson_point_url": null,
+      "rationale": "The row relies on a vague and unstable access label rather than a durable sourced capability."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The table lists Dream Machine as a web-based text-to-video system.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4 > The Video Generation Landscape table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Dream Machine | Luma AI | Text-to-Video | Web |",
+      "suggested_rewrite": "| Dream Machine | Luma AI | Video generation | Web and API features vary by current model and plan |",
+      "lesson_point_url": null,
+      "rationale": "The row makes a time-sensitive vendor capability claim without a stable, allowlisted source."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The module says Sora was revealed on February 15, 2024 and demonstrated unprecedented physics and temporal stability.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? Technical Milestones, item 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The monumental OpenAI Sora model was revealed to the public on February 15, 2024, demonstrating previously thought impossible physics simulations and temporal stability across complex long-form generations.",
+      "suggested_rewrite": "OpenAI published the Sora technical report on February 15, 2024, showing a text-to-video model that can generate minute-long videos while also documenting important limitations in physics and long-range consistency.",
+      "lesson_point_url": null,
+      "rationale": "The date is citable, but the 'previously thought impossible' formulation is unsourced hype and overstates the evidence."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The Lucas-Kanade optical flow algorithm was published in 1981.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know? Technical Milestones, item 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://www.ri.cmu.edu/publications/an-iterative-image-registration-technique-with-an-application-to-stereo-vision-ijcai/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The original 1981 publication is citable via CMU's publication page, but that domain is off-allowlist."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Lucas-Kanade optical flow remains a common implementation in modern computer-vision tooling for point tracking.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know? Technical Milestones, item 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://docs.opencv.org/4.x/d4/dee/tutorial_optical_flow.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OpenCV's official tutorial directly documents Lucas-Kanade tracking usage, but docs.opencv.org is off-allowlist."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "The module claims YouTube receives over 500 hours of high-definition video every minute and presents this as a moderation-scale benchmark.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know? Technical Milestones, item 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The computational scale of global media is vast; every single minute, over 500 hours of high-definition video are uploaded to YouTube, forcing the absolute limits of automated moderation pipelines.",
+      "suggested_rewrite": "The scale of modern media platforms is vast; hundreds of hours of video are uploaded to YouTube every minute, which makes automated moderation a necessity at large scale.",
+      "lesson_point_url": null,
+      "rationale": "Official YouTube materials support the rough upload-volume point, but this sentence adds unsupported precision and qualifiers such as 'high-definition' and 'absolute limits'."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "Google Cloud documentation for Gemini 1.5 Pro lists video inputs up to about 45 minutes with audio in a single prompt.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? Technical Milestones, item 4",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/1-5-pro",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Google Cloud's model documentation explicitly lists approximately 45 minutes as the maximum supported video length with audio."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "The table estimates gpt-5 vision video-understanding cost at about $0.10 per minute.",
+      "claim_class": "pricing",
+      "span_hint": "section: The Economics of Video AI table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| gpt-5 (Vision) | ~$0.10/minute of video* | N/A | *At 10 frames/min |",
+      "suggested_rewrite": "| gpt-5 (Vision) | Usage-based | N/A | Estimate cost from current OpenAI pricing and your frame-sampling policy |",
+      "lesson_point_url": null,
+      "rationale": "This is a derived, time-sensitive price estimate rather than a stable quoted rate from a current pricing page."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "The table estimates Gemini 1.5 video-understanding cost at about $0.05 per minute.",
+      "claim_class": "pricing",
+      "span_hint": "section: The Economics of Video AI table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Google Gemini 1.5 | ~$0.05/minute of video | N/A | Native video input |",
+      "suggested_rewrite": "| Google Gemini 1.5 | Usage-based | N/A | Native video support exists, but costs depend on the current model and billing plan |",
+      "lesson_point_url": null,
+      "rationale": "This is a volatile pricing estimate tied to model/version assumptions rather than a durable quoted price."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "The table estimates Claude 3 Opus video-understanding cost at about $0.15 per minute.",
+      "claim_class": "pricing",
+      "span_hint": "section: The Economics of Video AI table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Claude 3 Opus | ~$0.15/minute of video* | N/A | *At 10 frames/min |",
+      "suggested_rewrite": "| Claude 3 Opus | Usage-based | N/A | Estimate cost from current Anthropic pricing and your frame-sampling policy |",
+      "lesson_point_url": null,
+      "rationale": "This is a derived estimate that will drift with model pricing and frame-sampling assumptions."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "The table prices Runway Gen-3 generation at $0.05 per second and about $3 per minute.",
+      "claim_class": "pricing",
+      "span_hint": "section: The Economics of Video AI table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Runway Gen-3 | N/A | $0.05/second | ~$3/minute of output |",
+      "suggested_rewrite": "| Runway Gen-3 | N/A | Subscription/credit-based | Generation pricing varies by model, plan, and output settings |",
+      "lesson_point_url": null,
+      "rationale": "The exact per-second rate is time-sensitive and product-specific."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "The table prices Pika generation at about $0.50 per five-second clip.",
+      "claim_class": "pricing",
+      "span_hint": "section: The Economics of Video AI table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Pika | N/A | ~$0.50/5-second clip | Subscription model |",
+      "suggested_rewrite": "| Pika | N/A | Subscription/credit-based | Generation pricing varies by plan and feature tier |",
+      "lesson_point_url": null,
+      "rationale": "The exact clip price is a volatile commercial estimate rather than a durable source-backed figure."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "The table estimates local faster-whisper processing cost at about $0.002 per minute.",
+      "claim_class": "pricing",
+      "span_hint": "section: The Economics of Video AI table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Local (faster-whisper) | ~$0.002/minute | N/A | GPU amortized |",
+      "suggested_rewrite": "| Local (faster-whisper) | Hardware-dependent | N/A | Actual cost depends on GPU utilization, throughput, and amortization assumptions |",
+      "lesson_point_url": null,
+      "rationale": "This is an internal cost model assumption, not a stable externally sourced price."
+    },
+    {
+      "claim_id": "C023",
+      "claim_text": "The table estimates local Stable Video Diffusion generation cost at about $0.01 per second.",
+      "claim_class": "pricing",
+      "span_hint": "section: The Economics of Video AI table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| Local (SVD) | N/A | ~$0.01/second | GPU amortized |",
+      "suggested_rewrite": "| Local (SVD) | N/A | Hardware-dependent | Actual cost depends on GPU type, batch size, and amortization assumptions |",
+      "lesson_point_url": null,
+      "rationale": "This is an assumed amortized hardware cost, not a durable quoted price."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/video-understanding",
+      "title": "Video understanding on Vertex AI",
+      "tier": "vendor",
+      "why_relevant": "Practical documentation for prompting Gemini models with video inputs and understanding current supported workflows."
+    },
+    {
+      "url": "https://arxiv.org/abs/2103.15691",
+      "title": "ViViT: A Video Vision Transformer",
+      "tier": "standards",
+      "why_relevant": "Canonical paper for transformer-based video understanding, directly relevant to the module's temporal-modeling section."
+    }
+  ],
+  "notes": "Code blocks, quiz answers, and exercise steps were intentionally excluded per seed rules. Source handles used here: S001 NTSB HWY16FH018; S002 OpenAI Sora technical report; S003 CMU Lucas-Kanade publication page; S004 OpenCV Lucas-Kanade tutorial; S005 Google Cloud Gemini 1.5 Pro model doc; S006 Hugging Face Stable Video Diffusion model card.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://openai.com/index/video-generation-models-as-world-simulators/",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "vendor"
+    }
+  ]
+}

@@ -67,7 +67,7 @@ graph TD
     C --> C3[Changes rarely, defines the model's personality]
 ```
 
-Once you internalize this distinction, the correct architectural choice for any given feature becomes immediately obvious. Attempting to force an LLM to memorize dynamic facts via gradient descent is as futile as attempting to teach a human calculus by having them read a dictionary.
+Once you internalize this distinction, the correct architectural choice for a given feature often becomes much clearer. Attempting to force an LLM to memorize dynamic facts via gradient descent is as futile as attempting to teach a human calculus by having them read a dictionary.
 
 > **Stop and think**: If you need an LLM to consistently output responses in a strict JSON format matching a deeply nested, proprietary schema, which approach makes more sense from a computational efficiency standpoint: RAG or fine-tuning?
 
@@ -453,7 +453,7 @@ There is a counterintuitive truth in ML engineering: **fine-tuning requires sign
 
 In a RAG system, the retrieved documents simply need to contain the relevant string of facts. The robust pre-trained capabilities of the LLM will effortlessly extract and format those facts into a coherent sentence, smoothing over any typos or bad grammar in your source documents.
 
-In contrast, every single row of fine-tuning data acts as a direct behavioral mandate. If your training data contains inconsistent formatting, the model will output inconsistent formatting permanently.
+In contrast, each row of fine-tuning data acts as a behavioral signal. If your training data contains inconsistent formatting, the model will output inconsistent formatting permanently.
 
 ```text
 Fine-tuning promise: "We'll teach the model our domain expertise!"
@@ -491,7 +491,7 @@ An enterprise software company executed a full parameter fine-tune on their prop
 
 ## The RAG Reliability Problem (And How to Solve It)
 
-RAG is not a silver bullet. Its primary vulnerability is the retrieval mechanism itself. If the vector database returns irrelevant context, the LLM is guaranteed to fail. Typical vector-only retrieval accuracy hovers around 70-85% in production.
+RAG is not a silver bullet. Its primary vulnerability is the retrieval mechanism itself. If the vector database returns irrelevant context, the LLM is likely to fail. Typical vector-only retrieval accuracy hovers around 70-85% in production.
 
 To bridge this gap, modern systems implement complex hybrid retrieval pipelines that combine dense vector embeddings with sparse keyword algorithms like BM25, culminating in a computationally intensive cross-encoder reranking phase.
 
@@ -1016,7 +1016,7 @@ graph LR
 <details>
 <summary>Question 1: A hospital network needs an LLM to quickly retrieve patient records. Strict HIPAA regulations dictate that patient data absolutely cannot be embedded within the model's parametric weights to prevent accidental disclosure via prompting. Which architectural approach is legally required here?</summary>
 
-**Answer:** A pure RAG architecture is legally required. Retrieval-Augmented Generation ensures that the LLM only accesses patient data via context injection at inference time. Because the underlying model weights are never updated with the sensitive data, there is zero risk of the model hallucinating patient data to unauthorized users outside of the explicit context window session.
+**Answer:** A pure RAG architecture is legally required. Retrieval-Augmented Generation ensures that the LLM only accesses patient data via context injection at inference time. Because the underlying model weights are not updated with the sensitive data, there is far less risk of the model exposing patient data to unauthorized users outside of the explicit context window session.
 </details>
 
 <details>
@@ -1034,7 +1034,7 @@ graph LR
 <details>
 <summary>Question 4: A latency-critical algorithmic trading application requires intent classification and response generation in under 100ms. The team currently utilizes a standard RAG pipeline, but their P95 latency is 350ms due to the vector search overhead. How can they meet their strict SLA?</summary>
 
-**Answer:** The team must pivot away from RAG and perform full or LoRA fine-tuning for this specific classification task. By embedding the classification logic directly into the model weights, they entirely eliminate the network hops required for the embedding API and the vector database lookup. This removes the retrieval overhead, allowing the model to begin generating tokens immediately.
+**Answer:** The team must pivot away from RAG and perform full or LoRA fine-tuning for this specific classification task. By embedding the classification logic directly into the model weights, they entirely eliminate the network hops required for the embedding API and the vector database lookup. This removes the retrieval overhead, allowing the model to begin generating tokens much sooner.
 </details>
 
 <details>
@@ -1046,7 +1046,7 @@ graph LR
 <details>
 <summary>Question 6: Following a massive full-parameter fine-tuning run designed to teach an LLM corporate HR policies, the engineering team notices the model can no longer solve basic logic puzzles it previously handled easily. What specific phenomenon has occurred?</summary>
 
-**Answer:** The model has suffered from catastrophic forgetting. By updating 100% of the model's parameters to heavily favor corporate HR data, the gradient updates mathematically overwrote the weights responsible for generalized reasoning and logic. To resolve this, the team should either use RAG for the policy documents or utilize a PEFT method like LoRA to freeze the base capabilities.
+**Answer:** The model has suffered from catastrophic forgetting. By updating 100% of the model's parameters to heavily favor corporate HR data, the gradient updates likely degraded weights that supported more generalized reasoning and logic. To resolve this, the team should either use RAG for the policy documents or utilize a PEFT method like LoRA to freeze the base capabilities.
 </details>
 
 ---
@@ -1259,3 +1259,9 @@ Now that you have mastered the exact architectural boundaries determining when t
 
 _Last updated: 2026-04-13_
 _Next: Module 1.4 - RAG Evaluation & Optimization_
+
+## Sources
+
+- [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) — Primary source for the parametric-versus-non-parametric memory framing behind modern RAG.
+- [LoRA: Low-Rank Adaptation of Large Language Models](https://arxiv.org/abs/2106.09685) — Primary source for why LoRA changes behavior with far fewer trainable parameters than full fine-tuning.
+- [QLoRA: Efficient Finetuning of Quantized LLMs](https://arxiv.org/abs/2305.14314) — Best source for the 4-bit quantized-adapter workflow and the realistic hardware implications of QLoRA.

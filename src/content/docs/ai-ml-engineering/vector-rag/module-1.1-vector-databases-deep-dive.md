@@ -57,9 +57,9 @@ LIMIT 10;
 SQL databases are built for **exact matches** and **range queries**:
 - `WHERE price > 50 AND price < 100`  Fast (uses B-tree index)
 - `WHERE category = 'Electronics'`  Fast (uses hash index)
-- `WHERE embedding SIMILAR TO [0.23, -0.45, ...]`  **Impossible!**
+- `WHERE embedding SIMILAR TO [0.23, -0.45, ...]`  Not something a traditional SQL engine handles efficiently by default.
 
-SQL has no concept of "similarity" in high-dimensional space.
+Traditional SQL databases are not designed for high-dimensional ANN search out of the box.
 
 **With Vector Database** (Qdrant, Pinecone, etc.):
 ```python
@@ -79,15 +79,15 @@ Vector databases are **purpose-built for finding similar vectors** in high-dimen
 
 ### The Problem That Sparked an Industry
 
-In 2012, Google had a problem. They were processing **30 trillion** web pages, and users expected instant search results. Traditional keyword search was fast, but it couldn't understand that "how to fix a flat tire" and "changing a blown tire" mean the same thing.
+By the early 2010s, web-scale search systems were operating under enormous corpus sizes and tight latency expectations. Traditional keyword search was fast, but it couldn't understand that "how to fix a flat tire" and "changing a blown tire" mean the same thing.
 
-Google's solution was to convert everything to vectors and search by similarity. But with billions of vectors, even their massive infrastructure couldn't brute-force search fast enough. A single query comparing against 1 billion vectors? That's 1 billion distance calculations - even at a million calculations per second, that's 16 minutes per query.
+Google's solution was to convert everything to vectors and search by similarity. But with billions of vectors, even their massive infrastructure couldn't brute-force search fast enough. At billion-scale, brute-force vector comparison becomes too slow for interactive systems, which is why ANN indexes matter.
 
 This pressure led to breakthroughs in **Approximate Nearest Neighbor (ANN)** search - algorithms that trade a tiny bit of accuracy for massive speed improvements.
 
 ### The HNSW Breakthrough (2016)
 
-In 2016, **Yury Malkov** and colleagues at the Russian Academy of Sciences published a paper that would change everything: "Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs."
+In 2016, **Yury Malkov** and colleagues at the Russian Academy of Sciences published a paper that would change everything: ["Efficient and robust approximate nearest neighbor search using Hierarchical Navigable Small World graphs."](https://arxiv.org/abs/1603.09320)
 
 **HNSW** (Hierarchical Navigable Small World) was inspired by a simple observation: social networks are "small worlds" - you can reach anyone through about 6 degrees of separation. What if you organized vectors the same way?
 
@@ -152,7 +152,7 @@ Three trends converged:
 
 **Capabilities**:
 - Semantic similarity (finds "ML" even when you search "machine learning")
-- Efficient high-dimensional search (384-1536 dimensions)
+- Efficient high-dimensional search (typically hundreds to low thousands of dimensions)
 - Metadata filtering (vector search + attribute filters)
 - Real-time updates (add/update/delete without full reindex)
 - Scalability (billions of vectors, distributed)
@@ -208,7 +208,7 @@ For 10 million vectors, this becomes **1.5 seconds per query**. For 100 million 
 
 #### The Smart Approach: Approximate Nearest Neighbor (ANN)
 
-Vector databases use **ANN algorithms** that trade tiny accuracy loss for **massive speed gains**:
+Vector databases use **ANN algorithms** that trade accuracy for speed; the table below shows illustrative, workload-dependent ranges rather than universal constants:
 
 | Algorithm | Speed (1M vectors) | Accuracy | Use Case |
 |-----------|-------------------|----------|----------|
@@ -221,7 +221,7 @@ Vector databases use **ANN algorithms** that trade tiny accuracy loss for **mass
 
 ---
 
-##  HNSW Indexing: The Secret Sauce
+## HNSW Indexing: The Secret Sauce
 
 ### What is HNSW?
 
@@ -263,9 +263,9 @@ HNSW applies this to vector space:
 
 **Time Complexity**:
 - Insertion: **O(log N)** - Fast even for billions of vectors
-- Search: **O(log N)** - Scales logarithmically, not linearly!
+- [Search: **O(log N)** - Scales logarithmically, not linearly!](https://arxiv.org/abs/1603.09320)
 
-**Real-world numbers** (1 million 384-dim vectors):
+**Illustrative numbers** (for a representative million-vector workload; actual results vary by hardware, data, and implementation):
 - Brute force: 150ms per query
 - HNSW: **1.5ms per query** (100x faster!)
 - Accuracy: **99.5%** (misses 0.5% of true neighbors)
@@ -294,16 +294,16 @@ For 100 million vectors, HNSW is **1000x faster** than brute force!
 - Slower inserts than some alternatives (still fast enough)
 - Cannot guarantee 100% accuracy (99.5% is "approximate")
 
-**When to use**: Almost always! HNSW is the default for good reason.
+**When to use**: In most cases! HNSW is the default for good reason.
 
 ---
 
 ## Did You Know?
 
 **HNSW was invented in 2016** by Yury Malkov and colleagues. It quickly became the industry standard, used by:
-- Google (for large-scale image search)
-- Meta/Facebook (for content recommendations)
-- Qdrant, Pinecone, Weaviate (all use HNSW)
+- Large-scale search systems commonly use ANN methods for similarity search
+- Recommendation systems also rely on ANN methods when matching similar items at scale
+- Many production vector databases use HNSW or closely related ANN indexes
 
 Before HNSW, vector search required **expensive GPU clusters** or accepted **slow search times**. HNSW made production vector search accessible on regular CPUs!
 
@@ -315,7 +315,7 @@ Before HNSW, vector search required **expensive GPU clusters** or accepted **slo
 
 **The Origin Story**: Qdrant was founded in **2021** by **Andrey Vasnetsov** in Berlin. The name comes from "quadrant" - representing the vector space coordinates. Vasnetsov, frustrated with existing solutions that were either slow (Python) or complex (Java), built Qdrant in **Rust** - combining the speed of C++ with modern developer experience. The bet paid off: Qdrant is now one of the fastest vector databases available.
 
-**Overview**: Open-source, Rust-based, production-ready
+**Overview**: [Open-source, Rust-based, production-ready](https://github.com/qdrant/qdrant)
 
 **Pros**:
 - **Self-hosted** (full control, no vendor lock-in)
@@ -367,9 +367,9 @@ The timing was perfect. Pinecone launched just as GPT-3 made embeddings mainstre
 - Projects where convenience > cost
 
 **Pricing**:
-- Free tier: 1M vectors, 100K queries/month
-- Starter: $70/month (1M vectors, 1M queries)
-- Standard: ~$200+/month (scales with usage)
+- Free-tier limits change over time; check the live Pinecone pricing page before planning capacity.
+- Entry-level managed pricing varies by plan and workload; verify against the vendor's live pricing calculator.
+- Higher-usage managed pricing depends on traffic, storage, and capacity model.
 
 **Real-World Example**: Notion AI uses Pinecone for their semantic search
 
@@ -381,7 +381,7 @@ The timing was perfect. Pinecone launched just as GPT-3 made embeddings mainstre
 
 Their killer feature became **hybrid search** - combining vector similarity with traditional keyword search in a single query. This solved a real problem: pure semantic search sometimes misses exact matches (searching for "iPhone 15" shouldn't return "Android phones").
 
-**Overview**: Open-source, hybrid vector + keyword search
+**Overview**: [Open-source, hybrid vector + keyword search](https://github.com/weaviate/weaviate)
 
 **Pros**:
 - **Hybrid search** (vector + keyword + filters in one query!)
@@ -418,7 +418,7 @@ The approach worked. Within months, Chroma became the default vector database fo
 **Overview**: Lightweight, embedding-focused, local-first
 
 **Pros**:
-- **Extremely simple** (`pip install chromadb`, 5 lines of code!)
+- **Extremely simple** ([`pip install chromadb`](https://github.com/chroma-core/chroma), 5 lines of code!)
 - **Local-first** (perfect for development)
 - **Embedding-native** (designed for LLM workflows)
 - **Free** (completely open-source)
@@ -430,7 +430,7 @@ The approach worked. Within months, Chroma became the default vector database fo
 
 **Best for**:
 - Local development and testing
-- Small-scale projects (<100K vectors)
+- Small-scale projects where you have validated the workload against your own latency and memory constraints
 - LLM prototypes
 - Learning vector databases
 
@@ -469,7 +469,7 @@ The approach worked. Within months, Chroma became the default vector database fo
 
 ---
 
-##  Metadata Filtering: The Killer Feature
+## Metadata Filtering: The Killer Feature
 
 One of the most powerful features of vector databases is **metadata filtering** - combining semantic search with traditional filters.
 
@@ -519,7 +519,7 @@ This finds papers that:
 
 ### Performance Impact
 
-**Key insight**: Vector databases apply filters **BEFORE** vector search:
+**Key insight**: Filter execution strategy is engine-specific; some systems pre-filter, while others integrate filters into ANN traversal:
 
 ```
 Bad (slow):
@@ -542,7 +542,7 @@ Filtering **first** reduces the search space, making everything faster!
 
 ---
 
-##  Production Considerations
+## Production Considerations
 
 ### Persistence
 
@@ -602,7 +602,7 @@ If Primary fails → Replica promoted to Primary
 **Qdrant** supports:
 1. **Snapshots**: Full database backup (restore point)
 2. **Write-ahead log (WAL)**: Incremental backups
-3. **Cloud storage**: S3/GCS for offsite backups
+3. **Offsite storage**: store backups in durable object storage supported by your deployment
 
 **Best practice**:
 - Daily snapshots (full backup)
@@ -612,7 +612,7 @@ If Primary fails → Replica promoted to Primary
 
 ---
 
-##  Query Optimization
+## Query Optimization
 
 ### 1. Batch Queries
 
@@ -643,7 +643,7 @@ qdrant_client.search(
 )
 ```
 
-**Defaults**:
+**Illustrative tuning examples**:
 - `hnsw_ef=128`: 99.5% accuracy, 1-2ms
 - `hnsw_ef=256`: 99.8% accuracy, 3-4ms
 - `hnsw_ef=64`: 98.5% accuracy, 0.5-1ms
@@ -684,7 +684,7 @@ qdrant_client.create_collection(
 )
 ```
 
-**Trade-off**: 1-2% accuracy loss for 4x memory savings (worth it!)
+**Trade-off**: Quantization reduces memory use and can speed search, but the accuracy impact depends on the quantization method and data.
 
 ---
 
@@ -775,13 +775,13 @@ if similar and similar[0].score > 0.95:
 
 In 2014, Spotify users complained their "shuffle" wasn't random - they'd hear the same artist twice in a row. The thing is, it *was* random. But users didn't want true randomness; they wanted **perceived variety**.
 
-Spotify's solution? **Vector embeddings**. They created embeddings for each song based on audio features, genre, mood, and artist. The new shuffle algorithm ensures consecutive songs are **far apart in embedding space** - same randomness, but songs feel more different.
+One way to model perceived variety is to represent songs with learned features and use those signals when sequencing tracks. They created embeddings for each song based on audio features, genre, mood, and artist. The new shuffle algorithm ensures consecutive songs are **far apart in embedding space** - same randomness, but songs feel more different.
 
 **The lesson**: Vector databases aren't just for search. They're for any problem where you need to understand "similarity" or "difference."
 
 ### Netflix: $1B in Recommendations
 
-Netflix estimates their recommendation system (powered by embeddings) saves them **$1 billion per year** in reduced churn. Users who get good recommendations stay subscribed.
+Recommendation quality can materially reduce churn for subscription media businesses, but vendor-specific savings claims need primary sourcing. Users who get good recommendations stay subscribed.
 
 Their architecture:
 - **100+ million users**, each with an embedding
@@ -869,9 +869,9 @@ qdrant_client.create_collection("all_vectors")
 
 Your vector database is only as good as your embeddings:
 
-- **all-MiniLM-L6-v2** (384 dims): Fast, good quality, FREE 
-- **text-embedding-ada-002** (1536 dims): Best quality, $0.02/1M tokens
-- **e5-large-v2** (1024 dims): Good balance
+- [**all-MiniLM-L6-v2** (384 dims)](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2): Fast, good quality, FREE 
+- **OpenAI embedding models**: quality, dimensionality, and price vary by model generation; check the current model and pricing docs before choosing one.
+- [**e5-large-v2** (1024 dims)](https://huggingface.co/intfloat/e5-large-v2): Good balance
 
 **Recommendation**: Start with `all-MiniLM-L6-v2`, upgrade only if needed.
 
@@ -912,7 +912,7 @@ Track these metrics:
 
 ---
 
-##  Production War Stories
+## Production War Stories
 
 ### The $40,000 Cold Start
 
@@ -986,7 +986,7 @@ def safe_upsert(client, collection_name, documents):
     client.upsert(collection_name=collection_name, points=points)
 ```
 
-**Lesson**: Always use deterministic IDs based on content. Never rely on auto-generated IDs for document ingestion pipelines.
+**Lesson**: Use deterministic IDs based on content for document ingestion pipelines. Avoid relying on auto-generated IDs for document ingestion pipelines.
 
 ---
 
@@ -1054,7 +1054,7 @@ results = client.search(
 
 ---
 
-##  Economics of Vector Databases
+## Economics of Vector Databases
 
 ### Cost Comparison (1M Vectors, 768 Dimensions)
 
@@ -1093,7 +1093,7 @@ then self-hosted becomes more economical.
 
 ---
 
-##  Interview Preparation
+## Interview Preparation
 
 ### Question 1: Why not just use PostgreSQL with pgvector?
 
@@ -1135,6 +1135,218 @@ The key insight: you can build with high ef_construction once, then tune ef_sear
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team built a semantic search demo over 2,430 support documents using FAISS, and it works well. Now leadership wants the same system to support 10 million documents, survive restarts, handle live updates, and filter results by product line and year. What is the strongest reason to move from a traditional SQL database or simple in-memory index to a vector database?
+
+<details>
+<summary>Answer</summary>
+A vector database is the right choice because the new requirements go beyond exact-match storage and small-scale in-memory search. The team now needs semantic similarity search over millions of high-dimensional vectors, persistence across restarts, metadata filtering, real-time updates, and production concurrency.
+
+Traditional SQL databases are optimized for exact matches and range queries, not high-dimensional similarity search. An in-memory FAISS-style setup can work for a few thousand items, but it does not solve persistence, distributed scaling, or rich filter-first search in production.
+</details>
+
+**Q2.** Your product search service compares each query embedding against all 1 million product vectors and now averages about 150 ms per search. Users expect near-instant responses. You can tolerate missing a tiny fraction of perfect matches if latency drops dramatically. Which indexing approach should you choose, and why?
+
+<details>
+<summary>Answer</summary>
+You should choose HNSW-based approximate nearest neighbor indexing. The module explains that HNSW typically reduces search time from about 150 ms to around 1-2 ms on 1 million vectors while still achieving roughly 99%+ recall.
+
+The trade-off is that HNSW is approximate rather than perfectly exact, but that small loss in recall is usually worth the 100x speed improvement in production systems.
+</details>
+
+**Q3.** A research assistant searches your paper database for “machine learning papers,” but keeps getting older results from the 1990s and early 2000s. The assistant only wants recent NeurIPS papers from 2023 onward. How should the query be designed so the system returns semantically relevant results without wasting work?
+
+<details>
+<summary>Answer</summary>
+The query should combine vector search with metadata filtering, such as `year >= 2023` and `venue = "NeurIPS"`. That lets the database return papers that are both semantically related to “machine learning” and match the structured constraints.
+
+This is better than searching broadly and filtering afterward because the module explains that vector databases apply filters before the similarity search, reducing the search space and improving performance.
+</details>
+
+**Q4.** Your company is choosing a vector database for a new internal RAG system. The team wants something self-hosted, production-ready, cost-sensitive, and flexible enough for strong metadata filtering. They are comfortable managing infrastructure themselves. Which option from the module is the best fit, and why?
+
+<details>
+<summary>Answer</summary>
+Qdrant is the best fit. The module recommends it for self-hosted, production-ready deployments where cost control and rich filtering matter.
+
+It is open-source, fast, Docker-friendly, and well suited for teams that want full control over their data and infrastructure. Pinecone is simpler but more expensive and more locked-in, while Chroma is better for local development than serious production scale.
+</details>
+
+**Q5.** Your legal-tech ingestion pipeline accidentally re-indexes the same contracts after every deployment. Six months later, search results show the same contract multiple times, and storage costs have exploded. Based on the module, what design change should have prevented this?
+
+<details>
+<summary>Answer</summary>
+The ingestion pipeline should have used deterministic document IDs, such as IDs derived from a hash of the content plus stable metadata. That makes upserts idempotent, so reprocessing the same contract updates the existing vector instead of inserting a duplicate.
+
+The module’s production example highlights this exact failure mode and shows that relying on auto-generated IDs can cause duplicate vectors, skewed rankings, and runaway storage growth.
+</details>
+
+**Q6.** A medical search application needs better recall, even if each query becomes a bit slower. The current setup uses HNSW with default search settings, but the team wants to favor accuracy over latency for high-stakes use. What parameter should they tune, and in which direction?
+
+<details>
+<summary>Answer</summary>
+They should increase the HNSW search parameter, such as `hnsw_ef`. Raising it increases recall and search accuracy, but it also increases query latency.
+
+The module gives the example that higher values like 256 improve accuracy compared with lower values such as 64, which are faster but slightly less accurate. For medical use, the higher-accuracy setting is the better trade-off.
+</details>
+
+**Q7.** Your platform now stores 100 million vectors, and one machine can no longer hold the full dataset. Management also wants the system to keep serving queries even if a machine fails. What production architecture from the module addresses both scale and availability?
+
+<details>
+<summary>Answer</summary>
+You should use sharding plus replication. Sharding distributes vectors across multiple machines so queries can be run in parallel and the dataset can scale beyond a single server. Replication adds copies of each shard so the system can continue operating if one machine fails.
+
+The module explains that sharding increases capacity and performance, while replication provides high availability by promoting a replica if a primary node goes down.
+</details>
+
+<!-- /v4:generated -->
+<!-- v4:generated type=no_exercise model=codex turn=1 -->
+## Hands-On Exercise
+
+
+Goal: deploy a local Qdrant instance, load a small document collection with embeddings and metadata, compare plain vector search with filtered search, and confirm that the data survives a restart.
+
+- [ ] Start a local Qdrant container with persistent storage.
+
+  ```bash
+  docker run -d \
+    --name qdrant-lab \
+    -p 6333:6333 \
+    -v "$(pwd)/qdrant_storage:/qdrant/storage" \
+    qdrant/qdrant
+  ```
+
+  Verification commands:
+
+  ```bash
+  curl -s http://127.0.0.1:6333/readyz
+  docker ps --filter name=qdrant-lab
+  ```
+
+- [ ] Create a Python environment and install the client libraries needed for embeddings and Qdrant access.
+
+  ```bash
+  python3 -m venv .venv
+  . .venv/bin/activate
+  pip install qdrant-client sentence-transformers
+  ```
+
+  Verification commands:
+
+  ```bash
+  python -c "import qdrant_client, sentence_transformers; print('deps-ok')"
+  ```
+
+- [ ] Create a collection named `rag_lab` that uses cosine distance for vector similarity.
+
+  ```python
+  from qdrant_client import QdrantClient
+  from qdrant_client.models import Distance, VectorParams
+
+  client = QdrantClient(url="http://127.0.0.1:6333")
+
+  client.recreate_collection(
+      collection_name="rag_lab",
+      vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+  )
+
+  print(client.get_collection("rag_lab"))
+  ```
+
+  Verification commands:
+
+  ```bash
+  python create_collection.py
+  curl -s http://127.0.0.1:6333/collections/rag_lab | jq '.result.status'
+  ```
+
+- [ ] Prepare 8-10 short documents across at least three topics such as Kubernetes, Linux, and machine learning, and include metadata fields like `category`, `year`, and `difficulty`.
+
+- [ ] Embed the documents with `all-MiniLM-L6-v2` and upsert them into Qdrant with deterministic IDs.
+
+  Example structure for each point:
+
+  ```python
+  {
+      "id": 1,
+      "vector": embedding,
+      "payload": {
+          "text": "...",
+          "category": "kubernetes",
+          "year": 2025,
+          "difficulty": "intermediate"
+      }
+  }
+  ```
+
+  Verification commands:
+
+  ```bash
+  python load_points.py
+  curl -s http://127.0.0.1:6333/collections/rag_lab | jq '.result.points_count'
+  ```
+
+- [ ] Run a semantic search for a query such as `how pods communicate inside a cluster` and inspect the top 3 results with scores.
+
+  Verification commands:
+
+  ```bash
+  python search_plain.py
+  ```
+
+  Expected outcome:
+  - Kubernetes-related documents rank above Linux or ML documents.
+  - Returned scores are sorted from highest to lowest.
+
+- [ ] Repeat the same search, but add a metadata filter such as `category = kubernetes` and `year >= 2024`.
+
+  Verification commands:
+
+  ```bash
+  python search_filtered.py
+  ```
+
+  Expected outcome:
+  - Results remain semantically relevant.
+  - Older or non-Kubernetes documents no longer appear.
+
+- [ ] Update one document payload or replace one vector, then delete one document from the collection.
+
+  Verification commands:
+
+  ```bash
+  python update_delete.py
+  curl -s http://127.0.0.1:6333/collections/rag_lab | jq '.result.points_count'
+  ```
+
+- [ ] Restart the Qdrant container and confirm that the collection and points still exist.
+
+  ```bash
+  docker restart qdrant-lab
+  ```
+
+  Verification commands:
+
+  ```bash
+  curl -s http://127.0.0.1:6333/collections | jq '.result.collections'
+  curl -s http://127.0.0.1:6333/collections/rag_lab | jq '.result.points_count'
+  ```
+
+- [ ] Record a short comparison of what the exercise showed about vector databases versus a traditional keyword or exact-match lookup.
+
+Success criteria:
+- A local Qdrant instance is running and responds on `127.0.0.1:6333`.
+- The `rag_lab` collection exists and contains embedded documents.
+- A semantic query returns meaningfully related results.
+- A filtered semantic query narrows results by metadata without losing relevance.
+- An update and a delete operation both succeed.
+- Data remains available after restarting the container.
+- The final notes clearly explain why persistence, ANN search, and metadata filtering matter for production RAG systems.
+
+<!-- /v4:generated -->
 ## What's Next?
 
 In **Module 12**, you'll build your first **RAG system** using Qdrant:
@@ -1372,3 +1584,12 @@ _Module 11: Introduction to Vector Databases - Theory Complete_
 _Next: Hands-on examples with Qdrant_
 
 **Ready to build? Let's go! **
+
+## Sources
+
+- [arxiv.org: 1603.09320](https://arxiv.org/abs/1603.09320) — The arXiv record directly gives the paper title, authors, and 2016 submission date.
+- [github.com: qdrant](https://github.com/qdrant/qdrant) — The GitHub README directly states that Qdrant is open-source, written in Rust, supports payload filtering, and is also available in the cloud.
+- [github.com: weaviate](https://github.com/weaviate/weaviate) — The GitHub README explicitly describes Weaviate as open-source and highlights hybrid/vector-plus-keyword search with filtering.
+- [github.com: chroma](https://github.com/chroma-core/chroma) — The GitHub README directly shows `pip install chromadb`, in-memory prototyping, and optional persistence.
+- [huggingface.co: all MiniLM L6 v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — The Hugging Face model card explicitly states that the model maps text to a 384-dimensional dense vector space.
+- [huggingface.co: e5 large v2](https://huggingface.co/intfloat/e5-large-v2) — The Hugging Face model card explicitly states that the embedding size is 1024.

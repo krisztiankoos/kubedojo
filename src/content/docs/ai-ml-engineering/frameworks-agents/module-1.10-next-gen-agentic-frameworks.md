@@ -24,7 +24,7 @@ Next-generation frameworks like Letta (formerly MemGPT), AutoGen, CrewAI, and La
 
 ## The Evolution from Pipelines to OS-Like Agents
 
-The first generation of LLM orchestration tools, primarily LangChain pipelines and simple ReAct (Reasoning and Acting) loops, treated language models as simple transformation functions. Data went in, text came out, and state was managed manually by the developer wrapping the API call. As use cases grew more complex, developers realized that advanced reasoning requires iterative problem-solving. However, these early loops still ran entirely within the volatile memory of the LLM's context window. When the window filled up, the system collapsed.
+The first generation of LLM orchestration tools, primarily LangChain pipelines and simple [ReAct (Reasoning and Acting)](https://arxiv.org/abs/2210.03629) loops, treated language models as simple transformation functions. Data went in, text came out, and state was managed manually by the developer wrapping the API call. As use cases grew more complex, developers realized that advanced reasoning requires iterative problem-solving. However, these early loops still ran entirely within the volatile memory of the LLM's context window. When the window filled up, the system collapsed.
 
 Modern agentic frameworks treat the LLM not as a mere transformation function, but as the Central Processing Unit (CPU) of a virtual computer. This mental model is critical for understanding next-generation architectures. In this extended analogy:
 - The LLM acts as the CPU, executing instructions, processing logic, and making routing decisions based on its inputs.
@@ -57,12 +57,12 @@ By adopting this OS-level perspective, developers can build agents that run perp
 
 ## Letta (formerly MemGPT): Persistent Memory Paging
 
-Letta was born out of the MemGPT research paper published by UC Berkeley, which identified a fundamental limitation in generative AI: context windows, no matter how large they grow, will eventually fill up in long-running applications. Furthermore, filling a massive context window (like 1 million tokens) for every single interaction is incredibly slow, degrades reasoning performance, and is prohibitively expensive.
+Letta was born out of the MemGPT research paper published by UC Berkeley, which identified a fundamental limitation in generative AI: context windows, no matter how large they grow, will eventually fill up in long-running applications. Furthermore, stuffing very large prompts into every interaction can be slow, costly, and can hurt model performance, so long-running systems usually need retrieval or memory management rather than brute-force context stuffing.
 
 Letta solves this by implementing a tiered memory system natively integrated with the LLM's function-calling capabilities:
 
-1. **Core Memory**: A small, persistent block of text always included in the LLM's system prompt. It contains the agent's persona, its current immediate goals, and critical facts about the user. It is highly constrained.
-2. **Archival Memory**: A massive, searchable database (usually a vector store) that holds the complete history of interactions and external documents. It is never passed to the LLM in its entirety.
+1. **Core Memory**: A small, persistent block of text typically included in the LLM's system prompt. It contains the agent's persona, its current immediate goals, and critical facts about the user. It is highly constrained.
+2. **Archival Memory**: A massive, searchable database (usually a vector store) that holds the complete history of interactions and external documents. It is generally not passed to the LLM in its entirety.
 3. **Recall Memory**: A chronological log of recent conversational events, used to maintain the immediate flow of a dialogue before it is archived.
 
 The major innovation of Letta is that the LLM itself is given explicit tools to edit its own memory structure. It can call functions like `core_memory_append`, `core_memory_replace`, or `archival_memory_search`. When the agent realizes it needs more space in its Core Memory, it can summarize existing facts and push data to archival storage, effectively paging memory in and out of RAM autonomously.
@@ -111,7 +111,7 @@ response = client.send_message(
 print(response.messages)
 ```
 
-Notice the parameter `context_window_limit=8192`. Why did we configure this specific constraint instead of setting it to the model's maximum capacity? We set this limit to force the agent to actively page memory out to archival storage rather than lazily filling up the context window until it crashes. Additionally, 8192 tokens represents the optimal recall zone for most GPT-4 class models; beyond this, the "lost in the middle" phenomenon frequently occurs where the model ignores critical instructions buried in the center of the prompt. By artificially constraining the RAM, we test and enforce the agent's memory management capabilities, ensuring consistent reliability.
+Notice the parameter `context_window_limit=8192`. Why did we configure this specific constraint instead of setting it to the model's maximum capacity? We set this limit to force the agent to actively page memory out to archival storage rather than lazily filling up the context window until it crashes. Additionally, a deliberately small working context forces the agent to rely on retrieval and summarization instead of endlessly growing the prompt, and very long prompts can suffer from "lost in the middle" failures. By artificially constraining the RAM, we test and enforce the agent's memory management capabilities, ensuring consistent reliability.
 
 In the background, if "SRE_Bot_Alpha" needs to know what happened last month, it will pause the conversation, issue a function call to search its archival memory for the phrase "database timeout last month", read the retrieved results into its temporary context window, and then formulate a final, highly contextual response to the user.
 
@@ -181,7 +181,7 @@ user_proxy.initiate_chat(
 )
 ```
 
-Notice the parameter `human_input_mode="NEVER"` in the User Proxy setup. Why is this explicitly required? In a production CI/CD pipeline or background asynchronous job, there is no physical human sitting at a terminal to press 'Enter' or type a response. If this mode is accidentally set to 'TERMINATE' or 'ALWAYS', the Python process will pause indefinitely waiting for standard input. This causes background workers to silently hang and eventually trigger Kubernetes liveness probe failures. Setting it to 'NEVER' guarantees fully autonomous execution.
+Notice the parameter `human_input_mode="NEVER"` in the User Proxy setup. Why is this explicitly required? In a production CI/CD pipeline or background asynchronous job, there is no physical human sitting at a terminal to press 'Enter' or type a response. If this mode is accidentally set to 'TERMINATE' or 'ALWAYS', the Python process can pause indefinitely waiting for standard input. This causes background workers to silently hang and eventually trigger Kubernetes liveness probe failures. Setting it to 'NEVER' guarantees fully autonomous execution.
 
 > **Stop and think**: In the code above, the supervisor relies on the plain text string 'TERMINATE' to end the process. If the Coder agent is generating a script that involves process management or logging, what unintended side effects might occur during the conversation? How might you redesign this termination condition to be cryptographically or structurally secure?
 
@@ -189,7 +189,7 @@ Notice the parameter `human_input_mode="NEVER"` in the User Proxy setup. Why is 
 
 CrewAI takes its core inspiration from real-world corporate structures. It organizes AI systems into distinct units: Agents, Tasks, and Crews. The primary differentiator for CrewAI is its highly opinionated process execution models, specifically the Sequential, Hierarchical, and Consensual processes.
 
-In CrewAI 0.5+, the Hierarchical process automatically provisions a managerial LLM to oversee the execution of tasks. The manager acts as an executive: it evaluates the overarching objective, breaks it down into sub-tasks, assigns them to the most capable agents within the crew, and reviews their work concurrently. This mimics a traditional tech company's engineering team.
+In CrewAI's Hierarchical process, a manager agent or manager model oversees task execution and delegation. The manager acts as an executive: it evaluates the overarching objective, breaks it down into sub-tasks, assigns them to the most capable agents within the crew, and reviews their work concurrently. This mimics a traditional tech company's engineering team.
 
 ### Example: Defining a Crew with a Manager
 
@@ -318,14 +318,14 @@ spec:
           periodSeconds: 10
 ```
 
-This v1.35-compliant manifest ensures that if an agent deadlocks and stops updating its heartbeat file, Kubernetes will autonomously terminate and restart the pod, providing a system-level safety net beneath the application-level framework.
+This v1.35-compliant manifest ensures that if an agent deadlocks and stops updating its heartbeat file, Kubernetes will autonomously [terminate and restart the pod](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/), providing a system-level safety net beneath the application-level framework.
 
 ## Did You Know?
 
-1. The original MemGPT paper was published in October 2023, introducing the groundbreaking concept of LLMs managing their own memory tiering via standard function calls.
-2. AutoGen was open-sourced by Microsoft in September 2023 and rapidly accumulated over 20,000 GitHub stars within its first three months, signaling a massive shift in industry focus toward multi-agent systems.
-3. CrewAI processes can reduce total task completion time by up to 35 percent when switching from sequential execution to asynchronous delegation among five or more specialized agents.
-4. The maximum context window of early 2023 models was typically 4,096 tokens, which drove the initial development of OS-like memory paging systems to handle documents exceeding 100,000 words.
+1. [The original MemGPT paper was published in October 2023](https://arxiv.org/abs/2310.08560), introducing the groundbreaking concept of LLMs managing their own memory tiering via standard function calls.
+2. AutoGen was open-sourced by Microsoft in 2023 and quickly drew substantial developer interest in multi-agent systems.
+3. CrewAI's concurrent delegation model can shorten end-to-end runtime in some workloads compared with purely sequential execution.
+4. Early chat models had much smaller context windows than today's long-context models, which helped motivate external-memory and retrieval-based agent architectures.
 
 ## Quiz
 
@@ -360,8 +360,8 @@ Parsing raw text is fragile because the LLM might hallucinate the keyword in an 
 </details>
 
 <details>
-<summary>7. You are migrating an agentic system from LangGraph to Letta. In your LangGraph application, you passed a massive dictionary of the user's entire account history directly between every node. When you replicate this exact data-passing pattern in Letta's core configuration, the system crashes from token exhaustion immediately. Why does this architectural mismatch occur, and how should Letta handle this data instead?</summary>
-LangGraph manages state by passing a structured state graph (usually a dictionary or object) directly between nodes at execution time; the state is generally scoped to the current execution run. Letta manages state persistently across sessions by treating the LLM as an OS that actively pages data between a small, immediate Core Memory and a massive, persistent Archival Memory stored on disk. Letta's state outlives the current execution loop. Passing the entire history continuously in Letta defeats the purpose of its memory tiering and immediately exhausts the context window.
+<summary>7. You are migrating an agentic system from LangGraph to Letta. In your LangGraph application, you passed a massive dictionary of the user's entire account history directly between every node. When you replicate this exact data-passing pattern in Letta's core configuration, the system can crash from token exhaustion very quickly. Why does this architectural mismatch occur, and how should Letta handle this data instead?</summary>
+LangGraph manages state by passing a structured state graph (usually a dictionary or object) directly between nodes at execution time; the state is generally scoped to the current execution run. Letta manages state persistently across sessions by treating the LLM as an OS that actively pages data between a small, immediate Core Memory and a massive, persistent Archival Memory stored on disk. Letta's state outlives the current execution loop. Passing the entire history continuously in Letta defeats the purpose of its memory tiering and can quickly exhaust the context window.
 </details>
 
 ## Hands-On Exercise
@@ -493,3 +493,12 @@ Set `max_consecutive_auto_reply=3` on the Security Analyst. Furthermore, add to 
 Now that you understand how to orchestrate multiple agents, manage persistent state, and prevent catastrophic context exhaustion, it is time to deploy these complex systems into production environments. Operating agents locally is one thing; running them at scale is another. In the next module, we will explore the cloud infrastructure required to host multi-agent systems, dealing with asynchronous task queues, system observability, and managing the financial costs of autonomous API usage.
 
 **Continue to:** [AI Infrastructure Discipline](/platform/disciplines/data-ai/ai-infrastructure/) — Explore the infrastructure, observability, and cost controls required to run complex agent systems in production.
+
+## Sources
+
+- [arxiv.org: 2210.03629](https://arxiv.org/abs/2210.03629) — The original ReAct paper is the primary source for the named method.
+- [kubernetes.io: configure liveness readiness startup probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) — The Kubernetes docs explicitly describe exec-based liveness checks and container restarts on probe failure.
+- [arxiv.org: 2310.08560](https://arxiv.org/abs/2310.08560) — The arXiv record shows the initial MemGPT submission date in October 2023.
+- [Letta GitHub Repository](https://github.com/letta-ai/letta) — Open-source framework that grew out of MemGPT and shows the current stateful-agent project.
+- [AutoGen GitHub Repository](https://github.com/microsoft/autogen) — Official repository overview for AutoGen's modern layered architecture and agent framework.
+- [LangGraph GitHub Repository](https://github.com/langchain-ai/langgraph) — Official repository overview for LangGraph's graph-based, long-running agent orchestration model.

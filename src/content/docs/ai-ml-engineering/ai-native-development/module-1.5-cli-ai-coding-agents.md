@@ -37,7 +37,7 @@ While agent-first development environments wrap artificial intelligence capabili
 
 Think of a graphical IDE agent as an assistant who works exclusively inside a well-lit studio. They are incredibly effective when you are sitting right next to them, looking at the same canvas. A CLI agent, conversely, is an assistant equipped with a flashlight and a toolkit who will follow you down into the basement, crawl into the ventilation shafts, and repair the plumbing. The CLI agent operates natively wherever a secure shell connection can reach.
 
-The Unix philosophy, established decades ago, dictates that systems should consist of small, highly focused programs that do one thing well and communicate via universal text streams. CLI agents honor this philosophy. They do not attempt to reinvent text editing, source control, or window management. Instead, they act as intelligent text processors that read project files, analyze standard error streams from failed compilations, and output exact diffs. You can pipe a failing test report directly into a CLI agent, instruct it to diagnose the failure, and pipe its output directly into a logging aggregator.
+The Unix philosophy, established decades ago, dictates that systems should consist of small, highly focused programs that do one thing well and communicate via standard text streams. CLI agents honor this philosophy. They do not attempt to reinvent text editing, source control, or window management. Instead, they act as intelligent text processors that read project files, analyze standard error streams from failed compilations, and output exact diffs. You can pipe a failing test report directly into a CLI agent, instruct it to diagnose the failure, and pipe its output directly into a logging aggregator.
 
 > **Pause and predict**: If you pass an entire monorepo to a CLI agent without scoping the context, what will happen to the language model's reasoning capabilities, and why?
 
@@ -69,7 +69,7 @@ flowchart TD
     MCP --> Custom[Custom APIs/DBs]
 ```
 
-Claude Code relies heavily on programmatic hooks and slash commands to align the language model with enterprise practices. Hooks allow the execution of rigid shell commands whenever the AI modifies a file, ensuring formatting tools always run. 
+Claude Code relies heavily on programmatic hooks and slash commands to align the language model with enterprise practices. Hooks allow the execution of rigid shell commands whenever the AI modifies a file, helping ensure formatting tools run consistently. 
 
 ```json
 // ~/.config/claude-code/settings.json
@@ -120,7 +120,7 @@ Review this code for:
 Focus on: $ARGUMENTS
 ```
 
-Global repository contexts are managed through a foundational markdown file. This file ensures that the agent never deviates from established architectural mandates, such as relying strictly on specific Object-Relational Mappers instead of executing raw database queries.
+Global repository contexts are managed through a foundational markdown file. This file helps keep the agent aligned with established architectural mandates, such as relying strictly on specific Object-Relational Mappers instead of executing raw database queries.
 
 ```markdown
 # CLAUDE.md
@@ -556,7 +556,7 @@ The solution was completely abandoning graphical IDE review. Each engineer paire
 
 In another instance, an enterprise e-commerce platform experienced massive database corruption exactly at midnight on a major holiday release cycle. The primary database engineer was unreachable, and the secondary on-call developer lacked expert-level diagnostic SQL proficiency. Because the organization had previously established Claude Code running inside their bastion instances and integrated it natively to a read-only PostgreSQL replica via a custom MCP server, they bypassed the deadlock. 
 
-The responding developer simply described the symptoms to the terminal agent. The CLI agent instantly extracted the schema, formulated a complex query, discovered the exact corruption pattern, and synthesized a highly surgical UPDATE statement designed to remediate the isolated rows. It further detailed an immediate rollback plan. Because the agent ran entirely within the audited command line environment, the resolution took twenty-three minutes instead of the estimated three hours. Hundreds of thousands of dollars in checkout revenue were preserved purely because the execution environment supported terminal-based AI agents.
+The responding developer simply described the symptoms to the terminal agent. The CLI agent quickly extracted the schema, formulated a complex query, discovered the exact corruption pattern, and synthesized a highly surgical UPDATE statement designed to remediate the isolated rows. It further detailed an immediate rollback plan. Because the agent ran entirely within the audited command line environment, the resolution took twenty-three minutes instead of the estimated three hours. Hundreds of thousands of dollars in checkout revenue were preserved purely because the execution environment supported terminal-based AI agents.
 
 ---
 
@@ -759,7 +759,7 @@ You must establish a foundational `CLAUDE.md` context file in the root of the re
 <details>
 <summary>3. An engineer attempts to deploy the OpenAI Codex CLI in a newly provisioned Debian container. They run `apt-get update && apt-get install -y codex` but the package is not found. When they download the binary directly, it fails with a runtime error. What architectural requirement of the Codex CLI is missing from this environment?</summary>
 
-The Codex CLI is distributed exclusively through the Node Package Manager, not through system package repositories like apt, meaning `apt-get install codex` will always fail because the package simply does not exist in the Debian ecosystem. The environment is also missing a compatible Node.js runtime, which is not included in standard Debian base images and must be installed separately before the npm command is available. The correct installation sequence requires first adding a Node.js apt repository or using nvm, then running `npm i -g @openai/codex` to pull the tool from the npm registry. The runtime error when attempting to run the downloaded binary directly is a consequence of the missing Node.js interpreter, since the CLI is a Node.js application rather than a standalone compiled executable. For containerized deployments, the base image must either be a node-based image or explicitly layer in Node.js before the agent installation step.
+The Codex CLI is typically distributed through the Node Package Manager rather than system package repositories like apt, meaning `apt-get install codex` will usually fail in a standard Debian environment because the package is not typically available in the default Debian repositories. The environment is also missing a compatible Node.js runtime, which is not included in standard Debian base images and must be installed separately before the npm command is available. The correct installation sequence requires first adding a Node.js apt repository or using nvm, then running `npm i -g @openai/codex` to pull the tool from the npm registry. The runtime error when attempting to run the downloaded binary directly is a consequence of the missing Node.js interpreter, since the CLI is a Node.js application rather than a standalone compiled executable. For containerized deployments, the base image must either be a node-based image or explicitly layer in Node.js before the agent installation step.
 </details>
 
 <details>
@@ -809,3 +809,10 @@ They are failing to utilize the explicit autopilot mode, which is specifically d
 You now understand the profound architectural differences between graphical AI extensions and raw, terminal-based CLI agents. The selection criteria depend solely on your operational constraints and the need for programmatic automation.
 
 [Proceed to Module 02: Prompt Engineering Fundamentals](/ai-ml-engineering/ai-native-development/module-02-prompt-fundamentals/) — Begin constructing robust logical constraints to force deterministic outputs from chaotic language models.
+
+## Sources
+
+- [Claude Code Product Page](https://www.anthropic.com/claude-code) — Useful for current high-level positioning, capabilities, and pricing context for Claude Code.
+- [Aider GitHub Repository](https://github.com/Aider-AI/aider) — Best upstream reference for Aider's current feature set, install guidance, and Git-native workflow.
+- [Gemini CLI GitHub Repository](https://github.com/google-gemini/gemini-cli) — Documents current installation methods, release channels, licensing, and command-line behavior.
+- [OpenAI Codex Repository](https://github.com/openai/codex) — Provides the maintained Codex CLI README, release artifacts, and license information.

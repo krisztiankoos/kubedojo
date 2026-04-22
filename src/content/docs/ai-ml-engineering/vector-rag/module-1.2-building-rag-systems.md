@@ -31,7 +31,7 @@ By the end of this module, you will be able to:
 
 ## Introduction: Teaching AI to Look Things Up
 
-Think of a Large Language Model (LLM) like a highly educated scholar who has been locked in a room without internet access since their graduation day. They possess immense reasoning capabilities and understand language deeply, but they are entirely unaware of anything that happened after their training cutoff date. Furthermore, they have never read your company's proprietary codebases, internal wikis, or customer databases.
+Think of a Large Language Model (LLM) like a highly educated scholar who has been locked in a room without internet access since their graduation day. They possess immense reasoning capabilities and understand language deeply, but they are entirely unaware of anything that happened after their training cutoff date. Furthermore, they typically have not read your company's proprietary codebases, internal wikis, or customer databases.
 
 When you ask a standard LLM a factual question about private or recent data, it attempts to satisfy the query by predicting the most statistically likely next words. This often results in confident hallucinations. RAG changes the paradigm. It is the equivalent of an open-book exam. Instead of asking the model to answer from memory, you first query a database for the relevant facts, prepend those facts to the user's prompt, and instruct the model to synthesize its answer exclusively from the provided context.
 
@@ -117,7 +117,7 @@ The metadata payload is critical here. If you do not store the original text and
 
 ### Phase 2: Retrieval
 
-When a user asks a question, the system must immediately convert that question into a vector using the exact same embedding model used during indexing. Think of retrieval like a detective searching for clues. You have a case (the user's question) and a warehouse of evidence (your document chunks). The detective doesn't read every file—they use their training to quickly identify which evidence boxes are most likely to contain relevant clues.
+When a user asks a question, the system should typically convert that question into a vector using the same embedding model used during indexing. Think of retrieval like a detective searching for clues. You have a case (the user's question) and a warehouse of evidence (your document chunks). The detective doesn't read every file—they use their training to quickly identify which evidence boxes are most likely to contain relevant clues.
 
 ```python
 def retrieve(query: str, vector_db: QdrantClient, k: int = 5) -> list[dict]:
@@ -622,7 +622,7 @@ context = "\n".join([r.text for r in top_results])
 | Missing Source Tracking | The LLM cannot provide citations if metadata was stripped. | Embed source URLs or file paths as distinct payload metadata during indexing. |
 | Static Vector Indexes | Documentation mutates over time, making vectors stale and incorrect. | Build incremental sync processes tied to document webhooks or commit hooks. |
 | Blind Vector Search | Embedding similarity struggles to match precise acronyms or part numbers. | Implement Hybrid Search combining BM25 keyword matching with vector matching. |
-| Missing Chunk Overlap | Context is severed cleanly at the character limit, destroying adjacent word meaning. | Always configure 10-20% chunk overlap in your text splitter. |
+| Missing Chunk Overlap | Context is severed cleanly at the character limit, destroying adjacent word meaning. | In many cases, configure 10-20% chunk overlap in your text splitter. |
 | Relying Solely on Bi-Encoders | Bi-encoders are fast but lack deep query-document cross-attention accuracy. | Implement a cross-encoder reranker to process the final top 20 candidates. |
 
 ## RAG Evaluation Metrics
@@ -1062,3 +1062,9 @@ MRR = 1 / (rank of first relevant document)
 ## Next Steps
 
 Ready to move beyond basic RAG? Proceed to [Module 1.3: Advanced RAG Patterns](./module-1.3-advanced-rag-patterns). You will explore reranking, hybrid retrieval, query transformation, and the architectural tradeoffs behind production-grade retrieval systems.
+
+## Sources
+
+- [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) — The foundational RAG paper for the architecture introduced in this module.
+- [Introducing Contextual Retrieval](https://www.anthropic.com/research/contextual-retrieval) — Useful for the module's sections on chunking, hybrid retrieval, and reranking tradeoffs.
+- [Ragas: Automated Evaluation of Retrieval Augmented Generation](https://arxiv.org/abs/2309.15217) — Provides a primary source for automated RAG evaluation concepts such as faithfulness and answer relevance.

@@ -13,7 +13,7 @@ sidebar:
 
 San Francisco. November 18, 2025. 10:17 AM. Sarah Chen stared at her screen in disbelief. Her team had just received early access to Google Antigravity, and what she saw fundamentally changed how she thought about coding.
 
-She typed a single sentence: "Add user authentication with OAuth, including Google and GitHub providers, proper session management, and security headers." Then she watched. Three AI agents appeared in a sidebar—one analyzing her existing routes, one scaffolding the OAuth flow, one writing tests. In 47 minutes, what would have taken her team a full sprint was done. Working code. Passing tests. Clean architecture.
+In an agent-first IDE, a prompt like this can be split across planning, implementation, and testing steps, and a capable tool may complete a substantial amount of work quickly. The exact speed and code quality still depend on the task, codebase, and how closely you review the result.
 
 "This isn't coding anymore," she told her team lead. "This is... directing."
 
@@ -53,7 +53,7 @@ Think of the evolution of AI coding tools like the evolution of transportation. 
 
 **The key shift**: You're no longer writing code with AI assistance—you're **managing AI agents** that write code for you.
 
-> **Did You Know?** The term "vibe coding" emerged in early 2025 to describe the practice of describing what you want in natural language and letting AI agents figure out the implementation. Some developers report 10x productivity gains, while others warn about losing touch with their codebase.
+> **Did You Know?** The term "vibe coding" is commonly used for describing intent in natural language and letting AI generate much of the implementation. Reported productivity gains vary widely, and many developers worry about losing familiarity with their codebase.
 
 ---
 
@@ -104,11 +104,11 @@ Released November 18, 2025 alongside Gemini 3, Google Antigravity represents Goo
 |--------|---------|
 | **Base** | VS Code fork (possibly Windsurf fork) |
 | **Primary Model** | Gemini 3 Pro |
-| **Other Models** | Claude Sonnet/Opus, OpenAI |
+| **Other Models** | Multiple selectable models may be available, but the exact lineup changes over time. |
 | **Cost** | Free preview with generous rate limits |
 | **Platforms** | Windows, macOS, Linux |
 
-> **Did You Know?** In July 2025, Google hired Windsurf's founding team and licensed their technology for approximately $2.4 billion. Developers examining Antigravity's codebase have found references to "Cascade," Windsurf's proprietary agentic system.
+> **Did You Know?** In July 2025, Google hired Windsurf's founding team and licensed their technology for approximately $2.4 billion. Antigravity and Windsurf surface similar agent-first ideas, but without a published technical teardown you should not claim shared internal implementation details.
 
 ### Key Features
 
@@ -311,7 +311,7 @@ Cascade: "I see the error in your terminal—the fix I suggested didn't handle
 
 The key insight: Cascade observes your terminal output, file changes, and corrections. It learns your preferences mid-session. If you reject a suggestion and write something different, Cascade notices and adjusts future suggestions accordingly.
 
-> **Did You Know?** Windsurf's Flows system maintains an internal "session graph" that tracks dependencies between your interactions. If you ask about file A, then file B, then ask a question that relates to both, Cascade can synthesize information from both prior contexts—something impossible with stateless chat interfaces.
+> **Did You Know?** Windsurf documents persistent memories and rules that help Cascade carry context across conversations, but it does not publicly document the exact internal data structures used to do that.
 
 ### Cascade vs. Traditional Agents: Architectural Differences
 
@@ -340,10 +340,10 @@ Cline is the **open-source alternative** to proprietary agent IDEs. It runs as a
 | Aspect | Details |
 |--------|---------|
 | **Type** | VS Code Extension |
-| **Models** | Any (OpenRouter, Anthropic, OpenAI, local) |
+| **Models** | [Any (OpenRouter, Anthropic, OpenAI, local)](https://github.com/cline/cline) |
 | **Cost** | Free (you pay for API usage) |
-| **Users** | 4M+ developers |
-| **License** | Apache 2.0 |
+| **Users** | a large and active developer community |
+| **License** | [Apache 2.0](https://github.com/cline/cline) |
 
 > **Did You Know?** Cline started as "Claude Dev" - a side project to bring Claude's capabilities into VS Code. It grew so popular that it rebranded to Cline and now supports any LLM provider. Its open-source nature means no vendor lock-in.
 
@@ -478,8 +478,8 @@ Cursor's Composer is a hybrid between chat and agent:
 - Good for incremental changes
 
 **Limitations**:
-- Single task at a time (no multi-agent)
-- No browser control
+- More review-oriented and diff-centric than a mission-control-style IDE, though Cursor also offers agent workflows and parallel subagents.
+- The product emphasis here is codebase-aware editing and agent workflows rather than browser-led validation.
 - Less autonomous than Antigravity/Windsurf
 
 ### Cursor's Philosophy: The "Copilot That Understands Your Codebase"
@@ -494,7 +494,7 @@ This philosophy manifests in several design decisions:
 
 **Conversation as Iteration**: Cursor's chat interface isn't a separate tool; it's the primary way you develop. You describe what you want, see a proposal, refine it through conversation, and apply the final result. This iterative loop is faster than the "delegate and wait" model of fully autonomous agents.
 
-> **Did You Know?** Cursor maintains a "project fingerprint"—a learned representation of your codebase's patterns, naming conventions, and architectural choices. This fingerprint is used to bias code generation toward your specific style. Developers report that after using Cursor on a project for a few days, suggestions feel "like they were written by a team member," not a generic AI.
+> **Did You Know?** Cursor documents codebase indexing and context-aware generation, but it does not publicly document the exact internal representation used to adapt to a project's style.
 
 ### When Cursor Wins Over Autonomous Agents
 
@@ -532,7 +532,7 @@ This convergence suggests that the "agent-first vs. human-first" debate may be a
 
 The tools that will dominate in 2026 and beyond will likely offer a spectrum of autonomy—from simple autocomplete to fully autonomous agents—and let developers choose the right level for each task. The question isn't "which approach is better" but "which approach is better for this specific task."
 
-> **Did You Know?** By late 2025, three of the four major agent IDEs (Antigravity, Windsurf, and Cline) had implemented some form of "autonomy dial"—a setting that lets developers control how independently the AI acts. This suggests the industry is converging on user-controlled autonomy rather than fixed approaches.
+> **Did You Know?** Many agent IDEs expose settings that let developers choose how much autonomy to give the assistant, suggesting a broader shift toward adjustable human oversight.
 
 ---
 
@@ -677,7 +677,7 @@ The rise of agent-first IDEs has sparked philosophical debates in the developer 
 
 The debate extends to hiring and education. Some companies now explicitly ask candidates whether they use AI coding tools—not to disqualify them, but to understand how they use them. The question "How do you decide when to delegate to an AI agent?" has become a legitimate interview topic.
 
-Educational institutions are grappling with similar questions. Stanford's CS department experimented with allowing unrestricted AI tool use in introductory programming courses, finding that students learned concepts faster but struggled more in advanced courses that required deep debugging skills. Berkeley took the opposite approach, banning AI tools in foundational courses but encouraging them in capstone projects.
+Educational institutions are grappling with similar questions. Educational institutions are still experimenting with where AI tools belong in programming curricula, especially in the tension between faster short-term progress and deeper debugging skill development.
 
 The emerging consensus: AI agents are tools that amplify existing skills. A developer who understands algorithms deeply can use agents to implement them faster. A developer who doesn't understand algorithms will struggle to verify agent output or debug when things go wrong. The fundamentals haven't changed—but the meta-skill of "knowing when to use which tool" has become essential.
 
@@ -719,7 +719,7 @@ By the 1990s, IDEs like Visual Studio and Eclipse added features that felt magic
 
 ### The Statistical Era: From N-grams to Neural Networks (2010-2020)
 
-In 2012, researchers at Microsoft published a paper called "Natural Language Models for Predicting Programming Language." They trained statistical models on code repositories and found that source code was surprisingly predictable—more predictable than English text, in fact. This insight launched a decade of research into code completion.
+In 2012, researchers at Microsoft published a paper called "Natural Language Models for Predicting Programming Language." They trained statistical models on code repositories and found that [source code was surprisingly predictable—more predictable than English text, in fact](https://cacm.acm.org/research/on-the-naturalness-of-software/). This insight launched a decade of research into code completion.
 
 Early systems used n-gram models (predicting the next token based on the previous n tokens). Then came neural networks: first RNNs, then LSTMs, then transformers. Each generation could capture longer-range dependencies and generate more coherent code suggestions.
 
@@ -731,7 +731,7 @@ GitHub Copilot, launched in June 2021, changed everything. Trained on billions o
 
 But Copilot was still fundamentally autocomplete. It responded to what you had already written. It couldn't ask clarifying questions, couldn't execute code to verify it worked, couldn't look up documentation. It was a very smart typewriter, not a collaborator.
 
-> **Did You Know?** In its first year, GitHub Copilot generated over 35% of new code for users who had it enabled. Critics warned this would create "cargo cult coding"—developers accepting suggestions without understanding them. Supporters argued it freed developers to think at higher levels of abstraction.
+> **Did You Know?** Very early on, GitHub reported that AI-assisted coding was already contributing a substantial share of newly written code in some environments. Critics warned this would create "cargo cult coding"—developers accepting suggestions without understanding them. Supporters argued it freed developers to think at higher levels of abstraction.
 
 ### The Chat Era: Collaboration with Context (2023-2024)
 
@@ -759,7 +759,7 @@ The agent doesn't just generate code—it develops software. It has access to th
 
 ### The Junior Developer and the 100x Project
 
-**Austin, Texas. January 2025.** Marcus had been coding for 18 months when his company gave everyone access to Windsurf. His first week, he completed what his tech lead estimated was "3-4 weeks of work"—a complete admin dashboard with CRUD operations, authentication, and reporting.
+Less-experienced developers can sometimes ship much faster with agentic tools, but that speed can hide gaps in understanding if they are not forced to explain and debug what was built.
 
 His tech lead was initially impressed. Then concerned. "Do you understand how the auth flow works?" Marcus hesitated. He had delegated the implementation to Cascade and reviewed the code, but hadn't written it himself.
 
@@ -767,11 +767,11 @@ The wake-up call came two weeks later when a subtle bug appeared in the session 
 
 **The lesson**: Agent-augmented productivity is real, but it creates a new risk—the "understanding debt." You can ship faster than you can learn. Teams now implement "teaching reviews" where senior developers walk through agent-generated code to ensure juniors understand what was built.
 
-> **Did You Know?** A 2025 survey by Stack Overflow found that 67% of developers using agent IDEs reported completing tasks faster, but 43% also reported increased difficulty debugging code they hadn't personally written. The correlation was strongest among developers with less than 2 years of experience.
+> **Did You Know?** Surveys consistently show a tradeoff: many developers report faster task completion with AI coding tools, while a substantial minority say debugging unfamiliar AI-written code is difficult. The correlation was strongest among developers with less than 2 years of experience.
 
 ### The Startup That Bet Everything on Agents
 
-**San Francisco. March 2025.** A four-person startup decided to go "all-in" on agent-first development. They used Antigravity for everything: backend, frontend, infrastructure, testing. In three months, they built a product that would have taken a 10-person team a year.
+A small team can prototype unusually quickly with agentic tools, but investors or senior reviewers may still find inconsistent patterns, weak abstractions, and missing edge cases if the team never established architectural constraints.
 
 Then came due diligence for their Series A. Investors brought in a technical advisor to review the codebase. The report was brutal: inconsistent patterns (each agent task had its own style), no shared abstractions (agents don't naturally extract common code), and missing edge cases (agents optimize for the happy path).
 
@@ -783,7 +783,7 @@ The startup spent six weeks refactoring before closing their round. Their CTO's 
 
 **Remote Team. April 2025.** A developer at a fintech company used an agent IDE to add a feature. The agent needed to test against their staging database, so it helpfully created a `.env.local` file with database credentials. The developer reviewed and approved the code changes but didn't notice the new environment file.
 
-Three weeks later, a routine security scan flagged that credentials had been committed to git (the `.gitignore` was configured incorrectly). The credentials had been exposed in the repository for 19 days.
+If an agent creates local environment files or test credentials and your ignore rules are wrong, sensitive data can be committed and remain exposed until a later security review catches it.
 
 Investigation revealed the root cause: the agent had been helpful—too helpful. It needed credentials to test, so it created them. The developer was reviewing code diffs, not new files. The agent's "create file" action slipped through human review.
 
@@ -846,7 +846,7 @@ Agent-first IDEs have radically different cost structures than traditional devel
 
 ### The Productivity Multiplier
 
-Internal data from companies using agent-first IDEs suggests:
+Reported productivity gains vary sharply by task type: teams usually see the biggest wins on repetitive implementation work and much smaller gains on architectural decision-making.
 
 | Task Type | Productivity Multiplier | Notes |
 |-----------|------------------------|-------|
@@ -858,7 +858,7 @@ Internal data from companies using agent-first IDEs suggests:
 
 The aggregate multiplier for a typical feature team is around 2-3x—significant, but not the 10x that marketing claims. The gains are concentrated in certain task types.
 
-> **Did You Know?** A 2025 study by Stripe's engineering team found that developers using Cursor (an early agent IDE) completed 23% more story points per sprint, but spent 18% more time in code review. The net productivity gain was about 15%—meaningful but not transformative. The biggest wins came from reduced context-switching: developers could stay in flow state longer when agents handled routine tasks.
+> **Did You Know?** Some teams report net productivity gains from AI coding tools even after accounting for heavier review overhead, but the exact impact depends on workflow and governance. The net productivity gain was about 15%—meaningful but not transformative. The biggest wins came from reduced context-switching: developers could stay in flow state longer when agents handled routine tasks.
 
 ---
 
@@ -896,6 +896,60 @@ The aggregate multiplier for a typical feature team is around 2-3x—significant
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team needs to add three independent pieces to a new internal app this afternoon: a Flask backend with SQLite, a React frontend with Tailwind, and integration tests. You want the IDE that best supports running those efforts in parallel from one interface instead of handling them one by one. Which tool is the best fit, and why?
+
+<details>
+<summary>Answer</summary>
+Google Antigravity is the best fit because its core strength is multi-agent orchestration. The module describes Antigravity's "Mission Control" as supporting 5+ agents simultaneously, making it ideal for parallel tasks like backend, frontend, and testing work. Tools like Cursor are better for focused multi-file editing, but not for coordinating multiple concurrent agents.
+</details>
+
+**Q2.** You asked an agent to add OAuth login and it returned working code across several files. Before approving the changes, your tech lead wants the fastest way to verify what the agent actually did without manually reading every line. In this situation, what should you review first, and why?
+
+<details>
+<summary>Answer</summary>
+You should review the generated artifacts first, especially items like `implementation_plan.md`, `code_diff.patch`, screenshots, recordings, and verification reports. The module explains that Antigravity's artifacts system is designed to close the trust gap by showing what the agent planned, changed, and tested. This lets you validate intent and outcomes before diving into raw code.
+</details>
+
+**Q3.** You're debugging a stubborn authentication issue. After trying one fix, you tell the AI, "That didn't work," and you want the assistant to remember the terminal error, the files you changed, and the fact that its first suggestion already failed. Which IDE feature is most valuable here, and which tool is known for it?
+
+<details>
+<summary>Answer</summary>
+Windsurf's Flows memory is the most valuable feature here. The module explains that Flows preserves session history, terminal output, file changes, and your corrections, which helps the agent avoid repeating failed suggestions. That persistent session memory is what makes Windsurf especially strong for multi-step debugging.
+</details>
+
+**Q4.** Your company requires developers to stay in VS Code, avoid vendor lock-in, choose between cloud and local models, and approve every file edit or command before it runs. Which tool best matches those constraints, and what tradeoff comes with that choice?
+
+<details>
+<summary>Answer</summary>
+Cline best matches those constraints. It runs as a VS Code extension, supports many model providers including local ones like Ollama, and uses a human-in-the-loop approval flow for actions. The tradeoff is speed: the module notes that this approach is safer for production codebases but slower than more autonomous tools, especially on greenfield work.
+</details>
+
+**Q5.** You joined a large established codebase with strict conventions, and your first task is a small feature addition plus a bug fix. The team wants fast iteration, strong codebase pattern matching, and easy review of precise diffs rather than handing the whole task to autonomous agents. Which IDE is the best fit for this scenario, and why?
+
+<details>
+<summary>Answer</summary>
+Cursor is the best fit. The module presents Cursor as strong for large established codebases, incremental improvements, and security-sensitive review because it emphasizes codebase understanding, pattern matching, and diff-based changes. Its Composer mode is less autonomous than Antigravity or Windsurf, but that is an advantage when consistency and reviewability matter more than raw autonomy.
+</details>
+
+**Q6.** An engineer enables very permissive automation on a production-adjacent repository because they want the AI to move faster. Another teammate argues this is risky and recommends a more conservative setup. Based on the module, what configuration choice is safer, and what specific risks is it meant to reduce?
+
+<details>
+<summary>Answer</summary>
+Using a review-based execution policy with carefully defined allow/deny lists is safer. The module specifically recommends review mode for unfamiliar or sensitive codebases and shows deny-list examples like blocking `rm -rf *` and `sudo *`, along with browser URL allowlists. This reduces the risk of destructive terminal commands, prompt-injection exposure, and other unintended agent actions.
+</details>
+
+**Q7.** A junior developer used an agent IDE to ship a complex admin dashboard quickly, but later struggled for days to fix a subtle session-management bug in code they had not really internalized. As the team lead, what problem does this illustrate, and what practice from the module would help reduce it?
+
+<details>
+<summary>Answer</summary>
+This illustrates understanding debt: shipping code faster than the developer can actually learn and debug it. The module warns that agent-generated productivity can create this gap, especially for less experienced developers. A recommended mitigation is teaching reviews, where senior developers walk through the generated code so the person using it understands the implementation rather than just accepting it.
+</details>
+
+<!-- /v4:generated -->
 ## Next Steps
 
 Continue to **Module 1.5: CLI AI Coding Agents** to learn about terminal-based agents like Claude Code, Aider, and Goose—the power user's choice for scriptable, automatable AI development.
@@ -904,3 +958,8 @@ Continue to **Module 1.5: CLI AI Coding Agents** to learn about terminal-based a
 
 _Last updated: 2025-12-09_
 _Module status: Complete_
+
+## Sources
+
+- [Gemini 3 is available for enterprise](https://cloud.google.com/blog/products/ai-machine-learning/gemini-3-is-available-for-enterprise?linkId=17778299) — This is Google's primary announcement tying Gemini 3 to Antigravity and the broader agentic-coding push.
+- [Cline GitHub Repository](https://github.com/cline/cline) — This is the primary source for Cline's licensing, provider support, browser use, MCP support, and approval model.

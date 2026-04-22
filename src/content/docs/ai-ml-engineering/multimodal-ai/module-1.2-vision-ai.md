@@ -14,7 +14,7 @@ sidebar:
 
 San Francisco. October 2023. A Cruise autonomous vehicle was navigating a city street when a human-driven car struck a pedestrian, throwing them directly into the Cruise vehicle's path. The robotaxi executed a hard emergency brake, coming to a stop directly over the critically injured pedestrian. It was at this moment that the multimodal vision AI system made a catastrophic semantic error. Analyzing the scene from its undercarriage and external cameras, the model classified the space under the car as "clear" and initiated a maneuver to pull over to the side of the road, dragging the pedestrian for 20 feet.
 
-The financial and reputational impact was immediate and devastating. The California DMV immediately suspended Cruise's deployment permits, forcing the company to ground its entire nationwide fleet of 400 autonomous vehicles. Within weeks, the CEO resigned, the company laid off 24 percent of its workforce, and General Motors slashed Cruise's internal valuation by more than half, erasing billions of dollars in enterprise value overnight. 
+The financial and reputational impact was immediate and devastating. The California DMV promptly suspended Cruise's deployment permits, forcing the company to ground its nationwide fleet of about 400 autonomous vehicles. Within weeks, the CEO resigned, the company laid off 24 percent of its workforce, and General Motors slashed Cruise's internal valuation by more than half, erasing billions of dollars in enterprise value overnight. 
 
 This incident underscores a critical reality for AI and ML engineers: vision AI is no longer a research novelty constrained to ImageNet benchmarks. It is actively deployed in safety-critical, high-stakes production environments where the semantic gap between "detecting pixels" and "understanding physical context" can cost lives and billions of dollars. Mastering multimodal AI means understanding not just how to process image tensors, but how these models reason about the visual world, where their mathematical blind spots lie, and how to architect rigorous safety boundaries against their inevitable hallucinations.
 
@@ -254,7 +254,7 @@ flowchart TD
     LLM --> R[Generated Response]
 ```
 
-The Projection Connector is the unsung hero of this architecture. Its sole purpose is to translate the high-dimensional visual features output by the Vision Encoder into the precise embedding dimension expected by the Language Model, acting as a universal translator between the two neural networks.
+The Projection Connector is the unsung hero of this architecture. Its primary purpose is to translate the high-dimensional visual features output by the Vision Encoder into the precise embedding dimension expected by the Language Model, acting as a bridge between the two neural networks.
 
 ### Major Vision-Language Models in Production
 
@@ -815,7 +815,7 @@ text = vlm.analyze("Extract any visible text")
 
 | Mistake | Why It Happens | Fix |
 |---------|----------------|-----|
-| Sending 4K images to APIs without resizing | APIs downsample or tile images into fixed grids (e.g., 512x512 blocks). You pay for pixels the model instantly discards. | Implement a client-side resize function to constrain the maximum dimension before making the network request. |
+| Sending 4K images to APIs without resizing | APIs downsample or tile images into fixed grids (e.g., 512x512 blocks). You pay for pixels the model often discards during preprocessing. | Implement a client-side resize function to constrain the maximum dimension before making the network request. |
 | Using Vision-Language Models for exact spatial coordinates | LLM architectures lack inherent spatial geometry; they process flattened 1D sequences of tokens. | Utilize dedicated object detection models (like YOLOv8) for bounding boxes, or explicitly overlay a visible coordinate grid on the image. |
 | Trusting native OCR capabilities for structural data | Text in complex layouts (invoices, forms) gets serialized linearly, destroying the implicit column and row relationships. | Employ a hybrid approach: use a specialized OCR engine for coordinate extraction and the VLM strictly for semantic reasoning. |
 | Providing zero-shot prompts for complex reasoning | Vision tokens compete with text tokens for attention. Without intermediate steps, the model overlooks critical visual details. | Enforce Chain-of-Thought prompting. Command the model to list visible objects first, then reason about their interactions. |
@@ -1232,3 +1232,9 @@ A native VLM processes the visual layout and structural geometry of the document
 ---
 
 _Next: [Module 24 - Video AI & Generation](./module-1.3-video-ai) — Learn how to extend spatial reasoning into the temporal dimension by architecting continuous frame pipelines and dealing with the massive data requirements of video streams._
+
+## Sources
+
+- [An Image is Worth 16x16 Words](https://arxiv.org/abs/2010.11929) — Foundational paper for Vision Transformers and the patch-based formulation used throughout the module.
+- [Learning Transferable Visual Models From Natural Language Supervision](https://arxiv.org/abs/2103.00020) — Primary source for CLIP, contrastive image-text learning, and zero-shot transfer.
+- [BLIP-2](https://arxiv.org/abs/2301.12597) — Clear primary reference for the modern frozen-vision-encoder plus LLM bridge pattern used by many VLMs.

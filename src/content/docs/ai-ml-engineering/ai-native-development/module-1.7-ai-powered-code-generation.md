@@ -29,7 +29,7 @@ By the end of this module, you will be able to:
 
 In 2019, engineering teams at Uber were preparing to launch a highly anticipated payment feature. The code had passed multiple rounds of human review. The test suite, achieving high coverage, returned completely green. By all traditional metrics, the feature was ready for production. However, before deployment, they ran the codebase through an early AI code analyzer to act as a final safety net.
 
-The AI system immediately flagged a critical vulnerability in the refund logic. Human reviewers had validated the "happy path" of calculating a refund by subtracting a fee from the total amount. What they missed was the edge case of fraudulent negative amounts. If a malicious actor submitted a negative transaction value, the system would mathematically invert it, resulting in a positive refund credited back to the attacker. 
+The AI system quickly flagged a critical vulnerability in the refund logic. Human reviewers had validated the "happy path" of calculating a refund by subtracting a fee from the total amount. What they missed was the edge case of fraudulent negative amounts. If a malicious actor submitted a negative transaction value, the system would mathematically invert it, resulting in a positive refund credited back to the attacker. 
 
 ```python
 # Human-approved code (WRONG!)
@@ -938,3 +938,7 @@ The concepts discussed throughout this module map to the following complete, ver
 
 **Next Module**: [Module 1.8 - AI-Assisted Debugging & Optimization](./module-1.8-ai-assisted-debugging-optimization)
 *You know how to build it. Now learn how to diagnose the hardest failures at scale.*
+
+## Sources
+
+- [OWASP Top 10: Injection](https://owasp.org/Top10/2025/A05_2025-Injection/) — Grounds the module's security-review advice in a standard reference on injection risks and defenses.

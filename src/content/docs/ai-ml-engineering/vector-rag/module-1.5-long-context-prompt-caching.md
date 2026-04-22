@@ -18,7 +18,7 @@ Upon completing this module, you will be able to:
 
 In late 2025, a major fintech analytics firm, QuantStream Solutions, attempted to replace their complex, multi-stage RAG pipeline with a single, massive-context LLM call. They fed ten years of quarterly earnings reports—roughly 1.8 million tokens—directly into the model for every user query, assuming the model would perfectly synthesize the data without the need for semantic search. For the first two days, the system seemed miraculous, eliminating the need for vector databases, embedding models, and complex chunking strategies. The developers celebrated the simplification of their architecture and the immediate reduction in moving parts.
 
-However, the architectural naivety quickly surfaced. Because they dynamically injected the user's short query at the *beginning* of the prompt before the massive block of historical data, they completely invalidated the prompt cache on every single request. Instead of paying fraction-of-a-cent caching rates, they were billed for processing 1.8 million tokens from scratch for every query. Within seventy-two hours, their API usage bill exceeded $120,000, wiping out their entire quarterly infrastructure budget. Furthermore, users began reporting that the model was hallucinating financial metrics from 2018 when asked about 2024, a classic symptom of attention degradation in unoptimized massive contexts.
+However, the architectural naivety quickly surfaced. Because they dynamically injected the user's short query at the *beginning* of the prompt before the massive block of historical data, they effectively invalidated the prompt cache on nearly every request. Instead of paying fraction-of-a-cent caching rates, they were billed for processing 1.8 million tokens from scratch for every query. Within seventy-two hours, their API usage bill exceeded $120,000, wiping out their entire quarterly infrastructure budget. Furthermore, users began reporting that the model was hallucinating financial metrics from 2018 when asked about 2024, a classic symptom of attention degradation in unoptimized massive contexts.
 
 This incident highlights the critical inflection point modern AI engineering has reached. We now possess models capable of ingesting entire codebases, libraries of documentation, and years of transactional history in a single prompt. But raw capacity does not equal architectural efficiency. Understanding how to structure prompts to exploit KV cache reuse, how to measure prefix caching cost models, and when to hybridize long-context with traditional RAG is the difference between a highly profitable, lightning-fast application and a catastrophic financial liability. This module provides the practitioner-level insights required to navigate this new paradigm safely and effectively, ensuring you can harness the power of millions of tokens without falling into the traps of latency and exponential cost.
 
@@ -123,7 +123,7 @@ sequenceDiagram
     GPU Cluster-->>Client: Return Answer B (Low Latency, Low Cost)
 ```
 
-If you change a single space, a single punctuation mark, or inject a dynamic timestamp at the beginning of your prompt, the hash changes, and the entire cache is invalidated for that request. The physical realities of storing massive tensors dictate this: a single differing token alters the relational attention mechanics for all subsequent tokens, making partial prefix matching mathematically impossible without recalculation.
+If you change a single space, a single punctuation mark, or inject a dynamic timestamp at the beginning of your prompt, the hash changes, and the entire cache is invalidated for that request. The physical realities of storing massive tensors dictate this: a single differing token alters the relational attention mechanics for all subsequent tokens, making partial prefix matching generally impossible in standard exact-prefix cache schemes without recalculation.
 
 ## 4. Architecting for Maximum Cache Hits
 
@@ -226,7 +226,7 @@ Let's assume a corpus of 1,000,000 tokens. You expect 10,000 queries per month.
     *   $Cost_{LC} = 10,000 \times [ (1M / 1M \times 0.30) + (500 / 1M \times 3.00) ]$
     *   $Cost_{LC} = 10,000 \times [ 0.30 + 0.0015 ] = $3,015.00 / month.
 
-**The Verdict**: In high-frequency, narrow-retrieval scenarios, Vector RAG is overwhelmingly cheaper ($175 vs $3,015). However, if the workload involves analyzing the *entire* corpus to synthesize a report (e.g., "Summarize all 1,000,000 tokens into a compliance dashboard"), RAG physically cannot perform the task, making Long-Context the only viable option regardless of cost. The break-even point heavily favors RAG for needle-in-haystack search, but flips entirely when holistic synthesis is required.
+**The Verdict**: In high-frequency, narrow-retrieval scenarios, Vector RAG is overwhelmingly cheaper ($175 vs $3,015). However, if the workload involves analyzing the *entire* corpus to synthesize a report (e.g., "Summarize all 1,000,000 tokens into a compliance dashboard"), basic RAG is often a poor fit for the task, making Long-Context the most straightforward option despite the cost. The break-even point heavily favors RAG for needle-in-haystack search, but flips entirely when holistic synthesis is required.
 
 ## 6. Long-Context vs. Traditional RAG: The Hybrid Future
 
@@ -303,7 +303,7 @@ def execute_llm_call(prompt):
     return response.text
 ```
 
-If your cache hit ratio drops below 80% on a system designed for massive static context, it immediately signals a regression in how your application concatenates strings.
+If your cache hit ratio drops below 80% on a system designed for massive static context, it usually signals a regression in how your application concatenates strings.
 
 ## War Stories from the Edge of Context
 
@@ -528,3 +528,9 @@ Now that you have mastered the economics and architecture of massive context win
 
 Continue to [Module 3.6: Fallbacks, Retries, and Defensive Engineering](/ai-ml-engineering/vector-rag/module-1.5-long-context-prompt-caching/), where we will cover exponential backoff strategies, semantic validation loops, and how to gracefully degrade your application's UX when the API provider experiences a catastrophic outage.
 ---
+
+## Sources
+
+- [OpenAI Prompt Caching Guide](https://developers.openai.com/api/docs/guides/prompt-caching) — Primary documentation for exact-prefix matching, cache retention, and prompt-structuring guidance.
+- [Lost in the Middle: How Language Models Use Long Contexts](https://arxiv.org/abs/2307.03172) — Primary paper on beginning-versus-middle-versus-end retrieval behavior in long contexts.
+- [Ring Attention with Blockwise Transformers for Near-Infinite Context](https://arxiv.org/abs/2310.01889) — Primary source for one of the distributed-attention techniques referenced in the module.

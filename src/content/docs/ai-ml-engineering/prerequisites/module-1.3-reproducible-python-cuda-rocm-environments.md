@@ -76,7 +76,7 @@ That means:
 
 Do not share one giant global Python environment across AI projects.
 
-That approach always looks efficient for two days and chaotic by week three.
+That approach often looks efficient for two days and chaotic by week three.
 
 ---
 
@@ -154,7 +154,7 @@ You do not need to memorize every toolkit version. You do need the right mental 
 
 ### CUDA
 
-CUDA is the NVIDIA compute stack used by many deep learning frameworks.
+[CUDA is the NVIDIA compute stack](https://github.com/NVIDIA/cuda-python) used by many deep learning frameworks.
 
 For learners, the important idea is:
 
@@ -168,7 +168,7 @@ If they do not, you often see:
 
 ### ROCm
 
-ROCm plays a similar role for AMD GPUs, but the ecosystem and supported combinations can be less forgiving depending on hardware and distro choice.
+[ROCm plays a similar role for AMD GPUs](https://github.com/ROCm/ROCm), but the ecosystem and [supported combinations can be less forgiving depending on hardware and distro choice](https://github.com/ROCm/ROCm).
 
 That does not make it unusable. It means you should be stricter about:
 - using supported operating systems
@@ -197,7 +197,7 @@ Before installing frameworks, verify:
 2. whether your OS is appropriate for the stack
 3. whether the driver is installed and visible
 4. which compute runtime family you are targeting
-5. which framework build matches that target
+5. [which framework build matches that target](https://github.com/pytorch/pytorch)
 
 Only then install the framework.
 
@@ -309,7 +309,7 @@ That habit is the bridge from hobby setup to professional reproducibility.
 | Mistake | What Goes Wrong | Better Move |
 |---|---|---|
 | One global Python environment for everything | dependency collisions and mystery imports | one environment per project |
-| Installing frameworks before checking driver/runtime assumptions | impossible-to-read failures | verify stack layers first |
+| Installing frameworks before checking driver/runtime assumptions | hard-to-read failures | verify stack layers first |
 | Mixing tools without understanding the active interpreter | shell and notebook mismatch | always know which interpreter is active |
 | Trusting a setup because one import worked once | hidden drift remains | use a repeatable smoke test |
 | Treating containers as magic | extra complexity with no model | use containers intentionally, not reflexively |
@@ -325,8 +325,193 @@ That habit is the bridge from hobby setup to professional reproducibility.
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team starts a new local LLM project, and one developer suggests reusing the same global Python environment they already use for three other AI experiments to save time. Two weeks later, package versions conflict and nobody can reproduce the same setup. What project setup should you have used from day one, and why?
+
+<details>
+<summary>Answer</summary>
+Use the module's baseline rule: one project, one isolated environment, and one documented setup path. That means a dedicated project directory, a dedicated `venv`, a tracked dependency file such as `requirements.txt`, and a short verification sequence. This prevents dependency collisions and makes it possible to recreate the same environment later instead of relying on a shared global Python install.
+</details>
+
+**Q2.** Your teammate sees that PyTorch imports correctly, but when they try to run a tensor operation on the GPU, the framework falls back to CPU. They immediately propose reinstalling Python. Based on the stack model from the module, what is the more likely problem area to investigate first?
+
+<details>
+<summary>Answer</summary>
+The driver and compute runtime compatibility should be checked before touching Python. The module explains that many failures happen when people confuse stack layers. If import works but GPU use fails, the likely issue is a driver/framework/runtime mismatch rather than Python itself. The right approach is to verify the driver layer first, confirm the intended CUDA or ROCm target, and then ensure the installed framework build matches that target.
+</details>
+
+**Q3.** You are setting up an AMD GPU workstation for model training on Linux. A colleague says, "Just install the newest packages from wherever you find them and it should work." Why is that a risky approach for ROCm, and what should you do instead?
+
+<details>
+<summary>Answer</summary>
+It is risky because ROCm can be less forgiving about supported hardware, operating systems, and framework builds. The module's correct mental model is not "install the newest thing" but "install a compatible set of things." You should verify that the OS is appropriate, confirm the GPU and driver are supported, choose ROCm as the target runtime family deliberately, and then install a documented framework build that matches that setup instead of mixing random packages.
+</details>
+
+**Q4.** A notebook on your machine can import a library successfully, but the same import fails from the command line in the project directory. What failure mode does this suggest, and how should you fix it?
+
+<details>
+<summary>Answer</summary>
+This suggests an environment mismatch between the notebook kernel, shell interpreter, and possibly the project root. The module calls this a common "it works on my notebook" problem. The fix is to make the environment explicit, make the project root explicit, verify which interpreter is active, and confirm imports from both the notebook and CLI so they are using the same project environment.
+</details>
+
+**Q5.** You are helping a small team onboard to a project that mixes several incompatible AI stacks, and different laptops keep drifting into different states. The code may later be deployed in production. Should you stay with host Python plus `venv`, or is this a case for containers?
+
+<details>
+<summary>Answer</summary>
+This is a case where containers are worth using. The module recommends host Python plus `venv` for learning, solo work, and straightforward setups, but containers become the better choice when onboarding must be repeatable, host dependencies are unstable, multiple incompatible stacks are involved, or the project is moving toward deployment. Here, the added control of containers is justified.
+</details>
+
+**Q6.** A developer installs framework packages first and only afterward checks whether the machine's GPU driver and runtime stack are appropriate. They now face hard-to-read errors across multiple layers. What installation order would have reduced this confusion?
+
+<details>
+<summary>Answer</summary>
+They should have followed the compatibility checklist before installing frameworks. The module's order is: verify what GPU is present, confirm the OS is appropriate, check that the driver is installed and visible, choose the compute runtime family such as CUDA or ROCm, and then install the framework build that matches that target. Reversing that order makes the whole stack harder to debug.
+</details>
+
+**Q7.** Your project setup guide currently says only, "Install dependencies and start working." A new teammate asks how they can tell whether the environment was ever healthy in the first place. What should you add to the project, and what should it verify?
+
+<details>
+<summary>Answer</summary>
+Add a short smoke test as part of the documented setup path. The module recommends verifying the Python version, active environment path, package install sanity, framework import, GPU visibility, and a simple tensor operation on the intended backend. This gives the team a known-good checkpoint instead of assuming that installation output means the environment actually works.
+</details>
+
+<!-- /v4:generated -->
+<!-- v4:generated type=no_exercise model=codex turn=1 -->
+## Hands-On Exercise
+
+
+Goal: build a fresh project environment that is isolated, documented, and easy to verify on CPU, CUDA, or ROCm hardware.
+
+- [ ] Create a new project directory with a dedicated virtual environment and activate it.
+
+  ```bash
+  mkdir -p reproducible-ai-env/{src,notebooks,data,outputs}
+  cd reproducible-ai-env
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python --version
+  which python
+  ```
+
+- [ ] Record the active interpreter and package tool versions so the environment state is explicit from the start.
+
+  ```bash
+  python --version
+  python -m pip --version
+  which python
+  which pip
+  ```
+
+- [ ] Create a minimal dependency file and install only the packages this project needs.
+
+  ```bash
+  cat > requirements.txt <<'EOF'
+  pip
+  setuptools
+  wheel
+  numpy
+  EOF
+
+  python -m pip install --upgrade pip setuptools wheel
+  python -m pip install -r requirements.txt
+  python -m pip freeze > requirements.lock.txt
+  ```
+
+- [ ] Inspect the machine's GPU stack before installing any framework-specific CUDA or ROCm build.
+
+  ```bash
+  uname -a
+  lspci | grep -Ei 'vga|3d|display'
+  ```
+
+  ```bash
+  nvidia-smi
+  ```
+
+  ```bash
+  rocminfo
+  ```
+
+- [ ] Add a smoke test script that reports Python details, package import health, and whether PyTorch can see CUDA or ROCm if it is installed later.
+
+  ```bash
+  cat > verify_env.py <<'EOF'
+  import os
+  import platform
+  import sys
+
+  print("python:", sys.version.split()[0])
+  print("executable:", sys.executable)
+  print("platform:", platform.platform())
+  print("venv:", os.environ.get("VIRTUAL_ENV", "not set"))
+
+  import numpy
+  print("numpy:", numpy.__version__)
+
+  try:
+      import torch
+      print("torch:", torch.__version__)
+      print("cuda_available:", torch.cuda.is_available())
+      print("cuda_version:", getattr(torch.version, "cuda", None))
+      print("hip_version:", getattr(torch.version, "hip", None))
+      if torch.cuda.is_available():
+          x = torch.tensor([1.0, 2.0]).to("cuda")
+          print("tensor_device:", x.device)
+  except ImportError:
+      print("torch: not installed")
+  EOF
+
+  python verify_env.py
+  ```
+
+- [ ] Create a short setup note so another person can reproduce the same environment without guessing.
+
+  ```bash
+  cat > README.md <<'EOF'
+  # Reproducible AI Environment
+
+  ## Setup
+  1. Create the virtual environment: `python3 -m venv .venv`
+  2. Activate it: `source .venv/bin/activate`
+  3. Install dependencies: `python -m pip install -r requirements.txt`
+
+  ## Verify
+  Run: `python verify_env.py`
+  EOF
+
+  cat README.md
+  ```
+
+- [ ] Recreate the environment from scratch and confirm the same verification path still works.
+
+  ```bash
+  deactivate
+  rm -rf .venv
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install -r requirements.txt
+  python verify_env.py
+  ```
+
+Success criteria:
+- The project has its own `.venv`, `requirements.txt`, `requirements.lock.txt`, `README.md`, and `verify_env.py`.
+- `which python` points to the project's virtual environment after activation.
+- `python -m pip freeze` produces a repeatable dependency snapshot.
+- Hardware inspection identifies whether the machine should follow a CPU, CUDA, or ROCm path.
+- `python verify_env.py` runs successfully and reports a clear, reproducible environment state.
+
+<!-- /v4:generated -->
 ## Next Modules
 
 - [Notebooks, Scripts, and Project Layouts](./module-1.4-notebooks-scripts-project-layouts/)
 - [PyTorch Fundamentals](../deep-learning/module-1.2-pytorch-fundamentals/)
 - [Home AI Workstation Fundamentals](./module-1.2-home-ai-workstation-fundamentals/)
+
+## Sources
+
+- [NVIDIA cuda-python](https://github.com/NVIDIA/cuda-python) — Useful for understanding CUDA's platform/runtime surface from the Python side of local AI environments.
+- [ROCm Official Repository](https://github.com/ROCm/ROCm) — Useful for ROCm overview, supported hardware and OS guidance, and links to the official compatibility matrix.
+- [PyTorch Official Repository](https://github.com/pytorch/pytorch) — Useful for seeing how a major framework distinguishes CPU, CUDA, and ROCm installation and build paths.

@@ -1,0 +1,144 @@
+{
+  "module_key": "ai-ml-engineering/prerequisites/module-1.2-home-ai-workstation-fundamentals",
+  "module_path": "src/content/docs/ai-ml-engineering/prerequisites/module-1.2-home-ai-workstation-fundamentals.md",
+  "research_run_id": "2026-04-22T07:28:13+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Available GPU memory strongly constrains whether a large model fits locally and whether quantization is needed to reduce memory footprint.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 48-59 | section: VRAM Is the First Hard Limit",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/transformers/en/quantization/bitsandbytes",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers bitsandbytes documentation explicitly says quantization reduces memory requirements and makes large models easier to fit on limited hardware."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Batch size is constrained by GPU memory during local training workloads.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 52-57 | section: VRAM Is the First Hard Limit",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/transformers/main/en/perf_train_gpu_one",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Transformers GPU training guide states that batch size affects memory usage and that the feasible batch size depends on the GPU."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Longer sequence lengths can drive memory use high enough to cause out-of-memory errors.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 56 | section: VRAM Is the First Hard Limit",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/trl/reducing_memory_usage",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The TRL memory guide explains that large max_length values can spike memory usage and lead to OOM errors."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "When GPU memory is insufficient, frameworks can offload model weights between GPU and CPU/system memory.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 71 | section: System RAM Is the Second Wall",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/transformers/en/quantization/bitsandbytes",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The bitsandbytes documentation explicitly documents CPU offloading to fit large models into memory when GPU capacity is limited."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Quantized LoRA-style fine-tuning can make single-GPU fine-tuning practical for some model sizes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 138-139, 165 | sections: What Different Workloads Actually Need; Sizing Rules That Age Well",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/2305.14314",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The QLoRA paper shows that quantized LoRA-style fine-tuning can reduce memory use enough to make single-GPU fine-tuning feasible."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "16 GB is workable for light learning but restrictive.",
+      "claim_class": "statistic",
+      "span_hint": "line 157 | section: RAM",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- `16 GB` is workable for light learning, but restrictive",
+      "suggested_rewrite": "- Lower-memory systems can work for light learning, but they become restrictive quickly",
+      "lesson_point_url": null,
+      "rationale": "This is a precise threshold presented as a general rule without an authoritative source."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "32 GB is a realistic floor for comfortable local AI work.",
+      "claim_class": "statistic",
+      "span_hint": "line 158 | section: RAM",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- `32 GB` is a realistic floor for comfortable local AI work",
+      "suggested_rewrite": "- A moderate amount of RAM gives much more headroom for comfortable local AI work",
+      "lesson_point_url": null,
+      "rationale": "The exact floor is a workload-dependent heuristic, not a source-backed universal threshold."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "64 GB becomes attractive once you run local databases, heavier notebooks, and multiple services together.",
+      "claim_class": "statistic",
+      "span_hint": "line 159 | section: RAM",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- `64 GB` becomes attractive once you run local databases, heavier notebooks, and multiple services together",
+      "suggested_rewrite": "- Higher RAM capacity becomes attractive once you run local databases, heavier notebooks, and multiple services together",
+      "lesson_point_url": null,
+      "rationale": "This is another uncited exact capacity threshold that varies by workload and toolchain."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://huggingface.co/docs/transformers/en/quantization/bitsandbytes",
+      "title": "Transformers Bitsandbytes Quantization Guide",
+      "tier": "vendor",
+      "why_relevant": "Best current reference for how quantization and CPU offloading change local model-fit constraints on limited hardware."
+    },
+    {
+      "url": "https://huggingface.co/docs/transformers/main/en/perf_train_gpu_one",
+      "title": "Transformers GPU Training Guide",
+      "tier": "vendor",
+      "why_relevant": "Explains the single-GPU memory tradeoffs behind batch size, gradient accumulation, and efficient local training."
+    },
+    {
+      "url": "https://arxiv.org/abs/2305.14314",
+      "title": "QLoRA: Efficient Finetuning of Quantized LLMs",
+      "tier": "standards",
+      "why_relevant": "Primary paper for why quantized LoRA-style fine-tuning materially changes what a single GPU can handle."
+    }
+  ],
+  "notes": "Skipped quiz items, quiz answers, hands-on exercise steps, and command blocks. No section citation pool exists for ai-ml-engineering/prerequisites, so all cited claims rely on newly proposed URLs.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

@@ -14,18 +14,13 @@ sidebar:
 - **Evaluate** the trade-offs between linear chains and graph-based workflow orchestration.
 
 ## Why This Module Matters
-San Francisco. August 7, 2024. 4:23 PM. Marcus, a senior engineer at a fintech startup, watched his monitoring dashboard with growing dread. Their AI loan processor had been running perfectly for three hours—collecting documents, verifying identities, running compliance checks. The customer had uploaded 52 different documents. Then the credit bureau API timed out.
+In a long-running AI workflow, a session can fail late in the process when a downstream dependency times out, even after substantial work has already been completed.
 
-He refreshed the dashboard. Everything was gone. All 52 documents, all verification results, all compliance checks—the entire session had vanished. The customer would have to start over from scratch. The financial impact was immediate: high abandonment rates were costing the firm nearly $15,000 in lost origination fees daily. 
+He refreshed the dashboard. Everything was gone. All 52 documents, all verification results, all compliance checks—the entire session had vanished. The customer would have to start over from scratch. The financial impact can be immediate: failed long-running sessions often increase abandonment and lost revenue. 
 
-Their agent framework had no concept of "where it left off." Every step lived in memory, and when the API call failed, the exception handler crashed the entire workflow. By the next morning, Marcus had deployed a LangGraph prototype that saved state after every single step. When he simulated an API failure at step 23, the workflow simply resumed from step 22. Nothing was lost. This module will teach you how to build exactly this kind of resilient, stateful AI architecture.
+Without persisted state, a workflow failure can wipe in-memory progress; with checkpointing, the system can resume from the most recent saved step instead of restarting from scratch. This module will teach you how to build exactly this kind of resilient, stateful AI architecture.
 
 ## Did You Know?
-- LangGraph was officially launched in **January 2024** to address the critical lack of cycle support in standard DAG-based orchestration tools.
-- E-commerce startups reported an impressive **11x reduction** in code volume (shrinking from 4,200 lines to just 380 lines) when migrating custom state management to LangGraph.
-- The $6.7B fintech giant Klarna uses LangGraph patterns to power a customer service AI that autonomously handles **2.3 million conversations** per month.
-- The foundational finite state machine (FSM) theory powering LangGraph was first introduced by Warren McCulloch and Walter Pitts back in **1943**—81 years before this framework existed!
-
 ## Section 1: The Graph Mental Model and Linear Limitations
 In previous modules, you mastered Chain-of-Thought and ReAct patterns. But real production workflows require more than a single reasoning trace. They need to remember state across many steps, branch conditionally, loop back if something fails, and coordinate multiple agents.
 
@@ -942,24 +937,24 @@ Total: ~$180K/year
 
 | Component | Without LangGraph | With LangGraph |
 |-----------|-------------------|----------------|
-| State Management | Custom code ($50K+ dev time) | Built-in |
+| State Management | Often requires substantial custom code | Built-in |
 | Crash Recovery | Manual replay (lost time + tokens) | Automatic resume |
 | Human Review | Custom tooling | Native interrupts |
 | Debugging | Log analysis | State replay |
 
 | Company | Before LangGraph | After LangGraph | Reduction |
 |---------|------------------|-----------------|-----------|
-| E-commerce startup | 4,200 lines | 380 lines | 11x |
-| Legal tech company | 2,800 lines | 420 lines | 6.7x |
-| Healthcare AI | 5,100 lines | 890 lines | 5.7x |
+| Example team | thousands of lines | a few hundred lines | substantial |
+| Example team | thousands of lines | a few hundred lines | substantial |
+| Example team | thousands of lines | a few hundred lines | substantial |
 
 | Feature | Airflow/Prefect | LangGraph |
 |---------|-----------------|-----------|
 | Primary use | Data pipelines | AI workflows |
 | Node types | Python functions | LLM-aware functions |
 | State management | External | Built-in with reducers |
-| Streaming | Not native | First-class support |
-| Human-in-loop | Complex setup | Native interrupt/resume |
+| Streaming | Support varies by platform and pattern | First-class support |
+| Human-in-loop | Often requires extra orchestration | Native interrupt/resume |
 | LLM integration | DIY | Native with LangChain |
 
 ## Common Mistakes
@@ -968,10 +963,10 @@ Total: ~$180K/year
 |---------|---------------|--------------|
 | **Forgetting State Annotations** | Defining `messages: List[str]` replaces the list on every node execution. | Use `Annotated[List[str], operator.add]` for accumulation. |
 | **Infinite Loops** | Conditional edges lack fallback limits, trapping agents in endless validation. | Track a `retry_count` in state and exit forcefully when it exceeds a threshold. |
-| **Missing Routing Edge Cases** | Conditional edge fails to account for a string variant, raising a KeyError. | Always return a fallback/default route in routing functions. |
+| **Missing Routing Edge Cases** | Conditional edge fails to account for a string variant, raising a KeyError. | Usually return a fallback/default route in routing functions for unexpected cases. |
 | **Stateful Nodes** | Relying on global Python variables (`global count`) inside nodes corrupts concurrent runs. | Enforce pure functions. Move all tracking to the `TypedDict` graph state. |
 | **Bloated State Objects** | Pushing massive 10MB payloads directly into state kills memory during checkpoints. | Persist references to external storage (`document_url: str`) instead of raw data. |
-| **Missing Graph Compilation** | Passing data straight into `StateGraph.invoke()` will throw an attribute exception. | Always instantiate via `app = graph.compile()` before invoking. |
+| **Missing Graph Compilation** | You must compile the graph before invoking it. | Always instantiate via `app = graph.compile()` before invoking. |
 | **Unpersisted Threads** | Pausing for human-in-the-loop without attaching a checkpointer wipes the session. | Define `checkpointer=MemorySaver()` (or Postgres) during `.compile()`. |
 
 ### Avoiding Pitfalls through Proper Design
@@ -1228,3 +1223,8 @@ LangGraph achieves system resiliency using persistent Checkpointers backed by ex
 _Module 18 Complete! Progress: 21/56 modules (38%)_
 
 _Next: [Module 1.5 - Building AI Agents](./module-1.5-building-ai-agents)_ — Move from framework components to full agent architectures, orchestration patterns, and production-ready design tradeoffs.
+
+## Sources
+
+- [LangGraph GitHub Repository](https://github.com/langchain-ai/langgraph) — This is the allowlisted upstream home for the framework and its high-level positioning.
+- [LangGraph Releases](https://github.com/langchain-ai/langgraph/releases) — Useful for checking official release chronology and version history.

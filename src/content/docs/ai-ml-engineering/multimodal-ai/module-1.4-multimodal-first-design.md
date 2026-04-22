@@ -19,7 +19,7 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-In late 2024, a major telehealth provider attempted to deploy an automated triage assistant using a composite multimodal system. The system chained a Speech-to-Text (STT) model, a Large Language Model (LLM), and a Text-to-Speech (TTS) model. During a critical surge in emergency calls, the compounding latency of these three separate network hops pushed the system's response time above 4.5 seconds. Patients, assuming the line was dead or the bot was broken, repeatedly spoke over the delayed responses. This created a cascading failure of interrupted context windows and hallucinated triage recommendations, leading to a complete system rollback within forty-eight hours and a reported $12.5 million loss in development and deployment costs.
+Composite STT -> LLM -> TTS voice systems can accumulate enough latency that callers speak over delayed responses, corrupt context, and force an expensive rollback in safety-critical deployments.
 
 The failure was not a flaw in the LLM's reasoning, but an architectural limitation of the "bolt-on" approach. When converting speech to text, critical acoustic features—prosody, tone, emotion, background noise, and hesitation—were permanently lost. The LLM was blind to the panic in a caller's voice or the sound of labored breathing. The subsequent TTS generation sounded robotic and misaligned with the gravity of the situation. The telehealth company realized too late that true intelligence in audio requires understanding the audio natively, not merely a textual transcript of it.
 
@@ -66,7 +66,7 @@ Native multimodal models dispense with intermediate representations. Instead of 
 
 When you pass an audio file to a native model, it does not transcribe it. It tokenizes the raw audio waveform (or a spectrogram representation) directly into continuous vectors that exist in the exact same latent space as text tokens. The model learns that the audio token for the sound of a barking dog is semantically adjacent to the text token for "dog" and the image patch token of a Golden Retriever.
 
-This unified latent space allows the model to perform cross-modal reasoning intrinsically. It can hear the sarcasm in a voice, read the text of a prompt, and look at an image, applying self-attention across all three modalities simultaneously.
+This [unified latent space](https://arxiv.org/abs/2305.05665) allows the model to perform cross-modal reasoning intrinsically. It can hear the sarcasm in a voice, read the text of a prompt, and look at an image, applying self-attention across all three modalities simultaneously.
 
 > **Pause and predict**: Imagine designing an AI drive-thru ordering system. If a customer says, "Yeah, sure, I *totally* want extra mayo" with a heavily sarcastic tone, how would a composite pipeline (STT -> LLM) misinterpret this compared to a native multimodal model, and what specific business impact would this failure have?
 
@@ -79,9 +79,9 @@ To understand how native multimodal models work under the hood, we must examine 
 While the core transformer network is unified, the initial ingestion of data requires modality-specific encoders to create the initial embeddings.
 
 1.  **Text Tokenization:** Text is split using standard subword tokenizers (like Byte-Pair Encoding or WordPiece) and mapped to dense vectors via an embedding matrix.
-2.  **Image Patching (Vision Transformers):** Images are divided into a grid of non-overlapping patches (e.g., 16x16 pixels). Each patch is flattened and linearly projected into a vector. Positional embeddings are added to retain spatial awareness.
+2.  **Image Patching (Vision Transformers):** [Images are divided into a grid of non-overlapping patches](https://arxiv.org/abs/2010.11929) (e.g., 16x16 pixels). Each patch is flattened and linearly projected into a vector. Positional embeddings are added to retain spatial awareness.
 3.  **Audio Spectrograms:** Raw audio waveforms are often converted into Mel-spectrograms (visual representations of frequencies over time). These spectrograms are then processed similarly to images, cut into patches over the time dimension, and projected into embeddings.
-4.  **Video Tubelets:** Video combines spatial and temporal dimensions. Instead of processing every single frame independently (which is computationally prohibitive), models extract "tubelets"—3D blocks of pixels spanning across multiple consecutive frames, capturing both appearance and motion.
+4.  **Video Tubelets:** Video combines spatial and temporal dimensions. Instead of processing every single frame independently (which is computationally prohibitive), [models extract "tubelets"—3D blocks of pixels spanning across multiple consecutive frames](https://arxiv.org/abs/2103.15691), capturing both appearance and motion.
 
 Once these modality-specific encoders project the raw data into embeddings of the same dimensionality (e.g., $d_{model} = 4096$), the transformer no longer cares where the data originated. It simply sees a sequence of vectors and applies multi-head self-attention across them.
 
@@ -156,11 +156,11 @@ The most transformative application of native multimodal models is the real-time
 
 ### The Problem with REST APIs for Real-Time
 
-Standard HTTP requests operate on a request-response cycle. You send the entire audio clip, wait for the server to process it, and receive the entire response. This introduces unacceptable latency for natural conversation. Human conversational gap averages around 200 milliseconds. If an AI takes 2 seconds to reply, the interaction feels disjointed and unnatural.
+Standard HTTP requests operate on a request-response cycle. You send the entire audio clip, wait for the server to process it, and receive the entire response. This introduces unacceptable latency for natural conversation. Human conversational turn-taking typically happens on the order of a few hundred milliseconds. If an AI takes 2 seconds to reply, the interaction feels disjointed and unnatural.
 
 ### WebSockets and WebRTC
 
-To achieve near-zero latency, multimodal applications utilize persistent, bidirectional connections like WebSockets or WebRTC.
+To achieve near-zero latency, multimodal applications utilize [persistent, bidirectional connections like WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/index.html) or WebRTC.
 
 1.  **Continuous Ingestion:** The client captures audio from the microphone in small chunks (e.g., 20ms frames) and streams them continuously to the server.
 2.  **Streaming Inference:** The native model processes these audio tokens as they arrive, continuously updating its internal state and attention matrices.
@@ -339,15 +339,15 @@ When designing a multimodal system that incorporates video, engineers must caref
 ## Did You Know?
 
 *   The transition from composite audio pipelines to native multimodal models typically reduces end-to-end response latency from an average of 3,200 milliseconds down to under 300 milliseconds.
-*   A single minute of uncompressed 1080p video contains over 3.5 billion pixels, requiring aggressive spatiotemporal compression techniques before native models can project it into a shared latent space.
-*   Native multimodal models retain up to 85 percent of paralinguistic acoustic features (like pitch, tempo, and breathiness), which are completely discarded by traditional Speech-to-Text transcribers.
-*   In 2025, over 60 percent of enterprise customer service deployments shifted from text-based chatbots to real-time voice agents powered by native multimodal architectures.
+*   A single minute of uncompressed 1080p video contains billions of pixels, so practical multimodal systems need aggressive spatiotemporal compression before feeding video into model context.
+*   Native audio models can preserve prosodic and other nonverbal cues that plain text transcription drops.
+*   By the mid-2020s, many enterprise customer-service teams were piloting or deploying real-time voice agents alongside text chatbots.
 
 ## Common Mistakes
 
 | Mistake | Why it happens | How to Fix |
 | :--- | :--- | :--- |
-| **Assuming text prompts always override audio context.** | Developers assume standard text system prompts carry more weight than the user's audio input. | In native models, an angry or urgent audio tone can sometimes cause the model to bypass polite text instructions. Explicitly instruct the model on how to handle emotional audio divergence. |
+| **Assuming text prompts always override audio context.** | Developers assume standard text system prompts carry more weight than the user's audio input. | In practice, emotional audio cues can materially influence how a native audio model interprets an exchange, so you should test how tone interacts with your text instructions. Explicitly instruct the model on how to handle emotional audio divergence. |
 | **Buffering audio unnecessarily.** | Applying REST API mindsets to streaming systems by waiting for complete sentences before sending data over the WebSocket. | Stream raw audio chunks (e.g., 20ms or 50ms) immediately as they are captured. Let the server-side Voice Activity Detection (VAD) handle sentence boundaries. |
 | **Ignoring server-side interruptions.** | The client continues playing synthesized audio even after the user has spoken, leading to "talking over each other." | Implement robust event listeners on the WebSocket to immediately halt local audio playback when an `interruption` or `clear` event is received from the model. |
 | **Sending incompatible audio formats.** | Feeding standard MP3 or high-bitrate stereo audio directly into APIs expecting raw PCM data at specific sample rates. | Always transcode audio to the API's exact specifications (typically 16-bit PCM, 24kHz, mono) before transmission to avoid silent failures or distorted inference. |
@@ -514,3 +514,10 @@ def truncate_context(generated_chunks, interruption_timestamp):
 ## Next Module
 
 Now that you understand the architectural foundations of native multimodal processing and real-time streaming, you are ready to tackle the complexities of spatial reasoning. In [Module 8.5: Spatial and Embodied AI](/ai-ml-engineering/multimodal-ai/module-1.4-multimodal-first-design/), we will explore how these models are integrated with robotic systems and 3D environments, translating multimodal understanding into physical action in the real world.
+
+## Sources
+
+- [arxiv.org: 2305.05665](https://arxiv.org/abs/2305.05665) — ImageBind explicitly presents a joint embedding space across multiple modalities, directly supporting the shared-space concept used here.
+- [arxiv.org: 2010.11929](https://arxiv.org/abs/2010.11929) — The ViT paper directly describes applying a transformer to sequences of image patches.
+- [arxiv.org: 2103.15691](https://arxiv.org/abs/2103.15691) — ViViT explicitly states that it extracts spatio-temporal tokens from input video, which supports the module's description of native video encoding.
+- [developer.mozilla.org: index.html](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API/index.html) — MDN directly documents WebSockets as two-way interactive communication and serves as a reasonable topical anchor for this transport-level claim.

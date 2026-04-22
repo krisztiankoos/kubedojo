@@ -7,15 +7,15 @@ sidebar:
 > **AI/ML Engineering Track** | Complexity: `[MEDIUM]` | Time: 4-5
 ## The Night Everything Changed
 
-It was December 2012, a chilly night at Stanford University at precisely 11:47 PM, when Geoffrey Hinton realized everything he'd fought for over forty years was finally vindicated. The researcher hadn't slept in three days. His team—two graduate students working from a tiny Toronto apartment—had just crushed the ImageNet competition. Their neural network, AlexNet, didn't just win. It demolished the competition by 10 percentage points—the largest margin in the competition's history.
+In 2012, AlexNet's ImageNet victory was widely seen as vindication for Geoffrey Hinton's long-running work on neural networks. The researcher hadn't slept in three days. His team—two graduate students working from a tiny Toronto apartment—had just crushed the ImageNet competition. Their neural network, AlexNet, didn't just win. It demolished the competition by [10 percentage points](https://cacm.acm.org/research/imagenet-classification-with-deep-convolutional-neural-networks/)—the largest margin in the competition's history.
 
 The room was silent as the results came in. Then: pandemonium.
 
-"They called us crazy for years," Hinton said quietly, his British accent thickened by exhaustion. "Said neural nets were a dead end. Said we were wasting our careers."
+For years, many researchers treated neural networks as a less promising path than symbolic or statistical approaches.
 
-He'd been working on neural networks since 1972—four decades of ridicule, funding denials, and watching colleagues abandon the field. He'd survived two AI Winters, academic exile, and the rise of competing approaches that seemed to make his life's work obsolete.
+By the 2010s, Hinton had spent decades working on neural networks through periods when the approach was out of favor. He'd survived two AI Winters, academic exile, and the rise of competing approaches that seemed to make his life's work obsolete.
 
-Now, in a single night, everything had changed. Within weeks, Google would acquire Hinton's company for $44 million. Within years, neural networks would be everywhere—recognizing faces, translating languages, driving cars, generating art.
+Now, in a single night, everything had changed. Soon afterward, Google acquired Hinton's startup DNNresearch. Within years, neural networks would be everywhere—recognizing faces, translating languages, driving cars, generating art.
 
 But none of it would have happened without the pioneers who came before: Turing, who asked if machines could think. McCulloch and Pitts, who drew the first artificial neuron. Rosenblatt, who built the first one that learned. And countless others who kept the flame alive through the winters.
 
@@ -37,6 +37,74 @@ By the end of this module, you will:
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team is building a simple fraud detector with a single-layer perceptron. It works on linearly separable examples, but it completely fails when the label should be positive only when exactly one of two signals is present. A teammate says the training data must be bad. Based on AI history, what is the more likely explanation, and what historical event exposed this limitation?
+
+<details>
+<summary>Answer</summary>
+The more likely explanation is that the problem has an XOR-like structure, which a single-layer perceptron cannot learn because it is not linearly separable. This was highlighted in *Perceptrons* (1969) by Marvin Minsky and Seymour Papert.
+
+The module explains that this limitation became a major blow to neural network research and helped trigger the first AI Winter. The issue was not just bad data; it was a fundamental architectural limitation of single-layer perceptrons.
+</details>
+
+**Q2.** Your startup just demoed an AI assistant and the CEO is publicly promising that it will replace most human knowledge workers within a few years. Investors are excited, but you are worried. Which pattern from AI history does this resemble, and what risk does the module say usually follows?
+
+<details>
+<summary>Answer</summary>
+This resembles the classic pattern of hype and overpromising that preceded both AI Winters. The module summarizes the pattern as: hype, overpromising, underdelivering, backlash, then winter.
+
+The risk is that if the system fails to meet exaggerated expectations, funding and trust can collapse. That is exactly what happened after early AI optimism in the 1960s and again during the expert systems boom in the 1980s.
+</details>
+
+**Q3.** A hospital wants software to diagnose a narrow class of bacterial infections and explain its reasoning step by step. Another team proposes a broad “general intelligence” system instead. Based on the module, which historical approach is the better fit for this narrow task, and which famous system supports your choice?
+
+<details>
+<summary>Answer</summary>
+The better fit is an expert system designed for a narrow domain with explicit rules and explanations. The classic example from the module is MYCIN, which diagnosed bacterial infections and recommended antibiotics.
+
+This fits because expert systems performed well in constrained domains where rules from human experts could be encoded. The module contrasts that narrow-domain success with the failure of broader claims about general intelligence.
+</details>
+
+**Q4.** Your product manager argues that because a chess engine beat a world champion, it proves the company is close to general AI. Using the module’s history, how would you respond?
+
+<details>
+<summary>Answer</summary>
+Beating a world champion at chess does not prove general intelligence. The module uses Deep Blue’s 1997 win over Garry Kasparov as an example of a highly capable but narrow system.
+
+Deep Blue relied on brute-force search, evaluation functions, and specialized hardware. It could play chess extremely well, but it could not transfer that ability to unrelated tasks. The lesson is that impressive performance in one domain is not the same as general intelligence.
+</details>
+
+**Q5.** In 2011, your computer vision team says neural networks are too unreliable for large-scale image classification. A year later, a competitor suddenly beats everyone by a huge margin. According to the module, what three conditions finally came together to make that breakthrough possible?
+
+<details>
+<summary>Answer</summary>
+The three conditions were data, compute, and algorithms. The module says AlexNet’s 2012 success happened because ImageNet provided massive labeled data, GPUs supplied enough compute, and improved techniques such as ReLU, dropout, and better initialization made training effective.
+
+The breakthrough was not caused by one factor alone. Deep learning succeeded when all three reached critical mass at the same time.
+</details>
+
+**Q6.** Your NLP team is debating whether to keep building around recurrent models or switch to an architecture that can process whole sequences in parallel and capture long-range relationships better. Which historical innovation from the module points to the stronger choice, and why?
+
+<details>
+<summary>Answer</summary>
+The stronger choice is the Transformer, introduced in 2017 in “Attention Is All You Need.” The module explains that Transformers use self-attention, avoid recurrence, and process sequences in parallel.
+
+That made training faster and improved handling of long-range dependencies. This is why Transformers became the foundation for later systems like BERT and GPT.
+</details>
+
+**Q7.** Your research lead wants to spend months hand-crafting domain rules for a new AI system, while another engineer argues for a more general learning approach with larger models and more compute. Which side is more aligned with the module’s “Bitter Lesson,” and what is the core argument?
+
+<details>
+<summary>Answer</summary>
+The engineer arguing for a general learning approach with more compute is more aligned with the Bitter Lesson. Richard Sutton’s argument, as presented in the module, is that general methods that leverage computation ultimately outperform systems built around hand-crafted human knowledge.
+
+The core idea is that search, learning, and scale repeatedly beat manually encoded expertise across domains like chess, vision, speech, and language. The “bitter” part is that human insight often matters less than researchers want it to.
+</details>
+
+<!-- /v4:generated -->
 ## Introduction: Why History Matters
 
 Before you build the future, you must understand the past.
@@ -60,7 +128,7 @@ The journey you're about to take spans more than eight decades—from handwritte
 
 The story begins not with computers, but with a **paper and pencil model** of how neurons might compute.
 
-In 1943, neurophysiologist **Warren McCulloch** and logician **Walter Pitts** published "A Logical Calculus of the Ideas Immanent in Nervous Activity." They proposed a simple model:
+In 1943, neurophysiologist **Warren McCulloch** and logician **Walter Pitts** [published "A Logical Calculus of the Ideas Immanent in Nervous Activity."](https://en.wikipedia.org/wiki/A_Logical_Calculus_of_the_Ideas_Immanent_in_Nervous_Activity) They proposed a simple model:
 
 ```
 McCulloch-Pitts Neuron (1943)
@@ -80,7 +148,7 @@ This looks trivially simple today, but it was revolutionary. McCulloch and Pitts
 
 Imagine the McCulloch-Pitts neuron like a single voter in an election—it receives inputs (arguments for and against), weighs them, and then casts a binary vote (yes or no). Just as a single voter can't make complex decisions alone, but millions of voters together can elect governments, individual artificial neurons seem limited but networks of them can solve surprisingly complex problems.
 
-**Did You Know?** Walter Pitts was entirely self-taught. He ran away from home at 15, lived homeless in Chicago, and taught himself logic by reading Bertrand Russell's *Principia Mathematica* in the library. When he found an error in Russell's work, he wrote to Russell, who was so impressed he invited Pitts to study at Cambridge. Pitts declined—he was only 15.
+**Did You Know?** Walter Pitts was entirely self-taught. [He ran away from home at 15, lived homeless in Chicago, and taught himself logic by reading Bertrand Russell's *Principia Mathematica* in the library. When he found an error in Russell's work, he wrote to Russell, who was so impressed he invited Pitts to study at Cambridge.](https://en.wikipedia.org/wiki/Walter_Pitts) Pitts declined—he was only 15.
 
 ### Alan Turing's Foundation (1950)
 
@@ -130,7 +198,7 @@ Choose the move that maximizes your
 minimum guaranteed outcome.
 ```
 
-Turing went further and actually wrote a chess program by hand—**before computers existed that could run it**. He called it "Turochamp" and executed it by hand, taking about 30 minutes per move. The program played weak but legal chess.
+Turing went further and actually wrote a chess program by hand—**before computers existed that could run it**. [He called it "Turochamp" and executed it by hand, taking about 30 minutes per move. The program played weak but legal chess.](https://en.wikipedia.org/wiki/Turochamp)
 
 **Did You Know?** Turing's hand-executed chess program played a game against one of his colleagues in 1952. The program lost, but it's the first recorded game ever played by a chess "program."
 
@@ -185,7 +253,7 @@ McCarthy chose "Artificial Intelligence" partly to **distinguish the field from 
 
 ### The Perceptron (1957)
 
-In 1957, psychologist **Frank Rosenblatt** at Cornell invented the **Perceptron**, the first machine that could learn from data:
+In 1957, psychologist **Frank Rosenblatt** at Cornell [invented the **Perceptron**, the first machine that could learn from data](https://en.wikipedia.org/wiki/Perceptron):
 
 ```
 Rosenblatt's Perceptron (1957)
@@ -226,7 +294,7 @@ Speed: Slow by modern standards
 But: It LEARNED from data!
 ```
 
-The New York Times headline read: **"NEW NAVY DEVICE LEARNS BY DOING"** and predicted the machine would eventually "walk, talk, see, write, reproduce itself and be conscious of its existence."
+Press coverage of the perceptron was highly sensational and overstated what the system could eventually do.
 
 **Did You Know?** Rosenblatt made bold predictions: "The embryo perceptron... is the first machine which is capable of having an original idea." Such overenthusiastic claims would come back to haunt the field.
 
@@ -234,7 +302,7 @@ The New York Times headline read: **"NEW NAVY DEVICE LEARNS BY DOING"** and pred
 
 While Rosenblatt pursued neural approaches, most AI researchers focused on **symbolic AI**—using logic, rules, and search algorithms.
 
-**Logic Theorist (1956)**: Created by Newell and Simon, this program proved 38 of the 52 theorems in Chapter 2 of *Principia Mathematica*. For one theorem, it found a proof more elegant than Russell's original.
+**Logic Theorist (1956)**: Created by Newell and Simon, this program [proved 38 of the 52 theorems in Chapter 2 of *Principia Mathematica*. For one theorem, it found a proof more elegant than Russell's original.](https://en.wikipedia.org/wiki/Logic_Theorist)
 
 **General Problem Solver (GPS, 1959)**: Newell and Simon's attempt to create a general-purpose reasoning program using means-ends analysis:
 
@@ -275,9 +343,9 @@ Response: "Tell me more about your <relation>"
 Output: "Tell me more about your mother"
 ```
 
-Weizenbaum was **horrified** when people, including his secretary, formed emotional attachments to ELIZA and wanted to confide in it privately. He spent the rest of his career warning about the dangers of computers in human decision-making.
+Weizenbaum was **horrified** when [people, including his secretary, formed emotional attachments to ELIZA](https://en.wikipedia.org/wiki/ELIZA) and wanted to confide in it privately. He spent the rest of his career warning about the dangers of computers in human decision-making.
 
-**Did You Know?** ELIZA spawned the first "chatbot" competitions. The annual Loebner Prize (1991-2019) awarded prizes to programs that best fooled judges in Turing Test conversations. Winners typically used ELIZA-style tricks rather than true understanding.
+**Did You Know?** ELIZA spawned the first "chatbot" competitions. [The annual Loebner Prize (1991-2019)](https://en.wikipedia.org/wiki/Loebner_Prize) awarded prizes to programs that best fooled judges in Turing Test conversations. Winners typically used ELIZA-style tricks rather than true understanding.
 
 ### The Optimism of the Era
 
@@ -304,7 +372,7 @@ Think of AI Winters like ice ages for technology—long periods where progress s
 
 In 1969, Marvin Minsky and Seymour Papert published *Perceptrons*, a mathematical analysis of what Rosenblatt's perceptrons could and couldn't do.
 
-The book proved that single-layer perceptrons **cannot learn XOR**:
+The book proved that [single-layer perceptrons **cannot learn XOR**](https://en.wikipedia.org/wiki/Perceptron):
 
 ```
 The XOR Problem
@@ -378,7 +446,7 @@ Success: Performed as well as human experts
          in its narrow domain
 ```
 
-MYCIN (1972) diagnosed bacterial infections and recommended antibiotics. It outperformed many human doctors on its specific task—but couldn't do anything outside that narrow domain.
+[MYCIN (1972) diagnosed bacterial infections and recommended antibiotics. It outperformed many human doctors on its specific task—but couldn't do anything outside that narrow domain.](https://en.wikipedia.org/wiki/Mycin)
 
 ---
 
@@ -485,7 +553,7 @@ The fundamental problems:
 1. **Knowledge Acquisition Bottleneck**: Extracting expert knowledge was slow and expensive
 2. **Brittleness**: Systems failed ungracefully on inputs outside their training
 3. **No Learning**: Expert systems couldn't improve from experience
-4. **Maintenance Nightmare**: Thousands of rules became impossible to maintain
+4. **Maintenance Nightmare**: Thousands of rules became extremely difficult to maintain
 
 **Did You Know?** During the AI Winter, many researchers rebranded their work. "Machine learning" sounded less grandiose than "AI." "Intelligent systems" replaced "expert systems." The substance was often similar, but the labels changed to avoid the AI stigma.
 
@@ -518,7 +586,7 @@ This solved the problem Minsky and Papert had identified—but it would take dec
 - **Support Vector Machines** (SVMs) for classification
 - **Probabilistic graphical models** for uncertainty
 
-**Did You Know?** Geoffrey Hinton kept working on neural networks throughout the AI Winter, even when it was unfashionable. He called this period "the wilderness years." His persistence would pay off spectacularly in 2012.
+**Did You Know?** Geoffrey Hinton kept working on neural networks throughout the AI Winter, even when it was unfashionable. He continued working on neural networks even while the field was out of fashion. His persistence would pay off spectacularly in 2012.
 
 ---
 
@@ -530,7 +598,7 @@ While "AI" remained a dirty word, machine learning researchers made steady progr
 
 **1997: Deep Blue Beats Kasparov**
 
-IBM's Deep Blue defeated world chess champion Garry Kasparov in a six-game match:
+[IBM's Deep Blue defeated world chess champion Garry Kasparov in a six-game match](https://www.ibm.com/history/deep-blue):
 
 ```
 Deep Blue (1997)
@@ -552,7 +620,7 @@ This was a **symbolic AI triumph**—Deep Blue used brute-force search, hand-cra
 
 **1997: LSTM Invented**
 
-While Deep Blue made headlines, **Sepp Hochreiter and Jürgen Schmidhuber** published "Long Short-Term Memory," solving the vanishing gradient problem for recurrent neural networks:
+While Deep Blue made headlines, **Sepp Hochreiter and Jürgen Schmidhuber** [published "Long Short-Term Memory," solving the vanishing gradient problem for recurrent neural networks](https://en.wikipedia.org/wiki/Long_short-term_memory):
 
 ```
 LSTM Cell (1997)
@@ -579,7 +647,7 @@ LSTMs would become crucial for speech recognition, machine translation, and text
 
 ### The Data Revolution
 
-The late 1990s and 2000s brought something AI had always lacked: **massive amounts of data**.
+The late 1990s and 2000s brought something AI had often lacked: **massive amounts of data**.
 
 ```
 The Data Explosion
@@ -599,7 +667,7 @@ Key Enablers:
 - Web crawling
 ```
 
-**ImageNet (2009)**: Fei-Fei Li's team at Stanford created ImageNet, a database of 14 million labeled images across 21,841 categories:
+**ImageNet (2009)**: Fei-Fei Li's team at Stanford created ImageNet, a massive labeled image dataset that became a key benchmark for computer vision:
 
 ```
 ImageNet
@@ -700,7 +768,7 @@ AlexNet Architecture:
 - Trained on 2 GPUs for 6 days
 ```
 
-The AI community was stunned. Within two years, nearly everyone in computer vision had switched to deep learning.
+The AI community was stunned. Within a few years, deep learning became the dominant approach in computer vision research.
 
 **Why Did It Work Now?**
 
@@ -723,7 +791,7 @@ All three had to reach critical mass together.
 2012 was the year they did.
 ```
 
-**Did You Know?** NVIDIA's GPUs weren't designed for AI—they were designed for video games. But the matrix operations for rendering graphics turned out to be exactly what neural networks needed. NVIDIA's Jensen Huang recognized this early and pivoted the company toward AI, making NVIDIA the most valuable chipmaker in the world.
+**Did You Know?** NVIDIA's GPUs weren't designed for AI—they were designed for video games. But the matrix operations for rendering graphics turned out to be exactly what neural networks needed. NVIDIA's GPUs became central to modern AI workloads, and the company later emerged as a dominant AI hardware vendor.
 
 ---
 
@@ -789,11 +857,11 @@ Result:
 
 The Transformer would prove to be one of the most important architectural innovations in AI history.
 
-**Did You Know?** The paper's title "Attention Is All You Need" was a bold claim—and it was right. Transformers replaced recurrence, convolution, and most other architectural elements with pure attention. The simplicity was part of the power.
+**Did You Know?** The paper's title "Attention Is All You Need" was a bold claim—and it was right. [Transformers replaced recurrence, convolution, and most other architectural elements with pure attention.](https://arxiv.org/abs/1706.03762) The simplicity was part of the power.
 
 ### BERT and GPT: Language Transformers (2018)
 
-**BERT (October 2018)**: Google's "Bidirectional Encoder Representations from Transformers" showed that pre-training on massive text corpora created powerful language representations:
+[**BERT (October 2018)**: Google's "Bidirectional Encoder Representations from Transformers"](https://arxiv.org/abs/1810.04805) showed that pre-training on massive text corpora created powerful language representations:
 
 ```
 BERT Training
@@ -815,7 +883,7 @@ Fine-tuning: Add task-specific head
 - NER: Token → entity type
 ```
 
-**GPT (June 2018)**: OpenAI's "Generative Pre-trained Transformer" took a different approach—**autoregressive** language modeling. Compare it to how a novelist writes: rather than understanding a whole sentence bidirectionally like BERT, GPT predicts one word at a time, building the story word by word:
+[**GPT (June 2018)**: OpenAI's "Generative Pre-trained Transformer" took a different approach—**autoregressive** language modeling.](https://openai.com/blog/language-unsupervised/) Compare it to how a novelist writes: rather than understanding a whole sentence bidirectionally like BERT, GPT predicts one word at a time, building the story word by word:
 
 ```
 GPT Training
@@ -859,7 +927,7 @@ OpenAI initially didn't release it,
 citing concerns about misuse.
 ```
 
-**GPT-3 (2020)**: At 175 billion parameters, GPT-3 demonstrated **emergent abilities**—capabilities that seemed to appear suddenly with scale:
+[**GPT-3 (2020)**](https://openai.com/index/language-models-are-few-shot-learners/): At 175 billion parameters, GPT-3 demonstrated **emergent abilities**—capabilities that seemed to appear suddenly with scale:
 
 ```
 GPT-3 Emergent Abilities
@@ -906,7 +974,7 @@ Result: Helpful, harmless, honest
         (mostly)
 ```
 
-ChatGPT reached **100 million users in 2 months**—the fastest-growing consumer application in history at that time.
+ChatGPT reached **[100 million users in 2 months](https://openai.com/global-affairs/introducing-the-intelligence-age/)**—the fastest-growing consumer application in history at that time.
 
 **Did You Know?** ChatGPT was originally intended as a "research preview." OpenAI was surprised by its viral growth. The success accelerated the entire industry—Google, Anthropic, Meta, and others rushed to release their own chatbots.
 
@@ -1010,7 +1078,7 @@ HYPE → OVERPROMISING → UNDERDELIVERING → BACKLASH → WINTER
 
 1. **Capabilities ≠ General Intelligence**
    - Deep Blue beat Kasparov but couldn't play checkers
-   - gpt-5 passes the bar exam but can't reliably count words
+   - modern language models can perform impressively on some benchmarks while still failing on simple tasks.
    - Don't confuse impressive demos with AGI
    - It's like watching a savant pianist who can play Chopin but can't tie their shoes—impressive in one domain doesn't mean general competence
 
@@ -1467,3 +1535,23 @@ The field has weathered two winters and emerged stronger each time. It has surpr
 
 _Last updated: 2025-11-29_
 _Module 55: The Complete History of AI & Machine Learning_
+
+## Sources
+
+- [cacm.acm.org: imagenet classification with deep convolutional neural networks](https://cacm.acm.org/research/imagenet-classification-with-deep-convolutional-neural-networks/) — The CACM version of the AlexNet paper directly gives the 15.3% vs 26.2% ILSVRC-2012 result.
+- [en.wikipedia.org: A Logical Calculus of the Ideas Immanent in Nervous Activity](https://en.wikipedia.org/wiki/A_Logical_Calculus_of_the_Ideas_Immanent_in_Nervous_Activity) — The cited page directly identifies the 1943 paper and its logical-function claim.
+- [en.wikipedia.org: Walter Pitts](https://en.wikipedia.org/wiki/Walter_Pitts) — Wikipedia's Walter Pitts entry directly covers these biographical details.
+- [en.wikipedia.org: Turochamp](https://en.wikipedia.org/wiki/Turochamp) — The Turochamp page directly covers the hand execution and early-game history.
+- [en.wikipedia.org: Perceptron](https://en.wikipedia.org/wiki/Perceptron) — The perceptron page directly covers Rosenblatt, the 1957 date, and its learning setup.
+- [en.wikipedia.org: Logic Theorist](https://en.wikipedia.org/wiki/Logic_Theorist) — The Logic Theorist page directly discusses the theorem counts and the elegance anecdote.
+- [en.wikipedia.org: ELIZA](https://en.wikipedia.org/wiki/ELIZA) — The ELIZA page directly covers both the 1966 origin and the well-known attachment anecdote.
+- [en.wikipedia.org: Loebner Prize](https://en.wikipedia.org/wiki/Loebner_Prize) — The Loebner Prize page directly gives the date range and purpose.
+- [en.wikipedia.org: Mycin](https://en.wikipedia.org/wiki/Mycin) — The MYCIN page directly covers its clinical scope and historical evaluations.
+- [ibm.com: deep blue](https://www.ibm.com/history/deep-blue) — IBM's history page directly states the 1997 match result.
+- [en.wikipedia.org: Long short term memory](https://en.wikipedia.org/wiki/Long_short-term_memory) — The LSTM page directly states the 1997 origin and the vanishing-gradient motivation.
+- [arxiv.org: 1706.03762](https://arxiv.org/abs/1706.03762) — The arXiv abstract directly describes the Transformer and its no-recurrence design.
+- [arxiv.org: 1810.04805](https://arxiv.org/abs/1810.04805) — The arXiv page directly gives the submission date, title, and bidirectional pretraining description.
+- [openai.com: language unsupervised](https://openai.com/blog/language-unsupervised/) — OpenAI's 2018 post directly presents GPT as Transformer-based unsupervised pretraining.
+- [openai.com: better language models](https://openai.com/index/better-language-models) — OpenAI's GPT-2 announcement explicitly says the full model was not released because of malicious-use concerns.
+- [openai.com: language models are few shot learners](https://openai.com/index/language-models-are-few-shot-learners/) — OpenAI's GPT-3 page directly emphasizes few-shot performance and the 2020 release.
+- [openai.com: introducing the intelligence age](https://openai.com/global-affairs/introducing-the-intelligence-age/) — OpenAI's 2025 policy post explicitly states the two-month, 100-million-user milestone.

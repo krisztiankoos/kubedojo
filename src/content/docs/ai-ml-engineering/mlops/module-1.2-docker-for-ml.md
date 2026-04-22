@@ -779,7 +779,7 @@ async def live(response: Response):
 
 **Seattle. Major E-commerce retailer.** Everything was ready for the massive holiday rush. The ML team deployed their recommendation model achieving 94% accuracy. By 7:30 AM on launch day, pods were crashing and restarting every 2 minutes. The fallback static recommendations kicked in, resulting in a 23% plunge in conversion rates. 
 
-**The post-mortem**: The team had developed locally on `python:3.10` but executed their CI/CD release using `python:3.10-slim`. The slim variant aggressively strips OS tooling and lacked `libgomp1`, an essential library that `numpy` demands for multi-threading operations. As load spiked, `numpy` parallelized and immediately faulted out.
+**The post-mortem**: The team had developed locally on `python:3.10` but executed their CI/CD release using `python:3.10-slim`. The slim variant aggressively strips OS tooling and lacked `libgomp1`, an essential library that `numpy` demands for multi-threading operations. As load spiked, `numpy` parallelized and then faulted out.
 
 The fix was a single line of code added back into the multi-stage layer:
 ```dockerfile
@@ -790,7 +790,7 @@ RUN apt-get install -y libgomp1
 
 ### The GPU Memory Leak That Took Down Production
 
-**San Francisco. AI startup serving real-time image generation.** A heavily utilized Stable Diffusion cluster began cascading out-of-memory (OOM) errors. GPU utilization indicated 100%, yet absolutely no API requests returned successfully. After automated container restarts, the stack survived roughly four hours before freezing again.
+**San Francisco. AI startup serving real-time image generation.** A heavily utilized Stable Diffusion cluster began cascading out-of-memory (OOM) errors. GPU utilization indicated 100%, yet almost no API requests returned successfully. After automated container restarts, the stack survived roughly four hours before freezing again.
 
 **The root cause**: Model inference logic unintentionally captured gradient histories.
 ```python
@@ -826,8 +826,8 @@ async def generate_image(prompt: str):
 | **Using `latest` tags** | Base layers change silently under your feet, causing intermittent failures. | Explicitly pin OS and tooling versions (e.g., `python:3.10.12-slim`). |
 | **`COPY . .` too early** | Placing this instruction before package installations destroys layer cache hits entirely. | Copy `requirements.txt` first, compile dependencies, *then* copy source logic. |
 | **Running as root** | Most containers default to `root`, posing a disastrous security pivot vulnerability. | Create an unprivileged user early in your build and execute `USER appuser`. |
-| **Default `/dev/shm`** | Docker restricts shared memory to an abysmal 64MB, instantly crashing PyTorch parallel DataLoaders. | Always execute GPU operations with the `--shm-size=16g` flag configuration. |
-| **Baking models in image** | Images swell beyond 15GB, making registry transfers agonising and rollbacks impossible. | Refactor containers to fetch large artifacts dynamically at runtime. |
+| **Default `/dev/shm`** | Docker restricts shared memory to an abysmal 64MB, often crashing PyTorch parallel DataLoaders. | In many GPU workloads, execute GPU operations with an increased shared-memory setting such as `--shm-size=16g`. |
+| **Baking models in image** | Images swell beyond 15GB, making registry transfers agonising and rollbacks much harder. | Refactor containers to fetch large artifacts dynamically at runtime. |
 | **Missing cache in CI** | CI pipelines execute fully isolated clean builds, burning tens of minutes per commit. | Inject `--cache-from` arguments into your pipeline builders. |
 
 ---
@@ -1076,3 +1076,9 @@ You now possess the technical capability to structurally design, deploy, and deb
 **Up Next**: Module 45 - CI/CD for AI/ML Development
 
 *Module Complete! You now have the containerization skills to ship ML code that executes identically everywhere.*
+
+## Sources
+
+- [Docker: What Is a Container?](https://www.docker.com/resources/what-container) — Good primary background for portability, shared-kernel isolation, and the container-vs-VM mental model.
+- [OWASP Docker Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html) — Covers practical container hardening topics such as non-root users, capabilities, and runtime safety.
+- [Sources of Irreproducibility in Machine Learning: A Review](https://arxiv.org/abs/2204.07610) — Provides a solid research-oriented framing for why environment control and reproducibility matter in ML workflows.

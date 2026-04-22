@@ -14,11 +14,11 @@ sidebar:
 
 **San Francisco. March 14, 2023. 9:47 AM.**
 
-Sam Altman stood backstage at OpenAI's headquarters, watching the livestream numbers climb. In the next hour, they would demonstrate something that many researchers had thought was years away: an AI that could pass the bar exam, explain jokes, analyze images, and write working code from a photograph of a hand-drawn sketch.
+OpenAI's March 2023 GPT-4 launch showcased a multimodal model that drew broad attention for its benchmark results and image-input capabilities.
 
-What viewers didn't see was the chaos of the previous months. Teams working around the clock. Engineers sleeping under desks. A model so capable that even its creators weren't entirely sure what it could do.
+Large model launches often involve intense engineering work and substantial uncertainty about model behavior under real-world use.
 
-When gpt-5 was released, the AI world fractured into before and after. Google declared "Code Red" and rushed their Bard release. Microsoft integrated gpt-5 into everything from Bing to Excel. Anthropic accelerated Claude development. And thousands of startups pivoted overnight—from building their own LLMs to building ON LLMs.
+The releases of ChatGPT and GPT-4 intensified competition across the AI industry and pushed many teams toward building applications on top of foundation models rather than training their own from scratch.
 
 The questions on everyone's mind: How does this work? What makes these models so capable? And how do you choose between them?
 
@@ -79,7 +79,7 @@ LLMs are:
 - **Models**: Mathematical functions that map inputs to outputs
 
 **Did You Know?** 
-GPT-3 has 175 billion parameters. If you printed each parameter as a single digit, the printout would stretch from New York to Los Angeles!
+GPT-3 has 175 billion parameters, which illustrates the enormous scale of frontier language models from that era.
 
 ---
 
@@ -106,7 +106,7 @@ What does "IT" refer to? RNNs struggle with long-distance references.
 
 ### The Transformer Revolution (2017)
 
-**Paper**: "Attention Is All You Need" (Vaswani et al., 2017)
+**Paper**: "[Attention Is All You Need](https://arxiv.org/abs/1706.03762)" (Vaswani et al., 2017)
 
 **Key Insight**: Use **attention** to process all words in parallel and capture long-range dependencies.
 
@@ -147,19 +147,13 @@ In 2017, Google researchers submitted "Attention Is All You Need" to a top AI co
 - Pushed for acceptance
 
 **The Impact** (6 years later):
-- **100,000+ citations** (one of most cited ML papers ever)
+- The paper became one of the most influential publications in modern machine learning.
 - Entire AI revolution built on transformers
 - RNNs nearly extinct for NLP
 - Created a $100B+ industry
 
 **The Irony**:
 The title "Attention Is All You Need" was meant to be provocative. But it turned out to be **literally true** - attention really is all you need!
-
-**The Authors**:
-The 8 authors went on to found companies worth billions:
-- **Ashish Vaswani**: Co-founded Essential AI ($50M+ funding)
-- **Illia Polosukhin**: Co-founded NEAR Protocol ($20B valuation)
-- **Jakob Uszkoreit**: Co-founded Inceptive ($100M+ funding)
 
 **Lesson**: Revolutionary ideas often look "too simple" at first. The transformer seemed obvious only AFTER it was invented.
 
@@ -232,9 +226,9 @@ graph TD
 ### Proprietary Models
 
 **1. OpenAI GPT Family**
-- **GPT-3.5**: 175B parameters, cheap, fast
-- **gpt-5**: Largest (size unknown), multimodal, most capable
-- **gpt-5 Turbo**: Faster, cheaper gpt-5
+- **GPT-3.5**: an earlier, lower-cost GPT model that was widely used before newer releases.
+- **Frontier GPT models**: proprietary multimodal systems whose exact internal sizes are typically undisclosed.
+- **Smaller GPT variants**: usually trade some capability for lower cost and lower latency.
 - **gpt-5**: Optimized for speed and cost
 
 **Strengths**:
@@ -275,7 +269,7 @@ graph TD
 **Strengths**:
 - Multimodal from ground up
 - Integrated with Google ecosystem
-- Long context (up to 1M tokens)
+- [Long context (up to 1M tokens)](https://cloud.google.com/vertex-ai/generative-ai/docs/long-context)
 
 **Limitations**:
 - Newer, less proven
@@ -304,7 +298,7 @@ graph TD
 ---
 
 **2. Mistral AI**
-- **Mistral 7B**: Efficient, competitive with Llama 13B
+- **Mistral 7B**: [Efficient, competitive with Llama 13B](https://arxiv.org/abs/2310.06825)
 - **Mixtral 8x7B**: Mixture of Experts (MoE), very efficient
 - **Mistral Large**: Closed-weight, API-only
 
@@ -332,7 +326,7 @@ graph TD
 
 **The Story** (July 2023):
 
-Meta dropped a bombshell: **Llama 4** - a competitive LLM family (7B, 13B, 70B) - completely open-source.
+Meta's 2023 open-weight Llama release accelerated interest in commercially usable open models.
 
 **What Made It Special**:
 - **Free for commercial use** (up to 700M users)
@@ -354,7 +348,7 @@ Meta dropped a bombshell: **Llama 4** - a competitive LLM family (7B, 13B, 70B) 
 - Researchers can experiment without API costs
 
 **The Numbers** (First 6 Months):
-- **30M+ downloads** on Hugging Face
+- The release quickly spawned a large ecosystem of downstream tools and fine-tuned variants.
 - **1000+ fine-tuned variants** created
 - **100+ research papers** using Llama 4
 - Spawned entire ecosystem (Ollama, LMStudio, Jan, etc.)
@@ -367,7 +361,7 @@ Meta dropped a bombshell: **Llama 4** - a competitive LLM family (7B, 13B, 70B) 
 
 **Llama 4** (2024):
 - Even better: Matches gpt-5 on some tasks
-- Trained on 15T tokens (vs 2T for Llama 4)
+- Later frontier models were typically trained on substantially larger corpora than earlier open releases.
 - Meta betting on open-source AI
 
 **Lesson**: Open-source is competitive! You don't always need the latest gpt-5. Llama 4 70B is **free**, powerful, and you control it.
@@ -392,7 +386,7 @@ Think of parameters like the settings on a mixing board in a recording studio. E
 - GPT-3.5: 175B
 - Llama 4: 7B, 13B, 70B
 - Claude 3.5 Sonnet: Unknown (estimated 200B+)
-- gpt-5: Unknown (rumored 1.7T)
+- Frontier proprietary model sizes are often undisclosed publicly.
 
 ---
 
@@ -401,14 +395,14 @@ Think of parameters like the settings on a mixing board in a recording studio. E
 **Yes, but with diminishing returns**.
 
 **Scaling Laws** (Kaplan et al., 2020):
-- 10x more parameters → ~2x better performance
+- Scaling-law research found that adding parameters, data, and compute tends to improve performance predictably, but the returns follow power laws rather than a simple rule of thumb.
 - 10x more training data → ~2x better performance
 - 10x more compute → ~2x better performance
 
 **But**:
 - Efficiency matters: Mixtral 8x7B outperforms many 70B models
 - Specialized training beats raw size: Code Llama 7B > Llama 70B for code
-- Longer context helps: Claude's 200K context vs gpt-5's 8K/32K
+- Context-window limits vary significantly by provider, model, and release, so check current documentation before making architecture decisions.
 
 **Rule of thumb**:
 - Simple tasks: Smaller models fine
@@ -467,7 +461,7 @@ Instruction-tuned: "The capital of France is Paris."
 (Actually answers!)
 ```
 
-**2. RLHF (Reinforcement Learning from Human Feedback)**
+**2. [RLHF (Reinforcement Learning from Human Feedback)](https://arxiv.org/abs/2203.02155)**
 - Train model to produce preferred outputs
 - Humans rank model outputs
 - Model learns to maximize human preference
@@ -515,7 +509,7 @@ Instruction-tuned: "The capital of France is Paris."
 Training GPT-3 (175B parameters) from scratch in 2020:
 
 **Compute Cost**:
-- **$4.6 million** in GPU costs (Lambda Labs estimate)
+- Training a frontier model from scratch can cost millions of dollars in compute.
 - Used thousands of NVIDIA V100 GPUs
 - Ran for weeks continuously
 - 314 zettaFLOPs (10²¹ floating point operations!)
@@ -528,7 +522,7 @@ Training GPT-3 (175B parameters) from scratch in 2020:
 **Total Training Cost**: ~$5-12 million (estimates vary)
 
 **gpt-5's Training (estimated)**:
-- Rumored cost: **$50-100 million**
+- Training costs for frontier proprietary models are rarely disclosed publicly and are widely believed to be very high.
 - 25,000+ A100 GPUs for 90-100 days
 - Energy: Entire small town's yearly consumption
 
@@ -570,7 +564,7 @@ When OpenAI released gpt-5, the AI world held its breath. Sam Altman had been te
 
 ### The Anthropic Origin Story: AI Safety Rebels
 
-**Anthropic** wasn't founded by outsiders—it was founded by **OpenAI's own safety team**.
+**Anthropic** was founded by former OpenAI researchers and positioned itself around AI safety and reliability.
 
 In **late 2020**, a group led by **Dario Amodei** (VP of Research) and his sister **Daniela Amodei** (VP of Safety) grew concerned about OpenAI's direction. They believed the company was prioritizing speed over safety.
 
@@ -578,14 +572,7 @@ In **late 2020**, a group led by **Dario Amodei** (VP of Research) and his siste
 
 **Their thesis**: What if you built an AI company where safety was THE priority, not an afterthought?
 
-**Constitutional AI** was born—training models using AI feedback guided by explicit principles. Claude would critique its own outputs and refuse harmful requests, not because of keyword filters, but because it understood WHY they were harmful.
-
-**The funding**:
-- 2021: $124M (Jaan Tallinn, ex-Skype founder)
-- 2022: $580M (Spark Capital, Google)
-- 2023: $2B from Google
-- 2024: $4B from Amazon
-- **Total**: $7B+ raised, valued at $15B+
+**[Constitutional AI](https://arxiv.org/abs/2212.08073)** was born—training models using AI feedback guided by explicit principles. Claude would critique its own outputs and refuse harmful requests, not because of keyword filters, but because it understood WHY they were harmful.
 
 **The irony**: The "safety-focused" lab created Claude, which many developers consider the best coding assistant. Turns out, making AI that carefully considers consequences also makes it better at careful coding.
 
@@ -603,13 +590,6 @@ While the West focused on GPT vs Claude, China quietly built serious competitors
 - Competitive with Llama 4 70B
 - Optimized for multilingual and coding
 
-**The restrictions**: U.S. export controls blocked sales of NVIDIA A100/H100 to China. Response? China accelerated domestic chip development and got creative with cloud workarounds.
-
-**The numbers**:
-- **200+** LLMs launched in China in 2023 alone
-- **$15B+** invested in Chinese AI in 2024
-- **ByteDance, Tencent, Baidu** all racing for #1
-
 ### The Mistral Miracle: 3 Months to $2 Billion
 
 The most shocking AI story of 2023 wasn't from Silicon Valley—it was from **Paris**.
@@ -618,7 +598,7 @@ The most shocking AI story of 2023 wasn't from Silicon Valley—it was from **Pa
 
 **What made it special**:
 - **7 billion parameters** (tiny by 2023 standards)
-- **Outperformed Llama 4 13B** (almost twice its size!)
+- **Outperformed Llama 2 13B** on the benchmarks reported in the Mistral 7B paper.
 - **Apache 2.0 license** (truly open for commercial use)
 - Released via **torrent link** (not even a website at first!)
 
@@ -626,7 +606,7 @@ The most shocking AI story of 2023 wasn't from Silicon Valley—it was from **Pa
 - June 2023: Company founded
 - September 2023: Mistral 7B released
 - December 2023: Mixtral 8x7B released (mixture of experts)
-- **December 2023**: $415M raised at **$2B valuation**—just 6 months after founding!
+- Mistral's rapid fundraising and model releases made it one of the most closely watched AI startups of 2023.
 
 **The lesson**: European AI isn't dead. Efficiency beats raw scale. And you can build a $2B company with a torrent link.
 
@@ -675,7 +655,7 @@ A small context window is like having a Post-it note for memory. A large context
 | Llama 4 | 4K tokens | Can extend with techniques |
 
 **Did You Know?** 
-Claude's 200K context window can fit the entire Harry Potter and the Philosopher's Stone book (77K words) with room to spare!
+[Claude's 200K context window](https://docs.anthropic.com/en/docs/build-with-claude/context-windows) can fit the entire Harry Potter and the Philosopher's Stone book (77K words) with room to spare!
 
 ---
 
@@ -941,7 +921,7 @@ print(response.choices[0].message.content)
 ### Data Usage Policies
 
 **OpenAI**:
-- API data NOT used for training (by default)
+- [API data NOT used for training (by default)](https://platform.openai.com/docs/models/how-we-use-your-data)
 - Can opt into training for discounts
 - Data retained 30 days for abuse monitoring
 
@@ -950,7 +930,7 @@ print(response.choices[0].message.content)
 - Data retained briefly for trust & safety
 
 **Self-hosted (Llama)**:
-- Data never leaves your infrastructure
+- Data typically stays within your infrastructure
 - Full control and privacy
 - You're responsible for security
 
@@ -997,7 +977,7 @@ No "best" model - each excels at different tasks/constraints. Fast/cheap for sim
 ### 6. API vs Self-hosted Trade-offs
 - API: Easy, scalable, maintained, but costly at volume
 - Self-hosted: Complex, but full control and cheaper at scale
-- The crossover point is roughly 1M tokens/month
+- The API-versus-self-hosting crossover point depends on model choice, utilization, hardware costs, and operational overhead.
 
 ### 7. Fine-tuning vs RAG Is Critical Decision
 - Fine-tuning: Behavior/style changes
@@ -1018,7 +998,7 @@ No "best" model - each excels at different tasks/constraints. Fast/cheap for sim
 **Reality**: Models can "get lost" in long contexts. Recent and early tokens attended to more than middle.
 
 ### Myth 4: "Open Source = Worse"
-**Reality**: Gap narrowing fast. Llama 4 70B competes with GPT-3.5. For many tasks, open-source is good enough.
+**Reality**: The gap between open and proprietary models has narrowed, and open models are good enough for many practical tasks.
 
 ### Myth 5: "One Model for Everything"
 **Reality**: Use fast/cheap models for simple tasks, expensive models for hard tasks. Route intelligently.
@@ -1084,3 +1064,14 @@ Before moving to Module 7, you should be able to:
 
 _Last updated: 2025-11-21_
 _Version: 1.0_
+
+## Sources
+
+- [arxiv.org: 1706.03762](https://arxiv.org/abs/1706.03762) — The paper directly describes the Transformer as an architecture based solely on attention mechanisms with improved parallelizability.
+- [arxiv.org: 2203.02155](https://arxiv.org/abs/2203.02155) — The InstructGPT paper directly describes training with human feedback and preference modeling.
+- [arxiv.org: 2212.08073](https://arxiv.org/abs/2212.08073) — Anthropic's Constitutional AI paper directly describes this training approach.
+- [cloud.google.com: long context](https://cloud.google.com/vertex-ai/generative-ai/docs/long-context) — Google Cloud documentation directly describes Gemini long-context offerings and million-token-scale context windows.
+- [platform.openai.com: how we use your data](https://platform.openai.com/docs/models/how-we-use-your-data) — The OpenAI data-controls page directly states both the default training policy and the 30-day abuse-monitoring retention period.
+- [arxiv.org: 2310.06825](https://arxiv.org/abs/2310.06825) — The paper directly states the Apache 2.0 license and reports outperforming Llama 2 13B on its evaluated benchmarks.
+- [docs.anthropic.com: context windows](https://docs.anthropic.com/en/docs/build-with-claude/context-windows) — Anthropic's context-window documentation explicitly describes a 200K-token standard context window.
+- [Language Models are Few-Shot Learners](https://openai.com/index/language-models-are-few-shot-learners/) — This paper introduced GPT-3 and is a key reference for scale, few-shot prompting, and early frontier-model behavior.

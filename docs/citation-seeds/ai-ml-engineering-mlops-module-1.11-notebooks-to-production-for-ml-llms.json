@@ -1,0 +1,31 @@
+{
+  "module_key": "ai-ml-engineering/mlops/module-1.11-notebooks-to-production-for-ml-llms",
+  "module_path": "src/content/docs/ai-ml-engineering/mlops/module-1.11-notebooks-to-production-for-ml-llms.md",
+  "research_run_id": "2026-04-22T04:19:09+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "title": "MLOps: Continuous delivery and automation pipelines in machine learning",
+      "tier": "vendor",
+      "why_relevant": "Explains the transition from notebook-driven experimentation to modularized, automated ML pipelines and production delivery."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment?view=azureml-api-2",
+      "title": "MLOps machine learning model management",
+      "tier": "vendor",
+      "why_relevant": "Covers model registration, versioning, metadata, and deployment concerns that map directly to artifact governance and production handoff."
+    },
+    {
+      "url": "https://huggingface.co/docs/hub/en/model-cards",
+      "title": "Model Cards",
+      "tier": "vendor",
+      "why_relevant": "Useful for making model candidates reviewable by documenting datasets, evaluation results, intended use, and limitations."
+    }
+  ],
+  "notes": "Module is predominantly pedagogical and workflow-oriented. It does not make dated statistical, incident, standards, security, pricing, or vendor-version claims that require inline citations under the stated rules.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

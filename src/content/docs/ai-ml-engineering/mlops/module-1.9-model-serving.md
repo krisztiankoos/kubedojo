@@ -226,7 +226,7 @@ async def predict_async(
 
 As your service scales to thousands of requests per second, the overhead of parsing JSON text payloads becomes a severe bottleneck. Think of REST and gRPC like sending a hand-written letter versus utilizing an automated binary Morse code transmission. REST sends human-readable JSON, which is excellent for debugging but extremely slow for machines to deserialize.
 
-gRPC uses Protocol Buffers—a strictly typed, heavily compressed binary format that allows machines to parse complex multi-dimensional tensors almost instantly.
+gRPC uses Protocol Buffers—a strictly typed, compact binary format that allows machines to parse complex multi-dimensional tensors much more efficiently.
 
 ```mermaid
 graph TD
@@ -542,7 +542,7 @@ flowchart TD
 
 ### Canary Deployment
 
-Canary deployments gradually expose the new model version to a tiny subset of real production traffic, slowly increasing the percentage as confidence grows. Automatic rollback occurs immediately if error rates spike, latency breaches P99 thresholds, or downstream systems report anomalies.
+Canary deployments gradually expose the new model version to a tiny subset of real production traffic, slowly increasing the percentage as confidence grows. Automatic rollback typically occurs quickly if error rates spike, latency breaches P99 thresholds, or downstream systems report anomalies.
 
 ```mermaid
 flowchart TD
@@ -1015,7 +1015,7 @@ Canary deployment. By routing only a strictly limited percentage (e.g., 5%) of l
 
 <details>
 <summary>3. What is the primary architectural purpose of exporting a PyTorch model to the ONNX format?</summary>
-ONNX provides a universal, framework-agnostic mathematical format for model weights and execution graphs. Exporting to ONNX decouples the training framework from the serving infrastructure, allowing the model to be optimized and deployed across diverse hardware and high-performance execution engines like TensorRT.
+ONNX provides a widely supported, framework-agnostic mathematical format for model weights and execution graphs. Exporting to ONNX decouples the training framework from the serving infrastructure, allowing the model to be optimized and deployed across diverse hardware and high-performance execution engines like TensorRT.
 </details>
 
 <details>
@@ -1273,3 +1273,9 @@ kubectl apply -f ingress-canary.yaml
 ## Next Steps
 
 Now that you have established robust, scalable deployment strategies for serving predictions, you must ensure you have deep visibility into their behavior. Proceed to [Module 1.10: ML Monitoring](./module-1.10-ml-monitoring), where we dive into establishing latency telemetry, alert fatigue, and detecting statistical model drift.
+
+## Sources
+
+- [Triton Inference Server](https://github.com/triton-inference-server/server) — Covers dynamic batching, ensembles, metrics, and inference protocol options for production model serving.
+- [Liveness, Readiness, and Startup Probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — Authoritative reference for probe behavior, readiness gating, and startup handling in Kubernetes deployments.
+- [Optimize Models for Inference](https://docs.aws.amazon.com/wellarchitected/latest/machine-learning-lens/mlsus05-bp03.html) — Summarizes serving-time optimization tradeoffs around latency, throughput, and cost in a way that fits this module's optimization section.

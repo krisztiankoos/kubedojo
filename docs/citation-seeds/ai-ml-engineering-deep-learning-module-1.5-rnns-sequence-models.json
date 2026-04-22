@@ -1,0 +1,225 @@
+{
+  "module_key": "ai-ml-engineering/deep-learning/module-1.5-rnns-sequence-models",
+  "module_path": "src/content/docs/ai-ml-engineering/deep-learning/module-1.5-rnns-sequence-models.md",
+  "research_run_id": "2026-04-22T01:22:30+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "In March 2018, an Uber autonomous test vehicle in Tempe, Arizona struck and killed a pedestrian walking a bicycle across the road.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.ntsb.gov/investigations/Pages/HWY18MH010.aspx",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a real fatal incident with named company, place, and date, and the primary source is the NTSB investigation page, which is off allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The module attributes the Tempe crash to a CNN on camera feeds that oscillated between classifications and delayed braking.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The Convolutional Neural Network processing the camera feeds struggled to classify the object in the darkness, oscillating wildly between predicting a \"vehicle,\" a \"bicycle,\" and an \"other.\" This indecision delayed the critical braking response by precious seconds.",
+      "suggested_rewrite": "The vehicle's perception and planning system misclassified the pedestrian over several seconds, delaying braking long enough to contribute to the fatal collision.",
+      "lesson_point_url": null,
+      "rationale": "The NTSB materials support perception-system misclassification, but not this specific attribution to a single CNN processing camera feeds."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The crash immediately halted autonomous testing nationwide, erased billions in projected market capitalization, and fundamentally changed AI regulation.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The incident immediately halted autonomous testing programs nationwide, erasing billions of dollars in projected market capitalization across the autonomous driving sector and fundamentally altering the regulatory landscape for AI deployment.",
+      "suggested_rewrite": "The crash prompted broad scrutiny of autonomous-vehicle testing and intensified debate over how AI systems should be evaluated and regulated in safety-critical settings.",
+      "lesson_point_url": null,
+      "rationale": "These sweeping quantitative and nationwide effects are not tied to a single primary source and overstate what can be cleanly supported."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Hubel and Wiesel's classic visual-cortex experiments identified simple and complex cells with orientation-selective behavior.",
+      "claim_class": "war_story",
+      "span_hint": "section: 1. The Computer Vision Revolution: Biological Roots",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC2556291/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This historical neuroscience claim is real, but the accessible primary-review source is on NIH/PMC, which is outside the current allowlist."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Hubel and Wiesel received the Nobel Prize in Physiology or Medicine in 1981 for their discoveries about visual information processing.",
+      "claim_class": "war_story",
+      "span_hint": "section: 1. The Computer Vision Revolution: Biological Roots",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.nobelprize.org/prizes/medicine/1981/summary/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Nobel page is the clean primary source for the award year and motivation, but nobelprize.org is off allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "LeNet-5 (1998) was an early CNN architecture for document recognition and check-reading applications.",
+      "claim_class": "war_story",
+      "span_hint": "section: 4. The Classic Architectures: A Journey Through History / LeNet-5 (1998)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://ieeexplore.ieee.org/document/726791",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The IEEE paper is the primary reference for LeNet-era document-recognition work."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "AlexNet's 2012 ImageNet result cut the top-5 error rate to 15.3%, far below the runner-up.",
+      "claim_class": "benchmark",
+      "span_hint": "section: 4. The Classic Architectures: A Journey Through History / AlexNet (2012)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cacm.acm.org/research/imagenet-classification-with-deep-convolutional-neural-networks/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CACM version directly states AlexNet's competition result and comparison to the second-best entry."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The module claims ResNet has surpassed 100,000 citations.",
+      "claim_class": "statistic",
+      "span_hint": "section: 4. The Classic Architectures: A Journey Through History / ResNet (2015)",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Kaiming He's ResNet paper from 2015 is one of the most cited academic papers in modern history, surpassing 100,000 citations and enabling networks to exceed one hundred layers without vanishing gradients.",
+      "suggested_rewrite": "Kaiming He's ResNet paper from 2015 became one of the most influential papers in modern computer vision and helped make very deep networks practical to train.",
+      "lesson_point_url": null,
+      "rationale": "The exact citation-count threshold is unstable and not cleanly supported by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "EfficientNet introduced compound scaling that jointly scales network depth, width, and input resolution.",
+      "claim_class": "standard",
+      "span_hint": "section: 4. The Classic Architectures: A Journey Through History / EfficientNet (2019)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/1905.11946",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The EfficientNet paper directly presents the compound-scaling framework over depth, width, and resolution."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "TorchVision pretrained weights require weight-specific preprocessing, and different weight versions can expect different transforms.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 6. Transfer Learning: Standing on Giants' Shoulders",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.pytorch.org/vision/0.16/models.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a framework-specific behavior claim, and the primary documentation lives on docs.pytorch.org, which is off allowlist."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "PyTorch AMP uses autocast and gradient scaling to run parts of training in lower precision and reduce memory footprint.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 7. Memory, Performance, and Common Mistakes",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.pytorch.org/tutorials/recipes/recipes/amp_recipe.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a PyTorch-specific API and behavior claim whose primary source is off allowlist."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The table gives an exact benchmark-style claim that 192×192 resolution uses 0.73× memory, runs 1.36× faster, and loses 1% accuracy.",
+      "claim_class": "benchmark",
+      "span_hint": "section: 7. Memory, Performance, and Common Mistakes / resolution table",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "| 192×192 | 0.73× | 1.36× | -1% |",
+      "suggested_rewrite": "| 192×192 | lower | faster | slightly lower |",
+      "lesson_point_url": "https://arxiv.org/abs/1905.11946",
+      "rationale": "The row presents exact benchmark numbers without identifying the model, hardware, dataset, or measurement method."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "The section presents the manifest as specifically for Kubernetes v1.35 and says GPU limits plus memory requests ensure scheduling on a capable hardware node.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 8. Deploying the CNN on Kubernetes (v1.35+)",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Below is an example of deploying a GPU-accelerated vision service using Kubernetes v1.35. Notice how we allocate NVIDIA GPU limits and memory requests to ensure the pod successfully schedules on a capable hardware node.",
+      "suggested_rewrite": "Below is an example of deploying a GPU-backed vision service on Kubernetes. The `nvidia.com/gpu` limit expresses the GPU requirement, while memory requests reserve RAM for the pod.",
+      "lesson_point_url": null,
+      "rationale": "The example is generic rather than v1.35-specific, and memory requests alone do not guarantee placement on a GPU-capable node."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://ieeexplore.ieee.org/document/726791",
+      "title": "Gradient-Based Learning Applied to Document Recognition",
+      "tier": "standards",
+      "why_relevant": "Primary historical paper for LeNet-era CNN design and document-recognition applications."
+    },
+    {
+      "url": "https://cacm.acm.org/research/imagenet-classification-with-deep-convolutional-neural-networks/",
+      "title": "ImageNet Classification with Deep Convolutional Neural Networks",
+      "tier": "standards",
+      "why_relevant": "Canonical reference for AlexNet and the ImageNet breakthrough that reignited deep-learning-based vision."
+    },
+    {
+      "url": "https://arxiv.org/pdf/1512.03385.pdf",
+      "title": "Deep Residual Learning for Image Recognition",
+      "tier": "standards",
+      "why_relevant": "Primary source for residual blocks and the training of very deep vision networks."
+    }
+  ],
+  "notes": "The module body is about CNNs and computer vision, but the module key/title and later generated exercise material point to RNNs/sequence models. I seeded citations for the body that exists, but this module likely needs editorial realignment before citation injection.",
+  "_schema_issues": [
+    "claim[12]:anchor_text_ambiguous_2_matches:C013",
+    "claim[13]:anchor_text_ambiguous_2_matches:C014",
+    "claim[14]:anchor_text_ambiguous_2_matches:C015"
+  ],
+  "rejected_urls": [
+    {
+      "url": "https://arxiv.org/pdf/1409.1556.pdf",
+      "reason": "pdf_no_adapter",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}

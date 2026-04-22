@@ -1,0 +1,325 @@
+{
+  "module_key": "ai-ml-engineering/ai-infrastructure/module-1.3-vllm-sglang-inference",
+  "module_path": "src/content/docs/ai-ml-engineering/ai-infrastructure/module-1.3-vllm-sglang-inference.md",
+  "research_run_id": "2026-04-21T22:34:50+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A late-2023 AI coding-assistant startup saw concurrency jump from 500 to 8,000, TTFT degrade from 200 ms to 30+ seconds, and GPU bandwidth utilization stay under 15% because of fragmented KV caches and naive static batching.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In late 2023, a rapidly growing AI native startup offering an AI coding assistant experienced a catastrophic service degradation during a product launch. As user concurrency spiked from a baseline of 500 simultaneous requests to over 8,000, their legacy inference infrastructure—relying on naive Hugging Face Transformers static batching—collapsed. The system began dropping requests, and Time to First Token (TTFT) degraded from 200 milliseconds to over 30 seconds. The startup was burning through a massive cloud budget, paying for thousands of A100 GPUs, yet utilizing less than 15% of the actual GPU memory bandwidth due to fragmented key-value (KV) caches and inefficient batching.",
+      "suggested_rewrite": "AI products can suffer severe service degradation during launches when concurrency spikes expose inefficient batching and KV-cache management, causing dropped requests, long TTFT, and poor GPU utilization.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with named timing and utilization numbers, so the false specifics should be removed rather than softened."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The startup lost an estimated $2.5 million in recurring revenue in one week, over-provisioned hardware, and discovered the system was memory-bound rather than compute-bound.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The financial impact was severe. The company lost an estimated $2.5 million in potential recurring revenue within a single week due to user churn and negative social media sentiment. Their engineering team scrambled to mitigate the issue by over-provisioning hardware, which temporarily stopped the bleeding but pushed their daily infrastructure costs to unsustainable levels. The root cause was not a lack of raw compute power, but a fundamental misunderstanding of LLM memory management and inference bottlenecks. The system was memory-bound, spending the majority of its time moving data rather than computing matrix multiplications.",
+      "suggested_rewrite": "When inference bottlenecks are misunderstood, teams can lose users, overspend on hardware, and still fail to fix the real problem if the workload is memory-bound rather than compute-bound.",
+      "lesson_point_url": null,
+      "rationale": "The revenue-loss anecdote is presented as a real event with precise figures but no attributable source."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "A two-week migration to vLLM increased throughput by 14x on the same hardware, cut cloud costs by 85%, prevented bankruptcy, and restored sub-second latency.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "To survive, the company completely overhauled its serving stack over a grueling two-week sprint, migrating to vLLM. By implementing PagedAttention and continuous batching, they increased their serving throughput by 14x on the exact same hardware footprint. This migration not only saved the company from bankruptcy by slashing their cloud bill by 85%, but it also restored sub-second latency for their users. Understanding modern inference engines like vLLM and sglang is no longer an optional optimization; it is the fundamental requirement for deploying generative AI models economically and reliably at scale.",
+      "suggested_rewrite": "Moving from naive batching to a modern inference engine can materially improve throughput and latency while reducing serving cost, but the exact gains depend on the workload, model, and hardware.",
+      "lesson_point_url": null,
+      "rationale": "This is another unsourced war story with precise operational and financial outcomes that should not remain as factual history."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "PagedAttention is inspired by virtual memory and paging and avoids requiring the KV cache for a sequence to live in one contiguous block of GPU memory.",
+      "claim_class": "standard",
+      "span_hint": "section: The Core of vLLM",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://arxiv.org/abs/2309.06180",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The vLLM paper directly describes PagedAttention as OS-paging-inspired memory management for KV cache."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Naive LLM serving systems can waste 60-80% of KV-cache memory through fragmentation and over-allocation.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Core of vLLM",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://vllm.ai/blog/vllm",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact 60-80% figure appears in the official vLLM blog, which is a primary project source but outside the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "vLLM supports continuous batching of incoming requests.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Continuous Batching (Iteration-Level Scheduling)",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://github.com/vllm-project/vllm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official vLLM repository README lists continuous batching as a core feature."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "vLLM provides an OpenAI-compatible API server.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Implementing vLLM in Production",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://github.com/vllm-project/vllm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official vLLM repository README explicitly advertises an OpenAI-compatible API server."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "vLLM supports Megatron-LM-style tensor parallelism and exposes it through the tensor-parallel-size setting for multi-GPU serving.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Implementing vLLM in Production, paragraph after YAML",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://github.com/vllm-project/vllm/blob/main/docs/serving/parallelism_scaling.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official vLLM docs in the repo directly document tensor parallel support and mention Megatron-LM's tensor parallel algorithm."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "vLLM prefix caching hashes KV-cache blocks and reuses them when a new request shares the same prefix, skipping redundant prompt computation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Automatic Prefix Caching (APC)",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://docs.vllm.ai/design/prefix_caching.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact hashing and block-reuse mechanism is documented in the official vLLM docs, but that host is off-allowlist."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "vLLM supports chunked prefill and speculative decoding.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Advanced Optimizations, including Chunked Prefill and Speculative Decoding",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://github.com/vllm-project/vllm",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official vLLM repository README lists both chunked prefill and speculative decoding as supported features."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "SGLang introduces RadixAttention, which keeps KV-cache entries in an LRU radix-tree structure for automatic reuse across generation calls.",
+      "claim_class": "standard",
+      "span_hint": "section: sglang: RadixAttention and Structured Generation",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://arxiv.org/abs/2312.07104",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The SGLang paper abstract directly describes RadixAttention as an LRU KV-cache in a radix tree."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "SGLang supports structured outputs for constrained generation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: sglang: RadixAttention and Structured Generation",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://github.com/sgl-project/sglang",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official SGLang repository README lists structured outputs as a core runtime capability."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "SGLang can forcefully append fixed structural tokens and bypass the model forward pass for them during constrained decoding.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: sglang: RadixAttention and Structured Generation, final sentence",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "If the schema requires the string `\"user_id\": \"`, sglang will not generate those tokens individually; it will forcefully append them to the sequence, bypassing the model's forward pass entirely for the structural scaffolding.",
+      "suggested_rewrite": "For structured outputs, sglang can reduce decoding overhead by compiling constraints ahead of time instead of relying on prompt wording alone.",
+      "lesson_point_url": null,
+      "rationale": "The exact implementation behavior here is more specific than the accessible allowlisted sources support, so the sentence should be generalized."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Before PagedAttention, fragmentation could leave up to 80% of GPU memory allocated but unusable for LLM inference.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://vllm.ai/blog/vllm",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact percentage is an official project statistic, but the available primary source is off-allowlist."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "At launch, vLLM reported up to 24x higher throughput than Hugging Face Transformers.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://vllm.ai/blog/vllm",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact benchmark framing is in the official vLLM launch blog, which is outside the allowlist."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "A radix tree supports prefix lookup in O(L) time with respect to key length.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://en.wikipedia.org/wiki/Radix_tree",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a standard data-structure claim and the allowlisted general reference covers radix-tree prefix matching."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "Speculative decoding can deliver around 2-2.5x decoding speedup without modifying the target model weights.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Did You Know, bullet 4",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://arxiv.org/abs/2302.01318",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The speculative sampling paper directly reports 2-2.5x speedups without modifying the target model."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "vLLM exports a Prometheus KV-cache usage metric, but scaling specifically at a >85% threshold is an illustrative heuristic rather than a source-backed cutoff.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Common Mistakes, final row",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Monitor Prometheus metrics exported by vLLM (e.g., `vllm:gpu_cache_usage_perc`). Scale out replicas when it hits >85%.",
+      "suggested_rewrite": "Monitor Prometheus metrics exported by vLLM (for example, KV-cache usage) and scale out before sustained cache saturation starts causing queueing.",
+      "lesson_point_url": null,
+      "rationale": "The metric itself is real, but the specific 85% threshold reads as a tuning heuristic rather than a documented vendor rule."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2309.06180",
+      "title": "Efficient Memory Management for Large Language Model Serving with PagedAttention",
+      "tier": "standards",
+      "why_relevant": "Primary paper for PagedAttention, KV-cache waste, and the original vLLM throughput claims."
+    },
+    {
+      "url": "https://arxiv.org/abs/2312.07104",
+      "title": "Efficiently Programming Large Language Models using SGLang",
+      "tier": "standards",
+      "why_relevant": "Primary paper for RadixAttention, SGLang's runtime model, and structured-generation acceleration."
+    },
+    {
+      "url": "https://github.com/vllm-project/vllm/blob/main/docs/serving/parallelism_scaling.md",
+      "title": "vLLM Parallelism and Scaling",
+      "tier": "upstream",
+      "why_relevant": "Official repo documentation for tensor parallelism and practical multi-GPU deployment choices."
+    },
+    {
+      "url": "https://arxiv.org/abs/2302.01318",
+      "title": "Accelerating Large Language Model Decoding with Speculative Sampling",
+      "tier": "standards",
+      "why_relevant": "Primary source for the draft-and-verify decoding pattern and its reported speedups."
+    }
+  ],
+  "notes": "Excluded quiz prompts, code blocks, diagrams, and exercise steps unless a table row itself made a load-bearing factual claim. Source map: S001=https://arxiv.org/abs/2309.06180; S002=https://github.com/vllm-project/vllm; S003=https://github.com/vllm-project/vllm/blob/main/docs/serving/parallelism_scaling.md; S004=https://arxiv.org/abs/2312.07104; S005=https://arxiv.org/abs/2302.01318; S006=https://github.com/vllm-project/vllm/blob/main/vllm/engine/metrics.py; S007=https://en.wikipedia.org/wiki/Radix_tree; S008=https://vllm.ai/blog/vllm; S010=https://docs.vllm.ai/design/prefix_caching.html; S012=https://github.com/sgl-project/sglang.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://github.com/vllm-project/vllm/blob/main/vllm/engine/metrics.py",
+      "reason": "lesson_point_http_404",
+      "at_step": "research_validation",
+      "claim_id": "C018"
+    }
+  ]
+}

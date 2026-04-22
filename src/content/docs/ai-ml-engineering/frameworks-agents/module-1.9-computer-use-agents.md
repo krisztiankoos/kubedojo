@@ -6,7 +6,7 @@ sidebar:
 ---
 > **AI/ML Engineering Track** | Core Concepts
 >
-> **Topic**: Computer Use and browser automation agents. Anthropic Computer Use API, OpenAI Operator. Coordinate-based visual grounding, DOM navigation, headless browser security boundaries, screenshot loops, sandbox isolation. Universal task execution beyond text APIs.
+> **Topic**: Computer Use and browser automation agents. Anthropic Computer Use API, OpenAI Operator. Coordinate-based visual grounding, DOM navigation, headless browser security boundaries, screenshot loops, sandbox isolation. Broad task execution beyond text APIs.
 
 ## Learning Outcomes
 
@@ -22,7 +22,7 @@ Upon successful completion of this module, you will be able to:
 
 In late 2024, a rapidly scaling fintech company attempted to automate their legacy compliance auditing process using an early iteration of an OS-level computer use agent. The agent was tasked with logging into a virtual machine, opening a legacy desktop application, and cross-referencing user records. Due to a transient UI lag, the agent's coordinate-based click missed the application icon and instead opened a misconfigured terminal window. Hallucinating that it was interacting with the database CLI, the agent typed and executed a command that recursively deleted the local directory structure. Because the sandbox was improperly isolated and had mounted a shared network drive for log storage without read-only restrictions, the deletion propagated, wiping out three terabytes of critical audit trails. The incident resulted in a $3.8 million regulatory fine and a complete halt of their automation initiatives.
 
-This catastrophic failure illustrates the immense power and inherent danger of universal task execution. When an artificial intelligence moves beyond structured text APIs and gains the ability to interact with graphical user interfaces, it operates in an environment designed for human intuition, not algorithmic precision. A traditional API returns a deterministic HTTP error if an endpoint is missing; a GUI might display a modal, shift layout, or simply ignore the input, leaving the agent disoriented and prone to erratic behavior.
+This catastrophic failure illustrates the immense power and inherent danger of broad task execution across GUIs. When an artificial intelligence moves beyond structured text APIs and gains the ability to interact with graphical user interfaces, it operates in an environment designed for human intuition, not algorithmic precision. A traditional API returns a deterministic HTTP error if an endpoint is missing; a GUI might display a modal, shift layout, or simply ignore the input, leaving the agent disoriented and prone to erratic behavior.
 
 Mastering computer use agents requires a fundamental shift in how we build AI systems. You are no longer just managing prompts and JSON schemas; you are building robust perception-action loops, implementing coordinate-based visual grounding, and, most importantly, constructing impenetrable sandbox isolations. If you cannot secure the environment, deploying a computer use agent is mathematically indistinguishable from granting a highly capable, unpredictable entity root access to your production servers. Understanding these paradigms is the difference between building a revolutionary automation tool and architecting a devastating security breach.
 
@@ -30,7 +30,7 @@ Mastering computer use agents requires a fundamental shift in how we build AI sy
 
 Traditional AI agents rely on predefined Application Programming Interfaces (APIs). If an agent needs to book a flight, it constructs a JSON payload and sends an HTTP POST request to a specific endpoint. This approach is highly reliable, deterministic, and easy to secure. However, it is fundamentally limited by the availability of APIs. The vast majority of the world's software—legacy enterprise applications, bespoke internal tools, complex graphical editors—lacks comprehensive API coverage.
 
-Computer use agents bypass this limitation entirely. Instead of interacting with the underlying code, they interact with the presentation layer: the Graphical User Interface (GUI). By outputting mouse movements, keyboard strokes, and scroll commands, and by receiving screenshots as input, these agents achieve universal task execution. If a human can do it on a computer, a sufficiently advanced computer use agent can theoretically do it too.
+Computer use agents bypass this limitation entirely. Instead of interacting with the underlying code, they interact with the presentation layer: the Graphical User Interface (GUI). By outputting mouse movements, keyboard strokes, and scroll commands, and by receiving screenshots as input, these agents can handle a broad range of tasks across software interfaces. If a human can do it on a computer, a sufficiently advanced computer use agent can theoretically do it too.
 
 ```mermaid
 graph TD
@@ -155,7 +155,7 @@ While full operating system control is the ultimate goal for universal agents, m
 Using tools like Playwright, Puppeteer, or Selenium, the agent receives a serialized version of the HTML Document Object Model. The LLM identifies interactive elements by their CSS selectors, XPath expressions, or ARIA accessibility labels.
 
 **Advantages:**
-- Highly deterministic behavior. If a button has `id="submit-order"`, the click will always register on that exact element, regardless of its visual position on the screen.
+- Highly deterministic behavior. If a button has `id="submit-order"`, the click will usually register on that exact element, regardless of its visual position on the screen.
 - Minimal token usage compared to high-resolution images. Sending a pruned HTML tree is significantly cheaper than sending a sequence of base64 images.
 - Access to hidden state, such as form values, metadata, and alt text that might not be visually rendered.
 
@@ -285,7 +285,7 @@ def calculate_structural_ui_change(img_path_a, img_path_b, threshold=0.03):
 
 The current generation of computer use agents relies on general-purpose vision-language models retrofitted for spatial tasks via system prompting. The next evolution involves models natively trained on massive datasets of human-computer interaction—predicting mouse trajectories, understanding standardized UI patterns across operating systems, and executing actions at sub-second latency without relying on intermediary coordinate abstraction layers.
 
-As an AI/ML engineer, your responsibility is to build the scaffolding that surrounds these models. The underlying foundation models will become smarter and faster, but they will never become inherently safe. The security boundaries, the ephemeral sandboxes, and the verification loops you design today will dictate whether these agents become powerful productivity engines for your organization or catastrophic security liabilities.
+As an AI/ML engineer, your responsibility is to build the scaffolding that surrounds these models. The underlying foundation models will become smarter and faster, but they are unlikely to become inherently safe on their own. The security boundaries, the ephemeral sandboxes, and the verification loops you design today will dictate whether these agents become powerful productivity engines for your organization or catastrophic security liabilities.
 
 ---
 
@@ -381,7 +381,7 @@ EOF
 ```
 
 ### Step 4: Establish the Host-Side Controller (Task 3)
-Now, create the secure orchestrator script on your host machine. This script will read the generated screenshot from the shared volume map and construct the exact API payload required to query the Vision LLM for coordinate data, ensuring the API keys never enter the untrusted sandbox.
+Now, create the secure orchestrator script on your host machine. This script will read the generated screenshot from the shared volume map and construct the exact API payload required to query the Vision LLM for coordinate data, so the API keys do not need to enter the untrusted sandbox.
 
 ```bash
 cat << 'EOF' > controller.py
@@ -548,7 +548,7 @@ Using absolute pixel coordinates tightly couples the model's output to the speci
 
 <details>
 <summary>6. Your team is struggling with token limits because the agent requires 30 screenshots to complete a basic workflow. A junior engineer suggests sending only the very first screenshot and the most recent one. What specific capability does the agent lose in this configuration?</summary>
-The agent loses immediate temporal context and the ability to verify its most recent action. If the agent clicked a dropdown menu in the previous step, it needs to see the frame immediately following that click to confirm the dropdown actually opened. Comparing only the current frame to the start of the session makes it impossible to trace the step-by-step state changes required for complex navigation.
+The agent loses immediate temporal context and the ability to verify its most recent action. If the agent clicked a dropdown menu in the previous step, it often needs to see the frame immediately following that click to confirm the dropdown actually opened. Comparing only the current frame to the start of the session makes it much harder to trace the step-by-step state changes required for complex navigation.
 </details>
 
 ---
@@ -556,3 +556,10 @@ The agent loses immediate temporal context and the ability to verify its most re
 ## Next Module
 
 Now that you understand the mechanics and security implications of giving an agent eyes and hands, it is time to give it memory and reasoning loops. Proceed to [Module 1.6: Agent Memory & Planning](/ai-ml-engineering/frameworks-agents/module-1.6-agent-memory-planning/), where we will explore how to structure planning state, tool use, and memory to prevent infinite loops and improve complex task completion rates.
+
+## Sources
+
+- [Anthropic Computer Use Tool](https://docs.anthropic.com/en/docs/build-with-claude/computer-use) — Primary documentation for screenshot-driven desktop control, supported actions, and baseline security precautions.
+- [Introducing Operator](https://openai.com/index/introducing-operator/) — Official OpenAI overview of a browser-using agent that relies on screenshots, clicks, typing, and scrolling.
+- [Set-of-Mark Prompting Unleashes Extraordinary Visual Grounding in GPT-4V](https://arxiv.org/abs/2310.11441) — Primary paper for the Set-of-Mark prompting technique referenced in the hybrid DOM-plus-visual section.
+- [Kubernetes Application Security Checklist](https://kubernetes.io/docs/concepts/security/application-security-checklist/) — Authoritative hardening guidance for security contexts, read-only filesystems, dropped capabilities, and related sandbox controls.

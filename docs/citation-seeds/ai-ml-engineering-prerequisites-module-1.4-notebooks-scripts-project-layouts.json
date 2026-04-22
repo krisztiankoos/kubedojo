@@ -1,0 +1,31 @@
+{
+  "module_key": "ai-ml-engineering/prerequisites/module-1.4-notebooks-scripts-project-layouts",
+  "module_path": "src/content/docs/ai-ml-engineering/prerequisites/module-1.4-notebooks-scripts-project-layouts.md",
+  "research_run_id": "2026-04-22T07:42:09+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://github.com/drivendataorg/cookiecutter-data-science",
+      "title": "Cookiecutter Data Science",
+      "tier": "upstream",
+      "why_relevant": "Provides a widely used reference project layout for separating code, data, notebooks, and outputs."
+    },
+    {
+      "url": "https://github.com/jupyter/nbdime",
+      "title": "nbdime",
+      "tier": "upstream",
+      "why_relevant": "Shows practical tooling for diffing and merging notebooks without treating them like ordinary text files."
+    },
+    {
+      "url": "https://github.com/kynan/nbstripout",
+      "title": "nbstripout",
+      "tier": "upstream",
+      "why_relevant": "Directly supports the module's version-control hygiene advice by stripping notebook outputs and noisy metadata."
+    }
+  ],
+  "notes": "No inline-citation candidates were identified in the narrative body. The module is predominantly pedagogical and normative best-practice guidance rather than a set of specific factual claims. Quiz items, exercise steps, code blocks, the example project tree, and Next Modules links were intentionally excluded per instructions.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

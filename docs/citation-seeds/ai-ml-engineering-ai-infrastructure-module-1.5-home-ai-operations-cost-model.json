@@ -1,0 +1,31 @@
+{
+  "module_key": "ai-ml-engineering/ai-infrastructure/module-1.5-home-ai-operations-cost-model",
+  "module_path": "src/content/docs/ai-ml-engineering/ai-infrastructure/module-1.5-home-ai-operations-cost-model.md",
+  "research_run_id": "2026-04-21T22:48:55+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [],
+  "further_reading": [
+    {
+      "url": "https://cloud.google.com/architecture/framework/perspectives/ai-ml/cost-optimization",
+      "title": "AI and ML perspective: Cost optimization",
+      "tier": "vendor",
+      "why_relevant": "Covers how to measure training, inference, storage, and operational costs for AI/ML workloads and compare them against business value."
+    },
+    {
+      "url": "https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html",
+      "title": "AWS Well-Architected Framework: Cost Optimization Pillar",
+      "tier": "vendor",
+      "why_relevant": "Provides a general framework for tracking usage, optimizing resources over time, and avoiding cost decisions based on guesswork."
+    },
+    {
+      "url": "https://cloud.google.com/architecture/ai-ml/storage-for-ai-ml",
+      "title": "Design storage for AI and ML workloads in Google Cloud",
+      "tier": "vendor",
+      "why_relevant": "Useful background for the module's storage-growth discussion, especially lifecycle planning across training, serving, and archiving."
+    }
+  ],
+  "notes": "No inline citation candidates were identified in the prose body. The module is mostly operational guidance and heuristic decision-making without dated statistics, named incidents, version-specific vendor claims, or other hard factual assertions that require inline citations under the pipeline rules. Quiz items and exercise steps were excluded per instructions.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

@@ -1,0 +1,463 @@
+{
+  "module_key": "ai-ml-engineering/mlops/module-1.7-data-pipelines",
+  "module_path": "src/content/docs/ai-ml-engineering/mlops/module-1.7-data-pipelines.md",
+  "research_run_id": "2026-04-22T05:26:06+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening title asserts a specific \"$50 million\" product-launch failure caused by unversioned training data.",
+      "claim_class": "war_story",
+      "span_hint": "title",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "## The $50 Million Bug: When \"train_FINAL_v2.csv\" Destroyed a Product Launch",
+      "suggested_rewrite": "## A Familiar Failure Mode: When Unversioned Training Data Derails a Launch",
+      "lesson_point_url": null,
+      "rationale": "This is a named, quantified anecdote with no attributable source in the module."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The anecdote gives an exact place, date, and time for the incident.",
+      "claim_class": "war_story",
+      "span_hint": "opening anecdote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Seattle. March 12, 2021. 9:47 AM.**",
+      "suggested_rewrite": "**Imagine a model team in the final hours before launch.**",
+      "lesson_point_url": null,
+      "rationale": "Precise event details for an uncited incident must be removed rather than hedged."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Jennifer Chen was the lead ML engineer at a major retail company and the launch followed 18 months of work by 12 engineers.",
+      "claim_class": "war_story",
+      "span_hint": "opening anecdote paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Jennifer Chen, lead ML engineer at a major retail company, was about to have the worst day of her career. In two hours, their new personalized pricing model would go live—a system that had taken 18 months and a team of 12 engineers to build.",
+      "suggested_rewrite": "A team was preparing to launch a new personalized pricing model after months of work, with very little margin for last-minute uncertainty about the training data.",
+      "lesson_point_url": null,
+      "rationale": "This is a named real-world anecdote with precise staffing and timeline details but no source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A junior engineer sent a Slack message asking whether to use train_v3.csv or train_v3_FINAL.csv.",
+      "claim_class": "war_story",
+      "span_hint": "opening anecdote paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Then Jennifer got a Slack message from a junior engineer: \"Hey, quick question—which training data should I use for the final model? train_v3.csv or train_v3_FINAL.csv?\"",
+      "suggested_rewrite": "In one common failure mode, a team realizes just before launch that nobody can say with confidence which dataset produced the candidate model.",
+      "lesson_point_url": null,
+      "rationale": "This is part of the same uncited named incident and should be collapsed into a generic lesson."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The production model used train_v3.csv, which was two months out of date and missing critical features.",
+      "claim_class": "war_story",
+      "span_hint": "opening anecdote paragraph after file tree",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Over the next 48 hours, the team discovered a horrifying truth: the production model had been trained on `train_v3.csv`—a dataset that was two months out of date and missing critical features.",
+      "suggested_rewrite": "The team eventually discovered that the launch candidate had been trained on the wrong dataset version, so the model they planned to ship did not match the one they had validated.",
+      "lesson_point_url": null,
+      "rationale": "The operational lesson is sound, but the precise timeline and dataset specifics are uncited."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The launch slipped three weeks, the company lost an estimated $50 million, three engineers were fired, and six months were spent implementing data versioning.",
+      "claim_class": "war_story",
+      "span_hint": "opening anecdote consequences paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The launch was delayed by three weeks. The company lost an estimated $50 million in the holiday season. Three engineers were fired. And Jennifer spent the next six months implementing what should have been there from the start: **data versioning**.",
+      "suggested_rewrite": "The launch was delayed, the team absorbed significant business and engineering costs, and they ultimately had to implement the data versioning practices that should have existed from the beginning.",
+      "lesson_point_url": null,
+      "rationale": "These are high-precision consequences for an uncited anecdote and cannot be retained as factual claims."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "A direct Jennifer Chen quote compares their data storage to messy family photo folders and says it cost them everything.",
+      "claim_class": "war_story",
+      "span_hint": "opening anecdote blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> \"We version our code religiously. But our data was stored like photos on my grandmother's computer—folders named 'vacation pics' and 'vacation pics (2)'. That inconsistency cost us everything.\"",
+      "suggested_rewrite": "> Teams that version code but not data often end up with ambiguous datasets, failed reproductions, and costly launch delays.",
+      "lesson_point_url": null,
+      "rationale": "This is a verbatim attributed quote with no citable source provided."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Jennifer Chen gave that quote at MLOps World 2022.",
+      "claim_class": "war_story",
+      "span_hint": "opening anecdote blockquote attribution",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> — Jennifer Chen, speaking at MLOps World 2022",
+      "suggested_rewrite": "> — A common MLOps failure pattern.",
+      "lesson_point_url": null,
+      "rationale": "The named speaker and event attribution are part of the same unsourced anecdote."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "A 2022 Gartner survey found 85% of AI projects fail, Google's ML team reported data-related issues cause 60% of production ML failures, and this led to the Data-Centric AI movement championed by Andrew Ng.",
+      "claim_class": "statistic",
+      "span_hint": "Did You Know? The 85% Failure Rate",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A 2022 survey by Gartner found that **85% of AI projects fail**, with \"data quality issues\" cited as the #1 reason. Google's ML team reported that data-related issues cause **60% of production ML failures**. This led to the \"Data-Centric AI\" movement championed by **Andrew Ng**, shifting focus from model architecture to data quality and versioning.",
+      "suggested_rewrite": "Data quality and data management problems are a common reason ML systems fail to deliver in production, which is one reason data-centric approaches gained traction.",
+      "lesson_point_url": null,
+      "rationale": "The specific failure-rate figures are not reliably supported here and should be removed rather than weakly anchored."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Andrew Ng said, \"In AI, data is food... we've been obsessing over the kitchen while ignoring the pantry.\"",
+      "claim_class": "war_story",
+      "span_hint": "Did You Know? The 85% Failure Rate blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> \"In AI, data is food. You can have the most sophisticated kitchen in the world, but if your ingredients are rotten, your meal will be terrible. We've been obsessing over the kitchen while ignoring the pantry.\"",
+      "suggested_rewrite": "> A common data-centric AI framing is that better models cannot compensate for poor training data.",
+      "lesson_point_url": null,
+      "rationale": "This is a verbatim attributed quote without a trustworthy in-module source."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "DVC is a tool for versioning data and models, with lightweight pipelines and experiment tracking integrated with Git-style workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "1. DVC: Data Version Control | What is DVC?",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://github.com/iterative/dvc",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official DVC repository README explicitly describes data/model versioning, pipelines, and experiment tracking."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "DVC uses small metadata files in Git while storing data and model contents outside Git, and supports remote storage such as S3, Azure, Google Cloud, and SSH/on-prem storage.",
+      "claim_class": "vendor_capability",
+      "span_hint": "1. DVC: Data Version Control | What is DVC? / Basic DVC Workflow",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://github.com/iterative/dvc",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official repository README explains DVC meta-files, cache behavior, and supported remote-storage patterns."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "DVC pipelines rerun only impacted stages and DVC supports local experiment tracking commands such as exp run/show/apply.",
+      "claim_class": "vendor_capability",
+      "span_hint": "1. DVC: Data Version Control | DVC Pipelines / DVC Experiments",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://github.com/iterative/dvc",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official repository README documents lightweight pipelines, impacted-step reruns, and experiment commands."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "DVC was created by Dmitry Petrov, a former Microsoft data scientist, in 2017.",
+      "claim_class": "war_story",
+      "span_hint": "1. DVC: Data Version Control | Did You Know? The Origin of DVC",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://dvc.org/blog/dvc-ambassador-program-announcement",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This appears real and verifiable, but the supporting primary-ish source is off the current allowlist."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Dmitry Petrov said teams built amazing models and then spent weeks trying to reproduce them because nobody knew which data version they had used.",
+      "claim_class": "war_story",
+      "span_hint": "1. DVC: Data Version Control | Did You Know? The Origin of DVC blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> \"I kept seeing the same pattern. Teams would build amazing models, then spend weeks trying to reproduce them because nobody knew which data version they'd used. Git solved this for code 20 years ago. Why were we still living in the dark ages for data?\"",
+      "suggested_rewrite": "> Teams often struggle to reproduce ML results when data versions are not tracked alongside code.",
+      "lesson_point_url": null,
+      "rationale": "This is a verbatim attributed quote without a strong source match supplied here."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "DVC is used by Intel, Microsoft, and Hugging Face, and has over 12,000 GitHub stars.",
+      "claim_class": "statistic",
+      "span_hint": "1. DVC: Data Version Control | Did You Know? The Origin of DVC closing paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Today, DVC is used by companies like Intel, Microsoft, and Hugging Face. It has over 12,000 GitHub stars and a vibrant community.",
+      "suggested_rewrite": "DVC has a large open-source community.",
+      "lesson_point_url": null,
+      "rationale": "The community-size part is directionally true, but the named-adopter list is not directly supported here and the whole sentence is better simplified."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "If you know Git, you already know 80% of DVC.",
+      "claim_class": "statistic",
+      "span_hint": "1. DVC: Data Version Control | Basic DVC Workflow",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The DVC workflow mirrors Git so closely that if you know Git, you already know 80% of DVC.",
+      "suggested_rewrite": "The DVC workflow mirrors Git closely enough that much of it will feel familiar if you already know Git.",
+      "lesson_point_url": null,
+      "rationale": "The exact percentage is illustrative, not sourced, and should be removed."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "Feast is the leading open-source feature store.",
+      "claim_class": "vendor_capability",
+      "span_hint": "2. Feature Stores | Feast: Open-Source Feature Store",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Feast (Feature Store) is the leading open-source solution.",
+      "suggested_rewrite": "Feast is a popular open-source feature store.",
+      "lesson_point_url": null,
+      "rationale": "\"Leading\" is a superlative claim without a clear benchmark or source."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "Feast uses offline and online stores, supports point-in-time correct historical retrieval, and serves low-latency online features for production inference.",
+      "claim_class": "vendor_capability",
+      "span_hint": "2. Feature Stores | Feast architecture / Using Feast in Practice",
+      "disposition": "supported",
+      "source_ids": [
+        "S002",
+        "S003"
+      ],
+      "proposed_url": "https://github.com/feast-dev/feast",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Feast's official repository and docs describe the offline/online split and point-in-time correct historical retrieval."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "Feast was created at Gojek by Willem Pienaar, drawing on lessons from Uber's Michelangelo platform.",
+      "claim_class": "war_story",
+      "span_hint": "2. Feature Stores | Feast: Open-Source Feature Store / Did You Know? The Origin of Feature Stores",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://www.globenewswire.com/news-release/2020/11/16/2127715/0/en/Tecton-Becomes-Feast-Core-Contributor-to-Build-the-Most-Advanced-Open-Source-Feature-Store-for-Machine-Learning.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The historical claim appears real, but the accessible supporting source is off-allowlist."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "Uber found 60% of its ML bugs came from feature-engineering inconsistencies.",
+      "claim_class": "statistic",
+      "span_hint": "2. Feature Stores | Did You Know? The Origin of Feature Stores",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Uber's ML team discovered that **60% of their ML bugs came from feature engineering inconsistencies**—teams computing the same feature differently, training-serving skew, and stale features.",
+      "suggested_rewrite": "Large ML organizations repeatedly report feature-engineering inconsistencies, training-serving skew, and stale features as major sources of production issues.",
+      "lesson_point_url": null,
+      "rationale": "The exact percentage is not well-supported here, but the underlying lesson is valid."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "Major cloud providers offer feature-store products, including AWS SageMaker Feature Store, Vertex AI Feature Store, and Azure Machine Learning managed feature store.",
+      "claim_class": "vendor_capability",
+      "span_hint": "2. Feature Stores | Did You Know? The Origin of Feature Stores closing bullets",
+      "disposition": "supported",
+      "source_ids": [
+        "S008",
+        "S009",
+        "S010"
+      ],
+      "proposed_url": null,
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "AWS, Google Cloud, and Microsoft each document a current feature-store offering."
+    },
+    {
+      "claim_id": "C023",
+      "claim_text": "Great Expectations uses expectations as data assertions or unit tests and can generate human-readable documentation of validation results.",
+      "claim_class": "vendor_capability",
+      "span_hint": "3. Data Validation with Great Expectations | Common Expectations / Architecture",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://github.com/great-expectations/great_expectations",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official repository README describes expectations as unit tests for data and mentions generated documentation."
+    },
+    {
+      "claim_id": "C024",
+      "claim_text": "Great Expectations provides hundreds of built-in expectations.",
+      "claim_class": "statistic",
+      "span_hint": "3. Data Validation with Great Expectations | Common Expectations",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Great Expectations provides hundreds of built-in expectations—pre-built validation rules you can apply to your data.",
+      "suggested_rewrite": "Great Expectations provides many built-in expectations—pre-built validation rules you can apply to your data.",
+      "lesson_point_url": null,
+      "rationale": "The exact count is not substantiated here and current official materials describe a smaller explicit number."
+    },
+    {
+      "claim_id": "C025",
+      "claim_text": "Great Expectations checkpoints can be used in CI/CD-style workflows to run validations and generate Data Docs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "3. Data Validation with Great Expectations | Automated Validation in Pipelines",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://github.com/great-expectations/great_expectations_action",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official GitHub Action documentation explicitly describes running checkpoints in CI workflows and generating Data Docs."
+    },
+    {
+      "claim_id": "C026",
+      "claim_text": "Great Expectations was created by Abe Gong and James Campbell in 2017.",
+      "claim_class": "war_story",
+      "span_hint": "3. Data Validation with Great Expectations | Did You Know? The Great Expectations Origin",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://greatexpectations.io/company/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This appears real and verifiable, but the supporting company-history page is off the current allowlist."
+    },
+    {
+      "claim_id": "C027",
+      "claim_text": "Abe Gong said data teams spent 80% of their time on data quality issues and had zero tools to catch problems before they became disasters.",
+      "claim_class": "statistic",
+      "span_hint": "3. Data Validation with Great Expectations | Did You Know? The Great Expectations Origin blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> \"We realized that data teams spent 80% of their time on data quality issues, but had zero tools to catch problems before they became disasters. It's like doing surgery without X-rays—you don't see the problem until you're already cutting.\"",
+      "suggested_rewrite": "> The tool was motivated by how hard it is to catch data quality problems before they affect downstream systems.",
+      "lesson_point_url": null,
+      "rationale": "The precise percentage and verbatim quote are not adequately sourced here."
+    },
+    {
+      "claim_id": "C028",
+      "claim_text": "Great Expectations has over 8,000 GitHub stars and is used by GitHub, Shopify, and Heineken.",
+      "claim_class": "statistic",
+      "span_hint": "3. Data Validation with Great Expectations | Did You Know? The Great Expectations Origin closing paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The project now has over 8,000 GitHub stars and is used by companies like GitHub, Shopify, and Heineken.",
+      "suggested_rewrite": "The project has a large open-source community.",
+      "lesson_point_url": null,
+      "rationale": "The star-count direction is plausible, but the named-customer claim is not directly supported here and the sentence is better simplified."
+    },
+    {
+      "claim_id": "C029",
+      "claim_text": "GDPR's right to be forgotten requires organizations to be able to delete user data on request.",
+      "claim_class": "standard",
+      "span_hint": "4. Data Lineage & Governance | Data Governance Best Practices",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://eur-lex.europa.eu/eli/reg/2016/679/oj",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a real regulatory requirement, but the primary legal text is off the current allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/iterative/dvc",
+      "title": "DVC Official Repository",
+      "tier": "upstream",
+      "why_relevant": "Primary source for DVC's data versioning, pipelines, remotes, and experiment-tracking behavior."
+    },
+    {
+      "url": "https://github.com/feast-dev/feast",
+      "title": "Feast Official Repository",
+      "tier": "upstream",
+      "why_relevant": "Primary source for Feast's offline/online store model and feature-store workflow."
+    },
+    {
+      "url": "https://github.com/great-expectations/great_expectations",
+      "title": "Great Expectations Official Repository",
+      "tier": "upstream",
+      "why_relevant": "Primary source for expectations-based data validation and generated documentation concepts."
+    }
+  ],
+  "notes": "Diagrams, code blocks, exercises, interview prompts, and the tool-comparison table were intentionally excluded unless they carried a load-bearing factual claim.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

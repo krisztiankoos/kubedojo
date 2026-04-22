@@ -110,7 +110,7 @@ With temperature = 0.0:
   ...
 ```
 
-The result is the exact same output every single time the API is called with the same prompt. This is vital when absolute reproducibility is required.
+The result is usually the exact same output when the API is called with the same prompt and settings. This is vital when absolute reproducibility is required.
 
 ```
 Prompt: "Explain photosynthesis in one sentence."
@@ -693,7 +693,7 @@ python sampling_playground.py creative_brainstorm
 
 | Temperature | Behavior | Use Cases |
 |-------------|----------|-----------|
-| **0.0** | Deterministic, always same | Testing, structured output, reproducibility |
+| **0.0** | Deterministic, usually the same | Testing, structured output, reproducibility |
 | **0.1-0.3** | Very focused, minimal variation | Code generation, data extraction |
 | **0.5-0.7** | Balanced, sensible variation | General chatbots, content generation |
 | **0.8-1.0** | Creative, diverse | Creative writing, brainstorming |
@@ -768,7 +768,7 @@ python sampling_playground.py creative_brainstorm
 
 **Correct Answer: A**
 
-**Why:** A temperature of `0.8` provides the desired conversational variety, but it also increases the likelihood of sampling from the very low-probability "tail" of the distribution, which can lead to nonsensical output. Nucleus sampling (`top_p: 0.9`) acts as a dynamic safety net by dynamically truncating that tail and restricting the sample pool to only the tokens that make up the top 90% of the cumulative probability mass. This guarantees that while the response remains varied, the model will never select bizarre, statistically improbable tokens. Setting `top_k: 1` would defeat the purpose of the temperature setting by forcing deterministic output.
+**Why:** A temperature of `0.8` provides the desired conversational variety, but it also increases the likelihood of sampling from the very low-probability "tail" of the distribution, which can lead to nonsensical output. Nucleus sampling (`top_p: 0.9`) acts as a dynamic safety net by dynamically truncating that tail and restricting the sample pool to only the tokens that make up the top 90% of the cumulative probability mass. This means that while the response remains varied, the model is much less likely to select bizarre, statistically improbable tokens. Setting `top_k: 1` would defeat the purpose of the temperature setting by forcing deterministic output.
 </details>
 
 **4. Scenario: You are generating a daily news summary for financial analysts. Accuracy is highly critical, but sentences should still read naturally rather than looking like robotic bullet points. What combination is ideal?**
@@ -827,7 +827,365 @@ python sampling_playground.py creative_brainstorm
 **Why:** Combining Top-p and Top-k is a classic anti-pattern because the order of operations varies depending on the backend infrastructure, leading to ambiguous probability truncations. The modern architectural standard is to utilize Top-p (nucleus sampling) exclusively because it dynamically adjusts the inclusion pool based on the actual probability distribution of the current step, whereas Top-k is rigidly static and can forcefully include bad tokens or exclude good ones. Removing Top-k resolves the architectural clash instantly.
 </details>
 
+<!-- v4:generated type=no_exercise model=codex turn=1 -->
+## Hands-On Exercise
+
+
+Goal: build a small Python sampling playground that demonstrates how `temperature`, `top_p`, `top_k`, `repetition_penalty`, and `max_tokens` change generated text, then use it to compare deterministic extraction, balanced chat, and creative generation profiles.
+
+- [ ] Create a clean lab directory and Python virtual environment.
+
+```bash
+mkdir -p ~/sampling-strategies-lab
+cd ~/sampling-strategies-lab
+python3 -m venv .venv
+./.venv/bin/python --version
+```
+
+Verification command:
+
+```bash
+pwd
+./.venv/bin/python --version
+```
+
+- [ ] Create `sampling_lab.py` with a small token sampler that supports greedy decoding, temperature scaling, nucleus sampling, top-k filtering, repetition penalty, and max-token limits.
+
+```bash
+cat > sampling_lab.py <<'PY'
+import argparse
+import math
+import random
+from collections import Counter
+
+BASE_TRANSITIONS = {
+    "<START>": {"Kubernetes": 0.28, "Sampling": 0.25, "A": 0.20, "Reliable": 0.15, "Creative": 0.12},
+    "Kubernetes": {"improves": 0.34, "requires": 0.26, "uses": 0.20, "scales": 0.20},
+    "Sampling": {"controls": 0.35, "changes": 0.25, "improves": 0.20, "limits": 0.20},
+    "A": {"deterministic": 0.30, "creative": 0.25, "balanced": 0.25, "reliable": 0.20},
+    "Reliable": {"systems": 0.34, "pipelines": 0.33, "outputs": 0.33},
+    "Creative": {"writing": 0.40, "brainstorming": 0.30, "output": 0.30},
+    "improves": {"reliability": 0.40, "clarity": 0.30, "consistency": 0.30},
+    "requires": {"careful": 0.50, "stable": 0.25, "explicit": 0.25},
+    "uses": {"structured": 0.34, "repeatable": 0.33, "focused": 0.33},
+    "scales": {"safely": 0.40, "predictably": 0.30, "gradually": 0.30},
+    "controls": {"randomness": 0.55, "quality": 0.25, "style": 0.20},
+    "changes": {"tone": 0.40, "variance": 0.35, "behavior": 0.25},
+    "limits": {"gibberish": 0.45, "drift": 0.30, "cost": 0.25},
+    "deterministic": {"JSON": 0.60, "pipelines": 0.20, "workflows": 0.20},
+    "creative": {"stories": 0.45, "ideas": 0.30, "drafts": 0.25},
+    "balanced": {"responses": 0.50, "chatbots": 0.25, "summaries": 0.25},
+    "reliable": {"automation": 0.45, "parsing": 0.30, "generation": 0.25},
+    "systems": {"need": 0.50, "prefer": 0.25, "benefit": 0.25},
+    "pipelines": {"need": 0.50, "avoid": 0.25, "prefer": 0.25},
+    "outputs": {"must": 0.45, "should": 0.30, "can": 0.25},
+    "writing": {"benefits": 0.40, "thrives": 0.30, "needs": 0.30},
+    "brainstorming": {"benefits": 0.40, "likes": 0.30, "needs": 0.30},
+    "output": {"benefits": 0.40, "changes": 0.30, "needs": 0.30},
+    "reliability": {".": 1.0},
+    "clarity": {".": 1.0},
+    "consistency": {".": 1.0},
+    "careful": {"configuration": 0.60, "sampling": 0.40},
+    "stable": {"prompts": 0.50, "schemas": 0.50},
+    "explicit": {"limits": 0.50, "parameters": 0.50},
+    "structured": {"formats": 0.50, "data": 0.50},
+    "repeatable": {"results": 0.60, "behavior": 0.40},
+    "focused": {"choices": 0.60, "generation": 0.40},
+    "safely": {".": 1.0},
+    "predictably": {".": 1.0},
+    "gradually": {".": 1.0},
+    "randomness": {".": 1.0},
+    "quality": {".": 1.0},
+    "style": {".": 1.0},
+    "tone": {".": 1.0},
+    "variance": {".": 1.0},
+    "behavior": {".": 1.0},
+    "gibberish": {".": 1.0},
+    "drift": {".": 1.0},
+    "cost": {".": 1.0},
+    "JSON": {"extraction": 0.70, "schemas": 0.30},
+    "stories": {"need": 0.60, "reward": 0.40},
+    "ideas": {"need": 0.50, "reward": 0.50},
+    "drafts": {"need": 0.60, "reward": 0.40},
+    "responses": {"need": 0.60, "benefit": 0.40},
+    "chatbots": {"need": 0.60, "benefit": 0.40},
+    "summaries": {"need": 0.60, "benefit": 0.40},
+    "automation": {".": 1.0},
+    "parsing": {".": 1.0},
+    "generation": {".": 1.0},
+    "need": {"low": 0.34, "moderate": 0.33, "careful": 0.33},
+    "prefer": {"low": 0.50, "focused": 0.50},
+    "benefit": {"from": 1.0},
+    "must": {"stay": 0.60, "remain": 0.40},
+    "should": {"stay": 0.60, "remain": 0.40},
+    "can": {"stay": 0.50, "be": 0.50},
+    "configuration": {".": 1.0},
+    "sampling": {".": 1.0},
+    "prompts": {".": 1.0},
+    "schemas": {".": 1.0},
+    "formats": {".": 1.0},
+    "data": {".": 1.0},
+    "results": {".": 1.0},
+    "choices": {".": 1.0},
+    "extraction": {"needs": 1.0},
+    "reward": {"higher": 0.50, "novel": 0.50},
+    "from": {"controlled": 0.60, "careful": 0.40},
+    "stay": {"consistent": 0.60, "structured": 0.40},
+    "remain": {"consistent": 0.60, "structured": 0.40},
+    "be": {"flexible": 0.50, "structured": 0.50},
+    "low": {"temperature": 1.0},
+    "moderate": {"temperature": 1.0},
+    "higher": {"temperature": 1.0},
+    "novel": {"tokens": 1.0},
+    "controlled": {"randomness": 1.0},
+    "consistent": {".": 1.0},
+    "structured": {".": 1.0},
+    "flexible": {".": 1.0},
+    "temperature": {".": 1.0},
+    "tokens": {".": 1.0},
+}
+
+PRESETS = {
+    "deterministic_json": {
+        "temperature": 0.0,
+        "top_p": 1.0,
+        "top_k": 0,
+        "repetition_penalty": 1.0,
+        "max_tokens": 8,
+        "seed": 7,
+    },
+    "balanced_chat": {
+        "temperature": 0.7,
+        "top_p": 0.9,
+        "top_k": 0,
+        "repetition_penalty": 1.05,
+        "max_tokens": 10,
+        "seed": 7,
+    },
+    "creative_story": {
+        "temperature": 1.1,
+        "top_p": 0.95,
+        "top_k": 0,
+        "repetition_penalty": 1.15,
+        "max_tokens": 12,
+        "seed": 7,
+    },
+    "loop_prone": {
+        "temperature": 0.8,
+        "top_p": 1.0,
+        "top_k": 0,
+        "repetition_penalty": 1.0,
+        "max_tokens": 12,
+        "seed": 3,
+    },
+    "loop_resistant": {
+        "temperature": 0.8,
+        "top_p": 1.0,
+        "top_k": 0,
+        "repetition_penalty": 1.3,
+        "max_tokens": 12,
+        "seed": 3,
+    },
+}
+
+def apply_temperature(probs, temperature):
+    if temperature == 0:
+        best = max(probs, key=probs.get)
+        return {best: 1.0}
+    adjusted = {tok: p ** (1.0 / temperature) for tok, p in probs.items()}
+    total = sum(adjusted.values())
+    return {tok: val / total for tok, val in adjusted.items()}
+
+def apply_top_k(probs, top_k):
+    if not top_k or top_k <= 0:
+        return probs
+    kept = dict(sorted(probs.items(), key=lambda item: item[1], reverse=True)[:top_k])
+    total = sum(kept.values())
+    return {tok: val / total for tok, val in kept.items()}
+
+def apply_top_p(probs, top_p):
+    if top_p >= 1.0:
+        return probs
+    ranked = sorted(probs.items(), key=lambda item: item[1], reverse=True)
+    kept = {}
+    cumulative = 0.0
+    for tok, val in ranked:
+        kept[tok] = val
+        cumulative += val
+        if cumulative >= top_p:
+            break
+    total = sum(kept.values())
+    return {tok: val / total for tok, val in kept.items()}
+
+def apply_repetition_penalty(probs, counts, penalty):
+    if penalty <= 1.0:
+        return probs
+    adjusted = {}
+    for tok, val in probs.items():
+        repeats = counts[tok]
+        adjusted[tok] = val / (penalty ** repeats)
+    total = sum(adjusted.values())
+    return {tok: val / total for tok, val in adjusted.items()}
+
+def sample_token(probs, rng):
+    tokens, weights = zip(*probs.items())
+    return rng.choices(tokens, weights=weights, k=1)[0]
+
+def generate(preset):
+    cfg = PRESETS[preset]
+    rng = random.Random(cfg["seed"])
+    counts = Counter()
+    current = "<START>"
+    output = []
+
+    for _ in range(cfg["max_tokens"]):
+        probs = BASE_TRANSITIONS[current]
+        probs = apply_repetition_penalty(probs, counts, cfg["repetition_penalty"])
+        probs = apply_temperature(probs, cfg["temperature"])
+        probs = apply_top_k(probs, cfg["top_k"])
+        probs = apply_top_p(probs, cfg["top_p"])
+        token = sample_token(probs, rng)
+        if token == ".":
+            output.append(token)
+            break
+        output.append(token)
+        counts[token] += 1
+        current = token
+
+    text = " ".join(output).replace(" .", ".")
+    return cfg, text
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--preset", choices=PRESETS.keys(), required=True)
+    args = parser.parse_args()
+    cfg, text = generate(args.preset)
+    print("Preset:", args.preset)
+    print("Config:")
+    print(cfg)
+    print("Output:")
+    print(text)
+
+if __name__ == "__main__":
+    main()
+PY
+```
+
+Verification command:
+
+```bash
+./.venv/bin/python sampling_lab.py --preset deterministic_json
+```
+
+- [ ] Run the deterministic profile twice and confirm the output is identical across runs.
+
+```bash
+./.venv/bin/python sampling_lab.py --preset deterministic_json
+./.venv/bin/python sampling_lab.py --preset deterministic_json
+```
+
+Verification commands:
+
+```bash
+./.venv/bin/python sampling_lab.py --preset deterministic_json | grep "temperature"
+./.venv/bin/python sampling_lab.py --preset deterministic_json | grep "Output:" -A1
+```
+
+- [ ] Run the balanced chat profile and compare it with the deterministic profile to observe moderate variation with controlled filtering.
+
+```bash
+./.venv/bin/python sampling_lab.py --preset balanced_chat
+```
+
+Verification commands:
+
+```bash
+./.venv/bin/python sampling_lab.py --preset balanced_chat | grep "top_p"
+./.venv/bin/python sampling_lab.py --preset balanced_chat | grep "repetition_penalty"
+```
+
+- [ ] Run the creative profile and confirm it uses a higher temperature and still constrains the token pool with nucleus sampling.
+
+```bash
+./.venv/bin/python sampling_lab.py --preset creative_story
+```
+
+Verification commands:
+
+```bash
+./.venv/bin/python sampling_lab.py --preset creative_story | grep "temperature"
+./.venv/bin/python sampling_lab.py --preset creative_story | grep "top_p"
+```
+
+- [ ] Compare a loop-prone configuration with a loop-resistant configuration to see how repetition penalties reduce repeated phrasing.
+
+```bash
+./.venv/bin/python sampling_lab.py --preset loop_prone
+./.venv/bin/python sampling_lab.py --preset loop_resistant
+```
+
+Verification commands:
+
+```bash
+./.venv/bin/python sampling_lab.py --preset loop_prone | grep "repetition_penalty"
+./.venv/bin/python sampling_lab.py --preset loop_resistant | grep "repetition_penalty"
+```
+
+- [ ] Edit the preset values in `sampling_lab.py` so `balanced_chat` uses `top_k: 3` and rerun it to observe the effect of static truncation.
+
+```bash
+grep -n "balanced_chat" -A8 sampling_lab.py
+./.venv/bin/python sampling_lab.py --preset balanced_chat
+```
+
+Verification command:
+
+```bash
+grep -n '"top_k"\|"top_k' sampling_lab.py
+```
+
+- [ ] Add a new preset named `code_generation` with low temperature, tight `top_p`, and short `max_tokens`, then run it and compare the output with `creative_story`.
+
+```bash
+./.venv/bin/python sampling_lab.py --preset code_generation
+./.venv/bin/python sampling_lab.py --preset creative_story
+```
+
+Verification commands:
+
+```bash
+grep -n "code_generation" -A8 sampling_lab.py
+./.venv/bin/python sampling_lab.py --preset code_generation | grep "Config:" -A6
+```
+
+- [ ] Write down one recommended sampling profile for each use case: JSON extraction, chatbot response, code generation, and creative brainstorming.
+
+Verification command:
+
+```bash
+printf '%s\n' \
+'JSON extraction: temperature 0.0, top_p 1.0, repetition_penalty 1.0' \
+'Chatbot response: temperature 0.7, top_p 0.9, repetition_penalty 1.05' \
+'Code generation: temperature 0.2, top_p 0.5, repetition_penalty 1.0' \
+'Creative brainstorming: temperature 1.1, top_p 0.95, repetition_penalty 1.15'
+```
+
+Success criteria:
+- Deterministic generation produces the same output on repeated runs with `temperature` set to `0.0`.
+- Balanced generation uses moderate randomness with `top_p` filtering and remains coherent.
+- Creative generation shows more varied phrasing than deterministic or balanced profiles.
+- Repetition penalty visibly changes outputs between loop-prone and loop-resistant presets.
+- A custom preset for a new use case can be added and executed successfully.
+- The final sampling recommendations clearly distinguish reliable, structured tasks from creative, open-ended tasks.
+
+<!-- /v4:generated -->
 ## What's Next
 
 **Module 9**: Embeddings & Semantic Similarity
 If sampling parameters control *how* an LLM speaks, embeddings determine *what* it understands. In the next module, you will learn how models convert raw text into high-dimensional vectors. We will unpack the mathematics behind semantic similarity, revealing the core technology driving enterprise RAG pipelines and vector databases!
+
+## Sources
+
+- [The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751) — Primary paper for nucleus sampling, degeneration under maximization, and the motivation for sampling-based decoding.
+- [Hugging Face Transformers: Generation Strategies](https://huggingface.co/docs/transformers/en/generation_strategies) — Practical overview of greedy decoding, sampling, and beam search with current framework terminology.
+- [Anthropic Messages API Reference](https://docs.anthropic.com/en/api/messages) — Relevant to the module's API examples and current provider-facing controls such as temperature, top_p, top_k, and stop sequences.

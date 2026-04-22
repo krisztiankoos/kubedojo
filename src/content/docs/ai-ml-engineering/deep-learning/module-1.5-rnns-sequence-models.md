@@ -1074,6 +1074,149 @@ The engineer completely forgot to call `model.eval()`. Without invoking this met
 
 ---
 
+<!-- v4:generated type=no_quiz model=codex turn=1 -->
+## Quiz
+
+
+**Q1.** Your team adds a `Conv2d` layer with `kernel_size=3`, `padding=1`, and `stride=2` to downsample 224×224 camera frames before the next block. A teammate incorrectly wires the following layer assuming the output will still be 224×224. What spatial size should the convolution actually produce, and why?
+
+<details>
+<summary>Answer</summary>
+It should produce **112×112** feature maps.
+
+Using the module’s formula:
+
+`Output Size = floor((Input - Kernel + 2×Padding) / Stride) + 1`
+
+`= floor((224 - 3 + 2×1) / 2) + 1`
+`= floor(223 / 2) + 1`
+`= 111 + 1`
+`= 112`
+
+So the full output shape becomes `(batch_size, out_channels, 112, 112)`. This is why stride-2 convolutions are commonly used for learnable downsampling.
+</details>
+
+**Q2.** Your team is building a pedestrian detector for roadside cameras. During testing, the same pedestrian is recognized only when standing in one exact part of the frame, but confidence drops if they shift a few pixels left or right. Which architectural idea from the module addresses this problem most directly, and how?
+
+<details>
+<summary>Answer</summary>
+The most direct fix is **pooling**, especially **max pooling**, because it introduces **spatial invariance**.
+
+Convolutional layers detect local features like edges and corners, but pooling helps the network care less about the exact pixel location of those features. Max pooling keeps the strongest activation in a small region, so if the pedestrian’s feature moves slightly, the model can still recognize it. The module connects this idea to biological “complex cells,” which respond to a feature even when it shifts within the receptive field.
+</details>
+
+**Q3.** You are designing a semantic segmentation system for satellite imagery. The product team needs precise pixel-level masks, so aggressive pooling is destroying too much spatial detail. You still need a larger receptive field to capture context. What should you use?
+
+<details>
+<summary>Answer</summary>
+Use **dilated (atrous) convolutions**.
+
+Dilated convolutions expand the receptive field by inserting gaps between kernel elements, so the model can “see” a larger area of the original image **without downsampling the feature map**. That makes them a strong choice for segmentation tasks where preserving spatial resolution is critical.
+</details>
+
+**Q4.** Your team trains a very deep vision model from scratch, but after many layers the loss barely improves and gradients become unstable. A senior engineer proposes switching some blocks to a ResNet-style design. Why would that help?
+
+<details>
+<summary>Answer</summary>
+A **ResNet skip connection** helps because it gives gradients a more direct path through the network.
+
+In a residual block, the output is `F(x) + x`. Even if the learned transformation `F(x)` is hard to optimize, the identity path `x` still carries information and gradients forward and backward. This reduces the vanishing-gradient problem and makes very deep networks easier to train. The module describes this as a “gradient highway.”
+</details>
+
+**Q5.** Your team has only 500 labeled images for a factory defect classifier, and you decide to start from a pretrained ResNet-18. A teammate wants to fine-tune every layer immediately. Based on the module, what is the safer first step and why?
+
+<details>
+<summary>Answer</summary>
+The safer first step is to **freeze the backbone and train only the classification head**.
+
+With a small dataset, training the full pretrained network right away increases the risk of **overfitting** and can destroy useful pretrained features. The module recommends freezing the backbone for small datasets, especially when you want faster training and more stable results. After the head is trained, you can consider gradually unfreezing deeper layers if needed.
+</details>
+
+**Q6.** A pretrained ImageNet model performs well in staging, but after deployment the production API returns unstable predictions that change depending on which other images happen to be in the same batch. What deployment mistake is the most likely cause?
+
+<details>
+<summary>Answer</summary>
+The most likely mistake is forgetting to switch the model to **evaluation mode** with `model.eval()`.
+
+Without `model.eval()`, **BatchNorm** keeps using batch statistics and **Dropout** stays active, which makes inference noisy and batch-dependent. The module also recommends pairing inference with `torch.no_grad()` to avoid unnecessary gradient tracking, but `model.eval()` is the key fix for inconsistent predictions.
+</details>
+
+**Q7.** An overnight training run crashes with a CUDA out-of-memory error. The batch size is important for throughput, and the team does not want to redesign the model yet. Which technique from the module is the best first response?
+
+<details>
+<summary>Answer</summary>
+The best first response is **mixed precision training** with `torch.cuda.amp`.
+
+Using `autocast()` and `GradScaler()` lets parts of the forward and backward pass run in **FP16**, which reduces memory usage significantly while preserving training stability through gradient scaling. The module presents this as a standard production technique for handling GPU memory pressure without changing the overall architecture.
+</details>
+
+<!-- /v4:generated -->
+<!-- v4:generated type=no_exercise model=codex turn=1 -->
+## Hands-On Exercise
+
+
+Goal: build and compare a simple `RNN`, `LSTM`, and `GRU` for next-token sequence prediction, then verify which architecture learns long-range dependencies more reliably.
+
+- [ ] Create a small sequential dataset for next-token prediction.
+  Use a toy corpus such as repeated character patterns, short log sequences, or integer sequences where the next element depends on earlier context.
+  Verification command:
+  ```bash
+  python -c "from pathlib import Path; print('dataset exists' if Path('data/sequences.txt').exists() else 'missing dataset')"
+  ```
+
+- [ ] Preprocess the data into fixed-length input windows and target tokens.
+  Convert tokens to integer IDs, build a vocabulary, and create training/validation splits with tensors shaped like `(batch, seq_len)`.
+  Verification command:
+  ```bash
+  python -c "import torch; x=torch.load('artifacts/sample_inputs.pt'); y=torch.load('artifacts/sample_targets.pt'); print(x.shape, y.shape)"
+  ```
+
+- [ ] Implement a baseline vanilla RNN model.
+  Include an embedding layer, recurrent layer, and output projection that predicts the next token for each sequence window.
+  Verification command:
+  ```bash
+  python -c "import torch; from model_rnn import SequenceRNN; m=SequenceRNN(vocab_size=30, embed_dim=32, hidden_dim=64); x=torch.randint(0,30,(4,12)); print(m(x).shape)"
+  ```
+
+- [ ] Implement equivalent `LSTM` and `GRU` variants.
+  Keep the embedding size, hidden size, optimizer, and training budget consistent so the comparison is fair.
+  Verification command:
+  ```bash
+  python -c "import torch; from model_lstm import SequenceLSTM; from model_gru import SequenceGRU; x=torch.randint(0,30,(4,12)); print(SequenceLSTM(30,32,64)(x).shape, SequenceGRU(30,32,64)(x).shape)"
+  ```
+
+- [ ] Train all three models and log training loss plus validation loss per epoch.
+  Save the best checkpoint for each architecture and record the final validation metric in a results table.
+  Verification commands:
+  ```bash
+  python train.py --model rnn --epochs 5
+  python train.py --model lstm --epochs 5
+  python train.py --model gru --epochs 5
+  ```
+
+- [ ] Run inference on a few seed sequences and generate predicted continuations.
+  Compare where the vanilla RNN breaks down versus where `LSTM` or `GRU` keeps the pattern coherent.
+  Verification command:
+  ```bash
+  python generate.py --checkpoint checkpoints/lstm_best.pt --prompt "A B A B"
+  ```
+
+- [ ] Summarize the behavioral differences between the models.
+  Note whether gated architectures converge faster, produce lower validation loss, or handle longer dependencies more cleanly than the baseline RNN.
+  Verification command:
+  ```bash
+  python -c "from pathlib import Path; print(Path('artifacts/results_summary.md').read_text()[:400])"
+  ```
+
+Success criteria:
+- The dataset is tokenized into sequence windows and target labels without shape errors.
+- Each model completes a forward pass and returns logits with the expected vocabulary dimension.
+- Training runs successfully for `RNN`, `LSTM`, and `GRU` and saves checkpoints.
+- At least one gated model (`LSTM` or `GRU`) achieves better validation performance than the vanilla RNN.
+- Generated continuations show that longer-context predictions are more stable for `LSTM` or `GRU`.
+- A short written comparison explains the trade-offs between simple recurrent networks and gated sequence models.
+
+<!-- /v4:generated -->
 ## Next Module
 
 Ready to move from recurrent architectures into the modern transformer era? Proceed directly to **[Module 1.7: Transformers from Scratch](./module-1.7-transformers-from-scratch/)** where you will discover why the phrase "Attention Is All You Need" permanently altered the trajectory of artificial intelligence, and how self-attention scales in ways that recurrent networks cannot.

@@ -1,0 +1,200 @@
+{
+  "module_key": "ai-ml-engineering/generative-ai/module-1.6-reasoning-models",
+  "module_path": "src/content/docs/ai-ml-engineering/generative-ai/module-1.6-reasoning-models.md",
+  "research_run_id": "2026-04-22T03:54:18+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A late-2024 quantitative trading-firm incident was caused by deploying a standard LLM to generate migration scripts.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1, sentence 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In late 2024, a leading quantitative trading firm attempted to automate its internal data pipeline migrations by deploying a state-of-the-art standard large language model.",
+      "suggested_rewrite": "Teams that let a standard LLM generate and run migration code without strong review can introduce subtle but serious production errors.",
+      "lesson_point_url": null,
+      "rationale": "This is a dated, specific war story about a real organization type, but no citable primary source is identified."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The generated migration created a cascading row-level lock on the primary transaction database.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1, sentence 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "When the script executed autonomously in production, it created a cascading row-level lock on the primary transaction database.",
+      "suggested_rewrite": "If generated migration code runs in production without safeguards, it can trigger severe database contention or other failure modes.",
+      "lesson_point_url": null,
+      "rationale": "The incident mechanics are presented as a real event, but no primary incident report is given."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The outage halted trading for 22 minutes and caused an estimated $14 million loss.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1, sentence 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "This halted all high-frequency trades for twenty-two minutes, resulting in an estimated fourteen million dollar loss.",
+      "suggested_rewrite": "In a trading environment, a production pipeline failure can cause substantial financial damage very quickly.",
+      "lesson_point_url": null,
+      "rationale": "This is a fake-precise loss and duration claim with no attributable source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Daniel Kahneman popularized the System 1/System 2 framework, with System 1 as fast and intuitive and System 2 as slower and more deliberative.",
+      "claim_class": "standard",
+      "span_hint": "section: The Shift from System 1 to System 2 Thinking, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited page directly describes Kahneman's book and its System 1/System 2 definitions."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "OpenAI reported that its reasoning models think before answering and improve with more test-time compute.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Shift from System 1 to System 2 Thinking, paragraph 2; section: The Mechanics of Test-Time Compute, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://openai.com/index/learning-to-reason-with-llms/",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OpenAI's release page explicitly says o1 uses chain-of-thought reasoning and that performance improves with more time spent thinking."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "OpenAI introduced a `reasoning_effort` parameter to control how long a reasoning model thinks before answering.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Mechanics of Test-Time Compute, paragraph 2",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://openai.com/index/o1-and-new-tools-for-developers/",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OpenAI's developer announcement directly introduces the `reasoning_effort` API parameter."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "OpenAI o3-mini offers low, medium, and high reasoning-effort settings.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Mechanics of Test-Time Compute, paragraph 3 and code sample",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://openai.com/research/openai-o3-mini/",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The o3-mini release page explicitly lists three reasoning-effort options: low, medium, and high."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "OpenAI released the o1 series in 2024 and reported that more inference-time compute improved reasoning performance.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In late 2024, OpenAI released the o1 model series, which demonstrated that scaling inference compute could yield performance gains comparable to scaling pre-training compute, fundamentally shifting how hardware demands are forecasted in data centers.",
+      "suggested_rewrite": "In 2024, OpenAI released the o1 model series and reported that reasoning performance improved when the model spent more time thinking at inference time.",
+      "lesson_point_url": null,
+      "rationale": "The release and test-time-compute finding are supportable, but the hardware-forecasting consequence is not directly backed on the primary pages."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "DeepSeek R1 used cold-start training before reinforcement learning and reported strong early-2025 math, code, and reasoning benchmark results.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://huggingface.co/deepseek-ai/DeepSeek-R1",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The DeepSeek-R1 model card directly describes cold-start data before RL and includes the benchmark table published in January 2025."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Hidden reasoning tokens can account for up to 95% of total completion tokens on complex queries.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Hidden reasoning tokens can account for up to 95% of the total completion tokens generated in highly complex algorithmic queries, drastically altering the unit economics of AI API consumption for enterprise applications.",
+      "suggested_rewrite": "Hidden reasoning tokens can dominate total completion-token usage on difficult queries, which can materially change API cost calculations for enterprise applications.",
+      "lesson_point_url": null,
+      "rationale": "The exact 95% figure is presented as fact but no authoritative source is identified."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Early reasoning models sometimes produced more than 30,000 internal tokens and over two minutes of latency before visible output.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet 4",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "During internal beta testing, some early reasoning models generated internal chains of thought exceeding 30,000 tokens before producing a single word of user-facing output, resulting in absolute latencies exceeding two full minutes per query.",
+      "suggested_rewrite": "During early reasoning-model testing, some systems exhibited very long internal reasoning traces and noticeably higher latency before the first visible output.",
+      "lesson_point_url": null,
+      "rationale": "The token and latency figures are highly specific but unattributed."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Thinking,_Fast_and_Slow",
+      "title": "Thinking, Fast and Slow",
+      "tier": "general",
+      "why_relevant": "Useful background for the System 1/System 2 analogy used throughout the module."
+    },
+    {
+      "url": "https://openai.com/index/learning-to-reason-with-llms/",
+      "title": "Learning to reason with LLMs",
+      "tier": "vendor",
+      "why_relevant": "Primary OpenAI release explaining train-time vs test-time compute and the behavior of reasoning models."
+    },
+    {
+      "url": "https://arxiv.org/abs/2501.12948",
+      "title": "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning",
+      "tier": "standards",
+      "why_relevant": "Primary paper for one of the major reasoning-model families referenced in the module."
+    }
+  ],
+  "notes": "Excluded Mermaid diagrams, code blocks, quiz prompts, and exercise steps per instructions. The main allowlist gap is OpenAI platform-doc coverage for prompting guidance, reasoning-token billing/metadata, and temperature support on reasoning models.",
+  "_schema_issues": [
+    "claim[7]:needs_allowlist_expansion_but_url_is_already_allowlisted",
+    "claim[8]:needs_allowlist_expansion_but_url_is_already_allowlisted",
+    "claim[13]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": []
+}
