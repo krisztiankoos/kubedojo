@@ -35,6 +35,7 @@ HUMAN_REVIEW_DIR = REPO_ROOT / ".pipeline" / "v3" / "human-review"
 DEFAULT_MAX_CANDIDATES = 3
 MIN_SIGNAL_ANCHORS_REQUIRED = 1
 HEAD_CHECK_TIMEOUT_SECONDS = 5.0
+MIN_QUOTE_MATCH_LENGTH = 12
 
 
 # ---- IO ------------------------------------------------------------------
@@ -136,10 +137,17 @@ high confidence actually discuss the specific claim — same year, same dollar
 figure, same named incident/company. Do not invent URLs. If no allowlist URL
 plausibly covers the claim, return an empty list.
 
+For every candidate you MUST include an `expected_quote` — a specific
+sentence or phrase (minimum 12 characters, case-insensitive) that the page
+actually contains and that supports the claim. The resolver fetches the page
+and rejects any candidate whose expected_quote is not a substring of the
+page body. Do not paraphrase or invent quotes — copy from the page you are
+citing. If you cannot commit to a specific quote, do not include the URL.
+
 Respond with strict JSON, no prose, no code fences:
 {{
   "candidates": [
-    {{"url": "https://...", "tier": "standards|upstream|vendor|incidents|general", "why": "one sentence"}},
+    {{"url": "https://...", "tier": "standards|upstream|vendor|incidents|general", "why": "one sentence", "expected_quote": "A sentence or phrase from the page that supports the claim."}},
     ...
   ]
 }}
@@ -300,14 +308,49 @@ def request_candidates(
             continue
         if not head_checker(url):
             continue
+        quote = str(c.get("expected_quote") or "").strip()
         valid.append(
             {
                 "url": url,
                 "tier": str(c.get("tier") or "unknown"),
                 "why": str(c.get("why") or "").strip(),
+                "expected_quote": quote,
             }
         )
     return valid
+
+
+def normalize_quote(text: str) -> str:
+    """Collapse whitespace, strip, lowercase — makes substring match
+    tolerant of the LLM's minor transcription drift (line breaks,
+    double spaces, casing)."""
+    return re.sub(r"\s+", " ", text).strip().lower()
+
+
+def quote_present_in_text(quote: str, body: str) -> bool:
+    """Check whether ``quote`` (or a long-enough prefix) is a substring
+    of ``body`` after whitespace + case normalization.
+
+    Accepts matches of at least ``MIN_QUOTE_MATCH_LENGTH`` characters
+    so minor LLM transcription drift (trailing phrase, missing word)
+    doesn't reject an otherwise-correct citation. Returns False when
+    the quote is too short to be meaningful — that's the LLM hedging,
+    not evidence.
+    """
+    norm_quote = normalize_quote(quote)
+    if len(norm_quote) < MIN_QUOTE_MATCH_LENGTH:
+        return False
+    norm_body = normalize_quote(body)
+    if norm_quote in norm_body:
+        return True
+    # Tolerate LLM drift on the tail: accept if the first
+    # MIN_QUOTE_MATCH_LENGTH-char prefix matches, rounded up to a word
+    # boundary so we don't mid-word match accidentally.
+    prefix = norm_quote[:max(MIN_QUOTE_MATCH_LENGTH, len(norm_quote) // 2)]
+    prefix = prefix.rsplit(" ", 1)[0] if " " in prefix else prefix
+    if len(prefix) >= MIN_QUOTE_MATCH_LENGTH and prefix in norm_body:
+        return True
+    return False
 
 
 # ---- validation ----------------------------------------------------------
@@ -331,27 +374,31 @@ def validate_candidate(
     advisory only — this is the real gate (#355 Codex review, must-fix).
     """
     url = candidate["url"]
+    expected_quote = str(candidate.get("expected_quote") or "").strip()
 
     # Phase 1: host allowlist (pre-network, deterministic).
     prechecked_tier = allowlist_tier(url)
     if not prechecked_tier:
         return {"ok": False, "url": url, "reason": "off_allowlist"}
 
-    # Phase 2: enforce that the finding has at least one deterministic
-    # anchor to verify. Signals like ``named_incident`` or
-    # ``attribution`` alone don't yield a value we can substring-match in
-    # the page body, so without anchors we'd be accepting "any 200
-    # allowlisted page" — which the fetcher cannot distinguish from the
-    # intended claim (#355 Codex review, must-fix #2).
+    # Phase 2: require some way to verify the page actually discusses
+    # the claim. Two paths:
+    #   A. The finding has deterministic anchors (year/price/percent).
+    #   B. The LLM committed to a specific expected_quote substring.
+    # At least one must be present, otherwise we'd accept "any 200
+    # allowlisted page" regardless of topical relevance. Phase 3 runs
+    # whichever path was populated (or both).
     anchors = extract_anchors(
         finding.get("excerpt", ""),
         finding.get("signals") or [],
     )
-    if not anchors:
+    has_anchors = bool(anchors)
+    has_quote = bool(expected_quote)
+    if not has_anchors and not has_quote:
         return {
             "ok": False,
             "url": url,
-            "reason": "no_anchors_extractable",
+            "reason": "no_verification_signal",
             "signals": finding.get("signals") or [],
         }
 
@@ -372,22 +419,39 @@ def validate_candidate(
         body = text_path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return {"ok": False, "url": url, "reason": "cache_read_failed"}
-    matched = anchors_present_in_text(anchors, body)
-    if len(matched) < MIN_SIGNAL_ANCHORS_REQUIRED:
+
+    matched_anchors = anchors_present_in_text(anchors, body) if has_anchors else []
+    quote_matched = quote_present_in_text(expected_quote, body) if has_quote else False
+
+    # Accept if the finding had anchors AND enough of them matched, OR
+    # the LLM committed to a quote AND that quote is on the page.
+    anchors_ok = has_anchors and len(matched_anchors) >= MIN_SIGNAL_ANCHORS_REQUIRED
+    if anchors_ok or quote_matched:
+        return {
+            "ok": True,
+            "url": url,
+            "final_url": meta.get("final_url", url),
+            "tier": post_fetch_tier,
+            "anchors_matched": matched_anchors,
+            "quote_matched": quote_matched,
+            "verified_via": "anchors" if anchors_ok else "expected_quote",
+            "page_bytes": meta.get("bytes", 0),
+        }
+
+    # Nothing matched: explain why.
+    if has_quote and not quote_matched:
         return {
             "ok": False,
             "url": url,
-            "reason": "no_anchor_match",
-            "anchors_expected": anchors,
-            "anchors_matched": matched,
+            "reason": "quote_not_in_page",
+            "expected_quote": expected_quote,
         }
     return {
-        "ok": True,
+        "ok": False,
         "url": url,
-        "final_url": meta.get("final_url", url),
-        "tier": post_fetch_tier,
-        "anchors_matched": matched,
-        "page_bytes": meta.get("bytes", 0),
+        "reason": "no_anchor_match",
+        "anchors_expected": anchors,
+        "anchors_matched": matched_anchors,
     }
 
 
