@@ -78,7 +78,7 @@ When Gemini is the designated cross-family reviewer:
 1. **Plan** with Gemini (gap analysis, module specs, structure)
 2. **Draft** — either Gemini drafts (needs expansion) or Claude writes directly (full quality)
 3. **Expand** — if Gemini drafted, Claude agent reads and expands to full depth
-4. **Review** — cross-family adversary review (a non-Gemini family per `docs/review-protocol.md` when the draft came from Gemini; score, flag issues)
+4. **Review** — cross-family adversary review (if Gemini drafted it, use Claude or Codex per `docs/review-protocol.md`; score, flag issues)
 5. **Fix** — address reviewer feedback
 6. **Commit** — with nav updates, READMEs, changelog
 

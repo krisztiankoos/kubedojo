@@ -129,13 +129,14 @@ scripts/ab ask-claude --task-id handback-to-claude --from codex "Summary of what
 **Key rules for Gemini coordination:**
 - NEVER parallelize Gemini calls — user runs other concurrent workloads, one at a time
 - Use `--model auto` as the model (never hardpin flash/pro)
-- Always send Gemini for adversarial review before closing any issue
-- If Gemini says NEEDS CHANGES, fix before merging
-- Post Gemini's review as a comment on the GH issue
+- When Gemini is the designated cross-family reviewer (see `docs/review-protocol.md`), send completed work before closing the issue
+- If the reviewer says NEEDS CHANGES, fix before merging
+- Post the review as a comment on the GH issue
 
-**Gemini's role:**
+**Gemini's role (when designated as cross-family reviewer):**
 1. Adversary reviewer — catches bugs Codex misses, flags technical errors
-2. Does NOT write code — you (Codex) write, Gemini reviews
+2. Does NOT write code — you (Codex) write, the reviewer reviews
+3. Gemini is one of three families (Claude / Codex / Gemini) — the actual reviewer is chosen to differ from the author family per `docs/review-protocol.md`
 
 ## Workflow for this task
 
@@ -148,7 +149,7 @@ scripts/ab ask-claude --task-id handback-to-claude --from codex "Summary of what
 
 ## Important project rules
 
-- **Never merge without adversarial review** — Gemini must review before any PR/commit to main
+- **Never merge without adversarial review** — the designated cross-family reviewer (see `docs/review-protocol.md`) must review before any PR/commit to main
 - **Claude never edits module content** — pipeline workers do, not you directly
 - **Never parallelize Gemini calls** — sequential only
 - **Build before push**: `npm run build` — 0 warnings required
