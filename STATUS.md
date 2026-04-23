@@ -2,30 +2,103 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-23 evening — #343 phase-1 resolver merged; 3-module pilot in progress)
+## Active Work (2026-04-23 late evening — tech-debt push: 4 PRs out, 3 merged)
 
-**Session deliverables:**
+**Session deliverables (chronological):**
 
-- **PR #355** (`3294d16f`, merged) — `feat(#343): citation residuals auto-resolver — phase 1 (needs_citation)`. New `scripts/citation_residuals.py` + 17 unit tests. Codex adversary review caught two must-fix bugs (off-allowlist URLs fetched before rejection; anchorless findings auto-accepted any 200) — fixed in `c7d60257` and APPROVED on re-review. Cross-family review protocol worked as designed (Claude author → Codex reviewer).
-- **Issues #351–#354 filed** (all four pipeline-gap observations): #351 citation_v3 missing-sources audit, #352 Gate A prose/quiz contradiction, #353 zombie gemini grandchildren (reopens #253), #354 orphan check_pre jobs (newly discovered — review_worker enqueues them but no worker processes them).
-- **Pipeline at 100% convergence.** LFCS `module-1.4-storage-services-and-users-practice` (the lone `pending_review`) cleared via `ControlPlane.lease_next_job(phase='check_pre')` + `complete_lease(source='manual_preflight_pass')`. Underlying bug tracked in #354. 567/567 done.
-- **Services: stale=0** (was 2). Updated `.pids/api.pid` to the actual running PID (47928); deleted dead `.pids/feedback.pid`.
+- **PR #355** (`3294d16f`, merged, earlier today) — phase-1 citation residuals resolver.
+- **Commit `55e0e9a2`** — 3-module pilot: 1/5 auto-resolved (20%). Exposed two hallucination classes (URL-existence, URL-content) that capped phase-1.
+- **Issues filed:** #351 (missing Sources audit), #352 (Gate A prose/quiz contradictions), #353 (zombie gemini), #354 (orphan check_pre), #356 (URL hallucination mitigation).
+- **PR #357** (`2d6908c3`, merged) — **#356 Part 1**: HEAD-check + allowlist pre-filter in `request_candidates`. Codex review approved with 2 nits (HEAD→range-GET→plain-GET escalation, narrow bare-except) — both fixed in `19e4ab05` before merge.
+- **PR #358** (`1e9a0b75`, merged) — **#354 fix**: removed orphan-check_pre enqueue after APPROVE. Preflight already runs at top of review function; reducer now sees APPROVE → `done` immediately. Codex nit about testing the reducer symptom (not just the mechanical cause) addressed in `065c84d7`.
+- **PR #359** (`5de7e33f`, merged) — **#351 fix**: `audit_missing_sources()` in `pipeline_v4_batch.py` post-batch. Codex caught 2 real must-fix issues (false-positive under `--skip-citation`; header regex too strict on trailing whitespace / EOF-without-newline) — both fixed in `1fad9f3e`.
+- **PR #360** (OPEN, awaiting Codex review) — **#356 Part 2**: quote-match verification. Extends LLM prompt to require `expected_quote`; resolver substring-matches it against cached page body (case-insensitive, whitespace-normalized, ≥12-char, prefix-match fallback). Rescues anchorless findings class. Branch `feat/356-part2-quote-match` at `7fbc2c17`. 34/34 tests pass. Codex review dispatched as task `pr-360-review` (bridge message ID 2697); response pending.
 
-**Current pilot (non-dry-run, 3 modules):**
+**Tech-debt status:**
 
-1. `ai-ml-engineering/advanced-genai/module-1.1-fine-tuning-llms` — 2 anchorable findings (year_reference). Expect 2/2 resolve. [running]
-2. `ai-ml-engineering/ai-infrastructure/module-1.1-cloud-ai-services` — 2 mixed (1 anchorable, 1 anchorless). Expect 1 resolve, 1 unresolvable_no_anchors_extractable.
-3. `cloud/advanced-operations/module-8.1-multi-account` — 1 anchorless. Expect 0 resolve, 1 unresolvable.
+| Issue | State |
+|---|---|
+| #351 | ✅ closed (PR #359 merged) |
+| #352 | open — Gate A prose/quiz contradictions (deferred; needs pipeline design session) |
+| #353 | open — zombie gemini (deferred; low urgency, auto-fallback covers) |
+| #354 | ✅ closed (PR #358 merged) |
+| #356 Part 1 | ✅ closed (PR #357 merged) |
+| #356 Part 2 | 🟡 PR #360 open, Codex review in flight |
+| #356 Part 3 | open — Codex candidate-fallback (do after Part 2 pilot) |
+| #344 | open — extend resolver to overstated/off-topic findings |
+| #343 | in progress — phase-1 + phase-2 landed; phase-1.5 (#356) finishing |
 
-**Expected pilot outcome:** 3/5 resolved (60%), 2/5 unresolvable_no_anchors_extractable (40%) — the 40% is the correctly-rejected anchorless class that's #344 territory.
+**New learning saved to memory:** `feedback_advisory_vs_enforced_constraints.md` — LLM prompt constraints are advisory; enforce deterministically in code before any side-effect.
 
-**New learning surfaced (saved to memory `feedback_advisory_vs_enforced_constraints.md`):** LLM prompt constraints are advisory. Deterministic enforcement must run in code before side-effects. Initial pilot got 0/2 on press-URL hallucination; fix was to hoist `fetch_citation.allowlist_tier()` ahead of `fetch()`.
+---
 
-**Next session starts here:**
-1. Pilot results: if close to expected, open **phase-2 PR** that (a) raises the `--workers` cap to ≤3 (per memory `feedback_batch_worker_cap.md`), (b) runs bulk on remaining ~180 needs_citation findings. Review gate: Codex.
-2. `#344` builds on #343 — extend resolver to `overstated_unfixed` (97 queued), `off_topic_unfixed` (75), `overstatement_queued` (30), `off_topic_delete_queued` (55). Totals are from today's `report` subcommand.
-3. Revisit `#354` (orphan check_pre) — simplest fix is to inline preflight in review_worker when verdict=APPROVE (option B in the issue).
-4. The **Anthropic April-23 postmortem** analysis was requested; notes are in-session only. If we want to codify, three concrete changes proposed: (a) add `--pilot-n N` flag to bulk scripts, (b) require prompt-change ablations on 3 fixture findings before merge, (c) make cross-family-reviewer rule explicit in `docs/review-protocol.md`.
+## Cold-start for next session
+
+**1. Check #360 review outcome** (inbox message IDs ≥ 2697):
+
+```bash
+scripts/ab inbox show claude
+scripts/ab read <latest-response-id>
+```
+
+If APPROVE → `gh pr merge 360 --merge --delete-branch`. If NEEDS CHANGES → fix, push, re-dispatch via:
+```bash
+git checkout feat/356-part2-quote-match
+# make fixes
+git push
+scripts/ab ask-codex --review --task-id pr-360-rereview --new-session "..." --from claude
+```
+
+**2. Re-pilot the 3-module set** after #360 merges. Expected: 60–75% resolve rate (up from 20% on phase-1). Reset the queue files first — previous pilot moved findings to `unresolvable_findings[]`:
+
+```bash
+.venv/bin/python - <<'EOF'
+import json
+from pathlib import Path
+for stem in ("ai-ml-engineering-advanced-genai-module-1.1-fine-tuning-llms",
+             "ai-ml-engineering-ai-infrastructure-module-1.1-cloud-ai-services",
+             "cloud-advanced-operations-module-8.1-multi-account"):
+    qp = Path(".pipeline/v3/human-review") / f"{stem}.json"
+    d = json.loads(qp.read_text())
+    restored = []
+    for f in d.pop("unresolvable_findings", []):
+        restored.append({k: v for k, v in f.items() if k not in ("unresolvable_reason", "attempts", "resolved_at")})
+    d["queued_findings"]["needs_citation"] = restored + d["queued_findings"].get("needs_citation", [])
+    qp.write_text(json.dumps(d, indent=2, ensure_ascii=False) + "\n")
+    print(f"reset {stem}: restored {len(restored)}")
+EOF
+
+.venv/bin/python scripts/citation_residuals.py resolve ai-ml-engineering-advanced-genai-module-1.1-fine-tuning-llms
+# ...repeat for the other two
+```
+
+**3. If re-pilot is good (≥60%), prep bulk phase-2 PR:**
+- Raise `--workers` cap to ≤3 (per memory `feedback_batch_worker_cap.md`).
+- File concurrency fix first — PR #357's Codex review flagged that two resolvers on the same module clobber each other's writes (deferred from #343 phase-1; bit me during the pilot when I accidentally ran one in foreground + background). Needs a `.pipeline/v2.db` lease before bulk.
+
+**4. Other open tech debt (ranked):**
+- **#356 Part 3** (Codex candidate fallback) — do after phase-2 bulk if resolve rate is below target.
+- **#344** (extend resolver to overstated/off-topic classes) — 257 findings across 4 categories. Design decision needed on the simpler "apply pre-composed fix" cases vs. the harder "soften the claim" cases.
+- **#352** (Gate A prose/quiz contradiction) — needs pipeline-design session, not a small PR.
+- **#353** (zombie gemini) — low urgency unless next batch shows orphan processes.
+
+**5. Postmortem follow-up** (user explicitly asked; answered in-conversation but not codified):
+- Add `--pilot-n N` flag to bulk scripts for gradual rollout.
+- Require prompt-change ablations on ≥3 fixture findings before merge.
+- Make cross-family reviewer rule explicit in `docs/review-protocol.md`.
+
+---
+
+## Smoketest (first 30s of next session)
+
+```bash
+curl -s http://127.0.0.1:8768/api/briefing/session?compact=1        # should show 100% convergence, stale=0
+git log --oneline -5                                                 # last merge should be #359 (1e9a0b75 or 5de7e33f)
+gh pr view 360 --json state,mergeable                                # #360 status
+scripts/ab inbox show claude                                         # any Codex responses pending ack
+```
+
+Expect: briefing shows stale=0 running≥5, last 5 commits include the PR-359 merge, PR #360 state=OPEN, inbox either empty or has Codex's #360 review response.
 
 ---
 
