@@ -61,7 +61,12 @@ def test_request_candidates_parses_json_response() -> None:
             }
         )
 
-    out = citation_residuals.request_candidates(finding, dispatcher=fake_dispatcher)
+    out = citation_residuals.request_candidates(
+        finding,
+        dispatcher=fake_dispatcher,
+        allowlist_tier=lambda _u: "official",
+        head_checker=lambda _u: True,
+    )
     assert len(out) == 2
     assert out[0]["url"] == "https://example.com/a"
     assert out[0]["tier"] == "official"
@@ -73,7 +78,15 @@ def test_request_candidates_handles_dispatch_failure() -> None:
     def failing(_prompt: str) -> tuple[bool, str]:
         return False, "timeout"
 
-    assert citation_residuals.request_candidates(finding, dispatcher=failing) == []
+    assert (
+        citation_residuals.request_candidates(
+            finding,
+            dispatcher=failing,
+            allowlist_tier=lambda _u: "official",
+            head_checker=lambda _u: True,
+        )
+        == []
+    )
 
 
 def test_request_candidates_rejects_non_http_urls() -> None:
@@ -84,7 +97,155 @@ def test_request_candidates_rejects_non_http_urls() -> None:
             {"candidates": [{"url": "javascript:alert(1)"}, {"url": "ftp://x"}]}
         )
 
-    assert citation_residuals.request_candidates(finding, dispatcher=weird) == []
+    assert (
+        citation_residuals.request_candidates(
+            finding,
+            dispatcher=weird,
+            allowlist_tier=lambda _u: "official",
+            head_checker=lambda _u: True,
+        )
+        == []
+    )
+
+
+def test_request_candidates_filters_off_allowlist(tmp_path: Path) -> None:
+    """#356 Part 1: hallucinated off-allowlist URLs never reach the fetch
+    path. Gemini occasionally suggests press domains despite the
+    prompt's allowlist constraint — this filter drops them."""
+    finding = {"excerpt": "x", "signals": [], "search_hint": []}
+
+    def dispatcher(_prompt: str) -> tuple[bool, str]:
+        return True, json.dumps(
+            {
+                "candidates": [
+                    {"url": "https://reuters.com/article"},
+                    {"url": "https://en.wikipedia.org/wiki/X"},
+                ]
+            }
+        )
+
+    head_calls: list[str] = []
+
+    def fake_head(u: str) -> bool:
+        head_calls.append(u)
+        return True
+
+    def fake_allowlist_tier(url: str) -> str | None:
+        return "general" if "wikipedia" in url else None
+
+    out = citation_residuals.request_candidates(
+        finding,
+        dispatcher=dispatcher,
+        allowlist_tier=fake_allowlist_tier,
+        head_checker=fake_head,
+    )
+    assert len(out) == 1
+    assert out[0]["url"] == "https://en.wikipedia.org/wiki/X"
+    # head_check must not be invoked on off-allowlist URLs (wasteful).
+    assert head_calls == ["https://en.wikipedia.org/wiki/X"]
+
+
+def test_request_candidates_filters_404_urls() -> None:
+    """#356 Part 1: URLs that 404 never make it past the filter, even if
+    on allowlist."""
+    finding = {"excerpt": "x", "signals": [], "search_hint": []}
+
+    def dispatcher(_prompt: str) -> tuple[bool, str]:
+        return True, json.dumps(
+            {
+                "candidates": [
+                    {"url": "https://en.wikipedia.org/wiki/Real"},
+                    {"url": "https://en.wikipedia.org/wiki/Hallucinated_404"},
+                ]
+            }
+        )
+
+    def fake_head(u: str) -> bool:
+        return "Real" in u
+
+    out = citation_residuals.request_candidates(
+        finding,
+        dispatcher=dispatcher,
+        allowlist_tier=lambda _u: "general",
+        head_checker=fake_head,
+    )
+    assert len(out) == 1
+    assert out[0]["url"] == "https://en.wikipedia.org/wiki/Real"
+
+
+def test_head_check_accepts_200(monkeypatch: pytest.MonkeyPatch) -> None:
+    import urllib.request
+
+    class _FakeResponse:
+        status = 200
+
+        def __enter__(self) -> "_FakeResponse":
+            return self
+
+        def __exit__(self, *_args: Any) -> None:
+            pass
+
+    def fake_urlopen(req: Any, timeout: float = 0) -> _FakeResponse:
+        return _FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert citation_residuals.head_check("https://ex.com/a") is True
+
+
+def test_head_check_rejects_404(monkeypatch: pytest.MonkeyPatch) -> None:
+    import urllib.error
+    import urllib.request
+
+    def fake_urlopen(req: Any, timeout: float = 0) -> Any:
+        raise urllib.error.HTTPError("url", 404, "Not Found", {}, None)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert citation_residuals.head_check("https://ex.com/gone") is False
+
+
+def test_head_check_falls_back_to_get_range_on_405(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Some well-behaved sites reject HEAD with 405 but accept GET. The
+    fallback is a range-limited GET so we don't pull the whole page."""
+    import urllib.error
+    import urllib.request
+
+    call_log: list[tuple[str, dict[str, str]]] = []
+
+    class _FakeResponse:
+        status = 200
+
+        def __enter__(self) -> "_FakeResponse":
+            return self
+
+        def __exit__(self, *_args: Any) -> None:
+            pass
+
+    def fake_urlopen(req: Any, timeout: float = 0) -> Any:
+        call_log.append((req.get_method(), dict(req.headers)))
+        if req.get_method() == "HEAD":
+            raise urllib.error.HTTPError("url", 405, "Method Not Allowed", {}, None)  # type: ignore[arg-type]
+        return _FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert citation_residuals.head_check("https://ex.com/a") is True
+    methods = [m for m, _ in call_log]
+    assert methods == ["HEAD", "GET"]
+    # The GET retry must carry a Range header so we don't pull the full page.
+    get_headers = call_log[1][1]
+    assert get_headers.get("Range") == "bytes=0-0"
+
+
+def test_head_check_rejects_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    import socket
+    import urllib.request
+
+    def fake_urlopen(req: Any, timeout: float = 0) -> Any:
+        raise socket.timeout("timed out")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert citation_residuals.head_check("https://ex.com/slow", timeout=0.01) is False
 
 
 # ---- validate_candidate --------------------------------------------------
@@ -345,6 +506,7 @@ def test_resolve_module_end_to_end(
         fetcher=fake_fetcher,
         cached_text_path=fake_cached_text_path,
         allowlist_tier=lambda _u: "official",
+        head_checker=lambda _u: True,
     )
     assert stats["considered"] == 1
     assert stats["resolved"] == 1
