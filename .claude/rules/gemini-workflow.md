@@ -49,11 +49,15 @@ ok, output = dispatch_gemini_with_retry("Translate...", mcp=True)
 
 ## Gemini Roles
 
-**1. Adversary Reviewer (primary role)**
-- Send completed work to Gemini for review BEFORE closing any issue
-- Gemini catches: version inaccuracies, missing ACs, scope gaps, technical errors, Russicisms in translations
-- If Gemini says NEEDS CHANGES, address feedback before closing
-- Post Gemini's review as a comment on the issue
+**1. Adversary Reviewer (one of three cross-family options)**
+
+Per `docs/review-protocol.md`, every PR review must come from a different model family than the author. Gemini is the cross-family reviewer for Codex-authored or Claude-authored work **when designated** — not a universal default. (For Claude-authored work, Codex has been the more rigorous reviewer on content batches per the 2026-04-23 PR #350 data point; Gemini is lighter/faster and a valid alternative.)
+
+When Gemini is the designated cross-family reviewer:
+- Send completed work to Gemini for review BEFORE closing the issue.
+- Gemini catches: version inaccuracies, missing ACs, scope gaps, technical errors, Russicisms in translations.
+- If Gemini says NEEDS CHANGES, address feedback before closing.
+- Post Gemini's review as a comment on the issue.
 
 **2. Translator (Ukrainian)**
 - Produces good Ukrainian translations (99-100% of original length)
@@ -74,8 +78,8 @@ ok, output = dispatch_gemini_with_retry("Translate...", mcp=True)
 1. **Plan** with Gemini (gap analysis, module specs, structure)
 2. **Draft** — either Gemini drafts (needs expansion) or Claude writes directly (full quality)
 3. **Expand** — if Gemini drafted, Claude agent reads and expands to full depth
-4. **Review** — Gemini adversary review (score, flag issues)
-5. **Fix** — address Gemini feedback
+4. **Review** — cross-family adversary review (a non-Gemini family per `docs/review-protocol.md` when the draft came from Gemini; score, flag issues)
+5. **Fix** — address reviewer feedback
 6. **Commit** — with nav updates, READMEs, changelog
 
 ## Gemini Limitations

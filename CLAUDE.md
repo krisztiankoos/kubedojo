@@ -46,7 +46,7 @@ Full agent recipe: [`scripts/agent_onboarding.md`](scripts/agent_onboarding.md).
 
 1. **Orient via `/api/briefing/session`** (see *Agent Orientation* above). `STATUS.md` is the fallback when the API is down.
 2. Use `scripts/prompts/module-writer.md` for new modules
-3. Send to Gemini for review before closing issues
+3. Send completed work to the designated cross-family reviewer (see `docs/review-protocol.md`) before closing issues
 4. **UPDATE `STATUS.md`** before ending session (the briefing parses it, so stale entries mislead the next session)
 
 ## Build & Serve
