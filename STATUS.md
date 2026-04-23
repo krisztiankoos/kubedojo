@@ -2,7 +2,34 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-23 — batch-c cloud citation backfill merged, dispatch auto-fallback landed)
+## Active Work (2026-04-23 evening — #343 phase-1 resolver merged; 3-module pilot in progress)
+
+**Session deliverables:**
+
+- **PR #355** (`3294d16f`, merged) — `feat(#343): citation residuals auto-resolver — phase 1 (needs_citation)`. New `scripts/citation_residuals.py` + 17 unit tests. Codex adversary review caught two must-fix bugs (off-allowlist URLs fetched before rejection; anchorless findings auto-accepted any 200) — fixed in `c7d60257` and APPROVED on re-review. Cross-family review protocol worked as designed (Claude author → Codex reviewer).
+- **Issues #351–#354 filed** (all four pipeline-gap observations): #351 citation_v3 missing-sources audit, #352 Gate A prose/quiz contradiction, #353 zombie gemini grandchildren (reopens #253), #354 orphan check_pre jobs (newly discovered — review_worker enqueues them but no worker processes them).
+- **Pipeline at 100% convergence.** LFCS `module-1.4-storage-services-and-users-practice` (the lone `pending_review`) cleared via `ControlPlane.lease_next_job(phase='check_pre')` + `complete_lease(source='manual_preflight_pass')`. Underlying bug tracked in #354. 567/567 done.
+- **Services: stale=0** (was 2). Updated `.pids/api.pid` to the actual running PID (47928); deleted dead `.pids/feedback.pid`.
+
+**Current pilot (non-dry-run, 3 modules):**
+
+1. `ai-ml-engineering/advanced-genai/module-1.1-fine-tuning-llms` — 2 anchorable findings (year_reference). Expect 2/2 resolve. [running]
+2. `ai-ml-engineering/ai-infrastructure/module-1.1-cloud-ai-services` — 2 mixed (1 anchorable, 1 anchorless). Expect 1 resolve, 1 unresolvable_no_anchors_extractable.
+3. `cloud/advanced-operations/module-8.1-multi-account` — 1 anchorless. Expect 0 resolve, 1 unresolvable.
+
+**Expected pilot outcome:** 3/5 resolved (60%), 2/5 unresolvable_no_anchors_extractable (40%) — the 40% is the correctly-rejected anchorless class that's #344 territory.
+
+**New learning surfaced (saved to memory `feedback_advisory_vs_enforced_constraints.md`):** LLM prompt constraints are advisory. Deterministic enforcement must run in code before side-effects. Initial pilot got 0/2 on press-URL hallucination; fix was to hoist `fetch_citation.allowlist_tier()` ahead of `fetch()`.
+
+**Next session starts here:**
+1. Pilot results: if close to expected, open **phase-2 PR** that (a) raises the `--workers` cap to ≤3 (per memory `feedback_batch_worker_cap.md`), (b) runs bulk on remaining ~180 needs_citation findings. Review gate: Codex.
+2. `#344` builds on #343 — extend resolver to `overstated_unfixed` (97 queued), `off_topic_unfixed` (75), `overstatement_queued` (30), `off_topic_delete_queued` (55). Totals are from today's `report` subcommand.
+3. Revisit `#354` (orphan check_pre) — simplest fix is to inline preflight in review_worker when verdict=APPROVE (option B in the issue).
+4. The **Anthropic April-23 postmortem** analysis was requested; notes are in-session only. If we want to codify, three concrete changes proposed: (a) add `--pilot-n N` flag to bulk scripts, (b) require prompt-change ablations on 3 fixture findings before merge, (c) make cross-family-reviewer rule explicit in `docs/review-protocol.md`.
+
+---
+
+## Prior (2026-04-23 morning — batch-c cloud citation backfill merged, dispatch auto-fallback landed)
 
 **Today's merges:**
 

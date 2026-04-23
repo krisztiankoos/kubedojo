@@ -949,3 +949,4 @@ Move on to **Module 1.2: Advanced Alignment Architectures** where you will deepl
 - [kubernetes.io: job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) — The Kubernetes Job docs describe backoff behavior and note that `restartPolicy: Never` means the kubelet does not restart the failed container in that Pod.
 - [LoRA: Low-Rank Adaptation of Large Language Models](https://arxiv.org/abs/2106.09685) — Primary paper for frozen-base low-rank adapters and the trainable-parameter reduction claims used throughout the module.
 - [TRL SFTTrainer](https://huggingface.co/docs/trl/sft_trainer) — Best practical reference for modern supervised fine-tuning workflows, PEFT integration, and trainer behavior in Hugging Face stacks.
+- [en.wikipedia.org: Algorithmic bias](https://en.wikipedia.org/wiki/Algorithmic_bias#Gender_bias) — In 2014, Amazon initiated a secretive engineering project to build an artificial intelligence recruiting tool.
