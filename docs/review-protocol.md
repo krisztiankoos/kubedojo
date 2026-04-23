@@ -18,7 +18,7 @@ Every PR review must come from a **different model family** than the author.
 
 **Never:** Claude reviewing Claude, Codex reviewing Codex, Gemini reviewing Gemini — including sub-model variants (opus reviewing sonnet still counts as Claude→Claude).
 
-**Enforcement:** `scripts/ab ask-{codex,gemini,claude}` with `--review` takes `--from` to label the author family. The reviewer family is determined by which `ask-*` subcommand you invoke. Pick the subcommand whose family differs from `--from`.
+**Operator workflow (not automated enforcement).** `scripts/ab ask-{codex,gemini,claude}` with `--review` records the author family via `--from` and targets the reviewer family via the subcommand chosen — but the CLI does not currently reject a same-family invocation. `scripts/verify_review.py` is passive quote/line verification only. Family separation today is enforced by **convention and reviewer discipline**, not by a hard CLI check. Pick an `ask-*` subcommand whose family differs from `--from`; if a real guard is added later, this section can be renamed back to "Enforcement."
 
 ## Prompt Context
 
