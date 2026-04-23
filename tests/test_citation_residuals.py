@@ -110,28 +110,46 @@ def test_validate_candidate_happy_path(tmp_path: Path) -> None:
         return text_file
 
     result = citation_residuals.validate_candidate(
-        candidate, finding, fetcher=fake_fetcher, cached_text_path=fake_cached_text_path
+        candidate,
+        finding,
+        fetcher=fake_fetcher,
+        cached_text_path=fake_cached_text_path,
+        allowlist_tier=lambda _u: "press",
     )
     assert result["ok"] is True
     assert result["tier"] == "press"
     assert "2023" in result["anchors_matched"]
 
 
-def test_validate_candidate_rejects_off_allowlist(tmp_path: Path) -> None:
-    finding = {"excerpt": "any", "signals": []}
-    candidate = {"url": "https://ex.com/a"}
+def test_validate_candidate_rejects_off_allowlist_before_fetch(tmp_path: Path) -> None:
+    """Regression for Codex review of #355: off-allowlist URLs must be
+    rejected before any network call so we don't leak traffic to
+    prohibited hosts. Earlier code fetched first, then checked tier."""
+    finding = {"excerpt": "In 2023 X happened.", "signals": ["year_reference"]}
+    candidate = {"url": "https://reuters.com/article"}
+
+    fetch_calls: list[str] = []
 
     def fake_fetcher(url: str) -> dict[str, Any]:
-        return {"status": 200, "final_url": url, "allowlist_tier": None}
+        fetch_calls.append(url)
+        return {"status": 200, "final_url": url, "allowlist_tier": "press"}
 
     def fake_cached_text_path(_url: str) -> Path:
         return tmp_path / "never-read.txt"
 
+    def fake_allowlist_tier(_url: str) -> str | None:
+        return None  # host NOT on allowlist
+
     result = citation_residuals.validate_candidate(
-        candidate, finding, fetcher=fake_fetcher, cached_text_path=fake_cached_text_path
+        candidate,
+        finding,
+        fetcher=fake_fetcher,
+        cached_text_path=fake_cached_text_path,
+        allowlist_tier=fake_allowlist_tier,
     )
     assert result["ok"] is False
     assert result["reason"] == "off_allowlist"
+    assert fetch_calls == [], "off-allowlist URL must not be fetched"
 
 
 def test_validate_candidate_rejects_when_anchors_missing(tmp_path: Path) -> None:
@@ -151,10 +169,46 @@ def test_validate_candidate_rejects_when_anchors_missing(tmp_path: Path) -> None
         return text_file
 
     result = citation_residuals.validate_candidate(
-        candidate, finding, fetcher=fake_fetcher, cached_text_path=fake_cached_text_path
+        candidate,
+        finding,
+        fetcher=fake_fetcher,
+        cached_text_path=fake_cached_text_path,
+        allowlist_tier=lambda _u: "official",
     )
     assert result["ok"] is False
     assert result["reason"] == "no_anchor_match"
+
+
+def test_validate_candidate_rejects_anchorless_finding_before_fetch(
+    tmp_path: Path,
+) -> None:
+    """Regression for Codex review of #355: a finding with only
+    named_incident/attribution signals yields no extractable anchors, so
+    the resolver cannot verify the page is about the right topic. Phase
+    1 must mark those unresolvable rather than accept any 200 + on-list
+    page."""
+    finding = {
+        "excerpt": "Amazon scrapped its project after concerns.",
+        "signals": ["named_incident", "attribution"],
+    }
+    candidate = {"url": "https://en.wikipedia.org/wiki/Random_topic"}
+
+    fetch_calls: list[str] = []
+
+    def fake_fetcher(url: str) -> dict[str, Any]:
+        fetch_calls.append(url)
+        return {"status": 200, "final_url": url, "allowlist_tier": "general"}
+
+    result = citation_residuals.validate_candidate(
+        candidate,
+        finding,
+        fetcher=fake_fetcher,
+        cached_text_path=lambda _u: tmp_path / "never.txt",
+        allowlist_tier=lambda _u: "general",
+    )
+    assert result["ok"] is False
+    assert result["reason"] == "no_anchors_extractable"
+    assert fetch_calls == [], "anchorless finding must not trigger a fetch"
 
 
 # ---- inject_source -------------------------------------------------------
@@ -186,6 +240,29 @@ def test_inject_source_idempotent_when_line_already_present() -> None:
     out, changed = citation_residuals.inject_source(module, line)
     assert changed is False
     assert out == module
+
+
+def test_inject_source_preserves_content_after_sources_section() -> None:
+    """Regression for Codex review of #355 (nit): inject_source must
+    insert INSIDE the Sources section, not at EOF — otherwise any
+    following prose gets stranded after the new bullet."""
+    module = (
+        "# Title\n\nBody.\n\n"
+        "## Sources\n\n"
+        "- [a](https://a.example) — first\n\n"
+        "## Further Reading\n\n"
+        "Some trailing prose.\n"
+    )
+    out, changed = citation_residuals.inject_source(
+        module, "- [b](https://b.example) — second"
+    )
+    assert changed is True
+    # New bullet appears BEFORE the Further Reading header.
+    assert out.index("- [b](https://b.example)") < out.index("## Further Reading")
+    # Trailing content preserved.
+    assert out.endswith("Some trailing prose.\n")
+    # Only one Further Reading header (no duplication).
+    assert out.count("## Further Reading") == 1
 
 
 # ---- resolve_module (end-to-end with fakes) ------------------------------
@@ -267,6 +344,7 @@ def test_resolve_module_end_to_end(
         dispatcher=fake_dispatcher,
         fetcher=fake_fetcher,
         cached_text_path=fake_cached_text_path,
+        allowlist_tier=lambda _u: "official",
     )
     assert stats["considered"] == 1
     assert stats["resolved"] == 1

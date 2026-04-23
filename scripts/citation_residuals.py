@@ -222,13 +222,43 @@ def validate_candidate(
     *,
     fetcher=fetch_citation.fetch,
     cached_text_path=fetch_citation.cached_text_path,
+    allowlist_tier=fetch_citation.allowlist_tier,
 ) -> dict[str, Any]:
-    """Fetch a candidate URL and check it against the finding's signals.
+    """Validate a candidate URL for a finding.
 
     Returns a dict with either ``ok: True`` (and page metadata) or
     ``ok: False`` with a ``reason`` string.
+
+    The allowlist check runs BEFORE ``fetcher()`` so off-allowlist hosts
+    don't incur a network round-trip. The LLM's allowlist-constraint is
+    advisory only — this is the real gate (#355 Codex review, must-fix).
     """
     url = candidate["url"]
+
+    # Phase 1: host allowlist (pre-network, deterministic).
+    prechecked_tier = allowlist_tier(url)
+    if not prechecked_tier:
+        return {"ok": False, "url": url, "reason": "off_allowlist"}
+
+    # Phase 2: enforce that the finding has at least one deterministic
+    # anchor to verify. Signals like ``named_incident`` or
+    # ``attribution`` alone don't yield a value we can substring-match in
+    # the page body, so without anchors we'd be accepting "any 200
+    # allowlisted page" — which the fetcher cannot distinguish from the
+    # intended claim (#355 Codex review, must-fix #2).
+    anchors = extract_anchors(
+        finding.get("excerpt", ""),
+        finding.get("signals") or [],
+    )
+    if not anchors:
+        return {
+            "ok": False,
+            "url": url,
+            "reason": "no_anchors_extractable",
+            "signals": finding.get("signals") or [],
+        }
+
+    # Phase 3: fetch + content match.
     try:
         meta = fetcher(url)
     except Exception as exc:  # noqa: BLE001 — network errors are expected
@@ -236,20 +266,17 @@ def validate_candidate(
     status = int(meta.get("status") or 0)
     if status != 200:
         return {"ok": False, "url": url, "reason": f"http_{status}"}
-    tier = meta.get("allowlist_tier")
-    if not tier:
-        return {"ok": False, "url": url, "reason": "off_allowlist"}
+    post_fetch_tier = meta.get("allowlist_tier")
+    if not post_fetch_tier:
+        # Redirected to an off-allowlist host.
+        return {"ok": False, "url": url, "reason": "off_allowlist_after_redirect"}
     text_path = cached_text_path(url)
     try:
         body = text_path.read_text(encoding="utf-8", errors="replace")
     except OSError:
         return {"ok": False, "url": url, "reason": "cache_read_failed"}
-    anchors = extract_anchors(
-        finding.get("excerpt", ""),
-        finding.get("signals") or [],
-    )
     matched = anchors_present_in_text(anchors, body)
-    if anchors and len(matched) < MIN_SIGNAL_ANCHORS_REQUIRED:
+    if len(matched) < MIN_SIGNAL_ANCHORS_REQUIRED:
         return {
             "ok": False,
             "url": url,
@@ -261,7 +288,7 @@ def validate_candidate(
         "ok": True,
         "url": url,
         "final_url": meta.get("final_url", url),
-        "tier": tier,
+        "tier": post_fetch_tier,
         "anchors_matched": matched,
         "page_bytes": meta.get("bytes", 0),
     }
@@ -312,18 +339,28 @@ def _summarize_finding(finding: dict[str, Any]) -> str:
 
 
 def inject_source(module_text: str, source_line: str) -> tuple[str, bool]:
-    """Append ``source_line`` to the module's ``## Sources`` section.
+    """Append ``source_line`` inside the module's ``## Sources`` section.
 
-    Creates the section if missing. Idempotent: if the exact line is
-    already present, returns ``(original, False)``.
+    Inserts just before the next ``## `` header (or at EOF if none), so
+    any content that follows the Sources block is preserved. Creates the
+    section at EOF if missing. Idempotent: if the exact line is already
+    present, returns ``(original, False)``.
     """
     if source_line in module_text:
         return module_text, False
-    if _SOURCES_HEADER_RE.search(module_text):
-        # Append inside the existing Sources section. The section
-        # conventionally sits at end-of-file with only trailing newlines,
-        # so appending at the end of the file keeps it alphabetical-free
-        # but monotonically ordered (matches existing batch-c style).
+    header_match = _SOURCES_HEADER_RE.search(module_text)
+    if header_match:
+        # Find the start of the next H2 header (if any) after the Sources header.
+        after_header = module_text[header_match.end():]
+        next_h2 = re.search(r"^## ", after_header, re.MULTILINE)
+        if next_h2:
+            insert_pos = header_match.end() + next_h2.start()
+            # Walk backwards to strip trailing blank lines between the last
+            # Sources bullet and the next H2 so we don't append into whitespace.
+            prefix = module_text[:insert_pos].rstrip("\n")
+            suffix = module_text[insert_pos:]
+            return prefix + "\n" + source_line + "\n\n" + suffix, True
+        # No following section — append at EOF, same as before.
         trimmed = module_text.rstrip("\n")
         return trimmed + "\n" + source_line + "\n", True
     # No Sources section yet — create one.
@@ -341,6 +378,7 @@ def resolve_module(
     dispatcher=dispatch_gemini,
     fetcher=fetch_citation.fetch,
     cached_text_path=fetch_citation.cached_text_path,
+    allowlist_tier=fetch_citation.allowlist_tier,
 ) -> dict[str, Any]:
     """Resolve all `needs_citation` findings for one module.
 
@@ -406,6 +444,7 @@ def resolve_module(
                 finding,
                 fetcher=fetcher,
                 cached_text_path=cached_text_path,
+                allowlist_tier=allowlist_tier,
             )
             attempts.append({"candidate": candidate, "validation": validation})
             if validation.get("ok"):
