@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import local_api
 from pipeline_common.review_audit import append_review_audit
 from pipeline_v2.control_plane import ControlPlane
+from pipeline_v2.cli import _build_status_report
 from pipeline_v2.review_worker import (
     DEEP_CHECK_IDS,
     REVIEW_FALLBACK_MODEL,
@@ -321,6 +322,13 @@ def test_review_worker_enforces_review_outcomes(tmp_path):
             # GH #354: APPROVE enqueues no follow-up phase job.
             check_pre_rows = _fetch_rows(control_plane.db_path, "SELECT phase FROM jobs WHERE phase = 'check_pre'")
             assert check_pre_rows == []
+            # And the user-visible symptom is fixed: the reducer resolves
+            # the approved module to `done`, not `pending_review` (Codex
+            # review nit — assert the actual regression, not just the
+            # missing row).
+            report = _build_status_report(control_plane.db_path)
+            assert report["counts"]["done"] == 1
+            assert report["counts"]["pending_review"] == 0
         else:
             queued = _fetch_rows(control_plane.db_path, "SELECT phase, model, queue_state FROM jobs WHERE phase = ?", (phase,))
             assert len(queued) == 1
