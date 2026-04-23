@@ -414,18 +414,18 @@ def test_validate_candidate_rejects_when_anchors_missing(tmp_path: Path) -> None
     assert result["reason"] == "no_anchor_match"
 
 
-def test_validate_candidate_rejects_anchorless_finding_before_fetch(
+def test_validate_candidate_rejects_finding_with_no_verification_signal(
     tmp_path: Path,
 ) -> None:
-    """Regression for Codex review of #355: a finding with only
-    named_incident/attribution signals yields no extractable anchors, so
-    the resolver cannot verify the page is about the right topic. Phase
-    1 must mark those unresolvable rather than accept any 200 + on-list
-    page."""
+    """Regression for #355 Codex review, updated for #356 Part 2: a
+    finding with only named_incident/attribution signals AND a
+    candidate that provides no expected_quote has nothing to verify
+    against. Must reject pre-fetch with no_verification_signal."""
     finding = {
         "excerpt": "Amazon scrapped its project after concerns.",
         "signals": ["named_incident", "attribution"],
     }
+    # No expected_quote — and no anchors extractable from named_incident.
     candidate = {"url": "https://en.wikipedia.org/wiki/Random_topic"}
 
     fetch_calls: list[str] = []
@@ -442,8 +442,235 @@ def test_validate_candidate_rejects_anchorless_finding_before_fetch(
         allowlist_tier=lambda _u: "general",
     )
     assert result["ok"] is False
-    assert result["reason"] == "no_anchors_extractable"
-    assert fetch_calls == [], "anchorless finding must not trigger a fetch"
+    assert result["reason"] == "no_verification_signal"
+    assert fetch_calls == [], "anchorless+quoteless finding must not trigger a fetch"
+
+
+# ---- #356 Part 2: quote-match verification -------------------------------
+
+
+def test_quote_present_whitespace_and_case_normalized() -> None:
+    assert citation_residuals.quote_present_in_text(
+        "Amazon scrapped its hiring tool in 2018",
+        "Reports AMAZON\nscrapped  its HIRING tool in 2018 — full story follows.",
+    ) is True
+
+
+def test_quote_present_rejects_too_short_quote() -> None:
+    """The LLM hedging with 'maybe' or 'see there' must not pass."""
+    assert citation_residuals.quote_present_in_text(
+        "see there",
+        "You can see there are some references to Amazon here.",
+    ) is False
+
+
+def test_quote_present_tolerates_minor_internal_drift() -> None:
+    """The start-AND-end-window fallback tolerates LLM drift in the
+    middle of the quote as long as both bookends match on the page."""
+    assert citation_residuals.quote_present_in_text(
+        "Amazon scrapped its AI recruiting tool after discovering bias against women",
+        "Amazon scrapped its AI recruiting tool after engineers saw bias against women in training data.",
+    ) is True
+
+
+def test_quote_present_rejects_end_changed() -> None:
+    """#360 Codex review, must-fix #2: the old prefix-only fallback
+    accepted end-changed quotes. Now both ends must match."""
+    assert citation_residuals.quote_present_in_text(
+        "Amazon scrapped its AI recruiting tool after discovering bias against women",
+        "Amazon scrapped its AI recruiting tool after finding serious issues in testing.",
+    ) is False
+
+
+def test_quote_present_rejects_generic_lead_in_with_different_subject() -> None:
+    """#360 Codex review, must-fix #2 (concrete adversarial example):
+    a boilerplate lead-in like 'According to the article...' cannot
+    carry a match when the claim-specific tail differs."""
+    quote = (
+        "According to the article published on the company's website earlier "
+        "this year, Amazon scrapped its AI"
+    )
+    body_with_kubernetes_instead = (
+        "According to the article published on the company's website earlier "
+        "this year, Kubernetes changed its default scheduler."
+    )
+    assert citation_residuals.quote_present_in_text(
+        quote, body_with_kubernetes_instead
+    ) is False
+
+
+def test_quote_present_rejects_unrelated_text() -> None:
+    assert citation_residuals.quote_present_in_text(
+        "Microsoft acquired GitHub for $7.5 billion",
+        "This page is about Kubernetes pod lifecycle and has nothing to do with Microsoft.",
+    ) is False
+
+
+def test_validate_candidate_accepts_via_expected_quote_when_no_anchors(
+    tmp_path: Path,
+) -> None:
+    """#356 Part 2 core: a finding with only named_incident signals now
+    resolves when the LLM provides an expected_quote that's on the page."""
+    finding = {
+        "excerpt": "Amazon scrapped its AI recruiting tool after bias concerns.",
+        "signals": ["named_incident", "attribution"],
+    }
+    candidate = {
+        "url": "https://en.wikipedia.org/wiki/Amazon_recruiting_AI",
+        "expected_quote": "Amazon scrapped its AI recruiting tool",
+    }
+
+    text_file = tmp_path / "body.txt"
+    text_file.write_text(
+        "Reuters reports that Amazon scrapped its AI recruiting tool after engineers "
+        "discovered bias against women in training data.",
+        encoding="utf-8",
+    )
+
+    result = citation_residuals.validate_candidate(
+        candidate,
+        finding,
+        fetcher=lambda u: {"status": 200, "final_url": u, "allowlist_tier": "general"},
+        cached_text_path=lambda _u: text_file,
+        allowlist_tier=lambda _u: "general",
+    )
+    assert result["ok"] is True
+    assert result["verified_via"] == "expected_quote"
+    assert result["quote_matched"] is True
+
+
+def test_validate_candidate_rejects_quote_not_on_page(tmp_path: Path) -> None:
+    """Core #356 Part 2: if LLM invents a quote that's not on the fetched
+    page, reject with quote_not_in_page (catches URL-content
+    hallucination)."""
+    finding = {
+        "excerpt": "Some claim about an incident.",
+        "signals": ["named_incident"],
+    }
+    candidate = {
+        "url": "https://en.wikipedia.org/wiki/Real_page",
+        "expected_quote": "A hallucinated sentence that is not on the page at all",
+    }
+
+    text_file = tmp_path / "body.txt"
+    text_file.write_text(
+        "This is a page about Kubernetes pod lifecycle and networking.",
+        encoding="utf-8",
+    )
+
+    result = citation_residuals.validate_candidate(
+        candidate,
+        finding,
+        fetcher=lambda u: {"status": 200, "final_url": u, "allowlist_tier": "general"},
+        cached_text_path=lambda _u: text_file,
+        allowlist_tier=lambda _u: "general",
+    )
+    assert result["ok"] is False
+    assert result["reason"] == "quote_not_in_page"
+    assert result["expected_quote"] == "A hallucinated sentence that is not on the page at all"
+
+
+def test_validate_candidate_prefers_anchor_when_both_signals_present(
+    tmp_path: Path,
+) -> None:
+    """With both year anchor AND expected_quote present and matching,
+    the happy path still returns ok, reporting verified_via=anchors
+    (the cheaper, more trusted signal) when anchors pass."""
+    finding = {
+        "excerpt": "In 2018 Amazon scrapped its AI tool.",
+        "signals": ["year_reference", "named_incident"],
+    }
+    candidate = {
+        "url": "https://en.wikipedia.org/wiki/Real",
+        "expected_quote": "Amazon scrapped its AI tool",
+    }
+
+    text_file = tmp_path / "body.txt"
+    text_file.write_text(
+        "In 2018 Amazon scrapped its AI tool after bias concerns.",
+        encoding="utf-8",
+    )
+
+    result = citation_residuals.validate_candidate(
+        candidate,
+        finding,
+        fetcher=lambda u: {"status": 200, "final_url": u, "allowlist_tier": "general"},
+        cached_text_path=lambda _u: text_file,
+        allowlist_tier=lambda _u: "general",
+    )
+    assert result["ok"] is True
+    assert result["verified_via"] == "anchors"
+    assert "2018" in result["anchors_matched"]
+    assert result["quote_matched"] is True
+
+
+def test_validate_candidate_rejects_anchor_mismatch_even_when_quote_matches(
+    tmp_path: Path,
+) -> None:
+    """#360 Codex review, must-fix #1: when a finding has deterministic
+    anchors, those anchors are authoritative. A matching
+    expected_quote cannot override anchor mismatch — that's the exact
+    failure mode Codex identified (claim says 2018, page says 2017,
+    but generic quote 'Amazon scrapped its AI tool' is on the page
+    anyway). Must reject, not accept."""
+    finding = {
+        "excerpt": "In 2018 Amazon scrapped its AI tool.",
+        "signals": ["year_reference", "named_incident"],
+    }
+    candidate = {
+        "url": "https://en.wikipedia.org/wiki/Wrong_year_page",
+        "expected_quote": "Amazon scrapped its AI tool",
+    }
+
+    text_file = tmp_path / "body.txt"
+    # Page supports the quote but uses 2017 — the claim-specific year
+    # mismatches. Must reject.
+    text_file.write_text(
+        "In 2017 Amazon scrapped its AI tool after bias concerns.",
+        encoding="utf-8",
+    )
+
+    result = citation_residuals.validate_candidate(
+        candidate,
+        finding,
+        fetcher=lambda u: {"status": 200, "final_url": u, "allowlist_tier": "general"},
+        cached_text_path=lambda _u: text_file,
+        allowlist_tier=lambda _u: "general",
+    )
+    assert result["ok"] is False
+    assert result["reason"] == "no_anchor_match"
+    assert result["anchors_expected"] == ["2018"]
+    assert result["anchors_matched"] == []
+    # Quote DID match on the page — but anchors are authoritative.
+    assert result["quote_matched"] is True
+
+
+def test_request_candidates_passes_expected_quote_through() -> None:
+    """Ensure the LLM's expected_quote survives JSON parsing and reaches
+    validate_candidate."""
+    finding = {"excerpt": "claim", "signals": [], "search_hint": []}
+
+    def fake_dispatcher(_prompt: str) -> tuple[bool, str]:
+        return True, json.dumps(
+            {
+                "candidates": [
+                    {
+                        "url": "https://en.wikipedia.org/wiki/X",
+                        "tier": "general",
+                        "expected_quote": "A sentence from the page.",
+                    }
+                ]
+            }
+        )
+
+    out = citation_residuals.request_candidates(
+        finding,
+        dispatcher=fake_dispatcher,
+        allowlist_tier=lambda _u: "general",
+        head_checker=lambda _u: True,
+    )
+    assert len(out) == 1
+    assert out[0]["expected_quote"] == "A sentence from the page."
 
 
 # ---- inject_source -------------------------------------------------------
