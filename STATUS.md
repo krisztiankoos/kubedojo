@@ -2,7 +2,7 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-23 late evening — tech-debt push: 4 PRs out, 3 merged)
+## Active Work (2026-04-23 night — 6 PRs out today, all merged; cross-family reviewer rule codified)
 
 **Session deliverables (chronological):**
 
@@ -12,7 +12,14 @@
 - **PR #357** (`2d6908c3`, merged) — **#356 Part 1**: HEAD-check + allowlist pre-filter in `request_candidates`. Codex review approved with 2 nits (HEAD→range-GET→plain-GET escalation, narrow bare-except) — both fixed in `19e4ab05` before merge.
 - **PR #358** (`1e9a0b75`, merged) — **#354 fix**: removed orphan-check_pre enqueue after APPROVE. Preflight already runs at top of review function; reducer now sees APPROVE → `done` immediately. Codex nit about testing the reducer symptom (not just the mechanical cause) addressed in `065c84d7`.
 - **PR #359** (`5de7e33f`, merged) — **#351 fix**: `audit_missing_sources()` in `pipeline_v4_batch.py` post-batch. Codex caught 2 real must-fix issues (false-positive under `--skip-citation`; header regex too strict on trailing whitespace / EOF-without-newline) — both fixed in `1fad9f3e`.
-- **PR #360** (OPEN, **awaiting Codex re-review**) — **#356 Part 2**: quote-match verification. Branch `feat/356-part2-quote-match` at `3404ab8b` (force-pushed after rebase). Initial Codex review NEEDS CHANGES — 2 must-fix correctness bugs: (1) quote could override contradictory anchors, (2) prefix-only drift fallback accepted generic lead-ins. Both fixed in `3404ab8b`: anchors now authoritative when present (quote-only acceptance limited to anchorless findings); drift fallback replaced with start-AND-end-window match in order. 37/37 tests pass. Re-review NOT yet dispatched — next session runs: `scripts/ab ask-codex --review --task-id pr-360-rereview --new-session "..." --from claude`.
+- **PR #360** (`f6418853`, merged) — **#356 Part 2**: quote-match verification rescues anchorless findings. Initial Codex NEEDS CHANGES — 2 must-fix correctness bugs: (1) quote could override contradictory anchors, (2) prefix-only drift fallback accepted generic lead-ins. Both fixed in `3404ab8b`: anchors authoritative when present (quote-only acceptance limited to anchorless findings); drift fallback replaced with start-AND-end-window match in order. 37/37 tests pass. Re-review APPROVE.
+- **PR #361** (`4a3e544b`, merged) — **postmortem follow-up**: added `## Reviewer Assignment (cross-family rule)` section to `docs/review-protocol.md`. Codifies the three model families (Claude / Codex / Gemini), default pairings, and the rule that a PR's reviewer must be from a different family than the author. Codex NEEDS CHANGES caught one must-fix — original "Enforcement" paragraph overclaimed a hard CLI mechanism that doesn't exist. Reworded at `8071805b` to "Operator workflow (not automated enforcement)" with explicit "enforced by convention and reviewer discipline, not by a hard CLI check". Re-review APPROVE.
+- **PR #362** (`4416d745`, merged) — **#361 follow-up**: aligned `.claude/rules/gemini-workflow.md`, `CLAUDE.md`, `.pipeline/codex-handoff.md`, and `docs/best-practices/agent-bridge.md` with the cross-family rule. Two Codex NEEDS-CHANGES rounds: (1) caught `.pipeline/codex-handoff.md:151` still mandating Gemini → fixed at `6c73db06`; (2) caught `docs/best-practices/agent-bridge.md:82,85` still hardcoded `--to gemini` and `Reviewed-By: gemini-3.1-pro-preview` in generic operator guidance → fixed at `7cc728ae`, also took nit to relabel dated codex-handoff workflow as "Historical execution notes (2026-04-15 v2-pipeline handoff)". APPROVE on second re-review.
+
+**Non-PR cleanup this session:**
+
+- **Stale `.pids/api.pid`** — contained dead pid `4983`; actual API listener is pid `47928`. Fixed by writing correct pid + re-aging file (briefing stopped flagging stale).
+- **Services catalog placeholders** — `feedback` (GitHub Issue Watcher) and `pipeline` (Pipeline Supervisor) are listed in `scripts/local_api.py:52-53` but have no launcher script anywhere; pid files have never existed. Either dead catalog entries or planned-but-unbuilt services. Left alone — no active harm.
 
 **Tech-debt status:**
 
@@ -23,33 +30,23 @@
 | #353 | open — zombie gemini (deferred; low urgency, auto-fallback covers) |
 | #354 | ✅ closed (PR #358 merged) |
 | #356 Part 1 | ✅ closed (PR #357 merged) |
-| #356 Part 2 | 🟡 PR #360 open, Codex review in flight |
+| #356 Part 2 | ✅ closed (PR #360 merged) |
 | #356 Part 3 | open — Codex candidate-fallback (do after Part 2 pilot) |
 | #344 | open — extend resolver to overstated/off-topic findings |
-| #343 | in progress — phase-1 + phase-2 landed; phase-1.5 (#356) finishing |
+| #343 | in progress — phase-1 + phase-2 + phase-1.5 (#356 parts 1+2) landed |
 
-**New learning saved to memory:** `feedback_advisory_vs_enforced_constraints.md` — LLM prompt constraints are advisory; enforce deterministically in code before any side-effect.
+**Key reviewer-rule data points (captured in codified doc):**
+
+- Codex-as-reviewer on PR #362 caught TWO file-level misses across two re-review rounds (`.pipeline/codex-handoff.md`, then `docs/best-practices/agent-bridge.md`). My grep pattern was too narrow ("Gemini for review" vs the actual phrases "Gemini must review" / "--to gemini"). Lesson: when sweeping for a deprecated convention, grep the conjugations + imperative/passive voice + CLI flag values, not just the natural-language form. Codified implicitly via the cross-family doc, not explicitly as a memory.
+- **Explicitly deferred (not blocking per Codex)**: `.pipeline/spec-lab-pipeline.md:273,296,299` and `.pipeline/spec-v2-pipeline.md:519` still reference Gemini as reviewer in pending checklist items. Decision: left as historical 2026-04-14 design-spec docs rather than rewriting past design records. Future operators consult `docs/review-protocol.md` for the live rule.
+
+**New learning saved to memory:** `feedback_advisory_vs_enforced_constraints.md` (from earlier in session) — LLM prompt constraints are advisory; enforce deterministically in code before any side-effect.
 
 ---
 
 ## Cold-start for next session
 
-**1. Check #360 review outcome** (inbox message IDs ≥ 2697):
-
-```bash
-scripts/ab inbox show claude
-scripts/ab read <latest-response-id>
-```
-
-If APPROVE → `gh pr merge 360 --merge --delete-branch`. If NEEDS CHANGES → fix, push, re-dispatch via:
-```bash
-git checkout feat/356-part2-quote-match
-# make fixes
-git push
-scripts/ab ask-codex --review --task-id pr-360-rereview --new-session "..." --from claude
-```
-
-**2. Re-pilot the 3-module set** after #360 merges. Expected: 60–75% resolve rate (up from 20% on phase-1). Reset the queue files first — previous pilot moved findings to `unresolvable_findings[]`:
+**1. Re-pilot the 3-module set** — #360 (quote-match verification) merged, so the anchorless-findings class (`named_incident` / `attribution`) should now resolve. Expected: 60–75% resolve rate (up from 20% on phase-1). Reset the queue files first — previous pilot moved findings to `unresolvable_findings[]`:
 
 ```bash
 .venv/bin/python - <<'EOF'
@@ -72,20 +69,20 @@ EOF
 # ...repeat for the other two
 ```
 
-**3. If re-pilot is good (≥60%), prep bulk phase-2 PR:**
+**2. If re-pilot is good (≥60%), prep bulk phase-2 PR:**
 - Raise `--workers` cap to ≤3 (per memory `feedback_batch_worker_cap.md`).
 - File concurrency fix first — PR #357's Codex review flagged that two resolvers on the same module clobber each other's writes (deferred from #343 phase-1; bit me during the pilot when I accidentally ran one in foreground + background). Needs a `.pipeline/v2.db` lease before bulk.
 
-**4. Other open tech debt (ranked):**
+**3. Other open tech debt (ranked):**
 - **#356 Part 3** (Codex candidate fallback) — do after phase-2 bulk if resolve rate is below target.
 - **#344** (extend resolver to overstated/off-topic classes) — 257 findings across 4 categories. Design decision needed on the simpler "apply pre-composed fix" cases vs. the harder "soften the claim" cases.
 - **#352** (Gate A prose/quiz contradiction) — needs pipeline-design session, not a small PR.
 - **#353** (zombie gemini) — low urgency unless next batch shows orphan processes.
 
-**5. Postmortem follow-up** (user explicitly asked; answered in-conversation but not codified):
+**4. Postmortem follow-up:**
+- ✅ Make cross-family reviewer rule explicit in `docs/review-protocol.md` — landed via PR #361 + #362.
 - Add `--pilot-n N` flag to bulk scripts for gradual rollout.
 - Require prompt-change ablations on ≥3 fixture findings before merge.
-- Make cross-family reviewer rule explicit in `docs/review-protocol.md`.
 
 ---
 
