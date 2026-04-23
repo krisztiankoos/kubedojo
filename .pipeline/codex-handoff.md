@@ -129,15 +129,18 @@ scripts/ab ask-claude --task-id handback-to-claude --from codex "Summary of what
 **Key rules for Gemini coordination:**
 - NEVER parallelize Gemini calls — user runs other concurrent workloads, one at a time
 - Use `--model auto` as the model (never hardpin flash/pro)
-- Always send Gemini for adversarial review before closing any issue
-- If Gemini says NEEDS CHANGES, fix before merging
-- Post Gemini's review as a comment on the GH issue
+- When Gemini is the designated cross-family reviewer (see `docs/review-protocol.md`), send completed work before closing the issue
+- If the reviewer says NEEDS CHANGES, fix before merging
+- Post the review as a comment on the GH issue
 
-**Gemini's role:**
+**Gemini's role (when designated as cross-family reviewer):**
 1. Adversary reviewer — catches bugs Codex misses, flags technical errors
-2. Does NOT write code — you (Codex) write, Gemini reviews
+2. Does NOT write code — you (Codex) write, the reviewer reviews
+3. Gemini is one of three families (Claude / Codex / Gemini) — the actual reviewer is chosen to differ from the author family per `docs/review-protocol.md`
 
-## Workflow for this task
+## Historical execution notes (2026-04-15 v2-pipeline handoff)
+
+> **Dated workflow — preserved for audit, not current policy.** The steps below executed on 2026-04-15 for the v2-pipeline codex delegation. Do not run them again. For current reviewer assignment policy, see `docs/review-protocol.md` and the "Key rules for Gemini coordination" / "Important project rules" sections above.
 
 1. Apply code changes (dispatch.py, review_worker.py, patch_worker.py, budgets.yaml)
 2. Run tests: `PYTHONPATH=scripts .venv/bin/pytest scripts/tests/ -q`
@@ -148,7 +151,7 @@ scripts/ab ask-claude --task-id handback-to-claude --from codex "Summary of what
 
 ## Important project rules
 
-- **Never merge without adversarial review** — Gemini must review before any PR/commit to main
+- **Never merge without adversarial review** — the designated cross-family reviewer (see `docs/review-protocol.md`) must review before any PR/commit to main
 - **Claude never edits module content** — pipeline workers do, not you directly
 - **Never parallelize Gemini calls** — sequential only
 - **Build before push**: `npm run build` — 0 warnings required
