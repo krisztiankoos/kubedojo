@@ -1,5 +1,25 @@
 # Review Protocol
 
+## Reviewer Assignment (cross-family rule)
+
+Every PR review must come from a **different model family** than the author.
+
+**Families:**
+- **Claude** (Anthropic) — opus-4-x, sonnet-4-x, haiku-4-x
+- **Codex / GPT** (OpenAI) — gpt-5-codex, gpt-5
+- **Gemini** (Google) — gemini-3.x, gemini-2.x
+
+**Why:** same-family self-review shares failure modes. A Claude reviewer misses the same bugs a Claude author wrote because both models share training corpus, hallucination patterns, and blind spots. Cross-family review catches what single-family review cannot.
+
+**Default pairings:**
+- Claude-authored → Codex reviewer (Codex has been more rigorous on content batches; see STATUS.md 2026-04-23 data point on PR #350)
+- Codex-authored → Claude or Gemini reviewer
+- Gemini-authored → Claude or Codex reviewer
+
+**Never:** Claude reviewing Claude, Codex reviewing Codex, Gemini reviewing Gemini — including sub-model variants (opus reviewing sonnet still counts as Claude→Claude).
+
+**Enforcement:** `scripts/ab ask-{codex,gemini,claude}` with `--review` takes `--from` to label the author family. The reviewer family is determined by which `ask-*` subcommand you invoke. Pick the subcommand whose family differs from `--from`.
+
 ## Prompt Context
 
 PROJECT CONTEXT:
