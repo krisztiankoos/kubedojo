@@ -118,3 +118,55 @@ def test_gemini_with_retry_force_subscription_skips_api_key():
 
     assert ok is True
     assert calls[0]["use_subscription"] is True
+
+
+def test_gemini_with_retry_flip_works_with_max_retries_one():
+    """Regression: with max_retries=1 the API-key 429 flip must still produce
+    an attempt on the subscription path. Previously the `continue` consumed
+    the only loop iteration and the subscription path was never tried."""
+    calls: list[dict] = []
+
+    def fake_dispatch(*args, use_subscription=None, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs,
+                      "use_subscription": use_subscription})
+        if len(calls) == 1:
+            return False, "429 Too Many Requests — quota exceeded"
+        return True, "real output"
+
+    with patch("dispatch.dispatch_gemini", side_effect=fake_dispatch), \
+         patch("dispatch.time.sleep") as sleep_mock, \
+         patch.object(dispatch, "_FORCE_GEMINI_SUBSCRIPTION", False):
+        ok, output = dispatch.dispatch_gemini_with_retry("hello", max_retries=1)
+
+    assert ok is True
+    assert output == "real output"
+    assert len(calls) == 2
+    assert calls[0]["use_subscription"] is False  # first try: API key
+    assert calls[1]["use_subscription"] is True   # flip retry: subscription
+    sleep_mock.assert_not_called()
+
+
+def test_gemini_with_retry_double_429_falls_back_to_subscription_backoff():
+    """When both API-key AND subscription return 429, the flip produces one
+    subscription attempt, then on the next loop iteration we apply subscription
+    backoff — not another flip."""
+    calls: list[dict] = []
+
+    def fake_dispatch(*args, use_subscription=None, **kwargs):
+        calls.append({"args": args, "kwargs": kwargs,
+                      "use_subscription": use_subscription})
+        if len(calls) <= 2:
+            return False, "429 rate limit"
+        return True, "finally ok"
+
+    with patch("dispatch.dispatch_gemini", side_effect=fake_dispatch), \
+         patch("dispatch.time.sleep") as sleep_mock, \
+         patch.object(dispatch, "_FORCE_GEMINI_SUBSCRIPTION", False):
+        ok, output = dispatch.dispatch_gemini_with_retry("hello", max_retries=3)
+
+    assert ok is True
+    assert output == "finally ok"
+    # Expected sequence: API-key (429) → flip, subscription (429) →
+    # backoff sleep → subscription (success)
+    assert [c["use_subscription"] for c in calls] == [False, True, True]
+    sleep_mock.assert_called_once()  # exactly one backoff between the two subscription attempts

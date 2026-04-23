@@ -322,21 +322,32 @@ def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
 
         # Check for rate limit
         if _is_rate_limited(output):
-            # If we're still on the API-key path, flip to subscription and retry
-            # immediately — the OAuth tier has a separate quota.
+            # If we're still on the API-key path, flip to subscription and
+            # retry immediately *without consuming the retry budget*. This
+            # guarantees that even callers with max_retries=1 get one attempt
+            # on the OAuth tier (independent quota).
             if not use_subscription:
                 print("Gemini API-key rate-limited — switching to subscription (OAuth) path",
                       file=sys.stderr)
                 use_subscription = True
-                continue  # no sleep; retry on the other tier
-            # Already on subscription — apply exponential backoff.
+                ok, output = dispatch_gemini(prompt, model, review, timeout, mcp,
+                                             use_subscription=True)
+                if ok:
+                    return True, output
+                # Subscription also failed. If it was a rate-limit, fall through
+                # to the backoff branch below. Otherwise, fall through to the
+                # timeout / fallback-model / failure branches.
+
+        if _is_rate_limited(output):
+            # At this point we're on subscription — either because the caller
+            # forced it, or because we just flipped. Apply exponential backoff.
             if attempt < max_retries - 1:
                 delay = base_delay * (2 ** attempt)
                 print(f"Rate limited on subscription (attempt {attempt + 1}/{max_retries}). Waiting {delay}s...",
                       file=sys.stderr)
                 time.sleep(delay)
                 continue
-            # All retries exhausted on both paths.
+            # All retries exhausted.
             return False, output
 
         # Timeout — don't retry, just fail (Gemini is slow, not broken)
