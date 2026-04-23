@@ -185,17 +185,33 @@ def head_check(
 ) -> bool:
     """Return True if ``url`` resolves to a live 2xx/3xx response.
 
-    Sends an HTTP HEAD first; on 405 Method Not Allowed, falls back to a
-    zero-byte range GET. Any other failure (404, 5xx, timeout, DNS
-    error, connection reset) returns False so the caller can drop the
-    candidate before doing full fetch + anchor matching.
+    Escalation ladder:
+        1. HEAD — cheapest probe.
+        2. On 405 Method Not Allowed, zero-byte range GET.
+        3. On Range-specific rejection (403 / 416 / 501 — WAFs that
+           reject Range but would serve a normal GET), plain GET.
+
+    Expected transport failures (DNS, connection reset, timeout,
+    malformed URL) return False. Unexpected exceptions bubble up so
+    coding regressions don't silently convert into "dead URL" drops
+    (#357 Codex review, nit #2).
 
     This is the deterministic gate for URL-existence hallucinations.
-    See GH #356 Part 1. Never raises — any error = "URL is not live
-    enough to cite."
+    See GH #356 Part 1.
     """
+    import http.client
+    import socket
     import urllib.error
     import urllib.request
+
+    _transport_errors: tuple[type[BaseException], ...] = (
+        urllib.error.URLError,
+        http.client.HTTPException,
+        socket.timeout,
+        socket.gaierror,
+        ConnectionError,
+        TimeoutError,
+    )
 
     def _try(method: str, extra_headers: dict[str, str] | None = None) -> int | None:
         req = urllib.request.Request(
@@ -212,7 +228,7 @@ def head_check(
                 return int(resp.status)
         except urllib.error.HTTPError as exc:
             return int(exc.code)
-        except Exception:  # noqa: BLE001 — any transport failure = dead URL
+        except _transport_errors:
             return None
 
     status = _try("HEAD")
@@ -222,10 +238,18 @@ def head_check(
         return True
     if status == 405:
         # Server rejects HEAD but may accept a range-limited GET.
-        retry_status = _try("GET", extra_headers={"Range": "bytes=0-0"})
-        if retry_status is None:
-            return False
-        return 200 <= retry_status < 400
+        range_status = _try("GET", extra_headers={"Range": "bytes=0-0"})
+        if range_status is not None and 200 <= range_status < 400:
+            return True
+        # WAFs/CDNs sometimes reject Range with 403 / 416 / 501 where
+        # a plain GET would return 200. Fall through to a final GET
+        # as the last escalation step (#357 Codex review, nit #1).
+        if range_status in (403, 416, 501):
+            get_status = _try("GET")
+            if get_status is None:
+                return False
+            return 200 <= get_status < 400
+        return False
     return False
 
 

@@ -248,6 +248,80 @@ def test_head_check_rejects_on_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     assert citation_residuals.head_check("https://ex.com/slow", timeout=0.01) is False
 
 
+def test_head_check_escalates_to_plain_get_when_range_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#357 Codex review nit #1: WAFs/CDNs that 405 HEAD AND reject
+    range GET with 403/416/501 would serve a plain GET. Must escalate
+    rather than return False."""
+    import urllib.error
+    import urllib.request
+
+    methods_seen: list[tuple[str, str | None]] = []
+
+    class _FakeResponse:
+        status = 200
+
+        def __enter__(self) -> "_FakeResponse":
+            return self
+
+        def __exit__(self, *_args: Any) -> None:
+            pass
+
+    def fake_urlopen(req: Any, timeout: float = 0) -> Any:
+        method = req.get_method()
+        range_header = req.headers.get("Range") or req.headers.get("range")
+        methods_seen.append((method, range_header))
+        if method == "HEAD":
+            raise urllib.error.HTTPError("u", 405, "no HEAD", {}, None)  # type: ignore[arg-type]
+        if method == "GET" and range_header:
+            raise urllib.error.HTTPError("u", 416, "no range", {}, None)  # type: ignore[arg-type]
+        return _FakeResponse()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert citation_residuals.head_check("https://ex.com/a") is True
+    assert [m for m, _ in methods_seen] == ["HEAD", "GET", "GET"]
+    assert methods_seen[1][1] == "bytes=0-0"
+    assert methods_seen[2][1] is None
+
+
+def test_head_check_does_not_escalate_on_unrelated_range_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """If range GET fails with a non-Range-specific status (e.g. 404),
+    don't waste another request on a plain GET — the URL is dead."""
+    import urllib.error
+    import urllib.request
+
+    methods_seen: list[str] = []
+
+    def fake_urlopen(req: Any, timeout: float = 0) -> Any:
+        methods_seen.append(req.get_method())
+        if req.get_method() == "HEAD":
+            raise urllib.error.HTTPError("u", 405, "no HEAD", {}, None)  # type: ignore[arg-type]
+        raise urllib.error.HTTPError("u", 404, "gone", {}, None)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    assert citation_residuals.head_check("https://ex.com/gone") is False
+    assert methods_seen == ["HEAD", "GET"]
+
+
+def test_head_check_reraises_unexpected_exceptions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#357 Codex review nit #2: unexpected (non-transport) exceptions
+    must NOT be swallowed — that would silently convert coding
+    regressions into 'dead URL' drops."""
+    import urllib.request
+
+    def fake_urlopen(req: Any, timeout: float = 0) -> Any:
+        raise RuntimeError("simulated coding bug")
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(RuntimeError, match="simulated coding bug"):
+        citation_residuals.head_check("https://ex.com/a")
+
+
 # ---- validate_candidate --------------------------------------------------
 
 
