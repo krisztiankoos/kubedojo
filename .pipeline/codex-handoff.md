@@ -138,7 +138,9 @@ scripts/ab ask-claude --task-id handback-to-claude --from codex "Summary of what
 2. Does NOT write code — you (Codex) write, the reviewer reviews
 3. Gemini is one of three families (Claude / Codex / Gemini) — the actual reviewer is chosen to differ from the author family per `docs/review-protocol.md`
 
-## Workflow for this task
+## Historical execution notes (2026-04-15 v2-pipeline handoff)
+
+> **Dated workflow — preserved for audit, not current policy.** The steps below executed on 2026-04-15 for the v2-pipeline codex delegation. Do not run them again. For current reviewer assignment policy, see `docs/review-protocol.md` and the "Key rules for Gemini coordination" / "Important project rules" sections above.
 
 1. Apply code changes (dispatch.py, review_worker.py, patch_worker.py, budgets.yaml)
 2. Run tests: `PYTHONPATH=scripts .venv/bin/pytest scripts/tests/ -q`

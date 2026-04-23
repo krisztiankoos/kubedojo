@@ -79,10 +79,10 @@ agent.** Per channel conventions:
 
 1. Write code → stage with `git add`
 2. `git diff --cached > /tmp/diff.txt`
-3. `ab post reviews "Review request for #NNN" --to gemini` (or ask-gemini with the diff attached)
+3. `ab post reviews "Review request for #NNN" --to <reviewer>` — where `<reviewer>` is the **designated cross-family reviewer** (see `docs/review-protocol.md`). Or use `ab ask-{codex,gemini,claude}` directly with the diff attached; pick the family that differs from the author.
 4. Apply feedback or argue back in writing
 5. Commit only after the review is CLEAN or BLOCKING is resolved
-6. Commit message includes `Reviewed-By: gemini-3.1-pro-preview (task-id)` trailer
+6. Commit message includes `Reviewed-By: <reviewer-model-id> (task-id)` trailer — e.g. `Reviewed-By: gpt-5.4 (pr-360-review)`, `Reviewed-By: gemini-3.1-pro-preview (pr-123-review)`, or `Reviewed-By: claude-opus-4-7 (pr-456-review)`, matching the actual reviewer used.
 
 This rule is non-negotiable. Bypassing it was the #1 reason review
 quality degraded on earlier commits.
