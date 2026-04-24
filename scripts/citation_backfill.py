@@ -36,6 +36,32 @@ from fetch_citation import allowlist_tier, fetch  # type: ignore[import-not-foun
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _primary_checkout_root(repo_root: Path) -> Path:
+    """Resolve the primary checkout root, even from a worktree.
+
+    AGENTS.md §1 mandates the ``.worktrees/<name>/`` layout inside the
+    primary checkout. When invoked from a worktree, ``REPO_ROOT``
+    resolves to ``<primary>/.worktrees/<name>``, so the venv isn't
+    co-located there. Detect that layout by name and step up two
+    levels to the primary checkout where ``.venv`` actually lives.
+
+    Pure function kept testable so a regression can assert both the
+    primary-case and the worktree-case without touching the filesystem.
+    """
+    if repo_root.parent.name == ".worktrees":
+        return repo_root.parent.parent
+    return repo_root
+
+
+#: Absolute path to the primary-checkout venv's Python. AGENTS.md §3
+#: forbids sys.executable for subprocess.run because it misses
+#: .venv-only deps. Derived from __file__ AND normalized for the
+#: worktree layout so the interpreter resolves to the primary venv
+#: whether the script is called from the primary checkout or a
+#: worktree (worktrees share the primary .venv).
+_VENV_PYTHON = str(_primary_checkout_root(REPO_ROOT) / ".venv" / "bin" / "python")
 DOCS_ROOT = REPO_ROOT / "src" / "content" / "docs"
 SEED_DIR = REPO_ROOT / "docs" / "citation-seeds"
 CITATION_POOL_DIR = REPO_ROOT / "docs" / "citation-pools"
@@ -722,7 +748,7 @@ GEMINI_DEFAULT_TIMEOUT = 900
 
 def dispatch_gemini(prompt: str, *, timeout: int = GEMINI_DEFAULT_TIMEOUT) -> tuple[bool, str]:
     cmd = [
-        sys.executable,
+        _VENV_PYTHON,
         str(REPO_ROOT / "scripts" / "dispatch.py"),
         "gemini", "-", "--timeout", str(timeout),
     ]
@@ -740,6 +766,83 @@ def dispatch_gemini(prompt: str, *, timeout: int = GEMINI_DEFAULT_TIMEOUT) -> tu
         return False, f"timeout_after_{timeout}s"
     if proc.returncode != 0:
         return False, proc.stderr or proc.stdout
+    return True, proc.stdout
+
+
+#: Default Claude timeout mirrors dispatch.py's CLI default; per-finding
+#: callers pass a shorter value explicitly.
+CLAUDE_DEFAULT_TIMEOUT = 600
+
+
+class DispatcherUnavailable(RuntimeError):
+    """The LLM dispatcher is temporarily unavailable (peak-hours guard,
+    per-process call budget exhausted, terminal rate-limit). Callers
+    must treat this distinctly from a genuine "no candidates" result —
+    a finding mid-flight when this raises should STAY in
+    needs_citation for a later retry, not be flipped to unresolvable.
+
+    PR #374 review (Codex, 2026-04-24) caught this: without a distinct
+    signal, a bulk run that crossed Claude peak hours (14:00-20:00
+    weekdays, 2x pricing refusal) would silently drain still-sourceable
+    findings out of the queue.
+    """
+
+
+# Stderr fragments dispatch.py writes when refusing a Claude call. Match
+# is substring-and-case-insensitive so minor wording tweaks in
+# dispatch.py don't silently reclassify unavailability as failure.
+_CLAUDE_UNAVAILABLE_MARKERS = (
+    "peak hours in effect",
+    "claude peak hours",
+    "call budget",
+    "claude budget",
+    "claude unavailable",
+    "claudeunavailableerror",
+)
+
+
+def _looks_unavailable(stderr: str) -> bool:
+    s = (stderr or "").lower()
+    return any(marker in s for marker in _CLAUDE_UNAVAILABLE_MARKERS)
+
+
+def dispatch_claude(prompt: str, *, timeout: int = CLAUDE_DEFAULT_TIMEOUT) -> tuple[bool, str]:
+    """Mirror of dispatch_gemini but via the Claude CLI subprocess.
+
+    Exists because Gemini's per-finding URL-candidate path hit a high
+    false-timeout rate even at 120s — see #373 for the composite-probe
+    solution. Claude is the short-term workaround: a second dispatcher
+    callers can swap in via the CLI's --agent flag.
+
+    Goes through scripts/dispatch.py so Claude's peak-hours guard and
+    per-process budget check still apply. When those guards refuse the
+    call, we raise DispatcherUnavailable so the caller can distinguish
+    "the dispatcher is temporarily off" from "the LLM returned no
+    candidates" — the latter is a real result, the former is
+    operationally retryable.
+    """
+    cmd = [
+        _VENV_PYTHON,
+        str(REPO_ROOT / "scripts" / "dispatch.py"),
+        "claude", "-", "--timeout", str(timeout),
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            input=prompt,
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"timeout_after_{timeout}s"
+    if proc.returncode != 0:
+        err = (proc.stderr or "").strip()
+        if _looks_unavailable(err):
+            raise DispatcherUnavailable(err or "claude dispatcher refused the call")
+        return False, err or proc.stdout
     return True, proc.stdout
 
 

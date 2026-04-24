@@ -30,7 +30,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import fetch_citation  # noqa: E402
-from citation_backfill import dispatch_gemini, parse_agent_response  # noqa: E402
+from citation_backfill import (  # noqa: E402
+    DispatcherUnavailable,
+    dispatch_claude,
+    dispatch_gemini,
+    parse_agent_response,
+)
 from pipeline_common import module_lock  # noqa: E402
 
 HUMAN_REVIEW_DIR = REPO_ROOT / ".pipeline" / "v3" / "human-review"
@@ -46,6 +51,14 @@ HEAD_CHECK_TIMEOUT_SECONDS = 5.0
 #: scripts/dedupe_audit.py, which does similar short-prompt work at 120s.
 GEMINI_PER_FINDING_TIMEOUT = 120
 
+#: Per-finding Claude timeout. Claude CLI is the alternate dispatcher
+#: (see `--agent claude`) after the 2026-04-24 pilot confirmed that even
+#: Category-A modules were hitting the 120s Gemini cap with zero
+#: resolves, consistent with false-timeout-mid-thought. Claude tends to
+#: respond faster for structured JSON prompts; 180s gives headroom over
+#: observed 30-60s typical responses without inviting the same trap.
+CLAUDE_PER_FINDING_TIMEOUT = 180
+
 
 def _dispatch_gemini_for_candidate(prompt: str) -> tuple[bool, str]:
     """dispatch_gemini wrapper with the short per-finding timeout.
@@ -55,6 +68,17 @@ def _dispatch_gemini_for_candidate(prompt: str) -> tuple[bool, str]:
     unaffected by the pilot's per-finding budget.
     """
     return dispatch_gemini(prompt, timeout=GEMINI_PER_FINDING_TIMEOUT)
+
+
+def _dispatch_claude_for_candidate(prompt: str) -> tuple[bool, str]:
+    """dispatch_claude wrapper with the short per-finding timeout."""
+    return dispatch_claude(prompt, timeout=CLAUDE_PER_FINDING_TIMEOUT)
+
+
+CANDIDATE_DISPATCHERS = {
+    "gemini": _dispatch_gemini_for_candidate,
+    "claude": _dispatch_claude_for_candidate,
+}
 MIN_QUOTE_MATCH_LENGTH = 12
 # Default lease is generous — a single module can take several minutes
 # when the LLM dispatch stalls or the network is slow; a tight TTL would
@@ -912,6 +936,18 @@ def main(argv: list[str] | None = None) -> int:
             "each other's writes to the same module."
         ),
     )
+    p_resolve.add_argument(
+        "--agent",
+        choices=sorted(CANDIDATE_DISPATCHERS),
+        default="gemini",
+        help=(
+            "LLM backend for per-finding URL-candidate generation. "
+            "Default is gemini (historical). Use claude when Gemini is "
+            "producing high false-timeout rates — see #373. The default "
+            "budget differs per agent; both are short-prompt scoped and "
+            "do not affect the research/inject write-path callers."
+        ),
+    )
 
     args = parser.parse_args(argv)
 
@@ -1003,9 +1039,37 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     continue
             outcome = "ok"
-            print(f"[{i}/{total_modules}] {canonical_key}: resolving")
+            print(f"[{i}/{total_modules}] {canonical_key}: resolving ({args.agent})")
             try:
-                stats = resolve_module(qp, dry_run=args.dry_run)
+                stats = resolve_module(
+                    qp,
+                    dry_run=args.dry_run,
+                    dispatcher=CANDIDATE_DISPATCHERS[args.agent],
+                )
+            except DispatcherUnavailable as exc:
+                # Peak-hours guard / budget exhaustion / terminal rate
+                # limit. resolve_module writes the queue file only on
+                # clean exit, so the in-flight finding stays in
+                # needs_citation for a retry — nothing gets flipped to
+                # unresolvable. Release the lock, print a clear
+                # operator-visible message, and abort the whole run
+                # instead of silently grinding through N more modules
+                # with the same refusal.
+                if use_lock:
+                    module_lock.release_module_lock(
+                        canonical_key, holder=worker_id
+                    )
+                print(
+                    f"{canonical_key}: ABORT — dispatcher unavailable: {exc}",
+                    file=sys.stderr,
+                )
+                print(
+                    "In-flight findings remain in needs_citation; "
+                    "re-run after the refusal clears "
+                    "(peak hours end / budget reset / rate limit cools).",
+                    file=sys.stderr,
+                )
+                return 3
             except BaseException:
                 outcome = "error"
                 if use_lock:
