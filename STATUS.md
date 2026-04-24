@@ -2,6 +2,45 @@
 
 > **Read this first every session. Update before ending.**
 
+## Active Work (2026-04-24 morning — pilot-hang autopsy, 2 infra PRs merged, phase-2 still held)
+
+**Session context**: user pivoted from "start phase-2" to a broader "we have git problems all the time, need a durable solution" concern after I surfaced a 13-day-old stash on cold-start. Infrastructure-level response below. No curriculum or content changes this session.
+
+### This session's shipments (all merged)
+
+- **PR #370** (`fix(resolver): line-buffer stdout + per-module heartbeat (#343)`). Root cause of the morning pilot's apparent 16-min freeze: Python block-buffers stdout when piped to `tee`, so the first line flushed but all subsequent lines never reached the log. Fix: `sys.stdout.reconfigure(line_buffering=True)` at `main()` entry, plus `[i/N] <key>: start` / `: resolving` heartbeat per module so any future hang localizes to a specific phase. Codex APPROVE with one NIT (lock ordering, not just string presence) — addressed in follow-up commit. 8/8 CLI lock tests pass.
+- **PR #371** (`feat(briefing): surface silent-drift git hygiene signals`). Adds three alerts to `/api/briefing/session`: forgotten stashes (warn >24 h, escalate >7 d), detached-HEAD worktrees, uncommitted files on `main` only. None need rate-limiting — each is a real drift signal we've hit before. Codex APPROVE with two test-coverage NITs (mixed-age behavior, malformed stash-list output) — both added as pinned tests. 107/107 `test_local_api.py` pass. The briefing service will surface these on next restart.
+
+### Hung pilot autopsy — root cause found
+
+Today's 16-min silent hang in `citation_residuals.py resolve --all --limit-modules 10`:
+1. **Visibility failure (fixed by #370)**: Python stdout block-buffered behind `tee`, so the intro line was the last thing flushed before Python's 8 KB buffer started filling silently.
+2. **Actual hang (NOT fixed this session)**: py-spy needs root on macOS, so used `kill -INT` to force a Python traceback. Stack:
+   ```
+   resolve_module → request_candidates:298 → dispatcher(prompt) →
+   citation_backfill.py:723 dispatch_gemini → subprocess.run(..., timeout=900)
+   → process.communicate → selector.select(None)
+   ```
+   `dispatch_gemini` **has** `timeout=900`, but that's per-call — a single slow Gemini invocation blocks the whole pilot for up to 15 minutes. Worst case on 10 modules × 3 findings = many hours. Not today's primary problem but a real throughput ceiling on the phase-2 bulk run.
+
+### Housekeeping
+
+- **13-day-old stash dropped**: `stash@{0}` from 2026-04-11 was 714 lines of partially-obsolete AI/ML overlap audit (`docs/migration-decisions.md`, written against the pre-#200 numbering so every filename was already stale) plus 112 lines of UK ZTT translation that was re-done in `f8a1c478`. Dropped after investigation.
+- **`py-spy` installed** (`brew install py-spy`) but requires `sudo` on macOS due to SIP. SIGINT → Python traceback was a cleaner alternative in this case.
+
+### Phase-2 pilot — still held for explicit approval
+
+Same gate as before. Now with three improvements when it resumes:
+1. Per-module heartbeat — operator sees which module is in-flight.
+2. Line-buffered stdout — hangs are visible in real time.
+3. Briefing will auto-flag any stash >24 h or pipeline residual on main from a future cold start.
+
+Before re-running at bulk, consider a small follow-up PR to lower the per-finding Gemini timeout from 900 s → ~120 s so one slow call doesn't kill the whole run. Not done this session — would be ~5 LOC in `citation_backfill.py:720` plus a test.
+
+### Prior session content — preserved below
+
+---
+
 ## Active Work (2026-04-24 early morning — session closed, 5 PRs merged, 2 issues closed, phase-2 pilot queued)
 
 **Continuation of the past-midnight push.** Session ran from cold-start through to a clean close: audit shipped, feature shipped, two bug-fix PRs shipped, residuals-audit worktrees reaped. No open PRs at handoff. Phase-2 bulk pilot is the next move and deliberately held for explicit user approval (bigger blast radius than the one-line edits this session shipped).
