@@ -2,7 +2,57 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-24 past-midnight — concurrency lock in re-review, pilot diagnosis landed, residuals audit in-flight)
+## Active Work (2026-04-24 early morning — cold-start continuation: audit shipped, pilot-n shipped, 2 follow-on issues filed)
+
+**Continuation of the past-midnight push.** The audit finished overnight while Codex was still headless; I processed the output and cleared the cold-start checklist:
+
+### This session's shipments
+
+- **PR #366** (open) — promoted `docs/residuals-audit-2026-04-24.md` to main. Classifies all 195 `needs_citation` findings across 92 residuals queue files: **111 A (sourceable, 57%) / 65 B (pedagogical fiction, 33%) / 1 C (hallucinated fact) / 18 D (ambiguous, 9%)**. Gemini flash review dispatched; awaiting verdict.
+- **PR #367** (open) — `feat(#343): --limit-modules N for gradual pilot rollout`. Wires the `--limit-modules N` arg that was sitting unfinished in the pilot-n worktree into the resolve loop (outer filter, applied after the empty-queue filter; ignored when a specific module_key is given). Rebased cleanly over #363's lock integration. 39/39 tests pass. Codex review dispatched (Claude-authored → Codex preferred per #350 data point).
+- **#364** filed (bug, infrastructure) — **blocks #343 phase-2 bulk**. `citation_residuals.py:_summarize_finding` uses the finding's `excerpt` as the Sources-line description. The excerpt is the *claim being cited*, not a description of what the source says. Every resolved finding currently ships a garbage description. Proposed fixes: URL-title only, LLM one-liner, or `<meta description>` scrape.
+- **#365** filed (bug, content) — the single Category C finding: `cloud/aws-essentials/module-1.10-cloudwatch.md:41` claims CloudWatch "launched alongside EC2 in 2009" but EC2 launched in 2006. Scope goes to #344 content-fix, not #343 resolver.
+
+### Found and reverted — pilot residual on main
+
+The working tree had an uncommitted line appended to `src/content/docs/cloud/advanced-operations/module-8.1-multi-account.md` — the "happy path" from last night's pilot. The URL was correct (AWS whitepaper) but the description text was the finding's own excerpt ("The root cause of this catastrophic failure…"), which is how I caught #364. Reverted to keep main shippable; the resolved URL will come back cleanly once #364 lands. Also removed the stale `.claude/scheduled_tasks.lock` (pid 43045 was dead).
+
+### Blockers newly surfaced
+
+- **Phase-2 bulk is blocked on #364.** Running `resolve --all --workers 3` without the description fix would ship ~100+ garbage Sources lines across 64 modules. Do not authorize the bulk pilot until #364 is merged and dogfooded on ≥3 real resolves.
+- **Cross-family review discipline (per `feedback_review_policy.md`)**: both #366 and #367 are waiting on reviewer verdict. Do not merge either without APPROVE.
+
+### Cold-start for next session
+
+1. **Collect review verdicts**:
+   - `gh pr view 366 --comments` — Gemini flash review of the audit (content classification).
+   - `gh pr view 367 --comments` — Codex review of the `--limit-modules` feature.
+   - If APPROVE: merge (rebase-merge), delete branches, clean up worktrees.
+   - If NEEDS CHANGES: address and push; re-request review.
+2. **Fix #364** — blocks everything downstream. Proposed approach A (quickest): switch to URL-title only in `build_source_line`, drop `_summarize_finding` entirely. Approach B (preferred if time): LLM one-liner ("what does this source say?") cached alongside the URL. Update `test_build_source_line_safe_title_and_summary` — it currently locks in the buggy behavior.
+3. **Fix #365** — correct the CloudWatch/EC2 date claim in `module-1.10-cloudwatch.md:41`. Also verify the "1 trillion metrics/day" statistic while you're there. Small content edit; cross-family review per protocol.
+4. **Phase-2 pilot** (only after #364 + #367 land): fresh 10-module sample with `citation_residuals.py resolve --all --worker-id pilot-2 --limit-modules 10`. Target ≥60% resolve on Category A findings. If green, authorize bulk at `--workers 3`.
+
+### Worktree hygiene
+
+- `.worktrees/residuals-audit` — keep until #366 merges (branch: `audit/residuals-classification`).
+- `.worktrees/pilot-n` — keep until #367 merges (branch: `feat/343-pilot-n-flag`).
+- `.worktrees/codex-interactive` — detached HEAD at `3b0d1c0f`, only untracked `.venv` / `node_modules`. Not in active use this cycle; candidate for cleanup after #366/#367 land if still empty.
+
+### Smoketest (first 30s of next session)
+
+```bash
+curl -s http://127.0.0.1:8768/api/briefing/session?compact=1    # fresh=1, stale=0 expected
+gh pr view 366 --json state,reviews                              # expect OPEN with a review
+gh pr view 367 --json state,reviews                              # expect OPEN with a review
+gh issue view 364 --json state,title                             # OPEN (resolver desc bug)
+gh issue view 365 --json state,title                             # OPEN (CloudWatch Cat-C)
+scripts/ab inbox show claude                                     # pending Codex replies, if any
+```
+
+---
+
+## Prior active work — 2026-04-24 past-midnight (concurrency lock merged, pilot diagnosis landed, residuals audit kicked off)
 
 **Continuation from earlier tonight (2026-04-23, see below).** After the 6-PR push, user asked me to run the phase-1.5 re-pilot and keep pushing overnight. Current state:
 
