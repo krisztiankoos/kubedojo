@@ -2,11 +2,23 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-24 afternoon — quality pipeline v1 REJECTED, v2 redesign handoff)
+## Active Work (2026-04-24 evening — pipeline v2 implemented through Phase C; Codex re-review in flight)
 
-**Status**: mid-session handoff. Requirements locked with user. v2 implementation not started. Primary repo clean on main; no in-flight worktrees; no uncommitted changes.
+**Status**: v2 shipped as `scripts/quality/` package across 4 commits (A→B→C→migration). 17 integration + 111 unit tests pass (128 total for quality/, 592 repo-wide). Primary clean on main; 5 commits ahead of origin/main.
 
-**Read the handoff first**: [`docs/sessions/2026-04-24-quality-pipeline-redesign.md`](docs/sessions/2026-04-24-quality-pipeline-redesign.md). It is a cold-start function — decisions, Codex must-fix list with file:line refs, smoketest commands.
+**Phase D in flight**: Codex review of v2 dispatched in background to `gpt-5.5 reasoning=high`. Started 2026-04-24 23:17; expected 10-20 min to produce the verdict JSON. Output to `/tmp/kd_v2_review_output.txt`; stderr traces to `/tmp/kd_v2_review_err.txt`.
+
+**Tracking issue**: [#375](https://github.com/kube-dojo/kube-dojo.github.io/issues/375) — full phase checklist + Codex must-fix mapping.
+
+**Commits shipped this session**:
+- `8e7be95b` Phase A — state + worktree + extractors (closes Codex #2, #3, #5, #6, #7, #8, #9, #10)
+- `b9798ed9` Phase B — dispatchers + prompts + citations (strict verify-or-remove)
+- `26bd0fed` Phase C — stages + pipeline orchestrator (closes Codex #1, #4, #5 runtime)
+- `eb705026` v1→v2 state migration in bootstrap
+
+**After Codex review**: address any new must-fixes, then smoke on `k8s-capa-module-1.2-argo-events`, then 3-module showcase (`cloud/aws-essentials/module-1.1-iam`, `k8s/cka/part1-cluster-architecture/module-1.1-control-plane`, `platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking`), then full 742.
+
+**Prior handoff preserved**: [`docs/sessions/2026-04-24-quality-pipeline-redesign.md`](docs/sessions/2026-04-24-quality-pipeline-redesign.md) — requirements still locked.
 
 ### What happened this afternoon
 
