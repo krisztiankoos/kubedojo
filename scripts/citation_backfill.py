@@ -748,6 +748,38 @@ def dispatch_gemini(prompt: str, *, timeout: int = GEMINI_DEFAULT_TIMEOUT) -> tu
 CLAUDE_DEFAULT_TIMEOUT = 600
 
 
+class DispatcherUnavailable(RuntimeError):
+    """The LLM dispatcher is temporarily unavailable (peak-hours guard,
+    per-process call budget exhausted, terminal rate-limit). Callers
+    must treat this distinctly from a genuine "no candidates" result —
+    a finding mid-flight when this raises should STAY in
+    needs_citation for a later retry, not be flipped to unresolvable.
+
+    PR #374 review (Codex, 2026-04-24) caught this: without a distinct
+    signal, a bulk run that crossed Claude peak hours (14:00-20:00
+    weekdays, 2x pricing refusal) would silently drain still-sourceable
+    findings out of the queue.
+    """
+
+
+# Stderr fragments dispatch.py writes when refusing a Claude call. Match
+# is substring-and-case-insensitive so minor wording tweaks in
+# dispatch.py don't silently reclassify unavailability as failure.
+_CLAUDE_UNAVAILABLE_MARKERS = (
+    "peak hours in effect",
+    "claude peak hours",
+    "call budget",
+    "claude budget",
+    "claude unavailable",
+    "claudeunavailableerror",
+)
+
+
+def _looks_unavailable(stderr: str) -> bool:
+    s = (stderr or "").lower()
+    return any(marker in s for marker in _CLAUDE_UNAVAILABLE_MARKERS)
+
+
 def dispatch_claude(prompt: str, *, timeout: int = CLAUDE_DEFAULT_TIMEOUT) -> tuple[bool, str]:
     """Mirror of dispatch_gemini but via the Claude CLI subprocess.
 
@@ -757,7 +789,11 @@ def dispatch_claude(prompt: str, *, timeout: int = CLAUDE_DEFAULT_TIMEOUT) -> tu
     callers can swap in via the CLI's --agent flag.
 
     Goes through scripts/dispatch.py so Claude's peak-hours guard and
-    per-process budget check still apply.
+    per-process budget check still apply. When those guards refuse the
+    call, we raise DispatcherUnavailable so the caller can distinguish
+    "the dispatcher is temporarily off" from "the LLM returned no
+    candidates" — the latter is a real result, the former is
+    operationally retryable.
     """
     cmd = [
         sys.executable,
@@ -777,7 +813,10 @@ def dispatch_claude(prompt: str, *, timeout: int = CLAUDE_DEFAULT_TIMEOUT) -> tu
     except subprocess.TimeoutExpired:
         return False, f"timeout_after_{timeout}s"
     if proc.returncode != 0:
-        return False, proc.stderr or proc.stdout
+        err = (proc.stderr or "").strip()
+        if _looks_unavailable(err):
+            raise DispatcherUnavailable(err or "claude dispatcher refused the call")
+        return False, err or proc.stdout
     return True, proc.stdout
 
 

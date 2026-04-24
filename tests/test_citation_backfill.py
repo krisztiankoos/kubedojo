@@ -133,3 +133,65 @@ def test_dispatch_gemini_timeout_error_message_reflects_value(
     ok, msg = citation_backfill.dispatch_gemini("hello", timeout=120)
     assert ok is False
     assert "120" in msg, f"error should name the budget; got {msg!r}"
+
+
+# ---- Claude dispatcher --------------------------------------------------
+
+
+def test_dispatch_claude_raises_on_peak_hours_refusal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Claude peak-hours refusal must NOT be flattened into a generic
+    False — that would let resolve_module mark the in-flight finding
+    as unresolvable. It must raise DispatcherUnavailable so the caller
+    leaves the finding in needs_citation and aborts the run for retry.
+
+    Regression guard against the #374 review finding (Codex).
+    """
+    class _P:
+        returncode = 2
+        stdout = ""
+        stderr = (
+            "⏸ Claude peak hours in effect (14:00-20:00 local Mon-Fri, "
+            "currently 15:xx). Refusing to dispatch to avoid 2x pricing."
+        )
+
+    def fake_run(cmd: list[str], **kwargs: object) -> _P:
+        return _P()
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(citation_backfill.DispatcherUnavailable, match="peak hours"):
+        citation_backfill.dispatch_claude("hi", timeout=180)
+
+
+def test_dispatch_claude_raises_on_budget_exhaustion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Per-process call-budget exhaustion is also retryable — next
+    fresh process gets a new budget. Must raise DispatcherUnavailable,
+    not return False."""
+    class _P:
+        returncode = 2
+        stdout = ""
+        stderr = "Claude call budget exhausted after 50 calls; restart to reset."
+
+    monkeypatch.setattr(subprocess, "run", lambda c, **kw: _P())
+    with pytest.raises(citation_backfill.DispatcherUnavailable, match="budget"):
+        citation_backfill.dispatch_claude("hi", timeout=180)
+
+
+def test_dispatch_claude_returns_false_on_ordinary_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Non-unavailability failures (e.g. malformed prompt, CLI crash)
+    still return (False, message) as before — those ARE the "the LLM
+    got nowhere" class and should fall through to unresolvable."""
+    class _P:
+        returncode = 1
+        stdout = ""
+        stderr = "TypeError: something broke"
+
+    monkeypatch.setattr(subprocess, "run", lambda c, **kw: _P())
+    ok, msg = citation_backfill.dispatch_claude("hi", timeout=180)
+    assert ok is False
+    assert "TypeError" in msg

@@ -31,6 +31,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import fetch_citation  # noqa: E402
 from citation_backfill import (  # noqa: E402
+    DispatcherUnavailable,
     dispatch_claude,
     dispatch_gemini,
     parse_agent_response,
@@ -1045,6 +1046,30 @@ def main(argv: list[str] | None = None) -> int:
                     dry_run=args.dry_run,
                     dispatcher=CANDIDATE_DISPATCHERS[args.agent],
                 )
+            except DispatcherUnavailable as exc:
+                # Peak-hours guard / budget exhaustion / terminal rate
+                # limit. resolve_module writes the queue file only on
+                # clean exit, so the in-flight finding stays in
+                # needs_citation for a retry — nothing gets flipped to
+                # unresolvable. Release the lock, print a clear
+                # operator-visible message, and abort the whole run
+                # instead of silently grinding through N more modules
+                # with the same refusal.
+                if use_lock:
+                    module_lock.release_module_lock(
+                        canonical_key, holder=worker_id
+                    )
+                print(
+                    f"{canonical_key}: ABORT — dispatcher unavailable: {exc}",
+                    file=sys.stderr,
+                )
+                print(
+                    "In-flight findings remain in needs_citation; "
+                    "re-run after the refusal clears "
+                    "(peak hours end / budget reset / rate limit cools).",
+                    file=sys.stderr,
+                )
+                return 3
             except BaseException:
                 outcome = "error"
                 if use_lock:

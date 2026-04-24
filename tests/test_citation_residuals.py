@@ -1190,6 +1190,49 @@ def test_claude_wrapper_passes_short_timeout(
     assert captured["timeout"] <= 300  # hard upper bound — regression guard
 
 
+def test_main_aborts_cleanly_on_dispatcher_unavailable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """If the Claude dispatcher raises DispatcherUnavailable (peak
+    hours, budget), main() must:
+      1. NOT mark the in-flight finding as unresolvable — it stays in
+         needs_citation for retry.
+      2. Exit with a non-zero code (3) signaling operator retry.
+      3. Print a clear message to stderr.
+
+    Regression guard for PR #374 review finding (Codex).
+    """
+    import citation_backfill
+
+    queue_dir = tmp_path / "human-review"
+    queue_dir.mkdir(parents=True)
+    finding = {
+        "line": 1,
+        "signals": ["year_reference"],
+        "excerpt": "In 2024, something happened.",
+    }
+    _write_queue_file(queue_dir / "x-one.json", "x/one", [finding])
+    monkeypatch.setattr(citation_residuals, "HUMAN_REVIEW_DIR", queue_dir)
+
+    def _unavailable(qp: Path, **_: Any) -> dict[str, Any]:
+        raise citation_backfill.DispatcherUnavailable("peak hours in effect")
+
+    monkeypatch.setattr(citation_residuals, "resolve_module", _unavailable)
+
+    rc = citation_residuals.main(
+        ["resolve", "x/one", "--agent", "claude", "--no-lock", "--dry-run"]
+    )
+    # Exit code 3 is our contract with ops scripts / CI for "retryable
+    # dispatcher refusal" vs a real error.
+    assert rc == 3
+    captured = capsys.readouterr()
+    assert "ABORT" in captured.err
+    assert "needs_citation" in captured.err
+    # Must NOT have run through to the TOTAL bookkeeping line — that
+    # would imply the finding was counted as (un)resolved.
+    assert "TOTAL:" not in captured.out
+
+
 def test_main_resolve_routes_to_selected_agent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
