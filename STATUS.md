@@ -2,9 +2,61 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-24 night — v2 Codex APPROVED on round 6; user-runnable smoke)
+## Active Work (2026-04-24 ~01:55 local — argo-events smoke 5/6 validated; write-retry hang blocking)
 
-**Status**: v2 mechanically complete + Codex-APPROVED on round 6. **147 quality tests green; ruff clean. 12 commits ahead of origin/main on `main`. Primary clean. Not pushed.** Pipeline mutations remain user-run (per `feedback_no_run_scripts`), so the smoke is staged but not yet executed.
+**Status**: v2 end-to-end pipeline validated through every stage **except final merge**. **152 quality tests green; ruff clean. 17 commits ahead of origin/main. Primary clean. Not pushed.** Four smoke rounds on `k8s-capa-module-1.2-argo-events` exposed three real bugs (all fixed) and one intermittent claude API hang that remains.
+
+### Smoke autopsy
+
+| Round | Outcome | Discovered | Closed by |
+|------|---------|------------|-----------|
+| 1 | FAILED at extract — claude returned 1.1 KB summary instead of 80 KB module | Tools-enabled claude is agentic by default; rewrites worktree files via Edit/Write and returns only a summary on stdout | `912f56ee` (diag-save infra) + `b488e522` (`--no-tools` plumbing) |
+| 2 | FAILED at write — claude hung 900 s with 0 B stdout | Wide `--disallowedTools` (incl. Read/Glob/Grep) sends claude into a state where it produces nothing | `c8a5f3d1` (narrow disallow list — only Bash/Edit/Write/NotebookEdit/WebFetch/WebSearch/Skill/Agent/ExitPlanMode blocked, read-only tools allowed) |
+| 3 | FAILED at review — codex CLI subparser missing | Latent bug: `dispatch.py` exposed `dispatch_codex()` but never wired a `codex` argparse subparser; tests stub the function so it was never noticed | `2c2a80a5` (codex subparser added) |
+| 4 | FAILED at write retry — claude hung 900 s with 0 B stdout, AGAIN | Initial write succeeded (84 KB, 7 min). Codex review correctly returned `changes_requested` with 3 must-fixes. Retry write hung at the second consecutive claude call | **NOT FIXED** — likely Anthropic-side throttling or sonnet-4.6 instability on consecutive heavy calls within a short window |
+
+### What round 4 validated
+
+End-to-end mechanics that work:
+
+- ✅ Audit promotion (uses cached teaching-audit JSON)
+- ✅ Route (score 3.8 → rewrite, writer=claude, reviewer=codex)
+- ✅ Worktree create + claude writer dispatch (`--no-tools` narrow list)
+- ✅ Module extraction from claude stdout (prose preamble stripped, frontmatter recovered)
+- ✅ Worktree commit (`07dd4678`)
+- ✅ Citation_verify (no `## Sources` in writer output → had_sources=false → kept=0/removed=0, clean transition)
+- ✅ Cross-family review dispatched to codex
+- ✅ Review verdict parsed (`changes_requested`, 3 must-fix items captured)
+- ✅ REVIEW_CHANGES → WRITE_PENDING retry routing (`retry_count` incremented to 1 of cap 2)
+- ✅ Worktree + branch teardown on FAILED transition (round-5 ownership-invariant fix held under real failure path)
+
+The only unvalidated path is `merge_one` (rebase + ff-merge to main).
+
+### Open issue: claude write retry hang
+
+The retry write hung with 0 B stdout across 900 s — same signature as round 2, despite the narrow disallow list that worked for round 4 write 1. Hypothesis (unverified): Anthropic's max-plan API throttles or stalls on a second large claude-code call issued within ~10 min of the first. The `_claude_call_count` budget is per-process so each `dispatch_claude` starts fresh, but Anthropic-side rate windows are independent of our process.
+
+Diagnostic data preserved: `.pipeline/quality-pipeline/k8s-capa-module-1.2-argo-events.write.36654ecb2e86.failed.json` (retry hang, 0 B stdout, "Claude timed out after 900s") and `.pipeline/quality-pipeline/k8s-capa-module-1.2-argo-events.write.d42d847f1341.failed.json` (round-2 wide-disallow hang).
+
+### Options to unblock
+
+1. **Wait + retry** — try the smoke after a longer cool-down (≥30 min from the last hang at 23:55 local). If the hang is rate-window-driven, this works without code changes.
+2. **Add hang-detection retry inside `_write_in_worktree`** — on dispatch failure with stdout_len=0 + timeout signature, sleep N seconds then retry once with a fresh attempt_id. Bounds wasted compute at +1 attempt per write.
+3. **Bump write timeout to 1800 s** — useful only if hang is "slow generation," not "stuck." Round-2 and round-4 hangs both produced zero bytes across 900 s, suggesting genuine stuck-state — bumping alone unlikely to help.
+4. **Pin claude-haiku-4-5 for retry writes** — faster + likely a different rate bucket from sonnet-4.6 default.
+
+Recommended order: 1 → 2.
+
+### Commits this session (6, all unpushed)
+
+| SHA | Title |
+|-----|-------|
+| `e240f551` | round-5 post-create-worktree race fix (Codex round-5 must) |
+| `3ef9bddf` | STATUS — round-6 APPROVE notation |
+| `912f56ee` | persist writer raw stdout/stderr on write failure |
+| `b488e522` | force text-only output from claude writer/reviewer (`--no-tools` plumbing) |
+| `c8a5f3d1` | narrow `--no-tools` disallow list |
+| `2c2a80a5` | add missing `codex` subparser to `dispatch.py` |
 
 **Read this first**: [`docs/sessions/2026-04-24-v2-implementation-handoff.md`](docs/sessions/2026-04-24-v2-implementation-handoff.md) — cold-start function with Codex must-fix→file:line→test mapping and the "what NOT to do" list.
 
