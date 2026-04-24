@@ -375,7 +375,12 @@ def _write_in_worktree(
     # the reviewer (Codex must-fix #1) could read from it.
     wt = create_worktree(_primary(), slug)
     try:
-        result = dispatch(writer, prompt, timeout=timeout, cwd=wt)
+        # tools_disabled=True forces stdout-only output. Without it,
+        # Claude's print mode is agentic and will modify files in ``cwd``
+        # (the worktree) directly, returning only a summary on stdout —
+        # which the extractor then rejects as "no frontmatter delimiter
+        # found" while the actual rewrite gets nuked with the worktree.
+        result = dispatch(writer, prompt, timeout=timeout, cwd=wt, tools_disabled=True)
         if not result.ok:
             diag = _save_write_diag(
                 slug=slug, writer=writer, attempt_id=attempt_id,
@@ -696,7 +701,11 @@ def review_one(slug: str, *, timeout: int = 900) -> None:
         )
 
         try:
-            result = dispatch(reviewer, prompt, timeout=timeout)
+            # See writer-side note: agentic Claude will read+edit files in
+            # cwd if tools are available. Reviewer cwd defaults to primary,
+            # but tool-use would still pollute stdout with summaries
+            # instead of the verdict JSON.
+            result = dispatch(reviewer, prompt, timeout=timeout, tools_disabled=True)
         except DispatcherUnavailable:
             # Revert to REVIEW_PENDING so the next run can re-attempt.
             state.transition(

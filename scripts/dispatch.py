@@ -365,9 +365,31 @@ def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
     return False, output
 
 
+_CLAUDE_TEXT_ONLY_DISALLOWED = (
+    "Bash,Edit,Write,Read,Glob,Grep,Task,TodoWrite,"
+    "NotebookEdit,WebFetch,WebSearch,Skill,ExitPlanMode,Agent"
+)
+"""Tool list passed to ``--disallowedTools`` when ``tools_disabled=True``.
+
+Claude in print mode (``-p``) defaults to allowing the full built-in tool
+set. Given an agentic prompt and a writable cwd it will use Edit/Write to
+modify files in cwd and return only a summary on stdout — which is fatal
+for the v2 quality pipeline writer/reviewer paths, where the pipeline
+expects the rewritten module markdown on stdout (see the
+k8s-capa-module-1.2-argo-events smoke autopsy).
+"""
+
+
 def dispatch_claude(prompt: str, model: str = CLAUDE_DEFAULT_MODEL,
-                    timeout: int = 600, mcp: bool = False) -> tuple[bool, str]:
+                    timeout: int = 600, mcp: bool = False,
+                    tools_disabled: bool = False) -> tuple[bool, str]:
     """Call Claude CLI directly. Returns (success, output).
+
+    ``tools_disabled=True`` forces Claude to return all output via stdout
+    (no Edit/Write/Bash/etc.) by passing a comprehensive
+    ``--disallowedTools`` list. Required for the v2 writer/reviewer
+    paths — without it Claude treats the prompt agentically and modifies
+    files in cwd, returning only a summary on stdout.
 
     Raises:
         ClaudeUnavailableError: during weekday 14:00-20:00 local peak-hours
@@ -400,6 +422,8 @@ def dispatch_claude(prompt: str, model: str = CLAUDE_DEFAULT_MODEL,
             "--mcp-config", str(MCP_CONFIG),
             "--allowedTools", CLAUDE_TRANSLATION_TOOLS,
         ])
+    elif tools_disabled:
+        cmd.extend(["--disallowedTools", _CLAUDE_TEXT_ONLY_DISALLOWED])
 
     t0 = time.time()
 
@@ -751,6 +775,9 @@ def main():
     cp.add_argument("prompt", help="Prompt text (use '-' to read from stdin)")
     cp.add_argument("--model", default=CLAUDE_DEFAULT_MODEL, help=f"Claude model (default: {CLAUDE_DEFAULT_MODEL})")
     cp.add_argument("--mcp", action="store_true", help="Enable RAG MCP tools (for translations)")
+    cp.add_argument("--no-tools", dest="tools_disabled", action="store_true",
+                    help="Force Claude to return text only (disables Edit/Write/Bash/etc.). "
+                         "Use for v2 quality writer/reviewer dispatches where stdout = full module text.")
     cp.add_argument("--timeout", type=int, default=600, help="Timeout in seconds (default: 600)")
 
     # logs
@@ -777,7 +804,10 @@ def main():
 
     elif args.agent == "claude":
         prompt = sys.stdin.read() if args.prompt == "-" else args.prompt
-        ok, output = dispatch_claude(prompt, args.model, args.timeout, args.mcp)
+        ok, output = dispatch_claude(
+            prompt, args.model, args.timeout, args.mcp,
+            tools_disabled=getattr(args, "tools_disabled", False),
+        )
         if ok:
             print(output)
         sys.exit(0 if ok else 1)

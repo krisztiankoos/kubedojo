@@ -97,11 +97,19 @@ def dispatch(
     timeout: int,
     model: str | None = None,
     cwd: Path | None = None,
+    tools_disabled: bool = False,
 ) -> DispatchResult:
     """Call ``scripts/dispatch.py <agent>`` with the prompt on stdin.
 
     ``cwd`` defaults to the primary checkout. Pass the worktree path when
     dispatching a writer — Codex's file operations anchor to cwd.
+
+    ``tools_disabled=True`` forces text-only output (no Edit/Write/Bash
+    tool use). Required for v2 writer/reviewer dispatches: Claude
+    in print mode is agentic by default and will modify files in
+    ``cwd``, returning only a summary on stdout. Currently honored for
+    Claude only; Codex relies on its ``--sandbox read-only`` setting
+    in :mod:`scripts.dispatch` and Gemini has no built-in tools.
 
     Raises :class:`DispatcherUnavailable` when the stderr signals a
     temporary refusal. Returns :class:`DispatchResult` with ``ok=False``
@@ -114,6 +122,8 @@ def dispatch(
     cmd: list[str] = [_VENV_PYTHON, _DISPATCH_CLI, agent, "-", "--timeout", str(timeout)]
     if model:
         cmd.extend(["--model", model])
+    if tools_disabled and agent == "claude":
+        cmd.append("--no-tools")
 
     t0 = time.monotonic()
     try:

@@ -121,3 +121,74 @@ def test_dispatch_timeout_returns_failure(monkeypatch) -> None:
     result = dispatchers.dispatch("gemini", "prompt", timeout=10)
     assert result.ok is False
     assert "timeout" in result.stderr.lower()
+
+
+def test_dispatch_passes_no_tools_for_claude_when_tools_disabled(monkeypatch) -> None:
+    """Claude writer/reviewer dispatches must propagate ``--no-tools`` so
+    the CLI returns text-only output. Without it, Claude in print mode
+    is agentic and modifies files in cwd.
+
+    Regression guard for the k8s-capa-module-1.2-argo-events smoke
+    autopsy (Apr 24): writer FAILED with ``no frontmatter delimiter
+    found`` because Claude had used Edit/Write to rewrite the worktree
+    file and returned only a summary on stdout.
+    """
+    import subprocess
+    captured: dict = {}
+
+    class FakeProc:
+        stdout = "ok"
+        stderr = ""
+        returncode = 0
+
+    def capture_run(cmd, *args, **kwargs):
+        captured["cmd"] = list(cmd)
+        return FakeProc()
+
+    monkeypatch.setattr(subprocess, "run", capture_run)
+    dispatchers.dispatch("claude", "prompt", timeout=10, tools_disabled=True)
+    assert "--no-tools" in captured["cmd"]
+
+
+def test_dispatch_omits_no_tools_when_not_requested(monkeypatch) -> None:
+    """Default (citation_verify, translation, etc.) must NOT pass
+    ``--no-tools`` — Claude's full tool set is needed there."""
+    import subprocess
+    captured: dict = {}
+
+    class FakeProc:
+        stdout = "ok"
+        stderr = ""
+        returncode = 0
+
+    monkeypatch.setattr(
+        subprocess, "run",
+        lambda cmd, *a, **k: (captured.setdefault("cmd", list(cmd)), FakeProc())[1],
+    )
+    dispatchers.dispatch("claude", "prompt", timeout=10)
+    assert "--no-tools" not in captured["cmd"]
+
+
+def test_dispatch_no_tools_only_for_claude(monkeypatch) -> None:
+    """Codex/Gemini have no built-in agentic tools surface in
+    ``scripts.dispatch`` (Codex relies on ``--sandbox read-only``),
+    so the flag is a no-op for them. Passing it should still not crash
+    or pollute the command line.
+    """
+    import subprocess
+    captured: dict = {}
+
+    class FakeProc:
+        stdout = "ok"
+        stderr = ""
+        returncode = 0
+
+    monkeypatch.setattr(
+        subprocess, "run",
+        lambda cmd, *a, **k: (captured.setdefault("cmd", list(cmd)), FakeProc())[1],
+    )
+    dispatchers.dispatch("codex", "prompt", timeout=10, tools_disabled=True)
+    assert "--no-tools" not in captured["cmd"]
+    captured.clear()
+    dispatchers.dispatch("gemini", "prompt", timeout=10, tools_disabled=True)
+    assert "--no-tools" not in captured["cmd"]

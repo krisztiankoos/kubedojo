@@ -164,7 +164,7 @@ def _review_changes_output(must_fix: list[str]) -> str:
 def _stubbed_dispatch(writer_out: str, review_out: str):
     """Build a dispatch fake keyed by agent — so write and review paths
     can return different content, matching the cross-family boundary."""
-    def fake_dispatch(agent, prompt, *, timeout, model=None, cwd=None):
+    def fake_dispatch(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
         if "## Your task" in prompt and "reviewing a KubeDojo module" in prompt:
             return DispatchResult(
                 ok=True, stdout=review_out, stderr="", returncode=0,
@@ -266,7 +266,7 @@ Start of body.
 kubectl get pods
 """  # no closing fence
 
-    def bad_dispatch(agent, prompt, *, timeout, model=None, cwd=None):
+    def bad_dispatch(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
         return DispatchResult(
             ok=True, stdout=truncated, stderr="", returncode=0,
             duration_sec=0.1, agent=agent, model=model,
@@ -296,7 +296,7 @@ def test_write_one_extract_failure_persists_raw_diag(fake_repo, monkeypatch):
 
     bogus_output = "I think the user wants me to refuse this rewrite."
 
-    def bad_dispatch(agent, prompt, *, timeout, model=None, cwd=None):
+    def bad_dispatch(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
         return DispatchResult(
             ok=True, stdout=bogus_output, stderr="some chatter",
             returncode=0, duration_sec=0.42, agent=agent, model=model,
@@ -333,7 +333,7 @@ def test_write_one_dispatch_nonzero_persists_raw_diag(fake_repo, monkeypatch):
     stages.audit_one(slug)
     stages.route_one(slug)
 
-    def crashing_dispatch(agent, prompt, *, timeout, model=None, cwd=None):
+    def crashing_dispatch(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
         return DispatchResult(
             ok=False, stdout="partial output before crash",
             stderr="Traceback (most recent call last): RuntimeError: kaboom",
@@ -367,7 +367,7 @@ def test_write_one_dispatcher_unavailable_reverts_to_pending(fake_repo, monkeypa
     stages.audit_one(slug)
     stages.route_one(slug)
 
-    def unavail(agent, prompt, *, timeout, model=None, cwd=None):
+    def unavail(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
         raise dispatchers.DispatcherUnavailable("claude peak hours")
 
     monkeypatch.setattr(stages, "dispatch", unavail)
@@ -396,7 +396,7 @@ def test_reviewer_reads_module_from_worktree_not_primary(fake_repo, monkeypatch)
 
     captured_review_prompt: list[str] = []
 
-    def capturing_dispatch(agent, prompt, *, timeout, model=None, cwd=None):
+    def capturing_dispatch(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
         if "reviewing a KubeDojo module" in prompt:
             captured_review_prompt.append(prompt)
             return DispatchResult(
@@ -868,7 +868,7 @@ def test_failed_modules_have_branches_cleaned_up(fake_repo, monkeypatch):
     stages.route_one(slug)
 
     # Force a write failure by making Codex output malformed.
-    def bad_dispatch(agent, prompt, *, timeout, model=None, cwd=None):
+    def bad_dispatch(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
         return DispatchResult(
             ok=True, stdout="garbage no frontmatter",
             stderr="", returncode=0, duration_sec=0.1, agent=agent, model=model,
