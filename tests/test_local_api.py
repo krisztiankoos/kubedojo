@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sqlite3
 import subprocess
 import sys
@@ -2790,3 +2791,166 @@ def test_cli_starts_server_and_reports_host_port(tmp_path: Path) -> None:
     finally:
         process.terminate()
         process.wait(timeout=5)
+
+
+def _seed_commit(repo: Path) -> None:
+    _init_repo(repo)
+    (repo / "a.txt").write_text("seed", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-m", "seed")
+    # Normalize: `git init` defaults to `master` on older git; the hygiene
+    # check keys on `main`. Force it so tests don't silently depend on the
+    # host machine's init.defaultBranch setting.
+    _git(repo, "branch", "-M", "main")
+
+
+def _stash_with_date(repo: Path, ts: int, message: str) -> None:
+    """Create a stash whose committer timestamp is `ts` (unix seconds).
+
+    `git stash push` honors GIT_COMMITTER_DATE / GIT_AUTHOR_DATE, so we
+    can back-date a stash for age-bucket tests without mutating refs by
+    hand. Uses -u so a fresh untracked file qualifies — without it, git
+    exits 0 with "No local changes to save" and the caller silently gets
+    an empty stash list.
+    """
+    env = {
+        **os.environ,
+        "GIT_COMMITTER_DATE": f"@{ts} +0000",
+        "GIT_AUTHOR_DATE": f"@{ts} +0000",
+    }
+    (repo / f"stash-{ts}.txt").write_text("modified", encoding="utf-8")
+    subprocess.run(
+        ["git", "stash", "push", "-u", "-m", message],
+        cwd=repo, env=env, check=True, capture_output=True,
+    )
+    r = subprocess.run(
+        ["git", "stash", "list"],
+        cwd=repo, capture_output=True, text=True, check=True,
+    )
+    if not r.stdout.strip():
+        raise RuntimeError("stash push did not actually create a stash")
+
+
+def test_git_hygiene_clean_repo_emits_nothing(tmp_path: Path) -> None:
+    _seed_commit(tmp_path)
+    worktree = local_api.build_worktree_status(tmp_path)
+    worktrees = local_api.build_worktrees_list(tmp_path)
+    assert local_api._git_hygiene_signals(tmp_path, worktree, worktrees) == []
+
+
+def test_git_hygiene_flags_stash_older_than_seven_days(tmp_path: Path) -> None:
+    _seed_commit(tmp_path)
+    _stash_with_date(tmp_path, int(time.time()) - 10 * 86400, "ancient")
+    worktree = local_api.build_worktree_status(tmp_path)
+    worktrees = local_api.build_worktrees_list(tmp_path)
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, worktrees)
+    assert any("older than 7 days" in a for a in alerts)
+
+
+def test_git_hygiene_flags_stash_older_than_one_day(tmp_path: Path) -> None:
+    _seed_commit(tmp_path)
+    _stash_with_date(tmp_path, int(time.time()) - 2 * 86400, "stale")
+    worktree = local_api.build_worktree_status(tmp_path)
+    worktrees = local_api.build_worktrees_list(tmp_path)
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, worktrees)
+    # 2-day-old stash is "stale" not "ancient"; 7-day wording should not appear.
+    assert any("older than 24h" in a for a in alerts)
+    assert not any("older than 7 days" in a for a in alerts)
+
+
+def test_git_hygiene_ignores_fresh_stash(tmp_path: Path) -> None:
+    _seed_commit(tmp_path)
+    _stash_with_date(tmp_path, int(time.time()) - 60, "fresh")
+    worktree = local_api.build_worktree_status(tmp_path)
+    worktrees = local_api.build_worktrees_list(tmp_path)
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, worktrees)
+    # Under 24h — no stash-age alert should fire.
+    assert not any("stash(es)" in a for a in alerts)
+
+
+def test_git_hygiene_ancient_suppresses_stale_message(tmp_path: Path) -> None:
+    # When a repo has BOTH >7-day and >24h stashes, only the >7-day line
+    # fires — we'd rather the operator see the worst offender than two
+    # competing lines about the same pile. The ancient-count excludes
+    # stale-only stashes (counts aren't double-counted).
+    _seed_commit(tmp_path)
+    _stash_with_date(tmp_path, int(time.time()) - 10 * 86400, "ancient")
+    _stash_with_date(tmp_path, int(time.time()) - 2 * 86400, "merely-stale")
+    worktree = local_api.build_worktree_status(tmp_path)
+    worktrees = local_api.build_worktrees_list(tmp_path)
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, worktrees)
+    ancient_lines = [a for a in alerts if "older than 7 days" in a]
+    stale_lines = [a for a in alerts if "older than 24h" in a]
+    assert len(ancient_lines) == 1
+    assert stale_lines == []
+    assert "1 stash(es)" in ancient_lines[0]  # only the >7d one counted
+
+
+def test_git_hygiene_tolerates_malformed_stash_list_output(
+    tmp_path: Path, monkeypatch
+) -> None:
+    # `git stash list --format=%ct` should always be one unix-timestamp
+    # per line, but we guard against weird states (half-broken stash
+    # ref, future git version) so a freak output never crashes the
+    # briefing. Pin that best-effort behavior.
+    _seed_commit(tmp_path)
+    worktree = local_api.build_worktree_status(tmp_path)
+    worktrees = local_api.build_worktrees_list(tmp_path)
+
+    ancient_ts = int(time.time()) - 10 * 86400
+    real_run = local_api.subprocess.run
+
+    def fake_run(cmd, **kwargs):
+        if list(cmd[:4]) == ["git", "stash", "list", "--format=%ct"]:
+            class _R:
+                returncode = 0
+                stdout = f"garbage\n{ancient_ts}\n\nnot-a-number\n"
+            return _R()
+        return real_run(cmd, **kwargs)
+
+    monkeypatch.setattr(local_api.subprocess, "run", fake_run)
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, worktrees)
+    # One valid numeric line interpreted as a real >7d stash; junk ignored.
+    assert any("older than 7 days" in a and "1 stash(es)" in a for a in alerts)
+
+
+def test_git_hygiene_flags_detached_worktree(tmp_path: Path) -> None:
+    _seed_commit(tmp_path)
+    worktree = local_api.build_worktree_status(tmp_path)
+    fake = {
+        "worktrees": [
+            {"path": str(tmp_path), "branch": "main", "detached": False},
+            {"path": "/tmp/stale-detached", "branch": None, "detached": True},
+        ]
+    }
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, fake)
+    assert any("detached HEAD" in a for a in alerts)
+
+
+def test_git_hygiene_flags_dirty_main(tmp_path: Path) -> None:
+    _seed_commit(tmp_path)
+    (tmp_path / "b.txt").write_text("uncommitted leak", encoding="utf-8")
+    _git(tmp_path, "add", "b.txt")
+    worktree = local_api.build_worktree_status(tmp_path)
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, {"worktrees": []})
+    assert any("uncommitted" in a and "on main" in a for a in alerts)
+
+
+def test_git_hygiene_silent_on_dirty_non_main_branch(tmp_path: Path) -> None:
+    _seed_commit(tmp_path)
+    _git(tmp_path, "checkout", "-b", "feature-x")
+    (tmp_path / "b.txt").write_text("wip", encoding="utf-8")
+    worktree = local_api.build_worktree_status(tmp_path)
+    alerts = local_api._git_hygiene_signals(tmp_path, worktree, {"worktrees": []})
+    # Dirty branches other than main are normal working state, not drift.
+    assert not any("uncommitted" in a for a in alerts)
+
+
+def test_session_briefing_surfaces_git_hygiene_alert(tmp_path: Path) -> None:
+    _setup_repo(tmp_path)
+    _stash_with_date(tmp_path, int(time.time()) - 10 * 86400, "ancient-audit-work")
+    briefing = local_api.build_session_briefing(tmp_path)
+    assert any(
+        "git hygiene" in a and "older than 7 days" in a
+        for a in briefing["alerts"]
+    )

@@ -5169,6 +5169,75 @@ def _pipeline_summary_safe(repo_root: Path) -> dict[str, Any] | None:
     }
 
 
+def _git_hygiene_signals(
+    repo_root: Path,
+    worktree: dict[str, Any],
+    worktrees: dict[str, Any],
+) -> list[str]:
+    """Alerts for git state that rots silently until someone trips over it.
+
+    Complements build_git_cleanup_report (prunable branches/worktrees) by
+    catching the three drift patterns that have actually bitten us:
+    forgotten stashes, detached-HEAD worktrees, and uncommitted files on
+    main (pipeline or pilot residuals leak here).
+    """
+    out: list[str] = []
+
+    try:
+        r = subprocess.run(
+            ["git", "stash", "list", "--format=%ct"],
+            cwd=repo_root, capture_output=True, text=True, check=False, timeout=5,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            now = time.time()
+            ages = [
+                now - int(line.strip())
+                for line in r.stdout.splitlines()
+                if line.strip().isdigit()
+            ]
+            ancient = sum(1 for a in ages if a > 7 * 86400)
+            stale = sum(1 for a in ages if a > 86400) - ancient
+            if ancient:
+                out.append(
+                    f"git hygiene: {ancient} stash(es) older than 7 days "
+                    "— inspect with `git stash list --date=relative` or drop"
+                )
+            elif stale:
+                out.append(
+                    f"git hygiene: {stale} stash(es) older than 24h "
+                    "— forgotten stashes become landmines"
+                )
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+    detached_paths = [
+        wt.get("path")
+        for wt in (worktrees.get("worktrees") or [])
+        if wt.get("detached")
+    ]
+    if detached_paths:
+        shown = ", ".join(str(p) for p in detached_paths[:3] if p)
+        more = f" (+{len(detached_paths) - 3} more)" if len(detached_paths) > 3 else ""
+        out.append(
+            f"git hygiene: {len(detached_paths)} worktree(s) in detached HEAD"
+            + (f": {shown}{more}" if shown else "")
+        )
+
+    if (
+        worktree.get("ok")
+        and worktree.get("branch") == "main"
+        and worktree.get("dirty")
+    ):
+        counts = worktree.get("counts") or {}
+        total = counts.get("total") or 0
+        out.append(
+            f"git hygiene: {total} uncommitted file(s) on main "
+            "— pipeline/pilot residuals sometimes land here; verify before committing"
+        )
+
+    return out
+
+
 def build_session_briefing(repo_root: Path) -> dict[str, Any]:
     """Compact control-plane snapshot for agent orientation.
 
@@ -5245,6 +5314,11 @@ def build_session_briefing(repo_root: Path) -> dict[str, Any]:
                 f"git hygiene: {cb} prunable branch(es), {cw} prunable worktree(s) "
                 "— run `git cleanup-merged` (see /api/git/cleanup)"
             )
+    except Exception:  # noqa: BLE001
+        pass
+
+    try:
+        alerts.extend(_git_hygiene_signals(repo_root, worktree, worktrees))
     except Exception:  # noqa: BLE001
         pass
 
