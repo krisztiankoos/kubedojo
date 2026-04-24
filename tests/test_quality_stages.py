@@ -906,6 +906,89 @@ def test_merge_retries_on_transient_rebase_failure(fake_repo, monkeypatch):
     assert calls["rebase"] == 2, "rebase should have been retried once"
 
 
+def test_cleanup_only_removes_worktree_when_write_text_raises(fake_repo, monkeypatch):
+    """Codex re-review must regression guard.
+
+    The cleanup-only path creates a fresh worktree. If
+    ``module_file.write_text(result.new_text)`` raises (disk full,
+    permissions, unicode error, ...) the worktree + branch must still
+    be torn down — the prior fix had the write outside the inner
+    try/except, so a write failure leaked the throwaway worktree.
+    """
+    slug = _high_score_module_setup(fake_repo)
+
+    def partial_verifier(_prompt):
+        return DispatchResult(
+            ok=True,
+            stdout=json.dumps({"verdict": "partial", "reasoning": "weak", "excerpt": ""}),
+            stderr="", returncode=0, duration_sec=0.1, agent="gemini", model=None,
+        )
+
+    # Force write_text to raise. Patch Path.write_text for the specific
+    # module_file the stage is about to write.
+    original_write_text = Path.write_text
+    wt = worktree.worktree_dir(fake_repo, slug)
+    # (worktree doesn't exist yet; citation_verify_one will create it)
+
+    def boomy_write_text(self, *a, **kw):
+        # Only fail for writes inside the worktree (i.e. the result.new_text
+        # write) — leave state-file writes alone.
+        if str(self).startswith(str(fake_repo / ".worktrees")):
+            raise OSError("simulated disk failure")
+        return original_write_text(self, *a, **kw)
+
+    monkeypatch.setattr(Path, "write_text", boomy_write_text)
+
+    with pytest.raises(OSError):
+        stages.citation_verify_one(
+            slug, verifier_fn=partial_verifier, fetcher_fn=lambda _u: "page"
+        )
+
+    # Worktree + branch scrubbed despite the crash.
+    assert not wt.exists()
+    import subprocess as _sp
+    rc = _sp.run(
+        ["git", "rev-parse", "--verify", worktree.branch_name(slug)],
+        cwd=fake_repo, capture_output=True,
+    ).returncode
+    assert rc != 0, "cleanup-only branch must not leak on write_text failure"
+
+
+def test_merge_lock_timeout_reaches_fail_and_cleanup(fake_repo, monkeypatch):
+    """Codex re-review nit: lock-contention TimeoutError must reach
+    _fail_and_cleanup, not loop or silently succeed."""
+    slug = _bootstrap(fake_repo)
+    monkeypatch.setattr(
+        stages, "dispatch",
+        _stubbed_dispatch(_writer_stub_output(), _review_approve_output()),
+    )
+    monkeypatch.setattr(
+        stages, "process_module_citations",
+        lambda p, *, verifier=None, fetcher=None: CitationResult(new_text=p.read_text(), had_sources_section=False),
+    )
+    stages.audit_one(slug)
+    stages.route_one(slug)
+    stages.write_one(slug, timeout=10)
+    stages.citation_verify_one(slug)
+    stages.review_one(slug, timeout=10)
+
+    # Force _merge_lock to raise TimeoutError (as if another worker held
+    # the lock past the contention budget).
+    from contextlib import contextmanager
+
+    @contextmanager
+    def timeout_lock(timeout=None):
+        raise TimeoutError("simulated lock contention")
+        yield  # unreachable
+
+    monkeypatch.setattr(stages, "_merge_lock", timeout_lock)
+    stages.merge_one(slug)
+
+    st = state.load_state(slug)
+    assert st["stage"] == "FAILED"
+    assert "TimeoutError" in (st.get("failure_reason") or "") or "lock" in (st.get("failure_reason") or "").lower()
+
+
 def test_write_cleanup_even_when_commit_fails(fake_repo, monkeypatch):
     """Codex must #8 regression guard.
 

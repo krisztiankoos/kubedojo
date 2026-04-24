@@ -457,10 +457,13 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
     }
 
     # Apply changes + commit if needed. All file + git ops run inside the
-    # worktree; primary is never touched.
+    # worktree; primary is never touched. The write AND the git sequence
+    # share one BaseException handler so a disk failure mid-write_text
+    # cleans up the throwaway cleanup-only worktree — Codex re-review
+    # caught the prior split where write_text lived outside the handler.
     if result.changed:
-        module_file.write_text(result.new_text, encoding="utf-8")
         try:
+            module_file.write_text(result.new_text, encoding="utf-8")
             if from_stage == "WRITE_DONE":
                 subprocess.run(["git", "add", module_rel], cwd=wt, check=True, capture_output=True)
                 subprocess.run(
