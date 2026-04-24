@@ -1152,3 +1152,82 @@ def test_resolve_module_default_dispatcher_is_short_timeout_wrapper() -> None:
             f"{fn.__name__} default dispatcher is {default!r}, expected "
             "the short-timeout wrapper"
         )
+
+
+# ---- --agent flag routing ------------------------------------------------
+
+
+def test_candidate_dispatchers_registry_has_both_agents() -> None:
+    """The --agent CLI choices must stay in sync with the wrapper
+    registry. If either drifts the flag becomes a silent no-op for the
+    missing agent."""
+    assert set(citation_residuals.CANDIDATE_DISPATCHERS) == {"gemini", "claude"}
+    assert (
+        citation_residuals.CANDIDATE_DISPATCHERS["gemini"]
+        is citation_residuals._dispatch_gemini_for_candidate
+    )
+    assert (
+        citation_residuals.CANDIDATE_DISPATCHERS["claude"]
+        is citation_residuals._dispatch_claude_for_candidate
+    )
+
+
+def test_claude_wrapper_passes_short_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The Claude wrapper mirrors the Gemini one: forward
+    CLAUDE_PER_FINDING_TIMEOUT to dispatch_claude so one stuck call
+    cannot block the whole pilot."""
+    captured: dict[str, Any] = {}
+
+    def fake_dispatch(prompt: str, *, timeout: int) -> tuple[bool, str]:
+        captured["timeout"] = timeout
+        return True, "{}"
+
+    monkeypatch.setattr(citation_residuals, "dispatch_claude", fake_dispatch)
+    citation_residuals._dispatch_claude_for_candidate("hi")
+    assert captured["timeout"] == citation_residuals.CLAUDE_PER_FINDING_TIMEOUT
+    assert captured["timeout"] <= 300  # hard upper bound — regression guard
+
+
+def test_main_resolve_routes_to_selected_agent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--agent claude must route through the Claude wrapper, not the
+    Gemini default. Breakage here would make the flag a silent no-op."""
+    queue_dir = tmp_path / "human-review"
+    queue_dir.mkdir(parents=True)
+    finding = {
+        "line": 1,
+        "signals": ["year_reference"],
+        "excerpt": "In 2024, something happened.",
+    }
+    _write_queue_file(queue_dir / "x-one.json", "x/one", [finding])
+    monkeypatch.setattr(citation_residuals, "HUMAN_REVIEW_DIR", queue_dir)
+
+    seen: list[object] = []
+
+    def fake_resolve(qp: Path, **kwargs: Any) -> dict[str, Any]:
+        seen.append(kwargs.get("dispatcher"))
+        return {
+            "module_key": qp.stem,
+            "considered": 0,
+            "resolved": 0,
+            "unresolvable": 0,
+            "module_edited": False,
+        }
+
+    monkeypatch.setattr(citation_residuals, "resolve_module", fake_resolve)
+
+    rc = citation_residuals.main(
+        ["resolve", "x/one", "--agent", "claude", "--no-lock", "--dry-run"]
+    )
+    assert rc == 0
+    assert seen == [citation_residuals._dispatch_claude_for_candidate]
+
+    seen.clear()
+    rc = citation_residuals.main(
+        ["resolve", "x/one", "--agent", "gemini", "--no-lock", "--dry-run"]
+    )
+    assert rc == 0
+    assert seen == [citation_residuals._dispatch_gemini_for_candidate]

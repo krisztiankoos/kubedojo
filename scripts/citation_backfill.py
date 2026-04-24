@@ -743,6 +743,44 @@ def dispatch_gemini(prompt: str, *, timeout: int = GEMINI_DEFAULT_TIMEOUT) -> tu
     return True, proc.stdout
 
 
+#: Default Claude timeout mirrors dispatch.py's CLI default; per-finding
+#: callers pass a shorter value explicitly.
+CLAUDE_DEFAULT_TIMEOUT = 600
+
+
+def dispatch_claude(prompt: str, *, timeout: int = CLAUDE_DEFAULT_TIMEOUT) -> tuple[bool, str]:
+    """Mirror of dispatch_gemini but via the Claude CLI subprocess.
+
+    Exists because Gemini's per-finding URL-candidate path hit a high
+    false-timeout rate even at 120s — see #373 for the composite-probe
+    solution. Claude is the short-term workaround: a second dispatcher
+    callers can swap in via the CLI's --agent flag.
+
+    Goes through scripts/dispatch.py so Claude's peak-hours guard and
+    per-process budget check still apply.
+    """
+    cmd = [
+        sys.executable,
+        str(REPO_ROOT / "scripts" / "dispatch.py"),
+        "claude", "-", "--timeout", str(timeout),
+    ]
+    try:
+        proc = subprocess.run(
+            cmd,
+            input=prompt,
+            cwd=str(REPO_ROOT),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return False, f"timeout_after_{timeout}s"
+    if proc.returncode != 0:
+        return False, proc.stderr or proc.stdout
+    return True, proc.stdout
+
+
 # ---- validation ----------------------------------------------------------
 
 
