@@ -906,6 +906,56 @@ def test_merge_retries_on_transient_rebase_failure(fake_repo, monkeypatch):
     assert calls["rebase"] == 2, "rebase should have been retried once"
 
 
+def test_cleanup_only_removes_worktree_when_lease_raises_after_create(fake_repo, monkeypatch):
+    """Codex third-pass regression guard.
+
+    If the final ``state.state_lease`` times out or ``state.transition``
+    raises AFTER ``create_worktree`` on the cleanup-only path, the new
+    worktree + branch must still be torn down.
+    """
+    slug = _high_score_module_setup(fake_repo)
+
+    def partial_verifier(_prompt):
+        return DispatchResult(
+            ok=True,
+            stdout=json.dumps({"verdict": "partial", "reasoning": "weak", "excerpt": ""}),
+            stderr="", returncode=0, duration_sec=0.1, agent="gemini", model=None,
+        )
+
+    # Force state_lease to raise TimeoutError on the SECOND call
+    # (first is for the initial CITATION_VERIFY transition; second is
+    # the final-state lease after the citation work completed).
+    original_lease = state.state_lease
+    calls = {"n": 0}
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def flaky_lease(slug_arg, timeout=5.0):
+        calls["n"] += 1
+        if calls["n"] >= 2:
+            raise TimeoutError("simulated post-write lease contention")
+        with original_lease(slug_arg, timeout=timeout) as lease:
+            yield lease
+
+    monkeypatch.setattr(state, "state_lease", flaky_lease)
+
+    with pytest.raises(TimeoutError):
+        stages.citation_verify_one(
+            slug, verifier_fn=partial_verifier, fetcher_fn=lambda _u: "page"
+        )
+
+    # Even though the final transition raised, the cleanup-only worktree
+    # + branch must be gone.
+    assert not worktree.worktree_dir(fake_repo, slug).exists()
+    import subprocess as _sp
+    rc = _sp.run(
+        ["git", "rev-parse", "--verify", worktree.branch_name(slug)],
+        cwd=fake_repo, capture_output=True,
+    ).returncode
+    assert rc != 0, "cleanup-only branch must not leak on post-write lease failure"
+
+
 def test_cleanup_only_removes_worktree_when_write_text_raises(fake_repo, monkeypatch):
     """Codex re-review must regression guard.
 

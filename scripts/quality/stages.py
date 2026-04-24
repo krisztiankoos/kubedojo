@@ -428,41 +428,46 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
 
     module_file = wt / module_rel
     if not module_file.exists():
+        if worktree_created_here:
+            remove_worktree(_primary(), slug, delete_branch=True)
         with state.state_lease(slug) as lease:
             st2 = lease.load()
             if st2 is not None:
                 _fail_and_cleanup(st2, f"citation_verify: module file missing at {module_file}")
         return
 
+    # Single BaseException handler covers every step after create_worktree
+    # on the cleanup-only path: citation processing, file write, git
+    # commit, lease acquisition, state transition, branch-tip SHA read.
+    # Codex re-review caught that v1-fix only guarded the first two;
+    # a TimeoutError on the state lease or a StateError on transition
+    # could still leak the throwaway worktree. ``worktree_owned_by_next_stage``
+    # flips to True once the final transition durably hands the worktree
+    # off to a later stage (REVIEW_PENDING → review → merge cleans up,
+    # or REVIEW_APPROVED → merge cleans up). If we never get there, the
+    # handler tears down the cleanup-only worktree.
+    worktree_owned_by_next_stage = False
     try:
         result = process_module_citations(
             module_file,
             verifier=verifier_fn or default_verifier,
             fetcher=fetcher_fn or fetch_page,
         )
-    except BaseException:
-        if worktree_created_here:
-            remove_worktree(_primary(), slug, delete_branch=True)
-        raise
 
-    citations_meta = {
-        "had_sources": result.had_sources_section,
-        "kept": len(result.kept),
-        "removed": len(result.removed),
-        "section_dropped": result.section_dropped,
-        "removed_details": [
-            {"url": p.entry.url, "verdict": p.verdict.value, "reason": p.reasoning[:200]}
-            for p in result.removed
-        ],
-    }
+        citations_meta = {
+            "had_sources": result.had_sources_section,
+            "kept": len(result.kept),
+            "removed": len(result.removed),
+            "section_dropped": result.section_dropped,
+            "removed_details": [
+                {"url": p.entry.url, "verdict": p.verdict.value, "reason": p.reasoning[:200]}
+                for p in result.removed
+            ],
+        }
 
-    # Apply changes + commit if needed. All file + git ops run inside the
-    # worktree; primary is never touched. The write AND the git sequence
-    # share one BaseException handler so a disk failure mid-write_text
-    # cleans up the throwaway cleanup-only worktree — Codex re-review
-    # caught the prior split where write_text lived outside the handler.
-    if result.changed:
-        try:
+        # Apply changes + commit if needed. All file + git ops run inside
+        # the worktree; primary is never touched.
+        if result.changed:
             module_file.write_text(result.new_text, encoding="utf-8")
             if from_stage == "WRITE_DONE":
                 subprocess.run(["git", "add", module_rel], cwd=wt, check=True, capture_output=True)
@@ -478,42 +483,70 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
                 )
                 subprocess.run(["git", "add", module_rel], cwd=wt, check=True, capture_output=True)
                 subprocess.run(["git", "commit", "-m", msg], cwd=wt, check=True, capture_output=True)
-        except BaseException:
-            if worktree_created_here:
-                remove_worktree(_primary(), slug, delete_branch=True)
-            raise
 
-    # Advance state. Cleanup-only with no citation change is a SKIP —
-    # no branch to merge, tear down the throwaway worktree.
-    with state.state_lease(slug) as lease:
-        st2 = lease.load()
-        if st2 is None:
-            return
+        # Advance state. Cleanup-only with no citation change is a SKIP —
+        # no branch to merge, tear down the throwaway worktree.
         if from_stage == "WRITE_DONE":
-            state.transition(
-                st2, "CITATION_VERIFY", "REVIEW_PENDING",
-                citations=citations_meta,
-                note=f"kept={len(result.kept)} removed={len(result.removed)}",
-            )
+            # Worktree already owned by the writer's lifecycle (write → review
+            # → merge). We don't own it here, so we don't flip the flag for
+            # cleanup purposes — but we also don't tear it down; the review
+            # / merge path does that.
+            with state.state_lease(slug) as lease:
+                st2 = lease.load()
+                if st2 is None:
+                    return
+                state.transition(
+                    st2, "CITATION_VERIFY", "REVIEW_PENDING",
+                    citations=citations_meta,
+                    note=f"kept={len(result.kept)} removed={len(result.removed)}",
+                )
+            worktree_owned_by_next_stage = True
         elif result.changed:
-            state.transition(
-                st2, "CITATION_VERIFY", "REVIEW_APPROVED",
-                citations=citations_meta,
-                write={
-                    "agent": "citation-verify",
-                    "commit_sha": _branch_tip_sha(slug),
-                    "worktree": f".worktrees/quality-{slug}",
-                },
-                note=f"cleanup-only commit; kept={len(result.kept)} removed={len(result.removed)}",
-            )
+            # Compute the new tip BEFORE acquiring the lease — if rev-parse
+            # raises, we're still in the protected block and cleanup runs.
+            new_tip = _branch_tip_sha(slug)
+            with state.state_lease(slug) as lease:
+                st2 = lease.load()
+                if st2 is None:
+                    return
+                state.transition(
+                    st2, "CITATION_VERIFY", "REVIEW_APPROVED",
+                    citations=citations_meta,
+                    write={
+                        "agent": "citation-verify",
+                        "commit_sha": new_tip,
+                        "worktree": f".worktrees/quality-{slug}",
+                    },
+                    note=f"cleanup-only commit; kept={len(result.kept)} removed={len(result.removed)}",
+                )
+            # merge_one will tear down the worktree on success.
+            worktree_owned_by_next_stage = True
         else:
-            # No changes needed — skip merge entirely.
+            # No changes needed — skip merge entirely. Remove the throwaway
+            # worktree BEFORE the lease so a lock-timeout failure below
+            # still leaves the worktree scrubbed.
             remove_worktree(_primary(), slug, delete_branch=True)
-            state.transition(
-                st2, "CITATION_VERIFY", "SKIPPED",
-                citations=citations_meta,
-                note="cleanup-only: all citations verified, no changes",
-            )
+            # We've already cleaned up — next-stage ownership doesn't
+            # apply; don't leave the handler holding the bag.
+            worktree_owned_by_next_stage = True
+            with state.state_lease(slug) as lease:
+                st2 = lease.load()
+                if st2 is None:
+                    return
+                state.transition(
+                    st2, "CITATION_VERIFY", "SKIPPED",
+                    citations=citations_meta,
+                    note="cleanup-only: all citations verified, no changes",
+                )
+    except BaseException:
+        # If we never reached a durable hand-off, we still own the
+        # throwaway cleanup-only worktree — tear it down before
+        # propagating so the branch doesn't leak. The rewrite path
+        # (worktree_created_here=False) always leaves the worktree to
+        # the writer's lifecycle — don't touch it.
+        if worktree_created_here and not worktree_owned_by_next_stage:
+            remove_worktree(_primary(), slug, delete_branch=True)
+        raise
 
 
 def _branch_tip_sha(slug: str) -> str:
