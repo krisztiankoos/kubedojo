@@ -403,48 +403,53 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
 
     module_rel = st["module_path"]
 
-    # Ensure a worktree exists. On the rewrite path it's already there
-    # (carries the writer's commit). On the cleanup-only path we create
-    # one fresh from ``main`` — NEVER mutate primary (Codex fatal #1).
+    # Ownership invariants computed BEFORE any worktree mutation.
+    # ``preexisting_worktree`` captures whether a worktree existed on
+    # entry to this stage. Combined with ``from_stage`` it gives an
+    # invariant predicate — "did THIS function create the throwaway
+    # cleanup-only worktree?" — that does not depend on a flag flipped
+    # AFTER ``create_worktree`` returns. Codex round 5: a
+    # KeyboardInterrupt landing between ``wt = create_worktree(...)``
+    # success and a post-call assignment would have leaked the physical
+    # worktree under the prior flag-based scheme. The .exists() probe
+    # in the BaseException handler is belt-and-braces — if
+    # create_worktree raised before producing any state, the worktree
+    # is absent and remove_worktree is skipped. ``worktree_owned_by_next_stage``
+    # flips to True once a successful state transition durably hands
+    # the worktree off (REVIEW_PENDING → review → merge cleans up, or
+    # REVIEW_APPROVED → merge cleans up), OR when we've already
+    # scrubbed the worktree ourselves inline (SKIPPED / missing-file /
+    # st2-is-None).
     wt = worktree_dir(_primary(), slug)
-    worktree_created_here = False
-    if not wt.exists():
-        if from_stage != "CITATION_CLEANUP_ONLY":
-            # A missing worktree on the rewrite path is unrecoverable.
-            with state.state_lease(slug) as lease:
-                st2 = lease.load()
-                if st2 is not None:
-                    _fail_and_cleanup(st2, f"citation_verify: worktree missing for {slug}")
-            return
-        try:
-            wt = create_worktree(_primary(), slug)
-            worktree_created_here = True
-        except WorktreeError as exc:
-            with state.state_lease(slug) as lease:
-                st2 = lease.load()
-                if st2 is not None:
-                    _fail_and_cleanup(st2, f"citation_verify: {exc}")
-            return
-
-    # Single BaseException handler covers EVERY step after
-    # create_worktree on the cleanup-only path: module_file resolution,
-    # the missing-file check, citation processing, file write, git
-    # commit, lease acquisition, state transition, branch-tip SHA read.
-    # Codex rev 3-4 caught windows outside the handler where an
-    # exception (even a KeyboardInterrupt) would leak the throwaway
-    # worktree. ``worktree_owned_by_next_stage`` flips to True once the
-    # final transition durably hands the worktree off to a later stage
-    # (REVIEW_PENDING → review → merge cleans up, or REVIEW_APPROVED →
-    # merge cleans up), OR when we've already cleaned the worktree
-    # ourselves (SKIPPED / missing-file / st2-is-None). Any exception
-    # with the flag still False → teardown.
+    preexisting_worktree = wt.exists()
+    we_own_throwaway = (from_stage == "CITATION_CLEANUP_ONLY") and not preexisting_worktree
     worktree_owned_by_next_stage = False
+
     try:
+        if not preexisting_worktree:
+            if from_stage != "CITATION_CLEANUP_ONLY":
+                # A missing worktree on the rewrite path is unrecoverable.
+                with state.state_lease(slug) as lease:
+                    st2 = lease.load()
+                    if st2 is not None:
+                        _fail_and_cleanup(st2, f"citation_verify: worktree missing for {slug}")
+                return
+            try:
+                wt = create_worktree(_primary(), slug)
+            except WorktreeError as exc:
+                # ``create_worktree`` cleans up its own partial state on
+                # WorktreeError by contract — nothing for us to scrub.
+                with state.state_lease(slug) as lease:
+                    st2 = lease.load()
+                    if st2 is not None:
+                        _fail_and_cleanup(st2, f"citation_verify: {exc}")
+                return
+
         module_file = wt / module_rel
         if not module_file.exists():
-            if worktree_created_here:
+            if we_own_throwaway:
                 remove_worktree(_primary(), slug, delete_branch=True)
-                worktree_owned_by_next_stage = True
+            worktree_owned_by_next_stage = True
             with state.state_lease(slug) as lease:
                 st2 = lease.load()
                 if st2 is not None:
@@ -518,7 +523,7 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
                     # State file vanished between create_worktree and
                     # the final transition. Can't hand off to merge —
                     # scrub the throwaway worktree ourselves.
-                    if worktree_created_here:
+                    if we_own_throwaway:
                         remove_worktree(_primary(), slug, delete_branch=True)
                     worktree_owned_by_next_stage = True
                     return
@@ -552,12 +557,16 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
                     note="cleanup-only: all citations verified, no changes",
                 )
     except BaseException:
-        # If we never reached a durable hand-off, we still own the
-        # throwaway cleanup-only worktree — tear it down before
-        # propagating so the branch doesn't leak. The rewrite path
-        # (worktree_created_here=False) always leaves the worktree to
-        # the writer's lifecycle — don't touch it.
-        if worktree_created_here and not worktree_owned_by_next_stage:
+        # We own the throwaway cleanup-only worktree iff we entered on
+        # the cleanup-only path with no pre-existing worktree AND have
+        # neither durably handed off nor scrubbed inline. The .exists()
+        # probe is belt-and-braces — closes the round-5 race where a
+        # post-create_worktree exception would otherwise have leaked.
+        if (
+            we_own_throwaway
+            and not worktree_owned_by_next_stage
+            and worktree_dir(_primary(), slug).exists()
+        ):
             remove_worktree(_primary(), slug, delete_branch=True)
         raise
 

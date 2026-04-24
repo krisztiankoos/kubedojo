@@ -1008,6 +1008,50 @@ def test_cleanup_only_removes_worktree_when_lease_raises_after_create(fake_repo,
     assert rc != 0, "cleanup-only branch must not leak on post-write lease failure"
 
 
+def test_cleanup_only_scrubs_worktree_when_create_worktree_raises_after_creation(
+    fake_repo, monkeypatch
+):
+    """Codex round-5 regression guard.
+
+    On the cleanup-only path the throwaway worktree must be scrubbed
+    even if a BaseException-class exception (KeyboardInterrupt) lands
+    AFTER ``create_worktree`` has physically created the worktree but
+    BEFORE any post-call assignment in the calling function. Round-4's
+    flag-based design (``worktree_created_here = True`` set after the
+    call) had a Python-bytecode-level race window — round-5 closes it
+    with an invariant ownership predicate (``from_stage`` +
+    ``preexisting_worktree``) plus a filesystem .exists() probe in the
+    BaseException handler.
+    """
+    slug = _high_score_module_setup(fake_repo)
+
+    real_create = stages.create_worktree
+    raised = {"n": 0}
+
+    def real_then_raise(primary, slug_arg):
+        # Honor the real contract: physically create the worktree +
+        # branch on disk, then simulate a Ctrl-C landing immediately
+        # post-return, before any caller-side flag could be set.
+        real_create(primary, slug_arg)
+        raised["n"] += 1
+        raise KeyboardInterrupt("simulated post-create-worktree interrupt")
+
+    monkeypatch.setattr(stages, "create_worktree", real_then_raise)
+
+    with pytest.raises(KeyboardInterrupt):
+        stages.citation_verify_one(slug)
+
+    assert raised["n"] == 1, "create_worktree wrapper must have been hit"
+    assert not worktree.worktree_dir(fake_repo, slug).exists(), (
+        "round-5: throwaway worktree must be scrubbed after a post-create raise"
+    )
+    rc = subprocess.run(
+        ["git", "rev-parse", "--verify", worktree.branch_name(slug)],
+        cwd=fake_repo, capture_output=True,
+    ).returncode
+    assert rc != 0, "round-5: throwaway branch must not leak"
+
+
 def test_cleanup_only_removes_worktree_when_write_text_raises(fake_repo, monkeypatch):
     """Codex re-review must regression guard.
 
