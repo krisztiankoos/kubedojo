@@ -426,28 +426,31 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
                     _fail_and_cleanup(st2, f"citation_verify: {exc}")
             return
 
-    module_file = wt / module_rel
-    if not module_file.exists():
-        if worktree_created_here:
-            remove_worktree(_primary(), slug, delete_branch=True)
-        with state.state_lease(slug) as lease:
-            st2 = lease.load()
-            if st2 is not None:
-                _fail_and_cleanup(st2, f"citation_verify: module file missing at {module_file}")
-        return
-
-    # Single BaseException handler covers every step after create_worktree
-    # on the cleanup-only path: citation processing, file write, git
+    # Single BaseException handler covers EVERY step after
+    # create_worktree on the cleanup-only path: module_file resolution,
+    # the missing-file check, citation processing, file write, git
     # commit, lease acquisition, state transition, branch-tip SHA read.
-    # Codex re-review caught that v1-fix only guarded the first two;
-    # a TimeoutError on the state lease or a StateError on transition
-    # could still leak the throwaway worktree. ``worktree_owned_by_next_stage``
-    # flips to True once the final transition durably hands the worktree
-    # off to a later stage (REVIEW_PENDING → review → merge cleans up,
-    # or REVIEW_APPROVED → merge cleans up). If we never get there, the
-    # handler tears down the cleanup-only worktree.
+    # Codex rev 3-4 caught windows outside the handler where an
+    # exception (even a KeyboardInterrupt) would leak the throwaway
+    # worktree. ``worktree_owned_by_next_stage`` flips to True once the
+    # final transition durably hands the worktree off to a later stage
+    # (REVIEW_PENDING → review → merge cleans up, or REVIEW_APPROVED →
+    # merge cleans up), OR when we've already cleaned the worktree
+    # ourselves (SKIPPED / missing-file / st2-is-None). Any exception
+    # with the flag still False → teardown.
     worktree_owned_by_next_stage = False
     try:
+        module_file = wt / module_rel
+        if not module_file.exists():
+            if worktree_created_here:
+                remove_worktree(_primary(), slug, delete_branch=True)
+                worktree_owned_by_next_stage = True
+            with state.state_lease(slug) as lease:
+                st2 = lease.load()
+                if st2 is not None:
+                    _fail_and_cleanup(st2, f"citation_verify: module file missing at {module_file}")
+            return
+
         result = process_module_citations(
             module_file,
             verifier=verifier_fn or default_verifier,
@@ -487,13 +490,17 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
         # Advance state. Cleanup-only with no citation change is a SKIP —
         # no branch to merge, tear down the throwaway worktree.
         if from_stage == "WRITE_DONE":
-            # Worktree already owned by the writer's lifecycle (write → review
-            # → merge). We don't own it here, so we don't flip the flag for
-            # cleanup purposes — but we also don't tear it down; the review
-            # / merge path does that.
+            # Worktree belongs to the writer's lifecycle (write → review
+            # → merge). If the state file is missing we can't transition,
+            # but the worktree is write_one's to manage — not ours.
             with state.state_lease(slug) as lease:
                 st2 = lease.load()
                 if st2 is None:
+                    # No state to transition. We didn't create the
+                    # worktree here (rewrite path), so let the writer's
+                    # lifecycle handle it. Flag prevents the handler
+                    # from double-cleaning.
+                    worktree_owned_by_next_stage = True
                     return
                 state.transition(
                     st2, "CITATION_VERIFY", "REVIEW_PENDING",
@@ -508,6 +515,12 @@ def citation_verify_one(slug: str, *, verifier_fn=None, fetcher_fn=None) -> None
             with state.state_lease(slug) as lease:
                 st2 = lease.load()
                 if st2 is None:
+                    # State file vanished between create_worktree and
+                    # the final transition. Can't hand off to merge —
+                    # scrub the throwaway worktree ourselves.
+                    if worktree_created_here:
+                        remove_worktree(_primary(), slug, delete_branch=True)
+                    worktree_owned_by_next_stage = True
                     return
                 state.transition(
                     st2, "CITATION_VERIFY", "REVIEW_APPROVED",

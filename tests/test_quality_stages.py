@@ -906,6 +906,58 @@ def test_merge_retries_on_transient_rebase_failure(fake_repo, monkeypatch):
     assert calls["rebase"] == 2, "rebase should have been retried once"
 
 
+def test_cleanup_only_scrubs_worktree_when_state_file_disappears(fake_repo, monkeypatch):
+    """Codex fourth-pass regression guard.
+
+    On the cleanup-only changed path, if ``lease.load()`` returns None
+    (state file vanished between create_worktree and final transition),
+    the stage returns early WITHOUT an exception. The throwaway
+    worktree + branch must still be scrubbed — the exception-only
+    cleanup handler wouldn't fire, so the cleanup is inline in the
+    st2-is-None branch.
+    """
+    slug = _high_score_module_setup(fake_repo)
+
+    def partial_verifier(_prompt):
+        return DispatchResult(
+            ok=True,
+            stdout=json.dumps({"verdict": "partial", "reasoning": "weak", "excerpt": ""}),
+            stderr="", returncode=0, duration_sec=0.1, agent="gemini", model=None,
+        )
+
+    # Delete the state file just after the first CITATION_VERIFY
+    # transition but before the final REVIEW_APPROVED transition.
+    # Hook into state.load_state; on the THIRD load (first CITATION_VERIFY
+    # transition load, then the "do we continue" load inside the final
+    # lease, then our target — the pre-transition load), return None.
+    original_load = state.load_state
+    calls = {"n": 0}
+
+    def vanishing_load(slug_arg):
+        calls["n"] += 1
+        # Let the CITATION_VERIFY transition succeed (first lease's load),
+        # then claim the state has vanished on subsequent loads.
+        if calls["n"] >= 3:
+            return None
+        return original_load(slug_arg)
+
+    monkeypatch.setattr(state, "load_state", vanishing_load)
+
+    # Should NOT raise — the st2-is-None branch returns cleanly after cleanup.
+    stages.citation_verify_one(
+        slug, verifier_fn=partial_verifier, fetcher_fn=lambda _u: "page"
+    )
+
+    # Worktree + branch must be gone despite the silent early-return.
+    assert not worktree.worktree_dir(fake_repo, slug).exists()
+    import subprocess as _sp
+    rc = _sp.run(
+        ["git", "rev-parse", "--verify", worktree.branch_name(slug)],
+        cwd=fake_repo, capture_output=True,
+    ).returncode
+    assert rc != 0, "cleanup-only branch must not leak when state file vanishes"
+
+
 def test_cleanup_only_removes_worktree_when_lease_raises_after_create(fake_repo, monkeypatch):
     """Codex third-pass regression guard.
 
