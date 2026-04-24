@@ -2,16 +2,16 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-24 early morning — cold-start continuation: audit MERGED, pilot-n MERGED, 2 follow-on issues filed)
+## Active Work (2026-04-24 early morning — session closed, 5 PRs merged, 2 issues closed, phase-2 pilot queued)
 
-**Continuation of the past-midnight push.** The audit finished overnight while Codex was still headless; I processed the output, cleared the cold-start checklist, and rode two PRs through review to green merges:
+**Continuation of the past-midnight push.** Session ran from cold-start through to a clean close: audit shipped, feature shipped, two bug-fix PRs shipped, residuals-audit worktrees reaped. No open PRs at handoff. Phase-2 bulk pilot is the next move and deliberately held for explicit user approval (bigger blast radius than the one-line edits this session shipped).
 
-### This session's shipments
+### This session's shipments (all merged)
 
-- **PR #366 MERGED** (`docs: add 2026-04-24 residuals-audit classification`). Promoted `docs/residuals-audit-2026-04-24.md` to main. Final category counts after Gemini-review correction (Zillow "Million-Dollar Gradient Explosion" reclassified B→A): **112 A (sourceable, 57.4%) / 64 B (pedagogical fiction, 32.8%) / 1 C (hallucinated fact, 0.5%) / 18 D (ambiguous, 9.2%) = 195 total across 92 files**. Methodology notes extended with the lesson that excerpt-only classification is lossy when section headers supply names/dates — pull one paragraph of context for terse Category B excerpts.
-- **PR #367 MERGED** (`feat(#343): --limit-modules N for gradual pilot rollout`). Adds the cap flag for safe gradual rollout. After Codex review: `--limit-modules 0` / `-1` / non-integer now rejected by argparse via a `_positive_int` type function (silent degradation to "no limit" would let a typo unleash the full bulk run). Tests lock in the after-filter ordering with a mixed empty/non-empty fixture set. 43/43 tests pass.
-- **#364 filed** (bug, infrastructure) — **blocks #343 phase-2 bulk**. `citation_residuals.py:_summarize_finding` uses the finding's `excerpt` as the Sources-line description. The excerpt is the *claim being cited*, not a description of what the source says. Every resolved finding currently ships a garbage description. Proposed fixes: URL-title only, LLM one-liner, or `<meta description>` scrape.
-- **#365 filed** (bug, content) — the single Category C finding: `cloud/aws-essentials/module-1.10-cloudwatch.md:41` claims CloudWatch "launched alongside EC2 in 2009" but EC2 launched in 2006. Scope goes to #344 content-fix, not #343 resolver.
+- **PR #366** (`docs: add 2026-04-24 residuals-audit classification`). Promoted `docs/residuals-audit-2026-04-24.md` to main. Final category counts after Gemini-review correction (Zillow "Million-Dollar Gradient Explosion" reclassified B→A): **112 A (sourceable, 57.4%) / 64 B (pedagogical fiction, 32.8%) / 1 C (hallucinated fact, 0.5%) / 18 D (ambiguous, 9.2%) = 195 total across 92 files**. Methodology notes extended with the lesson that excerpt-only classification is lossy when section headers supply names/dates — pull one paragraph of context for terse Category B excerpts.
+- **PR #367** (`feat(#343): --limit-modules N for gradual pilot rollout`). Cap flag for safe gradual rollout. Codex caught both real failure modes first round: `--limit-modules 0` / `-1` / non-integer now rejected by argparse via a `_positive_int` type function; mixed empty/non-empty fixture test locks in the after-empty-queue-filter ordering. 43/43 tests pass.
+- **PR #368** (`fix(#364): drop finding-excerpt-as-description in Sources line`). Closes #364. `_summarize_finding` removed; `build_source_line` emits `- [title](url)` only; `.html`/`.htm` stripped from URL-derived titles. Codex APPROVE with an independent smoke-test on a fixture residuals tree (confirmed `- [docs.aws.amazon.com: aft overview](url)` output). 47/47 tests pass. **#343 phase-2 bulk unblocked.**
+- **PR #369** (`fix(#365): correct CloudWatch/EC2 launch-date historical error`). Closes #365. Single-line prose fix in `module-1.10-cloudwatch.md:41`: "launching alongside EC2 in 2009" → "Launched in May 2009 — about three years after EC2 (2006)". Also softened "over 1 trillion metrics per day" → "over a trillion metrics per day" (exact figure is conference-talk-sourced; qualitative claim holds). Codex review was the **first use of gpt-5.5 at model_reasoning_effort=high** per the new preference — and noticeably more thorough than the default codex model: ran live web searches against AWS announcement archives (CloudWatch May 17, 2009 beta; EC2 Aug 24, 2006 beta / Oct 22, 2008 GA; Logs Insights Nov 27, 2018 GA), cross-checked the trillion-metrics figure against AWS's own "1 quadrillion observations/month" disclosure, and grepped the full repo for lingering old wording. APPROVE, zero must-fix.
 
 ### Found and reverted — pilot residual on main
 
@@ -22,28 +22,35 @@ The working tree had an uncommitted line appended to `src/content/docs/cloud/adv
 - **Codex on #367** (Claude-authored feat): NEEDS CHANGES first round, both findings legitimate. (1) `--limit-modules 0` / `-1` silently fell through to full bulk — a typo-unleashes-workers failure mode. (2) Original test fixture had findings in every queue file, so slice-before-filter vs slice-after-filter was indistinguishable. Both addressed, APPROVE on second round. Reaffirms the #350 data point: Codex is the rigorous reviewer for Claude-authored code.
 - **Gemini Pro on #366** (Codex-authored audit): REQUEST CHANGES, one real finding — "Million-Dollar Gradient Explosion" misclassified as B because the excerpt-only line sounded anonymous; the surrounding section header named the real Zillow Nov 2021 incident. Dispatched via `--review` defaulted to Pro; **Pro stalled for ~12 min on capacity** before returning. For future content-review dispatches today, prefer `--model gemini-3-flash-preview` explicitly — flash re-review on the correction came back in <60 s.
 
-### Blockers still open
+### Codex model preference (2026-04-24 user instruction)
 
-- **#364 — MERGED (PR #368, Codex APPROVE with smoke-test).** Minimum-viable fix: `_summarize_finding` dropped, `build_source_line` emits `- [title](url)` only, `.html`/`.htm` stripped from derived titles. 47/47 tests pass. **#343 phase-2 bulk is now unblocked** — next move is a `--limit-modules 10` pilot on a fresh sample.
-- **Codex model preference (2026-04-24):** user instruction — use `gpt-5.5` at `model_reasoning_effort=high` for Codex dispatches going forward. Invocation: `codex exec -m gpt-5.5 -c model_reasoning_effort="high" …`, or pin via `~/.codex/config.toml` so the bridge's `ask-codex` inherits automatically. The #368 review used the pre-instruction default (codex CLI default); subsequent dispatches should use gpt-5.5 high. Memory saved at `reference_codex_models.md`.
+Use `gpt-5.5` at `model_reasoning_effort=high` for Codex dispatches going forward. Smoke-verified: the CLI echoes "reasoning effort: high" in the exec session header.
 
-### Cold-start for next session
+Invocation patterns:
+- **Direct**: `codex exec -m gpt-5.5 -c model_reasoning_effort="high" --sandbox read-only - < prompt`. Bypasses bridge, output lands in a local file — you must post to the PR manually.
+- **Via bridge `ab ask-codex`**: accepts `--to-model gpt-5.5` but has no first-class effort flag. Either pin `model_reasoning_effort="high"` in `~/.codex/config.toml` so everything inherits, or plumb an effort parameter through `scripts/agent_runtime/runner.py`. The first is one line and works immediately.
+- **Via `scripts/dispatch.py`**: `CODEX_*_DEFAULT_MODEL` constants at `scripts/dispatch.py:79-81` use `"codex"` to mean "let the CLI pick" — so `~/.codex/config.toml` again covers it with no code change.
 
-1. **Fix #365** — correct the CloudWatch/EC2 date claim in `module-1.10-cloudwatch.md:41` ("launching alongside EC2 in 2009" — EC2 launched 2006). Also verify the "1 trillion metrics/day" statistic while you're there. Small content edit; cross-family review via Codex (gpt-5.5 high) per protocol.
-2. **Phase-2 pilot** (now unblocked after #368): fresh 10-module sample with `citation_residuals.py resolve --all --worker-id pilot-2 --limit-modules 10`. Target ≥60% resolve on Category A findings (~112 of 195 total). If green, authorize bulk at `--workers 3`. Spot-check the first couple of Sources lines produced to confirm the title-only output reads well in context.
-3. **Consider follow-up**: per #364's PR body, the higher-quality fix is an LLM one-liner for Sources descriptions (describing what the page documents, not the claim). Defer until the phase-2 pilot validates the minimum-viable title-only output is acceptable at scale.
+Full memory at `reference_codex_models.md`.
+
+### Cold-start for next session (all prerequisites for phase-2 are on main)
+
+1. **Phase-2 pilot — deliberately held for explicit user approval.** Fresh 10-module sample: `.venv/bin/python scripts/citation_residuals.py resolve --all --worker-id pilot-2 --limit-modules 10`. Target: ≥60 % resolve on Category A findings (~112 of 195 total across 92 files). After the run, spot-check 2–3 of the newly-added Sources lines to confirm the title-only output from #368 reads well in context. If green, authorize bulk at `--workers 3`.
+2. **Pin Codex config.toml default (optional one-shot)**: add `model = "gpt-5.5"` and `model_reasoning_effort = "high"` to `~/.codex/config.toml` so every invocation path (bridge `ask-codex`, `dispatch.py`, direct `codex exec`) inherits the preference without per-call flags. Not done this session — user-scope config change, wanted an explicit thumbs-up first. See `reference_codex_models.md` for rationale.
+3. **Follow-up on #364 (deferred)**: the higher-quality fix is an LLM one-liner per Sources line describing what the page documents (vs. the minimum-viable title-only output in #368). Defer until the phase-2 pilot validates the current output at scale; only invest in the LLM description if the title-only lines feel too spartan next to the human-curated ones in existing modules.
 
 ### Worktree hygiene
 
-- `.worktrees/codex-interactive` — detached HEAD at `3b0d1c0f`, only untracked `.venv` / `node_modules`. Not in active use; candidate for cleanup next session if still empty.
+No active worktrees at handoff — primary repo on `main`, all branches from this session deleted, `.worktrees/codex-interactive` (idle detached HEAD) reaped during cleanup.
 
 ### Smoketest (first 30s of next session)
 
 ```bash
 curl -s http://127.0.0.1:8768/api/briefing/session?compact=1    # fresh=1, stale=0 expected
-git log --oneline -5                                             # expect 74b3bcce + audit-merge commit on main
-gh issue view 364 --json state,title                             # OPEN (resolver desc bug)
-gh issue view 365 --json state,title                             # OPEN (CloudWatch Cat-C)
+git log --oneline -6                                             # expect fb466b93 (fix/#365) at top
+gh issue view 364 --json state -q .state                         # CLOSED
+gh issue view 365 --json state -q .state                         # CLOSED
+gh pr list --state open --limit 5                                # expect empty
 scripts/ab inbox show claude                                     # should be empty
 ```
 
