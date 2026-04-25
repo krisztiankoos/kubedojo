@@ -5,60 +5,58 @@ sidebar:
   order: 3
 ---
 
-> **Complexity**: `[COMPLEX]` — Multiple interacting CRDs and integration patterns
+> **Complexity**: `[COMPLEX]` — Multiple interacting CRDs, RBAC dependencies, and cross-component debugging
 >
-> **Time to Complete**: 50-60 minutes
+> **Time to Complete**: 60-75 minutes
 >
-> **Prerequisites**: Module 1 (Argo Workflows basics), familiarity with Kubernetes CRDs
+> **Prerequisites**: Module 1.1 (Argo Workflows basics), familiarity with Kubernetes CRDs, basic understanding of message brokers
 >
 > **CAPA Domain**: 4 — Argo Events (12% of exam)
 
 ## What You'll Be Able to Do
 
-After completing this highly detailed module, you will be able to:
+After completing this module, you will be able to:
 
-1. **Design** comprehensive event-driven architectures using Argo Events' core Custom Resource Definitions: EventSource, Sensor, and EventBus.
-2. **Configure** complex EventSources for webhooks, S3/MinIO, calendars, and Kafka, explicitly routing events through NATS or JetStream EventBus implementations.
-3. **Implement** sophisticated Sensor triggers that evaluate AND/OR dependency logic to conditionally execute Argo Workflows, create Kubernetes objects, or dispatch HTTP requests.
-4. **Evaluate** and **diagnose** event flow failures by systematically tracing events from their external origin through the EventSource status, into the EventBus metrics, and finally reviewing Sensor logs and Trigger outputs.
+1. **Design** event-driven automation pipelines by selecting and connecting EventSource, EventBus, and Sensor CRDs appropriate for a given integration scenario.
+2. **Configure** EventSources for webhooks, calendars, and message queues, routing events through a JetStream-backed EventBus.
+3. **Implement** Sensors with conditional AND/OR dependency logic, data filters, and parameter injection that launch Argo Workflows based on specific event payloads.
+4. **Diagnose** broken event pipelines by systematically tracing failures from EventSource status through EventBus transport to Sensor logs and Trigger audit output.
+5. **Evaluate** the tradeoffs between Argo Events and alternative Kubernetes-native automation primitives like CronJobs, Kubernetes controllers, and admission webhooks.
 
 ## Why This Module Matters
 
-Consider a well-documented 2021 incident at a major global financial institution—a scenario often mirrored by massive enterprise deployments at companies like BlackRock or Intuit, who process millions of daily events. Before adopting a modern Event-Driven Architecture (EDA), their platform engineering team relied heavily on over 500 distinct polling scripts. These scripts consisted of legacy bash loops and Kubernetes CronJobs running every 60 seconds, constantly querying GitHub repositories, internal S3 buckets, and various external webhook providers just to check if a new file or code commit had arrived. 
+Consider a well-documented incident pattern at major global financial institutions — a scenario frequently mirrored by enterprise deployments at organizations that process millions of daily events. Before adopting a modern Event-Driven Architecture (EDA), platform engineering teams often rely on hundreds of distinct polling scripts: legacy bash loops and Kubernetes CronJobs running every 60 seconds, constantly querying GitHub repositories, internal object storage buckets, and external webhook providers just to detect whether a new file or commit has arrived.
 
-The operational and financial impacts of this polling model were staggering. The company was aggressively burning through external API rate limits, which frequently caused legitimate, business-critical deployments to fail entirely. On one notorious Friday, a race condition in a custom GitHub poller caused it to incorrectly parse a Git SHA. This resulted in an unbounded continuous loop that triggered over 10,000 duplicate database migration workflows. This single incident saturated and locked up their entire production Kubernetes cluster, delayed external transaction processing by 6 hours, and cost the company an estimated $1.2 million in missed SLAs, SLA penalties, and engineering downtime. 
+The operational and financial impacts of this polling model accumulate quickly. Teams aggressively burn through external API rate limits, which causes legitimate, business-critical deployments to fail. A race condition in a custom GitHub poller that incorrectly parses a Git SHA can trigger an unbounded loop — one that fires thousands of duplicate database migration workflows, saturating an entire production cluster and delaying transaction processing for hours.
 
-By migrating to Argo Events, the platform team replaced thousands of lines of fragile, imperative glue code with a clean, declarative, native nervous system for Kubernetes. Argo Events allowed them to entirely eliminate polling. Events now flow instantaneously into their cluster, decision logic is explicitly defined and version-controlled via YAML, and actions are triggered immediately. When you master Argo Events, you are learning how to build resilient, highly scalable automation that protects organizations from catastrophic polling failures, API bottlenecks, and fragile continuous integration loops.
+By migrating to Argo Events, platform teams replace thousands of lines of fragile imperative glue code with a clean, declarative, version-controlled nervous system for Kubernetes. Events flow instantaneously into the cluster. Decision logic is defined explicitly in YAML and enforced by controllers. Actions fire immediately when the right conditions are met.
 
-## Did You Know?
-
-- **Argo was accepted to CNCF on March 26, 2020** and moved to graduated maturity on December 6, 2022, proving it is a battle-tested and foundational cloud-native technology.
-- **Argo Events supports 20+ event sources and 10+ triggers natively**, making it versatile enough to integrate with almost any enterprise toolchain out of the box without writing custom integration code.
-- **The Argo Helm chart metadata** currently defines `version: 2.4.21` and `appVersion: 1.9.10` for argo-events, which is critical to verify when configuring automated deployments to ensure version drift does not occur.
-- **Argo Events installation docs** historically outline a baseline requirement of Kubernetes >= v1.11 and kubectl > v1.11.0, though all modern production clusters must run Kubernetes v1.35 or higher to maintain strict security and ongoing vendor support.
+Mastering Argo Events means learning to build resilient, scalable automation that eliminates polling failures, API bottlenecks, and fragile CI loops. This module builds that knowledge from the ground up, then teaches you to diagnose it when it breaks.
 
 ---
 
-## Part 1: Event-Driven Architecture (EDA) Fundamentals
+## Part 1: Event-Driven Architecture Fundamentals
 
-### 1.1 Why Events?
+### 1.1 Why Events Change the Architecture
 
-There are two fundamental ways to detect that a state change has occurred in an external system: polling and event-driven reactions. 
+There are two fundamental strategies for detecting that a state change has occurred in an external system: polling and event-driven reaction. Understanding why one outperforms the other is not just academic — it determines whether your automation scales to thousands of events per day or collapses under load.
 
 | Approach | How It Works | Downside |
 |----------|-------------|----------|
 | **Polling** | Ask "did anything change?" on a timer | Wastes resources, delayed detection, API rate limits |
 | **Reactive (events)** | Get notified the instant something changes | Requires event infrastructure |
 
-Events drastically outperform polling because they are **immediate**, **efficient**, and completely **decoupled**. In an Event-Driven Architecture, the producer generating the event does not know or care who consumes it. Similarly, the consumer reacting to the event does not need to understand the internal mechanisms of the producer. Argo Events is precisely an event-driven workflow automation framework for Kubernetes that codifies this exact decoupling paradigm.
+The deeper architectural difference is about coupling. In a polling model, every consumer must know the address and API contract of every producer. The consumer owns the detection logic, the scheduling, the retry, and the deduplication. When the producer's API changes or enforces rate limits, every consumer breaks simultaneously.
+
+In an event-driven model, the producer emits a notification without knowing who listens. The consumer subscribes to the notification channel without knowing who produces. Each side evolves independently. This is the decoupling that makes event-driven systems composable — you can add a new consumer without touching the producer, and retire an old one without reconfiguring anything else.
+
+Argo Events codifies this decoupling as native Kubernetes objects. The coupling between external systems and your internal workflows is managed entirely through declarative YAML, not through custom scripts that live outside your GitOps lifecycle.
 
 ### 1.2 The CloudEvents Specification
 
-To ensure compatibility across a vast, heterogeneous ecosystem, Argo Events relies heavily on the CloudEvents specification. CloudEvents is a CNCF graduated specification that provides a standardized envelope for any event data format.
+To ensure compatibility across a heterogeneous ecosystem, Argo Events relies on the CloudEvents specification. CloudEvents is a CNCF graduated specification that provides a standardized envelope for any event data, regardless of origin. This matters because a GitHub push webhook looks completely different from an SNS notification, which looks completely different from a Kafka message. CloudEvents imposes a common structure on the envelope so that downstream consumers — your Sensors — can reason about events from any source using the same filtering and parameter extraction mechanisms.
 
-Whenever an EventSource receives an external trigger, it converts that raw external input into a standardized CloudEvent and dispatches it through the EventBus. 
-
-Here is what a standard CloudEvent payload looks like in practice:
+Whenever an EventSource receives an external trigger, it converts that raw external input into a standardized CloudEvent and dispatches it through the EventBus. Here is what a standard CloudEvent payload looks like in practice:
 
 ```json
 {
@@ -70,29 +68,30 @@ Here is what a standard CloudEvent payload looks like in practice:
   "datacontenttype": "application/json",
   "data": {
     "ref": "refs/heads/main",
+    "after": "abc123def456",
     "commits": [{"message": "fix: update config"}]
   }
 }
 ```
 
-The key top-level fields (`specversion`, `type`, `source`, `id`, `time`) act as the universal routing header, while the nested `data` field contains the specific, domain-relevant payload that your pipelines care about.
+The top-level fields (`specversion`, `type`, `source`, `id`, `time`) act as the universal routing header. Your Sensor's filters can match against these fields. The nested `data` field contains the domain-specific payload your pipelines care about — the Git branch, the commit SHA, the S3 bucket name.
 
-> **Pause and predict**: If you wanted to extract the Git branch name from the event above to pass into a dynamic Argo Workflow parameter, what precise JSON path string would you define in your dependency mapping? (Consider this before we cover parameter injection in Part 8).
+> **Pause and predict**: If you want to extract the Git commit SHA from the event above (`data.after`) and pass it as a parameter to an Argo Workflow, you need a JSON path expression that navigates into the `data` object. What path string would you write in a Sensor parameter `src.dataKey`? Sketch your answer before reading Part 4, then verify it against the worked example.
 
 ---
 
 ## Part 2: Argo Events Architecture
 
-The comprehensive architecture of Argo Events is built entirely around four logical components, which are realized as native Kubernetes Custom Resource Definitions (CRDs). 
+The architecture of Argo Events is built around four logical components realized as native Kubernetes Custom Resource Definitions. Each component owns a specific responsibility, and events must pass through each layer in sequence. Understanding the handoff between layers is what allows you to diagnose failures systematically.
 
-1. **EventSource**: The gateway. An EventSource definition converts external inputs into CloudEvents and dispatches them through EventBus. 
-2. **EventBus**: The transport layer. The default EventBus is a namespaced Kubernetes custom resource requiring one per namespace for EventSources and Sensors to interact over.
-3. **Sensor**: The intelligent routing brain. Sensors define event dependencies, subscribe to EventBus, and execute triggers when dependencies resolve.
-4. **Trigger**: The action payload. Trigger resources executed by a Sensor include Argo Workflows, Kubernetes object creation, HTTP/serverless, NATS/Kafka messages, Slack, Azure Event Hubs, Custom triggers, and OpenWhisk.
+1. **EventSource**: The gateway. An EventSource pod listens for a specific type of external input — a webhook call, a calendar tick, a Kafka message — and converts it into a CloudEvent dispatched to the EventBus.
+2. **EventBus**: The transport layer. A namespaced Kubernetes resource backed by a message broker (JetStream, NATS, or Kafka). Every namespace where EventSources and Sensors must communicate requires exactly one EventBus named `default` unless you configure the name explicitly.
+3. **Sensor**: The decision layer. A Sensor declares which events it cares about as named dependencies, defines filter conditions those events must satisfy, and specifies trigger templates to execute when all conditions resolve.
+4. **Trigger**: The action payload embedded inside a Sensor template. Trigger types include Argo Workflows, raw Kubernetes object creation, HTTP requests, NATS or Kafka messages, Slack notifications, Azure Event Hubs, and OpenWhisk actions.
 
 ### Architecture Diagram
 
-To visualize the system, here is the architectural diagram mapping the journey from EventSource to Trigger Action. 
+The following diagram maps the full journey from an external event source through each Argo Events layer to the final action:
 
 ```mermaid
 flowchart LR
@@ -109,18 +108,25 @@ flowchart LR
     end
 ```
 
-### 2.1 The Components in Detail
+### 2.1 EventSource in Depth
 
-**EventSource**
-The EventSource catalog currently includes AMQP, AWS SNS, AWS SQS, Azure Events Hub, Azure Queue Storage, Calendar, File, GCP PubSub, GitHub, GitLab, Kafka, NATS, Slack, Stripe, Webhooks, and other named connectors. EventSources sit at the edge of your cluster and listen for these specific external payloads.
+The EventSource catalog includes over twenty named connectors: AMQP, AWS SNS, AWS SQS, Azure Events Hub, Azure Queue Storage, Calendar, File, GCP PubSub, GitHub, GitLab, Kafka, NATS, Slack, Stripe, Webhooks, and more. A single `EventSource` resource can configure multiple named event streams simultaneously. A single resource named `ci-sources` could define a `github-push` webhook listener and a `release-timer` calendar entry in the same spec, each producing events independently through the same EventBus.
 
-**EventBus**
-Argo Events supports three EventBus implementations (NATS, JetStream, and Kafka), with NATS Streaming (STAN) explicitly noted as deprecated. A NATS-backed EventBus is documented as supported via either NATS Streaming or JetStream, but modern deployments should always favor JetStream. The EventBus acts as the internal transport layer within a given namespace.
+When the EventSource controller processes an EventSource resource, it creates a dedicated pod for that EventSource. That pod runs the actual listening logic — opening a port for webhooks, polling an S3 bucket for new objects, or subscribing to a Kafka partition. This pod-per-EventSource pattern isolates faults: a misbehaving webhook listener cannot destabilize a calendar EventSource running in a separate pod.
 
-> **Stop and think**: If STAN is deprecated, what operational risks do you take by deploying it on a modern Kubernetes cluster? Consider the support lifecycle of both Argo Events and the underlying message broker.
+### 2.2 EventBus in Depth
 
-**Sensor and Triggers**
-Sensors define event dependencies, subscribe to the EventBus, and execute triggers when those dependencies resolve. Trigger resources executed by a Sensor include Argo Workflows, Kubernetes object creation, HTTP/serverless, NATS/Kafka messages, Slack, Azure Event Hubs, Custom triggers, and OpenWhisk.
+Argo Events supports three EventBus implementations: NATS JetStream, NATS Streaming (STAN), and Kafka. NATS Streaming is explicitly deprecated — do not use it in new deployments. JetStream is the recommended default for new clusters because it offers persistent message storage, consumer acknowledgment, and replay semantics that STAN never provided.
+
+An EventBus resource named `default` in a given namespace is what most EventSources and Sensors look for unless you configure a different name explicitly. This default-name assumption is a common source of confusion and is addressed in the Common Mistakes section. The EventBus controller provisions the underlying broker infrastructure automatically — when you create the EventBus resource, the controller creates the StatefulSets and Services for the JetStream cluster.
+
+> **Stop and think**: STAN is deprecated. What operational risks does leaving it in place actually create — not just in theory, but in terms of what happens when you file a bug report against Argo Events, when a security CVE is published against the STAN broker, and when a newer Kubernetes version changes an API the STAN StatefulSet depends on? Consider all three before reading on.
+
+### 2.3 Sensor and Dependency Resolution
+
+A Sensor does not subscribe to an EventBus "topic" in the traditional sense. Instead, it declares named dependencies — each dependency points to a specific EventSource name and event name pair. The Sensor controller subscribes to the EventBus on behalf of the Sensor and holds received events in memory until the dependency resolution logic determines whether to fire a trigger.
+
+The resolution logic supports both AND and OR semantics across dependencies. By default, all listed dependencies must resolve (AND). You can define `dependencyGroups` and a `circuit` expression to implement OR or more complex boolean combinations. This allows patterns like "fire if either a GitHub push OR a manual webhook arrives" without requiring two separate Sensor resources.
 
 ---
 
@@ -128,55 +134,726 @@ Sensors define event dependencies, subscribe to the EventBus, and execute trigge
 
 ### 3.1 Installation Flow
 
-The documented installation flow requires creating the `argo-events` namespace, applying the core installation manifests, and then creating the EventBus via the native example manifest.
+The installation flow creates the `argo-events` namespace, applies the core manifests (controllers, RBAC, and CRDs), then creates the default EventBus. Execute these against a Kubernetes v1.35+ cluster:
 
 ```bash
-# Note: Always execute these against a modern Kubernetes v1.35+ cluster
 kubectl create namespace argo-events
 kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-events/stable/manifests/install.yaml
 kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-events/stable/examples/eventbus/native.yaml -n argo-events
 ```
 
-### 3.2 Namespace Scoping and Architecture
+After applying these manifests, verify the controllers reach `Running` state before creating EventSources or Sensors. Creating a Sensor before the controller is ready leaves the Sensor stuck in a pending reconciliation state with no error message — a common confusion during initial setup.
 
-For Argo Events v1.7 and above, namespace-scoped installs must use the `--namespaced` flag on the unified controller deployment, with an optional `--managed-namespace` flag if you want to watch a specific target namespace. Historically, pre-v1.7 setups required you to deploy three separate controllers with per-controller `--namespaced` flags, but the architecture is now effectively consolidated.
+```bash
+kubectl get pods -n argo-events
+# Expect: eventsource-controller, sensor-controller, eventbus-controller all Running
+```
 
-### 3.3 Versioning and Helm Considerations
+### 3.2 Namespace Scoping
 
-When operating Argo Events in production, version drift can cause controller failures. The project's release policy requires matching image versions across all components: `eventsource`, `sensor`, `eventbus-controller`, `eventsource-controller`, `sensor-controller`, and `events-webhook`. 
+For Argo Events v1.7 and above, namespace-scoped installs use the `--namespaced` flag on the unified controller deployment, with an optional `--managed-namespace` flag to target a specific tenant namespace. Earlier architectures (pre-v1.7) required deploying three separate controllers with per-controller namespace flags. The modern architecture consolidates this into a single deployment.
 
-Furthermore, the release policy strictly follows semantic versioning (x.y.z) with only the two most recent minor branches maintained. If you manage your deployments using Helm, be aware that the Argo Helm chart documentation explicitly states that only the latest upstream versions are officially supported; older versions are not guaranteed to receive bug or security patching.
+In a multi-tenant cluster where multiple teams each want isolated Argo Events namespaces, deploy one namespaced controller per tenant namespace. Each controller only watches and acts on resources within its designated namespace, preventing cross-tenant interference.
+
+### 3.3 RBAC for Sensors
+
+A Sensor that triggers Argo Workflows must have a ServiceAccount with permission to create Workflow resources in the target namespace. This requirement is frequently overlooked, and the resulting failures are silent — Sensor logs show a trigger attempt, then nothing. The Workflow never appears. Create the RBAC before creating the Sensor:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: operate-workflow-sa
+  namespace: argo-events
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: operate-workflow-role
+  namespace: argo-events
+rules:
+  - apiGroups: ["argoproj.io"]
+    resources: ["workflows"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operate-workflow-rolebinding
+  namespace: argo-events
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: operate-workflow-role
+subjects:
+  - kind: ServiceAccount
+    name: operate-workflow-sa
+    namespace: argo-events
+```
+
+Reference this ServiceAccount in your Sensor's `spec.template.serviceAccountName`. Without it, the Sensor executes the trigger call and receives a `Forbidden` response from the API server, which surfaces only in the Kubernetes events stream — not in Sensor logs themselves.
+
+### 3.4 Versioning and Version Drift
+
+Version drift between Argo Events components causes subtle controller failures that are hard to diagnose. The release policy requires matching image versions across all components: `eventsource-controller`, `sensor-controller`, `eventbus-controller`, and `events-webhook`. The project maintains only the two most recent minor branches — if your cluster runs an unsupported version, do not expect bug fixes or security patches.
+
+When using Helm, verify that the chart's `appVersion` matches your intended Argo Events release. Mismatches between chart version and appVersion are a common source of "it worked in staging" failures when different teams apply different chart versions.
 
 ---
 
-## Part 4: Knowledge Check
+## Part 4: Complete End-to-End Worked Example
 
-**Quiz 1**
-**Scenario:** You are tasked with migrating a legacy polling application to an event-driven architecture on a Kubernetes v1.35 cluster. You decide to use Argo Events. The application needs to process incoming webhooks from Stripe, filter the events based on the payload, and launch an Argo Workflow only if the payment is successful. Which combination of Argo Events Custom Resources will you need to deploy?
-A) EventSource, Sensor, and Trigger
-B) WebhookSource, EventBus, and WorkflowTrigger
-C) EventSource, EventBus, and Sensor
-D) EventBus, EventSource, and Trigger template
+This section builds a complete, working event pipeline from scratch. Read through the full scenario before applying any manifests — the sequence of decisions and the reasons behind each YAML field are as important as the fields themselves. By the end you will have verified that every layer from external HTTP call to running Argo Workflow functions correctly.
 
-**Answer:** C
-**Explanation:** To build a complete event-driven pipeline in Argo Events, you must deploy an EventSource, an EventBus, and a Sensor. The EventSource is responsible for receiving the external Stripe webhooks and converting them into standardized CloudEvents. The EventBus acts as the transport layer (often backed by JetStream) that routes these events within the namespace. Finally, the Sensor defines the dependency logic (e.g., filtering for successful payments) and contains the embedded Trigger template that actually launches the Argo Workflow.
+### The Scenario
 
-**Quiz 2**
-**Scenario:** Your platform engineering team is upgrading an older Kubernetes cluster to v1.35. During the upgrade, they notice that the Argo Events installation is using a NATS Streaming (STAN) EventBus. According to current Argo Events architecture guidelines, what action should the team take regarding the EventBus?
-A) No action is needed; STAN is the recommended default for v1.35.
-B) Migrate the EventBus from STAN to JetStream or Kafka, as STAN is deprecated.
-C) Downgrade the cluster to Kubernetes v1.33 to maintain STAN compatibility.
-D) Replace the EventBus with an EventSource configured for NATS.
+Your platform team needs to automatically run integration tests every time a developer pushes to the `main` branch of the `acme/backend-service` repository. GitHub sends a push event to a webhook endpoint in your cluster. The pipeline must:
 
-**Answer:** B
-**Explanation:** The team must migrate the EventBus to either JetStream or Kafka. Argo Events supports three EventBus implementations (NATS, JetStream, and Kafka), but explicitly notes that NATS Streaming (STAN) is deprecated. JetStream is the modern, supported NATS-backed implementation designed to replace STAN, offering better performance and reliability. Keeping a deprecated technology in a freshly upgraded cluster poses operational and support risks, particularly since Argo only maintains the two most recent minor release branches.
+1. Receive the push event via a webhook EventSource
+2. Filter for pushes to `refs/heads/main` only — ignore all feature branches
+3. Extract the commit SHA from the event payload
+4. Launch an Argo Workflow with that commit SHA as a runtime parameter
 
-**Quiz 3**
-**Scenario:** You are deploying Argo Events v1.9.10 to a locked-down enterprise cluster where administrators enforce strict namespace isolation. You need the Argo Events controllers to only watch and process resources within a specific tenant namespace (`tenant-a`), rather than at the cluster scope. How should you configure the installation?
-A) Deploy three separate controllers and pass `--namespaced` to each.
-B) Apply the standard cluster-wide manifests and use RBAC to restrict access.
-C) Use the `--namespaced` flag on the controller, optionally along with `--managed-namespace`.
-D) Install a dedicated EventBus in `tenant-a` and disable the controller.
+This is a representative CI automation pattern. Once you understand every field here, you can adapt the pattern to S3 uploads, Kafka messages, calendar triggers, or any other EventSource type.
 
-**Answer:** C
-**Explanation:** For Argo Events v1.7 and newer, namespace-scoped installations are handled by applying the `--namespaced` flag to the unified controller deployment. You can also specify `--managed-namespace` if the controller needs to watch a different specific namespace. Earlier versions (pre-v1.7) required deploying three separate controllers with individual flags, but the modern architecture consolidates this into a single deployment. Relying solely on cluster-wide manifests and RBAC (Option B) violates the requirement for strict controller-level namespace isolation, and an EventBus alone (Option D) cannot process resources without an active controller.
+### Step 1: Create the EventBus
+
+Before any EventSource or Sensor can function, the EventBus must exist in the target namespace. This is analogous to starting the message broker before connecting producers or consumers — the ordering is not optional. The name `default` is significant: EventSources and Sensors look for an EventBus named `default` unless you explicitly configure a different name in their specs.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: EventBus
+metadata:
+  name: default
+  namespace: argo-events
+spec:
+  jetstream:
+    version: "2.10.11"
+    replicas: 3
+```
+
+The `replicas: 3` gives you a JetStream cluster with quorum-based availability. A single-replica EventBus loses all in-flight events if its pod is evicted or rescheduled. In a development environment `replicas: 1` is acceptable, but understand the tradeoff explicitly rather than inheriting it from a copied example.
+
+Apply this and wait for the EventBus to reach `Running` phase before proceeding:
+
+```bash
+kubectl apply -f eventbus.yaml
+kubectl get eventbus default -n argo-events -w
+# Wait until STATUS column shows "running"
+```
+
+### Step 2: Create the EventSource
+
+The EventSource defines a webhook listener. When GitHub POSTs to `/push`, the EventSource pod receives the HTTP request, wraps the body in a CloudEvent, and publishes it to the EventBus under the event name `push`. That event name is the identifier your Sensor will reference in its dependency declaration.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: github-eventsource
+  namespace: argo-events
+spec:
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  webhook:
+    push:
+      port: "12000"
+      endpoint: /push
+      method: POST
+```
+
+Two fields here are responsible for the majority of beginner wiring mistakes. First, the `service` stanza instructs the EventSource controller to create a Kubernetes Service alongside the EventSource pod. Without this stanza, no Service is created. Port-forward works fine without it because port-forward targets the pod directly, but an Ingress backend or external traffic has no path in. Second, the name `push` inside the `webhook` block becomes the `eventName` that Sensors reference in their dependency declarations. This string must match exactly — a single character difference means the Sensor subscribes to an event that never arrives.
+
+Verify the EventSource, its pod, and its backing Service all exist:
+
+```bash
+kubectl get eventsource github-eventsource -n argo-events
+kubectl get pod -l eventsource-name=github-eventsource -n argo-events
+kubectl get svc -n argo-events | grep eventsource
+```
+
+The Service name follows the pattern `<eventsource-name>-eventsource-svc`. Note it — you will need it for port-forward.
+
+### Step 3: Create the Sensor
+
+The Sensor declares one dependency named `push-dep` that points to the `github-eventsource` EventSource and the `push` event. A data filter checks the `body.ref` field, restricting the pipeline to `main`-branch pushes. The trigger template defines the Argo Workflow to create, and the parameter binding copies the commit SHA from `body.after` into the Workflow's `commit-sha` argument.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: github-sensor
+  namespace: argo-events
+spec:
+  template:
+    serviceAccountName: operate-workflow-sa
+  dependencies:
+    - name: push-dep
+      eventSourceName: github-eventsource
+      eventName: push
+      filters:
+        data:
+          - path: body.ref
+            type: string
+            value:
+              - refs/heads/main
+  triggers:
+    - template:
+        name: trigger-ci-workflow
+        argoWorkflow:
+          group: argoproj.io
+          version: v1alpha1
+          resource: workflows
+          operation: create
+          source:
+            resource:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Workflow
+              metadata:
+                generateName: ci-build-
+                namespace: argo-events
+              spec:
+                entrypoint: run-tests
+                arguments:
+                  parameters:
+                    - name: commit-sha
+                      value: placeholder
+                templates:
+                  - name: run-tests
+                    inputs:
+                      parameters:
+                        - name: commit-sha
+                    container:
+                      image: alpine:3.18
+                      command: [sh, -c]
+                      args:
+                        - |
+                          echo "Running tests for commit {{inputs.parameters.commit-sha}}"
+                          sleep 5
+                          echo "Tests passed"
+          parameters:
+            - src:
+                dependencyName: push-dep
+                dataKey: body.after
+              dest: spec.arguments.parameters.0.value
+```
+
+Several structural decisions in this YAML deserve explicit attention before you move on.
+
+**`filters.data` path notation**: The path `body.ref` navigates the webhook HTTP request body that the EventSource wraps inside the CloudEvent's `data` field. In the raw CloudEvent structure it would appear as `data.body.ref`, but Argo Events data filters implicitly navigate within `data`, so the prefix is just `body`. When working with non-webhook EventSources (Kafka, SNS), the path structure differs — always inspect a raw event from your EventSource before writing filters.
+
+**`parameters` index zero**: The parameter binding sets `spec.arguments.parameters.0.value`, where `0` is the zero-based index into the Workflow's `arguments.parameters` array. If you inject multiple parameters, add multiple entries to the `parameters` list, each with a different destination index. Injecting into the wrong index silently uses the `placeholder` string from the template.
+
+**`generateName` vs `name`**: Using `generateName` means each triggered Workflow gets a unique name like `ci-build-k29xr`. A fixed `name` causes the second trigger attempt to fail with an `AlreadyExists` conflict, making your pipeline appear to fire only once. Always use `generateName` for dynamically triggered Workflows.
+
+### Step 4: Test the Pipeline End-to-End
+
+To test without configuring a real GitHub webhook, simulate a push event with `curl`. First, port-forward the EventSource Service:
+
+```bash
+kubectl port-forward svc/github-eventsource-eventsource-svc 12000:12000 -n argo-events &
+```
+
+Then send a simulated main-branch push:
+
+```bash
+curl -X POST http://localhost:12000/push \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ref": "refs/heads/main",
+    "after": "abc123def456789",
+    "commits": [{"message": "fix: update config"}]
+  }'
+```
+
+Watch for the Workflow:
+
+```bash
+kubectl get workflows -n argo-events -w
+```
+
+A `ci-build-XXXXX` Workflow should appear and reach `Running` state within a few seconds. Check that the commit SHA parameter was injected correctly:
+
+```bash
+kubectl get workflow -n argo-events -o jsonpath='{.items[0].spec.arguments.parameters[0].value}'
+# Expected: abc123def456789
+```
+
+If nothing appears after 15 seconds, proceed to Part 6 to trace the failure systematically.
+
+### What Just Happened: Tracing the Full Event Flow
+
+Stepping through the pipeline in sequence builds the mental model you need to debug it later:
+
+1. `curl` POSTed JSON to the EventSource pod on port 12000 at the `/push` endpoint.
+2. The EventSource pod wrapped the JSON body in a CloudEvent and published it to the JetStream EventBus on the subject bound to the `push` event name.
+3. The Sensor's subscriber goroutine received the message from the EventBus and evaluated the `filters.data` condition against `body.ref`. The value `refs/heads/main` matched the filter, so the dependency `push-dep` resolved.
+4. With all dependencies resolved, the Sensor instantiated the trigger template and applied the parameter substitution, replacing `placeholder` with `abc123def456789` from `body.after`.
+5. The Sensor's ServiceAccount called the Kubernetes API to create the Workflow resource.
+6. The Argo Workflows controller picked up the new Workflow object and scheduled it for execution.
+
+Each of these steps is independently observable. That is the architectural property that makes systematic debugging tractable.
+
+---
+
+## Part 5: Sensor Dependency Logic and Filters
+
+### 5.1 AND vs. OR Dependency Resolution
+
+The default behavior in Argo Events is AND resolution: every dependency listed in the Sensor must resolve before any trigger fires. This is appropriate for precondition enforcement — "only run the deployment workflow when BOTH the test result event AND the security scan event have arrived and passed."
+
+For OR semantics, use `dependencyGroups` combined with a `circuit` expression. The `circuit` field is a boolean expression string evaluated by the Sensor controller. The following example fires the trigger when either a GitHub push or a manual webhook arrives:
+
+```yaml
+spec:
+  dependencies:
+    - name: github-push
+      eventSourceName: github-eventsource
+      eventName: push
+    - name: manual-trigger
+      eventSourceName: webhook-eventsource
+      eventName: manual
+  dependencyGroups:
+    - name: auto
+      dependencies: ["github-push"]
+    - name: manual
+      dependencies: ["manual-trigger"]
+  circuit: "auto || manual"
+  triggers:
+    - template:
+        conditions: "auto || manual"
+        name: deploy-trigger
+        # ... trigger template
+```
+
+The `circuit` field at the Sensor level determines when the Sensor as a whole is ready to fire. The `conditions` field inside each trigger template determines which group must be satisfied to fire that specific trigger. This two-level logic allows a single Sensor to contain multiple triggers that each fire under different dependency conditions — a useful pattern for routing events to different Workflows based on which dependency group resolved.
+
+### 5.2 Filter Types
+
+Argo Events supports four categories of filters, each addressing a different dimension of event qualification:
+
+**Data filters** match against specific fields in the event payload using JSON path expressions. The `type` field must be `string`, `number`, or `bool`, and the filter performs an equality check against the `value` list. Multiple values in the list are combined with OR logic — the event passes if the field matches any listed value. Data filters are the most commonly used and should be your first choice when a field equality check suffices.
+
+**Time filters** restrict event processing to specific windows within a 24-hour period, using RFC 3339 formatted start and stop times. This is useful for "only process events during business hours" patterns or for limiting high-frequency event sources to maintenance windows when downstream workflows are permitted to run.
+
+**Context filters** match against CloudEvents envelope fields like `source`, `type`, or `subject` — the fields outside the `data` block. If multiple GitHub repositories send events to the same EventSource endpoint (GitHub's webhook URL per-org configuration), a context filter on `source` can route events from `myorg/repo-a` to one Sensor dependency and events from `myorg/repo-b` to another, all within the same Sensor.
+
+**Expression filters** (`exprFilters`) use the `expr` library syntax to write arbitrary boolean expressions against event fields. This is the most flexible option but also the hardest to read and debug — prefer data filters when a simple equality check or list match is sufficient.
+
+> **Stop and think**: Your Sensor is receiving events from two different GitHub repositories, both pushing to `refs/heads/main`. You want Workflow A to fire for `myorg/service-alpha` and Workflow B for `myorg/service-beta`. Without writing YAML yet, sketch the combination of filter type, dependency names, and trigger conditions you would use. Consider whether you need one Sensor or two. Then compare your approach against the architecture described in Quiz Question 8.
+
+### 5.3 Parameter Injection in Depth
+
+Parameter injection transforms a generic event into a Workflow with meaningful, event-specific inputs. The `parameters` list in a trigger template defines mappings, each with a `src` (extraction source) and a `dest` (injection target).
+
+The `src` block supports several extraction strategies. `dataKey` takes a JSON path into the CloudEvent's `data` field — use this for payload fields like commit SHAs, file names, or user IDs. `dataTemplate` takes a Go template expression evaluated against the entire CloudEvent — use this when you need to transform or combine fields rather than extract a single value. `contextKey` navigates the CloudEvent envelope rather than the data payload — use this for envelope metadata like `type` or `source`. `value` injects a static string regardless of event content — use this for constants like environment names or cluster identifiers.
+
+The `dest` field is a JSON path into the trigger resource's spec. For Argo Workflow triggers, the path must start with `spec.` and navigate the Workflow spec structure. The pattern `spec.arguments.parameters.0.value` sets the first entry in the Workflow's top-level `arguments.parameters` array. Template parameter injection (inside `templates[].inputs.parameters`) is handled by the Workflow itself via `{{inputs.parameters.name}}` references — you do not inject there from Argo Events.
+
+---
+
+## Part 6: Diagnosing Event Flow Failures
+
+Event pipelines fail silently more often than they fail loudly. An EventSource can return HTTP 200 to an incoming webhook while the event never reaches the Sensor. A Sensor can log "trigger executed" while the Workflow never appears. Effective diagnosis requires knowing what each component observes and what its silence means.
+
+### 6.1 The Diagnostic Ladder
+
+When events are not flowing as expected, work down this ladder from source to action. Each layer isolates a different component's responsibility:
+
+```
+Layer 1: Did the event reach the EventSource pod?
+    └── EventSource pod logs for HTTP request receipt and dispatch attempts
+
+Layer 2: Did the EventSource publish to the EventBus?
+    └── EventSource logs for "Dispatching event" or broker publish errors
+    └── EventBus pod health and StatefulSet readiness
+
+Layer 3: Did the Sensor receive the event from the EventBus?
+    └── Sensor pod logs for dependency receipt traces
+
+Layer 4: Did the filter evaluate and pass?
+    └── Sensor pod logs for filter evaluation results (PASSED or FAILED with reason)
+
+Layer 5: Did the trigger execute?
+    └── Sensor pod logs for "trigger executed" and downstream API call results
+
+Layer 6: Was the Workflow created successfully?
+    └── kubectl get workflows and kubectl get events for Forbidden entries
+```
+
+Never skip layers. A failure at layer 2 will look the same as a filter failure at layer 4 if you only check the final output at layer 6.
+
+### 6.2 Diagnostic Commands by Layer
+
+Checking EventSource status and events:
+
+```bash
+kubectl describe eventsource github-eventsource -n argo-events
+# Look for: status.conditions with type "Ready" = True
+# Look for: events section with controller reconciliation errors
+```
+
+Checking EventSource pod logs for incoming requests:
+
+```bash
+kubectl logs -l eventsource-name=github-eventsource -n argo-events --tail=50
+# Look for: lines showing "Dispatching event" after your HTTP call
+# A missing dispatch line means the HTTP request never reached the pod
+```
+
+Checking Sensor logs for dependency evaluation:
+
+```bash
+kubectl logs -l sensor-name=github-sensor -n argo-events --tail=50
+# Look for: dependency resolution trace messages
+# Look for: filter evaluation results with PASSED or FAILED and the reason
+# Look for: trigger execution attempts and their outcomes
+```
+
+Checking for Workflow creation and RBAC failures:
+
+```bash
+kubectl get workflows -n argo-events
+kubectl get events -n argo-events --sort-by='.lastTimestamp' | tail -20
+# RBAC failures appear as Warning events with "Forbidden" in the message
+```
+
+### 6.3 Common Failure Signatures and Their Meaning
+
+**Symptom: EventSource pod is Running but nothing appears in Sensor logs**
+
+This almost always means the EventBus is unreachable. Both the EventSource and Sensor pods can start and appear healthy in their own status conditions while having no working connection to the message broker. Verify that an EventBus named `default` exists in the same namespace and has reached `Running` phase: `kubectl get eventbus -n argo-events`. A missing or failed EventBus is silent at the component level but fatal to the pipeline.
+
+**Symptom: Sensor logs show "trigger executed" but no Workflow appears**
+
+This is a trigger execution failure after the Sensor successfully decided to fire. The most common cause is an RBAC misconfiguration — the Sensor's ServiceAccount lacks `create` permission on `argoproj.io/workflows`. The Kubernetes API returns a `Forbidden` response, which appears in `kubectl get events` but not in Sensor logs. Fix the Role and RoleBinding, then resend a test event.
+
+**Symptom: Some events trigger the Workflow, others do not**
+
+The filter condition is passing for some events and failing for others. This is expected behavior if the filter is correct. If unexpected events are being dropped, check Sensor logs immediately after a push that should have triggered. The filter evaluation trace shows the actual field value observed versus the expected value. A common mistake is writing `body.ref` when the actual JSON path for the specific EventSource type places the field at a different location.
+
+**Symptom: Workflow is created but runs with placeholder values instead of real commit SHAs**
+
+The parameter injection path is incorrect. The `dataKey` expression does not resolve to a populated field in the event payload. Add a debug HTTP trigger to the Sensor that sends the raw event body to a `requestbin`-style endpoint or an in-cluster debug service. Inspect the actual JSON structure, confirm the correct path, and update the `dataKey` value.
+
+> **Active learning**: You receive a report: "The CI workflow fires for every push, including feature branches. I thought the filter was supposed to restrict it to main." Before checking the YAML, name three distinct places in the pipeline where this misconfiguration could originate, and describe the specific kubectl command you would run at each layer to confirm or rule out each cause. Write your answer before reading the Common Mistakes table below.
+
+---
+
+## Did You Know?
+
+- **Argo was accepted to the CNCF on March 26, 2020** and graduated on December 6, 2022, making it one of the fastest CNCF projects to reach graduated maturity at the time and confirming its production readiness at enterprise scale.
+- **Argo Events supports over 20 native event sources and 10 trigger types**, covering the majority of enterprise integration patterns without requiring custom connector code — from AWS SNS and GCP PubSub to Stripe and Azure Event Hubs.
+- **The JetStream EventBus provides message persistence with acknowledgment semantics**, meaning events are not lost if the Sensor pod is temporarily unavailable during a rolling restart — JetStream holds unacknowledged messages until a consumer reconnects and acknowledges delivery.
+- **Argo Events uses Kubernetes admission webhooks** for validation and mutation of EventSource and Sensor resources on create and update, which means the webhook infrastructure must be reachable from the API server — a requirement frequently overlooked in air-gapped, private, or highly firewalled cluster deployments.
+
+---
+
+## Common Mistakes
+
+| Mistake | Symptom | Fix |
+|---------|---------|-----|
+| **No EventBus in the target namespace** | EventSource and Sensor pods start normally but no events flow between them; Sensor logs show broker connection refused | Create an `EventBus` resource named `default` in the same namespace as your EventSource and Sensor before deploying either |
+| **EventSource event name and Sensor dependency event name mismatch** | Sensor logs show no dependency resolution; EventSource appears healthy and publishes events | Compare the string key inside the EventSource webhook block (`push:`) exactly against the `eventName` field in the Sensor dependency — one character difference breaks the subscription |
+| **Missing `spec.service` stanza in webhook EventSource** | EventSource pod runs; local `curl` via port-forward succeeds; Ingress or external traffic fails with connection refused | Add `spec.service.ports` to the EventSource so the controller creates a backing Kubernetes Service |
+| **Sensor ServiceAccount lacks Workflow create permission** | Sensor logs show trigger execution; no Workflow appears; `kubectl get events` shows Forbidden warning | Create a Role granting `create` on `argoproj.io/workflows`, bind it to the Sensor's ServiceAccount, and reference the ServiceAccount in `spec.template.serviceAccountName` |
+| **Using fixed `metadata.name` instead of `generateName` in the embedded Workflow** | Pipeline fires correctly the first time; second trigger fails with AlreadyExists; appears to work only once | Use `metadata.generateName` in the Workflow template inside the trigger source so each execution creates a uniquely named Workflow object |
+| **Incorrect `dataKey` path for parameter injection** | Workflow is created and runs but uses the literal string `placeholder` for all parameters | Log the raw event payload using a debug HTTP trigger, confirm the actual JSON path, and update the `dataKey` field — remember that webhook EventSources nest the request body under `body` |
+| **Deploying NATS Streaming (STAN) instead of JetStream** | Broker functions initially; no security patches applied; eventual incompatibility with newer Kubernetes or Argo Events releases | Migrate the EventBus spec to `jetstream`, verify the JetStream StatefulSet reaches Ready, and confirm EventSources and Sensors reconnect before decommissioning STAN |
+| **EventSource and Sensor in different namespaces without explicit cross-namespace wiring** | Events published by the EventSource never reach the Sensor; neither component shows an error in its own status | Place both resources in the same namespace, or consult the Argo Events cross-namespace event routing documentation for your version if cross-namespace is architecturally required |
+
+---
+
+## Quiz
+
+**Question 1**
+
+Your team is migrating a legacy system that polls GitHub every 60 seconds for new push events. You deploy a webhook EventSource with a data filter on `body.ref` matching `refs/heads/main` only. A developer pushes to `feature/dark-mode`, waits, then pushes to `main`. Describe exactly which events trigger the downstream Argo Workflow, which do not, and explain what the Sensor logs would show at each evaluation.
+
+<details>
+<summary>Answer</summary>
+
+Only the push to `main` triggers the Workflow. When the push to `feature/dark-mode` arrives, the Sensor evaluates the data filter against `body.ref`. The value `refs/heads/feature/dark-mode` does not match the filter value `refs/heads/main`, so the dependency does not resolve. The Sensor logs will show a filter evaluation entry with a result indicating the filter failed, including the observed value. No trigger is attempted.
+
+When the push to `main` arrives, the filter evaluates `body.ref: refs/heads/main` against the configured value, finds a match, and the dependency resolves. The Sensor logs will show a filter passed entry, then a trigger execution entry, and the Workflow will appear in `kubectl get workflows` within seconds.
+
+The polling system the team is replacing would have processed both pushes identically — filter logic lived in custom application code, not in infrastructure. Moving the filter into the Sensor makes the intent version-controlled and auditable.
+
+</details>
+
+---
+
+**Question 2**
+
+You deploy Argo Events to a new namespace called `team-alpha`. You create an EventSource and a Sensor. Both pods reach `Running` state. You send a webhook request that returns HTTP 200. No Workflow is created. You check Sensor logs and see no dependency resolution entries at all — not even a failed filter. What is the most likely cause, and what is the specific kubectl command sequence that confirms it?
+
+<details>
+<summary>Answer</summary>
+
+The most likely cause is a missing EventBus in the `team-alpha` namespace. Both the EventSource and Sensor pods can start and pass their own health checks while having no working connection to a message broker. HTTP 200 from the EventSource confirms the pod received the request, but it does not confirm the event was published to the EventBus. Without the EventBus, the publish silently fails or is dropped.
+
+Confirm with: `kubectl get eventbus -n team-alpha`
+
+If no EventBus exists, create one and wait for it to reach `Running` phase. Then resend the webhook event and watch Sensor logs: `kubectl logs -l sensor-name=<name> -n team-alpha -f`
+
+If the EventBus exists but shows a non-Running phase, run `kubectl describe eventbus default -n team-alpha` to find the controller error, then address it before retesting.
+
+</details>
+
+---
+
+**Question 3**
+
+Your platform team is upgrading a production cluster from v1.31 to v1.35. The existing Argo Events installation uses a NATS Streaming (STAN) EventBus. A colleague argues that STAN still works today, so the migration can wait until next quarter. What specific risks does this position ignore? What is the correct migration sequence?
+
+<details>
+<summary>Answer</summary>
+
+The colleague's argument ignores three distinct risk categories. First, STAN is explicitly deprecated in Argo Events, which means any STAN-specific bugs filed against the Argo Events project will be closed without a fix. Second, the Argo project maintains only the two most recent minor release branches, so an organization running an older Argo Events version that still supported STAN will eventually fall off the support window entirely, leaving them with unpatched CVEs. Third, the STAN broker itself has a separate support lifecycle from Argo Events — security vulnerabilities in the STAN process or its dependencies will not be patched.
+
+The correct migration sequence: update the EventBus resource spec from `nats` or the deprecated STAN configuration to `jetstream` with the desired replica count. The EventBus controller will provision the JetStream StatefulSet. Verify the StatefulSet reaches full readiness with `kubectl get statefulset -n argo-events`. Confirm all dependent EventSources and Sensors reconnect — check their status conditions and test the full pipeline with a simulated event before declaring migration complete. Only then decommission the STAN StatefulSet.
+
+</details>
+
+---
+
+**Question 4**
+
+You are deploying Argo Events v1.9.10 to an enterprise cluster where security policy requires that controllers only watch resources within a specific tenant namespace, `tenant-a`. A colleague proposes using the default cluster-wide installation and restricting access via RBAC instead. Why is this insufficient, and how should the installation be configured?
+
+<details>
+<summary>Answer</summary>
+
+RBAC restricts what the controller's ServiceAccount can do, but does not restrict which namespaces the controller watches for CRD resources. The cluster-wide installation deploys a controller with a ClusterRole that watches all namespaces by default. Even with RBAC restrictions on write operations, the controller still observes EventSource and Sensor resources across all namespaces, which violates the isolation requirement at the observation layer.
+
+The correct configuration for v1.7 and above is to apply the `--namespaced` flag to the unified controller deployment and specify `--managed-namespace tenant-a`. This restricts the watch scope at the controller level, not just the permissions level. The controller will only reconcile EventSource and Sensor resources that exist in `tenant-a`, and any resources in other namespaces are invisible to it.
+
+In a multi-tenant cluster with multiple teams, deploy one namespaced controller per tenant namespace. Each controller is fully isolated. A bug or misconfiguration in one team's controller cannot affect another team's event pipeline.
+
+</details>
+
+---
+
+**Question 5**
+
+A Sensor has two dependencies: `test-passed` (from a test result EventSource) and `scan-passed` (from a security scan EventSource). Default AND resolution is active. Tests complete and emit an event. The security scan times out and never emits. The deployment Workflow never fires. A developer asks you to change the Sensor so the Workflow fires as soon as tests pass, with the scan being optional. What architectural change do you make, and what security tradeoff does it introduce?
+
+<details>
+<summary>Answer</summary>
+
+With default AND resolution, both dependencies must resolve before any trigger fires. Since `scan-passed` never arrives, the pipeline is permanently blocked for that event cycle.
+
+To make the scan optional, restructure the Sensor using `dependencyGroups` and a `circuit` expression. Define one group named `tests-only` containing just `test-passed`. Optionally define a second group named `full-check` containing both `test-passed` and `scan-passed`. Set `circuit: "tests-only || full-check"`. Configure the trigger's `conditions` field to match the same expression.
+
+The tradeoff: you are now allowing deployments without a completed security scan. This may be acceptable if the scan is advisory rather than enforced, but it weakens your security posture. Make this decision consciously with your security team rather than as a convenience default. Consider an alternative: set a timeout on the scan dependency so the Sensor waits a bounded period for both, falls back to deploying without scan completion, but generates a security event or metric so the team knows a scan was skipped.
+
+</details>
+
+---
+
+**Question 6**
+
+Your Sensor logs show the message "trigger executed" for every incoming webhook event. Running `kubectl get workflows -n argo-events` shows no Workflows have been created. A junior engineer suggests restarting the Sensor pod. Will this help? What is the actual root cause and how do you diagnose it?
+
+<details>
+<summary>Answer</summary>
+
+Restarting the Sensor pod will not help. "Trigger executed" in the Sensor logs confirms the Sensor called the Kubernetes API to create the Workflow resource. The failure is in the API server's response to that call, not in the Sensor itself — a restart does not change the RBAC configuration that caused the API call to fail.
+
+The actual root cause is almost certainly a missing or incorrect RBAC binding. The Sensor's ServiceAccount does not have `create` permission on `argoproj.io/workflows`. The Kubernetes API server returns a `Forbidden` response, which is recorded as a Warning event in the namespace but does not appear in Sensor logs.
+
+Diagnose with: `kubectl get events -n argo-events --sort-by='.lastTimestamp' | grep -i forbidden`
+
+The event message will identify the ServiceAccount and the resource type that was denied. Fix by creating or updating a Role that grants `create` on `argoproj.io/workflows` in the target namespace and binding it to the Sensor's ServiceAccount via a RoleBinding. Then resend a test event to confirm Workflows appear.
+
+</details>
+
+---
+
+**Question 7**
+
+Your EventSource has been working correctly with port-forward testing. After the team configures a real Ingress pointing to the EventSource, GitHub webhook deliveries begin failing with "connection refused." No configuration change was made to the EventSource itself. What is the most likely cause and how do you confirm it?
+
+<details>
+<summary>Answer</summary>
+
+The most likely cause is a missing `spec.service` stanza in the EventSource definition. When this stanza is absent, the EventSource controller does not create a Kubernetes Service for the EventSource pod. Port-forward bypasses the Service layer entirely by targeting the pod directly, which is why local testing worked. An Ingress, however, requires a Service as its backend target. With no Service, the Ingress has nothing to route to and GitHub connections are refused.
+
+Confirm with: `kubectl get svc -n argo-events | grep eventsource`
+
+If no Service appears, add `spec.service.ports` to the EventSource manifest and reapply. The controller will create the Service on the next reconciliation. Then update the Ingress backend reference to point to the new Service name and port, verify GitHub can deliver a test payload, and confirm Workflows appear as expected.
+
+</details>
+
+---
+
+**Question 8**
+
+Two GitHub repositories, `myorg/service-alpha` and `myorg/service-beta`, both push to `refs/heads/main` and send webhooks to the same EventSource endpoint. You need Workflow A to fire for `service-alpha` and Workflow B for `service-beta`. Describe a single-Sensor architecture that handles this routing, specifying which filter type you use and how the trigger conditions are structured.
+
+<details>
+<summary>Answer</summary>
+
+Define two dependencies in the same Sensor: `dep-alpha` and `dep-beta`. Both reference the same EventSource name and event name. Add a context filter to `dep-alpha` matching the CloudEvents `source` field against `https://github.com/myorg/service-alpha`. Add a context filter to `dep-beta` matching `source` against `https://github.com/myorg/service-beta`. The GitHub EventSource populates the `source` field in the CloudEvent envelope from the repository URL in the webhook payload.
+
+Define two `dependencyGroups`: group `alpha` containing `dep-alpha`, and group `beta` containing `dep-beta`. Set `circuit: "alpha || beta"`. Define two trigger templates: the first with `conditions: "alpha"` pointing to Workflow A's template, and the second with `conditions: "beta"` pointing to Workflow B's template.
+
+This keeps all routing logic in one Sensor resource rather than two. If you later add a third repository, you add one dependency, one group, and one trigger template — the change is localized. If you had two separate Sensors, adding shared configuration like a common parameter mapping or a shared filter would require updating both, introducing maintenance drift.
+
+</details>
+
+---
+
+## Hands-On Exercise
+
+### Objective
+
+Wire a complete Argo Events pipeline on a local cluster. A webhook EventSource receives a simulated push event, a JetStream EventBus transports it, a Sensor filters for `main`-branch pushes and injects the commit SHA, and an Argo Workflow executes with that parameter. Then introduce a deliberate misconfiguration and practice diagnosing it.
+
+### Prerequisites
+
+- A running `kind` or `minikube` cluster with Kubernetes v1.35+
+- `kubectl` configured and pointing at that cluster
+- Argo Workflows installed in the `argo-events` namespace
+- `curl` available locally
+
+### Setup
+
+Install Argo Events if not already present:
+
+```bash
+kubectl create namespace argo-events
+kubectl apply -f https://raw.githubusercontent.com/argoproj/argo-events/stable/manifests/install.yaml
+```
+
+Wait for controllers to reach `Running` before continuing:
+
+```bash
+kubectl get pods -n argo-events -w
+```
+
+- [ ] The `eventsource-controller`, `sensor-controller`, and `eventbus-controller` pods all show `Running` status.
+
+---
+
+### Task 1: Create RBAC and EventBus
+
+Save the RBAC manifest from Part 3.3 to `rbac.yaml` and the EventBus manifest from Part 4 Step 1 to `eventbus.yaml`. Apply both:
+
+```bash
+kubectl apply -f rbac.yaml
+kubectl apply -f eventbus.yaml
+kubectl get eventbus default -n argo-events -w
+```
+
+- [ ] EventBus `default` shows phase `running`.
+- [ ] The JetStream StatefulSet shows all replicas ready: `kubectl get statefulset -n argo-events`.
+- [ ] ServiceAccount `operate-workflow-sa` exists in `argo-events`: `kubectl get sa operate-workflow-sa -n argo-events`.
+
+---
+
+### Task 2: Deploy the EventSource
+
+Save the EventSource manifest from Part 4 Step 2 to `eventsource.yaml` and apply it:
+
+```bash
+kubectl apply -f eventsource.yaml
+kubectl get eventsource github-eventsource -n argo-events
+kubectl get pod -l eventsource-name=github-eventsource -n argo-events
+kubectl get svc -n argo-events | grep eventsource
+```
+
+- [ ] EventSource shows phase `running`.
+- [ ] An EventSource pod shows `Running` status.
+- [ ] A Service matching `*-eventsource-svc` exists in the namespace.
+
+---
+
+### Task 3: Deploy the Sensor
+
+Save the Sensor manifest from Part 4 Step 3 to `sensor.yaml` and apply it:
+
+```bash
+kubectl apply -f sensor.yaml
+kubectl get sensor github-sensor -n argo-events
+kubectl logs -l sensor-name=github-sensor -n argo-events --tail=20
+```
+
+- [ ] Sensor shows phase `running`.
+- [ ] Sensor logs contain no broker connection errors.
+
+---
+
+### Task 4: Trigger the Pipeline with a Main-Branch Event
+
+Port-forward the EventSource Service and send a simulated main-branch push:
+
+```bash
+kubectl port-forward svc/github-eventsource-eventsource-svc 12000:12000 -n argo-events &
+
+curl -X POST http://localhost:12000/push \
+  -H "Content-Type: application/json" \
+  -d '{"ref": "refs/heads/main", "after": "abc123def456789", "commits": [{"message": "feat: add login"}]}'
+```
+
+- [ ] `curl` returns HTTP 200.
+- [ ] A `ci-build-XXXXX` Workflow appears within 10 seconds: `kubectl get workflows -n argo-events`.
+- [ ] The Workflow reaches `Succeeded` state.
+- [ ] The Workflow's commit SHA parameter equals `abc123def456789`: `kubectl get workflow -n argo-events -o jsonpath='{.items[-1].spec.arguments.parameters[0].value}'`.
+
+---
+
+### Task 5: Verify the Filter Rejects Feature-Branch Events
+
+Send a push event for a feature branch:
+
+```bash
+curl -X POST http://localhost:12000/push \
+  -H "Content-Type: application/json" \
+  -d '{"ref": "refs/heads/feature/dark-mode", "after": "xyz987654321", "commits": [{"message": "wip: dark mode"}]}'
+```
+
+- [ ] No new Workflow appears after this event (wait 15 seconds).
+- [ ] Sensor logs show a filter evaluation entry that did not result in a trigger: `kubectl logs -l sensor-name=github-sensor -n argo-events --tail=30`.
+
+---
+
+### Task 6: Introduce and Diagnose a Misconfiguration
+
+Copy `sensor.yaml` to `sensor-broken.yaml`. Edit the copy to change `eventSourceName: github-eventsource` to `eventSourceName: github-eventsource-typo`. Apply it:
+
+```bash
+kubectl apply -f sensor-broken.yaml
+```
+
+Send a valid main-branch push event and observe the result:
+
+```bash
+curl -X POST http://localhost:12000/push \
+  -H "Content-Type: application/json" \
+  -d '{"ref": "refs/heads/main", "after": "deadbeef12345", "commits": [{"message": "fix: urgent patch"}]}'
+```
+
+- [ ] No Workflow is created despite sending a valid main-branch event.
+- [ ] Sensor logs show no dependency resolution activity after the event.
+- [ ] You identify the misconfiguration by comparing the Sensor's `spec.dependencies[0].eventSourceName` against the actual EventSource name in `kubectl get eventsource -n argo-events`.
+- [ ] Revert the typo by reapplying the original `sensor.yaml`, send another push event, and confirm a Workflow appears.
+
+---
+
+### Task 7: Add OR Dependency Logic
+
+Extend the Sensor to also accept a manual trigger from a second webhook endpoint. Create a second EventSource with an event named `manual` at endpoint `/trigger`. Update the Sensor using `dependencyGroups` and a `circuit` expression so that either `push-dep` resolving against `refs/heads/main` OR `manual-dep` resolving from the second EventSource fires the same Workflow trigger.
+
+- [ ] Sending a push to `/push` with `ref: refs/heads/main` triggers the Workflow.
+- [ ] Sending a POST to `/trigger` on the second EventSource's port also triggers the Workflow.
+- [ ] Sending a push to `/push` with `ref: refs/heads/feature/x` triggers nothing.
+- [ ] Sensor logs confirm which dependency group resolved for each test event.
+
+---
+
+## Next Steps
+
+Proceed to **Module 1.3: Argo CD — GitOps Continuous Delivery**, where you connect the event-driven pipeline built in this module to a GitOps deployment controller. A verified commit SHA from Argo Events becomes the source of truth for a production deployment — completing the path from code push to running workload without manual intervention.
