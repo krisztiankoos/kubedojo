@@ -2,13 +2,31 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-24 ~02:10 local — handoff: smoke 5/6 validated; P0=hang-retry)
+## Active Work (2026-04-25 ~10:25 local — v2 pipeline GREEN both writer paths; pushed)
 
-**Status**: v2 end-to-end pipeline validated through every stage **except final merge**. **152 quality tests green; ruff clean. 18 commits ahead of origin/main. Primary clean. Not pushed.**
+**Status**: v2 quality pipeline ships modules end-to-end on both writer paths. **154 quality tests, ruff clean. 0 commits ahead of origin/main — pushed.**
 
-**Read this first**: [`docs/sessions/2026-04-24-v2-smoke-handoff.md`](docs/sessions/2026-04-24-v2-smoke-handoff.md) — cold-start, autopsy, P0–P4 plan, what-NOT-to-do.
+**Read this first**: [`docs/sessions/2026-04-25-v2-smoke-green.md`](docs/sessions/2026-04-25-v2-smoke-green.md) — P0–P4 done, P3 design call findings, what next.
 
-**P0 next session**: hang-detection retry inside `_write_in_worktree` (sleep + 1 retry on stdout_len=0 + timeout signature) — the only blocker keeping argo-events from reaching COMMITTED. Then re-smoke argo-events (P1), Codex-as-writer smoke on an even-index module (P2), citation-insertion design call (P3), push to origin (P4, after green).
+**This session closed P0–P4** from the prior handoff:
+
+| Task | Result | Commit |
+|------|--------|--------|
+| P0 hang-retry in `_write_in_worktree` | shipped + 2 regression tests | `d017e8b9` |
+| P1 re-smoke argo-events (claude writer + codex review) | COMMITTED in 11.5 min, codex APPROVE @ 4.4 | `4f911c49` |
+| P2 codex-as-writer smoke (codex writer + claude review) | COMMITTED in 4.3 min, claude APPROVE @ 4.6 | `63c91218` |
+| P3 citation-insertion design call | findings written up — see handoff doc | (no code) |
+| P4 push to origin | 22 commits pushed, 0 ahead | — |
+
+**Both LLM writer paths smoke-validated.** Final `merge_one` (rebase + ff-merge) now exercised on real data, twice (round-5 argo-events, round-6 ai-ai-building). The 6-stage pipeline (audit → route → write → citation_verify → review → merge) is durable.
+
+**P3 design call (NEEDS USER DECISION)**: v2 ships modules without `## Sources` by intentional design — writer prompt forbids adding them, reviewer prompt tells reviewer to ignore them, citation_verify only verifies/removes existing. `scripts/citation_backfill.py` is the SEPARATE orchestrator that adds Sources. Two-pipeline workflow currently has NO orchestration handoff: v2 reaches COMMITTED, citation_backfill must be invoked separately. Three issues to decide:
+
+1. **Existing Sources stripping risk**: 241 modules have `## Sources`. v2 rewrite track produces "complete replacement modules" without listing Sources as a protected asset, so any of those 241 that route to `rewrite` (audit < 4.0 OR missing structural section) will lose their Sources on rewrite. Most of them sit at score ≥ 4.0 + structurally complete → `CITATION_CLEANUP_ONLY` (cleanup-only path preserves them), so the actual hit count is likely small but nonzero. **Minimal fix**: 1-line addition to `rewrite_prompt` listing `## Sources` as a preserved asset alongside ASCII/Mermaid/tables.
+2. **Orchestration gap**: nothing wires v2 → `citation_backfill` after `merge_one`. Newly-rewritten modules ship at score ≥ 4.0 teaching-wise but are still flagged `critical_quality` by the heuristic rubric scanner because Sources is missing. Two paths: (a) document a manual two-step (run `citation_backfill` on the slug list after each v2 batch); (b) add a 7th `CITATION_BACKFILL` stage post-COMMITTED that auto-invokes `scripts/citation_backfill.py`.
+3. **Internal inconsistency in prompts**: `docs/quality-rubric.md` has a "Citation Gate (Mandatory Before Scoring)" — uncited modules cap at score 3 — but `review_prompt` line 213 explicitly tells the reviewer to "Ignore the `## Sources` section — do not penalize their absence." This is intentional (the reviewer mustn't double-penalize when the design defers Sources to a separate stage), but the rubric text should mention the deferral so future readers don't think there's a bug.
+
+Recommendation: ship (1) as a 1-line prompt fix immediately (zero risk, prevents 241-module Sources loss), (2a) as a documentation update noting the manual two-step, defer (2b) to a future ticket once the manual workflow is exercised. (3) is a 1-line note added to the rubric.
 
 ### Smoke autopsy
 
