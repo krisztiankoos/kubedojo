@@ -360,6 +360,106 @@ def test_write_one_dispatch_nonzero_persists_raw_diag(fake_repo, monkeypatch):
     assert payload["stdout"] == "partial output before crash"
 
 
+def test_write_one_hang_retry_succeeds(fake_repo, monkeypatch):
+    """Hang signature (ok=False, empty stdout, "timed out" in stderr) on the
+    first dispatch must trigger ONE retry. If the retry returns valid
+    markdown, the write succeeds and the first-attempt raw is persisted
+    under the ``-r0`` sub-id so the postmortem keeps both. Regression
+    guard for v2 smoke round 4 (argo-events) where the retry write hung
+    after a successful write 1 ~10 min earlier — same Anthropic-side rate
+    window theory.
+    """
+    slug = _bootstrap(fake_repo)
+    stages.audit_one(slug)
+    stages.route_one(slug)
+
+    monkeypatch.setattr(stages, "_HANG_RETRY_SLEEP_SEC", 0)
+    sleep_calls: list[float] = []
+    monkeypatch.setattr(stages.time, "sleep", lambda s: sleep_calls.append(s))
+
+    call_count = {"n": 0}
+
+    def hang_then_ok(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return DispatchResult(
+                ok=False, stdout="", stderr="Claude timed out after 900s",
+                returncode=1, duration_sec=900.17, agent=agent, model=model,
+            )
+        return DispatchResult(
+            ok=True, stdout=_writer_stub_output(), stderr="",
+            returncode=0, duration_sec=0.1, agent=agent, model=model,
+        )
+
+    monkeypatch.setattr(stages, "dispatch", hang_then_ok)
+    stages.write_one(slug, timeout=10)
+
+    st = state.load_state(slug)
+    assert st["stage"] == "WRITE_DONE", st.get("failure_reason")
+    assert st["write"]["commit_sha"]
+    assert call_count["n"] == 2, "second dispatch must have run"
+    assert sleep_calls == [0], "exactly one bounded sleep before the retry"
+
+    # Only the first-attempt raw is persisted; the successful retry
+    # doesn't leave a diag because there's nothing to debug.
+    diag_dir = fake_repo / ".pipeline" / "quality-pipeline"
+    diag_files = sorted(diag_dir.glob(f"{slug}.write.*.failed.json"))
+    assert len(diag_files) == 1, f"expected exactly one r0 diag, got {diag_files}"
+    payload = json.loads(diag_files[0].read_text())
+    assert payload["error"] == "dispatch_hang_attempt1"
+    assert payload["attempt_id"].endswith("-r0")
+    assert payload["stdout"] == ""
+    assert "timed out" in payload["stderr"].lower()
+
+
+def test_write_one_hang_double_retry_fails(fake_repo, monkeypatch):
+    """If both the original dispatch and the retry hang, FAIL with both
+    diags persisted under ``-r0`` and ``-r1`` sub-ids. Bound is ONE retry
+    so a stuck rate window can't infinitely loop the writer."""
+    slug = _bootstrap(fake_repo)
+    stages.audit_one(slug)
+    stages.route_one(slug)
+
+    monkeypatch.setattr(stages, "_HANG_RETRY_SLEEP_SEC", 0)
+    monkeypatch.setattr(stages.time, "sleep", lambda s: None)
+
+    call_count = {"n": 0}
+
+    def always_hang(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
+        call_count["n"] += 1
+        return DispatchResult(
+            ok=False, stdout="", stderr="Claude timed out after 900s",
+            returncode=1, duration_sec=900.17, agent=agent, model=model,
+        )
+
+    monkeypatch.setattr(stages, "dispatch", always_hang)
+    stages.write_one(slug, timeout=10)
+
+    st = state.load_state(slug)
+    assert st["stage"] == "FAILED"
+    assert call_count["n"] == 2, "must retry exactly once before giving up"
+    reason = (st.get("failure_reason") or "")
+    assert "hung twice" in reason.lower()
+    assert "-r0.failed.json" in reason and "-r1.failed.json" in reason
+
+    diag_dir = fake_repo / ".pipeline" / "quality-pipeline"
+    diag_files = sorted(diag_dir.glob(f"{slug}.write.*.failed.json"))
+    assert len(diag_files) == 2, f"expected r0 + r1 diags, got {diag_files}"
+
+    by_attempt = {json.loads(p.read_text())["attempt_id"]: json.loads(p.read_text())
+                  for p in diag_files}
+    r0_id = next(k for k in by_attempt if k.endswith("-r0"))
+    r1_id = next(k for k in by_attempt if k.endswith("-r1"))
+    assert by_attempt[r0_id]["error"] == "dispatch_hang_attempt1"
+    assert by_attempt[r1_id]["error"] == "dispatch_hang_attempt2"
+    # Both share the same lease attempt prefix — they're sub-IDs of one attempt.
+    assert r0_id[:-3] == r1_id[:-3]
+
+    # Worktree + branch cleaned up so the next retry starts fresh
+    # (Codex must-fix #6/#8 — broad cleanup handler).
+    assert not worktree.worktree_dir(fake_repo, slug).exists()
+
+
 def test_write_one_dispatcher_unavailable_reverts_to_pending(fake_repo, monkeypatch):
     """Peak-hours / budget refusal must REVERT to WRITE_PENDING so the
     module stays retryable. v1's failure mode silently drained the queue."""

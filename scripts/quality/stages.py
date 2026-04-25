@@ -82,6 +82,14 @@ SCORE_SKIP_THRESHOLD = 4.0
 """Audit score at or above which the rewrite stage is skipped. Citation
 verify still runs unconditionally."""
 
+_HANG_RETRY_SLEEP_SEC = 90
+"""Sleep before re-dispatching when the writer dispatch hangs (0 B stdout,
+returns "timed out" in stderr). Smoke rounds 2 and 4 on argo-events both
+exhibited this pattern within ~10 min of a prior heavy claude-code call —
+hypothesis is an Anthropic-side rate window. ONE retry per call site,
+both diags persisted to disk; if both hang we surface FAILED with both
+filenames in ``failure_reason``. Tests monkeypatch this to 0."""
+
 
 class StageError(RuntimeError):
     """Stage couldn't complete for non-retryable reasons (parse fail, git fail, etc.).
@@ -277,6 +285,18 @@ def write_one(slug: str, *, timeout: int = 900) -> None:
         )
 
 
+def _looks_like_dispatch_hang(result: DispatchResult) -> bool:
+    """The "0 B stdout + 'timed out' stderr" signature observed on argo-events
+    smoke rounds 2 and 4. We retry ONCE for this signature only — we don't
+    retry generic non-zero exits (e.g., ``RuntimeError: kaboom``) because
+    those signal a genuine writer crash, not a stuck rate window."""
+    if result.ok:
+        return False
+    if result.stdout:  # any output at all means generation was happening
+        return False
+    return "timed out" in (result.stderr or "").lower()
+
+
 def _save_write_diag(
     *,
     slug: str,
@@ -381,6 +401,33 @@ def _write_in_worktree(
         # which the extractor then rejects as "no frontmatter delimiter
         # found" while the actual rewrite gets nuked with the worktree.
         result = dispatch(writer, prompt, timeout=timeout, cwd=wt, tools_disabled=True)
+        # Hang-retry path: the "0 B stdout + 'timed out' stderr" signature
+        # observed on argo-events smoke rounds 2 and 4 — likely an
+        # Anthropic-side stall on the second heavy claude-code call within
+        # a rate window. ONE retry with a fresh dispatch; both raw outputs
+        # persisted under distinct sub-IDs of the lease's ``attempt_id`` so
+        # the postmortem keeps both. Generic dispatch failures (rc != 0
+        # with stdout or non-timeout stderr) skip this branch and fall
+        # through to the existing failure path.
+        if _looks_like_dispatch_hang(result):
+            hang_attempt_1 = f"{attempt_id}-r0"
+            _save_write_diag(
+                slug=slug, writer=writer, attempt_id=hang_attempt_1,
+                result=result, prompt=prompt, error="dispatch_hang_attempt1",
+            )
+            time.sleep(_HANG_RETRY_SLEEP_SEC)
+            result = dispatch(writer, prompt, timeout=timeout, cwd=wt, tools_disabled=True)
+            if _looks_like_dispatch_hang(result) or not result.ok:
+                hang_attempt_2 = f"{attempt_id}-r1"
+                diag2 = _save_write_diag(
+                    slug=slug, writer=writer, attempt_id=hang_attempt_2,
+                    result=result, prompt=prompt, error="dispatch_hang_attempt2",
+                )
+                raise StageError(
+                    f"{writer} dispatch hung twice (rc={result.returncode}): "
+                    f"{(result.stderr or '').strip()[:400]} — raw saved to "
+                    f"{slug}.write.{hang_attempt_1}.failed.json and {diag2.name}"
+                )
         if not result.ok:
             diag = _save_write_diag(
                 slug=slug, writer=writer, attempt_id=attempt_id,
