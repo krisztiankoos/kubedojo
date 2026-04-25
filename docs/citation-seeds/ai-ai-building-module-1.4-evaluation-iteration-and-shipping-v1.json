@@ -1,30 +1,144 @@
 {
   "module_key": "ai/ai-building/module-1.4-evaluation-iteration-and-shipping-v1",
   "module_path": "src/content/docs/ai/ai-building/module-1.4-evaluation-iteration-and-shipping-v1.md",
-  "research_run_id": "2026-04-19T23:26:26+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 2,
-  "claims": [],
+  "research_run_id": "2026-04-25T14:03:09+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A dated 2023 SaaS anecdote is presented as a real support-ticket-classifier launch that was approved on a five-example demo.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In 2023, a mid-sized SaaS company shipped an internal tool to classify inbound support tickets by urgency. The product manager demoed it to leadership using five carefully chosen examples. All five were classified correctly. The tool went live.",
+      "suggested_rewrite": "A team can easily convince itself an AI classifier is ready by demoing a handful of carefully chosen examples that all happen to look correct, then shipping before the task is clearly defined or tested on messy real-world inputs.",
+      "lesson_point_url": null,
+      "rationale": "This is written as a real dated incident but provides no attributable source, so the date and incident framing should be removed."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The same anecdote gives a specific post-launch timeline and concrete failure consequences as if they were a real incident.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Three weeks later, the support team was getting paged at midnight. The system was routing time-sensitive delivery failures to a low-priority queue and marking routine billing questions as critical. The product manager could not explain why — because the team had never defined what \"urgent\" meant in the system prompt. They had tuned the prompt until the five demo examples looked right, then shipped. Nobody had tested it on the messy, ambiguous messages that real customers actually send.",
+      "suggested_rewrite": "After launch, that kind of system often misroutes genuinely urgent tickets because the team never defined what \"urgent\" meant in the prompt or tested the ambiguous messages real users actually send.",
+      "lesson_point_url": null,
+      "rationale": "The precise timeline and operational fallout are unattributed incident details, so the teaching point should be kept without the false specificity."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Unexpected real-user inputs will appear within the first hour on every real system.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Evaluation Gap, paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "On every real system with real traffic, that happens within the first hour.",
+      "suggested_rewrite": "On real systems with real traffic, that usually happens quickly.",
+      "lesson_point_url": null,
+      "rationale": "This is a universal time-bound claim with no support and should lose the exact timing."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Building a 10-to-20 example test set takes roughly 30 minutes.",
+      "claim_class": "statistic",
+      "span_hint": "section: The Evaluation Gap, paragraph 4",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The cost of building a 10-to-20 example test set is roughly 30 minutes of honest work.",
+      "suggested_rewrite": "Building a 10-to-20 example test set usually takes a short block of focused work.",
+      "lesson_point_url": null,
+      "rationale": "The exact time estimate is presented as fact without a source and should be generalized."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The module gives an unsupported history of the term \"evals\" and an exact count for the OpenAI Evals repository.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know?, item 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "1. The term \"evals\" comes from the NLP research community, where it originally referred to standardized benchmarks for comparing language models across research groups. In production AI development, the meaning shifted to mean any structured test of a model's behavior on a specific task — which is why companies now publish internal eval tooling as open-source. OpenAI's evals repository contains over 1,000 community-contributed evaluation sets covering tasks from logical reasoning to translation quality.",
+      "suggested_rewrite": "1. In production AI development, \"evals\" usually means structured tests of a model or system on a specific task, often using repeatable examples so teams can compare changes over time.",
+      "lesson_point_url": null,
+      "rationale": "The etymology and exact repository count are not directly backed here, so the sentence should be reduced to the defensible instructional point."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The module attributes a specific GPT-4 benchmark drop, time window, caller-visible version behavior, and causal explanation to a 2023 Stanford study.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know?, item 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "2. A 2023 study from Stanford's Center for Research on Foundation Models found that GPT-4's performance on a standard coding benchmark dropped by over 40 percentage points across a 6-month window — without any change to the model version accessed by callers. The degradation came from changes in safety tuning and training distribution applied by the provider. This is why re-running your evaluation set after any model provider update is not optional maintenance — it is the only way to detect a silent regression.",
+      "suggested_rewrite": "2. A 2023 study found that model behavior can shift substantially over time across tasks, which is why re-running your evaluation set after provider changes is necessary to catch silent regressions.",
+      "lesson_point_url": null,
+      "rationale": "There is literature on model behavior drift, but the exact time window and causal attribution in this wording are not cleanly supported."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The module says the bounded-v1 rollout pattern has the formal safety-engineering name \"graduated autonomy\" and equates it to aviation autopilot practice.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know?, item 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "3. The practice of shipping a bounded v1 before expanding autonomy has a formal name in safety engineering: graduated autonomy. Aviation autopilot systems follow the same pattern — the system handles one flight regime reliably before being extended to another. AI features benefit from the same logic: demonstrate reliability in the bounded case first, then extend scope incrementally as each extension is validated.",
+      "suggested_rewrite": "3. A safer rollout pattern is to prove reliability in a bounded, reviewable use case first and then expand scope incrementally as each extension is validated.",
+      "lesson_point_url": null,
+      "rationale": "The named safety-engineering term and aviation comparison are too specific to leave uncited, so the principle should be preserved without the formal attribution."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The module presents \"prompt drift\" as a documented failure mode with a specific causal list.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know?, item 4",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "4. \"Prompt drift\" is a documented failure mode in long-running AI systems where the effective behavior of a prompt degrades over time even when the prompt text is unchanged. Causes include: underlying model updates by the provider, changes in the data being fed as context, shifts in the vocabulary used by upstream systems, and subtle changes to API defaults. Teams that do not periodically re-run their eval sets often discover prompt drift months after it began, when the system's behavior has already diverged significantly from its original specification.",
+      "suggested_rewrite": "4. Long-running AI systems can drift away from their original behavior over time even when the prompt text appears unchanged, which is why teams should periodically re-run evals and watch for regressions after model, context, or upstream-data changes.",
+      "lesson_point_url": null,
+      "rationale": "The named failure mode and causal list are stronger than the available primary support, so the guidance should be kept without the formal claim."
+    }
+  ],
   "further_reading": [
     {
       "url": "https://github.com/openai/evals",
       "title": "OpenAI Evals",
       "tier": "upstream",
-      "why_relevant": "Concrete examples and tooling for building repeatable eval sets and comparing changes over time."
+      "why_relevant": "Provides concrete examples and tooling for building repeatable task-specific evals."
     },
     {
       "url": "https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook",
       "title": "NIST AI RMF Playbook",
       "tier": "standards",
-      "why_relevant": "Useful for turning evaluation and review steps into an explicit shipping and governance practice."
+      "why_relevant": "Useful for turning evaluation, review, and release decisions into an explicit operational process."
     },
     {
-      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
-      "title": "OWASP Top 10 for LLM Applications",
+      "url": "https://arxiv.org/abs/2307.09009",
+      "title": "How Is ChatGPT's Behavior Changing Over Time?",
       "tier": "standards",
-      "why_relevant": "Relevant when moving from prompt iteration to shipping, because it highlights common security and reliability risks in LLM features."
+      "why_relevant": "Helpful background on why persistent evals matter when model behavior can shift across provider updates."
     }
   ],
-  "notes": "No inline citation candidates found. The module is predominantly pedagogical guidance and workflow advice; its numbers are instructional examples or exercise scaffolding rather than factual claims about real incidents, vendors, standards, or measured statistics.",
+  "notes": "Most worked examples, quiz scenarios, tables, and exercise prompts are explicitly pedagogical or hypothetical and do not need inline citations under the module rules; the main citation issues here are the fabricated/over-precise anecdote and the four Did You Know items.",
   "_schema_issues": [],
   "rejected_urls": []
 }
