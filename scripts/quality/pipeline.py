@@ -262,11 +262,47 @@ def _run_one_with_abort(slug: str) -> str:
         return "abort"
     except Exception as exc:
         print(f"[fail] {slug}: {exc}")
+        _print_failure_diagnostics(slug)
         return "fail"
     if terminal == "FAILED":
         print(f"[fail] {slug}: FAILED")
+        _print_failure_diagnostics(slug)
         return "fail"
     return "ok"
+
+
+def _print_failure_diagnostics(slug: str) -> None:
+    """Emit recorded failure context (state.failure_reason, last history
+    entry, latest write/review diagnostic JSON) so the operator can
+    triage without having to manually open files. Best-effort — never
+    raises into the run loop."""
+    try:
+        st = state.load_state(slug)
+    except Exception as exc:  # pragma: no cover — display path
+        print(f"        (could not read state: {exc})")
+        return
+    if st is None:
+        print(f"        (no state file for {slug})")
+        return
+    reason = st.get("failure_reason") or "(no failure_reason recorded)"
+    print(f"        reason: {reason}")
+    history = st.get("history") or []
+    if history:
+        last = history[-1]
+        print(f"        last  : {last.get('stage')} @ {last.get('at')} — {last.get('note', '')}")
+    diag_dir = _REPO_ROOT / ".pipeline" / "quality-pipeline" / "diagnostics"
+    if diag_dir.is_dir():
+        diags = sorted(
+            (p for p in diag_dir.glob(f"{slug}.*.failed.json")),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        if diags:
+            try:
+                rel = diags[0].relative_to(_REPO_ROOT)
+            except ValueError:
+                rel = diags[0]
+            print(f"        diag  : {rel}")
 
 
 def cmd_run_module(args: argparse.Namespace) -> int:
