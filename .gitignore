@@ -88,6 +88,7 @@ test_script.sh
 .pipeline/audit-ztt-*/
 .pipeline/teaching-audit/
 .pipeline/quality-pipeline/
+.pipeline/runs/
 .cache/
 
 # Agent bridge runtime
