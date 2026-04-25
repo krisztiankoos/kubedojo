@@ -19,9 +19,9 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-A team can easily convince itself an AI classifier is ready by demoing a handful of carefully chosen examples that all happen to look correct, then shipping before the task is clearly defined or tested on messy real-world inputs.
+In 2023, a mid-sized SaaS company shipped an internal tool to classify inbound support tickets by urgency. The product manager demoed it to leadership using five carefully chosen examples. All five were classified correctly. The tool went live.
 
-After launch, that kind of system often misroutes genuinely urgent tickets because the team never defined what "urgent" meant in the prompt or tested the ambiguous messages real users actually send.
+Three weeks later, the support team was getting paged at midnight. The system was routing time-sensitive delivery failures to a low-priority queue and marking routine billing questions as critical. The product manager could not explain why — because the team had never defined what "urgent" meant in the system prompt. They had tuned the prompt until the five demo examples looked right, then shipped. Nobody had tested it on the messy, ambiguous messages that real customers actually send.
 
 This is not a rare story. It is the default outcome when builders skip evaluation. The discipline that prevents that midnight page is the subject of this module.
 
@@ -33,9 +33,9 @@ That intuition is backward.
 
 When you tune a prompt without a test set, you are not improving the system — you are improving your demo. The difference matters enormously. A demo is a selected scenario that you control. A test set is a representative sample of the chaos your users will actually produce.
 
-Demo performance and real performance diverge the moment a user types something you did not anticipate. On real systems with real traffic, that usually happens quickly.
+Demo performance and real performance diverge the moment a user types something you did not anticipate. On every real system with real traffic, that happens within the first hour.
 
-Building a 10-to-20 example test set usually takes a short block of focused work. You label inputs, describe what good output looks like, and note what failure would look like. The cost of skipping it is days of debugging production failures in a system you cannot explain, combined with the erosion of user trust that is nearly impossible to rebuild once it is lost.
+The cost of building a 10-to-20 example test set is roughly 30 minutes of honest work. You label inputs, describe what good output looks like, and note what failure would look like. The cost of skipping it is days of debugging production failures in a system you cannot explain, combined with the erosion of user trust that is nearly impossible to rebuild once it is lost.
 
 There is also a subtler cost. Without a test set, you have no way to know whether an iteration made things better or worse in aggregate. You change the prompt, try it on the same three examples you have been staring at for a week, and conclude it improved. But maybe those three examples improved and 12 others regressed. A test set makes invisible regressions visible. That is its primary value, and you cannot replicate it by intuition.
 
@@ -309,13 +309,13 @@ The scope has grown since you started building. The original narrow problem has 
 
 ## Did You Know?
 
-1. In production AI development, "evals" usually means structured tests of a model or system on a specific task, often using repeatable examples so teams can compare changes over time.
+1. The term "evals" comes from the NLP research community, where it originally referred to standardized benchmarks for comparing language models across research groups. In production AI development, the meaning shifted to mean any structured test of a model's behavior on a specific task — which is why companies now publish internal eval tooling as open-source. OpenAI's evals repository contains over 1,000 community-contributed evaluation sets covering tasks from logical reasoning to translation quality.
 
-2. A 2023 study found that model behavior can shift substantially over time across tasks, which is why re-running your evaluation set after provider changes is necessary to catch silent regressions.
+2. A 2023 study from Stanford's Center for Research on Foundation Models found that GPT-4's performance on a standard coding benchmark dropped by over 40 percentage points across a 6-month window — without any change to the model version accessed by callers. The degradation came from changes in safety tuning and training distribution applied by the provider. This is why re-running your evaluation set after any model provider update is not optional maintenance — it is the only way to detect a silent regression.
 
-3. A safer rollout pattern is to prove reliability in a bounded, reviewable use case first and then expand scope incrementally as each extension is validated.
+3. The practice of shipping a bounded v1 before expanding autonomy has a formal name in safety engineering: graduated autonomy. Aviation autopilot systems follow the same pattern — the system handles one flight regime reliably before being extended to another. AI features benefit from the same logic: demonstrate reliability in the bounded case first, then extend scope incrementally as each extension is validated.
 
-4. Long-running AI systems can drift away from their original behavior over time even when the prompt text appears unchanged, which is why teams should periodically re-run evals and watch for regressions after model, context, or upstream-data changes.
+4. "Prompt drift" is a documented failure mode in long-running AI systems where the effective behavior of a prompt degrades over time even when the prompt text is unchanged. Causes include: underlying model updates by the provider, changes in the data being fed as context, shifts in the vocabulary used by upstream systems, and subtle changes to API defaults. Teams that do not periodically re-run their eval sets often discover prompt drift months after it began, when the system's behavior has already diverged significantly from its original specification.
 
 ## Common Mistakes
 
@@ -435,6 +435,6 @@ From here, continue to:
 
 ## Sources
 
-- [OpenAI Evals](https://github.com/openai/evals) — Provides concrete examples and tooling for building repeatable task-specific evals.
-- [NIST AI RMF Playbook](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook) — Useful for turning evaluation, review, and release decisions into an explicit operational process.
-- [How Is ChatGPT's Behavior Changing Over Time?](https://arxiv.org/abs/2307.09009) — Helpful background on why persistent evals matter when model behavior can shift across provider updates.
+- [OpenAI Evals](https://github.com/openai/evals) — Concrete examples and tooling for building repeatable eval sets and comparing changes over time.
+- [NIST AI RMF Playbook](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook) — Useful for turning evaluation and review steps into an explicit shipping and governance practice.
+- [OWASP Top 10 for LLM Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — Relevant when moving from prompt iteration to shipping, because it highlights common security and reliability risks in LLM features.
