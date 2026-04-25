@@ -35,8 +35,8 @@
 **Git hygiene done at session start**: removed 3 merged quality worktrees + branches (5.2/5.3/5.4 — crash had wiped working tree state, branches sat at `4abd1f80`), removed detached-HEAD `codex-interactive` worktree, cleaned 0-byte `.tsv.lock` residue. Briefing alerts cleared.
 
 **Next session**:
-- Push 40 commits to `origin/main` (`git push`).
-- Manual rewrite of 9.4 to address the 3 audit gaps (Orchestration & Pipelines section needs diagrams/code, Monitoring & Governance section is too thin, Practitioner Depth dimension below 4 — must add patterns/anti-patterns/failure modes).
+- ~~Push commits to `origin/main`~~ — done; 41 commits pushed.
+- **#387 Manual rewrite of 9.4-private-mlops-platform** — full must-fix list + recommended approach in the issue body.
 - The 11 newly-merged modules should land in the next `backfill-pending` cycle to attach `## Sources` sections.
 
 **Prior session summary follows** —
