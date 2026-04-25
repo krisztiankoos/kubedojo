@@ -450,10 +450,3 @@ The `ReadWriteOncePod` access mode, which graduated to stable in Kubernetes 1.29
 
 ## Next Module
 Ready to move from storage architectures to advanced scheduling? Check out [GPU Scheduling](/platform/toolkits/data-ai-platforms/ml-platforms/module-9.7-gpu-scheduling/), where we dive into coordinated placement, queueing, and accelerator-aware scheduling patterns for large AI workloads.
-
-## Further Reading
-* [Fluid Official Documentation](https://fluid.io/)
-* [Alluxio Kubernetes Deployment Guide](https://docs.alluxio.io/os/user/stable/en/kubernetes/)
-* [NVIDIA GPUDirect Storage Overview](https://developer.nvidia.com/gpudirect-storage)
-* [WebDataset: High-Performance I/O for Deep Learning](https://github.com/webdataset/webdataset)
-* [BeeGFS CSI Driver GitHub Repository](https://github.com/ThinkParQ/beegfs-csi-driver)
