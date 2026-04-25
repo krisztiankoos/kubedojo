@@ -28,7 +28,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONTENT_ROOT = REPO_ROOT / "src" / "content" / "docs"
 AUDIT_DIR = REPO_ROOT / ".pipeline" / "teaching-audit"
-PROMPT_TEMPLATE = Path("/tmp/kd_audit_prompt.md")
+PROMPT_TEMPLATE = REPO_ROOT / "scripts" / "prompts" / "audit_teaching.md"
 
 _VENV_PYTHON = str(REPO_ROOT / ".venv" / "bin" / "python")
 DISPATCH = str(REPO_ROOT / "scripts" / "dispatch.py")
