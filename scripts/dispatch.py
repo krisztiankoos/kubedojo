@@ -366,7 +366,7 @@ def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
 
 
 _CLAUDE_TEXT_ONLY_DISALLOWED = (
-    "Bash,Edit,Write,NotebookEdit,WebFetch,WebSearch,Skill,Agent,ExitPlanMode"
+    "Bash,Edit,Write,NotebookEdit,WebFetch,WebSearch,Skill,Agent,Task,ExitPlanMode"
 )
 """Tool list passed to ``--disallowedTools`` when ``tools_disabled=True``.
 
@@ -377,11 +377,17 @@ which is fatal for the v2 quality pipeline writer/reviewer paths, where
 the pipeline expects the rewritten module markdown on stdout (see the
 k8s-capa-module-1.2-argo-events smoke autopsy).
 
-Read-only tools (Read, Glob, Grep, Task, TodoWrite) stay enabled —
+``Task`` (sub-agent invocation) is also disallowed — without it Claude
+delegated rewrites to a subagent that wrote to a separate context, then
+summarized in stdout (observed twice on
+ai-ai-building-module-1.2-models-apis-context-structured-output: 8 min
+of internal work, ~1 KB summary out, classic "the module above" prose).
+
+Read-only tools (Read, Glob, Grep, TodoWrite) stay enabled —
 empirically Claude needs them to plan output without hanging. With ALL
 tools blocked (including Read/Glob/Grep) the writer prompt produced
-zero stdout for 900s before timing out; with only mutating + external
-tools blocked it returns the full ~80KB module markdown in ~90s.
+zero stdout for 900s before timing out; with only mutating + external +
+sub-agent tools blocked it returns the full ~80KB module markdown.
 """
 
 
