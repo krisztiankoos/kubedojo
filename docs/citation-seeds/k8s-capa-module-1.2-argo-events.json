@@ -1,0 +1,522 @@
+{
+  "module_key": "k8s/capa/module-1.2-argo-events",
+  "module_path": "src/content/docs/k8s/capa/module-1.2-argo-events.md",
+  "research_run_id": "2026-04-25T09:07:12+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The CAPA exam weights Argo Events at 12% of the domain breakdown.",
+      "claim_class": "standard",
+      "span_hint": "line 14",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://training.linuxfoundation.org/certification/certified-argo-project-associate-capa/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Linux Foundation CAPA exam page publishes the domain percentages and includes Argo Events at 12%."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "A well-documented pattern at major financial institutions involves hundreds of polling scripts and CronJobs running every 60 seconds across systems processing millions of events per day.",
+      "claim_class": "war_story",
+      "span_hint": "line 28",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Consider a well-documented incident pattern at major global financial institutions — a scenario frequently mirrored by enterprise deployments at organizations that process millions of daily events. Before adopting a modern Event-Driven Architecture (EDA), platform engineering teams often rely on hundreds of distinct polling scripts: legacy bash loops and Kubernetes CronJobs running every 60 seconds, constantly querying GitHub repositories, internal object storage buckets, and external webhook providers just to detect whether a new file or commit has arrived.",
+      "suggested_rewrite": "In large enterprise environments, platform teams often accumulate many polling scripts and Kubernetes CronJobs that repeatedly check external systems for changes.",
+      "lesson_point_url": null,
+      "rationale": "This is a composite anecdote with precise operational scale but no attributable source."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Polling failures can burn API rate limits and a buggy GitHub poller can trigger thousands of duplicate migration workflows that delay transaction processing for hours.",
+      "claim_class": "war_story",
+      "span_hint": "line 30",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The operational and financial impacts of this polling model accumulate quickly. Teams aggressively burn through external API rate limits, which causes legitimate, business-critical deployments to fail. A race condition in a custom GitHub poller that incorrectly parses a Git SHA can trigger an unbounded loop — one that fires thousands of duplicate database migration workflows, saturating an entire production cluster and delaying transaction processing for hours.",
+      "suggested_rewrite": "Polling-based automation can create real operational problems: wasted API calls, delayed detection, and duplicate or runaway jobs when custom polling logic fails.",
+      "lesson_point_url": null,
+      "rationale": "This is another unattributed composite incident with false precision and no citable named event."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "CloudEvents is a CNCF-graduated specification for exposing event metadata in a common way across systems.",
+      "claim_class": "standard",
+      "span_hint": "section: 1.2 The CloudEvents Specification",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://www.cncf.io/announcements/2024/01/25/cloud-native-computing-foundation-announces-the-graduation-of-cloudevents/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF announcement explicitly describes CloudEvents as a specification and announces its graduation."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "EventSources consume events from external systems, transform them into CloudEvents, and dispatch them over the EventBus.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 57-59",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/concepts/event_source/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Argo Events Event Source concept page states that EventSources transform events into CloudEvents and dispatch them to the EventBus."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "EventBus is namespaced, required for EventSource/Sensor communication, and is commonly named `default` unless another `eventBusName` is configured.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 88-89",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/eventbus/eventbus/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The EventBus docs state it is namespaced, required in the namespace, and commonly created as `default` unless explicitly overridden."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Argo Events includes trigger types such as Argo Workflows, Kubernetes objects, HTTP, Kafka, NATS, Slack, Azure Event Hubs, and OpenWhisk.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 90",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/concepts/trigger/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Trigger concept page enumerates the built-in trigger types."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Argo Events provides 20+ event sources, and a single EventSource can define multiple named events in one resource.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 113-114",
+      "disposition": "supported",
+      "source_ids": [
+        "S003",
+        "S006"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/eventsources/multiple-events/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Event Source docs list more than 20 sources, and the Multiple Events docs state that multiple events can be configured in a single EventSource."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The EventSource controller creates one deployment per EventSource object, with one replica by default.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 115-116",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/eventsources/ha/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The EventSource HA docs explicitly say the controller creates a deployment for each EventSource object and defaults replicas to 1."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Argo Events supports JetStream, NATS Streaming (STAN), and Kafka as EventBus implementations, and STAN is deprecated for new deployments.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 119-121",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S008"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/eventbus/eventbus/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The EventBus docs list the supported backends, and the Jetstream page describes JetStream as the newer option with STAN being deprecated."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "JetStream is the recommended default because it provides persistent storage, acknowledgements, and replay semantics.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 119",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S022"
+      ],
+      "proposed_url": "https://docs.nats.io/nats-concepts/jetstream",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact persistence, acknowledgement, and replay semantics are best documented in the NATS JetStream primary docs, which are off the current allowlist."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "With multiple dependencies, Argo Events uses AND by default.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 129, 405-407",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/sensors/trigger-conditions/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Trigger Conditions docs state that if `conditions` is missing, the default logic is AND across defined dependencies."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "OR and more complex dependency logic in Argo Events should be implemented with `dependencyGroups` and a `circuit` expression.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 129",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "You can define `dependencyGroups` and a `circuit` expression to implement OR or more complex boolean combinations.",
+      "suggested_rewrite": "You can use trigger `conditions` with boolean expressions such as `A || B` and `(A || B) && C` to model OR and more complex combinations.",
+      "lesson_point_url": null,
+      "rationale": "Current upstream docs document trigger conditions, not the deprecated `dependencyGroups`/`circuit` approach."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "The installation instructions require Kubernetes v1.35+.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 137",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Execute these against a Kubernetes v1.35+ cluster:",
+      "suggested_rewrite": "Execute these against a supported Kubernetes cluster:",
+      "lesson_point_url": null,
+      "rationale": "Upstream installation docs do not state a v1.35+ minimum for Argo Events."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "For v1.7+, namespaced installs use `--namespaced` on the unified controller-manager deployment, optionally with `--managed-namespace`; before v1.7 there were three separate controllers.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 154-156",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/managed-namespace/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Managed Namespace docs explicitly distinguish the v1.7+ controller-manager model from the pre-v1.7 three-controller model."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "A Sensor that triggers Workflows needs a ServiceAccount with permission to create Workflow resources.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 160-177",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/service-accounts/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Service Accounts docs state that Sensors using `argoWorkflow` triggers need permissions on `workflows.argoproj.io`."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "If that ServiceAccount is missing, the failure appears only in Kubernetes events and not in Sensor logs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 194",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Without it, the Sensor executes the trigger call and receives a `Forbidden` response from the API server, which surfaces only in the Kubernetes events stream — not in Sensor logs themselves.",
+      "suggested_rewrite": "Without it, the Sensor cannot create the Workflow resource and the Kubernetes API returns a `Forbidden` response.",
+      "lesson_point_url": null,
+      "rationale": "The permission requirement is documented, but the exact log-versus-events visibility claim is not directly supported by upstream docs."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "Supported Argo Events releases track only the two most recent minor branches, and core component images should use the same version.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 198-199",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/releases/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Releases page states both the two-minor-branch support policy and the required image version alignment."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "For HTTP-based EventSources, the `service` field can create a ClusterIP Service; without it, no Service is created automatically.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 267",
+      "disposition": "supported",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/eventsources/services/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The EventSource Services docs describe the `service` field as the mechanism that creates the Service."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "The key inside the EventSource event block, such as `push`, becomes the Sensor dependency `eventName` and must match exactly.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 267",
+      "disposition": "supported",
+      "source_ids": [
+        "S014"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/eventsources/naming/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The EventSource Names docs define `eventName` as the configured event map key."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "For webhook events, Sensor data filters operate inside `data`, so paths such as `body.ref` are used rather than `data.body.ref`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 345-346",
+      "disposition": "supported",
+      "source_ids": [
+        "S015"
+      ],
+      "proposed_url": "https://argoproj.github.io/argo-events/sensors/filters/data/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Data Filter docs show the webhook event structure and state that data filters are applied on `data` within the payload."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "Using `generateName` creates a unique Workflow name prefix, while a fixed `name` collides on repeated creates.",
+      "claim_class": "standard",
+      "span_hint": "line 349",
+      "disposition": "supported",
+      "source_ids": [
+        "S018"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/names",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes object naming docs explain `generateName` and name uniqueness semantics for create requests."
+    },
+    {
+      "claim_id": "C023",
+      "claim_text": "The OR-logic example in Part 5 should use `dependencyGroups` plus `circuit`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 407",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "For OR semantics, use `dependencyGroups` combined with a `circuit` expression.",
+      "suggested_rewrite": "For OR semantics, use trigger `conditions` with a boolean expression such as `github-push || manual-trigger`.",
+      "lesson_point_url": null,
+      "rationale": "The upstream docs teach OR logic via trigger conditions rather than deprecated `dependencyGroups`/`circuit` fields."
+    },
+    {
+      "claim_id": "C024",
+      "claim_text": "Argo Events has exactly four filter categories.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 435",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Argo Events supports four categories of filters, each addressing a different dimension of event qualification:",
+      "suggested_rewrite": "Argo Events supports several filter types. The ones used most often in practice are data, time, context, and expression filters:",
+      "lesson_point_url": null,
+      "rationale": "Upstream docs enumerate five filter types and include script filters as well."
+    },
+    {
+      "claim_id": "C025",
+      "claim_text": "Time filters use RFC 3339 start and stop times.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 439",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Time filters** restrict event processing to specific windows within a 24-hour period, using RFC 3339 formatted start and stop times.",
+      "suggested_rewrite": "**Time filters** restrict event processing to specific windows within a 24-hour period, using `HH:MM:SS` start and stop times with an optional timezone.",
+      "lesson_point_url": null,
+      "rationale": "The upstream Time Filter docs specify `HH:MM:SS` rather than RFC 3339 timestamps."
+    },
+    {
+      "claim_id": "C026",
+      "claim_text": "For GitHub events sent to one endpoint, a context filter on CloudEvents `source` can route by repository URL.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 441",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Context filters** match against CloudEvents envelope fields like `source`, `type`, or `subject` — the fields outside the `data` block. If multiple GitHub repositories send events to the same EventSource endpoint (GitHub's webhook URL per-org configuration), a context filter on `source` can route events from `myorg/repo-a` to one Sensor dependency and events from `myorg/repo-b` to another, all within the same Sensor.",
+      "suggested_rewrite": "**Context filters** match against CloudEvents envelope fields like `source`, `type`, or `subject` — the fields outside the `data` block. If multiple repositories send events to the same endpoint, inspect repository-specific fields in the event payload and use data or expression filters to route them.",
+      "lesson_point_url": null,
+      "rationale": "The documented webhook event structure uses the EventSource name in CloudEvents context, not the GitHub repository URL."
+    },
+    {
+      "claim_id": "C027",
+      "claim_text": "The documented filter field is `exprFilters`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 443",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Expression filters** (`exprFilters`) use the `expr` library syntax to write arbitrary boolean expressions against event fields.",
+      "suggested_rewrite": "**Expression filters** use the `expr` library syntax to write arbitrary boolean expressions against event fields.",
+      "lesson_point_url": null,
+      "rationale": "Upstream docs document expr filters and `exprs`, not an `exprFilters` field name."
+    },
+    {
+      "claim_id": "C028",
+      "claim_text": "Argo was accepted into CNCF on March 26, 2020 and graduated on December 6, 2022.",
+      "claim_class": "standard",
+      "span_hint": "line 547",
+      "disposition": "supported",
+      "source_ids": [
+        "S019"
+      ],
+      "proposed_url": "https://www.cncf.io/projects/argo/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF Argo project page provides these exact milestone dates."
+    },
+    {
+      "claim_id": "C029",
+      "claim_text": "Argo was one of the fastest CNCF projects to graduate and its graduation confirmed enterprise-scale production readiness.",
+      "claim_class": "statistic",
+      "span_hint": "line 547",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "making it one of the fastest CNCF projects to reach graduated maturity at the time and confirming its production readiness at enterprise scale.",
+      "suggested_rewrite": "marking a major maturity milestone for the project.",
+      "lesson_point_url": null,
+      "rationale": "The milestone dates are citable, but the ranking and enterprise-readiness inference are not directly supported by the cited project page."
+    },
+    {
+      "claim_id": "C030",
+      "claim_text": "Argo Events supports over 20 event sources and 10+ triggers.",
+      "claim_class": "statistic",
+      "span_hint": "line 548",
+      "disposition": "supported",
+      "source_ids": [
+        "S020"
+      ],
+      "proposed_url": "https://github.com/argoproj/argo-events",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream Argo Events README states support for 20+ event sources and 10+ triggers."
+    },
+    {
+      "claim_id": "C031",
+      "claim_text": "JetStream persistence and acknowledgement semantics prevent event loss during temporary Sensor unavailability and allow delivery after reconnection.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 549",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S022"
+      ],
+      "proposed_url": "https://docs.nats.io/nats-concepts/jetstream",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact no-loss/persistence/replay semantics are documented in the primary NATS JetStream docs, which are off allowlist."
+    },
+    {
+      "claim_id": "C032",
+      "claim_text": "Argo Events uses admission webhooks for both validation and mutation of EventSource and Sensor resources.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 550",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Argo Events uses Kubernetes admission webhooks** for validation and mutation of EventSource and Sensor resources on create and update, which means the webhook infrastructure must be reachable from the API server — a requirement frequently overlooked in air-gapped, private, or highly firewalled cluster deployments.",
+      "suggested_rewrite": "**Argo Events provides a validating admission webhook** for resource validation, so the webhook infrastructure must be reachable from the API server if you install it.",
+      "lesson_point_url": null,
+      "rationale": "The upstream docs clearly document a validating admission webhook, but not a mutating webhook for these resources."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://argoproj.github.io/argo-events/",
+      "title": "Argo Events Documentation",
+      "tier": "upstream",
+      "why_relevant": "This is the main upstream documentation hub for EventBus, EventSource, Sensor, filters, and triggers."
+    },
+    {
+      "url": "https://argoproj.github.io/argo-events/sensors/trigger-conditions/",
+      "title": "Trigger Conditions",
+      "tier": "upstream",
+      "why_relevant": "This is the current upstream reference for AND/OR-style dependency logic and trigger gating."
+    },
+    {
+      "url": "https://argoproj.github.io/argo-events/tutorials/02-parameterization/",
+      "title": "Parameterization Tutorial",
+      "tier": "upstream",
+      "why_relevant": "This covers `dataKey`, `contextKey`, templates, and destination paths for injecting event data into triggers."
+    }
+  ],
+  "notes": "Primary cleanup points: remove the fabricated enterprise/financial intro anecdote; replace deprecated `dependencyGroups`/`circuit` references with trigger `conditions`; correct filter taxonomy and time-filter format; do not route GitHub repositories via CloudEvents `source`; change the admission-webhook sentence to validating-only. Source map: S001=https://training.linuxfoundation.org/certification/certified-argo-project-associate-capa/ ; S002=https://www.cncf.io/announcements/2024/01/25/cloud-native-computing-foundation-announces-the-graduation-of-cloudevents/ ; S003=https://argoproj.github.io/argo-events/concepts/event_source/ ; S004=https://argoproj.github.io/argo-events/eventbus/eventbus/ ; S005=https://argoproj.github.io/argo-events/concepts/trigger/ ; S006=https://argoproj.github.io/argo-events/eventsources/multiple-events/ ; S007=https://argoproj.github.io/argo-events/eventsources/ha/ ; S008=https://argoproj.github.io/argo-events/eventbus/jetstream/ ; S009=https://argoproj.github.io/argo-events/sensors/trigger-conditions/ ; S010=https://argoproj.github.io/argo-events/managed-namespace/ ; S011=https://argoproj.github.io/argo-events/service-accounts/ ; S012=https://argoproj.github.io/argo-events/releases/ ; S013=https://argoproj.github.io/argo-events/eventsources/services/ ; S014=https://argoproj.github.io/argo-events/eventsources/naming/ ; S015=https://argoproj.github.io/argo-events/sensors/filters/data/ ; S018=https://kubernetes.io/docs/concepts/overview/working-with-objects/names ; S019=https://www.cncf.io/projects/argo/ ; S020=https://github.com/argoproj/argo-events ; S022=https://docs.nats.io/nats-concepts/jetstream",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
