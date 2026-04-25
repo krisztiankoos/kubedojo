@@ -2,7 +2,41 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-25 ~10:25 local — v2 pipeline GREEN both writer paths; pushed)
+## Active Work (2026-04-25 ~11:10 local — v2 + citation_backfill seam closed; both pipelines smoke-green)
+
+**Status**: v2 quality pipeline ships modules end-to-end on both writer paths AND auto-orchestrates citation backfill via the new `backfill-pending` subcommand. **160 quality tests, ruff clean.** Two modules took the full path round-trip this morning:
+
+| Slug | Rewrite | Backfill | Sources |
+|------|---------|----------|---------|
+| `k8s-capa-module-1.2-argo-events` | claude `4f911c49` (4.4) | `0e308451` | 3 upstream Argo Events URLs |
+| `ai-ai-building-module-1.1-from-chat-to-ai-systems` | codex `63c91218` (4.6) | `498097e5` | Anthropic + OpenAI + NIST AI RMF |
+
+Both lift from `audit_score < 4.0` → `COMMITTED` (rewrite) → `backfill.done=True` (sources injected) without any manual intervention.
+
+**This morning's commits** (chronological, all pushed):
+- `d017e8b9` P0 — hang-detection retry in `_write_in_worktree`
+- `4f911c49` P1 — claude rewrite of argo-events
+- `63c91218` P2 — codex rewrite of ai-ai-building 1.1
+- `33eb89ad` P3+P4 handoff doc + STATUS update
+- `ac112c88` Sources preservation in writer prompts + new `backfill-pending` subcommand + rubric doc consistency
+- `497d0cd4` `backfill-pending` must commit seed JSON alongside module
+- `9939ec4f` fixup: orphaned seed for backfill 498097e5
+- `498097e5` ai-ai-building 1.1 backfill (codex agent, 3 sources)
+- `0e308451` argo-events backfill (codex agent, 3 sources)
+
+**Workflow now**:
+```bash
+.venv/bin/python -m scripts.quality.pipeline run --workers 1   # v2: rewrite to COMMITTED
+.venv/bin/python -m scripts.quality.pipeline backfill-pending  # backfill: inject Sources
+```
+
+`backfill-pending` is idempotent (skips modules with `state.backfill.done=True`), refuses to run on dirty primary, rolls back partial inject writes on failure, and detects concurrent-edit races.
+
+**Prior session summary follows** —
+
+---
+
+## Prior session (2026-04-25 ~10:25 local — v2 pipeline GREEN both writer paths; pushed)
 
 **Status**: v2 quality pipeline ships modules end-to-end on both writer paths. **154 quality tests, ruff clean. 0 commits ahead of origin/main — pushed.**
 
