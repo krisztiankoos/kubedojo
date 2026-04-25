@@ -2,9 +2,13 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-24 ~01:55 local — argo-events smoke 5/6 validated; write-retry hang blocking)
+## Active Work (2026-04-24 ~02:10 local — handoff: smoke 5/6 validated; P0=hang-retry)
 
-**Status**: v2 end-to-end pipeline validated through every stage **except final merge**. **152 quality tests green; ruff clean. 17 commits ahead of origin/main. Primary clean. Not pushed.** Four smoke rounds on `k8s-capa-module-1.2-argo-events` exposed three real bugs (all fixed) and one intermittent claude API hang that remains.
+**Status**: v2 end-to-end pipeline validated through every stage **except final merge**. **152 quality tests green; ruff clean. 18 commits ahead of origin/main. Primary clean. Not pushed.**
+
+**Read this first**: [`docs/sessions/2026-04-24-v2-smoke-handoff.md`](docs/sessions/2026-04-24-v2-smoke-handoff.md) — cold-start, autopsy, P0–P4 plan, what-NOT-to-do.
+
+**P0 next session**: hang-detection retry inside `_write_in_worktree` (sleep + 1 retry on stdout_len=0 + timeout signature) — the only blocker keeping argo-events from reaching COMMITTED. Then re-smoke argo-events (P1), Codex-as-writer smoke on an even-index module (P2), citation-insertion design call (P3), push to origin (P4, after green).
 
 ### Smoke autopsy
 
