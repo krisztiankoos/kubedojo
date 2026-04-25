@@ -1088,6 +1088,97 @@ def test_merge_retries_on_transient_rebase_failure(fake_repo, monkeypatch):
     assert calls["rebase"] == 2, "rebase should have been retried once"
 
 
+def test_merge_aborts_when_visual_aids_regressed(fake_repo, monkeypatch):
+    """#377 hard gate: a rewrite that strips a Mermaid block must NOT
+    land on main. ``merge_one`` aborts with FAILED + a visual-aid-
+    regression reason; main stays untouched; worktree + branch are
+    cleaned up.
+
+    Seeds a module on main with a Mermaid diagram, then has the writer
+    return a rewrite that drops the Mermaid block. The pipeline must
+    refuse to merge.
+    """
+    # Re-seed the module on main with Mermaid content.
+    slug = _bootstrap(fake_repo)
+    module_rel = "src/content/docs/k8s/cka/module-1.1-pods.md"
+    (fake_repo / module_rel).write_text("""---
+title: Pods Fundamentals
+sidebar:
+  order: 1
+---
+
+# Pods
+
+Original content.
+
+```mermaid
+graph TD
+  A --> B
+```
+
+## Quiz
+
+Question.
+""")
+    subprocess.run(["git", "add", "-A"], cwd=fake_repo, check=True)
+    subprocess.run(["git", "commit", "-m", "seed mermaid"], cwd=fake_repo, check=True, capture_output=True)
+    main_sha_before = subprocess.run(
+        ["git", "rev-parse", "main"], cwd=fake_repo, capture_output=True, text=True, check=True,
+    ).stdout.strip()
+
+    # Writer stub strips the Mermaid block on rewrite (regression).
+    rewritten_no_mermaid = """---
+title: Pods Fundamentals
+sidebar:
+  order: 1
+---
+
+# Pods
+
+Rewritten content but I forgot the diagram.
+
+## Quiz
+
+Better scenario question.
+"""
+    monkeypatch.setattr(
+        stages, "dispatch",
+        _stubbed_dispatch(
+            f"reasoning prose...\n\n{rewritten_no_mermaid}",
+            _review_approve_output(),
+        ),
+    )
+    monkeypatch.setattr(
+        stages, "process_module_citations",
+        lambda p, *, verifier=None, fetcher=None: CitationResult(new_text=p.read_text(), had_sources_section=False),
+    )
+
+    terminal = stages.run_module(slug)
+    assert terminal == "FAILED", f"expected FAILED on visual-aid regression, got {terminal}"
+
+    st = state.load_state(slug)
+    reason = (st.get("failure_reason") or "").lower()
+    assert "visual-aid" in reason or "mermaid" in reason, f"reason missing regression context: {st.get('failure_reason')!r}"
+
+    # Main must NOT have advanced — the abort happened before ff-merge.
+    main_sha_after = subprocess.run(
+        ["git", "rev-parse", "main"], cwd=fake_repo, capture_output=True, text=True, check=True,
+    ).stdout.strip()
+    assert main_sha_after == main_sha_before, "main advanced despite gate fail"
+
+    # Module on main still has the Mermaid block (writer's drop didn't land).
+    on_main = (fake_repo / module_rel).read_text()
+    assert "```mermaid" in on_main
+
+    # Worktree + branch torn down by _fail_and_cleanup.
+    assert not worktree.worktree_dir(fake_repo, slug).exists()
+    rc = subprocess.run(
+        ["git", "rev-parse", "--verify", worktree.branch_name(slug)],
+        cwd=fake_repo, capture_output=True,
+    ).returncode
+    assert rc != 0, "branch must be deleted after gate fail"
+
+
 def test_cleanup_only_scrubs_worktree_when_state_file_disappears(fake_repo, monkeypatch):
     """Codex fourth-pass regression guard.
 

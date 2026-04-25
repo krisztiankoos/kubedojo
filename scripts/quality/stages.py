@@ -35,7 +35,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
-from . import state
+from . import gates, state
 from .citations import process_module_citations
 from .dispatchers import (
     DispatcherUnavailable,
@@ -944,12 +944,25 @@ def merge_one(slug: str) -> None:
             _fail_and_cleanup(st, "merge: primary has uncommitted changes — manual intervention")
             return
 
+        # Hard gate (#377): visual-aid preservation. Run BEFORE merge so a
+        # regression doesn't land on main; the worktree branch is rebased
+        # onto current main, then we diff branch-tip vs main for this
+        # module's path. Per ``.claude/rules/module-quality.md``: "NEVER
+        # remove or simplify existing visual aids during rewrites — they
+        # are protected assets."
         last_error: Exception | None = None
         merge_sha: str | None = None
         for attempt in range(_MERGE_RETRY_CAP):
             try:
                 with _merge_lock():
                     rebase_onto_main(primary, slug)
+                    try:
+                        gates.assert_visual_aids_preserved(
+                            primary, slug, st["module_path"], base_ref="main",
+                        )
+                    except gates.GateError as gate_exc:
+                        last_error = gate_exc
+                        break  # don't retry — regression is deterministic
                     merge_sha = merge_ff_only(primary, slug)
                 break
             except WorktreeError as exc:
