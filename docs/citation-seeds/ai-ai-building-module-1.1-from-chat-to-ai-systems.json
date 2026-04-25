@@ -1,31 +1,31 @@
 {
   "module_key": "ai/ai-building/module-1.1-from-chat-to-ai-systems",
   "module_path": "src/content/docs/ai/ai-building/module-1.1-from-chat-to-ai-systems.md",
-  "research_run_id": "2026-04-19T23:21:41+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 2,
+  "research_run_id": "2026-04-25T08:53:37+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
   "claims": [],
   "further_reading": [
     {
-      "url": "https://www.anthropic.com/engineering/building-effective-agents",
-      "title": "Building effective agents",
+      "url": "https://www.anthropic.com/research/building-effective-agents/",
+      "title": "Building Effective AI Agents",
       "tier": "vendor",
-      "why_relevant": "Explains the difference between orchestrated workflows and more autonomous agents, which matches this module's shift from chat use to system design."
+      "why_relevant": "Explains the difference between controlled workflows and more autonomous agents, which maps directly to this module's system-design framing."
     },
     {
-      "url": "https://openai.com/index/function-calling-and-other-api-updates/",
-      "title": "Function calling and other API updates",
+      "url": "https://platform.openai.com/docs/guides/structured-outputs?api-mode=chat",
+      "title": "Structured model outputs",
       "tier": "vendor",
-      "why_relevant": "Shows how model calls fit inside larger application workflows that invoke tools, APIs, and deterministic code."
+      "why_relevant": "Shows how schema-shaped outputs make validation, routing, and predictable failure handling easier in real AI features."
+    },
+    {
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "title": "AI Risk Management Framework",
+      "tier": "standards",
+      "why_relevant": "Provides a practical risk and control framework for guardrails, review, measurement, and governance around AI systems."
     }
   ],
-  "notes": "No inline citation claims were seeded. The module is primarily pedagogical framing, analogies, design guidance, exercises, and comparative tables without dated statistics, vendor/version assertions, named incidents, standards references, or other load-bearing factual specifics that require inline citation under the stated rules.",
+  "notes": "No inline-citation claims identified. The module is predominantly pedagogical and uses hypothetical product examples rather than assertions about real incidents, named standards, vendor-version behavior, statistics, or dated facts. The few concrete examples (support summarizer, release-note generator, refund workflow) are framed as design illustrations, not real-world factual claims requiring inline support.",
   "_schema_issues": [],
-  "rejected_urls": [
-    {
-      "url": "https://openai.com/index/introducing-structured-outputs-in-the-api/",
-      "reason": "http_403",
-      "at_step": "research_validation",
-      "agent_proposed_tier": "vendor"
-    }
-  ]
+  "rejected_urls": []
 }
