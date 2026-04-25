@@ -46,7 +46,9 @@ def fake_repo(tmp_path: Path, monkeypatch):
     subprocess.run(["git", "init", "-b", "main"], cwd=repo, check=True, capture_output=True)
     for k, v in [("user.email", "t@t"), ("user.name", "t"), ("commit.gpgsign", "false")]:
         subprocess.run(["git", "config", k, v], cwd=repo, check=True)
-    (repo / ".gitignore").write_text(".worktrees/\n.pipeline/\n")
+    (repo / ".gitignore").write_text(
+        ".worktrees/\n.pipeline/\ndocs/quality-progress.tsv\ndocs/quality-progress.tsv.lock\n"
+    )
     (repo / "README.md").write_text("seed\n")
 
     # Seed one module at a realistic path.
@@ -90,6 +92,17 @@ Question 1.
     monkeypatch.setattr(stages, "_AUDIT_DIR", repo / ".pipeline" / "teaching-audit")
     monkeypatch.setattr(pipeline, "_REPO_ROOT", repo)
     monkeypatch.setattr(pipeline, "_CONTENT_ROOT", repo / "src" / "content" / "docs")
+    # gates.py uses module-level constants captured at import for the
+    # ledger and audit subprocesses. Without these patches, integration
+    # tests that exercise merge_one would write rows to the REAL
+    # docs/quality-progress.tsv and pollute the production audit trail.
+    from scripts.quality import gates
+    monkeypatch.setattr(gates, "_REPO_ROOT", repo)
+    monkeypatch.setattr(gates, "_AUDIT_DIR", repo / ".pipeline" / "teaching-audit")
+    monkeypatch.setattr(gates, "LEDGER_PATH", repo / "docs" / "quality-progress.tsv")
+    # Disable real-LLM sampling in tests — the audit subprocess would
+    # call gemini for real and the test rig has no dispatch stub for it.
+    monkeypatch.setenv("KUBEDOJO_GATES_SAMPLE_RATE", "0")
     # Prompt docs aren't present in the fake repo; stub the startup check.
     monkeypatch.setattr("scripts.quality.pipeline.assert_required_docs_exist", lambda: None)
 

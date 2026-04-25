@@ -91,6 +91,9 @@ test_script.sh
 .pipeline/runs/
 .cache/
 
+# Quality progress ledger lock (the .tsv itself IS committed as the audit trail)
+docs/quality-progress.tsv.lock
+
 # Agent bridge runtime
 .bridge/
 .agent/

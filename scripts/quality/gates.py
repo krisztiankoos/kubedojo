@@ -436,9 +436,16 @@ def _ledger_lock(path: Path):
                 raise
 
 
-def append_ledger(row: LedgerRow, path: Path = LEDGER_PATH) -> None:
+def append_ledger(row: LedgerRow, path: Path | None = None) -> None:
     """Append ``row`` to the TSV ledger, creating the file with a header
     if it doesn't exist yet.
+
+    ``path`` defaults to the module-level :data:`LEDGER_PATH`. The
+    default is resolved at *call time*, not at function-definition time,
+    so monkeypatching ``gates.LEDGER_PATH`` in tests routes writes to a
+    fixture path. Without that, integration tests that exercise
+    ``merge_one`` (which calls this via ``_post_merge_gates``) would
+    pollute the real ``docs/quality-progress.tsv`` audit trail.
 
     Idempotency note: this is intentionally NOT idempotent on slug.
     A re-run that re-samples the same slug appends a new row — the
@@ -449,6 +456,8 @@ def append_ledger(row: LedgerRow, path: Path = LEDGER_PATH) -> None:
     under :func:`_ledger_lock` so two workers landing on COMMITTED
     simultaneously don't duplicate the header or interleave bytes.
     """
+    if path is None:
+        path = LEDGER_PATH
     with _ledger_lock(path):
         # Re-check existence INSIDE the lock — outside-the-lock check is
         # the racy v1 bug we're fixing.
