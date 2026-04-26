@@ -20,8 +20,21 @@ This chapter should avoid the myth that Hinton, Rumelhart, and Williams single-h
 3. **The PDP Demonstration:** Rumelhart, Hinton, and Williams show hidden units learning internal features, moving connectionism from philosophy back into executable experiments.
 4. **The Delayed Infrastructure Fit:** The algorithm was still compute-hungry and ran on small networks, but it converted learning into matrix operations and gradient bookkeeping, the shape that later hardware could accelerate.
 
+## 4k-7k Prose Capacity Plan
+
+This chapter can support a long narrative only if it is built from verified layers rather than padding:
+
+- 800-1,000 words: the post-perceptron problem of hidden-unit credit assignment, tied back to Ch17.
+- 900-1,200 words: a pedagogical walkthrough of backpropagation as derivative bookkeeping, using a toy network and avoiding dry equations.
+- 700-1,000 words: the prior-art lineage from reverse-mode differentiation and Werbos, written as an attribution correction rather than a side quarrel.
+- 1,000-1,400 words: the PDP/Nature publication moment and what "internal representations" meant in cognitive-science terms.
+- 700-1,000 words: infrastructure limits of the 1980s, why the algorithm waited for more compute, and why its matrix/gradient shape later mattered.
+- 300-600 words: honest close that distinguishes mathematical possibility, practical trainability, and biological plausibility.
+
+If page-level evidence cannot support one of these layers, the chapter should shrink rather than inventing lab drama.
+
 ## Citation Bar
 
 - Minimum primary sources before review: Rumelhart/Hinton/Williams 1986 Nature, Rumelhart/Hinton/Williams 1986 PDP chapter, Werbos 1974 thesis, and one automatic-differentiation lineage source.
 - Minimum secondary sources before review: at least one modern survey/history source and one technical explainer that distinguishes backpropagation from biological learning.
-- Current status: solid draft contract, but not locked. The biological-plausibility and priority-history claims remain Yellow until page-level citations are added.
+- Current status: solid example contract, but not prose-locked. The biological-plausibility, exact hardware, and priority-history claims remain Yellow/Red until page-level citations are added.

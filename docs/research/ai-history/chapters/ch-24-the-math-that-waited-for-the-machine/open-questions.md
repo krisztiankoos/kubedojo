@@ -7,6 +7,8 @@
 - What hardware/computing environment did Rumelhart, Hinton, and Williams use for the reported experiments?
 - Which examples from the PDP chapter should be included in the narrative without turning the chapter into a textbook?
 - How should we phrase biological plausibility? Current evidence supports "useful engineering algorithm"; it does not yet support broad claims about how brains learn.
+- Which Minsky/Papert passage should be cross-linked from Ch17 so Chapter 24 can set up hidden-unit credit assignment without duplicating the earlier perceptron-fall chapter?
+- Can the 4k-7k chapter target be met from the verified layers listed in `brief.md`, or should the chapter be capped lower until more primary material is found?
 
 ## Drafting Warnings
 

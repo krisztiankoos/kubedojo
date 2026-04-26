@@ -14,6 +14,7 @@
 | David E. Rumelhart, Geoffrey E. Hinton, Ronald J. Williams, "Learning Internal Representations by Error Propagation," in *Parallel Distributed Processing*, Vol. 1, MIT Press, 1986, pp. 318-362. URL: https://gwern.net/doc/ai/nn/fully-connected/1986-rumelhart.pdf | Longer technical version for examples, algorithm description, and the PDP framing around internal representations. | Green for PDP framing; page anchors still needed before prose lock. |
 | Paul J. Werbos, *Beyond Regression: New Tools for Prediction and Analysis in the Behavioral Sciences*, Harvard PhD thesis, 1974/1975. URL: https://gwern.net/doc/ai/nn/1974-werbos.pdf | Prior-art anchor for adapting dynamic systems by propagating derivatives backward. | Yellow until exact pages are extracted; important for avoiding false invention claims. |
 | Seppo Linnainmaa, "Taylor Expansion of the Accumulated Rounding Error," *BIT Numerical Mathematics* 16, 146-160, 1976. DOI: `10.1007/BF01931367`. | Automatic-differentiation lineage: reverse accumulation of derivatives before neural-network popularization. | Yellow until full source/page access is verified. |
+| Marvin Minsky and Seymour Papert, *Perceptrons*, MIT Press, 1969. | Background source for why the field cared about the limits of perceptron-style learning and hidden-layer training. | Yellow; core source belongs to Ch17, but Chapter 24 needs cross-reference anchors. |
 
 ## Secondary and Context Sources
 
@@ -34,9 +35,18 @@
 | Reverse-mode automatic differentiation predates the PDP revival. | Chain Rule Becomes Machinery | Linnainmaa 1976 | AD histories still to verify | Yellow | Need a stable secondary history of AD before Green. |
 | The breakthrough was historically important because it trained hidden layers after the perceptron era had made single-layer limits salient. | Frozen Hidden Layer | Rumelhart/Hinton/Williams contrast with perceptron-convergence procedure | Minsky/Papert source belongs in Ch17; LeCun/Bengio/Hinton 2015 | Yellow | Requires cross-link to Ch17 research. |
 | Backprop was not biologically settled or obviously brain-plausible. | Delayed Infrastructure Fit | Need Hinton or neuroscience source | LeCun/Bengio/Hinton 2015 mentions engineering framing, not enough alone | Red | Do not draft beyond a cautious sentence until sourced. |
+| A 4k-7k chapter is feasible without padding if it uses separate evidence layers: perceptron context, backprop mechanism, prior art, PDP demonstration, compute limits, and biological caveats. | All | This source table | Chapter brief prose-capacity plan | Yellow | Feasibility claim depends on resolving page anchors, not just listing sources. |
 
 ## Conflict Notes
 
 - Priority is disputed. The safest formulation is: earlier derivative machinery existed; Werbos connected backward derivatives to trainable systems; Rumelhart/Hinton/Williams popularized and demonstrated backpropagation for neural-network internal representations.
 - "Invented backpropagation" should not appear in prose unless qualified.
 - The chapter should not imply that 1986 systems were large by modern standards. The drama is algorithmic and infrastructural: the method made hidden-layer learning executable, but the hardware still limited depth, data, and experiment scale.
+
+## Page Anchor Worklist
+
+- Nature 1986: extract one anchor for the hidden-unit/internal-representation claim and one for the perceptron-convergence contrast.
+- PDP chapter: extract one anchor for the algorithm walkthrough and one for a concrete demonstration/task.
+- Werbos thesis: extract exact pages for backward derivative propagation and note whether the terminology maps cleanly to later neural-network backpropagation.
+- Linnainmaa 1976: verify exact pages for reverse accumulation.
+- Minsky/Papert: identify the specific passage that sets up the hidden-layer training problem so this chapter does not re-litigate Ch17.
