@@ -2,8 +2,9 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-26 ~18:25 local — v3 follow-on session: AI history book filed + #246 routes shipped + gemini-fixed)
+## Active Work (2026-04-26 ~20:15 local — v4 handoff: bridges + drain-fix + What's New shipped)
 
+**Latest handoff**: [`docs/sessions/2026-04-26-388-handoff-v4.md`](docs/sessions/2026-04-26-388-handoff-v4.md)
 **Prior handoff**: [`docs/sessions/2026-04-26-388-handoff-v3.md`](docs/sessions/2026-04-26-388-handoff-v3.md)
 
 | | Value |
