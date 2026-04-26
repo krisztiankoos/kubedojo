@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 10.2: Event Correlation Platforms"
 slug: platform/toolkits/observability-intelligence/aiops-tools/module-10.2-event-correlation-platforms
 sidebar:
