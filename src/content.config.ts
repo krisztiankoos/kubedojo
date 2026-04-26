@@ -69,6 +69,11 @@ export const collections = {
         // RevisionBanner via PageTitle.astro so learners see the in-flight
         // status. Cleared automatically when the rewrite merges.
         revision_pending: z.boolean().optional(),
+        // Set when the rewrite landed under KUBEDOJO_SKIP_REVIEW (writer
+        // gates passed but the LLM cross-family review was deferred).
+        // Cleared by scripts/quality_post_review.py on real APPROVE; on
+        // CHANGES the module flips back to revision_pending.
+        qa_pending: z.boolean().optional(),
       }),
     }),
   }),

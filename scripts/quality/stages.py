@@ -1066,7 +1066,9 @@ def handle_review_changes(slug: str) -> None:
         )
 
 
-def _clear_banner_and_complete_queue(primary: Path, slug: str, module_relpath: str) -> None:
+def _clear_banner_and_complete_queue(
+    primary: Path, slug: str, module_relpath: str, *, auto_approved: bool = False,
+) -> None:
     """Post-merge cleanup: remove the ``revision_pending`` banner from the
     merged file and mark the queue entry completed.
 
@@ -1078,6 +1080,14 @@ def _clear_banner_and_complete_queue(primary: Path, slug: str, module_relpath: s
     case), we strip it and commit a small ``quality(banner)`` cleanup
     commit so the rendered page no longer shows "queued for revision".
 
+    When ``auto_approved=True`` the merge happened under
+    ``KUBEDOJO_SKIP_REVIEW`` (LLM cross-family review deferred), so we
+    additionally stamp ``qa_pending: true`` on the frontmatter so learners
+    see a "final QA queued" banner instead of nothing — the module is
+    technically shipped but hasn't been independently reviewed yet.
+    ``scripts.quality_post_review`` clears that flag once a real APPROVE
+    lands (or flips it back to ``revision_pending`` on CHANGES).
+
     The queue's ``record_completion`` is also called WITHOUT a path so
     it only updates the in-pipeline JSON state (no second frontmatter
     pass). Best-effort: failures here are logged but never re-raise,
@@ -1086,6 +1096,11 @@ def _clear_banner_and_complete_queue(primary: Path, slug: str, module_relpath: s
     """
     module_file = primary / module_relpath
     banner_clean_succeeded = True
+    commit_msg = (
+        f"quality(banner): clear revision_pending + set qa_pending for {slug}"
+        if auto_approved
+        else f"quality(banner): clear revision_pending for {slug}"
+    )
     # Acquire the merge lock for the dirty-primary window so another
     # slug's merge pre-flight (``has_uncommitted(primary)``) doesn't
     # see an in-progress banner edit and refuse its merge.
@@ -1093,6 +1108,12 @@ def _clear_banner_and_complete_queue(primary: Path, slug: str, module_relpath: s
         with _merge_lock():
             try:
                 cleared = queue.clear_revision_pending_frontmatter(module_file)
+                qa_set = (
+                    queue.set_qa_pending_frontmatter(module_file)
+                    if auto_approved
+                    else False
+                )
+                cleared = cleared or qa_set
             except Exception as exc:  # pragma: no cover — advisory cleanup
                 # Codex round-3 must #1: a raise here means we don't know
                 # whether the banner is gone, so the queue must NOT be
@@ -1108,8 +1129,7 @@ def _clear_banner_and_complete_queue(primary: Path, slug: str, module_relpath: s
                         cwd=primary, check=True, capture_output=True,
                     )
                     subprocess.run(
-                        ["git", "commit", "-m",
-                         f"quality(banner): clear revision_pending for {slug}"],
+                        ["git", "commit", "-m", commit_msg],
                         cwd=primary, check=True, capture_output=True,
                     )
                 except subprocess.CalledProcessError as exc:
@@ -1370,6 +1390,7 @@ def merge_one(slug: str) -> None:
         # ``record_completion``, so it MUST run outside this block to
         # avoid an fcntl re-entrancy deadlock.
         module_relpath = st["module_path"]
+        auto_approved = bool((st.get("review") or {}).get("auto_approved"))
 
     # Codex must #3: clear the banner + close the queue entry so a
     # shipped module no longer renders the "queued for revision" banner
@@ -1377,7 +1398,7 @@ def merge_one(slug: str) -> None:
     # but acquires its OWN ``_merge_lock`` so the brief dirty-primary
     # window for the banner-cleanup commit doesn't race with another
     # module's merge pre-flight check.
-    _clear_banner_and_complete_queue(primary, slug, module_relpath)
+    _clear_banner_and_complete_queue(primary, slug, module_relpath, auto_approved=auto_approved)
 
     # #377 post-merge: anti-gaming sampler (20 % deterministic) + ledger
     # row. Runs AFTER the COMMITTED transition (no state_lease held) so

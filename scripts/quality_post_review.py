@@ -37,7 +37,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from quality import state as qstate  # noqa: E402
 from quality.dispatchers import Agent, DispatcherUnavailable, dispatch  # noqa: E402
 from quality.prompts import build_audit_context, review_prompt  # noqa: E402
-from quality.queue import set_revision_pending_frontmatter  # noqa: E402
+from quality.queue import (  # noqa: E402
+    clear_qa_pending_frontmatter,
+    set_revision_pending_frontmatter,
+)
 from quality.stages import _parse_review_verdict  # noqa: E402
 
 QUEUE_PATH = Path(".pipeline/quality-pipeline/post-review-queue.txt")
@@ -124,12 +127,16 @@ def review_slug(slug: str, *, reviewer_override: str | None, timeout: int, dry_r
         lease.save(st)
 
     if verdict["verdict"] == "approve":
+        clear_qa_pending_frontmatter(module_file)
         return "approve", f"rubric={verdict.get('rubric_score')} teaching={verdict.get('teaching_score')}"
 
+    # CHANGES — flip qa_pending → revision_pending so learners see the rework
+    # banner instead of the QA-pending banner.
+    clear_qa_pending_frontmatter(module_file)
     if set_revision_pending_frontmatter(module_file):
-        marked = "banner re-set"
+        marked = "banner flipped to revision_pending"
     else:
-        marked = "banner already present"
+        marked = "banner already revision_pending"
     must_fix = verdict.get("must_fix") or []
     return "changes", f"{marked}; {len(must_fix)} must-fix"
 

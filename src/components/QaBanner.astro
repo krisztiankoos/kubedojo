@@ -1,0 +1,72 @@
+---
+/**
+ * QaBanner — shown at the top of any module whose frontmatter has
+ * `qa_pending: true`. Rendered by PageTitle.astro.
+ *
+ * Set when a clarity rewrite landed under KUBEDOJO_SKIP_REVIEW (writer's
+ * deterministic gates passed — density, visual-aid, code-block-balance —
+ * but the cross-family LLM review was deferred to a later pass to keep
+ * batch throughput up during a reviewer rate-limit window).
+ *
+ * Cleared by scripts/quality_post_review.py once a real reviewer
+ * approves the module; if the reviewer requests changes, the module
+ * flips back to revision_pending instead.
+ *
+ * Usage in frontmatter:
+ *   qa_pending: true
+ */
+---
+
+<aside class="qa-banner" aria-label="Module QA notice">
+  <div class="qa-banner-inner">
+    <span class="qa-banner-icon" aria-hidden="true">&#9745;</span>
+    <div class="qa-banner-text">
+      <strong>This module is awaiting a final QA review.</strong>
+      The rewrite passed our automated quality gates (density, visual-aid
+      preservation, code-block balance), but a final cross-family review by a
+      second LLM is still queued. The content is correct and ready to read —
+      we'll post-review and tighten anything that needs it. Track progress at
+      <a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/388"
+         target="_blank" rel="noopener">issue&nbsp;#388</a>.
+    </div>
+  </div>
+</aside>
+
+<style>
+  .qa-banner {
+    background: linear-gradient(135deg, #0F3D2E 0%, #145A42 100%);
+    border-left: 4px solid #2DD4BF;
+    border-radius: 8px;
+    padding: 0.875rem 1.125rem;
+    margin: 0.75rem 0 1.5rem;
+    color: #D1FAE5;
+  }
+  .qa-banner-inner {
+    display: flex;
+    gap: 0.875rem;
+    align-items: flex-start;
+  }
+  .qa-banner-icon {
+    color: #2DD4BF;
+    font-size: 1.25rem;
+    line-height: 1.4;
+    flex-shrink: 0;
+  }
+  .qa-banner-text {
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+  .qa-banner-text strong {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: #6EE7B7;
+    font-weight: 700;
+  }
+  .qa-banner-text a {
+    color: #6EE7B7;
+    text-decoration: underline;
+  }
+  .qa-banner-text a:hover {
+    color: #A7F3D0;
+  }
+</style>

@@ -86,6 +86,7 @@ ADVANCED_TRACKS = (
 _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 _COMPLEXITY_RE = re.compile(r"complexity\s*[:=]\s*[`'\"]?\[?(\w+)\]?", re.IGNORECASE)
 _REVISION_LINE_RE = re.compile(r"^revision_pending\s*:.*\n", re.MULTILINE)
+_QA_LINE_RE = re.compile(r"^qa_pending\s*:.*\n", re.MULTILINE)
 
 
 def _read_complexity(module_path: Path) -> str | None:
@@ -409,6 +410,40 @@ def clear_revision_pending_frontmatter(module_path: Path) -> bool:
     return True
 
 
+def set_qa_pending_frontmatter(module_path: Path) -> bool:
+    """Add ``qa_pending: true`` to a module's frontmatter (idempotent).
+
+    Set when a rewrite landed under KUBEDOJO_SKIP_REVIEW — the writer
+    gates passed but the LLM cross-family review was deferred. Cleared by
+    :mod:`scripts.quality_post_review` once a real reviewer approves; on
+    CHANGES the module flips back to ``revision_pending``.
+    """
+    text = module_path.read_text(encoding="utf-8")
+    fm = _FRONTMATTER_RE.match(text)
+    if not fm:
+        return False
+    if _QA_LINE_RE.search(fm.group(0)):
+        return False  # already set
+    new_fm = fm.group(0).replace("---\n", "---\nqa_pending: true\n", 1)
+    new_text = new_fm + text[fm.end():]
+    module_path.write_text(new_text, encoding="utf-8")
+    return True
+
+
+def clear_qa_pending_frontmatter(module_path: Path) -> bool:
+    """Remove the ``qa_pending`` line from a module's frontmatter."""
+    text = module_path.read_text(encoding="utf-8")
+    fm = _FRONTMATTER_RE.match(text)
+    if not fm:
+        return False
+    new_fm = _QA_LINE_RE.sub("", fm.group(0), count=1)
+    if new_fm == fm.group(0):
+        return False
+    new_text = new_fm + text[fm.end():]
+    module_path.write_text(new_text, encoding="utf-8")
+    return True
+
+
 def queue_summary() -> dict[str, Any]:
     """Aggregate counts for ``status`` display. No lease — read-only snapshot."""
     from .state import iter_state_slugs
@@ -455,4 +490,6 @@ __all__ = [
     "queue_summary",
     "set_revision_pending_frontmatter",
     "clear_revision_pending_frontmatter",
+    "set_qa_pending_frontmatter",
+    "clear_qa_pending_frontmatter",
 ]
