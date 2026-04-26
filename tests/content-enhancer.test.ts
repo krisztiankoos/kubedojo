@@ -42,7 +42,23 @@ function enhanceMetaChips(root: Element): void {
   if (chips.length > 0) {
     const chipsDiv = document.createElement('div');
     chipsDiv.className = 'kd-meta-chips';
-    chipsDiv.innerHTML = chips.join('');
+    
+    // Reproduce the new safer buildChips logic
+    if (complexity) {
+      const cls = complexity === 'QUICK' ? 'kd-chip-quick' :
+                  complexity === 'MEDIUM' ? 'kd-chip-medium' : 'kd-chip-advanced';
+      const icon = complexity === 'QUICK' ? '✓' : complexity === 'MEDIUM' ? '⚠' : '⚡';
+      const chip = document.createElement('span');
+      chip.className = `kd-chip ${cls}`;
+      chip.textContent = `${icon} ${complexity.charAt(0) + complexity.slice(1).toLowerCase()}`;
+      chipsDiv.appendChild(chip);
+    }
+    if (time) {
+      const chip = document.createElement('span');
+      chip.className = 'kd-chip kd-chip-time';
+      chip.textContent = `⏱ ${time}`;
+      chipsDiv.appendChild(chip);
+    }
     firstBq.replaceWith(chipsDiv);
   }
 }
@@ -68,7 +84,14 @@ function enhanceWarStories(root: Element): void {
 
     const header = document.createElement('div');
     header.className = 'kd-warstory-header';
-    header.innerHTML = `<span>🔥</span><span>${text.replace(/war story:?\s*/i, '').trim() || 'War Story'}</span>`;
+    
+    const iconSpan = document.createElement('span');
+    iconSpan.textContent = '🔥';
+    header.appendChild(iconSpan);
+    
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = text.replace(/war story:?\s*/i, '').trim() || 'War Story';
+    header.appendChild(titleSpan);
 
     const body = document.createElement('div');
     body.className = 'kd-warstory-body';

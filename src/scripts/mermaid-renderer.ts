@@ -71,7 +71,7 @@ async function renderHost(host: HTMLElement): Promise<void> {
 
   mermaid.initialize({
     startOnLoad: false,
-    securityLevel: 'loose',
+    securityLevel: 'strict',
     theme: currentTheme() === 'light' ? 'default' : 'dark',
   });
 
