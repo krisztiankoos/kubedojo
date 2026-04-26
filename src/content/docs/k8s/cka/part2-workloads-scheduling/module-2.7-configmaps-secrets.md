@@ -1,5 +1,4 @@
 ---
-revision_pending: true
 title: "Module 2.7: ConfigMaps & Secrets"
 slug: k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets
 sidebar:
@@ -11,352 +10,377 @@ lab:
   difficulty: intermediate
   environment: kubernetes
 ---
-**Complexity:** `[MEDIUM]` | **Time to Complete:** 55 minutes | **CKA Weight:** Part of 15%
+**Complexity:** `[MEDIUM]` | **Time to Complete:** 55 minutes | **CKA Weight:** Workloads & Scheduling
 
 ## Prerequisites
 
-Before starting this module, ensure you have:
-- Completed [Module 2.1: Pods Deep-Dive](../module-2.1-pods/) (Pod spec structure)
-- Completed [Module 2.2: Deployments](../module-2.2-deployments/) (Updating configurations)
-- A running Kubernetes cluster (kind or minikube)
-- Basic understanding of environment variables
-- `kubectl` aliased to `k` (`alias k=kubectl`) to execute the commands verbatim
+Before starting this module, make sure you have completed [Module 2.1: Pods Deep-Dive](../module-2.1-pods/) and [Module 2.2: Deployments](../module-2.2-deployments/), because this module assumes you can read Pod specs and understand why restarting a Pod changes runtime state. You should also have a running Kubernetes 1.35+ cluster, such as kind or minikube, and a working shell where `kubectl` is available. The commands below use the common exam alias `k` for `kubectl`; create it once with `alias k=kubectl` before running the examples.
 
----
-
-## What You'll Be Able to Do
+## Learning Outcomes
 
 After this module, you will be able to:
-- **Create** ConfigMaps and Secrets from files, literals, and directories
-- **Mount** configuration as environment variables and volume mounts and explain when to use each
-- **Implement** immutable ConfigMaps/Secrets and explain when immutability matters
-- **Troubleshoot** configuration issues (wrong mount path, missing key, base64 encoding errors)
 
----
+- **Design** a configuration injection strategy that separates container images from environment-specific settings while choosing correctly between ConfigMaps and Secrets.
+- **Implement** ConfigMaps and Secrets from literals, files, env files, and manifests, then mount selected keys as environment variables or files.
+- **Compare** environment-variable injection, full volume mounts, projected volumes, and `subPath` mounts using update behavior, security exposure, and application expectations.
+- **Debug** Pods that fail or behave incorrectly because of missing keys, wrong mount paths, stale values, invalid Secret encoding, or restrictive file permissions.
+- **Evaluate** when immutable configuration objects, versioned names, RBAC restrictions, and external secret stores are appropriate in production systems.
 
 ## Why This Module Matters
 
-Every real application needs configuration. Database connection strings, feature flags, API keys, certificates—these can't be hardcoded. Kubernetes provides two primitives for injecting configuration into Pods: **ConfigMaps** for non-sensitive data and **Secrets** for sensitive data.
+A release engineer ships a new web service on Friday afternoon. The image works in staging, the readiness probe passes, and the Deployment rolls out cleanly. Ten minutes later, production traffic starts failing because the container image still points to the staging database host. The image was rebuilt correctly, but the wrong setting was baked into it, so the team must rebuild, retag, rescan, and redeploy just to change one string.
 
-**On the CKA exam**, you'll need to:
-- Create ConfigMaps and Secrets from files, literals, and manifests
-- Inject them as environment variables or mounted files
-- Update configurations without rebuilding containers
-- Understand the security implications of Secrets
+Another team avoids that mistake by moving the database host into a ConfigMap and the password into a Secret. Their rollout is faster, but a later incident reveals a different failure mode: the password was injected as an environment variable, a debug endpoint dumped the process environment, and a credential that should have stayed private appeared in logs. The primitive was correct, but the injection method was not matched to the risk.
 
-Getting this wrong in production means leaked credentials or broken applications. Getting it right means secure, flexible deployments.
+ConfigMaps and Secrets are simple API objects, but they sit on a critical boundary between application design, cluster administration, and security practice. On the CKA exam, you must create them quickly and wire them into Pods without breaking the workload. In production, you must also understand the update mechanics, file paths, encoding rules, RBAC exposure, and restart behavior well enough to choose a design that remains safe after the first successful `kubectl apply`.
 
----
+## Core Content
 
-## Did You Know?
+### 1. Configuration Is Runtime Input, Not Image Content
 
-- **Secrets aren't encrypted by default**—they're only base64 encoded. Anyone with API access can decode them. Encryption at rest requires explicit configuration.
+A container image should describe what the application is, while configuration should describe how that application behaves in a specific environment. If the same image can run in development, staging, and production by changing only Kubernetes objects, deployments become faster and less risky. When an image contains database hosts, feature flags, or certificates, every configuration change becomes a supply-chain change, which increases operational cost and makes rollback harder than it needs to be.
 
-- **ConfigMap updates propagate automatically** when mounted as volumes, but NOT when used as environment variables. Environment variables require Pod restart.
+Kubernetes gives you two first-class objects for this separation. A ConfigMap stores non-sensitive configuration, such as log levels, endpoint names, feature flags, and application config files. A Secret stores sensitive configuration, such as passwords, bearer tokens, SSH keys, TLS private keys, and registry credentials. The objects look similar because both are key-value maps, but they carry different security expectations and should be handled differently by people, automation, and applications.
 
-- **The 1MB limit** on ConfigMaps and Secrets exists because they're stored in etcd. Larger configurations need different solutions (external config stores, init containers downloading configs).
+The first design question is not "what command creates this object?" The first question is "how does the application need to consume this data?" Some applications read environment variables at process startup and never look again. Others watch files for changes or reload configuration when a file changes. Some expect a whole directory of files, while others expect one exact file path. Your Kubernetes design should fit that application behavior instead of forcing the application into a convenient manifest shape.
 
-- **Projected volumes** allow you to mount multiple ConfigMaps, Secrets, and Downward API information into a single directory, which is extremely useful when an application expects all its configuration files in one place.
+```ascii
++----------------------+        +----------------------+        +----------------------+
+| Container Image      |        | Kubernetes Object    |        | Runtime View in Pod  |
+|----------------------|        |----------------------|        |----------------------|
+| app binary           |        | ConfigMap            |        | env vars or files    |
+| libraries            |        | Secret               |        | env vars or files    |
+| default config       |        | projected volume     |        | merged file tree     |
++----------------------+        +----------------------+        +----------------------+
+          |                              |                              |
+          | same image across envs       | environment-specific data     | values injected at start
+          +------------------------------+------------------------------+
+```
 
----
+A useful rule is to classify each value by both sensitivity and reload behavior. A log level may be non-sensitive and safe as an environment variable if the application only reads it during startup. A TLS key is sensitive and usually safer as a read-only mounted file with restrictive permissions. A routing table that changes during an incident may need a full volume mount because environment variables will not update inside an already-running process.
 
-## The Real-World Analogy
+> **Active learning prompt:** Your team wants to store `PAYMENTS_API_URL`, `FEATURE_CHECKOUT_V2`, and `PAYMENTS_API_TOKEN`. Which of these belong in a ConfigMap, which belong in a Secret, and which injection method would you choose if the application reads only environment variables during startup?
 
-Think of ConfigMaps and Secrets like hotel room configuration:
+The CKA exam rewards speed, so you will often create objects imperatively and patch YAML generated with `--dry-run=client -o yaml`. Real clusters reward clarity, so production teams usually manage these objects through GitOps, Helm, Kustomize, External Secrets, or another controlled workflow. The underlying Kubernetes mechanics are the same in both contexts, which is why learning the primitive deeply pays off beyond exam muscle memory.
 
-- **ConfigMaps** are like the room service menu, Wi-Fi instructions, and TV channel guide. Everyone can see them, and they change the guest experience without renovating the room.
+### 2. Creating ConfigMaps From Literals, Files, Directories, And Env Files
 
-- **Secrets** are like the safe code and door lock combination. They need to stay private, and sharing them with unauthorized people causes serious problems.
+A ConfigMap stores string data under keys. A key can represent a simple value like `LOG_LEVEL`, or it can represent an entire file like `nginx.conf`. This distinction matters because Kubernetes does not inspect file contents and automatically split them into application settings unless you ask it to do so with the right creation mode.
 
-Both are separate from the room itself (your container image)—you don't rebuild the room to change the menu or safe code.
+The simplest exam-friendly creation method is `--from-literal`. Use it when each value is already known and short enough to type safely. Because every `--from-literal` flag becomes one key, this method maps naturally to environment variables and small configuration maps.
 
----
+```bash
+k create configmap app-config \
+  --from-literal=LOG_LEVEL=info \
+  --from-literal=CACHE_TTL_SECONDS=300 \
+  --from-literal=FEATURE_CHECKOUT_V2=true
+```
 
-## Understanding ConfigMaps
+You can inspect the resulting object with `kubectl get` or `kubectl describe`. The YAML representation is worth reading because it shows exactly what a Pod can reference later. A Pod cannot reference "the third literal" or "the cache setting" as an idea; it references a specific object name and a specific key.
 
-### What ConfigMaps Store
-
-ConfigMaps hold key-value pairs of non-sensitive configuration data:
+```bash
+k get configmap app-config -o yaml
+```
 
 ```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app-config
-  namespace: default
 data:
-  # Simple key-value pairs
-  LOG_LEVEL: "debug"
-  MAX_CONNECTIONS: "100"
-  FEATURE_FLAGS: "new-ui,beta-api"
-
-  # Entire configuration files
-  config.json: |
-    {
-      "database": {
-        "host": "db.example.com",
-        "port": 5432
-      },
-      "cache": {
-        "enabled": true,
-        "ttl": 300
-      }
-    }
-
-  nginx.conf: |
-    server {
-      listen 80;
-      server_name localhost;
-      location / {
-        root /usr/share/nginx/html;
-      }
-    }
+  CACHE_TTL_SECONDS: "300"
+  FEATURE_CHECKOUT_V2: "true"
+  LOG_LEVEL: info
 ```
 
-Key concepts:
-- **data**: String key-value pairs (most common)
-- **binaryData**: Base64-encoded binary content
-- **immutable**: If set to `true`, prevents modifications (performance optimization)
-
-### Creating ConfigMaps
-
-**Method 1: From literal values (exam favorite)**
+Use `--from-file` when the application expects a file, such as an NGINX server block, a Java properties file, or an application YAML file. With plain `--from-file=config.properties`, the key becomes the filename and the value becomes the complete file content. Kubernetes does not split the file into multiple keys just because the file happens to contain `key=value` lines.
 
 ```bash
-# Single value
-k create configmap app-config --from-literal=LOG_LEVEL=debug
-
-# Multiple values
-k create configmap app-config \
-  --from-literal=LOG_LEVEL=debug \
-  --from-literal=MAX_CONNECTIONS=100 \
-  --from-literal=CACHE_ENABLED=true
-```
-
-**Method 2: From a file**
-
-```bash
-# Create a config file
-cat > config.properties <<EOF
-database.host=db.example.com
+cat > config.properties <<'EOF'
+database.host=orders-db.default.svc.cluster.local
 database.port=5432
 cache.enabled=true
 EOF
 
-# Create ConfigMap from file
-k create configmap app-config --from-file=config.properties
-
-# The key becomes the filename, value is file contents
-# Result: data: { "config.properties": "database.host=db.example.com\n..." }
+k create configmap app-file-config --from-file=config.properties
 ```
 
-**Method 3: From a file with custom key**
-
-```bash
-# Specify the key name
-k create configmap app-config --from-file=app.conf=config.properties
-# Result: data: { "app.conf": "..." }
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-file-config
+data:
+  config.properties: |
+    database.host=orders-db.default.svc.cluster.local
+    database.port=5432
+    cache.enabled=true
 ```
 
-**Method 4: From a directory**
+If the filename in the container must differ from the local filename, provide a custom key. This is common when a generated file has a temporary name on your workstation but the application expects a stable path inside the container. The key you choose becomes the filename when the ConfigMap is mounted as a volume unless you remap it again with `items`.
 
 ```bash
-# All files in directory become keys
-k create configmap app-config --from-file=./config-dir/
+k create configmap app-file-config-v2 \
+  --from-file=application.properties=config.properties
 ```
 
-**Method 5: From env file**
+Use `--from-env-file` when each line should become a separate key-value pair. This is a frequent exam trap because env files and config files can look similar to a human. To Kubernetes, `--from-file` means "store this entire file under one key," while `--from-env-file` means "parse each valid line into its own key."
 
 ```bash
-cat > config.env <<EOF
+cat > app.env <<'EOF'
 LOG_LEVEL=debug
-MAX_CONNECTIONS=100
+CACHE_TTL_SECONDS=120
+FEATURE_CHECKOUT_V2=false
 EOF
 
-k create configmap app-config --from-env-file=config.env
-# Each line becomes a separate key-value pair (not one key with file contents)
+k create configmap app-env-config --from-env-file=app.env
 ```
 
-### Using ConfigMaps in Pods
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-env-config
+data:
+  CACHE_TTL_SECONDS: "120"
+  FEATURE_CHECKOUT_V2: "false"
+  LOG_LEVEL: debug
+```
 
-**Option 1: As environment variables (specific keys)**
+| Creation Method | Best Use | Resulting Keys | Common Exam Risk |
+|---|---|---|---|
+| `--from-literal` | A few known values | One key per flag | Typing the wrong key name |
+| `--from-file=file` | Application needs the whole file | Filename becomes one key | Expecting lines to split automatically |
+| `--from-file=key=file` | Application needs a specific filename | Custom key becomes filename | Forgetting the custom key later |
+| `--from-file=directory/` | Several files become one ConfigMap | One key per file | Hidden files and invalid names are skipped |
+| `--from-env-file=file` | Each line should become an env-style key | One key per parsed line | Using it for multi-line config files |
+
+A directory import is useful when an application expects several configuration files in the same mounted directory. Kubernetes creates one key for each regular file in the directory. This is convenient, but it also means the directory contents become part of the API object, so avoid using it casually from a directory that includes local editor files, backups, or secrets that should not be in a ConfigMap.
+
+```bash
+mkdir -p config-dir
+
+cat > config-dir/app.yaml <<'EOF'
+server:
+  port: 8080
+logging:
+  level: info
+EOF
+
+cat > config-dir/routes.yaml <<'EOF'
+routes:
+  - path: /health
+    upstream: local
+EOF
+
+k create configmap app-directory-config --from-file=config-dir/
+```
+
+A ConfigMap can also be written as a manifest, which is often clearer for reviewed changes. In a manifest, the `data` field contains text values and the optional `binaryData` field contains base64-encoded binary values. For CKA tasks, imperative creation is usually faster, but knowing the manifest shape helps you debug generated YAML and work with real repositories.
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orders-config
+data:
+  LOG_LEVEL: "info"
+  application.yaml: |
+    database:
+      host: orders-db.default.svc.cluster.local
+      port: 5432
+    features:
+      checkoutV2: true
+```
+
+> **Active learning prompt:** You created a ConfigMap from `app.properties` with `--from-file`, then used `envFrom` in a Pod and expected `database.host` to appear as an environment variable. Predict what variable, if any, appears in the container, then decide which creation method you should have used.
+
+### 3. Injecting ConfigMaps: Environment Variables, Files, And Key Path Mapping
+
+Once the ConfigMap exists, the Pod spec decides how the container sees it. The two most common choices are environment variables and volume-mounted files. Environment variables are simple and familiar, but they are fixed when the container process starts. Volume mounts are better for file-oriented applications and can receive updates automatically, as long as you avoid `subPath`.
+
+Use `env.valueFrom.configMapKeyRef` when you want one key mapped to one environment variable with a container-specific name. This pattern is precise and readable. It also lets you mark an individual key optional, which can be useful during staged rollouts but should be used carefully because optional missing config can hide a deployment mistake.
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: app-env-single
 spec:
   containers:
   - name: app
-    image: nginx
+    image: nginx:1.27
     env:
-    - name: LOG_LEVEL           # Name in container
-      valueFrom:
-        configMapKeyRef:
-          name: app-config      # ConfigMap name
-          key: LOG_LEVEL        # Key in ConfigMap
-    - name: DB_HOST
+    - name: APP_LOG_LEVEL
       valueFrom:
         configMapKeyRef:
           name: app-config
-          key: database.host
-          optional: true        # Don't fail if key missing
+          key: LOG_LEVEL
+    - name: APP_CACHE_TTL_SECONDS
+      valueFrom:
+        configMapKeyRef:
+          name: app-config
+          key: CACHE_TTL_SECONDS
 ```
 
-**Option 2: All keys as environment variables**
+Use `envFrom` when every valid key in the ConfigMap should become an environment variable. This is fast for exam tasks and clean for simple applications, but it can be too broad in production because every key becomes part of the process environment. A prefix reduces naming collisions and makes it clearer that the value came from Kubernetes configuration.
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: app-env-all
 spec:
   containers:
   - name: app
-    image: nginx
+    image: nginx:1.27
     envFrom:
     - configMapRef:
         name: app-config
-      prefix: APP_              # Optional: prefix all vars
+      prefix: APP_
 ```
 
-All ConfigMap keys become environment variables. With prefix, `LOG_LEVEL` becomes `APP_LOG_LEVEL`.
+When a ConfigMap is mounted as a volume, each key becomes a file. This is the core mental model that prevents most mount-path mistakes. If the ConfigMap has keys `application.yaml` and `routes.yaml`, and the volume is mounted at `/etc/app`, the container sees `/etc/app/application.yaml` and `/etc/app/routes.yaml`.
 
-**Option 3: As a mounted volume (entire ConfigMap)**
+```ascii
++-----------------------------+          +--------------------------------+
+| ConfigMap: orders-config    |          | Container filesystem           |
+|-----------------------------|          |--------------------------------|
+| data.LOG_LEVEL              |   env    | APP_LOG_LEVEL=info             |
+| data.application.yaml       |  file    | /etc/app/application.yaml      |
+| data.routes.yaml            |  file    | /etc/app/routes.yaml           |
++-----------------------------+          +--------------------------------+
+```
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: app-config-volume
 spec:
   containers:
   - name: app
-    image: nginx
+    image: nginx:1.27
     volumeMounts:
-    - name: config-volume
-      mountPath: /etc/config    # Directory containing all files
+    - name: app-config-volume
+      mountPath: /etc/app
   volumes:
-  - name: config-volume
+  - name: app-config-volume
     configMap:
-      name: app-config
-      # Each key becomes a file in /etc/config/
+      name: orders-config
 ```
 
-**Option 4: Mount specific keys as files**
+The following diagram is the most important path-mapping model in this module. The key name is not just metadata; for volume mounts it becomes a filename unless the Pod remaps it. The `mountPath` is the directory where the volume appears, and the file path inside the container is the directory plus the mapped key path.
+
+```ascii
++-----------------------------------+      +--------------------------------------+
+| ConfigMap key map                 |      | Mounted volume at /etc/app           |
+|-----------------------------------|      |--------------------------------------|
+| application.yaml                  | ---> | /etc/app/application.yaml             |
+| routes.yaml                       | ---> | /etc/app/routes.yaml                  |
+| feature-flags.json                | ---> | /etc/app/feature-flags.json           |
++-----------------------------------+      +--------------------------------------+
+```
+
+Sometimes you only want selected keys, or you want the file path inside the mounted directory to be different from the key name. Use `items` for that mapping. This is safer than changing the ConfigMap key just to match one application's preferred filename, because several Pods can reuse the same ConfigMap with different path mappings.
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: app-config-items
 spec:
   containers:
   - name: app
-    image: nginx
+    image: nginx:1.27
     volumeMounts:
-    - name: config-volume
-      mountPath: /etc/nginx/nginx.conf
-      subPath: nginx.conf      # Mount single file, not directory
+    - name: app-config-volume
+      mountPath: /etc/app
   volumes:
-  - name: config-volume
+  - name: app-config-volume
     configMap:
-      name: app-config
+      name: orders-config
       items:
-      - key: nginx.conf        # Key from ConfigMap
-        path: nginx.conf       # Filename in volume
+      - key: application.yaml
+        path: config/application.yaml
+      - key: routes.yaml
+        path: routes.yaml
 ```
 
-> **Pause and predict**: You update a ConfigMap that is injected into a pod two ways: one key is used as an environment variable, and another key is mounted as a volume. After updating the ConfigMap, which value changes automatically in the pod and which one stays stale? What about if the volume uses `subPath`?
-
-### ConfigMap Update Behavior
-
-| Injection Method | Auto-Updates? | Notes |
-|------------------|---------------|-------|
-| Environment variable | No | Requires Pod restart |
-| Volume mount | Yes | ~1 minute delay (kubelet sync) |
-| subPath mount | No | Requires Pod restart |
-
----
-
-## Understanding Secrets
-
-### Secret Types
-
-Kubernetes supports several Secret types:
-
-| Type | Description | Auto-created? |
-|------|-------------|---------------|
-| `Opaque` | Generic key-value pairs | No (default) |
-| `kubernetes.io/tls` | TLS certificate + key | No |
-| `kubernetes.io/dockerconfigjson` | Docker registry auth | No |
-| `kubernetes.io/service-account-token` | ServiceAccount token | Legacy (Use TokenRequest) |
-| `kubernetes.io/basic-auth` | Username + password | No |
-| `kubernetes.io/ssh-auth` | SSH private key | No |
-
-> **Pause and predict**: You write a Secret YAML with `data: {password: MyPassword123}` and apply it. When your app reads the password, it gets garbled text. What went wrong, and what field should you use instead of `data` to avoid this issue?
-
-### Creating Secrets
-
-**Method 1: Generic secret from literals**
-
-```bash
-# Values are automatically base64 encoded
-k create secret generic db-creds \
-  --from-literal=username=admin \
-  --from-literal=password='S3cur3P@ssw0rd!'
+```ascii
++-----------------------------+          +--------------------------------+
+| ConfigMap: orders-config    |          | mountPath: /etc/app            |
+|-----------------------------|          |--------------------------------|
+| application.yaml            |  items   | /etc/app/config/application.yaml|
+| routes.yaml                 |  items   | /etc/app/routes.yaml            |
+| LOG_LEVEL                   | skipped  | no file created                 |
++-----------------------------+          +--------------------------------+
 ```
 
-**Method 2: From files**
-
-```bash
-# Create credential files
-echo -n 'admin' > username.txt
-echo -n 'S3cur3P@ssw0rd!' > password.txt
-
-k create secret generic db-creds \
-  --from-file=username=username.txt \
-  --from-file=password=password.txt
-
-# Clean up files
-rm username.txt password.txt
-```
-
-**Method 3: TLS secret**
-
-```bash
-# From existing cert and key
-k create secret tls app-tls \
-  --cert=tls.crt \
-  --key=tls.key
-```
-
-**Method 4: Docker registry secret**
-
-```bash
-k create secret docker-registry regcred \
-  --docker-server=registry.example.com \
-  --docker-username=user \
-  --docker-password=pass \
-  --docker-email=user@example.com
-```
-
-**Method 5: From YAML (manual base64)**
+A `subPath` mount is different. It mounts one file from the volume onto one exact path in the container. This is useful when an image already contains a directory such as `/etc/nginx/conf.d`, and you only want to replace `/etc/nginx/conf.d/default.conf` without hiding the rest of the directory. The trade-off is major: ConfigMap and Secret updates do not propagate through `subPath` mounts.
 
 ```yaml
 apiVersion: v1
-kind: Secret
+kind: Pod
 metadata:
-  name: db-creds
-type: Opaque
-data:
-  # Values must be base64 encoded
-  username: YWRtaW4=           # echo -n 'admin' | base64
-  password: UzNjdXIzUEBzc3cwcmQh   # echo -n 'S3cur3P@ssw0rd!' | base64
+  name: nginx-subpath-config
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.27
+    volumeMounts:
+    - name: nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: nginx.conf
+  volumes:
+  - name: nginx-config
+    configMap:
+      name: nginx-config
+      items:
+      - key: nginx.conf
+        path: nginx.conf
 ```
 
-Or use `stringData` for plain text (Kubernetes encodes it):
+```ascii
++---------------------------+          +-----------------------------------------+
+| ConfigMap key             |          | subPath mount result                    |
+|---------------------------|          |-----------------------------------------|
+| nginx.conf                | -------> | /etc/nginx/conf.d/default.conf          |
+|                           |          | single file mount, not auto-refreshed   |
++---------------------------+          +-----------------------------------------+
+```
+
+| Injection Pattern | Container View | Updates In Running Pod | Best Fit | Main Risk |
+|---|---|---|---|---|
+| `env` with one key | One named environment variable | No | Precise startup settings | Missing key blocks container unless optional |
+| `envFrom` | Many environment variables | No | Small apps with env-based config | Too broad and collision-prone |
+| Full volume mount | Directory of files | Yes, after kubelet sync delay | File-based config and reloadable apps | Mount hides existing directory contents |
+| Volume with `items` | Selected files and paths | Yes, unless mounted by `subPath` | Curated file tree | Wrong key or path causes missing file |
+| `subPath` file mount | One exact file path | No | Replacing one file inside existing directory | Stale config after object update |
+
+> **Active learning prompt:** An NGINX image already contains several files in `/etc/nginx/conf.d/`, and you want to replace only `default.conf`. Which mount style avoids hiding the existing directory, and what operational cost do you accept when you choose it?
+
+ConfigMap update behavior deserves special attention because it surprises both beginners and experienced engineers moving quickly. A running process receives environment variables only when the process starts, so changing the ConfigMap will not rewrite the process environment. A full ConfigMap volume mount can update the files inside the container after kubelet syncs the new object, but the application must either reread the file or be reloaded. A `subPath` file mount stays stale until the Pod is restarted.
+
+### 4. Creating And Using Secrets Without Confusing Encoding With Security
+
+A Secret is a Kubernetes object for sensitive data, but the default representation is not magic encryption. Values in the `data` field are base64 encoded because Kubernetes API objects are JSON-compatible and need a safe text representation for arbitrary bytes. Base64 protects formatting, not confidentiality. Anyone who can read the Secret through the API can decode it.
+
+For exam speed, `kubectl create secret generic` is usually the safest way to avoid manual encoding mistakes. The command accepts plain text literals or files and stores the encoded form in the API object. Quote shell-sensitive values, especially passwords containing `!`, `$`, `\`, spaces, or other characters the shell may interpret.
+
+```bash
+k create secret generic db-creds \
+  --from-literal=username=orders_user \
+  --from-literal=password='S3cure-Pass-2026'
+```
+
+Inspecting the Secret shows encoded values. This is expected, and it does not prove the value is encrypted. It only proves the API object stores the value in the `data` map. Use JSONPath and `base64 -d` when debugging a lab value, but avoid printing real production secrets into terminal scrollback, shell history, logs, or screen shares.
+
+```bash
+k get secret db-creds -o jsonpath='{.data.password}' | base64 -d
+```
+
+When writing a Secret manifest by hand, use `stringData` unless you have a specific reason to provide already encoded data. The `stringData` field accepts plain text and Kubernetes converts it into `data` when the object is stored. This reduces the chance of accidentally encoding a trailing newline or double-encoding a value.
 
 ```yaml
 apiVersion: v1
@@ -365,715 +389,616 @@ metadata:
   name: db-creds
 type: Opaque
 stringData:
-  username: admin              # Plain text - Kubernetes encodes
-  password: S3cur3P@ssw0rd!
+  username: orders_user
+  password: S3cure-Pass-2026
 ```
 
-### Using Secrets in Pods
+If you use the `data` field, values must already be base64 encoded. Use `echo -n` rather than `echo`, because a trailing newline becomes part of the Secret value. This invisible character is a classic cause of authentication failures: humans see the same password, but the database receives an extra newline byte.
 
-**Option 1: As environment variables**
+```bash
+echo -n 'S3cure-Pass-2026' | base64
+```
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-creds-encoded
+type: Opaque
+data:
+  username: b3JkZXJzX3VzZXI=
+  password: UzNjdXJlLVBhc3MtMjAyNg==
+```
+
+Kubernetes defines several Secret types. The type does not make the value more secret, but it can add validation or signal intended use to controllers. For example, `kubernetes.io/tls` expects `tls.crt` and `tls.key`, while `kubernetes.io/dockerconfigjson` stores registry pull credentials in a specific JSON key.
+
+| Secret Type | Typical Keys | Primary Use | Validation Benefit |
+|---|---|---|---|
+| `Opaque` | Any keys | Generic app credentials | Minimal validation |
+| `kubernetes.io/tls` | `tls.crt`, `tls.key` | TLS certificate and private key | Checks required keys exist |
+| `kubernetes.io/dockerconfigjson` | `.dockerconfigjson` | Private image registry auth | Checks expected key shape |
+| `kubernetes.io/basic-auth` | `username`, `password` | Basic authentication | Documents intent clearly |
+| `kubernetes.io/ssh-auth` | `ssh-privatekey` | SSH private key material | Documents intent clearly |
+| `bootstrap.kubernetes.io/token` | Bootstrap token fields | Node bootstrap flows | Specialized cluster use |
+
+Mounting Secrets follows the same environment-variable and volume patterns as ConfigMaps, but the security trade-offs are sharper. A Secret injected as an environment variable is visible to the process and its children, and it can leak through debug endpoints, crash dumps, accidental logging, or `kubectl exec -- env` by an authorized operator. A Secret mounted as a file still requires API access to create the Pod, but inside the container the application must intentionally read the file path.
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: app-secret-env
 spec:
   containers:
   - name: app
-    image: myapp
+    image: nginx:1.27
     env:
-    - name: DB_USERNAME
+    - name: DATABASE_USERNAME
       valueFrom:
         secretKeyRef:
           name: db-creds
           key: username
-    - name: DB_PASSWORD
+    - name: DATABASE_PASSWORD
       valueFrom:
         secretKeyRef:
           name: db-creds
           key: password
 ```
 
-**Option 2: All keys as environment variables**
-
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: app-secret-volume
 spec:
   containers:
   - name: app
-    image: myapp
-    envFrom:
-    - secretRef:
-        name: db-creds
-      prefix: DB_
-```
-
-**Option 3: As mounted files**
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: app
-spec:
-  containers:
-  - name: app
-    image: myapp
+    image: nginx:1.27
     volumeMounts:
-    - name: secret-volume
-      mountPath: /etc/secrets
-      readOnly: true           # Best practice for secrets
+    - name: db-creds-volume
+      mountPath: /etc/db-creds
+      readOnly: true
   volumes:
-  - name: secret-volume
+  - name: db-creds-volume
     secret:
       secretName: db-creds
-      defaultMode: 0400        # Restrict permissions
+      defaultMode: 0400
 ```
 
-**Option 4: Mount TLS certificate**
+```ascii
++-----------------------------+          +--------------------------------+
+| Secret: db-creds            |          | mountPath: /etc/db-creds       |
+|-----------------------------|          |--------------------------------|
+| username                    | -------> | /etc/db-creds/username         |
+| password                    | -------> | /etc/db-creds/password         |
+| defaultMode: 0400           | -------> | read permission only           |
++-----------------------------+          +--------------------------------+
+```
+
+For TLS, a Secret volume maps naturally to certificate files. The application or proxy still needs to reload the certificate after the file changes, so a successful volume update is only half of the rotation story. NGINX, Envoy, Java applications, and Go servers differ in how they reload certificates, which means the Kubernetes mount pattern and the application reload strategy must be designed together.
+
+```bash
+k create secret tls web-tls \
+  --cert=tls.crt \
+  --key=tls.key
+```
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app
+  name: tls-nginx
 spec:
   containers:
-  - name: app
-    image: nginx
+  - name: nginx
+    image: nginx:1.27
     volumeMounts:
     - name: tls-certs
-      mountPath: /etc/nginx/ssl
+      mountPath: /etc/nginx/tls
       readOnly: true
   volumes:
   - name: tls-certs
     secret:
-      secretName: app-tls
-      items:
-      - key: tls.crt
-        path: server.crt
-      - key: tls.key
-        path: server.key
-        mode: 0400             # Restrictive for private key
+      secretName: web-tls
+      defaultMode: 0400
 ```
 
-### Decoding Secrets
+| Secret Injection Choice | Exposure Inside Container | Update Behavior | When To Prefer It |
+|---|---|---|---|
+| Environment variable | Visible through process environment | Requires container restart | Legacy apps that only read env vars |
+| Full volume mount | File read required | Files can update after sync | Credentials, certificates, tokens |
+| `subPath` file mount | File read required | Does not update automatically | Exact file replacement only |
+| Image pull Secret | Used by kubelet, not app process | Applied when pulling image | Private registry authentication |
+
+> **Active learning prompt:** A security reviewer says your database password must not appear in `kubectl exec pod -- env`. Your application can read either an env var or a file. Which Secret injection method satisfies the reviewer, and what `volumeMount` and `secret` settings make the design stronger?
+
+### 5. Update, Immutability, Projection, And Troubleshooting
+
+ConfigMaps and Secrets are API objects, so you can change them after creation unless they are immutable. The harder question is whether a running workload notices the change. Kubernetes can update mounted volume files after kubelet observes the object change, but it cannot rewrite a process environment. Even when a file changes, the application may keep old values in memory until it reloads.
 
 ```bash
-# View encoded values
-k get secret db-creds -o yaml
-
-# Decode a specific key
-k get secret db-creds -o jsonpath='{.data.password}' | base64 -d
-
-# Decode all keys
-k get secret db-creds -o go-template='{{range $k,$v := .data}}{{$k}}: {{$v | base64decode}}{{"\n"}}{{end}}'
+k patch configmap app-config \
+  --type merge \
+  -p '{"data":{"LOG_LEVEL":"debug"}}'
 ```
 
----
+After this patch, a Pod using `APP_LOG_LEVEL` from `envFrom` still has the old value until the container restarts. A Pod using a full ConfigMap volume may see the file contents update after a short kubelet sync delay. A Pod using `subPath` remains stale, because the single-file bind mount does not participate in the atomic symlink update mechanism Kubernetes uses for projected content.
 
-## Security Considerations
-
-### Secrets Are Not Truly Secret (by default)
-
-Base64 is encoding, not encryption:
-
-```bash
-# Anyone can decode
-echo 'UzNjdXIzUEBzc3cwcmQh' | base64 -d
-# Output: S3cur3P@ssw0rd!
+```ascii
++----------------------+        +----------------------+        +----------------------+
+| ConfigMap update     |        | Injection method     |        | Running Pod outcome  |
+|----------------------|        |----------------------|        |----------------------|
+| LOG_LEVEL=debug      | -----> | env / envFrom        | -----> | old value until restart |
+| app.yaml changed     | -----> | full volume mount    | -----> | file refresh after sync |
+| nginx.conf changed   | -----> | subPath file mount   | -----> | stale until restart     |
++----------------------+        +----------------------+        +----------------------+
 ```
 
-**Security measures:**
-
-1. **RBAC**: Limit who can read Secrets
-2. **Encryption at rest**: Enable etcd encryption
-3. **Audit logging**: Track Secret access
-4. **External secret stores**: HashiCorp Vault, AWS Secrets Manager
-
-> **Stop and think**: A security auditor tells you that storing database passwords as environment variables is risky. They recommend volume mounts instead. What specific attack vector do environment variables create that mounted files avoid?
-
-### Environment Variables vs Volume Mounts
-
-| Aspect | Env Vars | Volume Mounts |
-|--------|----------|---------------|
-| Visibility | `kubectl exec -- env` shows them | Must cat files |
-| Process inheritance | Child processes inherit | Must explicitly read |
-| Logging risk | Often logged accidentally | Less likely to log |
-| Updates | Requires restart | Auto-updates (~1min) |
-
-**Best practice**: Use volume mounts for sensitive secrets to reduce accidental exposure.
-
-### Secret Immutability
-
-For production, consider immutable Secrets:
+Immutability changes the operational model. When you set `immutable: true`, Kubernetes rejects later updates to the object data. That sounds restrictive, but it can be desirable for production because it prevents accidental mutation and reduces watch load from kubelets. The normal pattern is to create a new object name, such as `app-config-v2`, and update the Deployment template so Kubernetes performs a controlled rollout.
 
 ```yaml
 apiVersion: v1
-kind: Secret
+kind: ConfigMap
 metadata:
-  name: db-creds-v1
-type: Opaque
-immutable: true              # Cannot be modified
+  name: app-config-v1
+immutable: true
 data:
-  password: UzNjdXIzUEBzc3cwcmQh
+  LOG_LEVEL: info
+  CACHE_TTL_SECONDS: "300"
 ```
 
-Benefits:
-- Prevents accidental changes
-- Performance: kubelet doesn't need to watch for updates
-- Version control: Use naming (v1, v2) for rotation
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orders-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: orders-api
+  template:
+    metadata:
+      labels:
+        app: orders-api
+    spec:
+      containers:
+      - name: orders-api
+        image: nginx:1.27
+        envFrom:
+        - configMapRef:
+            name: app-config-v2
+```
 
----
+Projected volumes let you merge multiple sources into one directory. This is useful when an application expects all configuration under one path, but your cluster design separates non-sensitive config, sensitive credentials, and Pod metadata into different Kubernetes sources. A projected volume can include ConfigMaps, Secrets, the Downward API, and service account tokens.
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: projected-config-demo
+spec:
+  containers:
+  - name: app
+    image: nginx:1.27
+    volumeMounts:
+    - name: combined-config
+      mountPath: /etc/runtime
+      readOnly: true
+  volumes:
+  - name: combined-config
+    projected:
+      sources:
+      - configMap:
+          name: app-config
+          items:
+          - key: LOG_LEVEL
+            path: config/log-level
+      - secret:
+          name: db-creds
+          items:
+          - key: password
+            path: secrets/db-password
+      - downwardAPI:
+          items:
+          - path: pod/name
+            fieldRef:
+              fieldPath: metadata.name
+```
+
+```ascii
++--------------------+       +----------------------------------+
+| Projected sources  |       | /etc/runtime inside container    |
+|--------------------|       |----------------------------------|
+| ConfigMap LOG_LEVEL| ----> | /etc/runtime/config/log-level    |
+| Secret password    | ----> | /etc/runtime/secrets/db-password |
+| Downward API name  | ----> | /etc/runtime/pod/name            |
++--------------------+       +----------------------------------+
+```
+
+Troubleshooting configuration failures starts with the Pod status and events. A missing ConfigMap, missing Secret, or missing required key often prevents container creation and produces `CreateContainerConfigError`. A wrong path may let the container start but cause the application to fail later. A bad Secret value may look like an application authentication bug until you decode the actual bytes.
+
+```bash
+k get pod broken-app
+
+k describe pod broken-app
+
+k get events --sort-by=.lastTimestamp
+```
+
+For missing objects, the `Events` section usually names the exact reference Kubernetes could not resolve. For wrong keys, compare the Pod spec against the object data. For wrong file paths, `kubectl exec` into the container and inspect the directory structure. The goal is to trace the value from object key to injection rule to runtime location.
+
+```bash
+k get configmap app-config -o yaml
+
+k get pod app-config-volume -o yaml
+
+k exec app-config-volume -- ls -la /etc/app
+
+k exec app-config-volume -- cat /etc/app/application.yaml
+```
+
+For Secret encoding issues, decode the value and reveal hidden characters. `cat -e` makes a trailing newline visible as `$`, and `xxd` shows the byte-level representation. Use these techniques in labs and controlled debugging, not casually against production credentials.
+
+```bash
+k get secret db-creds -o jsonpath='{.data.password}' | base64 -d | cat -e
+
+k get secret db-creds -o jsonpath='{.data.password}' | base64 -d | xxd
+```
+
+| Symptom | Likely Cause | First Check | Usual Fix |
+|---|---|---|---|
+| `CreateContainerConfigError` | Missing ConfigMap, Secret, or key | `k describe pod` events | Create object or correct reference |
+| Env var has old value | ConfigMap or Secret changed after start | `k exec pod -- env` | Restart Pod or roll Deployment |
+| Mounted file has old value | Using `subPath` or app cached value | Pod YAML and file timestamp | Restart Pod or use full volume plus reload |
+| File missing in mount directory | Wrong `items.key` or path mapping | Object keys and volume spec | Correct key name or `items` path |
+| Auth fails with correct-looking password | Encoded newline or wrong field | Decode with `cat -e` or `xxd` | Recreate Secret with `stringData` or `echo -n` |
+| App cannot read Secret file | Permissions or user mismatch | `ls -l` inside container | Adjust `defaultMode`, `fsGroup`, or app user |
+
+A senior-level design often combines several ideas: non-sensitive config in a ConfigMap, sensitive values in a Secret, projected volume paths that match application expectations, immutable versioned objects for controlled rollouts, and RBAC that limits who can read Secrets. The exam may only ask you to wire a Pod, but the same commands support a production design when you understand the update and security semantics.
+
+## Did You Know?
+
+- **Secrets are base64 encoded by default, not encrypted by default.** Encryption at rest must be configured for the cluster, and RBAC still controls who can read Secret objects through the API.
+- **ConfigMap and Secret volume updates are eventually reflected through kubelet-managed projected files, but environment variables never update inside an already-running process.** The application must also reread or reload the file to use the new value.
+- **Objects marked `immutable: true` cannot be edited in place, which is useful when you want configuration changes to happen only through versioned object names and controlled Pod rollouts.**
+- **A projected volume can combine ConfigMaps, Secrets, Downward API data, and service account tokens into one directory tree, which helps applications that expect a single runtime configuration path.**
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Forgetting base64 in YAML | Invalid Secret data | Use `stringData` for plain text |
-| Not using `-n` with echo | Newline in encoded value | `echo -n 'value'` |
-| Expecting env var updates | App uses stale config | Restart Pod or use volume mount |
-| Hardcoding secrets in image | Security risk, inflexible | Always use Secrets |
-| Committing Secrets to git | Credentials exposed | Use `.gitignore`, external stores |
-| Overly permissive RBAC | Anyone can read Secrets | Limit with Role/RoleBinding |
-| Not setting volume readOnly | Container could modify | Always `readOnly: true` |
-| Ignoring subPath limitation | Config doesn't update | Use full volume mount when possible |
-| Using in Static Pods | Pod fails to start | ConfigMaps/Secrets cannot be used in Static Pods |
+| Mistake | Why It Breaks | Better Practice |
+|---|---|---|
+| Using `--from-file` when each line should become a separate environment variable | The whole file becomes one key, so `envFrom` does not create the expected variables | Use `--from-env-file` for `KEY=value` files that should split into separate keys |
+| Writing plain text under Secret `data` | The `data` field expects base64-encoded values, so the application may receive invalid bytes | Use `stringData` for hand-written YAML or let `kubectl create secret` encode values |
+| Encoding Secrets with plain `echo` | The trailing newline becomes part of the credential and can break authentication | Use `echo -n`, `printf`, `stringData`, or `kubectl create secret --from-literal` |
+| Expecting env vars to update after a ConfigMap or Secret changes | Environment variables are copied into the process at container start | Restart the Pod or use a volume mount with an application reload strategy |
+| Using `subPath` for files that must rotate automatically | `subPath` mounts do not receive ConfigMap or Secret updates | Mount the full volume directory or restart Pods during rotation |
+| Mounting a ConfigMap over a populated application directory | The volume hides files that were already present in the image at that path | Mount into an empty config directory or use `subPath` when exact replacement is acceptable |
+| Injecting sensitive values with `envFrom` by default | Secrets become broad process environment data and are easier to leak in logs or diagnostics | Prefer read-only Secret volume mounts for credentials when the application supports files |
+| Giving broad users or service accounts permission to read all Secrets | Anyone with read access can retrieve and decode Secret values | Scope RBAC narrowly and combine it with encryption at rest and audit logging |
 
----
+## Quiz
+
+### Question 1
+
+Your team created `settings.env` with ten `KEY=value` lines and then ran `k create configmap web-settings --from-file=settings.env`. The Pod uses `envFrom.configMapRef.name: web-settings`, but the application reports that `LOG_LEVEL` and `CACHE_TTL_SECONDS` are unset. What happened, and how would you fix the ConfigMap creation command?
+
+<details>
+<summary>Show Answer</summary>
+
+`--from-file=settings.env` stored the entire file under one key named `settings.env`; Kubernetes did not split the lines into separate keys. When `envFrom` tried to create environment variables, the key name was not a useful application setting, and the expected keys such as `LOG_LEVEL` did not exist. Recreate the ConfigMap with `--from-env-file=settings.env` so each valid `KEY=value` line becomes its own key. If a Pod already exists, restart it after recreating the ConfigMap because environment variables are set only at container start.
+</details>
+
+### Question 2
+
+A Pod mounts a ConfigMap at `/etc/app`, and the ConfigMap contains keys `application.yaml` and `routes.yaml`. A teammate expects the files to appear directly as `/application.yaml` and `/routes.yaml` because those are the key names. The app fails with "file not found" at `/etc/app/application.yaml`. How do you explain the path mapping and verify the real files?
+
+<details>
+<summary>Show Answer</summary>
+
+For a full ConfigMap volume mount, each key becomes a file under the `mountPath`. The key `application.yaml` becomes `/etc/app/application.yaml`, and `routes.yaml` becomes `/etc/app/routes.yaml`. The files do not appear at the filesystem root unless the volume is mounted at `/`, which would be a bad design. Verify the mapping with `k exec <pod> -- ls -la /etc/app` and then read the expected file with `k exec <pod> -- cat /etc/app/application.yaml`. If the application is looking elsewhere, change the app config or adjust `mountPath` and `items.path`.
+</details>
+
+### Question 3
+
+An NGINX Pod uses `subPath` to mount one ConfigMap key onto `/etc/nginx/conf.d/default.conf`. You patch the ConfigMap to add a new `/api` location, but traffic still follows the old configuration after several minutes. What are the two separate reasons this design may not update behavior immediately?
+
+<details>
+<summary>Show Answer</summary>
+
+First, `subPath` mounts do not receive automatic ConfigMap updates, so the file mounted at `/etc/nginx/conf.d/default.conf` remains stale until the Pod is restarted. Second, even if the file were updated through a full volume mount, NGINX may keep its old configuration in memory until it is reloaded. The exam-friendly fix is to restart or recreate the Pod. A production design would usually mount the full config directory or use versioned ConfigMap names, then pair file changes with an explicit NGINX reload or rolling Deployment update.
+</details>
+
+### Question 4
+
+A developer writes a Secret manifest with `data.password: SuperSecret123` and applies it. The Pod starts, but database authentication fails. They argue that `kubectl get secret -o yaml` clearly shows the password field exists. What should you check, and how should the manifest be rewritten?
+
+<details>
+<summary>Show Answer</summary>
+
+The problem is likely that `data` contains plain text instead of base64-encoded data. The existence of the key only proves Kubernetes stored something; it does not prove the decoded bytes are the intended password. Check the decoded value with a controlled command such as `k get secret <name> -o jsonpath='{.data.password}' | base64 -d | cat -e`. Rewrite the manifest using `stringData.password: SuperSecret123`, or encode the value correctly with `echo -n 'SuperSecret123' | base64` and place the result under `data.password`.
+</details>
+
+### Question 5
+
+A security audit finds that database credentials are visible through `k exec orders-api -- env`. The application can read credentials either from environment variables or from files. What Kubernetes change would reduce accidental exposure, and what hardening settings should you include?
+
+<details>
+<summary>Show Answer</summary>
+
+The credentials are currently injected as environment variables through `env`, `envFrom`, or `secretKeyRef`. Switch to a Secret volume mount so the application reads files such as `/etc/db-creds/username` and `/etc/db-creds/password`. Set `readOnly: true` on the `volumeMount` and use a restrictive `defaultMode`, such as `0400`, in the Secret volume. This does not remove the need for RBAC and encryption at rest, but it avoids exposing the values through ordinary process environment inspection.
+</details>
+
+### Question 6
+
+Your team marks `app-config` as immutable to prevent accidental edits. A week later, production needs `LOG_LEVEL=debug` for an incident. A teammate tries `k patch configmap app-config`, but Kubernetes rejects the change. What rollout procedure should you use instead?
+
+<details>
+<summary>Show Answer</summary>
+
+Immutable ConfigMaps cannot be changed in place. Create a new ConfigMap with a versioned name, such as `app-config-v2`, containing the updated value. Then update the Deployment Pod template to reference `app-config-v2`, which triggers a rollout and makes the change auditable. After the incident, create another version or roll back the Deployment to the previous ConfigMap name. This procedure treats configuration changes like release artifacts instead of mutable shared state.
+</details>
+
+### Question 7
+
+A Pod fails with `CreateContainerConfigError` after you add a required Secret key reference. The Secret exists, and the Pod spec references the right Secret name. What Kubernetes-level checks would you perform before blaming the application image?
+
+<details>
+<summary>Show Answer</summary>
+
+Start with `k describe pod <pod>` and read the Events section, because Kubernetes often reports the missing key or invalid reference there. Then inspect the Secret keys with `k get secret <secret> -o yaml` and compare them exactly against the Pod's `secretKeyRef.key`; key names are case-sensitive. Also confirm the Pod and Secret are in the same namespace, because Pod references do not cross namespaces. If the key is optional, the container may start without the value, but for required references Kubernetes blocks container creation until the reference is valid.
+</details>
 
 ## Hands-On Exercise
 
-### Scenario: Configure a Web Application
+### Scenario: Configure And Debug A Web Application
 
-You need to deploy a web application with:
-- Configuration file (ConfigMap)
-- Database credentials (Secret)
-- Feature flags (ConfigMap as env vars)
+You are the platform engineer on call for a small web application. The application needs non-sensitive runtime settings, an NGINX config file, and database credentials. You will create the objects, mount them into a Pod, verify the runtime view, intentionally update configuration, and explain which values change without a restart.
 
-### Task 1: Create Configuration
+### Step 1: Prepare The Namespace And Non-Sensitive Settings
+
+Create a namespace for the lab so cleanup is safe and the object references are easy to inspect. The first ConfigMap uses literals because the values are short and map naturally to environment variables. The second ConfigMap uses a file because NGINX expects a complete server configuration file.
 
 ```bash
-# Create namespace
-k create ns config-demo
+k create namespace config-demo
 
-# Create ConfigMap with app configuration
-k create configmap app-config -n config-demo \
+k create configmap app-settings -n config-demo \
   --from-literal=LOG_LEVEL=info \
-  --from-literal=CACHE_TTL=300 \
-  --from-literal=FEATURE_NEW_UI=true
+  --from-literal=CACHE_TTL_SECONDS=300 \
+  --from-literal=FEATURE_CHECKOUT_V2=true
+```
 
-# Create nginx configuration file
-cat > /tmp/nginx.conf <<EOF
+```bash
+cat > /tmp/kubedojo-nginx.conf <<'EOF'
 server {
-    listen 80;
-    location / {
-        root /usr/share/nginx/html;
-        index index.html;
-    }
-    location /health {
-        return 200 'OK';
-        add_header Content-Type text/plain;
-    }
+  listen 80;
+
+  location / {
+    return 200 'KubeDojo config demo\n';
+    add_header Content-Type text/plain;
+  }
+
+  location /health {
+    return 200 'OK\n';
+    add_header Content-Type text/plain;
+  }
 }
 EOF
 
 k create configmap nginx-config -n config-demo \
-  --from-file=nginx.conf=/tmp/nginx.conf
+  --from-file=nginx.conf=/tmp/kubedojo-nginx.conf
 ```
 
-### Task 2: Create Secrets
+### Step 2: Create Database Credentials As A Secret
+
+Create the Secret imperatively so Kubernetes handles encoding. This is the safest exam path when the value contains punctuation. In production, avoid placing real secrets directly in shell history; this lab uses throwaway values in a local namespace.
 
 ```bash
-# Database credentials
 k create secret generic db-creds -n config-demo \
-  --from-literal=DB_USER=appuser \
-  --from-literal=DB_PASS='Pr0dP@ssw0rd!'
+  --from-literal=username=orders_user \
+  --from-literal=password='Lab-Pass-2026'
+```
 
-# Verify
+Inspect the object shape without printing decoded values unnecessarily. You should see base64 strings under `data`, which confirms storage format but not encryption.
+
+```bash
 k get secret db-creds -n config-demo -o yaml
 ```
 
-### Task 3: Deploy Application
+### Step 3: Deploy The Pod With Env Vars And Mounted Files
+
+Apply a Pod that uses three different injection patterns. `app-settings` is loaded through `envFrom` with a prefix, `nginx-config` is mounted through `subPath` to replace one exact file, and `db-creds` is mounted as read-only files with restrictive permissions. This mixed design is realistic because different values have different consumers and risks.
 
 ```bash
-cat <<EOF > /tmp/webapp.yaml
+cat > /tmp/kubedojo-webapp.yaml <<'EOF'
 apiVersion: v1
 kind: Pod
 metadata:
   name: webapp
   namespace: config-demo
+  labels:
+    app: webapp
 spec:
   containers:
   - name: nginx
-    image: nginx:1.25
+    image: nginx:1.27
     ports:
     - containerPort: 80
-    # Environment variables from ConfigMap
     envFrom:
     - configMapRef:
-        name: app-config
+        name: app-settings
       prefix: APP_
-    # Environment variables from Secret
-    env:
-    - name: DATABASE_USER
-      valueFrom:
-        secretKeyRef:
-          name: db-creds
-          key: DB_USER
-    - name: DATABASE_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: db-creds
-          key: DB_PASS
     volumeMounts:
-    # Mount nginx config
     - name: nginx-config
       mountPath: /etc/nginx/conf.d/default.conf
       subPath: nginx.conf
-    # Mount secrets as files
     - name: db-creds
-      mountPath: /etc/secrets
+      mountPath: /etc/db-creds
       readOnly: true
   volumes:
   - name: nginx-config
     configMap:
       name: nginx-config
+      items:
+      - key: nginx.conf
+        path: nginx.conf
   - name: db-creds
     secret:
       secretName: db-creds
       defaultMode: 0400
 EOF
 
-k apply -f /tmp/webapp.yaml
+k apply -f /tmp/kubedojo-webapp.yaml
+
+k wait --for=condition=ready pod/webapp -n config-demo --timeout=90s
 ```
 
-### Task 4: Verify Configuration
+### Step 4: Verify The Runtime View
+
+Verify each injection path separately. The goal is not just to prove the Pod is running; the goal is to trace each object key to what the container can actually see. This is the same troubleshooting habit you need when a Pod starts but the application behaves incorrectly.
 
 ```bash
-# Check Pod is running
-k get pod webapp -n config-demo
+k exec webapp -n config-demo -- env | grep '^APP_'
 
-# Verify environment variables
-k exec webapp -n config-demo -- env | grep -E "APP_|DATABASE"
-
-# Verify mounted config file
 k exec webapp -n config-demo -- cat /etc/nginx/conf.d/default.conf
 
-# Verify secret files exist (don't cat in production!)
-k exec webapp -n config-demo -- ls -la /etc/secrets/
+k exec webapp -n config-demo -- ls -l /etc/db-creds
 
-# Test nginx health endpoint
-k exec webapp -n config-demo -- curl -s localhost/health
+k exec webapp -n config-demo -- sh -c 'curl -s localhost/health'
 ```
 
-### Task 5: Update ConfigMap
+The environment output should include `APP_LOG_LEVEL=info`, `APP_CACHE_TTL_SECONDS=300`, and `APP_FEATURE_CHECKOUT_V2=true`. The NGINX config should match the file you created under `/tmp`, but remember that it is mounted with `subPath`. The Secret files should exist under `/etc/db-creds`, and the mode should reflect the restrictive Secret volume setting.
+
+### Step 5: Update A ConfigMap And Observe Stale Values
+
+Patch the `app-settings` ConfigMap and then check the running process environment. The value will not change inside the existing container because environment variables are copied at process start. This is not a bug; it is the expected runtime contract.
 
 ```bash
-# Update a ConfigMap value non-interactively
-k patch configmap app-config -n config-demo --type merge -p '{"data":{"LOG_LEVEL":"debug"}}'
+k patch configmap app-settings -n config-demo \
+  --type merge \
+  -p '{"data":{"LOG_LEVEL":"debug"}}'
 
-# Check if env var updated (it won't - requires restart)
-k exec webapp -n config-demo -- env | grep LOG_LEVEL
-# Still shows: APP_LOG_LEVEL=info
+k exec webapp -n config-demo -- env | grep '^APP_LOG_LEVEL='
+```
 
-# Restart pod to pick up changes
-k replace --force -f /tmp/webapp.yaml
+Now restart the Pod by replacing it from the same manifest. This is a simple Pod lab, so `replace --force` is acceptable. In a Deployment, you would update the Pod template or restart the rollout instead.
 
-# Verify the pod is running again
-k wait --for=condition=ready pod/webapp -n config-demo --timeout=60s
+```bash
+k replace --force -f /tmp/kubedojo-webapp.yaml
 
-# Check the updated environment variable
-k exec webapp -n config-demo -- env | grep LOG_LEVEL
-# Should now show: APP_LOG_LEVEL=debug
+k wait --for=condition=ready pod/webapp -n config-demo --timeout=90s
+
+k exec webapp -n config-demo -- env | grep '^APP_LOG_LEVEL='
+```
+
+### Step 6: Diagnose A Missing Key Failure
+
+Create a deliberately broken Pod manifest that references a key that does not exist. Do not spend time guessing from memory; use the Kubernetes events to identify the exact failure. This step practices the fastest CKA troubleshooting path for configuration references.
+
+```bash
+cat > /tmp/kubedojo-broken.yaml <<'EOF'
+apiVersion: v1
+kind: Pod
+metadata:
+  name: broken-webapp
+  namespace: config-demo
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.27
+    env:
+    - name: APP_REQUIRED_SETTING
+      valueFrom:
+        configMapKeyRef:
+          name: app-settings
+          key: DOES_NOT_EXIST
+EOF
+
+k apply -f /tmp/kubedojo-broken.yaml
+
+k get pod broken-webapp -n config-demo
+
+k describe pod broken-webapp -n config-demo
+```
+
+Read the Events section and identify the missing key. Then repair the Pod by either changing the referenced key to an existing key or adding the missing key to the ConfigMap. For this lab, add the missing key and watch the Pod recover.
+
+```bash
+k patch configmap app-settings -n config-demo \
+  --type merge \
+  -p '{"data":{"DOES_NOT_EXIST":"now-present"}}'
+
+k wait --for=condition=ready pod/broken-webapp -n config-demo --timeout=90s
+
+k exec broken-webapp -n config-demo -- env | grep APP_REQUIRED_SETTING
+```
+
+### Step 7: Validate Secret Bytes When Authentication Looks Wrong
+
+Create a Secret with a trailing newline to see why invisible bytes matter. This is a controlled debugging exercise; the point is to learn the symptom without using real credentials. The command intentionally uses plain `echo`, which includes a newline.
+
+```bash
+echo 'bad-password' | base64
+
+cat > /tmp/kubedojo-bad-secret.yaml <<'EOF'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bad-db-creds
+  namespace: config-demo
+type: Opaque
+data:
+  password: YmFkLXBhc3N3b3JkCg==
+EOF
+
+k apply -f /tmp/kubedojo-bad-secret.yaml
+
+k get secret bad-db-creds -n config-demo \
+  -o jsonpath='{.data.password}' | base64 -d | cat -e
+```
+
+The `$` marker at the end shows that the decoded value includes a newline. Recreate the Secret using `stringData` or a no-newline encoding method. In real work, this small byte-level check often saves time when every visible character seems correct.
+
+```bash
+cat > /tmp/kubedojo-good-secret.yaml <<'EOF'
+apiVersion: v1
+kind: Secret
+metadata:
+  name: good-db-creds
+  namespace: config-demo
+type: Opaque
+stringData:
+  password: bad-password
+EOF
+
+k apply -f /tmp/kubedojo-good-secret.yaml
+
+k get secret good-db-creds -n config-demo \
+  -o jsonpath='{.data.password}' | base64 -d | cat -e
 ```
 
 ### Success Criteria
 
-- [ ] Pod is running with all configurations injected
-- [ ] Environment variables visible with correct prefix
-- [ ] nginx.conf mounted at correct path
-- [ ] Secret files have restrictive permissions (0400)
-- [ ] Health endpoint returns OK
+- [ ] You created a namespace, ConfigMap literals, a ConfigMap file, and a generic Secret without using hardcoded production credentials.
+- [ ] The `webapp` Pod reached `Ready` and showed `APP_` environment variables from the ConfigMap.
+- [ ] The NGINX config appeared at `/etc/nginx/conf.d/default.conf` through a `subPath` mount, and you can explain why that file will not auto-update.
+- [ ] The database credential files appeared under `/etc/db-creds` with read-only mount behavior and restrictive Secret volume permissions.
+- [ ] After patching `app-settings`, you observed that the running environment variable stayed stale until the Pod was restarted.
+- [ ] You diagnosed a `CreateContainerConfigError` caused by a missing ConfigMap key using `k describe pod`.
+- [ ] You decoded a Secret value with `cat -e` and identified the difference between a password with and without a trailing newline.
 
 ### Cleanup
 
 ```bash
-k delete ns config-demo
-rm -f /tmp/nginx.conf /tmp/webapp.yaml
+k delete namespace config-demo
+
+rm -f /tmp/kubedojo-nginx.conf \
+  /tmp/kubedojo-webapp.yaml \
+  /tmp/kubedojo-broken.yaml \
+  /tmp/kubedojo-bad-secret.yaml \
+  /tmp/kubedojo-good-secret.yaml
 ```
 
----
+## Next Module
 
-## Quiz
-
-### Question 1
-You have a config file `app.properties` with 20 key-value pairs. You need each pair as a separate environment variable in your pod. A teammate used `--from-file=app.properties`, but all 20 pairs ended up as a single key. What did they do wrong, and what's the correct command?
-
-<details>
-<summary>Show Answer</summary>
-
-They used `--from-file`, which stores the entire file as a single key (the filename becomes the key, the file contents become the value). For individual key-value pairs, they should use `--from-env-file`:
-
-```bash
-# Wrong: single key "app.properties" with all content as value
-k create configmap test --from-file=app.properties
-# Result: data: { "app.properties": "key1=value1\nkey2=value2\n..." }
-
-# Correct: each line becomes its own key-value pair
-k create configmap test --from-env-file=app.properties
-# Result: data: { "key1": "value1", "key2": "value2", ... }
-```
-
-Use `--from-file` when you need to mount the entire file (e.g., nginx.conf, application.yaml). Use `--from-env-file` when you need individual properties as separate environment variables. This distinction is a common exam trap.
-</details>
-
-### Question 2
-You deploy an nginx pod with a ConfigMap-mounted `nginx.conf` using `subPath`. Later, you update the ConfigMap to add a new `location /api` block. Users report the change isn't taking effect even after 10 minutes. What's wrong, and what are your options?
-
-<details>
-<summary>Show Answer</summary>
-
-When a ConfigMap is mounted using `subPath`, updates do NOT automatically propagate to the pod. This is because `subPath` mounts a specific file rather than a symlinked directory, bypassing the kubelet's automatic update mechanism. You have three options: (1) Delete and recreate the pod to pick up the new ConfigMap (simplest for exam), (2) switch from `subPath` to a full volume mount at a directory path (enables auto-updates but may overwrite other files in the directory), or (3) use an immutable ConfigMap naming scheme (e.g., `nginx-config-v2`) and update the pod spec to reference the new ConfigMap. Option 2 is the best long-term solution if auto-updates are important, but be aware that a full volume mount replaces the entire directory contents.
-</details>
-
-### Question 3
-A junior developer wrote a Secret YAML with `data: {password: MySecurePassword123}` and applied it. Authentication to the database fails, but `kubectl get secret db-creds -o yaml` shows the password field has a value. They're confused because the value "is right there." What are two things wrong with this scenario, and how should the YAML be written?
-
-<details>
-<summary>Show Answer</summary>
-
-Two issues: (1) The `data` field requires base64-encoded values, but `MySecurePassword123` is plain text. Kubernetes will try to base64-decode this value when injecting it into a pod, producing garbled output. (2) The developer may also be confused because `kubectl get secret -o yaml` shows base64-encoded values, which look valid but are actually a double-encoding issue. The fix is to either base64-encode the value yourself (`echo -n 'MySecurePassword123' | base64`) in the `data` field, or use `stringData` instead, which accepts plain text and Kubernetes handles the encoding:
-
-```yaml
-stringData:
-  password: MySecurePassword123
-```
-
-Always use `echo -n` (not `echo`) when encoding to avoid including a trailing newline, which is another common cause of authentication failures.
-</details>
-
-### Question 4
-A security audit found that your team's database passwords are visible when running `kubectl exec <pod> -- env` on any pod that uses them. The auditor requires that secrets not be retrievable via process introspection. What injection method are you using now, what should you switch to, and what additional hardening step should you take?
-
-<details>
-<summary>Show Answer</summary>
-
-You're currently injecting secrets as environment variables (via `envFrom` or `env.valueFrom.secretKeyRef`), which makes them visible to `kubectl exec -- env`, child process inheritance, and crash dump logging. Switch to volume-mounted secrets, which are stored as files at a mount path (e.g., `/etc/secrets/password`). Applications must explicitly read the file to access the value. Additionally, set `readOnly: true` on the volume mount and use restrictive file permissions with `defaultMode: 0400` on the volume definition. This ensures the files can only be read by the container's process owner and cannot be modified. For deeper security, combine this with RBAC rules that limit which service accounts can access the Secret, and enable encryption at rest for etcd to protect the stored Secret data.
-</details>
-
-### Question 5
-You created a Secret with `echo 'S3cur3P@ssw0rd!' | base64` and stored the result in your YAML. When the application tries to authenticate, it fails with "invalid credentials." You've triple-checked the password is correct. What went wrong?
-
-<details>
-<summary>Show Answer</summary>
-
-The `echo` command adds a trailing newline character by default. When you pipe to base64, the newline is encoded along with the password, so the decoded value becomes `S3cur3P@ssw0rd!\n` instead of `S3cur3P@ssw0rd!`. The database rejects the password because of the invisible extra character. The fix is to use `echo -n` (no newline):
-
-```bash
-# Wrong: includes newline
-echo 'S3cur3P@ssw0rd!' | base64    # encodes "S3cur3P@ssw0rd!\n"
-
-# Correct: no newline
-echo -n 'S3cur3P@ssw0rd!' | base64  # encodes "S3cur3P@ssw0rd!"
-```
-
-This is one of the most common Kubernetes Secret pitfalls. Alternatively, use `stringData` in your YAML to avoid base64 entirely, or use `kubectl create secret generic --from-literal=password='S3cur3P@ssw0rd!'` which handles encoding correctly.
-</details>
-
-### Question 6
-Your application reads its config from a file at `/etc/config/app.yaml` mounted from a ConfigMap. After a ConfigMap update, the application picks up the new config automatically within a minute. Your team wants the same auto-update behavior for a TLS certificate stored in a Secret and mounted at `/etc/nginx/ssl/server.crt`. But they're using `subPath` for the certificate mount. Will the TLS certificate auto-update? What's the best approach?
-
-<details>
-<summary>Show Answer</summary>
-
-No, the TLS certificate will NOT auto-update because `subPath` mounts bypass the kubelet's automatic update mechanism. The ConfigMap at `/etc/config/app.yaml` auto-updates because it uses a full volume mount (the kubelet creates symlinks that get updated). For the TLS certificate, remove the `subPath` and mount the entire secret volume to a directory (e.g., `/etc/nginx/ssl/`), then reference the files within that directory. The certificate will auto-update within approximately 60 seconds of a Secret change. However, note that nginx caches TLS certificates in memory, so you may also need a sidecar or process that watches for file changes and triggers a config reload (e.g., `nginx -s reload`).
-</details>
-
-### Question 7
-You have a ConfigMap mounted as a volume in your Pod. You set `immutable: true` on the ConfigMap, but later need to update a configuration value. What is the correct procedure to apply this change to your application?
-
-<details>
-<summary>Show Answer</summary>
-
-Because the ConfigMap is marked as immutable, you cannot update it in place. The kubelet also stops watching immutable ConfigMaps for changes, which improves cluster performance. To apply a change, you must: (1) Create a new ConfigMap with a new name (e.g., `app-config-v2`) containing the updated values, and (2) Update the Pod template (usually via its Deployment) to reference the new ConfigMap name. This triggers a rolling update of the Pods, ensuring a safe and version-controlled configuration rollout.
-</details>
-
----
-
-## Practice Drills
-
-Practice these scenarios under exam time pressure.
-
-### Drill 1: Quick ConfigMap Creation
-**Target Time:** 30 seconds
-
-Create a ConfigMap named `web-config` with these values:
-- `SERVER_PORT=8080`
-- `DEBUG_MODE=false`
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-k create configmap web-config \
-  --from-literal=SERVER_PORT=8080 \
-  --from-literal=DEBUG_MODE=false
-```
-</details>
-
-### Drill 2: ConfigMap from File
-**Target Time:** 45 seconds
-
-Create a file `/tmp/app.properties` with content:
-```
-db.host=localhost
-db.port=5432
-```
-Then create ConfigMap `app-props` from this file.
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-cat > /tmp/app.properties <<EOF
-db.host=localhost
-db.port=5432
-EOF
-
-k create configmap app-props --from-file=/tmp/app.properties
-```
-</details>
-
-### Drill 3: Secret from Literals
-**Target Time:** 30 seconds
-
-Create a Secret named `api-key` with:
-- `API_KEY=abc123secret`
-- `API_SECRET=xyz789token`
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-k create secret generic api-key \
-  --from-literal=API_KEY=abc123secret \
-  --from-literal=API_SECRET=xyz789token
-```
-</details>
-
-### Drill 4: Pod with ConfigMap Env Vars
-**Target Time:** 2 minutes
-
-Create a Pod `envpod` using image `nginx` that loads all keys from ConfigMap `web-config` as environment variables.
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-k run envpod --image=nginx --dry-run=client -o yaml > /tmp/pod.yaml
-```
-
-Edit to add `envFrom`:
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: envpod
-spec:
-  containers:
-  - name: envpod
-    image: nginx
-    envFrom:
-    - configMapRef:
-        name: web-config
-```
-
-```bash
-k apply -f /tmp/pod.yaml
-```
-</details>
-
-### Drill 5: Pod with Secret Volume
-**Target Time:** 2 minutes
-
-Create Pod `secretpod` using image `nginx` that mounts Secret `api-key` at `/etc/api-secrets` with read-only access.
-
-<details>
-<summary>Show Solution</summary>
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: secretpod
-spec:
-  containers:
-  - name: secretpod
-    image: nginx
-    volumeMounts:
-    - name: secret-vol
-      mountPath: /etc/api-secrets
-      readOnly: true
-  volumes:
-  - name: secret-vol
-    secret:
-      secretName: api-key
-```
-
-```bash
-k apply -f /tmp/secretpod.yaml
-```
-</details>
-
-### Drill 6: Decode Secret Value
-**Target Time:** 30 seconds
-
-Extract and decode the `API_KEY` value from Secret `api-key`.
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-k get secret api-key -o jsonpath='{.data.API_KEY}' | base64 -d
-```
-</details>
-
-### Drill 7: TLS Secret
-**Target Time:** 1 minute
-
-You have files `server.crt` and `server.key`. Create a TLS Secret named `web-tls`.
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-# If you need to create test files first:
-openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-  -keyout server.key -out server.crt \
-  -subj "/CN=test"
-
-# Create the secret
-k create secret tls web-tls --cert=server.crt --key=server.key
-```
-</details>
-
-### Drill 8: Specific Key as File
-**Target Time:** 2 minutes
-
-Create Pod `configfile` that mounts only the `db.host` key from ConfigMap `app-props` as `/etc/dbhost` file.
-
-<details>
-<summary>Show Solution</summary>
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: configfile
-spec:
-  containers:
-  - name: configfile
-    image: nginx
-    volumeMounts:
-    - name: config-vol
-      mountPath: /etc/dbhost
-      subPath: db.host
-  volumes:
-  - name: config-vol
-    configMap:
-      name: app-props
-      items:
-      - key: db.host
-        path: db.host
-```
-
-Note: This requires the ConfigMap to have a key named `db.host`. If your ConfigMap was created with `--from-file`, the key would be `app.properties` (the filename).
-</details>
-
-### Drill 9: Troubleshooting Missing ConfigMap
-**Target Time:** 2 minutes
-
-A Pod named `api-server` is crashing with `CreateContainerConfigError`. Troubleshoot and find out why it won't start. (Simulate this by creating a pod referencing a non-existent ConfigMap).
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-# Check the pod status and events
-k describe pod api-server
-
-# Look at the Events section at the bottom. You will see an error like:
-# Warning  Failed  ...  Error: configmap "missing-config" not found
-
-# To fix it, either create the missing ConfigMap or update the Pod to reference the correct one.
-```
-</details>
-
-### Drill 10: Troubleshooting Secret Base64 Error
-**Target Time:** 2 minutes
-
-You created a Secret using YAML, but the application is getting rejected due to invalid credentials. You suspect an encoding issue. How do you verify the exact decoded value Kubernetes is passing to the Pod?
-
-<details>
-<summary>Show Solution</summary>
-
-```bash
-# Get the base64 encoded value from the secret
-k get secret my-secret -o jsonpath='{.data.password}'
-
-# Decode it and pipe through xxd or cat -e to reveal hidden characters (like trailing newlines)
-k get secret my-secret -o jsonpath='{.data.password}' | base64 -d | cat -e
-
-# If you see "mypassword%$" (where $ is a newline) instead of just "mypassword%", 
-# it means it was encoded with a newline. Fix it by recreating the secret with echo -n.
-```
-</details>
-
----
-
-## Key Takeaways
-
-1. **ConfigMaps** store non-sensitive configuration; **Secrets** store sensitive data (but aren't encrypted by default)
-
-2. **Creation methods**: `--from-literal`, `--from-file`, `--from-env-file`, YAML manifest
-
-3. **Injection methods**: Environment variables (single or all), volume mounts (full or specific keys)
-
-4. **Updates**: Volume mounts auto-update (~1min), environment variables require Pod restart, subPath mounts don't update
-
-5. **Secrets**: Use `stringData` for plain text in YAML, always use `echo -n` to avoid newline issues
-
-6. **Security**: Limit RBAC access, prefer volume mounts over env vars, consider external secret stores for production
-
----
-
-## What's Next?
-
-Congratulations! You've completed all modules in Part 2: Workloads & Scheduling.
-
-**Next step:** [Part 2 Cumulative Quiz](../part2-cumulative-quiz/) - Test your knowledge across all Part 2 topics before moving on.
-
-**Coming up in Part 3:** Services & Networking - How Pods communicate with each other and the outside world.
-
----
-
-### Part 2 Module Index
-
-Quick links for review:
-
-| Module | Topic | Key Skills |
-|--------|-------|------------|
-| [2.1](../module-2.1-pods/) | Pods Deep-Dive | Multi-container patterns, lifecycle, probes |
-| [2.2](../module-2.2-deployments/) | Deployments & ReplicaSets | Rolling updates, rollbacks, scaling |
-| [2.3](../module-2.3-daemonsets-statefulsets/) | DaemonSets & StatefulSets | Node-level workloads, stateful apps |
-| [2.4](../module-2.4-jobs-cronjobs/) | Jobs & CronJobs | Batch processing, scheduled tasks |
-| [2.5](../module-2.5-resource-management/) | Resource Management | Requests, limits, QoS, quotas |
-| [2.6](../module-2.6-scheduling/) | Scheduling | Affinity, taints, topology |
-| [2.7](../module-2.7-configmaps-secrets/) | ConfigMaps & Secrets | Configuration injection |
-
-**Exam Tip:** Part 2 (Workloads & Scheduling) is 15% of the CKA exam. Master `kubectl run`, `kubectl create deployment`, and `kubectl create configmap/secret` for quick task completion.
+You have completed Part 2: Workloads & Scheduling. Continue with [Part 2 Cumulative Quiz](../part2-cumulative-quiz/) to verify the workload patterns together before moving into Services & Networking.
