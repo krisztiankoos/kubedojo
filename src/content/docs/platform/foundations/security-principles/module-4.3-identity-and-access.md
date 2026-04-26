@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 4.3: Identity and Access Management"
 slug: platform/foundations/security-principles/module-4.3-identity-and-access
 sidebar:
