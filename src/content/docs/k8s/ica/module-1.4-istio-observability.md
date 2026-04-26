@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 1.4: Istio Observability"
 slug: k8s/ica/module-1.4-istio-observability
 sidebar:

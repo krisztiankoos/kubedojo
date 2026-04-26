@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "CGOA GitOps Principles Review"
 slug: k8s/cgoa/module-1.2-gitops-principles-review
 sidebar:
