@@ -80,6 +80,13 @@ while IFS=$'\t' read -r idx tier wpp words slug; do
     echo -e "$idx\t$tier\t$slug\t$start\t$start\t0\tskip_committed" >> "$STATUS"
     continue
   fi
+  if [[ "$pre" == "FAILED" ]]; then
+    echo "" | tee -a "$LOG"
+    echo "===== [$idx/$total] $tier  $slug =====" | tee -a "$LOG"
+    echo "skip:  FAILED previously — needs manual review" | tee -a "$LOG"
+    echo -e "$idx\t$tier\t$slug\t$start\t$start\t0\tskip_failed" >> "$STATUS"
+    continue
+  fi
 
   if primary_dirty_tracked; then
     recover_orphan_ledger
