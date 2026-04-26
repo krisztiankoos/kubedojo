@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 3.3: Instrumentation Principles"
 slug: platform/foundations/observability-theory/module-3.3-instrumentation-principles
 sidebar:
