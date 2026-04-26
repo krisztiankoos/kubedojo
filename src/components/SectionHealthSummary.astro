@@ -1,0 +1,123 @@
+---
+/**
+ * SectionHealthSummary — small informational line at the top of a section
+ * index page that aggregates child-module status:
+ *   - revision_pending: true  → counted as "being reworked"
+ *   - qa_pending: true        → counted as "awaiting final QA"
+ *
+ * Renders nothing when both counts are zero (no visual noise on stable
+ * sections). Mirrors the RevisionBanner / QaBanner styling but a single
+ * compact line — not a full banner — so it sits above the index table
+ * without dominating the page.
+ *
+ * Wired in via PageTitle.astro for any route whose entry.filePath ends
+ * with `/index.md` (covers EN and UK index pages alike). Build-time only:
+ * counts come from getCollection('docs') frontmatter, so they update on
+ * every rebuild.
+ *
+ * Props:
+ *   currentPath — the route slug for the index page, e.g.
+ *                 "k8s/cka/part3-services-networking" (EN) or
+ *                 "uk/k8s/cka/part3-services-networking" (UK).
+ */
+import { getCollection } from 'astro:content';
+
+interface Props {
+  currentPath: string;
+}
+
+const { currentPath } = Astro.props;
+
+// Normalize: strip any extension, strip trailing slash. We compare using
+// `id` from the docs collection, which in Astro v5 is the slug-style path
+// (no extension) such as "k8s/cka/part3-services-networking" for an
+// `index.md` at that directory or "k8s/cka/part3-services-networking/module-3.1-services"
+// for a child module.
+function normalize(p: string): string {
+  return p.replace(/\.(md|mdx)$/i, '').replace(/\/+$/, '').replace(/^\/+/, '');
+}
+
+// On a UK index page route.id is "uk/k8s/cka/...". UK content files don't
+// carry their own revision_pending / qa_pending — those flags live only on
+// the EN source modules — so for matching purposes we strip the leading
+// "uk/" segment and aggregate from the parallel EN tree (the UK translation
+// can't be more current than the EN source it tracks).
+const sectionId = normalize(currentPath).replace(/^uk\//, '');
+
+let revisionCount = 0;
+let qaCount = 0;
+
+if (sectionId.length > 0) {
+  const all = await getCollection('docs');
+  const prefix = sectionId + '/';
+  for (const entry of all) {
+    const entryId = normalize(entry.id);
+    // Direct or nested children only — exclude the index itself.
+    if (!entryId.startsWith(prefix)) continue;
+    if (entryId === sectionId) continue;
+    const data = entry.data as Record<string, unknown>;
+    if (data.revision_pending === true) revisionCount++;
+    if (data.qa_pending === true) qaCount++;
+  }
+}
+
+const showSummary = revisionCount > 0 || qaCount > 0;
+
+function modulePhrase(n: number): string {
+  return n === 1 ? '1 module' : `${n} modules`;
+}
+---
+
+{showSummary && (
+  <p class="section-health-summary" role="note" aria-label="Section health summary">
+    <span class="section-health-icon" aria-hidden="true">&#9881;</span>
+    <span class="section-health-text">
+      {revisionCount > 0 && (
+        <>
+          <strong>{modulePhrase(revisionCount)}</strong>
+          {revisionCount === 1 ? ' is' : ' are'} currently being reworked.
+        </>
+      )}
+      {revisionCount > 0 && qaCount > 0 && ' '}
+      {qaCount > 0 && (
+        <>
+          <strong>{modulePhrase(qaCount)}</strong>
+          {qaCount === 1 ? ' is' : ' are'} awaiting final QA.
+        </>
+      )}
+      {' '}
+      <span class="section-health-tail">
+        Watch this section over the next few days.
+      </span>
+    </span>
+  </p>
+)}
+
+<style>
+  .section-health-summary {
+    display: flex;
+    gap: 0.625rem;
+    align-items: flex-start;
+    margin: 0.5rem 0 1.25rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid #6B7280;
+    background: rgba(107, 114, 128, 0.08);
+    border-radius: 4px;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--sl-color-gray-2, #C4C7C5);
+  }
+  .section-health-icon {
+    color: #9CA3AF;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    flex-shrink: 0;
+  }
+  .section-health-text strong {
+    color: var(--sl-color-white, #FFFFFF);
+    font-weight: 600;
+  }
+  .section-health-tail {
+    opacity: 0.85;
+  }
+</style>
