@@ -13,8 +13,9 @@ set -u
 cd "$(dirname "$0")/.."
 
 QUEUE="${REWRITE_QUEUE:-/tmp/388-rewrite-queue.tsv}"
-LOG="logs/quality/phase-rewrite-batch.log"
-STATUS="logs/quality/phase-rewrite-status.tsv"
+SUFFIX="${REWRITE_SUFFIX:-}"
+LOG="logs/quality/phase-rewrite-batch${SUFFIX}.log"
+STATUS="logs/quality/phase-rewrite-status${SUFFIX}.tsv"
 mkdir -p logs/quality
 
 if [[ ! -f "$QUEUE" ]]; then
