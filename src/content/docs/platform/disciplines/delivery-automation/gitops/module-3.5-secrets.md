@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 3.5: Secrets in GitOps"
 slug: platform/disciplines/delivery-automation/gitops/module-3.5-secrets
 sidebar:
