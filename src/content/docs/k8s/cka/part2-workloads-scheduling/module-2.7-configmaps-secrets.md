@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 2.7: ConfigMaps & Secrets"
 slug: k8s/cka/part2-workloads-scheduling/module-2.7-configmaps-secrets
 sidebar:
