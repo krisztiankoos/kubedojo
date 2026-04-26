@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 3.8: AI/ML on Cloud Native Infrastructure"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.8-ai-ml-cloud-native
 sidebar:

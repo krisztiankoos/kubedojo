@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 12.3: CodeQL - Query Your Code Like a Database"
 slug: platform/toolkits/security-quality/code-quality/module-12.3-codeql
 sidebar:

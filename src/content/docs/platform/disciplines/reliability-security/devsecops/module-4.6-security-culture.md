@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 4.6: Security Culture and Automation"
 slug: platform/disciplines/reliability-security/devsecops/module-4.6-security-culture
 sidebar:
