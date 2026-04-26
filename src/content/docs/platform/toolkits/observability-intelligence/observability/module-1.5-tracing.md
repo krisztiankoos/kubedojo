@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 1.5: Distributed Tracing"
 slug: platform/toolkits/observability-intelligence/observability/module-1.5-tracing
 sidebar:
