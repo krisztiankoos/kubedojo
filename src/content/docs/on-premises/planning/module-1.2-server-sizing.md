@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 1.2: Server Sizing & Hardware Selection"
 slug: on-premises/planning/module-1.2-server-sizing
 sidebar:
