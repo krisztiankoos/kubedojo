@@ -127,6 +127,23 @@ def _beginner_writer() -> str:
     return PRIMARY_BEGINNER
 
 
+def _tertiary_writer() -> str:
+    """Resolve the tertiary writer, honouring a runtime degraded fallback.
+
+    Same shape as ``_beginner_writer``. Anthropic-side throttling on
+    consecutive heavy claude calls (~10 min cool-down) made Claude an
+    unreliable batch writer during the 2026-04-26 run; setting
+    ``KUBEDOJO_TERTIARY_FALLBACK=codex`` reroutes any module that would
+    otherwise default to Claude (unenumerated tracks) to Codex gpt-5.5.
+    """
+    fallback = os.environ.get("KUBEDOJO_TERTIARY_FALLBACK", "").lower().strip()
+    if fallback in {"codex", "gpt-5.5"}:
+        return PRIMARY_ADVANCED
+    if fallback in {"gemini", "gemini-3.1-pro-preview"}:
+        return PRIMARY_BEGINNER
+    return TERTIARY
+
+
 def route_writer(module_path: Path) -> str:
     """Return the assigned writer for a module per the routing rule.
 
@@ -150,7 +167,7 @@ def route_writer(module_path: Path) -> str:
     for t in ADVANCED_TRACKS:
         if section.startswith(t):
             return PRIMARY_ADVANCED
-    return TERTIARY
+    return _tertiary_writer()
 
 
 # --- Backoff schedule -------------------------------------------------------
