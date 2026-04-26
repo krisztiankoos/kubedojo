@@ -160,7 +160,23 @@ def visual_aid_diff(before_text: str, after_text: str) -> dict[str, dict[str, in
 
 
 def regressed_metrics(diff: dict[str, dict[str, int]]) -> list[str]:
-    """Return the list of metrics whose count decreased. Empty = pass."""
+    """Return the list of metrics whose count regressed. Empty = pass.
+
+    A per-type decrease only counts as a regression if the **total**
+    across all visual-aid types (mermaid + ascii + table) also dropped.
+
+    Background: empirically Codex's rewrites sometimes substitute
+    ASCII diagrams for clearer Markdown tables — net visual richness
+    is preserved or grows even when one specific type's count drops.
+    The original strict "any per-type decrease" rule rejected those
+    fungible substitutions. The new rule still catches genuine visual
+    destruction (drops with no compensation) but lets net-neutral or
+    net-positive substitutions pass.
+    """
+    total_before = sum(d["before"] for d in diff.values())
+    total_after = sum(d["after"] for d in diff.values())
+    if total_after >= total_before:
+        return []
     return [m for m, d in diff.items() if d["delta"] < 0]
 
 
