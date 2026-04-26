@@ -33,3 +33,4 @@ ts_utc	slug	heuristic_before	heuristic_after	real_llm_sampled	real_llm_teaching_
 2026-04-26T03:13:47Z	ai-ml-engineering-frameworks-agents-module-1.6-agent-memory-planning	4.30		0			codex	claude	approve	
 2026-04-26T03:18:44Z	ai-ml-engineering-ai-native-development-module-1.9-building-with-ai-coding-assistants	4.80		0			codex	claude	approve	
 2026-04-26T03:24:58Z	ai-ml-engineering-mlops-module-1.2-docker-for-ml	4.50		0			codex	claude	approve	
+2026-04-26T03:30:23Z	ai-ml-engineering-mlops-module-1.1-ml-devops-foundations	5.00		0			codex	claude	approve	
