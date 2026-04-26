@@ -9,7 +9,7 @@ sidebar:
 
 If the history of artificial intelligence was solely a story of hardware, the narrative would move seamlessly from electrical relays to digital computers. But the fundamental architecture of modern deep learning—the neural network—did not begin in an engineering lab. It began with a physiological revelation: the messy, biological human brain could be abstracted into a network of clean, binary logic gates.
 
-The idea that biology and computation could be mathematically united was the brainchild of an unlikely partnership. It was forged in Chicago in the early 1940s between a respected neurophysiologist and a homeless, self-taught mathematical prodigy. Together, they proved that biological intelligence and artificial calculation shared the exact same mathematical foundation.
+The idea that biology and computation could be mathematically united was the brainchild of an unlikely partnership. It was forged in Chicago in the early 1940s between a respected neurophysiologist and a homeless, self-taught mathematical prodigy. Together, they developed an idealized logical model of nervous activity, arguing that neural networks could be analyzed with the same logical calculus as early computing formalisms.
 
 ## The Vagabond Genius
 
