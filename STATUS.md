@@ -46,7 +46,9 @@ Tier ordering:
 | D | `platform/disciplines/data-ai` (mlops + aiops) | 12 |
 | E | everything else, by wpp asc | 323 |
 
-**ETA at ~24min/module sequential**: ~150 hours total. Tier A+B+C+D (60 modules ≈ AI/ML scope) ≈ 24h. **Phase 2a deadline 2026-05-05 (Gemini-3.1-pro downgrade)** is 9 days out — at workers=1 sequential the batch will run past that. If the deadline matters, bump to workers=3 hard-cap (per `feedback_batch_worker_cap.md`) after monitoring stability for the first 5–10 modules.
+**Writer split (route_writer over 383)**: Codex gpt-5.5 = 320 (84%), Claude Opus = 50 (13%), Gemini-3.1-pro = 13 (3.4%, all in `ai/foundations` + `ai/open-models-local-inference` + 4 stragglers).
+
+**ETA at ~24min/module sequential**: ~150h total. AI/ML scope (A+B+C+D = 60 modules) ≈ 24h. The 13 Gemini-routed modules clear in ~5.2h, well before the 2026-05-05 Gemini-3.1-pro downgrade — that deadline isn't load-bearing. The actual budget cliff is **Codex 10x window expiring 2026-05-17** (21 days out, 320 modules × 24min = 128h = 5.3 days at workers=1 — comfortable). workers=3 hard-cap would clear the whole batch in ~2 days if you want it done sooner.
 
 ### Resume / observe / kill
 
