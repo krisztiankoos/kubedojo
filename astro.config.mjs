@@ -147,6 +147,7 @@ export default defineConfig({
               ],
             },
             { label: 'Extending Kubernetes', autogenerate: { directory: 'k8s/extending' }, collapsed: true },
+            { label: 'Bridges to Other Tracks', autogenerate: { directory: 'k8s/bridges' }, collapsed: true },
             {
               label: 'Ecosystem Certifications',
               collapsed: true,
@@ -227,6 +228,7 @@ export default defineConfig({
             { label: 'Multimodal AI', autogenerate: { directory: 'ai-ml-engineering/multimodal-ai' }, collapsed: true },
             { label: 'Deep Learning Foundations', autogenerate: { directory: 'ai-ml-engineering/deep-learning' }, collapsed: true },
             { label: 'Classical ML', autogenerate: { directory: 'ai-ml-engineering/classical-ml' }, collapsed: true },
+            { label: 'Bridges to Other Tracks', autogenerate: { directory: 'ai-ml-engineering/bridges' }, collapsed: true },
             { label: 'Appendix A: History of AI/ML', autogenerate: { directory: 'ai-ml-engineering/history' }, collapsed: true },
           ],
         },
